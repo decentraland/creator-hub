@@ -6,6 +6,7 @@ import type {Project} from '/shared/types/projects';
 import type {Workspace} from '/shared/types/workspace';
 import {hasDependency} from './pkg';
 import {getRowsAndCols, parseCoords} from './scene';
+import {getCwd} from './cwd';
 
 /**
  * Get scene json
@@ -95,13 +96,11 @@ export async function getProjects(_path: string) {
   return scenes;
 }
 
-// temp
-const getCwd = () => '';
-
 /**
  * Returns workspace info
  */
-export async function getWorkspace(cwd = getCwd()): Promise<Workspace> {
+export async function getWorkspace(): Promise<Workspace> {
+  const cwd = await getCwd();
   return {
     projects: await getProjects(cwd),
   };
