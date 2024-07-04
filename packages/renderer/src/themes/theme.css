@@ -1,0 +1,75 @@
+:root {
+  /* Colors */
+  --metaverse-gradient: linear-gradient(to bottom, #060d2b, #132d7d 52%, #9763c1);
+  --purple-banner: #691ea9;
+  --purplish-grey-raw: 115, 110, 125;
+
+  --promo-banner-text: white;
+  --promo-banner-bg: #171717;
+
+  --contest-color: white;
+  --contest-background: #691ea9;
+  --smart-item: #472550;
+  --smart-item-hover: #5f326a;
+
+  --light-gray: #736e7d;
+  --gray: rgba(115, 110, 125, 0.4);
+  --dark-gray: rgba(22, 20, 26, 0.48);
+
+  --light-blue-raw: rgb(0, 217, 255);
+  --light-blue-steel: rgba(var(--bluish-steel-raw), 0.4);
+
+  /**
+  * Component variables
+  */
+
+  /* ScenesPage */
+  --scenespage-card-width: 256px;
+  --scenespage-card-height: 240px;
+  --scenespage-card-margin: 12px;
+
+  /* ScenesPage */
+  --list-page-card-width: 328px;
+  --list-page-card-height: 364px;
+  --list-page-card-margin: 20px;
+
+  /* TopBar */
+  --topbar-height: 48px;
+
+  /* Editor page Banner */
+  --incentive-banner-height: 47px;
+
+  /* SideBar */
+  --sidebar-width: 370px;
+  --sidebar-heading: rgba(255, 255, 255, 0.9);
+
+  /* Preview */
+  --preview-background: #38333f;
+  --preview-z-index: 1100;
+
+  /* Share */
+  --facebook: #4267b2;
+  --twitter: #1da1f2;
+
+  /* Dropdowns */
+  --translusent-gray: rgba(255, 255, 255, 0.08);
+
+  /* Colors to be moved to decentraland ui */
+  --smart-grey-raw: 55, 51, 61;
+  --smart-grey: #37333d;
+  --dark-two: #242129;
+
+  --parameter-font-size: 15px;
+}
+
+.dcl.navbar .ui.menu .item {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.ui.popup.modal-tooltip {
+  z-index: 999999999999999;
+}
+
+html {
+  overflow: hidden;
+}

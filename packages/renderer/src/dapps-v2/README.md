@@ -1,0 +1,3 @@
+This module is a temporary refactor of several components from the "decentraland-dapps" package, necessary for the initial phases of the standalone editor's functionality.
+
+We began with the translation module because we are in the process of migrating components from the builder application, and these components heavily rely on translation. While it would have been possible to simply remove the translation feature from the components in the standalone editor, this approach seemed regressive. Instead, we chose to migrate the translation module as well, ensuring that the translation functionality remains (almost) intact.

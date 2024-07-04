@@ -1,0 +1,2218 @@
+{
+  "atlas": {
+    "locate_land": "Localiza la siguente LAND",
+    "zoom_in": "Acercarse",
+    "zoom_out": "Alejarse"
+  },
+  "authorization_modal": {
+    "title": "Autorizar {token}",
+    "description": "Para poder continuar deberás autorizar al contrato de {contract} a operar tus tokens de {token}. Esto solo debe realizarse una única vez.",
+    "authorize": "Autoriza al contrato de {contract_link} a operar {symbol} por tí",
+    "pending_tx": "Transaccion pendiente, haz click aquí para ir a tu pantalla de actividad y ver más información"
+  },
+  "add_existing_item_modal": {
+    "title": "Agregar Item",
+    "subtitle": "Selecciona un item que no pertenezca a ninguna colección"
+  },
+  "move_item_to_collection_modal": {
+    "title": "Mover item a colección",
+    "subtitle": "Selecciona la colección a la que quieras mover el item",
+    "confirm": "Mover"
+  },
+  "move_item_to_another_collection_modal": {
+    "title": "Mover item a otra colección",
+    "subtitle": "Selecciona la colección a la que quieras mover el item",
+    "confirm": "Mover",
+    "cancel": "Cancelar"
+  },
+  "asset_pack": {
+    "confirm_delete": {
+      "action": "Eliminar Asset Pack",
+      "back": "Volver",
+      "description": "Estas a punto de eliminar este Asset Pack. Esta acción no se puede deshacer.",
+      "title": "¿Estás seguro?"
+    },
+    "default_name": "Mi Asset Pack",
+    "default_name_suffix": "Mi Asset Pack ({suffix})",
+    "edit_asset": {
+      "action": "Continuar",
+      "action_skip": "Saltar revisión",
+      "category": {
+        "label": "categoría"
+      },
+      "description_create": "Revisa tus assets, agrega etiquetas y más",
+      "description_edit": "Revisa tus assets, agrega etiquetas y más",
+      "errors": {
+        "max_name_length": "El nombre del asset sólo puede contener un máximo de {count} caracteres",
+        "min_name_length": "El nombre del asset debe contener al menos {count} caracteres",
+        "tag_count": "Sólo puedes especificar un máximo de {count} etiquetas"
+      },
+      "ground": {
+        "label": "utilizar como suelo"
+      },
+      "name": {
+        "label": "nombre",
+        "placeholder": "Nombre del Asset"
+      },
+      "tags": {
+        "label": "etiquetas",
+        "placeholder": "p.ej. (exterior mueble piso)"
+      },
+      "title_edit": "Editar Asset Pack"
+    },
+    "edit_assetpack": {
+      "action_add_items": "Agregar Assets",
+      "action_create": "Crear Asset Pack",
+      "action_delete": "Eliminar Asset Pack",
+      "action_edit": "Guardar Asset Pack",
+      "description_create": "¡Genial! Ponle un nombre único a tu Asset Pack.",
+      "description_edit": "Elige un nombre para tu Asset Pack. Haz click en un Asset para editarlo.",
+      "errors": {
+        "max_title_length": "El titulo del Asset Pack sólo puede contener un máximo de {count} caracteres",
+        "min_title_length": "El titulo del Asset Pack debe contener al menos {count} caracteres",
+        "thumbnail_size": "El tamaño de la imagen debe ser menor a {size}"
+      },
+      "items": {
+        "empty": "Este Asset Pack se encuentra vacío",
+        "label": "{count} {count, plural, one {Asset} other {Assets}}"
+      },
+      "name": {
+        "label": "nombre",
+        "placeholder": "Mi nuevo Asset Pack"
+      },
+      "reset": "Agregar nuevos Assets",
+      "title_edit": "Editar Asset Pack"
+    },
+    "exit": {
+      "action": "Salir",
+      "back": "Volver",
+      "description_create": "Estas a punto de salir de la creación de tu Asset Pack ¿Quieres continuar?",
+      "description_edit": "Estas a punto de salir de la edición de tu Asset Pack ¿Quieres continuar?",
+      "title_create": "¿Estás seguro?",
+      "title_edit": "¿Estás seguro?"
+    },
+    "import": {
+      "action": "Importar Asset",
+      "action_many": "Importar {count} Assets",
+      "cta": "Arrastra el archivo ({accepted_extensions}) de tu Asset aquí,{enter}o {action}",
+      "upload_manually": "buscalo en tu computadora",
+      "description_create": "Comienza añadiendo algunos assets a tu pack",
+      "description_edit": "Añade algunos assets más a tu pack",
+      "loaded": "Asset importado correctamente",
+      "errors": {
+        "duplicated": "Asset duplicado",
+        "duplicated_asset": "{name}: Ya existe un asset en este asset pack llamado \"{existingAsset}\" que tiene el id \"{id}\", por favor cámbiale el id a \"{newAsset}\" por uno diferente",
+        "invalid": "Asset inválido",
+        "max_file_size": "{name}: El tamaño del archivo excede el límite de {max}mb",
+        "missing_extension": "{name}: Extensión de archivo no encontrada",
+        "missing_model": "{name}: Modelo 3D (.gltf or .glb) no encontrado",
+        "scene_file": "{name}: Escenas exportadas del Builder no estan permitidas"
+      },
+      "title_edit": "Editar Asset Pack"
+    },
+    "login": {
+      "action": "Iniciar Sesión",
+      "description_create": "Necesitas iniciar sesión para crear un Asset Pack",
+      "description_edit": "Necesitas iniciar sesión para editar un Asset Pack",
+      "title": "Iniciar Sesión"
+    },
+    "new_asset_pack": "Nuevo Asset Pack",
+    "progress": {
+      "creating_asset_pack": "Creando Asset Pack",
+      "updating_asset_pack": "Actualizando Asset Pack",
+      "uploading_contents": "Subiendo contenidos del Asset Pack"
+    },
+    "success": {
+      "continue": "Continuar trabajando",
+      "description": "Tu Asset Pack fue subido exitosamente. Visita el listado de Asset Packs para comenzar a usarlo.",
+      "title": "¡Todo listo!"
+    },
+    "title_create": "Crear Asset Pack"
+  },
+  "banners": {
+    "promo_subtitle": "¡Tus Asset Packs personales ahora disponibles en Decentraland!",
+    "promo_title": "Personaliza tu mundo",
+    "top_banner_action": "Descubre más.",
+    "top_banner_left": "Septiembre 16-30 - Súmate a la creación con más de $250k USD en premios para compartir.",
+    "top_banner_right": " "
+  },
+  "body_shapes": {
+    "both": "Ambos",
+    "male": "Hombre",
+    "female": "Mujer"
+  },
+  "item_types": {
+    "wearable": "Vestimenta",
+    "smart_wearable": "Vestimenta Interactiva"
+  },
+  "emotes": {
+    "wave": "Saludar",
+    "idle": "Inactivo",
+    "run": "Correr",
+    "walk": "Caminar",
+    "jump": "Saltar",
+    "clap": "Aplaudir",
+    "dab": "Dab",
+    "dance": "Bailar",
+    "fashion": "Probar Ropa",
+    "fashion-2": "Chic",
+    "fashion-3": "Fashionista",
+    "fashion-4": "Spotlight",
+    "money": "Dinero",
+    "love": "Amor",
+    "head-explode": "Cabeza Explotando",
+    "fist-pump": "Bomba de puño"
+  },
+  "create_collection_modal": {
+    "title": "Nueva Colección",
+    "subtitle": "Ponle un nombre descriptivo a tu nueva colleción",
+    "label": "Nombre de la colección",
+    "placeholder": "Mi colleción",
+    "message": "El nombre puede tener un máximo de {maxLength} caracteres",
+    "error_name_already_in_use": "Nombre en uso. Prueba uno diferente"
+  },
+  "create_third_party_collection_modal": {
+    "title": "Nueva colleción externa",
+    "subtitle": "Ponle un nombre descriptivo a tu nueva colleción",
+    "third_party": {
+      "label": "Colección Externa"
+    },
+    "name_field": {
+      "label": "Nombre",
+      "message": "El nombre puede tener un máximo de {maxLength} caracteres"
+    },
+    "urn_suffix_field": {
+      "label": "Id",
+      "message": "Recomendamos incluir la dirección del contrato de la colección como parte del id. Solo puede usar letras, números y guiones (-)"
+    }
+  },
+  "model_metrics": {
+    "triangles": "{count} {count, plural, one {triángulo} other {triángulos}}",
+    "materials": "{count} {count, plural, one {material} other {materiales}}",
+    "textures": "{count} {count, plural, one {textura} other {texturas}}",
+    "sequences": "{count} {count, plural, one {sequence} other {sequences}}",
+    "duration": "{count} {count, plural, one {segundo} other {segundos}}",
+    "frames": "{count} {count, plural, one {fotograma} other {fotogramas}}",
+    "fps": "{count} fps"
+  },
+  "claim_ens_page": {
+    "title": "Reclamar un nombre único",
+    "subtitle": "Se pueden asignar nombres únicos a su avatar para usarlos como un alias, o se pueden asignar a parcelas y propiedades. {br} Asignar un nombre a una parcela o propiedad le permite crear una URL única, como {exampleLink}, por lo que fácilmente podrá enviar personas a su LAND. Cuando alguien siga su nueva URL, será redirigido a su LAND en {dclWorldLink}{br} Los nombres estan disponibles solo en Ethereum, y solo pueden ser reclamados con MANA de Ethereum {symbol}",
+    "world": "Decentraland!",
+    "name_label": "Nombre",
+    "name_message": "Los nombres no pueden exceder los 15 caracteres, contener espacios o incluir caracteres no alfanuméricos.",
+    "name_placeholder": "Tu nombre va aquí",
+    "repeated_message": "Este nombre no esta disponible.",
+    "error_message": "Hay un error de red. Vuelve a intentarlo.",
+    "radio_label": "MANA aprobado",
+    "claim_button": "Reclama",
+    "need_mana_message": "Autoriza el contrato {contract_link} a operar MANA en tu nombre",
+    "mana_not_allowed": "Debes autorizar suficiente MANA para reclamar un nuevo nombre",
+    "not_enough_mana": "No tienes suficiente MANA para reclamar un nuevo nombre"
+  },
+  "create_single_item_modal": {
+    "title": "Nuevo item",
+    "thumbnail_step_title": "Editar el thumbnail",
+    "upload_video_step_title": "Sube un video para tu vestimenta inteligente",
+    "title_emote": "Nueva Animación",
+    "add_representation": "Agregar representación de {bodyShape}",
+    "wrong_thumbnail_format": "El thumbnail provisto no es una imagen PNG",
+    "name_label": "Ponle un nombre a tu item",
+    "category_label": "Cuál es la categoría de este item?",
+    "category_placeholder": "Selecciona una categoria",
+    "play_mode_label": "Modo de ejecución",
+    "play_mode_placeholder": "Selecciona un modo de ejecución",
+    "upload_video_label": "Mostrar a los usuarios una vista previa de cómo usar este elemento",
+    "upload_video_placeholder": "Seleccione un video",
+    "rarity_label": "Cuál es la rareza de este item?",
+    "rarity_placeholder": "Selecciona una rareza",
+    "representation_label": "Selecciona el tipo de cuerpo para tu item",
+    "existing_item": "Es parte de un item existente?",
+    "pick_item": "Elige un item que no sea para un cuerpo con {bodyShape}",
+    "adding_representation": "Esto será agregado como {bodyShape} para el siguiente item",
+    "change_item_file": "Editar representación",
+    "upload_video_information": "Tamaño máximo de archivo {max_size}",
+    "error": {
+      "item_too_big": "El item entero es demasiado grande para cargarlo. El tamaño máximo de todos los archivos es {size}.",
+      "file_too_big": "{title}.{enter}El límite máximo de tamaño de archivo es {size}. Reduzca el tamaño del archivo e intente nuevamente.",
+      "file_too_big_title": "El archivo es demasiado grande y no se puede cargar",
+      "thumbnail_file_too_big": "El archivo thumbnail es demasiado grande para cargarlo. El tamaño maximo es {size}.",
+      "wrong_extension": "El archivo tiene una extensión inválida.",
+      "invalid_files": "Los archivos parecen no ser válidos o estar dañados. Por favor revíselos y vuelva a intentarlo.",
+      "missing_model_file": "No se pudo encontrar un archivo de modelo válido.",
+      "invalid_content_path": "La ruta \"{path}\" es inválida para la propiedad \"{name}\", el archivo no existe.",
+      "invalid_enum_value": "Valor inválido \"{value}\" para la propiedad \"{name}\", valores posibles: {values}.",
+      "invalid_model_files_representation": "El archivo parece tener más de una representación. Por favor revíselas y vuelva a intentarlo.",
+      "emote_duration_too_long": ".{enter}La duración de los emoticones tiene un límite de {duration} segundos.{enter}Reduce la duración del emote e intente nuevamente.",
+      "emote_duration_too_long_title": "El emote supera la duración máxima en segundos",
+      "invalid_model_file_type": "El archivo tiene una representación inválida para este {type}. Por favor revíselo y vuelva a intentarlo.",
+      "wrong_video_format": "El video provisto no es un video MP4",
+      "unknown_required_permissions": {
+        "title": "{count, plural, one {El permiso} other {Los permisos}} {wrong_configurations} de la vestimenta interactiva no {count, plural, one {existe} other {existen}}. Por favor, corrija el archivo 'scene.json'.",
+        "message": "Para obtener {learn_more}, consulte la documentación."
+      },
+      "duplicated_required_permissions": {
+        "title": "{count, plural, one {El permiso} other {Los permisos}} {wrong_configurations} {count, plural, one {está duplicado} other {están duplicados}}. Por favor, corrija el archivo 'scene.json'.",
+        "message": "Para obtener {learn_more}, consulte la documentación."
+      },
+      "missing_required_properties": {
+        "title": "{count, plural, one {La propiedad} other {Las propiedades}} {wrong_configurations} no {count, plural, one {está} other {están}} configuradas. Por favor, corrija el archivo 'scene.json'.",
+        "message": "Para obtener {learn_more}, consulte la documentación."
+      },
+      "allowed_media_hostnames_empty_or_invalid": {
+        "title": "Dado que el permiso 'ALLOW_MEDIA_HOSTNAMES' está configurado, la propiedad 'allowedMediaHostnames' debe ser configurada y no puede ser vacía. Por favor, corrija el archivo 'scene.json'.",
+        "message": "Para obtener {learn_more}, consulte la documentación."
+      },
+      "item_not_allowed_in_third_party_collections": "Este tipo {tipo} no está permitido en colecciones externas",
+      "emote_animations_sync_error": "<b>Las longitudes de las animaciones del avatar y de las props no son iguales</b><br></br>Corrija su animación y vuelva a subirla para una sincronización perfecta.",
+      "emote_with_mesh": "<b>Su archivo incluye el mesh del Avatar.</b><br></br>Esta malla no es necesaria para este proceso. Por favor, simplemente vuelva a exportarlo y vuelva a subirlo para continuar."
+    },
+    "emote_notice": "Las animaciones estan disponibles para todos los cuerpos.",
+    "smart_wearable_details_title": "Completa los detalles de tu vestimenta interactiva",
+    "smart_wearable_permissions_label": "Permisos de la vestimenta interactiva",
+    "smart_wearable_notice": "Recuerde que la vestimenta interactiva está disponibles para todos los cuerpos.",
+    "thumbnail_preview_title": "Thumbnail",
+    "video_preview_title": "Detalle de video"
+  },
+  "create_and_edit_multiple_items_modal": {
+    "create": {
+      "title": "Crea multiples items",
+      "successful_title": "Items creados",
+      "cancelled_title": "Creación de múltiples items cancelada",
+      "failed_title": "Creación de múltiples items fallida",
+      "finished_successfully_subtitle": "Excelente! Agregaste {number_of_items} items",
+      "finished_partial_successfully_subtitle": "Agregaste {number_of_items} items pero {number_of_failed_items} fallaron",
+      "saved_items_table_title": "Items guardados"
+    },
+    "edit": {
+      "title": "Editar multiples items",
+      "subtitle": "Para poder editar un item existente, use la misma URN",
+      "successful_title": "Items editados",
+      "cancelled_title": "Edición de múltiples items cancelada",
+      "failed_title": "Edición de múltiples items fallida",
+      "finished_successfully_subtitle": "Excelente! Editaste {number_of_items} items",
+      "finished_partial_successfully_subtitle": "Agregaste {number_of_items} items pero {number_of_failed_items} fallaron. Por favor revise las URNs subidas",
+      "saved_items_table_title": "Items actualizados"
+    },
+    "wrong_thumbnail_format": "El archivo thumbnail.png no tiene el formato de una imagen PNG.",
+    "wrong_file_extension": "La extensión del artchivo no es correcta.",
+    "wearable_file_not_found": "El archivo wearable.json no se encontró.",
+    "thumbnail_file_not_generated": "El archivo thumbnail.png no pudo ser generado.",
+    "saved_items_table_title": "Items salvados",
+    "not_saved_items_table_title": "Invalid items",
+    "cancelled_items_table_title": "Cancelled items",
+    "invalid_urn": "El archivo wearable.json contiene una URN inválida para esta colección",
+    "invalid_title": "INVALIDOS",
+    "valid_title": "VALIDOS",
+    "add_more_button": "Agregar más",
+    "upload_items_button": "Subir items",
+    "only_valid_items_info": "Sólo los items válidos serán subidos",
+    "done_button": "Listo",
+    "importing_files_progress_label": "Procesando items",
+    "uploading_items_progress_label": "Subiendo {number_of_items} items",
+    "import_information_link_label": "haz click aquí",
+    "import_information": "Para más información sobre la estructura del ZIP {link}"
+  },
+  "create_items_modal": {
+    "title": "Nuevo item",
+    "subtitle": "Selecciona el mecanismo para crear tus items.",
+    "single_item_button_name": "Un solo item",
+    "single_item_button_description": "Sube archivos GLTF, GLB, PNG o ZIP con el contenido del item.",
+    "multiple_items_button_name": "Múltiples items",
+    "multiple_items_button_description": "Sube múltiples archivos ZIP con el contenido de los items."
+  },
+  "edit_collection_name_modal": {
+    "title": "Editar Nombre",
+    "subtitle": "Escribe un nuevo nombre para esta colección",
+    "submit": "Guardar"
+  },
+  "edit_urn_modal": {
+    "title": "Editar URN",
+    "subtitle": "Actualizar el URN para {name}"
+  },
+  "custom_layout_modal": {
+    "subtitle_one": "Puedes crear diseños personalizados para tu Escena.",
+    "subtitle_two": "Ingresa los valores debajo para ajustar el tamaño."
+  },
+  "share_modal": {
+    "title": "Comparte tu Escena",
+    "description": "Deja que tus amigos y co-creadores vean tu trabajo",
+    "copy": "Copiar enlace",
+    "copied": "Copiado",
+    "uri": {
+      "facebook": "https://www.facebook.com/sharer/sharer.php?u={url}&description=¡Presentando mi última creación, ahora vivo en Decentraland! Mírala a continuación y luego ayúdame a construir el Metaverso agregando las tuyas.",
+      "twitter": "https://twitter.com/intent/tweet?text=Acabo de agregar un nuevo diseño a Decentraland a través del Builder. Mírala a continuación y luego crea el tuyo propio. ¡El mundo virtual no se va a construir solo! {url}&hashtags=builder,virtualworld,gaming"
+    }
+  },
+  "deployment_status": {
+    "online": "Publicado en {coords}",
+    "online_multiple": "Publicado en {count} ubicaciones",
+    "needs_sync": "Publicado en {coords} pero está desactualizado",
+    "needs_sync_multiple": "{count} {count, plural, one {escena está desactualizada} other {escenas estan desactualizadas}}"
+  },
+  "deployment_modal": {
+    "clear": {
+      "confirmation": {
+        "action": "Despublicar",
+        "description": "Estás a punto de despublicar \"{project}\" de {location}",
+        "title": "Despublicar Escena"
+      },
+      "connect": {
+        "description": "Conecta to Wallet para despublicar to Escena.",
+        "title": "Conecta tu wallet"
+      },
+      "success": {
+        "continue": "OK",
+        "description": "{asset} para publicar una nueva Escena!",
+        "title": "¡Todo listo!",
+        "land": "La tierra ya esta despejada y lista",
+        "world": "El mundo ya esta despejado y listo"
+      },
+      "progress": {
+        "title": "Despublicar Escena",
+        "description": "Por favor, espere mientras su escena se despublica"
+      }
+    },
+    "description": "Sube to Escena a tu LAND o aplica por un permiso para que dueños de LAND lo hagan por tí.",
+    "land": {
+      "confirmation": {
+        "action": "Publicar",
+        "description": "Estas publicando la siguiente Escena en tu LAND:",
+        "location_label": "Publicada en",
+        "size_label": "Tamaño",
+        "title_label": "Título"
+      },
+      "connect": {
+        "description": "Conecta tu wallet para continuar.",
+        "title": "Publica la Escena"
+      },
+      "map": {
+        "continue": "Continuar",
+        "no_land_action": "Sube tu Escena al Pool",
+        "no_land_warning": "Parece que no posees LAND",
+        "occupied_tooltip": "Libera espacio de tu LAND{br}Despublica la Escena desde el dashboard",
+        "occupied_warning": "Al menos una Escena ya está publicada en esta ubicación",
+        "placement_active": "Colocando una Escena de {count} LAND en {x},{y}",
+        "placement_default": "Selecciona las LANDs donde publicarás tu Escena",
+        "reset": "Restablecer",
+        "title": "Publica la Escena"
+      },
+      "progress": {
+        "creating_files": {
+          "description": "Por favor espera mientras se generan los archivos para ser subidos.",
+          "title": "Creando Archivos"
+        },
+        "recording": {
+          "description": "Por Favor espera mientras se captura una previsualización de tu Escena.",
+          "title": "Capturando previsualización"
+        },
+        "uploading_assets": {
+          "description": "Por favor espera mientras tu Escena es subida.",
+          "title": "Subiendo Escena al Metaverso"
+        },
+        "uploading_recording": {
+          "description": "Por favor espera mientras la previsualización de tu Escena es subida.",
+          "title": "Subiendo previsualización"
+        }
+      },
+      "success": {
+        "jump_in": "Ingresar",
+        "continue": "Continuar trabajando",
+        "description": "¡Tu Escena ha sido publicada!",
+        "title": "¡Listo!"
+      },
+      "empty": {
+        "title": "No eres dueño de ninguna tierra",
+        "description": "<b>Compre su propia tierra o alquile durante un período</b><br></br>Tu escena es {landSize}, asegúrese de obtener {dimension, plural, one {una tierra} other {un estado}} que sea igual o más grande que eso.",
+        "buy_land": "Comprar tierra",
+        "rent_land": "Alquilar tierra"
+      },
+      "not_enough_land": {
+        "title": "Esta escena es más grande que tu tierra",
+        "description": "Esta escena requiere un área de {cols} x {rows} parcelas. Asegúrese de que sus tierras sean iguales o más grandes que esta para acomodar esta escena. Tenga en cuenta que esta escena podría ser perfecta para un mundo.",
+        "publish_world": "Publicar en mi mundo",
+        "return_scenes": "Volver a las escenas",
+        "claim_name": "Obtene tu nombre único para un mundo gratis"
+      },
+      "title": "Publicar Escena"
+    },
+    "option_land": {
+      "action": "Publicar a LAND",
+      "description": "Publica tu Escena en tu LAND o Estate.",
+      "title": "Mi LAND"
+    },
+    "option_pool": {
+      "action": "Aplicar",
+      "description": "Aplica para que tu Escena sea publicada en una LAND que pertenece a otros.",
+      "title": "Pool de Escenas"
+    },
+    "pool": {
+      "action": "Enviar",
+      "contact_information": "Información de contacto",
+      "i_accept_the": "Al hacer click sobre \"enviar\" aceptas recibir noticias de Decentraland",
+      "progress": "Procesando",
+      "sign_in": {
+        "action": "Iniciar Sesión",
+        "subtitle": "Necesitas iniciar sesión para publicar tu Escena",
+        "title": "Iniciar Sesión"
+      },
+      "subtitle": "Su escena está a punto de cargarse en el grupo de la comunidad, lo que significa que cualquiera puede usarla.",
+      "success": {
+        "body": "Se incluirá en nuestra galería de escenas públicas para cualquier persona interesada en usarla.¡Gracias por tu contribución!",
+        "title": "¡Tu escena ahora es parte del grupo de escenas!"
+      },
+      "title": "Publica tu Escena",
+      "uploading": "Subiendo..."
+    },
+    "deploy_world": {
+      "title": "Publicar en tu Mundo",
+      "description": "Seleccione un NAME de Decentraland o un Dominio ENS que definirá la URL",
+      "action": "Publicar",
+      "world_label": "Mundo (NAME)",
+      "world_placeholder": "Seleccione un NAME",
+      "world_label_ens": "Mundo (ENS Domain)",
+      "world_placeholder_ens": "Seleccione un Dominio ENS",
+      "back": "Volver a elegir donde publicar",
+      "close": "Cerrar modal publicación",
+      "claim_name": "Obtener un NAME",
+      "claim_name_ens": "Obtener un Dominio ENS",
+      "empty_state_title": "No tiene ningún Mundo disponible",
+      "empty_state_description": "<b>Obtenga un Mundo gratis cuando tenga un NAME</b>.<br></br>Cada NAME le otorga acceso a un mundo. Puedes tener tantos como quieras.",
+      "name_type": {
+        "dcl": "NAME",
+        "ens": "Dominio ENS"
+      },
+      "success": {
+        "title": "Tu escena ha sido publicada!",
+        "subtitle": "Ahora puedes explorar y jugar en tu Mundo:",
+        "jump_in": "Ingresar",
+        "share_in_twitter": "Compartir en Twitter",
+        "share_in_twitter_text": "Acabo de publicar contenido nuevo en mi mundo✨\n\nVisitalo en:\n📍"
+      },
+      "failure": {
+        "title": "Algo salió mal",
+        "subtitle": "No pudimos publicar tu escena",
+        "subtitle_size_error": "La escena es demasiado grande para publicarse en un mundo.<br></br>El tamaño máximo es de <b>{maxSizeMbs} mbs</b>, pero la escena actual es de <b>{deployedSizedMbs} mbs</b >."
+      },
+      "world_url_description": "La URL para ingresar en tu mundo será:<br></br><b>{world_url}</b>",
+      "world_has_content": "El contenido existente en {world} mundo se reemplazará con el nuevo contenido que está a punto de publicar.",
+      "confirm_world_replace_content": "Entiendo que esta acción es irreversible",
+      "scene_information": "Información de escena"
+    },
+    "title": "Publicar Escena {sceneName}",
+    "subtitle": "Elige donde querés subir esta escena:",
+    "learn_more": "Más información",
+    "options": {
+      "world": {
+        "title": "Mi Mundo",
+        "description": "No se puede encontrar en el mapa de Genesis City.<br></br>Hasta 100 usuarios pueden unirse al mismo tiempo.",
+        "action": "Publicar en el mundo"
+      },
+      "land": {
+        "title": "Mi Tierra",
+        "description": "Se puede encontrar en el mapa de Genesis City.<br></br>Un número ilimitado de usuarios pueden unirse al mismo tiempo.",
+        "action": "Publicar en la tierra"
+      },
+      "pool": {
+        "title": "Subir al grupo de escenas",
+        "description": "Tu escena aparecerá en una galería de escenas y estará disponible públicamente para su descarga.",
+        "action": "Subir al grupo de escenas"
+      }
+    }
+  },
+  "deploy_to_world_announcement_modal": {
+    "title": "Ahora puedes publicar<br></br>tus escenas a los mundos",
+    "description": "Cree su escena con el constructor y publíquela en un mundo en unos pocos clics.",
+    "create_scene": "Crear Escena"
+  },
+  "templates_announcement_modal": {
+    "title": "Amplíe su creatividad con plantillas y el grupo de escenas comunitarias",
+    "description": "De ahora en adelante puede comenzar a descargar y usar plantillas y escenas del grupo de la comunidad.¡Deja que tu imaginación moldee tus Mundos y Tierras!",
+    "go_to_scenes": "Ir a mis escenas"
+  },
+  "smart_wearables_announcement_modal": {
+    "title": "¡La vestimenta interactiva ya está disponible! 🟢",
+    "description": "<b>Lleva la Vestimenta al siguiente nivel con Experiencias Portátiles</b><br></br>Monetiza tus Experiencias Portátiles a través de la Vestimenta Interactiva y amplía la usabilidad de la Vestimenta ofreciendo a los jugadores nuevas habilidades (¡como volar!) o una capa adicional de contenido superpuesto en escenas de Decentraland.",
+    "learn_more": "Más información sobre la vestimenta interactiva"
+  },
+  "emotes_v2_announcement_modal": {
+    "title": "¡Los emotes 2.0 estan disponibles! 🟢",
+    "description": "<b>¡Los emotes ahora ofrecen más que movimiento!</b><br></br>Aproveche estas capacidades extendidas y mejore sus emotes con accesorios y sonidos para una experiencia más expresiva.",
+    "learn_more": "Obtenga más información sobre Emotes"
+  },
+  "use_as_alias_modal": {
+    "title": "Establece un nombre a tu avatar",
+    "subtitle": "Establece un nuevo alias para tu avatar",
+    "body": "Usa {newName} como el nuevo alias de tu avatar. ¡Los nombres únicos son una excelente manera de ayudar a tus amigos a encontrarte en Metaverso! Esto reemplazará a {oldName}.",
+    "success": "{name} es tu nuevo alias en el Metaverso! Deja que otras personas vean tu nuevo nombre cuando visiten el mundo.",
+    "error": "Algo salió mal... Vuelve a intentarlo más tarde."
+  },
+  "deployment_contest_modal": {
+    "action": "Únete al Contest",
+    "submit": {
+      "title": "Creator Contest",
+      "subtitle": "Gana hasta 200 MANA (  ̴$5 USD) por cada escena que envies al Creator Contest. ¡Puedes enviar hasta 20!.",
+      "eth_address": "Dirección ETH (optional)",
+      "invalid_eth_address": "Dirección ETH inválida"
+    },
+    "recording": {
+      "title": "Preparando tu escena",
+      "subtitle": "Estamos preparando su escena para el concurso, por favor espere."
+    },
+    "uploading": {
+      "title": "Preparando tu escena",
+      "subtitle": "Estamos preparando su escena para el concurso, por favor espere."
+    },
+    "success": {
+      "title": "¡Gracias por subir tu escena!",
+      "subtitle": "Recibiras una notificación por correo electrónico si se selecciona tu escena."
+    },
+    "sign_in": {
+      "title": "Inicia sesión",
+      "subtitle": "Debes iniciar sesión antes de enviar tu escena al concurso."
+    }
+  },
+  "dissolve_modal": {
+    "title": "Disolver Estate",
+    "confirm": "Estás por disolver a {name}. Deseas continuar?",
+    "too_big": "Este Estate es muy grane para ser disuelto en una transacción. Por favor remueve parcelas hasta que tenga como máximo un tamaño de {max} parcelas."
+  },
+  "edit_project_modal": {
+    "custom_layout_label": "Dimensiones",
+    "title": "Detalles de la Escena",
+    "unpublish_needed": "Por favor Despublica tu Escena antes de actualizar los detalles de la misma"
+  },
+  "ens_list_page": {
+    "title": "Tus NOMBREs",
+    "sort_by": "Ordernar por",
+    "mint_name": "Comprar un nuevo nombre",
+    "result": "{count} {count, plural, one {resultado} other {resultados}}",
+    "edit": "Editar",
+    "transfer": "Transferir",
+    "table": {
+      "name": "Nombre",
+      "link": "Enlace",
+      "assigned_to": "Asignado a",
+      "address": "Dirección asociada",
+      "alias": "Alias vinculado",
+      "land": "Tierra vinculada",
+      "actions": "Acciones",
+      "you": "tú"
+    },
+    "unclaimed": "No recuperado",
+    "assigned_to_land": "Tierra ({landId})",
+    "assigned_to_estate": "Estate ({landId})",
+    "button": {
+      "assign": "Usar como link",
+      "edit": "Editar link",
+      "use_as_alias": "Usar como alias",
+      "add_to_avatar": "Asignar a Avatar",
+      "link_to_address": "Asignar a una dirección de Ethereum",
+      "assign_to_land": "Asignar a ubicación",
+      "reclaim_land": "Recuperar para asignar a ubicación",
+      "reclaim_address": "Recuperar para asigner a dirección de ETH"
+    },
+    "empty_names": "No tienes ningun nombre aún.{br} {link} para comenzar.",
+    "items": "{count} {count, plural, one {resultado} other {resultados}}",
+    "alias_popup": "Este nombre está siendo usado por tu perfil pero igual puede ser asignado",
+    "not_profile_created": "Primero necesitas entrar en el mundo antes de asignar un alias.",
+    "empty_state": {
+      "title": "Nada Aquí Todavía",
+      "subtitle": "¡Posee su presencia en el metalto con un nombre de usuario libre de números al final (por ejemplo, Génesis#1234), además de disfrutar de los beneficios adicionales del poder de votación y el acceso a su propio mundo!",
+      "mint_name": "Comprar un nuevo nombre"
+    }
+  },
+  "ens_detail_page": {
+    "name": "Nombre",
+    "address": "Dirección",
+    "alias": "Alias",
+    "land": "Tierra",
+    "unassign": "Sin asignar",
+    "set_as_primary": "Usar como alias",
+    "edit_address": "Editar dirección",
+    "assign_address": "Asignar valor a dirección",
+    "point_location": "Asignar una tierra o mundo",
+    "tooltips": {
+      "alias": "El alias asignado puede ser solo uno por avatar",
+      "address": "Se puede usar externamente en cualquier transacción Web3. Leer los <a>beneficios de ENS</a>",
+      "land": "Las tierras son activos espaciales, las unidades mínimas son parcelas, leer mas sobre <a>los beneficios del Metaverso</a>"
+    },
+    "unclaimed": "Sin recuperar",
+    "reclaim_name": "Recuperar nombre",
+    "reclaim_for_location": "Recuperar para asignar a ubicación",
+    "reclaim_for_address": "Recuperar para asigner a dirección de ETH"
+  },
+  "ens_map_address_modal": {
+    "title": "Enlace a una dirección de Ethereum",
+    "description": "Permita que otros hagan referencia a su cuenta definiendo una dirección de Ethereum con su nombre Decentraland. Esto le permite recibir activos simplemente proporcionando su nombre.",
+    "address": {
+      "label": "Dirección de Ethereum vinculada",
+      "placeholder": "DIRECCIÓN"
+    },
+    "network": "Red",
+    "ethereum": "Ethereum Mainnet",
+    "error_title": "Se produjo un error al configurar la dirección",
+    "learn_more": "Aprende más",
+    "save": "Guardar",
+    "set_resolver": {
+      "title": "Conceder permiso",
+      "info": "Permitir que otros hagan referencia a su cuenta definiendo una dirección de Ethereum con su nombre Decentraland.<br></br> <br></br>Esto le permite recibir activos simplemente proporcionando su nombre. Autorice al resolución pública de ENS para establecer el registro de la dirección en su nombre en Decentraland.",
+      "action": "Autorizar",
+      "error": "Algo salió mal. Por favor, vuelva a intentarlo."
+    },
+    "confirm_transaction": "Confirmar transacción...",
+    "processing": "Procesando..."
+  },
+  "ens_reclaim_name_modal": {
+    "title": "Recuperar nombre",
+    "info": "Recuperar posesión del dominio ETH asociado con este nombre para ser registrado como su propietario por el ENS público.<br></br><br></br>Esto le permitirá vincular una tierra a su nombre o asignarle una dirección de billetera para que pueda recibir activos en Web3 simplemente proporcionando su nombre.",
+    "action": "Recuperar",
+    "confirm_transaction": "Confirmar la transacción...",
+    "processing": "Procesando...",
+    "error": "Algo salió mal. Por favor, vuelva a intentarlo."
+  },
+  "worlds_list_page": {
+    "table": {
+      "name": "NOMBRE",
+      "url": "URL",
+      "published_scene": "Escena Publicada",
+      "publish_scene": "Publicar Escena",
+      "edit_scene": "Editar Escena",
+      "status": "Estado",
+      "status_active": "Activo",
+      "status_inactive": "Inactivo",
+      "status_warning": "Atención",
+      "status_blocked": "Bloqueado",
+      "actions": "Acciones",
+      "empty_url": "Para activar este mundo, necesitas publicar una escena",
+      "size": "Peso Mb"
+    },
+    "empty_list": {
+      "title": "Obtenga un mundo gratis cuando tenga un NAME",
+      "description": "Cada NAME le otorga acceso a un Mundo, <b>su espacio 3D personal en el metaverso</b> donde le puede dar forma como quiera e invitar hasta 100 personas a visitar su espacio.",
+      "cta": "Reclamar un nuevo NAME",
+      "title_ens": "Obtén un Mundo gratis cuando eres dueño de un Dominio ENS",
+      "description_ens": "Con un Dominio ENS, puedes crear un mundo único con 25 Mb de almacenamiento dedicado. Es una excelente manera de comenzar tu viaje en Decentraland.",
+      "cta_ens": "Reclamar Dominio ENS"
+    },
+    "name_tabs": {
+      "dcl_names": "NAMEs de Decentraland",
+      "ens_names": "Dominios ENS"
+    },
+    "worlds_storage": {
+      "used": "Espacio utilizado",
+      "description": "El almacenamiento total se calcula en base a las tenencias de MANA, LAND y NAME.",
+      "link": "Ver Detalles"
+    },
+    "worlds_warning_message": {
+      "to_be_blocked": "Estás utilizando más almacenamiento del permitido. Despublica algunas escenas para liberar espacio o aumenta tu almacenamiento máximo antes del <b>{toBeBlockedAt}</b> para evitar perder el acceso a tus escenas.",
+      "blocked": "El acceso a tus escenas ha sido bloqueado desde <b>{blockedAt}</b> porque no tienes suficiente almacenamiento para mantener tus Mundos publicados actualmente. Despublica algunas escenas para liberar espacio o aumenta tu almacenamiento máximo para recuperar el acceso."
+    }
+  },
+  "error_page": {
+    "or": "o intentar",
+    "reload": "recargar la página",
+    "subtitle": "Ocurrió un error, esto es todo lo que sabemos:",
+    "support": "Contactar soporte",
+    "title": "Oops"
+  },
+  "estate_editor": {
+    "title_edit": "Editar Estate",
+    "subtitle_edit": "Haz click para agregar o remover parcelaas",
+    "title_create": "Construir Estate",
+    "subtitle_create": "Haz click en parcelas adjacentes para construir to Estate",
+    "subtitle_form": "Escribe un nombre y descripción para tu Estate",
+    "name_label": "Nombre",
+    "name_placeholder": "Mi Estate...",
+    "description_label": "Descripción",
+    "description_placeholder": "Alguna descripción...",
+    "add_limit_reached": "Puedes agregar un máximo de {max} parcelas a la vez",
+    "remove_limit_reached": "Puedes remover un máximo de {max} parcelas a la vez",
+    "needs_two_txs": "Este cambio enviará dos transacciones: una para agregar {toAdd} {toAdd, plural, one {parcel} other {parcels}} y otra para remover {toRemove} {toRemove, plural, one {parcel} other {parcels}}"
+  },
+  "export_modal": {
+    "action": "Descargar escena",
+    "docs": "¿Qué es el SDK de Decentraland?",
+    "description": "Transicione sin problemas del constructor al SDK para una escena más interactiva y personalizada.Tenga en cuenta que tiene la opción de descargar escenas del grupo de escenas y plantillas y cargarlo en diferentes cuentas.",
+    "loading": "Descargando...",
+    "title": "Descargue escenas y cree con un mayor nivel de complejidad."
+  },
+  "global": {
+    "avatar": "Avatar",
+    "activity": "Actividad",
+    "approved_tx": "Aprobada",
+    "back": "volver",
+    "blog_post": "blog post",
+    "amount": "Cantidad",
+    "cancel": "Cancelar",
+    "coming_soon": "Próximamente",
+    "confirm": "Confirmar",
+    "copied": "Copiado!",
+    "add": "Agregar",
+    "buy": "Comprar",
+    "continue": "Continuar",
+    "create": "Crear",
+    "dismiss": "Descartar",
+    "done": "OK",
+    "email": "email",
+    "error_ocurred": "Ha ocurrido un error",
+    "eth_address": "ETH address",
+    "finish": "Finalizar",
+    "free": "Gratis",
+    "here": "aquí",
+    "item": "Item",
+    "learn_more": "Más información",
+    "loading": "Cargando",
+    "mint": "Crear",
+    "new": "Nuevo",
+    "new_scene": "Nueva escena",
+    "delete": "Borrar",
+    "edit": "Editar",
+    "next": "siguiente",
+    "optional": "opcional",
+    "or": "o",
+    "project": "Escena",
+    "read_more": "Leer más",
+    "retry_tx": "Re Enviar",
+    "reload": "Recargar",
+    "save": "Salvar",
+    "skip": "Saltar",
+    "send": "Enviar",
+    "see_in_decentraland": "Ver en Decentraland",
+    "share": "Compartir",
+    "sign_in_required": "Debes {link} para acceder a esta página.",
+    "sign_in": "Iniciar sesión",
+    "sign_up": "Suscribirse",
+    "submit": "Enviar",
+    "subscribe": "Subscribirse",
+    "terms_and_conditions": "Términos y Condiciones",
+    "view_more": "Ver Más",
+    "click_here": "Has click aquí",
+    "proceed": "Proceder",
+    "open_in_editor": "Abrir en el editor",
+    "address": "Dirección",
+    "balance": "Balance",
+    "balances": "Balances",
+    "revoke": "Revocar",
+    "set": "Establecer",
+    "settings": "Ajustes",
+    "yes": "Si",
+    "no": "No",
+    "name": "Nombre",
+    "category": "Categoría",
+    "rarity": "Rareza",
+    "body_shape": "Cuerpo",
+    "body_shape_plural": "Cuerpos",
+    "size": "Tamaño",
+    "hash": "Hash",
+    "publish": "Publicar",
+    "published": "Publicado",
+    "description": "Descripción",
+    "urn": "URN",
+    "order": {
+      "newest": "Reciente",
+      "oldest": "Antigüo",
+      "name_asc": "Nombre ↑",
+      "name_desc": "Nombre ↓",
+      "updated_at_asc": "Última actualización ↑",
+      "updated_at_desc": "Última actualización ↓"
+    },
+    "total": "Total",
+    "parcel_plural": "Parcelas",
+    "estate_plural": "Estates",
+    "role": "Rol",
+    "none": "Ninguno",
+    "emote": "Animación"
+  },
+  "roles": {
+    "1": "Dueño",
+    "2": "Dueño",
+    "3": "Arrendador",
+    "4": "Inquilino"
+  },
+  "navigation": {
+    "overview": "Overview",
+    "scenes": "Escenas",
+    "land": "Tierras",
+    "collections": "Colecciones",
+    "names": "Nombres",
+    "worlds": "Mundos",
+    "curation": "Curado"
+  },
+  "list": {
+    "two": "{first} y {second}",
+    "three": "{first}, {second} y {third}",
+    "more": "{count} más"
+  },
+  "home_page": {
+    "title": "¡Construyamos juntos el Metaverso!",
+    "collections": {
+      "card_title": "Colecciones",
+      "card_description": "Crear, tener una vista previa y publicar colecciones de wearables y emotes.",
+      "cta_label": "Gestionar colecciones"
+    },
+    "scenes": {
+      "card_title": "Escenas",
+      "card_description": "Crear tu espacio en tu TIERRA. Puede usar los modelos 3D gratuitos o subir los suyos propios.",
+      "cta_label": "Crear escenas"
+    },
+    "land": {
+      "card_title": "Tierras",
+      "card_description": "Publicar escenas, crear estates y gestionar permisos de sus tierras.",
+      "cta_label": "Gestionar su tierra"
+    },
+    "names": {
+      "card_title": "Nombres",
+      "card_description": "Reclama tu nombre unico y asignalo a tu avatar o a parcelas.",
+      "cta_label": "Reclamar nombre"
+    }
+  },
+  "scenes_page": {
+    "my_scenes": "Mis Escenas",
+    "upload_scene": "Subir Escene",
+    "create_scene": "Crear Escene",
+    "no_projects": "Puede publicar sus escenas en su LAND, sus mundos o cargarlas en el Pool de escenas.{br}Alternativamente, también puede <link>cargar un archivo de escena</link> y continuar trabajando desde allí.",
+    "no_projects_guest": "Tus Escenas fueron subidas a la Nube{br}{sign_in} para verlas.",
+    "sdk6_support": "El soporte técnico para SDK 6 finalizará el 23 de diciembre de 2023.",
+    "project_actions": {
+      "delete_project": "Borrar Escena",
+      "duplicate_project": "Duplicar Escena",
+      "export_project": "Descargar Escena",
+      "unpublish": "Despublicar"
+    },
+    "choose_scene_creation": "Elija la mejor opción para construir su escena",
+    "no_scenes": {
+      "title": "Crea tu primera escena",
+      "description": "Desata tu creatividad. Comienza a construir escenas para sus tierras y mundos y comparta con la comunidad.<a> Aprenda más sobre cómo crear escenas. </a>",
+      "from_scratch": {
+        "title": "Empezar desde el principio",
+        "description": "Comience a construir sus escenas desde cero con el constructor en línea de una manera simple e intuitiva."
+      },
+      "from_template": {
+        "title": "Use plantillas predefinidas",
+        "description": "Elija una de estas plantillas pulidas y lance una escena increíble con solo unos pocos clics!"
+      }
+    },
+    "sort": {
+      "name": "Nombre",
+      "newest": "Más Nuevas",
+      "size": "Tamaño"
+    },
+    "start": "Comenzar",
+    "subtitle": "Con herramientas simples y cientos de objetos 3D a tu disposición, el Builder hace que crear sea divertido. ¡Libera tu creatividad!",
+    "templates_title": "Escoge el tamaño de tu Escena para comenzar",
+    "title": "¡Construye algo genial!",
+    "migration": "Necesitas {link} tus Escenas",
+    "migration_link": "migrar",
+    "migration_banner": "El Builder ha comenzado a utilizar billeteras en lugar de emails. Usa la {link} para migrar tus escenas.",
+    "migration_banner_link": "Página de Migración",
+    "migration_modal_title": "Migración exitosa!",
+    "migration_modal_message": "Los siguientes datos han sido migrados:",
+    "migration_modal_dismiss": "Aceptar",
+    "results": "{count} {count, plural, one {resultado} other {resultados}}",
+    "from_scene_pool": "De La Comunidad"
+  },
+  "templates_page": {
+    "title": "Elija una plantilla",
+    "back_to_scenes": "Volver a las escenas",
+    "parcels": "{size} parcelas",
+    "coming_soon": "Muy pronto"
+  },
+  "import_modal": {
+    "action": "Cargar",
+    "action_many": "Cargar {count} Escenas",
+    "cta": "Arrastra un archivo .zip o {action}",
+    "description": "Para transferir escenas entre diferentes cuentas o cargar una escena previamente descargada desde el grupo de escenas, utilice la función de carga. Asegúrese de cargar el archivo zip exactamente como se descargó.",
+    "invalid_file": "Archivo inválido",
+    "title": "Cargar Escena",
+    "upload_manually": "buscarlo en su computadora"
+  },
+  "upload_video": {
+    "cta": "Arrastre y suelte un video (formato .MP4) para mostrar la funcionalidad portátil inteligente o {acción}",
+    "upload_manually": "buscarlo en su computadora",
+    "error": {
+      "video_file_too_big": {
+        "title": "El archivo es demasiado grande y no se puede cargar.",
+        "message": "El límite de tamaño del archivo es {tamaño}. Por favor reduzca el tamaño del archivo y vuelva a intentarlo."
+      },
+      "video_file_too_long": {
+        "title": "La duración del video excede {max_duration} segundos.",
+        "message": "Por favor reduce la duración e inténtalo de nuevo."
+      },
+      "invalid_video": {
+        "title": "Parece que el video no es válido o está roto.",
+        "message": "Por favor revisa tu archivo y vuelve a intentarlo."
+      }
+    }
+  },
+  "itemdrawer": {
+    "opensea_credit": "Impulsado por {link}",
+    "edit_asset_pack": "Editar",
+    "empty_ground": "Sin piso",
+    "no_results": "Sin resultados",
+    "results": "Resultados",
+    "search": "Buscar Assets",
+    "title": "Asset Packs",
+    "search_items": "Buscar objetos"
+  },
+  "item_dropdown": {
+    "placeholder": "Selecciona un item",
+    "no_items": "No hay items validos"
+  },
+  "collection_dropdown": {
+    "placeholder": "Selecciona una colección",
+    "no_collections": "No hay colecciones válidas"
+  },
+  "layout_picker": {
+    "columns": "columnas",
+    "rows": "filas"
+  },
+  "metrics": {
+    "bodies": "cuerpos",
+    "entities": "entidades",
+    "height": "altura",
+    "materials": "materiales",
+    "meshes": "meshes",
+    "textures": "texturas",
+    "too_many": "Demasiados {metric}",
+    "triangles": "triángulos"
+  },
+  "video_stats": {
+    "seconds": "{seconds} {seconds, plural, one {segundo} other {segundos}}",
+    "size": "{size} MB"
+  },
+  "mobile_page": {
+    "desktop_too_narrow": "¡El Builder no funciona con esta resolución! Intenta agrandando la ventana si puedes.",
+    "gallery_title": "Esto es lo que se está costruyendo",
+    "learn_more": "Aprende más acerca del Builder",
+    "message": "El Builder aún no funciona en dispositivos móviles. Suscribete para recibir actualizaciones y pruebalo en tu PC.",
+    "reminder_body": "¡Ey!\n\n¡Al parecer has intentado utilizar el Builder desde un dispositivo movil!\nEl Builder solo funciona en computadoras de escritorio y notebooks. Cuando estes listo ingresa a https://builder.decentraland.org\n\n¡Que lo disfrutes!\n\nEl equipo de Decentraland",
+    "reminder_subject": "Recordatorio: Probar el Builder de Decentraland",
+    "secondary_hero": {
+      "action": "Enviar recordatorio",
+      "title": "¿Quieres comenzar a construir cuando estes en tu PC?"
+    },
+    "success": "Gracias, ¡Te mantendremos al tanto!",
+    "title": "El Builder solo esta disponible para PC",
+    "list_title": "Desde tu PC, tu podras:",
+    "first_paragraph": "Crear, tener una vista previa y publicar {bold_text}.",
+    "first_paragraph_bold_text": "colecciones de wearables y emotes",
+    "second_paragraph": "Crear {bold_text}. Puede usar los modelos 3D gratuitos o subir los suyos propios.",
+    "second_paragraph_bold_text": "contenido para su LAND",
+    "third_paragraph": "Publicar escenas, {bold_text} de su LAND.",
+    "third_paragraph_bold_text": "crear estates y gestionar permisos",
+    "fourth_paragraph": "Reclama tu {bold_text} y asignalo a tus avatar o a parcelas.",
+    "fourth_paragraph_bold_text": "nombre unico"
+  },
+  "rental_period": {
+    "period_over": "Período de renta terminado",
+    "tenant_operator_permissions": "Tendrás permisos de Operador hasta que el dueño pida su tierra",
+    "lessor_operator_permissions": "Tendrás permisos de Operador hasta que pidas tu tierra",
+    "ends_in": "Termina en"
+  },
+  "land_page": {
+    "coordinates": "Coordenadas",
+    "operated_by": "Operado por",
+    "type": "Tipo",
+    "online_scenes": "Escenas Online",
+    "owner": "Dueño",
+    "operators": "Operadores",
+    "results": "{count} {count, plural, one {resultado} other {resultados}}",
+    "owner_explanation": "Estas son tierras que te pertenecen",
+    "operator_explanation": "Estas son tierras que no son tuyas, pero donde tienes permiso",
+    "tenant_explanation": "Estas son tierras que no son tuyas, pero donde tienes una renta"
+  },
+  "land_detail_page": {
+    "transfer": "Transferir",
+    "set_operator": "Configurar Operador",
+    "assign_name": "Configurar link",
+    "build_estate": "Construir Estate",
+    "add_or_remove_parcels": "Añadir o Quitar Parcelas",
+    "dissolve_estate": "Disolver Estate",
+    "online_scenes": "Escenas Online",
+    "add_scene": "Agregar Escena",
+    "assigned_names": "Nombres asignados",
+    "description": "Descripción",
+    "owner": "Dueño",
+    "tenant": "Inquilino",
+    "land_is_locked": "Esta acción está bloqueada hasta que reclames tu tierra.",
+    "operated_by": "Operado por",
+    "total_land": "Tierras Totales",
+    "empty_land": "Tierras Vacias",
+    "unset_ens_content": {
+      "title": "Estás seguro?",
+      "text": "Desasignar el nombre va a causar que {link} ya no te lleve a {land}. Deseas proceder?"
+    }
+  },
+  "land_assign_ens_page": {
+    "title": "Asignar {name}",
+    "subtitle": "Asigna un nombre a {land}",
+    "set_name_message": "<strong>Antes de poder asignar este nombre a su parcela, debe enviar 2 o 3 transacciones:</strong> La primera transacción reclama tu nombre ENS para que tomes control del mismo y sólo es requerida para nombres comprados o transferidos de otros usuarios, la segunda transacción le permite usar su nombre como enlace y la tercera transacción vincula su nombre a su LAND.",
+    "reclaim": "Reclamar",
+    "reclaim_explanation": "Esto recupera el control de su nombre después de que se le haya transferido. El dueño del nombre tiene control sobre él hasta que sea reclamado.",
+    "set_resolver": "Establecer Resolver",
+    "set_resolver_explanation": "Esto permite que su nombre esté vinculado a una parcela",
+    "set_content": "Establecer Contenido",
+    "set_content_explanation": "Esto resuelve su nombre con un enlace a su LAND en Decentraland"
+  },
+  "ens_select_land_page": {
+    "title": "Asignar {name}",
+    "subtitle": "Puede asignar este nombre a cualquiera de sus parcelas o propiedades.",
+    "land_selected": "Seleccion:",
+    "already_assigned": "Ya asignaddo"
+  },
+  "land_select_ens_page": {
+    "title": "Asigna un Nombre",
+    "subtitle": "Asigna un nombre a {land}",
+    "empty_options_message": "No tienes nombres disponibles. Para asignar un nuevo nombre a tu LAND, necesitas reclamar uno",
+    "claim_new_name": "Reclamar un nuevo nombre",
+    "select_name_title": "Mis nombres",
+    "select_name_placeholder": "Selecciona un nombre",
+    "click_to_claim_new_name": "{click_here} para obtener un nuevo nombre",
+    "name_assigned": "Este nombre ya ha sido asignado a tu tierra"
+  },
+  "claim_name_fat_finger_modal": {
+    "title": "Por favor, confirme su nuevo nombre",
+    "description": "Has elegido {name}. Vuelva a ingresar su nombre para confirmar su selección.",
+    "ok_message": "Felicidades el nombre {name} es tuyo.",
+    "name_placeholder": "Tu nombre único",
+    "names_different": "Los nombres no son iguales",
+    "authorization": {
+      "title_action": "compra",
+      "action": "afirmar"
+    }
+  },
+  "migrate_page": {
+    "step_one_title": "Migra tu cuenta",
+    "step_one_message_line_one": "Con el objetivo de mejor la experiencia de nuestros productos, hemos cambiado el sistema de cuentas de usuario del Builder. Hemos dejado de usar emails y pasado a usar una billetera en su lugar. Esto significa que necesitaras conectar una billetera de Ethereum para almacenar tus escenas en la nube. Si no tienes una billetera y quieres aprender como conseguir una has {link}.",
+    "step_one_link": "click aquí",
+    "step_one_message_line_two": "Si tenias escenas almacenadas en tu cuenta de email, puedes migrarlas a tu billetera usando esta página.",
+    "step_one_cta": "Comenzar Migración",
+    "step_two_title": "Inicia sesión con tu Email",
+    "step_two_message": "Por favor inicia sesión con tu email para poder encontrar las escenas que necesitan ser migradas.",
+    "step_two_cta": "Iniciar sesión",
+    "step_three_title": "Conecta tu billetera",
+    "step_three_message": "Por favor conecta tu billetera para continuar. Si no tienes una billetera, ahi hay una {link} para conseguir una.",
+    "step_three_link": "guía para principiantes",
+    "step_three_cta": "Conectar",
+    "step_three_error": "Por favor instala {metamask} u otra billetera de Ethereum para continuar.",
+    "step_four_title": "Migra tus escenas",
+    "step_four_message": "Migrar todas tus escenas y asset packs de tu cuenta de email a tu billetera.",
+    "step_four_cta": "Migrar",
+    "projects_title": "Las siguientes Escenas seran migradas:"
+  },
+  "operator_page": {
+    "title": "Asignar Operador",
+    "subtitle": "Estas asignando un operador para {name}.<br></br>Los operadores <b>solo</b> pueden publicar escenas en la tierra.",
+    "address": "Dirección",
+    "undo": "Deshacer",
+    "revoke": "Revocar",
+    "invalid_address": "Dirección invalida"
+  },
+  "not_found_page": {
+    "back": "Volver a tus Escenas",
+    "subtitle": "Lo sentimos, no pudimos encontrar la Escena que buscabas.",
+    "title": "404"
+  },
+  "scene_list_page": {
+    "projects_title": "Escenas de la comunidad",
+    "no_projects": "No se encotraron Escenas",
+    "filters": {
+      "creator-contest-2019-12": "Creator Contest (Submission)",
+      "qualified-creator-contest-2019-12": "Creator Contest",
+      "all_groups": "Todas las colecciones",
+      "all_users": "Todos los usuarios",
+      "only_me": "Solo yo",
+      "newest": "Más Nuevas",
+      "likes": "Más Favoritos",
+      "size": "Tamaño",
+      "items": "Más Objetos",
+      "smart_items": "Más Objetos Interactivos",
+      "name": "Nombre"
+    }
+  },
+  "public_page": {
+    "made_with": "Scene made with Builder",
+    "made_by": "Scene by",
+    "try_it_out": "try it out",
+    "parcel_count": "{parcels} {parcels, plural, one {parcel} other {parcels}}",
+    "item_count": "{items} {items, plural, one {item} other {items}}",
+    "likes": "{likes} {likes, plural, one {like} other {likes}}"
+  },
+  "popups": {
+    "metrics_help": "¡Ver métricas aquí!",
+    "shortcuts_help": "¡Ver atajos aquí!",
+    "its_you": "¡Eres tú!"
+  },
+  "project_card": {
+    "parcel_count": "{parcels} {parcels, plural, one {parcela} other {parcelas}}",
+    "item_count": "{items} {items, plural, one {item} other {items}}",
+    "confirm_delete_content": "¿Seguro que quieres borrar tu Escena \"{title}\"? Esta operación es ireversible",
+    "confirm_delete_header": "Borrar \"{title}\""
+  },
+  "item_card": {
+    "move_to_collection": "Mover a colección",
+    "confirm_delete_content": "¿Seguro que quieres borrar tu item \"{name}\"? Esta operación es ireversible",
+    "confirm_delete_header": "Borrar \"{name}\""
+  },
+  "project_fields": {
+    "description_field_label": "Descripción",
+    "description_field_placeholder": "Sin descripción",
+    "title_field_label": "Título",
+    "title_field_placeholder": "Título de la Escena"
+  },
+  "project_layout_picker": {
+    "max_area_error": "Tu Escena no puede tener más de {area} parcelas",
+    "min_area_error": "Tu Escena es muy chica",
+    "decimals_error": "El tamaño de parcelas de su escena no debe tener un valor decimal",
+    "empty_field_error": "Debe completar la cantidad de filas y columnas para establecer el tamaño de la escena"
+  },
+  "quota_exceeded_modal": {
+    "retry": {
+      "description": "No hemos podido guardar tu trabajo",
+      "title": "¡Oh no!"
+    },
+    "sign_in": {
+      "description": "Te has quedado sin espacio de almacenamiento local, inicia sesion para continuar",
+      "title": "¡Oh no!"
+    }
+  },
+  "scene_detail_page": {
+    "actions": {
+      "duplicate": "Duplicar",
+      "delete": "Eliminar",
+      "unpublish": "Despublicar"
+    },
+    "edit_scene": "Editar Escena",
+    "download_scene": "Descargar Escena",
+    "published_in": "Publicada En",
+    "no_deployments": "Esta escena aún no ha sido publicada.",
+    "published": "Publicada",
+    "unsynced": "Desactualizada",
+    "draft": "Borrador",
+    "status": "Estado",
+    "location": "Ubicación",
+    "description": "Descripción",
+    "url": "URL"
+  },
+  "template_detail_page": {
+    "select_template": "Seleccionar plantilla",
+    "download_scene": "Descargar Escena",
+    "description": "Descripción",
+    "creator": "Creador",
+    "scene_details": "Detalles de la escena",
+    "built_for_world": "Construido para Mundos",
+    "personalize_it_yourself": "Personalizalo tu mismo",
+    "parcels": "{rows} x {cols} parcelas"
+  },
+  "shortcuts": {
+    "delete": "Eliminar objeto",
+    "duplicate": "Objeto duplicado",
+    "export": "Descargar Escena",
+    "hold": "Sostener",
+    "move": "Alternar flechas",
+    "move_camera": "Mover cámara",
+    "precision": "Ignorar ajustado a la grilla",
+    "preview": "Avance",
+    "redo": "Rehacer",
+    "reset": "Restablecer objeto",
+    "reset_camera": "Restablecer cámara",
+    "rotate": "Alternar órbitas",
+    "scale": "Alternar escalado",
+    "shortcut_reference": "Referencia de atajos",
+    "toggle_colliders": "Mostrar colisiones",
+    "toggle_sidebar": "Alternar barra lateral",
+    "undo": "Deshacer",
+    "zoom_in": "Aumentar el zoom",
+    "zoom_out": "Disminuir el zoom",
+    "multiselect": "Seleccionar múltiples objetos"
+  },
+  "shortcuts_modal": {
+    "editor_shortcuts": "Editor",
+    "item_shortcuts": "Objeto",
+    "other_shortcuts": "Otros",
+    "title": "Atajos"
+  },
+  "create_modal": {
+    "title": "Crear una Escena",
+    "name_subtitle": "Escribe un nombre y una descripcion de tu Escena",
+    "size_subtitle": "Elige el tamaño de tu nueva Escena",
+    "sdk_title": "Experimente el nuevo editor de Decentraland",
+    "sdk_subtitle": "Aproveche el poder de SDK 7 sin ningún código.",
+    "sdk_description": "Mejore su proceso de construcción de escenas con nuestro editor visual mejorado. Se incluyen todas las características del Builder anterior, mientras que la adición de  <b>smart items</b> está programado para una próxima actualización.",
+    "sdk_image_alt": "SDK 7",
+    "name_label": "Nombre",
+    "description_label": "Descripción",
+    "description_placeholder": "Una descripción...",
+    "use_sdk7": "Use el nuevo editor web de Decentraland",
+    "use_sdk6": "Use el antiguo constructor de escenas (SDK 6)",
+    "change_item_file": "Editar representation"
+  },
+  "clone_template_modal": {
+    "title": "Escribe un nombre y una descripcion de tu Escena",
+    "name_label": "Nombre",
+    "name_max_length": "El nombre puede tener un máximo de 32 caracteres",
+    "description_label": "Descripción",
+    "description_placeholder": "Una descripción..."
+  },
+  "sync": {
+    "error": "{errorCount} {errorCount, plural, one {Escena} other {Escenas}} fallaron al ser guardadas",
+    "loading": "Guardando...",
+    "retry": "Reintentar",
+    "success": "¡Escenas guardadas exitosamente!"
+  },
+  "templates": {
+    "big": "Grande (2x3)",
+    "custom_layout": {
+      "title": "A medida",
+      "up_to": "Hasta {max} parcelas"
+    },
+    "description": "{dimensions} - {amount} objetos aprox",
+    "medium": "Estándar (2x2)",
+    "small": "Mini (1x1)"
+  },
+  "activity_page": {
+    "latest_activity": "Ultima Actividad",
+    "clear_history": "Limpiar Historial",
+    "empty": "No tienes actividad aún.",
+    "clear_history_modal": {
+      "title": "Estás seguro?",
+      "text": "Estás por limpiar tu historial. Deseas proceder?"
+    }
+  },
+  "settings_page": {
+    "authorizations": "Autorizaciones",
+    "disclaimer": "Puedes asignar a otra persona para que opere en todas tus tierras por tí. Ellos {emphasis} transferir o venderlas, solo podrán publicar contenido en ellas.",
+    "emphasis": "no podrán",
+    "authorization": "Haz autorizado a {address} para que pueda operar en tus {type}.",
+    "authorization_action": "Autorizar a {address} para que pueda operar tus {type}.",
+    "copy_address": "Copiar direccion",
+    "copied": "Copiada",
+    "authorizations_title": "Autorizaciones Activas"
+  },
+  "transaction": {
+    "approved": "Aprobaste",
+    "not_approved": "Desaprobaste",
+    "approve_token": "{action} al contrato {contract} para que opere {token} por tí.",
+    "change_profile": "Tu nombre es usado como alias para {address}",
+    "transfer": "Has transferido {name} a {address}.",
+    "edit": "Has editado {name}.",
+    "set_operator_assigned": "Has asignado {address} como operador de {name}.",
+    "set_operator_revoked": "Has revocado el operador de {name}.",
+    "create_estate": "Has creado {name}.",
+    "dissolve_estate": "Has disuelto {name}.",
+    "edit_estate_add": "Has agregado {count} {count, plural, one {parcela} other {parcelas}} a {name}.",
+    "edit_estate_remove": "Has removido {count} {count, plural, one {parcela} other {parcelas}} de {name}.",
+    "set_manager_assigned": "Has asignado a {address} como operador de tus {type}.",
+    "set_manager_revoked": "Has revocado a {address} como operador de tus {type}.",
+    "collection_published": "Colección {name} publicada",
+    "collection_approved": "Colección {name} aprobada",
+    "collection_rejected": "Colección {name} rechazada",
+    "set_price_and_beneficiary": "Has editado el precio y/o beneficiario de {name}",
+    "collection_item_minted": "Item {itemName} creado para la colección {collectionName} {count, plural, one {una vez} other {{count} veces}}",
+    "collection_items_minted": "{count} items creados para la colleción {name}",
+    "updated_collection_managers": "Actualizados los colaboradores de la colección {name}",
+    "updated_collection_minters": "Actualizados los emisores de la colección {name}",
+    "set_collection_on_sale": "Colección {name} puesta a la venta",
+    "unset_collection_on_sale": "La colección {name} ya no está a la venta",
+    "set_ens_resolver": "Haz asignado el resolver para el nombre \"{name}\".",
+    "set_ens_content": "Haz asignado el contenido de redirección para el nombre \"{name}\" en {land_link}.",
+    "unset_ens_content": "Haz removido el contenido para el nombre \"{name}\".",
+    "allowed_claim_mana": "Permitió el uso de MANA para reclamar un nuevo nombre",
+    "disallowed_claim_mana": "No permitió el uso de MANA para reclamar un nuevo nombre",
+    "claim_name": "Haz reclamado el nombre: \"{name}\".",
+    "rescue_items": "Has aprobado el contenido de {count} {count, plural, one {item} other {items}} para la collección {collectionName}"
+  },
+  "transfer_page": {
+    "title": "Transferir",
+    "subtitle": "Estás por transferir {name}.",
+    "disclaimer": "Recuerda que transferir es una operación irreversible.{br}Por favor verifica que la dirección sea la correcta.",
+    "same_owner": "Ese ya es el dueño",
+    "invalid_address": "Esto no es una dirección válida"
+  },
+  "toasts": {
+    "localstorage": "Las Escenas se guardan en tu navegador. {sign_in} para subirlas a la nube!"
+  },
+  "topbar": {
+    "bounds_exceeded": "Objeto fuera de límites{br}¡Muevelo dentro de los límites!",
+    "limits_exceeded": "Demasiados {metric}{br}¡Intenta borrar algunos objetos!",
+    "up_to_date": "¡Al día!{br}Todos los cambios están actualizados",
+    "update_scene": "Actualizar Escena"
+  },
+  "tutorial_modal": {
+    "slide0": {
+      "description": "Este es el nuevo constructor de Escenas de Decentraland. Antes de comenzar, déjanos mostrarte cómo funciona.",
+      "title": "¡Bienvenido al Builder!"
+    },
+    "slide1": {
+      "description": "Para mover un objeto, haz clic y arrastralo.",
+      "title": "Moviendo objetos"
+    },
+    "slide2": {
+      "description": "Agrega objetos a tu Escena desde la barra lateral a la derecha.",
+      "title": "Añadiendo objetos"
+    },
+    "slide3": {
+      "description": "Girar objetos haciendo clic en la herramienta Rotar y arrastrando las órbitas.",
+      "title": "Flechas y órbitas"
+    },
+    "slide4": {
+      "description": "Arrastra con el botón izquierdo para girar la cámara. Use el botón derecho para desplazarse.",
+      "title": "Controlando la cámara"
+    },
+    "subtitle": "El Builder es muy fácil de usar, aquí hay algunos consejos antes de comenzar",
+    "title": "Comienza con el Builder"
+  },
+  "unsupported_browser_page": {
+    "back": "Volver a tus Escenas",
+    "subtitle": "El Builder no es compatible con tu navegador.{br}Visita esta página usando {chrome} o {firefox}",
+    "title": "¡Oops!"
+  },
+  "user_menu": {
+    "guest": "Invitado",
+    "sign_in": "Iniciar Sesión",
+    "sign_out": "Cerrar Sesión"
+  },
+  "validation": {
+    "project": {
+      "description": {
+        "length": "La longitud de la descripción debe estar entre {min} y {max} caracteres."
+      },
+      "title": {
+        "length": "La longitud del título debe estar entre {min} y {max} caracteres."
+      }
+    }
+  },
+  "video_modal": {
+    "title": "Aprende más sobre el Builder",
+    "youtube_id": "4YSdIaxfg-E"
+  },
+  "wallet": {
+    "signature_error": "Error al firmar el mensaje",
+    "no_wallet": "No se encontro una billetera",
+    "connect_error": "No se pudo conectar la billetera",
+    "title": "Conecta tu billetera para iniciar sesión.",
+    "sign_in_required": "Necesitas {sign_in} para acceder a esta página.",
+    "sign_in": "Iniciar sesión"
+  },
+  "collections_page": {
+    "results": "{count} {count, plural, one {resultado} other {resultados}}",
+    "no_items": "Sin colecciones",
+    "new_item": "Nuevo item",
+    "new_collection": "Crear colección",
+    "new_third_party_collection": "Crear colección externa",
+    "type": "Tipo",
+    "items": "Items",
+    "collections": "Colecciones",
+    "collection": "Colección",
+    "single_items": "Items individuales",
+    "empty_description": "Aún no tienes colecciones, comienza creándo una de ellas y entra al metaverso con estilo",
+    "created_at": "Creado",
+    "last_modified": "Última modificación"
+  },
+  "curation_page": {
+    "order": {
+      "most_relevant": "Más relevantes"
+    },
+    "filter": {
+      "all_status": "Todos los estados",
+      "all_assignees": "Todos los asignados",
+      "all_types": "Todos los tipos",
+      "not_reviewed": "No revisado",
+      "approved": "Aprobado",
+      "rejected": "Rechazado",
+      "under_review": "Bajo revisión",
+      "to_review": "A revisar",
+      "standard": "Estandar",
+      "third_party": "Externa"
+    },
+    "search_placeholder": "Busca por nombre o por la dirección del dueño",
+    "results": "{count} {count, plural, one {resultado} other {resultados}}",
+    "collections": "{count} {count, plural, one {colecccion} other {coleccciones}}",
+    "empty_collections": "Aún no hay colecciones para revisar.",
+    "assign_modal": {
+      "unassign": "Desasignar",
+      "collection_unassigned": "La colección {collection_name} no se ha asignado.",
+      "self_assign": {
+        "title": "Confirma tu asignación a {collection_name}",
+        "body": "Serás el responsable de {emphasis}. Si es necesario, podrá reasignar la colección a otro curador.",
+        "emphasis": "revisar esta colección y comunicarse con el creador en el foro",
+        "success": "Se te asignó la colección {collection_name}."
+      },
+      "reassign": {
+        "title": "Editar curador asignado para la colección {nombre_de_la_colección}",
+        "body": "En caso de que no pueda revisar esta colección, reasígnela a otro curador. Asegúrese de informarles acerca de este cambio.",
+        "success": "La colección {collection_name} se ha asignado a {assignee}."
+      }
+    },
+    "error_message_title": "Error",
+    "error_message_body": "Algo salió mal... Vuelve a intentarlo más tarde.",
+    "assign_success_title": "Colección asignada",
+    "unassign_success_title": "Colección sin asignar",
+    "curator": "Curador",
+    "confirm_not_assigned_curation_modal": {
+      "title": "Aprobar colección",
+      "body": "Esta colección está asignada a {assignee}. Si es necesario, aún puede aprobarlo, pero asegúrese de informar al curador asignado.",
+      "confirm_footer": "Confirmar la aprobación de esta colección para que se habilite para ser acuñada.",
+      "confirm_button": "Asignarme y aprobar la colección"
+    }
+  },
+  "collection_row": {
+    "collection": "Colección",
+    "published": "Publicado",
+    "date": "Fecha",
+    "assignee": "Asignado a",
+    "status": "Estado",
+    "discussion": "Discusión",
+    "items": "{count} {count, plural, one {item} other {items}}",
+    "owner": "Dueño",
+    "link": "Enlace",
+    "type": "Tipo",
+    "type_third_party": "Colección Externa",
+    "type_standard": "Estándar",
+    "review_request": "Solicitud de revisión",
+    "forum_post": "Post en el foro",
+    "no_forum_post": "No hay post",
+    "approved": "Aprobada",
+    "rejected": "Rechazada",
+    "disabled": "Deshabilitada",
+    "unassigned": "Sin asignar",
+    "assign_to_me": "Asignar a mí",
+    "you": "usted"
+  },
+  "item_detail_page": {
+    "details_info": {
+      "id": "Id"
+    },
+    "selling": {
+      "title": "Vendiendo"
+    },
+    "representations": {
+      "title": "Representaciones"
+    },
+    "tags": {
+      "title": "Tags"
+    },
+    "details": "Detalles",
+    "edit_thumbnail": "Editar Thumbnail",
+    "properties": "Propiedades",
+    "notice": "Debes agregar tus items a una colección antes de poder publicarlos",
+    "add_representation": "Agregar representación de {bodyShape}",
+    "change_item_file": "Editar representación",
+    "delete_published_item": "No se puede borrar un item publicado",
+    "required_permissions": "Permisos",
+    "edit_video": "Editar video"
+  },
+  "third_party_collection_detail_page": {
+    "notice": "Cada item publicado toma un Slot. Crear un borrador de propuesta en el DAO para solicitar más slots",
+    "search_placeholder": "Buscar {count} {count, plural, one {item} other {items}}...",
+    "search_info": "{page}-{pageTotal} de {total}",
+    "clear_selection": "Limpiar selección",
+    "select_all": "Seleccionar los {total} items",
+    "selection": "{count, plural, one {# item} other {# items}} seleccionados.",
+    "max_select_count": "Puedes publicar un máximo de {count} items a la vez",
+    "slots": "{amount, plural, =0 {Sin Slots} one {# Slot} other {# Slots}}",
+    "start_adding_items": "¡Se ve bien! Ahora puedes comenzar a agregar items a tu colección.",
+    "cant_remove": "No podrás agregar o remover items una vez que estén publicados.",
+    "publish_items": "Publicar {count, plural, =0 {} one {# item} other {# items}}",
+    "new_items": "Nuevos items",
+    "publish": "Publicar",
+    "push_changes": "Subir cambios",
+    "publish_and_push_changes": "Publicar y subir cambios",
+    "cant_publish": "Esta colección todavía no está verificada, cuando ese proceso termine, podrás publicar más items",
+    "cant_publish_items": "Estas tratando de publicar {count} {count, plural, one {item} other {items}}. Hay otro que se encuentran bajo revisión en este momento",
+    "exceeds_available_slots": "Estas excediendo la cantidad de slots disponibles. Podrás pedir más slots a la DAO através de una propuesta",
+    "cant_publish_and_push_changes": "Estas tratando de publicar {count} {count, plural, one {item} other {items}} y subir cambios al mismo tiempo. Deselecciona los items a publicar para poder subir cambios",
+    "synced_filter": {
+      "all": "Todos los items",
+      "synced": "Sincronizados",
+      "unsynced": "No sincronizados"
+    },
+    "synced_statuses": {
+      "unpublished": "Listos para publicar",
+      "under_review": "Bajo revisión",
+      "synced": "Sincronizado",
+      "unsynced": "No sincronizado"
+    }
+  },
+  "collection_detail_page": {
+    "new_item": "Nuevo Item",
+    "mint_items": "Crear Items",
+    "on_sale": "En venta",
+    "put_for_sale": "Poner en venta",
+    "set_on_sale_popup": "Esto permitirá que tu colección sea vendida en el Mercado de Decentraland.",
+    "unset_on_sale_popup": "Esta colección está en venta en el Mercado de Decentraland.",
+    "notice": "Bien! Ahora puedes empezar a trabajar con tus items. {editor_link} para abrir el editor o edita cada item.",
+    "preview": "Preview en el Editor",
+    "publish": "Publicar Colección",
+    "remove_from_marketplace": "Remover del Marketplace",
+    "add_item": "Agregar Item",
+    "add_items_title": "Se ve bien!",
+    "add_items_subtitle": "Ahora puede comenzar a agregar items a su colección",
+    "add_items_subtitle_extensions": "Formatos aceptados: ZIP, GLTF, GLB, PNG.",
+    "start_adding_items": "¡Se ve bien! Ahora puedes comenzar a agregar items a tu colección.",
+    "cant_remove": "No podrás agregar o remover items de tu colección una vez que esté publicada.",
+    "can_mint": "Crear items le permite transferir NFTs directamente a una dirección.",
+    "cant_mint": "Esta colección todavía no está verificada, cuando ese proceso termine, podrás crear items",
+    "cant_push": "Esta colección aún está bajo revisión, los artículos aún se pueden acuñar pero no reflejarán nuevos cambios hasta su aprobación.",
+    "push_changes": "Subir Cambios",
+    "under_review": "No verificada",
+    "cant_operate": "Esta colección está bloqueada, una vez que la publicación termine serás capaz de utilizarla nuevamente",
+    "locked": "Bloqueada",
+    "publish_reason_max_items": "Las colecciones pueden publicarse con un máximo de  {maxItems} items.",
+    "publish_reason_no_items": "Debes agregar al menos un item para publicar tu colección.",
+    "publish_reason_items_not_complete": "Todos los items deben estar completos para publicar tu colección, comprueba que todas sus propiedades estén establecidas.",
+    "emotes": "Animaciones",
+    "wearables": "Vestimentas",
+    "table": {
+      "item": "Item",
+      "rarity": "Rareza",
+      "category": "Categoria",
+      "price": "Precio",
+      "supply": "Suministro",
+      "play_mode": "Modo de Reproducción",
+      "status": "Estado"
+    },
+    "missing_item_price": "Es necesario configurar el precio de una o más {item_type}.",
+    "missing_smart_wearable_video": "Es necesario subir un video para uno o más vestimentas interactivas.",
+    "unsynced_collection_title": "Hay items no sincronizados con el servidor en esta colección",
+    "unsynced_collection_message": "Se modificaron uno o más items después de que se aprobó esta colección.{br}Estas actualizaciones deben ser publicadas y revisadas nuevamente por el comité de curadores.",
+    "under_review_collection_message": "Los items actualizados estan siendo revisados por el comité de curadores.{br}Una vez aprobados, estarán visibles automáticamente para los actuales dueños{br}y en el Marketplace."
+  },
+  "collection_context_menu": {
+    "add_existing_item": "Agregar item existente",
+    "forum_post": "Ver post en el foro",
+    "copy_address": "Copiar dirección",
+    "edit_urn": "Editar URN",
+    "edit_in_bulk": "Editar en masa",
+    "copy_urn": "Copiar URN",
+    "see_in_decentraland": "Ver en Decentraland",
+    "unpublished": "Esta colleción aún no está publicada",
+    "managers": "Colaboradores",
+    "minters": "Emisores",
+    "post_to_forum": "Post al foro",
+    "posting": "Posteando",
+    "not_posted": "La colección no tiene un post asociado. Puedes intentar crearlo aquí",
+    "delete_published_collection": "No puedes borrar una colleción publicada",
+    "change_published_urn": "No puedes cambiar el URN una vez que la colleción fue publicada"
+  },
+  "collection_item": {
+    "set_price": "agregar precio",
+    "ready": "Listo",
+    "published": "Publicado",
+    "not_ready": "Incompleto",
+    "under_review": "En Revisión",
+    "unsynced": "No sincronizado",
+    "ready_to_publish": "Listo para publicar",
+    "incomplete": "Incompleto",
+    "edit_item": "editar",
+    "mint_item": "crear",
+    "delete_item": "Eliminar item",
+    "edit_price": "Editar precio",
+    "see_details": "Ver detalles",
+    "edit_urn": "Editar URN",
+    "cannot_edit_urn": "No puedes cambiar el URN una vez que el item fue publicado",
+    "reset_item": "Deshacer cambios",
+    "move_to_another_collection": "Mover a otra colección",
+    "preview": "Preview en el Editor"
+  },
+  "collection": {
+    "type": {
+      "standard": "Colección",
+      "third_party": "Colección Externa"
+    }
+  },
+  "item": {
+    "blockchain_id": "Blockchain ID",
+    "category": "Categoría",
+    "rarity": "Rareza",
+    "representation": "Representación",
+    "price": "Precio",
+    "beneficiary": "Beneficiario",
+    "supply": "Suministro",
+    "collection": "Colección",
+    "edit_urn": "Editar URN",
+    "copy_urn": "Copiar URN",
+    "type": {
+      "wearable": "Vestimenta",
+      "emote": "Emote",
+      "smart_wearable": "Vestimenta Interactiva"
+    }
+  },
+  "edit_price_and_beneficiary_modal": {
+    "title": "Asignar un precio",
+    "for_me": "Soy el beneficiario",
+    "free": "Hacerlo gratuito",
+    "price_label": "Precio",
+    "price_message": "Tenga en cuenta que la cantidad mínima admitida para transacciones sin costo es {minPrice}.{br}{br}Si el item cuesta menos que eso, el comprador deberá cubrir el costo de la transacción en {token}.",
+    "beneficiary_label": "Dirección de la billetera del beneficiario",
+    "beneficiary_popup": "Esta es la dirección de la billetera que recibirá MANA cuando se venda este item por primera vez y Regalías cuando sea revendido. Puede establecer una dirección de beneficiario diferente para cada item de una colección.",
+    "free_message": "El creador original será el beneficiario de las regalías"
+  },
+  "confirm_delete": {
+    "content": "Eliminar \"{name}\"?",
+    "subcontent": "¿Estás seguro que quieres eliminar \"{name}\"?. Esta acción es irreversible"
+  },
+  "delete_item_modal": {
+    "title": "Eliminar {name}",
+    "subtitle": "¿Estás seguro que quieres eliminar {name}?. Esta acción es irreversible"
+  },
+  "publish_collection_modal": {
+    "title": "Publicar Colección",
+    "title_tos": "Política de contenido",
+    "first_paragraph": "Estás por publicar tu colleción, recuerda que:",
+    "second_paragraph": "No serás capaz de agregar o borrar items luego de publicar.",
+    "third_paragraph": "No podrás cambiar el nombre de la colección. Asegúrese de que esté escrito correctamente y que no viole los derechos de propiedad intelectual.",
+    "fourth_paragraph": "Los items de la colección aparecerán en Marketplace, pero no se pueden vender hasta que sean aprobados por la DAO.",
+    "items_breakdown_title": "Estas por publicar {count} {count, plural, one {item} other {items}}. El fee de MANA por publicar la collección será enviado a la DAO, donde va a ser usado para soportar grants, eventos y premios",
+    "tos_title": "Por la presente declaro y garantizo que:",
+    "tos_first_condition": "1: Los Wearables por publicarse cumplen plenamente con los {terms_of_use} y las {content_policy}, que reconozco y acepto.",
+    "tos_second_condition": "2: Tengo suficientes derechos de propiedad intelectual sobre los Wearables que serán publicados.",
+    "tos_third_condition": "3: Reconozco que la DAO puede negarse a aceptar los Wearables basándose en infracciones a la Política de contenido y los Términos de uso. También reconozco que la tarifa de publicación no se reembolsará en caso de rechazo.",
+    "invalid_email": "El email provisto no es válido.",
+    "terms_of_use": "Términos de uso",
+    "content_policy": "Política de contenido",
+    "accept_by_publishing": "Al presionar Publish estás aceptando nuestros términos y condiciones",
+    "not_enough_mana": "No tienes suficiente {symbol} para publicar la collección.",
+    "get_mana": "Puedes obtener más usando la {link} dapp.",
+    "unsynced_collection": "La colección que está intentando publicar tiene diferencias con la que hay en el servidor. Por favor, refresque el navegador e intente de nuevo."
+  },
+  "publish_collection_modal_with_oracle": {
+    "title": "Publicar Colección",
+    "title_tos": "Política de contenido",
+    "first_paragraph": "Estás por publicar tu colleción, recuerda que:",
+    "second_paragraph": "No serás capaz de agregar o borrar items luego de publicar.",
+    "third_paragraph": "No podrás cambiar el nombre de la colección. Asegúrese de que esté escrito correctamente y que no viole los derechos de propiedad intelectual.",
+    "fourth_paragraph": "Los items de la colección aparecerán en Marketplace, pero no se pueden vender hasta que sean aprobados por la DAO.",
+    "items_breakdown_title": "Está a punto de publicar una colección con {count} {count, plural, one {item} other {items}}. Para apoyar el crecimiento de la comunidad, hay una tarifa de publicación de {publicationFee} {currency} por artículo (pagado en MANA) que va a la DAO y al Comité de Curadores.",
+    "learn_more": "Más información sobre la tarifa de publicación",
+    "estimate_notice": "* El total en MANA se calcula en función de los precios actuales del mercado. Este valor puede cambiar ligeramente cuando se ejecuta la transacción.",
+    "qty_of_items": "# de artículos",
+    "fee_per_item": "Tarifa por artículo",
+    "total_in_usd": "Total en {currency}",
+    "total_in_mana": "Total en MANA",
+    "rarities_error": "Hubo un error al intentar obtener las tarifas de publicación.",
+    "tos_title": "Por la presente declaro y garantizo que:",
+    "tos_first_condition": "1: Los Wearables por publicarse cumplen plenamente con los {terms_of_use} y las {content_policy}, que reconozco y acepto.",
+    "tos_second_condition": "2: Tengo suficientes derechos de propiedad intelectual sobre los Wearables que serán publicados.",
+    "tos_third_condition": "3: Reconozco que la DAO puede negarse a aceptar los Wearables basándose en infracciones a la Política de contenido y los Términos de uso. También reconozco que la tarifa de publicación no se reembolsará en caso de rechazo.",
+    "invalid_email": "El email provisto no es válido.",
+    "terms_of_use": "Términos de uso",
+    "content_policy": "Política de contenido",
+    "accept_by_publishing": "Al presionar Publish estás aceptando nuestros términos y condiciones",
+    "not_enough_mana": "No tienes suficiente {symbol} para publicar la collección.",
+    "get_mana": "Puedes obtener más usando la {link} dapp.",
+    "unsynced_collection": "La colección que está intentando publicar tiene diferencias con la que hay en el servidor. Por favor, refresque el navegador e intente de nuevo."
+  },
+  "publish_wizard_collection_modal": {
+    "title_publish_collection": "Publicar Colección",
+    "title_review_content_policy": "Revisar la política de contenido",
+    "title_pay_publication_fee": "Pagar la tarifa de publicación",
+    "title_congratulations": "Felicidades!",
+    "publish_failed": "Error al publicar",
+    "confirm_collection_name_step": {
+      "title": "Confirmar nombre de la colección",
+      "subtitle": "El nombre de la colección no podra ser modificado despues de ser enviado para su revisión.",
+      "description": "Asegúrese de que esté escrito correctamente y que no viole los derechos de propiedad intelectual (ej. Star Wars, Sailor Moon, etc)",
+      "collection_name_label": "Nombre de la Colección",
+      "collection_name_confirmation_label": "Confirme el nombre de la Colección",
+      "collection_name_placeholder": "Nombre de la Colección",
+      "collection_names_different": "El nombre de la Colección no coinciden",
+      "confirm_name": "Confirmar Nombre"
+    },
+    "confirm_collection_items_step": {
+      "title": "Confirmar artículos",
+      "subtitle": "No se pueden agregar o eliminar elementos de una colección ni se puede cambiar su rareza después de la publicación.",
+      "description": "Sin embargo, el nombre, la descripción, la categoría y el precio de los artículos siempre se pueden modificar.",
+      "confirm_items": "Confirmar Artículos"
+    },
+    "review_content_policy_step": {
+      "title": "Antes de enviar su colección para su revisión, confirme su reconocimiento de lo siguiente:",
+      "content_policy_first_condition": "Entiendo que no podré agregar o eliminar artículos, ni modificar el nombre de la colección después de que se publique, y puedo dar fe de que \"{collection_name}\" como nombre no viola ningún derecho de Propiedad Intelectual.",
+      "terms_of_use": "Términos de uso",
+      "content_policy": "Política de contenido",
+      "accept_terms_of_use": "Garantizo que los artículos enviados cumplen plenamente con los {terms_of_use_link} y las {content_policy_link}, que reconozco y acepto.",
+      "acknowledge_dao_terms": "Reconozco que la DAO puede negarse a aceptar los artículos basándose en infracciones a las {content_policy_link} y los {terms_of_use_link}. También reconozco que la tarifa de publicación no se reembolsará en caso de rechazo ya que su finalidad es compensar a los curadores por su tiempo y trabajo.",
+      "email_disclousure": "Necesitamos tu email para futuras comunicaciones sobre esta colección.",
+      "email_disclousure_detail": "Solo utilizaremos este email para comunicaciones sobre esta colección en particular.{enter}No estará vinculado a su cuenta.",
+      "email_newsletter": "¡Manténme al tanto! Utilice este correo electrónico para recibir el boletín semanal, las actualizaciones y las noticias del concurso de Decentraland.",
+      "continue": "Continar"
+    },
+    "pay_publication_fee_step": {
+      "title": "Estás por enviar tu colección \"{collection_name}\" que incluye {count} {count, plural, one {artículo} other {artículos}} a revisión.",
+      "subtitle": "Para apoyar al Comité de Curadores y la tesorería de DAO, hay una tarifa de publicación de {currency} {publicationFee} por artículo (pagado en MANA).",
+      "learn_more": "Más información sobre la tarifa de publicación",
+      "quantity": "Cantidad",
+      "items": "{count} {count, plural, one {artículo} other {artículos}}",
+      "fee_per_item": "Tarifa por artículo",
+      "total_in_usd": "Total en {currency}",
+      "total_in_mana": "Total en MANA",
+      "pay": "Pagar {value} MANA"
+    },
+    "congratulations_step": {
+      "title": "Su colección ya esta disponible para ser verificada por los curadores.",
+      "subtitle": "Todos los comentarios seran enviados al {forum_post} donde usted y cualquier miembro de la comunidad podrán comentar.",
+      "description": "La colección sera publicada luego de ser aprobada por el Comité de Curación. Dado que este es un proceso manual, podria tomar unos días. Se agradece su paciencia.",
+      "forum_post": "Post en el foro",
+      "view_forum_post": "Ver el Post en el foro"
+    },
+    "authorization": {
+      "title_action": "publicación",
+      "action": "publicar colección",
+      "confirm_transaction_title": "Completar transacción para publicar su colección",
+      "authorize_mana_description": "Tenga en cuenta que algunas billeteras requieren establecer un límite de gasto de maná personalizado.Ingrese un precio de tarifa de {price} o una cantidad ligeramente mayor para evitar el rechazo de la transacción debido a la volatilidad del precio.Puede cambiar el límite en cualquier momento.",
+      "set_cap_description": "Ingrese un precio de tarifa de {price} o una cantidad ligeramente mayor para evitar el rechazo de la transacción debido a la volatilidad del precio.Puede cambiar el límite en cualquier momento.",
+      "insufficient_amount_error_message": "Recuerde establecer un límite de gasto igual al precio de tarifa {price} o superior para evitar ser rechazado debido a la volatilidad del precio.Revoca su límite actual y vuelve a intentarlo."
+    }
+  },
+  "sell_collection_modal": {
+    "title": "¿Quieres vender tus items?",
+    "turn_on_description": "Al activar esta opción tu colección estará en venta en el mercado de Decentraland.",
+    "turn_on": "Activar",
+    "turn_off_description": "Al desactivar esta opción tu colección ya no estará en venta.",
+    "turn_off": "Desactivar",
+    "put_for_sale": {
+      "title": "¿Quieres poner en venta esta colección?",
+      "description": "La colección estará en venta en el mercado de Decentraland.",
+      "cta": "Poner en Venta"
+    },
+    "remove_from_marketplace": {
+      "title": "¿Quieres remover esta colección del Marketplace?",
+      "description": "La colección ya no estará en venta en el mercado de Decentraland.",
+      "cta": "Remover del Marketplace"
+    },
+    "unsynced_warning": "Algunos items tienen cambios que aún no se han aprobado."
+  },
+  "publish_third_party_collection_modal": {
+    "title": "Publicar Items externos",
+    "publish_description": "Está por usar {slotsToUse, plural, one {# slot} other {# slots}} de {availableSlots} slots disponibles para publicar \"{collectionName}\"",
+    "push_changes_description": "Está por subir cambios a {itemsWithChanges, plural, one {# item} other {# items}} for \"{collectionName}\".",
+    "publish_and_push_changes_description": "Está por usar {slotsToUse, plural, one {# slot} other {# slots}} slots de {availableSlots} disponibles para publicar \"{collectionName}\" y subir cambios a {itemsWithChanges, plural, one {# item} other {# items}}."
+  },
+  "mint_items_modal": {
+    "title": "Crear Items",
+    "add_item": "Agregar Item",
+    "limit_reached": "Solo puede crear {max} items por transaction",
+    "no_items": "No tienes items disponibles para crear en la colleción \"{name}\"",
+    "unsynced_warning": "Algunos items tienen cambios que aún no se han aprobado.",
+    "next": "Siguiente",
+    "total_items": "Total de items para mintear",
+    "confirm_title": "Estas por mintear  {count} {count, plural, one {item} other {items}}, cada item va a ser minteado a la dirección indicada con la cantidad seleccionada.",
+    "beneficiary": "Beneficiario"
+  },
+  "reset_item_modal": {
+    "title": "Deshacer cambios",
+    "content": "El item es actualmente diferente del que ha sido aprobado previamente por el comité. {br}La versión que estás viendo ahora no se corresponde con la visible en el mercado y en el juego. {br}Puede subir los cambios para que el comité revise esta nueva versión, o puede hacer clic en el botón de confirmación para restablecer el elemento a su estado original."
+  },
+  "manage_collection_role_modal": {
+    "manager": {
+      "title": "Colaboradores",
+      "subtitle": "Si has colaborado con otros emisores, agrega sus direcciones de ETH aquí",
+      "add_new": "Agregar Colaborador",
+      "empty": "No hay colaboradores aún, empieza"
+    },
+    "minter": {
+      "title": "Emisores",
+      "subtitle": "Agrega la dirección de ETH para permitir la creación de tus items",
+      "add_new": "Agregar Creador",
+      "empty": "No hay emisores aún, empieza"
+    },
+    "adding_one": "agregando uno!"
+  },
+  "push_collection_changes_modal": {
+    "title": "Subir Cambios",
+    "description": "Se han realizado cambios en la colección o en los artículos contenidos en ella desde la última vez que un curador los revisó.{br}Para que estos cambios se reflejen en el mercado y en el juego, deben ser revisados y aprobados nuevamente por el comité.{br}¿Está seguro de que desea impulsar los cambios para su revisión?"
+  },
+  "see_in_world_modal": {
+    "title": "Ver en Decentraland",
+    "subtitle": "Elige una de las opciones para probar tus items en Decentraland",
+    "genesis": {
+      "title": "Genesis Plaza",
+      "subtitle": "Explora, salta e interactúa"
+    },
+    "empty_parcel": {
+      "title": "Parcela vacía",
+      "subtitle": "Sólo correr y saltar. Cargará más rápido"
+    },
+    "jump_in": "Ingresar"
+  },
+  "collection_image": {
+    "no_items": "No Items"
+  },
+  "collection_card": {
+    "item_count": "{count} {count, plural, one {item} other {items}}",
+    "subtitle": "{count} {count, plural, one {item} other {items}}",
+    "confirm_delete_content": "¿Seguro que quieres borrar tu colección \"{name}\"? Esta operación es ireversible",
+    "confirm_delete_header": "Borrar \"{name}\""
+  },
+  "item_editor": {
+    "open": "Abrir editor",
+    "top_panel": {
+      "reviewed_counter": "Items revisados: {count}/{threshold}",
+      "items_pending_to_review": "Hay items pendientes de ser revisados",
+      "not_enough_items_to_curate_more": "La colección no tiene más items a revisar",
+      "approve": "Aprobar",
+      "reject": "Rechazar",
+      "enable": "Habilitar",
+      "disable": "Deshabilitar",
+      "rejection_modal": {
+        "veredict_explanation": "Puedes contarnos por qué?",
+        "visit_activity": "Puedes visitar tu {activity_link} para monitoriear la transacción",
+        "go_to_forum": "Por favor visita la discusión asocida y explícale al creador el por qué de tu decisión.",
+        "forum_link": "Link al foro",
+        "discussion": "Discusión",
+        "keep_reviewing": "Continua verificando",
+        "back_to_curation": "Volver a curar",
+        "waiting_for_upload": "Algunos items de la colección aún se están cargando al Catalyst. Por favor prueba nuevamente en unos momentos para proceder.",
+        "reject_curation": {
+          "title": "Rechazar Cambios",
+          "subtitle": "Los cambios no son lo suficientemenete buenos?",
+          "action": "Rechazar"
+        },
+        "disable_collection": {
+          "title": "Deshabilitar Colección",
+          "subtitle": "Esta colleccion no estara mas disponible. Puedes habilitarla nuevamente en el futuro.",
+          "tx_pending": "Esperando a que se confirme la transacción de deshabilitado",
+          "action": "Deshabilitar"
+        }
+      }
+    },
+    "left_panel": {
+      "title": "Mis Items",
+      "title_alternative": "Mis Colecciones",
+      "actions": {
+        "new_item": "Nuevo Item",
+        "new_collection": "Nueva Colección",
+        "add_existing_item": "Agregar Item",
+        "edit_name": "Editar Nombre"
+      },
+      "reviewed_tab": {
+        "page_counter": "{pageStart}-{pageEnd} de {total} items"
+      },
+      "get_more_samples_modal": {
+        "title": "Obtener más muestras",
+        "content": "Esto reemplazará las muestras actuales y obtendrá {count} más muestras seleccionadas al azar. Siempre puede consultar muestras anteriores en la pestaña {tabName}.",
+        "understood": "Comprendido",
+        "dont_show_again": "No volver a mostrar este mensaje."
+      },
+      "to_review": "A revisar",
+      "reviewed": "Revisado",
+      "all_items": "Todos los items",
+      "wearable": "Vestimentas",
+      "emote": "Animaciones",
+      "get_random_sample": "Obtener muestra aleatoria",
+      "reviewed_samples_bold": "Muestras revisadas: {count}",
+      "reviewed_samples": "{reviewed_samples_bold}/{total}",
+      "items": "Items",
+      "collections": "Colecciones",
+      "items_count": "{count} items",
+      "invalid_representation_tooltip": "Este item no tiene representacion de {bodyShape}",
+      "no_items_to_review": "No hay más items para revisar",
+      "empty_collection": "La colección está vacía, ¡agrega algunos items primero!"
+    },
+    "center_panel": {
+      "disabled_animation_dropdown": "Tiene que haber al menos un item visible para poder activar una animacion",
+      "play_emote": "Reproducir Animación",
+      "stop": "Parar",
+      "from_collection": "Desde la Colección",
+      "from_items": "Desde los Items",
+      "default": "Predeterminadas"
+    },
+    "right_panel": {
+      "properties": "Propiedades",
+      "details": "Detalles",
+      "basics": "Básico",
+      "overrides": "Avanzado",
+      "overrides_info": "Determina qué otras categorías de wearables y partes base del cuerpo esconderá su item. Simplemente seleccione en el menú desplegable.",
+      "replaces": "Remplaza",
+      "replaces_info": "Cuando un usuario equipa tu item, cualquier otro item de la categoría que selecciones no estará equipado. Los usuarios deben volver a equiparlos después de retirar tu item.",
+      "hides": "Oculta",
+      "hides_info": "Cuando un usuario equipa tu item, cualquier otro item de la categoría que selecciones permanecerá equipado, pero no se renderizará. Los usuarios solo verán reaparecer sus otros elementos después de eliminar su elemento.",
+      "base_body": "Cuerpo base",
+      "base_body_info": "Los elementos que elija del menú desplegable del cuerpo base estarán ocultos.",
+      "wearables": "Wearables",
+      "wearables_info": "Los elementos que elija del menú desplegable estarán ocultos.",
+      "animation": "Animación",
+      "tags": "Etiquetas",
+      "event_tag": "Usa la etiqueta {event_tag} si quieres incluir este item en el {event_name}. {learn_more}",
+      "select_placeholder": "Selecciona una opción",
+      "request_for_changes": "Solicitud de cambios",
+      "request_for_changes_explanation": "Si desea realizar cambios en {name}, solicite autorización a un miembro del comité en el foro",
+      "required_permissions": "Permisos"
+    }
+  },
+  "video_showcase_modal": {
+    "title": "Video detallado de su Vestimenta Interactiva",
+    "back": "Volver",
+    "edit": "Editar video"
+  },
+  "emote": {
+    "category": {
+      "simple": "Simple",
+      "loop": "Loop",
+      "dance": "Baile",
+      "stunt": "Truco",
+      "greetings": "Saludos",
+      "fun": "Divertido",
+      "poses": "Poses",
+      "reactions": "Reacciones",
+      "horror": "Horror",
+      "miscellaneous": "Misceláneos"
+    },
+    "play_mode": {
+      "simple": {
+        "text": "Reproducir una vez",
+        "description": "Una vez activada, la animación se reproducirá una vez y volverá a la posición inicial."
+      },
+      "loop": {
+        "text": "Loop",
+        "description": "Una vez activada, la animacion se reproducirá en loop hasta que el jugador haga un movimiento."
+      }
+    }
+  },
+  "wearable": {
+    "supply": "{formatted} {count, plural, one {unidad} other {unidades}}",
+    "rarity": {
+      "unique": "Único",
+      "mythic": "Mítico",
+      "legendary": "Legendario",
+      "epic": "Épico",
+      "rare": "Raro",
+      "uncommon": "Poco común",
+      "common": "Común"
+    },
+    "color": {
+      "skin": "Color de piel",
+      "eye": "Color de ojos",
+      "hair": "Color de pelo"
+    },
+    "category": {
+      "body_shape": "Cuerpo",
+      "earring": "Aros",
+      "eyebrows": "Cejas",
+      "eyes": "Ojos",
+      "eyewear": "Gafas",
+      "facial_hair": "Barba",
+      "feet": "Pies",
+      "hair": "Cabello",
+      "hat": "Sombrero",
+      "head": "Cabeza",
+      "helmet": "Cazco",
+      "lower_body": "Piernas",
+      "mask": "Mascara",
+      "mouth": "Boca",
+      "tiara": "Tiara",
+      "top_head": "Cabeza",
+      "upper_body": "Torso",
+      "skin": "Skin",
+      "hands": "Manos",
+      "hands_wear": "Ropa de manos"
+    }
+  },
+  "rarity_description": {
+    "unique": "Único en su tipo: uno solo en existencia",
+    "mythic": "Para algunos pocos: máximo 10",
+    "legendary": "Edición limitada: máximo 100",
+    "epic": "Suministro máximo: 1000",
+    "rare": "Suministro máximo: 5000",
+    "uncommon": "Suministro máximo: 10.000",
+    "common": "Suministro máximo: 100.000"
+  },
+  "time": {
+    "hours": "{amount}h",
+    "minutes": "{amount}m",
+    "seconds": "{amount}s"
+  },
+  "analytics": {
+    "users": "Usuarios Semanales",
+    "sessions": "Sesiones Semanales",
+    "median_session_time": "Tiempo de Sesion",
+    "max_concurrent_users": "Usuarios Concurrentes",
+    "notice": "*Las metricas se calculan una vez por semana cada Lunes"
+  },
+  "maintainance": {
+    "notice": "Estamos en mantenimiento, volveremos pronto!"
+  },
+  "networks": {
+    "ethereum": "Ethereum",
+    "matic": "Polygon"
+  },
+  "tokens": {
+    "ethereum": "ETH",
+    "matic": "MATIC"
+  },
+  "toast": {
+    "meta_transaction_failure": {
+      "title": "Meta transacción",
+      "body": "Ocurrió un error publicando la meta transacción.{br}Intentelo de nuevo o ingrese a nuestro {discord_link} para obtener más información."
+    },
+    "deploy_item_failure": {
+      "title": "Error en el Item",
+      "body": "Error al cargar el item \"{itemName}\" de \"{collectionName}\".{br}El tamaño del item es demasiado grande y el tamaño máximo permitido es {size} "
+    },
+    "third_party_action_failure": {
+      "title": "Error",
+      "body": "Algo salió mal... Vuelve a intentarlo más tarde."
+    },
+    "collection_detail_page": {
+      "move_item_to_another_collection": {
+        "title": "Has movido el Item a otra colección",
+        "body": "{item_name} ha sido movido a la colección {collection_name}.",
+        "cta": "Ver Colección"
+      },
+      "item_deleted": {
+        "title": "Item Eliminado",
+        "body": "{name} ha sido eliminado."
+      }
+    }
+  },
+  "sagas": {
+    "collection": {
+      "invalid_character": "¡Carácter invalido! El \":\" no está permitido en los nombres",
+      "missing_salt": "La colección no tiene salt",
+      "collection_locked": "La colección está bloqueada"
+    },
+    "item": {
+      "invalid_identity": "Identidad inválida",
+      "invalid_character": "¡Carácter invalido! El \":\" no está permitido en nombres o descripciones",
+      "cant_save_published": "El item no debe publicarse para guardarlo.",
+      "not_published": "El item debe estar publicado",
+      "cant_save_without_collection": "No se puede guardar una publicación sin una colección",
+      "not_found": "No se encontró",
+      "item_added_toast": {
+        "title": "¡Item añadido!",
+        "body": "El item <b>{name}</b> se agrego a su colección. <br></br><collection-link>Ver Colección</collection-link>"
+      }
+    }
+  },
+  "status": {
+    "under_review": "En Revisión",
+    "loading": "Cargando...",
+    "synced": "Sincronizado",
+    "unsynced": "Desincronizado"
+  },
+  "editor_preview": {
+    "loading_unity": "Cargando Unity...",
+    "loading_unity_error": "Por favor vuelva a cargar su navegador. Si el problema persiste, intente usar una escena más ligera o contacte a soporte."
+  },
+  "approval_flow": {
+    "loading": {
+      "title": "Cargando...",
+      "subtitle": "Preparando colección para revisión"
+    },
+    "rescue": {
+      "title": "Aprobar Items",
+      "subtitle": "Por favor aprueba los items y sus hashes",
+      "confirm": "Confirmar",
+      "items_exceed_limit": {
+        "title": "La colección excede el máximo número de items",
+        "content": "Se realizarán múltiples transacciones. Ten en cuenta que se te pedirá que las firmes."
+      }
+    },
+    "consume_slots": {
+      "title": "Aprobar Items",
+      "subtitle": "Por favor aprueba los siguientes items",
+      "more_items": "Y {count} otros {count, plural, one {item} other {items}}",
+      "confirm": "Confirmar"
+    },
+    "upload": {
+      "title": "Subir Archivos",
+      "subtitle": "Por favor sube los archivos de los items",
+      "confirm": "Subir"
+    },
+    "approve": {
+      "title": "Habilitar Colección",
+      "subtitle": "Por favor habilita la colección para poder mintear items",
+      "confirm": "Enable"
+    },
+    "error": {
+      "title": "Error",
+      "subtitle": "Algo salio mal..."
+    },
+    "success": {
+      "title": "Colección Aprobada!",
+      "subtitle": "Gracias por revisar esta colleción"
+    }
+  },
+  "event_banner": {
+    "small": {
+      "title": "¡Obtenga sus artículos presentados durante el Decentraland Music Festival!",
+      "subtitle": "Simplemente etiquete sus artículos y emotes con el tag del festival con {event_tag} Y aparecerán en una pestaña del marketplace especial durante el evento."
+    },
+    "event_tag": "DCLMF23"
+  },
+  "campaign": {
+    "name": "Decentraland Music Festival",
+    "tag": "DCLMF23"
+  },
+  "logged_in_detail_page": {
+    "error_title": "Ocurrió un error al cargar la página de detalles"
+  },
+  "hands_category_ftu": {
+    "title": "Introducción de ropa de mano",
+    "subtitle": "Una nueva categoría de wearables para todas sus creaciones de ropa mano",
+    "img_alt": "Nueva categoría de ropa de mano",
+    "description": "Actualice sus wearables a la nueva categoría en el editor una vez que los haya modificado en consecuencia. Tenga en cuenta que la categoría de ropa de mano es para accesorios manuales o portátiles que reemplazan las manos con otros funcionalmente similares, no para elementos que se sostienen.",
+    "action": "Aprende más"
+  },
+  "migrate_to_sdk7_modal": {
+    "use_legacy_builder": "Continúe con el editor de escenas antiguo (SDK 6)",
+    "save_a_copy": "Guarde una copia de la escena original en SDK 6.",
+    "saving_copy": "Guardando copia en SDK 6",
+    "migrating_scene": "Migrando escena a SDK 7",
+    "image_alt": "Migrar a SDK 7",
+    "info": {
+      "title": "Actualice su escena a SDK 7 con el nuevo editor web de Decentraland",
+      "subtitle": "<b>Esta escena está actualmente construida con SDK 6, lo que dejará de recibir soporte en unos pocos meses, pero se puede migrar automáticamente al SDK 7.</b> Se incluyen todas las características del constructor de escenas anterior, mientras que los elementos inteligentes se agregarán en una próxima actualización.",
+      "action": "Use el editor web de Decentraland (SDK 7)"
+    },
+    "info_smart_items": {
+      "title": "Actualice su escena a SDK 7 con el nuevo editor web de Decentraland",
+      "subtitle": "<b>Esta escena está actualmente construida con SDK 6, que dejará de recibir soporte en unos pocos meses, y contiene elementos inteligentes </b>.Si elige actualizar a SDK 7 utilizando nuestro editor visual mejorado, estos elementos inteligentes se eliminarán, ya que aún no son compatibles.",
+      "action": "Use el editor web de Decentraland (SDK 7)"
+    },
+    "migrate": {
+      "title": "Migración automática a SDK 7",
+      "subtitle": "Esta escena está actualmente construida con SDK 6, pero se puede migrar automáticamente a SDK 7 </b>.Esto mejorará su experiencia de construcción de escenas con nuestro nuevo y mejorado editor web.<br> </br> <br> </br> <b> ¿Listo para actualizar? </b>",
+      "action": "Migrar ahora"
+    },
+    "migrate_smart_items": {
+      "title": "Opciones de migración para su escena",
+      "subtitle": "Tu escena contiene <b>{smartItemsCount} Smart Items</b> wActualmente, solo solo son compatibles en SDK 6. <br> </br> Puede optar por migrar al SDK 7 eliminando estos elementos o continuar utilizando el constructor de escenas heredadas hasta que los elementos inteligentes estén disponibles para SDK 7 (próximamente).",
+      "action": "Migrar y eliminar elementos inteligentes"
+    }
+  },
+  "inspector": {
+    "top_bar": {
+      "back": "Volver a tu escena",
+      "download": "Descargar escena",
+      "publish": "Publicar escena",
+      "preview": "Avance de escena"
+    }
+  },
+  "worlds_your_storage_modal": {
+    "your_storage": "Su Almacenamiento",
+    "total_available_storage": "ALMACENAMIENTO TOTAL DISPONIBLE",
+    "mana": "MANA",
+    "mana_earn_storage": "Gana 100 Mb de almacenamiento por cada 2,000 tokens (Polygon o Ethereum).",
+    "mana_holdings": "Tienes {mbs} Mb gracias a tener {owned} MANA.",
+    "mana_buy": "COMPRAR MANA",
+    "lands": "LANDs",
+    "lands_earn_storage": "Gana 100 Mb de almacenamiento por cada LAND.",
+    "lands_holdings": "Tienes {mbs} Mb gracias a tener {owned} LANDs.",
+    "lands_buy": "COMPRAR LAND",
+    "names": "NAMEs",
+    "names_earn_storage": "Gana 100 Mb de almacenamiento por cada NAME.",
+    "names_holdings": "Tienes {mbs} Mb gracias a tener {owned} NAMEs de Decentraland.",
+    "names_buy": "COMPRAR NAME",
+    "proposal": "Estas reglas de almacenamiento fueron votadas y aprobadas en una propuesta de la DAO.",
+    "learn_more": "APRENDER MÁS"
+  },
+  "worlds_for_ens_owners_announcement_modal": {
+    "title": "Presentamos Mundos para Titulares de dominios ENS y Límites de Tamaño de Mundo Ampliados",
+    "description_ens": "Los titulares de dominios ENS ahora tendrán acceso automático a su propio Mundo de Decentraland con un límite de tamaño de escena de 25 Mb.",
+    "description_dcl": "Mientras tanto, los Mundos de los NAMEs de Decentraland tendrán un límite de tamaño máximo dinámico dependiendo de las tenencias del usuario. <b>Cada NAME, LAND y 2,000 tokens MANA poseídos</b> otorgarán un adicional de <b>100 Mb de almacenamiento</b> en el servidor de contenido de Mundos para ser utilizado como desee.",
+    "start_building": "comenzar a construir",
+    "learn_more": "aprende más"
+  }
+}

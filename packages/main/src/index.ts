@@ -1,8 +1,10 @@
 import {app} from 'electron';
-import './security-restrictions';
 import {restoreOrCreateWindow} from '/@/mainWindow';
 import {platform} from 'node:process';
 import updater from 'electron-updater';
+
+import { initIpc } from './ipc';
+import './security-restrictions';
 
 /**
  * Prevent electron from running multiple instances.
@@ -34,11 +36,14 @@ app.on('window-all-closed', () => {
 app.on('activate', restoreOrCreateWindow);
 
 /**
- * Create the application window when the background process is ready.
+ * Create the application window & Ipc.
  */
 app
   .whenReady()
-  .then(restoreOrCreateWindow)
+  .then(async () => {
+    initIpc();
+    await restoreOrCreateWindow();
+  })
   .catch(e => console.error('Failed create window:', e));
 
 /**
