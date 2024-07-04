@@ -1,0 +1,11 @@
+.Icon {
+  display: inline-block;
+}
+
+.Icon:before {
+  content: '';
+}
+
+.Icon.clickeable {
+  cursor: pointer;
+}

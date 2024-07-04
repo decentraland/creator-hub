@@ -1,0 +1,9 @@
+.dcl.badge.DeploymentStatus {
+  display: block;
+  height: 22px;
+  padding: 2px 8px;
+  border-radius: 34px;
+  color: var(--shadows);
+  font-weight: 500;
+  text-transform: none;
+}

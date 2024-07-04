@@ -1,7 +1,5 @@
-/**
- * @module preload
- */
+import {initRendererApi} from '../../main/src/ipc/api';
 
-import {sha256sum} from './nodeCrypto';
-import {versions} from './versions';
-export {sha256sum, versions};
+const api = initRendererApi();
+
+export {api};
