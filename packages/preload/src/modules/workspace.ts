@@ -1,15 +1,11 @@
-import fs from 'fs';
-import path from 'path';
-import type {Scene} from '@dcl/schemas';
+import fs from 'node:fs';
+import path from 'node:path';
+import type { Scene } from '@dcl/schemas';
 
-import type {Project} from '/shared/types/projects';
-import {hasDependency} from './pkg';
-import {getCwd} from './cwd';
-import {getRowsAndCols, parseCoords} from './scene';
-
-export type Workspace = {
-  projects: Project[];
-};
+import type { Project } from '/shared/types/projects';
+import type { Workspace } from '/shared/types/workspace';
+import { hasDependency } from './pkg';
+import { getRowsAndCols, parseCoords } from './scene';
 
 /**
  * Get scene json
@@ -59,7 +55,7 @@ export function hasNodeModules(_path: string): boolean {
 export function getProject(_path: string): Project {
   try {
     const scene = getScene(_path);
-    const parcels = scene.scene.parcels.map($ => parseCoords($));
+    const parcels = scene.scene.parcels.map(($) => parseCoords($));
 
     return {
       path: _path,
@@ -75,7 +71,9 @@ export function getProject(_path: string): Project {
       templateStatus: null,
     };
   } catch (error: any) {
-    throw new Error(`Could not get scene.json info for project in "${_path}": ${error.message}`);
+    throw new Error(
+      `Could not get scene.json info for project in "${_path}": ${error.message}`,
+    );
   }
 }
 
@@ -98,10 +96,13 @@ export function getProjects(_path: string): Project[] {
   return scenes;
 }
 
+// temp
+const getCwd = () => '';
+
 /**
  * Returns workspace info
  */
-export function getWorkspace(cwd = getCwd()): Workspace {
+export async function getWorkspace(cwd = getCwd()): Promise<Workspace> {
   return {
     projects: getProjects(cwd),
   };

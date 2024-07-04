@@ -3,7 +3,6 @@ import {restoreOrCreateWindow} from '/@/mainWindow';
 import {platform} from 'node:process';
 import updater from 'electron-updater';
 
-import {initIpc} from './ipc';
 import './security-restrictions';
 
 /**
@@ -36,12 +35,11 @@ app.on('window-all-closed', () => {
 app.on('activate', restoreOrCreateWindow);
 
 /**
- * Create the application window & Ipc.
+ * Create the application window when app is ready.
  */
 app
   .whenReady()
   .then(async () => {
-    initIpc();
     await restoreOrCreateWindow();
   })
   .catch(e => console.error('Failed create window:', e));
