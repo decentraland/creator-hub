@@ -10,7 +10,7 @@ export type Coords = {
  */
 export function parseCoords(coords: string): Coords {
   const [x, y] = coords.split(',');
-  return { x: parseInt(x, 10), y: parseInt(y, 10) };
+  return {x: parseInt(x, 10), y: parseInt(y, 10)};
 }
 
 /**
@@ -22,25 +22,25 @@ export function getRowsAndCols(parcels: Coords[]): {
   rows: number;
   cols: number;
 } {
-  if (!parcels.length) return { rows: 0, cols: 0 };
+  if (!parcels.length) return {rows: 0, cols: 0};
 
-  const limits: { min: Coords; max: Coords } = {
-    min: { x: Infinity, y: Infinity },
-    max: { x: -Infinity, y: -Infinity },
+  const limits: {min: Coords; max: Coords} = {
+    min: {x: Infinity, y: Infinity},
+    max: {x: -Infinity, y: -Infinity},
   };
 
-  parcels.forEach((parcel) => {
-    const { x, y } = parcel;
+  parcels.forEach(parcel => {
+    const {x, y} = parcel;
 
     if (limits.min.y >= y) {
-      limits.min = { x: Math.min(limits.min.x, x), y };
+      limits.min = {x: Math.min(limits.min.x, x), y};
     }
 
     if (y >= limits.max.y) {
-      limits.max = { x: Math.max(limits.max.x, x), y };
+      limits.max = {x: Math.max(limits.max.x, x), y};
     }
 
-    return { x, y };
+    return {x, y};
   });
 
   return {
