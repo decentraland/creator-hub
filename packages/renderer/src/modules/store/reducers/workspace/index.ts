@@ -1,6 +1,6 @@
 import {createSlice} from '@reduxjs/toolkit';
 
-import type {Workspace} from '../../../../../../main/src/modules/workspace';
+import type {Workspace} from '/shared/types/workspace';
 import {getWorkspace} from './thunks';
 import type {Async} from '../types';
 

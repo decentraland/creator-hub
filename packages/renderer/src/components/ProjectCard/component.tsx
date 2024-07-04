@@ -5,7 +5,6 @@ import {useCallback, useEffect, useState, type CSSProperties} from 'react';
 import {useSelector} from '../../modules/store';
 import {t} from '../../dapps-v2/translation/utils';
 
-import {DeploymentStatus} from '../DeploymentStatus';
 import {Icon} from '../Icon';
 import {OptionsDropdown} from '../OptionsDropdown';
 import {getThumbnailUrl} from '../../modules/project';
@@ -93,10 +92,6 @@ export function ProjectCard({
         style={style}
       />
       <>
-        <DeploymentStatus
-          projectId={project.path}
-          className="deployment-status"
-        />
         <div className="options-container">
           <OptionsDropdown
             className="options-dropdown"
@@ -119,7 +114,7 @@ export function ProjectCard({
           className="description"
           title={project.description}
         >
-          <Icon name="scene-parcel" /> {t('public_page.parcel_count', {parcels})}
+          <Icon name="scene-parcel" /> {t('scenes_page.parcel_count', {parcels})}
         </div>
       </div>
     </>

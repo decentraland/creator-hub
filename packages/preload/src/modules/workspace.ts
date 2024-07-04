@@ -1,15 +1,11 @@
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import type {Scene} from '@dcl/schemas';
 
 import type {Project} from '/shared/types/projects';
+import type {Workspace} from '/shared/types/workspace';
 import {hasDependency} from './pkg';
-import {getCwd} from './cwd';
 import {getRowsAndCols, parseCoords} from './scene';
-
-export type Workspace = {
-  projects: Project[];
-};
 
 /**
  * Get scene json
@@ -98,10 +94,13 @@ export function getProjects(_path: string): Project[] {
   return scenes;
 }
 
+// temp
+const getCwd = () => '';
+
 /**
  * Returns workspace info
  */
-export function getWorkspace(cwd = getCwd()): Workspace {
+export async function getWorkspace(cwd = getCwd()): Promise<Workspace> {
   return {
     projects: getProjects(cwd),
   };
