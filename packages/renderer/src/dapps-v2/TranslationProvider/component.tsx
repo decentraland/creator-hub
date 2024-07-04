@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-// import { Loader } from 'decentraland-ui';
 
 import type { Props } from './types';
 import { I18nProvider } from '../translation/utils';
@@ -23,12 +22,10 @@ export function TranslationProvider({
       dispatch(fetchTranslations(locale));
       setLocale(locale);
     }
-  }, [locale, fetchTranslations]);
+  }, [fetchTranslations]);
 
   return translations && locale ? (
-    <I18nProvider key={locale} locale={locale} messages={translations}>
-      {children}
-    </I18nProvider>
+    <I18nProvider locale={locale} messages={translations}>{children}</I18nProvider>
   ) : (
     'LOADING'
   );
