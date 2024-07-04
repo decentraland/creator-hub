@@ -1,10 +1,5 @@
-import {
-  IntlProvider,
-  createIntl,
-  createIntlCache,
-  FormattedMessage,
-} from 'react-intl';
-import type { Locale } from './types';
+import {IntlProvider, createIntl, createIntlCache, FormattedMessage} from 'react-intl';
+import type {Locale} from './types';
 
 const cache = createIntlCache();
 let currentLocale: ReturnType<typeof createIntl>;
@@ -16,10 +11,9 @@ export function getPreferredLocale(availableLocales: Locale[]): Locale | null {
     throw new Error('Failed to get preferred locale: Missing locale list');
   }
 
-  const { navigator } = window;
+  const {navigator} = window;
 
-  const navigatorLocale =
-    (navigator.languages && navigator.languages[0]) || navigator.language;
+  const navigatorLocale = (navigator.languages && navigator.languages[0]) || navigator.language;
 
   const locale: Locale = navigatorLocale.slice(0, 2) as Locale;
 
@@ -30,17 +24,14 @@ export function getPreferredLocale(availableLocales: Locale[]): Locale | null {
   return locale;
 }
 
-export function setCurrentLocale(
-  localeName: Locale,
-  messages: Record<string, string>,
-) {
+export function setCurrentLocale(localeName: Locale, messages: Record<string, string>) {
   const locale = {
     en: 'en-EN',
     es: 'es-ES',
     zh: 'zh-CN',
   }[localeName];
 
-  currentLocale = createIntl({ locale, messages }, cache);
+  currentLocale = createIntl({locale, messages}, cache);
 }
 
 export function getCurrentLocale() {
@@ -48,13 +39,13 @@ export function getCurrentLocale() {
 }
 
 export function t(id: string, values?: any) {
-  return currentLocale.formatMessage({ id }, values);
+  return currentLocale.formatMessage({id}, values);
 }
 
 export const T = FormattedMessage;
 
 // eslint-disable-next-line no-underscore-dangle
-function _mergeTranslations<T extends { [key: string]: T | string }>(
+function _mergeTranslations<T extends {[key: string]: T | string}>(
   target: T = {} as T,
   source: T = {} as T,
 ) {
@@ -69,7 +60,7 @@ function _mergeTranslations<T extends { [key: string]: T | string }>(
   return merged;
 }
 
-export function mergeTranslations<T extends { [key: string]: T | string }>(
+export function mergeTranslations<T extends {[key: string]: T | string}>(
   target: T = {} as T,
   ...sources: (T | undefined)[]
 ) {

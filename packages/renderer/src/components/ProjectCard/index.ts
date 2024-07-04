@@ -1,2 +1,2 @@
-import { ProjectCard } from './component';
-export { ProjectCard };
+import {ProjectCard} from './component';
+export {ProjectCard};

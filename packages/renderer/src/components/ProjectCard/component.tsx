@@ -1,18 +1,18 @@
 // REMOVE
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { useCallback, useEffect, useState, type CSSProperties } from 'react';
+import {useCallback, useEffect, useState, type CSSProperties} from 'react';
 
-import { useSelector } from '../../modules/store';
-import { t } from '../../dapps-v2/translation/utils';
+import {useSelector} from '../../modules/store';
+import {t} from '../../dapps-v2/translation/utils';
 
-import { DeploymentStatus } from '../DeploymentStatus';
-import { Icon } from '../Icon';
-import { OptionsDropdown } from '../OptionsDropdown';
-import { getThumbnailUrl } from '../../modules/project';
-import { isRemoteURL } from '../../modules/media';
+import {DeploymentStatus} from '../DeploymentStatus';
+import {Icon} from '../Icon';
+import {OptionsDropdown} from '../OptionsDropdown';
+import {getThumbnailUrl} from '../../modules/project';
+import {isRemoteURL} from '../../modules/media';
 
-import { selectCard } from './selectors';
-import type { Props } from './types';
+import {selectCard} from './selectors';
+import type {Props} from './types';
 
 import './styles.css';
 
@@ -24,9 +24,7 @@ export function ProjectCard({
   onOpenModal,
   onLoadProjectScene,
 }: Props) {
-  const { parcels, isUploading, hasError, type } = useSelector((state) =>
-    selectCard(state, project),
-  );
+  const {parcels, isUploading, hasError, type} = useSelector(state => selectCard(state, project));
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
@@ -57,7 +55,7 @@ export function ProjectCard({
   }, [project, onDuplicateProject]);
 
   const handleExportScene = useCallback(() => {
-    onOpenModal('ExportModal', { project });
+    onOpenModal('ExportModal', {project});
   }, [project, onOpenModal]);
 
   let style: CSSProperties = {};
@@ -69,7 +67,7 @@ export function ProjectCard({
     if (thumbnailUrl && isRemoteURL(thumbnailUrl)) {
       thumbnailUrl += `?updated_at=${+new Date(project.updatedAt)}`;
     }
-    style = { backgroundImage: `url(${thumbnailUrl})` };
+    style = {backgroundImage: `url(${thumbnailUrl})`};
     classes += ' has-thumbnail';
   }
 
@@ -90,7 +88,10 @@ export function ProjectCard({
 
   const children = (
     <>
-      <div className="project-thumbnail" style={style} />
+      <div
+        className="project-thumbnail"
+        style={style}
+      />
       <>
         <DeploymentStatus
           projectId={project.path}
@@ -107,15 +108,18 @@ export function ProjectCard({
         <div className="title-wrapper">
           <div className="title">{project.title}</div>
           {isUploading ? (
-            <Icon name="cloud-upload" className="is-uploading" />
+            <Icon
+              name="cloud-upload"
+              className="is-uploading"
+            />
           ) : null}
-          {!isUploading && hasError ? (
-            <div className="error-indicator" />
-          ) : null}
+          {!isUploading && hasError ? <div className="error-indicator" /> : null}
         </div>
-        <div className="description" title={project.description}>
-          <Icon name="scene-parcel" />{' '}
-          {t('public_page.parcel_count', { parcels })}
+        <div
+          className="description"
+          title={project.description}
+        >
+          <Icon name="scene-parcel" /> {t('public_page.parcel_count', {parcels})}
         </div>
       </div>
     </>
@@ -123,7 +127,10 @@ export function ProjectCard({
 
   return (
     <>
-      <div className={classes} onClick={handleOnClick}>
+      <div
+        className={classes}
+        onClick={handleOnClick}
+      >
         {children}
       </div>
     </>

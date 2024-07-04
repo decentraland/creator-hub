@@ -1,4 +1,4 @@
-import type { SyntheticEvent } from 'react';
+import type {SyntheticEvent} from 'react';
 
 // check if eventMethod is a callable property of event
 export type EventMethod<T extends SyntheticEvent | Event> = {
@@ -19,9 +19,7 @@ function executeFn(eventMethod: EventMethod<SyntheticEvent | Event>) {
   };
 }
 
-export const preventDefault = (
-  fn?: (event?: SyntheticEvent | Event, ...args: any[]) => void,
-) => executeFn('preventDefault')(fn);
-export const stopPropagation = (
-  fn?: (event?: SyntheticEvent | Event, ...args: any[]) => void,
-) => executeFn('stopPropagation')(fn);
+export const preventDefault = (fn?: (event?: SyntheticEvent | Event, ...args: any[]) => void) =>
+  executeFn('preventDefault')(fn);
+export const stopPropagation = (fn?: (event?: SyntheticEvent | Event, ...args: any[]) => void) =>
+  executeFn('stopPropagation')(fn);

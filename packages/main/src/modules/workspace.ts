@@ -1,11 +1,11 @@
 import fs from 'fs';
 import path from 'path';
-import type { Scene } from '@dcl/schemas';
+import type {Scene} from '@dcl/schemas';
 
-import type { Project } from '/shared/types/projects';
-import { hasDependency } from './pkg';
-import { getCwd } from './cwd';
-import { getRowsAndCols, parseCoords } from './scene';
+import type {Project} from '/shared/types/projects';
+import {hasDependency} from './pkg';
+import {getCwd} from './cwd';
+import {getRowsAndCols, parseCoords} from './scene';
 
 export type Workspace = {
   projects: Project[];
@@ -59,7 +59,7 @@ export function hasNodeModules(_path: string): boolean {
 export function getProject(_path: string): Project {
   try {
     const scene = getScene(_path);
-    const parcels = scene.scene.parcels.map(($) => parseCoords($));
+    const parcels = scene.scene.parcels.map($ => parseCoords($));
 
     return {
       path: _path,
@@ -75,9 +75,7 @@ export function getProject(_path: string): Project {
       templateStatus: null,
     };
   } catch (error: any) {
-    throw new Error(
-      `Could not get scene.json info for project in "${_path}": ${error.message}`,
-    );
+    throw new Error(`Could not get scene.json info for project in "${_path}": ${error.message}`);
   }
 }
 

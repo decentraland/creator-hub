@@ -1,2 +1,2 @@
-import { OptionsDropdownMemo as OptionsDropdown } from './component';
-export { OptionsDropdown };
+import {OptionsDropdownMemo as OptionsDropdown} from './component';
+export {OptionsDropdown};

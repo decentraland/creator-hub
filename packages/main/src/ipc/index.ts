@@ -1,4 +1,4 @@
-import { initWorkspace } from './handlers/workspace';
+import {initWorkspace} from './handlers/workspace';
 
 export function initIpc() {
   return {

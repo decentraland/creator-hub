@@ -1,2 +1,2 @@
-import { SceneCard } from './component';
-export { SceneCard };
+import {SceneCard} from './component';
+export {SceneCard};

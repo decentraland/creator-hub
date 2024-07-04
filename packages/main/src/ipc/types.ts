@@ -1,6 +1,6 @@
-import { ipcMain, type IpcMainInvokeEvent } from 'electron';
+import {ipcMain, type IpcMainInvokeEvent} from 'electron';
 
-import type { Tail as IgnoreEvent } from '/shared/types/utils';
+import type {Tail as IgnoreEvent} from '/shared/types/utils';
 
 // Main
 export type IpcHandlerType = 'INVOKE';
@@ -9,10 +9,7 @@ export enum MessageType {
   GET_WORKSPACE = 'get_workspace',
 }
 
-export type HandlerFn<P extends any[], K> = (
-  e: IpcMainInvokeEvent,
-  ...args: P
-) => K;
+export type HandlerFn<P extends any[], K> = (e: IpcMainInvokeEvent, ...args: P) => K;
 
 export type Handler<T extends IpcHandlerType, P extends any[], K> = {
   type: T;
@@ -26,7 +23,7 @@ export function handleInvoke<T extends MessageType, P extends any[], K>(
   handler: HandlerFn<P, K>,
 ): InvokeHandler<P, K> {
   ipcMain.handle(type, handler);
-  return { type: 'INVOKE', handler };
+  return {type: 'INVOKE', handler};
 }
 
 // Renderer

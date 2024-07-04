@@ -1,2 +1,2 @@
-import { DeploymentStatus } from './component';
-export { DeploymentStatus };
+import {DeploymentStatus} from './component';
+export {DeploymentStatus};

@@ -1,7 +1,7 @@
-import { ipcRenderer } from 'electron';
+import {ipcRenderer} from 'electron';
 
-import type { initWorkspace } from '../handlers/workspace';
-import { MessageType, type IpcHandlers} from '../types';
+import type {initWorkspace} from '../handlers/workspace';
+import {MessageType, type IpcHandlers} from '../types';
 
 export function initWorkspaceApi() {
   const workspaceApi: IpcHandlers<ReturnType<typeof initWorkspace>> = {

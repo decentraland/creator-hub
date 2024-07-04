@@ -1,2 +1,2 @@
-import { Icon } from './component';
-export { Icon };
+import {Icon} from './component';
+export {Icon};

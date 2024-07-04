@@ -1,2 +1,2 @@
-import { TranslationProvider } from './component';
-export { TranslationProvider };
+import {TranslationProvider} from './component';
+export {TranslationProvider};

@@ -1,4 +1,4 @@
-import type { DeploymentStatus } from '../../modules/deployment';
+import type {DeploymentStatus} from '../../modules/deployment';
 
 export type Props = {
   className?: string;

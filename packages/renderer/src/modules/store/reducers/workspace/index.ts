@@ -1,8 +1,8 @@
-import { createSlice } from '@reduxjs/toolkit';
+import {createSlice} from '@reduxjs/toolkit';
 
-import type { Workspace } from '../../../../../../main/src/modules/workspace';
-import { getWorkspace } from './thunks';
-import type { Async } from '../types';
+import type {Workspace} from '../../../../../../main/src/modules/workspace';
+import {getWorkspace} from './thunks';
+import type {Async} from '../types';
 
 const INITIAL_STATE: Async<Workspace> = {
   projects: [],
@@ -11,13 +11,13 @@ const INITIAL_STATE: Async<Workspace> = {
 };
 
 export function createWorkspaceSlice() {
-  const { actions, reducer, selectors } = createSlice({
+  const {actions, reducer, selectors} = createSlice({
     name: 'workspace',
     initialState: INITIAL_STATE,
     reducers: {},
-    extraReducers: (builder) => {
+    extraReducers: builder => {
       builder
-        .addCase(getWorkspace.pending, (state) => {
+        .addCase(getWorkspace.pending, state => {
           state.status = 'loading';
         })
         .addCase(getWorkspace.fulfilled, (_, action) => {
@@ -34,7 +34,7 @@ export function createWorkspaceSlice() {
     },
   });
 
-  return { actions, reducer, selectors };
+  return {actions, reducer, selectors};
 }
 
-export const { actions, reducer, selectors } = createWorkspaceSlice();
+export const {actions, reducer, selectors} = createWorkspaceSlice();

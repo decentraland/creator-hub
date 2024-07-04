@@ -1,10 +1,10 @@
-import type { Layout } from '/shared/types/projects';
+import type {Layout} from '/shared/types/projects';
 
-export type Coordinate = { x: number; y: number };
+export type Coordinate = {x: number; y: number};
 
 export type Rotation = 'north' | 'east' | 'south' | 'west';
 
-export type Placement = { point: Coordinate; rotation: Rotation };
+export type Placement = {point: Coordinate; rotation: Rotation};
 
 export enum DeploymentStatus {
   UNPUBLISHED,

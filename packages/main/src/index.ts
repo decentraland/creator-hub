@@ -3,7 +3,7 @@ import {restoreOrCreateWindow} from '/@/mainWindow';
 import {platform} from 'node:process';
 import updater from 'electron-updater';
 
-import { initIpc } from './ipc';
+import {initIpc} from './ipc';
 import './security-restrictions';
 
 /**

@@ -1,4 +1,4 @@
-import { createAsyncThunk } from '@reduxjs/toolkit';
+import {createAsyncThunk} from '@reduxjs/toolkit';
 
 export function initThunkCreator(namespace: string) {
   return <K, P = void>(fn: (arg: P) => Promise<K>) =>

@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 
-import { getFileSize } from './file';
+import {getFileSize} from './file';
 
 export function useVideo() {
   const [hovered, setHovered] = useState(false);
@@ -13,9 +13,7 @@ export function useVideo() {
     const videoElement = video.current;
 
     const loadVideoHandler = async () => {
-      const fileSize = await getFileSize(
-        (videoElement as HTMLVideoElement).src,
-      );
+      const fileSize = await getFileSize((videoElement as HTMLVideoElement).src);
       setSize(fileSize);
       setDuration((videoElement as HTMLVideoElement).duration);
       setLoading(false);

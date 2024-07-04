@@ -1,20 +1,14 @@
-import { useEffect, useState } from 'react';
+import {useEffect, useState} from 'react';
 
-import type { Props } from './types';
-import { I18nProvider } from '../translation/utils';
-import { selectTranslations } from '../translation/selectors';
-import { useDispatch, useSelector } from '../../modules/store';
-import type { Locale } from '../translation/types';
+import type {Props} from './types';
+import {I18nProvider} from '../translation/utils';
+import {selectTranslations} from '../translation/selectors';
+import {useDispatch, useSelector} from '../../modules/store';
+import type {Locale} from '../translation/types';
 
-export function TranslationProvider({
-  children,
-  locales,
-  fetchTranslations,
-}: Props) {
+export function TranslationProvider({children, locales, fetchTranslations}: Props) {
   const dispatch = useDispatch();
-  const { locale, translations } = useSelector((state) =>
-    selectTranslations(state, locales),
-  );
+  const {locale, translations} = useSelector(state => selectTranslations(state, locales));
   const [_locale, setLocale] = useState<Locale | undefined>();
 
   useEffect(() => {
@@ -25,7 +19,12 @@ export function TranslationProvider({
   }, [fetchTranslations]);
 
   return translations && locale ? (
-    <I18nProvider locale={locale} messages={translations}>{children}</I18nProvider>
+    <I18nProvider
+      locale={locale}
+      messages={translations}
+    >
+      {children}
+    </I18nProvider>
   ) : (
     'LOADING'
   );

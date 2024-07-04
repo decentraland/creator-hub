@@ -1,20 +1,14 @@
-import { useCallback } from 'react';
+import {useCallback} from 'react';
 import classNames from 'classnames';
-import {
-  Container,
-  Button,
-  Select,
-  MenuItem,
-  type SelectChangeEvent,
-} from 'decentraland-ui2';
+import {Container, Button, Select, MenuItem, type SelectChangeEvent} from 'decentraland-ui2';
 
-import { t } from '../../dapps-v2/translation/utils';
+import {t} from '../../dapps-v2/translation/utils';
 
-import { SceneCreationSelector } from '../SceneCreationSelector';
-import { ProjectCard } from '../ProjectCard';
+import {SceneCreationSelector} from '../SceneCreationSelector';
+import {ProjectCard} from '../ProjectCard';
 
-import type { Props} from './types';
-import { SortBy } from './types';
+import type {Props} from './types';
+import {SortBy} from './types';
 
 import './styles.css';
 
@@ -30,7 +24,7 @@ function NoScenesAnchor(content: string) {
   );
 }
 
-export function ScenesPage({ projects, sortBy, onOpenModal, onSort }: Props) {
+export function ScenesPage({projects, sortBy, onOpenModal, onSort}: Props) {
   const handleOpenImportModal = useCallback(() => {
     onOpenModal('ImportModal');
   }, [onOpenModal]);
@@ -41,7 +35,10 @@ export function ScenesPage({ projects, sortBy, onOpenModal, onSort }: Props) {
 
   const renderImportButton = () => {
     return (
-      <Button className="import-scene" onClick={handleOpenImportModal}>
+      <Button
+        className="import-scene"
+        onClick={handleOpenImportModal}
+      >
         {t('scenes_page.upload_scene')}
       </Button>
     );
@@ -49,7 +46,10 @@ export function ScenesPage({ projects, sortBy, onOpenModal, onSort }: Props) {
 
   const renderCreateButton = () => {
     return (
-      <Button className="create-scene" onClick={handleOpenCreateModal}>
+      <Button
+        className="create-scene"
+        onClick={handleOpenCreateModal}
+      >
         {t('scenes_page.create_scene')}
       </Button>
     );
@@ -62,7 +62,8 @@ export function ScenesPage({ projects, sortBy, onOpenModal, onSort }: Props) {
     [sortBy, onSort],
   );
 
-  const handleDropdownChange = useCallback((e: SelectChangeEvent<SortBy>) => sort(e.target.value as SortBy),
+  const handleDropdownChange = useCallback(
+    (e: SelectChangeEvent<SortBy>) => sort(e.target.value as SortBy),
     [sort],
   );
 
@@ -85,7 +86,7 @@ export function ScenesPage({ projects, sortBy, onOpenModal, onSort }: Props) {
     if (projects.length > 0) {
       return (
         <div className="CardList">
-          {projects.map((project) => (
+          {projects.map(project => (
             <ProjectCard
               key={project.path}
               project={project}
@@ -103,7 +104,7 @@ export function ScenesPage({ projects, sortBy, onOpenModal, onSort }: Props) {
       <div className="no-scenes-container">
         <h3 className="no-scenes-title">{t('scenes_page.no_scenes.title')}</h3>
         <span className="no-scenes-description">
-          {t('scenes_page.no_scenes.description', { a: NoScenesAnchor })}
+          {t('scenes_page.no_scenes.description', {a: NoScenesAnchor})}
         </span>
         <SceneCreationSelector onOpenModal={handleOpenCreateModal} />
       </div>
@@ -128,17 +129,13 @@ export function ScenesPage({ projects, sortBy, onOpenModal, onSort }: Props) {
           <div className="actions">
             <div>
               <div className="items-count">
-                {t('scenes_page.results', { count: projects.length })}
+                {t('scenes_page.results', {count: projects.length})}
               </div>
             </div>
-            <div>
-              {projects.length > 1 ? renderSortDropdown() : null}
-            </div>
+            <div>{projects.length > 1 ? renderSortDropdown() : null}</div>
           </div>
         </div>
-        <div className={classNames('project-cards')}>
-          {renderProjects()}
-        </div>
+        <div className={classNames('project-cards')}>{renderProjects()}</div>
       </Container>
     </div>
   );

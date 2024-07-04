@@ -1,5 +1,5 @@
-import { initRendererApi } from '../../main/src/ipc/api';
+import {initRendererApi} from '../../main/src/ipc/api';
 
 const api = initRendererApi();
 
-export { api };
+export {api};

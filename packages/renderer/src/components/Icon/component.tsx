@@ -1,7 +1,7 @@
-import { type MouseEvent, type KeyboardEvent, useCallback } from 'react';
+import {type MouseEvent, type KeyboardEvent, useCallback} from 'react';
 import classNames from 'classnames';
 
-import type { Props } from './types';
+import type {Props} from './types';
 
 import './styles.css';
 import './sprite.css';
@@ -19,7 +19,7 @@ const isKeyboardEvent = (
 ): e is KeyboardEvent<HTMLElement> => (e as KeyboardEvent).key !== ' ';
 
 export function Icon(props: Props) {
-  const { name, isActive = false, onClick, className = '' } = props;
+  const {name, isActive = false, onClick, className = ''} = props;
   const iconName = isActive ? `${name}-active` : name;
 
   const handleEvent = useCallback(
@@ -34,12 +34,7 @@ export function Icon(props: Props) {
 
   return (
     <div
-      className={classNames(
-        'Icon',
-        iconName,
-        { clickeable: !!onClick },
-        className,
-      )}
+      className={classNames('Icon', iconName, {clickeable: !!onClick}, className)}
       onClick={handleEvent}
       onKeyUp={handleEvent}
     />

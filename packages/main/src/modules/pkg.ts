@@ -6,7 +6,7 @@ type PackageJson = {
   engines: {
     node: string;
   };
-  bin?: { [command: string]: string };
+  bin?: {[command: string]: string};
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
 };
@@ -17,19 +17,14 @@ type PackageJson = {
  * @param moduleName The name of the module
  * @returns The package json object
  */
-export function getPackageJson(
-  _path: string,
-  moduleName?: string | null,
-): PackageJson {
+export function getPackageJson(_path: string, moduleName?: string | null): PackageJson {
   const packageJsonPath = moduleName
     ? path.join(_path, './node_modules', moduleName, 'package.json')
     : path.join(_path, 'package.json');
   try {
     return JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
   } catch (error: any) {
-    throw new Error(
-      `Could not get package.json for module "${moduleName}": ${error.message}`,
-    );
+    throw new Error(`Could not get package.json for module "${moduleName}": ${error.message}`);
   }
 }
 
@@ -51,7 +46,6 @@ export function getPackageVersion(_path: string, moduleName?: string) {
 export function hasDependency(_path: string, moduleName: string) {
   const pkg = getPackageJson(_path, undefined);
   const isDependency = !!pkg.dependencies && moduleName in pkg.dependencies;
-  const isDevDependency =
-    !!pkg.devDependencies && moduleName in pkg.devDependencies;
+  const isDevDependency = !!pkg.devDependencies && moduleName in pkg.devDependencies;
   return isDependency || isDevDependency;
 }

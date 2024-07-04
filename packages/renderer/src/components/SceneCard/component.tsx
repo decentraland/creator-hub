@@ -1,8 +1,8 @@
 import classNames from 'classnames';
-import { Badge } from 'decentraland-ui2';
+import {Badge} from 'decentraland-ui2';
 
-import { useVideo } from '../../modules/video';
-import type { Props } from './types';
+import {useVideo} from '../../modules/video';
+import type {Props} from './types';
 
 import './styles.css';
 
@@ -16,7 +16,7 @@ export function SceneCard({
   tag,
   onClick,
 }: Props) {
-  const { video, hovered, onMouseEnter, onMouseLeave } = useVideo();
+  const {video, hovered, onMouseEnter, onMouseLeave} = useVideo();
 
   return (
     <button
@@ -53,11 +53,7 @@ export function SceneCard({
             <span className="title">{title}</span>
             {subtitle && <span className="subtitle">{subtitle}</span>}
           </div>
-          {tag ? (
-            <Badge className="badge">
-              {tag.label}
-            </Badge>
-          ) : null}
+          {tag ? <Badge className="badge">{tag.label}</Badge> : null}
         </div>
         {hovered && <span className="info">{description}</span>}
       </div>

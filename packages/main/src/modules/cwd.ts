@@ -1,4 +1,4 @@
-import { app } from 'electron';
+import {app} from 'electron';
 import fs from 'fs';
 
 // set default workspace to user's home directory for now

@@ -19,5 +19,5 @@ export type TranslationState = {
 
 export type TranslationFetcherOpts = {
   getTranslation?: (locale: string) => Promise<Translation>;
-  translations?: { [locale: string]: Translation };
+  translations?: {[locale: string]: Translation};
 };

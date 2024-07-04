@@ -1,2 +1,2 @@
-import { SceneCreationSelector } from './component';
-export { SceneCreationSelector };
+import {SceneCreationSelector} from './component';
+export {SceneCreationSelector};

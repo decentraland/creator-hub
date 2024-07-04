@@ -5,4 +5,4 @@ import ja from './ja.json';
 import ko from './ko.json';
 import zh from './zh.json';
 
-export { en, es, fr, ja, ko, zh };
+export {en, es, fr, ja, ko, zh};
