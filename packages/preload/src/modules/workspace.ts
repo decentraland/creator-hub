@@ -97,7 +97,7 @@ export function getProjects(_path: string): Project[] {
 }
 
 // temp
-const getCwd = () => '';
+const getCwd = () => '/Users/mikey-mike/Projects/decentraland';
 
 /**
  * Returns workspace info

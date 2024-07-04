@@ -10,7 +10,6 @@ import type {
   TranslationFetcherOpts,
 } from './types';
 import {mergeTranslations, setCurrentLocale} from './utils';
-import * as defaultTranslations from './defaults';
 
 export const INITIAL_STATE: TranslationState = {
   value: {},
@@ -34,11 +33,7 @@ export function createTranslationFetcher({getTranslation, translations}: Transla
         throw new Error('You must provide `translations` or `getTranslations`');
       }
 
-      // merge translations and defaults
-      const allTransalations = mergeTranslations<TranslationKeys>(
-        flatten(defaultTranslations[locale]),
-        flatten(result),
-      );
+      const allTransalations = mergeTranslations<TranslationKeys>(flatten(result));
 
       setCurrentLocale(locale, allTransalations);
 
