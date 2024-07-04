@@ -1,4 +1,4 @@
-import fs from 'node:fs';
+import fs from 'node:fs/promises';
 import path from 'node:path';
 
 type PackageJson = {
@@ -17,12 +17,16 @@ type PackageJson = {
  * @param moduleName The name of the module
  * @returns The package json object
  */
-export function getPackageJson(_path: string, moduleName?: string | null): PackageJson {
+export async function getPackageJson(
+  _path: string,
+  moduleName?: string | null,
+): Promise<PackageJson> {
   const packageJsonPath = moduleName
     ? path.join(_path, './node_modules', moduleName, 'package.json')
     : path.join(_path, 'package.json');
   try {
-    return JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+    const file = await fs.readFile(packageJsonPath, 'utf8');
+    return JSON.parse(file);
   } catch (error: any) {
     throw new Error(`Could not get package.json for module "${moduleName}": ${error.message}`);
   }
@@ -31,9 +35,9 @@ export function getPackageJson(_path: string, moduleName?: string | null): Packa
 /**
  * Returns the version of a given module if exists, otherwise returns null
  */
-export function getPackageVersion(_path: string, moduleName?: string) {
+export async function getPackageVersion(_path: string, moduleName?: string) {
   try {
-    const pkg = getPackageJson(_path, moduleName);
+    const pkg = await getPackageJson(_path, moduleName);
     return pkg.version;
   } catch (_) {
     return null;
@@ -43,8 +47,8 @@ export function getPackageVersion(_path: string, moduleName?: string) {
 /**
  * Returns whether or not there's a dependency on a module
  */
-export function hasDependency(_path: string, moduleName: string) {
-  const pkg = getPackageJson(_path, undefined);
+export async function hasDependency(_path: string, moduleName: string) {
+  const pkg = await getPackageJson(_path, undefined);
   const isDependency = !!pkg.dependencies && moduleName in pkg.dependencies;
   const isDevDependency = !!pkg.devDependencies && moduleName in pkg.devDependencies;
   return isDependency || isDevDependency;
