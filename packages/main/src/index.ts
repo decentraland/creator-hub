@@ -4,6 +4,7 @@ import {platform} from 'node:process';
 import updater from 'electron-updater';
 
 import './security-restrictions';
+import {initIpc} from './ipc';
 
 /**
  * Prevent electron from running multiple instances.
@@ -40,6 +41,7 @@ app.on('activate', restoreOrCreateWindow);
 app
   .whenReady()
   .then(async () => {
+    initIpc();
     await restoreOrCreateWindow();
   })
   .catch(e => console.error('Failed create window:', e));
