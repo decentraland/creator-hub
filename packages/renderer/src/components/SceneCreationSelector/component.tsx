@@ -1,7 +1,7 @@
 import {useCallback} from 'react';
 
-import {t} from '../../dapps-v2/translation/utils';
-import {SceneCard} from '../SceneCard';
+import { t } from '/@/modules/store/reducers/translation/utils';
+import {SceneCard} from '/@/components/SceneCard';
 
 import type {Props} from './types';
 

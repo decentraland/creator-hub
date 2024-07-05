@@ -1,10 +1,10 @@
 import {useEffect, useState} from 'react';
 
+import {useDispatch, useSelector} from '#store';
+import type {Locale} from '/@/modules/store/reducers/translation/types';
+import { I18nProvider } from '/@/modules/store/reducers/translation/utils';
+import {selectTranslations} from './selectors';
 import type {Props} from './types';
-import {I18nProvider} from '../translation/utils';
-import {selectTranslations} from '../translation/selectors';
-import {useDispatch, useSelector} from '../../modules/store';
-import type {Locale} from '../translation/types';
 
 export function TranslationProvider({children, locales, fetchTranslations}: Props) {
   const dispatch = useDispatch();

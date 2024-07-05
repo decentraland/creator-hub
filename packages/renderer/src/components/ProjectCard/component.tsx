@@ -2,12 +2,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import {useCallback, useEffect, useState, type CSSProperties} from 'react';
 
-import {useSelector} from '../../modules/store';
-import {t} from '../../dapps-v2/translation/utils';
+import {useSelector} from '/@/modules/store';
+import { t } from '/@/modules/store/reducers/translation/utils';
 
-import {Icon} from '../Icon';
-import {OptionsDropdown} from '../OptionsDropdown';
-import {getThumbnailUrl} from '../../modules/project';
+import {Icon} from '/@/components/Icon';
+import {OptionsDropdown} from '/@/components/OptionsDropdown';
+import {getThumbnailUrl} from '/@/modules/project';
 
 import {selectCard} from './selectors';
 import type {Props} from './types';

@@ -1,7 +1,7 @@
 import {createSelector} from '@reduxjs/toolkit';
 
 import type {RootState} from '#store';
-import type {Locale, TranslationState} from './types';
+import type {Locale, TranslationState} from '/@/modules/store/reducers/translation/types';
 import {getPreferredLocale} from './utils';
 
 export function isLoading(translation: TranslationState) {

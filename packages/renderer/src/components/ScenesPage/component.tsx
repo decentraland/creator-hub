@@ -2,10 +2,9 @@ import {useCallback} from 'react';
 import classNames from 'classnames';
 import {Container, Button, Select, MenuItem, type SelectChangeEvent} from 'decentraland-ui2';
 
-import {t} from '../../dapps-v2/translation/utils';
-
-import {SceneCreationSelector} from '../SceneCreationSelector';
-import {ProjectCard} from '../ProjectCard';
+import { t } from '/@/modules/store/reducers/translation/utils';
+import {SceneCreationSelector} from '/@/components/SceneCreationSelector';
+import {ProjectCard} from '/@/components/ProjectCard';
 
 import type {Props} from './types';
 import {SortBy} from './types';

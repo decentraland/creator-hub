@@ -5,7 +5,7 @@ import {ThemeProvider} from '@mui/material/styles';
 import {dark} from 'decentraland-ui2/dist/theme';
 
 import {store, useDispatch, useSelector} from '#store';
-import {TranslationProvider} from '/@/dapps-v2/TranslationProvider';
+import {TranslationProvider} from '/@/components/TranslationProvider';
 import {fetchTranslations} from '/@/modules/store/reducers/translation';
 import {locales} from '/@/modules/store/reducers/translation/utils';
 import {getWorkspace} from '/@/modules/store/reducers/workspace/thunks';
