@@ -1,6 +1,6 @@
-import {IntlProvider, createIntl, createIntlCache, FormattedMessage} from 'react-intl';
+import { IntlProvider, createIntl, createIntlCache, FormattedMessage } from 'react-intl';
 
-import type {Locale} from './types';
+import type { Locale } from './types';
 import * as languages from './languages';
 
 export const locales = Object.keys(languages) as Locale[];
@@ -17,7 +17,7 @@ export function setCurrentLocale(localeName: Locale, messages: Record<string, st
     zh: 'zh-CN',
   }[localeName];
 
-  currentLocale = createIntl({locale, messages}, cache);
+  currentLocale = createIntl({ locale, messages }, cache);
 }
 
 export function getCurrentLocale() {
@@ -25,12 +25,12 @@ export function getCurrentLocale() {
 }
 
 export function t(id: string, values?: any) {
-  return currentLocale.formatMessage({id}, values);
+  return currentLocale.formatMessage({ id }, values);
 }
 
 export const T = FormattedMessage;
 
-function _mergeTranslations<T extends {[key: string]: T | string}>(
+function _mergeTranslations<T extends { [key: string]: T | string }>(
   target: T = {} as T,
   source: T = {} as T,
 ) {
@@ -45,7 +45,7 @@ function _mergeTranslations<T extends {[key: string]: T | string}>(
   return merged;
 }
 
-export function mergeTranslations<T extends {[key: string]: T | string}>(
+export function mergeTranslations<T extends { [key: string]: T | string }>(
   target: T = {} as T,
   ...sources: (T | undefined)[]
 ) {

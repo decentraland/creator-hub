@@ -1,12 +1,12 @@
-import type {ElectronApplication, JSHandle} from 'playwright';
-import {_electron as electron} from 'playwright';
-import {afterAll, beforeAll, expect, test} from 'vitest';
-import type {BrowserWindow} from 'electron';
+import type { ElectronApplication, JSHandle } from 'playwright';
+import { _electron as electron } from 'playwright';
+import { afterAll, beforeAll, expect, test } from 'vitest';
+import type { BrowserWindow } from 'electron';
 
 let electronApp: ElectronApplication;
 
 beforeAll(async () => {
-  electronApp = await electron.launch({args: ['.']});
+  electronApp = await electron.launch({ args: ['.'] });
 });
 
 afterAll(async () => {
@@ -20,7 +20,9 @@ test('Main window state', async () => {
   const window: JSHandle<BrowserWindow> = await electronApp.browserWindow(page);
   console.log('await electronApp.browserWindow(page)');
   const windowState = await window.evaluate(
-    (mainWindow): Promise<{isVisible: boolean; isDevToolsOpened: boolean; isCrashed: boolean}> => {
+    (
+      mainWindow,
+    ): Promise<{ isVisible: boolean; isDevToolsOpened: boolean; isCrashed: boolean }> => {
       const getState = () => ({
         isVisible: mainWindow.isVisible(),
         isDevToolsOpened: mainWindow.webContents.isDevToolsOpened(),
@@ -48,7 +50,7 @@ test('Main window state', async () => {
 
 test('Main window web content', async () => {
   const page = await electronApp.firstWindow();
-  const element = await page.$('#app', {strict: true});
+  const element = await page.$('#app', { strict: true });
   expect(element, 'Was unable to find the root element').toBeDefined();
   expect((await element!.innerHTML()).trim(), 'Window content was empty').not.equal('');
 });

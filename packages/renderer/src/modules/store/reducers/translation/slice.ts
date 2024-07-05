@@ -1,6 +1,6 @@
-import type {PayloadAction} from '@reduxjs/toolkit';
-import {createAsyncThunk, createSlice} from '@reduxjs/toolkit';
-import {flatten} from 'flat';
+import type { PayloadAction } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import { flatten } from 'flat';
 
 import type {
   Locale,
@@ -9,7 +9,7 @@ import type {
   TranslationKeys,
   TranslationFetcherOpts,
 } from './types';
-import {mergeTranslations, setCurrentLocale} from './utils';
+import { mergeTranslations, setCurrentLocale } from './utils';
 
 export const INITIAL_STATE: TranslationState = {
   value: {},
@@ -18,12 +18,12 @@ export const INITIAL_STATE: TranslationState = {
   error: null,
 };
 
-export function createTranslationFetcher({getTranslation, translations}: TranslationFetcherOpts) {
+export function createTranslationFetcher({ getTranslation, translations }: TranslationFetcherOpts) {
   return createAsyncThunk(
     'translation/fetchTranslations',
     async function fetchTranslations(
       locale: Locale,
-    ): Promise<{translations: TranslationKeys; locale: Locale}> {
+    ): Promise<{ translations: TranslationKeys; locale: Locale }> {
       let result: Translation;
       if (getTranslation) {
         result = await getTranslation(locale);
@@ -37,7 +37,7 @@ export function createTranslationFetcher({getTranslation, translations}: Transla
 
       setCurrentLocale(locale, allTransalations);
 
-      return {locale, translations: allTransalations};
+      return { locale, translations: allTransalations };
     },
   );
 }
@@ -47,7 +47,7 @@ export function createTranslationSlice({
 }: {
   fetchTranslations: ReturnType<typeof createTranslationFetcher>;
 }) {
-  const {actions, reducer, selectors} = createSlice({
+  const { actions, reducer, selectors } = createSlice({
     name: 'translation',
     initialState: INITIAL_STATE,
     reducers: {
@@ -61,7 +61,7 @@ export function createTranslationSlice({
           state.status = 'loading';
         })
         .addCase(fetchTranslations.fulfilled, (state, action) => {
-          const {locale} = action.payload;
+          const { locale } = action.payload;
           state.status = 'succeeded';
           state.value[locale] = action.payload.translations;
           state.locale = locale;
@@ -73,5 +73,5 @@ export function createTranslationSlice({
     },
   });
 
-  return {actions: {...actions, fetchTranslations}, reducer, selectors};
+  return { actions: { ...actions, fetchTranslations }, reducer, selectors };
 }

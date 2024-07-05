@@ -1,4 +1,4 @@
-import {ipcRenderer} from 'electron';
+import { ipcRenderer } from 'electron';
 
 async function invoke<T>(channel: string, ...args: any[]): Promise<T> {
   return ipcRenderer.invoke(channel, ...args);

@@ -6,7 +6,7 @@ type PackageJson = {
   engines: {
     node: string;
   };
-  bin?: {[command: string]: string};
+  bin?: { [command: string]: string };
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
 };

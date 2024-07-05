@@ -1,8 +1,8 @@
-import {createSelector} from '@reduxjs/toolkit';
+import { createSelector } from '@reduxjs/toolkit';
 
-import type {RootState} from '#store';
-import type {Locale, TranslationState} from '/@/modules/store/reducers/translation/types';
-import {getPreferredLocale} from './utils';
+import type { RootState } from '#store';
+import type { Locale, TranslationState } from '/@/modules/store/reducers/translation/types';
+import { getPreferredLocale } from './utils';
 
 export function isLoading(translation: TranslationState) {
   return translation.status === 'loading';
@@ -22,9 +22,9 @@ export const selectTranslations = createSelector(
     const locale = getLocale(translation, locales);
     if (locale) {
       const translationsInState = translation.value[locale] || undefined;
-      return {locale, translations: translationsInState};
+      return { locale, translations: translationsInState };
     }
 
-    return {locale, translations: undefined};
+    return { locale, translations: undefined };
   },
 );

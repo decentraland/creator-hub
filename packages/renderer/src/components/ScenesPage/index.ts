@@ -1,2 +1,2 @@
-import {ScenesPage} from './component';
-export {ScenesPage};
+import { ScenesPage } from './component';
+export { ScenesPage };

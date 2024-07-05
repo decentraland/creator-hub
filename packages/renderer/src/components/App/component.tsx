@@ -1,9 +1,9 @@
-import {useEffect} from 'react';
-import {useDispatch, useSelector} from '#store';
-import {getWorkspace} from '/@/modules/store/reducers/workspace/thunks';
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from '#store';
+import { getWorkspace } from '/@/modules/store/reducers/workspace/thunks';
 
-import {ScenesPage} from '/@/components/ScenesPage';
-import {SortBy} from '/@/components/ScenesPage/types';
+import { ScenesPage } from '/@/components/ScenesPage';
+import { SortBy } from '/@/components/ScenesPage/types';
 
 const noop = () => undefined;
 

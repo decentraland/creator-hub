@@ -5,7 +5,7 @@ export function getPreferredLocale(availableLocales: Locale[]): Locale | null {
     throw new Error('Failed to get preferred locale: Missing locale list');
   }
 
-  const {navigator} = window;
+  const { navigator } = window;
 
   const navigatorLocale = (navigator.languages && navigator.languages[0]) || navigator.language;
 

@@ -1,12 +1,12 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type {Scene} from '@dcl/schemas';
+import type { Scene } from '@dcl/schemas';
 
-import type {Project} from '/shared/types/projects';
-import type {Workspace} from '/shared/types/workspace';
-import {hasDependency} from './pkg';
-import {getRowsAndCols, parseCoords} from './scene';
-import {ipc} from './ipc';
+import type { Project } from '/shared/types/projects';
+import type { Workspace } from '/shared/types/workspace';
+import { hasDependency } from './pkg';
+import { getRowsAndCols, parseCoords } from './scene';
+import { ipc } from './ipc';
 
 /**
  * Get scene json
