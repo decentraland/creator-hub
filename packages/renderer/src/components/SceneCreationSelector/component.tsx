@@ -19,10 +19,10 @@ export function SceneCreationSelector({onOpenModal}: Props) {
     <div className="SceneCreationSelector container">
       <SceneCard
         onClick={handleOpenCreateFromScratchModal}
-        title={t('scenes_page.no_scenes.from_scratch.title')}
+        title={t('scene_list.no_scenes.from_scratch.title')}
         videoSrc={videoSrc}
         imgSrc={imgSrc}
-        description={t('scenes_page.no_scenes.from_scratch.description')}
+        description={t('scene_list.no_scenes.from_scratch.description')}
       />
     </div>
   );

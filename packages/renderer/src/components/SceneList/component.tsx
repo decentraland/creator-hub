@@ -23,7 +23,7 @@ function NoScenesAnchor(content: string) {
   );
 }
 
-export function ScenesPage({projects, sortBy, onOpenModal, onSort}: Props) {
+export function SceneList({projects, sortBy, onOpenModal, onSort}: Props) {
   const handleOpenImportModal = useCallback(() => {
     onOpenModal('ImportModal');
   }, [onOpenModal]);
@@ -50,9 +50,9 @@ export function ScenesPage({projects, sortBy, onOpenModal, onSort}: Props) {
         value={sortBy}
         onChange={handleDropdownChange}
       >
-        <MenuItem value={SortBy.NEWEST}>{t('scenes_page.sort.newest')}</MenuItem>
-        <MenuItem value={SortBy.NAME}>{t('scenes_page.sort.name')}</MenuItem>
-        <MenuItem value={SortBy.SIZE}>{t('scenes_page.sort.size')}</MenuItem>
+        <MenuItem value={SortBy.NEWEST}>{t('scene_list.sort.newest')}</MenuItem>
+        <MenuItem value={SortBy.NAME}>{t('scene_list.sort.name')}</MenuItem>
+        <MenuItem value={SortBy.SIZE}>{t('scene_list.sort.size')}</MenuItem>
       </Select>
     );
   };
@@ -61,27 +61,23 @@ export function ScenesPage({projects, sortBy, onOpenModal, onSort}: Props) {
 
   const renderProjects = () => {
     if (projects.length > 0) {
-      return (
-        <div className="CardList">
-          {projects.map(project => (
-            <ProjectCard
-              key={project.path}
-              project={project}
-              onDeleteProject={noop}
-              onDuplicateProject={noop}
-              onOpenModal={noop}
-              onLoadProjectScene={noop}
-            />
-          ))}
-        </div>
-      );
+      return projects.map(project => (
+        <ProjectCard
+          key={project.path}
+          project={project}
+          onDeleteProject={noop}
+          onDuplicateProject={noop}
+          onOpenModal={noop}
+          onLoadProjectScene={noop}
+        />
+      ));
     }
 
     return (
       <div className="no-scenes-container">
-        <h3 className="no-scenes-title">{t('scenes_page.no_scenes.title')}</h3>
+        <h3 className="no-scenes-title">{t('scene_list.no_scenes.title')}</h3>
         <span className="no-scenes-description">
-          {t('scenes_page.no_scenes.description', {a: NoScenesAnchor})}
+          {t('scene_list.no_scenes.description', {a: NoScenesAnchor})}
         </span>
         <SceneCreationSelector onOpenModal={handleOpenCreateModal} />
       </div>
@@ -89,12 +85,12 @@ export function ScenesPage({projects, sortBy, onOpenModal, onSort}: Props) {
   };
 
   return (
-    <div className="ScenesPage">
+    <div className="SceneList">
       <Container>
         <div className="projects-menu">
           <div>
             <div>
-              <div>{t('scenes_page.my_scenes')}</div>
+              <div>{t('scene_list.my_scenes')}</div>
             </div>
             <div>
               <div className="actions">
@@ -102,13 +98,13 @@ export function ScenesPage({projects, sortBy, onOpenModal, onSort}: Props) {
                   className="import-scene"
                   onClick={handleOpenImportModal}
                 >
-                  {t('scenes_page.upload_scene')}
+                  {t('scene_list.upload_scene')}
                 </Button>
                 <Button
                   className="create-scene"
                   onClick={handleOpenCreateModal}
                 >
-                  {t('scenes_page.create_scene')}
+                  {t('scene_list.create_scene')}
                 </Button>
               </div>
             </div>
@@ -116,7 +112,7 @@ export function ScenesPage({projects, sortBy, onOpenModal, onSort}: Props) {
           <div className="actions">
             <div>
               <div className="items-count">
-                {t('scenes_page.results', {count: projects.length})}
+                {t('scene_list.results', {count: projects.length})}
               </div>
             </div>
             <div>{projects.length > 1 ? renderSortDropdown() : null}</div>

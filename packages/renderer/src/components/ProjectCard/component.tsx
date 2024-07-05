@@ -1,11 +1,11 @@
 // REMOVE
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import {useCallback, useEffect, useState, type CSSProperties} from 'react';
+import ViewModuleIcon from '@mui/icons-material/ViewModule';
 
 import {useSelector} from '/@/modules/store';
 import { t } from '/@/modules/store/reducers/translation/utils';
 
-import {Icon} from '/@/components/Icon';
 import {OptionsDropdown} from '/@/components/OptionsDropdown';
 import {getThumbnailUrl} from '/@/modules/project';
 
@@ -67,15 +67,15 @@ export function ProjectCard({
 
   const dropdownOptions = [
     {
-      text: t('scenes_page.project_actions.duplicate_project'),
+      text: t('scene_list.project_actions.duplicate_project'),
       handler: handleDuplicateProject,
     },
     {
-      text: t('scenes_page.project_actions.export_project'),
+      text: t('scene_list.project_actions.export_project'),
       handler: handleExportScene,
     },
     {
-      text: t('scenes_page.project_actions.delete_project'),
+      text: t('scene_list.project_actions.delete_project'),
       handler: handleConfirmDeleteProject,
     },
   ];
@@ -102,7 +102,7 @@ export function ProjectCard({
           className="description"
           title={project.description}
         >
-          <Icon name="scene-parcel" /> {t('scenes_page.parcel_count', {parcels})}
+          <ViewModuleIcon /> {t('scene_list.parcel_count', {parcels})}
         </div>
       </div>
     </>

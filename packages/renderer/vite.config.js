@@ -20,6 +20,7 @@ const config = {
     alias: {
       '/@/': join(PACKAGE_ROOT, 'src') + '/',
       '/shared/': join(PROJECT_ROOT, 'packages', 'shared') + '/',
+      '/assets/': join(PACKAGE_ROOT, 'assets') + '/',
       '#store': join(PACKAGE_ROOT, 'src', 'modules', 'store') + '/',
     },
   },

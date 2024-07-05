@@ -10,7 +10,7 @@ import { TranslationProvider } from '/@/components/TranslationProvider';
 import { fetchTranslations } from '/@/modules/store/reducers/translation';
 import { locales } from '/@/modules/store/reducers/translation/utils';
 
-import { App } from '/@/components/App/component';
+import { Home } from './components/Home/component';
 
 import '/@/themes';
 
@@ -27,10 +27,10 @@ root.render(
         <ThemeProvider theme={dark}>
           <Router>
             <Routes>
-              <Route
-                path="/"
-                element={<App />}
-              />
+                <Route
+                  path="/"
+                  element={<Home />}
+                />
             </Routes>
           </Router>
         </ThemeProvider>
