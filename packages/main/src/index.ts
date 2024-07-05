@@ -4,7 +4,7 @@ import { platform } from 'node:process';
 import updater from 'electron-updater';
 
 import './security-restrictions';
-import { initIpc } from './ipc';
+import { initIpc } from './modules/ipc';
 
 /**
  * Prevent electron from running multiple instances.

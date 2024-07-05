@@ -1,12 +1,11 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { Scene } from '@dcl/schemas';
-
 import type { Project } from '/shared/types/projects';
 import type { Workspace } from '/shared/types/workspace';
 import { hasDependency } from './pkg';
 import { getRowsAndCols, parseCoords } from './scene';
-import { ipc } from './ipc';
+import { invoke } from './invoke';
 
 /**
  * Get scene json
@@ -91,7 +90,7 @@ export async function getProject(_path: string) {
 }
 
 export async function getPath() {
-  const home = await ipc.app.getPath('home');
+  const home = await invoke('electron.getHome');
   const path = `${home}/.decentraland`;
   try {
     await fs.stat(path);
@@ -110,15 +109,15 @@ export async function getProjects(_path: string) {
   for (const dir of files) {
     try {
       const projectDir = path.join(_path, dir);
-      if (await hasDependency(projectDir, '@dcl/sdk')) {
+      if (await isDCL(projectDir)) {
         promises.push(getProject(projectDir));
       }
       // eslint-disable-next-line no-empty
     } catch (_) {}
   }
 
-  const scenes = await Promise.all(promises);
-  return scenes;
+  const projects = await Promise.all(promises);
+  return projects;
 }
 
 /**
