@@ -1,5 +1,6 @@
 import {createSelector} from '@reduxjs/toolkit';
-import type {RootState} from '../../modules/store';
+
+import type {RootState} from '#store';
 import type {Locale, TranslationState} from './types';
 import {getPreferredLocale} from './utils';
 

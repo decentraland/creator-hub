@@ -8,7 +8,6 @@ import {t} from '../../dapps-v2/translation/utils';
 import {Icon} from '../Icon';
 import {OptionsDropdown} from '../OptionsDropdown';
 import {getThumbnailUrl} from '../../modules/project';
-import {isRemoteURL} from '../../modules/media';
 
 import {selectCard} from './selectors';
 import type {Props} from './types';
@@ -23,11 +22,11 @@ export function ProjectCard({
   onOpenModal,
   onLoadProjectScene,
 }: Props) {
-  const {parcels, isUploading, hasError, type} = useSelector(state => selectCard(state, project));
+  const {parcels} = useSelector(state => selectCard(state, project));
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    onLoadProjectScene(project, type);
+    onLoadProjectScene(project);
   });
 
   const handleOnClick = useCallback(() => {
@@ -60,12 +59,8 @@ export function ProjectCard({
   let style: CSSProperties = {};
   let classes = 'ProjectCard';
 
-  let thumbnailUrl = getThumbnailUrl(project);
+  const thumbnailUrl = getThumbnailUrl(project);
   if (thumbnailUrl) {
-    // prevent caching remote images when they are updated
-    if (thumbnailUrl && isRemoteURL(thumbnailUrl)) {
-      thumbnailUrl += `?updated_at=${+new Date(project.updatedAt)}`;
-    }
     style = {backgroundImage: `url(${thumbnailUrl})`};
     classes += ' has-thumbnail';
   }
@@ -102,13 +97,6 @@ export function ProjectCard({
       <div className="project-data">
         <div className="title-wrapper">
           <div className="title">{project.title}</div>
-          {isUploading ? (
-            <Icon
-              name="cloud-upload"
-              className="is-uploading"
-            />
-          ) : null}
-          {!isUploading && hasError ? <div className="error-indicator" /> : null}
         </div>
         <div
           className="description"

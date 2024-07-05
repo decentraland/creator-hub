@@ -33,28 +33,6 @@ export function ScenesPage({projects, sortBy, onOpenModal, onSort}: Props) {
     onOpenModal('SceneCreationModal');
   }, [onOpenModal]);
 
-  const renderImportButton = () => {
-    return (
-      <Button
-        className="import-scene"
-        onClick={handleOpenImportModal}
-      >
-        {t('scenes_page.upload_scene')}
-      </Button>
-    );
-  };
-
-  const renderCreateButton = () => {
-    return (
-      <Button
-        className="create-scene"
-        onClick={handleOpenCreateModal}
-      >
-        {t('scenes_page.create_scene')}
-      </Button>
-    );
-  };
-
   const sort = useCallback(
     (_sortBy: SortBy) => {
       onSort(_sortBy);
@@ -121,8 +99,18 @@ export function ScenesPage({projects, sortBy, onOpenModal, onSort}: Props) {
             </div>
             <div>
               <div className="actions">
-                {renderImportButton()}
-                {renderCreateButton()}
+                <Button
+                  className="import-scene"
+                  onClick={handleOpenImportModal}
+                >
+                  {t('scenes_page.upload_scene')}
+                </Button>
+                <Button
+                  className="create-scene"
+                  onClick={handleOpenCreateModal}
+                >
+                  {t('scenes_page.create_scene')}
+                </Button>
               </div>
             </div>
           </div>

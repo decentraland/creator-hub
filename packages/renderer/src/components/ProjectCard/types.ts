@@ -1,5 +1,4 @@
 import type {Project} from '/shared/types/projects';
-import type {PreviewType} from '../../modules/editor';
 
 export type Props = {
   project: Project;
@@ -7,5 +6,5 @@ export type Props = {
   onDeleteProject: (project: Project) => void;
   onDuplicateProject: (project: Project) => void;
   onOpenModal: (name: string, metadata: any) => any;
-  onLoadProjectScene: (project: Project, type: PreviewType) => void;
+  onLoadProjectScene: (project: Project) => void;
 };

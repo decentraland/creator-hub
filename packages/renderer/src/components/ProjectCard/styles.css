@@ -20,15 +20,6 @@
   border-top-right-radius: 10px;
 }
 
-.ProjectCard .deployment-status {
-  align-self: flex-end;
-  margin-right: 8px;
-  margin-bottom: 8px;
-  position: absolute;
-  right: 0px;
-  bottom: 70px;
-}
-
 .ProjectCard .project-data {
   height: 70px;
   width: 100%;
@@ -117,19 +108,4 @@
 
 .ProjectCard .title-wrapper {
   display: flex;
-}
-
-.ProjectCard .Icon.is-uploading {
-  margin-left: 4px;
-  margin-top: 2px;
-}
-
-.ProjectCard .error-indicator {
-  width: 16px;
-  height: 16px;
-  background: url(../../../assets/images/save-error.svg);
-  background-repeat: no-repeat;
-  background-position: center -2px;
-  margin-top: 3px;
-  margin-left: 7px;
 }

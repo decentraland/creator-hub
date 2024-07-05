@@ -44,7 +44,6 @@ export function t(id: string, values?: any) {
 
 export const T = FormattedMessage;
 
-// eslint-disable-next-line no-underscore-dangle
 function _mergeTranslations<T extends {[key: string]: T | string}>(
   target: T = {} as T,
   source: T = {} as T,
