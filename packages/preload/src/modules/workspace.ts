@@ -6,7 +6,7 @@ import type {Project} from '/shared/types/projects';
 import type {Workspace} from '/shared/types/workspace';
 import {hasDependency} from './pkg';
 import {getRowsAndCols, parseCoords} from './scene';
-import {getCwd} from './cwd';
+import {ipc} from './ipc';
 
 /**
  * Get scene json
@@ -76,6 +76,17 @@ export async function getProject(_path: string) {
   }
 }
 
+export async function getPath() {
+  const home = await ipc.app.getPath('home');
+  const path = `${home}/.decentraland`;
+  try {
+    await fs.stat(path);
+  } catch (error) {
+    await fs.mkdir(path);
+  }
+  return path;
+}
+
 /**
  * Returns all decentraland projects in the provided directory
  */
@@ -100,8 +111,8 @@ export async function getProjects(_path: string) {
  * Returns workspace info
  */
 export async function getWorkspace(): Promise<Workspace> {
-  const cwd = await getCwd();
+  const path = await getPath();
   return {
-    projects: await getProjects(cwd),
+    projects: await getProjects(path),
   };
 }

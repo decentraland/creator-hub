@@ -1,7 +1,7 @@
 import cli from './ipc/cli';
-import path from './ipc/path';
+import app from './ipc/app';
 
 export function initIpc() {
   cli();
-  path();
+  app();
 }

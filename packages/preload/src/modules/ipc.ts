@@ -5,7 +5,10 @@ async function invoke<T>(channel: string, ...args: any[]): Promise<T> {
 }
 
 export const ipc = {
-  path: {
-    getHome: () => invoke<string>('path.getHome'),
+  app: {
+    getPath: (name: string) => invoke<string>('app.getPath', name),
+  },
+  cli: {
+    preview: () => invoke<void>('cli.preview'),
   },
 };
