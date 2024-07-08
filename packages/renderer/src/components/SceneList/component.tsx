@@ -1,6 +1,5 @@
 import {useCallback} from 'react';
-import classNames from 'classnames';
-import {Container, Button, Select, MenuItem, type SelectChangeEvent} from 'decentraland-ui2';
+import {Select, MenuItem, type SelectChangeEvent} from 'decentraland-ui2';
 
 import { t } from '/@/modules/store/reducers/translation/utils';
 import {SceneCreationSelector} from '/@/components/SceneCreationSelector';
@@ -8,6 +7,11 @@ import {ProjectCard} from '/@/components/ProjectCard';
 
 import type {Props} from './types';
 import {SortBy} from './types';
+
+import { Button } from '../Button';
+import { Column } from '../Column';
+import { Row } from '../Row';
+import { OpenFolder, Plus } from '../Icons';
 
 import './styles.css';
 
@@ -86,40 +90,34 @@ export function SceneList({projects, sortBy, onOpenModal, onSort}: Props) {
 
   return (
     <div className="SceneList">
-      <Container>
-        <div className="projects-menu">
-          <div>
-            <div>
-              <div>{t('scene_list.my_scenes')}</div>
-            </div>
-            <div>
-              <div className="actions">
-                <Button
-                  className="import-scene"
-                  onClick={handleOpenImportModal}
-                >
-                  {t('scene_list.upload_scene')}
-                </Button>
-                <Button
-                  className="create-scene"
-                  onClick={handleOpenCreateModal}
-                >
-                  {t('scene_list.create_scene')}
-                </Button>
-              </div>
-            </div>
-          </div>
-          <div className="actions">
-            <div>
-              <div className="items-count">
-                {t('scene_list.results', {count: projects.length})}
-              </div>
-            </div>
-            <div>{projects.length > 1 ? renderSortDropdown() : null}</div>
-          </div>
-        </div>
-        <div className={classNames('project-cards')}>{renderProjects()}</div>
-      </Container>
+      <Column className="projects-menu">
+        <Row>
+          <h4>{t('scene_list.my_scenes')}</h4>
+          <Row className="actions">
+            <Button
+              startIcon={<OpenFolder />}
+              color="secondary"
+              onClick={handleOpenImportModal}
+            >
+              {t('scene_list.import_scene')}
+            </Button>
+            <Button
+              startIcon={<Plus />}
+              color="primary"
+              onClick={handleOpenCreateModal}
+            >
+              {t('scene_list.create_scene')}
+            </Button>
+          </Row>
+        </Row>
+        <Row className="actions">
+          <Row className="items-count">
+            {t('scene_list.results', { count: projects.length })}
+          </Row>
+          <Row>{projects.length > 1 ? renderSortDropdown() : null}</Row>
+        </Row>
+      </Column>
+      <Column className="project-cards">{renderProjects()}</Column>
     </div>
   );
 }

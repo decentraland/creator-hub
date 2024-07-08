@@ -1,8 +1,8 @@
 {
   "scene_list": {
     "my_scenes": "Mis Escenas",
-    "upload_scene": "Subir Escene",
-    "create_scene": "Crear Escene",
+    "import_scene": "Importar Escena",
+    "create_scene": "Crear Escena",
     "project_actions": {
       "delete_project": "Borrar Escena",
       "duplicate_project": "Duplicar Escena",

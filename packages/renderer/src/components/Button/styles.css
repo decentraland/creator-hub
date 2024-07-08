@@ -1,0 +1,50 @@
+.Button.MuiButton-root {
+  padding: 5px 20px;
+  color: var(--white);
+  font-weight: 400;
+}
+
+.Button.MuiButton-root + .Button.MuiButton-root {
+  margin-left: 10px
+}
+
+.Button.MuiButton-root svg,
+.Button.MuiButton-root svg path {
+  color: white;
+  fill: white;
+}
+
+.MuiButton-startIcon > * {
+  font-size: 0 !important;
+}
+
+/* Color primary */
+.Button.MuiButton-colorPrimary {
+  background-color: var(--dcl);
+}
+
+.Button.MuiButton-colorPrimary:hover {
+  background-color: var(--dcl-dark);
+}
+
+/* Color secondary */
+.Button.MuiButton-colorSecondary {
+  background-color: var(--dark-gray);
+}
+
+.Button.MuiButton-colorSecondary:hover {
+  background-color: var(--darker-gray);
+}
+
+/* Color info */
+.Button.MuiButton-colorInfo {
+  color: var(--white);
+  background-color: initial;
+  border: 1px solid var(--white);
+  font-weight: 400;
+  padding: 2px 10px;
+}
+
+.Button.MuiButton-colorInfo:hover {
+  background-color: var(--light-gray);
+}

@@ -1,9 +1,3 @@
-.SceneList .ui.button.inverted,
-.SceneList .ui.button.inverted:hover {
-  background-color: #ffffff;
-  color: var(--shadows);
-}
-
 .SceneList .project-cards {
   position: relative;
 }
@@ -23,7 +17,7 @@
   align-items: center;
   justify-content: center;
   color: var(--text);
-  background-color: var(--dark-two);
+  background-color: var(--darker-gray);
   user-select: none;
   text-align: center;
   line-height: 28px;
@@ -52,16 +46,7 @@
   gap: 14px;
 }
 
-.SceneList .template-cards {
-  margin-top: 80px;
-}
-
-.SceneList .template-cards.animate .TemplateCard {
-  animation: templateAnimation 2s;
-}
-
-.SceneList .project-cards .subtitle,
-.SceneList .template-cards .subtitle {
+.SceneList .project-cards .subtitle {
   font-size: 20px;
 }
 
@@ -103,7 +88,6 @@
   font-size: 13px;
   line-height: 18px;
   text-transform: uppercase;
-  margin-bottom: 8px;
 }
 
 .SceneList .projects-menu .actions .ui.button {
@@ -128,38 +112,11 @@
   margin-left: 24px;
 }
 
-.SceneList .ui.button.import-scene,
-.SceneList .ui.button.create-scene {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 12px 18px;
-}
-
-.SceneList .import-scene::before,
-.SceneList .create-scene::before {
-  content: '';
-  width: 20px;
-  height: 20px;
-  background-position: center;
-  background-repeat: no-repeat;
-  display: block;
-}
-
-.SceneList .import-scene::before {
-  background-image: url('/assets/images/upload_scene.svg');
-}
-
-.SceneList .create-scene::before {
-  background-image: url('/assets/images/create_scene.svg');
-}
-
 .SceneList .no-scenes-container {
   display: flex;
   flex-direction: column;
   width: 100%;
-  padding: 50px;
+  padding: 50px 0;
   background: #242129;
   border-radius: 10px;
   align-items: center;

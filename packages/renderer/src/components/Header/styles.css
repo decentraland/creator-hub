@@ -1,0 +1,29 @@
+.Header {
+  display: flex;
+  width: 100%;
+  flex-direction: row;
+  align-items: center;
+  margin: 40px 0;
+}
+
+.Header .title {
+  display: flex;
+  flex: 2;
+  align-items: center;
+}
+
+.Header .actions {
+  display: flex;
+  align-items: center;
+  justify-content: end;
+  flex: 1;
+}
+
+.Header .title h4 {
+  margin: 0 20px;
+  font-size: 48px;
+}
+
+.Header .title .Button {
+  font-size: 12px;
+}

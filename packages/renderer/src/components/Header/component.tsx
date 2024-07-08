@@ -1,5 +1,7 @@
 import type { Props } from './types';
 
+import './styles.css';
+
 export function Header({ children }: Props) {
   const [title, actions] = children;
   return (

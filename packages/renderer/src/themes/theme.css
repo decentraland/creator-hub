@@ -1,16 +1,20 @@
 :root {
   /* Colors */
+  --bg: #16141A;
   --metaverse-gradient: linear-gradient(to bottom, #060d2b, #132d7d 52%, #9763c1);
   --purple-banner: #691ea9;
   --purplish-grey-raw: 115, 110, 125;
+  --white: #FFFFFF;
 
   --light-gray: #736e7d;
-  --gray: rgba(115, 110, 125, 0.4);
-  --dark-gray: rgba(22, 20, 26, 0.48);
+  --dark-gray: #43404A;
+  --darker-gray: #242129;
 
   --light-blue-raw: rgb(0, 217, 255);
   --light-blue-steel: rgba(var(--bluish-steel-raw), 0.4);
 
+  --dcl: #FF2D55;
+  --dcl-dark: #9c1c34;
 
   /* Share */
   --facebook: #4267b2;
@@ -19,13 +23,19 @@
   /* Dropdowns */
   --translusent-gray: rgba(255, 255, 255, 0.08);
 
-  --dark-two: #242129;
-}
-
-.ui.popup.modal-tooltip {
-  z-index: 999999999999999;
+  /* fonts */
+  --font-family: system-ui, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --font-monospace: 'Inconsolata', 'Consolas', 'Droid Sans Mono', 'Monaco',
+    'Courier New', monospace;
 }
 
 html {
-  overflow: hidden;
+  background-color: var(--bg);
+  color: var(--white);
+  font-family: var(--font-family);
+}
+
+body {
+  padding: 0 20px;
 }
