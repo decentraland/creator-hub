@@ -1,17 +1,17 @@
 // REMOVE
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import {useCallback, useEffect, useState, type CSSProperties} from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import cx from 'classnames';
 
-import {useSelector} from '/@/modules/store';
+import { useSelector } from '/@/modules/store';
 import { t } from '/@/modules/store/reducers/translation/utils';
 
-import {OptionsDropdown} from '/@/components/OptionsDropdown';
-import {getThumbnailUrl} from '/@/modules/project';
+import { Dropdown } from '../Dropdown';
+import { getThumbnailUrl } from '/@/modules/project';
 
-import {selectCard} from './selectors';
-import type {Props} from './types';
+import { selectCard } from './selectors';
+import type { Props } from './types';
 
 import './styles.css';
 
@@ -79,7 +79,7 @@ export function ProjectCard({
             <ViewModuleIcon className="Icon" /> {t('scene_list.parcel_count', { parcels })}
           </div>
         </div>
-        <OptionsDropdown className="options-dropdown" options={dropdownOptions} />
+        <Dropdown className="options-dropdown" options={dropdownOptions} />
       </div>
     </div>
   );

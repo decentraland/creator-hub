@@ -26,6 +26,7 @@
 .ProjectCard .project-data {
   display: flex;
   flex-direction: row;
+  justify-content: space-around;
   padding: 10px;
   background-color: #313131;
   color: var(--text);
@@ -67,9 +68,4 @@
 
 .ProjectCard .options-dropdown {
   height: 20px;
-  visibility: hidden;
-}
-
-.ProjectCard:hover .options-dropdown {
-  visibility: visible;
 }
