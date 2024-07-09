@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import {useCallback, useEffect, useState, type CSSProperties} from 'react';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
+import cx from 'classnames';
 
 import {useSelector} from '/@/modules/store';
 import { t } from '/@/modules/store/reducers/translation/utils';
@@ -30,9 +31,7 @@ export function ProjectCard({
   });
 
   const handleOnClick = useCallback(() => {
-    if (onClick) {
-      onClick(project);
-    }
+    if (onClick) onClick(project);
   }, [project, onClick]);
 
   const handleConfirmDeleteProject = useCallback(() => {
@@ -56,14 +55,8 @@ export function ProjectCard({
     onOpenModal('ExportModal', {project});
   }, [project, onOpenModal]);
 
-  let style: CSSProperties = {};
-  let classes = 'ProjectCard';
 
   const thumbnailUrl = getThumbnailUrl(project);
-  if (thumbnailUrl) {
-    style = {backgroundImage: `url(${thumbnailUrl})`};
-    classes += ' has-thumbnail';
-  }
 
   const dropdownOptions = [
     {
@@ -71,51 +64,23 @@ export function ProjectCard({
       handler: handleDuplicateProject,
     },
     {
-      text: t('scene_list.project_actions.export_project'),
-      handler: handleExportScene,
-    },
-    {
       text: t('scene_list.project_actions.delete_project'),
       handler: handleConfirmDeleteProject,
     },
   ];
 
-  const children = (
-    <>
-      <div
-        className="project-thumbnail"
-        style={style}
-      />
-      <>
-        <div className="options-container">
-          <OptionsDropdown
-            className="options-dropdown"
-            options={dropdownOptions}
-          />
-        </div>
-      </>
+  return (
+    <div className={cx('ProjectCard', { 'has-thumbnail': !!thumbnailUrl })} onClick={handleOnClick}>
+      <div className="project-thumbnail" style={thumbnailUrl ? { backgroundImage: `url(${thumbnailUrl})` } : {}} />
       <div className="project-data">
         <div className="title-wrapper">
           <div className="title">{project.title}</div>
+          <div className="description" title={project.description}>
+            <ViewModuleIcon className="Icon" /> {t('scene_list.parcel_count', { parcels })}
+          </div>
         </div>
-        <div
-          className="description"
-          title={project.description}
-        >
-          <ViewModuleIcon /> {t('scene_list.parcel_count', {parcels})}
-        </div>
+        <OptionsDropdown className="options-dropdown" options={dropdownOptions} />
       </div>
-    </>
-  );
-
-  return (
-    <>
-      <div
-        className={classes}
-        onClick={handleOnClick}
-      >
-        {children}
-      </div>
-    </>
+    </div>
   );
 }

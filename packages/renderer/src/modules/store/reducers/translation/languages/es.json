@@ -5,8 +5,7 @@
     "create_scene": "Crear Escena",
     "project_actions": {
       "delete_project": "Borrar Escena",
-      "duplicate_project": "Duplicar Escena",
-      "export_project": "Descargar Escena"
+      "duplicate_project": "Duplicar Escena"
     },
     "no_scenes": {
       "title": "Crea tu primera escena",

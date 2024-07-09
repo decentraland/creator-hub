@@ -81,7 +81,7 @@ export function SceneList({projects, sortBy, onOpenModal, onSort}: Props) {
       <div className="no-scenes-container">
         <h3 className="no-scenes-title">{t('scene_list.no_scenes.title')}</h3>
         <span className="no-scenes-description">
-          {t('scene_list.no_scenes.description', {a: NoScenesAnchor})}
+          {t('scene_list.no_scenes.description', { a: NoScenesAnchor })}
         </span>
         <SceneCreationSelector onOpenModal={handleOpenCreateModal} />
       </div>

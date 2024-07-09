@@ -1,44 +1,50 @@
 .ProjectCard {
-  position: relative;
-  width: 100%;
-  max-width: 256px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 256px;
   height: 240px;
   border-radius: 10px;
-  background: rgba(var(--bluish-steel-raw), 0.16);
+  background: var(--dark-gray);
   cursor: pointer;
-  display: flex;
-  justify-content: flex-end;
-  flex-direction: column;
+}
+
+.ProjectCard.has-thumbnail {
+  position: relative;
+  background-size: cover;
+  background-position: center;
 }
 
 .ProjectCard .project-thumbnail {
-  height: 170px;
   width: 100%;
-  max-width: 256px;
   background-size: 100% 170px;
+  height: 100%;
   border-top-left-radius: 10px;
   border-top-right-radius: 10px;
 }
 
 .ProjectCard .project-data {
-  height: 70px;
-  width: 100%;
-  padding: 12px 9px 14px;
+  display: flex;
+  flex-direction: row;
+  padding: 10px;
   background-color: #313131;
-  align-self: flex-end;
   color: var(--text);
-  z-index: 1;
   border-bottom-left-radius: 10px;
   border-bottom-right-radius: 10px;
 }
 
+.ProjectCard .title-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 180px;
+  line-height: 24px;
+}
+
 .ProjectCard .title {
   font-size: 18px;
-  line-height: 24px;
   font-weight: 600;
   overflow: hidden;
   white-space: nowrap;
-  width: 240px;
   text-overflow: ellipsis;
 }
 
@@ -47,7 +53,6 @@
   align-items: center;
   font-size: 14px;
   font-weight: 400;
-  line-height: 24px;
   letter-spacing: 0px;
   text-align: left;
   overflow: hidden;
@@ -60,52 +65,11 @@
   margin-right: 5px;
 }
 
-.ProjectCard .description .Icon.scene-object {
-  margin-left: 11px;
-}
-
-.ProjectCard .overlay {
-  position: absolute;
-  left: 0px;
-  right: 0px;
-  top: 0px;
-  bottom: 0px;
-  background: var(--background);
-  opacity: 0.3;
-}
-
-.ProjectCard:hover {
-  z-index: 999;
-}
-
-.ProjectCard .options-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: absolute;
-  top: 0;
-  width: 100%;
-  padding: 8px;
-}
-
 .ProjectCard .options-dropdown {
+  height: 20px;
   visibility: hidden;
 }
 
 .ProjectCard:hover .options-dropdown {
   visibility: visible;
-}
-
-.ProjectCard .options-dropdown .icon:before {
-  color: var(--text) !important;
-}
-
-.ProjectCard.has-thumbnail {
-  position: relative;
-  background-size: cover;
-  background-position: center;
-}
-
-.ProjectCard .title-wrapper {
-  display: flex;
 }
