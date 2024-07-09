@@ -1,12 +1,12 @@
-import {useCallback} from 'react';
-import {Select, MenuItem, type SelectChangeEvent} from 'decentraland-ui2';
+import { useCallback } from 'react';
+import { Select, MenuItem, type SelectChangeEvent } from 'decentraland-ui2';
 
 import { t } from '/@/modules/store/reducers/translation/utils';
-import {SceneCreationSelector} from '/@/components/SceneCreationSelector';
-import {ProjectCard} from '/@/components/ProjectCard';
+import { SceneCreationSelector } from '/@/components/SceneCreationSelector';
+import { ProjectCard } from '/@/components/ProjectCard';
 
-import type {Props} from './types';
-import {SortBy} from './types';
+import type { Props } from './types';
+import { SortBy } from './types';
 
 import { Button } from '../Button';
 import { Column } from '../Column';
@@ -27,7 +27,7 @@ function NoScenesAnchor(content: string) {
   );
 }
 
-export function SceneList({projects, sortBy, onOpenModal, onSort}: Props) {
+export function SceneList({ projects, sortBy, onOpenModal, onSort }: Props) {
   const handleOpenImportModal = useCallback(() => {
     onOpenModal('ImportModal');
   }, [onOpenModal]);
@@ -69,10 +69,8 @@ export function SceneList({projects, sortBy, onOpenModal, onSort}: Props) {
         <ProjectCard
           key={project.path}
           project={project}
-          onDeleteProject={noop}
-          onDuplicateProject={noop}
-          onOpenModal={noop}
-          onLoadProjectScene={noop}
+          onDelete={noop}
+          onDuplicate={noop}
         />
       ));
     }

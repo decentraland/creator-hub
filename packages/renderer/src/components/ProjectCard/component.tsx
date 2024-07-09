@@ -1,6 +1,4 @@
-// REMOVE
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import cx from 'classnames';
 
@@ -18,43 +16,22 @@ import './styles.css';
 export function ProjectCard({
   project,
   onClick,
-  onDeleteProject,
-  onDuplicateProject,
-  onOpenModal,
-  onLoadProjectScene,
+  onDelete,
+  onDuplicate,
 }: Props) {
-  const {parcels} = useSelector(state => selectCard(state, project));
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  useEffect(() => {
-    onLoadProjectScene(project);
-  });
+  const { parcels } = useSelector(state => selectCard(state, project));
 
   const handleOnClick = useCallback(() => {
     if (onClick) onClick(project);
   }, [project, onClick]);
 
-  const handleConfirmDeleteProject = useCallback(() => {
-    setIsDeleting(true);
-  }, []);
-
-  const handleCancelDeleteProject = useCallback(() => {
-    setIsDeleting(false);
-  }, []);
-
   const handleDeleteProject = useCallback(() => {
-    onDeleteProject(project);
-    setIsDeleting(false);
-  }, [project, onDeleteProject]);
+    onDelete(project);
+  }, [project, onDelete]);
 
   const handleDuplicateProject = useCallback(() => {
-    onDuplicateProject(project);
-  }, [project, onDuplicateProject]);
-
-  const handleExportScene = useCallback(() => {
-    onOpenModal('ExportModal', {project});
-  }, [project, onOpenModal]);
-
+    onDuplicate(project);
+  }, [project, onDuplicate]);
 
   const thumbnailUrl = getThumbnailUrl(project);
 
@@ -65,7 +42,7 @@ export function ProjectCard({
     },
     {
       text: t('scene_list.project_actions.delete_project'),
-      handler: handleConfirmDeleteProject,
+      handler: handleDeleteProject,
     },
   ];
 
