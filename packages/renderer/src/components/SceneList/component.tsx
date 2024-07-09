@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Select, MenuItem, type SelectChangeEvent } from 'decentraland-ui2';
+import { Select, MenuItem, type SelectChangeEvent, Box } from 'decentraland-ui2';
 
 import { t } from '/@/modules/store/reducers/translation/utils';
 import { SceneCreationSelector } from '/@/components/SceneCreationSelector';
@@ -115,7 +115,9 @@ export function SceneList({ projects, sortBy, onOpenModal, onSort }: Props) {
           <Row>{projects.length > 1 ? renderSortDropdown() : null}</Row>
         </Row>
       </Column>
-      <Column className="project-cards">{renderProjects()}</Column>
+      <Box display="grid" gridTemplateColumns="repeat(4, 1fr)" gap={2}>
+        {renderProjects()}
+      </Box>
     </div>
   );
 }
