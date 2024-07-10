@@ -1,12 +1,15 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import cx from 'classnames';
+import { Dialog } from 'decentraland-ui2';
+import { ModalContent } from 'decentraland-ui2/dist/components/Modal/Modal';
 
 import { useSelector } from '/@/modules/store';
+import { getThumbnailUrl } from '/@/modules/project';
 import { t } from '/@/modules/store/reducers/translation/utils';
 
+import { Button } from '../Button';
 import { Dropdown } from '../Dropdown';
-import { getThumbnailUrl } from '/@/modules/project';
 
 import { selectCard } from './selectors';
 import type { Props } from './types';
@@ -19,6 +22,7 @@ export function ProjectCard({
   onDelete,
   onDuplicate,
 }: Props) {
+  const [open, setOpen] = useState(false);
   const { parcels } = useSelector(state => selectCard(state, project));
 
   const handleOnClick = useCallback(() => {
@@ -33,6 +37,14 @@ export function ProjectCard({
     onDuplicate(project);
   }, [project, onDuplicate]);
 
+  const handleOpenModal = useCallback(() => {
+    setOpen(true);
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
+    setOpen(false);
+  }, []);
+
   const thumbnailUrl = getThumbnailUrl(project);
 
   const dropdownOptions = [
@@ -42,7 +54,7 @@ export function ProjectCard({
     },
     {
       text: t('scene_list.project_actions.delete_project'),
-      handler: handleDeleteProject,
+      handler: handleOpenModal,
     },
   ];
 
@@ -58,6 +70,20 @@ export function ProjectCard({
         </div>
         <Dropdown className="options-dropdown" options={dropdownOptions} />
       </div>
+      <Dialog open={open}>
+        <ModalContent
+          title={`Delete "${project.title}"`}
+          size="tiny"
+          actions={(
+            <>
+              <Button color="secondary" onClick={handleCloseModal}>Cancel</Button>
+              <Button onClick={handleDeleteProject}>Confirm</Button>
+            </>
+          )}
+        >
+          This operation is not reversible
+        </ModalContent>
+      </Dialog>
     </div>
   );
 }

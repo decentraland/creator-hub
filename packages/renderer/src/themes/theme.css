@@ -36,3 +36,8 @@ html {
 body {
   padding: 0 20px;
 }
+
+/* Temp: override the default position so the Modal component is visible */
+.MuiDialog-paper {
+  position: inherit !important;
+}
