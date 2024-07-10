@@ -1,6 +1,6 @@
-import {handle} from './handle';
-import {init, preview, publish} from './cli';
-import {getHome} from './electron';
+import { handle } from './handle';
+import { init, preview, publish } from './cli';
+import { getHome } from './electron';
 
 export function initIpc() {
   // electron

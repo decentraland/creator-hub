@@ -1,5 +1,5 @@
-import {ipcRenderer} from 'electron';
-import type {Ipc} from '/shared/types/ipc';
+import { ipcRenderer } from 'electron';
+import type { Ipc } from '/shared/types/ipc';
 
 // wrapper for ipcRenderer.invoke with types
 export async function invoke<T extends keyof Ipc>(
