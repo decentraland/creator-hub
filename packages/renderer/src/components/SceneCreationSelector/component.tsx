@@ -1,16 +1,16 @@
-import {useCallback} from 'react';
+import { useCallback } from 'react';
 
-import {t} from '../../dapps-v2/translation/utils';
-import {SceneCard} from '../SceneCard';
+import { t } from '/@/modules/store/reducers/translation/utils';
+import { SceneCard } from '/@/components/SceneCard';
 
-import type {Props} from './types';
+import type { Props } from './types';
 
 import './styles.css';
 
 import videoSrc from '../../../assets/videos/scratch-preview.mov';
 import imgSrc from '../../../assets/images/scratch-preview-img.webp';
 
-export function SceneCreationSelector({onOpenModal}: Props) {
+export function SceneCreationSelector({ onOpenModal }: Props) {
   const handleOpenCreateFromScratchModal = useCallback(() => {
     onOpenModal('CustomLayoutModal');
   }, [onOpenModal]);
@@ -19,10 +19,10 @@ export function SceneCreationSelector({onOpenModal}: Props) {
     <div className="SceneCreationSelector container">
       <SceneCard
         onClick={handleOpenCreateFromScratchModal}
-        title={t('scenes_page.no_scenes.from_scratch.title')}
+        title={t('scene_list.no_scenes.from_scratch.title')}
         videoSrc={videoSrc}
         imgSrc={imgSrc}
-        description={t('scenes_page.no_scenes.from_scratch.description')}
+        description={t('scene_list.no_scenes.from_scratch.description')}
       />
     </div>
   );

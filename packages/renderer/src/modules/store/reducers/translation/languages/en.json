@@ -1,7 +1,13 @@
 {
-  "scenes_page": {
+  "home": {
+    "header": {
+      "title": "Welcome to Editor Alpha",
+      "feedback": "Give us feedback"
+    }
+  },
+  "scene_list": {
     "my_scenes": "My Scenes",
-    "upload_scene": "Upload Scene",
+    "import_scene": "Import Scene",
     "create_scene": "Create Scene",
     "project_actions": {
       "delete_project": "Delete",

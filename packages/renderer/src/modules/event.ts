@@ -1,4 +1,4 @@
-import type {SyntheticEvent} from 'react';
+import type { SyntheticEvent } from 'react';
 
 // check if eventMethod is a callable property of event
 export type EventMethod<T extends SyntheticEvent | Event> = {

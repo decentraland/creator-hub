@@ -1,10 +1,10 @@
-import {app} from 'electron';
-import {restoreOrCreateWindow} from '/@/mainWindow';
-import {platform} from 'node:process';
+import { app } from 'electron';
+import { restoreOrCreateWindow } from '/@/mainWindow';
+import { platform } from 'node:process';
 import updater from 'electron-updater';
 
 import './security-restrictions';
-import {initIpc} from './ipc';
+import { initIpc } from './ipc';
 
 /**
  * Prevent electron from running multiple instances.

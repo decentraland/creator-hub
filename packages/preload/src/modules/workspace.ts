@@ -1,12 +1,12 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type {Scene} from '@dcl/schemas';
+import type { Scene } from '@dcl/schemas';
 
-import type {Project} from '/shared/types/projects';
-import type {Workspace} from '/shared/types/workspace';
-import {hasDependency} from './pkg';
-import {getRowsAndCols, parseCoords} from './scene';
-import {ipc} from './ipc';
+import type { Project } from '/shared/types/projects';
+import type { Workspace } from '/shared/types/workspace';
+import { hasDependency } from './pkg';
+import { getRowsAndCols, parseCoords } from './scene';
+import { ipc } from './ipc';
 
 /**
  * Get scene json
@@ -53,6 +53,20 @@ export async function hasNodeModules(_path: string) {
   }
 }
 
+export async function getProjectThumbnail(
+  projectPath: string,
+  scene: Scene,
+): Promise<string | undefined> {
+  try {
+    if (!scene.display?.navmapThumbnail) return undefined;
+    const thumbnailPath = path.join(projectPath, scene.display.navmapThumbnail);
+    return (await fs.readFile(thumbnailPath)).toString('base64');
+  } catch (e) {
+    console.log(`Could not get project thumbnail for project in ${projectPath}`, e);
+    return undefined;
+  }
+}
+
 export async function getProject(_path: string) {
   try {
     const scene = await getScene(_path);
@@ -62,7 +76,7 @@ export async function getProject(_path: string) {
       path: _path,
       title: scene.display?.title,
       description: scene.display?.description,
-      thumbnail: scene.display?.navmapThumbnail,
+      thumbnail: await getProjectThumbnail(_path, scene),
       isPublic: true,
       createdAt: new Date().toDateString(),
       updatedAt: new Date().toDateString(),

@@ -1,133 +1,101 @@
-// REMOVE
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import {useCallback, useEffect, useState, type CSSProperties} from 'react';
+import { useCallback, useState } from 'react';
+import ViewModuleIcon from '@mui/icons-material/ViewModule';
+import cx from 'classnames';
+import { Dialog } from 'decentraland-ui2';
+import { ModalContent } from 'decentraland-ui2/dist/components/Modal/Modal';
 
-import {useSelector} from '../../modules/store';
-import {t} from '../../dapps-v2/translation/utils';
+import { useSelector } from '/@/modules/store';
+import { getThumbnailUrl } from '/@/modules/project';
+import { t } from '/@/modules/store/reducers/translation/utils';
 
-import {Icon} from '../Icon';
-import {OptionsDropdown} from '../OptionsDropdown';
-import {getThumbnailUrl} from '../../modules/project';
-import {isRemoteURL} from '../../modules/media';
+import { Button } from '../Button';
+import { Dropdown } from '../Dropdown';
 
-import {selectCard} from './selectors';
-import type {Props} from './types';
+import { selectCard } from './selectors';
+import type { Props } from './types';
 
 import './styles.css';
 
-export function ProjectCard({
-  project,
-  onClick,
-  onDeleteProject,
-  onDuplicateProject,
-  onOpenModal,
-  onLoadProjectScene,
-}: Props) {
-  const {parcels, isUploading, hasError, type} = useSelector(state => selectCard(state, project));
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  useEffect(() => {
-    onLoadProjectScene(project, type);
-  });
+export function ProjectCard({ project, onClick, onDelete, onDuplicate }: Props) {
+  const [open, setOpen] = useState(false);
+  const { parcels } = useSelector(state => selectCard(state, project));
 
   const handleOnClick = useCallback(() => {
-    if (onClick) {
-      onClick(project);
-    }
+    if (onClick) onClick(project);
   }, [project, onClick]);
 
-  const handleConfirmDeleteProject = useCallback(() => {
-    setIsDeleting(true);
-  }, []);
-
-  const handleCancelDeleteProject = useCallback(() => {
-    setIsDeleting(false);
-  }, []);
-
   const handleDeleteProject = useCallback(() => {
-    onDeleteProject(project);
-    setIsDeleting(false);
-  }, [project, onDeleteProject]);
+    onDelete(project);
+  }, [project, onDelete]);
 
   const handleDuplicateProject = useCallback(() => {
-    onDuplicateProject(project);
-  }, [project, onDuplicateProject]);
+    onDuplicate(project);
+  }, [project, onDuplicate]);
 
-  const handleExportScene = useCallback(() => {
-    onOpenModal('ExportModal', {project});
-  }, [project, onOpenModal]);
+  const handleOpenModal = useCallback(() => {
+    setOpen(true);
+  }, []);
 
-  let style: CSSProperties = {};
-  let classes = 'ProjectCard';
+  const handleCloseModal = useCallback(() => {
+    setOpen(false);
+  }, []);
 
-  let thumbnailUrl = getThumbnailUrl(project);
-  if (thumbnailUrl) {
-    // prevent caching remote images when they are updated
-    if (thumbnailUrl && isRemoteURL(thumbnailUrl)) {
-      thumbnailUrl += `?updated_at=${+new Date(project.updatedAt)}`;
-    }
-    style = {backgroundImage: `url(${thumbnailUrl})`};
-    classes += ' has-thumbnail';
-  }
+  const thumbnailUrl = getThumbnailUrl(project);
 
   const dropdownOptions = [
     {
-      text: t('scenes_page.project_actions.duplicate_project'),
+      text: t('scene_list.project_actions.duplicate_project'),
       handler: handleDuplicateProject,
     },
     {
-      text: t('scenes_page.project_actions.export_project'),
-      handler: handleExportScene,
-    },
-    {
-      text: t('scenes_page.project_actions.delete_project'),
-      handler: handleConfirmDeleteProject,
+      text: t('scene_list.project_actions.delete_project'),
+      handler: handleOpenModal,
     },
   ];
 
-  const children = (
-    <>
+  return (
+    <div
+      className={cx('ProjectCard', { 'has-thumbnail': !!thumbnailUrl })}
+      onClick={handleOnClick}
+    >
       <div
         className="project-thumbnail"
-        style={style}
+        style={thumbnailUrl ? { backgroundImage: `url(${thumbnailUrl})` } : {}}
       />
-      <>
-        <div className="options-container">
-          <OptionsDropdown
-            className="options-dropdown"
-            options={dropdownOptions}
-          />
-        </div>
-      </>
       <div className="project-data">
         <div className="title-wrapper">
           <div className="title">{project.title}</div>
-          {isUploading ? (
-            <Icon
-              name="cloud-upload"
-              className="is-uploading"
-            />
-          ) : null}
-          {!isUploading && hasError ? <div className="error-indicator" /> : null}
+          <div
+            className="description"
+            title={project.description}
+          >
+            <ViewModuleIcon className="Icon" /> {t('scene_list.parcel_count', { parcels })}
+          </div>
         </div>
-        <div
-          className="description"
-          title={project.description}
+        <Dropdown
+          className="options-dropdown"
+          options={dropdownOptions}
+        />
+      </div>
+      <Dialog open={open}>
+        <ModalContent
+          title={`Delete "${project.title}"`}
+          size="tiny"
+          actions={
+            <>
+              <Button
+                color="secondary"
+                onClick={handleCloseModal}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleDeleteProject}>Confirm</Button>
+            </>
+          }
         >
-          <Icon name="scene-parcel" /> {t('scenes_page.parcel_count', {parcels})}
-        </div>
-      </div>
-    </>
-  );
-
-  return (
-    <>
-      <div
-        className={classes}
-        onClick={handleOnClick}
-      >
-        {children}
-      </div>
-    </>
+          This operation is not reversible
+        </ModalContent>
+      </Dialog>
+    </div>
   );
 }

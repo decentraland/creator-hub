@@ -1,12 +1,11 @@
 {
-  "scenes_page": {
+  "scene_list": {
     "my_scenes": "我的场景",
-    "upload_scene": "上传场景",
+    "import_scene": "导入场景",
     "create_scene": "创建场景",
     "project_actions": {
       "delete_project": "删除场景",
-      "duplicate_project": "复制场景",
-      "export_project": "场景导出"
+      "duplicate_project": "复制场景"
     },
     "no_scenes": {
       "title": "创建您的第一个场景",

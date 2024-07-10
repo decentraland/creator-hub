@@ -1,5 +1,5 @@
-import {workspace} from '#preload';
-import {initThunkCreator} from '../utils';
+import { workspace } from '#preload';
+import { initThunkCreator } from '../utils';
 
 const createWorkspaceThunk = initThunkCreator('workspace');
 

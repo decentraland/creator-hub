@@ -12,6 +12,7 @@
     "baseUrl": ".",
     "paths": {
       "#preload": ["../preload/src/index"],
+      "#store": ["./src/modules/store"],
       "/@/*": ["./src/*"],
       "/shared/*": ["../shared/*"]
     },

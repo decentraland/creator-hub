@@ -1,6 +1,6 @@
-import {useCallback, useEffect, useRef, useState} from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-import {getFileSize} from './file';
+import { getFileSize } from './file';
 
 export function useVideo() {
   const [hovered, setHovered] = useState(false);
