@@ -11,7 +11,7 @@ export async function init(path: string, repo?: string) {
 }
 
 let currentPreview: Command | null = null;
-export async function preview(path: string) {
+export async function start(path: string) {
   if (currentPreview) {
     await currentPreview.kill();
   }

@@ -1,5 +1,5 @@
 import { handle } from './handle';
-import { init, preview, publish } from './cli';
+import { init, start, publish } from './cli';
 import { getHome } from './electron';
 
 export function initIpc() {
@@ -8,6 +8,6 @@ export function initIpc() {
 
   // cli
   handle('cli.init', (_event, name) => init(name));
-  handle('cli.preview', (_event, path) => preview(path));
+  handle('cli.start', (_event, path) => start(path));
   handle('cli.publish', (_event, path) => publish(path));
 }
