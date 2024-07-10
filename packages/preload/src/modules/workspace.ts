@@ -72,15 +72,8 @@ export async function getProject(_path: string) {
     return {
       path: _path,
       title: scene.display?.title,
-      description: scene.display?.description,
       thumbnail: await getProjectThumbnail(_path, scene),
-      isPublic: true,
-      createdAt: new Date().toDateString(),
-      updatedAt: new Date().toDateString(),
       layout: getRowsAndCols(parcels),
-      isTemplate: false,
-      video: null,
-      templateStatus: null,
     };
   } catch (error: any) {
     throw new Error(`Could not get scene.json info for project in "${_path}": ${error.message}`);
