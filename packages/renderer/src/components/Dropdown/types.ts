@@ -6,5 +6,5 @@ export type Option = {
 export type Props = {
   options: Option[];
   className?: string;
-  selected?: string
+  selected?: string;
 };

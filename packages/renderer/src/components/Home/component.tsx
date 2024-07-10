@@ -30,11 +30,25 @@ export function Home() {
       <Header>
         <>
           {/* TODO: Get SVG for this logo 👇 and transform it into an Icon component */}
-          <img src="/assets/images/logo-editor.png" alt={t('home.header.title')} />
+          <img
+            src="/assets/images/logo-editor.png"
+            alt={t('home.header.title')}
+          />
           <h4>{t('home.header.title')}</h4>
-          <Button color="info" href="https://decentraland.canny.io" onClick={handleClickFeedback}>{t('home.header.feedback')}</Button>
+          <Button
+            color="info"
+            href="https://decentraland.canny.io"
+            onClick={handleClickFeedback}
+          >
+            {t('home.header.feedback')}
+          </Button>
         </>
-        <Button color="info" onClick={handleClickFeedback}><SettingsIcon /></Button>
+        <Button
+          color="info"
+          onClick={handleClickFeedback}
+        >
+          <SettingsIcon />
+        </Button>
       </Header>
       <Container>
         <SceneList

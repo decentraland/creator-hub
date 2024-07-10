@@ -7,7 +7,11 @@ import './styles.css';
 
 export function ButtonComponent({ children, className = '', onClick, ...props }: Props) {
   return (
-    <Button {...props} className={cx('Button', className)} onClick={onClick}>
+    <Button
+      {...props}
+      className={cx('Button', className)}
+      onClick={onClick}
+    >
       {children}
     </Button>
   );

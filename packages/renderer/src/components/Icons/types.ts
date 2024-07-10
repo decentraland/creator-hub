@@ -1,3 +1,3 @@
 export type CommonProps = {
-  className?: string
-}
+  className?: string;
+};

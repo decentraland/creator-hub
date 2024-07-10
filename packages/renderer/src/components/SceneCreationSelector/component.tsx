@@ -1,16 +1,16 @@
-import {useCallback} from 'react';
+import { useCallback } from 'react';
 
 import { t } from '/@/modules/store/reducers/translation/utils';
-import {SceneCard} from '/@/components/SceneCard';
+import { SceneCard } from '/@/components/SceneCard';
 
-import type {Props} from './types';
+import type { Props } from './types';
 
 import './styles.css';
 
 import videoSrc from '../../../assets/videos/scratch-preview.mov';
 import imgSrc from '../../../assets/images/scratch-preview-img.webp';
 
-export function SceneCreationSelector({onOpenModal}: Props) {
+export function SceneCreationSelector({ onOpenModal }: Props) {
   const handleOpenCreateFromScratchModal = useCallback(() => {
     onOpenModal('CustomLayoutModal');
   }, [onOpenModal]);

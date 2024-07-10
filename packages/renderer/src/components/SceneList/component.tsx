@@ -110,13 +110,15 @@ export function SceneList({ projects, sortBy, onOpenModal, onSort }: Props) {
           </Row>
         </Row>
         <Row className="actions">
-          <Row className="items-count">
-            {t('scene_list.results', { count: projects.length })}
-          </Row>
+          <Row className="items-count">{t('scene_list.results', { count: projects.length })}</Row>
           <Row>{projects.length > 1 ? renderSortDropdown() : null}</Row>
         </Row>
       </Column>
-      <Box display="grid" gridTemplateColumns="repeat(4, 1fr)" gap={2}>
+      <Box
+        display="grid"
+        gridTemplateColumns="repeat(4, 1fr)"
+        gap={2}
+      >
         {renderProjects()}
       </Box>
     </div>

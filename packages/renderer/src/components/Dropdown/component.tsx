@@ -27,15 +27,21 @@ function Dropdown(props: Props) {
 
   return (
     <div>
-      <IconButton onClick={handleClick}><ThreeDots /></IconButton>
+      <IconButton onClick={handleClick}>
+        <ThreeDots />
+      </IconButton>
       <Menu
-        classes={{ root: cx('Dropdown', className)}}
+        classes={{ root: cx('Dropdown', className) }}
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
       >
-        {options.map((option) => (
-          <MenuItem key={option.text} selected={option.text === selected} onClick={(e) => handleSelect(e, option)}>
+        {options.map(option => (
+          <MenuItem
+            key={option.text}
+            selected={option.text === selected}
+            onClick={e => handleSelect(e, option)}
+          >
             {option.text}
           </MenuItem>
         ))}

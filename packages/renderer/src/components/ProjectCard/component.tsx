@@ -16,12 +16,7 @@ import type { Props } from './types';
 
 import './styles.css';
 
-export function ProjectCard({
-  project,
-  onClick,
-  onDelete,
-  onDuplicate,
-}: Props) {
+export function ProjectCard({ project, onClick, onDelete, onDuplicate }: Props) {
   const [open, setOpen] = useState(false);
   const { parcels } = useSelector(state => selectCard(state, project));
 
@@ -59,27 +54,44 @@ export function ProjectCard({
   ];
 
   return (
-    <div className={cx('ProjectCard', { 'has-thumbnail': !!thumbnailUrl })} onClick={handleOnClick}>
-      <div className="project-thumbnail" style={thumbnailUrl ? { backgroundImage: `url(${thumbnailUrl})` } : {}} />
+    <div
+      className={cx('ProjectCard', { 'has-thumbnail': !!thumbnailUrl })}
+      onClick={handleOnClick}
+    >
+      <div
+        className="project-thumbnail"
+        style={thumbnailUrl ? { backgroundImage: `url(${thumbnailUrl})` } : {}}
+      />
       <div className="project-data">
         <div className="title-wrapper">
           <div className="title">{project.title}</div>
-          <div className="description" title={project.description}>
+          <div
+            className="description"
+            title={project.description}
+          >
             <ViewModuleIcon className="Icon" /> {t('scene_list.parcel_count', { parcels })}
           </div>
         </div>
-        <Dropdown className="options-dropdown" options={dropdownOptions} />
+        <Dropdown
+          className="options-dropdown"
+          options={dropdownOptions}
+        />
       </div>
       <Dialog open={open}>
         <ModalContent
           title={`Delete "${project.title}"`}
           size="tiny"
-          actions={(
+          actions={
             <>
-              <Button color="secondary" onClick={handleCloseModal}>Cancel</Button>
+              <Button
+                color="secondary"
+                onClick={handleCloseModal}
+              >
+                Cancel
+              </Button>
               <Button onClick={handleDeleteProject}>Confirm</Button>
             </>
-          )}
+          }
         >
           This operation is not reversible
         </ModalContent>

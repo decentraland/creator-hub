@@ -53,7 +53,10 @@ export async function hasNodeModules(_path: string) {
   }
 }
 
-export async function getProjectThumbnail(projectPath: string, scene: Scene): Promise<string | undefined> {
+export async function getProjectThumbnail(
+  projectPath: string,
+  scene: Scene,
+): Promise<string | undefined> {
   try {
     if (!scene.display?.navmapThumbnail) return undefined;
     const thumbnailPath = path.join(projectPath, scene.display.navmapThumbnail);
