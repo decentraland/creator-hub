@@ -1,11 +1,13 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { Scene } from '@dcl/schemas';
+
 import type { Project } from '/shared/types/projects';
 import type { Workspace } from '/shared/types/workspace';
 import { hasDependency } from './pkg';
 import { getRowsAndCols, parseCoords } from './scene';
 import { invoke } from './invoke';
+import { exists } from './fs';
 
 /**
  * Get scene json
@@ -44,12 +46,8 @@ export async function isEmpty(_path: string) {
  * Return whether or not the provided directory has a node_modules directory
  */
 export async function hasNodeModules(_path: string) {
-  try {
-    const nodeModulesPath = path.join(_path, 'node_modules');
-    await fs.stat(nodeModulesPath);
-  } catch (_) {
-    return false;
-  }
+  const nodeModulesPath = path.join(_path, 'node_modules');
+  return exists(nodeModulesPath);
 }
 
 export async function getProjectThumbnail(
@@ -128,4 +126,19 @@ export async function getWorkspace(): Promise<Workspace> {
   return {
     projects: await getProjects(path),
   };
+}
+
+export async function createProject(name: string) {
+  const slug = name.toLowerCase().replace(/\s/g, '_');
+  const path = `${await getPath()}/${slug}`;
+  if (await exists(path)) {
+    console.log('error');
+    throw new Error(`Project "${name}" already exists`);
+  } else {
+    await fs.mkdir(path);
+    await invoke('cli.init', path);
+    const scene = await getScene(path);
+    scene.display!.title = name;
+    await fs.writeFile(`${path}/scene.json`, JSON.stringify(scene, null, 2));
+  }
 }

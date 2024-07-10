@@ -1,6 +1,5 @@
 import { workspace } from '#preload';
-import { initThunkCreator } from '../utils';
+import { createAsyncThunk } from '@reduxjs/toolkit';
 
-const createWorkspaceThunk = initThunkCreator('workspace');
-
-export const getWorkspace = createWorkspaceThunk(workspace.getWorkspace);
+export const getWorkspace = createAsyncThunk('workspace/getWorkspace', workspace.getWorkspace);
+export const createProject = createAsyncThunk('workspace/createProject', workspace.createProject);

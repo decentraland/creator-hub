@@ -1,9 +1,12 @@
 import { useCallback } from 'react';
 import { Select, MenuItem, type SelectChangeEvent, Box } from 'decentraland-ui2';
 
+import { useDispatch } from '/@/modules/store';
+
 import { t } from '/@/modules/store/reducers/translation/utils';
 import { SceneCreationSelector } from '/@/components/SceneCreationSelector';
 import { ProjectCard } from '/@/components/ProjectCard';
+import { createProject } from '/@/modules/store/reducers/workspace/thunks';
 
 import type { Props } from './types';
 import { SortBy } from './types';
@@ -28,12 +31,14 @@ function NoScenesAnchor(content: string) {
 }
 
 export function SceneList({ projects, sortBy, onOpenModal, onSort }: Props) {
+  const dispatch = useDispatch();
+
   const handleOpenImportModal = useCallback(() => {
     onOpenModal('ImportModal');
   }, [onOpenModal]);
 
   const handleOpenCreateModal = useCallback(() => {
-    onOpenModal('SceneCreationModal');
+    dispatch(createProject('Placeholder'));
   }, [onOpenModal]);
 
   const sort = useCallback(

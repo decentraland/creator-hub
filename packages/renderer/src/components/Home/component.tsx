@@ -25,6 +25,12 @@ export function Home() {
     dispatch(getWorkspace());
   }, []);
 
+  useEffect(() => {
+    if (workspace.status === 'reload') {
+      dispatch(getWorkspace());
+    }
+  }, [workspace.status]);
+
   return (
     <main className="Home">
       <Header>

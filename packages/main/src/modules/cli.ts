@@ -1,11 +1,39 @@
-export async function init(name: string) {
-  console.log('init', name);
+import type {Command} from './npx';
+import {npx} from './npx';
+
+export async function init(path: string, repo?: string) {
+  console.log('init', path);
+  const command = npx(
+    '@dcl/sdk-commands',
+    ['init', '--yes', ...(repo ? ['--github-repo', repo] : [])],
+    path,
+  );
+  return command.wait();
 }
 
+let currentPreview: Command | null = null;
 export async function preview(path: string) {
-  console.log('preview', path);
+  if (currentPreview) {
+    await currentPreview.kill();
+  }
+  currentPreview = npx('@dcl/sdk-commands', ['start'], path);
 }
 
+let currentPublish: Command | null = null;
 export async function publish(path: string) {
-  console.log('publish', path);
+  if (currentPublish) {
+    await currentPublish.kill();
+  }
+  currentPublish = npx('@dcl/sdk-commands', ['publish'], path);
+}
+
+export async function killAll() {
+  const promises = [];
+  if (currentPreview) {
+    promises.push(currentPreview.kill());
+  }
+  if (currentPublish) {
+    promises.push(currentPublish.kill());
+  }
+  await Promise.all(promises);
 }
