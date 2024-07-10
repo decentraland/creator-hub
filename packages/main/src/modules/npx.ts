@@ -1,9 +1,9 @@
 import path from 'path';
 import treeKill from 'tree-kill';
-import {future} from 'fp-future';
+import { future } from 'fp-future';
 import isRunning from 'is-running';
-import {createRequire} from 'node:module';
-import {utilityProcess} from 'electron';
+import { createRequire } from 'node:module';
+import { utilityProcess } from 'electron';
 
 export type Command = {
   pkg: string;
@@ -43,8 +43,7 @@ export function npx(pkg: string, args: string[] = [], cwd: string): Command {
   const require = createRequire(import.meta.url);
   const npmPath = require.resolve('npm');
   const npxPath = path.join(path.dirname(npmPath), '../.bin/npx');
-  console.log(`npxPath: ${npxPath}`);
-  const child = utilityProcess.fork(npxPath, [pkg, ...args], {cwd, stdio: 'pipe'});
+  const child = utilityProcess.fork(npxPath, [pkg, ...args], { cwd, stdio: 'pipe' });
 
   const name = `npx ${pkg} ${args.join(' ')}`;
   child.on('spawn', () => {
@@ -77,7 +76,7 @@ export function npx(pkg: string, args: string[] = [], cwd: string): Command {
     process: child,
     on: (pattern, handler) => {
       if (alive) {
-        return matchers.push({pattern, handler, enabled: true}) - 1;
+        return matchers.push({ pattern, handler, enabled: true }) - 1;
       }
       throw new Error('Process has been killed');
     },
@@ -156,8 +155,8 @@ export function npx(pkg: string, args: string[] = [], cwd: string): Command {
 
 async function handleData(buffer: Buffer, matchers: Matcher[]) {
   const data = buffer.toString('utf8');
-  console.log(data);
-  for (const {pattern, handler, enabled} of matchers) {
+  console.log(data); // pipe data to console
+  for (const { pattern, handler, enabled } of matchers) {
     if (!enabled) continue;
     pattern.lastIndex = 0; // reset regexp
     if (pattern.test(data)) {

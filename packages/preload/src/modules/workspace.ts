@@ -125,7 +125,6 @@ export async function createProject(name: string) {
   const slug = name.toLowerCase().replace(/\s/g, '_');
   const path = `${await getPath()}/${slug}`;
   if (await exists(path)) {
-    console.log('error');
     throw new Error(`Project "${name}" already exists`);
   } else {
     await fs.mkdir(path);

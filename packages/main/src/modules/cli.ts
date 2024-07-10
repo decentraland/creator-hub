@@ -1,8 +1,7 @@
-import type {Command} from './npx';
-import {npx} from './npx';
+import type { Command } from './npx';
+import { npx } from './npx';
 
 export async function init(path: string, repo?: string) {
-  console.log('init', path);
   const command = npx(
     '@dcl/sdk-commands',
     ['init', '--yes', ...(repo ? ['--github-repo', repo] : [])],
