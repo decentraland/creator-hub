@@ -51,6 +51,7 @@ export function SceneList({ projects, sortBy, onOpenModal, onSort }: Props) {
   const renderSortDropdown = () => {
     return (
       <Select
+        variant="standard"
         value={sortBy}
         onChange={handleDropdownChange}
       >

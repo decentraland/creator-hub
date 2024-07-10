@@ -40,6 +40,16 @@
   margin-bottom: 10px;
 }
 
+.SceneList .projects-menu .actions .MuiInputBase-root,
+.SceneList .projects-menu .actions .MuiInputBase-root svg {
+  color: var(--dcl);
+}
+
+.SceneList .projects-menu .actions .MuiInputBase-root::before,
+.SceneList .projects-menu .actions .MuiInputBase-root::after {
+  border: none;
+}
+
 .SceneList .no-scenes-container {
   display: flex;
   flex-direction: column;
