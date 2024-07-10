@@ -72,6 +72,7 @@ export async function getProject(_path: string) {
     return {
       path: _path,
       title: scene.display?.title,
+      description: scene.display?.description,
       thumbnail: await getProjectThumbnail(_path, scene),
       layout: getRowsAndCols(parcels),
     };
