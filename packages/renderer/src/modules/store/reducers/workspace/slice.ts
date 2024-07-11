@@ -1,7 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 import type { Workspace } from '/shared/types/workspace';
-import { getWorkspace } from './thunks';
+import { createProject, getWorkspace } from './thunks';
 import type { Async } from '../types';
 
 const INITIAL_STATE: Async<Workspace> = {
@@ -30,6 +30,9 @@ export function createWorkspaceSlice() {
         .addCase(getWorkspace.rejected, (state, action) => {
           state.status = 'failed';
           state.error = action.error.message || 'Failed to get workspace';
+        })
+        .addCase(createProject.fulfilled, (state, action) => {
+          state.projects = [...state.projects, action.payload];
         });
     },
   });

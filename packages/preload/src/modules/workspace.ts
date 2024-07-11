@@ -6,7 +6,8 @@ import type { Project } from '/shared/types/projects';
 import type { Workspace } from '/shared/types/workspace';
 import { hasDependency } from './pkg';
 import { getRowsAndCols, parseCoords } from './scene';
-import { ipc } from './ipc';
+import { invoke } from './invoke';
+import { exists } from './fs';
 
 /**
  * Get scene json
@@ -45,12 +46,8 @@ export async function isEmpty(_path: string) {
  * Return whether or not the provided directory has a node_modules directory
  */
 export async function hasNodeModules(_path: string) {
-  try {
-    const nodeModulesPath = path.join(_path, 'node_modules');
-    await fs.stat(nodeModulesPath);
-  } catch (_) {
-    return false;
-  }
+  const nodeModulesPath = path.join(_path, 'node_modules');
+  return exists(nodeModulesPath);
 }
 
 export async function getProjectThumbnail(
@@ -72,18 +69,16 @@ export async function getProject(_path: string) {
     const scene = await getScene(_path);
     const parcels = scene.scene.parcels.map($ => parseCoords($));
 
+    const stat = await fs.stat(_path);
+
     return {
       path: _path,
       title: scene.display?.title,
       description: scene.display?.description,
       thumbnail: await getProjectThumbnail(_path, scene),
-      isPublic: true,
-      createdAt: new Date().toDateString(),
-      updatedAt: new Date().toDateString(),
       layout: getRowsAndCols(parcels),
-      isTemplate: false,
-      video: null,
-      templateStatus: null,
+      createdAt: Number(stat.birthtime),
+      updatedAt: Number(stat.mtime),
     };
   } catch (error: any) {
     throw new Error(`Could not get scene.json info for project in "${_path}": ${error.message}`);
@@ -91,7 +86,7 @@ export async function getProject(_path: string) {
 }
 
 export async function getPath() {
-  const home = await ipc.app.getPath('home');
+  const home = await invoke('electron.getHome');
   const path = `${home}/.decentraland`;
   try {
     await fs.stat(path);
@@ -110,15 +105,15 @@ export async function getProjects(_path: string) {
   for (const dir of files) {
     try {
       const projectDir = path.join(_path, dir);
-      if (await hasDependency(projectDir, '@dcl/sdk')) {
+      if (await isDCL(projectDir)) {
         promises.push(getProject(projectDir));
       }
       // eslint-disable-next-line no-empty
     } catch (_) {}
   }
 
-  const scenes = await Promise.all(promises);
-  return scenes;
+  const projects = await Promise.all(promises);
+  return projects;
 }
 
 /**
@@ -129,4 +124,20 @@ export async function getWorkspace(): Promise<Workspace> {
   return {
     projects: await getProjects(path),
   };
+}
+
+export async function createProject(name: string): Promise<Project> {
+  const slug = name.toLowerCase().replace(/\s/g, '_');
+  const path = `${await getPath()}/${slug}`;
+  if (await exists(path)) {
+    throw new Error(`Project "${name}" already exists`);
+  } else {
+    await fs.mkdir(path);
+    await invoke('cli.init', path);
+    const scene = await getScene(path);
+    scene.display!.title = name;
+    await fs.writeFile(`${path}/scene.json`, JSON.stringify(scene, null, 2));
+    const project = await getProject(path);
+    return project;
+  }
 }

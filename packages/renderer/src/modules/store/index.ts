@@ -4,6 +4,7 @@ import {
   useSelector as formerUseSelector,
   useDispatch as formerUseDispuseDispatch,
 } from 'react-redux';
+import logger from 'redux-logger';
 
 import { createRootReducer } from './reducers';
 
@@ -11,6 +12,7 @@ import { createRootReducer } from './reducers';
 // for more info in the future...
 const store = configureStore({
   reducer: createRootReducer(),
+  middleware: getDefaultMiddleware => getDefaultMiddleware().concat(logger),
 });
 
 const isDevelopment = true; // todo

@@ -13,11 +13,7 @@ export type Project = {
   title?: string;
   description?: string;
   thumbnail?: string;
-  isPublic: boolean;
-  createdAt: string;
-  updatedAt: string;
   layout: Layout;
-  isTemplate: boolean;
-  video: string | null;
-  templateStatus: TemplateStatus | null;
+  createdAt: number;
+  updatedAt: number;
 };

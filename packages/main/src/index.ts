@@ -4,7 +4,8 @@ import { platform } from 'node:process';
 import updater from 'electron-updater';
 
 import './security-restrictions';
-import { initIpc } from './ipc';
+import { initIpc } from './modules/ipc';
+import { killAll } from './modules/cli';
 
 /**
  * Prevent electron from running multiple instances.
@@ -24,7 +25,8 @@ app.disableHardwareAcceleration();
 /**
  * Shout down background process if all windows was closed
  */
-app.on('window-all-closed', () => {
+app.on('window-all-closed', async () => {
+  await killAll();
   if (platform !== 'darwin') {
     app.quit();
   }
