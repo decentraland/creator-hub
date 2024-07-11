@@ -10,29 +10,29 @@ export async function init(path: string, repo?: string) {
   return command.wait();
 }
 
-let currentPreview: Command | null = null;
+let currentStart: Command | null = null;
 export async function start(path: string) {
-  if (currentPreview) {
-    await currentPreview.kill();
+  if (currentStart) {
+    await currentStart.kill();
   }
-  currentPreview = npx('@dcl/sdk-commands', ['start'], path);
+  currentStart = npx('@dcl/sdk-commands', ['start'], path);
 }
 
-let currentPublish: Command | null = null;
-export async function publish(path: string) {
-  if (currentPublish) {
-    await currentPublish.kill();
+let currentDeploy: Command | null = null;
+export async function deploy(path: string) {
+  if (currentDeploy) {
+    await currentDeploy.kill();
   }
-  currentPublish = npx('@dcl/sdk-commands', ['publish'], path);
+  currentDeploy = npx('@dcl/sdk-commands', ['deploy'], path);
 }
 
 export async function killAll() {
   const promises = [];
-  if (currentPreview) {
-    promises.push(currentPreview.kill());
+  if (currentStart) {
+    promises.push(currentStart.kill());
   }
-  if (currentPublish) {
-    promises.push(currentPublish.kill());
+  if (currentDeploy) {
+    promises.push(currentDeploy.kill());
   }
   await Promise.all(promises);
 }
