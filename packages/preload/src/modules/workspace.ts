@@ -122,7 +122,7 @@ export async function getWorkspace(): Promise<Workspace> {
   };
 }
 
-export async function createProject(name: string) {
+export async function createProject(name: string): Promise<Project> {
   const slug = name.toLowerCase().replace(/\s/g, '_');
   const path = `${await getPath()}/${slug}`;
   if (await exists(path)) {
@@ -133,5 +133,7 @@ export async function createProject(name: string) {
     const scene = await getScene(path);
     scene.display!.title = name;
     await fs.writeFile(`${path}/scene.json`, JSON.stringify(scene, null, 2));
+    const project = await getProject(path);
+    return project;
   }
 }

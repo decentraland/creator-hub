@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { Select, MenuItem, type SelectChangeEvent, Box } from 'decentraland-ui2';
 
-import { useDispatch } from '/@/modules/store';
+import { useDispatch } from '#store';
 
 import { t } from '/@/modules/store/reducers/translation/utils';
 import { SceneCreationSelector } from '/@/components/SceneCreationSelector';

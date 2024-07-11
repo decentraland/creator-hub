@@ -31,9 +31,8 @@ export function createWorkspaceSlice() {
           state.status = 'failed';
           state.error = action.error.message || 'Failed to get workspace';
         })
-        .addCase(createProject.fulfilled, state => {
-          state.status = 'reload';
-          state.error = null;
+        .addCase(createProject.fulfilled, (state, action) => {
+          state.projects = [...state.projects, action.payload];
         });
     },
   });
