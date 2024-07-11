@@ -149,7 +149,6 @@ export async function createProject(name: string): Promise<Project> {
  * @returns A Promise that resolves when the directory has been deleted.
  */
 export async function deleteProject(_path: string): Promise<void> {
-  if (import.meta.env.DEV) return;
   await fs.rm(_path, { recursive: true, force: true });
 }
 
