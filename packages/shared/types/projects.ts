@@ -14,4 +14,6 @@ export type Project = {
   description?: string;
   thumbnail?: string;
   layout: Layout;
+  createdAt: number;
+  updatedAt: number;
 };

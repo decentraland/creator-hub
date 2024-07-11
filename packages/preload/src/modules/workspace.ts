@@ -69,12 +69,16 @@ export async function getProject(_path: string) {
     const scene = await getScene(_path);
     const parcels = scene.scene.parcels.map($ => parseCoords($));
 
+    const stat = await fs.stat(_path);
+
     return {
       path: _path,
       title: scene.display?.title,
       description: scene.display?.description,
       thumbnail: await getProjectThumbnail(_path, scene),
       layout: getRowsAndCols(parcels),
+      createdAt: Number(stat.birthtime),
+      updatedAt: Number(stat.mtime),
     };
   } catch (error: any) {
     throw new Error(`Could not get scene.json info for project in "${_path}": ${error.message}`);
