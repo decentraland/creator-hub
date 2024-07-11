@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { Scene } from '@dcl/schemas';
 
-import type { Project } from '/shared/types/projects';
+import { SortBy, type Project } from '/shared/types/projects';
 import type { Workspace } from '/shared/types/workspace';
 import { hasDependency } from './pkg';
 import { getRowsAndCols, parseCoords } from './scene';
@@ -64,7 +64,7 @@ export async function getProjectThumbnail(
   }
 }
 
-export async function getProject(_path: string) {
+export async function getProject(_path: string): Promise<Project> {
   try {
     const scene = await getScene(_path);
     const parcels = scene.scene.parcels.map($ => parseCoords($));
@@ -79,6 +79,7 @@ export async function getProject(_path: string) {
       layout: getRowsAndCols(parcels),
       createdAt: Number(stat.birthtime),
       updatedAt: Number(stat.mtime),
+      size: stat.size,
     };
   } catch (error: any) {
     throw new Error(`Could not get scene.json info for project in "${_path}": ${error.message}`);
@@ -122,6 +123,7 @@ export async function getProjects(_path: string) {
 export async function getWorkspace(): Promise<Workspace> {
   const path = await getPath();
   return {
+    sortBy: SortBy.NEWEST, // TODO: read from editor config file...
     projects: await getProjects(path),
   };
 }

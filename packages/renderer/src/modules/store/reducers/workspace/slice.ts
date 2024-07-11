@@ -1,10 +1,12 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 import type { Workspace } from '/shared/types/workspace';
+import { SortBy } from '/shared/types/projects';
 import { createProject, deleteProject, duplicateProject, getWorkspace } from './thunks';
 import type { Async } from '../types';
 
 const INITIAL_STATE: Async<Workspace> = {
+  sortBy: SortBy.NEWEST,
   projects: [],
   status: 'idle',
   error: null,
@@ -14,7 +16,11 @@ export function createWorkspaceSlice() {
   const { actions, reducer, selectors } = createSlice({
     name: 'workspace',
     initialState: INITIAL_STATE,
-    reducers: {},
+    reducers: {
+      setSortProjectsBy: (state, { payload: type }: PayloadAction<SortBy>) => {
+        state.sortBy = type;
+      },
+    },
     extraReducers: builder => {
       // nth: generic case adder so we don't end up with this mess 👇
       builder
