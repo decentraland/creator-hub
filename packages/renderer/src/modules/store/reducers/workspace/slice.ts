@@ -1,11 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 import type { Workspace } from '/shared/types/workspace';
-<<<<<<< HEAD
-import { createProject, getWorkspace } from './thunks';
-=======
-import { deleteProject, getWorkspace } from './thunks';
->>>>>>> 2896200 (implement delete scene)
+import { createProject, deleteProject, duplicateProject, getWorkspace } from './thunks';
 import type { Async } from '../types';
 
 const INITIAL_STATE: Async<Workspace> = {
@@ -53,6 +49,21 @@ export function createWorkspaceSlice() {
         .addCase(deleteProject.rejected, (state, action) => {
           state.status = 'failed';
           state.error = action.error.message || `Failed to delete project ${action.meta.arg}`;
+        })
+        .addCase(duplicateProject.pending, state => {
+          state.status = 'loading';
+        })
+        .addCase(duplicateProject.fulfilled, (state, action) => {
+          return {
+            ...state,
+            projects: state.projects.concat(action.payload),
+            status: 'succeeded',
+            error: null,
+          };
+        })
+        .addCase(duplicateProject.rejected, (state, action) => {
+          state.status = 'failed';
+          state.error = action.error.message || `Failed to duplicate project ${action.meta.arg}`;
         });
     },
   });

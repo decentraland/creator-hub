@@ -141,3 +141,30 @@ export async function createProject(name: string): Promise<Project> {
     return project;
   }
 }
+
+/**
+ * Deletes a project directory and all its contents.
+ *
+ * @param _path - The path of the directory to be deleted.
+ * @returns A Promise that resolves when the directory has been deleted.
+ */
+export async function deleteProject(_path: string): Promise<void> {
+  if (import.meta.env.DEV) return;
+  await fs.rm(_path, { recursive: true, force: true });
+}
+
+/**
+ * Duplicates a project directory, creating a copy with a modified title.
+ *
+ * @param _path - The path of the directory to be duplicated.
+ * @returns A Promise that resolves to the duplicated Project.
+ */
+export async function duplicateProject(_path: string): Promise<Project> {
+  const scene = await getScene(_path);
+  const dupPath = path.join(await getPath(), `Copy of ${path.basename(_path)}`);
+  await fs.cp(_path, dupPath, { recursive: true });
+  scene.display = { ...scene.display, title: `Copy of ${scene.display?.title}` };
+  await fs.writeFile(path.join(dupPath, 'scene.json'), JSON.stringify(scene, null, 2));
+  const project = await getProject(dupPath);
+  return project;
+}
