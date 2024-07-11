@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { Select, MenuItem, type SelectChangeEvent, Box } from 'decentraland-ui2';
 
 import { useDispatch } from '#store';
-
+import { deleteProject, duplicateProject } from '/@/modules/store/reducers/workspace/thunks';
 import { t } from '/@/modules/store/reducers/translation/utils';
 import { SceneCreationSelector } from '/@/components/SceneCreationSelector';
 import { ProjectCard } from '/@/components/ProjectCard';
@@ -53,6 +53,14 @@ export function SceneList({ projects, sortBy, onOpenModal, onSort }: Props) {
     [sort],
   );
 
+  const handleDeleteProject = useCallback((project: Props['projects'][0]) => {
+    dispatch(deleteProject(project.path));
+  }, []);
+
+  const handleDuplicateProject = useCallback((project: Props['projects'][0]) => {
+    dispatch(duplicateProject(project.path));
+  }, []);
+
   const renderSortDropdown = () => {
     return (
       <Select
@@ -67,16 +75,14 @@ export function SceneList({ projects, sortBy, onOpenModal, onSort }: Props) {
     );
   };
 
-  const noop = () => undefined;
-
   const renderProjects = () => {
     if (projects.length > 0) {
       return projects.map(project => (
         <ProjectCard
           key={project.path}
           project={project}
-          onDelete={noop}
-          onDuplicate={noop}
+          onDelete={handleDeleteProject}
+          onDuplicate={handleDuplicateProject}
         />
       ));
     }
