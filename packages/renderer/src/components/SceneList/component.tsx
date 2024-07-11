@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { Select, MenuItem, type SelectChangeEvent, Box } from 'decentraland-ui2';
 
 import { useDispatch } from '#store';
+import { SortBy } from '/shared/types/projects';
 import { deleteProject, duplicateProject } from '/@/modules/store/reducers/workspace/thunks';
 import { t } from '/@/modules/store/reducers/translation/utils';
 import { SceneCreationSelector } from '/@/components/SceneCreationSelector';
@@ -9,7 +10,6 @@ import { ProjectCard } from '/@/components/ProjectCard';
 import { createProject } from '/@/modules/store/reducers/workspace/thunks';
 
 import type { Props } from './types';
-import { SortBy } from './types';
 
 import { Button } from '../Button';
 import { Column } from '../Column';
@@ -49,7 +49,9 @@ export function SceneList({ projects, sortBy, onOpenModal, onSort }: Props) {
   );
 
   const handleDropdownChange = useCallback(
-    (e: SelectChangeEvent<SortBy>) => sort(e.target.value as SortBy),
+    (e: SelectChangeEvent<SortBy>) => {
+      sort(e.target.value as SortBy);
+    },
     [sort],
   );
 

@@ -1,5 +1,6 @@
-import type { Project } from './projects';
+import type { Project, SortBy } from './projects';
 
 export type Workspace = {
+  sortBy: SortBy;
   projects: Project[];
 };

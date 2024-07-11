@@ -3,13 +3,16 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import { Container } from 'decentraland-ui2';
 
 import { useDispatch, useSelector } from '#store';
+import { type SortBy } from '/shared/types/projects';
 import { t } from '/@/modules/store/reducers/translation/utils';
+import { actions as workspaceActions } from '/@/modules/store/reducers/workspace/index';
 import { getWorkspace } from '/@/modules/store/reducers/workspace/thunks';
 
 import { Header } from '../Header';
 import { Button } from '../Button';
 import { SceneList } from '../SceneList';
-import { SortBy } from '../SceneList/types';
+
+import { sortProjectsBy } from './utils';
 
 import './styles.css';
 
@@ -20,10 +23,18 @@ export function Home() {
   const workspace = useSelector(state => state.workspace);
 
   const handleClickFeedback = useCallback(() => undefined, []);
+  const handleClickOptions = useCallback(() => undefined, []);
 
   useEffect(() => {
     dispatch(getWorkspace());
   }, []);
+
+  const handleSceneSort = useCallback(
+    (type: SortBy) => {
+      dispatch(workspaceActions.setSortProjectsBy(type));
+    },
+    [workspace.sortBy],
+  );
 
   return (
     <main className="Home">
@@ -45,17 +56,17 @@ export function Home() {
         </>
         <Button
           color="info"
-          onClick={handleClickFeedback}
+          onClick={handleClickOptions}
         >
           <SettingsIcon />
         </Button>
       </Header>
       <Container>
         <SceneList
-          projects={workspace.projects}
-          sortBy={SortBy.NEWEST}
+          projects={sortProjectsBy(workspace.projects, workspace.sortBy)}
+          sortBy={workspace.sortBy}
           onOpenModal={noop}
-          onSort={noop}
+          onSort={handleSceneSort}
         />
       </Container>
     </main>

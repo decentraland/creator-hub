@@ -1,10 +1,4 @@
-import type { Project } from '/shared/types/projects';
-
-export enum SortBy {
-  NEWEST = 'newest',
-  SIZE = 'size',
-  NAME = 'name',
-}
+import type { Project, SortBy } from '/shared/types/projects';
 
 export type Props = {
   projects: Project[];

@@ -8,6 +8,12 @@ export enum TemplateStatus {
   COMING_SOON = 'coming_soon',
 }
 
+export enum SortBy {
+  NEWEST = 'newest',
+  SIZE = 'size',
+  NAME = 'name',
+}
+
 export type Project = {
   path: string;
   title?: string;
@@ -16,4 +22,5 @@ export type Project = {
   layout: Layout;
   createdAt: number;
   updatedAt: number;
+  size: number;
 };
