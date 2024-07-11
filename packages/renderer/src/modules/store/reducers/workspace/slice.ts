@@ -15,7 +15,7 @@ export function createWorkspaceSlice() {
     name: 'workspace',
     initialState: INITIAL_STATE,
     reducers: {},
-    extraReducers: (builder) => {
+    extraReducers: builder => {
       // nth: generic case adder so we don't end up with this mess 👇
       builder
         .addCase(getWorkspace.pending, state => {
@@ -41,7 +41,7 @@ export function createWorkspaceSlice() {
         .addCase(deleteProject.fulfilled, (state, action) => {
           return {
             ...state,
-            projects: state.projects.filter(($) => $.path !== action.meta.arg),
+            projects: state.projects.filter($ => $.path !== action.meta.arg),
             status: 'succeeded',
             error: null,
           };
