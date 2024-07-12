@@ -105,9 +105,11 @@ export async function getProjects(paths: string | string[]) {
 
   const promises: Promise<Project>[] = [];
   for (const _path of paths) {
-    if (await isDCL(_path)) { // path is a project
+    if (await isDCL(_path)) {
+      // _path is a project
       promises.push(getProject(_path));
-    } else { // path is a directory with projects
+    } else {
+      // _path is a directory with projects
       const files = await fs.readdir(_path);
       for (const dir of files) {
         try {
@@ -186,11 +188,11 @@ export async function duplicateProject(_path: string): Promise<Project> {
  */
 export async function importProject(): Promise<Project> {
   const [projectPath] = await invoke('electron.showOpenDialog', {
-    title: 'testing title',
+    title: 'Import project',
     properties: ['openDirectory'],
   });
 
-  if (!await isDCL(projectPath)) {
+  if (!(await isDCL(projectPath))) {
     throw new Error(`"${path.basename(projectPath)}" is not a valid project`);
   }
 

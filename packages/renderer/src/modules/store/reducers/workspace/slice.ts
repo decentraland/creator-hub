@@ -2,7 +2,13 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 import type { Workspace } from '/shared/types/workspace';
 import { SortBy } from '/shared/types/projects';
-import { createProject, deleteProject, duplicateProject, getWorkspace, importProject } from './thunks';
+import {
+  createProject,
+  deleteProject,
+  duplicateProject,
+  getWorkspace,
+  importProject,
+} from './thunks';
 import type { Async } from '../types';
 
 const INITIAL_STATE: Async<Workspace> = {
