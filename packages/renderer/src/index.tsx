@@ -43,16 +43,3 @@ root.render(
     </StoreProvider>
   </React.StrictMode>,
 );
-
-function test() {
-  const canvasObj = document.createElement('canvas');
-  console.log(
-    'WEBGL',
-    canvasObj.getContext('webgl') ||
-      canvasObj.getContext('experimental-webgl') ||
-      canvasObj.getContext('moz-webgl') ||
-      canvasObj.getContext('webkit-3d'),
-  );
-}
-
-test();
