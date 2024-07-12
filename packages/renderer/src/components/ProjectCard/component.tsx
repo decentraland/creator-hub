@@ -49,16 +49,17 @@ export function ProjectCard({ project, onDelete, onDuplicate }: Props) {
   ];
 
   return (
-    <Link
-      to={`/editor?path=${encodeURIComponent(project.path)}`}
-      className={cx('ProjectCard', { 'has-thumbnail': !!thumbnailUrl })}
-    >
-      <div
+    <div className={cx('ProjectCard', { 'has-thumbnail': !!thumbnailUrl })}>
+      <Link
+        to={`/editor?path=${encodeURIComponent(project.path)}`}
         className="project-thumbnail"
         style={thumbnailUrl ? { backgroundImage: `url(${thumbnailUrl})` } : {}}
       />
       <div className="project-data">
-        <div className="title-wrapper">
+        <Link
+          to={`/editor?path=${encodeURIComponent(project.path)}`}
+          className="title-wrapper"
+        >
           <div className="title">{project.title}</div>
           <div
             className="description"
@@ -66,7 +67,7 @@ export function ProjectCard({ project, onDelete, onDuplicate }: Props) {
           >
             <ViewModuleIcon className="Icon" /> {t('scene_list.parcel_count', { parcels })}
           </div>
-        </div>
+        </Link>
         <Dropdown
           className="options-dropdown"
           options={dropdownOptions}
@@ -91,6 +92,6 @@ export function ProjectCard({ project, onDelete, onDuplicate }: Props) {
           This operation is not reversible
         </ModalContent>
       </Dialog>
-    </Link>
+    </div>
   );
 }

@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { Select, MenuItem, type SelectChangeEvent, Box } from 'decentraland-ui2';
 
 import { useDispatch } from '#store';
-import { SortBy } from '/shared/types/projects';
+import { type Project, SortBy } from '/shared/types/projects';
 import { t } from '/@/modules/store/reducers/translation/utils';
 import { SceneCreationSelector } from '/@/components/SceneCreationSelector';
 import { ProjectCard } from '/@/components/ProjectCard';
@@ -36,6 +36,14 @@ function NoScenesAnchor(content: string) {
 
 export function SceneList({ projects, sortBy, onSort }: Props) {
   const dispatch = useDispatch();
+
+  const handleDelete = useCallback((project: Project) => {
+    dispatch(deleteProject(project.path));
+  }, []);
+
+  const handleDuplicate = useCallback((project: Project) => {
+    dispatch(duplicateProject(project.path));
+  }, []);
 
   const handleImportProject = useCallback(() => {
     dispatch(importProject());
@@ -79,8 +87,8 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
         <ProjectCard
           key={project.path}
           project={project}
-          onDelete={noop}
-          onDuplicate={noop}
+          onDelete={handleDelete}
+          onDuplicate={handleDuplicate}
         />
       ));
     }
