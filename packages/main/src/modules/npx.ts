@@ -101,7 +101,8 @@ export function npx(pkg: string, args: string[] = [], cwd: string): Command {
         }
       }),
     kill: async () => {
-      console.log(`Killing process "${name}" with pid=${child.pid}...`);
+      const pid = child.pid!;
+      console.log(`Killing process "${name}" with pid=${pid}...`);
       // if child is being killed or already killed then return
       if (isKilling || !alive) return;
       isKilling = true;
@@ -110,7 +111,7 @@ export function npx(pkg: string, args: string[] = [], cwd: string): Command {
       const promise = future<void>();
 
       // kill child gracefully
-      treeKill(child.pid!);
+      treeKill(pid);
 
       // child succesfully killed
       const die = (force: boolean = false) => {
@@ -122,17 +123,17 @@ export function npx(pkg: string, args: string[] = [], cwd: string): Command {
           matcher.enabled = false;
         }
         if (force) {
-          console.log(`Process "${name}" with pid=${child.pid} forcefully killed`);
-          treeKill(child.pid!, 'SIGKILL');
+          console.log(`Process "${name}" with pid=${pid} forcefully killed`);
+          treeKill(pid!, 'SIGKILL');
         } else {
-          console.log(`Process "${name}" with pid=${child.pid} gracefully killed`);
+          console.log(`Process "${name}" with pid=${pid} gracefully killed`);
         }
         promise.resolve();
       };
 
       // interval to check if child still running and flag it as dead when is not running anymore
       const interval = setInterval(() => {
-        if (!child.pid || !isRunning(child.pid)) {
+        if (!pid || !isRunning(pid)) {
           die();
         }
       }, 100);

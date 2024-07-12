@@ -1,0 +1,38 @@
+.Editor {
+  display: flex;
+  justify-content: flex-start;
+  flex-direction: column;
+  width: 100%;
+  height: 100vh;
+}
+
+.Editor .header {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 0 16px;
+  height: 48px;
+}
+
+.Editor .header .back {
+  background-image: url("./back.svg");
+  background-repeat: no-repeat;
+  background-position: 11px 10px;
+  background-size: 7px;
+  border-radius: 100%;
+  border: 1px solid var(--dark-gray);
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  display: inline-block;
+}
+
+.Editor .header .title {
+  margin-left: 20px;
+}
+
+.Editor .inspector {
+  flex: 1 0 auto;
+  border: none;
+}

@@ -3,11 +3,15 @@ import { Select, MenuItem, type SelectChangeEvent, Box } from 'decentraland-ui2'
 
 import { useDispatch } from '#store';
 import { SortBy } from '/shared/types/projects';
-import { deleteProject, duplicateProject } from '/@/modules/store/reducers/workspace/thunks';
 import { t } from '/@/modules/store/reducers/translation/utils';
 import { SceneCreationSelector } from '/@/components/SceneCreationSelector';
 import { ProjectCard } from '/@/components/ProjectCard';
-import { createProject, importProject } from '/@/modules/store/reducers/workspace/thunks';
+import {
+  createProject,
+  deleteProject,
+  duplicateProject,
+  importProject,
+} from '/@/modules/store/reducers/workspace/thunks';
 
 import type { Props } from './types';
 
@@ -55,14 +59,6 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
     [sort],
   );
 
-  const handleDeleteProject = useCallback((project: Props['projects'][0]) => {
-    dispatch(deleteProject(project.path));
-  }, []);
-
-  const handleDuplicateProject = useCallback((project: Props['projects'][0]) => {
-    dispatch(duplicateProject(project.path));
-  }, []);
-
   const renderSortDropdown = () => {
     return (
       <Select
@@ -83,8 +79,8 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
         <ProjectCard
           key={project.path}
           project={project}
-          onDelete={handleDeleteProject}
-          onDuplicate={handleDuplicateProject}
+          onDelete={noop}
+          onDuplicate={noop}
         />
       ));
     }

@@ -1,3 +1,5 @@
+import { type Scene } from '@dcl/schemas';
+
 export type Layout = {
   rows: number;
   cols: number;
@@ -16,11 +18,12 @@ export enum SortBy {
 
 export type Project = {
   path: string;
-  title?: string;
+  title: string;
   description?: string;
-  thumbnail?: string;
+  thumbnail: string;
   layout: Layout;
   createdAt: number;
   updatedAt: number;
   size: number;
+  scene: Scene;
 };

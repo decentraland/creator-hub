@@ -5,7 +5,8 @@ import updater from 'electron-updater';
 
 import './security-restrictions';
 import { initIpc } from './modules/ipc';
-import { killAll } from './modules/cli';
+import { deployServer, startServer } from './modules/cli';
+import { initInspector, inspectorServer } from './modules/inspector';
 
 /**
  * Prevent electron from running multiple instances.
@@ -44,6 +45,7 @@ app
   .whenReady()
   .then(async () => {
     initIpc();
+    initInspector();
     await restoreOrCreateWindow();
   })
   .catch(e => console.error('Failed create window:', e));
@@ -63,3 +65,23 @@ if (import.meta.env.PROD) {
     .then(() => updater.autoUpdater.checkForUpdatesAndNotify())
     .catch(e => console.error('Failed check and install updates:', e));
 }
+
+export async function killAll() {
+  const promises = [];
+  if (startServer) {
+    promises.push(startServer.kill());
+  }
+  if (deployServer) {
+    promises.push(deployServer.kill());
+  }
+  if (inspectorServer) {
+    promises.push(inspectorServer.kill());
+  }
+  await Promise.all(promises);
+}
+
+app.on('before-quit', async event => {
+  event.preventDefault();
+  await killAll();
+  app.exit();
+});

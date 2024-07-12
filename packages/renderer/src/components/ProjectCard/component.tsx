@@ -3,26 +3,21 @@ import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import cx from 'classnames';
 import { Dialog } from 'decentraland-ui2';
 import { ModalContent } from 'decentraland-ui2/dist/components/Modal/Modal';
+import { Link } from 'react-router-dom';
 
-import { useSelector } from '/@/modules/store';
 import { getThumbnailUrl } from '/@/modules/project';
 import { t } from '/@/modules/store/reducers/translation/utils';
 
 import { Button } from '../Button';
 import { Dropdown } from '../Dropdown';
 
-import { selectCard } from './selectors';
 import type { Props } from './types';
 
 import './styles.css';
 
-export function ProjectCard({ project, onClick, onDelete, onDuplicate }: Props) {
+export function ProjectCard({ project, onDelete, onDuplicate }: Props) {
   const [open, setOpen] = useState(false);
-  const { parcels } = useSelector(state => selectCard(state, project));
-
-  const handleOnClick = useCallback(() => {
-    if (onClick) onClick(project);
-  }, [project, onClick]);
+  const parcels = project.layout.cols * project.layout.rows;
 
   const handleDeleteProject = useCallback(() => {
     onDelete(project);
@@ -54,9 +49,9 @@ export function ProjectCard({ project, onClick, onDelete, onDuplicate }: Props) 
   ];
 
   return (
-    <div
+    <Link
+      to={`/editor?path=${encodeURIComponent(project.path)}`}
       className={cx('ProjectCard', { 'has-thumbnail': !!thumbnailUrl })}
-      onClick={handleOnClick}
     >
       <div
         className="project-thumbnail"
@@ -96,6 +91,6 @@ export function ProjectCard({ project, onClick, onDelete, onDuplicate }: Props) 
           This operation is not reversible
         </ModalContent>
       </Dialog>
-    </div>
+    </Link>
   );
 }

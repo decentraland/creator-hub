@@ -10,7 +10,8 @@ import { TranslationProvider } from '/@/components/TranslationProvider';
 import { fetchTranslations } from '/@/modules/store/reducers/translation';
 import { locales } from '/@/modules/store/reducers/translation/utils';
 
-import { Home } from './components/Home/component';
+import { Home } from './components/Home';
+import { Editor } from './components/Editor';
 
 import '/@/themes';
 
@@ -31,6 +32,10 @@ root.render(
                 path="/"
                 element={<Home />}
               />
+              <Route
+                path="/editor"
+                element={<Editor />}
+              />
             </Routes>
           </Router>
         </ThemeProvider>
@@ -38,3 +43,16 @@ root.render(
     </StoreProvider>
   </React.StrictMode>,
 );
+
+function test() {
+  const canvasObj = document.createElement('canvas');
+  console.log(
+    'WEBGL',
+    canvasObj.getContext('webgl') ||
+      canvasObj.getContext('experimental-webgl') ||
+      canvasObj.getContext('moz-webgl') ||
+      canvasObj.getContext('webkit-3d'),
+  );
+}
+
+test();
