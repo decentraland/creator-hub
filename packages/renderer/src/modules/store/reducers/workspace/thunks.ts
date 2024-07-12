@@ -8,3 +8,4 @@ export const duplicateProject = createAsyncThunk(
   'workspace/duplicateProject',
   workspace.duplicateProject,
 );
+export const importProject = createAsyncThunk('workspace/importProject', workspace.importProject);

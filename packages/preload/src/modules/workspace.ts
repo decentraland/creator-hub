@@ -87,30 +87,40 @@ export async function getProject(_path: string): Promise<Project> {
 }
 
 export async function getPath() {
-  const home = await invoke('electron.getHome');
-  const path = `${home}/.decentraland`;
+  const appHome = await invoke('electron.getAppHome');
   try {
-    await fs.stat(path);
+    await fs.stat(appHome);
   } catch (error) {
-    await fs.mkdir(path);
+    await fs.mkdir(appHome);
   }
-  return path;
+  return appHome;
 }
 
 /**
- * Returns all decentraland projects in the provided directory
+ * Returns all decentraland projects in the provided directories (or the default one if no provided)
  */
-export async function getProjects(_path: string) {
+export async function getProjects(paths: string | string[]) {
+  paths = Array.isArray(paths) ? paths : [paths];
+  if (!paths.length) return [];
+
   const promises: Promise<Project>[] = [];
-  const files = await fs.readdir(_path);
-  for (const dir of files) {
-    try {
-      const projectDir = path.join(_path, dir);
-      if (await isDCL(projectDir)) {
-        promises.push(getProject(projectDir));
+  for (const _path of paths) {
+    if (await isDCL(_path)) {
+      // _path is a project
+      promises.push(getProject(_path));
+    } else {
+      // _path is a directory with projects
+      const files = await fs.readdir(_path);
+      for (const dir of files) {
+        try {
+          const projectDir = path.join(_path, dir);
+          if (await isDCL(projectDir)) {
+            promises.push(getProject(projectDir));
+          }
+          // eslint-disable-next-line no-empty
+        } catch (_) {}
       }
-      // eslint-disable-next-line no-empty
-    } catch (_) {}
+    }
   }
 
   const projects = await Promise.all(promises);
@@ -167,5 +177,27 @@ export async function duplicateProject(_path: string): Promise<Project> {
   scene.display = { ...scene.display, title: `Copy of ${scene.display?.title}` };
   await fs.writeFile(path.join(dupPath, 'scene.json'), JSON.stringify(scene, null, 2));
   const project = await getProject(dupPath);
+  return project;
+}
+
+/**
+ * Imports a project by allowing the user to select a directory.
+ *
+ * @returns A Promise that resolves to the imported project path.
+ * @throws An error if the selected directory is not a valid project.
+ */
+export async function importProject(): Promise<Project> {
+  const [projectPath] = await invoke('electron.showOpenDialog', {
+    title: 'Import project',
+    properties: ['openDirectory'],
+  });
+
+  if (!(await isDCL(projectPath))) {
+    throw new Error(`"${path.basename(projectPath)}" is not a valid project`);
+  }
+
+  // TODO: update config file with new project path...
+
+  const project = getProject(projectPath);
   return project;
 }

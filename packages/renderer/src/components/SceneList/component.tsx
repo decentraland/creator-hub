@@ -7,7 +7,7 @@ import { deleteProject, duplicateProject } from '/@/modules/store/reducers/works
 import { t } from '/@/modules/store/reducers/translation/utils';
 import { SceneCreationSelector } from '/@/components/SceneCreationSelector';
 import { ProjectCard } from '/@/components/ProjectCard';
-import { createProject } from '/@/modules/store/reducers/workspace/thunks';
+import { createProject, importProject } from '/@/modules/store/reducers/workspace/thunks';
 
 import type { Props } from './types';
 
@@ -30,16 +30,16 @@ function NoScenesAnchor(content: string) {
   );
 }
 
-export function SceneList({ projects, sortBy, onOpenModal, onSort }: Props) {
+export function SceneList({ projects, sortBy, onSort }: Props) {
   const dispatch = useDispatch();
 
-  const handleOpenImportModal = useCallback(() => {
-    onOpenModal('ImportModal');
-  }, [onOpenModal]);
+  const handleImportProject = useCallback(() => {
+    dispatch(importProject());
+  }, []);
 
   const handleOpenCreateModal = useCallback(() => {
     dispatch(createProject('Placeholder'));
-  }, [onOpenModal]);
+  }, []);
 
   const sort = useCallback(
     (_sortBy: SortBy) => {
@@ -109,7 +109,7 @@ export function SceneList({ projects, sortBy, onOpenModal, onSort }: Props) {
             <Button
               startIcon={<OpenFolder />}
               color="secondary"
-              onClick={handleOpenImportModal}
+              onClick={handleImportProject}
             >
               {t('scene_list.import_scene')}
             </Button>
