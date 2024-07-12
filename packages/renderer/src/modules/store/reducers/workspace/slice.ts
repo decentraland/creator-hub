@@ -2,7 +2,7 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 import type { Workspace } from '/shared/types/workspace';
 import { SortBy } from '/shared/types/projects';
-import { createProject, deleteProject, duplicateProject, getWorkspace } from './thunks';
+import { createProject, deleteProject, duplicateProject, getWorkspace, importProject } from './thunks';
 import type { Async } from '../types';
 
 const INITIAL_STATE: Async<Workspace> = {
@@ -70,6 +70,21 @@ export function createWorkspaceSlice() {
         .addCase(duplicateProject.rejected, (state, action) => {
           state.status = 'failed';
           state.error = action.error.message || `Failed to duplicate project ${action.meta.arg}`;
+        })
+        .addCase(importProject.pending, state => {
+          state.status = 'loading';
+        })
+        .addCase(importProject.fulfilled, (state, action) => {
+          return {
+            ...state,
+            projects: state.projects.concat(action.payload),
+            status: 'succeeded',
+            error: null,
+          };
+        })
+        .addCase(importProject.rejected, (state, action) => {
+          state.status = 'failed';
+          state.error = action.error.message || `Failed to import project ${action.meta.arg}`;
         });
     },
   });

@@ -16,8 +16,6 @@ import { sortProjectsBy } from './utils';
 
 import './styles.css';
 
-const noop = () => undefined;
-
 export function Home() {
   const dispatch = useDispatch();
   const workspace = useSelector(state => state.workspace);
@@ -65,7 +63,6 @@ export function Home() {
         <SceneList
           projects={sortProjectsBy(workspace.projects, workspace.sortBy)}
           sortBy={workspace.sortBy}
-          onOpenModal={noop}
           onSort={handleSceneSort}
         />
       </Container>
