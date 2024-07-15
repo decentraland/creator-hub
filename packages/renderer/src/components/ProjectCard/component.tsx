@@ -1,8 +1,7 @@
 import { useCallback, useState } from 'react';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import cx from 'classnames';
-import { Dialog } from 'decentraland-ui2';
-import { ModalContent } from 'decentraland-ui2/dist/components/Modal/Modal';
+import { Modal } from 'decentraland-ui2/dist/components/Modal/Modal';
 import { Link } from 'react-router-dom';
 
 import { getThumbnailUrl } from '/@/modules/project';
@@ -73,25 +72,25 @@ export function ProjectCard({ project, onDelete, onDuplicate }: Props) {
           options={dropdownOptions}
         />
       </div>
-      <Dialog open={open}>
-        <ModalContent
-          title={`Delete "${project.title}"`}
-          size="tiny"
-          actions={
-            <>
-              <Button
-                color="secondary"
-                onClick={handleCloseModal}
-              >
-                {t('modal.cancel')}
-              </Button>
-              <Button onClick={handleDeleteProject}>{t('modal.confirm')}</Button>
-            </>
-          }
-        >
-          {t('modal.irreversible_operation')}
-        </ModalContent>
-      </Dialog>
+      <Modal
+        open={open}
+        title={`Delete "${project.title}"`}
+        onClose={handleCloseModal}
+        size="tiny"
+        actions={
+          <>
+            <Button
+              color="secondary"
+              onClick={handleCloseModal}
+            >
+              {t('modal.cancel')}
+            </Button>
+            <Button onClick={handleDeleteProject}>{t('modal.confirm')}</Button>
+          </>
+        }
+      >
+        {t('modal.irreversible_operation')}
+      </Modal>
     </div>
   );
 }
