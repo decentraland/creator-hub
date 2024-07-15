@@ -6,8 +6,8 @@ export function Header({ children }: Props) {
   const [title, actions] = children;
   return (
     <nav className="Header">
-      <div className="title">{title}</div>
-      <div className="actions">{actions}</div>
+      <div className="left">{title}</div>
+      <div className="right">{actions}</div>
     </nav>
   );
 }

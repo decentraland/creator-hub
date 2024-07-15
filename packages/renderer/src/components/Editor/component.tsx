@@ -2,9 +2,12 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Loader from '@mui/material/CircularProgress';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
-import './styles.css';
-import { Button } from '../Button';
+
 import { useEditor } from '/@/hooks/useEditor';
+import { Header } from '../Header';
+import { Button } from '../Button';
+
+import './styles.css';
 
 export function Editor() {
   const navigate = useNavigate();
@@ -67,30 +70,23 @@ export function Editor() {
 
   return (
     <div className="Editor">
-      <div className="header">
-        <div className="left">
-          <div
-            className="back"
-            onClick={handleBack}
-          >
-            <ArrowBackIosIcon />
-          </div>
+      <Header>
+        <>
+          <div className="back" onClick={handleBack}><ArrowBackIosIcon /></div>
           <div className="title">{project?.title}</div>
-        </div>
-        <div className="right">
-          <div className="actions">
-            <Button color="secondary">Code</Button>
-            <Button
-              color="secondary"
-              disabled={loadingPreview}
-              onClick={openPreview}
-            >
-              Preview
-            </Button>
-            <Button color="primary">Publish</Button>
-          </div>
-        </div>
-      </div>
+        </>
+        <>
+          <Button color="secondary">Code</Button>
+          <Button
+            color="secondary"
+            disabled={loadingPreview}
+            onClick={openPreview}
+          >
+            Preview
+          </Button>
+          <Button color="primary">Publish</Button>
+        </>
+      </Header>
       {isReady ? (
         <iframe
           className="inspector"
