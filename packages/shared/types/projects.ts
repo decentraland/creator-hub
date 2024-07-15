@@ -1,5 +1,3 @@
-import { type Scene } from '@dcl/schemas';
-
 export type Layout = {
   rows: number;
   cols: number;
@@ -25,5 +23,4 @@ export type Project = {
   createdAt: number;
   updatedAt: number;
   size: number;
-  scene: Scene;
 };

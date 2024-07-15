@@ -9,27 +9,55 @@
 .Editor .header {
   display: flex;
   flex: 0 0 auto;
-  justify-content: flex-start;
+  justify-content: space-between;
   align-items: center;
   padding: 0 16px;
   height: 48px;
 }
 
+.Editor .header .left {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: flex-start;
+  align-items: center;
+  height: 100%;
+}
+
+.Editor .header .right {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: flex-start;
+  align-items: center;
+  height: 100%;
+}
+
 .Editor .header .back {
-  background-image: url("./back.svg");
-  background-repeat: no-repeat;
-  background-position: 11px 10px;
-  background-size: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 100%;
   border: 1px solid var(--dark-gray);
   width: 32px;
   height: 32px;
   cursor: pointer;
-  display: inline-block;
+}
+
+.Editor .header .back svg {
+  width: 14px;
+  height: 14px;
+  margin-left: 5px;
+  margin-top: 1px;
 }
 
 .Editor .header .title {
   margin-left: 20px;
+}
+
+.Editor .header .actions {
+  display: flex;
+  flex: 1 0 auto;
+  justify-content: flex-start;
+  align-items: center;
 }
 
 .Editor .inspector {
