@@ -5,14 +5,22 @@
       "feedback": "Give us feedback"
     }
   },
+  "editor": {
+    "header": {
+      "actions": {
+        "code": "Code",
+        "preview": "Preview",
+        "publish": "Publish"
+      }
+    }
+  },
   "scene_list": {
     "my_scenes": "My Scenes",
     "import_scene": "Import Scene",
     "create_scene": "Create Scene",
     "project_actions": {
       "delete_project": "Delete",
-      "duplicate_project": "Duplicate",
-      "export_project": "Download"
+      "duplicate_project": "Duplicate"
     },
     "no_scenes": {
       "title": "Create your first scene",
@@ -29,5 +37,10 @@
     },
     "results": "{count} {count, plural, one {result} other {results}}",
     "parcel_count": "{parcels} {parcels, plural, one {parcel} other {parcels}}"
+  },
+  "modal": {
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "irreversible_operation": "This operation is not reversible"
   }
 }

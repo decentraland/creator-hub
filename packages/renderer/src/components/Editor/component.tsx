@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Loader from '@mui/material/CircularProgress';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 
+import { t } from '/@/modules/store/translation/utils';
 import { useEditor } from '/@/hooks/useEditor';
 import { Header } from '../Header';
 import { Button } from '../Button';
@@ -20,6 +21,10 @@ export function Editor() {
   const handleBack = useCallback(() => {
     navigate(-1);
   }, [navigate]);
+
+  const handlePublish = useCallback(() => {
+
+  }, []);
 
   useEffect(() => {
     if (ref.current) return;
@@ -76,15 +81,15 @@ export function Editor() {
           <div className="title">{project?.title}</div>
         </>
         <>
-          <Button color="secondary">Code</Button>
+          <Button color="secondary">{t('editor.header.actions.code')}</Button>
           <Button
             color="secondary"
             disabled={loadingPreview}
             onClick={openPreview}
           >
-            Preview
+            {t('editor.header.actions.preview')}
           </Button>
-          <Button color="primary">Publish</Button>
+          <Button color="primary">{t('editor.header.actions.publish')}</Button>
         </>
       </Header>
       {isReady ? (

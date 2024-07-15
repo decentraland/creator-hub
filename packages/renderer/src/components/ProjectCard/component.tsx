@@ -83,13 +83,13 @@ export function ProjectCard({ project, onDelete, onDuplicate }: Props) {
                 color="secondary"
                 onClick={handleCloseModal}
               >
-                Cancel
+                {t('modal.cancel')}
               </Button>
-              <Button onClick={handleDeleteProject}>Confirm</Button>
+              <Button onClick={handleDeleteProject}>{t('modal.confirm')}</Button>
             </>
           }
         >
-          This operation is not reversible
+          {t('modal.irreversible_operation')}
         </ModalContent>
       </Dialog>
     </div>

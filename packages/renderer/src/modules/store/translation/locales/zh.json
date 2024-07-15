@@ -1,6 +1,21 @@
 {
+  "home": {
+    "header": {
+      "title": "欢迎来到阿尔法编辑器",
+      "feedback": "给我们反馈"
+    }
+  },
+  "editor": {
+    "header": {
+      "actions": {
+        "code": "代码",
+        "preview": "预览",
+        "publish": "发布"
+      }
+    }
+  },
   "scene_list": {
-    "my_scenes": "我的场景",
+    "my_scenes": "",
     "import_scene": "导入场景",
     "create_scene": "创建场景",
     "project_actions": {
@@ -22,5 +37,10 @@
     },
     "results": "{count}结果",
     "parcel_count": "{parcels} {parcels, plural, one {parcel} other {parcels}}"
+  },
+  "modal": {
+    "cancel": "取消",
+    "confirm": "确认",
+    "irreversible_operation": "此操作不可逆"
   }
 }

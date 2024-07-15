@@ -1,4 +1,19 @@
 {
+  "home": {
+    "header": {
+      "title": "Bienvenido al Editor Alpha",
+      "feedback": "Darnos feedback"
+    }
+  },
+  "editor": {
+    "header": {
+      "actions": {
+        "code": "Código",
+        "preview": "Previsualizar",
+        "publish": "Publicar"
+      }
+    }
+  },
   "scene_list": {
     "my_scenes": "Mis Escenas",
     "import_scene": "Importar Escena",
@@ -22,5 +37,10 @@
     },
     "results": "{count} {count, plural, one {resultado} other {resultados}}",
     "parcel_count": "{parcels} {parcels, plural, one {parcel} other {parcels}}"
+  },
+  "modal": {
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "irreversible_operation": "Esta operación es irreversible"
   }
 }
