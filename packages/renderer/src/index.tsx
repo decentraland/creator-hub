@@ -10,7 +10,8 @@ import { TranslationProvider } from '/@/components/TranslationProvider';
 import { fetchTranslations } from '/@/modules/store/reducers/translation';
 import { locales } from '/@/modules/store/reducers/translation/utils';
 
-import { Home } from './components/Home/component';
+import { Home } from './components/Home';
+import { Editor } from './components/Editor';
 
 import '/@/themes';
 
@@ -30,6 +31,10 @@ root.render(
               <Route
                 path="/"
                 element={<Home />}
+              />
+              <Route
+                path="/editor"
+                element={<Editor />}
               />
             </Routes>
           </Router>

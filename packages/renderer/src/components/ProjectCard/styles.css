@@ -7,6 +7,8 @@
   border-radius: 10px;
   background: var(--dark-gray);
   cursor: pointer;
+  color: var(--text);
+  text-decoration: none;
 }
 
 .ProjectCard.has-thumbnail {
@@ -39,6 +41,8 @@
   flex-direction: column;
   width: 180px;
   line-height: 24px;
+  color: var(--text);
+  text-decoration: none;
 }
 
 .ProjectCard .title {

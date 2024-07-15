@@ -8,6 +8,7 @@ import { hasDependency } from './pkg';
 import { getRowsAndCols, parseCoords } from './scene';
 import { invoke } from './invoke';
 import { exists } from './fs';
+import { DEFAULT_THUMBNAIL } from './constants';
 
 /**
  * Get scene json
@@ -50,17 +51,14 @@ export async function hasNodeModules(_path: string) {
   return exists(nodeModulesPath);
 }
 
-export async function getProjectThumbnail(
-  projectPath: string,
-  scene: Scene,
-): Promise<string | undefined> {
+export async function getProjectThumbnail(projectPath: string, scene: Scene): Promise<string> {
   try {
-    if (!scene.display?.navmapThumbnail) return undefined;
+    if (!scene.display?.navmapThumbnail) return DEFAULT_THUMBNAIL;
     const thumbnailPath = path.join(projectPath, scene.display.navmapThumbnail);
     return (await fs.readFile(thumbnailPath)).toString('base64');
   } catch (e) {
-    console.log(`Could not get project thumbnail for project in ${projectPath}`, e);
-    return undefined;
+    console.warn(`Could not get project thumbnail for project in ${projectPath}`, e);
+    return DEFAULT_THUMBNAIL;
   }
 }
 
@@ -73,7 +71,7 @@ export async function getProject(_path: string): Promise<Project> {
 
     return {
       path: _path,
-      title: scene.display?.title,
+      title: scene.display?.title || 'Untitled scene',
       description: scene.display?.description,
       thumbnail: await getProjectThumbnail(_path, scene),
       layout: getRowsAndCols(parcels),

@@ -5,10 +5,10 @@ import { SceneCard } from '/@/components/SceneCard';
 
 import type { Props } from './types';
 
-import './styles.css';
-
 import videoSrc from '../../../assets/videos/scratch-preview.mov';
 import imgSrc from '../../../assets/images/scratch-preview-img.webp';
+
+import './styles.css';
 
 export function SceneCreationSelector({ onOpenModal }: Props) {
   const handleOpenCreateFromScratchModal = useCallback(() => {

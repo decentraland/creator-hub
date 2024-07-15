@@ -1,16 +1,16 @@
 :root {
   /* Colors */
-  --bg: #16141A;
+  --bg: #16141a;
   --metaverse-gradient: linear-gradient(to bottom, #060d2b, #132d7d 52%, #9763c1);
   --purple-banner: #691ea9;
   --purplish-grey-raw: 115, 110, 125;
-  --white: #FFFFFF;
+  --white: #ffffff;
 
   --light-gray: #736e7d;
-  --dark-gray: #43404A;
+  --dark-gray: #43404a;
   --darker-gray: #242129;
 
-  --dcl: #FF2D55;
+  --dcl: #ff2d55;
   --dcl-dark: #9c1c34;
 
   /* Share */
@@ -21,10 +21,38 @@
   --translusent-gray: rgba(255, 255, 255, 0.08);
 
   /* fonts */
-  --font-family: system-ui, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    'Helvetica Neue', Arial, sans-serif;
-  --font-monospace: 'Inconsolata', 'Consolas', 'Droid Sans Mono', 'Monaco',
-    'Courier New', monospace;
+  --font-family: system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+  --font-monospace: "Inconsolata", "Consolas", "Droid Sans Mono", "Monaco", "Courier New", monospace;
+
+  --background: #18141a;
+  --danger: #ffa900;
+  --error: #ff0000;
+  --primary: #ff2d55;
+  --secondary: #242129;
+  --primary-hover: #ff3d61;
+  --secondary-hover: #28262c;
+  --secondary-on-modal: #67637033;
+  --secondary-on-modal-hover: #6763704d;
+  --card-on-modal: #67637033;
+  --text: #ffffff;
+  --secondary-text: #676370;
+  --text-on-primary: #ffffff;
+  --text-on-secondary: #ffffff;
+  --divider: #67637033;
+  --dropdown: #716b7c;
+  --dropdown-hover: #24212933;
+  --popup: #676370;
+  --popup-text: #ffffff;
+  --card: #242129;
+  --outline: 1px solid #00000005;
+  --toast: #3d3b43;
+  --toast-text: #ffffff;
+  --modal: #242129;
+  --dimmer: #000000dd;
+  --text-area-border: #676370;
+  --clear-divider: #a09ba8;
+  --brightness: brightness(100);
 }
 
 html {
@@ -34,7 +62,8 @@ html {
 }
 
 body {
-  padding: 0 20px;
+  padding: 0px;
+  margin: 0px;
 }
 
 /* Temp: override the default position so the Modal component is visible */

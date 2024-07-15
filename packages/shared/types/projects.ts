@@ -16,9 +16,9 @@ export enum SortBy {
 
 export type Project = {
   path: string;
-  title?: string;
+  title: string;
   description?: string;
-  thumbnail?: string;
+  thumbnail: string;
   layout: Layout;
   createdAt: number;
   updatedAt: number;
