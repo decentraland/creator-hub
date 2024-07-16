@@ -12,6 +12,11 @@
         "preview": "Preview",
         "publish": "Publish"
       }
+    },
+    "modal": {
+      "publish": {
+        "title": "Publish \"{title}\" Scene"
+      }
     }
   },
   "scene_list": {

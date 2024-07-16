@@ -12,6 +12,11 @@
         "preview": "预览",
         "publish": "发布"
       }
+    },
+    "modal": {
+      "publish": {
+        "title": "公共场所 \"{title}\""
+      }
     }
   },
   "scene_list": {

@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Loader from '@mui/material/CircularProgress';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
+import { Modal } from 'decentraland-ui2/dist/components/Modal/Modal';
 
 import { t } from '/@/modules/store/translation/utils';
 import { useEditor } from '/@/hooks/useEditor';
@@ -10,11 +11,14 @@ import { Button } from '../Button';
 
 import './styles.css';
 
+type ModalType = 'publish';
+
 export function Editor() {
   const navigate = useNavigate();
   const ref = useRef(false);
   const { project, inspectorPort, runScene, previewPort, loadingPreview, openPreview } =
     useEditor();
+  const [open, setOpen] = useState<ModalType | undefined>();
 
   const isReady = !!project && inspectorPort > 0 && previewPort > 0;
 
@@ -22,8 +26,12 @@ export function Editor() {
     navigate(-1);
   }, [navigate]);
 
-  const handlePublish = useCallback(() => {
+  const handleOpenModal = useCallback((type: ModalType) => () => {
+    setOpen(type);
+  }, []);
 
+  const handleCloseModal = useCallback(() => {
+    setOpen(undefined);
   }, []);
 
   useEffect(() => {
@@ -89,7 +97,7 @@ export function Editor() {
           >
             {t('editor.header.actions.preview')}
           </Button>
-          <Button color="primary">{t('editor.header.actions.publish')}</Button>
+          <Button color="primary" onClick={handleOpenModal('publish')}>{t('editor.header.actions.publish')}</Button>
         </>
       </Header>
       {isReady ? (
@@ -102,6 +110,14 @@ export function Editor() {
           <Loader />
         </div>
       )}
+      <Modal
+        open={open === 'publish'}
+        title={t('editor.modal.publish.title', { title: project?.title })}
+        onClose={handleCloseModal}
+        size="small"
+      >
+        {t('modal.irreversible_operation')}
+      </Modal>
     </div>
   );
 }
