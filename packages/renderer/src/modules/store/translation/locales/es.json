@@ -15,7 +15,19 @@
     },
     "modal": {
       "publish": {
-        "title": "Publicar escena \"{title}\""
+        "title": "Publicar escena \"{title}\"",
+        "select": "Select where you want to deploy this scene:",
+        "worlds": {
+          "title": "Worlds",
+          "description": "Not findable in Genesis City map. \nUp to 100 users can join concurrently.",
+          "action": "Publish to World"
+        },
+        "land": {
+          "title": "My Land",
+          "description": "Findable in Genesis City map. \nUnlimited users can join concurrently.",
+          "action": "Publish to Land"
+        },
+        "alternative_servers": "Alternative servers"
       }
     }
   },
@@ -47,5 +59,8 @@
     "cancel": "Cancelar",
     "confirm": "Confirmar",
     "irreversible_operation": "Esta operación es irreversible"
+  },
+  "option_box": {
+    "learn_more": "Learn more"
   }
 }
