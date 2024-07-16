@@ -8,7 +8,7 @@ import { hasDependency } from './pkg';
 import { getRowsAndCols, parseCoords } from './scene';
 import { invoke } from './invoke';
 import { exists } from './fs';
-import { DEFAULT_THUMBNAIL } from './constants';
+import { DEFAULT_THUMBNAIL, NEW_SCENE_NAME } from './constants';
 
 /**
  * Get scene json
@@ -136,20 +136,22 @@ export async function getWorkspace(): Promise<Workspace> {
   };
 }
 
-export async function createProject(name: string): Promise<Project> {
-  const slug = name.toLowerCase().replace(/\s/g, '_');
-  const path = `${await getPath()}/${slug}`;
-  if (await exists(path)) {
-    throw new Error(`Project "${name}" already exists`);
-  } else {
-    await fs.mkdir(path);
-    await invoke('cli.init', path);
-    const scene = await getScene(path);
-    scene.display!.title = name;
-    await fs.writeFile(`${path}/scene.json`, JSON.stringify(scene, null, 2));
-    const project = await getProject(path);
-    return project;
+export async function createProject(name = NEW_SCENE_NAME): Promise<Project> {
+  let sceneName = name;
+  let counter = 2;
+  const homePath = await getPath();
+  let path = `${homePath}/${sceneName}`;
+  while (await exists(path)) {
+    sceneName = `${name} ${counter++}`;
+    path = `${homePath}/${sceneName}`;
   }
+  await fs.mkdir(path);
+  await invoke('cli.init', path);
+  const scene = await getScene(path);
+  scene.display!.title = sceneName;
+  await fs.writeFile(`${path}/scene.json`, JSON.stringify(scene, null, 2));
+  const project = await getProject(path);
+  return project;
 }
 
 /**

@@ -1,31 +1,17 @@
-import { useEffect, useState } from 'react';
+import { type ReactNode } from 'react';
+import { IntlProvider } from 'react-intl';
+import { useSelector } from '#store';
+import { selectors } from '../../modules/store/translation';
 
-import { useDispatch, useSelector } from '#store';
-import type { Locale } from '/@/modules/store/reducers/translation/types';
-import { I18nProvider } from '/@/modules/store/reducers/translation/utils';
-import { selectTranslations } from './selectors';
-import type { Props } from './types';
-
-export function TranslationProvider({ children, locales, fetchTranslations }: Props) {
-  const dispatch = useDispatch();
-  const { locale, translations } = useSelector(state => selectTranslations(state, locales));
-  const [_locale, setLocale] = useState<Locale | undefined>();
-
-  useEffect(() => {
-    if (locale && _locale !== locale) {
-      dispatch(fetchTranslations(locale));
-      setLocale(locale);
-    }
-  }, [fetchTranslations]);
-
-  return translations && locale ? (
-    <I18nProvider
+export function TranslationProvider(props: { children?: ReactNode }) {
+  const locale = useSelector(selectors.getLocale);
+  const keys = useSelector(selectors.getKeys);
+  return (
+    <IntlProvider
       locale={locale}
-      messages={translations}
+      messages={keys}
     >
-      {children}
-    </I18nProvider>
-  ) : (
-    'LOADING'
+      {props.children}
+    </IntlProvider>
   );
 }

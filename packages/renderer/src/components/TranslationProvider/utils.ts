@@ -1,4 +1,4 @@
-import type { Locale } from '/@/modules/store/reducers/translation/types';
+import type { Locale } from '../../modules/store/translation/types';
 
 export function getPreferredLocale(availableLocales: Locale[]): Locale | null {
   if (!availableLocales) {

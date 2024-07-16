@@ -45,9 +45,12 @@ export function npx(pkg: string, args: string[] = [], cwd: string): Command {
   const npxPath = path.join(path.dirname(npmPath), '../.bin/npx');
   const child = utilityProcess.fork(npxPath, [pkg, ...args], { cwd, stdio: 'pipe' });
 
+  const ready = future<void>();
+
   const name = `npx ${pkg} ${args.join(' ')}`;
   child.on('spawn', () => {
     console.log(`Running "${name}" with pid=${child.pid} in ${cwd}...`);
+    ready.resolve();
   });
 
   child.on('exit', code => {
@@ -101,6 +104,7 @@ export function npx(pkg: string, args: string[] = [], cwd: string): Command {
         }
       }),
     kill: async () => {
+      await ready;
       const pid = child.pid!;
       console.log(`Killing process "${name}" with pid=${pid}...`);
       // if child is being killed or already killed then return

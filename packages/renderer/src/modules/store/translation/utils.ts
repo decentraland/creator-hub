@@ -1,14 +1,13 @@
-import { IntlProvider, createIntl, createIntlCache, FormattedMessage } from 'react-intl';
+import { createIntl, createIntlCache, FormattedMessage } from 'react-intl';
+import { flatten } from 'flat';
 
-import type { Locale } from './types';
-import * as languages from './languages';
+import type { Locale, Translation, TranslationKeys } from './types';
+import * as languages from './locales';
 
 export const locales = Object.keys(languages) as Locale[];
 
 const cache = createIntlCache();
 let currentLocale: ReturnType<typeof createIntl>;
-
-export const I18nProvider = IntlProvider;
 
 export function setCurrentLocale(localeName: Locale, messages: Record<string, string>) {
   const locale = {
@@ -53,4 +52,11 @@ export function mergeTranslations<T extends { [key: string]: T | string }>(
     (result, obj) => _mergeTranslations<T>(result, obj),
     {} as T,
   );
+}
+
+export function getKeys(locale: Locale) {
+  const result = languages[locale] as any as Translation;
+  const allTransalations = mergeTranslations<TranslationKeys>(flatten(result));
+  setCurrentLocale(locale, allTransalations);
+  return allTransalations;
 }

@@ -1,17 +1,10 @@
 import { useCallback } from 'react';
 import { Select, MenuItem, type SelectChangeEvent, Box } from 'decentraland-ui2';
-
-import { useDispatch } from '#store';
-import { type Project, SortBy } from '/shared/types/projects';
-import { t } from '/@/modules/store/reducers/translation/utils';
+import { SortBy } from '/shared/types/projects';
+import { t } from '/@/modules/store/translation/utils';
 import { SceneCreationSelector } from '/@/components/SceneCreationSelector';
 import { ProjectCard } from '/@/components/ProjectCard';
-import {
-  createProject,
-  deleteProject,
-  duplicateProject,
-  importProject,
-} from '/@/modules/store/reducers/workspace/thunks';
+import { useWorkspace } from '/@/hooks/useWorkspace';
 
 import type { Props } from './types';
 
@@ -35,23 +28,7 @@ function NoScenesAnchor(content: string) {
 }
 
 export function SceneList({ projects, sortBy, onSort }: Props) {
-  const dispatch = useDispatch();
-
-  const handleDelete = useCallback((project: Project) => {
-    dispatch(deleteProject(project.path));
-  }, []);
-
-  const handleDuplicate = useCallback((project: Project) => {
-    dispatch(duplicateProject(project.path));
-  }, []);
-
-  const handleImportProject = useCallback(() => {
-    dispatch(importProject());
-  }, []);
-
-  const handleOpenCreateModal = useCallback(() => {
-    dispatch(createProject('Placeholder'));
-  }, []);
+  const { deleteProject, duplicateProject, importProject, createProject } = useWorkspace();
 
   const sort = useCallback(
     (_sortBy: SortBy) => {
@@ -87,8 +64,8 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
         <ProjectCard
           key={project.path}
           project={project}
-          onDelete={handleDelete}
-          onDuplicate={handleDuplicate}
+          onDelete={deleteProject}
+          onDuplicate={duplicateProject}
         />
       ));
     }
@@ -99,7 +76,7 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
         <span className="no-scenes-description">
           {t('scene_list.no_scenes.description', { a: NoScenesAnchor })}
         </span>
-        <SceneCreationSelector onOpenModal={handleOpenCreateModal} />
+        <SceneCreationSelector onOpenModal={createProject} />
       </div>
     );
   };
@@ -113,14 +90,14 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
             <Button
               startIcon={<OpenFolder />}
               color="secondary"
-              onClick={handleImportProject}
+              onClick={importProject}
             >
               {t('scene_list.import_scene')}
             </Button>
             <Button
               startIcon={<Plus />}
               color="primary"
-              onClick={handleOpenCreateModal}
+              onClick={createProject}
             >
               {t('scene_list.create_scene')}
             </Button>

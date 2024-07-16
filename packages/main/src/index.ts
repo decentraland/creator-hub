@@ -5,8 +5,8 @@ import updater from 'electron-updater';
 
 import './security-restrictions';
 import { initIpc } from './modules/ipc';
-import { deployServer, startServer } from './modules/cli';
-import { initInspector, inspectorServer } from './modules/inspector';
+import { deployServer, previewServer } from './modules/cli';
+import { inspectorServer } from './modules/inspector';
 
 /**
  * Prevent electron from running multiple instances.
@@ -40,7 +40,6 @@ app
   .whenReady()
   .then(async () => {
     initIpc();
-    initInspector();
     await restoreOrCreateWindow();
   })
   .catch(e => console.error('Failed create window:', e));
@@ -63,8 +62,8 @@ if (import.meta.env.PROD) {
 
 export async function killAll() {
   const promises = [];
-  if (startServer) {
-    promises.push(startServer.kill());
+  if (previewServer) {
+    promises.push(previewServer.kill());
   }
   if (deployServer) {
     promises.push(deployServer.kill());

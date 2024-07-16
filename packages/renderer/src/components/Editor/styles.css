@@ -60,6 +60,13 @@
   align-items: center;
 }
 
+.Editor .loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1 0 auto;
+}
+
 .Editor .inspector {
   flex: 1 0 auto;
   border: none;
