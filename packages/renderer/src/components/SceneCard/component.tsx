@@ -1,7 +1,7 @@
 import classNames from 'classnames';
 import { Badge } from 'decentraland-ui2';
 
-import { useVideo } from '/@/modules/video';
+import { useVideo } from '/@/hooks/useVideo';
 import type { Props } from './types';
 
 import './styles.css';

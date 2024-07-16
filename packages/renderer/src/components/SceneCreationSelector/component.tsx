@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 
-import { t } from '/@/modules/store/reducers/translation/utils';
+import { t } from '../../modules/store/translation/utils';
 import { SceneCard } from '/@/components/SceneCard';
 
 import type { Props } from './types';

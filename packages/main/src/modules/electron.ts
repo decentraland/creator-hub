@@ -1,5 +1,5 @@
 import path from 'path';
-import { app, BrowserWindow, dialog, type OpenDialogOptions } from 'electron';
+import { app, BrowserWindow, dialog, type OpenDialogOptions, shell } from 'electron';
 
 export function getHome() {
   return app.getPath('home');
@@ -15,4 +15,8 @@ export async function showOpenDialog(opts: Partial<OpenDialogOptions>): Promise<
 
   const { filePaths } = await dialog.showOpenDialog(window, opts);
   return filePaths;
+}
+
+export async function openExternal(url: string) {
+  shell.openExternal(url);
 }

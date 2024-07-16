@@ -1,38 +1,23 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { Container } from 'decentraland-ui2';
 
-import { useDispatch, useSelector } from '#store';
-import { type SortBy } from '/shared/types/projects';
-import { t } from '/@/modules/store/reducers/translation/utils';
-import { actions as workspaceActions } from '/@/modules/store/reducers/workspace/index';
-import { getWorkspace } from '/@/modules/store/reducers/workspace/thunks';
+import { t } from '../../modules/store/translation/utils';
 
 import { Header } from '../Header';
 import { Button } from '../Button';
 import { SceneList } from '../SceneList';
 
 import { sortProjectsBy } from './utils';
+import { useWorkspace } from '/@/hooks/useWorkspace';
 
 import './styles.css';
 
 export function Home() {
-  const dispatch = useDispatch();
-  const workspace = useSelector(state => state.workspace);
+  const { projects, sortBy, setSortBy } = useWorkspace();
 
   const handleClickFeedback = useCallback(() => undefined, []);
   const handleClickOptions = useCallback(() => undefined, []);
-
-  useEffect(() => {
-    dispatch(getWorkspace());
-  }, []);
-
-  const handleSceneSort = useCallback(
-    (type: SortBy) => {
-      dispatch(workspaceActions.setSortProjectsBy(type));
-    },
-    [workspace.sortBy],
-  );
 
   return (
     <main className="Home">
@@ -61,9 +46,9 @@ export function Home() {
       </Header>
       <Container>
         <SceneList
-          projects={sortProjectsBy(workspace.projects, workspace.sortBy)}
-          sortBy={workspace.sortBy}
-          onSort={handleSceneSort}
+          projects={sortProjectsBy(projects, sortBy)}
+          sortBy={sortBy}
+          onSort={setSortBy}
         />
       </Container>
     </main>

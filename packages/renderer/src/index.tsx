@@ -7,8 +7,6 @@ import { dark } from 'decentraland-ui2/dist/theme';
 
 import { store } from '#store';
 import { TranslationProvider } from '/@/components/TranslationProvider';
-import { fetchTranslations } from '/@/modules/store/reducers/translation';
-import { locales } from '/@/modules/store/reducers/translation/utils';
 
 import { Home } from './components/Home';
 import { Editor } from './components/Editor';
@@ -21,10 +19,7 @@ const root = createRoot(container);
 root.render(
   <React.StrictMode>
     <StoreProvider store={store}>
-      <TranslationProvider
-        locales={locales}
-        fetchTranslations={fetchTranslations}
-      >
+      <TranslationProvider>
         <ThemeProvider theme={dark}>
           <Router>
             <Routes>

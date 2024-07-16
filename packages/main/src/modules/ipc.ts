@@ -1,14 +1,19 @@
 import { handle } from './handle';
-import { init, start, deploy } from './cli';
-import { getAppHome, showOpenDialog } from './electron';
+import * as electron from './electron';
+import * as inspector from './inspector';
+import * as cli from './cli';
 
 export function initIpc() {
   // electron
-  handle('electron.getAppHome', () => getAppHome());
-  handle('electron.showOpenDialog', (_event, opts) => showOpenDialog(opts));
+  handle('electron.getAppHome', () => electron.getAppHome());
+  handle('electron.showOpenDialog', (_event, opts) => electron.showOpenDialog(opts));
+  handle('electron.openExternal', (_event, url) => electron.openExternal(url));
+
+  // inspector
+  handle('inspector.start', () => inspector.start());
 
   // cli
-  handle('cli.init', (_event, name) => init(name));
-  handle('cli.start', (_event, path) => start(path));
-  handle('cli.deploy', (_event, path) => deploy(path));
+  handle('cli.init', (_event, path, repo) => cli.init(path, repo));
+  handle('cli.start', (_event, path) => cli.start(path));
+  handle('cli.deploy', (_event, path) => cli.deploy(path));
 }
