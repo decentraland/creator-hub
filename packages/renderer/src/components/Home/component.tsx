@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { Container } from 'decentraland-ui2';
 
-import { t } from '../../modules/store/translation/utils';
+import { t } from '/@/modules/store/translation/utils';
 
 import { Header } from '../Header';
 import { Button } from '../Button';

@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { Select, MenuItem, type SelectChangeEvent, Box } from 'decentraland-ui2';
 import { SortBy } from '/shared/types/projects';
-import { t } from '../../modules/store/translation/utils';
+import { t } from '/@/modules/store/translation/utils';
 import { SceneCreationSelector } from '/@/components/SceneCreationSelector';
 import { ProjectCard } from '/@/components/ProjectCard';
 import { useWorkspace } from '/@/hooks/useWorkspace';

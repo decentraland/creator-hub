@@ -65,8 +65,6 @@ export function Editor() {
   // iframe src
   const iframeUrl = `${htmlUrl}?${params}`;
 
-  console.log(iframeUrl);
-
   return (
     <div className="Editor">
       <div className="header">

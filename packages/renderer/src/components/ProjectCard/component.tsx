@@ -6,7 +6,7 @@ import { ModalContent } from 'decentraland-ui2/dist/components/Modal/Modal';
 import { Link } from 'react-router-dom';
 
 import { getThumbnailUrl } from '/@/modules/project';
-import { t } from '../../modules/store/translation/utils';
+import { t } from '/@/modules/store/translation/utils';
 
 import { Button } from '../Button';
 import { Dropdown } from '../Dropdown';
