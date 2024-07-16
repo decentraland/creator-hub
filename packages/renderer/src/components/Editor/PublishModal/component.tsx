@@ -16,18 +16,17 @@ import { type Props } from './types';
 
 import './styles.css';
 
-type Step = 'initial' | 'alternative-servers'
+type Step = 'initial' | 'alternative-servers';
 
-export function PublishModal({
-  open,
-  project,
-  onClose,
-}: Props) {
+export function PublishModal({ open, project, onClose }: Props) {
   const [step, setStep] = useState<Step>('initial');
 
-  const handleChangeStep = useCallback((step: Step) => () => {
-    setStep(step);
-  }, []);
+  const handleChangeStep = useCallback(
+    (step: Step) => () => {
+      setStep(step);
+    },
+    [],
+  );
 
   const handleClickPublish = useCallback((target: string) => {
     console.log('Publish to: ', target);
@@ -42,19 +41,30 @@ export function PublishModal({
       onBack={step !== 'initial' ? handleChangeStep('initial') : undefined}
     >
       <div className="PublishModal">
-        {step === 'initial' && <PublishDefault onClick={handleClickPublish} onStepChange={handleChangeStep} />}
+        {step === 'initial' && (
+          <PublishDefault
+            onClick={handleClickPublish}
+            onStepChange={handleChangeStep}
+          />
+        )}
         {step === 'alternative-servers' && <AlternativeServers onClick={handleClickPublish} />}
       </div>
     </Modal>
   );
 }
 
-type StepProps = { onClick: (target: string) => void }
+type StepProps = { onClick: (target: string) => void };
 
-function PublishDefault({ onClick, onStepChange }: StepProps & { onStepChange: (step: Step) => () => void }) {
-  const handleClick = useCallback((target: 'worlds' | 'land') => () => {
-    onClick(target);
-  }, []);
+function PublishDefault({
+  onClick,
+  onStepChange,
+}: StepProps & { onStepChange: (step: Step) => () => void }) {
+  const handleClick = useCallback(
+    (target: 'worlds' | 'land') => () => {
+      onClick(target);
+    },
+    [],
+  );
 
   return (
     <div className="initial">
@@ -77,8 +87,11 @@ function PublishDefault({ onClick, onStepChange }: StepProps & { onStepChange: (
           learnMoreUrl="https://docs.decentraland.org/creator/development-guide/sdk7/publishing-permissions/#land-permission-options"
         />
       </div>
-      <span className="alternative_servers" onClick={onStepChange('alternative-servers')}>
-        {t('editor.modal.publish.alternative_servers')}
+      <span
+        className="alternative_servers"
+        onClick={onStepChange('alternative-servers')}
+      >
+        {t('editor.modal.publish.alternative_servers.title')}
       </span>
     </div>
   );
@@ -93,13 +106,16 @@ function AlternativeServers({ onClick }: StepProps) {
     onClick(option);
   }, []);
 
-  const OPTIONS = [{
-    text: t('editor.modal.publish.alternative_servers.options.test_server'),
-    handler: () => setOption('test'),
-  }, {
-    text: t('editor.modal.publish.alternative_servers.options.custom_server'),
-    handler: () => setOption('custom'),
-  }];
+  const OPTIONS = [
+    {
+      text: t('editor.modal.publish.alternative_servers.options.test_server'),
+      handler: () => setOption('test'),
+    },
+    {
+      text: t('editor.modal.publish.alternative_servers.options.custom_server'),
+      handler: () => setOption('custom'),
+    },
+  ];
 
   return (
     <div className="alternative-servers">
@@ -110,11 +126,18 @@ function AlternativeServers({ onClick }: StepProps) {
             <h3>{t('editor.modal.publish.alternative_servers.title')}</h3>
             <Dropdown options={OPTIONS} />
           </div>
-          <img className="thumbnail" src={GenesisPlazaPng} />
+          <img
+            className="thumbnail"
+            src={GenesisPlazaPng}
+          />
         </div>
         <div className="actions">
-          <Link to="https://docs.decentraland.org/creator/development-guide/sdk7/publishing/#the-test-server">{t('option_box.learn_more')}</Link>
-          <Button onClick={handleClick}>{t('editor.modal.publish.alternative_servers.action')}</Button>
+          <Link to="https://docs.decentraland.org/creator/development-guide/sdk7/publishing/#the-test-server">
+            {t('option_box.learn_more')}
+          </Link>
+          <Button onClick={handleClick}>
+            {t(`editor.modal.publish.alternative_servers.action.${option}_server`)}
+          </Button>
         </div>
       </div>
     </div>

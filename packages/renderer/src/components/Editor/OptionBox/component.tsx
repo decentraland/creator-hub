@@ -17,11 +17,21 @@ export function OptionBox({
 }: Props) {
   return (
     <div className="OptionBox">
-      <img className="thumbnail" src={thumbnailSrc} />
+      <img
+        className="thumbnail"
+        src={thumbnailSrc}
+      />
       <h3>{title}</h3>
       <span className="description">{description}</span>
       <Button onClick={onClickPublish}>{buttonText}</Button>
-      {learnMoreUrl  && <Link className="learn-more" to={learnMoreUrl}>{t('option_box.learn_more')}</Link>}
+      {learnMoreUrl && (
+        <Link
+          className="learn-more"
+          to={learnMoreUrl}
+        >
+          {t('option_box.learn_more')}
+        </Link>
+      )}
     </div>
   );
 }

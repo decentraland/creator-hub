@@ -12,7 +12,6 @@ import { PublishModal } from './PublishModal';
 
 import './styles.css';
 
-
 type ModalType = 'publish';
 
 export function Editor() {
@@ -28,9 +27,12 @@ export function Editor() {
     navigate(-1);
   }, [navigate]);
 
-  const handleOpenModal = useCallback((type: ModalType) => () => {
-    setOpen(type);
-  }, []);
+  const handleOpenModal = useCallback(
+    (type: ModalType) => () => {
+      setOpen(type);
+    },
+    [],
+  );
 
   const handleCloseModal = useCallback(() => {
     setOpen(undefined);
@@ -87,7 +89,12 @@ export function Editor() {
     <div className="Editor">
       <Header>
         <>
-          <div className="back" onClick={handleBack}><ArrowBackIosIcon /></div>
+          <div
+            className="back"
+            onClick={handleBack}
+          >
+            <ArrowBackIosIcon />
+          </div>
           <div className="title">{project?.title}</div>
         </>
         <>
@@ -99,7 +106,12 @@ export function Editor() {
           >
             {t('editor.header.actions.preview')}
           </Button>
-          <Button color="primary" onClick={handleOpenModal('publish')}>{t('editor.header.actions.publish')}</Button>
+          <Button
+            color="primary"
+            onClick={handleOpenModal('publish')}
+          >
+            {t('editor.header.actions.publish')}
+          </Button>
         </>
       </Header>
       {isReady ? (
@@ -112,7 +124,13 @@ export function Editor() {
           <Loader />
         </div>
       )}
-      {project && <PublishModal open={open === 'publish'} project={project} onClose={handleCloseModal} />}
+      {project && (
+        <PublishModal
+          open={open === 'publish'}
+          project={project}
+          onClose={handleCloseModal}
+        />
+      )}
     </div>
   );
 }

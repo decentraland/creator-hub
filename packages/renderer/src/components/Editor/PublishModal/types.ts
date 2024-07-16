@@ -4,4 +4,4 @@ export type Props = {
   open: boolean;
   project: Project;
   onClose: () => void;
-}
+};

@@ -27,7 +27,17 @@
           "description": "Findable in Genesis City map. \nUnlimited users can join concurrently.",
           "action": "Publish to Land"
         },
-        "alternative_servers": "Alternative servers"
+        "alternative_servers": {
+          "title": "Alternative servers",
+          "options": {
+            "test_server": "Test Server",
+            "custom_server": "Custom Server"
+          },
+          "action": {
+            "test_server": "Publish to Test Server",
+            "custom_server": "Publish to Custom Server"
+          }
+        }
       }
     }
   },

@@ -74,7 +74,7 @@ export function ProjectCard({ project, onDelete, onDuplicate }: Props) {
       </div>
       <Modal
         open={open}
-        title={`${t('scene_list.project_actions.delete_project') } "${project.title}"`}
+        title={`${t('scene_list.project_actions.delete_project')} "${project.title}"`}
         onClose={handleCloseModal}
         size="tiny"
         actions={

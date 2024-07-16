@@ -7,4 +7,4 @@ export type Props = {
   buttonText: string;
   onClickPublish: (e: MouseEvent) => void;
   learnMoreUrl?: string;
-}
+};
