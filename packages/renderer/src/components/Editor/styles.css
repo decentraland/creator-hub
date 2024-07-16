@@ -43,28 +43,3 @@
   align-items: center;
   flex: 1 0 auto;
 }
-
-/* TODO: update the Modal component in ui2 to allow providing a className to the Material Modal...*/
-.MuiModal-root .PublishModal {
-  display: flex;
-  flex-direction: column;
-}
-
-.MuiModal-root .PublishModal .select,
-.MuiModal-root .PublishModal .alternative_servers {
-  text-align: center;
-}
-
-.MuiModal-root .PublishModal .options {
-  display: flex;
-  margin: 20px 0;
-}
-
-.MuiModal-root .PublishModal .options .OptionBox + .OptionBox {
-  margin-left: 20px;
-}
-
-.MuiModal-root .PublishModal .alternative_servers {
-  text-decoration: underline;
-  text-transform: uppercase;
-}

@@ -2,19 +2,16 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Loader from '@mui/material/CircularProgress';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
-import { Modal } from 'decentraland-ui2/dist/components/Modal/Modal';
 
 import { t } from '/@/modules/store/translation/utils';
 import { useEditor } from '/@/hooks/useEditor';
 
-import WorldsPng from '/assets/images/worlds.png';
-import LandPng from '/assets/images/land.png';
-
 import { Button } from '../Button';
 import { Header } from '../Header';
+import { PublishModal } from './PublishModal';
 
 import './styles.css';
-import { OptionBox } from './OptionBox';
+
 
 type ModalType = 'publish';
 
@@ -115,35 +112,7 @@ export function Editor() {
           <Loader />
         </div>
       )}
-      <Modal
-        open={open === 'publish'}
-        title={t('editor.modal.publish.title', { title: project?.title })}
-        onClose={handleCloseModal}
-        size="small"
-      >
-        <div className="PublishModal">
-          <span className="select">{t('editor.modal.publish.select')}</span>
-          <div className="options">
-            <OptionBox
-              thumbnailSrc={WorldsPng}
-              title={t('editor.modal.publish.worlds.title')}
-              description={t('editor.modal.publish.worlds.description')}
-              buttonText={t('editor.modal.publish.worlds.action')}
-              onClickPublish={() => null}
-              learnMoreUrl={'123'}
-            />
-            <OptionBox
-              thumbnailSrc={LandPng}
-              title={t('editor.modal.publish.land.title')}
-              description={t('editor.modal.publish.land.description')}
-              buttonText={t('editor.modal.publish.land.action')}
-              onClickPublish={() => null}
-              learnMoreUrl={'asd'}
-            />
-          </div>
-          <span className="alternative_servers">{t('editor.modal.publish.alternative_servers')}</span>
-        </div>
-      </Modal>
+      {project && <PublishModal open={open === 'publish'} project={project} onClose={handleCloseModal} />}
     </div>
   );
 }
