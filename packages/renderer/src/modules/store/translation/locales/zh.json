@@ -16,23 +16,34 @@
     "modal": {
       "publish": {
         "title": "公共场所 \"{title}\"",
-        "select": "Select where you want to deploy this scene:",
+        "select": "选择要部署此场景的位置：",
         "worlds": {
-          "title": "Worlds",
-          "description": "Not findable in Genesis City map. \nUp to 100 users can join concurrently.",
-          "action": "Publish to World"
+          "title": "世界赛",
+          "description": "在创世城地图中找不到。 \n最多可同时加入 100 个用户。",
+          "action": "发布到世界"
         },
         "land": {
-          "title": "My Land",
-          "description": "Findable in Genesis City map. \nUnlimited users can join concurrently.",
-          "action": "Publish to Land"
+          "title": "我的地盘",
+          "description": "可在创世城地图中找到。 \n无限用户可以同时加入。",
+          "action": "发布到土地"
         },
-        "alternative_servers": "Alternative servers"
+        "alternative_servers": {
+          "title": "替代服务器",
+          "options": {
+            "test_server": "测试服务器",
+            "custom_server": "定制服务器"
+          },
+          "custom_server_url": "服务器地址",
+          "action": {
+            "test_server": "发布到测试服务器",
+            "custom_server": "发布到自定义服务器"
+          }
+        }
       }
     }
   },
   "scene_list": {
-    "my_scenes": "",
+    "my_scenes": "我的场景",
     "import_scene": "导入场景",
     "create_scene": "创建场景",
     "project_actions": {
@@ -53,7 +64,7 @@
       "size": "尺寸"
     },
     "results": "{count}结果",
-    "parcel_count": "{parcels} {parcels, plural, one {parcel} other {parcels}}"
+    "parcel_count": "{parcels} {包裹, plural, one {包裹} other {包裹}}"
   },
   "modal": {
     "cancel": "取消",
@@ -61,6 +72,6 @@
     "irreversible_operation": "此操作不可逆"
   },
   "option_box": {
-    "learn_more": "Learn more"
+    "learn_more": "了解更多"
   }
 }
