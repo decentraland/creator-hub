@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { MenuItem, Select, type SelectChangeEvent } from 'decentraland-ui2';
 import { Modal } from 'decentraland-ui2/dist/components/Modal/Modal';
 
+import { isUrl } from '/shared/types/utils';
 import { t } from '/@/modules/store/translation/utils';
 
 import GenesisPlazaPng from '/assets/images/genesis_plaza.png';
@@ -101,10 +102,14 @@ function Initial({
 
 function AlternativeServers({ onClick }: StepProps) {
   const [option, setOption] = useState<AlternativeTarget>('test');
-  const [customUrl, setCustomUrl] = useState<string>('');
+  const [customUrl, setCustomUrl] = useState('');
+  const [error, setError] = useState('');
 
   const handleClick = useCallback(() => {
-    const value = { target: option, customUrl };
+    if (option === 'custom' && !isUrl(customUrl)) {
+      return setError(t('editor.modal.publish.alternative_servers.errors.url'));
+    }
+    const value: StepValue = { target: option, value: customUrl };
     onClick(value);
   }, [option, customUrl]);
 
@@ -113,8 +118,9 @@ function AlternativeServers({ onClick }: StepProps) {
   }, []);
 
   const handleChangeCustom = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    if (error) setError('');
     setCustomUrl(e.target.value);
-  }, []);
+  }, [error]);
 
   return (
     <div className="AlternativeServers">
@@ -137,11 +143,12 @@ function AlternativeServers({ onClick }: StepProps) {
             </Select>
             {option === 'custom' && (
               <div className="custom_input">
-                <span>{t('editor.modal.publish.alternative_servers.custom_server_url')}</span>
+                <span className="title">{t('editor.modal.publish.alternative_servers.custom_server_url')}</span>
                 <input
                   value={customUrl}
                   onChange={handleChangeCustom}
                 />
+                <span className="error">{error}</span>
               </div>
             )}
           </div>

@@ -76,13 +76,15 @@
 }
 
 .MuiModal-root .AlternativeServers .box .selection .custom_input {
+  display: flex;
+  flex-direction: column;
   margin: 10px 0;
+  font-size: 11px;
 }
 
-.MuiModal-root .AlternativeServers .box .selection .custom_input span {
+.MuiModal-root .AlternativeServers .box .selection .custom_input .title {
   margin-bottom: 5px;
   display: flex;
-  font-size: 11px;
 }
 
 .MuiModal-root .AlternativeServers .box .selection .custom_input input {
@@ -92,6 +94,11 @@
   padding: 3px 10px;
   color: var(--white);
   border-radius: 4px;
+  margin-bottom: 5px;
+}
+
+.MuiModal-root .AlternativeServers .box .selection .custom_input .error {
+  color: var(--error);
 }
 
 .MuiModal-root .AlternativeServers .box .actions {

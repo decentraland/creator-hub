@@ -1,4 +1,7 @@
 import { type OpenDialogOptions } from 'electron';
+
+export type DeployOptions = { path: string; target?: string; targetContent?: string; }
+
 export interface Ipc {
   'electron.getAppHome': () => string;
   'electron.showOpenDialog': (opts: Partial<OpenDialogOptions>) => Promise<string[]>;
@@ -6,5 +9,5 @@ export interface Ipc {
   'inspector.start': () => Promise<number>;
   'cli.init': (path: string, repo?: string) => Promise<void>;
   'cli.start': (path: string) => Promise<number>;
-  'cli.deploy': (path: string) => Promise<number>;
+  'cli.deploy': (opts: DeployOptions) => Promise<number>;
 }

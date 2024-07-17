@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Loader from '@mui/material/CircularProgress';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 
+import { DEPLOY_URLS } from '/shared/types/deploy';
 import { t } from '/@/modules/store/translation/utils';
 import { useEditor } from '/@/hooks/useEditor';
 
@@ -18,7 +19,7 @@ type ModalType = 'publish';
 export function Editor() {
   const navigate = useNavigate();
   const ref = useRef(false);
-  const { project, inspectorPort, runScene, previewPort, loadingPreview, openPreview } =
+  const { project, inspectorPort, runScene, previewPort, loadingPreview, openPreview, publishScene } =
     useEditor();
   const [open, setOpen] = useState<ModalType | undefined>();
 
@@ -39,8 +40,17 @@ export function Editor() {
     setOpen(undefined);
   }, []);
 
-  const handleSubmitModal = useCallback((value: StepValue) => {
-    console.log('Publish to: ', value);
+  const handleSubmitModal = useCallback(({ target, value }: StepValue) => {
+    switch (target) {
+      case 'worlds':
+        return publishScene({ targetContent: import.meta.env.VITE_WORLDS_SERVER || DEPLOY_URLS.WORLDS });
+      case 'test':
+        return publishScene({ target: import.meta.env.VITE_TEST_SERVER || DEPLOY_URLS.TEST });
+      case 'custom':
+        return publishScene({ target: value });
+      default:
+        return publishScene();
+    }
   }, []);
 
   useEffect(() => {

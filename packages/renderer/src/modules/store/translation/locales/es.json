@@ -37,6 +37,9 @@
           "action": {
             "test_server": "Publicar en el Servidor de Prueba",
             "custom_server": "Publicar en Servidor Personalizado"
+          },
+          "errors": {
+            "url": "URL inválida"
           }
         }
       }

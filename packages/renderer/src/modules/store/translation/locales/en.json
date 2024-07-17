@@ -37,6 +37,9 @@
           "action": {
             "test_server": "Publish to Test Server",
             "custom_server": "Publish to Custom Server"
+          },
+          "errors": {
+            "url": "Invalid URL"
           }
         }
       }

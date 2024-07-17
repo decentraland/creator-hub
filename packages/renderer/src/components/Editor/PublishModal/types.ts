@@ -13,4 +13,4 @@ export type AlternativeTarget = 'test' | 'custom';
 
 export type Target = InitialTarget | AlternativeTarget;
 export type StepValue = { target: Target; value?: string };
-export type StepProps = { onClick: (target: StepValue) => void };
+export type StepProps = { onClick: (value: StepValue) => void };

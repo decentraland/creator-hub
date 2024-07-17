@@ -37,6 +37,9 @@
           "action": {
             "test_server": "发布到测试服务器",
             "custom_server": "发布到自定义服务器"
+          },
+          "errors": {
+            "url": "无效的网址"
           }
         }
       }
