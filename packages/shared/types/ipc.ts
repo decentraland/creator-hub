@@ -1,6 +1,6 @@
 import { type OpenDialogOptions } from 'electron';
 
-export type DeployOptions = { path: string; target?: string; targetContent?: string; }
+export type DeployOptions = { path: string; target?: string; targetContent?: string };
 
 export interface Ipc {
   'electron.getAppHome': () => string;

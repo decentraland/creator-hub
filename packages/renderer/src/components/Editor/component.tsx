@@ -19,8 +19,15 @@ type ModalType = 'publish';
 export function Editor() {
   const navigate = useNavigate();
   const ref = useRef(false);
-  const { project, inspectorPort, runScene, previewPort, loadingPreview, openPreview, publishScene } =
-    useEditor();
+  const {
+    project,
+    inspectorPort,
+    runScene,
+    previewPort,
+    loadingPreview,
+    openPreview,
+    publishScene,
+  } = useEditor();
   const [open, setOpen] = useState<ModalType | undefined>();
 
   const isReady = !!project && inspectorPort > 0 && previewPort > 0;
@@ -43,7 +50,9 @@ export function Editor() {
   const handleSubmitModal = useCallback(({ target, value }: StepValue) => {
     switch (target) {
       case 'worlds':
-        return publishScene({ targetContent: import.meta.env.VITE_WORLDS_SERVER || DEPLOY_URLS.WORLDS });
+        return publishScene({
+          targetContent: import.meta.env.VITE_WORLDS_SERVER || DEPLOY_URLS.WORLDS,
+        });
       case 'test':
         return publishScene({ target: import.meta.env.VITE_TEST_SERVER || DEPLOY_URLS.TEST });
       case 'custom':

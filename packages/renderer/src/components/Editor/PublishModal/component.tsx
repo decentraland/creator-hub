@@ -117,10 +117,13 @@ function AlternativeServers({ onClick }: StepProps) {
     setOption(e.target.value as AlternativeTarget);
   }, []);
 
-  const handleChangeCustom = useCallback((e: ChangeEvent<HTMLInputElement>) => {
-    if (error) setError('');
-    setCustomUrl(e.target.value);
-  }, [error]);
+  const handleChangeCustom = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      if (error) setError('');
+      setCustomUrl(e.target.value);
+    },
+    [error],
+  );
 
   return (
     <div className="AlternativeServers">
@@ -143,7 +146,9 @@ function AlternativeServers({ onClick }: StepProps) {
             </Select>
             {option === 'custom' && (
               <div className="custom_input">
-                <span className="title">{t('editor.modal.publish.alternative_servers.custom_server_url')}</span>
+                <span className="title">
+                  {t('editor.modal.publish.alternative_servers.custom_server_url')}
+                </span>
                 <input
                   value={customUrl}
                   onChange={handleChangeCustom}

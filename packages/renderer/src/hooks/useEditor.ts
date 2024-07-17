@@ -28,11 +28,14 @@ export const useEditor = () => {
     }
   }, [project]);
 
-  const publishScene = useCallback((opts: Omit<DeployOptions, 'path'> = {}) => {
-    if (project) {
-      dispatch(actions.publishScene({ ...opts, path: project.path }));
-    }
-  }, [project, actions.publishScene]);
+  const publishScene = useCallback(
+    (opts: Omit<DeployOptions, 'path'> = {}) => {
+      if (project) {
+        dispatch(actions.publishScene({ ...opts, path: project.path }));
+      }
+    },
+    [project, actions.publishScene],
+  );
 
   const openPreview = useCallback(() => {
     if (editor.previewPort) {

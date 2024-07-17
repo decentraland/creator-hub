@@ -33,11 +33,16 @@ export async function deploy({ path, target, targetContent }: DeployOptions) {
     await deployServer.kill();
   }
   const port = await getAvailablePort();
-  deployServer = npx('@dcl/sdk-commands', [
-    'deploy',
-    '--port', port.toString(),
-    ...(target ? ['--target', target] : []),
-    ...(targetContent ? ['--target-content', targetContent] : []),
-  ], path);
+  deployServer = npx(
+    '@dcl/sdk-commands',
+    [
+      'deploy',
+      '--port',
+      port.toString(),
+      ...(target ? ['--target', target] : []),
+      ...(targetContent ? ['--target-content', targetContent] : []),
+    ],
+    path,
+  );
   return port;
 }
