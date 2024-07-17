@@ -28,11 +28,12 @@
           "action": "Publish to Land"
         },
         "alternative_servers": {
-          "title": "Alternative servers",
+          "title": "Alternative Servers",
           "options": {
             "test_server": "Test Server",
             "custom_server": "Custom Server"
           },
+          "custom_server_url": "Server URL",
           "action": {
             "test_server": "Publish to Test Server",
             "custom_server": "Publish to Custom Server"

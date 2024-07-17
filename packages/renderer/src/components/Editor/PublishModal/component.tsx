@@ -1,5 +1,6 @@
-import { useCallback, useState } from 'react';
+import { type ChangeEvent, useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { MenuItem, Select, type SelectChangeEvent } from 'decentraland-ui2';
 import { Modal } from 'decentraland-ui2/dist/components/Modal/Modal';
 
 import { t } from '/@/modules/store/translation/utils';
@@ -9,17 +10,19 @@ import LandPng from '/assets/images/land.png';
 import WorldsPng from '/assets/images/worlds.png';
 
 import { Button } from '../../Button';
-import { Dropdown } from '../../Dropdown';
 import { OptionBox } from '../OptionBox';
 
-import { type Props } from './types';
+import type { AlternativeTarget, Step, StepProps, StepValue, Props } from './types';
 
 import './styles.css';
 
-type Step = 'initial' | 'alternative-servers';
-
 export function PublishModal({ open, project, onClose }: Props) {
   const [step, setStep] = useState<Step>('initial');
+
+  const handleClose = useCallback(() => {
+    setStep('initial');
+    onClose();
+  }, []);
 
   const handleChangeStep = useCallback(
     (step: Step) => () => {
@@ -28,7 +31,7 @@ export function PublishModal({ open, project, onClose }: Props) {
     [],
   );
 
-  const handleClickPublish = useCallback((target: string) => {
+  const handleClickPublish = useCallback(({ target }: StepValue) => {
     console.log('Publish to: ', target);
   }, []);
 
@@ -36,38 +39,34 @@ export function PublishModal({ open, project, onClose }: Props) {
     <Modal
       open={open}
       title={t('editor.modal.publish.title', { title: project?.title })}
-      onClose={onClose}
+      onClose={handleClose}
       size="small"
       onBack={step !== 'initial' ? handleChangeStep('initial') : undefined}
     >
-      <div className="PublishModal">
-        {step === 'initial' && (
-          <PublishDefault
-            onClick={handleClickPublish}
-            onStepChange={handleChangeStep}
-          />
-        )}
-        {step === 'alternative-servers' && <AlternativeServers onClick={handleClickPublish} />}
-      </div>
+      {step === 'initial' && (
+        <Initial
+          onClick={handleClickPublish}
+          onStepChange={handleChangeStep}
+        />
+      )}
+      {step === 'alternative-servers' && <AlternativeServers onClick={handleClickPublish} />}
     </Modal>
   );
 }
 
-type StepProps = { onClick: (target: string) => void };
-
-function PublishDefault({
+function Initial({
   onClick,
   onStepChange,
 }: StepProps & { onStepChange: (step: Step) => () => void }) {
   const handleClick = useCallback(
     (target: 'worlds' | 'land') => () => {
-      onClick(target);
+      onClick({ target });
     },
     [],
   );
 
   return (
-    <div className="initial">
+    <div className="Initial">
       <span className="select">{t('editor.modal.publish.select')}</span>
       <div className="options">
         <OptionBox
@@ -97,34 +96,51 @@ function PublishDefault({
   );
 }
 
-type AlternativeOption = 'test' | 'custom';
-
 function AlternativeServers({ onClick }: StepProps) {
-  const [option, setOption] = useState<AlternativeOption>('test');
+  const [option, setOption] = useState<AlternativeTarget>('test');
+  const [customUrl, setCustomUrl] = useState<string>('');
 
   const handleClick = useCallback(() => {
-    onClick(option);
+    const value = { target: option, customUrl };
+    onClick(value);
+  }, [option]);
+
+  const handleChangeSelect = useCallback((e: SelectChangeEvent<AlternativeTarget>) => {
+    setOption(e.target.value as AlternativeTarget);
   }, []);
 
-  const OPTIONS = [
-    {
-      text: t('editor.modal.publish.alternative_servers.options.test_server'),
-      handler: () => setOption('test'),
-    },
-    {
-      text: t('editor.modal.publish.alternative_servers.options.custom_server'),
-      handler: () => setOption('custom'),
-    },
-  ];
+  const handleChangeCustom = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    setCustomUrl(e.target.value);
+  }, []);
 
   return (
-    <div className="alternative-servers">
+    <div className="AlternativeServers">
       <span className="select">{t('editor.modal.publish.select')}</span>
       <div className="box">
         <div className="selection">
           <div>
             <h3>{t('editor.modal.publish.alternative_servers.title')}</h3>
-            <Dropdown options={OPTIONS} />
+            <Select
+              variant="standard"
+              value={option}
+              onChange={handleChangeSelect}
+            >
+              <MenuItem value="test">
+                {t('editor.modal.publish.alternative_servers.options.test_server')}
+              </MenuItem>
+              <MenuItem value="custom">
+                {t('editor.modal.publish.alternative_servers.options.custom_server')}
+              </MenuItem>
+            </Select>
+            {option === 'custom' && (
+              <div className="custom_input">
+                <span>{t('editor.modal.publish.alternative_servers.custom_server_url')}</span>
+                <input
+                  value={customUrl}
+                  onChange={handleChangeCustom}
+                />
+              </div>
+            )}
           </div>
           <img
             className="thumbnail"
