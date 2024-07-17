@@ -1,5 +1,4 @@
-import type { Command } from './npx';
-import { npx } from './npx';
+import { npx, type Command } from './npx';
 import { getAvailablePort } from './port';
 
 export async function init(path: string, repo?: string) {

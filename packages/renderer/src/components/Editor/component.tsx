@@ -9,6 +9,7 @@ import { useEditor } from '/@/hooks/useEditor';
 import { Button } from '../Button';
 import { Header } from '../Header';
 import { PublishModal } from './PublishModal';
+import type { StepValue } from './PublishModal/types';
 
 import './styles.css';
 
@@ -36,6 +37,10 @@ export function Editor() {
 
   const handleCloseModal = useCallback(() => {
     setOpen(undefined);
+  }, []);
+
+  const handleSubmitModal = useCallback((value: StepValue) => {
+    console.log('Publish to: ', value);
   }, []);
 
   useEffect(() => {
@@ -129,6 +134,7 @@ export function Editor() {
           open={open === 'publish'}
           project={project}
           onClose={handleCloseModal}
+          onSubmit={handleSubmitModal}
         />
       )}
     </div>

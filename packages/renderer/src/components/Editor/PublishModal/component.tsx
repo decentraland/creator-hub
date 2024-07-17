@@ -16,13 +16,15 @@ import type { AlternativeTarget, Step, StepProps, StepValue, Props } from './typ
 
 import './styles.css';
 
-export function PublishModal({ open, project, onClose }: Props) {
+export function PublishModal({ open, project, onSubmit, onClose }: Props) {
   const [step, setStep] = useState<Step>('initial');
 
-  const handleClose = useCallback(() => {
+  const close = useCallback(() => {
     setStep('initial');
     onClose();
   }, []);
+
+  const handleClose = useCallback(() => close(), []);
 
   const handleChangeStep = useCallback(
     (step: Step) => () => {
@@ -31,8 +33,9 @@ export function PublishModal({ open, project, onClose }: Props) {
     [],
   );
 
-  const handleClickPublish = useCallback(({ target }: StepValue) => {
-    console.log('Publish to: ', target);
+  const handleClickPublish = useCallback((value: StepValue) => {
+    onSubmit(value);
+    close();
   }, []);
 
   return (
@@ -103,7 +106,7 @@ function AlternativeServers({ onClick }: StepProps) {
   const handleClick = useCallback(() => {
     const value = { target: option, customUrl };
     onClick(value);
-  }, [option]);
+  }, [option, customUrl]);
 
   const handleChangeSelect = useCallback((e: SelectChangeEvent<AlternativeTarget>) => {
     setOption(e.target.value as AlternativeTarget);

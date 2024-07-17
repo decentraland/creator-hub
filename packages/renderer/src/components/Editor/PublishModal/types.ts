@@ -4,6 +4,7 @@ export type Props = {
   open: boolean;
   project: Project;
   onClose: () => void;
+  onSubmit: (value: StepValue) => void;
 };
 
 export type Step = 'initial' | 'alternative-servers';
