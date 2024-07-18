@@ -1,3 +1,4 @@
+import type { DeployOptions } from '/shared/types/ipc';
 import { invoke } from './invoke';
 
 export async function startInspector() {
@@ -10,8 +11,8 @@ export async function runScene(path: string) {
   return port;
 }
 
-export async function publishScene(path: string) {
-  const port = await invoke('cli.deploy', path);
+export async function publishScene(opts: DeployOptions) {
+  const port = await invoke('cli.deploy', opts);
   return port;
 }
 

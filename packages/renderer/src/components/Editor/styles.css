@@ -6,32 +6,11 @@
   height: 100vh;
 }
 
-.Editor .header {
-  display: flex;
-  flex: 0 0 auto;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 16px;
+.Editor .Header {
   height: 48px;
 }
 
-.Editor .header .left {
-  display: flex;
-  flex: 0 0 auto;
-  justify-content: flex-start;
-  align-items: center;
-  height: 100%;
-}
-
-.Editor .header .right {
-  display: flex;
-  flex: 0 0 auto;
-  justify-content: flex-start;
-  align-items: center;
-  height: 100%;
-}
-
-.Editor .header .back {
+.Editor .Header .back {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -42,22 +21,20 @@
   cursor: pointer;
 }
 
-.Editor .header .back svg {
+.Editor .Header .back svg {
   width: 14px;
   height: 14px;
   margin-left: 5px;
   margin-top: 1px;
 }
 
-.Editor .header .title {
+.Editor .Header .title {
   margin-left: 20px;
 }
 
-.Editor .header .actions {
-  display: flex;
+.Editor .inspector {
   flex: 1 0 auto;
-  justify-content: flex-start;
-  align-items: center;
+  border: none;
 }
 
 .Editor .loading {
@@ -65,9 +42,4 @@
   justify-content: center;
   align-items: center;
   flex: 1 0 auto;
-}
-
-.Editor .inspector {
-  flex: 1 0 auto;
-  border: none;
 }

@@ -1,22 +1,66 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Loader from '@mui/material/CircularProgress';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
-import './styles.css';
-import { Button } from '../Button';
+
+import { DEPLOY_URLS } from '/shared/types/deploy';
+import { t } from '/@/modules/store/translation/utils';
 import { useEditor } from '/@/hooks/useEditor';
+
+import { Button } from '../Button';
+import { Header } from '../Header';
+import { PublishModal } from './PublishModal';
+import type { StepValue } from './PublishModal/types';
+
+import './styles.css';
+
+type ModalType = 'publish';
 
 export function Editor() {
   const navigate = useNavigate();
   const ref = useRef(false);
-  const { project, inspectorPort, runScene, previewPort, loadingPreview, openPreview } =
-    useEditor();
+  const {
+    project,
+    inspectorPort,
+    runScene,
+    previewPort,
+    loadingPreview,
+    openPreview,
+    publishScene,
+  } = useEditor();
+  const [open, setOpen] = useState<ModalType | undefined>();
 
   const isReady = !!project && inspectorPort > 0 && previewPort > 0;
 
   const handleBack = useCallback(() => {
     navigate(-1);
   }, [navigate]);
+
+  const handleOpenModal = useCallback(
+    (type: ModalType) => () => {
+      setOpen(type);
+    },
+    [],
+  );
+
+  const handleCloseModal = useCallback(() => {
+    setOpen(undefined);
+  }, []);
+
+  const handleSubmitModal = useCallback(({ target, value }: StepValue) => {
+    switch (target) {
+      case 'worlds':
+        return publishScene({
+          targetContent: import.meta.env.VITE_WORLDS_SERVER || DEPLOY_URLS.WORLDS,
+        });
+      case 'test':
+        return publishScene({ target: import.meta.env.VITE_TEST_SERVER || DEPLOY_URLS.TEST });
+      case 'custom':
+        return publishScene({ target: value });
+      default:
+        return publishScene();
+    }
+  }, []);
 
   useEffect(() => {
     if (ref.current) return;
@@ -67,8 +111,8 @@ export function Editor() {
 
   return (
     <div className="Editor">
-      <div className="header">
-        <div className="left">
+      <Header>
+        <>
           <div
             className="back"
             onClick={handleBack}
@@ -76,21 +120,24 @@ export function Editor() {
             <ArrowBackIosIcon />
           </div>
           <div className="title">{project?.title}</div>
-        </div>
-        <div className="right">
-          <div className="actions">
-            <Button color="secondary">Code</Button>
-            <Button
-              color="secondary"
-              disabled={loadingPreview}
-              onClick={openPreview}
-            >
-              Preview
-            </Button>
-            <Button color="primary">Publish</Button>
-          </div>
-        </div>
-      </div>
+        </>
+        <>
+          <Button color="secondary">{t('editor.header.actions.code')}</Button>
+          <Button
+            color="secondary"
+            disabled={loadingPreview}
+            onClick={openPreview}
+          >
+            {t('editor.header.actions.preview')}
+          </Button>
+          <Button
+            color="primary"
+            onClick={handleOpenModal('publish')}
+          >
+            {t('editor.header.actions.publish')}
+          </Button>
+        </>
+      </Header>
       {isReady ? (
         <iframe
           className="inspector"
@@ -100,6 +147,14 @@ export function Editor() {
         <div className="loading">
           <Loader />
         </div>
+      )}
+      {project && (
+        <PublishModal
+          open={open === 'publish'}
+          project={project}
+          onClose={handleCloseModal}
+          onSubmit={handleSubmitModal}
+        />
       )}
     </div>
   );

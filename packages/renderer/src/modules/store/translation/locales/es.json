@@ -1,4 +1,50 @@
 {
+  "home": {
+    "header": {
+      "title": "Bienvenido al Editor Alpha",
+      "feedback": "Darnos feedback"
+    }
+  },
+  "editor": {
+    "header": {
+      "actions": {
+        "code": "Código",
+        "preview": "Previsualizar",
+        "publish": "Publicar"
+      }
+    },
+    "modal": {
+      "publish": {
+        "title": "Publicar escena \"{title}\"",
+        "select": "Select where you want to deploy this scene:",
+        "worlds": {
+          "title": "Worlds",
+          "description": "Not findable in Genesis City map. \nUp to 100 users can join concurrently.",
+          "action": "Publish to World"
+        },
+        "land": {
+          "title": "My Land",
+          "description": "Findable in Genesis City map. \nUnlimited users can join concurrently.",
+          "action": "Publish to Land"
+        },
+        "alternative_servers": {
+          "title": "Servidores Alternativos",
+          "options": {
+            "test_server": "Servidor de Prueba",
+            "custom_server": "Servidor Personalizado"
+          },
+          "custom_server_url": "URL del Servidor",
+          "action": {
+            "test_server": "Publicar en el Servidor de Prueba",
+            "custom_server": "Publicar en Servidor Personalizado"
+          },
+          "errors": {
+            "url": "URL inválida"
+          }
+        }
+      }
+    }
+  },
   "scene_list": {
     "my_scenes": "Mis Escenas",
     "import_scene": "Importar Escena",
@@ -22,5 +68,13 @@
     },
     "results": "{count} {count, plural, one {resultado} other {resultados}}",
     "parcel_count": "{parcels} {parcels, plural, one {parcel} other {parcels}}"
+  },
+  "modal": {
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "irreversible_operation": "Esta operación es irreversible"
+  },
+  "option_box": {
+    "learn_more": "Learn more"
   }
 }

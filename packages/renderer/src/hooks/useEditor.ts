@@ -1,7 +1,11 @@
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
+
 import { useDispatch, useSelector } from '#store';
+
+import type { DeployOptions } from '/shared/types/ipc';
 import { actions } from '/@/modules/store/editor';
+
 import { useWorkspace } from './useWorkspace';
 
 export const useEditor = () => {
@@ -24,11 +28,14 @@ export const useEditor = () => {
     }
   }, [project]);
 
-  const publishScene = useCallback(() => {
-    if (project) {
-      dispatch(actions.publishScene(project.path));
-    }
-  }, [project, actions.publishScene]);
+  const publishScene = useCallback(
+    (opts: Omit<DeployOptions, 'path'> = {}) => {
+      if (project) {
+        dispatch(actions.publishScene({ ...opts, path: project.path }));
+      }
+    },
+    [project, actions.publishScene],
+  );
 
   const openPreview = useCallback(() => {
     if (editor.previewPort) {

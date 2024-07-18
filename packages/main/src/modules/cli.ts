@@ -1,5 +1,6 @@
-import type { Command } from './npx';
-import { npx } from './npx';
+import type { DeployOptions } from '/shared/types/ipc';
+
+import { npx, type Command } from './npx';
 import { getAvailablePort } from './port';
 
 export async function init(path: string, repo?: string) {
@@ -27,11 +28,21 @@ export async function start(path: string) {
 }
 
 export let deployServer: Command | null = null;
-export async function deploy(path: string) {
+export async function deploy({ path, target, targetContent }: DeployOptions) {
   if (deployServer) {
     await deployServer.kill();
   }
   const port = await getAvailablePort();
-  deployServer = npx('@dcl/sdk-commands', ['deploy', '--port', port.toString()], path);
+  deployServer = npx(
+    '@dcl/sdk-commands',
+    [
+      'deploy',
+      '--port',
+      port.toString(),
+      ...(target ? ['--target', target] : []),
+      ...(targetContent ? ['--target-content', targetContent] : []),
+    ],
+    path,
+  );
   return port;
 }
