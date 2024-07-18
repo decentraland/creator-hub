@@ -1,21 +1,19 @@
-import path from 'node:path';
-import { type Command, npx } from './npx';
-import { createRequire } from 'node:module';
+// import { app } from 'electron';
+// import path from 'node:path';
+import { type Command } from './npx';
 import { getAvailablePort } from './port';
 
-export let inspectorServer: Command | null = null;
+export const inspectorServer: Command | null = null;
 export async function start() {
-  if (inspectorServer) {
-    await inspectorServer.kill();
-  }
+  // if (inspectorServer) {
+  //   await inspectorServer.kill();
+  // }
 
-  const require = createRequire(import.meta.url);
-  const pkgPath = require.resolve('@dcl/inspector');
-  const inspectorPath = path.join(path.dirname(pkgPath), '../public');
+  // const inspectorPath = path.join(app.getAppPath(), './node_modules/@dcl/inspector/public');
 
   const port = await getAvailablePort();
-  inspectorServer = npx('http-server', ['--port', port.toString()], inspectorPath);
-  await inspectorServer.waitFor(/available/i, /error/i);
+  // inspectorServer = npx('http-server', ['--port', port.toString()], inspectorPath);
+  // await inspectorServer.waitFor(/available/i, /error/i);
 
   return port;
 }

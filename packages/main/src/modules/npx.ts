@@ -1,9 +1,9 @@
+import log from 'electron-log/main';
+import { app, utilityProcess } from 'electron';
 import path from 'path';
 import treeKill from 'tree-kill';
 import { future } from 'fp-future';
 import isRunning from 'is-running';
-import { createRequire } from 'node:module';
-import { utilityProcess } from 'electron';
 
 export type Command = {
   pkg: string;
@@ -40,23 +40,22 @@ export function npx(pkg: string, args: string[] = [], cwd: string): Command {
   const matchers: Matcher[] = [];
 
   // run npx as a utility process on a given cwd
-  const require = createRequire(import.meta.url);
-  const npmPath = require.resolve('npm');
-  const npxPath = path.join(path.dirname(npmPath), '../.bin/npx');
+  const npxPath = path.join(app.getAppPath(), './node_modules/npm/bin/npx-cli.js');
+  log.info(`npx path: ${npxPath}`);
   const child = utilityProcess.fork(npxPath, [pkg, ...args], { cwd, stdio: 'pipe' });
 
   const ready = future<void>();
 
   const name = `npx ${pkg} ${args.join(' ')}`;
   child.on('spawn', () => {
-    console.log(`Running "${name}" with pid=${child.pid} in ${cwd}...`);
+    log.info(`Running "${name}" with pid=${child.pid} in ${cwd}...`);
     ready.resolve();
   });
 
   child.on('exit', code => {
     if (!alive) return;
     alive = false;
-    console.log(`Exiting "${name}" with pid=${child.pid} and exit code=${code || 0}`);
+    log.info(`Exiting "${name}" with pid=${child.pid} and exit code=${code || 0}`);
     if (code !== 0 && code !== null) {
       promise.reject(
         new Error(`Error: process "${name}" with pid=${child.pid} exited with code=${code}`),
@@ -106,7 +105,7 @@ export function npx(pkg: string, args: string[] = [], cwd: string): Command {
     kill: async () => {
       await ready;
       const pid = child.pid!;
-      console.log(`Killing process "${name}" with pid=${pid}...`);
+      log.info(`Killing process "${name}" with pid=${pid}...`);
       // if child is being killed or already killed then return
       if (isKilling || !alive) return;
       isKilling = true;
@@ -127,10 +126,10 @@ export function npx(pkg: string, args: string[] = [], cwd: string): Command {
           matcher.enabled = false;
         }
         if (force) {
-          console.log(`Process "${name}" with pid=${pid} forcefully killed`);
+          log.info(`Process "${name}" with pid=${pid} forcefully killed`);
           treeKill(pid!, 'SIGKILL');
         } else {
-          console.log(`Process "${name}" with pid=${pid} gracefully killed`);
+          log.info(`Process "${name}" with pid=${pid} gracefully killed`);
         }
         promise.resolve();
       };
@@ -160,7 +159,7 @@ export function npx(pkg: string, args: string[] = [], cwd: string): Command {
 
 async function handleData(buffer: Buffer, matchers: Matcher[]) {
   const data = buffer.toString('utf8');
-  console.log(data); // pipe data to console
+  log.info(data); // pipe data to console
   for (const { pattern, handler, enabled } of matchers) {
     if (!enabled) continue;
     pattern.lastIndex = 0; // reset regexp

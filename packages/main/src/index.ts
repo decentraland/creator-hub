@@ -2,11 +2,15 @@ import { app } from 'electron';
 import { restoreOrCreateWindow } from '/@/mainWindow';
 import { platform } from 'node:process';
 import updater from 'electron-updater';
+import log from 'electron-log/main';
 
 import './security-restrictions';
 import { initIpc } from './modules/ipc';
 import { deployServer, previewServer } from './modules/cli';
 import { inspectorServer } from './modules/inspector';
+import { npx } from './modules/npx';
+
+log.initialize();
 
 /**
  * Prevent electron from running multiple instances.
@@ -40,6 +44,10 @@ app
   .whenReady()
   .then(async () => {
     initIpc();
+    log.info('APP PATH', app.getAppPath());
+    await npx('-v', [], app.getAppPath());
+    await npx('sign-bunny', ['HELLO'], app.getAppPath());
+    await npx('http-server', [], app.getAppPath());
     await restoreOrCreateWindow();
   })
   .catch(e => console.error('Failed create window:', e));
@@ -79,3 +87,5 @@ app.on('before-quit', async event => {
   await killAll();
   app.exit();
 });
+
+app.setAppLogsPath('/Users/mostro/Desktop');
