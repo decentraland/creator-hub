@@ -8,7 +8,7 @@ import './security-restrictions';
 import { initIpc } from './modules/ipc';
 import { deployServer, previewServer } from './modules/cli';
 import { inspectorServer } from './modules/inspector';
-import { npx } from './modules/npx';
+// import { run } from './modules/bin';
 
 log.initialize();
 
@@ -40,14 +40,32 @@ app.on('activate', restoreOrCreateWindow);
 /**
  * Create the application window when app is ready.
  */
+
 app
   .whenReady()
   .then(async () => {
+    // const child = utilityProcess.fork('/Users/mostro/code/editor-electron/test.js', [], {
+    //   stdio: 'pipe',
+    //   env: {
+    //     ...process.env,
+    //     PATH: process.env.PATH + ':/Users/mostro/.nvm/versions/node/v20.12.2/bin',
+    //   },
+    // });
+    // child.on('spawn', () => {
+    //   log.info('test.js spawned');
+    //   if (child.stdout) {
+    //     child.stdout.on('data', data => {
+    //       log.info(data.toString());
+    //     });
+    //   }
+    //   if (child.stderr) {
+    //     child.stderr!.on('data', data => {
+    //       log.error(data.toString());
+    //     });
+    //   }
+    // });
     initIpc();
-    log.info('APP PATH', app.getAppPath());
-    await npx('-v', [], app.getAppPath());
-    await npx('sign-bunny', ['HELLO'], app.getAppPath());
-    await npx('http-server', [], app.getAppPath());
+    // run('sign-bunny', 'sign-bunny', 'HELLO');
     await restoreOrCreateWindow();
   })
   .catch(e => console.error('Failed create window:', e));

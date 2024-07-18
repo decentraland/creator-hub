@@ -4,10 +4,14 @@ import path from 'path';
 import treeKill from 'tree-kill';
 import { future } from 'fp-future';
 import isRunning from 'is-running';
+import { getBinPath } from './path';
 
-export type Command = {
+export type Child = {
   pkg: string;
+  bin: string;
+  command: string;
   args: string[];
+  cwd: string;
   process: Electron.UtilityProcess;
   on: (pattern: RegExp, handler: (data?: string) => void) => number;
   once: (pattern: RegExp, handler: (data?: string) => void) => number;
@@ -24,14 +28,27 @@ type Matcher = {
   enabled: boolean;
 };
 
+type Options = {
+  basePath?: string; // this is the path where the node_modules that should be used are located, it defaults to the app path.
+};
+
 /**
- * Runs any command in a spanwed child process, provides helpers to wait for the process to finish, listen for outputs, send reponses, etc
- * @param command The command
+ * Runs a javascript bin script in a utility child process, provides helpers to wait for the process to finish, listen for outputs, etc
+ * @param pkg The npm package
+ * @param command The command to run
  * @param args The arguments for the command
+ * @param cwd The directory where the command should be executed, it defaults to the app path
  * @param options Options for the child process spawned
  * @returns SpanwedChild
  */
-export function npx(pkg: string, args: string[] = [], cwd: string): Command {
+export function run(
+  pkg: string,
+  bin: string,
+  command: string,
+  args: string[] = [],
+  cwd: string = app.getAppPath(),
+  options: Options = {},
+): Child {
   // status
   let isKilling = false;
   let alive = true;
@@ -39,26 +56,37 @@ export function npx(pkg: string, args: string[] = [], cwd: string): Command {
   const promise = future<void>();
   const matchers: Matcher[] = [];
 
-  // run npx as a utility process on a given cwd
-  const npxPath = path.join(app.getAppPath(), './node_modules/npm/bin/npx-cli.js');
-  log.info(`npx path: ${npxPath}`);
-  const child = utilityProcess.fork(npxPath, [pkg, ...args], { cwd, stdio: 'pipe' });
+  const { basePath = app.getAppPath() } = options;
+
+  const binPath = getBinPath(pkg, bin, basePath);
+  const forked = utilityProcess.fork(binPath, [command, ...args], {
+    cwd,
+    stdio: 'pipe',
+    env: {
+      ...process.env,
+      PATH:
+        process.env.PATH +
+        ':/Users/mostro/.nvm/versions/node/v20.12.2/bin' +
+        ':' +
+        path.dirname(getBinPath('npm', 'npm')),
+    },
+  });
 
   const ready = future<void>();
 
-  const name = `npx ${pkg} ${args.join(' ')}`;
-  child.on('spawn', () => {
-    log.info(`Running "${name}" with pid=${child.pid} in ${cwd}...`);
+  const name = `${pkg} ${command} ${args.join(' ')}`;
+  forked.on('spawn', () => {
+    log.info(`Running "${name}" using bin=${binPath} with pid=${forked.pid} in ${cwd}`);
     ready.resolve();
   });
 
-  child.on('exit', code => {
+  forked.on('exit', code => {
     if (!alive) return;
     alive = false;
-    log.info(`Exiting "${name}" with pid=${child.pid} and exit code=${code || 0}`);
+    log.info(`Exiting "${name}" with pid=${forked.pid} and exit code=${code || 0}`);
     if (code !== 0 && code !== null) {
       promise.reject(
-        new Error(`Error: process "${name}" with pid=${child.pid} exited with code=${code}`),
+        new Error(`Error: process "${name}" with pid=${forked.pid} exited with code=${code}`),
       );
     } else {
       promise.resolve(void 0);
@@ -69,13 +97,16 @@ export function npx(pkg: string, args: string[] = [], cwd: string): Command {
     stream!.on('data', (data: Buffer) => handleData(data, matchers));
   }
 
-  handleStream(child.stdout!);
-  handleStream(child.stderr!);
+  handleStream(forked.stdout!);
+  handleStream(forked.stderr!);
 
-  const command: Command = {
+  const child: Child = {
     pkg,
+    bin,
+    command,
     args,
-    process: child,
+    cwd,
+    process: forked,
     on: (pattern, handler) => {
       if (alive) {
         return matchers.push({ pattern, handler, enabled: true }) - 1;
@@ -83,9 +114,9 @@ export function npx(pkg: string, args: string[] = [], cwd: string): Command {
       throw new Error('Process has been killed');
     },
     once: (pattern, handler) => {
-      const index = command.on(pattern, data => {
+      const index = child.on(pattern, data => {
         handler(data);
-        command.off(index);
+        child.off(index);
       });
       return index;
     },
@@ -97,14 +128,14 @@ export function npx(pkg: string, args: string[] = [], cwd: string): Command {
     wait: () => promise,
     waitFor: (resolvePattern, rejectPattern) =>
       new Promise((resolve, reject) => {
-        command.once(resolvePattern, data => resolve(data!));
+        child.once(resolvePattern, data => resolve(data!));
         if (rejectPattern) {
-          command.once(rejectPattern, data => reject(new Error(data)));
+          child.once(rejectPattern, data => reject(new Error(data)));
         }
       }),
     kill: async () => {
       await ready;
-      const pid = child.pid!;
+      const pid = forked.pid!;
       log.info(`Killing process "${name}" with pid=${pid}...`);
       // if child is being killed or already killed then return
       if (isKilling || !alive) return;
@@ -154,7 +185,7 @@ export function npx(pkg: string, args: string[] = [], cwd: string): Command {
     alive: () => alive,
   };
 
-  return command;
+  return child;
 }
 
 async function handleData(buffer: Buffer, matchers: Matcher[]) {
