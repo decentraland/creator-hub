@@ -1,15 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-
-type PackageJson = {
-  version: string;
-  engines: {
-    node: string;
-  };
-  bin?: { [command: string]: string };
-  dependencies?: Record<string, string>;
-  devDependencies?: Record<string, string>;
-};
+import { type PackageJson } from '/shared/types/pkg';
 
 /**
  * Return the package json of a given module

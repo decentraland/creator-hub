@@ -2,11 +2,15 @@ import { app } from 'electron';
 import { restoreOrCreateWindow } from '/@/mainWindow';
 import { platform } from 'node:process';
 import updater from 'electron-updater';
+import log from 'electron-log/main';
 
 import './security-restrictions';
 import { initIpc } from './modules/ipc';
 import { deployServer, previewServer } from './modules/cli';
 import { inspectorServer } from './modules/inspector';
+import { link } from './modules/bin';
+
+log.initialize();
 
 /**
  * Prevent electron from running multiple instances.
@@ -36,9 +40,11 @@ app.on('activate', restoreOrCreateWindow);
 /**
  * Create the application window when app is ready.
  */
+
 app
   .whenReady()
   .then(async () => {
+    await link();
     initIpc();
     await restoreOrCreateWindow();
   })
