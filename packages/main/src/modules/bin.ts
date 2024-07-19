@@ -53,11 +53,11 @@ export async function link() {
         await fs.symlink(nodeBinPath, nodeCmdPath);
       }
     }
+    PATH = joinEnvPaths(process.env.PATH, path.dirname(nodeCmdPath), path.dirname(npmBinPath));
     log.info('node command:', nodeCmdPath);
     log.info('node bin:', nodeBinPath);
     log.info('npm bin: ', npmBinPath);
     log.info('$PATH', PATH);
-    PATH = joinEnvPaths(process.env.PATH, path.dirname(nodeCmdPath), path.dirname(npmBinPath));
   } else {
     // no need to link node and npm in dev mode since they should already be in the $PATH for dev environment to work
     log.info('Skip linking node and npm binaries in DEV mode');
