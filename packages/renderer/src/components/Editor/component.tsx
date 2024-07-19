@@ -75,7 +75,7 @@ export function Editor() {
   // query params
   const params = new URLSearchParams();
 
-  params.append('dataLayerRpcWsUrl', `ws://0.0.0.0:${previewPort}/data-layer`); // this connects the inspector to the data layer running on the preview server
+  params.append('dataLayerRpcWsUrl', `ws://localhost:${previewPort}/data-layer`); // this connects the inspector to the data layer running on the preview server
 
   if (import.meta.env.VITE_ASSET_PACKS_CONTENT_URL) {
     // this is for local development of the asset-packs repo, or to use a different environment like .zone
