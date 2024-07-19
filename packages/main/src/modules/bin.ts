@@ -95,7 +95,7 @@ type RunOptions = {
 /**
  * Runs a javascript bin script in a utility child process, provides helpers to wait for the process to finish, listen for outputs, etc
  * @param pkg The npm package
- * @param command The command to run
+ * @param bin The command to run
  * @param options Options for the child process (args, cwd, env, workspace)
  * @returns Child
  */
