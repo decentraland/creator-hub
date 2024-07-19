@@ -9,7 +9,7 @@ import { hasDependency } from './pkg';
 import { getRowsAndCols, parseCoords } from './scene';
 import { invoke } from './invoke';
 import { exists } from './fs';
-import { setConfig } from './config';
+import { getConfig, setConfig } from './config';
 
 import { DEFAULT_THUMBNAIL, NEW_SCENE_NAME } from './constants';
 
@@ -129,7 +129,7 @@ export async function getProjects(paths: string | string[]) {
 }
 
 export async function getWorkspacePaths(): Promise<string[]> {
-  const [home, config] = await Promise.all([getPath(), invoke('config.get')]);
+  const [home, config] = await Promise.all([getPath(), getConfig()]);
   return [home, ...config.workspace.paths];
 }
 
