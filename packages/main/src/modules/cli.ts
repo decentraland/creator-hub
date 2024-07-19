@@ -7,10 +7,12 @@ export async function init(path: string, repo?: string) {
     '@dcl/sdk-commands',
     'sdk-commands',
     'init',
-    ['--yes', ...(repo ? ['--github-repo', repo] : [])],
+    ['--yes', '--skip-install', ...(repo ? ['--github-repo', repo] : [])],
     path,
   );
   await initCommand.wait();
+  const installCommand = run('npm', 'npm', 'install', [], path);
+  await installCommand.wait();
 }
 
 export let previewServer: Child | null = null;

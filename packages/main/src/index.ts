@@ -8,6 +8,7 @@ import './security-restrictions';
 import { initIpc } from './modules/ipc';
 import { deployServer, previewServer } from './modules/cli';
 import { inspectorServer } from './modules/inspector';
+import { link } from './modules/bin';
 
 log.initialize();
 
@@ -43,6 +44,7 @@ app.on('activate', restoreOrCreateWindow);
 app
   .whenReady()
   .then(async () => {
+    await link();
     initIpc();
     await restoreOrCreateWindow();
   })

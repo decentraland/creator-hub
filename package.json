@@ -32,6 +32,7 @@
     "format": "npx prettier --write \"**/*.{js,mjs,cjs,ts,mts,cts,vue,json}\""
   },
   "devDependencies": {
+    "@types/cmd-shim": "^5.0.2",
     "@types/is-running": "^2.1.2",
     "@types/node": "20.14.9",
     "@types/react": "^18.3.3",
@@ -59,6 +60,7 @@
     "@reduxjs/toolkit": "^2.2.6",
     "@vitejs/plugin-react": "^4.3.1",
     "classnames": "^2.5.1",
+    "cmd-shim": "^6.0.3",
     "decentraland-ui2": "^0.1.0",
     "electron-log": "^5.1.6",
     "electron-updater": "6.2.1",

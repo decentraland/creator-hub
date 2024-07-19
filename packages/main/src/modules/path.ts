@@ -18,3 +18,21 @@ export function getBinPath(pkg: string, bin: string, basePath: string = app.getA
 
   return path.join(pkgPath, pkgJson.bin[bin]);
 }
+
+/**
+ * Helper to get the absolute path to the node bin given the user platform
+ * @returns The path to the node bin
+ */
+export function getNodeCmdPath() {
+  const cmd = process.platform === 'win32' ? 'node.cmd' : 'node';
+  return path.join(app.getAppPath(), cmd);
+}
+
+/**
+ * Combines different paths as a single env PATH using the right separator given the user's platform
+ */
+
+export function joinEnvPaths(...paths: (undefined | string)[]) {
+  const separator = process.platform === 'win32' ? ';' : ':';
+  return paths.filter((path): path is string => !!path).join(separator);
+}

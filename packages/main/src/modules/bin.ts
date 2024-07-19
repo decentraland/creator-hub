@@ -1,41 +1,67 @@
 import log from 'electron-log/main';
-import fs from 'node:fs';
+import fs from 'node:fs/promises';
 import { app, utilityProcess } from 'electron';
 import path from 'path';
 import treeKill from 'tree-kill';
 import { future } from 'fp-future';
 import isRunning from 'is-running';
-import { getBinPath } from './path';
+import cmdShim from 'cmd-shim';
+import { getBinPath, getNodeCmdPath, joinEnvPaths } from './path';
 
-function getNodeBinPath() {
-  const cmdPath = path.join(app.getAppPath(), 'node');
-  log.info('cmdPath', cmdPath);
-  let isLinked = false;
-  try {
-    const stat = fs.statSync(cmdPath);
-    log.info('Node bin found', stat);
-    if (stat.isSymbolicLink()) {
-      const link = fs.readlinkSync(cmdPath);
-      log.info(`Node is linked to ${link}`);
-      if (link === process.execPath) {
-        log.info('Is same as execPath');
-        isLinked = true;
+// the env $PATH
+let PATH = process.env.PATH;
+
+/**
+ * Links node and npm binaries to the env $PATH
+ */
+export async function link() {
+  const nodeCmdPath = getNodeCmdPath();
+  const nodeBinPath = process.execPath;
+  const npmBinPath = getBinPath('npm', 'npm');
+  if (!import.meta.env.DEV) {
+    let isLinked = false;
+    try {
+      // check if link exists
+      const stat = await fs.stat(nodeCmdPath);
+      // check if it is a symlink
+      if (stat.isSymbolicLink()) {
+        const link = await fs.readlink(nodeCmdPath);
+        // check if link points to the right bin
+        if (link === process.execPath) {
+          // skip linking
+          log.info('Node binaries already linked');
+          isLinked = true;
+        }
       } else {
-        log.info(`Is different to execPath=${process.execPath}`);
+        // if not a symlink delete
+        await fs.rm(nodeCmdPath);
       }
-    } else {
-      log.info('Node bin not linked');
-      fs.rmSync(cmdPath);
+    } catch (error) {
+      // if link is not found, continue linking
     }
-  } catch (error) {
-    // do nothing
-    log.info('Node bin not found');
+    if (!isLinked) {
+      log.info(`Linking node bin from ${nodeCmdPath} to ${nodeBinPath}`);
+      // on windows we use a cmd file
+      if (process.platform === 'win32') {
+        await cmdShim(
+          nodeBinPath,
+          // remove the .cmd part if present, since it will get added by cmdShim
+          nodeCmdPath.endsWith('.cmd') ? nodeCmdPath.replace(/\.cmd$/, '') : nodeCmdPath,
+        );
+      } else {
+        // otherwise we use a symlink
+        await fs.symlink(nodeBinPath, nodeCmdPath);
+      }
+    }
+    PATH = joinEnvPaths(process.env.PATH, path.dirname(nodeCmdPath), path.dirname(npmBinPath));
+  } else {
+    // no need to link node and npm in dev mode since they should already be in the $PATH for dev environment to work
+    log.info('Skip linking node and npm binaries in DEV mode');
   }
-  if (!isLinked) {
-    log.info(`Linking node bin from cmdPath=${cmdPath} to ${process.execPath}`);
-    fs.symlinkSync(process.execPath, cmdPath);
-  }
-  return cmdPath;
+  log.info('node command:', nodeCmdPath);
+  log.info('node bin:', nodeBinPath);
+  log.info('npm bin: ', npmBinPath);
+  log.info('$PATH', PATH);
 }
 
 export type Child = {
@@ -91,13 +117,7 @@ export function run(
   const { basePath = app.getAppPath() } = options;
 
   const binPath = getBinPath(pkg, bin, basePath);
-  const PATH =
-    process.env.PATH +
-    ':' +
-    path.dirname(getNodeBinPath()) +
-    ':' +
-    path.dirname(getBinPath('npm', 'npm'));
-  log.info(`PATH=${PATH}`);
+
   const forked = utilityProcess.fork(binPath, [command, ...args], {
     cwd,
     stdio: 'pipe',
