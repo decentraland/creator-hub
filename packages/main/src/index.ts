@@ -85,5 +85,3 @@ app.on('before-quit', async event => {
   await killAll();
   app.exit();
 });
-
-app.setAppLogsPath('/Users/mostro/Desktop');
