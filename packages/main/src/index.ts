@@ -8,7 +8,6 @@ import './security-restrictions';
 import { initIpc } from './modules/ipc';
 import { deployServer, previewServer } from './modules/cli';
 import { inspectorServer } from './modules/inspector';
-// import { run } from './modules/bin';
 
 log.initialize();
 
@@ -44,28 +43,7 @@ app.on('activate', restoreOrCreateWindow);
 app
   .whenReady()
   .then(async () => {
-    // const child = utilityProcess.fork('/Users/mostro/code/editor-electron/test.js', [], {
-    //   stdio: 'pipe',
-    //   env: {
-    //     ...process.env,
-    //     PATH: process.env.PATH + ':/Users/mostro/.nvm/versions/node/v20.12.2/bin',
-    //   },
-    // });
-    // child.on('spawn', () => {
-    //   log.info('test.js spawned');
-    //   if (child.stdout) {
-    //     child.stdout.on('data', data => {
-    //       log.info(data.toString());
-    //     });
-    //   }
-    //   if (child.stderr) {
-    //     child.stderr!.on('data', data => {
-    //       log.error(data.toString());
-    //     });
-    //   }
-    // });
     initIpc();
-    // run('sign-bunny', 'sign-bunny', 'HELLO');
     await restoreOrCreateWindow();
   })
   .catch(e => console.error('Failed create window:', e));

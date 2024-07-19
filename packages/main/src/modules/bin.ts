@@ -1,10 +1,42 @@
 import log from 'electron-log/main';
+import fs from 'node:fs';
 import { app, utilityProcess } from 'electron';
 import path from 'path';
 import treeKill from 'tree-kill';
 import { future } from 'fp-future';
 import isRunning from 'is-running';
 import { getBinPath } from './path';
+
+function getNodeBinPath() {
+  const cmdPath = path.join(app.getAppPath(), 'node');
+  log.info('cmdPath', cmdPath);
+  let isLinked = false;
+  try {
+    const stat = fs.statSync(cmdPath);
+    log.info('Node bin found', stat);
+    if (stat.isSymbolicLink()) {
+      const link = fs.readlinkSync(cmdPath);
+      log.info(`Node is linked to ${link}`);
+      if (link === process.execPath) {
+        log.info('Is same as execPath');
+        isLinked = true;
+      } else {
+        log.info(`Is different to execPath=${process.execPath}`);
+      }
+    } else {
+      log.info('Node bin not linked');
+      fs.rmSync(cmdPath);
+    }
+  } catch (error) {
+    // do nothing
+    log.info('Node bin not found');
+  }
+  if (!isLinked) {
+    log.info(`Linking node bin from cmdPath=${cmdPath} to ${process.execPath}`);
+    fs.symlinkSync(process.execPath, cmdPath);
+  }
+  return cmdPath;
+}
 
 export type Child = {
   pkg: string;
@@ -59,16 +91,19 @@ export function run(
   const { basePath = app.getAppPath() } = options;
 
   const binPath = getBinPath(pkg, bin, basePath);
+  const PATH =
+    process.env.PATH +
+    ':' +
+    path.dirname(getNodeBinPath()) +
+    ':' +
+    path.dirname(getBinPath('npm', 'npm'));
+  log.info(`PATH=${PATH}`);
   const forked = utilityProcess.fork(binPath, [command, ...args], {
     cwd,
     stdio: 'pipe',
     env: {
       ...process.env,
-      PATH:
-        process.env.PATH +
-        ':/Users/mostro/.nvm/versions/node/v20.12.2/bin' +
-        ':' +
-        path.dirname(getBinPath('npm', 'npm')),
+      PATH,
     },
   });
 
