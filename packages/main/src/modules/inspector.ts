@@ -9,16 +9,12 @@ export async function start() {
     await inspectorServer.kill();
   }
 
-  const inspectorPath = path.join(app.getAppPath(), './node_modules/@dcl/inspector/public');
-
   const port = await getAvailablePort();
-  inspectorServer = run(
-    'http-server',
-    'http-server',
-    '',
-    ['--port', port.toString()],
-    inspectorPath,
-  );
+  inspectorServer = run('http-server', 'http-server', {
+    args: ['--port', port.toString()],
+    cwd: path.join(app.getAppPath(), './node_modules/@dcl/inspector/public'),
+  });
+
   await inspectorServer.waitFor(/available/i, /error/i);
 
   return port;

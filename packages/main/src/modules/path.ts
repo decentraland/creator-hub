@@ -3,8 +3,15 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { type PackageJson } from '/shared/types/pkg';
 
-export function getBinPath(pkg: string, bin: string, basePath: string = app.getAppPath()) {
-  const pkgPath = path.join(basePath, './node_modules', pkg);
+/**
+ * Returns the path to a particular bin
+ * @param pkg The name of the package
+ * @param bin The name of the bin
+ * @param workspace The path to the workspace, where the `node_modules` folder is located
+ * @returns
+ */
+export function getBinPath(pkg: string, bin: string, workspace: string = app.getAppPath()) {
+  const pkgPath = path.join(workspace, './node_modules', pkg);
   let pkgJson: PackageJson;
   try {
     pkgJson = JSON.parse(fs.readFileSync(path.join(pkgPath, 'package.json'), 'utf8'));

@@ -3,15 +3,12 @@ import { run, type Child } from './bin';
 import { getAvailablePort } from './port';
 
 export async function init(path: string, repo?: string) {
-  const initCommand = run(
-    '@dcl/sdk-commands',
-    'sdk-commands',
-    'init',
-    ['--yes', '--skip-install', ...(repo ? ['--github-repo', repo] : [])],
-    path,
-  );
+  const initCommand = run('@dcl/sdk-commands', 'sdk-commands', {
+    args: ['init', '--yes', '--skip-install', ...(repo ? ['--github-repo', repo] : [])],
+    cwd: path,
+  });
   await initCommand.wait();
-  const installCommand = run('npm', 'npm', 'install', [], path);
+  const installCommand = run('npm', 'npm', { args: ['install'], cwd: path });
   await installCommand.wait();
 }
 
@@ -21,16 +18,11 @@ export async function start(path: string) {
     await previewServer.kill();
   }
   const port = await getAvailablePort();
-  previewServer = run(
-    '@dcl/sdk-commands',
-    'sdk-commands',
-    'start',
-    ['--port', port.toString(), '--no-browser', '--data-layer'],
-    path,
-    {
-      basePath: path,
-    },
-  );
+  previewServer = run('@dcl/sdk-commands', 'sdk-commands', {
+    args: ['start', '--port', port.toString(), '--no-browser', '--data-layer'],
+    cwd: path,
+    workspace: path,
+  });
   await previewServer.waitFor(/available/i);
   return port;
 }
@@ -41,17 +33,16 @@ export async function deploy({ path, target, targetContent }: DeployOptions) {
     await deployServer.kill();
   }
   const port = await getAvailablePort();
-  deployServer = run(
-    '@dcl/sdk-commands',
-    'sdk-commands',
-    'deploy',
-    [
+  deployServer = run('@dcl/sdk-commands', 'sdk-commands', {
+    args: [
+      'deploy',
       '--port',
       port.toString(),
       ...(target ? ['--target', target] : []),
       ...(targetContent ? ['--target-content', targetContent] : []),
     ],
-    path,
-  );
+    cwd: path,
+    workspace: path,
+  });
   return port;
 }

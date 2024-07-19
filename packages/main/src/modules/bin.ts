@@ -53,21 +53,20 @@ export async function link() {
         await fs.symlink(nodeBinPath, nodeCmdPath);
       }
     }
+    log.info('node command:', nodeCmdPath);
+    log.info('node bin:', nodeBinPath);
+    log.info('npm bin: ', npmBinPath);
+    log.info('$PATH', PATH);
     PATH = joinEnvPaths(process.env.PATH, path.dirname(nodeCmdPath), path.dirname(npmBinPath));
   } else {
     // no need to link node and npm in dev mode since they should already be in the $PATH for dev environment to work
     log.info('Skip linking node and npm binaries in DEV mode');
   }
-  log.info('node command:', nodeCmdPath);
-  log.info('node bin:', nodeBinPath);
-  log.info('npm bin: ', npmBinPath);
-  log.info('$PATH', PATH);
 }
 
 export type Child = {
   pkg: string;
   bin: string;
-  command: string;
   args: string[];
   cwd: string;
   process: Electron.UtilityProcess;
@@ -86,8 +85,11 @@ type Matcher = {
   enabled: boolean;
 };
 
-type Options = {
-  basePath?: string; // this is the path where the node_modules that should be used are located, it defaults to the app path.
+type RunOptions = {
+  args?: string[]; // this are the arguments for the command
+  cwd?: string; // this is the directory where the command should be executed, it defaults to the app path.
+  env?: Record<string, string>; // this are the env vars that should be added to the command's env
+  workspace?: string; // this is the path where the node_modules that should be used are located, it defaults to the app path.
 };
 
 /**
@@ -99,14 +101,7 @@ type Options = {
  * @param options Options for the child process spawned
  * @returns SpanwedChild
  */
-export function run(
-  pkg: string,
-  bin: string,
-  command: string,
-  args: string[] = [],
-  cwd: string = app.getAppPath(),
-  options: Options = {},
-): Child {
+export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
   // status
   let isKilling = false;
   let alive = true;
@@ -114,22 +109,23 @@ export function run(
   const promise = future<void>();
   const matchers: Matcher[] = [];
 
-  const { basePath = app.getAppPath() } = options;
+  const { workspace = app.getAppPath(), cwd = app.getAppPath(), args = [], env = {} } = options;
 
-  const binPath = getBinPath(pkg, bin, basePath);
+  const binPath = getBinPath(pkg, bin, workspace);
 
-  const forked = utilityProcess.fork(binPath, [command, ...args], {
+  const forked = utilityProcess.fork(binPath, [...args], {
     cwd,
     stdio: 'pipe',
     env: {
       ...process.env,
+      ...env,
       PATH,
     },
   });
 
   const ready = future<void>();
 
-  const name = `${pkg} ${command} ${args.join(' ')}`;
+  const name = `${pkg} ${args.join(' ')}`.trim();
   forked.on('spawn', () => {
     log.info(`Running "${name}" using bin=${binPath} with pid=${forked.pid} in ${cwd}`);
     ready.resolve();
@@ -158,7 +154,6 @@ export function run(
   const child: Child = {
     pkg,
     bin,
-    command,
     args,
     cwd,
     process: forked,
