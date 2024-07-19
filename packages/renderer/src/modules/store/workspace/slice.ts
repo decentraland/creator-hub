@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { workspace } from '#preload';
+
 import type { Workspace } from '/shared/types/workspace';
 import { SortBy } from '/shared/types/projects';
 import type { Async } from '../../async';
@@ -10,6 +11,7 @@ const createProject = createAsyncThunk('workspace/createProject', workspace.crea
 const deleteProject = createAsyncThunk('workspace/deleteProject', workspace.deleteProject);
 const duplicateProject = createAsyncThunk('workspace/duplicateProject', workspace.duplicateProject);
 const importProject = createAsyncThunk('workspace/importProject', workspace.importProject);
+const reimportProject = createAsyncThunk('workspace/reimportProject', workspace.reimportProject);
 
 // state
 export type WorkspaceState = Async<Workspace>;
@@ -17,6 +19,7 @@ export type WorkspaceState = Async<Workspace>;
 const initialState: WorkspaceState = {
   sortBy: SortBy.NEWEST,
   projects: [],
+  missing: [],
   status: 'idle',
   error: null,
 };
@@ -93,6 +96,22 @@ export const slice = createSlice({
       .addCase(importProject.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message || `Failed to import project ${action.meta.arg}`;
+      })
+      .addCase(reimportProject.pending, state => {
+        state.status = 'loading';
+      })
+      .addCase(reimportProject.fulfilled, (state, action) => {
+        return {
+          ...state,
+          projects: state.projects.concat(action.payload),
+          missing: state.missing.filter(($) => $ !== action.meta.arg),
+          status: 'succeeded',
+          error: null,
+        };
+      })
+      .addCase(reimportProject.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.error.message || `Failed to re-import project ${action.meta.arg}`;
       });
   },
 });
