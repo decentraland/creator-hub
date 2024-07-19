@@ -4,10 +4,13 @@ import type { Scene } from '@dcl/schemas';
 
 import { SortBy, type Project } from '/shared/types/projects';
 import type { Workspace } from '/shared/types/workspace';
+
 import { hasDependency } from './pkg';
 import { getRowsAndCols, parseCoords } from './scene';
 import { invoke } from './invoke';
 import { exists } from './fs';
+import { setConfig } from './config';
+
 import { DEFAULT_THUMBNAIL, NEW_SCENE_NAME } from './constants';
 
 /**
@@ -125,14 +128,19 @@ export async function getProjects(paths: string | string[]) {
   return projects;
 }
 
+export async function getWorkspacePaths(): Promise<string[]> {
+  const [home, config] = await Promise.all([getPath(), invoke('config.get')]);
+  return [home, ...config.workspace.paths];
+}
+
 /**
  * Returns workspace info
  */
 export async function getWorkspace(): Promise<Workspace> {
-  const path = await getPath();
+  const paths = await getWorkspacePaths();
   return {
     sortBy: SortBy.NEWEST, // TODO: read from editor config file...
-    projects: await getProjects(path),
+    projects: await getProjects(paths),
   };
 }
 
@@ -161,7 +169,10 @@ export async function createProject(name = NEW_SCENE_NAME): Promise<Project> {
  * @returns A Promise that resolves when the directory has been deleted.
  */
 export async function deleteProject(_path: string): Promise<void> {
-  await fs.rm(_path, { recursive: true, force: true });
+  await Promise.all([
+    fs.rm(_path, { recursive: true, force: true }),
+    setConfig(({ workspace }) => (workspace.paths = workspace.paths.filter($ => $ !== _path))), // delete path from config if exists
+  ]);
 }
 
 /**
@@ -196,7 +207,8 @@ export async function importProject(): Promise<Project> {
     throw new Error(`"${path.basename(projectPath)}" is not a valid project`);
   }
 
-  // TODO: update config file with new project path...
+  // update workspace on config file with new path
+  await setConfig(config => config.workspace.paths.push(projectPath));
 
   const project = getProject(projectPath);
   return project;

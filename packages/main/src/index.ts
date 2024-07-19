@@ -23,7 +23,7 @@ if (!isSingleInstance) {
 app.on('second-instance', restoreOrCreateWindow);
 
 /**
- * Shout down background process if all windows was closed
+ * Shut down background process if all windows was closed
  */
 app.on('window-all-closed', async () => {
   await killAll();
