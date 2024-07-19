@@ -96,10 +96,8 @@ type RunOptions = {
  * Runs a javascript bin script in a utility child process, provides helpers to wait for the process to finish, listen for outputs, etc
  * @param pkg The npm package
  * @param command The command to run
- * @param args The arguments for the command
- * @param cwd The directory where the command should be executed, it defaults to the app path
- * @param options Options for the child process spawned
- * @returns SpanwedChild
+ * @param options Options for the child process (args, cwd, env, workspace)
+ * @returns Child
  */
 export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
   // status
