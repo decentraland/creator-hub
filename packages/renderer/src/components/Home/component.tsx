@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { Container } from 'decentraland-ui2';
-
+import logo from '/assets/images/logo-editor.png';
 import { t } from '/@/modules/store/translation/utils';
 
 import { Header } from '../Header';
@@ -25,7 +25,7 @@ export function Home() {
         <>
           {/* TODO: Get SVG for this logo 👇 and transform it into an Icon component */}
           <img
-            src="/assets/images/logo-editor.png"
+            src={logo}
             alt={t('home.header.title')}
           />
           <h4>{t('home.header.title')}</h4>
