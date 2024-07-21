@@ -12,7 +12,7 @@ import './styles.css';
 export function SnackbarComponent() {
   const { notifications, close } = useSnackbar();
 
-  const getComponent = useCallback  ((notification: Notification) => {
+  const getComponent = useCallback((notification: Notification) => {
     switch (notification.type) {
       case 'generic':
         return <Generic {...notification} />;

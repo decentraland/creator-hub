@@ -11,13 +11,13 @@ import LandPng from '/assets/images/land.png';
 import WorldsPng from '/assets/images/worlds.png';
 
 import { Button } from '../../Button';
-import { OptionBox } from '../OptionBox';
+import { OptionBox } from '../../Editor/OptionBox';
 
 import type { AlternativeTarget, Step, StepProps, StepValue, Props } from './types';
 
 import './styles.css';
 
-export function PublishModal({ open, project, onSubmit, onClose }: Props) {
+export function PublishProject({ open, project, onSubmit, onClose }: Props) {
   const [step, setStep] = useState<Step>('initial');
 
   const close = useCallback(() => {
