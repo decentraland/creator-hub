@@ -1,12 +1,10 @@
-// import type { PayloadAction } from '@reduxjs/toolkit';
+import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
 
-export type Notification = {
-  timestamp: number;
-  message: string;
-  severity: string;
-  type: string;
-}
+import { actions as workspaceActions } from '../workspace';
+import { createCustomNotification, createGenericNotification } from './utils';
+import type { Notification } from './types';
+import { t } from '../translation/utils';
 
 // state
 export type SnackbarState = {
@@ -14,7 +12,7 @@ export type SnackbarState = {
 };
 
 export const initialState: SnackbarState = {
-  notifications: [],
+  notifications: [createGenericNotification('success', 'Testing notification!')],
 };
 
 // slice
@@ -22,7 +20,17 @@ export const slice = createSlice({
   name: 'snackbar',
   initialState,
   reducers: {
-
+    removeSnackbar: (state, { payload: id }: PayloadAction<Notification['id']>) => {
+      state.notifications = state.notifications.filter($ => $.id !== id);
+      state.notifications.push(createGenericNotification('success', t('modal.confirm')));
+    },
+  },
+  extraReducers: builder => {
+    builder.addCase(workspaceActions.getWorkspace.fulfilled, (state, action) => {
+      if (action.payload.missing.length > 0) {
+        state.notifications.push(createCustomNotification('missing-scenes'));
+      }
+    });
   },
   selectors: {},
 });

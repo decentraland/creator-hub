@@ -108,7 +108,7 @@ export async function getProjects(paths: string | string[]): Promise<[Project[],
   const missing: string[] = [];
 
   for (const _path of paths) {
-    if (!exists(_path)) {
+    if (!(await exists(_path))) {
       // _path doesn't exist
       missing.push(_path);
     } else if (await isDCL(_path)) {
@@ -214,7 +214,7 @@ export async function importProject(): Promise<Project> {
   const pathBaseName = path.basename(projectPath);
   const paths = await getWorkspacePaths();
   const [projects] = await getProjects(paths);
-  const projectAlreadyExists = projects.find(($) => $.path === projectPath);
+  const projectAlreadyExists = projects.find($ => $.path === projectPath);
 
   if (projectAlreadyExists) {
     throw new Error(`"${pathBaseName}" is already on the projects library`);

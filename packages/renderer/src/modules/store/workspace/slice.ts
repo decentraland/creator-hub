@@ -104,7 +104,7 @@ export const slice = createSlice({
         return {
           ...state,
           projects: state.projects.concat(action.payload),
-          missing: state.missing.filter(($) => $ !== action.meta.arg),
+          missing: state.missing.filter($ => $ !== action.meta.arg),
           status: 'succeeded',
           error: null,
         };
@@ -124,6 +124,7 @@ export const actions = {
   deleteProject,
   duplicateProject,
   importProject,
+  reimportProject,
 };
 export const reducer = slice.reducer;
 export const selectors = { ...slice.selectors };
