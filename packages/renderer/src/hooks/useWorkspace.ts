@@ -31,6 +31,14 @@ export const useWorkspace = () => {
     dispatch(actions.importProject());
   }, []);
 
+  const reimportProject = useCallback((path: string) => {
+    dispatch(actions.reimportProject(path));
+  }, []);
+
+  const unlistProjects = useCallback((paths: string[]) => {
+    dispatch(actions.unlistProjects(paths));
+  }, []);
+
   return {
     ...workspace,
     getWorkspace,
@@ -39,5 +47,7 @@ export const useWorkspace = () => {
     deleteProject,
     duplicateProject,
     importProject,
+    reimportProject,
+    unlistProjects,
   };
 };

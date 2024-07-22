@@ -12,37 +12,6 @@
         "preview": "Preview",
         "publish": "Publish"
       }
-    },
-    "modal": {
-      "publish": {
-        "title": "Publish \"{title}\" Scene",
-        "select": "Select where you want to deploy this scene:",
-        "worlds": {
-          "title": "Worlds",
-          "description": "Not findable in Genesis City map. \nUp to 100 users can join concurrently.",
-          "action": "Publish to World"
-        },
-        "land": {
-          "title": "My Land",
-          "description": "Findable in Genesis City map. \nUnlimited users can join concurrently.",
-          "action": "Publish to Land"
-        },
-        "alternative_servers": {
-          "title": "Alternative Servers",
-          "options": {
-            "test_server": "Test Server",
-            "custom_server": "Custom Server"
-          },
-          "custom_server_url": "Server URL",
-          "action": {
-            "test_server": "Publish to Test Server",
-            "custom_server": "Publish to Custom Server"
-          },
-          "errors": {
-            "url": "Invalid URL"
-          }
-        }
-      }
     }
   },
   "scene_list": {
@@ -72,7 +41,51 @@
   "modal": {
     "cancel": "Cancel",
     "confirm": "Confirm",
-    "irreversible_operation": "This operation is not reversible"
+    "irreversible_operation": "This operation is not reversible",
+    "missing_projects": {
+      "title": "Missing scenes",
+      "find": "Find",
+      "discard": "Discard",
+      "discard_all": "Discard all"
+    },
+    "publish_project": {
+      "title": "Publish \"{title}\" Scene",
+      "select": "Select where you want to deploy this scene:",
+      "worlds": {
+        "title": "Worlds",
+        "description": "Not findable in Genesis City map. \nUp to 100 users can join concurrently.",
+        "action": "Publish to World"
+      },
+      "land": {
+        "title": "My Land",
+        "description": "Findable in Genesis City map. \nUnlimited users can join concurrently.",
+        "action": "Publish to Land"
+      },
+      "alternative_servers": {
+        "title": "Alternative Servers",
+        "options": {
+          "test_server": "Test Server",
+          "custom_server": "Custom Server"
+        },
+        "custom_server_url": "Server URL",
+        "action": {
+          "test_server": "Publish to Test Server",
+          "custom_server": "Publish to Custom Server"
+        },
+        "errors": {
+          "url": "Invalid URL"
+        }
+      }
+    }
+  },
+  "snackbar": {
+    "missing_projects": {
+      "title": "{scenes} missing {scenes, plural, one {scene} other {scenes}} found",
+      "actions": {
+        "view": "View",
+        "discard_all": "Discard all"
+      }
+    }
   },
   "option_box": {
     "learn_more": "Learn more"

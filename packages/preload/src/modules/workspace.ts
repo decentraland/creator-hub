@@ -100,13 +100,18 @@ export async function getPath() {
 /**
  * Returns all decentraland projects in the provided directories (or the default one if no provided)
  */
-export async function getProjects(paths: string | string[]) {
+export async function getProjects(paths: string | string[]): Promise<[Project[], string[]]> {
   paths = Array.isArray(paths) ? paths : [paths];
-  if (!paths.length) return [];
+  if (!paths.length) return [[], []];
 
   const promises: Promise<Project>[] = [];
+  const missing: string[] = [];
+
   for (const _path of paths) {
-    if (await isDCL(_path)) {
+    if (!(await exists(_path))) {
+      // _path doesn't exist
+      missing.push(_path);
+    } else if (await isDCL(_path)) {
       // _path is a project
       promises.push(getProject(_path));
     } else {
@@ -125,7 +130,7 @@ export async function getProjects(paths: string | string[]) {
   }
 
   const projects = await Promise.all(promises);
-  return projects;
+  return [projects, missing];
 }
 
 export async function getWorkspacePaths(): Promise<string[]> {
@@ -138,9 +143,12 @@ export async function getWorkspacePaths(): Promise<string[]> {
  */
 export async function getWorkspace(): Promise<Workspace> {
   const paths = await getWorkspacePaths();
+  const [projects, missing] = await getProjects(paths);
+
   return {
     sortBy: SortBy.NEWEST, // TODO: read from editor config file...
-    projects: await getProjects(paths),
+    projects,
+    missing,
   };
 }
 
@@ -163,16 +171,26 @@ export async function createProject(name = NEW_SCENE_NAME): Promise<Project> {
 }
 
 /**
+ * Unlists a project directory from config.
+ *
+ * @param paths - The path or paths of the directories to be unlisted.
+ * @returns A Promise that resolves when the directories have been unlisted.
+ */
+export async function unlistProjects(paths: string[]): Promise<void> {
+  const pathSet = new Set(paths);
+  await setConfig(
+    ({ workspace }) => (workspace.paths = workspace.paths.filter($ => !pathSet.has($))),
+  );
+}
+
+/**
  * Deletes a project directory and all its contents.
  *
  * @param _path - The path of the directory to be deleted.
  * @returns A Promise that resolves when the directory has been deleted.
  */
 export async function deleteProject(_path: string): Promise<void> {
-  await Promise.all([
-    fs.rm(_path, { recursive: true, force: true }),
-    setConfig(({ workspace }) => (workspace.paths = workspace.paths.filter($ => $ !== _path))), // delete path from config if exists
-  ]);
+  await Promise.all([fs.rm(_path, { recursive: true, force: true }), unlistProjects([_path])]);
 }
 
 /**
@@ -203,13 +221,35 @@ export async function importProject(): Promise<Project> {
     properties: ['openDirectory'],
   });
 
+  const pathBaseName = path.basename(projectPath);
+  const paths = await getWorkspacePaths();
+  const [projects] = await getProjects(paths);
+  const projectAlreadyExists = projects.find($ => $.path === projectPath);
+
+  if (projectAlreadyExists) {
+    throw new Error(`"${pathBaseName}" is already on the projects library`);
+  }
+
   if (!(await isDCL(projectPath))) {
-    throw new Error(`"${path.basename(projectPath)}" is not a valid project`);
+    throw new Error(`"${pathBaseName}" is not a valid project`);
   }
 
   // update workspace on config file with new path
   await setConfig(config => config.workspace.paths.push(projectPath));
 
   const project = getProject(projectPath);
+  return project;
+}
+
+/**
+ * Reimports a project by allowing the user to select a new directory for a project whose path was deleted or renamed.
+ *
+ * @param _path - The current path of the project that needs to be reimported.
+ * @returns A Promise that resolves to the reimported Project object.
+ * @throws An error if the selected directory is not a valid project.
+ */
+export async function reimportProject(_path: string): Promise<Project> {
+  const project = await importProject();
+  await unlistProjects([_path]);
   return project;
 }

@@ -6,12 +6,14 @@ import {
 } from 'react-redux';
 import logger from 'redux-logger';
 import { reducer as editorReducer, actions as editorActions } from './editor';
+import { reducer as snackbarReducer } from './snackbar';
 import { reducer as translationReducer } from './translation';
 import { reducer as workspaceReducer, actions as workspaceActions } from './workspace';
 
 export function createRootReducer() {
   return {
     editor: editorReducer,
+    snackbar: snackbarReducer,
     translation: translationReducer,
     workspace: workspaceReducer,
   };

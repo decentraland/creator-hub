@@ -7,10 +7,9 @@ import { DEPLOY_URLS } from '/shared/types/deploy';
 import { t } from '/@/modules/store/translation/utils';
 import { useEditor } from '/@/hooks/useEditor';
 
+import { PublishProject, type StepValue } from '../Modals/PublishProject';
 import { Button } from '../Button';
 import { Header } from '../Header';
-import { PublishModal } from './PublishModal';
-import type { StepValue } from './PublishModal/types';
 
 import './styles.css';
 
@@ -149,7 +148,7 @@ export function Editor() {
         </div>
       )}
       {project && (
-        <PublishModal
+        <PublishProject
           open={open === 'publish'}
           project={project}
           onClose={handleCloseModal}

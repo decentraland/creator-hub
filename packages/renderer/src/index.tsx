@@ -12,6 +12,7 @@ import { Home } from './components/Home';
 import { Editor } from './components/Editor';
 
 import '/@/themes';
+import { Snackbar } from './components/Snackbar';
 
 const container = document.getElementById('app')!;
 const root = createRoot(container);
@@ -33,6 +34,7 @@ root.render(
               />
             </Routes>
           </Router>
+          <Snackbar />
         </ThemeProvider>
       </TranslationProvider>
     </StoreProvider>

@@ -1,0 +1,8 @@
+.Snackbar .MuiPaper-root {
+  background-color: var(--black);
+  color: var(--white);
+}
+
+.Snackbar .MuiPaper-root button {
+  color: var(--dcl);
+}

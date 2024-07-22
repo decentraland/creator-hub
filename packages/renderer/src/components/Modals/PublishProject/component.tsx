@@ -11,13 +11,13 @@ import LandPng from '/assets/images/land.png';
 import WorldsPng from '/assets/images/worlds.png';
 
 import { Button } from '../../Button';
-import { OptionBox } from '../OptionBox';
+import { OptionBox } from '../../Editor/OptionBox';
 
 import type { AlternativeTarget, Step, StepProps, StepValue, Props } from './types';
 
 import './styles.css';
 
-export function PublishModal({ open, project, onSubmit, onClose }: Props) {
+export function PublishProject({ open, project, onSubmit, onClose }: Props) {
   const [step, setStep] = useState<Step>('initial');
 
   const close = useCallback(() => {
@@ -42,7 +42,7 @@ export function PublishModal({ open, project, onSubmit, onClose }: Props) {
   return (
     <Modal
       open={open}
-      title={t('editor.modal.publish.title', { title: project?.title })}
+      title={t('modal.publish_project.title', { title: project?.title })}
       onClose={handleClose}
       size="small"
       onBack={step !== 'initial' ? handleChangeStep('initial') : undefined}
@@ -71,21 +71,21 @@ function Initial({
 
   return (
     <div className="Initial">
-      <span className="select">{t('editor.modal.publish.select')}</span>
+      <span className="select">{t('modal.publish_project.select')}</span>
       <div className="options">
         <OptionBox
           thumbnailSrc={WorldsPng}
-          title={t('editor.modal.publish.worlds.title')}
-          description={t('editor.modal.publish.worlds.description')}
-          buttonText={t('editor.modal.publish.worlds.action')}
+          title={t('modal.publish_project.worlds.title')}
+          description={t('modal.publish_project.worlds.description')}
+          buttonText={t('modal.publish_project.worlds.action')}
           onClickPublish={handleClick('worlds')}
           learnMoreUrl="https://docs.decentraland.org/creator/worlds/about/#publish-a-world"
         />
         <OptionBox
           thumbnailSrc={LandPng}
-          title={t('editor.modal.publish.land.title')}
-          description={t('editor.modal.publish.land.description')}
-          buttonText={t('editor.modal.publish.land.action')}
+          title={t('modal.publish_project.land.title')}
+          description={t('modal.publish_project.land.description')}
+          buttonText={t('modal.publish_project.land.action')}
           onClickPublish={handleClick('land')}
           learnMoreUrl="https://docs.decentraland.org/creator/development-guide/sdk7/publishing-permissions/#land-permission-options"
         />
@@ -94,7 +94,7 @@ function Initial({
         className="alternative_servers"
         onClick={onStepChange('alternative-servers')}
       >
-        {t('editor.modal.publish.alternative_servers.title')}
+        {t('modal.publish_project.alternative_servers.title')}
       </span>
     </div>
   );
@@ -107,7 +107,7 @@ function AlternativeServers({ onClick }: StepProps) {
 
   const handleClick = useCallback(() => {
     if (option === 'custom' && !isUrl(customUrl)) {
-      return setError(t('editor.modal.publish.alternative_servers.errors.url'));
+      return setError(t('modal.publish_project.alternative_servers.errors.url'));
     }
     const value: StepValue = { target: option, value: customUrl };
     onClick(value);
@@ -127,27 +127,27 @@ function AlternativeServers({ onClick }: StepProps) {
 
   return (
     <div className="AlternativeServers">
-      <span className="select">{t('editor.modal.publish.select')}</span>
+      <span className="select">{t('modal.publish_project.select')}</span>
       <div className="box">
         <div className="selection">
           <div>
-            <h3>{t('editor.modal.publish.alternative_servers.title')}</h3>
+            <h3>{t('modal.publish_project.alternative_servers.title')}</h3>
             <Select
               variant="standard"
               value={option}
               onChange={handleChangeSelect}
             >
               <MenuItem value="test">
-                {t('editor.modal.publish.alternative_servers.options.test_server')}
+                {t('modal.publish_project.alternative_servers.options.test_server')}
               </MenuItem>
               <MenuItem value="custom">
-                {t('editor.modal.publish.alternative_servers.options.custom_server')}
+                {t('modal.publish_project.alternative_servers.options.custom_server')}
               </MenuItem>
             </Select>
             {option === 'custom' && (
               <div className="custom_input">
                 <span className="title">
-                  {t('editor.modal.publish.alternative_servers.custom_server_url')}
+                  {t('modal.publish_project.alternative_servers.custom_server_url')}
                 </span>
                 <input
                   value={customUrl}
@@ -167,7 +167,7 @@ function AlternativeServers({ onClick }: StepProps) {
             {t('option_box.learn_more')}
           </Link>
           <Button onClick={handleClick}>
-            {t(`editor.modal.publish.alternative_servers.action.${option}_server`)}
+            {t(`modal.publish_project.alternative_servers.action.${option}_server`)}
           </Button>
         </div>
       </div>

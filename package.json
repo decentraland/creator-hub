@@ -29,7 +29,7 @@
     "typecheck:renderer": "tsc --noEmit -p packages/renderer/tsconfig.json",
     "typecheck": "npm run typecheck:main && npm run typecheck:preload && npm run typecheck:renderer",
     "postinstall": "cross-env ELECTRON_RUN_AS_NODE=1 electron scripts/update-electron-vendors.js",
-    "format": "npx prettier --write \"**/*.{js,mjs,cjs,ts,mts,cts,vue,json}\""
+    "format": "npx prettier --write \"**/*.{js,ts,tsx,json}\""
   },
   "devDependencies": {
     "@types/cmd-shim": "^5.0.2",

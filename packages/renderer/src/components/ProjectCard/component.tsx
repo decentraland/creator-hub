@@ -1,14 +1,13 @@
 import { useCallback, useState } from 'react';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import cx from 'classnames';
-import { Modal } from 'decentraland-ui2/dist/components/Modal/Modal';
 import { Link } from 'react-router-dom';
 
 import { getThumbnailUrl } from '/@/modules/project';
 import { t } from '/@/modules/store/translation/utils';
 
-import { Button } from '../Button';
 import { Dropdown } from '../Dropdown';
+import { DeleteProject } from '../Modals/DeleteProject';
 
 import type { Props } from './types';
 
@@ -72,25 +71,12 @@ export function ProjectCard({ project, onDelete, onDuplicate }: Props) {
           options={dropdownOptions}
         />
       </div>
-      <Modal
+      <DeleteProject
         open={open}
-        title={`${t('scene_list.project_actions.delete_project')} "${project.title}"`}
+        project={project}
         onClose={handleCloseModal}
-        size="tiny"
-        actions={
-          <>
-            <Button
-              color="secondary"
-              onClick={handleCloseModal}
-            >
-              {t('modal.cancel')}
-            </Button>
-            <Button onClick={handleDeleteProject}>{t('modal.confirm')}</Button>
-          </>
-        }
-      >
-        {t('modal.irreversible_operation')}
-      </Modal>
+        onSubmit={handleDeleteProject}
+      />
     </div>
   );
 }
