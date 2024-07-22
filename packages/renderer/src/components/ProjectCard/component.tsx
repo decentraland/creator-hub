@@ -19,6 +19,7 @@ export function ProjectCard({ project, onDelete, onDuplicate }: Props) {
 
   const handleDeleteProject = useCallback(() => {
     onDelete(project);
+    handleCloseModal();
   }, [project, onDelete]);
 
   const handleDuplicateProject = useCallback(() => {

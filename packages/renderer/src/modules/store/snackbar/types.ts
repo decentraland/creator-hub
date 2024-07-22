@@ -7,7 +7,7 @@ type CustomNotificationType = 'missing-scenes';
 export type Opts = {
   requestId?: string;
   duration?: number;
-}
+};
 
 type CommonNotificationProps<T extends string> = {
   id: NotificationId;

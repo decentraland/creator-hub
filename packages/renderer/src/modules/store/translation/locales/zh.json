@@ -82,6 +82,14 @@
     }
   },
   "snackbar": {
+    "generic": {
+      "import_scene": "导入场景...",
+      "import_scene_failed": "场景导入失败",
+      "duplicate_scene": "复制场景...",
+      "duplicate_scene_failed": "复制场景失败",
+      "delete_scene": "删除场景...",
+      "delete_scene_failed": "删除场景失败"
+    },
     "missing_projects": {
       "title": "{scenes} 丢失的 {scenes, plural, one {场景} other {场景}} 成立",
       "actions": {

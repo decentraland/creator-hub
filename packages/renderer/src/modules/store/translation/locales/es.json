@@ -82,6 +82,14 @@
     }
   },
   "snackbar": {
+    "generic": {
+      "import_scene": "Importando escena...",
+      "import_scene_failed": "Error al importar escena",
+      "duplicate_scene": "Duplicando escena...",
+      "duplicate_scene_failed": "Error al duplicar escena",
+      "delete_scene": "Borrando escena...",
+      "delete_scene_failed": "Error al borrar escena"
+    },
     "missing_projects": {
       "title": "{scenes} {scenes, plural, one {escena} other {escenas}} {scenes, plural, one {faltante} other {faltantes}}",
       "actions": {
