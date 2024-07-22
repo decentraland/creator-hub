@@ -171,16 +171,26 @@ export async function createProject(name = NEW_SCENE_NAME): Promise<Project> {
 }
 
 /**
+ * Unlists a project directory from config.
+ *
+ * @param paths - The path or paths of the directories to be unlisted.
+ * @returns A Promise that resolves when the directories have been unlisted.
+ */
+export async function unlistProjects(paths: string[]): Promise<void> {
+  const pathSet = new Set(paths);
+  await setConfig(
+    ({ workspace }) => (workspace.paths = workspace.paths.filter($ => !pathSet.has($))),
+  );
+}
+
+/**
  * Deletes a project directory and all its contents.
  *
  * @param _path - The path of the directory to be deleted.
  * @returns A Promise that resolves when the directory has been deleted.
  */
 export async function deleteProject(_path: string): Promise<void> {
-  await Promise.all([
-    fs.rm(_path, { recursive: true, force: true }),
-    setConfig(({ workspace }) => (workspace.paths = workspace.paths.filter($ => $ !== _path))), // delete path from config if exists
-  ]);
+  await Promise.all([fs.rm(_path, { recursive: true, force: true }), unlistProjects([_path])]);
 }
 
 /**
@@ -240,6 +250,6 @@ export async function importProject(): Promise<Project> {
  */
 export async function reimportProject(_path: string): Promise<Project> {
   const project = await importProject();
-  await setConfig(({ workspace }) => (workspace.paths = workspace.paths.filter($ => $ !== _path))); // delete path from config if exists
+  await unlistProjects([_path]);
   return project;
 }

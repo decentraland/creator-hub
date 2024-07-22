@@ -12,37 +12,6 @@
         "preview": "预览",
         "publish": "发布"
       }
-    },
-    "modal": {
-      "publish": {
-        "title": "公共场所 \"{title}\"",
-        "select": "选择要部署此场景的位置：",
-        "worlds": {
-          "title": "世界赛",
-          "description": "在创世城地图中找不到。 \n最多可同时加入 100 个用户。",
-          "action": "发布到世界"
-        },
-        "land": {
-          "title": "我的地盘",
-          "description": "可在创世城地图中找到。 \n无限用户可以同时加入。",
-          "action": "发布到土地"
-        },
-        "alternative_servers": {
-          "title": "替代服务器",
-          "options": {
-            "test_server": "测试服务器",
-            "custom_server": "定制服务器"
-          },
-          "custom_server_url": "服务器地址",
-          "action": {
-            "test_server": "发布到测试服务器",
-            "custom_server": "发布到自定义服务器"
-          },
-          "errors": {
-            "url": "无效的网址"
-          }
-        }
-      }
     }
   },
   "scene_list": {
@@ -72,7 +41,42 @@
   "modal": {
     "cancel": "取消",
     "confirm": "确认",
-    "irreversible_operation": "此操作不可逆"
+    "irreversible_operation": "此操作不可逆",
+    "missing_projects": {
+      "title": "缺失的场景",
+      "find": "寻找",
+      "discard": "丢弃",
+      "discard_all": "全部丢弃"
+    },
+    "publish_project": {
+      "title": "公共场所 \"{title}\"",
+      "select": "选择要部署此场景的位置：",
+      "worlds": {
+        "title": "世界赛",
+        "description": "在创世城地图中找不到。 \n最多可同时加入 100 个用户。",
+        "action": "发布到世界"
+      },
+      "land": {
+        "title": "我的地盘",
+        "description": "可在创世城地图中找到。 \n无限用户可以同时加入。",
+        "action": "发布到土地"
+      },
+      "alternative_servers": {
+        "title": "替代服务器",
+        "options": {
+          "test_server": "测试服务器",
+          "custom_server": "定制服务器"
+        },
+        "custom_server_url": "服务器地址",
+        "action": {
+          "test_server": "发布到测试服务器",
+          "custom_server": "发布到自定义服务器"
+        },
+        "errors": {
+          "url": "无效的网址"
+        }
+      }
+    }
   },
   "option_box": {
     "learn_more": "了解更多"

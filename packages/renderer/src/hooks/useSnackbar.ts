@@ -9,7 +9,7 @@ export function useSnackbar() {
   const dispatch = useDispatch();
   const snackbar = useSelector(state => state.snackbar);
 
-  const close = useCallback(
+  const dismiss = useCallback(
     (id: Notification['id'], idx: number) =>
       (_: SyntheticEvent<any> | Event, reason: SnackbarCloseReason) => {
         if (reason === 'timeout') dispatch(actions.removeSnackbar(id));
@@ -21,8 +21,16 @@ export function useSnackbar() {
     [snackbar.notifications],
   );
 
+  const close = useCallback(
+    (id: Notification['id']) => () => {
+      dispatch(actions.removeSnackbar(id));
+    },
+    [],
+  );
+
   return {
     ...snackbar,
     close,
+    dismiss,
   };
 }

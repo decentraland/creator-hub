@@ -2,9 +2,8 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
 
 import { actions as workspaceActions } from '../workspace';
-import { createCustomNotification, createGenericNotification } from './utils';
+import { createCustomNotification } from './utils';
 import type { Notification } from './types';
-import { t } from '../translation/utils';
 
 // state
 export type SnackbarState = {
@@ -12,7 +11,7 @@ export type SnackbarState = {
 };
 
 export const initialState: SnackbarState = {
-  notifications: [createGenericNotification('success', 'Testing notification!')],
+  notifications: [],
 };
 
 // slice
@@ -22,7 +21,6 @@ export const slice = createSlice({
   reducers: {
     removeSnackbar: (state, { payload: id }: PayloadAction<Notification['id']>) => {
       state.notifications = state.notifications.filter($ => $.id !== id);
-      state.notifications.push(createGenericNotification('success', t('modal.confirm')));
     },
   },
   extraReducers: builder => {

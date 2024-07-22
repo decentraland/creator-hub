@@ -12,6 +12,7 @@ const deleteProject = createAsyncThunk('workspace/deleteProject', workspace.dele
 const duplicateProject = createAsyncThunk('workspace/duplicateProject', workspace.duplicateProject);
 const importProject = createAsyncThunk('workspace/importProject', workspace.importProject);
 const reimportProject = createAsyncThunk('workspace/reimportProject', workspace.reimportProject);
+const unlistProjects = createAsyncThunk('workspace/unlistProjects', workspace.unlistProjects);
 
 // state
 export type WorkspaceState = Async<Workspace>;
@@ -112,6 +113,22 @@ export const slice = createSlice({
       .addCase(reimportProject.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message || `Failed to re-import project ${action.meta.arg}`;
+      })
+      .addCase(unlistProjects.pending, state => {
+        state.status = 'loading';
+      })
+      .addCase(unlistProjects.fulfilled, (state, action) => {
+        const pathsSet = new Set(action.meta.arg);
+        return {
+          ...state,
+          missing: state.missing.filter($ => !pathsSet.has($)),
+          status: 'succeeded',
+          error: null,
+        };
+      })
+      .addCase(unlistProjects.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.error.message || `Failed to unlists projects: ${action.meta.arg}`;
       });
   },
 });
@@ -125,6 +142,7 @@ export const actions = {
   duplicateProject,
   importProject,
   reimportProject,
+  unlistProjects,
 };
 export const reducer = slice.reducer;
 export const selectors = { ...slice.selectors };

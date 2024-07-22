@@ -10,14 +10,14 @@ import { Generic } from './Generic';
 import './styles.css';
 
 export function SnackbarComponent() {
-  const { notifications, close } = useSnackbar();
+  const { notifications, close, dismiss } = useSnackbar();
 
   const getComponent = useCallback((notification: Notification) => {
     switch (notification.type) {
       case 'generic':
         return <Generic {...notification} />;
       case 'missing-scenes':
-        return <MissingScenes />;
+        return <MissingScenes onClose={close(notification.id)} />;
       default:
         return null;
     }
@@ -34,7 +34,7 @@ export function SnackbarComponent() {
             key={notification.id}
             open={true}
             // autoHideDuration={5000}
-            onClose={close(notification.id, idx)}
+            onClose={dismiss(notification.id, idx)}
             anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
           >
             <div>
