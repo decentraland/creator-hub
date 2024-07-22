@@ -2,7 +2,7 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
 
 import { actions as workspaceActions } from '../workspace';
-import { createCustomNotification } from './utils';
+import { createCustomNotification, createGenericNotification } from './utils';
 import type { Notification } from './types';
 
 // state
@@ -24,11 +24,26 @@ export const slice = createSlice({
     },
   },
   extraReducers: builder => {
-    builder.addCase(workspaceActions.getWorkspace.fulfilled, (state, action) => {
-      if (action.payload.missing.length > 0) {
-        state.notifications.push(createCustomNotification('missing-scenes'));
-      }
-    });
+    builder
+      .addCase(workspaceActions.getWorkspace.fulfilled, (state, action) => {
+        if (action.payload.missing.length > 0) {
+          state.notifications.push(createCustomNotification('missing-scenes'));
+        }
+      })
+      .addCase(workspaceActions.importProject.pending, (state, payload) => {
+        const { requestId } = payload.meta;
+        state.notifications.push(createGenericNotification('loading', 'Importing scene...', { duration: 0, requestId }));
+      })
+      .addCase(workspaceActions.importProject.fulfilled, (state, payload) => {
+        const { requestId } = payload.meta;
+        state.notifications = state.notifications.filter(($) => $.id !== requestId);
+      })
+      .addCase(workspaceActions.importProject.rejected, (state, payload) => {
+        const { requestId } = payload.meta;
+        state.notifications = state.notifications.filter(($) => $.id !== requestId);
+        state.notifications.push(createGenericNotification('error', 'Failed importing scene', { requestId }));
+      })
+    ;
   },
   selectors: {},
 });

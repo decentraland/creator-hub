@@ -9,6 +9,8 @@ import { Generic } from './Generic';
 
 import './styles.css';
 
+const DEFAULT_DURATION_IN_MS = 5_000;
+
 export function SnackbarComponent() {
   const { notifications, close, dismiss } = useSnackbar();
 
@@ -23,6 +25,11 @@ export function SnackbarComponent() {
     }
   }, []);
 
+  const getDuration = useCallback(({ duration }: Notification) => {
+    if (duration === 0) return null;
+    return duration || DEFAULT_DURATION_IN_MS;
+  }, []);
+
   return (
     <div className="Snackbar">
       {notifications.map((notification, idx) => {
@@ -33,7 +40,7 @@ export function SnackbarComponent() {
             style={{ bottom: `${(notifications.length - idx) * 60}px` }}
             key={notification.id}
             open={true}
-            // autoHideDuration={5000}
+            autoHideDuration={getDuration(notification)}
             onClose={dismiss(notification.id, idx)}
             anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
           >
