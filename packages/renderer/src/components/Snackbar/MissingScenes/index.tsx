@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'decentraland-ui2';
 
+import { t } from '/@/modules/store/translation/utils';
 import { useWorkspace } from '/@/hooks/useWorkspace';
 
 import { Button } from '../../Button';
@@ -32,14 +33,14 @@ export function MissingScenes({ onClose }: { onClose: () => void }) {
         size="small"
         onClick={handleModal(true)}
       >
-        View
+        {t('snackbar.missing_projects.actions.view')}
       </Button>
       <Button
         color="inherit"
         size="small"
         onClick={handleDiscardAll}
       >
-        Discard all
+        {t('snackbar.missing_projects.actions.discard_all')}
       </Button>
     </>
   );
@@ -50,7 +51,7 @@ export function MissingScenes({ onClose }: { onClose: () => void }) {
         severity="error"
         action={renderActions()}
       >
-        {missing.length} missing scenes found
+        {t('snackbar.missing_projects.title', { scenes: missing.length })}
       </Alert>
       <MissingProjects
         open={open}

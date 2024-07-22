@@ -78,6 +78,15 @@
       }
     }
   },
+  "snackbar": {
+    "missing_projects": {
+      "title": "{scenes} 丢失的 {scenes, plural, one {场景} other {场景}} 成立",
+      "actions": {
+        "view": "版本",
+        "discard_all": "全部丢弃"
+      }
+    }
+  },
   "option_box": {
     "learn_more": "了解更多"
   }

@@ -78,6 +78,15 @@
       }
     }
   },
+  "snackbar": {
+    "missing_projects": {
+      "title": "{scenes} missing {scenes, plural, one {scene} other {scenes}} found",
+      "actions": {
+        "view": "View",
+        "discard_all": "Discard all"
+      }
+    }
+  },
   "option_box": {
     "learn_more": "Learn more"
   }

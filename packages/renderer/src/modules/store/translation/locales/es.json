@@ -36,7 +36,7 @@
       "size": "Tamaño"
     },
     "results": "{count} {count, plural, one {resultado} other {resultados}}",
-    "parcel_count": "{parcels} {parcels, plural, one {parcel} other {parcels}}"
+    "parcel_count": "{parcels} {parcels, plural, one {parcela} other {parcelas}}"
   },
   "modal": {
     "cancel": "Cancelar",
@@ -75,6 +75,15 @@
         "errors": {
           "url": "URL inválida"
         }
+      }
+    }
+  },
+  "snackbar": {
+    "missing_projects": {
+      "title": "{scenes} {scenes, plural, one {escena} other {escenas}} {scenes, plural, one {faltante} other {faltantes}}",
+      "actions": {
+        "view": "Ver",
+        "discard_all": "Descartar todas"
       }
     }
   },
