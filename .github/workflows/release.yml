@@ -7,6 +7,13 @@ on:
         default: false
         required: false
         type: boolean
+    secrets:
+      MACOS_CSC_LINK:
+        description: 'Certificate to sign dmg file'
+        required: true
+      MACOS_CSC_KEY_PASSWORD:
+        description: 'Password to decrypt the certificate file'
+        required: true
 
 concurrency:
   group: release-${{ github.ref }}
@@ -59,7 +66,7 @@ jobs:
         env:
           # Code Signing params
           # See https://www.electron.build/code-signing
-          # CSC_LINK: ''
-          # CSC_KEY_PASSWORD: ''
+          CSC_LINK: ${{ secrets.MACOS_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.MACOS_CSC_KEY_PASSWORD }}
           # Publishing artifacts
           GH_TOKEN: ${{ secrets.github_token }} # GitHub token, automatically provided (No need to define this secret in the repo settings)
