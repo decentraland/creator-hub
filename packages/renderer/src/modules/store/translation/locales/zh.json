@@ -6,6 +6,9 @@
     }
   },
   "editor": {
+    "loading": {
+      "title": "正在准备场景..."
+    },
     "header": {
       "actions": {
         "code": "代码",

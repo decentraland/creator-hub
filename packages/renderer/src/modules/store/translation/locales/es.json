@@ -6,6 +6,9 @@
     }
   },
   "editor": {
+    "loading": {
+      "title": "Preparando tu escena..."
+    },
     "header": {
       "actions": {
         "code": "Código",
