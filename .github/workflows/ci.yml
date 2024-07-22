@@ -46,4 +46,8 @@ jobs:
       dry-run: ${{ github.event_name != 'push' || github.ref_name != 'main' }}
     needs: [ typechecking, tests ]
     uses: ./.github/workflows/release.yml
+    secrets:
+      # Secrets required to sign and notarize the app in MacOS
+      MACOS_CSC_LINK: ${{ secrets.MACOS_CSC_LINK }}
+      MACOS_CSC_KEY_PASSWORD: ${{ secrets.MACOS_CSC_KEY_PASSWORD }}
 
