@@ -7,3 +7,5 @@ files:
 
 linux:
   target: deb
+
+productName: Decentraland Editor
