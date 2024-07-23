@@ -1,3 +1,10 @@
+import { promisify } from 'util';
+import { exec as execSync } from 'child_process';
+import { shell } from 'electron';
+import path from 'path';
+
+const exec = promisify(execSync);
+
 import type { DeployOptions } from '/shared/types/ipc';
 import { invoke } from './invoke';
 
@@ -23,4 +30,13 @@ export async function publishScene(opts: DeployOptions) {
 export async function openPreview(port: number) {
   const url = `http://localhost:${port}`;
   await invoke('electron.openExternal', url);
+}
+
+export async function openCode(_path: string) {
+  const normalPath = path.normalize(_path);
+  try {
+    await exec(`code "${normalPath}"`);
+  } catch (_) {
+    await shell.openPath(normalPath) ;
+  }
 }

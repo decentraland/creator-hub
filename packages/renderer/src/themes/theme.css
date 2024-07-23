@@ -57,7 +57,8 @@
 }
 
 html {
-  background-color: var(--bg);
+  background: var(--bg);
+  background: linear-gradient(180deg, rgba(22, 20, 26, 1) 0%, rgba(36, 33, 41, 1) 100%);
   color: var(--white);
   font-family: var(--font-family);
 }

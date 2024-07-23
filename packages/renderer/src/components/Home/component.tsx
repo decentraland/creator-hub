@@ -23,7 +23,7 @@ export function Home() {
     () => misc.openExternal('https://decentraland.canny.io'),
     [],
   );
-  const handleClickOptions = useCallback(() => undefined, []);
+  // const handleClickOptions = useCallback(() => undefined, []);
 
   return (
     <main className="Home">
@@ -41,12 +41,13 @@ export function Home() {
             {t('home.header.feedback')}
           </Button>
         </>
-        <Button
+        <></>
+        {/* <Button
           color="info"
           onClick={handleClickOptions}
         >
-          {/* <SettingsIcon /> */}
-        </Button>
+          <SettingsIcon />
+        </Button> */}
       </Header>
       <Container>
         <SceneList

@@ -14,10 +14,6 @@
   fill: white;
 }
 
-.MuiButton-startIcon > * {
-  font-size: 0 !important;
-}
-
 /* Color primary */
 .Button.MuiButton-colorPrimary {
   background-color: var(--dcl);

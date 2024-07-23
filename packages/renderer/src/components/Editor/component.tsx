@@ -2,6 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CircularProgress as Loader } from 'decentraland-ui2';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
+import PlayCircleIcon from '@mui/icons-material/PlayCircle';
+import CodeIcon from '@mui/icons-material/Code';
+import PublicIcon from '@mui/icons-material/Public';
 
 import { DEPLOY_URLS } from '/shared/types/deploy';
 import { t } from '/@/modules/store/translation/utils';
@@ -29,6 +32,7 @@ export function Editor() {
     loadingPreview,
     openPreview,
     publishScene,
+    openCode,
   } = useEditor();
   const [open, setOpen] = useState<ModalType | undefined>();
 
@@ -137,22 +141,30 @@ export function Editor() {
               </div>
               <div className="title">{project?.title}</div>
             </>
-            <>
-              <Button color="secondary">{t('editor.header.actions.code')}</Button>
+            <div className="actions">
+              <Button
+                color="secondary"
+                onClick={openCode}
+                startIcon={<CodeIcon />}
+              >
+                {t('editor.header.actions.code')}
+              </Button>
               <Button
                 color="secondary"
                 disabled={loadingPreview}
                 onClick={openPreview}
+                startIcon={<PlayCircleIcon />}
               >
                 {t('editor.header.actions.preview')}
               </Button>
               <Button
                 color="primary"
                 onClick={handleOpenModal('publish')}
+                startIcon={<PublicIcon />}
               >
                 {t('editor.header.actions.publish')}
               </Button>
-            </>
+            </div>
           </Header>
           <iframe
             className="inspector"
