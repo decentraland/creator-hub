@@ -54,7 +54,7 @@ export async function install() {
         // if link is not found, continue installing
       }
       if (!isInstalled) {
-        log.info(`Installed node bin from ${nodeCmdPath} to ${nodeBinPath}`);
+        log.info(`Installed node bin linking from ${nodeCmdPath} to ${nodeBinPath}`);
         // on windows we use a cmd file
         if (process.platform === 'win32') {
           await cmdShim(
@@ -102,7 +102,9 @@ export async function install() {
       }
 
       // if the version is different from the current one, we will install the node_modules again in case there are new dependencies
-      if (!version || semver.lt(version, import.meta.env.VITE_APP_VERSION)) {
+      const shouldInstall = !version || semver.lt(version, import.meta.env.VITE_APP_VERSION);
+      if (shouldInstall) {
+        // install dependencies using npm
         log.info('Installing node_modules...');
         const npmInstall = run('npm', 'npm', {
           args: ['install'],
@@ -110,6 +112,13 @@ export async function install() {
           workspace,
         });
         await npmInstall.wait();
+
+        // save the current version to the registry
+        log.info('Writing current version to the registry');
+        await fs.writeFile(
+          path.join(APP_UNPACKED_PATH, 'version.json'),
+          JSON.stringify({ version: import.meta.env.VITE_APP_VERSION }),
+        );
       } else {
         log.info('Skipping installation of node_modules because it is up to date');
       }
@@ -120,14 +129,9 @@ export async function install() {
         await rimraf(workspace);
       }
 
-      // save the current version to the registry
-      log.info('Writing current version to the registry');
-      await fs.writeFile(
-        path.join(APP_UNPACKED_PATH, 'version.json'),
-        JSON.stringify({ version: import.meta.env.VITE_APP_VERSION }),
-      );
-
-      log.info('Installation complete!');
+      if (shouldInstall) {
+        log.info('Installation complete!');
+      }
     } else {
       // no need to install node and npm in dev mode since they should already be in the $PATH for dev environment to work
       log.info('Skipping installation of node and npm binaries in DEV mode');
