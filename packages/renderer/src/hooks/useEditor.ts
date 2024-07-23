@@ -1,22 +1,14 @@
-import { useCallback, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useCallback } from 'react';
 
 import { useDispatch, useSelector } from '#store';
 
 import type { DeployOptions } from '/shared/types/ipc';
 import { actions } from '/@/modules/store/editor';
 
-import { useWorkspace } from './useWorkspace';
-
 export const useEditor = () => {
   const dispatch = useDispatch();
   const editor = useSelector(state => state.editor);
-  const [search] = useSearchParams();
-  const path = useMemo(() => search.get('path'), [search]);
-  const workspace = useWorkspace();
-  const project = useMemo(() => {
-    return workspace.projects.find(project => project.path === path);
-  }, [workspace.projects, path]);
+  const { project } = editor;
 
   const startInspector = useCallback(() => {
     dispatch(actions.startInspector());

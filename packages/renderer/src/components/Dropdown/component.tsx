@@ -12,16 +12,19 @@ function Dropdown(props: Props) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
-  const handleClick = useCallback((event: MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
+  const handleClick = useCallback((e: MouseEvent<HTMLElement>) => {
+    e.stopPropagation();
+    setAnchorEl(e.currentTarget);
   }, []);
 
-  const handleSelect = useCallback((_: MouseEvent<HTMLLIElement>, option: Option) => {
+  const handleSelect = useCallback((e: MouseEvent<HTMLLIElement>, option: Option) => {
+    e.stopPropagation();
     setAnchorEl(null);
     option.handler();
   }, []);
 
-  const handleClose = useCallback(() => {
+  const handleClose = useCallback((e: MouseEvent<HTMLElement>) => {
+    e.stopPropagation();
     setAnchorEl(null);
   }, []);
 

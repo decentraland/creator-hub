@@ -1,48 +1,60 @@
 import { useDispatch, useSelector } from '#store';
 import { useCallback } from 'react';
-import { actions } from '/@/modules/store/workspace';
+
 import { type Project, type SortBy } from '/shared/types/projects';
+
+import { actions as editorActions } from '/@/modules/store/editor';
+import { actions as workspaceActions } from '/@/modules/store/workspace';
+import { useNavigate } from 'react-router-dom';
 
 export const useWorkspace = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const workspace = useSelector(state => state.workspace);
 
   const getWorkspace = useCallback(() => {
-    dispatch(actions.getWorkspace());
+    dispatch(workspaceActions.getWorkspace());
   }, []);
 
   const setSortBy = useCallback((type: SortBy) => {
-    dispatch(actions.setSortBy(type));
+    dispatch(workspaceActions.setSortBy(type));
+  }, []);
+
+  const selectProject = useCallback((project: Project) => {
+    dispatch(editorActions.setProject(project));
+    navigate('/editor');
   }, []);
 
   const createProject = useCallback(() => {
-    dispatch(actions.createProject());
+    dispatch(workspaceActions.createProject());
+    navigate('/editor');
   }, []);
 
   const deleteProject = useCallback((project: Project) => {
-    dispatch(actions.deleteProject(project.path));
+    dispatch(workspaceActions.deleteProject(project.path));
   }, []);
 
   const duplicateProject = useCallback((project: Project) => {
-    dispatch(actions.duplicateProject(project.path));
+    dispatch(workspaceActions.duplicateProject(project.path));
   }, []);
 
   const importProject = useCallback(() => {
-    dispatch(actions.importProject());
+    dispatch(workspaceActions.importProject());
   }, []);
 
   const reimportProject = useCallback((path: string) => {
-    dispatch(actions.reimportProject(path));
+    dispatch(workspaceActions.reimportProject(path));
   }, []);
 
   const unlistProjects = useCallback((paths: string[]) => {
-    dispatch(actions.unlistProjects(paths));
+    dispatch(workspaceActions.unlistProjects(paths));
   }, []);
 
   return {
     ...workspace,
     getWorkspace,
     setSortBy,
+    selectProject,
     createProject,
     deleteProject,
     duplicateProject,

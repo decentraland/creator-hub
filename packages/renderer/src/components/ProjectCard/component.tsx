@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import cx from 'classnames';
-import { Link } from 'react-router-dom';
 
 import { getThumbnailUrl } from '/@/modules/project';
 import { t } from '/@/modules/store/translation/utils';
@@ -13,9 +12,13 @@ import type { Props } from './types';
 
 import './styles.css';
 
-export function ProjectCard({ project, onDelete, onDuplicate }: Props) {
+export function ProjectCard({ project, onClick, onDelete, onDuplicate }: Props) {
   const [open, setOpen] = useState(false);
   const parcels = project.layout.cols * project.layout.rows;
+
+  const handleClick = useCallback(() => {
+    if (onClick) onClick(project);
+  }, [project, onClick]);
 
   const handleDeleteProject = useCallback(() => {
     onDelete(project);
@@ -48,29 +51,30 @@ export function ProjectCard({ project, onDelete, onDuplicate }: Props) {
   ];
 
   return (
-    <div className={cx('ProjectCard', { 'has-thumbnail': !!thumbnailUrl })}>
-      <Link
-        to={`/editor?path=${encodeURIComponent(project.path)}`}
-        className="project-thumbnail"
-        style={thumbnailUrl ? { backgroundImage: `url(${thumbnailUrl})` } : {}}
-      />
-      <div className="project-data">
-        <Link
-          to={`/editor?path=${encodeURIComponent(project.path)}`}
-          className="title-wrapper"
-        >
-          <div className="title">{project.title}</div>
-          <div
-            className="description"
-            title={project.description}
-          >
-            <ViewModuleIcon className="Icon" /> {t('scene_list.parcel_count', { parcels })}
-          </div>
-        </Link>
-        <Dropdown
-          className="options-dropdown"
-          options={dropdownOptions}
+    <>
+      <div
+        className={cx('ProjectCard', { 'has-thumbnail': !!thumbnailUrl })}
+        onClick={handleClick}
+      >
+        <div
+          className="project-thumbnail"
+          style={thumbnailUrl ? { backgroundImage: `url(${thumbnailUrl})` } : {}}
         />
+        <div className="project-data">
+          <div className="title-wrapper">
+            <div className="title">{project.title}</div>
+            <div
+              className="description"
+              title={project.description}
+            >
+              <ViewModuleIcon className="Icon" /> {t('scene_list.parcel_count', { parcels })}
+            </div>
+          </div>
+          <Dropdown
+            className="options-dropdown"
+            options={dropdownOptions}
+          />
+        </div>
       </div>
       <DeleteProject
         open={open}
@@ -78,6 +82,6 @@ export function ProjectCard({ project, onDelete, onDuplicate }: Props) {
         onClose={handleCloseModal}
         onSubmit={handleDeleteProject}
       />
-    </div>
+    </>
   );
 }
