@@ -1,15 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Loader from '@mui/material/CircularProgress';
+import { CircularProgress as Loader } from 'decentraland-ui2';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 
 import { DEPLOY_URLS } from '/shared/types/deploy';
 import { t } from '/@/modules/store/translation/utils';
 import { useEditor } from '/@/hooks/useEditor';
 
+import EditorPng from '/assets/images/editor.png';
+
 import { PublishProject, type StepValue } from '../Modals/PublishProject';
 import { Button } from '../Button';
 import { Header } from '../Header';
+import { Row } from '../Row';
 
 import './styles.css';
 
@@ -108,52 +111,62 @@ export function Editor() {
   // iframe src
   const iframeUrl = `${htmlUrl}?${params}`;
 
+  const renderLoading = () => (
+    <div className="loading">
+      <img src={EditorPng} />
+      <Row>
+        <Loader />
+        {t('editor.loading.title')}
+      </Row>
+    </div>
+  );
+
   return (
     <div className="Editor">
-      <Header>
-        <>
-          <div
-            className="back"
-            onClick={handleBack}
-          >
-            <ArrowBackIosIcon />
-          </div>
-          <div className="title">{project?.title}</div>
-        </>
-        <>
-          <Button color="secondary">{t('editor.header.actions.code')}</Button>
-          <Button
-            color="secondary"
-            disabled={loadingPreview}
-            onClick={openPreview}
-          >
-            {t('editor.header.actions.preview')}
-          </Button>
-          <Button
-            color="primary"
-            onClick={handleOpenModal('publish')}
-          >
-            {t('editor.header.actions.publish')}
-          </Button>
-        </>
-      </Header>
-      {isReady ? (
-        <iframe
-          className="inspector"
-          src={iframeUrl}
-        ></iframe>
+      {!isReady ? (
+        renderLoading()
       ) : (
-        <div className="loading">
-          <Loader />
-        </div>
-      )}
-      {project && (
-        <PublishProject
-          open={open === 'publish'}
-          project={project}
-          onClose={handleCloseModal}
-          onSubmit={handleSubmitModal}
-        />
+        <>
+          <Header>
+            <>
+              <div
+                className="back"
+                onClick={handleBack}
+              >
+                <ArrowBackIosIcon />
+              </div>
+              <div className="title">{project?.title}</div>
+            </>
+            <>
+              <Button color="secondary">{t('editor.header.actions.code')}</Button>
+              <Button
+                color="secondary"
+                disabled={loadingPreview}
+                onClick={openPreview}
+              >
+                {t('editor.header.actions.preview')}
+              </Button>
+              <Button
+                color="primary"
+                onClick={handleOpenModal('publish')}
+              >
+                {t('editor.header.actions.publish')}
+              </Button>
+            </>
+          </Header>
+          <iframe
+            className="inspector"
+            src={iframeUrl}
+          ></iframe>
+          {project && (
+            <PublishProject
+              open={open === 'publish'}
+              project={project}
+              onClose={handleCloseModal}
+              onSubmit={handleSubmitModal}
+            />
+          )}
+        </>
       )}
     </div>
   );

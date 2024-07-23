@@ -39,7 +39,19 @@
 
 .Editor .loading {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  flex: 1 0 auto;
+  height: 100%;
+  font-size: 30px;
+}
+
+.Editor .loading img {
+  width: 240px;
+  transform: scaleX(-1);
+  margin-bottom: 20px;
+}
+
+.Editor .loading span {
+  margin-right: 15px;
 }

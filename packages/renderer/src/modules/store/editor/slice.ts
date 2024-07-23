@@ -1,5 +1,8 @@
 import { editor } from '#preload';
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
+
+import { type Project } from '/shared/types/projects';
+import { actions as workspaceActions } from '../workspace';
 
 // actions
 export const startInspector = createAsyncThunk('editor/startInspector', editor.startInspector);
@@ -9,6 +12,7 @@ export const openPreview = createAsyncThunk('editor/openPreview', editor.openPre
 
 // state
 export type EditorState = {
+  project?: Project;
   inspectorPort: number;
   previewPort: number;
   publishPort: number;
@@ -34,7 +38,11 @@ const initialState: EditorState = {
 export const slice = createSlice({
   name: 'editor',
   initialState,
-  reducers: {},
+  reducers: {
+    setProject: (state, { payload: project }: PayloadAction<Project>) => {
+      state.project = project;
+    },
+  },
   extraReducers: builder => {
     builder.addCase(startInspector.pending, state => {
       state.inspectorPort = 0;
@@ -71,6 +79,12 @@ export const slice = createSlice({
     builder.addCase(publishScene.rejected, (state, action) => {
       state.error = action.error.message || null;
       state.loadingPublish = false;
+    });
+    builder.addCase(workspaceActions.createProject.pending, state => {
+      state.project = undefined;
+    });
+    builder.addCase(workspaceActions.createProject.fulfilled, (state, action) => {
+      state.project = action.payload;
     });
   },
 });

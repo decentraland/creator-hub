@@ -1,7 +1,10 @@
 import { useCallback } from 'react';
-import SettingsIcon from '@mui/icons-material/Settings';
+// import SettingsIcon from '@mui/icons-material/Settings';
 import { Container } from 'decentraland-ui2';
+
 import logo from '/assets/images/logo-editor.png';
+
+import { misc } from '#preload';
 import { t } from '/@/modules/store/translation/utils';
 
 import { Header } from '../Header';
@@ -16,14 +19,16 @@ import './styles.css';
 export function Home() {
   const { projects, sortBy, setSortBy } = useWorkspace();
 
-  const handleClickFeedback = useCallback(() => undefined, []);
+  const handleClickFeedback = useCallback(
+    () => misc.openExternal('https://decentraland.canny.io'),
+    [],
+  );
   const handleClickOptions = useCallback(() => undefined, []);
 
   return (
     <main className="Home">
       <Header>
         <>
-          {/* TODO: Get SVG for this logo 👇 and transform it into an Icon component */}
           <img
             src={logo}
             alt={t('home.header.title')}
@@ -31,7 +36,6 @@ export function Home() {
           <h4>{t('home.header.title')}</h4>
           <Button
             color="info"
-            href="https://decentraland.canny.io"
             onClick={handleClickFeedback}
           >
             {t('home.header.feedback')}
@@ -41,7 +45,7 @@ export function Home() {
           color="info"
           onClick={handleClickOptions}
         >
-          <SettingsIcon />
+          {/* <SettingsIcon /> */}
         </Button>
       </Header>
       <Container>

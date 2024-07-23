@@ -6,6 +6,9 @@
     }
   },
   "editor": {
+    "loading": {
+      "title": "Preparing your scene..."
+    },
     "header": {
       "actions": {
         "code": "Code",
@@ -79,6 +82,14 @@
     }
   },
   "snackbar": {
+    "generic": {
+      "import_scene": "Importing scene...",
+      "import_scene_failed": "Failed importing scene",
+      "duplicate_scene": "Duplicating scene...",
+      "duplicate_scene_failed": "Failed duplicating scene",
+      "delete_scene": "Deleting scene...",
+      "delete_scene_failed": "Failed deleting scene"
+    },
     "missing_projects": {
       "title": "{scenes} missing {scenes, plural, one {scene} other {scenes}} found",
       "actions": {
