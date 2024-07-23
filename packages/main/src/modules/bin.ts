@@ -1,66 +1,141 @@
 import log from 'electron-log/main';
 import fs from 'node:fs/promises';
-import { app, utilityProcess } from 'electron';
+import { utilityProcess } from 'electron';
 import path from 'path';
 import treeKill from 'tree-kill';
 import { future } from 'fp-future';
 import isRunning from 'is-running';
 import cmdShim from 'cmd-shim';
-import { getBinPath, getNodeCmdPath, joinEnvPaths } from './path';
+import { rimraf } from 'rimraf';
+import semver from 'semver';
+import { APP_UNPACKED_PATH, getBinPath, getNodeCmdPath, joinEnvPaths } from './path';
 
 // the env $PATH
 let PATH = process.env.PATH;
 
+// install future
+const installed = future<void>();
+
 /**
- * Links node and npm binaries to the env $PATH
+ * Wait for node and npm binaries to be installed
+ * @returns A promise that resolves when the installation is complete
  */
-export async function link() {
-  const nodeCmdPath = getNodeCmdPath();
-  const nodeBinPath = process.execPath;
-  const npmBinPath = getBinPath('npm', 'npm');
-  if (!import.meta.env.DEV) {
-    let isLinked = false;
-    try {
-      // check if link exists
-      const stat = await fs.stat(nodeCmdPath);
-      // check if it is a symlink
-      if (stat.isSymbolicLink()) {
-        const link = await fs.readlink(nodeCmdPath);
-        // check if link points to the right bin
-        if (link === process.execPath) {
-          // skip linking
-          log.info('Node binaries already linked');
-          isLinked = true;
+export async function waitForInstall() {
+  return installed;
+}
+
+/**
+ * Installs node and npm binaries
+ */
+export async function install() {
+  try {
+    const nodeCmdPath = getNodeCmdPath();
+    const nodeBinPath = process.execPath;
+    const npmBinPath = getBinPath('npm', 'npm');
+    if (!import.meta.env.DEV) {
+      let isInstalled = false;
+      try {
+        // check if link exists
+        const stat = await fs.stat(nodeCmdPath);
+        // check if it is a symlink
+        if (stat.isSymbolicLink()) {
+          const link = await fs.readlink(nodeCmdPath);
+          // check if link points to the right bin
+          if (link === process.execPath) {
+            // skip linking
+            log.info('Node binaries already installed');
+            isInstalled = true;
+          }
+        } else {
+          // if not a symlink delete
+          await fs.rm(nodeCmdPath);
         }
-      } else {
-        // if not a symlink delete
-        await fs.rm(nodeCmdPath);
+      } catch (error) {
+        // if link is not found, continue installing
       }
-    } catch (error) {
-      // if link is not found, continue linking
-    }
-    if (!isLinked) {
-      log.info(`Linking node bin from ${nodeCmdPath} to ${nodeBinPath}`);
-      // on windows we use a cmd file
-      if (process.platform === 'win32') {
-        await cmdShim(
-          nodeBinPath,
-          // remove the .cmd part if present, since it will get added by cmdShim
-          nodeCmdPath.endsWith('.cmd') ? nodeCmdPath.replace(/\.cmd$/, '') : nodeCmdPath,
-        );
-      } else {
-        // otherwise we use a symlink
-        await fs.symlink(nodeBinPath, nodeCmdPath);
+      if (!isInstalled) {
+        log.info(`Installed node bin from ${nodeCmdPath} to ${nodeBinPath}`);
+        // on windows we use a cmd file
+        if (process.platform === 'win32') {
+          await cmdShim(
+            nodeBinPath,
+            // remove the .cmd part if present, since it will get added by cmdShim
+            nodeCmdPath.endsWith('.cmd') ? nodeCmdPath.replace(/\.cmd$/, '') : nodeCmdPath,
+          );
+        } else {
+          // otherwise we use a symlink
+          await fs.symlink(nodeBinPath, nodeCmdPath);
+        }
       }
+      PATH = joinEnvPaths(process.env.PATH, path.dirname(nodeCmdPath), path.dirname(npmBinPath));
+      log.info('node command:', nodeCmdPath);
+      log.info('node bin:', nodeBinPath);
+      log.info('npm bin: ', npmBinPath);
+      log.info('$PATH', PATH);
+
+      // install node_modules
+      log.info('Current version:', import.meta.env.VITE_APP_VERSION);
+      let version: string | null = null;
+      let isFirstInstall = false;
+      try {
+        // keep track of the last version that was installed
+        const versionPath = path.join(APP_UNPACKED_PATH, 'version.json');
+        const versionJson: { version: string } = JSON.parse(await fs.readFile(versionPath, 'utf8'));
+        version = versionJson.version;
+        log.info('Last installed version:', version);
+      } catch (_error) {
+        // if there's no registry of the last version, we will assume it's the first install
+        isFirstInstall = true;
+        log.info('This is the first installation');
+      }
+
+      let workspace = APP_UNPACKED_PATH;
+      // on the first installation, the node_modules only contain npm, so we'll move it to a temp folder so we can use it from there on a pristine environment
+      if (isFirstInstall) {
+        const nodeModulesPath = path.join(APP_UNPACKED_PATH, 'node_modules');
+        const tempPath = path.join(APP_UNPACKED_PATH, 'temp');
+        log.info('Creating temp folder');
+        await fs.mkdir(tempPath);
+        log.info('Moving node_modules to temp folder');
+        await fs.rename(nodeModulesPath, path.join(tempPath, 'node_modules')).catch(() => {});
+        workspace = tempPath;
+      }
+
+      // if the version is different from the current one, we will install the node_modules again in case there are new dependencies
+      if (!version || semver.lt(version, import.meta.env.VITE_APP_VERSION)) {
+        log.info('Installing node_modules...');
+        const npmInstall = run('npm', 'npm', {
+          args: ['install'],
+          cwd: APP_UNPACKED_PATH,
+          workspace,
+        });
+        await npmInstall.wait();
+      } else {
+        log.info('Skipping installation of node_modules because it is up to date');
+      }
+
+      // if this was the first installation, we can now remove the temp node_modules folder
+      if (isFirstInstall) {
+        log.info('Removing temp folder');
+        await rimraf(workspace);
+      }
+
+      // save the current version to the registry
+      log.info('Writing current version to the registry');
+      await fs.writeFile(
+        path.join(APP_UNPACKED_PATH, 'version.json'),
+        JSON.stringify({ version: import.meta.env.VITE_APP_VERSION }),
+      );
+
+      log.info('Installation complete!');
+    } else {
+      // no need to install node and npm in dev mode since they should already be in the $PATH for dev environment to work
+      log.info('Skipping installation of node and npm binaries in DEV mode');
     }
-    PATH = joinEnvPaths(process.env.PATH, path.dirname(nodeCmdPath), path.dirname(npmBinPath));
-    log.info('node command:', nodeCmdPath);
-    log.info('node bin:', nodeBinPath);
-    log.info('npm bin: ', npmBinPath);
-    log.info('$PATH', PATH);
-  } else {
-    // no need to link node and npm in dev mode since they should already be in the $PATH for dev environment to work
-    log.info('Skip linking node and npm binaries in DEV mode');
+    installed.resolve();
+  } catch (error: any) {
+    installed.reject(error);
+    throw error;
   }
 }
 
@@ -107,7 +182,7 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
   const promise = future<void>();
   const matchers: Matcher[] = [];
 
-  const { workspace = app.getAppPath(), cwd = app.getAppPath(), args = [], env = {} } = options;
+  const { workspace = APP_UNPACKED_PATH, cwd = APP_UNPACKED_PATH, args = [], env = {} } = options;
 
   const binPath = getBinPath(pkg, bin, workspace);
 
@@ -184,10 +259,11 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
     kill: async () => {
       await ready;
       const pid = forked.pid!;
-      log.info(`Killing process "${name}" with pid=${pid}...`);
+
       // if child is being killed or already killed then return
       if (isKilling || !alive) return;
       isKilling = true;
+      log.info(`Killing process "${name}" with pid=${pid}...`);
 
       // create promise to kill child
       const promise = future<void>();
