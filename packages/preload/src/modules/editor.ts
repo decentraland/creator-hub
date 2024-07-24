@@ -37,6 +37,6 @@ export async function openCode(_path: string) {
   try {
     await exec(`code "${normalPath}"`);
   } catch (_) {
-    await shell.openPath(normalPath) ;
+    await shell.openPath(normalPath);
   }
 }

@@ -21,15 +21,18 @@ export function EditableTitle({ initialValue, onChange }: Props) {
     onChange(value);
   }, [value]);
 
-  const handleKeyDown = useCallback((e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Escape') {
-      setIsEditing(false);
-      setValue(initialValue);
-    } else if (e.key === 'Enter') {
-      setIsEditing(false);
-      onChange(value);
-    }
-  }, [initialValue, value]);
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Escape') {
+        setIsEditing(false);
+        setValue(initialValue);
+      } else if (e.key === 'Enter') {
+        setIsEditing(false);
+        onChange(value);
+      }
+    },
+    [initialValue, value],
+  );
 
   return (
     <div className="EditableTitle">
