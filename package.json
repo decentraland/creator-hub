@@ -1,7 +1,7 @@
 {
   "name": "decentraland-editor",
   "description": "Decentraland Editor",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "type": "module",
   "author": {
@@ -72,6 +72,7 @@
     "electron-log": "^5.1.6",
     "electron-updater": "6.2.1",
     "http-server": "^14.1.1",
+    "immer": "^10.1.1",
     "is-running": "^2.1.0",
     "npm": "^10.8.1",
     "rimraf": "^6.0.1",
