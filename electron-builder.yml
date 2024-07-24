@@ -9,6 +9,9 @@ linux:
   target: deb
 
 productName: Decentraland Editor
+artifactName: '${productName}-${version}-${os}-${arch}.${ext}'
+executableName: Decentraland Editor
+
 mac:
   target:
     - target: dmg
