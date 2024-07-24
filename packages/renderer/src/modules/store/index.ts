@@ -40,7 +40,9 @@ export const useSelector: TypedUseSelectorHook<RootState> = formerUseSelector;
 export const createSelector = createDraftSafeSelector.withTypes<RootState>();
 
 // dispatch start up actions
-store.dispatch(editorActions.startInspector());
-store.dispatch(workspaceActions.getWorkspace());
+store.dispatch(editorActions.install()).then(() => {
+  store.dispatch(editorActions.startInspector());
+  store.dispatch(workspaceActions.getWorkspace());
+});
 
 export { store };

@@ -10,9 +10,10 @@ import { TranslationProvider } from '/@/components/TranslationProvider';
 
 import { Home } from './components/Home';
 import { Editor } from './components/Editor';
+import { Snackbar } from './components/Snackbar';
+import { Install } from './components/Install';
 
 import '/@/themes';
-import { Snackbar } from './components/Snackbar';
 
 const container = document.getElementById('app')!;
 const root = createRoot(container);
@@ -26,6 +27,10 @@ root.render(
             <Routes>
               <Route
                 path="/"
+                element={<Install />}
+              />
+              <Route
+                path="/home"
                 element={<Home />}
               />
               <Route

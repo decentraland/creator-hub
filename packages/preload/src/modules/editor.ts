@@ -1,6 +1,10 @@
 import type { DeployOptions } from '/shared/types/ipc';
 import { invoke } from './invoke';
 
+export async function install() {
+  return invoke('bin.install');
+}
+
 export async function startInspector() {
   const port = await invoke('inspector.start');
   return port;

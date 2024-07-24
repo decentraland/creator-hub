@@ -1,4 +1,7 @@
 {
+  "install": {
+    "message": "Instalando Decentraland Editor v{version}"
+  },
   "home": {
     "header": {
       "title": "Bienvenido al Editor Alpha",

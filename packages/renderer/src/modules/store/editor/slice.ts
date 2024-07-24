@@ -5,6 +5,7 @@ import { type Project } from '/shared/types/projects';
 import { actions as workspaceActions } from '../workspace';
 
 // actions
+export const install = createAsyncThunk('editor/install', editor.install);
 export const startInspector = createAsyncThunk('editor/startInspector', editor.startInspector);
 export const runScene = createAsyncThunk('editor/runScene', editor.runScene);
 export const publishScene = createAsyncThunk('editor/publishScene', editor.publishScene);
@@ -19,6 +20,8 @@ export type EditorState = {
   loadingInspector: boolean;
   loadingPreview: boolean;
   loadingPublish: boolean;
+  isInstalling: boolean;
+  isInstalled: boolean;
   error: string | null;
 };
 
@@ -29,6 +32,8 @@ const initialState: EditorState = {
   loadingInspector: false,
   loadingPreview: false,
   loadingPublish: false,
+  isInstalling: false,
+  isInstalled: false,
   error: null,
 };
 
@@ -86,12 +91,24 @@ export const slice = createSlice({
     builder.addCase(workspaceActions.createProject.fulfilled, (state, action) => {
       state.project = action.payload;
     });
+    builder.addCase(install.pending, state => {
+      state.isInstalling = true;
+    });
+    builder.addCase(install.fulfilled, state => {
+      state.isInstalling = false;
+      state.isInstalled = true;
+    });
+    builder.addCase(install.rejected, (state, action) => {
+      state.error = action.error.message || null;
+      state.isInstalling = false;
+    });
   },
 });
 
 // exports
 export const actions = {
   ...slice.actions,
+  install,
   startInspector,
   runScene,
   publishScene,

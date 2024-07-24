@@ -4,13 +4,21 @@ import fs from 'node:fs';
 import { type PackageJson } from '/shared/types/pkg';
 
 /**
+ * The path to the unpacked app
+ */
+export const APP_UNPACKED_PATH = path.join(
+  app.getAppPath(),
+  import.meta.env.DEV ? '.' : '../app.asar.unpacked',
+);
+
+/**
  * Returns the path to a particular bin
  * @param pkg The name of the package
  * @param bin The name of the bin
  * @param workspace The path to the workspace, where the `node_modules` folder is located
  * @returns
  */
-export function getBinPath(pkg: string, bin: string, workspace: string = app.getAppPath()) {
+export function getBinPath(pkg: string, bin: string, workspace: string = APP_UNPACKED_PATH) {
   const pkgPath = path.join(workspace, './node_modules', pkg);
   let pkgJson: PackageJson;
   try {
@@ -32,7 +40,7 @@ export function getBinPath(pkg: string, bin: string, workspace: string = app.get
  */
 export function getNodeCmdPath() {
   const cmd = process.platform === 'win32' ? 'node.cmd' : 'node';
-  return path.join(app.getAppPath(), cmd);
+  return path.join(APP_UNPACKED_PATH, cmd);
 }
 
 /**

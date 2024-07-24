@@ -8,7 +8,6 @@ import './security-restrictions';
 import { initIpc } from './modules/ipc';
 import { deployServer, previewServer } from './modules/cli';
 import { inspectorServer } from './modules/inspector';
-import { link } from './modules/bin';
 
 log.initialize();
 
@@ -44,11 +43,10 @@ app.on('activate', restoreOrCreateWindow);
 app
   .whenReady()
   .then(async () => {
-    await link();
     initIpc();
     await restoreOrCreateWindow();
   })
-  .catch(e => console.error('Failed create window:', e));
+  .catch(e => log.error('Failed create window:', e));
 
 /**
  * Check for app updates, install it in background and notify user that new version was installed.
