@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { Select, MenuItem, type SelectChangeEvent, Box } from 'decentraland-ui2';
+import AddIcon from '@mui/icons-material/Add';
 
 import { SortBy } from '/shared/types/projects';
 import { t } from '/@/modules/store/translation/utils';
@@ -12,7 +13,7 @@ import type { Props } from './types';
 import { Button } from '../Button';
 import { Column } from '../Column';
 import { Row } from '../Row';
-import { OpenFolder, Plus } from '../Icons';
+import { OpenFolder } from '../Icons';
 
 import './styles.css';
 
@@ -98,7 +99,7 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
               {t('scene_list.import_scene')}
             </Button>
             <Button
-              startIcon={<Plus />}
+              startIcon={<AddIcon />}
               color="primary"
               onClick={createProject}
             >

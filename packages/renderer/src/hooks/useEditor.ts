@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 
+import { editor as editorApi } from '#preload';
 import { useDispatch, useSelector } from '#store';
 
 import type { DeployOptions } from '/shared/types/ipc';
@@ -35,6 +36,12 @@ export const useEditor = () => {
     }
   }, [editor.previewPort, actions.openPreview]);
 
+  const openCode = useCallback(() => {
+    if (project) {
+      editorApi.openCode(project.path);
+    }
+  }, [project]);
+
   return {
     ...editor,
     project,
@@ -42,5 +49,6 @@ export const useEditor = () => {
     runScene,
     publishScene,
     openPreview,
+    openCode,
   };
 };

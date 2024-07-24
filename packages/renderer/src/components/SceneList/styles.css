@@ -32,7 +32,7 @@
 .SceneList .projects-menu .actions {
   display: flex;
   flex: 1 0 auto;
-  align-items: center;
+  align-items: stretch;
   justify-content: flex-end;
   font-size: 13px;
   line-height: 18px;
