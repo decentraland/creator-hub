@@ -37,6 +37,8 @@ defaults:
 jobs:
   draft_release:
 
+    timeout-minutes: 30
+
     permissions:
       contents: write # Allows this job to create releases
 
