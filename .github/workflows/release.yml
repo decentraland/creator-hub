@@ -43,7 +43,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [ macos-latest, ubuntu-latest, windows-latest ]
+        os: [ macos-latest-large, ubuntu-latest, windows-latest ]
 
     runs-on: ${{ matrix.os }}
 
@@ -63,10 +63,10 @@ jobs:
           
       - name: Save APPLE_TEAM_ID into electron-builder.yml
         # This is necessary for the notarization of the app in MacOS to work
-        if: ${{github.ref == 'refs/heads/main' && matrix.os == 'macos-latest' && !inputs.dry-run}}
+        if: ${{github.ref == 'refs/heads/main' && startsWith(matrix.os, 'macos-latest') && !inputs.dry-run}}
         env:
           APPLE_TEAM_ID: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}
-        run: sed -e "s|\$APPLE_TEAM_ID|$APPLE_TEAM_ID|" electron-builder.yml > electron-builder-with-apple-team-id.yml && mv electron-builder-with-apple-team-id.yml electron-builder.yml && cat electron-builder.yml
+        run: sed -e "s|\$APPLE_TEAM_ID|$APPLE_TEAM_ID|" electron-builder.yml > electron-builder-with-apple-team-id.yml && mv electron-builder-with-apple-team-id.yml electron-builder.yml
 
       - name: Compile artifacts ${{ inputs.dry-run && '' || 'and upload them to github release' }}
         # I use this action because it is capable of retrying multiple times if there are any issues with the distribution server
