@@ -7,7 +7,6 @@
 
 .Header .left {
   display: flex;
-  flex: 2;
   align-items: center;
 }
 
