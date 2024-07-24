@@ -12,10 +12,10 @@ linux:
 
 productName: Decentraland Editor
 artifactName: '${productName}-${version}-${os}-${arch}.${ext}'
-executableName: Decentraland Editor
 
 mac:
-  notarize: true
+  notarize:
+    teamId: $APPLE_TEAM_ID
   target:
     - target: dmg
       arch: arm64
