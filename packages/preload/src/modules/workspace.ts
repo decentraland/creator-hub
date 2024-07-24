@@ -156,17 +156,18 @@ export async function createProject(name = NEW_SCENE_NAME): Promise<Project> {
   let sceneName = name;
   let counter = 2;
   const homePath = await getPath();
-  let path = `${homePath}/${sceneName}`;
-  while (await exists(path)) {
+  let scenePath = path.join(homePath, sceneName);
+  while (await exists(scenePath)) {
     sceneName = `${name} ${counter++}`;
-    path = `${homePath}/${sceneName}`;
+    scenePath = path.join(homePath, sceneName);
   }
-  await fs.mkdir(path);
-  await invoke('cli.init', path);
-  const scene = await getScene(path);
+  await fs.mkdir(scenePath);
+  await invoke('cli.init', scenePath);
+  const scene = await getScene(scenePath);
   scene.display!.title = sceneName;
-  await fs.writeFile(`${path}/scene.json`, JSON.stringify(scene, null, 2));
-  const project = await getProject(path);
+  const sceneJsonPath = path.join(scenePath, 'scene.json');
+  await fs.writeFile(sceneJsonPath, JSON.stringify(scene, null, 2));
+  const project = await getProject(scenePath);
   return project;
 }
 
