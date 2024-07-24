@@ -14,6 +14,15 @@ on:
       MACOS_CSC_KEY_PASSWORD:
         description: 'Password to decrypt the certificate file'
         required: true
+      MACOS_NOTARIZATION_APPLE_ID:
+        description: 'Apple ID used for notarization'
+        required: true
+      MACOS_NOTARIZATION_TEAM_ID:
+        description: 'Team ID used for notarization'
+        required: true
+      MACOS_NOTARIZATION_PWD:
+        description: 'Password used for notarization'
+        required: true
 
 concurrency:
   group: release-${{ github.ref }}
@@ -68,5 +77,10 @@ jobs:
           # See https://www.electron.build/code-signing
           CSC_LINK: ${{ secrets.MACOS_CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.MACOS_CSC_KEY_PASSWORD }}
+          # Notarization params
+          # See https://www.electron.build/configuration/mac#NotarizeNotaryOptions
+          APPLE_ID: ${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PWD }}
           # Publishing artifacts
           GH_TOKEN: ${{ secrets.github_token }} # GitHub token, automatically provided (No need to define this secret in the repo settings)

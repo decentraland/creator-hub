@@ -1,3 +1,5 @@
+appId: com.decentraland.editor
+
 directories:
   output: dist
   buildResources: buildResources
@@ -13,6 +15,7 @@ artifactName: '${productName}-${version}-${os}-${arch}.${ext}'
 executableName: Decentraland Editor
 
 mac:
+  notarize: true
   target:
     - target: dmg
       arch: arm64
