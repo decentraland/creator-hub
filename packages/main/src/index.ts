@@ -11,6 +11,8 @@ import { inspectorServer } from './modules/inspector';
 
 log.initialize();
 
+log.info('App started');
+
 /**
  * Prevent electron from running multiple instances.
  */
@@ -43,8 +45,11 @@ app.on('activate', restoreOrCreateWindow);
 app
   .whenReady()
   .then(async () => {
+    log.info('App ready');
     initIpc();
+    log.info('IPC ready');
     await restoreOrCreateWindow();
+    log.info('Browser ready');
   })
   .catch(e => log.error('Failed create window:', e));
 
