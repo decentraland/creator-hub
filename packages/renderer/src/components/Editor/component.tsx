@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CircularProgress as Loader } from 'decentraland-ui2';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
@@ -23,11 +23,9 @@ type ModalType = 'publish';
 
 export function Editor() {
   const navigate = useNavigate();
-  const ref = useRef(false);
   const {
     project,
     inspectorPort,
-    runScene,
     previewPort,
     loadingPreview,
     openPreview,
@@ -66,12 +64,6 @@ export function Editor() {
       default:
         return publishScene();
     }
-  }, []);
-
-  useEffect(() => {
-    if (ref.current) return;
-    runScene();
-    ref.current = true;
   }, []);
 
   // inspector url

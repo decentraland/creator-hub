@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 
 import { editor as editorApi } from '#preload';
 import { useDispatch, useSelector } from '#store';
+import type { Project } from '/shared/types/projects';
 
 import type { DeployOptions } from '/shared/types/ipc';
 import { actions } from '/@/modules/store/editor';
@@ -15,11 +16,12 @@ export const useEditor = () => {
     dispatch(actions.startInspector());
   }, [dispatch, actions.startInspector]);
 
-  const runScene = useCallback(() => {
-    if (project) {
+  const runScene = useCallback(
+    (project: Project) => {
       dispatch(actions.runScene(project.path));
-    }
-  }, [project]);
+    },
+    [project],
+  );
 
   const publishScene = useCallback(
     (opts: Omit<DeployOptions, 'path'> = {}) => {
