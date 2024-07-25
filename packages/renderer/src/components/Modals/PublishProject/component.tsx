@@ -126,10 +126,15 @@ function AlternativeServers({ onClick }: StepProps) {
   );
 
   const handleClickLearnMore = useCallback(() => {
+    if (option === 'custom') {
+      return misc.openExternal(
+        'https://docs.decentraland.org/creator/development-guide/sdk7/publishing/#custom-servers',
+      );
+    }
     misc.openExternal(
       'https://docs.decentraland.org/creator/development-guide/sdk7/publishing/#the-test-server',
     );
-  }, []);
+  }, [option]);
 
   return (
     <div className="AlternativeServers">
