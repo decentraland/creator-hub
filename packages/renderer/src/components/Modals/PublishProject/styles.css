@@ -108,7 +108,10 @@
   align-items: center;
 }
 
-.MuiModal-root .AlternativeServers .box .actions a {
+.MuiModal-root .AlternativeServers .box .actions .learn-more {
   text-transform: uppercase;
+  text-decoration: underline;
   margin-right: 40px;
+  cursor: pointer;
+  font-weight: bold;
 }

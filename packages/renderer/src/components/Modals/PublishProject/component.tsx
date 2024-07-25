@@ -1,8 +1,8 @@
 import { type ChangeEvent, useCallback, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { MenuItem, Select, type SelectChangeEvent } from 'decentraland-ui2';
 import { Modal } from 'decentraland-ui2/dist/components/Modal/Modal';
 
+import { misc } from '#preload';
 import { isUrl } from '/shared/types/utils';
 import { t } from '/@/modules/store/translation/utils';
 
@@ -125,6 +125,12 @@ function AlternativeServers({ onClick }: StepProps) {
     [error],
   );
 
+  const handleClickLearnMore = useCallback(() => {
+    misc.openExternal(
+      'https://docs.decentraland.org/creator/development-guide/sdk7/publishing/#the-test-server',
+    );
+  }, []);
+
   return (
     <div className="AlternativeServers">
       <span className="select">{t('modal.publish_project.select')}</span>
@@ -163,9 +169,12 @@ function AlternativeServers({ onClick }: StepProps) {
           />
         </div>
         <div className="actions">
-          <Link to="https://docs.decentraland.org/creator/development-guide/sdk7/publishing/#the-test-server">
+          <span
+            className="learn-more"
+            onClick={handleClickLearnMore}
+          >
             {t('option_box.learn_more')}
-          </Link>
+          </span>
           <Button onClick={handleClick}>
             {t(`modal.publish_project.alternative_servers.action.${option}_server`)}
           </Button>

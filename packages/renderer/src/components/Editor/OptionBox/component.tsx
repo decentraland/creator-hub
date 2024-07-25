@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom';
+import { useCallback } from 'react';
+
+import { misc } from '#preload';
 
 import { t } from '/@/modules/store/translation/utils';
 import { Button } from '../../Button';
@@ -15,6 +17,10 @@ export function OptionBox({
   onClickPublish,
   learnMoreUrl,
 }: Props) {
+  const handleClickLearnMore = useCallback(() => {
+    if (learnMoreUrl) misc.openExternal(learnMoreUrl);
+  }, []);
+
   return (
     <div className="OptionBox">
       <img
@@ -25,12 +31,12 @@ export function OptionBox({
       <span className="description">{description}</span>
       <Button onClick={onClickPublish}>{buttonText}</Button>
       {learnMoreUrl && (
-        <Link
+        <span
           className="learn-more"
-          to={learnMoreUrl}
+          onClick={handleClickLearnMore}
         >
           {t('option_box.learn_more')}
-        </Link>
+        </span>
       )}
     </div>
   );

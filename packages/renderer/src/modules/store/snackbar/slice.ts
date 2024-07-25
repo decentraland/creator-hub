@@ -29,7 +29,7 @@ export const slice = createSlice({
     builder
       .addCase(workspaceActions.getWorkspace.fulfilled, (state, action) => {
         if (action.payload.missing.length > 0) {
-          state.notifications.push(createCustomNotification('missing-scenes'));
+          state.notifications.push(createCustomNotification('missing-scenes', { duration: 0 }));
         }
       })
       .addCase(workspaceActions.importProject.pending, (state, payload) => {
