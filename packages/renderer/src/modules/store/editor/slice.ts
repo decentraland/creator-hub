@@ -1,6 +1,8 @@
 import { editor } from '#preload';
 import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
+import { type ThunkAction } from '#store';
+
 import { type Project } from '/shared/types/projects';
 import { actions as workspaceActions } from '../workspace';
 
@@ -10,6 +12,11 @@ export const startInspector = createAsyncThunk('editor/startInspector', editor.s
 export const runScene = createAsyncThunk('editor/runScene', editor.runScene);
 export const publishScene = createAsyncThunk('editor/publishScene', editor.publishScene);
 export const openPreview = createAsyncThunk('editor/openPreview', editor.openPreview);
+export const createAndRunProject: ThunkAction = async dispatch => {
+  const action = dispatch(workspaceActions.createProject());
+  const project = await action.unwrap();
+  await dispatch(runScene(project.path));
+};
 
 // state
 export type EditorState = {
@@ -108,6 +115,7 @@ export const slice = createSlice({
 // exports
 export const actions = {
   ...slice.actions,
+  createAndRunProject,
   install,
   startInspector,
   runScene,

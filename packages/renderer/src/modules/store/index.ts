@@ -35,6 +35,7 @@ if (isDevelopment) {
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
+export type ThunkAction = (dispatch: AppDispatch, getState: typeof store.getState) => void;
 export const useDispatch: () => AppDispatch = formerUseDispuseDispatch;
 export const useSelector: TypedUseSelectorHook<RootState> = formerUseSelector;
 export const createSelector = createDraftSafeSelector.withTypes<RootState>();

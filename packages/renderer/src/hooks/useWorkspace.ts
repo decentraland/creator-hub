@@ -26,7 +26,7 @@ export const useWorkspace = () => {
   }, []);
 
   const createProject = useCallback(() => {
-    dispatch(workspaceActions.createProject());
+    dispatch(editorActions.createAndRunProject);
     navigate('/editor');
   }, []);
 
