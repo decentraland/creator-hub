@@ -87,9 +87,10 @@ export const slice = createSlice({
         state.status = 'loading';
       })
       .addCase(importProject.fulfilled, (state, action) => {
+        const newProject = action.payload;
         return {
           ...state,
-          projects: state.projects.concat(action.payload),
+          projects: newProject ? state.projects.concat(newProject) : state.projects,
           status: 'succeeded',
           error: null,
         };
@@ -102,10 +103,11 @@ export const slice = createSlice({
         state.status = 'loading';
       })
       .addCase(reimportProject.fulfilled, (state, action) => {
+        const newProject = action.payload;
         return {
           ...state,
-          projects: state.projects.concat(action.payload),
-          missing: state.missing.filter($ => $ !== action.meta.arg),
+          projects: newProject ? state.projects.concat(newProject) : state.projects,
+          missing: newProject ? state.missing.filter($ => $ !== action.meta.arg) : state.missing,
           status: 'succeeded',
           error: null,
         };

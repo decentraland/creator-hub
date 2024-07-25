@@ -38,8 +38,8 @@ root.render(
                 element={<Editor />}
               />
             </Routes>
+            <Snackbar />
           </Router>
-          <Snackbar />
         </ThemeProvider>
       </TranslationProvider>
     </StoreProvider>

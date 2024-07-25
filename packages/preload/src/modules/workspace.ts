@@ -216,11 +216,15 @@ export async function duplicateProject(_path: string): Promise<Project> {
  * @returns A Promise that resolves to the imported project path.
  * @throws An error if the selected directory is not a valid project.
  */
-export async function importProject(): Promise<Project> {
+export async function importProject(): Promise<Project | undefined> {
   const [projectPath] = await invoke('electron.showOpenDialog', {
     title: 'Import project',
     properties: ['openDirectory'],
   });
+
+  const cancelled = !projectPath;
+
+  if (cancelled) return undefined;
 
   const pathBaseName = path.basename(projectPath);
   const paths = await getWorkspacePaths();
@@ -249,8 +253,8 @@ export async function importProject(): Promise<Project> {
  * @returns A Promise that resolves to the reimported Project object.
  * @throws An error if the selected directory is not a valid project.
  */
-export async function reimportProject(_path: string): Promise<Project> {
+export async function reimportProject(_path: string): Promise<Project | undefined> {
   const project = await importProject();
-  await unlistProjects([_path]);
+  if (project) await unlistProjects([_path]);
   return project;
 }
