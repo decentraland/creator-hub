@@ -1,6 +1,5 @@
 import fs from 'node:fs/promises';
 import path from 'path';
-import log from 'electron-log';
 import { produce, type WritableDraft } from 'immer';
 
 import type { Config } from '/shared/types/config';
@@ -46,7 +45,7 @@ export async function getConfig(): Promise<Readonly<Config>> {
       try {
         await writeConfig(getDefaultConfig());
       } catch (e) {
-        log.error('[Preload] Failed initializing config file', e);
+        console.error('[Preload] Failed initializing config file', e);
       }
     }
   }
@@ -68,7 +67,7 @@ export async function writeConfig(_config: Config): Promise<void> {
     // Update the in-memory config variable with the new configuration
     config = _config;
   } catch (e) {
-    log.error('[Preload] Failed writing to config file', e);
+    console.error('[Preload] Failed writing to config file', e);
     throw e;
   }
 }

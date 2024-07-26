@@ -1,4 +1,3 @@
-import log from 'electron-log';
 import { configureStore, createDraftSafeSelector } from '@reduxjs/toolkit';
 import {
   type TypedUseSelectorHook,
@@ -58,7 +57,7 @@ async function start() {
       store.dispatch(workspaceActions.getWorkspace()),
     ]);
   } catch (error: any) {
-    log.error(`[Renderer]: Failed to start up error=${error.message}`);
+    console.error(`[Renderer]: Failed to start up error=${error.message}`);
   }
 }
 
