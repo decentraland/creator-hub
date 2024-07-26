@@ -21,6 +21,11 @@ mac:
       arch: arm64
     - target: dmg
       arch: x64
+    # We need to also build the .zip artifacts for the auto-updater to work https://github.com/electron-userland/electron-builder/issues/2199
+    - target: zip
+      arch: arm64
+    - target: zip
+      arch: x64
 
 asarUnpack:
   - './node_modules/npm/**/*'
