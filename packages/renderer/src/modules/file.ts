@@ -1,3 +1,5 @@
+import log from 'electron-log';
+
 const MAX_NAME_LENGTH = 30;
 
 export function truncateFileName(name: string) {
@@ -30,7 +32,7 @@ export async function getFileSize(src: string): Promise<number> {
       return fileSize ? parseInt(fileSize, 10) : 0;
     }
   } catch (error) {
-    console.error('Error retrieving file size:', error);
+    log.error('[Renderer] Error retrieving file size:', error);
   }
 
   return 0;

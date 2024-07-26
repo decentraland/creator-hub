@@ -8,7 +8,18 @@ export async function handle<T extends keyof Ipc>(
   handler: (event: Electron.IpcMainInvokeEvent, ...args: Parameters<Ipc[T]>) => ReturnType<Ipc[T]>,
 ) {
   ipcMain.handle(channel, async (event, ...args) => {
-    log.info(`IPC: ${channel}`, ...args);
-    return handler(event, ...(args as Parameters<Ipc[T]>));
+    try {
+      log.info(
+        `[IPC] channel=${channel} ${args
+          .map((arg, idx) => `args[${idx}]=${JSON.stringify(arg)}`)
+          .join(' ')}
+        }`.trim(),
+      );
+      const result = await handler(event, ...(args as Parameters<Ipc[T]>));
+      return result;
+    } catch (error: any) {
+      log.error(`[IPC] channel=${channel} error=${error.message}`);
+      throw error;
+    }
   });
 }

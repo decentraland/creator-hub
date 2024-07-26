@@ -11,8 +11,6 @@ import { inspectorServer } from './modules/inspector';
 
 log.initialize();
 
-log.info('App started');
-
 /**
  * Prevent electron from running multiple instances.
  */
@@ -45,11 +43,11 @@ app.on('activate', restoreOrCreateWindow);
 app
   .whenReady()
   .then(async () => {
-    log.info('App ready');
+    log.info(`[App] Ready v${app.getVersion()}`);
     initIpc();
-    log.info('IPC ready');
+    log.info('[IPC] Ready');
     await restoreOrCreateWindow();
-    log.info('Browser window ready');
+    log.info('[BrowserWindow] Ready');
   })
   .catch(e => log.error('Failed create window:', e));
 
@@ -110,8 +108,8 @@ app.on('before-quit', async event => {
   try {
     await killAll();
   } catch (error) {
-    log.error('Failed to kill all servers:', error);
+    log.error('[App] Failed to kill all servers:', error);
   }
-  log.info('App quit');
+  log.info('[App] Quit');
   app.exit();
 });

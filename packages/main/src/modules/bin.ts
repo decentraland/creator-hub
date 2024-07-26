@@ -1,6 +1,6 @@
 import log from 'electron-log/main';
 import fs from 'node:fs/promises';
-import { utilityProcess } from 'electron';
+import { app, utilityProcess } from 'electron';
 import path from 'path';
 import treeKill from 'tree-kill';
 import { future } from 'fp-future';
@@ -29,6 +29,8 @@ export async function waitForInstall() {
  */
 export async function install() {
   try {
+    const nodeModulesPath = path.join(APP_UNPACKED_PATH, 'node_modules');
+    const tempPath = path.join(APP_UNPACKED_PATH, 'temp');
     const nodeCmdPath = getNodeCmdPath();
     const nodeBinPath = process.execPath;
     const npmBinPath = getBinPath('npm', 'npm');
@@ -43,7 +45,7 @@ export async function install() {
           // check if link points to the right bin
           if (link === process.execPath) {
             // skip linking
-            log.info('Node binaries already installed');
+            log.info('[Install] Node binaries already installed');
             isInstalled = true;
           }
         } else {
@@ -54,7 +56,7 @@ export async function install() {
         // if link is not found, continue installing
       }
       if (!isInstalled) {
-        log.info(`Installed node bin linking from ${nodeCmdPath} to ${nodeBinPath}`);
+        log.info(`[Install] Installed node bin linking from ${nodeCmdPath} to ${nodeBinPath}`);
         // on windows we use a cmd file
         if (process.platform === 'win32') {
           await cmdShim(
@@ -68,13 +70,13 @@ export async function install() {
         }
       }
       PATH = joinEnvPaths(process.env.PATH, path.dirname(nodeCmdPath), path.dirname(npmBinPath));
-      log.info('node command:', nodeCmdPath);
-      log.info('node bin:', nodeBinPath);
-      log.info('npm bin: ', npmBinPath);
-      log.info('$PATH', PATH);
+      log.info('[Install] node command:', nodeCmdPath);
+      log.info('[Install] node bin:', nodeBinPath);
+      log.info('[Install] npm bin: ', npmBinPath);
+      log.info('[Install] $PATH', PATH);
 
       // install node_modules
-      log.info('Current version:', import.meta.env.VITE_APP_VERSION);
+      log.info('[Install] Current version:', app.getVersion());
       let version: string | null = null;
       let isFirstInstall = false;
       try {
@@ -82,21 +84,19 @@ export async function install() {
         const versionPath = path.join(APP_UNPACKED_PATH, 'version.json');
         const versionJson: { version: string } = JSON.parse(await fs.readFile(versionPath, 'utf8'));
         version = versionJson.version;
-        log.info('Last installed version:', version);
+        log.info('[Install] Last installed version:', version);
       } catch (_error) {
         // if there's no registry of the last version, we will assume it's the first install
         isFirstInstall = true;
-        log.info('This is the first installation');
+        log.info('[Install] This is the first installation');
       }
 
       let workspace = APP_UNPACKED_PATH;
       // on the first installation, the node_modules only contain npm, so we'll move it to a temp folder so we can use it from there on a pristine environment
       if (isFirstInstall) {
-        const nodeModulesPath = path.join(APP_UNPACKED_PATH, 'node_modules');
-        const tempPath = path.join(APP_UNPACKED_PATH, 'temp');
-        log.info('Creating temp folder');
+        log.info('[Install] Creating temp folder');
         await fs.mkdir(tempPath);
-        log.info('Moving node_modules to temp folder');
+        log.info('[Install] Moving node_modules to temp folder');
         await fs.rename(nodeModulesPath, path.join(tempPath, 'node_modules')).catch(() => {});
         workspace = tempPath;
       }
@@ -105,39 +105,40 @@ export async function install() {
       const shouldInstall = !version || semver.lt(version, import.meta.env.VITE_APP_VERSION);
       if (shouldInstall) {
         // install dependencies using npm
-        log.info('Installing node_modules...');
+        log.info('[Install] Installing node_modules...');
         const npmInstall = run('npm', 'npm', {
           args: ['install'],
           cwd: APP_UNPACKED_PATH,
           workspace,
         });
-        await npmInstall.wait();
+        await npmInstall.waitFor(/added \d+ packages/); // wait for successs message, because when the user quits the app while installing, npm exits gracefully with an exit code=0;
 
         // save the current version to the registry
-        log.info('Writing current version to the registry');
+        log.info('[Install] Writing current version to the registry');
         await fs.writeFile(
           path.join(APP_UNPACKED_PATH, 'version.json'),
           JSON.stringify({ version: import.meta.env.VITE_APP_VERSION }),
         );
       } else {
-        log.info('Skipping installation of node_modules because it is up to date');
+        log.info('[Install] Skipping installation of node_modules because it is up to date');
       }
 
       // if this was the first installation, we can now remove the temp node_modules folder
       if (isFirstInstall) {
-        log.info('Removing temp folder');
+        log.info('[Install] Removing temp folder');
         await rimraf(workspace);
       }
 
       if (shouldInstall) {
-        log.info('Installation complete!');
+        log.info('[Install] Installation complete!');
       }
     } else {
       // no need to install node and npm in dev mode since they should already be in the $PATH for dev environment to work
-      log.info('Skipping installation of node and npm binaries in DEV mode');
+      log.info('[Install] Skipping installation of node and npm binaries in DEV mode');
     }
     installed.resolve();
   } catch (error: any) {
+    log.error('[Install] Failed to install node and npm binaries:', error.message);
     installed.reject(error);
     throw error;
   }
@@ -204,14 +205,18 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
 
   const name = `${pkg} ${args.join(' ')}`.trim();
   forked.on('spawn', () => {
-    log.info(`Running "${name}" using bin=${binPath} with pid=${forked.pid} in ${cwd}`);
+    log.info(
+      `[UtilityProcess] Running "${name}" using bin=${binPath} with pid=${forked.pid} in ${cwd}`,
+    );
     ready.resolve();
   });
 
   forked.on('exit', code => {
     if (!alive) return;
     alive = false;
-    log.info(`Exiting "${name}" with pid=${forked.pid} and exit code=${code || 0}`);
+    log.info(
+      `[UtilityProcess] Exiting "${name}" with pid=${forked.pid} and exit code=${code || 0}`,
+    );
     if (code !== 0 && code !== null) {
       promise.reject(
         new Error(`Error: process "${name}" with pid=${forked.pid} exited with code=${code}`),
@@ -267,7 +272,7 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
       // if child is being killed or already killed then return
       if (isKilling || !alive) return;
       isKilling = true;
-      log.info(`Killing process "${name}" with pid=${pid}...`);
+      log.info(`[UtilityProcess] Killing process "${name}" with pid=${pid}...`);
 
       // create promise to kill child
       const promise = future<void>();
@@ -285,10 +290,10 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
           matcher.enabled = false;
         }
         if (force) {
-          log.info(`Process "${name}" with pid=${pid} forcefully killed`);
+          log.info(`[UtilityProcess] Process "${name}" with pid=${pid} forcefully killed`);
           treeKill(pid!, 'SIGKILL');
         } else {
-          log.info(`Process "${name}" with pid=${pid} gracefully killed`);
+          log.info(`[UtilityProcess] Process "${name}" with pid=${pid} gracefully killed`);
         }
         promise.resolve();
       };
@@ -318,7 +323,7 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
 
 async function handleData(buffer: Buffer, matchers: Matcher[]) {
   const data = buffer.toString('utf8');
-  log.info(data); // pipe data to console
+  log.info(`[UtilityProcess] ${data}`); // pipe data to console
   for (const { pattern, handler, enabled } of matchers) {
     if (!enabled) continue;
     pattern.lastIndex = 0; // reset regexp
