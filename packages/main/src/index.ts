@@ -76,6 +76,9 @@ if (import.meta.env.PROD) {
       updater.autoUpdater.on('update-downloaded', _info => {
         log.info('[AutoUpdater] Update downloaded');
       });
+      updater.autoUpdater.on('download-progress', info => {
+        log.info(`[AutoUpdater] Download progress ${info.percent}%`);
+      });
       updater.autoUpdater.on('error', err => {
         log.error('[AutoUpdater] Error in auto-updater', err);
       });

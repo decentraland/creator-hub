@@ -12,8 +12,7 @@ export async function handle<T extends keyof Ipc>(
       log.info(
         `[IPC] channel=${channel} ${args
           .map((arg, idx) => `args[${idx}]=${JSON.stringify(arg)}`)
-          .join(' ')}
-        }`.trim(),
+          .join(' ')}`.trim(),
       );
       const result = await handler(event, ...(args as Parameters<Ipc[T]>));
       return result;
