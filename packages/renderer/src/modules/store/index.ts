@@ -1,3 +1,4 @@
+import log from 'electron-log';
 import { configureStore, createDraftSafeSelector } from '@reduxjs/toolkit';
 import {
   type TypedUseSelectorHook,
@@ -41,9 +42,27 @@ export const useSelector: TypedUseSelectorHook<RootState> = formerUseSelector;
 export const createSelector = createDraftSafeSelector.withTypes<RootState>();
 
 // dispatch start up actions
-store.dispatch(editorActions.install()).then(() => {
-  store.dispatch(editorActions.startInspector());
-  store.dispatch(workspaceActions.getWorkspace());
-});
+async function start() {
+  try {
+    // fetch app version
+    await store.dispatch(editorActions.fetchVersion());
+    // install editor dependencies
+    const install = store.dispatch(editorActions.install());
+    await install.unwrap(); // .unwrap() to make it throw if thunk is rejected
+
+    // start app
+    await Promise.all([
+      // start inspector
+      store.dispatch(editorActions.startInspector()),
+      // load workspace
+      store.dispatch(workspaceActions.getWorkspace()),
+    ]);
+  } catch (error: any) {
+    log.error(`[Renderer]: Failed to start up error=${error.message}`);
+  }
+}
+
+// kick it off
+void start();
 
 export { store };

@@ -4,6 +4,7 @@ export type DeployOptions = { path: string; target?: string; targetContent?: str
 
 export interface Ipc {
   'electron.getAppHome': () => string;
+  'electron.getAppVersion': () => Promise<string>;
   'electron.showOpenDialog': (opts: Partial<OpenDialogOptions>) => Promise<string[]>;
   'electron.openExternal': (url: string) => Promise<void>;
   'inspector.start': () => Promise<number>;

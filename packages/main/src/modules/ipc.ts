@@ -6,6 +6,7 @@ import * as bin from './bin';
 
 export function initIpc() {
   // electron
+  handle('electron.getAppVersion', () => electron.getAppVersion());
   handle('electron.getAppHome', () => electron.getAppHome());
   handle('electron.showOpenDialog', (_event, opts) => electron.showOpenDialog(opts));
   handle('electron.openExternal', (_event, url) => electron.openExternal(url));

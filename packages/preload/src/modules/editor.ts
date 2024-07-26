@@ -3,10 +3,14 @@ import { exec as execSync } from 'child_process';
 import { shell } from 'electron';
 import path from 'path';
 
-const exec = promisify(execSync);
-
 import type { DeployOptions } from '/shared/types/ipc';
 import { invoke } from './invoke';
+
+const exec = promisify(execSync);
+
+export async function getVersion() {
+  return invoke('electron.getAppVersion');
+}
 
 export async function install() {
   return invoke('bin.install');

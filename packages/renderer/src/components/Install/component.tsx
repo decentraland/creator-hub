@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CircularProgress as Loader } from 'decentraland-ui2';
 import { useEditor } from '/@/hooks/useEditor';
-import './styles.css';
-import { useNavigate } from 'react-router-dom';
 import { t } from '/@/modules/store/translation/utils';
+import './styles.css';
 
 export function Install() {
-  const { isInstalled, isInstalling } = useEditor();
+  const { version, isInstalled, isInstalling } = useEditor();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,9 +19,7 @@ export function Install() {
     <div className="Install">
       <div className="loading">
         <Loader />
-        <div className="message">
-          {t('install.message', { version: import.meta.env.VITE_APP_VERSION })}
-        </div>
+        <div className="message">{t('install.message', { version })}</div>
       </div>
     </div>
   );

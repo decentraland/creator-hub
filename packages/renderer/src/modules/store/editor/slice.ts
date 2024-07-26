@@ -7,6 +7,7 @@ import { type Project } from '/shared/types/projects';
 import { actions as workspaceActions } from '../workspace';
 
 // actions
+export const fetchVersion = createAsyncThunk('editor/fetchVersion', editor.getVersion);
 export const install = createAsyncThunk('editor/install', editor.install);
 export const startInspector = createAsyncThunk('editor/startInspector', editor.startInspector);
 export const runScene = createAsyncThunk('editor/runScene', editor.runScene);
@@ -20,6 +21,7 @@ export const createAndRunProject: ThunkAction = async dispatch => {
 
 // state
 export type EditorState = {
+  version: string | null;
   project?: Project;
   inspectorPort: number;
   previewPort: number;
@@ -29,10 +31,12 @@ export type EditorState = {
   loadingPublish: boolean;
   isInstalling: boolean;
   isInstalled: boolean;
+  isFetchingVersion: boolean;
   error: string | null;
 };
 
 const initialState: EditorState = {
+  version: null,
   inspectorPort: 0,
   previewPort: 0,
   publishPort: 0,
@@ -41,6 +45,7 @@ const initialState: EditorState = {
   loadingPublish: false,
   isInstalling: false,
   isInstalled: false,
+  isFetchingVersion: false,
   error: null,
 };
 
@@ -109,6 +114,17 @@ export const slice = createSlice({
       state.error = action.error.message || null;
       state.isInstalling = false;
     });
+    builder.addCase(fetchVersion.fulfilled, (state, action) => {
+      state.version = action.payload;
+      state.isFetchingVersion = false;
+    });
+    builder.addCase(fetchVersion.pending, state => {
+      state.isFetchingVersion = true;
+    });
+    builder.addCase(fetchVersion.rejected, (state, action) => {
+      state.error = action.error.message || null;
+      state.isFetchingVersion = false;
+    });
   },
 });
 
@@ -116,6 +132,7 @@ export const slice = createSlice({
 export const actions = {
   ...slice.actions,
   createAndRunProject,
+  fetchVersion,
   install,
   startInspector,
   runScene,

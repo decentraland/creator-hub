@@ -20,3 +20,7 @@ export async function showOpenDialog(opts: Partial<OpenDialogOptions>): Promise<
 export async function openExternal(url: string) {
   shell.openExternal(url);
 }
+
+export async function getAppVersion() {
+  return app.getVersion();
+}
