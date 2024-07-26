@@ -31,6 +31,21 @@ export async function install() {
   try {
     const nodeModulesPath = path.join(APP_UNPACKED_PATH, 'node_modules');
     const tempPath = path.join(APP_UNPACKED_PATH, 'temp');
+    /** Fix a previously interruped install */
+    try {
+      // If the temp folder exists, delete node_modules and move temp back to node_modules
+      await fs.stat(tempPath);
+      log.info('[Install] Found temp folder, moving node_modules back');
+      try {
+        await rimraf(nodeModulesPath);
+        await fs.rename(path.join(tempPath, 'node_modules'), nodeModulesPath);
+        await rimraf(tempPath);
+      } catch (error: any) {
+        log.error('[Install] Failed to move node_modules back:', error.message);
+      }
+    } catch (error) {
+      // If temp folder doesn't exist, continue with regular install
+    }
     const nodeCmdPath = getNodeCmdPath();
     const nodeBinPath = process.execPath;
     const npmBinPath = getBinPath('npm', 'npm');
@@ -102,7 +117,7 @@ export async function install() {
       }
 
       // if the version is different from the current one, we will install the node_modules again in case there are new dependencies
-      const shouldInstall = !version || semver.lt(version, import.meta.env.VITE_APP_VERSION);
+      const shouldInstall = !version || semver.lt(version, app.getVersion());
       if (shouldInstall) {
         // install dependencies using npm
         log.info('[Install] Installing node_modules...');
