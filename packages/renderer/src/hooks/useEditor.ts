@@ -1,11 +1,16 @@
 import { useCallback } from 'react';
+import { type Scene } from '@dcl/schemas';
 
 import { editor as editorApi } from '#preload';
 import { useDispatch, useSelector } from '#store';
+
 import type { Project } from '/shared/types/projects';
+import type { Method, Params } from '/@/modules/server';
+import { bufferToJson } from '/@/modules/buffer';
 
 import type { DeployOptions } from '/shared/types/ipc';
-import { actions } from '/@/modules/store/editor';
+import { actions as editorActions } from '/@/modules/store/editor';
+import { actions as workspaceActions } from '/@/modules/store/workspace';
 
 export const useEditor = () => {
   const dispatch = useDispatch();
@@ -13,12 +18,12 @@ export const useEditor = () => {
   const { project } = editor;
 
   const startInspector = useCallback(() => {
-    dispatch(actions.startInspector());
-  }, [dispatch, actions.startInspector]);
+    dispatch(editorActions.startInspector());
+  }, [dispatch, editorActions.startInspector]);
 
   const runScene = useCallback(
     (project: Project) => {
-      dispatch(actions.runScene(project.path));
+      dispatch(editorActions.runScene(project.path));
     },
     [project],
   );
@@ -26,23 +31,34 @@ export const useEditor = () => {
   const publishScene = useCallback(
     (opts: Omit<DeployOptions, 'path'> = {}) => {
       if (project) {
-        dispatch(actions.publishScene({ ...opts, path: project.path }));
+        dispatch(editorActions.publishScene({ ...opts, path: project.path }));
       }
     },
-    [project, actions.publishScene],
+    [project, editorActions.publishScene],
   );
 
   const openPreview = useCallback(() => {
     if (editor.previewPort) {
-      dispatch(actions.openPreview(editor.previewPort));
+      dispatch(editorActions.openPreview(editor.previewPort));
     }
-  }, [editor.previewPort, actions.openPreview]);
+  }, [editor.previewPort, editorActions.openPreview]);
 
   const openCode = useCallback(() => {
     if (project) {
       editorApi.openCode(project.path);
     }
   }, [project]);
+
+  const updateSceneTitle = useCallback(
+    ({ path, content }: Params[Method.WRITE_FILE]) => {
+      if (project && path === 'scene.json') {
+        const scene = bufferToJson(content) as Scene;
+        const title = scene.display?.title || '';
+        dispatch(workspaceActions.setProjectTitle({ path: project.path, title }));
+      }
+    },
+    [project],
+  );
 
   return {
     ...editor,
@@ -52,5 +68,6 @@ export const useEditor = () => {
     publishScene,
     openPreview,
     openCode,
+    updateSceneTitle,
   };
 };

@@ -125,6 +125,11 @@ export const slice = createSlice({
       state.error = action.error.message || null;
       state.isFetchingVersion = false;
     });
+    builder.addCase(workspaceActions.setProjectTitle, (state, action) => {
+      if (state.project?.path === action.payload.path) {
+        state.project.title = action.payload.title;
+      }
+    });
   },
 });
 

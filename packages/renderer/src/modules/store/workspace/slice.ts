@@ -32,6 +32,10 @@ export const slice = createSlice({
     setSortBy: (state, { payload: type }: PayloadAction<SortBy>) => {
       state.sortBy = type;
     },
+    setProjectTitle: (state, { payload }: PayloadAction<{ path: string; title: string }>) => {
+      const project = state.projects.find($ => $.path === payload.path)!;
+      project.title = payload.title;
+    },
   },
   extraReducers: builder => {
     // nth: generic case adder so we don't end up with this mess 👇

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CircularProgress as Loader } from 'decentraland-ui2';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
@@ -18,6 +18,7 @@ import { Header } from '../Header';
 import { Row } from '../Row';
 
 import './styles.css';
+import { initTransport } from '../../modules/server';
 
 type ModalType = 'publish';
 
@@ -31,8 +32,28 @@ export function Editor() {
     openPreview,
     publishScene,
     openCode,
+    updateSceneTitle,
   } = useEditor();
+  const transportRef = useRef<ReturnType<typeof initTransport>>();
   const [open, setOpen] = useState<ModalType | undefined>();
+
+  const refIframe = useCallback(
+    (iframe: HTMLIFrameElement | null) => {
+      if (iframe && project) {
+        transportRef.current = initTransport(iframe, project, { write_file: updateSceneTitle });
+      }
+    },
+    [project],
+  );
+
+  useEffect(() => {
+    return () => {
+      // React.StrictMode will trigger this on mount, it shoulnd't be a problem since
+      // there is no transportRef.current yet, but just fyi
+      transportRef.current?.dispose();
+      transportRef.current = undefined;
+    };
+  }, [transportRef.current]);
 
   const isReady = !!project && inspectorPort > 0 && previewPort > 0;
 
@@ -73,7 +94,9 @@ export function Editor() {
   // query params
   const params = new URLSearchParams();
 
-  params.append('dataLayerRpcWsUrl', `ws://localhost:${previewPort}/data-layer`); // this connects the inspector to the data layer running on the preview server
+  // params.append('dataLayerRpcWsUrl', `ws://localhost:${previewPort}/data-layer`); // this connects the inspector to the data layer running on the preview server
+
+  params.append('dataLayerRpcParentUrl', window.location.origin);
 
   if (import.meta.env.VITE_ASSET_PACKS_CONTENT_URL) {
     // this is for local development of the asset-packs repo, or to use a different environment like .zone
@@ -159,6 +182,7 @@ export function Editor() {
             </div>
           </Header>
           <iframe
+            ref={refIframe}
             className="inspector"
             src={iframeUrl}
           ></iframe>
