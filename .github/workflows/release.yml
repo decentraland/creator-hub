@@ -58,7 +58,9 @@ jobs:
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
 
-      - run: npm run build
+      - run: echo MODE=$MODE && npm run build
+        env:
+          MODE: ${{ !inputs.dry-run && 'production' || 'development' }}
 
           
       - name: Save APPLE_TEAM_ID into electron-builder.yml

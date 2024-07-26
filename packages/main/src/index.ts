@@ -49,7 +49,7 @@ app
     initIpc();
     log.info('IPC ready');
     await restoreOrCreateWindow();
-    log.info('Browser ready');
+    log.info('Browser window ready');
   })
   .catch(e => log.error('Failed create window:', e));
 
@@ -65,8 +65,30 @@ app
 if (import.meta.env.PROD) {
   app
     .whenReady()
-    .then(() => updater.autoUpdater.checkForUpdatesAndNotify())
-    .catch(e => console.error('Failed check and install updates:', e));
+    .then(() => {
+      updater.autoUpdater.on('checking-for-update', () => {
+        log.info('[AutoUpdater] Checking for updates');
+      });
+      updater.autoUpdater.on('update-available', _info => {
+        log.info('[AutoUpdater] Update available');
+      });
+      updater.autoUpdater.on('update-not-available', _info => {
+        log.info('[AutoUpdater] Update not available');
+      });
+      updater.autoUpdater.on('update-downloaded', _info => {
+        log.info('[AutoUpdater] Update downloaded');
+      });
+      updater.autoUpdater.on('error', err => {
+        log.error('[AutoUpdater] Error in auto-updater', err);
+      });
+      return updater.autoUpdater.checkForUpdatesAndNotify({
+        title: 'Update available',
+        body: 'New version was installed. Restart the app to apply changes.',
+      });
+    })
+    .catch(error => log.error('[AutoUpdater] Failed check and install updates:', error.message));
+} else {
+  log.info('Skipping updates check in DEV mode');
 }
 
 export async function killAll() {
@@ -85,6 +107,11 @@ export async function killAll() {
 
 app.on('before-quit', async event => {
   event.preventDefault();
-  await killAll();
+  try {
+    await killAll();
+  } catch (error) {
+    log.error('Failed to kill all servers:', error);
+  }
+  log.info('App quit');
   app.exit();
 });

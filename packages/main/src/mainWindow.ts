@@ -15,6 +15,7 @@ async function createWindow() {
   });
 
   browserWindow.setMenuBarVisibility(false);
+  browserWindow.maximize();
 
   /**
    * If the 'show' property of the BrowserWindow's constructor is omitted from the initialization options,

@@ -25,3 +25,7 @@ mac:
 asarUnpack:
   - './node_modules/npm/**/*'
   - './package.json'
+
+publish:
+  - provider: github
+    vPrefixedTagName: false

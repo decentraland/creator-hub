@@ -22,6 +22,7 @@ vi.mock('electron', () => {
   bw.prototype.focus = vi.fn();
   bw.prototype.restore = vi.fn();
   bw.prototype.setMenuBarVisibility = vi.fn();
+  bw.prototype.maximize = vi.fn();
 
   const app: Pick<Electron.App, 'getAppPath'> = {
     getAppPath(): string {
