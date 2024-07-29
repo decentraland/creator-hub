@@ -126,7 +126,7 @@ export async function install() {
           cwd: APP_UNPACKED_PATH,
           workspace,
         });
-        await npmInstall.waitFor(/added \d+ packages/); // wait for successs message, because when the user quits the app while installing, npm exits gracefully with an exit code=0;
+        await npmInstall.waitFor(/added \d+ packages|up to date/); // wait for successs message, because when the user quits the app while installing, npm exits gracefully with an exit code=0;
 
         // save the current version to the registry
         log.info('[Install] Writing current version to the registry');
