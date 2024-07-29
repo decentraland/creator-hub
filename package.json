@@ -66,6 +66,7 @@
     "vitest": "1.6.0"
   },
   "dependencies": {
+    "@dcl/mini-rpc": "^1.0.7",
     "@dcl/schemas": "^11.10.4",
     "@dcl/sdk": "^7.5.6",
     "cmd-shim": "^6.0.3",

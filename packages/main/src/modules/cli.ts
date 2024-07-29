@@ -19,7 +19,7 @@ export async function start(path: string) {
   await installCommand.wait();
   const port = await getAvailablePort();
   previewServer = run('@dcl/sdk-commands', 'sdk-commands', {
-    args: ['start', '--port', port.toString(), '--no-browser', '--data-layer'],
+    args: ['start', '--port', port.toString(), '--no-browser'],
     cwd: path,
     workspace: path,
   });

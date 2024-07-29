@@ -13,22 +13,23 @@ export const startInspector = createAsyncThunk('editor/startInspector', editor.s
 export const runScene = createAsyncThunk('editor/runScene', editor.runScene);
 export const publishScene = createAsyncThunk('editor/publishScene', editor.publishScene);
 export const openPreview = createAsyncThunk('editor/openPreview', editor.openPreview);
-export const createAndRunProject: ThunkAction = async dispatch => {
-  const action = dispatch(workspaceActions.createProject());
-  const project = await action.unwrap();
-  await dispatch(runScene(project.path));
-};
+export const runSceneAndOpenPreview: (project: Project) => ThunkAction =
+  project => async dispatch => {
+    const action = dispatch(runScene(project.path));
+    const port = await action.unwrap();
+    await dispatch(openPreview(port));
+  };
 
 // state
 export type EditorState = {
   version: string | null;
   project?: Project;
   inspectorPort: number;
-  previewPort: number;
   publishPort: number;
+  previewPort: number;
   loadingInspector: boolean;
-  loadingPreview: boolean;
   loadingPublish: boolean;
+  loadingPreview: boolean;
   isInstalling: boolean;
   isInstalled: boolean;
   isFetchingVersion: boolean;
@@ -38,11 +39,11 @@ export type EditorState = {
 const initialState: EditorState = {
   version: null,
   inspectorPort: 0,
-  previewPort: 0,
   publishPort: 0,
+  previewPort: 0,
   loadingInspector: false,
-  loadingPreview: false,
   loadingPublish: false,
+  loadingPreview: false,
   isInstalling: false,
   isInstalled: false,
   isFetchingVersion: false,
@@ -58,6 +59,7 @@ export const slice = createSlice({
   reducers: {
     setProject: (state, { payload: project }: PayloadAction<Project>) => {
       state.project = project;
+      state.previewPort = 0;
     },
   },
   extraReducers: builder => {
@@ -72,18 +74,6 @@ export const slice = createSlice({
     builder.addCase(startInspector.rejected, (state, action) => {
       state.error = action.error.message || null;
       state.loadingInspector = false;
-    });
-    builder.addCase(runScene.pending, state => {
-      state.previewPort = 0;
-      state.loadingPreview = true;
-    });
-    builder.addCase(runScene.fulfilled, (state, action) => {
-      state.previewPort = action.payload;
-      state.loadingPreview = false;
-    });
-    builder.addCase(runScene.rejected, (state, action) => {
-      state.error = action.error.message || null;
-      state.loadingPreview = false;
     });
     builder.addCase(publishScene.pending, state => {
       state.publishPort = 0;
@@ -102,6 +92,7 @@ export const slice = createSlice({
     });
     builder.addCase(workspaceActions.createProject.fulfilled, (state, action) => {
       state.project = action.payload;
+      state.previewPort = 0;
     });
     builder.addCase(install.pending, state => {
       state.isInstalling = true;
@@ -125,19 +116,36 @@ export const slice = createSlice({
       state.error = action.error.message || null;
       state.isFetchingVersion = false;
     });
+    builder.addCase(workspaceActions.setProjectTitle, (state, action) => {
+      if (state.project?.path === action.payload.path) {
+        state.project.title = action.payload.title;
+      }
+    });
+    builder.addCase(runScene.pending, state => {
+      state.previewPort = 0;
+      state.loadingPreview = true;
+    });
+    builder.addCase(runScene.fulfilled, (state, { payload: port }) => {
+      state.previewPort = port;
+      state.loadingPreview = false;
+    });
+    builder.addCase(runScene.rejected, state => {
+      state.previewPort = 0;
+      state.loadingPreview = false;
+    });
   },
 });
 
 // exports
 export const actions = {
   ...slice.actions,
-  createAndRunProject,
   fetchVersion,
   install,
   startInspector,
   runScene,
   publishScene,
   openPreview,
+  runSceneAndOpenPreview,
 };
 export const reducer = slice.reducer;
 export const selectors = { ...slice.selectors };
