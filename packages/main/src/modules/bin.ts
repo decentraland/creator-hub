@@ -132,7 +132,7 @@ export async function install() {
         log.info('[Install] Writing current version to the registry');
         await fs.writeFile(
           path.join(APP_UNPACKED_PATH, 'version.json'),
-          JSON.stringify({ version: import.meta.env.VITE_APP_VERSION }),
+          JSON.stringify({ version: app.getVersion() }),
         );
       } else {
         log.info('[Install] Skipping installation of node_modules because it is up to date');
