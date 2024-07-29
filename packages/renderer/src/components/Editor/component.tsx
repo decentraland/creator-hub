@@ -32,6 +32,7 @@ export function Editor() {
     openCode,
     updateSceneTitle,
     loadingPreview,
+    loadingPublish,
   } = useEditor();
   const transportRef = useRef<ReturnType<typeof initTransport>>();
   const [open, setOpen] = useState<ModalType | undefined>();
@@ -168,14 +169,15 @@ export function Editor() {
                 color="secondary"
                 disabled={loadingPreview}
                 onClick={openPreview}
-                startIcon={<PlayCircleIcon />}
+                startIcon={loadingPreview ? <Loader size={20} /> : <PlayCircleIcon />}
               >
                 {t('editor.header.actions.preview')}
               </Button>
               <Button
                 color="primary"
+                disabled={loadingPublish}
                 onClick={handleOpenModal('publish')}
-                startIcon={<PublicIcon />}
+                startIcon={loadingPublish ? <Loader size={20} /> : <PublicIcon />}
               >
                 {t('editor.header.actions.publish')}
               </Button>

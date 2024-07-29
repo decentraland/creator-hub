@@ -44,5 +44,9 @@ export async function deploy({ path, target, targetContent }: DeployOptions) {
     cwd: path,
     workspace: path,
   });
+
+  // App ready at
+  await deployServer.waitFor(/app ready at/i);
+
   return port;
 }
