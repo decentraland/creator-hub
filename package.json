@@ -6,7 +6,7 @@
   "type": "module",
   "author": {
     "email": "hello@decentraland.org",
-    "name": "Decentraland",
+    "name": "Decentraland Foundation",
     "url": "https://decentraland.org"
   },
   "main": "packages/main/dist/index.js",
@@ -16,6 +16,7 @@
     "build:preload": "cd ./packages/preload && vite build",
     "build:renderer": "cd ./packages/renderer && vite build",
     "compile": "cross-env MODE=production npm run build && electron-builder build --config electron-builder.yml --dir",
+    "compile:installer": "cross-env MODE=production npm run build && electron-builder build --config electron-builder.yml --publish never",
     "test": "npm run test:main && npm run test:preload && npm run test:renderer && npm run test:e2e",
     "test:e2e": "npm run build && vitest run",
     "test:main": "vitest run -r packages/main --passWithNoTests",
