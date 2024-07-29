@@ -27,23 +27,23 @@ export function Editor() {
   const {
     project,
     inspectorPort,
-    previewPort,
-    loadingPreview,
     openPreview,
     publishScene,
     openCode,
     updateSceneTitle,
+    loadingPreview,
   } = useEditor();
   const transportRef = useRef<ReturnType<typeof initTransport>>();
   const [open, setOpen] = useState<ModalType | undefined>();
 
-  const refIframe = useCallback(
-    (iframe: HTMLIFrameElement | null) => {
-      if (iframe && project) {
-        transportRef.current = initTransport(iframe, project, { write_file: updateSceneTitle });
+  const handleIframeLoad = useCallback(
+    (e: React.SyntheticEvent<HTMLIFrameElement, Event>) => {
+      const iframe = e.currentTarget;
+      if (project) {
+        transportRef.current = initTransport(iframe, project, { writeFile: updateSceneTitle });
       }
     },
-    [project],
+    [project, updateSceneTitle],
   );
 
   useEffect(() => {
@@ -53,9 +53,9 @@ export function Editor() {
       transportRef.current?.dispose();
       transportRef.current = undefined;
     };
-  }, [transportRef.current]);
+  }, []);
 
-  const isReady = !!project && inspectorPort > 0 && previewPort > 0;
+  const isReady = !!project && inspectorPort > 0;
 
   const handleBack = useCallback(() => {
     navigate(-1);
@@ -182,9 +182,9 @@ export function Editor() {
             </div>
           </Header>
           <iframe
-            ref={refIframe}
             className="inspector"
             src={iframeUrl}
+            onLoad={handleIframeLoad}
           ></iframe>
           {project && (
             <PublishProject

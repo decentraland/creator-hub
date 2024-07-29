@@ -38,16 +38,25 @@ export const useEditor = () => {
   );
 
   const openPreview = useCallback(() => {
-    if (editor.previewPort) {
-      dispatch(editorActions.openPreview(editor.previewPort));
+    if (project) {
+      if (editor.previewPort > 0) {
+        dispatch(editorActions.openPreview(editor.previewPort));
+      } else {
+        dispatch(editorActions.runSceneAndOpenPreview(project));
+      }
     }
-  }, [editor.previewPort, editorActions.openPreview]);
+  }, [
+    editorActions.openPreview,
+    editorActions.runSceneAndOpenPreview,
+    project,
+    editor.previewPort,
+  ]);
 
   const openCode = useCallback(() => {
     if (project) {
       editorApi.openCode(project.path);
     }
-  }, [project]);
+  }, [editorApi.openCode, project]);
 
   const updateSceneTitle = useCallback(
     ({ path, content }: Params[Method.WRITE_FILE]) => {
@@ -57,7 +66,7 @@ export const useEditor = () => {
         dispatch(workspaceActions.setProjectTitle({ path: project.path, title }));
       }
     },
-    [project],
+    [workspaceActions.setProjectTitle, project],
   );
 
   return {

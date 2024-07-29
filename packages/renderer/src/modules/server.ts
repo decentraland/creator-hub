@@ -41,7 +41,9 @@ export type Result = {
   }[];
 };
 
-export type Callbacks = { [key in Method]: (params: Params[key]) => Result[key] };
+interface Callbacks {
+  writeFile?: (params: Params[Method.WRITE_FILE]) => Result[Method.WRITE_FILE];
+}
 
 export function initTransport(
   target: HTMLIFrameElement,
@@ -56,7 +58,7 @@ export function initTransport(
   });
   storage.handle('write_file', async ({ path, content }) => {
     await fs.writeFile(await fs.resolve(project.path, path), content);
-    cbs.write_file?.({ path, content });
+    cbs.writeFile?.({ path, content });
   });
   storage.handle('exists', async ({ path }) => {
     return await fs.exists(await fs.resolve(project.path, path));
