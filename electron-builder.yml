@@ -13,6 +13,11 @@ linux:
 productName: Decentraland Editor
 artifactName: '${productName}-${version}-${os}-${arch}.${ext}'
 
+dmg:
+  # Disable generation of .zip.blockmap files (only on MacOS) because they take a lot of time to generate, fail frequently and are not even used by the auto updater due to the signing + notarization of dmg files
+  # See this issue for more info: https://github.com/electron-userland/electron-builder/issues/2900#issuecomment-730571696
+  writeUpdateInfo: false
+
 mac:
   notarize:
     teamId: $APPLE_TEAM_ID
