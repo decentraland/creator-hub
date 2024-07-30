@@ -1,3 +1,5 @@
+export const EMPTY_SCENE_TEMPLATE_REPO = 'https://github.com/decentraland/sdk-empty-scene-template';
+
 export const NEW_SCENE_NAME = 'New Scene';
 
 export const DEFAULT_THUMBNAIL =
