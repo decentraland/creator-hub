@@ -11,7 +11,7 @@ import { invoke } from './invoke';
 import { exists } from './fs';
 import { getConfig, setConfig } from './config';
 
-import { DEFAULT_THUMBNAIL, NEW_SCENE_NAME } from './constants';
+import { DEFAULT_THUMBNAIL, NEW_SCENE_NAME, EMPTY_SCENE_TEMPLATE_REPO } from './constants';
 
 /**
  * Get scene json
@@ -162,7 +162,7 @@ export async function createProject(name = NEW_SCENE_NAME): Promise<Project> {
     scenePath = path.join(homePath, sceneName);
   }
   await fs.mkdir(scenePath);
-  await invoke('cli.init', scenePath);
+  await invoke('cli.init', scenePath, EMPTY_SCENE_TEMPLATE_REPO);
   const scene = await getScene(scenePath);
   scene.display!.title = sceneName;
   const sceneJsonPath = path.join(scenePath, 'scene.json');
