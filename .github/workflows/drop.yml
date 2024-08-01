@@ -1,5 +1,12 @@
 name: Drop draft release
-on: [ workflow_call ]
+on:
+  workflow_call:
+    inputs:
+      dry-run:
+        description: 'Compiles the app but not upload artifacts to distribution server'
+        default: false
+        required: false
+        type: boolean
 
 concurrency:
   group: drop-${{ github.ref }}
@@ -20,6 +27,7 @@ jobs:
           cache: 'npm'
 
       - name: Drop draft release
+        if: ${{github.ref == 'refs/heads/main' && !inputs.dry-run}}
         uses: sgpublic/delete-release-action@v1.1
         with:
           draft-drop: true

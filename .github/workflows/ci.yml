@@ -40,9 +40,10 @@ jobs:
   tests:
     uses: ./.github/workflows/tests.yml
   drop_draft_release:
-    if: ${{github.ref_name == 'main' && github.event_name == 'push'}}
     permissions:
       contents: write 
+    with:
+      dry-run: ${{ github.event_name != 'push' || github.ref_name != 'main' }}
     needs: [ typechecking, tests ]
     uses: ./.github/workflows/drop.yml
   draft_release:
