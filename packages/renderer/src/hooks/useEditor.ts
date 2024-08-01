@@ -1,19 +1,20 @@
 import { useCallback } from 'react';
-import { type Scene } from '@dcl/schemas';
 
 import { editor as editorApi } from '#preload';
 import { useDispatch, useSelector } from '#store';
 
 import type { Project } from '/shared/types/projects';
-import type { Method, Params } from '/@/modules/server';
-import { bufferToJson } from '/@/modules/buffer';
-
 import type { DeployOptions } from '/shared/types/ipc';
+
 import { actions as editorActions } from '/@/modules/store/editor';
 import { actions as workspaceActions } from '/@/modules/store/workspace';
+import { bufferToScene } from '/@/modules/buffer';
+import type { CallbackParams, Method, Params } from '/@/modules/server';
+import { useScene } from './useScene';
 
 export const useEditor = () => {
   const dispatch = useDispatch();
+  const { updateTitle, updateThumbnail } = useScene();
   const editor = useSelector(state => state.editor);
   const { project } = editor;
 
@@ -58,12 +59,19 @@ export const useEditor = () => {
     }
   }, [editorApi.openCode, project]);
 
-  const updateSceneTitle = useCallback(
-    ({ path, content }: Params[Method.WRITE_FILE]) => {
-      if (project && path === 'scene.json') {
-        const scene = bufferToJson(content) as Scene;
-        const title = scene.display?.title || '';
-        dispatch(workspaceActions.setProjectTitle({ path: project.path, title }));
+  const updateScene = useCallback(
+    async (cbParams: CallbackParams, { path, content }: Params[Method.WRITE_FILE]) => {
+      if (!project) return;
+
+      // TODO: we could alternatively have an "updateProject" reducer that allows
+      // updating the whole project object instead of dispatching updates one by one...
+
+      if (path === 'scene.json') {
+        updateTitle(project, bufferToScene(content));
+      }
+
+      if (path === 'scene.json' || path.endsWith('.composite')) {
+        updateThumbnail(project, cbParams);
       }
     },
     [workspaceActions.setProjectTitle, project],
@@ -77,6 +85,6 @@ export const useEditor = () => {
     publishScene,
     openPreview,
     openCode,
-    updateSceneTitle,
+    updateScene,
   };
 };

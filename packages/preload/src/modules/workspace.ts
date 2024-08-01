@@ -8,7 +8,7 @@ import type { Workspace } from '/shared/types/workspace';
 import { hasDependency } from './pkg';
 import { getRowsAndCols, parseCoords } from './scene';
 import { invoke } from './invoke';
-import { exists } from './fs';
+import { exists, writeFile as deepWriteFile } from './fs';
 import { getConfig, setConfig } from './config';
 
 import { DEFAULT_THUMBNAIL, NEW_SCENE_NAME, EMPTY_SCENE_TEMPLATE_REPO } from './constants';
@@ -257,4 +257,21 @@ export async function reimportProject(_path: string): Promise<Project | undefine
   const project = await importProject();
   if (project) await unlistProjects([_path]);
   return project;
+}
+
+export async function saveThumbnail({
+  path: _path,
+  thumbnail,
+}: {
+  path: string;
+  thumbnail: string;
+}): Promise<void> {
+  const scene = await getScene(_path);
+  const relativePath = path.join('images', 'scene-thumbnail.png');
+  const fullPath = path.join(_path, relativePath);
+  scene.display = { ...scene.display, navmapThumbnail: relativePath };
+  await Promise.all([
+    deepWriteFile(fullPath, thumbnail, { encoding: 'base64' }),
+    fs.writeFile(path.join(_path, 'scene.json'), JSON.stringify(scene, null, 2)),
+  ]);
 }

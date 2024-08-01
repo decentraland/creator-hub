@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import cx from 'classnames';
 
-import { getThumbnailUrl } from '/@/modules/project';
+import { addBase64ImagePrefix } from '/@/modules/image';
 import { t } from '/@/modules/store/translation/utils';
 
 import { Dropdown } from '../Dropdown';
@@ -37,7 +37,7 @@ export function ProjectCard({ project, onClick, onDelete, onDuplicate }: Props) 
     setOpen(false);
   }, []);
 
-  const thumbnailUrl = getThumbnailUrl(project);
+  const thumbnailUrl = project.thumbnail ? addBase64ImagePrefix(project.thumbnail) : undefined;
 
   const dropdownOptions = [
     {

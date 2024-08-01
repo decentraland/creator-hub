@@ -13,6 +13,7 @@ const duplicateProject = createAsyncThunk('workspace/duplicateProject', workspac
 const importProject = createAsyncThunk('workspace/importProject', workspace.importProject);
 const reimportProject = createAsyncThunk('workspace/reimportProject', workspace.reimportProject);
 const unlistProjects = createAsyncThunk('workspace/unlistProjects', workspace.unlistProjects);
+const saveThumbnail = createAsyncThunk('workspace/saveThumbnail', workspace.saveThumbnail);
 
 // state
 export type WorkspaceState = Async<Workspace>;
@@ -135,6 +136,11 @@ export const slice = createSlice({
       .addCase(unlistProjects.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message || `Failed to unlists projects: ${action.meta.arg}`;
+      })
+      .addCase(saveThumbnail.fulfilled, (state, payload) => {
+        const { path, thumbnail } = payload.meta.arg;
+        const project = state.projects.find($ => $.path === path)!;
+        project.thumbnail = thumbnail;
       });
   },
 });
@@ -149,6 +155,7 @@ export const actions = {
   importProject,
   reimportProject,
   unlistProjects,
+  saveThumbnail,
 };
 export const reducer = slice.reducer;
 export const selectors = { ...slice.selectors };

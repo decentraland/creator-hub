@@ -3,7 +3,7 @@ import { MenuItem, Select, type SelectChangeEvent } from 'decentraland-ui2';
 import { Modal } from 'decentraland-ui2/dist/components/Modal/Modal';
 
 import { misc } from '#preload';
-import { isUrl } from '/shared/types/utils';
+import { isUrl } from '/shared/utils';
 import { t } from '/@/modules/store/translation/utils';
 
 import GenesisPlazaPng from '/assets/images/genesis_plaza.png';
