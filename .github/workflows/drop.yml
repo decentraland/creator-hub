@@ -10,7 +10,7 @@ defaults:
     shell: 'bash'
 
 jobs:
-  typescript:
+  drop_draft_release:
     runs-on: ubuntu-latest
 
     steps:
