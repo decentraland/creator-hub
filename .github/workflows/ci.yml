@@ -39,12 +39,17 @@ jobs:
     uses: ./.github/workflows/typechecking.yml
   tests:
     uses: ./.github/workflows/tests.yml
+  drop_draft_release:
+    permissions:
+      contents: write 
+    needs: [ typechecking, tests ]
+    uses: ./.github/workflows/drop.yml
   draft_release:
     permissions:
       contents: write # Allows this job to create releases
     with:
       dry-run: ${{ github.event_name != 'push' || github.ref_name != 'main' }}
-    needs: [ typechecking, tests ]
+    needs: [ drop_draft_release ]
     uses: ./.github/workflows/release.yml
     secrets:
       # Secrets required to sign and notarize the app in MacOS

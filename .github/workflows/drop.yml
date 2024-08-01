@@ -1,0 +1,28 @@
+name: Drop draft release
+on: [ workflow_call ]
+
+concurrency:
+  group: drop-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: 'bash'
+
+jobs:
+  typescript:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
+      - uses: actions/setup-node@v4
+        with:
+          cache: 'npm'
+
+      - name: Drop draft release
+        uses: sgpublic/delete-release-action@v1.1
+        with:
+          draft-drop: true
+          draft-drop-count: -1
+        env:
+          GITHUB_TOKEN: ${{ secrets.github_token }}
