@@ -5,11 +5,12 @@ import type { Scene } from '@dcl/schemas';
 import { SortBy, type Project } from '/shared/types/projects';
 import type { Workspace } from '/shared/types/workspace';
 
+import { getConfig, setConfig } from './config';
+import { exists, writeFile as deepWriteFile } from './fs';
 import { hasDependency } from './pkg';
 import { getRowsAndCols, parseCoords } from './scene';
+import { getEditorHome } from './editor';
 import { invoke } from './invoke';
-import { exists, writeFile as deepWriteFile } from './fs';
-import { getConfig, setConfig } from './config';
 
 import { DEFAULT_THUMBNAIL, NEW_SCENE_NAME, EMPTY_SCENE_TEMPLATE_REPO } from './constants';
 
@@ -54,10 +55,22 @@ export async function hasNodeModules(_path: string) {
   return exists(nodeModulesPath);
 }
 
-export async function getProjectThumbnail(projectPath: string, scene: Scene): Promise<string> {
+export async function getProjectThumbnailPath(_path: string) {
+  const editorHomePath = await getEditorHome(_path);
+  return path.join(editorHomePath, 'images', 'project-thumbnail.png');
+}
+
+export async function getProjectThumbnailAsBase64(
+  projectPath: string,
+  scene: Scene,
+): Promise<string> {
   try {
-    if (!scene.display?.navmapThumbnail) return DEFAULT_THUMBNAIL;
-    const thumbnailPath = path.join(projectPath, scene.display.navmapThumbnail);
+    if (scene.display?.navmapThumbnail) {
+      const thumbnailPath = path.join(projectPath, scene.display.navmapThumbnail);
+      return (await fs.readFile(thumbnailPath)).toString('base64');
+    }
+    // if there is no thumbnail defined in scene.json, use the auto-generated one from .editor directory
+    const thumbnailPath = await getProjectThumbnailPath(projectPath);
     return (await fs.readFile(thumbnailPath)).toString('base64');
   } catch (e) {
     console.warn(`Could not get project thumbnail for project in ${projectPath}`, e);
@@ -76,7 +89,7 @@ export async function getProject(_path: string): Promise<Project> {
       path: _path,
       title: scene.display?.title || 'Untitled scene',
       description: scene.display?.description,
-      thumbnail: await getProjectThumbnail(_path, scene),
+      thumbnail: await getProjectThumbnailAsBase64(_path, scene),
       layout: getRowsAndCols(parcels),
       createdAt: Number(stat.birthtime),
       updatedAt: Number(stat.mtime),
@@ -259,6 +272,14 @@ export async function reimportProject(_path: string): Promise<Project | undefine
   return project;
 }
 
+/**
+ * Saves a thumbnail image to a specified path.
+ *
+ * @param {Object} params - The parameters for the function.
+ * @param {string} params.path - The path where the thumbnail will be saved.
+ * @param {string} params.thumbnail - The base64-encoded string of the thumbnail image.
+ * @returns {Promise<void>} A promise that resolves when the thumbnail has been saved.
+ */
 export async function saveThumbnail({
   path: _path,
   thumbnail,
@@ -266,12 +287,5 @@ export async function saveThumbnail({
   path: string;
   thumbnail: string;
 }): Promise<void> {
-  const scene = await getScene(_path);
-  const relativePath = path.join('images', 'scene-thumbnail.png');
-  const fullPath = path.join(_path, relativePath);
-  scene.display = { ...scene.display, navmapThumbnail: relativePath };
-  await Promise.all([
-    deepWriteFile(fullPath, thumbnail, { encoding: 'base64' }),
-    fs.writeFile(path.join(_path, 'scene.json'), JSON.stringify(scene, null, 2)),
-  ]);
+  await deepWriteFile(await getProjectThumbnailPath(_path), thumbnail, { encoding: 'base64' });
 }
