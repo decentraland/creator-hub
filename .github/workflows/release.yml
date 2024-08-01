@@ -73,7 +73,15 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}
         run: sed -e "s|\$APPLE_TEAM_ID|$APPLE_TEAM_ID|" electron-builder.yml > electron-builder-with-apple-team-id.yml && mv electron-builder-with-apple-team-id.yml electron-builder.yml
 
-      - name: Generate Release Version
+      - name: Drop draft release
+        uses: sgpublic/delete-release-action@v1.1
+        with:
+          draft-drop: true
+          draft-drop-count: -1
+        env:
+          GITHUB_TOKEN: ${{ secrets.github_token }}
+
+      - name: Generate release version
         id: version
         uses: paulhatch/semantic-version@v5.4.0
         with:
