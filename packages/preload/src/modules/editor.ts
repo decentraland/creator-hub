@@ -1,3 +1,4 @@
+import fs from 'node:fs/promises';
 import { promisify } from 'util';
 import { exec as execSync } from 'child_process';
 import { shell } from 'electron';
@@ -7,6 +8,16 @@ import type { DeployOptions } from '/shared/types/ipc';
 import { invoke } from './invoke';
 
 const exec = promisify(execSync);
+
+export async function getEditorHome(_path: string) {
+  const editorHomePath = path.join(_path, '.editor');
+  try {
+    await fs.stat(editorHomePath);
+  } catch (_) {
+    await fs.mkdir(editorHomePath);
+  }
+  return editorHomePath;
+}
 
 export async function getVersion() {
   return invoke('electron.getAppVersion');

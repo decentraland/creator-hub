@@ -1,4 +1,4 @@
-import { isUrl } from '/shared/types/utils';
+import { isUrl } from '/shared/utils';
 
 import { invoke } from './invoke';
 

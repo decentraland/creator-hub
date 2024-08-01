@@ -1,5 +1,7 @@
 import { MessageTransport, RPC } from '@dcl/mini-rpc';
 
+import { CameraClient } from './camera';
+
 import { fs } from '#preload';
 import { type Project } from '/shared/types/projects';
 
@@ -41,24 +43,37 @@ export type Result = {
   }[];
 };
 
+export type CallbackParams = {
+  iframe: HTMLIFrameElement;
+  project: Project;
+  storage: RPC<Method, Params, Result, string, Record<string, any>>;
+  camera: CameraClient;
+};
+
 interface Callbacks {
-  writeFile?: (params: Params[Method.WRITE_FILE]) => Result[Method.WRITE_FILE];
+  writeFile?: (
+    cbParams: CallbackParams,
+    fnParams: Params[Method.WRITE_FILE],
+  ) => Promise<Result[Method.WRITE_FILE]>;
 }
 
 export function initTransport(
-  target: HTMLIFrameElement,
+  iframe: HTMLIFrameElement,
   project: Project,
   cbs: Partial<Callbacks> = {},
 ) {
-  const transport = new MessageTransport(window, target.contentWindow!);
+  const transport = new MessageTransport(window, iframe.contentWindow!);
+  const camera = new CameraClient(transport);
   const storage = new RPC<Method, Params, Result>('IframeStorage', transport);
+  const params = { iframe, project, storage, camera };
+
   storage.handle('read_file', async ({ path }) => {
     const file = await fs.readFile(await fs.resolve(project.path, path));
     return file;
   });
   storage.handle('write_file', async ({ path, content }) => {
-    await fs.writeFile(await fs.resolve(project.path, path), content);
-    cbs.writeFile?.({ path, content });
+    await fs.writeFile(await fs.resolve(project.path, path), content as any); // "content as any" since there is a mismatch in typescript's type definitions
+    await cbs.writeFile?.(params, { path, content });
   });
   storage.handle('exists', async ({ path }) => {
     return await fs.exists(await fs.resolve(project.path, path));
@@ -82,6 +97,8 @@ export function initTransport(
   });
 
   return {
-    dispose: () => storage.dispose(),
+    dispose: () => {
+      storage.dispose();
+    },
   };
 }

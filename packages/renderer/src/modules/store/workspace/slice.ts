@@ -3,7 +3,8 @@ import { workspace } from '#preload';
 
 import type { Workspace } from '/shared/types/workspace';
 import { SortBy } from '/shared/types/projects';
-import type { Async } from '../../async';
+
+import type { Async } from '/@/modules/async';
 
 // actions
 const getWorkspace = createAsyncThunk('workspace/getWorkspace', workspace.getWorkspace);
@@ -13,6 +14,14 @@ const duplicateProject = createAsyncThunk('workspace/duplicateProject', workspac
 const importProject = createAsyncThunk('workspace/importProject', workspace.importProject);
 const reimportProject = createAsyncThunk('workspace/reimportProject', workspace.reimportProject);
 const unlistProjects = createAsyncThunk('workspace/unlistProjects', workspace.unlistProjects);
+const saveThumbnail = createAsyncThunk(
+  'workspace/saveThumbnail',
+  async ({ path, thumbnail }: Parameters<typeof workspace.saveThumbnail>[0]) => {
+    await workspace.saveThumbnail({ path, thumbnail });
+    const project = await workspace.getProject(path);
+    return project;
+  },
+);
 
 // state
 export type WorkspaceState = Async<Workspace>;
@@ -135,6 +144,12 @@ export const slice = createSlice({
       .addCase(unlistProjects.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message || `Failed to unlists projects: ${action.meta.arg}`;
+      })
+      .addCase(saveThumbnail.fulfilled, (state, { payload: project }) => {
+        const projectIdx = state.projects.findIndex($ => $.path === project.path);
+        if (projectIdx !== -1) {
+          state.projects[projectIdx] = project;
+        }
       });
   },
 });
@@ -149,6 +164,7 @@ export const actions = {
   importProject,
   reimportProject,
   unlistProjects,
+  saveThumbnail,
 };
 export const reducer = slice.reducer;
 export const selectors = { ...slice.selectors };

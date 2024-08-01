@@ -30,7 +30,7 @@ export function Editor() {
     openPreview,
     publishScene,
     openCode,
-    updateSceneTitle,
+    updateScene,
     loadingPreview,
     loadingPublish,
   } = useEditor();
@@ -41,10 +41,10 @@ export function Editor() {
     (e: React.SyntheticEvent<HTMLIFrameElement, Event>) => {
       const iframe = e.currentTarget;
       if (project) {
-        transportRef.current = initTransport(iframe, project, { writeFile: updateSceneTitle });
+        transportRef.current = initTransport(iframe, project, { writeFile: updateScene });
       }
     },
-    [project, updateSceneTitle],
+    [project, updateScene],
   );
 
   useEffect(() => {
