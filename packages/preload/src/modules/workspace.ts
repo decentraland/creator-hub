@@ -65,16 +65,17 @@ export async function getProjectThumbnailAsBase64(
   scene: Scene,
 ): Promise<string> {
   try {
-    if (scene.display?.navmapThumbnail) {
-      const thumbnailPath = path.join(projectPath, scene.display.navmapThumbnail);
-      return (await fs.readFile(thumbnailPath)).toString('base64');
-    }
-    // if there is no thumbnail defined in scene.json, use the auto-generated one from .editor directory
-    const thumbnailPath = await getProjectThumbnailPath(projectPath);
+    const thumbnailPath = path.join(projectPath, scene.display?.navmapThumbnail || '');
     return (await fs.readFile(thumbnailPath)).toString('base64');
   } catch (e) {
-    console.warn(`Could not get project thumbnail for project in ${projectPath}`, e);
-    return DEFAULT_THUMBNAIL;
+    try {
+      // if there is no thumbnail defined in scene.json, use the auto-generated one from .editor directory
+      const thumbnailPath = await getProjectThumbnailPath(projectPath);
+      return (await fs.readFile(thumbnailPath)).toString('base64');
+    } catch (_) {
+      console.warn(`Could not get project thumbnail for project in ${projectPath}`, e);
+      return DEFAULT_THUMBNAIL;
+    }
   }
 }
 
