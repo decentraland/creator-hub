@@ -9,6 +9,9 @@ import { reducer as editorReducer, actions as editorActions } from './editor';
 import { reducer as snackbarReducer } from './snackbar';
 import { reducer as translationReducer } from './translation';
 import { reducer as workspaceReducer, actions as workspaceActions } from './workspace';
+import { createAnalyticsMiddleware } from './analytics/middleware';
+
+const analytics = createAnalyticsMiddleware(import.meta.env.VITE_EDITOR_SEGMENT_API_KEY);
 
 export function createRootReducer() {
   return {
@@ -23,7 +26,7 @@ export function createRootReducer() {
 // for more info in the future...
 const store = configureStore({
   reducer: createRootReducer(),
-  middleware: getDefaultMiddleware => getDefaultMiddleware().concat(logger),
+  middleware: getDefaultMiddleware => getDefaultMiddleware().concat(logger).concat(analytics),
 });
 
 const isDevelopment = true; // todo
@@ -33,12 +36,13 @@ if (isDevelopment) {
   _window.getState = store.getState;
 }
 
-export type RootState = ReturnType<typeof store.getState>;
+export type GetState = typeof store.getState;
+export type AppState = ReturnType<GetState>;
 export type AppDispatch = typeof store.dispatch;
-export type ThunkAction = (dispatch: AppDispatch, getState: typeof store.getState) => void;
+export type ThunkAction = (dispatch: AppDispatch, getState: GetState) => void;
 export const useDispatch: () => AppDispatch = formerUseDispuseDispatch;
-export const useSelector: TypedUseSelectorHook<RootState> = formerUseSelector;
-export const createSelector = createDraftSafeSelector.withTypes<RootState>();
+export const useSelector: TypedUseSelectorHook<AppState> = formerUseSelector;
+export const createSelector = createDraftSafeSelector.withTypes<AppState>();
 
 // dispatch start up actions
 async function start() {
