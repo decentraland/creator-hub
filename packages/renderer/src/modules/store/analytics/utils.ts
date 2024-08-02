@@ -1,4 +1,5 @@
 import type { Action } from '@reduxjs/toolkit';
+import { track } from '#preload';
 import type {
   AnalyticsAction,
   EventName,
@@ -8,7 +9,6 @@ import type {
 } from './types';
 
 export const trackedActions: Record<string, AnalyticsAction> = {};
-const hashedProps = ['project_path'];
 
 export const hash = async (text: string) => {
   const msgUint8 = new TextEncoder().encode(text);
@@ -17,23 +17,6 @@ export const hash = async (text: string) => {
   const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   return hashHex.slice(0, 32);
 };
-
-export async function track(
-  event: string,
-  payload: Record<string, string | number | undefined | null>,
-) {
-  const analytics = getAnalytics();
-  if (!analytics) return;
-  if (typeof payload === 'object') {
-    for (const key in payload) {
-      if (hashedProps.includes(key) && typeof payload[key] === 'string') {
-        payload[key] = await hash(payload[key]);
-      }
-    }
-  }
-  console.log('TRACKABOLA', payload);
-  analytics.track(event, payload);
-}
 
 export async function handleAction(action: Action) {
   console.log('handleAction', action);
@@ -50,7 +33,7 @@ export async function handleAction(action: Action) {
 
     const payload = await getPayload(action);
 
-    track(event, payload);
+    await track(event, payload);
   }
 }
 

@@ -11,7 +11,7 @@ import { reducer as translationReducer } from './translation';
 import { reducer as workspaceReducer, actions as workspaceActions } from './workspace';
 import { createAnalyticsMiddleware } from './analytics/middleware';
 
-const analytics = createAnalyticsMiddleware(import.meta.env.VITE_EDITOR_SEGMENT_API_KEY);
+const analytics = createAnalyticsMiddleware();
 
 export function createRootReducer() {
   return {

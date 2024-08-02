@@ -1,14 +1,16 @@
+import dotenv from 'dotenv';
 import { app } from 'electron';
 import { restoreOrCreateWindow } from '/@/mainWindow';
 import { platform } from 'node:process';
 import updater from 'electron-updater';
 import log from 'electron-log/main';
 
-import './security-restrictions';
 import { initIpc } from './modules/ipc';
 import { deployServer, previewServer } from './modules/cli';
 import { inspectorServer } from './modules/inspector';
+import './security-restrictions';
 
+dotenv.config();
 log.initialize();
 
 /**

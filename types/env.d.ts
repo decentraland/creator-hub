@@ -21,8 +21,8 @@ interface ImportMetaEnv {
   readonly VITE_APP_VERSION: string;
 
   // Analytics
-  VITE_EDITOR_SEGMENT_API_KEY: string | undefined;
-  VITE_INSPECTOR_SEGMENT_API_KEY: string | undefined;
+  SEGMENT_EDITOR_API_KEY: string | undefined;
+  VITE_SEGMENT_INSPECTOR_API_KEY: string | undefined;
 
   // Local Development
   VITE_INSPECTOR_PORT: string | undefined;

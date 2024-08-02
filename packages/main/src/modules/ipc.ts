@@ -3,6 +3,7 @@ import * as electron from './electron';
 import * as inspector from './inspector';
 import * as cli from './cli';
 import * as bin from './bin';
+import * as analytics from './analytics';
 
 export function initIpc() {
   // electron
@@ -21,4 +22,7 @@ export function initIpc() {
 
   // bin
   handle('bin.install', () => bin.install());
+
+  // analytics
+  handle('analytics.track', (_event, eventName, data) => analytics.track(eventName, data));
 }

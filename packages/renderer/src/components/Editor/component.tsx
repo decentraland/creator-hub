@@ -116,17 +116,15 @@ export function Editor() {
   params.append('binIndexJsUrl', binIndexJsUrl);
 
   // these are analytics related
-  if (import.meta.env.VITE_INSPECTOR_SEGMENT_API_KEY) {
-    params.append('segmentKey', import.meta.env.VITE_INSPECTOR_SEGMENT_API_KEY);
+  if (import.meta.env.VITE_SEGMENT_INSPECTOR_API_KEY) {
+    params.append('segmentKey', import.meta.env.VITE_SEGMENT_INSPECTOR_API_KEY);
   }
 
-  if (import.meta.env.VITE_INSPECTOR_SEGMENT_APP_ID) {
-    params.append('segmentAppId', import.meta.env.VITE_INSPECTOR_SEGMENT_APP_ID);
-  }
+  params.append('segmentAppId', 'desktop-editor');
 
   // TODO: these are to identify events, but I wouldn't know what values to use
   // params.append('segmentUserId', ???);
-  // params.append('projectId', ???);
+  // params.append('projectId', project?.);
 
   // iframe src
   const iframeUrl = `${htmlUrl}?${params}`;
