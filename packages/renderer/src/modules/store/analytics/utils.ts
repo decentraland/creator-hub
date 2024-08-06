@@ -10,17 +10,7 @@ import type {
 
 export const trackedActions: Record<string, AnalyticsAction> = {};
 
-export const hash = async (text: string) => {
-  const msgUint8 = new TextEncoder().encode(text);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex.slice(0, 32);
-};
-
 export async function handleAction(action: Action) {
-  console.log('handleAction', action);
-
   if (isActionTrackable(action)) {
     const { eventName, getPayload } = trackedActions[action.type];
 
@@ -31,7 +21,7 @@ export async function handleAction(action: Action) {
       event = eventName(action);
     }
 
-    const payload = await getPayload(action);
+    const payload = getPayload ? await getPayload(action) : undefined;
 
     await track(event, payload);
   }
@@ -40,7 +30,7 @@ export async function handleAction(action: Action) {
 export function trackAction<ActionCreator extends TypedActionCreator<string>>(
   actionCreator: ActionCreator,
   eventName: EventName,
-  getPayload: GetPayload<ActionCreator>,
+  getPayload?: GetPayload<ActionCreator>,
 ) {
   if (actionCreator.type in trackedActions) {
     console.warn(`Analytics: the action type "${actionCreator.type}" is already being tracked!`);

@@ -15,14 +15,14 @@ export async function getUserId() {
   return config.get<string>('userId');
 }
 
-export async function getAnalytics(): Promise<Analytics> {
+export async function getAnalytics(): Promise<Analytics | null> {
   if (analytics) {
     return analytics;
   }
-  const writeKey = process.env.SEGMENT_EDITOR_API_KEY!;
+  const writeKey = import.meta.env.VITE_SEGMENT_EDITOR_API_KEY;
   if (writeKey) {
     analytics = new Analytics({
-      writeKey: process.env.SEGMENT_EDITOR_API_KEY!,
+      writeKey,
     });
     analytics.identify({
       userId: await getUserId(),
@@ -32,15 +32,15 @@ export async function getAnalytics(): Promise<Analytics> {
     });
     return analytics;
   } else {
-    throw new Error('No analytics key found');
+    return null;
   }
 }
 
 export async function track(event: string, data: Record<string, any> = {}) {
   try {
     const analytics = await getAnalytics();
+    if (!analytics) return;
     const userId = await getUserId();
-    console.log('track', event, data, userId);
     analytics.track({ event, properties: data, userId });
   } catch (error) {
     log.error('Error tracking event', event, error);

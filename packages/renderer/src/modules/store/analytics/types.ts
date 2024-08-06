@@ -11,7 +11,7 @@ export interface AnalyticsAction<
 > {
   eventName: EventName;
   actionType: Action['type'];
-  getPayload: GetPayload<A>;
+  getPayload?: GetPayload<A>;
 }
 
 export interface TypedActionCreator<Type extends string> {
