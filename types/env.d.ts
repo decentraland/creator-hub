@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+/// <reference types="@types/segment-analytics" />
 
 /**
  * Describes all existing environment variables and their types.
@@ -18,6 +19,20 @@ interface ImportMetaEnv {
 
   /** Current app version */
   readonly VITE_APP_VERSION: string;
+
+  // Analytics
+  VITE_SEGMENT_EDITOR_API_KEY: string | undefined;
+  VITE_SEGMENT_INSPECTOR_API_KEY: string | undefined;
+
+  // Local Development
+  VITE_INSPECTOR_PORT: string | undefined;
+  VITE_ASSET_PACKS_CONTENT_URL: string | undefined;
+  VITE_ASSET_PACKS_JS_PORT: string | undefined;
+  VITE_ASSET_PACKS_JS_PATH: string | undefined;
+
+  // Publish
+  VITE_WORLDS_SERVER: string | undefined;
+  VITE_TEST_SERVER: string | undefined;
 }
 
 interface ImportMeta {

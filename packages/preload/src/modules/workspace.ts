@@ -1,9 +1,11 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { randomUUID, type UUID } from 'node:crypto';
 import type { Scene } from '@dcl/schemas';
 
 import { SortBy, type Project } from '/shared/types/projects';
 import type { Workspace } from '/shared/types/workspace';
+import { FileSystemStorage } from '/shared/types/storage';
 
 import { getConfig, setConfig } from './config';
 import { exists, writeFile as deepWriteFile } from './fs';
@@ -21,6 +23,18 @@ export async function getScene(_path: string): Promise<Scene> {
   const sceneJsonPath = path.join(_path, 'scene.json');
   const scene = await fs.readFile(sceneJsonPath, 'utf8');
   return JSON.parse(scene);
+}
+
+export async function getProjectId(_path: string): Promise<UUID> {
+  const projectInfoPath = path.join(await getEditorHome(_path), 'project.json');
+  const projectInfo = new FileSystemStorage(projectInfoPath);
+  const hasId = await projectInfo.has('id');
+  if (!hasId) {
+    const projectId = randomUUID();
+    await projectInfo.set('id', projectId);
+    return projectId;
+  }
+  return projectInfo.get<UUID>('id');
 }
 
 /**
@@ -81,12 +95,14 @@ export async function getProjectThumbnailAsBase64(
 
 export async function getProject(_path: string): Promise<Project> {
   try {
+    const id = await getProjectId(_path);
     const scene = await getScene(_path);
     const parcels = scene.scene.parcels.map($ => parseCoords($));
 
     const stat = await fs.stat(_path);
 
     return {
+      id,
       path: _path,
       title: scene.display?.title || 'Untitled scene',
       description: scene.display?.description,

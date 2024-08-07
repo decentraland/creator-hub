@@ -4,10 +4,11 @@ import { platform } from 'node:process';
 import updater from 'electron-updater';
 import log from 'electron-log/main';
 
-import './security-restrictions';
 import { initIpc } from './modules/ipc';
 import { deployServer, previewServer } from './modules/cli';
 import { inspectorServer } from './modules/inspector';
+import { getAnalytics, track } from './modules/analytics';
+import './security-restrictions';
 
 log.initialize();
 
@@ -48,6 +49,12 @@ app
     log.info('[IPC] Ready');
     await restoreOrCreateWindow();
     log.info('[BrowserWindow] Ready');
+    const analytics = await getAnalytics();
+    if (analytics) {
+      await track('Open Editor', { version: app.getVersion() });
+    } else {
+      log.info('[Analytics] API key not provided, analytics disabled');
+    }
   })
   .catch(e => log.error('Failed create window:', e));
 
@@ -73,8 +80,9 @@ if (import.meta.env.PROD) {
       updater.autoUpdater.on('update-not-available', _info => {
         log.info('[AutoUpdater] Update not available');
       });
-      updater.autoUpdater.on('update-downloaded', _info => {
+      updater.autoUpdater.on('update-downloaded', async info => {
         log.info('[AutoUpdater] Update downloaded');
+        await track('Auto Update Editor', { version: info.version });
       });
       updater.autoUpdater.on('download-progress', info => {
         log.info(`[AutoUpdater] Download progress ${info.percent}%`);

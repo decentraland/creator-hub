@@ -5,17 +5,20 @@ import {
   useDispatch as formerUseDispuseDispatch,
 } from 'react-redux';
 import logger from 'redux-logger';
-import { reducer as editorReducer, actions as editorActions } from './editor';
-import { reducer as snackbarReducer } from './snackbar';
-import { reducer as translationReducer } from './translation';
-import { reducer as workspaceReducer, actions as workspaceActions } from './workspace';
+import { createAnalyticsMiddleware } from './analytics/middleware';
+import * as editor from './editor';
+import * as snackbar from './snackbar';
+import * as translations from './translation';
+import * as workspace from './workspace';
+import * as analytics from './analytics';
 
 export function createRootReducer() {
   return {
-    editor: editorReducer,
-    snackbar: snackbarReducer,
-    translation: translationReducer,
-    workspace: workspaceReducer,
+    editor: editor.reducer,
+    snackbar: snackbar.reducer,
+    translation: translations.reducer,
+    workspace: workspace.reducer,
+    analytics: analytics.reducer,
   };
 }
 
@@ -23,7 +26,8 @@ export function createRootReducer() {
 // for more info in the future...
 const store = configureStore({
   reducer: createRootReducer(),
-  middleware: getDefaultMiddleware => getDefaultMiddleware().concat(logger),
+  middleware: getDefaultMiddleware =>
+    getDefaultMiddleware().concat(logger).concat(createAnalyticsMiddleware()),
 });
 
 const isDevelopment = true; // todo
@@ -33,28 +37,33 @@ if (isDevelopment) {
   _window.getState = store.getState;
 }
 
-export type RootState = ReturnType<typeof store.getState>;
+export type GetState = typeof store.getState;
+export type AppState = ReturnType<GetState>;
 export type AppDispatch = typeof store.dispatch;
-export type ThunkAction = (dispatch: AppDispatch, getState: typeof store.getState) => void;
+export type ThunkAction = (dispatch: AppDispatch, getState: GetState) => void;
 export const useDispatch: () => AppDispatch = formerUseDispuseDispatch;
-export const useSelector: TypedUseSelectorHook<RootState> = formerUseSelector;
-export const createSelector = createDraftSafeSelector.withTypes<RootState>();
+export const useSelector: TypedUseSelectorHook<AppState> = formerUseSelector;
+export const createSelector = createDraftSafeSelector.withTypes<AppState>();
 
 // dispatch start up actions
 async function start() {
   try {
-    // fetch app version
-    await store.dispatch(editorActions.fetchVersion());
+    // fetch app version and user id
+    await Promise.all([
+      store.dispatch(editor.actions.fetchVersion()),
+      store.dispatch(analytics.actions.fetchUserId()),
+    ]);
+
     // install editor dependencies
-    const install = store.dispatch(editorActions.install());
+    const install = store.dispatch(editor.actions.install());
     await install.unwrap(); // .unwrap() to make it throw if thunk is rejected
 
     // start app
     await Promise.all([
       // start inspector
-      store.dispatch(editorActions.startInspector()),
+      store.dispatch(editor.actions.startInspector()),
       // load workspace
-      store.dispatch(workspaceActions.getWorkspace()),
+      store.dispatch(workspace.actions.getWorkspace()),
     ]);
   } catch (error: any) {
     console.error(`[Renderer]: Failed to start up error=${error.message}`);

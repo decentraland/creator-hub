@@ -12,6 +12,7 @@ import { useEditor } from '/@/hooks/useEditor';
 
 import EditorPng from '/assets/images/editor.png';
 
+import { useSelector } from '#store';
 import { PublishProject, type StepValue } from '../Modals/PublishProject';
 import { Button } from '../Button';
 import { Header } from '../Header';
@@ -34,6 +35,7 @@ export function Editor() {
     loadingPreview,
     loadingPublish,
   } = useEditor();
+  const userId = useSelector(state => state.analytics.userId);
   const transportRef = useRef<ReturnType<typeof initTransport>>();
   const [open, setOpen] = useState<ModalType | undefined>();
 
@@ -116,17 +118,18 @@ export function Editor() {
   params.append('binIndexJsUrl', binIndexJsUrl);
 
   // these are analytics related
-  if (import.meta.env.VITE_INSPECTOR_SEGMENT_API_KEY) {
-    params.append('segmentKey', import.meta.env.VITE_INSPECTOR_SEGMENT_API_KEY);
+  if (import.meta.env.VITE_SEGMENT_INSPECTOR_API_KEY) {
+    params.append('segmentKey', import.meta.env.VITE_SEGMENT_INSPECTOR_API_KEY);
   }
 
-  if (import.meta.env.VITE_INSPECTOR_SEGMENT_APP_ID) {
-    params.append('segmentAppId', import.meta.env.VITE_INSPECTOR_SEGMENT_APP_ID);
+  // analytics
+  params.append('segmentAppId', 'desktop-editor');
+  if (userId) {
+    params.append('segmentUserId', userId);
   }
-
-  // TODO: these are to identify events, but I wouldn't know what values to use
-  // params.append('segmentUserId', ???);
-  // params.append('projectId', ???);
+  if (project) {
+    params.append('projectId', project.id);
+  }
 
   // iframe src
   const iframeUrl = `${htmlUrl}?${params}`;

@@ -14,7 +14,12 @@ export enum SortBy {
   NAME = 'name',
 }
 
+export type ProjectInfo = {
+  id: string;
+};
+
 export type Project = {
+  id: string;
   path: string;
   title: string;
   description?: string;

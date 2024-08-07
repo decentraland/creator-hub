@@ -9,6 +9,7 @@ import cmdShim from 'cmd-shim';
 import { rimraf } from 'rimraf';
 import semver from 'semver';
 import { APP_UNPACKED_PATH, getBinPath, getNodeCmdPath, joinEnvPaths } from './path';
+import { track } from './analytics';
 
 // the env $PATH
 let PATH = process.env.PATH;
@@ -146,6 +147,7 @@ export async function install() {
 
       if (shouldInstall) {
         log.info('[Install] Installation complete!');
+        await track('Install Editor', { version: app.getVersion() });
       }
     } else {
       // no need to install node and npm in dev mode since they should already be in the $PATH for dev environment to work
