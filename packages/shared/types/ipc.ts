@@ -13,4 +13,5 @@ export interface Ipc {
   'cli.start': (path: string) => Promise<number>;
   'cli.deploy': (opts: DeployOptions) => Promise<number>;
   'analytics.track': (event: string, data?: Record<string, any>) => void;
+  'analytics.getUserId': () => Promise<string>;
 }

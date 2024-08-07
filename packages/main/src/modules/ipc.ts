@@ -25,4 +25,5 @@ export function initIpc() {
 
   // analytics
   handle('analytics.track', (_event, eventName, data) => analytics.track(eventName, data));
+  handle('analytics.getUserId', () => analytics.getUserId());
 }

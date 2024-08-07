@@ -1,5 +1,5 @@
 import type { Action } from '@reduxjs/toolkit';
-import { track } from '#preload';
+import { analytics } from '#preload';
 import type {
   AnalyticsAction,
   EventName,
@@ -23,7 +23,7 @@ export async function handleAction(action: Action) {
 
     const payload = getPayload ? await getPayload(action) : undefined;
 
-    await track(event, payload);
+    await analytics.track(event, payload);
   }
 }
 
