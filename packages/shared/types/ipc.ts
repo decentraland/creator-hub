@@ -9,6 +9,7 @@ export interface Ipc {
   'electron.openExternal': (url: string) => Promise<void>;
   'inspector.start': () => Promise<number>;
   'bin.install': () => Promise<void>;
+  'bin.code': (path: string) => Promise<void>;
   'cli.init': (path: string, repo?: string) => Promise<void>;
   'cli.start': (path: string) => Promise<number>;
   'cli.deploy': (opts: DeployOptions) => Promise<number>;

@@ -1,13 +1,8 @@
 import fs from 'node:fs/promises';
-import { promisify } from 'util';
-import { exec as execSync } from 'child_process';
-import { shell } from 'electron';
 import path from 'path';
 
 import type { DeployOptions } from '/shared/types/ipc';
 import { invoke } from './invoke';
-
-const exec = promisify(execSync);
 
 export async function getEditorHome(_path: string) {
   const editorHomePath = path.join(_path, '.editor');
@@ -48,10 +43,5 @@ export async function openPreview(port: number) {
 }
 
 export async function openCode(_path: string) {
-  const normalPath = path.normalize(_path);
-  try {
-    await exec(`code "${normalPath}"`);
-  } catch (_) {
-    await shell.openPath(normalPath);
-  }
+  return invoke('bin.code', _path);
 }

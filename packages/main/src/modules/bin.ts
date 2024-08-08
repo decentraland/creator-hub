@@ -1,6 +1,6 @@
 import log from 'electron-log/main';
 import fs from 'node:fs/promises';
-import { app, utilityProcess } from 'electron';
+import { app, utilityProcess, shell } from 'electron';
 import path from 'path';
 import treeKill from 'tree-kill';
 import { future } from 'fp-future';
@@ -8,6 +8,8 @@ import isRunning from 'is-running';
 import cmdShim from 'cmd-shim';
 import { rimraf } from 'rimraf';
 import semver from 'semver';
+import { promisify } from 'util';
+import { exec as execSync } from 'child_process';
 import { APP_UNPACKED_PATH, getBinPath, getNodeCmdPath, joinEnvPaths } from './path';
 import { track } from './analytics';
 
@@ -16,6 +18,9 @@ let PATH = process.env.PATH;
 
 // install future
 const installed = future<void>();
+
+// exec async
+const exec = promisify(execSync);
 
 /**
  * Wait for node and npm binaries to be installed
@@ -86,6 +91,10 @@ export async function install() {
         }
       }
       PATH = joinEnvPaths(process.env.PATH, path.dirname(nodeCmdPath), path.dirname(npmBinPath));
+      if (process.platform !== 'win32') {
+        // on unix systems we need to install the path to the local bin folder for the Open in VSCode feature to work
+        PATH = joinEnvPaths(PATH, '/usr/local/bin');
+      }
       log.info('[Install] node command:', nodeCmdPath);
       log.info('[Install] node bin:', nodeBinPath);
       log.info('[Install] npm bin: ', npmBinPath);
@@ -347,5 +356,14 @@ async function handleData(buffer: Buffer, matchers: Matcher[]) {
     if (pattern.test(data)) {
       handler(data);
     }
+  }
+}
+
+export async function code(_path: string) {
+  const normalizedPath = path.normalize(_path);
+  try {
+    await exec(`code "${normalizedPath}"`, { env: { ...process.env, PATH } });
+  } catch (_) {
+    await shell.openPath(normalizedPath);
   }
 }
