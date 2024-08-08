@@ -11,23 +11,30 @@ import { DeleteProject } from '../Modals/DeleteProject';
 import type { Props } from './types';
 
 import './styles.css';
+import { useWorkspace } from '/@/hooks/useWorkspace';
 
-export function ProjectCard({ project, onClick, onDelete, onDuplicate }: Props) {
+export function ProjectCard({ project }: Props) {
   const [open, setOpen] = useState(false);
   const parcels = project.layout.cols * project.layout.rows;
 
-  const handleClick = useCallback(() => {
-    if (onClick) onClick(project);
-  }, [project, onClick]);
+  const { selectProject, duplicateProject, deleteProject, openFolder } = useWorkspace();
 
-  const handleDeleteProject = useCallback(() => {
-    onDelete(project);
-    handleCloseModal();
-  }, [project, onDelete]);
+  const handleClick = useCallback(() => {
+    selectProject(project);
+  }, [project, selectProject]);
 
   const handleDuplicateProject = useCallback(() => {
-    onDuplicate(project);
-  }, [project, onDuplicate]);
+    duplicateProject(project);
+  }, [project, duplicateProject]);
+
+  const handleDeleteProject = useCallback(() => {
+    deleteProject(project);
+    handleCloseModal();
+  }, [project, deleteProject]);
+
+  const handleOpenFolder = useCallback(() => {
+    openFolder(project.path);
+  }, [project, openFolder]);
 
   const handleOpenModal = useCallback(() => {
     setOpen(true);
@@ -47,6 +54,10 @@ export function ProjectCard({ project, onClick, onDelete, onDuplicate }: Props) 
     {
       text: t('scene_list.project_actions.delete_project'),
       handler: handleOpenModal,
+    },
+    {
+      text: t('scene_list.project_actions.open_folder'),
+      handler: handleOpenFolder,
     },
   ];
 

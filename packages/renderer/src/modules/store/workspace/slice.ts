@@ -22,6 +22,7 @@ const saveThumbnail = createAsyncThunk(
     return project;
   },
 );
+const openFolder = createAsyncThunk('workspace/openFolder', workspace.openFolder);
 
 // state
 export type WorkspaceState = Async<Workspace>;
@@ -165,6 +166,7 @@ export const actions = {
   reimportProject,
   unlistProjects,
   saveThumbnail,
+  openFolder,
 };
 export const reducer = slice.reducer;
 export const selectors = { ...slice.selectors };

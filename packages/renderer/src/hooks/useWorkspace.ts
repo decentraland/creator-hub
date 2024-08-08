@@ -50,6 +50,10 @@ export const useWorkspace = () => {
     dispatch(workspaceActions.unlistProjects(paths));
   }, []);
 
+  const openFolder = useCallback((path: string) => {
+    dispatch(workspaceActions.openFolder(path));
+  }, []);
+
   return {
     ...workspace,
     getWorkspace,
@@ -61,5 +65,6 @@ export const useWorkspace = () => {
     importProject,
     reimportProject,
     unlistProjects,
+    openFolder,
   };
 };

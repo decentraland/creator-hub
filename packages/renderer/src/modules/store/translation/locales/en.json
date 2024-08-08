@@ -5,12 +5,12 @@
   "home": {
     "header": {
       "title": "Welcome to Editor Alpha",
-      "feedback": "Give us feedback"
+      "feedback": "Submit Feedback"
     }
   },
   "editor": {
     "loading": {
-      "title": "Preparing your scene..."
+      "title": "Loading..."
     },
     "header": {
       "actions": {
@@ -26,7 +26,8 @@
     "create_scene": "Create Scene",
     "project_actions": {
       "delete_project": "Delete",
-      "duplicate_project": "Duplicate"
+      "duplicate_project": "Duplicate",
+      "open_folder": "Open Folder"
     },
     "no_scenes": {
       "title": "Create your first scene",
@@ -47,28 +48,33 @@
   "modal": {
     "cancel": "Cancel",
     "confirm": "Confirm",
-    "irreversible_operation": "This operation is not reversible",
     "missing_projects": {
-      "title": "Missing scenes",
+      "title": "Scenes missing reference files",
       "find": "Find",
-      "discard": "Discard",
-      "discard_all": "Discard all"
+      "discard": "Delete",
+      "discard_all": "Delete all"
+    },
+    "delete_project": {
+      "title": "Are you sure you want to delete \"{title}\"?",
+      "irreversible_operation": "This operation is not reversible.",
+      "remove_imported_scene": "This will only remove \"{title}\" from the Editor. The original scene files on your computer will not be affected"
     },
     "publish_project": {
-      "title": "Publish \"{title}\" Scene",
-      "select": "Select where you want to deploy this scene:",
+      "title": "Publish \"{title}\"",
+      "select": "Where would you like to deploy your scene to?",
       "worlds": {
         "title": "Worlds",
-        "description": "Not findable in Genesis City map. \nUp to 100 users can join concurrently.",
-        "action": "Publish to World"
+        "description": "Your own virtual space, separate from Genesis City. Claim yours when you get a NAME.",
+        "action": "Publish to a World"
       },
       "land": {
         "title": "My Land",
-        "description": "Findable in Genesis City map. \nUnlimited users can join concurrently.",
+        "description": "The parcels that make up Decentraland's Genesis City map. Buy or rent your own in the Marketplace.",
         "action": "Publish to Land"
       },
       "alternative_servers": {
-        "title": "Alternative Servers",
+        "title": "Publish to a different server",
+        "list": "Alternate Servers",
         "options": {
           "test_server": "Test Server",
           "custom_server": "Custom Server"
@@ -94,7 +100,7 @@
       "delete_scene_failed": "Failed deleting scene"
     },
     "missing_projects": {
-      "title": "{scenes} missing {scenes, plural, one {scene} other {scenes}} found",
+      "title": "{scenes} {scenes, plural, one {scene} other {scenes}} could not be loaded due to missing files",
       "actions": {
         "view": "View",
         "discard_all": "Discard all"

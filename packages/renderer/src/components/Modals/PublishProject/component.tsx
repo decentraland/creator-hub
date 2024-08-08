@@ -142,7 +142,7 @@ function AlternativeServers({ onClick }: StepProps) {
       <div className="box">
         <div className="selection">
           <div>
-            <h3>{t('modal.publish_project.alternative_servers.title')}</h3>
+            <h3>{t('modal.publish_project.alternative_servers.list')}</h3>
             <Select
               variant="standard"
               value={option}
