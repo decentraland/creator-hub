@@ -47,12 +47,16 @@
   "modal": {
     "cancel": "Cancelar",
     "confirm": "Confirmar",
-    "irreversible_operation": "Esta operación es irreversible",
     "missing_projects": {
       "title": "Escenas perdidas",
       "find": "Buscar",
       "discard": "Descartar",
       "discard_all": "Descartar todas"
+    },
+    "delete_project": {
+      "title": "Estas seguro que quieres eliminar \"{title}\"?",
+      "irreversible_operation": "Esta es una operacion irreversible.",
+      "remove_imported_scene": "Esto eliminará \"{title}\" del Editor. Los archivos originales permaneceran en tu sistema."
     },
     "publish_project": {
       "title": "Publicar escena \"{title}\"",

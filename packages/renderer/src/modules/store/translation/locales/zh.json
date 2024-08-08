@@ -47,12 +47,16 @@
   "modal": {
     "cancel": "取消",
     "confirm": "确认",
-    "irreversible_operation": "此操作不可逆",
     "missing_projects": {
       "title": "缺失的场景",
       "find": "寻找",
       "discard": "丢弃",
       "discard_all": "全部丢弃"
+    },
+    "delete_project": {
+      "title": "您确定要删除 \"{title}\" 吗？",
+      "irreversible_operation": "此操作不可逆转。",
+      "remove_imported_scene": "这只会从编辑器中删除 \"{title}\"。您计算机上的原始场景文件不会受到影响。"
     },
     "publish_project": {
       "title": "公共场所 \"{title}\"",

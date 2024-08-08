@@ -101,6 +101,8 @@ export async function getProject(_path: string): Promise<Project> {
 
     const stat = await fs.stat(_path);
 
+    const config = await getConfig();
+
     return {
       id,
       path: _path,
@@ -111,6 +113,7 @@ export async function getProject(_path: string): Promise<Project> {
       createdAt: Number(stat.birthtime),
       updatedAt: Number(stat.mtime),
       size: stat.size,
+      isImported: config.workspace.paths.includes(_path),
     };
   } catch (error: any) {
     throw new Error(`Could not get scene.json info for project in "${_path}": ${error.message}`);
@@ -221,7 +224,12 @@ export async function unlistProjects(paths: string[]): Promise<void> {
  * @returns A Promise that resolves when the directory has been deleted.
  */
 export async function deleteProject(_path: string): Promise<void> {
-  await Promise.all([fs.rm(_path, { recursive: true, force: true }), unlistProjects([_path])]);
+  const config = await getConfig();
+  if (config.workspace.paths.includes(_path)) {
+    await unlistProjects([_path]);
+  } else {
+    await fs.rm(_path, { recursive: true, force: true });
+  }
 }
 
 /**
