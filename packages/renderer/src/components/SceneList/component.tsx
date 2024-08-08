@@ -30,8 +30,7 @@ function NoScenesAnchor(content: string) {
 }
 
 export function SceneList({ projects, sortBy, onSort }: Props) {
-  const { selectProject, deleteProject, duplicateProject, importProject, createProject } =
-    useWorkspace();
+  const { importProject, createProject } = useWorkspace();
 
   const sort = useCallback(
     (_sortBy: SortBy) => {
@@ -67,9 +66,6 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
         <ProjectCard
           key={project.path}
           project={project}
-          onClick={selectProject}
-          onDelete={deleteProject}
-          onDuplicate={duplicateProject}
         />
       ));
     }

@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID, type UUID } from 'node:crypto';
 import type { Scene } from '@dcl/schemas';
+import { shell } from 'electron';
 
 import { SortBy, type Project } from '/shared/types/projects';
 import type { Workspace } from '/shared/types/workspace';
@@ -313,4 +314,11 @@ export async function saveThumbnail({
   thumbnail: string;
 }): Promise<void> {
   await deepWriteFile(await getProjectThumbnailPath(_path), thumbnail, { encoding: 'base64' });
+}
+
+export async function openFolder(_path: string) {
+  const error = await shell.openPath(_path);
+  if (error) {
+    throw new Error(error);
+  }
 }

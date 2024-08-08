@@ -26,7 +26,8 @@
     "create_scene": "Crear Escena",
     "project_actions": {
       "delete_project": "Borrar Escena",
-      "duplicate_project": "Duplicar Escena"
+      "duplicate_project": "Duplicar Escena",
+      "open_folder": "Abrir Carpeta"
     },
     "no_scenes": {
       "title": "Crea tu primera escena",

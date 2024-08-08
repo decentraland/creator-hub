@@ -26,7 +26,8 @@
     "create_scene": "Create Scene",
     "project_actions": {
       "delete_project": "Delete",
-      "duplicate_project": "Duplicate"
+      "duplicate_project": "Duplicate",
+      "open_folder": "Open Folder"
     },
     "no_scenes": {
       "title": "Create your first scene",

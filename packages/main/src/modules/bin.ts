@@ -364,6 +364,9 @@ export async function code(_path: string) {
   try {
     await exec(`code "${normalizedPath}"`, { env: { ...process.env, PATH } });
   } catch (_) {
-    await shell.openPath(normalizedPath);
+    const error = await shell.openPath(normalizedPath);
+    if (error) {
+      throw new Error(error);
+    }
   }
 }
