@@ -102,8 +102,6 @@ export async function getProject(_path: string): Promise<Project> {
 
     const stat = await fs.stat(_path);
 
-    const config = await getConfig();
-
     return {
       id,
       path: _path,
@@ -114,7 +112,6 @@ export async function getProject(_path: string): Promise<Project> {
       createdAt: Number(stat.birthtime),
       updatedAt: Number(stat.mtime),
       size: stat.size,
-      isImported: config.workspace.paths.includes(_path),
     };
   } catch (error: any) {
     throw new Error(`Could not get scene.json info for project in "${_path}": ${error.message}`);
@@ -167,17 +164,12 @@ export async function getProjects(paths: string | string[]): Promise<[Project[],
   return [projects, missing];
 }
 
-export async function getWorkspacePaths(): Promise<string[]> {
-  const [home, config] = await Promise.all([getPath(), getConfig()]);
-  return [home, ...config.workspace.paths];
-}
-
 /**
  * Returns workspace info
  */
 export async function getWorkspace(): Promise<Workspace> {
-  const paths = await getWorkspacePaths();
-  const [projects, missing] = await getProjects(paths);
+  const config = await getConfig();
+  const [projects, missing] = await getProjects(config.workspace.paths);
 
   return {
     sortBy: SortBy.NEWEST, // TODO: read from editor config file...
@@ -190,18 +182,19 @@ export async function createProject(name = NEW_SCENE_NAME): Promise<Project> {
   let sceneName = name;
   let counter = 2;
   const homePath = await getPath();
-  let scenePath = path.join(homePath, sceneName);
-  while (await exists(scenePath)) {
+  let projectPath = path.join(homePath, sceneName);
+  while (await exists(projectPath)) {
     sceneName = `${name} ${counter++}`;
-    scenePath = path.join(homePath, sceneName);
+    projectPath = path.join(homePath, sceneName);
   }
-  await fs.mkdir(scenePath);
-  await invoke('cli.init', scenePath, EMPTY_SCENE_TEMPLATE_REPO);
-  const scene = await getScene(scenePath);
+  await fs.mkdir(projectPath);
+  await invoke('cli.init', projectPath, EMPTY_SCENE_TEMPLATE_REPO);
+  const scene = await getScene(projectPath);
   scene.display!.title = sceneName;
-  const sceneJsonPath = path.join(scenePath, 'scene.json');
+  const sceneJsonPath = path.join(projectPath, 'scene.json');
   await fs.writeFile(sceneJsonPath, JSON.stringify(scene, null, 2));
-  const project = await getProject(scenePath);
+  const project = await getProject(projectPath);
+  await setConfig(config => config.workspace.paths.push(projectPath));
   return project;
 }
 
@@ -225,12 +218,7 @@ export async function unlistProjects(paths: string[]): Promise<void> {
  * @returns A Promise that resolves when the directory has been deleted.
  */
 export async function deleteProject(_path: string): Promise<void> {
-  const config = await getConfig();
-  if (config.workspace.paths.includes(_path)) {
-    await unlistProjects([_path]);
-  } else {
-    await fs.rm(_path, { recursive: true, force: true });
-  }
+  await unlistProjects([_path]);
 }
 
 /**
@@ -266,8 +254,8 @@ export async function importProject(): Promise<Project | undefined> {
   if (cancelled) return undefined;
 
   const pathBaseName = path.basename(projectPath);
-  const paths = await getWorkspacePaths();
-  const [projects] = await getProjects(paths);
+  const config = await getConfig();
+  const [projects] = await getProjects(config.workspace.paths);
   const projectAlreadyExists = projects.find($ => $.path === projectPath);
 
   if (projectAlreadyExists) {

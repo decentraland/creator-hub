@@ -56,7 +56,6 @@
     },
     "delete_project": {
       "title": "您确定要删除 \"{title}\" 吗？",
-      "irreversible_operation": "此操作不可逆转。",
       "remove_imported_scene": "这只会从编辑器中删除 \"{title}\"。您计算机上的原始场景文件不会受到影响。"
     },
     "publish_project": {

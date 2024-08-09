@@ -56,7 +56,6 @@
     },
     "delete_project": {
       "title": "Are you sure you want to delete \"{title}\"?",
-      "irreversible_operation": "This operation is not reversible.",
       "remove_imported_scene": "This will only remove \"{title}\" from the Editor. The original scene files on your computer will not be affected"
     },
     "publish_project": {
