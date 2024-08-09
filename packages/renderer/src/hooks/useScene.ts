@@ -9,17 +9,17 @@ import { seconds } from '/shared/time';
 
 import { actions as workspaceActions } from '/@/modules/store/workspace';
 import { stripBase64ImagePrefix, resizeImage } from '/@/modules/image';
-import { type CameraClient } from '/@/modules/server/camera';
+import { type CameraRPC } from '/@/modules/rpc/camera';
 
 type Screenshot = {
   iframe: HTMLIFrameElement;
-  camera: CameraClient;
+  camera: CameraRPC;
 };
 
 export function useScene() {
   const dispatch = useDispatch();
   const [takeScreenshot] = throttle(
-    async (target: HTMLIFrameElement, camera: CameraClient) => {
+    async (target: HTMLIFrameElement, camera: CameraRPC) => {
       // TODO:
       // 1. make the camera position/target relative to parcels rows & columns
       // 2. the CameraServer only allows to reposition the main camera, so repositioning it, will also
