@@ -20,7 +20,7 @@ export type Result = {
   [Method.SET_POSITION]: void;
 };
 
-export class CameraClient extends RPC<Method, Params, Result> {
+export class CameraRPC extends RPC<Method, Params, Result> {
   constructor(transport: Transport) {
     super(name, transport);
   }

@@ -9,8 +9,9 @@ import type { DeployOptions } from '/shared/types/ipc';
 import { actions as editorActions } from '/@/modules/store/editor';
 import { actions as workspaceActions } from '/@/modules/store/workspace';
 import { bufferToScene } from '/@/modules/buffer';
-import type { CallbackParams, Method, Params } from '/@/modules/server';
+import type { Method, Params } from '/@/modules/rpc/storage';
 import { useScene } from './useScene';
+import type { CallbackParams } from '../modules/rpc';
 
 export const useEditor = () => {
   const dispatch = useDispatch();
