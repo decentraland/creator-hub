@@ -81,11 +81,11 @@ if (import.meta.env.PROD) {
         log.info('[AutoUpdater] Update not available');
       });
       updater.autoUpdater.on('update-downloaded', async info => {
-        log.info('[AutoUpdater] Update downloaded');
+        log.info(`[AutoUpdater] Update downloaded (v${info.version})`);
         await track('Auto Update Editor', { version: info.version });
       });
       updater.autoUpdater.on('download-progress', info => {
-        log.info(`[AutoUpdater] Download progress ${info.percent}%`);
+        log.info(`[AutoUpdater] Download progress ${info.percent.toFixed(2)}%`);
       });
       updater.autoUpdater.on('error', err => {
         log.error('[AutoUpdater] Error in auto-updater', err);

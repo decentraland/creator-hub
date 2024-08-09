@@ -132,7 +132,7 @@ export async function install() {
         // install dependencies using npm
         log.info('[Install] Installing node_modules...');
         const npmInstall = run('npm', 'npm', {
-          args: ['install'],
+          args: ['install', '--loglevel', 'error'],
           cwd: APP_UNPACKED_PATH,
           workspace,
         });
@@ -229,7 +229,7 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
 
   const ready = future<void>();
 
-  const name = `${pkg} ${args.join(' ')}`.trim();
+  const name = `${bin} ${args.join(' ')}`.trim();
   forked.on('spawn', () => {
     log.info(
       `[UtilityProcess] Running "${name}" using bin=${binPath} with pid=${forked.pid} in ${cwd}`,

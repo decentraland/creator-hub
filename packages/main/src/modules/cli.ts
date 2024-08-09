@@ -15,13 +15,12 @@ export async function start(path: string) {
   if (previewServer) {
     await previewServer.kill();
   }
-  const installCommand = run('npm', 'npm', { args: ['install'], cwd: path });
+  const installCommand = run('npm', 'npm', { args: ['install', '--loglevel', 'error'], cwd: path });
   await installCommand.wait();
   const port = await getAvailablePort();
   previewServer = run('@dcl/sdk-commands', 'sdk-commands', {
     args: ['start', '--port', port.toString(), '--no-browser'],
     cwd: path,
-    workspace: path,
   });
   await previewServer.waitFor(/available/i);
   return port;
@@ -42,7 +41,6 @@ export async function deploy({ path, target, targetContent }: DeployOptions) {
       ...(targetContent ? ['--target-content', targetContent] : []),
     ],
     cwd: path,
-    workspace: path,
   });
 
   // App ready at
