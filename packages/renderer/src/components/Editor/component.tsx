@@ -5,21 +5,21 @@ import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import CodeIcon from '@mui/icons-material/Code';
 import PublicIcon from '@mui/icons-material/Public';
+import { useSelector } from '#store';
 
 import { DEPLOY_URLS } from '/shared/types/deploy';
+import { initRpc } from '/@/modules/rpc';
 import { t } from '/@/modules/store/translation/utils';
 import { useEditor } from '/@/hooks/useEditor';
 
 import EditorPng from '/assets/images/editor.png';
 
-import { useSelector } from '#store';
 import { PublishProject, type StepValue } from '../Modals/PublishProject';
 import { Button } from '../Button';
 import { Header } from '../Header';
 import { Row } from '../Row';
 
 import './styles.css';
-import { initTransport } from '../../modules/server';
 
 type ModalType = 'publish';
 
@@ -36,14 +36,14 @@ export function Editor() {
     loadingPublish,
   } = useEditor();
   const userId = useSelector(state => state.analytics.userId);
-  const transportRef = useRef<ReturnType<typeof initTransport>>();
+  const iframeRef = useRef<ReturnType<typeof initRpc>>();
   const [open, setOpen] = useState<ModalType | undefined>();
 
-  const handleIframeLoad = useCallback(
+  const handleIframeRef = useCallback(
     (e: React.SyntheticEvent<HTMLIFrameElement, Event>) => {
       const iframe = e.currentTarget;
       if (project) {
-        transportRef.current = initTransport(iframe, project, { writeFile: updateScene });
+        iframeRef.current = initRpc(iframe, project, { writeFile: updateScene });
       }
     },
     [project, updateScene],
@@ -53,8 +53,8 @@ export function Editor() {
     return () => {
       // React.StrictMode will trigger this on mount, it shoulnd't be a problem since
       // there is no transportRef.current yet, but just fyi
-      transportRef.current?.dispose();
-      transportRef.current = undefined;
+      iframeRef.current?.dispose();
+      iframeRef.current = undefined;
     };
   }, []);
 
@@ -189,7 +189,7 @@ export function Editor() {
           <iframe
             className="inspector"
             src={iframeUrl}
-            onLoad={handleIframeLoad}
+            onLoad={handleIframeRef}
           ></iframe>
           {project && (
             <PublishProject
