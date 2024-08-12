@@ -30,9 +30,7 @@ export function DeleteProject({ open, project, onClose, onSubmit }: Props) {
         </>
       }
     >
-      {project.isImported
-        ? t('modal.delete_project.remove_imported_scene', { title: project.title })
-        : t('modal.delete_project.irreversible_operation')}
+      {t('modal.delete_project.remove_imported_scene', { title: project.title })}
     </Modal>
   );
 }

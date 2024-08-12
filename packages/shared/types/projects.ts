@@ -27,6 +27,5 @@ export type Project = {
   layout: Layout;
   createdAt: number;
   updatedAt: number;
-  isImported: boolean;
   size: number;
 };
