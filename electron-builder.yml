@@ -23,6 +23,7 @@ win:
         - x64
   extraResources:
     - buildResources/icon.ico
+  verifyUpdateCodeSignature: false
 
 nsis:
   createDesktopShortcut: true
