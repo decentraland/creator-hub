@@ -52,12 +52,12 @@ export function ProjectCard({ project }: Props) {
       handler: handleDuplicateProject,
     },
     {
-      text: t('scene_list.project_actions.delete_project'),
-      handler: handleOpenModal,
-    },
-    {
       text: t('scene_list.project_actions.open_folder'),
       handler: handleOpenFolder,
+    },
+    {
+      text: t('scene_list.project_actions.delete_project'),
+      handler: handleOpenModal,
     },
   ];
 

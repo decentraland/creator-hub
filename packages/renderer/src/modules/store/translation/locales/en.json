@@ -25,9 +25,9 @@
     "import_scene": "Import Scene",
     "create_scene": "Create Scene",
     "project_actions": {
-      "delete_project": "Delete",
+      "delete_project": "Delete from My Scenes",
       "duplicate_project": "Duplicate",
-      "open_folder": "Open Folder"
+      "open_folder": "Open Folder Location"
     },
     "no_scenes": {
       "title": "Create your first scene",
