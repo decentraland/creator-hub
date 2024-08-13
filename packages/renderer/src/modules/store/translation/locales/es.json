@@ -1,10 +1,10 @@
 {
   "install": {
-    "message": "Instalando Decentraland Editor v{version}"
+    "message": "Instalando Creators Hub v{version}"
   },
   "home": {
     "header": {
-      "title": "Bienvenido al Editor Alpha",
+      "title": "Bienvenido al Creators Hub",
       "feedback": "Darnos feedback"
     }
   },

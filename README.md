@@ -1,6 +1,6 @@
-# Decentraland Editor
+# Creators Hub
 
-Decentraland Editor is an Electron-based application designed for creating, editing, and deploying Decentraland scenes. This application is distributed for both Windows and MacOS, supporting both x64 and ARM architectures.
+Creators Hub is an Electron-based application designed for creating, editing, and deploying Decentraland scenes. This application is distributed for both Windows and MacOS, supporting both x64 and ARM architectures.
 
 ### Features
 
@@ -58,18 +58,18 @@ When debugging the production build (executables) you can open the DevTools via 
 On Windows (PowerShell):
 
 ```bash
-Get-Content -Path "$env:APPDATA\decentraland-editor\logs\main.log" -Wait
+Get-Content -Path "$env:APPDATA\creators-hub\logs\main.log" -Wait
 ```
 
 On MacOS:
 
 ```bash
-tail -f ~/Library/Logs/decentraland-editor/main.log
+tail -f ~/Library/Logs/creators-hub/main.log
 ```
 
 ## Installation Process
 
-The Decentraland Editor requires several binaries to be available, including Node.js, npm, and sdk-commands. Due to Apple's requirements for app distribution, the application must be packaged into an `.asar` file for proper signing and notarization. However, some binaries within the `node_modules` directory cannot be used from inside the `.asar` file. Therefore, certain components are left outside the `.asar` file, including `package.json` and npm binaries.
+The Creators Hub requires several binaries to be available, including Node.js, npm, and sdk-commands. Due to Apple's requirements for app distribution, the application must be packaged into an `.asar` file for proper signing and notarization. However, some binaries within the `node_modules` directory cannot be used from inside the `.asar` file. Therefore, certain components are left outside the `.asar` file, including `package.json` and npm binaries.
 
 ### Steps
 
@@ -93,7 +93,7 @@ To minimize installation time for the end user, `package.json` should include on
 
 ## Update Process
 
-The Decentraland Editor uses `electron-updater` to automatically update the production app to the latest version.
+The Creators Hub uses `electron-updater` to automatically update the production app to the latest version.
 
 ### Steps
 
@@ -113,7 +113,7 @@ This ensures that users always have the latest features and fixes without manual
 
 ## Release Process
 
-The CI pipeline is configured to automate the release process for the Decentraland Editor.
+The CI pipeline is configured to automate the release process for the Creators Hub.
 
 ### Steps
 

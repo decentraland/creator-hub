@@ -1,6 +1,6 @@
 {
-  "name": "decentraland-editor",
-  "description": "Decentraland Editor",
+  "name": "creators-hub",
+  "description": "Creators Hub",
   "version": "0.0.0-dev",
   "private": true,
   "type": "module",
