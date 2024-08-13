@@ -1,4 +1,4 @@
-appId: com.decentraland.editor
+appId: com.decentraland.creatorshub
 
 directories:
   output: dist
@@ -10,12 +10,12 @@ files:
 linux:
   target: deb
 
-productName: Decentraland Editor
+productName: Creators Hub
 artifactName: '${productName}-${version}-${os}-${arch}.${ext}'
 
 win:
   publisherName: 'Decentraland Foundation'
-  appId: Decentraland.Editor
+  appId: Decentraland.CreatorsHub
   icon: buildResources/icon.ico
   target:
     - target: nsis
@@ -31,7 +31,7 @@ nsis:
   installerIcon: buildResources/icon.ico
 
 dmg:
-  title: Decentraland Editor Installer
+  title: Creators Hub Installer
   background: buildResources/background.png
   window:
     width: 714

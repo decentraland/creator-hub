@@ -19,7 +19,7 @@ export async function getAnalytics(): Promise<Analytics | null> {
   if (analytics) {
     return analytics;
   }
-  const writeKey = import.meta.env.VITE_SEGMENT_EDITOR_API_KEY;
+  const writeKey = import.meta.env.VITE_SEGMENT_CREATORS_HUB_API_KEY;
   if (writeKey) {
     analytics = new Analytics({
       writeKey,
@@ -27,7 +27,7 @@ export async function getAnalytics(): Promise<Analytics | null> {
     analytics.identify({
       userId: await getUserId(),
       traits: {
-        appId: 'desktop-editor',
+        appId: 'creators-hub',
       },
     });
     return analytics;
