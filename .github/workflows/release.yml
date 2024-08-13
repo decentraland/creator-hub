@@ -24,7 +24,7 @@ on:
         description: 'Password used for notarization'
         required: true
       VITE_SEGMENT_CREATORS_HUB_API_KEY:
-        description: 'Segment API key used for the Desktop Editor'
+        description: 'Segment API key used for the Creators Hub'
         required: true
       VITE_SEGMENT_INSPECTOR_API_KEY:
         description: 'Segment API key used for the Inspector'

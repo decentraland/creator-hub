@@ -123,7 +123,7 @@ export function Editor() {
   }
 
   // analytics
-  params.append('segmentAppId', 'desktop-editor');
+  params.append('segmentAppId', 'creators-hub');
   if (userId) {
     params.append('segmentUserId', userId);
   }
