@@ -1,5 +1,5 @@
 {
-  "name": "decentraland-creators-hub",
+  "name": "@dcl/creators-hub",
   "description": "Creators Hub",
   "version": "0.0.0-dev",
   "private": true,
