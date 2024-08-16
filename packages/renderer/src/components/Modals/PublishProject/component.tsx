@@ -11,7 +11,7 @@ import LandPng from '/assets/images/land.png';
 import WorldsPng from '/assets/images/worlds.png';
 
 import { Button } from '../../Button';
-import { OptionBox } from '../../Editor/OptionBox';
+import { OptionBox } from '../../EditorPage/OptionBox';
 
 import type { AlternativeTarget, Step, StepProps, StepValue, Props } from './types';
 

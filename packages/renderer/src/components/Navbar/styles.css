@@ -1,0 +1,43 @@
+.Navbar {
+  margin: 40px 0;
+}
+
+.Navbar .menu {
+  display: flex;
+  margin-left: 20px;
+}
+
+.Navbar .logo img {
+  width: 64px;
+}
+
+.Navbar .menu .menu-item {
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 300;
+  cursor: pointer;
+  text-transform: uppercase;
+  padding: 19px 16px 17px 16px;
+  color: #716b7c;
+  text-decoration: none;
+}
+
+.Navbar .menu .menu-item:hover {
+  color: var(--text);
+}
+
+.Navbar .menu .menu-item.active {
+  color: var(--text);
+  border-bottom: 2px solid white;
+}
+
+.Navbar .feedback {
+  border-radius: 6px;
+  padding: 8px;
+  text-transform: uppercase;
+  border: 1px solid var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+}

@@ -23,7 +23,7 @@ import './styles.css';
 
 type ModalType = 'publish';
 
-export function Editor() {
+export function EditorPage() {
   const navigate = useNavigate();
   const {
     project,
