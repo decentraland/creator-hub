@@ -4,8 +4,7 @@
   },
   "home": {
     "header": {
-      "title": "Bienvenido al Creators Hub",
-      "feedback": "Darnos feedback"
+      "title": "Bienvenido al Creators Hub"
     }
   },
   "editor": {
@@ -44,6 +43,16 @@
     },
     "results": "{count} {count, plural, one {resultado} other {resultados}}",
     "parcel_count": "{parcels} {parcels, plural, one {parcela} other {parcelas}}"
+  },
+  "navbar": {
+    "menu": {
+      "home": "Inicio",
+      "scenes": "Escenas",
+      "collections": "Colecciones",
+      "manage": "Gestionar",
+      "learn": "Aprender"
+    },
+    "feedback": "Darnos feedback"
   },
   "modal": {
     "cancel": "Cancelar",

@@ -11,7 +11,7 @@ export function Install() {
 
   useEffect(() => {
     if (isInstalled && !isInstalling) {
-      navigate('/home');
+      navigate('/scenes');
     }
   }, [isInstalled, isInstalling]);
 

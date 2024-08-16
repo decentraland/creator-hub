@@ -4,8 +4,7 @@
       "message": "安装 decentraland 编辑器 v${version}"
     },
     "header": {
-      "title": "欢迎来到阿尔法编辑器",
-      "feedback": "给我们反馈"
+      "title": "欢迎来到阿尔法编辑器"
     }
   },
   "editor": {
@@ -44,6 +43,16 @@
     },
     "results": "{count}结果",
     "parcel_count": "{parcels} {包裹, plural, one {包裹} other {包裹}}"
+  },
+  "navbar": {
+    "menu": {
+      "home": "首页",
+      "scenes": "场景",
+      "collections": "收藏",
+      "manage": "管理",
+      "learn": "学习"
+    },
+    "feedback": "给我们反馈"
   },
   "modal": {
     "cancel": "取消",

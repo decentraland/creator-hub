@@ -58,13 +58,13 @@ When debugging the production build (executables) you can open the DevTools via 
 On Windows (PowerShell):
 
 ```bash
-Get-Content -Path "$env:APPDATA\creators-hub\logs\main.log" -Wait
+Get-Content -Path "$env:APPDATA\@dcl\creators-hub\logs\main.log" -Wait
 ```
 
 On MacOS:
 
 ```bash
-tail -f ~/Library/Logs/creators-hub/main.log
+tail -f ~/Library/Logs/@dcl/creators-hub/main.log
 ```
 
 ## Installation Process
