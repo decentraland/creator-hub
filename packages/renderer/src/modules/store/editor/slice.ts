@@ -19,6 +19,7 @@ export const runSceneAndOpenPreview: (project: Project) => ThunkAction =
     const port = await action.unwrap();
     await dispatch(openPreview(port));
   };
+export const openTutorial = createAsyncThunk('editor/openTutorial', editor.openTutorial);
 
 // state
 export type EditorState = {
@@ -146,6 +147,7 @@ export const actions = {
   publishScene,
   openPreview,
   runSceneAndOpenPreview,
+  openTutorial,
 };
 export const reducer = slice.reducer;
 export const selectors = { ...slice.selectors };

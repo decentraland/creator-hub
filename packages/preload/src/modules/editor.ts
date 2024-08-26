@@ -45,3 +45,9 @@ export async function openPreview(port: number) {
 export async function openCode(_path: string) {
   return invoke('bin.code', _path);
 }
+
+export async function openTutorial(opts: { id: string; list?: string }) {
+  const { id, list } = opts;
+  const url = `https://youtu.be/${id}${list ? `?list=${list}` : ''}`.trim();
+  await invoke('electron.openExternal', url);
+}

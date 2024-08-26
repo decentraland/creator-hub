@@ -116,5 +116,8 @@
   },
   "option_box": {
     "learn_more": "了解更多"
+  },
+  "tutorials": {
+    "title": "SDK7教程"
   }
 }
