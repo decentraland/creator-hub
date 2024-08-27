@@ -7,6 +7,7 @@ import { dark } from 'decentraland-ui2/dist/theme';
 
 import { store } from '#store';
 import { TranslationProvider } from '/@/components/TranslationProvider';
+import { AuthProvider } from '/@/components/AuthProvider';
 
 import { HomePage } from './components/HomePage';
 import { ScenesPage } from './components/ScenesPage';
@@ -14,6 +15,7 @@ import { EditorPage } from './components/EditorPage';
 import { CollectionsPage } from './components/CollectionsPage';
 import { ManagePage } from './components/ManagePage';
 import { LearnPage } from './components/LearnPage';
+import { SignInPage } from './components/SignInPage';
 
 import { Snackbar } from './components/Snackbar';
 import { Install } from './components/Install';
@@ -29,37 +31,43 @@ root.render(
       <TranslationProvider>
         <ThemeProvider theme={dark}>
           <Router>
-            <Routes>
-              <Route
-                path="/"
-                element={<Install />}
-              />
-              <Route
-                path="/home"
-                element={<HomePage />}
-              />
-              <Route
-                path="/scenes"
-                element={<ScenesPage />}
-              />
-              <Route
-                path="/collections"
-                element={<CollectionsPage />}
-              />
-              <Route
-                path="/manage"
-                element={<ManagePage />}
-              />
-              <Route
-                path="/learn"
-                element={<LearnPage />}
-              />
-              <Route
-                path="/editor"
-                element={<EditorPage />}
-              />
-            </Routes>
-            <Snackbar />
+            <AuthProvider>
+              <Routes>
+                <Route
+                  path="/"
+                  element={<Install />}
+                />
+                <Route
+                  path="/home"
+                  element={<HomePage />}
+                />
+                <Route
+                  path="/scenes"
+                  element={<ScenesPage />}
+                />
+                <Route
+                  path="/collections"
+                  element={<CollectionsPage />}
+                />
+                <Route
+                  path="/manage"
+                  element={<ManagePage />}
+                />
+                <Route
+                  path="/learn"
+                  element={<LearnPage />}
+                />
+                <Route
+                  path="/editor"
+                  element={<EditorPage />}
+                />
+                <Route
+                  path="/sign-in"
+                  element={<SignInPage />}
+                />
+              </Routes>
+              <Snackbar />
+            </AuthProvider>
           </Router>
         </ThemeProvider>
       </TranslationProvider>
