@@ -33,6 +33,9 @@ interface ImportMetaEnv {
   // Publish
   VITE_WORLDS_SERVER: string | undefined;
   VITE_TEST_SERVER: string | undefined;
+
+  // Security
+  VITE_ALLOWED_EXTERNAL_ORIGINS: string | undefined;
 }
 
 interface ImportMeta {
