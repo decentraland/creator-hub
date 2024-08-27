@@ -52,7 +52,11 @@
       "manage": "Manage",
       "learn": "Learn"
     },
-    "feedback": "Submit feedback"
+    "feedback": "Submit feedback",
+    "user_menu": {
+      "sign_in": "Sign In",
+      "sign_out": "Sign Out"
+    }
   },
   "modal": {
     "cancel": "Cancel",

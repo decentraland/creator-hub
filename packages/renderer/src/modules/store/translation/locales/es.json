@@ -52,7 +52,11 @@
       "manage": "Gestionar",
       "learn": "Aprender"
     },
-    "feedback": "Darnos feedback"
+    "feedback": "Darnos feedback",
+    "user_menu": {
+      "sign_in": "Iniciar Sesión",
+      "sign_out": "Cerrar Sesión"
+    }
   },
   "modal": {
     "cancel": "Cancelar",

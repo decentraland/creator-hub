@@ -52,7 +52,11 @@
       "manage": "管理",
       "learn": "学习"
     },
-    "feedback": "给我们反馈"
+    "feedback": "给我们反馈",
+    "user_menu": {
+      "sign_in": "登录",
+      "sign_out": "登出"
+    }
   },
   "modal": {
     "cancel": "取消",
