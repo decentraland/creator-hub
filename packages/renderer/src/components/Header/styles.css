@@ -25,3 +25,7 @@
 .Header .left .Button {
   font-size: 12px;
 }
+
+.Header .user {
+  margin-left: 24px;
+}
