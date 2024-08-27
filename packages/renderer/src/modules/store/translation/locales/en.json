@@ -117,5 +117,8 @@
   },
   "option_box": {
     "learn_more": "Learn more"
+  },
+  "tutorials": {
+    "title": "SDK7 Tutorials"
   }
 }

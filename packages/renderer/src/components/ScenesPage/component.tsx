@@ -1,12 +1,12 @@
 import { Container } from 'decentraland-ui2';
 
-import { SceneList } from '../SceneList';
-
-import { sortProjectsBy } from './utils';
 import { useWorkspace } from '/@/hooks/useWorkspace';
+import { SceneList } from '../SceneList';
+import { Navbar, NavbarItem } from '../Navbar';
+import { sortProjectsBy } from './utils';
+import { Tutorials, TutorialsWrapper } from '../Tutorials';
 
 import './styles.css';
-import { Navbar, NavbarItem } from '../Navbar';
 
 export function ScenesPage() {
   const { projects, sortBy, setSortBy } = useWorkspace();
@@ -15,11 +15,14 @@ export function ScenesPage() {
     <main className="ScenesPage">
       <Navbar active={NavbarItem.SCENES} />
       <Container>
-        <SceneList
-          projects={sortProjectsBy(projects, sortBy)}
-          sortBy={sortBy}
-          onSort={setSortBy}
-        />
+        <TutorialsWrapper>
+          <SceneList
+            projects={sortProjectsBy(projects, sortBy)}
+            sortBy={sortBy}
+            onSort={setSortBy}
+          />
+          <Tutorials />
+        </TutorialsWrapper>
       </Container>
     </main>
   );
