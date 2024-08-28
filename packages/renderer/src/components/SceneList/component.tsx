@@ -48,13 +48,32 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
   const renderSortDropdown = () => {
     return (
       <Select
+        className="sort-dropdown"
         variant="standard"
         value={sortBy}
         onChange={handleDropdownChange}
+        MenuProps={{
+          className: 'SceneListSortMenu',
+        }}
       >
-        <MenuItem value={SortBy.NEWEST}>{t('scene_list.sort.newest')}</MenuItem>
-        <MenuItem value={SortBy.NAME}>{t('scene_list.sort.name')}</MenuItem>
-        <MenuItem value={SortBy.SIZE}>{t('scene_list.sort.size')}</MenuItem>
+        <MenuItem
+          className="sort-item"
+          value={SortBy.NEWEST}
+        >
+          {t('scene_list.sort.newest')}
+        </MenuItem>
+        <MenuItem
+          className="sort-item"
+          value={SortBy.NAME}
+        >
+          {t('scene_list.sort.name')}
+        </MenuItem>
+        <MenuItem
+          className="sort-item"
+          value={SortBy.SIZE}
+        >
+          {t('scene_list.sort.size')}
+        </MenuItem>
       </Select>
     );
   };
@@ -93,7 +112,7 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
     <div className="SceneList">
       <Column className="projects-menu">
         <Row>
-          <h4>{t('scene_list.my_scenes')}</h4>
+          <Typography variant="h4">{t('scene_list.my_scenes')}</Typography>
           <Row className="actions">
             <Button
               startIcon={<OpenFolder />}
@@ -112,9 +131,11 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
           </Row>
         </Row>
         {projects.length > 0 ? (
-          <Row className="actions">
+          <Row className="filters">
             <Row className="items-count">{t('scene_list.results', { count: projects.length })}</Row>
-            <Row>{projects.length > 1 ? renderSortDropdown() : null}</Row>
+            <Row className="sort-by">
+              <p>{t('scene_list.sort_by')}</p>&nbsp;{renderSortDropdown()}
+            </Row>
           </Row>
         ) : null}
       </Column>

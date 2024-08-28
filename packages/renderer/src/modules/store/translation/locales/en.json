@@ -23,6 +23,7 @@
     "my_scenes": "My Scenes",
     "import_scene": "Import Scene",
     "create_scene": "Create Scene",
+    "sort_by": "Sort by",
     "project_actions": {
       "delete_project": "Delete from My Scenes",
       "duplicate_project": "Duplicate",
@@ -37,7 +38,7 @@
       "newest": "Newest",
       "size": "Size"
     },
-    "results": "{count} {count, plural, one {result} other {results}}",
+    "results": "{count} {count, plural, one {scene} other {scenes}}",
     "parcel_count": "{parcels} {parcels, plural, one {parcel} other {parcels}}"
   },
   "navbar": {
