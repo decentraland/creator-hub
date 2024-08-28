@@ -1,10 +1,9 @@
 import { useCallback } from 'react';
-import { Select, MenuItem, type SelectChangeEvent, Box } from 'decentraland-ui2';
+import { Select, MenuItem, type SelectChangeEvent, Box, Typography } from 'decentraland-ui2';
 import AddIcon from '@mui/icons-material/Add';
 
 import { SortBy } from '/shared/types/projects';
 import { t } from '/@/modules/store/translation/utils';
-import { SceneCreationSelector } from '/@/components/SceneCreationSelector';
 import { ProjectCard } from '/@/components/ProjectCard';
 import { useWorkspace } from '/@/hooks/useWorkspace';
 
@@ -72,11 +71,20 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
 
     return (
       <div className="no-scenes-container">
-        <h3 className="no-scenes-title">{t('scene_list.no_scenes.title')}</h3>
-        <span className="no-scenes-description">
-          {t('scene_list.no_scenes.description', { a: NoScenesAnchor })}
-        </span>
-        <SceneCreationSelector onOpenModal={createProject} />
+        <div className="no-scenes-card">
+          <div className="no-scenes-card-text">
+            <Typography
+              variant="h3"
+              className="no-scenes-title"
+            >
+              {t('scene_list.no_scenes.title')}
+            </Typography>
+            <span className="no-scenes-description">
+              {t('scene_list.no_scenes.description', { a: NoScenesAnchor })}
+            </span>
+          </div>
+          <div className="no-scenes-card-button"></div>
+        </div>
       </div>
     );
   };
@@ -103,10 +111,12 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
             </Button>
           </Row>
         </Row>
-        <Row className="actions">
-          <Row className="items-count">{t('scene_list.results', { count: projects.length })}</Row>
-          <Row>{projects.length > 1 ? renderSortDropdown() : null}</Row>
-        </Row>
+        {projects.length > 0 ? (
+          <Row className="actions">
+            <Row className="items-count">{t('scene_list.results', { count: projects.length })}</Row>
+            <Row>{projects.length > 1 ? renderSortDropdown() : null}</Row>
+          </Row>
+        ) : null}
       </Column>
       <Box
         display="grid"

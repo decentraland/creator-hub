@@ -83,5 +83,10 @@ export function Tutorials() {
 }
 
 export function TutorialsWrapper(props: React.PropsWithChildren) {
-  return <div className="TutorialsWrapper">{props.children}</div>;
+  return (
+    <div className="TutorialsWrapper">
+      <div className="content">{props.children}</div>
+      <Tutorials />
+    </div>
+  );
 }

@@ -1,10 +1,9 @@
-import { Container } from 'decentraland-ui2';
-
 import { useWorkspace } from '/@/hooks/useWorkspace';
 import { SceneList } from '../SceneList';
 import { Navbar, NavbarItem } from '../Navbar';
 import { sortProjectsBy } from './utils';
-import { Tutorials, TutorialsWrapper } from '../Tutorials';
+import { Container } from '../Container';
+import { TutorialsWrapper } from '../Tutorials';
 
 import './styles.css';
 
@@ -21,7 +20,6 @@ export function ScenesPage() {
             sortBy={sortBy}
             onSort={setSortBy}
           />
-          <Tutorials />
         </TutorialsWrapper>
       </Container>
     </main>
