@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Button, Grid, Tooltip, Typography } from 'decentraland-ui2';
 import { InfoOutlined, ChevronLeftOutlined } from '@mui/icons-material';
+import { t } from '/@/modules/store/translation/utils';
 import { useAuth } from '/@/hooks/useAuth';
 
 import './styles.css';
@@ -57,33 +58,31 @@ export function SignInPage() {
           variant="contained"
           onClick={handleBack}
         >
-          <ChevronLeftOutlined /> BACK
+          <ChevronLeftOutlined /> {t('sign_in.back')}
         </Button>
         <Typography
           variant="h4"
           gutterBottom
         >
-          Secure sign-in step
+          {t('sign_in.content.title')}
         </Typography>
-        <Typography variant="body1">
-          Remember the verification number below.
-          <br />
-          You'll be prompted to confirm it in your web browser to securely link your sign in.
-        </Typography>
+        <Typography variant="body1">{t('sign_in.content.body', { br: () => <br /> })}</Typography>
         <Box className="code">
           <Typography className="verificationCode">{verificationCode}</Typography>
           <div className="tooltip">
             <Tooltip
               placement="right"
-              title="Keep this number private. It ensures that your sign-in is secure and unique to you."
+              title={t('sign_in.content.verification_code_info')}
             >
               <InfoOutlined />
             </Tooltip>
           </div>
         </Box>
         <Typography variant="body2">
-          Verification number will expire in {expirationCountdown.minutes}:
-          {expirationCountdown.seconds} minutes
+          {t('sign_in.content.expiration', {
+            minutes: expirationCountdown.minutes,
+            seconds: expirationCountdown.seconds,
+          })}
         </Typography>
       </Grid>
     </Grid>

@@ -124,5 +124,14 @@
   },
   "tutorials": {
     "title": "SDK7 Tutorials"
+  },
+  "sign_in": {
+    "back": "Back",
+    "content": {
+      "title": "Secure sign-in step",
+      "body": "Remember the verification number below.<br></br>You'll be prompted to confirm it in your web browser to securely link your sign in.",
+      "verification_code_info": "Keep this number private. It ensures that your sign-in is secure and unique to you.",
+      "expiration": "Verification number will expire in {minutes}:{seconds} minutes"
+    }
   }
 }
