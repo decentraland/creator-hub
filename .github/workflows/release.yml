@@ -32,7 +32,6 @@ on:
       VITE_ALLOWED_EXTERNAL_ORIGINS:
         description: 'Allowed external origins for the app'
         required: true
-        default: 'https://github.com'
 
 concurrency:
   group: release-${{ github.ref }}
