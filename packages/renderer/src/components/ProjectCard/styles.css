@@ -5,10 +5,11 @@
   min-width: 256px;
   height: 240px;
   border-radius: 10px;
-  background: var(--dark-gray);
   cursor: pointer;
   color: var(--text);
   text-decoration: none;
+  border: 2px solid transparent;
+  box-sizing: border-box;
 }
 
 .ProjectCard.has-thumbnail {
@@ -64,12 +65,22 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   user-select: none;
-}
-
-.ProjectCard .description .Icon {
-  margin-right: 5px;
+  gap: 2px;
+  color: #a09ba8;
 }
 
 .ProjectCard .options-dropdown {
   height: 20px;
+}
+
+.ProjectCard:hover {
+  border: 2px solid white;
+}
+
+.ProjectCard .description .icon {
+  width: 16px;
+  height: 16px;
+  background-image: url(./icon.svg);
+  background-position: center;
+  background-repeat: no-repeat;
 }

@@ -123,6 +123,7 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
         gridTemplateColumns={`repeat(${projects.length > 0 ? 4 : 1}, 1fr)`}
         gap={2}
       >
+        <div className="new-scene"></div>
         {renderProjects()}
       </Box>
     </div>
