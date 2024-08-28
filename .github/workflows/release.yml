@@ -29,6 +29,9 @@ on:
       VITE_SEGMENT_INSPECTOR_API_KEY:
         description: 'Segment API key used for the Inspector'
         required: true
+      VITE_ALLOWED_EXTERNAL_ORIGINS:
+        description: 'Allowed external origins for the app'
+        required: true
 
 concurrency:
   group: release-${{ github.ref }}
@@ -72,6 +75,7 @@ jobs:
           MODE: ${{ !inputs.dry-run && 'production' || 'development' }}
           VITE_SEGMENT_CREATORS_HUB_API_KEY: ${{ secrets.VITE_SEGMENT_CREATORS_HUB_API_KEY }}
           VITE_SEGMENT_INSPECTOR_API_KEY: ${{ secrets.VITE_SEGMENT_INSPECTOR_API_KEY }}
+          VITE_ALLOWED_EXTERNAL_ORIGINS: ${{ secrets.VITE_ALLOWED_EXTERNAL_ORIGINS }}
 
           
       - name: Save APPLE_TEAM_ID into electron-builder.yml

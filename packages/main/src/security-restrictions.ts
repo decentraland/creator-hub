@@ -2,6 +2,8 @@ import type { Session } from 'electron';
 import { app, shell } from 'electron';
 import { URL } from 'node:url';
 
+const IS_DEV = import.meta.env.DEV;
+
 /**
  * Union for all existing permissions in electron
  */
@@ -15,7 +17,7 @@ type Permission = Parameters<
  * In development mode you need allow open `VITE_DEV_SERVER_URL`.
  */
 const ALLOWED_ORIGINS_AND_PERMISSIONS = new Map<string, Set<Permission>>(
-  import.meta.env.DEV && import.meta.env.VITE_DEV_SERVER_URL
+  IS_DEV && import.meta.env.VITE_DEV_SERVER_URL
     ? [[new URL(import.meta.env.VITE_DEV_SERVER_URL).origin, new Set()]]
     : [],
 );
@@ -30,7 +32,16 @@ const ALLOWED_ORIGINS_AND_PERMISSIONS = new Map<string, Set<Permission>>(
  *   href="https://github.com/"
  * >
  */
-const ALLOWED_EXTERNAL_ORIGINS = new Set<`https://${string}`>(['https://github.com']);
+
+type AllowedOrigins<IsDev extends boolean> = IsDev extends true
+  ? `http://${string}` | `https://${string}`
+  : `https://${string}`;
+const ALLOWED_EXTERNAL_ORIGINS = new Set<AllowedOrigins<typeof IS_DEV>>([
+  'https://decentraland.org',
+  'https://decentraland.today',
+  'https://decentraland.zone',
+  ...(import.meta.env.VITE_ALLOWED_EXTERNAL_ORIGINS ?? '').split(',').filter(Boolean),
+] as AllowedOrigins<typeof IS_DEV>[]);
 
 app.on('web-contents-created', (_, contents) => {
   /**
@@ -50,7 +61,7 @@ app.on('web-contents-created', (_, contents) => {
     // Prevent navigation
     event.preventDefault();
 
-    if (import.meta.env.DEV) {
+    if (IS_DEV) {
       console.warn(`Blocked navigating to disallowed origin: ${origin}`);
     }
   });
@@ -67,7 +78,7 @@ app.on('web-contents-created', (_, contents) => {
     const permissionGranted = !!ALLOWED_ORIGINS_AND_PERMISSIONS.get(origin)?.has(permission);
     callback(permissionGranted);
 
-    if (!permissionGranted && import.meta.env.DEV) {
+    if (!permissionGranted && IS_DEV) {
       console.warn(`${origin} requested permission for '${permission}', but was rejected.`);
     }
   });
@@ -84,11 +95,10 @@ app.on('web-contents-created', (_, contents) => {
    */
   contents.setWindowOpenHandler(({ url }) => {
     const { origin } = new URL(url);
-
-    if (ALLOWED_EXTERNAL_ORIGINS.has(origin as `https://${string}`)) {
+    if (ALLOWED_EXTERNAL_ORIGINS.has(origin as AllowedOrigins<typeof IS_DEV>)) {
       // Open url in default browser.
       shell.openExternal(url).catch(console.error);
-    } else if (import.meta.env.DEV) {
+    } else if (IS_DEV) {
       console.warn(`Blocked the opening of a disallowed origin: ${origin}`);
     }
 
@@ -106,7 +116,7 @@ app.on('web-contents-created', (_, contents) => {
   contents.on('will-attach-webview', (event, webPreferences, params) => {
     const { origin } = new URL(params.src);
     if (!ALLOWED_ORIGINS_AND_PERMISSIONS.has(origin)) {
-      if (import.meta.env.DEV) {
+      if (IS_DEV) {
         console.warn(`A webview tried to attach ${params.src}, but was blocked.`);
       }
 

@@ -52,7 +52,11 @@
       "manage": "Gestionar",
       "learn": "Aprender"
     },
-    "feedback": "Darnos feedback"
+    "feedback": "Darnos feedback",
+    "user_menu": {
+      "sign_in": "Iniciar Sesión",
+      "sign_out": "Cerrar Sesión"
+    }
   },
   "modal": {
     "cancel": "Cancelar",
@@ -119,5 +123,14 @@
   },
   "tutorials": {
     "title": "Tutoriales de SDK7"
+  },
+  "sign_in": {
+    "back": "Volver",
+    "content": {
+      "title": "Paso de inicio de sesión seguro",
+      "body": "Recuerda el número de verificación a continuación.<br></br>Se te pedirá que lo confirmes en tu navegador web para vincular de forma segura tu inicio de sesión.",
+      "verification_code_info": "Mantén este número en privado. Asegurará que tu inicio de sesión sea seguro y único para ti.",
+      "expiration": "El número de verificación expirará en {minutes}:{seconds} minutos"
+    }
   }
 }

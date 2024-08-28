@@ -52,7 +52,11 @@
       "manage": "管理",
       "learn": "学习"
     },
-    "feedback": "给我们反馈"
+    "feedback": "给我们反馈",
+    "user_menu": {
+      "sign_in": "登录",
+      "sign_out": "登出"
+    }
   },
   "modal": {
     "cancel": "取消",
@@ -119,5 +123,14 @@
   },
   "tutorials": {
     "title": "SDK7教程"
+  },
+  "sign_in": {
+    "back": "後退",
+    "content": {
+      "title": "安全登入步驟",
+      "body": "請記住下面的驗證碼。<br></br>系統會提示您在網頁瀏覽器中進行確認，以安全地連結您的登入。",
+      "verification_code_info": "請將此號碼保密。它確保您的登入是安全的且對您來說是唯一的。",
+      "expiration": "驗證碼將在{minutes}:{seconds}分鐘後過期"
+    }
   }
 }
