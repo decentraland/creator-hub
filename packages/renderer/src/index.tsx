@@ -16,6 +16,7 @@ import { CollectionsPage } from './components/CollectionsPage';
 import { ManagePage } from './components/ManagePage';
 import { LearnPage } from './components/LearnPage';
 import { SignInPage } from './components/SignInPage';
+import { TemplatesPage } from './components/TemplatesPage';
 
 import { Snackbar } from './components/Snackbar';
 import { Install } from './components/Install';
@@ -44,6 +45,10 @@ root.render(
                 <Route
                   path="/scenes"
                   element={<ScenesPage />}
+                />
+                <Route
+                  path="/templates"
+                  element={<TemplatesPage />}
                 />
                 <Route
                   path="/collections"

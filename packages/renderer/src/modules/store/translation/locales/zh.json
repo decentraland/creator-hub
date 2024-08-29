@@ -22,7 +22,7 @@
   "scene_list": {
     "my_scenes": "我的场景",
     "import_scene": "导入场景",
-    "create_scene": "创建场景",
+    "templates": "模板",
     "project_actions": {
       "delete_project": "删除场景",
       "duplicate_project": "复制场景",

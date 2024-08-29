@@ -22,7 +22,7 @@
   "scene_list": {
     "my_scenes": "Mis Escenas",
     "import_scene": "Importar Escena",
-    "create_scene": "Crear Escena",
+    "templates": "Plantillas",
     "project_actions": {
       "delete_project": "Borrar de Mis Escenas",
       "duplicate_project": "Duplicar",

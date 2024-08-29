@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import { Select, MenuItem, type SelectChangeEvent, Box, Typography } from 'decentraland-ui2';
-import AddIcon from '@mui/icons-material/Add';
 
 import { SortBy } from '/shared/types/projects';
 import { t } from '/@/modules/store/translation/utils';
@@ -12,9 +11,9 @@ import type { Props } from './types';
 import { Button } from '../Button';
 import { Column } from '../Column';
 import { Row } from '../Row';
-import { OpenFolder } from '../Icons';
 
 import './styles.css';
+import { useNavigate } from 'react-router-dom';
 
 function NoScenesAnchor(content: string) {
   return (
@@ -29,7 +28,8 @@ function NoScenesAnchor(content: string) {
 }
 
 export function SceneList({ projects, sortBy, onSort }: Props) {
-  const { importProject, createProject } = useWorkspace();
+  const { importProject } = useWorkspace();
+  const navigate = useNavigate();
 
   const sort = useCallback(
     (_sortBy: SortBy) => {
@@ -80,12 +80,20 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
 
   const renderProjects = () => {
     if (projects.length > 0) {
-      return projects.map(project => (
-        <ProjectCard
-          key={project.path}
-          project={project}
-        />
-      ));
+      return (
+        <>
+          <div
+            className="new-scene"
+            onClick={() => navigate('/templates')}
+          ></div>
+          {projects.map(project => (
+            <ProjectCard
+              key={project.path}
+              project={project}
+            />
+          ))}
+        </>
+      );
     }
 
     return (
@@ -102,7 +110,10 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
               {t('scene_list.no_scenes.description', { a: NoScenesAnchor })}
             </span>
           </div>
-          <div className="no-scenes-card-button"></div>
+          <div
+            className="no-scenes-card-button"
+            onClick={() => navigate('/templates')}
+          ></div>
         </div>
       </div>
     );
@@ -115,18 +126,20 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
           <Typography variant="h4">{t('scene_list.my_scenes')}</Typography>
           <Row className="actions">
             <Button
-              startIcon={<OpenFolder />}
+              className="action-button import-button"
+              startIcon={<i className="icon import-icon" />}
               color="secondary"
               onClick={importProject}
             >
               {t('scene_list.import_scene')}
             </Button>
             <Button
-              startIcon={<AddIcon />}
+              className="action-button templates-button"
+              startIcon={<i className="icon template-icon" />}
               color="primary"
-              onClick={createProject}
+              onClick={() => navigate('/templates')}
             >
-              {t('scene_list.create_scene')}
+              {t('scene_list.templates')}
             </Button>
           </Row>
         </Row>
@@ -144,7 +157,6 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
         gridTemplateColumns={`repeat(${projects.length > 0 ? 4 : 1}, 1fr)`}
         gap={2}
       >
-        <div className="new-scene"></div>
         {renderProjects()}
       </Box>
     </div>

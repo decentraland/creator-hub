@@ -22,7 +22,7 @@
   "scene_list": {
     "my_scenes": "My Scenes",
     "import_scene": "Import Scene",
-    "create_scene": "Create Scene",
+    "templates": "Templates",
     "sort_by": "Sort by",
     "project_actions": {
       "delete_project": "Delete from My Scenes",

@@ -72,14 +72,33 @@
   margin-bottom: 10px;
 }
 
-.SceneList .projects-menu .actions .MuiInputBase-root,
-.SceneList .projects-menu .actions .MuiInputBase-root svg {
-  color: var(--dcl);
+.SceneList .projects-menu .actions .action-button {
+  border-radius: 8px;
+  background-color: transparent;
+  box-sizing: border-box;
+  border: 1px solid white;
 }
 
-.SceneList .projects-menu .actions .MuiInputBase-root::before,
-.SceneList .projects-menu .actions .MuiInputBase-root::after {
-  border: none;
+.SceneList .projects-menu .actions .action-button.MuiButton-textPrimary,
+.SceneList .projects-menu .actions .action-button.MuiButton-textPrimary:hover {
+  background-color: white;
+  color: black !important;
+}
+
+.SceneList .projects-menu .actions .action-button .icon {
+  width: 20px;
+  height: 16px;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.SceneList .projects-menu .actions .action-button .icon.template-icon {
+  background-image: url(./images/template-icon.svg);
+}
+
+.SceneList .projects-menu .actions .action-button .icon.import-icon {
+  background-image: url(./images/import-icon.svg);
 }
 
 .SceneList .no-scenes-container {
@@ -115,7 +134,7 @@
   display: flex;
   flex: none;
   gap: 32px;
-  background-image: url(./empty-state-button.svg);
+  background-image: url(./images/empty-state-button.svg);
   width: 256px;
   height: 234px;
   cursor: pointer;
@@ -146,6 +165,6 @@
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
-  background-image: url(./new-scene-button.svg);
+  background-image: url(./images/new-scene-button.svg);
   cursor: pointer;
 }
