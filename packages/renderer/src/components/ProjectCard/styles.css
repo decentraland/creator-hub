@@ -31,7 +31,7 @@
   flex-direction: row;
   justify-content: space-around;
   padding: 10px;
-  background-color: #242129;
+  background-color: var(--secondary);
   color: var(--text);
   border-bottom-left-radius: 10px;
   border-bottom-right-radius: 10px;
@@ -74,7 +74,7 @@
 }
 
 .ProjectCard:hover {
-  border: 2px solid white;
+  border: 2px solid var(--white);
 }
 
 .ProjectCard .description .icon {
