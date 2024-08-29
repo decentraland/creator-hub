@@ -72,6 +72,7 @@ export function Tutorials() {
       <div className="list">
         {playlist.map(video => (
           <Tutorial
+            key={video.id}
             title={video.title}
             id={video.id}
             list={PLAYLIST_ID}
