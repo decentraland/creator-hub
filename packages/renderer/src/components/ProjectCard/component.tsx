@@ -1,9 +1,9 @@
 import { useCallback, useState } from 'react';
-import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import cx from 'classnames';
 
 import { addBase64ImagePrefix } from '/@/modules/image';
 import { t } from '/@/modules/store/translation/utils';
+import { useWorkspace } from '/@/hooks/useWorkspace';
 
 import { Dropdown } from '../Dropdown';
 import { DeleteProject } from '../Modals/DeleteProject';
@@ -11,7 +11,6 @@ import { DeleteProject } from '../Modals/DeleteProject';
 import type { Props } from './types';
 
 import './styles.css';
-import { useWorkspace } from '/@/hooks/useWorkspace';
 
 export function ProjectCard({ project }: Props) {
   const [open, setOpen] = useState(false);
@@ -78,7 +77,7 @@ export function ProjectCard({ project }: Props) {
               className="description"
               title={project.description}
             >
-              <ViewModuleIcon className="Icon" /> {t('scene_list.parcel_count', { parcels })}
+              <i className="icon" /> {t('scene_list.parcel_count', { parcels })}
             </div>
           </div>
           <Dropdown

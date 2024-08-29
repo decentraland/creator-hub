@@ -4,29 +4,61 @@
   justify-content: space-between;
 }
 
-.SceneList .SceneList {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 12px;
+.SceneList .projects-menu .filters {
+  border-radius: 32px;
+  background-color: rgba(255, 255, 255, 0.05);
+  margin-top: 32px;
+  margin-bottom: 24px;
+  padding: 8px 16px 8px 24px;
 }
 
-.SceneList .ProjectCard {
-  transition: transform 0.2s ease-in-out;
-  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.16);
-}
-
-.SceneList .ProjectCard:hover {
-  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.24);
-  transform: translateY(-4px);
-}
-
-.SceneList .projects-menu .items-count {
+.SceneList .projects-menu .filters .items-count {
   flex: 1 0 auto;
-  color: var(--light-gray);
+  color: var(--clear-divider);
   text-transform: uppercase;
   font-size: 13px;
   line-height: 18px;
   font-weight: 500;
+}
+
+.SceneList .projects-menu .filters .sort-by {
+  color: var(--clear-divider);
+  display: flex;
+  align-items: center;
+}
+
+.SceneList .projects-menu .filters .sort-by .sort-dropdown {
+  padding: 4px 12px;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.SceneList .projects-menu .filters .sort-by > p {
+  margin: 0px;
+  margin-right: 4px;
+}
+
+.SceneList .projects-menu .filters .sort-by .sort-dropdown svg {
+  right: 8px;
+}
+
+.SceneList .projects-menu .filters .sort-by .sort-dropdown::before,
+.SceneList .projects-menu .filters .sort-by .sort-dropdown::after {
+  border: none;
+}
+
+.SceneList .projects-menu .filters .sort-by div[role="combobox"] {
+  padding: 0px 24px 0px 0px;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.SceneListSortMenu {
+  margin-top: 8px;
+}
+
+.SceneListSortMenu .sort-item.Mui-selected {
+  background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 .SceneList .projects-menu .actions {
@@ -40,25 +72,72 @@
   margin-bottom: 10px;
 }
 
-.SceneList .projects-menu .actions .MuiInputBase-root,
-.SceneList .projects-menu .actions .MuiInputBase-root svg {
-  color: var(--dcl);
+.SceneList .projects-menu .actions .action-button {
+  border-radius: 8px;
+  background-color: transparent;
+  box-sizing: border-box;
+  border: 1px solid white;
 }
 
-.SceneList .projects-menu .actions .MuiInputBase-root::before,
-.SceneList .projects-menu .actions .MuiInputBase-root::after {
-  border: none;
+.SceneList .projects-menu .actions .action-button.MuiButton-textPrimary,
+.SceneList .projects-menu .actions .action-button.MuiButton-textPrimary:hover {
+  background-color: white;
+  color: black !important;
+}
+
+.SceneList .projects-menu .actions .action-button .icon {
+  width: 20px;
+  height: 16px;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.SceneList .projects-menu .actions .action-button .icon.template-icon {
+  background-image: url(./images/template-icon.svg);
+}
+
+.SceneList .projects-menu .actions .action-button .icon.import-icon {
+  background-image: url(./images/import-icon.svg);
 }
 
 .SceneList .no-scenes-container {
   display: flex;
-  flex-direction: column;
-  width: 100%;
-  padding: 50px 0;
-  background: #242129;
-  border-radius: 10px;
+  flex: 1 0 auto;
   align-items: center;
   justify-content: center;
+  padding: 64px;
+}
+
+.SceneList .no-scenes-card {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  width: calc(768px - 64px * 2);
+  padding: 64px;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 64px;
+}
+
+.SceneList .no-scenes-card-text {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.SceneList .no-scenes-card-button {
+  display: flex;
+  flex: none;
+  gap: 32px;
+  background-image: url(./images/empty-state-button.svg);
+  width: 256px;
+  height: 234px;
+  cursor: pointer;
 }
 
 .SceneList .no-scenes-title {
@@ -66,16 +145,26 @@
 }
 
 .SceneList .no-scenes-description {
-  color: white;
+  color: rgba(255, 255, 255, 0.8);
   width: 100%;
   max-width: 620px;
   font-size: 14px;
   line-height: 24px;
   text-align: center;
-  margin-bottom: 36px;
 }
 
 .SceneList .no-scenes-description a {
   color: white;
   text-decoration: underline;
+}
+
+.SceneList .new-scene {
+  flex: none;
+  width: 256px;
+  height: 234px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  background-image: url(./images/new-scene-button.svg);
+  cursor: pointer;
 }

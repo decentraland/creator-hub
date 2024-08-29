@@ -22,7 +22,8 @@
   "scene_list": {
     "my_scenes": "我的场景",
     "import_scene": "导入场景",
-    "create_scene": "创建场景",
+    "templates": "模板",
+    "sort_by": "排序方式",
     "project_actions": {
       "delete_project": "删除场景",
       "duplicate_project": "复制场景",
@@ -30,11 +31,7 @@
     },
     "no_scenes": {
       "title": "创建您的第一个场景",
-      "description": "释放您的创造力。开始为您的土地和世界建立场景，并与社区分享。<a>了解有关创建场景的更多信息。</a>",
-      "from_scratch": {
-        "title": "白手起家",
-        "description": "以简单而直观的方式开始用在线构建器开始构建您的场景."
-      }
+      "description": "释放您的创造力。开始为您的土地和世界建立场景，并与社区分享。<a>了解有关创建场景的更多信息。</a>"
     },
     "sort": {
       "name": "名称",

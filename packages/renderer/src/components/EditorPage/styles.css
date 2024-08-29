@@ -8,6 +8,7 @@
 
 .Editor .Header {
   height: 48px;
+  background-color: var(--black);
 }
 
 .Editor .Header .back {

@@ -72,6 +72,7 @@ export function Tutorials() {
       <div className="list">
         {playlist.map(video => (
           <Tutorial
+            key={video.id}
             title={video.title}
             id={video.id}
             list={PLAYLIST_ID}
@@ -83,5 +84,10 @@ export function Tutorials() {
 }
 
 export function TutorialsWrapper(props: React.PropsWithChildren) {
-  return <div className="TutorialsWrapper">{props.children}</div>;
+  return (
+    <div className="TutorialsWrapper">
+      <div className="content">{props.children}</div>
+      <Tutorials />
+    </div>
+  );
 }
