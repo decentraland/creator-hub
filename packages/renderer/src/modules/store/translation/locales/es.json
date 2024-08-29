@@ -23,6 +23,7 @@
     "my_scenes": "Mis Escenas",
     "import_scene": "Importar Escena",
     "templates": "Plantillas",
+    "sort_by": "Ordenar por",
     "project_actions": {
       "delete_project": "Borrar de Mis Escenas",
       "duplicate_project": "Duplicar",
@@ -37,7 +38,7 @@
       "newest": "Más Nuevas",
       "size": "Tamaño"
     },
-    "results": "{count} {count, plural, one {resultado} other {resultados}}",
+    "results": "{count} {count, plural, one {escena} other {escenas}}",
     "parcel_count": "{parcels} {parcels, plural, one {parcela} other {parcelas}}"
   },
   "navbar": {
