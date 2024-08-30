@@ -118,7 +118,7 @@ export function MorePage() {
               title={t('more.cards.manage.worlds.title')}
               description={t('more.cards.manage.worlds.description')}
               action={() => misc.openExternal(`${BUILDER_URL}/worlds?tab=dcl`)}
-              image="/assets/images/worlds.png"
+              image="/assets/images/world.png"
             />
           </Grid>
           <Grid
