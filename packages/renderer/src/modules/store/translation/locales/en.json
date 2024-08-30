@@ -5,6 +5,28 @@
   "home": {
     "header": {
       "title": "Welcome to Creators Hub"
+    },
+    "cards": {
+      "sign_in": {
+        "title": "Sign In to publish your scenes",
+        "action": "Sign In"
+      },
+      "scenes": {
+        "title": "Scenes",
+        "empty_scenes": {
+          "description": "Create your first scene",
+          "action": "Start Building"
+        },
+        "action": "See All"
+      },
+      "learn": {
+        "title": "Learn",
+        "action": "See All"
+      },
+      "feedback": {
+        "title": "Shape the future of Creator Hub",
+        "action": "Submit Feedback"
+      }
     }
   },
   "editor": {
