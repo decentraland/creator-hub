@@ -17,6 +17,7 @@ import { ManagePage } from './components/ManagePage';
 import { LearnPage } from './components/LearnPage';
 import { SignInPage } from './components/SignInPage';
 import { TemplatesPage } from './components/TemplatesPage';
+import { MorePage } from './components/MorePage';
 
 import { Snackbar } from './components/Snackbar';
 import { Install } from './components/Install';
@@ -61,6 +62,10 @@ root.render(
                 <Route
                   path="/learn"
                   element={<LearnPage />}
+                />
+                <Route
+                  path="/more"
+                  element={<MorePage />}
                 />
                 <Route
                   path="/editor"
