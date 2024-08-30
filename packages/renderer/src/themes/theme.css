@@ -13,6 +13,7 @@
 
   --dcl: #ff2d55;
   --dcl-dark: #9c1c34;
+  --dcl-silver: #a09ba8;
 
   /* Share */
   --facebook: #4267b2;
@@ -58,6 +59,7 @@
   /* Buttons */
   /* TODO: Fix styles in the ui2 library */
   --mui-shape-borderRadius: 6px;
+  --mui-palette-primary-main: #ff2d55;
 }
 
 html {
