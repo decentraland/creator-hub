@@ -69,7 +69,8 @@
       "scenes": "场景",
       "collections": "收藏",
       "manage": "管理",
-      "learn": "学习"
+      "learn": "学习",
+      "more": "更多"
     },
     "feedback": "给我们反馈",
     "user_menu": {
@@ -150,6 +151,40 @@
       "body": "請記住下面的驗證碼。<br></br>系統會提示您在網頁瀏覽器中進行確認，以安全地連結您的登入。",
       "verification_code_info": "請將此號碼保密。它確保您的登入是安全的且對您來說是唯一的。",
       "expiration": "驗證碼將在{minutes}:{seconds}分鐘後過期"
+    }
+  },
+  "more": {
+    "header": {
+      "title": "更多"
+    },
+    "cards": {
+      "create": {
+        "title": "创建",
+        "legacy_web_editor": {
+          "title": "旧版网页编辑器",
+          "description": "访问旧版网页编辑器继续编辑你的场景。"
+        },
+        "collections": {
+          "title": "收藏",
+          "description": "创建、审核并发布你的可穿戴设备和表情收藏。"
+        }
+      },
+      "manage": {
+        "title": "管理",
+        "names": {
+          "title": "名字",
+          "description": "领取你的独特名字，并将其分配给你的头像或地块。"
+        },
+        "worlds": {
+          "title": "世界",
+          "description": "创建和管理你自己的虚拟空间。"
+        },
+        "land": {
+          "title": "土地",
+          "description": "发布场景，创建庄园并管理你的土地权限。"
+        }
+      },
+      "open_in_browser": "在浏览器中打开"
     }
   }
 }

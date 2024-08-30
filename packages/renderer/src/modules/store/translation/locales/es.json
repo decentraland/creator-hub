@@ -69,7 +69,8 @@
       "scenes": "Escenas",
       "collections": "Colecciones",
       "manage": "Gestionar",
-      "learn": "Aprender"
+      "learn": "Aprender",
+      "more": "Más"
     },
     "feedback": "Darnos feedback",
     "user_menu": {
@@ -150,6 +151,40 @@
       "body": "Recuerda el número de verificación a continuación.<br></br>Se te pedirá que lo confirmes en tu navegador web para vincular de forma segura tu inicio de sesión.",
       "verification_code_info": "Mantén este número en privado. Asegurará que tu inicio de sesión sea seguro y único para ti.",
       "expiration": "El número de verificación expirará en {minutes}:{seconds} minutos"
+    }
+  },
+  "more": {
+    "header": {
+      "title": "Más"
+    },
+    "cards": {
+      "create": {
+        "title": "Crear",
+        "legacy_web_editor": {
+          "title": "Editor Web Clásico",
+          "description": "Accede al editor web antiguo para continuar trabajando en tus escenas."
+        },
+        "collections": {
+          "title": "Colecciones",
+          "description": "Crea, revisa y publica tus colecciones de Wearables y Emotes."
+        }
+      },
+      "manage": {
+        "title": "Gestionar",
+        "names": {
+          "title": "Nombres",
+          "description": "Reclama tu nombre único y asígnalo a tu avatar o a tus parcelas."
+        },
+        "worlds": {
+          "title": "Mundos",
+          "description": "Crea y gestiona tus propios espacios virtuales."
+        },
+        "land": {
+          "title": "Tierras",
+          "description": "Publica Escenas, crea Estates y gestiona los permisos de tu TIERRA."
+        }
+      },
+      "open_in_browser": "Abrir en el Navegador"
     }
   }
 }
