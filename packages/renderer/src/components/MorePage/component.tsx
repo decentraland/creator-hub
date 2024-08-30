@@ -6,6 +6,8 @@ import { Navbar, NavbarItem } from '../Navbar';
 
 import './styles.css';
 
+const BUILDER_URL = 'https://decentraland.org/builder';
+
 const HorizontalCardWithImage: React.FC<{
   title: string;
   description: string;
@@ -61,7 +63,7 @@ export function MorePage() {
             <HorizontalCardWithImage
               title={t('more.cards.create.legacy_web_editor.title')}
               description={t('more.cards.create.legacy_web_editor.description')}
-              action={() => misc.openExternal('https://decentraland.org/builder/scenes')}
+              action={() => misc.openExternal(`${BUILDER_URL}/scenes`)}
               image="/assets/images/editor.png"
             />
           </Grid>
@@ -75,7 +77,7 @@ export function MorePage() {
             <HorizontalCardWithImage
               title={t('more.cards.create.collections.title')}
               description={t('more.cards.create.collections.description')}
-              action={() => misc.openExternal('https://decentraland.org/builder/collections')}
+              action={() => misc.openExternal(`${BUILDER_URL}/collections`)}
               image="/assets/images/collections.png"
             />
           </Grid>
@@ -101,7 +103,7 @@ export function MorePage() {
             <HorizontalCardWithImage
               title={t('more.cards.manage.names.title')}
               description={t('more.cards.manage.names.description')}
-              action={() => misc.openExternal('https://decentraland.org/builder/names')}
+              action={() => misc.openExternal(`${BUILDER_URL}/names`)}
               image="/assets/images/names.png"
             />
           </Grid>
@@ -115,7 +117,7 @@ export function MorePage() {
             <HorizontalCardWithImage
               title={t('more.cards.manage.worlds.title')}
               description={t('more.cards.manage.worlds.description')}
-              action={() => misc.openExternal('https://decentraland.org/builder/worlds?tab=dcl')}
+              action={() => misc.openExternal(`${BUILDER_URL}/worlds?tab=dcl`)}
               image="/assets/images/worlds.png"
             />
           </Grid>
@@ -129,7 +131,7 @@ export function MorePage() {
             <HorizontalCardWithImage
               title={t('more.cards.manage.land.title')}
               description={t('more.cards.manage.land.description')}
-              action={() => misc.openExternal('https://decentraland.org/builder/land')}
+              action={() => misc.openExternal(`${BUILDER_URL}/land`)}
               image="/assets/images/land.png"
             />
           </Grid>
