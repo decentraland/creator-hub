@@ -125,7 +125,8 @@
 
 .HomePage .Card.FeedbackCard img {
   height: 180px;
-  width: 100%;
+  width: 180px;
+  object-fit: contain;
 }
 
 .HomePage .Card.SignInCard .CardContent > .SignInButton.MuiButton-root,
