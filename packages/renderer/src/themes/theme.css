@@ -54,6 +54,10 @@
   --text-area-border: #676370;
   --clear-divider: #a09ba8;
   --brightness: brightness(100);
+
+  /* Buttons */
+  /* TODO: Fix styles in the ui2 library */
+  --mui-shape-borderRadius: 6px;
 }
 
 html {
