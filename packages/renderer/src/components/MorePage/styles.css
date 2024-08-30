@@ -20,7 +20,7 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  width: 140;
+  min-width: 160px;
   background-image: url("/assets/images/card-image-background.png");
   background-position: bottom;
 }
@@ -29,6 +29,10 @@
   height: 140px;
   width: 140px;
   object-fit: contain;
+}
+
+.MorePage .HorizontalCardWithImage.FlipImage .CardImage img {
+  transform: scaleX(-1);
 }
 
 .MorePage .HorizontalCardWithImage .CardContent {

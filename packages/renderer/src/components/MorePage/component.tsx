@@ -1,3 +1,4 @@
+import cx from 'classnames';
 import React from 'react';
 import { Box, Button, Card, CardContent, Container, Grid, Typography } from 'decentraland-ui2';
 import { misc } from '#preload';
@@ -9,12 +10,13 @@ import './styles.css';
 const BUILDER_URL = 'https://decentraland.org/builder';
 
 const HorizontalCardWithImage: React.FC<{
+  className?: string;
   title: string;
   description: string;
   image: string;
   action: () => void;
-}> = React.memo(({ title, description, image, action }) => (
-  <Card className="HorizontalCardWithImage">
+}> = React.memo(({ className, title, description, image, action }) => (
+  <Card className={cx('HorizontalCardWithImage', className)}>
     <Box className="CardImage">
       <img src={image} />
     </Box>
@@ -61,6 +63,7 @@ export function MorePage() {
             lg={4}
           >
             <HorizontalCardWithImage
+              className="FlipImage"
               title={t('more.cards.create.legacy_web_editor.title')}
               description={t('more.cards.create.legacy_web_editor.description')}
               action={() => misc.openExternal(`${BUILDER_URL}/scenes`)}
