@@ -1,10 +1,32 @@
 {
+  "install": {
+    "message": "安装 decentraland 编辑器 v${version}"
+  },
   "home": {
-    "install": {
-      "message": "安装 decentraland 编辑器 v${version}"
-    },
     "header": {
       "title": "欢迎来到阿尔法编辑器"
+    },
+    "cards": {
+      "sign_in": {
+        "title": "登入以發布您的現場",
+        "action": "登录"
+      },
+      "scenes": {
+        "title": "場景",
+        "empty_scenes": {
+          "description": "創建您的第一個場景",
+          "action": "開始建造"
+        },
+        "action": "看全部"
+      },
+      "learn": {
+        "title": "學習",
+        "action": "看全部"
+      },
+      "feedback": {
+        "title": "塑造創作者中心的未來",
+        "action": "提交回饋"
+      }
     }
   },
   "editor": {

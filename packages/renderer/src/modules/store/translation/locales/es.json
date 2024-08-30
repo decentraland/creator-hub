@@ -5,6 +5,28 @@
   "home": {
     "header": {
       "title": "Bienvenido al Creators Hub"
+    },
+    "cards": {
+      "sign_in": {
+        "title": "Inicia sesión para publicar tus escenas",
+        "action": "Iniciar sesión"
+      },
+      "scenes": {
+        "title": "Escenas",
+        "empty_scenes": {
+          "description": "Crea tu primera escena",
+          "action": "Empezar a construir"
+        },
+        "action": "Ver Todo"
+      },
+      "learn": {
+        "title": "Aprender",
+        "action": "Ver Todo"
+      },
+      "feedback": {
+        "title": "Da forma al futuro de Creator Hub",
+        "action": "Darnos feedback"
+      }
     }
   },
   "editor": {
