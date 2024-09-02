@@ -13,17 +13,18 @@ export enum NavbarItem {
   COLLECTIONS = 'collections',
   LEARN = 'learn',
   MANAGE = 'manage',
+  MORE = 'more',
 }
 
-function MenuItem(props: { item: NavbarItem; active: NavbarItem }) {
-  return (
+function MenuItem(props: { item: NavbarItem; active: NavbarItem; disable?: boolean }) {
+  return !props.disable ? (
     <Link
       to={`/${props.item}`}
       className={cx('menu-item', { active: props.active === props.item })}
     >
       {t(`navbar.menu.${props.item}`)}
     </Link>
-  );
+  ) : null;
 }
 
 export function Navbar(props: { active: NavbarItem }) {
@@ -50,16 +51,24 @@ export function Navbar(props: { active: NavbarItem }) {
             item={NavbarItem.SCENES}
             active={props.active}
           />
+          {/* This page will be added in a future shape */}
           <MenuItem
             item={NavbarItem.COLLECTIONS}
             active={props.active}
+            disable={true}
           />
           <MenuItem
             item={NavbarItem.LEARN}
             active={props.active}
           />
+          {/* This page will be added in a future shape */}
           <MenuItem
             item={NavbarItem.MANAGE}
+            active={props.active}
+            disable={true}
+          />
+          <MenuItem
+            item={NavbarItem.MORE}
             active={props.active}
           />
         </div>
