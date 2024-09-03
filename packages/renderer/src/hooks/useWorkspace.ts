@@ -25,8 +25,8 @@ export const useWorkspace = () => {
     navigate('/editor');
   }, []);
 
-  const createProject = useCallback(() => {
-    dispatch(workspaceActions.createProject());
+  const createProject = useCallback((opts?: { name?: string; repo?: string }) => {
+    dispatch(workspaceActions.createProject(opts));
     navigate('/editor');
   }, []);
 
@@ -54,6 +54,8 @@ export const useWorkspace = () => {
     dispatch(workspaceActions.openFolder(path));
   }, []);
 
+  const isLoading = workspace.status === 'loading';
+
   return {
     ...workspace,
     getWorkspace,
@@ -66,5 +68,6 @@ export const useWorkspace = () => {
     reimportProject,
     unlistProjects,
     openFolder,
+    isLoading,
   };
 };

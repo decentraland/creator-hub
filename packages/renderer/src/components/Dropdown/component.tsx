@@ -29,7 +29,7 @@ function Dropdown(props: Props) {
   }, []);
 
   return (
-    <div>
+    <>
       <IconButton onClick={handleClick}>
         <ThreeDots />
       </IconButton>
@@ -49,7 +49,7 @@ function Dropdown(props: Props) {
           </MenuItem>
         ))}
       </Menu>
-    </div>
+    </>
   );
 }
 

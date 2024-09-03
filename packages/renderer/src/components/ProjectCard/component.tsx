@@ -1,97 +1,68 @@
-import { useCallback, useState } from 'react';
-import cx from 'classnames';
-
-import { addBase64ImagePrefix } from '/@/modules/image';
-import { t } from '/@/modules/store/translation/utils';
-import { useWorkspace } from '/@/hooks/useWorkspace';
-
 import { Dropdown } from '../Dropdown';
-import { DeleteProject } from '../Modals/DeleteProject';
 
 import type { Props } from './types';
 
 import './styles.css';
+import { useCallback } from 'react';
 
-export function ProjectCard({ project }: Props) {
-  const [open, setOpen] = useState(false);
-  const parcels = project.layout.cols * project.layout.rows;
-
-  const { selectProject, duplicateProject, deleteProject, openFolder } = useWorkspace();
-
-  const handleClick = useCallback(() => {
-    selectProject(project);
-  }, [project, selectProject]);
-
-  const handleDuplicateProject = useCallback(() => {
-    duplicateProject(project);
-  }, [project, duplicateProject]);
-
-  const handleDeleteProject = useCallback(() => {
-    deleteProject(project);
-    handleCloseModal();
-  }, [project, deleteProject]);
-
-  const handleOpenFolder = useCallback(() => {
-    openFolder(project.path);
-  }, [project, openFolder]);
-
-  const handleOpenModal = useCallback(() => {
-    setOpen(true);
-  }, []);
-
-  const handleCloseModal = useCallback(() => {
-    setOpen(false);
-  }, []);
-
-  const thumbnailUrl = project.thumbnail ? addBase64ImagePrefix(project.thumbnail) : undefined;
-
-  const dropdownOptions = [
-    {
-      text: t('scene_list.project_actions.duplicate_project'),
-      handler: handleDuplicateProject,
+export function ProjectCard({
+  title,
+  description,
+  imageUrl,
+  videoUrl,
+  content,
+  dropdownOptions,
+  width = 256,
+  height = 240,
+  onClick,
+}: Props) {
+  const handleMouseEnterVideo = useCallback(
+    ({ currentTarget: video }: React.MouseEvent<HTMLVideoElement>) => {
+      video.play();
     },
-    {
-      text: t('scene_list.project_actions.open_folder'),
-      handler: handleOpenFolder,
+    [],
+  );
+
+  const handleMouseLeaveVideo = useCallback(
+    ({ currentTarget: video }: React.MouseEvent<HTMLVideoElement>) => {
+      video.pause();
+      video.currentTime = 0;
     },
-    {
-      text: t('scene_list.project_actions.delete_project'),
-      handler: handleOpenModal,
-    },
-  ];
+    [],
+  );
 
   return (
-    <>
-      <div
-        className={cx('ProjectCard', { 'has-thumbnail': !!thumbnailUrl })}
-        onClick={handleClick}
-      >
-        <div
-          className="project-thumbnail"
-          style={thumbnailUrl ? { backgroundImage: `url(${thumbnailUrl})` } : {}}
+    <div
+      className="ProjectCard"
+      onClick={onClick}
+      style={{ width: `${width}px`, height: `${height}px` }}
+    >
+      {videoUrl ? (
+        <video
+          className="video"
+          src={videoUrl}
+          onMouseEnter={handleMouseEnterVideo}
+          onMouseLeave={handleMouseLeaveVideo}
         />
-        <div className="project-data">
-          <div className="title-wrapper">
-            <div className="title">{project.title}</div>
-            <div
-              className="description"
-              title={project.description}
-            >
-              <i className="icon" /> {t('scene_list.parcel_count', { parcels })}
-            </div>
-          </div>
-          <Dropdown
-            className="options-dropdown"
-            options={dropdownOptions}
-          />
+      ) : (
+        <div
+          className="thumbnail"
+          style={imageUrl ? { backgroundImage: `url(${imageUrl})` } : {}}
+        />
+      )}
+      <div className="info">
+        <div className="title">
+          <h2>{title}</h2>
+          {dropdownOptions?.length && (
+            <Dropdown
+              className="options-dropdown"
+              options={dropdownOptions}
+            />
+          )}
         </div>
+        {description && <p className="description">{description}</p>}
+        {content && <div className="content">{content}</div>}
       </div>
-      <DeleteProject
-        open={open}
-        project={project}
-        onClose={handleCloseModal}
-        onSubmit={handleDeleteProject}
-      />
-    </>
+    </div>
   );
 }

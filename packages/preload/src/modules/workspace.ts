@@ -5,7 +5,7 @@ import type { Scene } from '@dcl/schemas';
 import { shell } from 'electron';
 
 import { SortBy, type Project } from '/shared/types/projects';
-import type { Workspace } from '/shared/types/workspace';
+import type { Template, Workspace } from '/shared/types/workspace';
 import { FileSystemStorage } from '/shared/types/storage';
 
 import { getConfig, setConfig } from './config';
@@ -165,20 +165,43 @@ export async function getProjects(paths: string | string[]): Promise<[Project[],
 }
 
 /**
+ * Fetches a list of templates and filters them by scene type.
+ * @returns {Promise<Template[]>} A promise that resolves to an array of Template objects.
+ * @throws {Error} If the fetch request fails or if the response is not in the expected format.
+ */
+export async function getTemplates(): Promise<Template[]> {
+  try {
+    const response = await fetch('https://studios.decentraland.org/api/get/resources');
+    const templates: Template[] = (await response.json()) as Template[];
+    return templates.filter($ => $.scene_type?.includes('Scene template'));
+  } catch (e) {
+    console.warn('[Preload] Could not get templates', e);
+    return [];
+  }
+}
+
+/**
  * Returns workspace info
  */
 export async function getWorkspace(): Promise<Workspace> {
   const config = await getConfig();
   const [projects, missing] = await getProjects(config.workspace.paths);
+  const templates = await getTemplates();
 
   return {
     sortBy: SortBy.NEWEST, // TODO: read from editor config file...
     projects,
     missing,
+    templates,
   };
 }
 
-export async function createProject(name = NEW_SCENE_NAME): Promise<Project> {
+export async function createProject(opts?: { name?: string; repo?: string }): Promise<Project> {
+  const { name, repo } = {
+    name: opts?.name ?? NEW_SCENE_NAME,
+    repo: opts?.repo ?? EMPTY_SCENE_TEMPLATE_REPO,
+  };
+
   let sceneName = name;
   let counter = 2;
   const homePath = await getPath();
@@ -188,7 +211,7 @@ export async function createProject(name = NEW_SCENE_NAME): Promise<Project> {
     projectPath = path.join(homePath, sceneName);
   }
   await fs.mkdir(projectPath);
-  await invoke('cli.init', projectPath, EMPTY_SCENE_TEMPLATE_REPO);
+  await invoke('cli.init', projectPath, repo);
   const scene = await getScene(projectPath);
   scene.display!.title = sceneName;
   const sceneJsonPath = path.join(projectPath, 'scene.json');
