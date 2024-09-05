@@ -23,6 +23,7 @@ import { Snackbar } from './components/Snackbar';
 import { Install } from './components/Install';
 
 import '/@/themes';
+import { VideosPage } from './components/VideosPage';
 
 const container = document.getElementById('app')!;
 const root = createRoot(container);
@@ -62,6 +63,10 @@ root.render(
                 <Route
                   path="/learn"
                   element={<LearnPage />}
+                />
+                <Route
+                  path="/learn/videos"
+                  element={<VideosPage />}
                 />
                 <Route
                   path="/more"

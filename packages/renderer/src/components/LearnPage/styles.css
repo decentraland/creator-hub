@@ -6,6 +6,10 @@
   gap: 24px;
 }
 
+.LearnPage .Container {
+  flex-direction: column;
+}
+
 .LearnPage .section {
   width: 330px;
   flex: none;

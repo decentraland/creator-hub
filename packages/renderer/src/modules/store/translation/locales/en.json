@@ -220,6 +220,9 @@
       "docs": "Creator Docs",
       "more": "More"
     },
-    "see_all": "See All"
+    "see_all": "See All",
+    "videos": {
+      "title": "Videos"
+    }
   }
 }

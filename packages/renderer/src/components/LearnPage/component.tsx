@@ -1,7 +1,9 @@
-import { Button, Container, Typography } from 'decentraland-ui2';
+import { useNavigate } from 'react-router-dom';
+import { Button, Typography } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
 import { misc } from '#preload';
 
+import { Container } from '../Container';
 import { Navbar, NavbarItem } from '../Navbar';
 import './styles.css';
 
@@ -33,6 +35,7 @@ function Link(props: { url: string; title: string }) {
 }
 
 export function LearnPage() {
+  const navigate = useNavigate();
   return (
     <main className="LearnPage">
       <Navbar active={NavbarItem.LEARN} />
@@ -74,6 +77,7 @@ export function LearnPage() {
             <Button
               className="see-all"
               disableRipple
+              onClick={() => navigate('/learn/videos')}
             >
               {t('learn.see_all')}
             </Button>
