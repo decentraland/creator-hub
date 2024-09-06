@@ -18,12 +18,13 @@ import { LearnPage } from './components/LearnPage';
 import { SignInPage } from './components/SignInPage';
 import { TemplatesPage } from './components/TemplatesPage';
 import { MorePage } from './components/MorePage';
+import { VideosPage } from './components/VideosPage';
+import { DocsPage } from './components/DocsPage';
 
 import { Snackbar } from './components/Snackbar';
 import { Install } from './components/Install';
 
 import '/@/themes';
-import { VideosPage } from './components/VideosPage';
 
 const container = document.getElementById('app')!;
 const root = createRoot(container);
@@ -67,6 +68,10 @@ root.render(
                 <Route
                   path="/learn/videos"
                   element={<VideosPage />}
+                />
+                <Route
+                  path="/learn/docs"
+                  element={<DocsPage />}
                 />
                 <Route
                   path="/more"

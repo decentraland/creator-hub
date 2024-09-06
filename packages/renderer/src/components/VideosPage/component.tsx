@@ -57,12 +57,11 @@ export function VideosPage() {
           mb="48px"
           className="top-bar"
         >
-          <div className="header">
-            <i
-              className="back"
-              onClick={() => navigate('/learn')}
-            />{' '}
-            {t('learn.videos.title')}
+          <div
+            className="header"
+            onClick={() => navigate('/learn')}
+          >
+            <i className="back" /> <span className="title">{t('learn.videos.title')}</span>
           </div>
         </Typography>
         <div className="playlists">

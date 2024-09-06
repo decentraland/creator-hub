@@ -223,6 +223,9 @@
     "see_all": "See All",
     "videos": {
       "title": "Videos"
+    },
+    "docs": {
+      "title": "Creator Docs"
     }
   }
 }

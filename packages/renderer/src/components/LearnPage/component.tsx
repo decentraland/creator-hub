@@ -115,6 +115,7 @@ export function LearnPage() {
             </div>
             <Button
               className="see-all"
+              onClick={() => navigate('/learn/docs')}
               disableRipple
             >
               {t('learn.see_all')}
