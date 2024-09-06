@@ -25,3 +25,79 @@
   background-color: rgba(255, 255, 255, 0.08);
   border-radius: 100%;
 }
+
+.DocsPage .link {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.DocsPage .link .icon {
+  width: 24px;
+  height: 24px;
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+.DocsPage .link .icon {
+  background-image: url(./images/docs-icon.svg);
+}
+
+.DocsPage .link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.DocsPage .docs {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+
+.DocsPage .section {
+  padding: 16px;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.DocsPage .docs .section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.DocsPage .section h1,
+.DocsPage .section h4,
+.DocsPage .section h5 {
+  color: var(--dcl-silver);
+  margin: 0px;
+  padding: 8px 16px 0px 16px;
+}
+
+.DocsPage .section h1,
+.DocsPage .section h4 {
+  text-transform: uppercase;
+}
+
+.DocsPage .section h1 {
+  font-size: 28px;
+}
+
+.DocsPage .section h4 {
+  font-size: 20px;
+}
+
+.DocsPage .section h5 {
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.DocsPage .links {
+  display: flex;
+}
