@@ -3,11 +3,6 @@ export type Layout = {
   cols: number;
 };
 
-export enum TemplateStatus {
-  ACTIVE = 'active',
-  COMING_SOON = 'coming_soon',
-}
-
 export enum SortBy {
   NEWEST = 'newest',
   SIZE = 'size',

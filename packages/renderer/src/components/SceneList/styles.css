@@ -4,63 +4,6 @@
   justify-content: space-between;
 }
 
-.SceneList .projects-menu .filters {
-  border-radius: 32px;
-  background-color: rgba(255, 255, 255, 0.05);
-  margin-top: 32px;
-  margin-bottom: 24px;
-  padding: 8px 16px 8px 24px;
-}
-
-.SceneList .projects-menu .filters .items-count {
-  flex: 1 0 auto;
-  color: var(--clear-divider);
-  text-transform: uppercase;
-  font-size: 13px;
-  line-height: 18px;
-  font-weight: 500;
-}
-
-.SceneList .projects-menu .filters .sort-by {
-  color: var(--clear-divider);
-  display: flex;
-  align-items: center;
-}
-
-.SceneList .projects-menu .filters .sort-by .sort-dropdown {
-  padding: 4px 12px;
-  border-radius: 8px;
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-.SceneList .projects-menu .filters .sort-by > p {
-  margin: 0px;
-  margin-right: 4px;
-}
-
-.SceneList .projects-menu .filters .sort-by .sort-dropdown svg {
-  right: 8px;
-}
-
-.SceneList .projects-menu .filters .sort-by .sort-dropdown::before,
-.SceneList .projects-menu .filters .sort-by .sort-dropdown::after {
-  border: none;
-}
-
-.SceneList .projects-menu .filters .sort-by div[role="combobox"] {
-  padding: 0px 24px 0px 0px;
-  border: none;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.SceneListSortMenu {
-  margin-top: 8px;
-}
-
-.SceneListSortMenu .sort-item.Mui-selected {
-  background-color: rgba(255, 255, 255, 0.1) !important;
-}
-
 .SceneList .projects-menu .actions {
   display: flex;
   flex: 1 0 auto;
@@ -165,6 +108,6 @@
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
-  background-image: url(./images/new-scene-button.svg);
+  background-image: url(/assets/images/new-scene-button.svg);
   cursor: pointer;
 }

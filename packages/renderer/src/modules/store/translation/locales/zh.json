@@ -186,5 +186,30 @@
       },
       "open_in_browser": "在浏览器中打开"
     }
+  },
+  "templates": {
+    "title": "选择一个模板",
+    "results": "{count} {count, plural, one {模板} other {模板}}",
+    "actions": {
+      "preview": "预览模板",
+      "code": "查看代码"
+    },
+    "new_scene": {
+      "title": "空景",
+      "description": "从头开始创建自己的场景"
+    },
+    "filters": {
+      "title": "过滤依据",
+      "difficulty": {
+        "easy": "简单的",
+        "medium": "中等的",
+        "hard": "难的"
+      }
+    },
+    "sort": {
+      "title": "排序方式：",
+      "default": "默认",
+      "newest": "最新"
+    }
   }
 }

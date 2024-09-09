@@ -175,7 +175,7 @@
         "names": {
           "title": "NAMEs",
           "description": "Claim your unique name and assign it to your avatar or your parcels."
-        }, 
+        },
         "worlds": {
           "title": "Worlds",
           "description": "Create and manage your own virtual spaces."
@@ -186,6 +186,31 @@
         }
       },
       "open_in_browser": "Open in Browser"
+    }
+  },
+  "templates": {
+    "title": "Choose a Template",
+    "results": "{count} {count, plural, one {template} other {templates}}",
+    "actions": {
+      "preview": "Preview Template",
+      "code": "View Code"
+    },
+    "new_scene": {
+      "title": "Empty Scene",
+      "description": "Start your own scene from scratch"
+    },
+    "filters": {
+      "title": "Filter by",
+      "difficulty": {
+        "easy": "Easy",
+        "medium": "Medium",
+        "hard": "Hard"
+      }
+    },
+    "sort": {
+      "title": "Sort by:",
+      "default": "Default",
+      "newest": "Newest"
     }
   }
 }

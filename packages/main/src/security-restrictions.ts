@@ -1,4 +1,4 @@
-import type { Session } from 'electron';
+import { session, type Session } from 'electron';
 import { app, shell } from 'electron';
 import { URL } from 'node:url';
 
@@ -40,8 +40,29 @@ const ALLOWED_EXTERNAL_ORIGINS = new Set<AllowedOrigins<typeof IS_DEV>>([
   'https://decentraland.org',
   'https://decentraland.today',
   'https://decentraland.zone',
+  'https://studios.decentraland.org',
   ...(import.meta.env.VITE_ALLOWED_EXTERNAL_ORIGINS ?? '').split(',').filter(Boolean),
 ] as AllowedOrigins<typeof IS_DEV>[]);
+
+app.on('ready', () => {
+  const filter = {
+    urls: ['https://studios.decentraland.org/*'],
+  };
+
+  session.defaultSession.webRequest.onBeforeSendHeaders(filter, (details, callback) => {
+    details.requestHeaders['Origin'] = '*';
+    callback({ requestHeaders: details.requestHeaders });
+  });
+
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        'Access-Control-Allow-Origin': ['*'],
+        ...details.responseHeaders,
+      },
+    });
+  });
+});
 
 app.on('web-contents-created', (_, contents) => {
   /**

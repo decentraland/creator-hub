@@ -1,5 +1,13 @@
-import type { Project } from '/shared/types/projects';
+import type { ReactNode } from 'react';
 
 export type Props = {
-  project: Project;
+  title: string;
+  description?: string;
+  imageUrl?: string;
+  videoUrl?: string;
+  content?: ReactNode;
+  width?: number;
+  height?: number;
+  dropdownOptions?: { text: string; handler: () => void }[];
+  onClick: () => void;
 };

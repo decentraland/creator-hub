@@ -1,0 +1,9 @@
+.TemplatesPage .Filters .filter-by {
+  text-transform: none;
+  margin-left: 36px;
+}
+
+.TemplatesPage .Filters .filter-by .MuiChip-root {
+  margin-left: 12px;
+  cursor: pointer;
+}

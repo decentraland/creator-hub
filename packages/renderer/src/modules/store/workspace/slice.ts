@@ -31,6 +31,7 @@ const initialState: WorkspaceState = {
   sortBy: SortBy.NEWEST,
   projects: [],
   missing: [],
+  templates: [],
   status: 'idle',
   error: null,
 };

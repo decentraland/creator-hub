@@ -186,5 +186,30 @@
       },
       "open_in_browser": "Abrir en el Navegador"
     }
+  },
+  "templates": {
+    "title": "Elija una plantilla",
+    "results": "{count} {count, plural, one {plantilla} other {plantillas}}",
+    "actions": {
+      "preview": "Previsualizar Plantilla",
+      "code": "Ver Código"
+    },
+    "new_scene": {
+      "title": "Escena Vacía",
+      "description": "Comienza tu propia escena desde cero"
+    },
+    "filters": {
+      "title": "Filtrar por",
+      "difficulty": {
+        "easy": "Fácil",
+        "medium": "Intermedio",
+        "hard": "Difícil"
+      }
+    },
+    "sort": {
+      "title": "Ordenar por:",
+      "default": "Default",
+      "newest": "Más Nuevas"
+    }
   }
 }
