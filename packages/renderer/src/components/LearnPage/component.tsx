@@ -48,7 +48,10 @@ export function LearnPage() {
         </Typography>
         <div className="sections">
           <div className="section videos">
-            <div className="header">
+            <div
+              className="header clickable"
+              onClick={() => navigate('/learn/videos')}
+            >
               <i className="image"></i>
               <span className="title">{t('learn.header.videos')}</span>
             </div>
@@ -83,7 +86,10 @@ export function LearnPage() {
             </Button>
           </div>
           <div className="section docs">
-            <div className="header">
+            <div
+              className="header clickable"
+              onClick={() => navigate('/learn/docs')}
+            >
               <i className="image"></i>
               <span className="title">{t('learn.header.docs')}</span>
             </div>

@@ -100,4 +100,13 @@
 
 .DocsPage .links {
   display: flex;
+  flex: auto;
+}
+
+.DocsPage .links.horizontal {
+  flex-direction: row;
+}
+
+.DocsPage .links.vertical {
+  flex-direction: column;
 }
