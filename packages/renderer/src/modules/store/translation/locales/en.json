@@ -212,5 +212,20 @@
       "default": "Default",
       "newest": "Newest"
     }
+  },
+  "learn": {
+    "header": {
+      "title": "Learn",
+      "videos": "Videos",
+      "docs": "Creator Docs",
+      "more": "More"
+    },
+    "see_all": "See All",
+    "videos": {
+      "title": "Videos"
+    },
+    "docs": {
+      "title": "Creator Docs"
+    }
   }
 }

@@ -210,6 +210,21 @@
       "title": "排序方式：",
       "default": "默认",
       "newest": "最新"
+    },
+    "learn": {
+      "header": {
+        "title": "学习",
+        "videos": "视频",
+        "docs": "创作者文档",
+        "more": "更多"
+      },
+      "see_all": "查看全部",
+      "videos": {
+        "title": "视频"
+      },
+      "docs": {
+        "title": "创作者文档"
+      }
     }
   }
 }
