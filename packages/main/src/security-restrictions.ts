@@ -54,7 +54,7 @@ app.on('ready', () => {
     callback({ requestHeaders: details.requestHeaders });
   });
 
-  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+  session.defaultSession.webRequest.onHeadersReceived(filter, (details, callback) => {
     callback({
       responseHeaders: {
         'Access-Control-Allow-Origin': ['*'],
