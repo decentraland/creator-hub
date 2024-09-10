@@ -32,23 +32,25 @@ on:
       VITE_ALLOWED_EXTERNAL_ORIGINS:
         description: 'Allowed external origins for the app'
         required: true
+      SDK_TEAM_AWS_ID:
+        required: true
+      SDK_TEAM_AWS_SECRET:
+        required: true
+      SDK_TEAM_S3_BUCKET:
+        required: true
+      SDK_TEAM_S3_BASE_URL:
+        required: true
 
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: true
 
-
 defaults:
   run:
     shell: 'bash'
 
-
 jobs:
   draft_release:
-
-    permissions:
-      contents: write # Allows this job to create releases
-
     strategy:
       fail-fast: true
       matrix:
@@ -77,7 +79,7 @@ jobs:
           VITE_SEGMENT_INSPECTOR_API_KEY: ${{ secrets.VITE_SEGMENT_INSPECTOR_API_KEY }}
           VITE_ALLOWED_EXTERNAL_ORIGINS: ${{ secrets.VITE_ALLOWED_EXTERNAL_ORIGINS }}
 
-          
+
       - name: Save APPLE_TEAM_ID into electron-builder.yml
         # This is necessary for the notarization of the app in MacOS to work
         if: ${{github.ref == 'refs/heads/main' && matrix.os == 'macos-latest' && !inputs.dry-run}}
@@ -98,7 +100,7 @@ jobs:
           search_commit_body: true
           user_format_type: "json"
 
-      - name: Compile artifacts ${{ inputs.dry-run && '' || 'and upload them to github release' }}
+      - name: Compile artifacts ${{ inputs.dry-run && ' ' || 'and upload them to github release' }}
         # I use this action because it is capable of retrying multiple times if there are any issues with the distribution server
         uses: nick-fields/retry@v3
         with:
@@ -122,3 +124,71 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PWD }}
           # Publishing artifacts
           GH_TOKEN: ${{ secrets.github_token }} # GitHub token, automatically provided (No need to define this secret in the repo settings)
+
+      - name: Move artifacts to upload folder
+        if: ${{ github.event.pull_request.number }}
+        run: sh -c 'mkdir dist/upload && cp dist/*.dmg dist/*.exe dist/upload 2> /dev/null || :'
+
+      - name: Upload to S3
+        if: ${{ github.event.pull_request.number }}
+        uses: shallwefootball/s3-upload-action@master
+        id: upload
+        with:
+          aws_key_id: ${{ secrets.SDK_TEAM_AWS_ID }}
+          aws_secret_access_key: ${{ secrets.SDK_TEAM_AWS_SECRET }}
+          aws_bucket: ${{ secrets.SDK_TEAM_S3_BUCKET }}
+          source_dir: 'dist/upload'
+          destination_dir: '@dcl/creators-hub/branch/${{ github.head_ref }}'
+
+      # Have to write the URL's to a file so GH Actions don't mask them for being possibly sensitive data (secrets.SDK_TEAM_S3_BASE_URL is not sensitive data)
+      - name: Update S3 URL's to CDN
+        if: ${{ github.event.pull_request.number }}
+        id: update-urls
+        run: |
+          urls='${{ steps.upload.outputs.object_locations }}'
+          echo "$urls" | jq -r '.[]' | sed -e 's|https://\*\*\*.s3.amazonaws.com|${{ secrets.SDK_TEAM_S3_BASE_URL }}|' -e 's|\+|%20|g' | \
+          while read url; do
+            arch=$(echo "$url" | grep -oE '(win-x64|mac-x64|mac-arm64|linux-x64)') # Extract architecture
+            echo "[$arch]($url)"  # Format as markdown link
+          done >> urls.md
+
+      - name: Set output with URLs
+        if: ${{ github.event.pull_request.number }}
+        id: url-list
+        run: |
+          content=$(cat urls.md)
+          echo "list<<EOF" >> $GITHUB_ENV
+          echo "$content" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Set specific macos instructions
+        if: ${{ github.event.pull_request.number && matrix.os == 'macos-latest' }}
+        id: macos-instructions
+        run: |
+          content=$(cat ./.github/workflows/macos-instructions.md)
+          echo "macos-instructions<<EOF" >> $GITHUB_ENV
+          echo "$content" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Find Comment
+        if: ${{ github.event.pull_request.number }}
+        uses: peter-evans/find-comment@v1
+        id: fc
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: Test this pull request on ${{ matrix.os }}
+
+      - name: Create or update comment
+        if: ${{ github.event.pull_request.number }}
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            # Test this pull request on ${{ matrix.os }}
+            #### Download the correct version for your architecture:
+              ${{ env.list }}
+
+              ${{ env.macos-instructions }}
+          edit-mode: replace
