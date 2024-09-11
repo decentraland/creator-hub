@@ -1,4 +1,4 @@
-import { editor } from '#preload';
+import { editor, misc } from '#preload';
 import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 import { type ThunkAction } from '#store';
@@ -12,12 +12,12 @@ export const install = createAsyncThunk('editor/install', editor.install);
 export const startInspector = createAsyncThunk('editor/startInspector', editor.startInspector);
 export const runScene = createAsyncThunk('editor/runScene', editor.runScene);
 export const publishScene = createAsyncThunk('editor/publishScene', editor.publishScene);
-export const openPreview = createAsyncThunk('editor/openPreview', editor.openPreview);
+export const openPreview = createAsyncThunk('editor/openPreview', misc.openExternal);
 export const runSceneAndOpenPreview: (project: Project) => ThunkAction =
   project => async dispatch => {
     const action = dispatch(runScene(project.path));
-    const port = await action.unwrap();
-    await dispatch(openPreview(port));
+    const url = await action.unwrap();
+    await dispatch(openPreview(url));
   };
 export const openTutorial = createAsyncThunk('editor/openTutorial', editor.openTutorial);
 
@@ -27,7 +27,7 @@ export type EditorState = {
   project?: Project;
   inspectorPort: number;
   publishPort: number;
-  previewPort: number;
+  previewUrl: string;
   loadingInspector: boolean;
   loadingPublish: boolean;
   loadingPreview: boolean;
@@ -41,7 +41,7 @@ const initialState: EditorState = {
   version: null,
   inspectorPort: 0,
   publishPort: 0,
-  previewPort: 0,
+  previewUrl: '',
   loadingInspector: false,
   loadingPublish: false,
   loadingPreview: false,
@@ -60,7 +60,7 @@ export const slice = createSlice({
   reducers: {
     setProject: (state, { payload: project }: PayloadAction<Project>) => {
       state.project = project;
-      state.previewPort = 0;
+      state.previewUrl = '';
     },
   },
   extraReducers: builder => {
@@ -93,7 +93,7 @@ export const slice = createSlice({
     });
     builder.addCase(workspaceActions.createProject.fulfilled, (state, action) => {
       state.project = action.payload;
-      state.previewPort = 0;
+      state.previewUrl = '';
     });
     builder.addCase(install.pending, state => {
       state.isInstalling = true;
@@ -123,15 +123,15 @@ export const slice = createSlice({
       }
     });
     builder.addCase(runScene.pending, state => {
-      state.previewPort = 0;
+      state.previewUrl = '';
       state.loadingPreview = true;
     });
     builder.addCase(runScene.fulfilled, (state, { payload: port }) => {
-      state.previewPort = port;
+      state.previewUrl = port;
       state.loadingPreview = false;
     });
     builder.addCase(runScene.rejected, state => {
-      state.previewPort = 0;
+      state.previewUrl = '';
       state.loadingPreview = false;
     });
   },

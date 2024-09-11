@@ -11,7 +11,7 @@ export interface Ipc {
   'bin.install': () => Promise<void>;
   'bin.code': (path: string) => Promise<void>;
   'cli.init': (path: string, repo?: string) => Promise<void>;
-  'cli.start': (path: string) => Promise<number>;
+  'cli.start': (path: string) => Promise<string>;
   'cli.deploy': (opts: DeployOptions) => Promise<number>;
   'analytics.track': (event: string, data?: Record<string, any>) => void;
   'analytics.getUserId': () => Promise<string>;
