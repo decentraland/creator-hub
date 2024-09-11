@@ -210,6 +210,21 @@
       "title": "Ordenar por:",
       "default": "Default",
       "newest": "Más Nuevas"
+    },
+    "learn": {
+      "header": {
+        "title": "Aprender",
+        "videos": "Videos",
+        "docs": "Documentación",
+        "more": "Más"
+      },
+      "see_all": "Ver Más",
+      "videos": {
+        "title": "Videos"
+      },
+      "docs": {
+        "title": "Documentación para Creadores"
+      }
     }
   }
 }
