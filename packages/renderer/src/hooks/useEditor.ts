@@ -41,13 +41,9 @@ export const useEditor = () => {
 
   const openPreview = useCallback(() => {
     if (project) {
-      if (editor.previewUrl) {
-        dispatch(editorActions.openPreview(editor.previewUrl));
-      } else {
-        dispatch(editorActions.runSceneAndOpenPreview(project));
-      }
+      dispatch(editorActions.runScene(project.path));
     }
-  }, [editorActions.openPreview, editorActions.runSceneAndOpenPreview, project, editor.previewUrl]);
+  }, [project, editorActions.runScene]);
 
   const openCode = useCallback(() => {
     if (project) {
