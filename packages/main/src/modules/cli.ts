@@ -22,8 +22,13 @@ export async function start(path: string) {
     args: ['start', '--port', port.toString(), '--no-browser'],
     cwd: path,
   });
-  await previewServer.waitFor(/available/i);
-  return port;
+  const message = await previewServer.waitFor(/available/i);
+  const match = message.match(/http:\/\/(\d|\.)+:\d+\?(.*)\n/); // match url printed by success message
+  if (match) {
+    return match[0].slice(0, -1); // remove last char because it's a new line '\n'
+  } else {
+    return `http://localhost:${port}`; // if match fails fallback to localhost and port, it should never happen unless the message from the CLI is changed, and the regex is not updated
+  }
 }
 
 export let deployServer: Child | null = null;
