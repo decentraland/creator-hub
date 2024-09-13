@@ -13,12 +13,21 @@ import {
 import LayersOutlinedIcon from '@mui/icons-material/LayersOutlined';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
+
 import { misc } from '#preload';
+
 import { type Project } from '/shared/types/projects';
-import { t } from '/@/modules/store/translation/utils';
+
+import EditorPng from '/assets/images/editor.png';
+import BookPng from '/assets/images/book.png';
+import InfluencePng from '/assets/images/influence.png';
+
 import { useAuth } from '/@/hooks/useAuth';
 import { useWorkspace } from '/@/hooks/useWorkspace';
+import { t } from '/@/modules/store/translation/utils';
+
 import { Navbar, NavbarItem } from '../Navbar';
+
 import { type CardBannerProps, type CardItemProps, type SignInCardProps } from './types';
 
 import './styles.css';
@@ -119,7 +128,7 @@ const ScenesCard: React.FC = React.memo(() => {
   return (
     <Card className="Card ScenesCard">
       <CardBanner
-        image="/assets/images/editor.png"
+        image={EditorPng}
         title={t('home.cards.scenes.title')}
         onClick={handleSeeAllClick}
       />
@@ -181,7 +190,7 @@ const LearnCard: React.FC = React.memo(() => {
   return (
     <Card className="Card LearnCard">
       <CardBanner
-        image="/assets/images/book.png"
+        image={BookPng}
         title={t('home.cards.learn.title')}
         onClick={handleClickSeeAll}
       />
@@ -220,7 +229,7 @@ const FeedbackCard: React.FC = React.memo(() => {
   return (
     <Card className="Card FeedbackCard">
       <CardContent className="CardContent CenteredContent">
-        <img src="/assets/images/influence.png" />
+        <img src={InfluencePng} />
         <Typography
           className="Title"
           variant="h5"
