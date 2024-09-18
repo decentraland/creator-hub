@@ -49,6 +49,7 @@ dmg:
   writeUpdateInfo: false
 
 mac:
+  icon: buildResources/icon.icns
   notarize:
     teamId: $APPLE_TEAM_ID
   target:
@@ -61,6 +62,8 @@ mac:
       arch: arm64
     - target: zip
       arch: x64
+  extraResources:
+    - icon.icns
 
 asarUnpack:
   - './node_modules/npm/**/*'
