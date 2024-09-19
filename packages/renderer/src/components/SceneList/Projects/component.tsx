@@ -2,6 +2,8 @@ import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Typography } from 'decentraland-ui2';
 
+import { misc } from '#preload';
+
 import type { Project } from '/shared/types/projects';
 
 import { t } from '/@/modules/store/translation/utils';
@@ -107,11 +109,17 @@ function Project({ project }: { project: Project }) {
 }
 
 function NoScenesAnchor(content: string) {
+  const handleClick = useCallback(
+    () => misc.openExternal('https://docs.decentraland.org/creator/development-guide/sdk-101/'),
+    [],
+  );
+
   return (
     <a
       rel="noreferrer"
       target="_blank"
       href="https://docs.decentraland.org/creator/development-guide/sdk-101/"
+      onClick={handleClick}
     >
       {content}
     </a>
