@@ -1,11 +1,12 @@
 .Button.MuiButton-root {
   padding: 5px 20px;
-  color: var(--white);
+  /* TODO: Fix this color in decentraland-ui2 */
+  color: var(--white) !important;
   font-weight: 400;
 }
 
 .Button.MuiButton-root + .Button.MuiButton-root {
-  margin-left: 10px
+  margin-left: 10px;
 }
 
 .Button.MuiButton-root svg,
