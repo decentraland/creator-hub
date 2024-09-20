@@ -4,8 +4,18 @@ import { createSlice } from '@reduxjs/toolkit';
 import { t } from '/@/modules/store/translation/utils';
 
 import { actions as workspaceActions } from '../workspace';
-import { createCustomNotification, createGenericNotification } from './utils';
-import type { Notification } from './types';
+import {
+  createCustomNotification,
+  createDependencyNotification,
+  createGenericNotification,
+} from './utils';
+import type {
+  CustomNotification,
+  DependencyNotification,
+  Notification,
+  Opts,
+  Severity,
+} from './types';
 
 // state
 export type SnackbarState = {
@@ -21,8 +31,54 @@ export const slice = createSlice({
   name: 'snackbar',
   initialState,
   reducers: {
-    removeSnackbar: (state, { payload: id }: PayloadAction<Notification['id']>) => {
-      state.notifications = state.notifications.filter($ => $.id !== id);
+    removeSnackbar: (
+      state,
+      {
+        payload,
+      }: PayloadAction<{ id: Notification['id']; project?: DependencyNotification['project'] }>,
+    ) => {
+      state.notifications = state.notifications.filter($ => $.id !== payload.id);
+    },
+    createGenericNotification: (
+      state,
+      action: PayloadAction<{ severity: Severity; message: string; opts?: Opts }>,
+    ) => {
+      state.notifications.push(
+        createGenericNotification(
+          action.payload.severity,
+          action.payload.message,
+          action.payload.opts,
+        ),
+      );
+    },
+    createCustomNotification: (
+      state,
+      action: PayloadAction<{ type: CustomNotification['type']; opts?: Opts }>,
+    ) => {
+      state.notifications.push(createCustomNotification(action.payload.type, action.payload.opts));
+    },
+    createDependencyNotification: (
+      state,
+      action: PayloadAction<{
+        type: DependencyNotification['type'];
+        project: DependencyNotification['project'];
+        opts?: Opts;
+      }>,
+    ) => {
+      // TODO: Fix showing duplicate notifications for the same type and project
+      if (
+        !state.notifications.some(
+          $ => $.type === action.payload.type && $.project.id === action.payload.project.id,
+        )
+      ) {
+        state.notifications.push(
+          createDependencyNotification(
+            action.payload.type,
+            action.payload.project,
+            action.payload.opts,
+          ),
+        );
+      }
     },
   },
   extraReducers: builder => {
