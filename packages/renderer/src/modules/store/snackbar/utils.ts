@@ -4,6 +4,7 @@ import type {
   NotificationId,
   Severity,
   Opts,
+  DependencyNotification,
 } from './types';
 
 let incrementalId = 0;
@@ -25,4 +26,12 @@ export function createGenericNotification(
   opts?: Opts,
 ): GenericNotification {
   return { ...opts, id: opts?.requestId || getId('generic'), type: 'generic', severity, message };
+}
+
+export function createDependencyNotification(
+  type: DependencyNotification['type'],
+  project: DependencyNotification['project'],
+  opts?: Opts,
+): DependencyNotification {
+  return { ...opts, id: opts?.requestId || getId(type), type, project };
 }
