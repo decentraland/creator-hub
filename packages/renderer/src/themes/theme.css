@@ -61,6 +61,7 @@
   --mui-shape-borderRadius: 6px;
   /* --mui-palette-primary-main: #ff2d55; */
   --mui-palette-action-disabled: #f8919d;
+  --mui-palette-secondary-contrast: #ffffff;
 }
 
 html {
