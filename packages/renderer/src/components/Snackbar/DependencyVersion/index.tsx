@@ -54,7 +54,7 @@ export function DependencyUpdatedAutomatically({ onClose }: { onClose: () => voi
         variant="text"
         onClick={onClose}
       >
-        {t('snackbar.dependency_updated_automatically.actions.update')}
+        {t('snackbar.dependency_updated_automatically.actions.ok')}
       </Button>
     ),
     [],

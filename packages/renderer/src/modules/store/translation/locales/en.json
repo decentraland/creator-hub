@@ -73,6 +73,7 @@
       "more": "More"
     },
     "feedback": "Submit feedback",
+    "report_an_issue": "Report an Issue",
     "user_menu": {
       "sign_in": "Sign In",
       "sign_out": "Sign Out"
@@ -120,6 +121,26 @@
           "url": "Invalid URL"
         }
       }
+    },
+    "app_settings": {
+      "title": "App Settings",
+      "fields": {
+        "scenes_folder": {
+          "label": "Scenes Folder",
+          "change_button": "Change Folder"
+        },
+        "scene_editor_dependencies": {
+          "label": "Scene Editor Dependencies",
+          "options": {
+            "auto_update": "Auto-update all my scenes",
+            "notify": "Notify me of new version updates",
+            "do_nothing": "Do nothing"
+          }
+        }
+      },
+      "actions": {
+        "apply_button": "Apply"
+      }
     }
   },
   "snackbar": {
@@ -136,6 +157,18 @@
       "actions": {
         "view": "View",
         "discard_all": "Discard all"
+      }
+    },
+    "new_dependency_version": {
+      "title": "New dependencies version detected",
+      "actions": {
+        "update": "Update"
+      }
+    },
+    "dependency_updated_automatically": {
+      "title": "Scene dependencies were updated",
+      "actions": {
+        "ok": "Ok"
       }
     }
   },

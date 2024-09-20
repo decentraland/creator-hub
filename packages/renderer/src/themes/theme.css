@@ -60,6 +60,7 @@
   /* TODO: Fix styles in the ui2 library */
   --mui-shape-borderRadius: 6px;
   --mui-palette-primary-main: #ff2d55;
+  --mui-palette-secondary-contrast: #ffffff;
 }
 
 html {

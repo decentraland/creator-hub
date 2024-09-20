@@ -119,6 +119,26 @@
           "url": "无效的网址"
         }
       }
+    },
+    "app_settings": {
+      "title": "應用程式設定",
+      "fields": {
+        "scenes_folder": {
+          "label": "場景資料夾",
+          "change_button": "更改資料夾"
+        },
+        "scene_editor_dependencies": {
+          "label": "場景編輯器依賴項",
+          "options": {
+            "auto_update": "自動更新我的所有場景",
+            "notify": "有新版本更新時通知我",
+            "do_nothing": "什麼也不做"
+          }
+        }
+      },
+      "actions": {
+        "apply_button": "申請"
+      }
     }
   },
   "snackbar": {
@@ -135,6 +155,18 @@
       "actions": {
         "view": "版本",
         "discard_all": "全部丢弃"
+      }
+    },
+    "new_dependency_version": {
+      "title": "偵測到新的依賴項版本",
+      "actions": {
+        "update": "更新"
+      }
+    },
+    "dependency_updated_automatically": {
+      "title": "場景相依性已更新",
+      "actions": {
+        "ok": "好的"
       }
     }
   },

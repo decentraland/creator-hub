@@ -119,6 +119,26 @@
           "url": "URL inválida"
         }
       }
+    },
+    "app_settings": {
+      "title": "Configuración de la aplicación",
+      "fields": {
+        "scenes_folder": {
+          "label": "Carpeta de escenas",
+          "change_button": "Cambiar carpeta"
+        },
+        "scene_editor_dependencies": {
+          "label": "Dependencias del editor de escenas",
+          "options": {
+            "auto_update": "Actualizar automáticamente las dependencias",
+            "notify": "Notificarme cuando exista una nueva version",
+            "do_nothing": "No hacer nada"
+          }
+        }
+      },
+      "actions": {
+        "apply_button": "Guardar"
+      }
     }
   },
   "snackbar": {
@@ -135,6 +155,18 @@
       "actions": {
         "view": "Ver",
         "discard_all": "Descartar todas"
+      }
+    },
+    "new_dependency_version": {
+      "title": "Se detectó una nueva versión de dependencias",
+      "actions": {
+        "update": "Actualizar"
+      }
+    },
+    "dependency_updated_automatically": {
+      "title": "Las dependencias de la escena fueron actualizadas",
+      "actions": {
+        "ok": "Ok"
       }
     }
   },
