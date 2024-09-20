@@ -40,6 +40,18 @@ on:
         required: true
       SDK_TEAM_S3_BASE_URL:
         required: true
+      ES_USERNAME:
+        description: 'Username to sign exe file'
+        required: true
+      ES_PASSWORD:
+        description: 'Password to sign the exe file'
+        required: true
+      WINDOWS_CREDENTIAL_ID_SIGNER:
+        description: 'Certificate to sign the exe file'
+        required: true
+      ES_TOTP_SECRET:
+        description: 'Password to decrypt the certificate file'
+        required: true
 
 concurrency:
   group: release-${{ github.ref }}
@@ -124,6 +136,26 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PWD }}
           # Publishing artifacts
           GH_TOKEN: ${{ secrets.github_token }} # GitHub token, automatically provided (No need to define this secret in the repo settings)
+
+      - name: Sign Windows Build (exe)
+        uses: sslcom/esigner-codesign@develop
+        if: ${{github.ref == 'refs/heads/main' && matrix.os == 'windows-latest' && !inputs.dry-run}}
+        with:
+          command: sign
+          username: ${{ secrets.ES_USERNAME }}
+          password: ${{ secrets.ES_PASSWORD }}
+          credential_id: ${{ secrets.WINDOWS_CREDENTIAL_ID_SIGNER }}
+          totp_secret: ${{ secrets.ES_TOTP_SECRET }}
+          file_path: ${GITHUB_WORKSPACE}/dist/Creators Hub-win-x64.exe
+          output_path: ${GITHUB_WORKSPACE}/dist/signed
+          malware_block: false
+          environment_name: PROD
+
+      - name: Replace signed exe
+        if: ${{github.ref == 'refs/heads/main' && matrix.os == 'windows-latest' && !inputs.dry-run}}
+        shell: pwsh
+        run: |
+          Copy-Item -Path "${env:GITHUB_WORKSPACE}\dist\signed\Creators Hub-win-x64.exe" -Destination "${env:GITHUB_WORKSPACE}\dist\Creators Hub-win-x64.exe" -Force
 
       - name: Move artifacts to upload folder
         if: ${{ github.event.pull_request.number }}

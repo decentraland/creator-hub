@@ -69,3 +69,7 @@ jobs:
       SDK_TEAM_AWS_SECRET: ${{ secrets.SDK_TEAM_AWS_SECRET }}
       SDK_TEAM_S3_BUCKET: ${{ secrets.SDK_TEAM_S3_BUCKET }}
       SDK_TEAM_S3_BASE_URL: ${{ secrets.SDK_TEAM_S3_BASE_URL }}
+      ES_USERNAME: ${{ secrets.ES_USERNAME }}
+      ES_PASSWORD: ${{ secrets.ES_PASSWORD }}
+      WINDOWS_CREDENTIAL_ID_SIGNER: ${{ secrets.WINDOWS_CREDENTIAL_ID_SIGNER }}
+      ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
