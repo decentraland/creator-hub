@@ -23,4 +23,10 @@ export type Project = {
   createdAt: number;
   updatedAt: number;
   size: number;
+  packageStatus?: {
+    [packageName: string]: {
+      isOutdated: boolean;
+      isUpdated?: boolean;
+    };
+  };
 };
