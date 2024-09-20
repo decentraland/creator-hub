@@ -26,4 +26,10 @@ export type Project = {
   updatedAt: number;
   size: number;
   worldConfiguration?: WorldConfiguration;
+  packageStatus?: {
+    [packageName: string]: {
+      isOutdated: boolean;
+      isUpdated?: boolean;
+    };
+  };
 };

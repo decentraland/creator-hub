@@ -1,15 +1,59 @@
 import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import { npm, workspace } from '#preload';
+import pLimit from 'p-limit';
+import { npm, settings, workspace } from '#preload';
 
 import { type ThunkAction } from '#store';
 
 import type { Workspace } from '/shared/types/workspace';
-import { SortBy } from '/shared/types/projects';
-
+import { type Project, SortBy } from '/shared/types/projects';
+import { UPDATE_DEPENDENCIES_STRATEGY } from '/shared/types/settings';
+import { SDK_PACKAGE } from '/shared/types/pkg';
+import { actions as snackbarActions } from '../snackbar';
 import type { Async } from '/@/modules/async';
 
+const limit = pLimit(1);
+
+// Helper function to handle SDK package update logic
+const handleSdkPackageUpdate = async (project: Project, updateStrategySetting: string) => {
+  if (updateStrategySetting === UPDATE_DEPENDENCIES_STRATEGY.DO_NOTHING) {
+    return project;
+  }
+
+  const isOutdated = await limit(() => workspace.npmPackageOutdated(project.path, SDK_PACKAGE));
+
+  const updatedPackageStatus: Project['packageStatus'] = {
+    ...project.packageStatus,
+    [SDK_PACKAGE]: { isOutdated },
+  };
+
+  if (updateStrategySetting === UPDATE_DEPENDENCIES_STRATEGY.AUTO_UPDATE && isOutdated) {
+    try {
+      await limit(() => workspace.installNpmPackage(project.path, SDK_PACKAGE));
+      updatedPackageStatus[SDK_PACKAGE].isUpdated = true;
+    } catch (_) {
+      updatedPackageStatus[SDK_PACKAGE].isUpdated = false;
+    }
+  }
+
+  return {
+    ...project,
+    packageStatus: updatedPackageStatus,
+  };
+};
+
+const getProjectsSdkPackageOutdated = async (projects: Project[]) => {
+  const updateStrategySetting = await settings.getUpdateDependenciesStrategy();
+  return Promise.all(
+    projects.map(project => handleSdkPackageUpdate(project, updateStrategySetting)),
+  );
+};
+
 // actions
-const getWorkspace = createAsyncThunk('workspace/getWorkspace', workspace.getWorkspace);
+const getWorkspace = createAsyncThunk('workspace/getWorkspace', async () => {
+  const payload = await workspace.getWorkspace();
+  const projects = await getProjectsSdkPackageOutdated(payload.projects);
+  return { ...payload, projects };
+});
 const createProject = createAsyncThunk('workspace/createProject', workspace.createProject);
 const updateProject = createAsyncThunk('workspace/updateProject', workspace.updateProject);
 const deleteProject = createAsyncThunk('workspace/deleteProject', workspace.deleteProject);
@@ -33,6 +77,9 @@ export const createProjectAndInstall: (
   const { path } = await dispatch(createProject(opts)).unwrap();
   dispatch(installProject(path));
 };
+const updateSdkPackage = createAsyncThunk('workspace/updateSdkPackage', async (path: string) =>
+  workspace.installNpmPackage(path, SDK_PACKAGE),
+);
 
 // state
 export type WorkspaceState = Async<Workspace>;
@@ -176,6 +223,51 @@ export const slice = createSlice({
         if (projectIdx !== -1) {
           state.projects[projectIdx] = project;
         }
+      })
+      .addCase(updateSdkPackage.pending, state => {
+        state.status = 'loading';
+      })
+      .addCase(updateSdkPackage.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        const projectIdx = state.projects.findIndex($ => $.path === action.meta.arg);
+        if (projectIdx !== -1) {
+          const project = { ...state.projects[projectIdx] };
+          state.projects[projectIdx] = {
+            ...project,
+            packageStatus: {
+              ...project.packageStatus,
+              [SDK_PACKAGE]: {
+                isOutdated: false,
+                isUpdated: true,
+              },
+            },
+          };
+        }
+      })
+      .addCase(updateSdkPackage.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error =
+          action.error.message || `Failed to update the SDK package for project ${action.meta.arg}`;
+      })
+      .addCase(snackbarActions.removeSnackbar, (state, action) => {
+        if (
+          action.payload.id.startsWith('dependency-updated-automatically') &&
+          action.payload.project
+        ) {
+          const projectIdx = state.projects.findIndex($ => $.id === action.payload.project!.id);
+          if (projectIdx !== -1) {
+            state.projects[projectIdx] = {
+              ...action.payload.project,
+              packageStatus: {
+                ...action.payload.project.packageStatus,
+                [SDK_PACKAGE]: {
+                  ...action.payload.project.packageStatus![SDK_PACKAGE],
+                  isUpdated: undefined,
+                },
+              },
+            };
+          }
+        }
       });
   },
 });
@@ -195,6 +287,7 @@ export const actions = {
   unlistProjects,
   saveThumbnail,
   openFolder,
+  updateSdkPackage,
 };
 export const reducer = slice.reducer;
 export const selectors = { ...slice.selectors };
