@@ -1,11 +1,16 @@
 import cx from 'classnames';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Box, Button, IconButton } from 'decentraland-ui2';
+import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { misc } from '#preload';
+import logo from '/assets/images/logo-editor.png';
 import { t } from '/@/modules/store/translation/utils';
 import { Header } from '../Header';
-import logo from '/assets/images/logo-editor.png';
+
 import './styles.css';
-import { Link } from 'react-router-dom';
+import { AppSettings } from '../Modals/AppSettings';
 
 export enum NavbarItem {
   HOME = 'home',
@@ -28,10 +33,21 @@ function MenuItem(props: { item: NavbarItem; active: NavbarItem; disable?: boole
 }
 
 export function Navbar(props: { active: NavbarItem }) {
-  const handleClickFeedback = useCallback(
+  const [openAppSettings, setOpenAppSettings] = useState(false);
+
+  const handleClickReportIssue = useCallback(
     () => misc.openExternal('https://decentraland.canny.io'),
     [],
   );
+
+  const handleClickHelp = useCallback(
+    () => misc.openExternal('https://decentraland.org/help/'),
+    [],
+  );
+
+  const handleClickSettings = useCallback(() => {
+    setOpenAppSettings(true);
+  }, []);
 
   return (
     <Header classNames={cx('Navbar')}>
@@ -74,12 +90,32 @@ export function Navbar(props: { active: NavbarItem }) {
         </div>
       </>
       <>
-        <div
-          className="feedback"
-          onClick={handleClickFeedback}
-        >
-          {t('navbar.feedback')}
-        </div>
+        <Box className="actions">
+          <Button
+            variant="outlined"
+            color="secondary"
+            size="small"
+            onClick={handleClickReportIssue}
+          >
+            {t('navbar.report_an_issue')}
+          </Button>
+          <IconButton
+            aria-label="help"
+            onClick={handleClickHelp}
+          >
+            <QuestionMarkIcon />
+          </IconButton>
+          <IconButton
+            aria-label="settings"
+            onClick={handleClickSettings}
+          >
+            <SettingsIcon />
+          </IconButton>
+        </Box>
+        <AppSettings
+          open={openAppSettings}
+          onClose={() => setOpenAppSettings(false)}
+        />
       </>
     </Header>
   );
