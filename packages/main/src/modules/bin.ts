@@ -1,5 +1,6 @@
 import log from 'electron-log/main';
 import fs from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { app, utilityProcess, shell } from 'electron';
 import path from 'path';
 import treeKill from 'tree-kill';
@@ -166,6 +167,49 @@ export async function install() {
   } catch (error: any) {
     log.error('[Install] Failed to install node and npm binaries:', error.message);
     installed.reject(error);
+    throw error;
+  }
+}
+
+export async function npmPackageOutdated(projectPath: string, packageName: string = '') {
+  const normalizedPath = path.normalize(projectPath);
+  const nodeModulesPath = path.join(normalizedPath, 'node_modules');
+
+  if (!existsSync(nodeModulesPath)) {
+    // For projects without node_modules, install dependencies before checking for outdated packages
+    await installNpmPackages(projectPath);
+  }
+
+  log.info(`[PackageOutdated] Verifying if the package ${packageName} is outdated...`);
+
+  try {
+    const _npmPackageOutdated = run('npm', 'npm', {
+      args: ['outdated', packageName, '--depth=0', '--json'],
+      cwd: projectPath,
+    });
+    log.info(`[PackageOutdated] Package ${packageName} is outdated...`);
+    await _npmPackageOutdated.waitFor(new RegExp(packageName), /\{\}/);
+    return true;
+  } catch (_) {
+    log.info(`[PackageOutdated] Package ${packageName} is up to date...${normalizedPath}`);
+    return false;
+  }
+}
+
+export async function installNpmPackages(projectPath: string, packageName?: string) {
+  try {
+    log.info(`[InstallNpmPackages] Installing npm package${packageName ? ` ${packageName}` : 's'}`);
+
+    const npmInstall = run('npm', 'npm', {
+      args: ['install', '--loglevel', 'error', ...(packageName ? ['--save', packageName] : [])],
+      cwd: projectPath,
+    });
+
+    await npmInstall.waitFor(/added \d+ package|up to date|changed \d+ package/);
+
+    log.info('[InstallNpmPackages] Installation complete!');
+  } catch (error: any) {
+    log.error('[InstallNpmPackages] Failed to install npm package:', error.message);
     throw error;
   }
 }

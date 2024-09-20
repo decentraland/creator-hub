@@ -23,6 +23,12 @@ export function initIpc() {
 
   // bin
   handle('bin.install', () => bin.install());
+  handle('bin.installNpmPackages', (_event, projectPath, packageName) =>
+    bin.installNpmPackages(projectPath, packageName),
+  );
+  handle('bin.npmPackageOutdated', (_event, projectPath, packageName) =>
+    bin.npmPackageOutdated(projectPath, packageName),
+  );
   handle('bin.code', (_event, path) => bin.code(path));
 
   // analytics
