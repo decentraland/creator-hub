@@ -15,6 +15,7 @@ import { hasDependency } from './pkg';
 import { getRowsAndCols, parseCoords } from './scene';
 import { getEditorHome } from './editor';
 import { invoke } from './invoke';
+import { getScenesPath } from './settings';
 
 import { DEFAULT_THUMBNAIL, NEW_SCENE_NAME, EMPTY_SCENE_TEMPLATE_REPO } from './constants';
 
@@ -124,7 +125,7 @@ export async function getProject(_path: string): Promise<Project> {
 }
 
 export async function getPath() {
-  const appHome = await invoke('electron.getAppHome');
+  const appHome = await getScenesPath();
   try {
     await fs.stat(appHome);
   } catch (error) {
@@ -239,6 +240,7 @@ export async function createProject(opts?: { name?: string; repo?: string }): Pr
   await fs.writeFile(sceneJsonPath, JSON.stringify(scene, null, 2));
   const project = await getProject(projectPath);
   await setConfig(config => config.workspace.paths.push(projectPath));
+  await invoke('bin.installNpmPackages', projectPath);
   return project;
 }
 
@@ -400,4 +402,12 @@ export async function openFolder(_path: string) {
   if (error) {
     throw new Error(error);
   }
+}
+
+export async function npmPackageOutdated(_path: string, _package: string): Promise<boolean> {
+  return invoke('bin.npmPackageOutdated', _path, _package);
+}
+
+export async function installNpmPackage(_path: string, _package: string): Promise<void> {
+  return invoke('bin.installNpmPackages', _path, _package);
 }
