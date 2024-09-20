@@ -187,6 +187,10 @@ const LearnCard: React.FC = React.memo(() => {
     navigate('/learn');
   }, []);
 
+  const handleLearnItemClick = useCallback((href: string) => {
+    misc.openExternal(href);
+  }, []);
+
   return (
     <Card className="Card LearnCard">
       <CardBanner
@@ -201,6 +205,7 @@ const LearnCard: React.FC = React.memo(() => {
               key={idx}
               title={item.title}
               icon={item.icon}
+              onClick={() => handleLearnItemClick(item.href)}
             />
           ))}
         </div>
