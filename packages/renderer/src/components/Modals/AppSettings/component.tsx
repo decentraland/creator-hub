@@ -9,9 +9,12 @@ import {
   OutlinedInput,
   Typography,
   FormGroup,
+  InputAdornment,
 } from 'decentraland-ui2';
 import CloseIcon from '@mui/icons-material/Close';
+import FolderIcon from '@mui/icons-material/Folder';
 import { Modal } from 'decentraland-ui2/dist/components/Modal/Modal';
+import { settings as settingsPreload } from '#preload';
 import { UPDATE_DEPENDENCIES_STRATEGY } from '/shared/types/settings';
 import { t } from '/@/modules/store/translation/utils';
 import { useSettings } from '/@/hooks/useSettings';
@@ -61,6 +64,13 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
     onClose();
   }, [scenesPath, updateDependenciesStrategy]);
 
+  const handleOpenFolder = useCallback(async () => {
+    const folder = await settingsPreload.selectSceneFolder();
+    if (folder) {
+      setScenesPath(folder);
+    }
+  }, []);
+
   useEffect(() => {
     const path = settings.scenesPath;
     const strategy = settings.updateDependenciesStrategy;
@@ -91,6 +101,16 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
               color="secondary"
               value={scenesPath}
               onChange={handleChangeSceneFolder}
+              endAdornment={
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={handleOpenFolder}
+                    edge="end"
+                  >
+                    <FolderIcon />
+                  </IconButton>
+                </InputAdornment>
+              }
             />
             <Button
               className="ChangeSceneFolderButton"
