@@ -80,11 +80,13 @@ jobs:
         with:
           cache: 'npm'
 
-      - run: npm ci
+      - name: 'Install dependencies'
+        run: npm ci
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
 
-      - run: echo MODE=$MODE && npm run build
+      - name: 'Build'
+        run: echo MODE=$MODE && npm run build
         env:
           MODE: ${{ !inputs.dry-run && 'production' || 'development' }}
           VITE_SEGMENT_CREATORS_HUB_API_KEY: ${{ secrets.VITE_SEGMENT_CREATORS_HUB_API_KEY }}
@@ -111,6 +113,17 @@ jobs:
           bump_each_commit_patch_pattern: "/^(patch|fix).+/"
           search_commit_body: true
           user_format_type: "json"
+
+      - name: Get draft release
+        id: draft_release
+        uses: kaliber5/action-get-release@v1
+        with:
+          token: ${{ github.token }}
+          draft: true
+          tag_name: ${{ steps.version.outputs.version }}
+
+      - name: Log draft release url
+        run: echo "Draft Release Upload Url ${{ steps.draft_release.outputs.url }}"
 
       - name: Compile artifacts ${{ inputs.dry-run && ' ' || 'and upload them to github release' }}
         # I use this action because it is capable of retrying multiple times if there are any issues with the distribution server
