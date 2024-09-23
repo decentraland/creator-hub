@@ -160,10 +160,16 @@ jobs:
         run: |
           Copy-Item -Path "${env:GITHUB_WORKSPACE}\dist\signed\Creators Hub-${{ steps.version.outputs.version }}-win-x64.exe" -Destination "${env:GITHUB_WORKSPACE}\dist\Creators Hub-${{ steps.version.outputs.version }}-win-x64.exe" -Force
 
-      - name: Log releases
-        run: gh release list
-        env:
-          GH_TOKEN: ${{ secrets.github_token }}
+      - name: Get draft release
+        id: draft_release
+        uses: kaliber5/action-get-release@v1
+        with:
+          token: ${{ github.token }}
+          draft: true
+          tag_name: ${{ steps.version.outputs.version }}
+          
+      - name: Log draft release url
+        run: echo "Draft Release Upload Url ${{ steps.draft_release.outputs.url }}"
 
       - name: Move artifacts to upload folder
         if: ${{ github.event.pull_request.number }}
