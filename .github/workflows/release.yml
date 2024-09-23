@@ -83,7 +83,7 @@ jobs:
       - name: Log releases
         run: gh release list
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.github_token }}
 
       - name: 'Install dependencies'
         run: npm ci
