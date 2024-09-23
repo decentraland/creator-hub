@@ -173,7 +173,7 @@ jobs:
         if: ${{github.ref == 'refs/heads/main' && matrix.os == 'windows-latest' && !inputs.dry-run}}
         uses: shogo82148/actions-upload-release-asset@v1
         with:
-          upload_url: ${{ steps.draft_release.outputs.url }}
+          upload_url: ${{ steps.draft_release.outputs.upload_url }}
           asset_path: ${env:GITHUB_WORKSPACE}\dist\Creators Hub-${{ steps.version.outputs.version }}-win-x64.exe
           asset_name: Creators Hub-${{ steps.version.outputs.version }}-win-x64.exe
           overwrite: true
