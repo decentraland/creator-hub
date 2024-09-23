@@ -80,6 +80,11 @@ jobs:
         with:
           cache: 'npm'
 
+      - name: Log releases
+        run: gh release list
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - name: 'Install dependencies'
         run: npm ci
         env:
@@ -113,17 +118,6 @@ jobs:
           bump_each_commit_patch_pattern: "/^(patch|fix).+/"
           search_commit_body: true
           user_format_type: "json"
-
-      - name: Get draft release
-        id: draft_release
-        uses: kaliber5/action-get-release@v1
-        with:
-          token: ${{ github.token }}
-          draft: true
-          tag_name: ${{ steps.version.outputs.version }}
-
-      - name: Log draft release url
-        run: echo "Draft Release Upload Url ${{ steps.draft_release.outputs.url }}"
 
       - name: Compile artifacts ${{ inputs.dry-run && ' ' || 'and upload them to github release' }}
         # I use this action because it is capable of retrying multiple times if there are any issues with the distribution server
