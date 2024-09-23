@@ -33,3 +33,12 @@ export async function getUpdateDependenciesStrategy() {
 export async function setUpdateDependenciesStrategy(strategy: UPDATE_DEPENDENCIES_STRATEGY) {
   await setConfig(config => (config.updateDependenciesStrategy = strategy));
 }
+
+export async function selectSceneFolder(): Promise<string | undefined> {
+  const [projectPath] = await invoke('electron.showOpenDialog', {
+    title: 'Select Scenes Folder',
+    properties: ['openDirectory'],
+  });
+
+  return projectPath;
+}
