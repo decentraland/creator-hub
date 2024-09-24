@@ -93,14 +93,6 @@ jobs:
           VITE_SEGMENT_INSPECTOR_API_KEY: ${{ secrets.VITE_SEGMENT_INSPECTOR_API_KEY }}
           VITE_ALLOWED_EXTERNAL_ORIGINS: ${{ secrets.VITE_ALLOWED_EXTERNAL_ORIGINS }}
 
-
-      - name: Save APPLE_TEAM_ID into electron-builder.yml
-        # This is necessary for the notarization of the app in MacOS to work
-        if: ${{github.ref == 'refs/heads/main' && matrix.os == 'macos-latest' && !inputs.dry-run}}
-        env:
-          APPLE_TEAM_ID: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}
-        run: sed -e "s|\$APPLE_TEAM_ID|$APPLE_TEAM_ID|" electron-builder.yml > electron-builder-with-apple-team-id.yml && mv electron-builder-with-apple-team-id.yml electron-builder.yml
-
       - name: Generate release version
         id: version
         uses: paulhatch/semantic-version@v5.4.0
@@ -114,6 +106,14 @@ jobs:
           search_commit_body: true
           user_format_type: "json"
 
+      # Download 'SSLcom/esigner-codesign' to a folder called 'esigner-codesign' in the root of the project
+      - name: Checkout esigner-codesign repository (Windows)
+        if: ${{github.ref == 'refs/heads/main' && matrix.os == 'windows-latest' && !inputs.dry-run}}
+        uses: actions/checkout@v3
+        with:
+          repository: 'SSLcom/esigner-codesign'
+          path: esigner-codesign
+
       - name: Compile artifacts ${{ inputs.dry-run && ' ' || 'and upload them to github release' }}
         # I use this action because it is capable of retrying multiple times if there are any issues with the distribution server
         uses: nick-fields/retry@v3
@@ -125,8 +125,10 @@ jobs:
           shell: 'bash'
           # Due to this issue https://github.com/electron-userland/electron-builder/issues/6411 the build with npx when rebuilding native dependencies hangs forever
           # see https://github.com/cawa-93/vite-electron-builder/pull/953
-          command: ./node_modules/.bin/electron-builder --config electron-builder.yml --config.extraMetadata.version=${{ steps.version.outputs.version }} --publish ${{ inputs.dry-run && 'never' || 'always' }}
+          command: ./node_modules/.bin/electron-builder --config electron-builder.cjs --publish ${{ inputs.dry-run && 'never' || 'always' }}
         env:
+          # The package.json has a hardcoded 0.0.0-dev version, we need to pass version generated in the earlier step
+          APP_VERSION: ${{ steps.version.outputs.version }}
           # Code Signing params
           # See https://www.electron.build/code-signing
           CSC_LINK: ${{ secrets.MACOS_CSC_LINK }}
@@ -138,39 +140,19 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PWD }}
           # Publishing artifacts
           GH_TOKEN: ${{ secrets.github_token }} # GitHub token, automatically provided (No need to define this secret in the repo settings)
-
-      - name: Sign Windows Build (exe)
-        uses: sslcom/esigner-codesign@develop
-        if: ${{github.ref == 'refs/heads/main' && matrix.os == 'windows-latest' && !inputs.dry-run}}
-        with:
-          command: sign
-          username: ${{ secrets.ES_USERNAME }}
-          password: ${{ secrets.ES_PASSWORD }}
-          credential_id: ${{ secrets.WINDOWS_CREDENTIAL_ID_SIGNER }}
-          totp_secret: ${{ secrets.ES_TOTP_SECRET }}
-          file_path: ${GITHUB_WORKSPACE}/dist/Creators Hub-${{ steps.version.outputs.version }}-win-x64.exe
-          output_path: ${GITHUB_WORKSPACE}/dist/signed
-          malware_block: false
-          environment_name: PROD
-          signing_method: v2
-
-      - name: Get draft release
-        if: ${{github.ref == 'refs/heads/main' && matrix.os == 'windows-latest' && !inputs.dry-run}}
-        id: draft_release
-        uses: kaliber5/action-get-release@v1
-        with:
-          token: ${{ github.token }}
-          draft: true
-          tag_name: ${{ steps.version.outputs.version }}
-
-      - name: 'Upload signed exe to draft release'
-        if: ${{github.ref == 'refs/heads/main' && matrix.os == 'windows-latest' && !inputs.dry-run}}
-        uses: shogo82148/actions-upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.draft_release.outputs.upload_url }}
-          asset_path: ${env:GITHUB_WORKSPACE}\dist\signed\Creators Hub-${{ steps.version.outputs.version }}-win-x64.exe
-          asset_name: Creators Hub-${{ steps.version.outputs.version }}-win-x64-SIGNED.exe
-          overwrite: true
+          # The following are the parameters required by the esigner-codesign action to work, we must explicitly pass in even the optional ones since we're not using the action directly, but from the checked out repo
+          CODE_SIGN_SCRIPT_PATH: "${{ github.workspace }}/esigner-codesign/dist/index.js"
+          INPUT_COMMAND: "sign"
+          INPUT_FILE_PATH: "${{ github.workspace }}/dist/Creators Hub-${{ steps.version.outputs.version }}-win-x64.exe"
+          INPUT_OVERRIDE: "true"
+          INPUT_MALWARE_BLOCK: "false"
+          INPUT_CLEAN_LOGS: "false"
+          INPUT_JVM_MAX_MEMORY: "1024M"
+          INPUT_ENVIRONMENT_NAME: "PROD"
+          INPUT_USERNAME: ${{ secrets.ES_USERNAME }}
+          INPUT_PASSWORD: ${{ secrets.ES_PASSWORD }}
+          INPUT_TOTP_SECRET: ${{ secrets.WINDOWS_CREDENTIAL_ID_SIGNER }}
+          INPUT_CREDENTIAL_ID: ${{ secrets.ES_TOTP_SECRET }}
 
       - name: Move artifacts to upload folder
         if: ${{ github.event.pull_request.number }}
