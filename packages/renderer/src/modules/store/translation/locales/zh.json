@@ -1,10 +1,10 @@
 {
   "install": {
-    "message": "安装 decentraland 编辑器 v${version}"
+    "message": "安裝 Decentraland 創作者中心 v${version}"
   },
   "home": {
     "header": {
-      "title": "欢迎来到阿尔法编辑器"
+      "title": "歡迎來到 Decentraland 創作者中心"
     },
     "cards": {
       "sign_in": {

@@ -39,7 +39,7 @@ export function Navbar(props: { active: NavbarItem }) {
         <div className="logo">
           <img
             src={logo}
-            alt="Creators Hub"
+            alt="Decentraland Creator Hub"
           />
         </div>
         <div className="menu">

@@ -1,10 +1,10 @@
 {
   "install": {
-    "message": "Installing Creators Hub v{version}"
+    "message": "Installing Decentraland Creator Hub v{version}"
   },
   "home": {
     "header": {
-      "title": "Welcome to Creators Hub"
+      "title": "Welcome to Decentraland Creator Hub"
     },
     "cards": {
       "sign_in": {

@@ -24,7 +24,7 @@ on:
         description: 'Password used for notarization'
         required: true
       VITE_SEGMENT_CREATORS_HUB_API_KEY:
-        description: 'Segment API key used for the Creators Hub'
+        description: 'Segment API key used for the Decentraland Creator Hub'
         required: true
       VITE_SEGMENT_INSPECTOR_API_KEY:
         description: 'Segment API key used for the Inspector'
@@ -148,7 +148,7 @@ jobs:
           password: ${{ secrets.ES_PASSWORD }}
           credential_id: ${{ secrets.WINDOWS_CREDENTIAL_ID_SIGNER }}
           totp_secret: ${{ secrets.ES_TOTP_SECRET }}
-          file_path: ${GITHUB_WORKSPACE}/dist/Creators Hub-${{ steps.version.outputs.version }}-win-x64.exe
+          file_path: ${GITHUB_WORKSPACE}/dist/Decentraland Creator Hub-${{ steps.version.outputs.version }}-win-x64.exe
           output_path: ${GITHUB_WORKSPACE}/dist/signed
           malware_block: false
           environment_name: PROD
@@ -168,8 +168,8 @@ jobs:
         uses: shogo82148/actions-upload-release-asset@v1
         with:
           upload_url: ${{ steps.draft_release.outputs.upload_url }}
-          asset_path: ${env:GITHUB_WORKSPACE}\dist\signed\Creators Hub-${{ steps.version.outputs.version }}-win-x64.exe
-          asset_name: Creators Hub-${{ steps.version.outputs.version }}-win-x64-SIGNED.exe
+          asset_path: ${env:GITHUB_WORKSPACE}\dist\signed\Decentraland Creator Hub-${{ steps.version.outputs.version }}-win-x64.exe
+          asset_name: Decentraland Creator Hub-${{ steps.version.outputs.version }}-win-x64-SIGNED.exe
           overwrite: true
 
       - name: Move artifacts to upload folder
@@ -185,7 +185,7 @@ jobs:
           aws_secret_access_key: ${{ secrets.SDK_TEAM_AWS_SECRET }}
           aws_bucket: ${{ secrets.SDK_TEAM_S3_BUCKET }}
           source_dir: 'dist/upload'
-          destination_dir: '@dcl/creators-hub/branch/${{ github.head_ref }}'
+          destination_dir: '@dcl/creator-hub/branch/${{ github.head_ref }}'
 
       # Have to write the URL's to a file so GH Actions don't mask them for being possibly sensitive data (secrets.SDK_TEAM_S3_BASE_URL is not sensitive data)
       - name: Update S3 URL's to CDN
