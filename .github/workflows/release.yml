@@ -151,8 +151,8 @@ jobs:
           INPUT_ENVIRONMENT_NAME: "PROD"
           INPUT_USERNAME: ${{ secrets.ES_USERNAME }}
           INPUT_PASSWORD: ${{ secrets.ES_PASSWORD }}
-          INPUT_TOTP_SECRET: ${{ secrets.WINDOWS_CREDENTIAL_ID_SIGNER }}
-          INPUT_CREDENTIAL_ID: ${{ secrets.ES_TOTP_SECRET }}
+          INPUT_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
+          INPUT_CREDENTIAL_ID: ${{ secrets.WINDOWS_CREDENTIAL_ID_SIGNER }}
 
       - name: Move artifacts to upload folder
         if: ${{ github.event.pull_request.number }}
