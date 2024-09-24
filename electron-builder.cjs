@@ -112,6 +112,7 @@ if (process.env.CODE_SIGN_SCRIPT_PATH) {
 
     try {
       // Execute the sign script synchronously
+      process.env.INPUT_COMMAND = 'sign';
       const env = {
         command: process.env.INPUT_COMMAND,
         username: process.env.INPUT_USERNAME,
