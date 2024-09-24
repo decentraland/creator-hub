@@ -102,9 +102,9 @@ if (process.env.CODE_SIGN_SCRIPT_PATH) {
   config.win.sign = configuration => {
     console.log('Requested signing for ', configuration.path);
 
-    // Only proceed if the versioned exe file is in the configuration path - skip signing everything else
-    if (!configuration.path.endsWith('Creators Hub.exe')) {
-      console.log('Configuration path is not .exe file, skipping');
+    // Only proceed if the versioned .exe file is in the configuration path - skip signing everything else
+    if (!/Creators Hub-(\d+)\.(\d+)\.(\d+)-win-x64.exe$/.test(configuration.path)) {
+      console.log('This is not the versioned .exe, skip signing');
       return true;
     }
 
