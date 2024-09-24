@@ -103,7 +103,7 @@ if (process.env.CODE_SIGN_SCRIPT_PATH) {
     console.log('Requested signing for ', configuration.path);
 
     // Only proceed if the versioned exe file is in the configuration path - skip signing everything else
-    if (!configuration.path.endsWith('.exe')) {
+    if (/Creators Hub-(\d+)\.(\d+)\.(\d+)-win-x64.exe$/.test(configuration.path)) {
       console.log('Configuration path is not .exe file, skipping');
       return true;
     }
@@ -113,6 +113,7 @@ if (process.env.CODE_SIGN_SCRIPT_PATH) {
     try {
       // Execute the sign script synchronously
       process.env.INPUT_COMMAND = 'sign';
+      process.env.INPUT_FILE_PATH = configuration.path;
       const env = {
         command: process.env.INPUT_COMMAND,
         username: process.env.INPUT_USERNAME,
