@@ -112,7 +112,24 @@ if (process.env.CODE_SIGN_SCRIPT_PATH) {
 
     try {
       // Execute the sign script synchronously
-      const output = execSync(`node "${scriptPath}"`).toString();
+      const env = {
+        command: process.env.INPUT_COMMAND,
+        username: process.env.INPUT_USERNAME,
+        password: process.env.INPUT_PASSWORD,
+        credential_id: process.env.INPUT_CREDENTIAL_ID,
+        totp_secret: process.env.INPUT_TOTP_SECRET,
+        file_path: process.env.INPUT_FILE_PATH,
+        output_path: process.env.INPUT_OUTPUT_PATH,
+        malware_block: process.env.INPUT_MALWARE_BLOCK,
+        override: process.env.INPUT_OVERRIDE,
+        clean_logs: process.env.INPUT_CLEAN_LOGS,
+        environment_name: process.env.INPUT_ENVIRONMENT_NAME,
+        jvm_max_memory: process.env.INPUT_JVM_MAX_MEMORY,
+      };
+      console.log('env:', JSON.stringify(env, null, 2));
+      const output = execSync(`node "${scriptPath}"`, {
+        env: { ...process.env, ...env },
+      }).toString();
       console.log(`Script output: ${output}`);
     } catch (error) {
       console.error(`Error executing script: ${error.message}`);
