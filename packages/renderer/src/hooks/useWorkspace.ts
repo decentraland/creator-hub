@@ -26,7 +26,7 @@ export const useWorkspace = () => {
   }, []);
 
   const createProject = useCallback((opts?: { name?: string; repo?: string }) => {
-    dispatch(workspaceActions.createProject(opts));
+    dispatch(workspaceActions.createProjectAndInstall(opts));
     navigate('/editor');
   }, []);
 

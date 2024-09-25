@@ -1,5 +1,7 @@
 import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import { workspace } from '#preload';
+import { npm, workspace } from '#preload';
+
+import { type ThunkAction } from '#store';
 
 import type { Workspace } from '/shared/types/workspace';
 import { SortBy } from '/shared/types/projects';
@@ -14,6 +16,7 @@ const duplicateProject = createAsyncThunk('workspace/duplicateProject', workspac
 const importProject = createAsyncThunk('workspace/importProject', workspace.importProject);
 const reimportProject = createAsyncThunk('workspace/reimportProject', workspace.reimportProject);
 const unlistProjects = createAsyncThunk('workspace/unlistProjects', workspace.unlistProjects);
+const openFolder = createAsyncThunk('workspace/openFolder', workspace.openFolder);
 const saveThumbnail = createAsyncThunk(
   'workspace/saveThumbnail',
   async ({ path, thumbnail }: Parameters<typeof workspace.saveThumbnail>[0]) => {
@@ -22,7 +25,13 @@ const saveThumbnail = createAsyncThunk(
     return project;
   },
 );
-const openFolder = createAsyncThunk('workspace/openFolder', workspace.openFolder);
+const installProject = createAsyncThunk('npm/install', npm.install);
+export const createProjectAndInstall: (
+  opts?: Parameters<typeof workspace.createProject>[0],
+) => ThunkAction = opts => async dispatch => {
+  const { path } = await dispatch(createProject(opts)).unwrap();
+  dispatch(installProject(path));
+};
 
 // state
 export type WorkspaceState = Async<Workspace>;
@@ -161,6 +170,8 @@ export const actions = {
   ...slice.actions,
   getWorkspace,
   createProject,
+  installProject,
+  createProjectAndInstall,
   deleteProject,
   duplicateProject,
   importProject,
