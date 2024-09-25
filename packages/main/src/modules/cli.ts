@@ -1,6 +1,7 @@
 import type { DeployOptions } from '/shared/types/ipc';
 import { run, type Child } from './bin';
 import { getAvailablePort } from './port';
+import { install } from './npm';
 
 export async function init(path: string, repo?: string) {
   const initCommand = run('@dcl/sdk-commands', 'sdk-commands', {
@@ -8,11 +9,6 @@ export async function init(path: string, repo?: string) {
     cwd: path,
   });
   await initCommand.wait();
-}
-
-export async function install(path: string) {
-  const installCommand = run('npm', 'npm', { args: ['install', '--loglevel', 'error'], cwd: path });
-  await installCommand.wait();
 }
 
 export let previewServer: Child | null = null;

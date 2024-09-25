@@ -234,16 +234,6 @@ export async function createProject(opts?: { name?: string; repo?: string }): Pr
 }
 
 /**
- * Installs the dependencies for a project located at the specified path.
- *
- * @param {string} path - The file system path of the project where dependencies should be installed.
- * @returns {Promise<void>} - A promise that resolves when the installation is complete.
- */
-export async function installProject(path: string): Promise<void> {
-  await invoke('cli.install', path);
-}
-
-/**
  * Unlists a project directory from config.
  *
  * @param paths - The path or paths of the directories to be unlisted.
