@@ -196,6 +196,18 @@ export async function getWorkspace(): Promise<Workspace> {
   };
 }
 
+/**
+ * Creates a new project with the given options.
+ *
+ * This function generates a new project folder with a unique name (if a project with the same name already exists)
+ * and initializes it using a specified repository template. It also updates the project’s `scene.json` file and
+ * adds the project path to the user's workspace configuration.
+ *
+ * @param {Object} [opts] - Options for creating the project.
+ * @param {string} [opts.name] - The desired name for the project. Defaults to a new scene name.
+ * @param {string} [opts.repo] - The repository to use as the template. Defaults to an empty scene template repository.
+ * @returns {Promise<Project>} - A promise that resolves to the created project.
+ */
 export async function createProject(opts?: { name?: string; repo?: string }): Promise<Project> {
   const { name, repo } = {
     name: opts?.name ?? NEW_SCENE_NAME,
@@ -219,6 +231,16 @@ export async function createProject(opts?: { name?: string; repo?: string }): Pr
   const project = await getProject(projectPath);
   await setConfig(config => config.workspace.paths.push(projectPath));
   return project;
+}
+
+/**
+ * Installs the dependencies for a project located at the specified path.
+ *
+ * @param {string} path - The file system path of the project where dependencies should be installed.
+ * @returns {Promise<void>} - A promise that resolves when the installation is complete.
+ */
+export async function installProject(path: string): Promise<void> {
+  await invoke('cli.install', path);
 }
 
 /**

@@ -10,13 +10,17 @@ export async function init(path: string, repo?: string) {
   await initCommand.wait();
 }
 
+export async function install(path: string) {
+  const installCommand = run('npm', 'npm', { args: ['install', '--loglevel', 'error'], cwd: path });
+  await installCommand.wait();
+}
+
 export let previewServer: Child | null = null;
 export async function start(path: string) {
   if (previewServer) {
     await previewServer.kill();
   }
-  const installCommand = run('npm', 'npm', { args: ['install', '--loglevel', 'error'], cwd: path });
-  await installCommand.wait();
+  await install(path);
   previewServer = run('@dcl/sdk-commands', 'sdk-commands', {
     args: ['start', '--explorer-alpha'],
     cwd: path,

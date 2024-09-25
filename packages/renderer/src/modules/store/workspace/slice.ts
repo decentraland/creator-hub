@@ -1,6 +1,8 @@
 import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { workspace } from '#preload';
 
+import { type ThunkAction } from '#store';
+
 import type { Workspace } from '/shared/types/workspace';
 import { SortBy } from '/shared/types/projects';
 
@@ -9,6 +11,7 @@ import type { Async } from '/@/modules/async';
 // actions
 const getWorkspace = createAsyncThunk('workspace/getWorkspace', workspace.getWorkspace);
 const createProject = createAsyncThunk('workspace/createProject', workspace.createProject);
+const installProject = createAsyncThunk('workspace/installProject', workspace.installProject);
 const deleteProject = createAsyncThunk('workspace/deleteProject', workspace.deleteProject);
 const duplicateProject = createAsyncThunk('workspace/duplicateProject', workspace.duplicateProject);
 const importProject = createAsyncThunk('workspace/importProject', workspace.importProject);
@@ -23,6 +26,13 @@ const saveThumbnail = createAsyncThunk(
   },
 );
 const openFolder = createAsyncThunk('workspace/openFolder', workspace.openFolder);
+
+export const createProjectAndInstall: (
+  opts?: Parameters<typeof workspace.createProject>[0],
+) => ThunkAction = opts => async dispatch => {
+  const { path } = await dispatch(createProject(opts)).unwrap();
+  dispatch(installProject(path));
+};
 
 // state
 export type WorkspaceState = Async<Workspace>;
@@ -161,6 +171,8 @@ export const actions = {
   ...slice.actions,
   getWorkspace,
   createProject,
+  installProject,
+  createProjectAndInstall,
   deleteProject,
   duplicateProject,
   importProject,
