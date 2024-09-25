@@ -81,22 +81,6 @@ const config = {
   ],
 };
 
-if (process.env.APPLE_TEAM_ID) {
-  console.log('APPLE_TEAM_ID found in env vars: ', process.env.APPLE_TEAM_ID);
-  if (!config.mac.notarize) {
-    config.mac.notarize = {};
-  }
-  config.mac.notarize.teamId = process.env.APPLE_TEAM_ID;
-}
-
-if (process.env.APP_VERSION) {
-  console.log('APP_VERSION found in env vars:', process.env.APP_VERSION);
-  if (!config.extraMetadata) {
-    config.extraMetadata = {};
-  }
-  config.extraMetadata.version = process.env.APP_VERSION;
-}
-
 if (process.env.CODE_SIGN_SCRIPT_PATH) {
   console.log('CODE_SIGN_SCRIPT_PATH found in env vars:', process.env.CODE_SIGN_SCRIPT_PATH);
   config.win.sign = configuration => {
