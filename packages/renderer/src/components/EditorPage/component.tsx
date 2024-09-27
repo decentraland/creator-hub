@@ -123,7 +123,7 @@ export function EditorPage() {
   }
 
   // analytics
-  params.append('segmentAppId', 'creators-hub');
+  params.append('segmentAppId', 'creator-hub');
   if (userId) {
     params.append('segmentUserId', userId);
   }
