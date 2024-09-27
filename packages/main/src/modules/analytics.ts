@@ -27,7 +27,7 @@ export async function getAnalytics(): Promise<Analytics | null> {
     analytics.identify({
       userId: await getUserId(),
       traits: {
-        appId: 'creators-hub',
+        appId: 'creator-hub',
       },
     });
     return analytics;
