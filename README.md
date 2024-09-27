@@ -1,6 +1,6 @@
-# Creators Hub
+# Decentraland Creator Hub
 
-Creators Hub is an Electron-based application designed for creating, editing, and deploying Decentraland scenes. This application is distributed for both Windows and MacOS, supporting both x64 and ARM architectures.
+Decentraland Creator Hub is an Electron-based application designed for creating, editing, and deploying Decentraland scenes. This application is distributed for both Windows and MacOS, supporting both x64 and ARM architectures.
 
 ### Features
 
@@ -64,12 +64,12 @@ Get-Content -Path "$env:APPDATA\@dcl\creators-hub\logs\main.log" -Wait
 On MacOS:
 
 ```bash
-tail -f ~/Library/Logs/@dcl/creators-hub/main.log
+tail -f ~/Library/Logs/creator-hub/main.log
 ```
 
 ## Installation Process
 
-The Creators Hub requires several binaries to be available, including Node.js, npm, and sdk-commands. Due to Apple's requirements for app distribution, the application must be packaged into an `.asar` file for proper signing and notarization. However, some binaries within the `node_modules` directory cannot be used from inside the `.asar` file. Therefore, certain components are left outside the `.asar` file, including `package.json` and npm binaries.
+The Decentraland Creator Hub requires several binaries to be available, including Node.js, npm, and sdk-commands. Due to Apple's requirements for app distribution, the application must be packaged into an `.asar` file for proper signing and notarization. However, some binaries within the `node_modules` directory cannot be used from inside the `.asar` file. Therefore, certain components are left outside the `.asar` file, including `package.json` and npm binaries.
 
 ### Steps
 
@@ -93,7 +93,7 @@ To minimize installation time for the end user, `package.json` should include on
 
 ## Update Process
 
-The Creators Hub uses `electron-updater` to automatically update the production app to the latest version.
+The Decentraland Creator Hub uses `electron-updater` to automatically update the production app to the latest version.
 
 ### Steps
 
@@ -113,7 +113,7 @@ This ensures that users always have the latest features and fixes without manual
 
 ## Release Process
 
-The CI pipeline is configured to automate the release process for the Creators Hub.
+The CI pipeline is configured to automate the release process for the Decentraland Creator Hub.
 
 ### Steps
 

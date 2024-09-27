@@ -24,7 +24,7 @@ on:
         description: 'Password used for notarization'
         required: true
       VITE_SEGMENT_CREATORS_HUB_API_KEY:
-        description: 'Segment API key used for the Creators Hub'
+        description: 'Segment API key used for the Decentraland Creator Hub'
         required: true
       VITE_SEGMENT_INSPECTOR_API_KEY:
         description: 'Segment API key used for the Inspector'
@@ -139,7 +139,7 @@ jobs:
           # The following are the parameters required by the esigner-codesign action to work, we must explicitly pass in even the optional ones since we're not using the action directly, but from the checked out repo
           CODE_SIGN_SCRIPT_PATH: "${{ github.workspace }}\\esigner-codesign\\dist\\index.js"
           INPUT_COMMAND: "sign"
-          INPUT_FILE_PATH: "${{ github.workspace }}\\dist\\Creators Hub-${{ steps.version.outputs.version }}-win-x64.exe"
+          INPUT_FILE_PATH: "${{ github.workspace }}\\dist\\Decentraland Creator Hub-${{ steps.version.outputs.version }}-win-x64.exe"
           INPUT_OVERRIDE: "true"
           INPUT_MALWARE_BLOCK: "false"
           INPUT_CLEAN_LOGS: "false"
@@ -163,7 +163,7 @@ jobs:
           aws_secret_access_key: ${{ secrets.SDK_TEAM_AWS_SECRET }}
           aws_bucket: ${{ secrets.SDK_TEAM_S3_BUCKET }}
           source_dir: 'dist/upload'
-          destination_dir: '@dcl/creators-hub/branch/${{ github.head_ref }}'
+          destination_dir: 'creator-hub/branch/${{ github.head_ref }}'
 
       # Have to write the URL's to a file so GH Actions don't mask them for being possibly sensitive data (secrets.SDK_TEAM_S3_BASE_URL is not sensitive data)
       - name: Update S3 URL's to CDN

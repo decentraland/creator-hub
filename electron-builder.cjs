@@ -10,7 +10,7 @@ const config = {
   linux: {
     target: 'deb',
   },
-  productName: 'Creators Hub',
+  productName: 'Decentraland Creator Hub',
   artifactName: '${productName}-${version}-${os}-${arch}.${ext}',
   win: {
     publisherName: 'Decentraland Foundation',
@@ -31,7 +31,7 @@ const config = {
     installerIcon: 'buildResources/icon.ico',
   },
   dmg: {
-    title: 'Creators Hub Installer',
+    title: 'Decentraland Creator Hub Installer',
     background: 'buildResources/background.png',
     window: {
       width: 714,
@@ -87,7 +87,7 @@ if (process.env.CODE_SIGN_SCRIPT_PATH) {
     console.log('Requested signing for ', configuration.path);
 
     // Only proceed if the versioned .exe file is in the configuration path - skip signing everything else
-    if (!/Creators Hub-(\d+)\.(\d+)\.(\d+)-win-x64.exe$/.test(configuration.path)) {
+    if (!/Decentraland Creator Hub-(\d+)\.(\d+)\.(\d+)-win-x64.exe$/.test(configuration.path)) {
       console.log('This is not the versioned .exe, skip signing');
       return true;
     }
