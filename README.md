@@ -58,7 +58,7 @@ When debugging the production build (executables) you can open the DevTools via 
 On Windows (PowerShell):
 
 ```bash
-Get-Content -Path "$env:APPDATA\@dcl\creator-hub\logs\main.log" -Wait
+Get-Content -Path "$env:APPDATA\creator-hub\logs\main.log" -Wait
 ```
 
 On MacOS:
