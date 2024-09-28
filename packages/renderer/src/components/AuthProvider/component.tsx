@@ -2,8 +2,10 @@ import React, { useCallback, useEffect, useRef, useState, type ReactNode } from 
 import { useNavigate } from 'react-router-dom';
 import { ChainId, type Avatar } from '@dcl/schemas';
 import { AuthServerProvider } from 'decentraland-connect';
+import { useDispatch } from '#store';
 import { AuthContext } from '/@/contexts/AuthContext';
 import Profiles from '/@/lib/profile';
+import { fetchENSList } from '/@/modules/store/ens';
 import type { AuthSignInProps } from './types';
 
 const AUTH_SERVER_URL = 'https://auth-api.decentraland.org';
@@ -13,10 +15,11 @@ const AUTH_DAPP_URL = 'https://decentraland.org/auth';
 AuthServerProvider.setAuthServerUrl(AUTH_SERVER_URL);
 AuthServerProvider.setAuthDappUrl(AUTH_DAPP_URL);
 
-const provider = new AuthServerProvider();
+export const provider = new AuthServerProvider();
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const initSignInResultRef = useRef<AuthSignInProps>();
   const [wallet, setWallet] = useState<string>();
   const [avatar, setAvatar] = useState<Avatar>();
@@ -88,6 +91,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       fetchAvatar(connectedAccount);
     }
   }, []);
+
+  useEffect(() => {
+    if (wallet && chainId) {
+      dispatch(fetchENSList({ address: wallet, chainId }));
+    }
+  }, [wallet, chainId]);
 
   return (
     <AuthContext.Provider
