@@ -240,7 +240,6 @@ export async function createProject(opts?: { name?: string; repo?: string }): Pr
   await fs.writeFile(sceneJsonPath, JSON.stringify(scene, null, 2));
   const project = await getProject(projectPath);
   await setConfig(config => config.workspace.paths.push(projectPath));
-  await invoke('bin.installNpmPackages', projectPath);
   return project;
 }
 
@@ -402,12 +401,4 @@ export async function openFolder(_path: string) {
   if (error) {
     throw new Error(error);
   }
-}
-
-export async function npmPackageOutdated(_path: string, _package: string): Promise<boolean> {
-  return invoke('bin.npmPackageOutdated', _path, _package);
-}
-
-export async function installNpmPackage(_path: string, _package: string): Promise<void> {
-  return invoke('bin.installNpmPackages', _path, _package);
 }

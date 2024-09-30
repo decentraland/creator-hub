@@ -23,12 +23,6 @@ export function initIpc() {
 
   // bin
   handle('bin.install', () => bin.install());
-  handle('bin.installNpmPackages', (_event, projectPath, packageName) =>
-    bin.installNpmPackages(projectPath, packageName),
-  );
-  handle('bin.npmPackageOutdated', (_event, projectPath, packageName) =>
-    bin.npmPackageOutdated(projectPath, packageName),
-  );
   handle('bin.code', (_event, path) => bin.code(path));
 
   // analytics
@@ -37,5 +31,8 @@ export function initIpc() {
   handle('analytics.getAnonymousId', () => analytics.getAnonymousId());
 
   // npm
-  handle('npm.install', (_event, path) => npm.install(path));
+  handle('npm.install', (_event, path, packageName) => npm.install(path, packageName));
+  handle('npm.packageOutdated', (_event, path, packageName) =>
+    npm.packageOutdated(path, packageName),
+  );
 }
