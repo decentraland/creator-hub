@@ -16,6 +16,7 @@
 
 .MuiModal-root .SelectWorld .thumbnail {
   width: 250px;
+  object-fit: cover;
 }
 
 .MuiModal-root .SelectWorld .box .selection {
