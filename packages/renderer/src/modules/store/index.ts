@@ -11,6 +11,7 @@ import * as snackbar from './snackbar';
 import * as translations from './translation';
 import * as workspace from './workspace';
 import * as analytics from './analytics';
+import * as ens from './ens';
 
 export function createRootReducer() {
   return {
@@ -19,6 +20,7 @@ export function createRootReducer() {
     translation: translations.reducer,
     workspace: workspace.reducer,
     analytics: analytics.reducer,
+    ens: ens.reducer,
   };
 }
 

@@ -69,6 +69,15 @@ export const useEditor = () => {
     [workspaceActions.setProjectTitle, project],
   );
 
+  const updateProject = useCallback(
+    (updatedProject: Project) => {
+      if (!project || !updatedProject || project.path !== updatedProject.path) return;
+
+      dispatch(workspaceActions.updateProject(updatedProject));
+    },
+    [workspaceActions.updateProject, project],
+  );
+
   return {
     ...editor,
     project,
@@ -78,5 +87,6 @@ export const useEditor = () => {
     openPreview,
     openCode,
     updateScene,
+    updateProject,
   };
 };

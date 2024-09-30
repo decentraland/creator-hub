@@ -5,7 +5,7 @@
 }
 
 .Button.MuiButton-root + .Button.MuiButton-root {
-  margin-left: 10px
+  margin-left: 10px;
 }
 
 .Button.MuiButton-root svg,

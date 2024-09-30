@@ -97,7 +97,28 @@
       "worlds": {
         "title": "Worlds",
         "description": "Not findable in Genesis City map. \nUp to 100 users can join concurrently.",
-        "action": "Publish to World"
+        "action": "Publicar Mundo",
+        "select_world": {
+          "title": "Publicar Mundo",
+          "description": "Seleccione el NOMBRE de Decentraland o el Dominio ENS que definirá la URL",
+          "world_name": "MUNDO (NOMBRE)",
+          "placeholder": "Seleccione un Nombre",
+          "claim_new_name": "Solicitar un nuevo Nombre",
+          "claim_new_ens_domain": "Solicitar un nuevo dominio ENS",
+          "action": "Publicar",
+          "ens_providers": {
+            "dcl": "NOMBRE",
+            "ens": "DOMINIO ENS"
+          },
+          "world_url_description": "La URL para acceder a tu mundo será:<br></br><b>{world_url}</b>",
+          "world_has_content": "El contenido existente en el mundo {world} será reemplazado por el nuevo contenido que estás a punto de publicar.",
+          "confirm_world_replace_content": "Entiendo que esta acción es irreversible."
+        },
+        "empty_names": {
+          "title": "No tienes ningún mundo disponible",
+          "description": "<b>Obtén un mundo gratis cuando tengas un NOMBRE</b>.<br></br>Cada NOMBRE te dará acceso a un mundo. Puedes tener tantos como quieras.",
+          "action": "Solicitar un nuevo Nombre"
+        }
       },
       "land": {
         "title": "My Land",
