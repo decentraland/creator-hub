@@ -150,7 +150,7 @@ export function EditorPage() {
         renderLoading()
       ) : (
         <>
-          <Header>
+          <Header hideUserMenu>
             <>
               <div
                 className="back"
