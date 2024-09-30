@@ -29,7 +29,7 @@ export type Project = {
   packageStatus?: {
     [packageName: string]: {
       isOutdated: boolean;
-      isUpdated?: boolean;
+      showUpdatedNotification?: boolean;
     };
   };
 };

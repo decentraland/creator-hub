@@ -19,7 +19,7 @@ const handleSdkPackageUpdate = async (project: Project, updateStrategySetting: s
     return project;
   }
 
-  const isOutdated = await limit(() => workspace.npmPackageOutdated(project.path, SDK_PACKAGE));
+  const isOutdated = await limit(() => npm.packageOutdated(project.path, SDK_PACKAGE));
 
   const updatedPackageStatus: Project['packageStatus'] = {
     ...project.packageStatus,
@@ -28,10 +28,10 @@ const handleSdkPackageUpdate = async (project: Project, updateStrategySetting: s
 
   if (updateStrategySetting === UPDATE_DEPENDENCIES_STRATEGY.AUTO_UPDATE && isOutdated) {
     try {
-      await limit(() => workspace.installNpmPackage(project.path, SDK_PACKAGE));
-      updatedPackageStatus[SDK_PACKAGE].isUpdated = true;
+      await limit(() => npm.install(project.path, SDK_PACKAGE));
+      updatedPackageStatus[SDK_PACKAGE].showUpdatedNotification = true;
     } catch (_) {
-      updatedPackageStatus[SDK_PACKAGE].isUpdated = false;
+      updatedPackageStatus[SDK_PACKAGE].showUpdatedNotification = false;
     }
   }
 
@@ -70,15 +70,15 @@ const saveThumbnail = createAsyncThunk(
     return project;
   },
 );
-const installProject = createAsyncThunk('npm/install', npm.install);
+const installProject = createAsyncThunk('npm/install', async (path: string) => npm.install(path));
 export const createProjectAndInstall: (
   opts?: Parameters<typeof workspace.createProject>[0],
 ) => ThunkAction = opts => async dispatch => {
   const { path } = await dispatch(createProject(opts)).unwrap();
   dispatch(installProject(path));
 };
-const updateSdkPackage = createAsyncThunk('workspace/updateSdkPackage', async (path: string) =>
-  workspace.installNpmPackage(path, SDK_PACKAGE),
+const updateSdkPackage = createAsyncThunk('npm/updateSdkPackage', async (path: string) =>
+  npm.install(path, SDK_PACKAGE),
 );
 
 // state
@@ -238,7 +238,7 @@ export const slice = createSlice({
               ...project.packageStatus,
               [SDK_PACKAGE]: {
                 isOutdated: false,
-                isUpdated: true,
+                showUpdatedNotification: true,
               },
             },
           };
@@ -262,7 +262,7 @@ export const slice = createSlice({
                 ...action.payload.project.packageStatus,
                 [SDK_PACKAGE]: {
                   ...action.payload.project.packageStatus![SDK_PACKAGE],
-                  isUpdated: undefined,
+                  showUpdatedNotification: undefined,
                 },
               },
             };

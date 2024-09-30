@@ -76,7 +76,7 @@ export function EditorPage() {
         createDependencyNotification('new-dependency-version', project, { duration: 0 });
       } else if (
         updateStrategySetting === UPDATE_DEPENDENCIES_STRATEGY.AUTO_UPDATE &&
-        project?.packageStatus?.[SDK_PACKAGE].isUpdated
+        project?.packageStatus?.[SDK_PACKAGE].showUpdatedNotification
       ) {
         createDependencyNotification('dependency-updated-automatically', project);
       }
