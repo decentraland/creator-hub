@@ -103,6 +103,8 @@
           "description": "Seleccione el NOMBRE de Decentraland o el Dominio ENS que definirá la URL",
           "world_name": "MUNDO (NOMBRE)",
           "placeholder": "Seleccione un Nombre",
+          "claim_new_name": "Solicitar un nuevo Nombre",
+          "claim_new_ens_domain": "Solicitar un nuevo dominio ENS",
           "action": "Publicar",
           "ens_providers": {
             "dcl": "NOMBRE",
@@ -113,9 +115,9 @@
           "confirm_world_replace_content": "Entiendo que esta acción es irreversible."
         },
         "empty_names": {
-          "title": "You don't have any available World",
-          "description": "<b>Get a free world when you own a NAME</b>.<br></br>Each NAME will give you access to one World. You can have as many as you want.",
-          "action": "Claim a new Name"
+          "title": "No tienes ningún mundo disponible",
+          "description": "<b>Obtén un mundo gratis cuando tengas un NOMBRE</b>.<br></br>Cada NOMBRE te dará acceso a un mundo. Puedes tener tantos como quieras.",
+          "action": "Solicitar un nuevo Nombre"
         }
       },
       "land": {

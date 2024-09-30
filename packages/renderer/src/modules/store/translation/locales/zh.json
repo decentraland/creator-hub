@@ -103,6 +103,8 @@
           "description": "選擇將定義 URL 的 Decentraland 姓名 或 ENS 網域",
           "world_name": "世界（名稱）",
           "placeholder": "選擇名稱",
+          "claim_new_name": "索取新名字",
+          "claim_new_ens_domain": "申請 ENS 域名",
           "action": "發布",
           "ens_providers": {
             "dcl": "姓名",
@@ -113,9 +115,9 @@
           "confirm_world_replace_content": "我了解此操作不可逆轉"
         },
         "empty_names": {
-          "title": "You don't have any available World",
-          "description": "<b>Get a free world when you own a NAME</b>.<br></br>Each NAME will give you access to one World. You can have as many as you want.",
-          "action": "Claim a new Name"
+          "title": "您沒有任何可用的世界",
+          "description": "<b>當您擁有一個NAME 時，您將獲得一個免費的世界</b>。你想要多少就可以有多少。",
+          "action": "索取新名字"
         }
       },
       "land": {

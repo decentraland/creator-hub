@@ -103,6 +103,8 @@
           "description": "Select the Decentraland NAME or ENS Domain that will define the URL",
           "world_name": "WORLD (NAME)",
           "placeholder": "Select a Name",
+          "claim_new_name": "Claim a new NAME",
+          "claim_new_ens_domain": "Claim an ENS Domain",
           "action": "Publish",
           "ens_providers": {
             "dcl": "NAME",

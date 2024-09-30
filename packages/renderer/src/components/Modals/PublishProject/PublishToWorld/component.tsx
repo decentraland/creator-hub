@@ -9,6 +9,8 @@ import {
   Typography,
   type SelectChangeEvent,
 } from 'decentraland-ui2';
+import WarningIcon from '@mui/icons-material/Warning';
+import AddIcon from '@mui/icons-material/Add';
 
 import { misc } from '#preload';
 import type { Project } from '/shared/types/projects';
@@ -85,6 +87,18 @@ function SelectWorld({ project, onPublish }: { project: Project; onPublish: () =
     onPublish();
   }, [project, name]);
 
+  const handleClaimNewName = useCallback(
+    (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
+      event.preventDefault();
+      if (ensProvider === ENSProvider.DCL) {
+        misc.openExternal('https://decentraland.org/marketplace/names/claim');
+      } else {
+        misc.openExternal('https://ens.domains');
+      }
+    },
+    [ensProvider],
+  );
+
   const handleChangeSelectProvider = useCallback((e: SelectChangeEvent) => {
     setENSProvider(e.target.value as ENSProvider);
     setName('');
@@ -92,6 +106,7 @@ function SelectWorld({ project, onPublish }: { project: Project; onPublish: () =
   }, []);
 
   const handleChangeSelectName = useCallback((e: SelectChangeEvent) => {
+    if (!e.target.value) return;
     setName(e.target.value);
     setConfirmWorldReplaceContent(false);
   }, []);
@@ -194,25 +209,32 @@ function SelectWorld({ project, onPublish }: { project: Project; onPublish: () =
                   {_world}
                 </MenuItem>
               ))}
+              <MenuItem onClick={handleClaimNewName}>
+                <AddIcon />
+                {ensProvider === ENSProvider.DCL
+                  ? t('modal.publish_project.worlds.select_world.claim_new_name')
+                  : t('modal.publish_project.worlds.select_world.claim_new_ens_domain')}
+              </MenuItem>
             </Select>
           </FormControl>
-          <Typography
-            variant="caption"
-            color="textSecondary"
-          >
-            {t('modal.publish_project.worlds.select_world.world_url_description', {
-              b: (child: JSX.Element) => <b>{child}</b>,
-              br: () => <br />,
-              world_url: <a href={getExplorerUrl}>{getExplorerUrl}</a>,
-            })}
-          </Typography>
-          {hasWorldContent && (
-            <Typography
-              variant="caption"
-              color="textSecondary"
-            >
-              {t('modal.publish_project.worlds.select_world.world_has_content', { world: name })}
+          {!!name && (
+            <Typography variant="caption">
+              {t('modal.publish_project.worlds.select_world.world_url_description', {
+                b: (child: JSX.Element) => <b>{child}</b>,
+                br: () => <br />,
+                world_url: <a href={getExplorerUrl}>{getExplorerUrl}</a>,
+              })}
             </Typography>
+          )}
+          {hasWorldContent && (
+            <div className="WorldHasContent">
+              <div className="WarningIcon">
+                <WarningIcon />
+              </div>
+              <Typography variant="caption">
+                {t('modal.publish_project.worlds.select_world.world_has_content', { world: name })}
+              </Typography>
+            </div>
           )}
         </div>
       </div>
