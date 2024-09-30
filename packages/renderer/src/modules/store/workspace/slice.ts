@@ -11,6 +11,7 @@ import type { Async } from '/@/modules/async';
 // actions
 const getWorkspace = createAsyncThunk('workspace/getWorkspace', workspace.getWorkspace);
 const createProject = createAsyncThunk('workspace/createProject', workspace.createProject);
+const updateProject = createAsyncThunk('workspace/updateProject', workspace.updateProject);
 const deleteProject = createAsyncThunk('workspace/deleteProject', workspace.deleteProject);
 const duplicateProject = createAsyncThunk('workspace/duplicateProject', workspace.duplicateProject);
 const importProject = createAsyncThunk('workspace/importProject', workspace.importProject);
@@ -76,6 +77,20 @@ export const slice = createSlice({
       })
       .addCase(createProject.fulfilled, (state, action) => {
         state.projects = [...state.projects, action.payload];
+      })
+      .addCase(updateProject.pending, state => {
+        state.status = 'loading';
+      })
+      .addCase(updateProject.fulfilled, (state, action) => {
+        const projectIdx = state.projects.findIndex($ => $.path === action.payload.path);
+        if (projectIdx !== -1) {
+          state.projects[projectIdx] = { ...action.payload };
+        }
+        state.status = 'succeeded';
+      })
+      .addCase(updateProject.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.error.message || 'Failed to get update the project';
       })
       .addCase(deleteProject.pending, state => {
         state.status = 'loading';
@@ -172,6 +187,7 @@ export const actions = {
   createProject,
   installProject,
   createProjectAndInstall,
+  updateProject,
   deleteProject,
   duplicateProject,
   importProject,

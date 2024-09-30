@@ -7,7 +7,7 @@ export type Props = {
   onSubmit: (value: StepValue) => void;
 };
 
-export type Step = 'initial' | 'alternative-servers';
+export type Step = 'initial' | 'alternative-servers' | 'publish-to-world';
 export type InitialTarget = 'worlds' | 'land';
 export type AlternativeTarget = 'test' | 'custom';
 

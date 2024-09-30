@@ -16,7 +16,7 @@
   margin: 20px 0;
 }
 
-.MuiModal-root .Initial .options .OptionBox+.OptionBox {
+.MuiModal-root .Initial .options .OptionBox + .OptionBox {
   margin-left: 20px;
 }
 

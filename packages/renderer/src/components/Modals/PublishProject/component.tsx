@@ -12,6 +12,7 @@ import WorldsPng from '/assets/images/worlds.png';
 
 import { Button } from '../../Button';
 import { OptionBox } from '../../EditorPage/OptionBox';
+import { PublishToWorld } from './PublishToWorld';
 
 import type { AlternativeTarget, Step, StepProps, StepValue, Props } from './types';
 
@@ -42,7 +43,11 @@ export function PublishProject({ open, project, onSubmit, onClose }: Props) {
   return (
     <Modal
       open={open}
-      title={t('modal.publish_project.title', { title: project?.title })}
+      title={
+        step !== 'publish-to-world'
+          ? t('modal.publish_project.title', { title: project?.title })
+          : ''
+      }
       onClose={handleClose}
       size="small"
       onBack={step !== 'initial' ? handleChangeStep('initial') : undefined}
@@ -54,6 +59,7 @@ export function PublishProject({ open, project, onSubmit, onClose }: Props) {
         />
       )}
       {step === 'alternative-servers' && <AlternativeServers onClick={handleClickPublish} />}
+      {step === 'publish-to-world' && <PublishToWorld onClose={onClose} />}
     </Modal>
   );
 }
@@ -78,7 +84,7 @@ function Initial({
           title={t('modal.publish_project.worlds.title')}
           description={t('modal.publish_project.worlds.description')}
           buttonText={t('modal.publish_project.worlds.action')}
-          onClickPublish={handleClick('worlds')}
+          onClickPublish={onStepChange('publish-to-world')}
           learnMoreUrl="https://docs.decentraland.org/creator/worlds/about/#publish-a-world"
         />
         <OptionBox

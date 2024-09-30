@@ -20,9 +20,12 @@ import { DEFAULT_THUMBNAIL, NEW_SCENE_NAME, EMPTY_SCENE_TEMPLATE_REPO } from './
 /**
  * Get scene json
  */
+function getScenePath(_path: string): string {
+  return path.join(_path, 'scene.json');
+}
+
 export async function getScene(_path: string): Promise<Scene> {
-  const sceneJsonPath = path.join(_path, 'scene.json');
-  const scene = await fs.readFile(sceneJsonPath, 'utf8');
+  const scene = await fs.readFile(getScenePath(_path), 'utf8');
   return JSON.parse(scene);
 }
 
@@ -112,6 +115,7 @@ export async function getProject(_path: string): Promise<Project> {
       createdAt: Number(stat.birthtime),
       updatedAt: Number(stat.mtime),
       size: stat.size,
+      worldConfiguration: scene?.worldConfiguration,
     };
   } catch (error: any) {
     throw new Error(`Could not get scene.json info for project in "${_path}": ${error.message}`);
@@ -231,6 +235,41 @@ export async function createProject(opts?: { name?: string; repo?: string }): Pr
   const project = await getProject(projectPath);
   await setConfig(config => config.workspace.paths.push(projectPath));
   return project;
+}
+
+/**
+ * Updates the project's information in the scene.json file.
+ *
+ * @param project - The Project object containing the updated information.
+ * @returns {Promise<Project>} A Promise that resolves to the updated Project object.
+ * @throws {Error} An error if the scene.json file cannot be updated.
+ */
+export async function updateProject(project: Project): Promise<Project> {
+  // TODO: Update all properties associated to a project in the scene.json
+  try {
+    let scene = await getScene(project.path);
+
+    scene = {
+      ...scene,
+      display: {
+        ...scene.display,
+        title: project.title,
+      },
+      worldConfiguration: {
+        ...project.worldConfiguration,
+      },
+    };
+
+    await deepWriteFile(getScenePath(project.path), JSON.stringify(scene, null, 2), {
+      encoding: 'utf8',
+    });
+
+    return project;
+  } catch (error: any) {
+    throw new Error(
+      `Could not update the scene.json info with project in "${project.path}": ${error.message}`,
+    );
+  }
 }
 
 /**
