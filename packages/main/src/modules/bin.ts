@@ -90,7 +90,7 @@ export async function install() {
           await fs.symlink(nodeBinPath, nodeCmdPath);
         }
       }
-      PATH = joinEnvPaths(process.env.PATH, path.dirname(nodeCmdPath), path.dirname(npmBinPath));
+      PATH = joinEnvPaths(path.dirname(nodeCmdPath), path.dirname(npmBinPath), process.env.PATH);
       if (process.platform !== 'win32') {
         // on unix systems we need to install the path to the local bin folder for the Open in VSCode feature to work
         PATH = joinEnvPaths(PATH, '/usr/local/bin');
