@@ -222,7 +222,14 @@ function SelectWorld({ project, onPublish }: { project: Project; onPublish: () =
               {t('modal.publish_project.worlds.select_world.world_url_description', {
                 b: (child: JSX.Element) => <b>{child}</b>,
                 br: () => <br />,
-                world_url: <a href={getExplorerUrl}>{getExplorerUrl}</a>,
+                world_url: (
+                  <a
+                    href={getExplorerUrl}
+                    onClick={() => misc.openExternal(getExplorerUrl)}
+                  >
+                    {getExplorerUrl}
+                  </a>
+                ),
               })}
             </Typography>
           )}
