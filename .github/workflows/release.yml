@@ -151,16 +151,6 @@ jobs:
           INPUT_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
           INPUT_CREDENTIAL_ID: ${{ secrets.WINDOWS_CREDENTIAL_ID_SIGNER }}
 
-      - name: Drop older pre-releases
-        if: ${{github.ref == 'refs/heads/main' && !inputs.dry-run}}
-        uses: sgpublic/delete-release-action@v1.1
-        with:
-          pre-release-drop: true
-          pre-release-keep-count: 0 # this is the number of pre-releases except the latest pre-release reserved
-          pre-release-drop-tag: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.github_token }}
-
       - name: Move artifacts to upload folder
         if: ${{ github.event.pull_request.number }}
         run: sh -c 'mkdir dist/upload && cp dist/*.dmg dist/*.exe dist/upload 2> /dev/null || :'
