@@ -62,7 +62,7 @@ defaults:
     shell: 'bash'
 
 jobs:
-  draft_release:
+  pre_release:
     strategy:
       fail-fast: true
       matrix:
@@ -136,6 +136,7 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PWD }}
           # Publishing artifacts
           GH_TOKEN: ${{ secrets.github_token }} # GitHub token, automatically provided (No need to define this secret in the repo settings)
+          EP_PRE_RELEASE: true # Publish as pre-release
           # The following are the parameters required by the esigner-codesign action to work, we must explicitly pass in even the optional ones since we're not using the action directly, but from the checked out repo
           CODE_SIGN_SCRIPT_PATH: "${{ github.workspace }}\\esigner-codesign\\dist\\index.js"
           INPUT_COMMAND: "sign"
@@ -149,6 +150,16 @@ jobs:
           INPUT_PASSWORD: ${{ secrets.ES_PASSWORD }}
           INPUT_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
           INPUT_CREDENTIAL_ID: ${{ secrets.WINDOWS_CREDENTIAL_ID_SIGNER }}
+
+      - name: Drop older pre-releases
+        if: ${{github.ref == 'refs/heads/main' && !inputs.dry-run}}
+        uses: sgpublic/delete-release-action@v1.1
+        with:
+          pre-release-drop: true
+          pre-release-keep-count: 0 # this is the number of pre-releases except the latest pre-release reserved
+          pre-release-drop-tag: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.github_token }}
 
       - name: Move artifacts to upload folder
         if: ${{ github.event.pull_request.number }}

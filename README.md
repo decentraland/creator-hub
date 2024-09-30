@@ -117,9 +117,9 @@ The CI pipeline is configured to automate the release process for the Decentrala
 
 ### Steps
 
-1. **Draft Release Creation**:
+1. **Pre-release Creation**:
 
-   - For every push to the main branch, the CI creates a draft release.
+   - For every push to the main branch, the CI creates a pre-release.
    - The commit message determines the type of release:
      - Patch (fix)
      - Minor (feat)
@@ -127,10 +127,10 @@ The CI pipeline is configured to automate the release process for the Decentrala
 
 2. **Artifact Generation**:
 
-   - Artifacts for MacOS (x64 and ARM architectures) and Windows are generated and attached to the draft release.
+   - Artifacts for MacOS (x64 and ARM architectures) and Windows are generated and attached to the pre-release.
 
 3. **Publishing the Release**:
-   - To publish a release, edit the draft release and publish it as the latest release.
+   - To publish a release, edit the pre-release and publish it as the latest release.
    - The auto updater, as mentioned in the Update Process, will pick up this new release and update the production app.
 
 This streamlined process ensures that updates are consistently and accurately deployed to users.
