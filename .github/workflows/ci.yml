@@ -1,3 +1,4 @@
+name: CI
 # This workflow is the entry point for all CI processes.
 # It is from here that all other workflows are launched.
 on:
