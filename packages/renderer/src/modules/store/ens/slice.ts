@@ -8,12 +8,68 @@ import { Worlds } from '/@/lib/worlds';
 import type { Async } from '/@/modules/async';
 import { ens as ensContract, ensResolver } from './contracts';
 import { getEnsProvider, isValidENSName, isDev } from './utils';
-import type { DomainsQueryResult, ENS, ENSError } from './types';
+import type { DCLDomainsQueryResult, DomainsQueryResult, ENS, ENSError } from './types';
 
 const REQUESTS_BATCH_SIZE = 25;
+const BATCH_SIZE = 1000;
 const limit = pLimit(REQUESTS_BATCH_SIZE);
 
 // actions
+export const fetchDCLENSNames = async (address: string, chainId: ChainId) => {
+  let dclEnsSubgraph = 'https://subgraph.decentraland.org/marketplace';
+  if (isDev(chainId)) {
+    dclEnsSubgraph = 'https://subgraph.decentraland.org/marketplace-sepolia';
+  }
+
+  let results: string[] = [];
+  let offset = 0;
+  let nextPage = true;
+
+  while (nextPage) {
+    const response: Response = await fetch(dclEnsSubgraph, {
+      method: 'POST',
+      body: JSON.stringify({
+        query: `{
+          nfts(
+            first: ${BATCH_SIZE},
+            skip: ${offset},
+            where: {
+              owner_: { id: "${address.toLowerCase()}" },
+              category: ens
+            }
+          ) {
+            ens {
+              subdomain
+            }
+          }
+        }`,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(response.status.toString());
+    }
+
+    const queryResult: DCLDomainsQueryResult = await response.json();
+
+    if ('errors' in queryResult) {
+      throw new Error(JSON.stringify(queryResult.errors));
+    }
+    const domains: string[] = queryResult.data.nfts.map(
+      nft => `${nft.ens.subdomain.toString()}.dcl.eth`,
+    );
+    results = results.concat(domains);
+
+    if (domains.length === BATCH_SIZE) {
+      offset += BATCH_SIZE;
+    } else {
+      nextPage = false;
+    }
+  }
+
+  return results;
+};
+
 export const fetchENSNames = async (address: string, chainId: ChainId) => {
   let ensSubgraph = 'https://subgraph.decentraland.org/ens';
   if (isDev(chainId)) {
@@ -26,7 +82,6 @@ export const fetchENSNames = async (address: string, chainId: ChainId) => {
       query: `{
         domains(
           where: {or: [
-            { owner_: { id: "${address.toLowerCase()}" } },
             { wrappedOwner: "${address.toLowerCase()}" },
             { registrant: "${address.toLowerCase()}" }
           ]}
@@ -102,7 +157,11 @@ export const fetchENSList = createAsyncThunk(
       provider,
     );
 
-    let domains: string[] = await fetchENSNames(address, chainId);
+    const [dclENSNames, ENSNames] = await Promise.all([
+      fetchDCLENSNames(address, chainId),
+      fetchENSNames(address, chainId),
+    ]);
+    let domains: string[] = [...dclENSNames, ...ENSNames];
     const bannedDomains: string[] = await fetchBannedNames(chainId);
     domains = domains.filter(domain => !bannedDomains.includes(domain)).filter(isValidENSName);
 
