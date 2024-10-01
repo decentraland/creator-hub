@@ -1,4 +1,4 @@
-import { editor, misc } from '#preload';
+import { editor } from '#preload';
 import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 import { type Project } from '/shared/types/projects';
@@ -10,7 +10,6 @@ export const install = createAsyncThunk('editor/install', editor.install);
 export const startInspector = createAsyncThunk('editor/startInspector', editor.startInspector);
 export const runScene = createAsyncThunk('editor/runScene', editor.runScene);
 export const publishScene = createAsyncThunk('editor/publishScene', editor.publishScene);
-export const openPreview = createAsyncThunk('editor/openPreview', misc.openExternal);
 export const openTutorial = createAsyncThunk('editor/openTutorial', editor.openTutorial);
 
 // state
@@ -133,7 +132,6 @@ export const actions = {
   startInspector,
   runScene,
   publishScene,
-  openPreview,
   openTutorial,
 };
 export const reducer = slice.reducer;
