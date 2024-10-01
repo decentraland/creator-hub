@@ -23,7 +23,7 @@ jobs:
           cache: 'npm'
       - name: Drop pre releases
         if: ${{github.ref == 'refs/heads/main' && !inputs.dry-run}}
-        uses: sgpublic/delete-release-action@v1.1
+        uses: sgpublic/delete-release-action@v1.2
         with:
           pre-release-drop: true
           pre-release-keep-count: -1
