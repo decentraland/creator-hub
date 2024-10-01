@@ -8,33 +8,18 @@ import { throttle } from '/shared/utils';
 import { seconds } from '/shared/time';
 
 import { actions as workspaceActions } from '/@/modules/store/workspace';
+import { takeScreenshot as takeScreenshotRPC } from '/@/modules/rpc';
 import { stripBase64ImagePrefix, resizeImage } from '/@/modules/image';
 import { type CameraRPC } from '/@/modules/rpc/camera';
 
 type Screenshot = {
   iframe: HTMLIFrameElement;
-  camera: CameraRPC;
+  camera?: CameraRPC;
 };
 
 export function useScene() {
   const dispatch = useDispatch();
-  const [takeScreenshot] = throttle(
-    async (target: HTMLIFrameElement, camera: CameraRPC) => {
-      // TODO:
-      // 1. make the camera position/target relative to parcels rows & columns
-      // 2. the CameraServer only allows to reposition the main camera, so repositioning it, will also
-      //    reposition the content creator's view. We need a way to specify a different camera or a way to
-      //    save the current position, move it for a screenshot, and restore it
-      //
-      // leaving the next line just for reference:
-      // await Promise.all([camera.setPosition(x, y, z), camera.setTarget(x, y, z)]);
-
-      const screenshot = await camera.takeScreenshot(+target.width, +target.height);
-      return screenshot;
-    },
-    seconds(30),
-    seconds(5),
-  );
+  const [takeScreenshot] = throttle(takeScreenshotRPC, seconds(30), seconds(5));
 
   const updateTitle = useCallback(
     (project: Project, scene: Scene) => {

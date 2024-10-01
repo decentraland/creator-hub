@@ -81,3 +81,6 @@ export type ContributableDomain = {
 
 export type Domain = { name: string };
 export type DomainsQueryResult = { data: { domains: Domain[] } } | { errors: any };
+export type DCLDomainsQueryResult =
+  | { data: { nfts: { ens: { subdomain: string } }[] } }
+  | { errors: any };

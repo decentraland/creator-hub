@@ -113,6 +113,11 @@ export const slice = createSlice({
         state.project.title = action.payload.title;
       }
     });
+    builder.addCase(workspaceActions.saveThumbnail.fulfilled, (state, action) => {
+      if (state.project?.path === action.payload.path) {
+        state.project.thumbnail = action.payload.thumbnail;
+      }
+    });
     builder.addCase(runScene.pending, state => {
       state.loadingPreview = true;
     });
