@@ -67,3 +67,17 @@ export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partia
     },
   };
 }
+
+export async function takeScreenshot(iframe: HTMLIFrameElement, camera?: CameraRPC) {
+  // TODO:
+  // 1. make the camera position/target relative to parcels rows & columns
+  // 2. the CameraServer only allows to reposition the main camera, so repositioning it, will also
+  //    reposition the content creator's view. We need a way to specify a different camera or a way to
+  //    save the current position, move it for a screenshot, and restore it
+  //
+  // leaving the next line just for reference:
+  // await Promise.all([camera.setPosition(x, y, z), camera.setTarget(x, y, z)]);
+  const _camera = camera ?? new CameraRPC(new MessageTransport(window, iframe.contentWindow!));
+  const screenshot = await _camera.takeScreenshot(+iframe.width, +iframe.height);
+  return screenshot;
+}
