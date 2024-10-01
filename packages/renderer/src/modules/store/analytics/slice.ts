@@ -2,17 +2,27 @@ import { analytics } from '#preload';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 // actions
-export const fetchUserId = createAsyncThunk('analytics/fetchUserId', analytics.getUserId);
+export const fetchAnonymousId = createAsyncThunk(
+  'analytics/fetchAnonymousId',
+  analytics.getAnonymousId,
+);
+export const identify = createAsyncThunk(
+  'analytics/identify',
+  async (opts: { userId: string; traits?: Record<string, any> }) =>
+    analytics.identify(opts.userId, opts.traits),
+);
 
 // state
 export type AnalyticsState = {
   loading: boolean;
+  anonymousId: string | null;
   userId: string | null;
   error: string | null;
 };
 
 const initialState: AnalyticsState = {
   loading: false,
+  anonymousId: null,
   userId: null,
   error: null,
 };
@@ -25,17 +35,20 @@ export const slice = createSlice({
   initialState,
   reducers: {},
   extraReducers: builder => {
-    builder.addCase(fetchUserId.pending, state => {
+    builder.addCase(fetchAnonymousId.pending, state => {
       state.loading = true;
     });
-    builder.addCase(fetchUserId.fulfilled, (state, action) => {
+    builder.addCase(fetchAnonymousId.fulfilled, (state, action) => {
       state.loading = false;
-      state.userId = action.payload;
+      state.anonymousId = action.payload;
       state.error = null;
     });
-    builder.addCase(fetchUserId.rejected, (state, action) => {
+    builder.addCase(fetchAnonymousId.rejected, (state, action) => {
       state.loading = false;
       state.error = action.error.message || null;
+    });
+    builder.addCase(identify.pending, (state, action) => {
+      state.userId = action.meta.arg.userId;
     });
   },
 });
@@ -43,7 +56,7 @@ export const slice = createSlice({
 // exports
 export const actions = {
   ...slice.actions,
-  fetchUserId,
+  fetchAnonymousId,
 };
 export const reducer = slice.reducer;
 export const selectors = { ...slice.selectors };

@@ -53,7 +53,7 @@ async function start() {
     // fetch app version and user id
     await Promise.all([
       store.dispatch(editor.actions.fetchVersion()),
-      store.dispatch(analytics.actions.fetchUserId()),
+      store.dispatch(analytics.actions.fetchAnonymousId()),
     ]);
 
     // install editor dependencies

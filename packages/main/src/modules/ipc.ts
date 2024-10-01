@@ -27,7 +27,8 @@ export function initIpc() {
 
   // analytics
   handle('analytics.track', (_event, eventName, data) => analytics.track(eventName, data));
-  handle('analytics.getUserId', () => analytics.getUserId());
+  handle('analytics.identify', (_event, userId, traits) => analytics.identify(userId, traits));
+  handle('analytics.getAnonymousId', () => analytics.getAnonymousId());
 
   // npm
   handle('npm.install', (_event, path) => npm.install(path));

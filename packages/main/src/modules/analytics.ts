@@ -1,11 +1,21 @@
-import { Analytics } from '@segment/analytics-node';
+import { Analytics, type TrackParams } from '@segment/analytics-node';
 import log from 'electron-log';
 import { randomUUID } from 'node:crypto';
 import { config } from './config';
 
 let analytics: Analytics | null = null;
 
-export async function getUserId() {
+let _userId: string | null = null;
+
+export function getUserId() {
+  return _userId;
+}
+
+export function setUserId(userId: string) {
+  _userId = userId;
+}
+
+export async function getAnonymousId() {
   const exists = await config.has('userId');
   if (!exists) {
     const userId = randomUUID();
@@ -24,26 +34,38 @@ export async function getAnalytics(): Promise<Analytics | null> {
     analytics = new Analytics({
       writeKey,
     });
-    analytics.identify({
-      userId: await getUserId(),
-      traits: {
-        appId: 'creator-hub',
-      },
-    });
     return analytics;
   } else {
     return null;
   }
 }
 
-export async function track(event: string, data: Record<string, any> = {}) {
+export async function track(event: string, properties: Record<string, any> = {}) {
   try {
     const analytics = await getAnalytics();
     if (!analytics) return;
-    const userId = await getUserId();
-    analytics.track({ event, properties: data, userId });
+    const anonymousId = await getAnonymousId();
+    const params: TrackParams = { event, properties, anonymousId };
+    const userId = getUserId();
+    if (userId) {
+      params.userId = userId;
+    }
+    analytics.track(params);
   } catch (error) {
     log.error('Error tracking event', event, error);
+    // do nothing
+  }
+}
+
+export async function identify(userId: string, traits: Record<string, any> = {}) {
+  try {
+    const analytics = await getAnalytics();
+    if (!analytics) return;
+    const anonymousId = await getAnonymousId();
+    setUserId(userId);
+    analytics.identify({ userId, anonymousId, traits });
+  } catch (error) {
+    log.error('Error identifying user', userId, error);
     // do nothing
   }
 }
