@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { config } from './config';
 
 let analytics: Analytics | null = null;
-
+const sessionId = randomUUID();
 let _userId: string | null = null;
 
 export function getUserId() {
@@ -45,7 +45,14 @@ export async function track(event: string, properties: Record<string, any> = {})
     const analytics = await getAnalytics();
     if (!analytics) return;
     const anonymousId = await getAnonymousId();
-    const params: TrackParams = { event, properties, anonymousId };
+    const params: TrackParams = {
+      event,
+      properties: {
+        ...properties,
+        sessionId,
+      },
+      anonymousId,
+    };
     const userId = getUserId();
     if (userId) {
       params.userId = userId;
