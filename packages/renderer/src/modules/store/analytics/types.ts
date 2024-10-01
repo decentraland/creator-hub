@@ -1,3 +1,4 @@
+import { type GetState } from '#store';
 import type { Action } from '@reduxjs/toolkit';
 
 export type WindowWithAnalytics = Window & {
@@ -21,4 +22,5 @@ export interface TypedActionCreator<Type extends string> {
 
 export type GetPayload<A extends TypedActionCreator<string>> = (
   action: ReturnType<A>,
+  getState: GetState,
 ) => Promise<Record<string, string | number | undefined | null>>;

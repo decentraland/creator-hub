@@ -6,6 +6,7 @@ import { useDispatch } from '#store';
 import { AuthContext } from '/@/contexts/AuthContext';
 import Profiles from '/@/lib/profile';
 import { fetchENSList } from '/@/modules/store/ens';
+import { identify } from '/@/modules/store/analytics';
 import type { AuthSignInProps } from './types';
 
 const AUTH_SERVER_URL = 'https://auth-api.decentraland.org';
@@ -95,6 +96,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     if (wallet && chainId) {
       dispatch(fetchENSList({ address: wallet, chainId }));
+      dispatch(identify({ userId: wallet }));
     }
   }, [wallet, chainId]);
 
