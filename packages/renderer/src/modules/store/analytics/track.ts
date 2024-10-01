@@ -24,6 +24,8 @@ trackAction(workspaceActions.saveThumbnail.fulfilled, 'Save Project Success', as
 trackAction(editorActions.runScene.pending, 'Preview Scene', async (_action, getState) => ({
   project_id: getState().editor.project?.id,
 }));
-trackAction(editorActions.publishScene.fulfilled, 'Publish Scene', async (_action, getState) => ({
+trackAction(editorActions.publishScene.fulfilled, 'Publish Scene', async (action, getState) => ({
   project_id: getState().editor.project?.id,
+  target: action.meta.arg.target,
+  targetContent: action.meta.arg.targetContent,
 }));
