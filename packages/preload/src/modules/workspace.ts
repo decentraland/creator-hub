@@ -231,6 +231,10 @@ export async function createProject(opts?: { name?: string; repo?: string }): Pr
   await invoke('cli.init', projectPath, repo);
   const scene = await getScene(projectPath);
   scene.display!.title = sceneName;
+  // TODO: Fix: Remove worldConfiguration in the scene.json of the templates
+  if (repo !== EMPTY_SCENE_TEMPLATE_REPO) {
+    delete scene.worldConfiguration;
+  }
   const sceneJsonPath = path.join(projectPath, 'scene.json');
   await fs.writeFile(sceneJsonPath, JSON.stringify(scene, null, 2));
   const project = await getProject(projectPath);
