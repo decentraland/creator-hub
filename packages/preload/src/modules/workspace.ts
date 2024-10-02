@@ -3,6 +3,7 @@ import path from 'node:path';
 import { randomUUID, type UUID } from 'node:crypto';
 import type { Scene } from '@dcl/schemas';
 import { shell } from 'electron';
+import equal from 'fast-deep-equal';
 
 import { SortBy, type Project } from '/shared/types/projects';
 import type { Template, Workspace } from '/shared/types/workspace';
@@ -240,31 +241,43 @@ export async function createProject(opts?: { name?: string; repo?: string }): Pr
 /**
  * Updates the project's information in the scene.json file.
  *
- * @param project - The Project object containing the updated information.
+ * @param {Project} project - The Project object containing the updated information.
  * @returns {Promise<Project>} A Promise that resolves to the updated Project object.
  * @throws {Error} An error if the scene.json file cannot be updated.
  */
 export async function updateProject(project: Project): Promise<Project> {
   // TODO: Update all properties associated to a project in the scene.json
   try {
-    let scene = await getScene(project.path);
+    const scene = await getScene(project.path);
 
-    scene = {
-      ...scene,
-      display: {
-        ...scene.display,
-        title: project.title,
-      },
-      worldConfiguration: {
-        ...project.worldConfiguration,
-      },
+    let updatedScene = JSON.parse(JSON.stringify(scene));
+
+    // Clean up the property navmapThumbnail if the define path doesn't exists
+    if (updatedScene.display?.navmapThumbnail) {
+      const navmapThumbnail = path.join(project.path, updatedScene.display.navmapThumbnail);
+      if (!(await exists(navmapThumbnail))) {
+        updatedScene.display.navmapThumbnail = '';
+      }
+    }
+
+    updatedScene = {
+      ...updatedScene,
+      ...(project?.worldConfiguration
+        ? {
+            worldConfiguration: {
+              ...project.worldConfiguration,
+            },
+          }
+        : {}),
     };
 
-    await deepWriteFile(getScenePath(project.path), JSON.stringify(scene, null, 2), {
-      encoding: 'utf8',
-    });
+    if (!equal(updatedScene, scene)) {
+      await deepWriteFile(getScenePath(project.path), JSON.stringify(updatedScene, null, 2), {
+        encoding: 'utf8',
+      });
+    }
 
-    return project;
+    return getProject(project.path);
   } catch (error: any) {
     throw new Error(
       `Could not update the scene.json info with project in "${project.path}": ${error.message}`,

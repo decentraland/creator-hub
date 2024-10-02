@@ -8,14 +8,13 @@ import type { DeployOptions } from '/shared/types/ipc';
 
 import { actions as editorActions } from '/@/modules/store/editor';
 import { actions as workspaceActions } from '/@/modules/store/workspace';
-import { bufferToScene } from '/@/modules/buffer';
 import type { Method, Params } from '/@/modules/rpc/storage';
 import { useScene } from './useScene';
 import type { CallbackParams } from '../modules/rpc';
 
 export const useEditor = () => {
   const dispatch = useDispatch();
-  const { updateTitle, updateThumbnail } = useScene();
+  const { updateThumbnail } = useScene();
   const editor = useSelector(state => state.editor);
   const { project } = editor;
 
@@ -52,14 +51,14 @@ export const useEditor = () => {
   }, [editorApi.openCode, project]);
 
   const updateScene = useCallback(
-    async (cbParams: CallbackParams, { path, content }: Params[Method.WRITE_FILE]) => {
+    async (cbParams: CallbackParams, { path }: Params[Method.WRITE_FILE]) => {
       if (!project) return;
 
       // TODO: we could alternatively have an "updateProject" reducer that allows
       // updating the whole project object instead of dispatching updates one by one...
 
       if (path === 'scene.json') {
-        updateTitle(project, bufferToScene(content));
+        updateProject(project);
       }
 
       if (path === 'scene.json' || path.endsWith('.composite')) {
