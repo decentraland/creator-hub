@@ -10,6 +10,7 @@ import {
   Button,
   Grid,
 } from 'decentraland-ui2';
+import { CircularProgress as Loader } from 'decentraland-ui2';
 import LayersOutlinedIcon from '@mui/icons-material/LayersOutlined';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
@@ -109,12 +110,11 @@ const SignInCard: React.FC<SignInCardProps> = React.memo(({ onClickSignIn }) => 
 
 const ScenesCard: React.FC = React.memo(() => {
   const navigate = useNavigate();
-  const { projects, selectProject } = useWorkspace();
+  const { projects, isLoading, selectProject } = useWorkspace();
   const emptyProjects = projects.length === 0;
 
   const handleStartBuildingClick = useCallback(() => {
-    // TODO: Navigate to Templates page
-    navigate('/scenes');
+    navigate('/templates');
   }, []);
 
   const handleSeeAllClick = useCallback(() => {
@@ -138,7 +138,9 @@ const ScenesCard: React.FC = React.memo(() => {
           EmptyProjects: emptyProjects,
         })}
       >
-        {emptyProjects ? (
+        {isLoading ? (
+          <Loader />
+        ) : emptyProjects ? (
           <>
             <Typography variant="h6">{t('home.cards.scenes.empty_scenes.description')}</Typography>
             <Button
