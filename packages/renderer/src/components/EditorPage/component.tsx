@@ -39,7 +39,7 @@ export function EditorPage() {
     loadingPreview,
     loadingPublish,
   } = useEditor();
-  const { createDependencyNotification } = useSnackbar();
+  const { createCustomNotification } = useSnackbar();
   const userId = useSelector(state => state.analytics.userId);
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
   const [open, setOpen] = useState<ModalType | undefined>();
@@ -73,12 +73,12 @@ export function EditorPage() {
         updateStrategySetting === UPDATE_DEPENDENCIES_STRATEGY.NOTIFY &&
         project?.packageStatus?.[SDK_PACKAGE].isOutdated
       ) {
-        createDependencyNotification('new-dependency-version', project, { duration: 0 });
+        createCustomNotification('new-dependency-version', { duration: 0, project });
       } else if (
         updateStrategySetting === UPDATE_DEPENDENCIES_STRATEGY.AUTO_UPDATE &&
         project?.packageStatus?.[SDK_PACKAGE].showUpdatedNotification
       ) {
-        createDependencyNotification('dependency-updated-automatically', project);
+        createCustomNotification('dependency-updated-automatically', { project });
       }
     };
 

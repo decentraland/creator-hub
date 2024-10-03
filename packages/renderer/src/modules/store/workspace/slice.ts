@@ -6,7 +6,6 @@ import { type ThunkAction } from '#store';
 import type { Workspace } from '/shared/types/workspace';
 import { SortBy } from '/shared/types/projects';
 import { SDK_PACKAGE } from '/shared/types/pkg';
-import { actions as snackbarActions } from '../snackbar';
 import type { Async } from '/@/modules/async';
 
 // actions
@@ -205,26 +204,6 @@ export const slice = createSlice({
         state.status = 'failed';
         state.error =
           action.error.message || `Failed to update the SDK package for project ${action.meta.arg}`;
-      })
-      .addCase(snackbarActions.removeSnackbar, (state, action) => {
-        if (
-          action.payload.id.startsWith('dependency-updated-automatically') &&
-          action.payload.project
-        ) {
-          const projectIdx = state.projects.findIndex($ => $.id === action.payload.project!.id);
-          if (projectIdx !== -1) {
-            state.projects[projectIdx] = {
-              ...action.payload.project,
-              packageStatus: {
-                ...action.payload.project.packageStatus,
-                [SDK_PACKAGE]: {
-                  ...action.payload.project.packageStatus![SDK_PACKAGE],
-                  showUpdatedNotification: undefined,
-                },
-              },
-            };
-          }
-        }
       });
   },
 });

@@ -5,7 +5,6 @@ import { useDispatch, useSelector } from '#store';
 import { actions } from '/@/modules/store/snackbar';
 import type {
   CustomNotification,
-  DependencyNotification,
   Notification,
   Opts,
   Severity,
@@ -16,20 +15,20 @@ export function useSnackbar() {
   const snackbar = useSelector(state => state.snackbar);
 
   const dismiss = useCallback(
-    (id: Notification['id'], idx: number, project?: DependencyNotification['project']) =>
+    (id: Notification['id'], idx: number) =>
       (_: SyntheticEvent<any> | Event, reason: SnackbarCloseReason) => {
-        if (reason === 'timeout') dispatch(actions.removeSnackbar({ id, project }));
+        if (reason === 'timeout') dispatch(actions.removeSnackbar({ id }));
         if (reason === 'escapeKeyDown' && idx === 0) {
           const first = snackbar.notifications[0];
-          dispatch(actions.removeSnackbar({ id: first.id, project }));
+          dispatch(actions.removeSnackbar({ id: first.id }));
         }
       },
     [snackbar.notifications],
   );
 
   const close = useCallback(
-    (id: Notification['id'], project?: DependencyNotification['project']) => () => {
-      dispatch(actions.removeSnackbar({ id, project }));
+    (id: Notification['id']) => () => {
+      dispatch(actions.removeSnackbar({ id }));
     },
     [],
   );
@@ -45,23 +44,11 @@ export function useSnackbar() {
     dispatch(actions.createCustomNotification({ type, opts }));
   }, []);
 
-  const createDependencyNotification = useCallback(
-    (
-      type: DependencyNotification['type'],
-      project: DependencyNotification['project'],
-      opts?: Opts,
-    ) => {
-      dispatch(actions.createDependencyNotification({ type, project, opts }));
-    },
-    [],
-  );
-
   return {
     ...snackbar,
     close,
     dismiss,
     createGenericNotification,
     createCustomNotification,
-    createDependencyNotification,
   };
 }

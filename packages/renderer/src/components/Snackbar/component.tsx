@@ -22,11 +22,9 @@ export function SnackbarComponent() {
       case 'missing-scenes':
         return <MissingScenes onClose={close(notification.id)} />;
       case 'new-dependency-version':
-        return <NewDependencyVersion onClose={close(notification.id, notification.project)} />;
+        return <NewDependencyVersion onClose={close(notification.id)} />;
       case 'dependency-updated-automatically':
-        return (
-          <DependencyUpdatedAutomatically onClose={close(notification.id, notification.project)} />
-        );
+        return <DependencyUpdatedAutomatically onClose={close(notification.id)} />;
       default:
         return null;
     }
@@ -48,11 +46,7 @@ export function SnackbarComponent() {
             key={notification.id}
             open={true}
             autoHideDuration={getDuration(notification)}
-            onClose={dismiss(
-              notification.id,
-              idx,
-              'project' in notification ? notification.project : undefined,
-            )}
+            onClose={dismiss(notification.id, idx)}
             anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
           >
             <div>
