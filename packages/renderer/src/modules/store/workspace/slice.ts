@@ -1,59 +1,16 @@
 import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import pLimit from 'p-limit';
-import { npm, settings, workspace } from '#preload';
+import { npm, workspace } from '#preload';
 
 import { type ThunkAction } from '#store';
 
 import type { Workspace } from '/shared/types/workspace';
-import { type Project, SortBy } from '/shared/types/projects';
-import { UPDATE_DEPENDENCIES_STRATEGY } from '/shared/types/settings';
+import { SortBy } from '/shared/types/projects';
 import { SDK_PACKAGE } from '/shared/types/pkg';
 import { actions as snackbarActions } from '../snackbar';
 import type { Async } from '/@/modules/async';
 
-const limit = pLimit(1);
-
-// Helper function to handle SDK package update logic
-const handleSdkPackageUpdate = async (project: Project, updateStrategySetting: string) => {
-  if (updateStrategySetting === UPDATE_DEPENDENCIES_STRATEGY.DO_NOTHING) {
-    return project;
-  }
-
-  const isOutdated = await limit(() => npm.packageOutdated(project.path, SDK_PACKAGE));
-
-  const updatedPackageStatus: Project['packageStatus'] = {
-    ...project.packageStatus,
-    [SDK_PACKAGE]: { isOutdated },
-  };
-
-  if (updateStrategySetting === UPDATE_DEPENDENCIES_STRATEGY.AUTO_UPDATE && isOutdated) {
-    try {
-      await limit(() => npm.install(project.path, SDK_PACKAGE));
-      updatedPackageStatus[SDK_PACKAGE].showUpdatedNotification = true;
-    } catch (_) {
-      updatedPackageStatus[SDK_PACKAGE].showUpdatedNotification = false;
-    }
-  }
-
-  return {
-    ...project,
-    packageStatus: updatedPackageStatus,
-  };
-};
-
-const getProjectsSdkPackageOutdated = async (projects: Project[]) => {
-  const updateStrategySetting = await settings.getUpdateDependenciesStrategy();
-  return Promise.all(
-    projects.map(project => handleSdkPackageUpdate(project, updateStrategySetting)),
-  );
-};
-
 // actions
-const getWorkspace = createAsyncThunk('workspace/getWorkspace', async () => {
-  const payload = await workspace.getWorkspace();
-  const projects = await getProjectsSdkPackageOutdated(payload.projects);
-  return { ...payload, projects };
-});
+const getWorkspace = createAsyncThunk('workspace/getWorkspace', workspace.getWorkspace);
 const createProject = createAsyncThunk('workspace/createProject', workspace.createProject);
 const updateProject = createAsyncThunk('workspace/updateProject', workspace.updateProject);
 const deleteProject = createAsyncThunk('workspace/deleteProject', workspace.deleteProject);
