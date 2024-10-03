@@ -61,6 +61,7 @@
   --mui-shape-borderRadius: 6px;
   /* --mui-palette-primary-main: #ff2d55; */
   --mui-palette-action-disabled: #f8919d;
+  --mui-palette-secondary-contrast: #ffffff;
 }
 
 html {
@@ -78,6 +79,8 @@ body {
   padding: 0px;
   margin: 0px;
   height: 100%;
+  /* The lib decentraland-ui2 adds a default background-color to the body */
+  background-color: unset !important;
 }
 
 a {

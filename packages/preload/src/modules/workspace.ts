@@ -15,6 +15,7 @@ import { hasDependency } from './pkg';
 import { getRowsAndCols, parseCoords } from './scene';
 import { getEditorHome } from './editor';
 import { invoke } from './invoke';
+import { getScenesPath } from './settings';
 
 import { DEFAULT_THUMBNAIL, NEW_SCENE_NAME, EMPTY_SCENE_TEMPLATE_REPO } from './constants';
 
@@ -124,7 +125,7 @@ export async function getProject(_path: string): Promise<Project> {
 }
 
 export async function getPath() {
-  const appHome = await invoke('electron.getAppHome');
+  const appHome = await getScenesPath();
   try {
     await fs.stat(appHome);
   } catch (error) {

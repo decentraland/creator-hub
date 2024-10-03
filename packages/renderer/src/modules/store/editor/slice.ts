@@ -1,8 +1,14 @@
-import { editor } from '#preload';
-import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import pLimit from 'p-limit';
+import { editor, npm, settings } from '#preload';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 import { type Project } from '/shared/types/projects';
+import { UPDATE_DEPENDENCIES_STRATEGY } from '/shared/types/settings';
+import { SDK_PACKAGE } from '/shared/types/pkg';
+
 import { actions as workspaceActions } from '../workspace';
+
+const limit = pLimit(1);
 
 // actions
 export const fetchVersion = createAsyncThunk('editor/fetchVersion', editor.getVersion);
@@ -11,6 +17,34 @@ export const startInspector = createAsyncThunk('editor/startInspector', editor.s
 export const runScene = createAsyncThunk('editor/runScene', editor.runScene);
 export const publishScene = createAsyncThunk('editor/publishScene', editor.publishScene);
 export const openTutorial = createAsyncThunk('editor/openTutorial', editor.openTutorial);
+export const setProject = createAsyncThunk('editor/setProject', async (project: Project) => {
+  const updateStrategySetting = await settings.getUpdateDependenciesStrategy();
+
+  if (updateStrategySetting === UPDATE_DEPENDENCIES_STRATEGY.DO_NOTHING) {
+    return project;
+  }
+
+  const isOutdated = await limit(() => npm.packageOutdated(project.path, SDK_PACKAGE));
+
+  const updatedPackageStatus: Project['packageStatus'] = {
+    ...project.packageStatus,
+    [SDK_PACKAGE]: { isOutdated },
+  };
+
+  if (updateStrategySetting === UPDATE_DEPENDENCIES_STRATEGY.AUTO_UPDATE && isOutdated) {
+    try {
+      await limit(() => npm.install(project.path, SDK_PACKAGE));
+      updatedPackageStatus[SDK_PACKAGE].showUpdatedNotification = true;
+    } catch (_) {
+      updatedPackageStatus[SDK_PACKAGE].showUpdatedNotification = false;
+    }
+  }
+
+  return {
+    ...project,
+    packageStatus: updatedPackageStatus,
+  };
+});
 
 // state
 export type EditorState = {
@@ -46,12 +80,15 @@ const initialState: EditorState = {
 export const slice = createSlice({
   name: 'editor',
   initialState,
-  reducers: {
-    setProject: (state, { payload: project }: PayloadAction<Project>) => {
-      state.project = project;
-    },
-  },
+  reducers: {},
   extraReducers: builder => {
+    builder.addCase(setProject.pending, state => {
+      // Clear previous project
+      state.project = undefined;
+    });
+    builder.addCase(setProject.fulfilled, (state, action) => {
+      state.project = action.payload;
+    });
     builder.addCase(startInspector.pending, state => {
       state.inspectorPort = 0;
       state.loadingInspector = true;
@@ -132,6 +169,7 @@ export const slice = createSlice({
 // exports
 export const actions = {
   ...slice.actions,
+  setProject,
   fetchVersion,
   install,
   startInspector,

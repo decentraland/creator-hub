@@ -7,3 +7,5 @@ export type PackageJson = {
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
 };
+
+export const SDK_PACKAGE = '@dcl/sdk';

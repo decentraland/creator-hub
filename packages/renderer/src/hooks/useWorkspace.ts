@@ -54,6 +54,10 @@ export const useWorkspace = () => {
     dispatch(workspaceActions.openFolder(path));
   }, []);
 
+  const updateSdkPackage = useCallback((path: string) => {
+    dispatch(workspaceActions.updateSdkPackage(path));
+  }, []);
+
   const isLoading = workspace.status === 'loading';
 
   return {
@@ -68,6 +72,7 @@ export const useWorkspace = () => {
     reimportProject,
     unlistProjects,
     openFolder,
+    updateSdkPackage,
     isLoading,
   };
 };

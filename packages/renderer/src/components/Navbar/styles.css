@@ -41,3 +41,9 @@
   text-align: center;
   cursor: pointer;
 }
+
+.Navbar .actions {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}

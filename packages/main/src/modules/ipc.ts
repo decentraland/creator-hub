@@ -31,5 +31,8 @@ export function initIpc() {
   handle('analytics.getAnonymousId', () => analytics.getAnonymousId());
 
   // npm
-  handle('npm.install', (_event, path) => npm.install(path));
+  handle('npm.install', (_event, path, packageName) => npm.install(path, packageName));
+  handle('npm.packageOutdated', (_event, path, packageName) =>
+    npm.packageOutdated(path, packageName),
+  );
 }

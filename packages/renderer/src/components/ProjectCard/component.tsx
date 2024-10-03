@@ -1,9 +1,10 @@
+import { useCallback } from 'react';
+
 import { Dropdown } from '../Dropdown';
 
 import type { Props } from './types';
 
 import './styles.css';
-import { useCallback } from 'react';
 
 export function ProjectCard({
   title,

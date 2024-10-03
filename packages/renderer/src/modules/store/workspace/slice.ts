@@ -5,7 +5,7 @@ import { type ThunkAction } from '#store';
 
 import type { Workspace } from '/shared/types/workspace';
 import { SortBy } from '/shared/types/projects';
-
+import { SDK_PACKAGE } from '/shared/types/pkg';
 import type { Async } from '/@/modules/async';
 
 // actions
@@ -26,13 +26,16 @@ const saveThumbnail = createAsyncThunk(
     return project;
   },
 );
-const installProject = createAsyncThunk('npm/install', npm.install);
+const installProject = createAsyncThunk('npm/install', async (path: string) => npm.install(path));
 export const createProjectAndInstall: (
   opts?: Parameters<typeof workspace.createProject>[0],
 ) => ThunkAction = opts => async dispatch => {
   const { path } = await dispatch(createProject(opts)).unwrap();
   dispatch(installProject(path));
 };
+const updateSdkPackage = createAsyncThunk('npm/updateSdkPackage', async (path: string) =>
+  npm.install(path, SDK_PACKAGE),
+);
 
 // state
 export type WorkspaceState = Async<Workspace>;
@@ -176,6 +179,31 @@ export const slice = createSlice({
         if (projectIdx !== -1) {
           state.projects[projectIdx] = project;
         }
+      })
+      .addCase(updateSdkPackage.pending, state => {
+        state.status = 'loading';
+      })
+      .addCase(updateSdkPackage.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        const projectIdx = state.projects.findIndex($ => $.path === action.meta.arg);
+        if (projectIdx !== -1) {
+          const project = { ...state.projects[projectIdx] };
+          state.projects[projectIdx] = {
+            ...project,
+            packageStatus: {
+              ...project.packageStatus,
+              [SDK_PACKAGE]: {
+                isOutdated: false,
+                showUpdatedNotification: true,
+              },
+            },
+          };
+        }
+      })
+      .addCase(updateSdkPackage.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error =
+          action.error.message || `Failed to update the SDK package for project ${action.meta.arg}`;
       });
   },
 });
@@ -195,6 +223,7 @@ export const actions = {
   unlistProjects,
   saveThumbnail,
   openFolder,
+  updateSdkPackage,
 };
 export const reducer = slice.reducer;
 export const selectors = { ...slice.selectors };

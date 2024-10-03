@@ -6,6 +6,7 @@ import { useSnackbar } from '/@/hooks/useSnackbar';
 
 import { MissingScenes } from './MissingScenes';
 import { Generic } from './Generic';
+import { DependencyUpdatedAutomatically, NewDependencyVersion } from './DependencyVersion';
 
 import './styles.css';
 
@@ -20,6 +21,10 @@ export function SnackbarComponent() {
         return <Generic {...notification} />;
       case 'missing-scenes':
         return <MissingScenes onClose={close(notification.id)} />;
+      case 'new-dependency-version':
+        return <NewDependencyVersion onClose={close(notification.id)} />;
+      case 'dependency-updated-automatically':
+        return <DependencyUpdatedAutomatically onClose={close(notification.id)} />;
       default:
         return null;
     }

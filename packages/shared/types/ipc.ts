@@ -16,5 +16,6 @@ export interface Ipc {
   'analytics.track': (event: string, data?: Record<string, any>) => void;
   'analytics.identify': (userId: string, traits?: Record<string, any>) => void;
   'analytics.getAnonymousId': () => Promise<string>;
-  'npm.install': (path: string) => Promise<void>;
+  'npm.install': (path: string, packageName?: string) => Promise<void>;
+  'npm.packageOutdated': (path: string, packageName: string) => Promise<boolean>;
 }
