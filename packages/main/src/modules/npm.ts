@@ -21,13 +21,14 @@ export async function packageOutdated(_path: string, packageName: string) {
 
   try {
     const npmOutdated = run('npm', 'npm', {
-      args: ['outdated', packageName, '--depth=0', '--json'],
+      args: ['outdated', packageName, '--depth=0'],
       cwd: _path,
     });
-    // If the npm outdated commands returns "{}", the package is updated otherwise, it returns a JSON object with outdated package versions
-    await npmOutdated.waitFor(new RegExp(packageName), /\{\}/);
-    return true;
-  } catch (_) {
+
+    // If the exit code is 0, the package is up to date, otherwise it's outdated
+    await npmOutdated.wait();
     return false;
+  } catch (_) {
+    return true;
   }
 }
