@@ -82,9 +82,12 @@ export const slice = createSlice({
   initialState,
   reducers: {},
   extraReducers: builder => {
+    builder.addCase(setProject.pending, state => {
+      // Clear previous project
+      state.project = undefined;
+    });
     builder.addCase(setProject.fulfilled, (state, action) => {
       state.project = action.payload;
-      state.loadingInspector = false;
     });
     builder.addCase(startInspector.pending, state => {
       state.inspectorPort = 0;
