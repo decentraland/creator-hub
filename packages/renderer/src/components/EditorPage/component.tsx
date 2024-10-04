@@ -88,7 +88,7 @@ export function EditorPage() {
   const isReady = !!project && inspectorPort > 0;
 
   const handleBack = useCallback(() => {
-    navigate(-1);
+    navigate('/scenes');
   }, [navigate]);
 
   const handleOpenModal = useCallback(
