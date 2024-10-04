@@ -26,6 +26,11 @@ function getDefaultConfig(): Config {
  */
 export async function getConfigPath(): Promise<string> {
   const appHome = await invoke('electron.getAppHome');
+  try {
+    await fs.stat(appHome);
+  } catch (error) {
+    await fs.mkdir(appHome);
+  }
   return path.join(appHome, CONFIG_FILE_NAME);
 }
 
