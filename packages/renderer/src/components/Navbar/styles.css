@@ -5,6 +5,7 @@
 .Navbar .menu {
   display: flex;
   margin-left: 20px;
+  gap: 8px;
 }
 
 .Navbar .logo img {
@@ -20,10 +21,11 @@
   padding: 19px 16px 17px 16px;
   color: #716b7c;
   text-decoration: none;
+  box-sizing: border-box;
 }
 
 .Navbar .menu .menu-item:hover {
-  color: var(--text);
+  background: #ffffff0d;
 }
 
 .Navbar .menu .menu-item.active {
