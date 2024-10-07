@@ -1,6 +1,6 @@
 .HomePage .Card {
   position: relative;
-  height: 452px;
+  height: 100%;
   background: #ffffff0d;
   padding: 0px;
   gap: 16px;
@@ -29,6 +29,7 @@
   border-radius: var(--mui-shape-borderRadius);
   overflow: hidden;
   z-index: 1;
+  flex: none;
 }
 
 .HomePage .Card .CardBanner .CardBannerImage {
@@ -64,6 +65,7 @@
 
 .HomePage .Card:has(.CardBanner) .CardContent {
   padding: 0;
+  flex: 1 0 auto;
 }
 
 .HomePage .Card .CardBanner .CardBannerContent {
@@ -77,19 +79,20 @@
 }
 
 .HomePage .Card .CardContent .CardList .CardItem {
-  height: 48px;
   box-sizing: border-box;
   justify-content: flex-start;
-  padding: 4px 16px;
+  padding: 16px;
   text-align: left;
   text-transform: none;
+  color: var(--white) !important;
 }
 
 .HomePage .Card .CardActions {
-  position: absolute;
+  position: relative;
   bottom: 0;
   width: 100%;
   padding: 0;
+  flex: none;
 }
 
 .HomePage .Card.SignInCard .CardContent,
@@ -113,10 +116,12 @@
 
 .HomePage .Card .CardActions > .SeeAllButton {
   background-color: #ffffff0d;
+  padding: 8px 22px;
+  flex: none;
 }
 
 .HomePage .Card .CardActions > .SeeAllButton:hover {
-  background-color: #ffffff36;
+  background: var(--secondary-light, #cfcdd4);
 }
 
 .HomePage .Card.FeedbackCard {
