@@ -27,10 +27,60 @@ export function Projects({ projects }: Props) {
         onClick={() => navigate('/templates')}
       ></div>
       {projects.map(project => (
-        <Project
-          key={project.path}
-          project={project}
-        />
+        <>
+          <Project
+            key={project.path}
+            project={project}
+          />
+          <Project
+            key={project.path}
+            project={project}
+          />
+          <Project
+            key={project.path}
+            project={project}
+          />
+          <Project
+            key={project.path}
+            project={project}
+          />
+          <Project
+            key={project.path}
+            project={project}
+          />
+          <Project
+            key={project.path}
+            project={project}
+          />
+          <Project
+            key={project.path}
+            project={project}
+          />
+          <Project
+            key={project.path}
+            project={project}
+          />
+          <Project
+            key={project.path}
+            project={project}
+          />
+          <Project
+            key={project.path}
+            project={project}
+          />
+          <Project
+            key={project.path}
+            project={project}
+          />
+          <Project
+            key={project.path}
+            project={project}
+          />
+          <Project
+            key={project.path}
+            project={project}
+          />
+        </>
       ))}
     </>
   );

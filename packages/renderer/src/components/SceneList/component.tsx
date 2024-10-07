@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { MenuItem, type SelectChangeEvent, Box, Typography } from 'decentraland-ui2';
+import { MenuItem, type SelectChangeEvent, Typography } from 'decentraland-ui2';
 import { useNavigate } from 'react-router-dom';
 
 import { SortBy } from '/shared/types/projects';
@@ -100,13 +100,9 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
           </FiltersBar>
         ) : null}
       </Column>
-      <Box
-        display="grid"
-        gridTemplateColumns={`repeat(${projects.length > 0 ? 4 : 1}, 1fr)`}
-        gap={2}
-      >
+      <div className="list">
         <Projects projects={projects} />
-      </Box>
+      </div>
     </div>
   );
 }

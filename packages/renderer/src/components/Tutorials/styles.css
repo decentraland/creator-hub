@@ -74,8 +74,10 @@
   display: flex;
   flex: 1 0 auto;
   gap: 64px;
+  width: 100%;
 }
 
 .TutorialsWrapper > .content {
   flex: 1 0 auto;
+  max-width: calc(100% - 256px - 64px);
 }

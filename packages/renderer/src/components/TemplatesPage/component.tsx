@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, MenuItem, type SelectChangeEvent, Chip } from 'decentraland-ui2';
+import { MenuItem, type SelectChangeEvent, Chip } from 'decentraland-ui2';
 
 import { misc } from '#preload';
 
@@ -124,11 +124,7 @@ export function TemplatesPage() {
               onChange={handleSort}
             />
           </FiltersBar>
-          <Box
-            display="grid"
-            gridTemplateColumns="repeat(3, 1fr)"
-            gap={2}
-          >
+          <div className="template-list">
             <ProjectCard
               title={t('templates.new_scene.title')}
               description={t('templates.new_scene.description')}
@@ -158,7 +154,7 @@ export function TemplatesPage() {
                 ))}
               />
             ))}
-          </Box>
+          </div>
         </TutorialsWrapper>
       </Container>
     </main>

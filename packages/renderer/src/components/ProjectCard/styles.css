@@ -11,6 +11,7 @@
   box-sizing: border-box;
   background-color: var(--secondary);
   color: var(--text);
+  flex: 0 0 auto;
 }
 
 .ProjectCard:hover {
