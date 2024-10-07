@@ -68,7 +68,7 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
     <div className="SceneList">
       <Column className="projects-menu">
         <Row>
-          <Typography variant="h4">{t('scene_list.my_scenes')}</Typography>
+          <Typography variant="h3">{t('scene_list.my_scenes')}</Typography>
           <Row className="actions">
             <Button
               className="action-button import-button"
@@ -90,7 +90,9 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
         </Row>
         {projects.length > 0 ? (
           <FiltersBar>
-            <>{t('scene_list.results', { count: projects.length })}</>
+            <Typography variant="h6">
+              {t('scene_list.results', { count: projects.length })}
+            </Typography>
             <>
               <p>{t('scene_list.sort_by')}</p>
               {renderSortDropdown()}

@@ -3,6 +3,7 @@ import './styles.css';
 import { useDispatch } from '#store';
 import { useCallback } from 'react';
 import { actions } from '/@/modules/store/editor';
+import { Typography } from 'decentraland-ui2';
 
 /* TODO: if we wanted to fetch this playlist from YouTube, we could use the their API:
 
@@ -65,10 +66,13 @@ export function Tutorial(props: { title: string; id: string; list?: string }) {
 export function Tutorials() {
   return (
     <div className="Tutorials">
-      <div className="title">
+      <Typography
+        variant="h6"
+        className="title"
+      >
         <i className="icon"></i>
         {t('tutorials.title')}
-      </div>
+      </Typography>
       <div className="list">
         {playlist.map(video => (
           <Tutorial
