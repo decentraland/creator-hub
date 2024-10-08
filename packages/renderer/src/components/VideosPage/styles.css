@@ -6,6 +6,7 @@
   display: flex;
   flex-direction: column;
   gap: 48px;
+  margin-top: 48px;
 }
 
 .VideosPage .playlist {
@@ -19,7 +20,6 @@
 }
 
 .VideosPage .playlist .header .title {
-  font-size: 16px;
   color: var(--dcl-silver);
   text-transform: uppercase;
   flex: none;
@@ -51,7 +51,7 @@
   align-items: stretch;
   justify-content: stretch;
   margin-bottom: 24px;
-  width: 256px;
+  width: 280px;
   cursor: pointer;
   background-color: transparent;
   padding: 12px;

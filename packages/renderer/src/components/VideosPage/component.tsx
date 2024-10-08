@@ -6,13 +6,19 @@ import { Container } from '../Container';
 import { Navbar, NavbarItem } from '../Navbar';
 import './styles.css';
 import { Title } from '../Title';
+import { Typography } from 'decentraland-ui2';
 
 function Playlist(props: { list: string; videos: { id: string; title: string }[]; title: string }) {
   return (
     <div className="playlist">
       <div className="header">
         <i className="icon"></i>
-        <span className="title">{props.title}</span>
+        <Typography
+          variant="h6"
+          className="title"
+        >
+          {props.title}
+        </Typography>
       </div>
       <div className="content">
         {props.videos.map((video, index) => (
