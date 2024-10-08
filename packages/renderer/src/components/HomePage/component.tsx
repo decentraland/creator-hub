@@ -84,7 +84,7 @@ const CardItem: React.FC<CardItemProps> = React.memo(({ title, icon, onClick }) 
     onClick={onClick}
     startIcon={icon}
   >
-    <Typography variant="h5">{title}</Typography>
+    <Typography variant="h6">{title}</Typography>
   </Button>
 ));
 
