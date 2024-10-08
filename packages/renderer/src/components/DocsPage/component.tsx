@@ -1,9 +1,10 @@
 import { useNavigate } from 'react-router-dom';
-import { Grid, Typography } from 'decentraland-ui2';
+import { Grid } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
 import { misc } from '#preload';
 
 import { Container } from '../Container';
+import { Title } from '../Title';
 import { Navbar, NavbarItem } from '../Navbar';
 import './styles.css';
 
@@ -26,18 +27,10 @@ export function DocsPage() {
     <main className="DocsPage">
       <Navbar active={NavbarItem.LEARN} />
       <Container>
-        <Typography
-          variant="h4"
-          mb="48px"
-          className="top-bar"
-        >
-          <div
-            className="header"
-            onClick={() => navigate('/learn')}
-          >
-            <i className="back" /> <span className="title">{t('learn.docs.title')}</span>
-          </div>
-        </Typography>
+        <Title
+          value={t('learn.docs.title')}
+          onBack={() => navigate('/learn')}
+        />
         <div className="docs">
           <div className="start">
             <div className="section">

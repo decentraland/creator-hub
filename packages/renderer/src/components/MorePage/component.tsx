@@ -31,7 +31,12 @@ const HorizontalCardWithImage: React.FC<{
     </Box>
     <CardContent className="CardContent">
       <Box p={0}>
-        <Typography variant="h6">{title}</Typography>
+        <Typography
+          variant="h6"
+          className="title"
+        >
+          {title}
+        </Typography>
         <Typography variant="body2">{description}</Typography>
       </Box>
       <Box className="CardActions">

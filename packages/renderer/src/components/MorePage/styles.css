@@ -45,6 +45,10 @@
   box-sizing: border-box;
 }
 
+.MorePage .HorizontalCardWithImage .CardContent .title {
+  margin-bottom: 8px;
+}
+
 .MorePage .HorizontalCardWithImage .CardContent .CardActions {
   display: flex;
   align-items: flex-end;
