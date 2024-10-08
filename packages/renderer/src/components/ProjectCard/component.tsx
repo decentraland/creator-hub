@@ -20,6 +20,7 @@ export function ProjectCard({
 }: Props) {
   const handleMouseEnterVideo = useCallback(
     ({ currentTarget: video }: React.MouseEvent<HTMLVideoElement>) => {
+      video.muted = true;
       video.play();
     },
     [],
