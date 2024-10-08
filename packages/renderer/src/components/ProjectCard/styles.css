@@ -52,7 +52,7 @@
   min-height: 34px;
 }
 
-.ProjectCard .title h2 {
+.ProjectCard .title .MuiTypography-root {
   margin: 0;
   font-size: 18px;
   font-weight: 600;

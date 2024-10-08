@@ -1,6 +1,8 @@
 .TemplatesPage .Filters .filter-by {
   text-transform: none;
   margin-left: 36px;
+  display: flex;
+  align-items: center;
 }
 
 .TemplatesPage .Filters .filter-by .MuiChip-root {
@@ -12,4 +14,12 @@
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
+}
+
+.TemplatesPage .ProjectCard .title .MuiTypography-root {
+  font-size: 20px;
+}
+
+.TemplatesPage .ProjectCard .info {
+  padding: 16px;
 }

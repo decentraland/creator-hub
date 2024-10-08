@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MenuItem, type SelectChangeEvent, Chip } from 'decentraland-ui2';
+import { MenuItem, type SelectChangeEvent, Chip, Typography } from 'decentraland-ui2';
 
 import { misc } from '#preload';
 
@@ -113,7 +113,7 @@ export function TemplatesPage() {
           />
           <FiltersBar>
             <>
-              <span>{t('templates.results', { count })}</span>
+              <Typography variant="h6">{t('templates.results', { count })}</Typography>
               <Filters
                 value={difficulty}
                 onClick={handleClickDifficulty}
@@ -129,7 +129,7 @@ export function TemplatesPage() {
               title={t('templates.new_scene.title')}
               description={t('templates.new_scene.description')}
               imageUrl={NewScenePng}
-              width={344}
+              width={300}
               height={480}
               onClick={handleClickTemplate()}
             />
@@ -140,7 +140,7 @@ export function TemplatesPage() {
                 description={template.description}
                 {...getTemplateThumbnailUrl(template)}
                 dropdownOptions={dropdownOptions(template)}
-                width={344}
+                width={300}
                 height={480}
                 onClick={handleClickTemplate(template.github_link)}
                 content={(template.tags || []).map($ => (
@@ -177,7 +177,7 @@ function Filters({
 
   return (
     <div className="filter-by">
-      {t('templates.filters.title')}
+      <Typography variant="body1">{t('templates.filters.title')}</Typography>
       <Chip
         label={t('templates.filters.difficulty.easy')}
         color="default"
