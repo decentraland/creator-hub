@@ -1,5 +1,6 @@
 import fetch from 'decentraland-crypto-fetch';
 import type { AuthIdentity } from '@dcl/crypto';
+import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
 import { DEPLOY_URLS } from '/shared/types/deploy';
 
 import type { ContributableDomain } from '../modules/store/ens/types';
@@ -145,6 +146,14 @@ export class Worlds {
     }
   }
 
+  private withIdentity(address: string): AuthIdentity {
+    const identity = localStorageGetIdentity(address);
+    if (!identity) {
+      throw new Error('No identity found');
+    }
+    return identity;
+  }
+
   public async fetchWorld(name: string) {
     try {
       const result = await fetch(`${this.url}/entities/active`, {
@@ -187,7 +196,7 @@ export class Worlds {
   };
 
   public postPermissionType = async (
-    identity: AuthIdentity,
+    address: string,
     worldName: string,
     worldPermissionNames: WorldPermissionNames,
     worldPermissionType: WorldPermissionType,
@@ -199,48 +208,46 @@ export class Worlds {
         metadata: {
           type: worldPermissionType,
         },
-        identity,
+        identity: this.withIdentity(address),
       },
     );
     return result.status === 204;
   };
 
   public putPermissionType = async (
-    identity: AuthIdentity,
+    address: string,
     worldName: string,
     worldPermissionNames: WorldPermissionNames,
-    address: string,
   ) => {
     const result = await fetch(
       `${this.url}/world/${worldName}/permissions/${worldPermissionNames}/${address}`,
       {
         method: 'PUT',
-        identity,
+        identity: this.withIdentity(address),
       },
     );
     return result.status === 204;
   };
 
   public deletePermissionType = async (
-    identity: AuthIdentity,
+    address: string,
     worldName: string,
     worldPermissionNames: WorldPermissionNames,
-    address: string,
   ) => {
     const result = await fetch(
       `${this.url}/world/${worldName}/permissions/${worldPermissionNames}/${address}`,
       {
         method: 'DELETE',
-        identity,
+        identity: this.withIdentity(address),
       },
     );
     return result.status === 204;
   };
 
-  public fetchContributableDomains = async (identity: AuthIdentity) => {
+  public fetchContributableDomains = async (address: string) => {
     const result = await fetch(`${this.url}/wallet/contribute`, {
       method: 'GET',
-      identity,
+      identity: this.withIdentity(address),
     });
 
     if (result.ok) {
