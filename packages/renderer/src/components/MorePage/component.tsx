@@ -47,7 +47,7 @@ export function MorePage() {
       <Navbar active={NavbarItem.MORE} />
       <Container>
         <Typography
-          variant="h4"
+          variant="h3"
           mb="48px"
         >
           {t('more.header.title')}
