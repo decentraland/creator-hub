@@ -1,10 +1,11 @@
 .Navbar {
   margin: 32px 0px 64px 0px;
+  padding: 0px 32px;
 }
 
 .Navbar .menu {
   display: flex;
-  margin-left: 20px;
+  margin-left: 32px;
   gap: 8px;
 }
 
