@@ -202,6 +202,18 @@ export async function getWorkspace(): Promise<Workspace> {
   };
 }
 
+export async function getAvailable(_name: string) {
+  let availableName = _name;
+  let counter = 2;
+  const homePath = await getPath();
+  let availablePath = path.join(homePath, availableName);
+  while (await exists(availablePath)) {
+    availableName = `${_name} ${counter++}`;
+    availablePath = path.join(homePath, availableName);
+  }
+  return { name: availableName, path: availablePath };
+}
+
 /**
  * Creates a new project with the given options.
  *
@@ -220,26 +232,19 @@ export async function createProject(opts?: { name?: string; repo?: string }): Pr
     repo: opts?.repo ?? EMPTY_SCENE_TEMPLATE_REPO,
   };
 
-  let sceneName = name;
-  let counter = 2;
-  const homePath = await getPath();
-  let projectPath = path.join(homePath, sceneName);
-  while (await exists(projectPath)) {
-    sceneName = `${name} ${counter++}`;
-    projectPath = path.join(homePath, sceneName);
-  }
-  await fs.mkdir(projectPath);
-  await invoke('cli.init', projectPath, repo);
-  const scene = await getScene(projectPath);
-  scene.display!.title = sceneName;
+  const available = await getAvailable(name);
+  await fs.mkdir(available.path);
+  await invoke('cli.init', available.path, repo);
+  const scene = await getScene(available.path);
+  scene.display!.title = available.name;
   // TODO: Fix: Remove worldConfiguration in the scene.json of the templates
   if (repo !== EMPTY_SCENE_TEMPLATE_REPO) {
     delete scene.worldConfiguration;
   }
-  const sceneJsonPath = path.join(projectPath, 'scene.json');
+  const sceneJsonPath = path.join(available.path, 'scene.json');
   await fs.writeFile(sceneJsonPath, JSON.stringify(scene, null, 2));
-  const project = await getProject(projectPath);
-  await setConfig(config => config.workspace.paths.push(projectPath));
+  const project = await getProject(available.path);
+  await setConfig(config => config.workspace.paths.push(available.path));
   return project;
 }
 
@@ -321,11 +326,12 @@ export async function deleteProject(_path: string): Promise<void> {
  */
 export async function duplicateProject(_path: string): Promise<Project> {
   const scene = await getScene(_path);
-  const dupPath = path.join(await getPath(), `Copy of ${path.basename(_path)}`);
-  await fs.cp(_path, dupPath, { recursive: true });
-  scene.display = { ...scene.display, title: `Copy of ${scene.display?.title}` };
-  await fs.writeFile(path.join(dupPath, 'scene.json'), JSON.stringify(scene, null, 2));
-  const project = await getProject(dupPath);
+  const available = await getAvailable(scene.display?.title || NEW_SCENE_NAME);
+
+  await fs.cp(_path, available.path, { recursive: true });
+  scene.display = { ...scene.display, title: available.name };
+  await fs.writeFile(path.join(available.path, 'scene.json'), JSON.stringify(scene, null, 2));
+  const project = await getProject(available.path);
   return project;
 }
 
