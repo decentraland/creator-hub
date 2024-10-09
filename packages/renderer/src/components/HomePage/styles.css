@@ -4,6 +4,7 @@
   background: #ffffff0d;
   padding: 0px;
   gap: 16px;
+  box-shadow: none;
 }
 
 .HomePage .Card .CardContent.CenteredContent {
