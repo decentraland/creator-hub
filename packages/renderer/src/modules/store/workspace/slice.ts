@@ -110,9 +110,7 @@ export const slice = createSlice({
         state.status = 'failed';
         state.error = action.error.message || `Failed to delete project ${action.meta.arg}`;
       })
-      .addCase(duplicateProject.pending, state => {
-        state.status = 'loading';
-      })
+      .addCase(duplicateProject.pending, _state => {})
       .addCase(duplicateProject.fulfilled, (state, action) => {
         return {
           ...state,
