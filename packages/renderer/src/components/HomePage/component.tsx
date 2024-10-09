@@ -84,7 +84,7 @@ const CardItem: React.FC<CardItemProps> = React.memo(({ title, icon, onClick }) 
     onClick={onClick}
     startIcon={icon}
   >
-    {title}
+    <Typography variant="h6">{title}</Typography>
   </Button>
 ));
 
@@ -263,7 +263,7 @@ export function HomePage() {
       <Navbar active={NavbarItem.HOME} />
       <Container>
         <Typography
-          variant="h4"
+          variant="h3"
           mb="48px"
         >
           {t('home.header.title')}

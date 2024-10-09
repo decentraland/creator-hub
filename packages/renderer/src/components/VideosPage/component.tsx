@@ -1,18 +1,24 @@
 import { useNavigate } from 'react-router-dom';
-import { Typography } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
 import { misc } from '#preload';
 
 import { Container } from '../Container';
 import { Navbar, NavbarItem } from '../Navbar';
 import './styles.css';
+import { Title } from '../Title';
+import { Typography } from 'decentraland-ui2';
 
 function Playlist(props: { list: string; videos: { id: string; title: string }[]; title: string }) {
   return (
     <div className="playlist">
       <div className="header">
         <i className="icon"></i>
-        <span className="title">{props.title}</span>
+        <Typography
+          variant="h6"
+          className="title"
+        >
+          {props.title}
+        </Typography>
       </div>
       <div className="content">
         {props.videos.map((video, index) => (
@@ -52,18 +58,10 @@ export function VideosPage() {
     <main className="VideosPage">
       <Navbar active={NavbarItem.LEARN} />
       <Container>
-        <Typography
-          variant="h4"
-          mb="48px"
-          className="top-bar"
-        >
-          <div
-            className="header"
-            onClick={() => navigate('/learn')}
-          >
-            <i className="back" /> <span className="title">{t('learn.videos.title')}</span>
-          </div>
-        </Typography>
+        <Title
+          value={t('learn.videos.title')}
+          onBack={() => navigate('/learn')}
+        />
         <div className="playlists">
           <Playlist
             title="Product Updates"

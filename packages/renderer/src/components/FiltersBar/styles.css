@@ -1,7 +1,7 @@
 .Filters {
   border-radius: 32px;
   background-color: rgba(255, 255, 255, 0.05);
-  margin-top: 32px;
+  margin-top: 48px;
   margin-bottom: 24px;
   padding: 8px 16px 8px 24px;
 }
@@ -21,9 +21,9 @@
   align-items: center;
 }
 
-.Filters .left>p,
-.Filters .left>span,
-.Filters .right>p,
-.Filters .right>span {
+.Filters .left > p,
+.Filters .left > span,
+.Filters .right > p,
+.Filters .right > span {
   margin: 0 8px 0 0;
 }

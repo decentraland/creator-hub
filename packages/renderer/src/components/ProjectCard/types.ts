@@ -1,3 +1,4 @@
+import { type TypographyProps } from 'decentraland-ui2';
 import type { ReactNode } from 'react';
 
 export type Props = {
@@ -9,5 +10,6 @@ export type Props = {
   width?: number;
   height?: number;
   dropdownOptions?: { text: string; handler: () => void }[];
+  titleVariant?: TypographyProps['variant'];
   onClick: () => void;
 };

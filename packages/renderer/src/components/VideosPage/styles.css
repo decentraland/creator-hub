@@ -2,34 +2,11 @@
   flex-direction: column;
 }
 
-.VideosPage .top-bar {
-  display: flex;
-}
-
-.VideosPage .top-bar > .header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex: none;
-  cursor: pointer;
-}
-
-.VideosPage .header .back {
-  display: inline-flex;
-  width: 45px;
-  height: 45px;
-  background: no-repeat center/contain url(./images/back.svg);
-}
-
-.VideosPage .top-bar > .header:hover .back {
-  background-color: rgba(255, 255, 255, 0.08);
-  border-radius: 100%;
-}
-
 .VideosPage .playlists {
   display: flex;
   flex-direction: column;
   gap: 48px;
+  margin-top: 48px;
 }
 
 .VideosPage .playlist {
@@ -43,7 +20,6 @@
 }
 
 .VideosPage .playlist .header .title {
-  font-size: 16px;
   color: var(--dcl-silver);
   text-transform: uppercase;
   flex: none;
@@ -75,7 +51,7 @@
   align-items: stretch;
   justify-content: stretch;
   margin-bottom: 24px;
-  width: 256px;
+  width: 280px;
   cursor: pointer;
   background-color: transparent;
   padding: 12px;

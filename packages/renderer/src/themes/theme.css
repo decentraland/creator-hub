@@ -65,7 +65,7 @@
 }
 
 html {
-  background: url(../../assets/images/background.png) #242129cc;
+  background: url(../../assets/images/background.png) #242129ff;
   background-position: center;
   background-size: cover;
   background-blend-mode: overlay;
@@ -81,6 +81,11 @@ body {
   height: 100%;
   /* The lib decentraland-ui2 adds a default background-color to the body */
   background-color: unset !important;
+  position: absolute;
+  top: 0px;
+  bottom: 0px;
+  right: 0px;
+  left: 0px;
 }
 
 a {

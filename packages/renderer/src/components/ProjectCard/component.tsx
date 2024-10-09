@@ -5,6 +5,7 @@ import { Dropdown } from '../Dropdown';
 import type { Props } from './types';
 
 import './styles.css';
+import { Typography } from 'decentraland-ui2';
 
 export function ProjectCard({
   title,
@@ -54,7 +55,7 @@ export function ProjectCard({
       )}
       <div className="info">
         <div className="title">
-          <h2>{title}</h2>
+          <Typography variant="h6">{title}</Typography>
           {dropdownOptions?.length && (
             <Dropdown
               className="options-dropdown"

@@ -1,5 +1,6 @@
 .MorePage .CardsSection {
   color: var(--dcl-silver);
+  text-transform: uppercase;
 }
 
 .MorePage .HorizontalCardWithImage.MuiCard-root {
@@ -42,6 +43,10 @@
   width: 100%;
   padding: 16px;
   box-sizing: border-box;
+}
+
+.MorePage .HorizontalCardWithImage .CardContent .title {
+  margin-bottom: 8px;
 }
 
 .MorePage .HorizontalCardWithImage .CardContent .CardActions {

@@ -11,9 +11,9 @@ import { useWorkspace } from '/@/hooks/useWorkspace';
 import { addBase64ImagePrefix } from '/@/modules/image';
 
 import { DeleteProject } from '../../Modals/DeleteProject';
+import { ProjectCard } from '../../ProjectCard';
 
 import type { Props } from './types';
-import { ProjectCard } from '../../ProjectCard';
 
 export function Projects({ projects }: Props) {
   const navigate = useNavigate();
@@ -27,10 +27,12 @@ export function Projects({ projects }: Props) {
         onClick={() => navigate('/templates')}
       ></div>
       {projects.map(project => (
-        <Project
-          key={project.path}
-          project={project}
-        />
+        <>
+          <Project
+            key={project.path}
+            project={project}
+          />
+        </>
       ))}
     </>
   );

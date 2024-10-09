@@ -83,6 +83,10 @@
   cursor: pointer;
 }
 
+.SceneList .no-scenes-card-button:hover {
+  background-image: url(./images/empty-state-button-hover.svg);
+}
+
 .SceneList .no-scenes-title {
   font-size: 24px;
 }
@@ -110,4 +114,18 @@
   background-size: cover;
   background-image: url(/assets/images/new-scene-button.svg);
   cursor: pointer;
+}
+
+.SceneList .new-scene:hover {
+  background-image: url(/assets/images/new-scene-button-hover.svg);
+}
+
+.SceneList {
+  max-width: 100%;
+}
+.SceneList .list {
+  display: flex;
+  gap: 16px;
+  max-width: 100%;
+  flex-wrap: wrap;
 }

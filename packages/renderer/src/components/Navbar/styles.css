@@ -1,10 +1,11 @@
 .Navbar {
-  margin: 40px 0;
+  margin: 32px 0px 64px 0px;
 }
 
 .Navbar .menu {
   display: flex;
   margin-left: 20px;
+  gap: 8px;
 }
 
 .Navbar .logo img {
@@ -14,16 +15,17 @@
 .Navbar .menu .menu-item {
   color: var(--text);
   font-size: 24px;
-  font-weight: 300;
+  font-weight: 500;
   cursor: pointer;
   text-transform: uppercase;
   padding: 19px 16px 17px 16px;
   color: #716b7c;
   text-decoration: none;
+  box-sizing: border-box;
 }
 
 .Navbar .menu .menu-item:hover {
-  color: var(--text);
+  background: #ffffff0d;
 }
 
 .Navbar .menu .menu-item.active {

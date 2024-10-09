@@ -2,7 +2,7 @@
   cursor: pointer;
   flex: 1 0 auto;
   background-color: rgba(255, 255, 255, 0);
-  padding: 12px 12px 0px 12px;
+  padding: 12px 12px 12px 12px;
   border-radius: 16px;
   margin-left: -12px;
   display: flex;
@@ -52,7 +52,6 @@
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: stretch;
-  gap: 12px;
 }
 
 .Tutorials > .title {
@@ -75,8 +74,10 @@
   display: flex;
   flex: 1 0 auto;
   gap: 64px;
+  width: 100%;
 }
 
 .TutorialsWrapper > .content {
   flex: 1 0 auto;
+  max-width: calc(100% - 256px - 64px);
 }
