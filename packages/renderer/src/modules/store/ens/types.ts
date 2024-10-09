@@ -72,15 +72,14 @@ export type WorldStatus = {
   };
 };
 
+export enum USER_PERMISSIONS {
+  DEPLOYMENT = 'deployment',
+  STREAMING = 'streaming',
+}
+
 export type ContributableDomain = {
   name: string;
-  user_permissions: string[];
+  user_permissions: USER_PERMISSIONS[];
   owner: string;
   size: string;
 };
-
-export type Domain = { name: string };
-export type DomainsQueryResult = { data: { domains: Domain[] } } | { errors: any };
-export type DCLDomainsQueryResult =
-  | { data: { nfts: { ens: { subdomain: string } }[] } }
-  | { errors: any };
