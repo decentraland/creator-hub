@@ -1,6 +1,3 @@
-import { type ChainId } from '@dcl/schemas/dist/dapps/chain-id';
-import { isDev } from '../modules/store/ens/utils';
-
 const BATCH_SIZE = 1000;
 
 export type Domain = { name: string };
@@ -22,8 +19,8 @@ export type OwnerByENSQueryResult =
 
 export class ENS {
   private subgraph = 'https://subgraph.decentraland.org/ens';
-  constructor(chainId: ChainId) {
-    if (isDev(chainId)) {
+  constructor(isDev: boolean) {
+    if (isDev) {
       this.subgraph = 'https://subgraph.decentraland.org/ens-sepolia';
     }
   }
@@ -116,8 +113,8 @@ export type DCLOwnerByNameQueryResult = {
 
 export class DCLNames {
   private subgraph = 'https://subgraph.decentraland.org/marketplace';
-  constructor(chainId: ChainId) {
-    if (isDev(chainId)) {
+  constructor(isDev: boolean) {
+    if (isDev) {
       this.subgraph = 'https://subgraph.decentraland.org/marketplace-sepolia';
     }
   }

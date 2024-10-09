@@ -88,7 +88,7 @@ export const fetchDCLNames = createAsyncThunk(
       provider,
     );
 
-    const dclNamesApi = new DCLNames(chainId);
+    const dclNamesApi = new DCLNames(isDev(chainId));
     const bannedNames = await fetchBannedNames(chainId);
 
     let names = await dclNamesApi.fetchNames(address);
@@ -167,7 +167,7 @@ export const fetchDCLNames = createAsyncThunk(
 export const fetchENS = createAsyncThunk(
   'ens/fetchENS',
   async ({ address, chainId }: { address: string; chainId: ChainId }) => {
-    const ensApi = new ENSApi(chainId);
+    const ensApi = new ENSApi(isDev(chainId));
     const bannedNames = await fetchBannedNames(chainId);
     const bannedNamesSet = new Set(bannedNames.map(x => x.toLowerCase()));
 
@@ -203,8 +203,8 @@ export const fetchENS = createAsyncThunk(
 export const fetchContributableNames = createAsyncThunk(
   'ens/fetchContributableNames',
   async ({ address, chainId }: { address: string; chainId: ChainId }) => {
-    const dclNamesApi = new DCLNames(chainId);
-    const ensApi = new ENSApi(chainId);
+    const dclNamesApi = new DCLNames(isDev(chainId));
+    const ensApi = new ENSApi(isDev(chainId));
     const bannedNames = await fetchBannedNames(chainId);
     const bannedNamesSet = new Set(bannedNames.map(x => x.toLowerCase()));
 
