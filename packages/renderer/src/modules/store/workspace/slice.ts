@@ -1,11 +1,14 @@
 import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import { npm, workspace } from '#preload';
+import { fs, npm, workspace } from '#preload';
 
 import { type ThunkAction } from '#store';
 
 import type { Workspace } from '/shared/types/workspace';
-import { SortBy } from '/shared/types/projects';
+import { type Project, SortBy } from '/shared/types/projects';
 import { SDK_PACKAGE } from '/shared/types/pkg';
+
+import { actions as editorActions } from '../editor';
+
 import type { Async } from '/@/modules/async';
 
 // actions
@@ -33,8 +36,19 @@ export const createProjectAndInstall: (
   const { path } = await dispatch(createProject(opts)).unwrap();
   dispatch(installProject(path));
 };
-const updateSdkPackage = createAsyncThunk('npm/updateSdkPackage', async (path: string) =>
+const updateSdkPackage = createAsyncThunk('npm/updateSdkPackage', (path: string) =>
   npm.install(path, SDK_PACKAGE),
+);
+const selectProject = createAsyncThunk(
+  'workspace/selectProject',
+  async (project: Project, { dispatch }) => {
+    const exists = await fs.exists(project.path);
+    if (exists) {
+      dispatch(editorActions.setProject(project));
+    } else {
+      throw new Error('Project is missing');
+    }
+  },
 );
 
 // state
@@ -59,6 +73,13 @@ export const slice = createSlice({
     setProjectTitle: (state, { payload }: PayloadAction<{ path: string; title: string }>) => {
       const project = state.projects.find($ => $.path === payload.path)!;
       project.title = payload.title;
+    },
+    moveProjectToMissing: (state, { payload }: PayloadAction<Project>) => {
+      state.projects = state.projects.reduce((projects: Project[], project) => {
+        if (payload.path === project.path) state.missing.push(project.path);
+        else projects.push(project);
+        return projects;
+      }, []);
     },
   },
   extraReducers: builder => {
@@ -210,6 +231,7 @@ export const slice = createSlice({
 export const actions = {
   ...slice.actions,
   getWorkspace,
+  selectProject,
   createProject,
   installProject,
   createProjectAndInstall,

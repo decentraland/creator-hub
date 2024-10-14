@@ -63,25 +63,24 @@ export function EditorPage() {
     };
   }, []);
 
+  // TODO: Tries to generate the notifications using the snackbar actions
+  const notifySdkPackageVersion = useCallback(async () => {
+    const updateStrategySetting = await settings.getUpdateDependenciesStrategy();
+    if (
+      updateStrategySetting === UPDATE_DEPENDENCIES_STRATEGY.NOTIFY &&
+      project?.packageStatus?.[SDK_PACKAGE].isOutdated
+    ) {
+      createCustomNotification('new-dependency-version', { duration: 0, project });
+    } else if (
+      updateStrategySetting === UPDATE_DEPENDENCIES_STRATEGY.AUTO_UPDATE &&
+      project?.packageStatus?.[SDK_PACKAGE].showUpdatedNotification
+    ) {
+      createCustomNotification('dependency-updated-automatically', { project });
+    }
+  }, [project]);
+
   useEffect(() => {
     if (!project) return;
-
-    // TODO: Tries to generate the notifications using the snackbar actions
-    const notifySdkPackageVersion = async () => {
-      const updateStrategySetting = await settings.getUpdateDependenciesStrategy();
-      if (
-        updateStrategySetting === UPDATE_DEPENDENCIES_STRATEGY.NOTIFY &&
-        project?.packageStatus?.[SDK_PACKAGE].isOutdated
-      ) {
-        createCustomNotification('new-dependency-version', { duration: 0, project });
-      } else if (
-        updateStrategySetting === UPDATE_DEPENDENCIES_STRATEGY.AUTO_UPDATE &&
-        project?.packageStatus?.[SDK_PACKAGE].showUpdatedNotification
-      ) {
-        createCustomNotification('dependency-updated-automatically', { project });
-      }
-    };
-
     notifySdkPackageVersion();
   }, [project]);
 

@@ -124,6 +124,14 @@ export const slice = createSlice({
             requestId,
           }),
         );
+      })
+      .addCase(workspaceActions.moveProjectToMissing, state => {
+        const oldMissingScenesNotification = state.notifications.find(
+          $ => $.type === 'missing-scenes',
+        );
+        if (!oldMissingScenesNotification) {
+          state.notifications.push(createCustomNotification('missing-scenes', { duration: 0 }));
+        }
       });
   },
   selectors: {},
