@@ -102,20 +102,23 @@ export function EditorPage() {
     setOpen(undefined);
   }, []);
 
-  const handleSubmitModal = useCallback(({ target, value }: StepValue) => {
-    switch (target) {
-      case 'worlds':
-        return publishScene({
-          targetContent: import.meta.env.VITE_WORLDS_SERVER || DEPLOY_URLS.WORLDS,
-        });
-      case 'test':
-        return publishScene({ target: import.meta.env.VITE_TEST_SERVER || DEPLOY_URLS.TEST });
-      case 'custom':
-        return publishScene({ target: value });
-      default:
-        return publishScene();
-    }
-  }, []);
+  const handleSubmitModal = useCallback(
+    ({ target, value }: StepValue) => {
+      switch (target) {
+        case 'worlds':
+          return publishScene({
+            targetContent: import.meta.env.VITE_WORLDS_SERVER || DEPLOY_URLS.WORLDS,
+          });
+        case 'test':
+          return publishScene({ target: import.meta.env.VITE_TEST_SERVER || DEPLOY_URLS.TEST });
+        case 'custom':
+          return publishScene({ target: value });
+        default:
+          return publishScene();
+      }
+    },
+    [isReady],
+  );
 
   // inspector url
   const htmlUrl = `http://localhost:${import.meta.env.VITE_INSPECTOR_PORT || inspectorPort}`;
