@@ -1,9 +1,9 @@
-import { useDispatch, useSelector } from '#store';
 import { useCallback } from 'react';
+
+import { useDispatch, useSelector } from '#store';
 
 import { type Project, type SortBy } from '/shared/types/projects';
 
-import { actions as editorActions } from '/@/modules/store/editor';
 import { actions as workspaceActions } from '/@/modules/store/workspace';
 import { useNavigate } from 'react-router-dom';
 
@@ -20,9 +20,13 @@ export const useWorkspace = () => {
     dispatch(workspaceActions.setSortBy(type));
   }, []);
 
-  const selectProject = useCallback((project: Project) => {
-    dispatch(editorActions.setProject(project));
-    navigate('/editor');
+  const selectProject = useCallback(async (project: Project) => {
+    try {
+      await dispatch(workspaceActions.selectProject(project)).unwrap();
+      navigate('/editor');
+    } catch (e) {
+      dispatch(workspaceActions.moveProjectToMissing(project));
+    }
   }, []);
 
   const createProject = useCallback((opts?: { name?: string; repo?: string }) => {
