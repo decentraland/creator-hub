@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { settings } from '#preload';
-import { UPDATE_DEPENDENCIES_STRATEGY } from '/shared/types/settings';
+import { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 
 export const useSettings = () => {
   const [scenesPath, setScenesPath] = useState('');
   const [updateDependenciesStrategy, setUpdateDependenciesStrategy] =
-    useState<UPDATE_DEPENDENCIES_STRATEGY>(UPDATE_DEPENDENCIES_STRATEGY.NOTIFY);
+    useState<DEPENDENCY_UPDATE_STRATEGY>(DEPENDENCY_UPDATE_STRATEGY.NOTIFY);
 
   const handleUpdateScenesPath = useCallback(async (path: string) => {
     await settings.setScenesPath(path);
@@ -13,7 +13,7 @@ export const useSettings = () => {
   }, []);
 
   const handleUpdateDependenciesStrategy = useCallback(
-    async (strategy: UPDATE_DEPENDENCIES_STRATEGY) => {
+    async (strategy: DEPENDENCY_UPDATE_STRATEGY) => {
       await settings.setUpdateDependenciesStrategy(strategy);
       setUpdateDependenciesStrategy(strategy);
     },

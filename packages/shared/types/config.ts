@@ -1,4 +1,4 @@
-import { type UPDATE_DEPENDENCIES_STRATEGY } from './settings';
+import { type DEPENDENCY_UPDATE_STRATEGY } from './settings';
 
 export type Config = {
   version: number;
@@ -9,5 +9,5 @@ export type Config = {
 
 export type AppSettings = {
   scenesPath?: string;
-  updateDependenciesStrategy?: UPDATE_DEPENDENCIES_STRATEGY;
+  updateDependenciesStrategy?: DEPENDENCY_UPDATE_STRATEGY;
 };

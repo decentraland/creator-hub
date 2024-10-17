@@ -37,3 +37,7 @@ export async function readdir(path: string) {
 export async function isDirectory(path: string) {
   return (await fs.stat(path)).isDirectory();
 }
+
+export async function mkdir(path: string) {
+  await fs.mkdir(path);
+}

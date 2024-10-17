@@ -1,5 +1,7 @@
 import { type OpenDialogOptions } from 'electron';
 
+import type { Outdated } from '/shared/types/npm';
+
 export type DeployOptions = { path: string; target?: string; targetContent?: string };
 
 export interface Ipc {
@@ -16,6 +18,6 @@ export interface Ipc {
   'analytics.track': (event: string, data?: Record<string, any>) => void;
   'analytics.identify': (userId: string, traits?: Record<string, any>) => void;
   'analytics.getAnonymousId': () => Promise<string>;
-  'npm.install': (path: string, packageName?: string) => Promise<void>;
-  'npm.packageOutdated': (path: string, packageName: string) => Promise<boolean>;
+  'npm.install': (path: string, packages?: string[]) => Promise<void>;
+  'npm.getOutdatedDeps': (path: string, packages?: string[]) => Promise<Outdated>;
 }
