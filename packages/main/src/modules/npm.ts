@@ -1,34 +1,30 @@
-import path from 'node:path';
-import { existsSync } from 'node:fs';
-import { run } from './bin';
+import type { Outdated } from '/shared/types/npm';
 
-export async function install(path: string, packageName?: string) {
+import { run, StreamError } from './bin';
+
+export async function install(path: string, packages: string[] = []) {
   const installCommand = run('npm', 'npm', {
-    args: ['install', '--loglevel', 'error', ...(packageName ? ['--save', packageName] : [])],
+    args: ['install', '--loglevel', 'error', ...packages.flatMap(dep => ['--save', dep])],
     cwd: path,
   });
   await installCommand.wait();
 }
 
-export async function packageOutdated(_path: string, packageName: string) {
-  const normalizedPath = path.normalize(_path);
-  const nodeModulesPath = path.join(normalizedPath, 'node_modules');
-
-  if (!existsSync(nodeModulesPath)) {
-    // For projects without node_modules, install dependencies before checking for outdated packages
-    await install(_path);
-  }
-
+export async function getOutdatedDeps(_path: string, packages: string[] = []): Promise<Outdated> {
   try {
     const npmOutdated = run('npm', 'npm', {
-      args: ['outdated', packageName, '--depth=0'],
+      args: ['outdated', '--depth=0', '--json', ...packages],
       cwd: _path,
     });
 
-    // If the exit code is 0, the package is up to date, otherwise it's outdated
     await npmOutdated.wait();
-    return false;
-  } catch (_) {
-    return true;
+    return {};
+  } catch (e) {
+    if (e instanceof StreamError) {
+      const data = e.stdout;
+      const outdated: Outdated = JSON.parse(data.toString('utf8'));
+      return outdated;
+    }
+    return {};
   }
 }

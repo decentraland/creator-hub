@@ -110,7 +110,7 @@ const SignInCard: React.FC<SignInCardProps> = React.memo(({ onClickSignIn }) => 
 
 const ScenesCard: React.FC = React.memo(() => {
   const navigate = useNavigate();
-  const { projects, isLoading, selectProject } = useWorkspace();
+  const { projects, isLoading, runProject } = useWorkspace();
   const emptyProjects = projects.length === 0;
 
   const handleStartBuildingClick = useCallback(() => {
@@ -122,7 +122,7 @@ const ScenesCard: React.FC = React.memo(() => {
   }, []);
 
   const handleProjectClick = useCallback((project: Project) => {
-    selectProject(project);
+    runProject(project);
   }, []);
 
   return (
