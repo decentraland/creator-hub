@@ -169,7 +169,8 @@
       "duplicate_scene": "Duplicando escena...",
       "duplicate_scene_failed": "Error al duplicar escena",
       "delete_scene": "Borrando escena...",
-      "delete_scene_failed": "Error al borrar escena"
+      "delete_scene_failed": "Error al borrar escena",
+      "dependencies_updated": "Las dependencias de la escena fueron actualizadas"
     },
     "missing_projects": {
       "title": "{scenes} {scenes, plural, one {escena} other {escenas}} {scenes, plural, one {faltante} other {faltantes}}",
@@ -182,12 +183,6 @@
       "title": "Se detectó una nueva versión de dependencias",
       "actions": {
         "update": "Actualizar"
-      }
-    },
-    "dependency_updated_automatically": {
-      "title": "Las dependencias de la escena fueron actualizadas",
-      "actions": {
-        "ok": "Ok"
       }
     }
   },

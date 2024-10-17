@@ -15,7 +15,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import FolderIcon from '@mui/icons-material/Folder';
 import { Modal } from 'decentraland-ui2/dist/components/Modal/Modal';
 import { settings as settingsPreload } from '#preload';
-import { UPDATE_DEPENDENCIES_STRATEGY } from '/shared/types/settings';
+import { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import { t } from '/@/modules/store/translation/utils';
 import { useSettings } from '/@/hooks/useSettings';
 
@@ -25,7 +25,7 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
   const settings = useSettings();
   const [scenesPath, setScenesPath] = useState('');
   const [updateDependenciesStrategy, setUpdateDependenciesStrategy] =
-    useState<UPDATE_DEPENDENCIES_STRATEGY>(UPDATE_DEPENDENCIES_STRATEGY.NOTIFY);
+    useState<DEPENDENCY_UPDATE_STRATEGY>(DEPENDENCY_UPDATE_STRATEGY.NOTIFY);
   const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
@@ -52,7 +52,7 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
 
   const handleChangeUpdateDependenciesStrategy = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      const value = event.target.value as UPDATE_DEPENDENCIES_STRATEGY;
+      const value = event.target.value as DEPENDENCY_UPDATE_STRATEGY;
       setUpdateDependenciesStrategy(value);
     },
     [],
@@ -131,17 +131,17 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
               onChange={handleChangeUpdateDependenciesStrategy}
             >
               <FormControlLabel
-                value={UPDATE_DEPENDENCIES_STRATEGY.AUTO_UPDATE}
+                value={DEPENDENCY_UPDATE_STRATEGY.AUTO_UPDATE}
                 control={<Radio />}
                 label={t('modal.app_settings.fields.scene_editor_dependencies.options.auto_update')}
               />
               <FormControlLabel
-                value={UPDATE_DEPENDENCIES_STRATEGY.NOTIFY}
+                value={DEPENDENCY_UPDATE_STRATEGY.NOTIFY}
                 control={<Radio />}
                 label={t('modal.app_settings.fields.scene_editor_dependencies.options.notify')}
               />
               <FormControlLabel
-                value={UPDATE_DEPENDENCIES_STRATEGY.DO_NOTHING}
+                value={DEPENDENCY_UPDATE_STRATEGY.DO_NOTHING}
                 control={<Radio />}
                 label={t('modal.app_settings.fields.scene_editor_dependencies.options.do_nothing')}
               />

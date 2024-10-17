@@ -1,11 +1,12 @@
 import { useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { useDispatch, useSelector } from '#store';
 
 import { type Project, type SortBy } from '/shared/types/projects';
+import { isWorkspaceError } from '/shared/types/workspace';
 
 import { actions as workspaceActions } from '/@/modules/store/workspace';
-import { useNavigate } from 'react-router-dom';
 
 export const useWorkspace = () => {
   const dispatch = useDispatch();
@@ -20,12 +21,14 @@ export const useWorkspace = () => {
     dispatch(workspaceActions.setSortBy(type));
   }, []);
 
-  const selectProject = useCallback(async (project: Project) => {
+  const runProject = useCallback(async (project: Project) => {
     try {
-      await dispatch(workspaceActions.selectProject(project)).unwrap();
-      navigate('/editor');
+      await dispatch(workspaceActions.runProject(project)).unwrap();
+      navigate('editor');
     } catch (e) {
-      dispatch(workspaceActions.moveProjectToMissing(project));
+      if (isWorkspaceError(e, 'PROJECT_NOT_FOUND')) {
+        dispatch(workspaceActions.moveProjectToMissing(project));
+      }
     }
   }, []);
 
@@ -58,8 +61,8 @@ export const useWorkspace = () => {
     dispatch(workspaceActions.openFolder(path));
   }, []);
 
-  const updateSdkPackage = useCallback((path: string) => {
-    dispatch(workspaceActions.updateSdkPackage(path));
+  const updatePackages = useCallback((project: Project) => {
+    dispatch(workspaceActions.updatePackages({ project }));
   }, []);
 
   const isLoading = workspace.status === 'loading';
@@ -68,7 +71,7 @@ export const useWorkspace = () => {
     ...workspace,
     getWorkspace,
     setSortBy,
-    selectProject,
+    runProject,
     createProject,
     deleteProject,
     duplicateProject,
@@ -76,7 +79,7 @@ export const useWorkspace = () => {
     reimportProject,
     unlistProjects,
     openFolder,
-    updateSdkPackage,
+    updatePackages,
     isLoading,
   };
 };

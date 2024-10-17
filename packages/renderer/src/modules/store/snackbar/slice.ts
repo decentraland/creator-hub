@@ -3,9 +3,11 @@ import { createSlice } from '@reduxjs/toolkit';
 
 import { t } from '/@/modules/store/translation/utils';
 
+import { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
+
 import { actions as workspaceActions } from '../workspace';
 import { createCustomNotification, createGenericNotification } from './utils';
-import type { CustomNotification, Notification, Opts, Severity } from './types';
+import type { Notification } from './types';
 
 // state
 export type SnackbarState = {
@@ -21,42 +23,17 @@ export const slice = createSlice({
   name: 'snackbar',
   initialState,
   reducers: {
-    removeSnackbar: (state, { payload }: PayloadAction<{ id: Notification['id'] }>) => {
-      state.notifications = state.notifications.filter($ => $.id !== payload.id);
-    },
-    createGenericNotification: (
-      state,
-      action: PayloadAction<{ severity: Severity; message: string; opts?: Opts }>,
-    ) => {
-      state.notifications.push(
-        createGenericNotification(
-          action.payload.severity,
-          action.payload.message,
-          action.payload.opts,
-        ),
-      );
-    },
-    createCustomNotification: (
-      state,
-      action: PayloadAction<{ type: CustomNotification['type']; opts?: Opts }>,
-    ) => {
-      // TODO: Fix showing duplicate notifications for the same type and project
-      if (
-        !state.notifications.some(
-          $ => $.type === action.payload.type && $.project?.id === action.payload.opts?.project?.id,
-        )
-      ) {
-        state.notifications.push(
-          createCustomNotification(action.payload.type, action.payload.opts),
-        );
-      }
+    removeSnackbar: (state, { payload: id }: PayloadAction<Notification['id']>) => {
+      state.notifications = state.notifications.filter($ => $.id !== id);
     },
   },
   extraReducers: builder => {
     builder
       .addCase(workspaceActions.getWorkspace.fulfilled, (state, action) => {
         if (action.payload.missing.length > 0) {
-          state.notifications.push(createCustomNotification('missing-scenes', { duration: 0 }));
+          state.notifications.push(
+            createCustomNotification({ type: 'missing-scenes' }, { duration: 0 }),
+          );
         }
       })
       .addCase(workspaceActions.importProject.pending, (state, payload) => {
@@ -130,9 +107,43 @@ export const slice = createSlice({
           $ => $.type === 'missing-scenes',
         );
         if (!oldMissingScenesNotification) {
-          state.notifications.push(createCustomNotification('missing-scenes', { duration: 0 }));
+          state.notifications.push(
+            createCustomNotification({ type: 'missing-scenes' }, { duration: 0 }),
+          );
         }
-      });
+      })
+      .addCase(
+        workspaceActions.runProject.fulfilled,
+        (state, { payload: { project, settings }, type }) => {
+          console.log('type: ', type);
+          // TODO: should all dependency update notification have the same requestId so the user can only
+          // have notifications from 1 project at the time?
+          switch (settings.dependencyUpdateStrategy) {
+            case DEPENDENCY_UPDATE_STRATEGY.NOTIFY: {
+              state.notifications = state.notifications.filter(
+                $ => $.type !== 'new-dependency-version',
+              );
+              state.notifications.push(
+                createCustomNotification(
+                  { type: 'new-dependency-version', project },
+                  { duration: 0 },
+                ),
+              );
+              break;
+            }
+            case DEPENDENCY_UPDATE_STRATEGY.AUTO_UPDATE: {
+              state.notifications = state.notifications.filter(
+                $ => $.requestId !== DEPENDENCY_UPDATE_STRATEGY.AUTO_UPDATE,
+              );
+              state.notifications.push(
+                createGenericNotification('success', t('snackbar.generic.dependencies_updated'), {
+                  requestId: DEPENDENCY_UPDATE_STRATEGY.AUTO_UPDATE,
+                }),
+              );
+            }
+          }
+        },
+      );
   },
   selectors: {},
 });

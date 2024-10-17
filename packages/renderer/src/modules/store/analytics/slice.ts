@@ -1,5 +1,6 @@
-import { analytics } from '#preload';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+
+import { analytics } from '#preload';
 
 // actions
 export const fetchAnonymousId = createAsyncThunk(

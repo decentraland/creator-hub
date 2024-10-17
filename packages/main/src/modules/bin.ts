@@ -10,6 +10,9 @@ import { rimraf } from 'rimraf';
 import semver from 'semver';
 import { promisify } from 'util';
 import { exec as execSync } from 'child_process';
+
+import { ErrorBase } from '/shared/types/error';
+
 import { APP_UNPACKED_PATH, getBinPath, getNodeCmdPath, joinEnvPaths } from './path';
 import { track } from './analytics';
 
@@ -170,6 +173,19 @@ export async function install() {
   }
 }
 
+type Error = 'COMMAND_FAILED';
+
+export class StreamError extends ErrorBase<Error> {
+  constructor(
+    type: Error,
+    message: string,
+    public stdout: Buffer,
+    public stderr: Buffer,
+  ) {
+    super(type, message);
+  }
+}
+
 export type Child = {
   pkg: string;
   bin: string;
@@ -179,7 +195,7 @@ export type Child = {
   on: (pattern: RegExp, handler: (data?: string) => void) => number;
   once: (pattern: RegExp, handler: (data?: string) => void) => number;
   off: (index: number) => void;
-  wait: () => Promise<void>;
+  wait: () => Promise<Buffer>;
   waitFor: (resolvePattern: RegExp, rejectPattern?: RegExp) => Promise<string>;
   kill: () => Promise<void>;
   alive: () => boolean;
@@ -210,7 +226,7 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
   let isKilling = false;
   let alive = true;
 
-  const promise = future<void>();
+  const promise = future<Awaited<ReturnType<Child['wait']>>>();
   const matchers: Matcher[] = [];
 
   const { workspace = APP_UNPACKED_PATH, cwd = APP_UNPACKED_PATH, args = [], env = {} } = options;
@@ -227,6 +243,18 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
     },
   });
 
+  const stdout: Uint8Array[] = [];
+  forked.stdout!.on('data', (data: Buffer) => {
+    handleData(data, matchers);
+    stdout.push(Uint8Array.from(data));
+  });
+
+  const stderr: Uint8Array[] = [];
+  forked.stderr!.on('data', (data: Buffer) => {
+    handleData(data, matchers);
+    stderr.push(Uint8Array.from(data));
+  });
+
   const ready = future<void>();
 
   const name = `${bin} ${args.join(' ')}`.trim();
@@ -240,15 +268,22 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
   forked.on('exit', code => {
     if (!alive) return;
     alive = false;
+    const stdoutBuf = Buffer.concat(stdout);
     log.info(
       `[UtilityProcess] Exiting "${name}" with pid=${forked.pid} and exit code=${code || 0}`,
     );
     if (code !== 0 && code !== null) {
+      const stderrBuf = Buffer.concat(stderr);
       promise.reject(
-        new Error(`Error: process "${name}" with pid=${forked.pid} exited with code=${code}`),
+        new StreamError(
+          'COMMAND_FAILED',
+          `Error: process "${name}" with pid=${forked.pid} exited with code=${code}`,
+          stdoutBuf,
+          stderrBuf,
+        ),
       );
     } else {
-      promise.resolve(void 0);
+      promise.resolve(stdoutBuf);
     }
   });
 

@@ -1,4 +1,7 @@
-import { UPDATE_DEPENDENCIES_STRATEGY } from '/shared/types/settings';
+import {
+  DEPENDENCY_UPDATE_STRATEGY,
+  DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
+} from '/shared/types/settings';
 import { invoke } from './invoke';
 import { getConfig, setConfig } from './config';
 
@@ -12,25 +15,17 @@ export async function setScenesPath(path: string) {
 }
 
 // Helper to check if a value is part of the enum
-function isValidUpdateStrategy(value: string): value is UPDATE_DEPENDENCIES_STRATEGY {
-  return Object.values(UPDATE_DEPENDENCIES_STRATEGY).includes(
-    value as UPDATE_DEPENDENCIES_STRATEGY,
-  );
+function isValidUpdateStrategy(value?: string): value is DEPENDENCY_UPDATE_STRATEGY {
+  return Object.values(DEPENDENCY_UPDATE_STRATEGY).includes(value as DEPENDENCY_UPDATE_STRATEGY);
 }
 
 export async function getUpdateDependenciesStrategy() {
-  const config = await getConfig();
-  if (
-    config.updateDependenciesStrategy &&
-    isValidUpdateStrategy(config.updateDependenciesStrategy)
-  ) {
-    return config.updateDependenciesStrategy;
-  } else {
-    return UPDATE_DEPENDENCIES_STRATEGY.NOTIFY;
-  }
+  const { updateDependenciesStrategy } = await getConfig();
+  if (isValidUpdateStrategy(updateDependenciesStrategy)) return updateDependenciesStrategy;
+  return DEFAULT_DEPENDENCY_UPDATE_STRATEGY;
 }
 
-export async function setUpdateDependenciesStrategy(strategy: UPDATE_DEPENDENCIES_STRATEGY) {
+export async function setUpdateDependenciesStrategy(strategy: DEPENDENCY_UPDATE_STRATEGY) {
   await setConfig(config => (config.updateDependenciesStrategy = strategy));
 }
 

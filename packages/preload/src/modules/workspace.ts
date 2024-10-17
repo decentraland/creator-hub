@@ -5,9 +5,10 @@ import type { Scene } from '@dcl/schemas';
 import { shell } from 'electron';
 import equal from 'fast-deep-equal';
 
-import { SortBy, type Project } from '/shared/types/projects';
+import { type DependencyState, SortBy, type Project } from '/shared/types/projects';
 import type { Template, Workspace } from '/shared/types/workspace';
 import { FileSystemStorage } from '/shared/types/storage';
+import { PACKAGES_LIST } from '/shared/types/pkg';
 
 import { getConfig, setConfig } from './config';
 import { exists, writeFile as deepWriteFile } from './fs';
@@ -15,7 +16,8 @@ import { hasDependency } from './pkg';
 import { getRowsAndCols, parseCoords } from './scene';
 import { getEditorHome } from './editor';
 import { invoke } from './invoke';
-import { getScenesPath } from './settings';
+import { getOudatedDeps } from './npm';
+import { getUpdateDependenciesStrategy, getScenesPath } from './settings';
 
 import { DEFAULT_THUMBNAIL, NEW_SCENE_NAME, EMPTY_SCENE_TEMPLATE_REPO } from './constants';
 
@@ -99,28 +101,37 @@ export async function getProjectThumbnailAsBase64(
   }
 }
 
+export async function getOutdatedPackages(_path: string): Promise<DependencyState> {
+  const outdated = await getOudatedDeps(_path, PACKAGES_LIST);
+  return outdated as DependencyState;
+}
+
 export async function getProject(_path: string): Promise<Project> {
   try {
-    const id = await getProjectId(_path);
-    const scene = await getScene(_path);
-    const parcels = scene.scene.parcels.map($ => parseCoords($));
-
-    const stat = await fs.stat(_path);
+    const [id, scene, stat, dependencyAvailableUpdates] = await Promise.all([
+      getProjectId(_path),
+      getScene(_path),
+      fs.stat(_path),
+      getOutdatedPackages(_path),
+    ]);
+    const thumbnail = await getProjectThumbnailAsBase64(_path, scene);
+    const layout = getRowsAndCols(scene.scene.parcels.map($ => parseCoords($)));
 
     return {
       id,
       path: _path,
       title: scene.display?.title || 'Untitled scene',
       description: scene.display?.description,
-      thumbnail: await getProjectThumbnailAsBase64(_path, scene),
-      layout: getRowsAndCols(parcels),
+      thumbnail,
+      layout,
       createdAt: Number(stat.birthtime),
       updatedAt: Number(stat.mtime),
       size: stat.size,
       worldConfiguration: scene?.worldConfiguration,
+      dependencyAvailableUpdates,
     };
   } catch (error: any) {
-    throw new Error(`Could not get scene.json info for project in "${_path}": ${error.message}`);
+    throw new Error(`Could not get project in "${_path}": ${error.message}`);
   }
 }
 
@@ -193,12 +204,16 @@ export async function getWorkspace(): Promise<Workspace> {
   const config = await getConfig();
   const [projects, missing] = await getProjects(config.workspace.paths);
   const templates = await getTemplates();
+  const updateStrategySetting = await getUpdateDependenciesStrategy();
 
   return {
     sortBy: SortBy.NEWEST, // TODO: read from editor config file...
     projects,
     missing,
     templates,
+    settings: {
+      dependencyUpdateStrategy: updateStrategySetting,
+    },
   };
 }
 
