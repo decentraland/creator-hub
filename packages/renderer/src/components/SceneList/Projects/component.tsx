@@ -27,26 +27,24 @@ export function Projects({ projects }: Props) {
         onClick={() => navigate('/templates')}
       ></div>
       {projects.map(project => (
-        <>
-          <Project
-            key={project.path}
-            project={project}
-          />
-        </>
+        <Project
+          key={project.path}
+          project={project}
+        />
       ))}
     </>
   );
 }
 
 function Project({ project }: { project: Project }) {
-  const { selectProject, duplicateProject, deleteProject, openFolder } = useWorkspace();
+  const { runProject, duplicateProject, deleteProject, openFolder } = useWorkspace();
   const [open, setOpen] = useState(false);
 
   const parcels = project.layout.cols * project.layout.rows;
 
   const handleClick = useCallback(() => {
-    selectProject(project);
-  }, [project, selectProject]);
+    runProject(project);
+  }, [project, runProject]);
 
   const handleDuplicateProject = useCallback(() => {
     duplicateProject(project);

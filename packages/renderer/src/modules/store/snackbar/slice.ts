@@ -4,8 +4,9 @@ import { createSlice } from '@reduxjs/toolkit';
 import { t } from '/@/modules/store/translation/utils';
 
 import { actions as workspaceActions } from '../workspace';
+import { shouldNotifyUpdates } from '../workspace/utils';
 import { createCustomNotification, createGenericNotification } from './utils';
-import type { CustomNotification, Notification, Opts, Severity } from './types';
+import type { Notification } from './types';
 
 // state
 export type SnackbarState = {
@@ -21,42 +22,17 @@ export const slice = createSlice({
   name: 'snackbar',
   initialState,
   reducers: {
-    removeSnackbar: (state, { payload }: PayloadAction<{ id: Notification['id'] }>) => {
-      state.notifications = state.notifications.filter($ => $.id !== payload.id);
-    },
-    createGenericNotification: (
-      state,
-      action: PayloadAction<{ severity: Severity; message: string; opts?: Opts }>,
-    ) => {
-      state.notifications.push(
-        createGenericNotification(
-          action.payload.severity,
-          action.payload.message,
-          action.payload.opts,
-        ),
-      );
-    },
-    createCustomNotification: (
-      state,
-      action: PayloadAction<{ type: CustomNotification['type']; opts?: Opts }>,
-    ) => {
-      // TODO: Fix showing duplicate notifications for the same type and project
-      if (
-        !state.notifications.some(
-          $ => $.type === action.payload.type && $.project?.id === action.payload.opts?.project?.id,
-        )
-      ) {
-        state.notifications.push(
-          createCustomNotification(action.payload.type, action.payload.opts),
-        );
-      }
+    removeSnackbar: (state, { payload: id }: PayloadAction<Notification['id']>) => {
+      state.notifications = state.notifications.filter($ => $.id !== id);
     },
   },
   extraReducers: builder => {
     builder
       .addCase(workspaceActions.getWorkspace.fulfilled, (state, action) => {
         if (action.payload.missing.length > 0) {
-          state.notifications.push(createCustomNotification('missing-scenes', { duration: 0 }));
+          state.notifications.push(
+            createCustomNotification({ type: 'missing-scenes' }, { duration: 0 }),
+          );
         }
       })
       .addCase(workspaceActions.importProject.pending, (state, payload) => {
@@ -130,9 +106,35 @@ export const slice = createSlice({
           $ => $.type === 'missing-scenes',
         );
         if (!oldMissingScenesNotification) {
-          state.notifications.push(createCustomNotification('missing-scenes', { duration: 0 }));
+          state.notifications.push(
+            createCustomNotification({ type: 'missing-scenes' }, { duration: 0 }),
+          );
         }
-      });
+      })
+      .addCase(workspaceActions.updatePackages.fulfilled, state => {
+        state.notifications = state.notifications.filter($ => $.requestId !== 'updatePackages');
+        state.notifications.push(
+          createGenericNotification('success', t('snackbar.generic.dependencies_updated'), {
+            requestId: 'updatePackages',
+          }),
+        );
+      })
+      .addCase(
+        workspaceActions.updateAvailableDependencyUpdates.fulfilled,
+        (state, { meta, payload: { project, strategy } }) => {
+          state.notifications = state.notifications.filter(
+            $ => $.type !== 'new-dependency-version',
+          );
+          if (shouldNotifyUpdates(strategy, project.dependencyAvailableUpdates)) {
+            state.notifications.push(
+              createCustomNotification(
+                { type: 'new-dependency-version', project },
+                { duration: 0, requestId: meta.requestId },
+              ),
+            );
+          }
+        },
+      );
   },
   selectors: {},
 });

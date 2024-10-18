@@ -9,11 +9,11 @@ import { useWorkspace } from '/@/hooks/useWorkspace';
 
 export function NewDependencyVersion({ onClose }: { onClose: () => void }) {
   const { project } = useEditor();
-  const { updateSdkPackage } = useWorkspace();
+  const { updatePackages } = useWorkspace();
 
   const handleClickUpdate = useCallback(() => {
     if (project) {
-      updateSdkPackage(project.path);
+      updatePackages(project);
     }
     onClose();
   }, [project]);
@@ -32,7 +32,7 @@ export function NewDependencyVersion({ onClose }: { onClose: () => void }) {
         </IconButton>
       </>
     ),
-    [],
+    [project],
   );
 
   return (
@@ -43,31 +43,6 @@ export function NewDependencyVersion({ onClose }: { onClose: () => void }) {
       sx={{ alignItems: 'center' }}
     >
       {t('snackbar.new_dependency_version.title')}
-    </Alert>
-  );
-}
-
-export function DependencyUpdatedAutomatically({ onClose }: { onClose: () => void }) {
-  const renderActions = useCallback(
-    () => (
-      <Button
-        variant="text"
-        onClick={onClose}
-      >
-        {t('snackbar.dependency_updated_automatically.actions.ok')}
-      </Button>
-    ),
-    [],
-  );
-
-  return (
-    <Alert
-      icon={<NotificationImportantIcon color="secondary" />}
-      severity="info"
-      action={renderActions()}
-      sx={{ alignItems: 'center' }}
-    >
-      {t('snackbar.dependency_updated_automatically.title')}
     </Alert>
   );
 }

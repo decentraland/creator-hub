@@ -10,7 +10,7 @@ trackAction(workspaceActions.createProject.fulfilled, 'Create Project', async ac
   cols: action.payload.layout.cols,
 }));
 
-trackAction(editorActions.setProject.fulfilled, 'Open Project', async action => ({
+trackAction(workspaceActions.runProject.fulfilled, 'Open Project', async action => ({
   project_id: action.payload.id,
   project_name: action.payload.title,
 }));

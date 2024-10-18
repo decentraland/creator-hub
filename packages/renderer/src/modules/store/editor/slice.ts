@@ -1,14 +1,12 @@
-import pLimit from 'p-limit';
-import { editor, npm, settings } from '#preload';
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import { createSlice } from '@reduxjs/toolkit';
+
+import { editor } from '#preload';
+import { createAsyncThunk } from '/@/modules/store/thunk';
 
 import { type Project } from '/shared/types/projects';
-import { UPDATE_DEPENDENCIES_STRATEGY } from '/shared/types/settings';
-import { SDK_PACKAGE } from '/shared/types/pkg';
+import { WorkspaceError } from '/shared/types/workspace';
 
 import { actions as workspaceActions } from '../workspace';
-
-const limit = pLimit(1);
 
 // actions
 export const fetchVersion = createAsyncThunk('editor/fetchVersion', editor.getVersion);
@@ -17,34 +15,6 @@ export const startInspector = createAsyncThunk('editor/startInspector', editor.s
 export const runScene = createAsyncThunk('editor/runScene', editor.runScene);
 export const publishScene = createAsyncThunk('editor/publishScene', editor.publishScene);
 export const openTutorial = createAsyncThunk('editor/openTutorial', editor.openTutorial);
-export const setProject = createAsyncThunk('editor/setProject', async (project: Project) => {
-  const updateStrategySetting = await settings.getUpdateDependenciesStrategy();
-
-  if (updateStrategySetting === UPDATE_DEPENDENCIES_STRATEGY.DO_NOTHING) {
-    return project;
-  }
-
-  const isOutdated = await limit(() => npm.packageOutdated(project.path, SDK_PACKAGE));
-
-  const updatedPackageStatus: Project['packageStatus'] = {
-    ...project.packageStatus,
-    [SDK_PACKAGE]: { isOutdated },
-  };
-
-  if (updateStrategySetting === UPDATE_DEPENDENCIES_STRATEGY.AUTO_UPDATE && isOutdated) {
-    try {
-      await limit(() => npm.install(project.path, SDK_PACKAGE));
-      updatedPackageStatus[SDK_PACKAGE].showUpdatedNotification = true;
-    } catch (_) {
-      updatedPackageStatus[SDK_PACKAGE].showUpdatedNotification = false;
-    }
-  }
-
-  return {
-    ...project,
-    packageStatus: updatedPackageStatus,
-  };
-});
 
 // state
 export type EditorState = {
@@ -58,7 +28,7 @@ export type EditorState = {
   isInstalling: boolean;
   isInstalled: boolean;
   isFetchingVersion: boolean;
-  error: string | null;
+  error: Error | null;
 };
 
 const initialState: EditorState = {
@@ -82,12 +52,22 @@ export const slice = createSlice({
   initialState,
   reducers: {},
   extraReducers: builder => {
-    builder.addCase(setProject.pending, state => {
-      // Clear previous project
+    builder.addCase(workspaceActions.runProject.pending, state => {
       state.project = undefined;
+      state.error = null;
     });
-    builder.addCase(setProject.fulfilled, (state, action) => {
+    builder.addCase(workspaceActions.runProject.fulfilled, (state, action) => {
       state.project = action.payload;
+      state.error = null;
+    });
+    builder.addCase(workspaceActions.runProject.rejected, (state, payload) => {
+      // TODO: Thunks return a SerializedError instead of the actual error thrown, so we have to do this
+      // ugly hack 👇 to check for the error name, which instead should be using "isWorkspaceError" to check that.
+      // Maybe there is a better way...
+      if (payload.error.name === 'PROJECT_NOT_FOUND') {
+        state.error = new WorkspaceError(payload.error.name);
+      }
+      state.project = undefined;
     });
     builder.addCase(startInspector.pending, state => {
       state.inspectorPort = 0;
@@ -98,7 +78,7 @@ export const slice = createSlice({
       state.loadingInspector = false;
     });
     builder.addCase(startInspector.rejected, (state, action) => {
-      state.error = action.error.message || null;
+      state.error = action.error.message ? new Error(action.error.message) : null;
       state.loadingInspector = false;
     });
     builder.addCase(publishScene.pending, state => {
@@ -110,7 +90,7 @@ export const slice = createSlice({
       state.loadingPublish = false;
     });
     builder.addCase(publishScene.rejected, (state, action) => {
-      state.error = action.error.message || null;
+      state.error = action.error.message ? new Error(action.error.message) : null;
       state.loadingPublish = false;
     });
     builder.addCase(workspaceActions.createProject.pending, state => {
@@ -130,7 +110,7 @@ export const slice = createSlice({
       state.isInstalled = true;
     });
     builder.addCase(install.rejected, (state, action) => {
-      state.error = action.error.message || null;
+      state.error = action.error.message ? new Error(action.error.message) : null;
       state.isInstalling = false;
     });
     builder.addCase(fetchVersion.fulfilled, (state, action) => {
@@ -141,7 +121,7 @@ export const slice = createSlice({
       state.isFetchingVersion = true;
     });
     builder.addCase(fetchVersion.rejected, (state, action) => {
-      state.error = action.error.message || null;
+      state.error = action.error.message ? new Error(action.error.message) : null;
       state.isFetchingVersion = false;
     });
     builder.addCase(workspaceActions.setProjectTitle, (state, action) => {
@@ -169,7 +149,6 @@ export const slice = createSlice({
 // exports
 export const actions = {
   ...slice.actions,
-  setProject,
   fetchVersion,
   install,
   startInspector,

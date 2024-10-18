@@ -5,16 +5,15 @@ import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import CodeIcon from '@mui/icons-material/Code';
 import PublicIcon from '@mui/icons-material/Public';
-import { settings } from '#preload';
+
 import { useSelector } from '#store';
 
 import { DEPLOY_URLS } from '/shared/types/deploy';
-import { UPDATE_DEPENDENCIES_STRATEGY } from '/shared/types/settings';
-import { SDK_PACKAGE } from '/shared/types/pkg';
+import { isWorkspaceError } from '/shared/types/workspace';
+
 import { initRpc } from '/@/modules/rpc';
 import { t } from '/@/modules/store/translation/utils';
 import { useEditor } from '/@/hooks/useEditor';
-import { useSnackbar } from '/@/hooks/useSnackbar';
 
 import EditorPng from '/assets/images/editor.png';
 
@@ -30,6 +29,7 @@ type ModalType = 'publish';
 export function EditorPage() {
   const navigate = useNavigate();
   const {
+    error,
     project,
     inspectorPort,
     openPreview,
@@ -39,7 +39,6 @@ export function EditorPage() {
     loadingPreview,
     loadingPublish,
   } = useEditor();
-  const { createCustomNotification } = useSnackbar();
   const userId = useSelector(state => state.analytics.userId);
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
   const [open, setOpen] = useState<ModalType | undefined>();
@@ -55,34 +54,14 @@ export function EditorPage() {
   );
 
   useEffect(() => {
+    if (isWorkspaceError(error, 'PROJECT_NOT_FOUND')) navigate('/scenes');
     return () => {
       // React.StrictMode will trigger this on mount, it shoulnd't be a problem since
       // there is no transportRef.current yet, but just fyi
       iframeRef.current?.dispose();
       iframeRef.current = undefined;
     };
-  }, []);
-
-  // TODO: Tries to generate the notifications using the snackbar actions
-  const notifySdkPackageVersion = useCallback(async () => {
-    const updateStrategySetting = await settings.getUpdateDependenciesStrategy();
-    if (
-      updateStrategySetting === UPDATE_DEPENDENCIES_STRATEGY.NOTIFY &&
-      project?.packageStatus?.[SDK_PACKAGE].isOutdated
-    ) {
-      createCustomNotification('new-dependency-version', { duration: 0, project });
-    } else if (
-      updateStrategySetting === UPDATE_DEPENDENCIES_STRATEGY.AUTO_UPDATE &&
-      project?.packageStatus?.[SDK_PACKAGE].showUpdatedNotification
-    ) {
-      createCustomNotification('dependency-updated-automatically', { project });
-    }
-  }, [project]);
-
-  useEffect(() => {
-    if (!project) return;
-    notifySdkPackageVersion();
-  }, [project]);
+  }, [error]);
 
   const isReady = !!project && inspectorPort > 0;
 

@@ -79,7 +79,6 @@ export const useEditor = () => {
 
   return {
     ...editor,
-    project,
     startInspector,
     runScene,
     publishScene,

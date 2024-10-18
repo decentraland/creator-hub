@@ -1,68 +1,25 @@
-import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import { fs, npm, workspace } from '#preload';
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
-import { type ThunkAction } from '#store';
-
-import type { Workspace } from '/shared/types/workspace';
 import { type Project, SortBy } from '/shared/types/projects';
-import { SDK_PACKAGE } from '/shared/types/pkg';
-
-import { actions as editorActions } from '../editor';
+import { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
+import { type Workspace } from '/shared/types/workspace';
 
 import type { Async } from '/@/modules/async';
 
-// actions
-const getWorkspace = createAsyncThunk('workspace/getWorkspace', workspace.getWorkspace);
-const createProject = createAsyncThunk('workspace/createProject', workspace.createProject);
-const updateProject = createAsyncThunk('workspace/updateProject', workspace.updateProject);
-const deleteProject = createAsyncThunk('workspace/deleteProject', workspace.deleteProject);
-const duplicateProject = createAsyncThunk('workspace/duplicateProject', workspace.duplicateProject);
-const importProject = createAsyncThunk('workspace/importProject', workspace.importProject);
-const reimportProject = createAsyncThunk('workspace/reimportProject', workspace.reimportProject);
-const unlistProjects = createAsyncThunk('workspace/unlistProjects', workspace.unlistProjects);
-const openFolder = createAsyncThunk('workspace/openFolder', workspace.openFolder);
-const saveThumbnail = createAsyncThunk(
-  'workspace/saveThumbnail',
-  async ({ path, thumbnail }: Parameters<typeof workspace.saveThumbnail>[0]) => {
-    await workspace.saveThumbnail({ path, thumbnail });
-    const project = await workspace.getProject(path);
-    return project;
-  },
-);
-const installProject = createAsyncThunk('npm/install', async (path: string) => npm.install(path));
-export const createProjectAndInstall: (
-  opts?: Parameters<typeof workspace.createProject>[0],
-) => ThunkAction = opts => async dispatch => {
-  const { path } = await dispatch(createProject(opts)).unwrap();
-  dispatch(installProject(path));
-};
-const updateSdkPackage = createAsyncThunk('npm/updateSdkPackage', (path: string) =>
-  npm.install(path, SDK_PACKAGE),
-);
-const selectProject = createAsyncThunk(
-  'workspace/selectProject',
-  async (project: Project, { dispatch }) => {
-    const exists = await fs.exists(project.path);
-    if (exists) {
-      dispatch(editorActions.setProject(project));
-    } else {
-      throw new Error('Project is missing');
-    }
-  },
-);
+import * as thunks from './thunks';
 
-// state
-export type WorkspaceState = Async<Workspace>;
-
-const initialState: WorkspaceState = {
+const initialState: Async<Workspace> = {
   sortBy: SortBy.NEWEST,
   projects: [],
   missing: [],
   templates: [],
+  settings: {
+    dependencyUpdateStrategy: DEPENDENCY_UPDATE_STRATEGY.NOTIFY,
+  },
   status: 'idle',
   error: null,
 };
-// slice
+
 export const slice = createSlice({
   name: 'workspace',
   initialState,
@@ -85,41 +42,41 @@ export const slice = createSlice({
   extraReducers: builder => {
     // nth: generic case adder so we don't end up with this mess 👇
     builder
-      .addCase(getWorkspace.pending, state => {
+      .addCase(thunks.getWorkspace.pending, state => {
         state.status = 'loading';
       })
-      .addCase(getWorkspace.fulfilled, (_, action) => {
+      .addCase(thunks.getWorkspace.fulfilled, (_, action) => {
         return {
           ...action.payload,
           status: 'succeeded',
           error: null,
         };
       })
-      .addCase(getWorkspace.rejected, (state, action) => {
+      .addCase(thunks.getWorkspace.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message || 'Failed to get workspace';
       })
-      .addCase(createProject.fulfilled, (state, action) => {
+      .addCase(thunks.createProject.fulfilled, (state, action) => {
         state.projects = [...state.projects, action.payload];
       })
-      .addCase(updateProject.pending, state => {
+      .addCase(thunks.updateProject.pending, state => {
         state.status = 'loading';
       })
-      .addCase(updateProject.fulfilled, (state, action) => {
+      .addCase(thunks.updateProject.fulfilled, (state, action) => {
         const projectIdx = state.projects.findIndex($ => $.path === action.payload.path);
         if (projectIdx !== -1) {
           state.projects[projectIdx] = { ...action.payload };
         }
         state.status = 'succeeded';
       })
-      .addCase(updateProject.rejected, (state, action) => {
+      .addCase(thunks.updateProject.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message || 'Failed to get update the project';
       })
-      .addCase(deleteProject.pending, state => {
+      .addCase(thunks.deleteProject.pending, state => {
         state.status = 'loading';
       })
-      .addCase(deleteProject.fulfilled, (state, action) => {
+      .addCase(thunks.deleteProject.fulfilled, (state, action) => {
         return {
           ...state,
           projects: state.projects.filter($ => $.path !== action.meta.arg),
@@ -127,12 +84,12 @@ export const slice = createSlice({
           error: null,
         };
       })
-      .addCase(deleteProject.rejected, (state, action) => {
+      .addCase(thunks.deleteProject.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message || `Failed to delete project ${action.meta.arg}`;
       })
-      .addCase(duplicateProject.pending, _state => {})
-      .addCase(duplicateProject.fulfilled, (state, action) => {
+      .addCase(thunks.duplicateProject.pending, _state => {})
+      .addCase(thunks.duplicateProject.fulfilled, (state, action) => {
         return {
           ...state,
           projects: state.projects.concat(action.payload),
@@ -140,14 +97,14 @@ export const slice = createSlice({
           error: null,
         };
       })
-      .addCase(duplicateProject.rejected, (state, action) => {
+      .addCase(thunks.duplicateProject.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message || `Failed to duplicate project ${action.meta.arg}`;
       })
-      .addCase(importProject.pending, state => {
+      .addCase(thunks.importProject.pending, state => {
         state.status = 'loading';
       })
-      .addCase(importProject.fulfilled, (state, action) => {
+      .addCase(thunks.importProject.fulfilled, (state, action) => {
         const newProject = action.payload;
         return {
           ...state,
@@ -156,14 +113,14 @@ export const slice = createSlice({
           error: null,
         };
       })
-      .addCase(importProject.rejected, (state, action) => {
+      .addCase(thunks.importProject.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message || `Failed to import project ${action.meta.arg}`;
       })
-      .addCase(reimportProject.pending, state => {
+      .addCase(thunks.reimportProject.pending, state => {
         state.status = 'loading';
       })
-      .addCase(reimportProject.fulfilled, (state, action) => {
+      .addCase(thunks.reimportProject.fulfilled, (state, action) => {
         const newProject = action.payload;
         return {
           ...state,
@@ -173,14 +130,14 @@ export const slice = createSlice({
           error: null,
         };
       })
-      .addCase(reimportProject.rejected, (state, action) => {
+      .addCase(thunks.reimportProject.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message || `Failed to re-import project ${action.meta.arg}`;
       })
-      .addCase(unlistProjects.pending, state => {
+      .addCase(thunks.unlistProjects.pending, state => {
         state.status = 'loading';
       })
-      .addCase(unlistProjects.fulfilled, (state, action) => {
+      .addCase(thunks.unlistProjects.fulfilled, (state, action) => {
         const pathsSet = new Set(action.meta.arg);
         return {
           ...state,
@@ -189,61 +146,32 @@ export const slice = createSlice({
           error: null,
         };
       })
-      .addCase(unlistProjects.rejected, (state, action) => {
+      .addCase(thunks.unlistProjects.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message || `Failed to unlists projects: ${action.meta.arg}`;
       })
-      .addCase(saveThumbnail.fulfilled, (state, { payload: project }) => {
+      .addCase(thunks.saveThumbnail.fulfilled, (state, { payload: project }) => {
         const projectIdx = state.projects.findIndex($ => $.path === project.path);
         if (projectIdx !== -1) {
           state.projects[projectIdx] = project;
         }
       })
-      .addCase(updateSdkPackage.pending, state => {
-        state.status = 'loading';
-      })
-      .addCase(updateSdkPackage.fulfilled, (state, action) => {
-        state.status = 'succeeded';
-        const projectIdx = state.projects.findIndex($ => $.path === action.meta.arg);
-        if (projectIdx !== -1) {
-          const project = { ...state.projects[projectIdx] };
-          state.projects[projectIdx] = {
-            ...project,
-            packageStatus: {
-              ...project.packageStatus,
-              [SDK_PACKAGE]: {
-                isOutdated: false,
-                showUpdatedNotification: true,
-              },
-            },
-          };
-        }
-      })
-      .addCase(updateSdkPackage.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error =
-          action.error.message || `Failed to update the SDK package for project ${action.meta.arg}`;
-      });
+      .addCase(
+        thunks.updateAvailableDependencyUpdates.fulfilled,
+        (state, { payload: { project } }) => {
+          const projectIdx = state.projects.findIndex($ => $.path === project.path);
+          if (projectIdx !== -1) {
+            state.projects[projectIdx] = project;
+          }
+        },
+      );
   },
 });
 
 // exports
 export const actions = {
   ...slice.actions,
-  getWorkspace,
-  selectProject,
-  createProject,
-  installProject,
-  createProjectAndInstall,
-  updateProject,
-  deleteProject,
-  duplicateProject,
-  importProject,
-  reimportProject,
-  unlistProjects,
-  saveThumbnail,
-  openFolder,
-  updateSdkPackage,
+  ...thunks,
 };
 export const reducer = slice.reducer;
 export const selectors = { ...slice.selectors };

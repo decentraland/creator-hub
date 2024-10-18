@@ -169,7 +169,8 @@
       "duplicate_scene": "复制场景...",
       "duplicate_scene_failed": "复制场景失败",
       "delete_scene": "删除场景...",
-      "delete_scene_failed": "删除场景失败"
+      "delete_scene_failed": "删除场景失败",
+      "dependencies_updated": "場景相依性已更新"
     },
     "missing_projects": {
       "title": "{scenes} 丢失的 {scenes, plural, one {场景} other {场景}} 成立",
@@ -182,12 +183,6 @@
       "title": "偵測到新的依賴項版本",
       "actions": {
         "update": "更新"
-      }
-    },
-    "dependency_updated_automatically": {
-      "title": "場景相依性已更新",
-      "actions": {
-        "ok": "好的"
       }
     }
   },
