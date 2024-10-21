@@ -18,7 +18,7 @@ export async function start(path: string) {
   }
   await install(path);
   previewServer = run('@dcl/sdk-commands', 'sdk-commands', {
-    args: ['start', '--explorer-alpha'],
+    args: ['start', '--explorer-alpha', '--hub'],
     cwd: path,
   });
   await previewServer.waitFor(/decentraland:\/\//i);
