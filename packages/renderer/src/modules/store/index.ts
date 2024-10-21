@@ -5,6 +5,7 @@ import {
   useDispatch as formerUseDispuseDispatch,
 } from 'react-redux';
 import logger from 'redux-logger';
+
 import { createAnalyticsMiddleware } from './analytics/middleware';
 import * as editor from './editor';
 import * as snackbar from './snackbar';

@@ -3,18 +3,24 @@ import path from 'path';
 import { produce, type WritableDraft } from 'immer';
 
 import type { Config } from '/shared/types/config';
+import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 
 import { invoke } from './invoke';
+import { getDefaultScenesPath } from './settings';
 
 const CONFIG_FILE_NAME = 'config.json';
 
 let config: Config | undefined;
 
-function getDefaultConfig(): Config {
+async function getDefaultConfig(): Promise<Config> {
   return {
     version: 1,
     workspace: {
       paths: [],
+    },
+    settings: {
+      scenesPath: await getDefaultScenesPath(),
+      dependencyUpdateStrategy: DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
     },
   };
 }
@@ -28,7 +34,7 @@ export async function getConfigPath(): Promise<string> {
   const appHome = await invoke('electron.getAppHome');
   try {
     await fs.stat(appHome);
-  } catch (error) {
+  } catch (_) {
     await fs.mkdir(appHome);
   }
   return path.join(appHome, CONFIG_FILE_NAME);
@@ -48,7 +54,7 @@ export async function getConfig(): Promise<Readonly<Config>> {
       config = JSON.parse(await fs.readFile(configPath, 'utf-8')) as Config;
     } catch (_) {
       try {
-        await writeConfig(getDefaultConfig());
+        await writeConfig(await getDefaultConfig());
       } catch (e) {
         console.error('[Preload] Failed initializing config file', e);
       }

@@ -3,24 +3,22 @@ import type { Project } from '/shared/types/projects';
 
 export type Severity = AlertColor | 'loading';
 export type NotificationId = string;
-type CustomNotificationType =
-  | 'missing-scenes'
-  | 'new-dependency-version'
-  | 'dependency-updated-automatically';
+export type CustomNotificationType =
+  | { type: 'missing-scenes' }
+  | { type: 'new-dependency-version'; project: Project };
 
 export type Opts = {
   requestId?: string;
   duration?: number;
-  project?: Project;
 };
 
-type CommonNotificationProps<T extends string> = {
+type CommonNotificationProps<T extends { type: string }> = {
   id: NotificationId;
-  type: T;
-} & Opts;
+} & T &
+  Opts;
 
 export type CustomNotification = CommonNotificationProps<CustomNotificationType>;
-export type GenericNotification = CommonNotificationProps<'generic'> & {
+export type GenericNotification = CommonNotificationProps<{ type: 'generic' }> & {
   severity: Severity;
   message: string;
 };

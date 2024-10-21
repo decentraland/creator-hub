@@ -8,4 +8,8 @@ export type PackageJson = {
   devDependencies?: Record<string, string>;
 };
 
-export const SDK_PACKAGE = '@dcl/sdk';
+export enum PACKAGES {
+  SDK_PACKAGE = '@dcl/sdk',
+}
+
+export const PACKAGES_LIST = Object.values(PACKAGES);

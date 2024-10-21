@@ -1,5 +1,8 @@
 import type { WorldConfiguration } from '@dcl/schemas';
 
+import type { Outdated } from './npm';
+import type { PACKAGES } from './pkg';
+
 export type Layout = {
   rows: number;
   cols: number;
@@ -15,6 +18,8 @@ export type ProjectInfo = {
   id: string;
 };
 
+export type DependencyState = { [k in PACKAGES]?: Outdated[keyof Outdated] };
+
 export type Project = {
   id: string;
   path: string;
@@ -26,10 +31,5 @@ export type Project = {
   updatedAt: number;
   size: number;
   worldConfiguration?: WorldConfiguration;
-  packageStatus?: {
-    [packageName: string]: {
-      isOutdated: boolean;
-      showUpdatedNotification?: boolean;
-    };
-  };
+  dependencyAvailableUpdates: DependencyState;
 };

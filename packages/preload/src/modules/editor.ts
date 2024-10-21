@@ -1,16 +1,13 @@
-import fs from 'node:fs/promises';
 import path from 'path';
 
 import type { DeployOptions } from '/shared/types/ipc';
+
 import { invoke } from './invoke';
+import * as fs from './fs';
 
 export async function getEditorHome(_path: string) {
   const editorHomePath = path.join(_path, '.editor');
-  try {
-    await fs.stat(editorHomePath);
-  } catch (_) {
-    await fs.mkdir(editorHomePath);
-  }
+  if (!(await fs.exists(editorHomePath))) await fs.mkdir(editorHomePath);
   return editorHomePath;
 }
 

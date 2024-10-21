@@ -1,4 +1,5 @@
 import type {
+  CustomNotificationType,
   CustomNotification,
   GenericNotification,
   NotificationId,
@@ -13,10 +14,10 @@ function getId(type: string): NotificationId {
 }
 
 export function createCustomNotification(
-  type: CustomNotification['type'],
+  notification: CustomNotificationType,
   opts?: Opts,
 ): CustomNotification {
-  return { ...opts, id: opts?.requestId || getId(type), type };
+  return { ...notification, ...opts, id: opts?.requestId || getId(notification.type) };
 }
 
 export function createGenericNotification(

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Button,
@@ -14,69 +14,53 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import FolderIcon from '@mui/icons-material/Folder';
 import { Modal } from 'decentraland-ui2/dist/components/Modal/Modal';
+import equal from 'fast-deep-equal';
+
 import { settings as settingsPreload } from '#preload';
-import { UPDATE_DEPENDENCIES_STRATEGY } from '/shared/types/settings';
+
+import { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
+
 import { t } from '/@/modules/store/translation/utils';
 import { useSettings } from '/@/hooks/useSettings';
 
 import './styles.css';
 
 export function AppSettings({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const settings = useSettings();
-  const [scenesPath, setScenesPath] = useState('');
-  const [updateDependenciesStrategy, setUpdateDependenciesStrategy] =
-    useState<UPDATE_DEPENDENCIES_STRATEGY>(UPDATE_DEPENDENCIES_STRATEGY.NOTIFY);
-  const [isDirty, setIsDirty] = useState(false);
+  const { settings: _settings, updateAppSettings } = useSettings();
+  const [settings, setSettings] = useState(_settings);
 
   useEffect(() => {
-    const checkIfDirty = async () => {
-      const scenesPathSetting = settings.scenesPath;
-      const updateStrategySetting = settings.updateDependenciesStrategy;
+    if (!equal(_settings, settings)) setSettings(_settings);
+  }, [_settings]);
 
-      setIsDirty(
-        scenesPath !== scenesPathSetting || updateDependenciesStrategy !== updateStrategySetting,
-      );
-    };
-
-    checkIfDirty();
-  }, [scenesPath, updateDependenciesStrategy]);
-
-  const handleChangeSceneFolder = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    setScenesPath(event.target.value);
-  }, []);
-
-  const handleClickChangeSceneFolder = useCallback(() => {
-    settings.setScenesPath(scenesPath);
-    onClose();
-  }, [scenesPath]);
+  const handleChangeSceneFolder = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setSettings({ ...settings, scenesPath: event.target.value });
+    },
+    [settings],
+  );
 
   const handleChangeUpdateDependenciesStrategy = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      const value = event.target.value as UPDATE_DEPENDENCIES_STRATEGY;
-      setUpdateDependenciesStrategy(value);
+      setSettings({
+        ...settings,
+        dependencyUpdateStrategy: event.target.value as DEPENDENCY_UPDATE_STRATEGY,
+      });
     },
-    [],
+    [settings],
   );
 
-  const handleClickApply = useCallback(async () => {
-    await settings.setScenesPath(scenesPath);
-    await settings.setUpdateDependenciesStrategy(updateDependenciesStrategy);
+  const handleClickApply = useCallback(() => {
+    updateAppSettings(settings);
     onClose();
-  }, [scenesPath, updateDependenciesStrategy]);
+  }, [settings, updateAppSettings]);
 
   const handleOpenFolder = useCallback(async () => {
     const folder = await settingsPreload.selectSceneFolder();
-    if (folder) {
-      setScenesPath(folder);
-    }
-  }, []);
+    if (folder) setSettings({ ...settings, scenesPath: folder });
+  }, [settings]);
 
-  useEffect(() => {
-    const path = settings.scenesPath;
-    const strategy = settings.updateDependenciesStrategy;
-    setScenesPath(path);
-    setUpdateDependenciesStrategy(strategy);
-  }, [settings.scenesPath, settings.updateDependenciesStrategy]);
+  const isDirty = useMemo(() => !equal(_settings, settings), [settings, _settings]);
 
   return (
     <Modal
@@ -99,7 +83,7 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
             </Typography>
             <OutlinedInput
               color="secondary"
-              value={scenesPath}
+              value={settings.scenesPath}
               onChange={handleChangeSceneFolder}
               endAdornment={
                 <InputAdornment position="end">
@@ -112,36 +96,27 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
                 </InputAdornment>
               }
             />
-            <Button
-              className="ChangeSceneFolderButton"
-              variant="contained"
-              color="secondary"
-              disableRipple
-              onClick={handleClickChangeSceneFolder}
-            >
-              {t('modal.app_settings.fields.scenes_folder.change_button')}
-            </Button>
           </FormGroup>
           <FormGroup sx={{ gap: '16px' }}>
             <Typography variant="body1">
               {t('modal.app_settings.fields.scene_editor_dependencies.label')}
             </Typography>
             <RadioGroup
-              value={updateDependenciesStrategy}
+              value={settings.dependencyUpdateStrategy}
               onChange={handleChangeUpdateDependenciesStrategy}
             >
               <FormControlLabel
-                value={UPDATE_DEPENDENCIES_STRATEGY.AUTO_UPDATE}
+                value={DEPENDENCY_UPDATE_STRATEGY.AUTO_UPDATE}
                 control={<Radio />}
                 label={t('modal.app_settings.fields.scene_editor_dependencies.options.auto_update')}
               />
               <FormControlLabel
-                value={UPDATE_DEPENDENCIES_STRATEGY.NOTIFY}
+                value={DEPENDENCY_UPDATE_STRATEGY.NOTIFY}
                 control={<Radio />}
                 label={t('modal.app_settings.fields.scene_editor_dependencies.options.notify')}
               />
               <FormControlLabel
-                value={UPDATE_DEPENDENCIES_STRATEGY.DO_NOTHING}
+                value={DEPENDENCY_UPDATE_STRATEGY.DO_NOTHING}
                 control={<Radio />}
                 label={t('modal.app_settings.fields.scene_editor_dependencies.options.do_nothing')}
               />

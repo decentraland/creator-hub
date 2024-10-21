@@ -71,7 +71,6 @@ export const useEditor = () => {
   const updateProject = useCallback(
     (updatedProject: Project) => {
       if (!project || !updatedProject || project.path !== updatedProject.path) return;
-
       dispatch(workspaceActions.updateProject(updatedProject));
     },
     [workspaceActions.updateProject, project],
@@ -79,7 +78,6 @@ export const useEditor = () => {
 
   return {
     ...editor,
-    project,
     startInspector,
     runScene,
     publishScene,
