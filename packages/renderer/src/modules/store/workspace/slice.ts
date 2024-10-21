@@ -1,7 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 import { type Project, SortBy } from '/shared/types/projects';
-import { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
+import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import { type Workspace } from '/shared/types/workspace';
 
 import type { Async } from '/@/modules/async';
@@ -14,7 +14,8 @@ const initialState: Async<Workspace> = {
   missing: [],
   templates: [],
   settings: {
-    dependencyUpdateStrategy: DEPENDENCY_UPDATE_STRATEGY.NOTIFY,
+    scenesPath: '',
+    dependencyUpdateStrategy: DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
   },
   status: 'idle',
   error: null,
@@ -164,7 +165,10 @@ export const slice = createSlice({
             state.projects[projectIdx] = project;
           }
         },
-      );
+      )
+      .addCase(thunks.updateSettings.fulfilled, (state, { meta }) => {
+        state.settings = meta.arg;
+      });
   },
 });
 

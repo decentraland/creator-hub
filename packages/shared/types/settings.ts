@@ -6,6 +6,7 @@ export enum DEPENDENCY_UPDATE_STRATEGY {
 
 export const DEFAULT_DEPENDENCY_UPDATE_STRATEGY = DEPENDENCY_UPDATE_STRATEGY.NOTIFY;
 
-export type Settings = {
+export type AppSettings = {
+  scenesPath: string;
   dependencyUpdateStrategy: DEPENDENCY_UPDATE_STRATEGY;
 };

@@ -1,9 +1,9 @@
-import { fs, npm, workspace } from '#preload';
+import { fs, npm, settings, workspace } from '#preload';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
 import { type Project } from '/shared/types/projects';
-import { type DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
+import type { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import { WorkspaceError } from '/shared/types/workspace';
 
 import { actions } from './index';
@@ -99,3 +99,4 @@ export const runProject = createAsyncThunk(
     return updatedProject;
   },
 );
+export const updateSettings = createAsyncThunk('config/updateSettings', settings.updateAppSettings);

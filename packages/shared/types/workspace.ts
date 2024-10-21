@@ -1,13 +1,13 @@
 import { ErrorBase } from './error';
 import type { Project, SortBy } from './projects';
-import type { Settings } from './settings';
+import type { AppSettings } from './settings';
 
 export type Workspace = {
   sortBy: SortBy;
   projects: Project[];
   missing: string[];
   templates: Template[];
-  settings: Settings;
+  settings: AppSettings;
 };
 
 export type Template = {

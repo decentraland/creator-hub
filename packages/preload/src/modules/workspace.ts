@@ -6,9 +6,10 @@ import { shell } from 'electron';
 import equal from 'fast-deep-equal';
 
 import { type DependencyState, SortBy, type Project } from '/shared/types/projects';
-import type { Template, Workspace } from '/shared/types/workspace';
-import { FileSystemStorage } from '/shared/types/storage';
 import { PACKAGES_LIST } from '/shared/types/pkg';
+import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
+import { FileSystemStorage } from '/shared/types/storage';
+import type { Template, Workspace } from '/shared/types/workspace';
 
 import { getConfig, setConfig } from './config';
 import { exists, writeFile as deepWriteFile } from './fs';
@@ -17,7 +18,7 @@ import { getRowsAndCols, parseCoords } from './scene';
 import { getEditorHome } from './editor';
 import { invoke } from './invoke';
 import { getOudatedDeps } from './npm';
-import { getUpdateDependenciesStrategy, getScenesPath } from './settings';
+import { getDefaultScenesPath, getScenesPath } from './settings';
 
 import { DEFAULT_THUMBNAIL, NEW_SCENE_NAME, EMPTY_SCENE_TEMPLATE_REPO } from './constants';
 
@@ -202,9 +203,10 @@ export async function getTemplates(): Promise<Template[]> {
  */
 export async function getWorkspace(): Promise<Workspace> {
   const config = await getConfig();
-  const [projects, missing] = await getProjects(config.workspace.paths);
-  const templates = await getTemplates();
-  const updateStrategySetting = await getUpdateDependenciesStrategy();
+  const [[projects, missing], templates] = await Promise.all([
+    getProjects(config.workspace.paths),
+    getTemplates(),
+  ]);
 
   return {
     sortBy: SortBy.NEWEST, // TODO: read from editor config file...
@@ -212,7 +214,11 @@ export async function getWorkspace(): Promise<Workspace> {
     missing,
     templates,
     settings: {
-      dependencyUpdateStrategy: updateStrategySetting,
+      ...config.settings,
+      // TODO: implement migrations for config file...
+      dependencyUpdateStrategy:
+        config.settings?.dependencyUpdateStrategy ?? DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
+      scenesPath: config.settings?.scenesPath ?? (await getDefaultScenesPath()),
     },
   };
 }

@@ -2,31 +2,33 @@ import {
   DEPENDENCY_UPDATE_STRATEGY,
   DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
 } from '/shared/types/settings';
+import type { AppSettings } from '/shared/types/settings';
+
 import { invoke } from './invoke';
 import { getConfig, setConfig } from './config';
 
+export function getDefaultScenesPath() {
+  return invoke('electron.getAppHome');
+}
+
 export async function getScenesPath() {
   const config = await getConfig();
-  return config.scenesPath ?? (await invoke('electron.getAppHome'));
+  return config.settings.scenesPath ?? (await getDefaultScenesPath());
 }
 
-export async function setScenesPath(path: string) {
-  await setConfig(config => (config.scenesPath = path));
-}
-
-// Helper to check if a value is part of the enum
-function isValidUpdateStrategy(value?: string): value is DEPENDENCY_UPDATE_STRATEGY {
+export function isValidUpdateStrategy(value?: string): value is DEPENDENCY_UPDATE_STRATEGY {
   return Object.values(DEPENDENCY_UPDATE_STRATEGY).includes(value as DEPENDENCY_UPDATE_STRATEGY);
 }
 
 export async function getUpdateDependenciesStrategy() {
-  const { updateDependenciesStrategy } = await getConfig();
-  if (isValidUpdateStrategy(updateDependenciesStrategy)) return updateDependenciesStrategy;
+  const { dependencyUpdateStrategy } = (await getConfig()).settings;
+  if (isValidUpdateStrategy(dependencyUpdateStrategy)) return dependencyUpdateStrategy;
   return DEFAULT_DEPENDENCY_UPDATE_STRATEGY;
 }
 
-export async function setUpdateDependenciesStrategy(strategy: DEPENDENCY_UPDATE_STRATEGY) {
-  await setConfig(config => (config.updateDependenciesStrategy = strategy));
+export async function updateAppSettings(settings: AppSettings) {
+  // update app settings on config file
+  await setConfig(config => (config.settings = settings));
 }
 
 export async function selectSceneFolder(): Promise<string | undefined> {
