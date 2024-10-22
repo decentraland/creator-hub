@@ -63,6 +63,11 @@ export function LearnPage() {
                   title="Project Updates"
                 />
                 <Video
+                  list="PLAcRraQmr_GP_K8WN7csnKnImK4R2TgMA"
+                  id="52LiG-4VI9c"
+                  title="SDK7 Tutorials"
+                />
+                <Video
                   list="PLAcRraQmr_GN8LcnnQk2BByo9L2Orvp9c"
                   id="-iWslh4uQIk"
                   title="Emote Tutorials"

@@ -78,7 +78,10 @@ export function VideosPage() {
             title="SDK7 Tutorials"
             list="PLAcRraQmr_GP_K8WN7csnKnImK4R2TgMA"
             videos={[
-              { id: 'fblj_FxUvM4', title: 'Smart Items - Basics' },
+              { id: '52LiG-4VI9c', title: 'Making a Scene with the Creator Hub' },
+              { id: 'cNl02PFPdcQ', title: 'Item Positioning' },
+              { id: 'UepXpH-k0EI', title: 'Using Custom 3D Art' },
+              { id: 'z7HF4GR01hE', title: 'Smart Items - Basics' },
               { id: 'Nbdo_oE80QU', title: 'Smart Items - Interactions' },
               { id: 'hXSiPO81KJA', title: 'Smart Items - State and Conditions' },
               { id: 'qXjQxMC97H0', title: 'Smart Items - Making any item smart' },
