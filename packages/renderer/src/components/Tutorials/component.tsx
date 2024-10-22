@@ -16,8 +16,20 @@ const PLAYLIST_ID = 'PLAcRraQmr_GP_K8WN7csnKnImK4R2TgMA';
 
 const playlist = [
   {
+    title: 'Making a Scene with the Creator Hub',
+    id: '52LiG-4VI9c',
+  },
+  {
+    title: 'Item Positioning',
+    id: 'cNl02PFPdcQ',
+  },
+  {
+    title: 'Using Custom 3D Art',
+    id: 'UepXpH-k0EI',
+  },
+  {
     title: 'Smart Items - Basics',
-    id: 'fblj_FxUvM4',
+    id: 'z7HF4GR01hE',
   },
   {
     title: 'Smart Items - Interactions between items',
