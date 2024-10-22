@@ -65,7 +65,7 @@ export function LearnPage() {
                 <Video
                   list="PLAcRraQmr_GP_K8WN7csnKnImK4R2TgMA"
                   id="52LiG-4VI9c"
-                  title="SDK7 Tutorials"
+                  title="Editor (no code)"
                 />
                 <Video
                   list="PLAcRraQmr_GN8LcnnQk2BByo9L2Orvp9c"
@@ -73,9 +73,9 @@ export function LearnPage() {
                   title="Emote Tutorials"
                 />
                 <Video
-                  list="PLAcRraQmr_GOJiVO5ZtZ86hef4unLsEkf"
-                  id="PF7smSBxVOc"
-                  title="Editor (No Code) Tutorials"
+                  list="PLAcRraQmr_GP_K8WN7csnKnImK4R2TgMA"
+                  id="J_EO1LZkaiA"
+                  title="Combine drag & dop + Code"
                 />
               </div>
               <Button
