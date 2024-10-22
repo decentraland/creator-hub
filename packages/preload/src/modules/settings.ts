@@ -13,7 +13,7 @@ export function getDefaultScenesPath() {
 
 export async function getScenesPath() {
   const config = await getConfig();
-  return config.settings.scenesPath ?? (await getDefaultScenesPath());
+  return config.settings?.scenesPath ?? (await getDefaultScenesPath());
 }
 
 export function isValidUpdateStrategy(value?: string): value is DEPENDENCY_UPDATE_STRATEGY {
