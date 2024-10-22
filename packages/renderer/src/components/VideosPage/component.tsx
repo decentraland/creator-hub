@@ -82,7 +82,6 @@ export function VideosPage() {
               { id: 'Nbdo_oE80QU', title: 'Smart Items - Interactions' },
               { id: 'hXSiPO81KJA', title: 'Smart Items - State and Conditions' },
               { id: 'qXjQxMC97H0', title: 'Smart Items - Making any item smart' },
-              { id: '7wEJyAi0Qx0', title: 'Decentraland scenes in SDK7 with only drag & drop' },
               {
                 id: 'J_EO1LZkaiA',
                 title: 'Combine drag & drop + Code to create Decentraland scenes',

@@ -28,10 +28,6 @@ const playlist = [
     id: 'qXjQxMC97H0',
   },
   {
-    title: 'Decentraland scenes in SDK7 with only drag and drop',
-    id: '7wEJyAi0Qx0',
-  },
-  {
     title: 'Combine drag & drop + Code to create Decentraland scenes in SDK 7',
     id: 'J_EO1LZkaiA',
   },
