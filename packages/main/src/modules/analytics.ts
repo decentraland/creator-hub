@@ -19,13 +19,13 @@ export function setUserId(userId: string) {
 }
 
 export async function getAnonymousId() {
-  const exists = await config.has('userId');
-  if (!exists) {
-    const userId = randomUUID();
-    await config.set('userId', userId);
-    return userId;
+  const userId = await config.get<string>('userId');
+  if (!userId) {
+    const uuid = randomUUID();
+    await config.set('userId', uuid);
+    return uuid;
   }
-  return config.get<string>('userId');
+  return userId;
 }
 
 export async function getAnalytics(): Promise<Analytics | null> {
