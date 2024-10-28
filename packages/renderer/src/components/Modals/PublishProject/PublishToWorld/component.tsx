@@ -11,6 +11,7 @@ import {
 } from 'decentraland-ui2';
 import WarningIcon from '@mui/icons-material/Warning';
 import AddIcon from '@mui/icons-material/Add';
+import type { WorldConfiguration } from '@dcl/schemas';
 
 import { misc } from '#preload';
 import type { Project } from '/shared/types/projects';
@@ -23,6 +24,7 @@ import { ENSProvider } from '/@/modules/store/ens/types';
 import { getEnsProvider } from '/@/modules/store/ens/utils';
 import { useAuth } from '/@/hooks/useAuth';
 import { useEditor } from '/@/hooks/useEditor';
+import { useWorkspace } from '/@/hooks/useWorkspace';
 
 import EmptyWorldSVG from '/assets/images/empty-deploy-to-world.svg';
 import LogoDCLSVG from '/assets/images/logo-dcl.svg';
@@ -54,7 +56,7 @@ export function PublishToWorld({ onClose }: { onClose: () => void }) {
 
 function SelectWorld({ project, onPublish }: { project: Project; onPublish: () => void }) {
   const { chainId } = useAuth();
-  const { updateProject } = useEditor();
+  const { updateSceneJson, updateProject } = useWorkspace();
   const names = useSelector(state => state.ens.data);
   const [name, setName] = useState(project.worldConfiguration?.name || '');
   const [ensProvider, setENSProvider] = useState(
@@ -120,13 +122,12 @@ function SelectWorld({ project, onPublish }: { project: Project; onPublish: () =
 
   useEffect(() => {
     if (name && project.worldConfiguration?.name !== name) {
-      updateProject({
-        ...project,
-        worldConfiguration: {
-          ...project.worldConfiguration,
-          name: name,
-        },
-      });
+      const worldConfiguration: WorldConfiguration = {
+        ...project.worldConfiguration,
+        name: name,
+      };
+      updateSceneJson(project.path, { worldConfiguration });
+      updateProject({ ...project, worldConfiguration });
     }
   }, [project, name]);
 

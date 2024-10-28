@@ -1,4 +1,4 @@
-import { fs, npm, settings, workspace } from '#preload';
+import { fs, npm, scene, settings, workspace } from '#preload';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
@@ -93,3 +93,4 @@ export const runProject = createAsyncThunk(
   },
 );
 export const updateSettings = createAsyncThunk('config/updateSettings', settings.updateAppSettings);
+export const updateSceneJson = createAsyncThunk('scene/updateScene', scene.writeScene);

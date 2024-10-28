@@ -1,7 +1,45 @@
+import type { Scene } from '@dcl/schemas';
+
+import fs from 'node:fs/promises';
+import path from 'node:path';
+
+import { writeFile } from './fs';
+
 export type Coords = {
   x: number;
   y: number;
 };
+
+/**
+ * Get Project's scene.json path
+ */
+function getScenePath(_path: string): string {
+  return path.join(_path, 'scene.json');
+}
+
+/**
+ * Get Project's scene JSON
+ */
+export async function getScene(_path: string): Promise<Scene> {
+  const scene = await fs.readFile(getScenePath(_path), 'utf8');
+  return JSON.parse(scene);
+}
+
+/**
+ * Write Project's scene JSON
+ */
+export async function writeScene({
+  path: _path,
+  scene: updates,
+}: {
+  path: string;
+  scene: Partial<Scene>;
+}) {
+  const scene = await getScene(_path);
+  await writeFile(getScenePath(_path), JSON.stringify({ ...scene, ...updates }, null, 2), {
+    encoding: 'utf8',
+  });
+}
 
 /**
  * Parses a string representing coordinates and returns an object with x and y properties.

@@ -4,7 +4,6 @@ import { editor as editorApi } from '#preload';
 import { useDispatch, useSelector } from '#store';
 
 import type { DeployOptions } from '/shared/types/ipc';
-import type { Project } from '/shared/types/projects';
 
 import { actions as editorActions } from '/@/modules/store/editor';
 import { actions as workspaceActions } from '/@/modules/store/workspace';
@@ -51,22 +50,21 @@ export const useEditor = () => {
       // so no data is lost if we don't do anything here, only runtime state will be out of sync.
       // Based on that, we could just update state for the project where needed, and let everything as is.
       // Then on go-back we can re-fetch the project so we keep everything synced...
+      // TODO OPTIMIZATION: maybe we can debounce this?
       if (project && path === 'scene.json') {
         const scene = bufferToScene(content);
-        updateProject({ ...project, title: scene.display?.title || project.title });
+        dispatch(
+          workspaceActions.updateProject({
+            ...project,
+            title: scene.display?.title || project.title,
+          }),
+        );
       }
     },
     [workspaceActions.updateProject, project],
   );
 
-  const updateProject = useCallback(
-    (updatedProject: Project) => {
-      if (!project || project.path !== updatedProject.path) return;
-      dispatch(workspaceActions.updateProject(updatedProject));
-    },
-    [project],
-  );
-
+  // TODO: find a proper name for this function
   const refreshProject = useCallback(
     async (rpcInfo: RPCInfo) => {
       const thumbnail = await generateThumbnail(rpcInfo);
@@ -86,7 +84,6 @@ export const useEditor = () => {
     openPreview,
     openCode,
     updateScene,
-    updateProject,
     refreshProject,
   };
 };

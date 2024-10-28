@@ -15,6 +15,7 @@ import { getRowsAndCols, parseCoords } from './scene';
 import { invoke } from './invoke';
 import { getOudatedDeps } from './npm';
 import { getDefaultScenesPath, getScenesPath } from './settings';
+import { getScene } from './scene';
 
 import { DEFAULT_THUMBNAIL, NEW_SCENE_NAME, EMPTY_SCENE_TEMPLATE_REPO } from './constants';
 import { getWorkspaceConfigPath } from './editor';
