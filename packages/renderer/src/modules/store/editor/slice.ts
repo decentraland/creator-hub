@@ -99,7 +99,7 @@ export const slice = createSlice({
     builder.addCase(workspaceActions.createProject.fulfilled, (state, action) => {
       state.project = action.payload;
     });
-    builder.addCase(workspaceActions.updateProject.fulfilled, (state, action) => {
+    builder.addCase(workspaceActions.updateProject, (state, action) => {
       state.project = action.payload;
     });
     builder.addCase(install.pending, state => {
@@ -123,16 +123,6 @@ export const slice = createSlice({
     builder.addCase(fetchVersion.rejected, (state, action) => {
       state.error = action.error.message ? new Error(action.error.message) : null;
       state.isFetchingVersion = false;
-    });
-    builder.addCase(workspaceActions.setProjectTitle, (state, action) => {
-      if (state.project?.path === action.payload.path) {
-        state.project.title = action.payload.title;
-      }
-    });
-    builder.addCase(workspaceActions.saveThumbnail.fulfilled, (state, action) => {
-      if (state.project?.path === action.payload.path) {
-        state.project.thumbnail = action.payload.thumbnail;
-      }
     });
     builder.addCase(runScene.pending, state => {
       state.loadingPreview = true;

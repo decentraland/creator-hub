@@ -2,7 +2,6 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { Scene } from '@dcl/schemas';
 import { shell } from 'electron';
-import equal from 'fast-deep-equal';
 
 import { type DependencyState, SortBy, type Project } from '/shared/types/projects';
 import { PACKAGES_LIST } from '/shared/types/pkg';
@@ -255,53 +254,6 @@ export async function createProject(opts?: { name?: string; repo?: string }): Pr
   const project = await getProject(available.path);
   await setConfig(config => config.workspace.paths.push(available.path));
   return project;
-}
-
-/**
- * Updates the project's information in the scene.json file.
- *
- * @param {Project} project - The Project object containing the updated information.
- * @returns {Promise<Project>} A Promise that resolves to the updated Project object.
- * @throws {Error} An error if the scene.json file cannot be updated.
- */
-export async function updateProject(updatedProject: Project): Promise<Project> {
-  // TODO: Update all properties associated to a project in the scene.json
-  try {
-    const scene = await getScene(updatedProject.path);
-    let project = await getProject(updatedProject.path);
-
-    let updatedScene = JSON.parse(JSON.stringify(scene)) as Scene;
-
-    // Clean up the property navmapThumbnail if the define path doesn't exists
-    if (updatedScene.display?.navmapThumbnail) {
-      const navmapThumbnail = path.join(project.path, updatedScene.display.navmapThumbnail);
-      if (!(await exists(navmapThumbnail))) {
-        updatedScene.display.navmapThumbnail = '';
-      }
-    }
-
-    if (updatedProject.updatedAt > project.updatedAt) {
-      project = updatedProject;
-    }
-
-    updatedScene = {
-      ...updatedScene,
-      worldConfiguration: project?.worldConfiguration,
-      scene: { ...project.scene },
-    };
-
-    if (!equal(updatedScene, scene)) {
-      await deepWriteFile(getScenePath(project.path), JSON.stringify(updatedScene, null, 2), {
-        encoding: 'utf8',
-      });
-    }
-
-    return getProject(project.path);
-  } catch (error: any) {
-    throw new Error(
-      `Could not update the scene.json info with project in "${updatedProject.path}": ${error.message}`,
-    );
-  }
 }
 
 /**

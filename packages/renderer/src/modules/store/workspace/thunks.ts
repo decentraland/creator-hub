@@ -11,8 +11,8 @@ import { actions } from './index';
 import { installAndGetOutdatedPackages, shouldUpdateDependencies } from './utils';
 
 export const getWorkspace = createAsyncThunk('workspace/getWorkspace', workspace.getWorkspace);
+export const getProject = createAsyncThunk('workspace/getProject', workspace.getProject);
 export const createProject = createAsyncThunk('workspace/createProject', workspace.createProject);
-export const updateProject = createAsyncThunk('workspace/updateProject', workspace.updateProject);
 export const deleteProject = createAsyncThunk('workspace/deleteProject', workspace.deleteProject);
 export const duplicateProject = createAsyncThunk(
   'workspace/duplicateProject',
@@ -31,14 +31,7 @@ export const openFolder = createAsyncThunk('workspace/openFolder', workspace.ope
 export const installProject = createAsyncThunk('npm/install', async (path: string) =>
   npm.install(path),
 );
-export const saveThumbnail = createAsyncThunk(
-  'workspace/saveThumbnail',
-  async ({ path, thumbnail }: Parameters<typeof workspace.saveThumbnail>[0]) => {
-    await workspace.saveThumbnail({ path, thumbnail });
-    const project = await workspace.getProject(path); // TODO: remove this and create a getThumbnail method...
-    return project;
-  },
-);
+export const saveThumbnail = createAsyncThunk('workspace/saveThumbnail', workspace.saveThumbnail);
 export const createProjectAndInstall = createAsyncThunk(
   'workspace/createProjectAndInstall',
   async (opts: Parameters<typeof workspace.createProject>[0], { dispatch }) => {

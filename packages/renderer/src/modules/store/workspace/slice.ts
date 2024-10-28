@@ -4,7 +4,7 @@ import { type Project, SortBy } from '/shared/types/projects';
 import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import { type Workspace } from '/shared/types/workspace';
 
-import type { Async } from '/@/modules/async';
+import type { Async } from '/shared/types//async';
 
 import * as thunks from './thunks';
 
@@ -28,16 +28,18 @@ export const slice = createSlice({
     setSortBy: (state, { payload: type }: PayloadAction<SortBy>) => {
       state.sortBy = type;
     },
-    setProjectTitle: (state, { payload }: PayloadAction<{ path: string; title: string }>) => {
-      const project = state.projects.find($ => $.path === payload.path)!;
-      project.title = payload.title;
-    },
     moveProjectToMissing: (state, { payload }: PayloadAction<Project>) => {
       state.projects = state.projects.reduce((projects: Project[], project) => {
         if (payload.path === project.path) state.missing.push(project.path);
         else projects.push(project);
         return projects;
       }, []);
+    },
+    updateProject: (state, { payload: project }: PayloadAction<Project>) => {
+      const idx = state.projects.findIndex($ => $.path === project.path);
+      if (idx !== -1) {
+        state.projects[idx] = project;
+      }
     },
   },
   extraReducers: builder => {
@@ -59,20 +61,6 @@ export const slice = createSlice({
       })
       .addCase(thunks.createProject.fulfilled, (state, action) => {
         state.projects = [...state.projects, action.payload];
-      })
-      .addCase(thunks.updateProject.pending, state => {
-        state.status = 'loading';
-      })
-      .addCase(thunks.updateProject.fulfilled, (state, action) => {
-        const projectIdx = state.projects.findIndex($ => $.path === action.payload.path);
-        if (projectIdx !== -1) {
-          state.projects[projectIdx] = { ...action.payload };
-        }
-        state.status = 'succeeded';
-      })
-      .addCase(thunks.updateProject.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.error.message || 'Failed to get update the project';
       })
       .addCase(thunks.deleteProject.pending, state => {
         state.status = 'loading';
@@ -151,12 +139,6 @@ export const slice = createSlice({
         state.status = 'failed';
         state.error = action.error.message || `Failed to unlists projects: ${action.meta.arg}`;
       })
-      .addCase(thunks.saveThumbnail.fulfilled, (state, { payload: project }) => {
-        const projectIdx = state.projects.findIndex($ => $.path === project.path);
-        if (projectIdx !== -1) {
-          state.projects[projectIdx] = project;
-        }
-      })
       .addCase(
         thunks.updateAvailableDependencyUpdates.fulfilled,
         (state, { payload: { project } }) => {
@@ -168,6 +150,24 @@ export const slice = createSlice({
       )
       .addCase(thunks.updateSettings.fulfilled, (state, { meta }) => {
         state.settings = meta.arg;
+      })
+      .addCase(thunks.getProject.pending, (state, { meta }) => {
+        const projectIdx = state.projects.findIndex($ => $.path === meta.arg);
+        if (projectIdx !== -1) {
+          state.projects[projectIdx] = { ...state.projects[projectIdx], status: 'loading' };
+        }
+      })
+      .addCase(thunks.getProject.fulfilled, (state, { payload: project }) => {
+        const projectIdx = state.projects.findIndex($ => $.path === project.path);
+        if (projectIdx !== -1) {
+          state.projects[projectIdx] = { ...project, status: 'succeeded' };
+        }
+      })
+      .addCase(thunks.getProject.rejected, (state, { meta }) => {
+        const projectIdx = state.projects.findIndex($ => $.path === meta.arg);
+        if (projectIdx !== -1) {
+          state.projects[projectIdx] = { ...state.projects[projectIdx], status: 'failed' };
+        }
       });
   },
 });

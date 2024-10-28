@@ -57,18 +57,18 @@ async function _createFileSystemStorage(storagePath: string) {
 }
 
 // In-memory Map of storages
-const storages = new Map<string, FileSystemStorage>();
+const storageMap = new Map<string, FileSystemStorage>();
 
 export const FileSystemStorage = {
   async create(path: string): Promise<FileSystemStorage> {
     const storage = await _createFileSystemStorage(path);
-    storages.set(path, storage);
+    storageMap.set(path, storage);
     return storage;
   },
   get(path: string): FileSystemStorage | undefined {
-    return storages.get(path);
+    return storageMap.get(path);
   },
   async getOrCreate(path: string): Promise<FileSystemStorage> {
-    return storages.get(path) ?? (await this.create(path));
+    return storageMap.get(path) ?? (await this.create(path));
   },
 };

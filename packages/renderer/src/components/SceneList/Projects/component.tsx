@@ -96,6 +96,7 @@ function Project({ project }: { project: Project }) {
         imageUrl={thumbnailUrl}
         dropdownOptions={dropdownOptions}
         content={content}
+        status={project.status}
         onClick={handleClick}
       />
       <DeleteProject

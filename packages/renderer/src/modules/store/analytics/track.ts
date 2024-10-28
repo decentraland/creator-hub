@@ -15,8 +15,7 @@ trackAction(workspaceActions.runProject.fulfilled, 'Open Project', async action 
   project_name: action.payload.title,
 }));
 
-// The saveThumbnail action is dispatched every time the user makes a change to the project so we can use it as a proxy to track the Save Project Success event.
-trackAction(workspaceActions.saveThumbnail.fulfilled, 'Save Project Success', async action => ({
+trackAction(workspaceActions.updateProject, 'Save Project Success', async action => ({
   project_id: action.payload.id,
   project_name: action.payload.title,
 }));

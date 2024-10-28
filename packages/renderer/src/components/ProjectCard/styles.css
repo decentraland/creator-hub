@@ -14,6 +14,17 @@
   flex: 0 0 auto;
 }
 
+.ProjectCard .Overlay {
+  background-color: var(--black);
+  opacity: 0.6;
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  cursor: not-allowed;
+}
+
 .ProjectCard:hover {
   border: 2px solid var(--white);
 }

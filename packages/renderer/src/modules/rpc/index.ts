@@ -9,7 +9,7 @@ import { type Project } from '/shared/types/projects';
 import { UiRPC } from './ui';
 import { type Method, type Params, type Result, StorageRPC } from './storage';
 
-export type CallbackParams = {
+export type RPCInfo = {
   iframe: HTMLIFrameElement;
   project: Project;
   storage: StorageRPC;
@@ -18,7 +18,7 @@ export type CallbackParams = {
 
 interface Callbacks {
   writeFile?: (
-    cbParams: CallbackParams,
+    rpcInfo: RPCInfo,
     fnParams: Params[Method.WRITE_FILE],
   ) => Promise<Result[Method.WRITE_FILE]>;
 }
@@ -39,7 +39,7 @@ export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partia
     await cbs.writeFile?.(params, { path, content });
   });
   storage.handle('exists', async ({ path }) => {
-    return await fs.exists(await fs.resolve(project.path, path));
+    return fs.exists(await fs.resolve(project.path, path));
   });
   storage.handle('delete', async ({ path }) => {
     await fs.rm(await fs.resolve(project.path, path));
@@ -64,6 +64,7 @@ export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partia
   );
 
   return {
+    ...params,
     dispose: () => {
       storage.dispose();
     },

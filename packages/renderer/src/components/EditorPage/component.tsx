@@ -11,8 +11,8 @@ import { useSelector } from '#store';
 import { DEPLOY_URLS } from '/shared/types/deploy';
 import { isWorkspaceError } from '/shared/types/workspace';
 
-import { initRpc } from '/@/modules/rpc';
 import { t } from '/@/modules/store/translation/utils';
+import { initRpc } from '/@/modules/rpc';
 import { useEditor } from '/@/hooks/useEditor';
 
 import EditorPng from '/assets/images/editor.png';
@@ -31,6 +31,7 @@ export function EditorPage() {
   const {
     error,
     project,
+    refreshProject,
     inspectorPort,
     openPreview,
     publishScene,
@@ -56,18 +57,21 @@ export function EditorPage() {
   useEffect(() => {
     if (isWorkspaceError(error, 'PROJECT_NOT_FOUND')) navigate('/scenes');
     return () => {
-      // React.StrictMode will trigger this on mount, it shoulnd't be a problem since
-      // there is no transportRef.current yet, but just fyi
-      iframeRef.current?.dispose();
-      iframeRef.current = undefined;
+      const rpc = iframeRef.current;
+      if (rpc) {
+        rpc.dispose();
+        iframeRef.current = undefined;
+      }
     };
   }, [error]);
 
   const isReady = !!project && inspectorPort > 0;
 
-  const handleBack = useCallback(() => {
+  const handleBack = useCallback(async () => {
+    const rpc = iframeRef.current;
+    if (rpc) await refreshProject(rpc);
     navigate('/scenes');
-  }, [navigate]);
+  }, [navigate, iframeRef.current]);
 
   const handleOpenModal = useCallback(
     (type: ModalType) => () => {
