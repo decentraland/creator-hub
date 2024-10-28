@@ -1,7 +1,10 @@
 import { Analytics, type TrackParams } from '@segment/analytics-node';
+import path from 'node:path';
 import log from 'electron-log';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, type UUID } from 'node:crypto';
+import { FileSystemStorage } from '/shared/types/storage';
 import { config } from './config';
+import { getWorkspaceConfigPath } from './electron';
 
 let analytics: Analytics | null = null;
 const sessionId = randomUUID();
@@ -75,4 +78,16 @@ export async function identify(userId: string, traits: Record<string, any> = {})
     log.error('Error identifying user', userId, error);
     // do nothing
   }
+}
+
+export async function getProjectId(_path: string): Promise<UUID> {
+  const projectInfoPath = path.join(await getWorkspaceConfigPath(_path), 'project.json');
+  const projectInfo = new FileSystemStorage(projectInfoPath);
+  const hasId = await projectInfo.has('id');
+  if (!hasId) {
+    const projectId = randomUUID();
+    await projectInfo.set('id', projectId);
+    return projectId;
+  }
+  return projectInfo.get<UUID>('id');
 }

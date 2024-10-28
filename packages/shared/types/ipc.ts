@@ -7,6 +7,7 @@ export type DeployOptions = { path: string; target?: string; targetContent?: str
 export interface Ipc {
   'electron.getAppHome': () => string;
   'electron.getAppVersion': () => Promise<string>;
+  'electron.getWorkspaceConfigPath': (path: string) => Promise<string>;
   'electron.showOpenDialog': (opts: Partial<OpenDialogOptions>) => Promise<string[]>;
   'electron.openExternal': (url: string) => Promise<void>;
   'inspector.start': () => Promise<number>;
@@ -18,6 +19,7 @@ export interface Ipc {
   'analytics.track': (event: string, data?: Record<string, any>) => void;
   'analytics.identify': (userId: string, traits?: Record<string, any>) => void;
   'analytics.getAnonymousId': () => Promise<string>;
+  'analytics.getProjectId': (path: string) => Promise<string>;
   'npm.install': (path: string, packages?: string[]) => Promise<void>;
   'npm.getOutdatedDeps': (path: string, packages?: string[]) => Promise<Outdated>;
 }

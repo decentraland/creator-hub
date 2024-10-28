@@ -1,6 +1,5 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { randomUUID, type UUID } from 'node:crypto';
 import type { Scene } from '@dcl/schemas';
 import { shell } from 'electron';
 import equal from 'fast-deep-equal';
@@ -8,19 +7,19 @@ import equal from 'fast-deep-equal';
 import { type DependencyState, SortBy, type Project } from '/shared/types/projects';
 import { PACKAGES_LIST } from '/shared/types/pkg';
 import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
-import { FileSystemStorage } from '/shared/types/storage';
 import type { Template, Workspace } from '/shared/types/workspace';
 
 import { getConfig, setConfig } from './config';
 import { exists, writeFile as deepWriteFile } from './fs';
 import { hasDependency } from './pkg';
 import { getRowsAndCols, parseCoords } from './scene';
-import { getEditorHome } from './editor';
 import { invoke } from './invoke';
 import { getOudatedDeps } from './npm';
 import { getDefaultScenesPath, getScenesPath } from './settings';
 
 import { DEFAULT_THUMBNAIL, NEW_SCENE_NAME, EMPTY_SCENE_TEMPLATE_REPO } from './constants';
+import { getWorkspaceConfigPath } from './editor';
+import { getProjectId } from './analytics';
 
 /**
  * Get scene json
@@ -32,18 +31,6 @@ function getScenePath(_path: string): string {
 export async function getScene(_path: string): Promise<Scene> {
   const scene = await fs.readFile(getScenePath(_path), 'utf8');
   return JSON.parse(scene);
-}
-
-export async function getProjectId(_path: string): Promise<UUID> {
-  const projectInfoPath = path.join(await getEditorHome(_path), 'project.json');
-  const projectInfo = new FileSystemStorage(projectInfoPath);
-  const hasId = await projectInfo.has('id');
-  if (!hasId) {
-    const projectId = randomUUID();
-    await projectInfo.set('id', projectId);
-    return projectId;
-  }
-  return projectInfo.get<UUID>('id');
 }
 
 /**
@@ -79,8 +66,8 @@ export async function hasNodeModules(_path: string) {
 }
 
 export async function getProjectThumbnailPath(_path: string) {
-  const editorHomePath = await getEditorHome(_path);
-  return path.join(editorHomePath, 'images', 'project-thumbnail.png');
+  const workspaceConfigPath = await getWorkspaceConfigPath(_path);
+  return path.join(workspaceConfigPath, 'images', 'project-thumbnail.png');
 }
 
 export async function getProjectThumbnailAsBase64(
