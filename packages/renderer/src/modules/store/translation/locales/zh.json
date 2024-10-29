@@ -123,7 +123,15 @@
       "land": {
         "title": "我的地盘",
         "description": "可在创世城地图中找到。 \n无限用户可以同时加入。",
-        "action": "发布到土地"
+        "action": "发布到土地",
+        "select_parcel": {
+          "select_parcel": "选择将承载场景的 LAND",
+          "place_scene": "将场景放置在 {coords}",
+          "actions": {
+            "publish": "发表",
+            "reset": "重置"
+          }
+        }
       },
       "alternative_servers": {
         "title": "替代服务器",
