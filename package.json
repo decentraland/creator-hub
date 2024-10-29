@@ -70,7 +70,7 @@
   "dependencies": {
     "@dcl/mini-rpc": "^1.0.7",
     "@dcl/schemas": "^11.10.4",
-    "@dcl/sdk": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/chore/ch-events/dcl-sdk-7.6.4-11563145537.commit-f65cb2e.tgz",
+    "@dcl/sdk": "^7.6.4",
     "@segment/analytics-node": "^2.1.2",
     "cmd-shim": "^6.0.3",
     "decentraland-connect": "^7.1.0",
