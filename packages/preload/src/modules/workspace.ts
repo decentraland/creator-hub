@@ -112,6 +112,7 @@ export async function getProject(_path: string): Promise<Project> {
       description: scene.display?.description,
       thumbnail,
       layout,
+      scene: scene.scene,
       createdAt: Number(stat.birthtime),
       updatedAt: Number(stat.mtime),
       size: stat.size,
@@ -280,13 +281,10 @@ export async function updateProject(project: Project): Promise<Project> {
 
     updatedScene = {
       ...updatedScene,
-      ...(project?.worldConfiguration
-        ? {
-            worldConfiguration: {
-              ...project.worldConfiguration,
-            },
-          }
-        : {}),
+      worldConfiguration: project?.worldConfiguration,
+      base: project.scene.base,
+      parcels: project.scene.parcels,
+      scene: { ...project.scene },
     };
 
     if (!equal(updatedScene, scene)) {

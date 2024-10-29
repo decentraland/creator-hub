@@ -1,4 +1,4 @@
-import type { WorldConfiguration } from '@dcl/schemas';
+import type { SceneParcels, WorldConfiguration } from '@dcl/schemas';
 
 import type { Outdated } from './npm';
 import type { PACKAGES } from './pkg';
@@ -27,6 +27,7 @@ export type Project = {
   description?: string;
   thumbnail: string;
   layout: Layout;
+  scene: SceneParcels;
   createdAt: number;
   updatedAt: number;
   size: number;
