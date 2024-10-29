@@ -87,7 +87,9 @@ export class ENS {
 
     const results: Record<string, string> = {};
     queryResult.data.domains.forEach(({ wrappedOwner, name }) => {
-      results[name] = wrappedOwner.id;
+      if (wrappedOwner && wrappedOwner.id) {
+        results[name] = wrappedOwner.id;
+      }
     });
     return results;
   }
