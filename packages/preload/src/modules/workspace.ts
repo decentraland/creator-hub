@@ -264,12 +264,13 @@ export async function createProject(opts?: { name?: string; repo?: string }): Pr
  * @returns {Promise<Project>} A Promise that resolves to the updated Project object.
  * @throws {Error} An error if the scene.json file cannot be updated.
  */
-export async function updateProject(project: Project): Promise<Project> {
+export async function updateProject(updatedProject: Project): Promise<Project> {
   // TODO: Update all properties associated to a project in the scene.json
   try {
-    const scene = await getScene(project.path);
+    const scene = await getScene(updatedProject.path);
+    let project = await getProject(updatedProject.path);
 
-    let updatedScene = JSON.parse(JSON.stringify(scene));
+    let updatedScene = JSON.parse(JSON.stringify(scene)) as Scene;
 
     // Clean up the property navmapThumbnail if the define path doesn't exists
     if (updatedScene.display?.navmapThumbnail) {
@@ -279,11 +280,13 @@ export async function updateProject(project: Project): Promise<Project> {
       }
     }
 
+    if (updatedProject.updatedAt > project.updatedAt) {
+      project = updatedProject;
+    }
+
     updatedScene = {
       ...updatedScene,
       worldConfiguration: project?.worldConfiguration,
-      base: project.scene.base,
-      parcels: project.scene.parcels,
       scene: { ...project.scene },
     };
 

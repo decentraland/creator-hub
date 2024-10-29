@@ -107,6 +107,7 @@ export function PublishToLand({ onClose }: { onClose: () => void }) {
           parcels: calculateParcels(project, newPlacement).map(({ x, y }) => `${x},${y}`),
         },
         worldConfiguration: undefined, // Cannot deploy to a LAND with a world configuration
+        updatedAt: Date.now(),
       });
     },
     [project, isValid, updateProject],
@@ -149,7 +150,7 @@ export function PublishToLand({ onClose }: { onClose: () => void }) {
           <Typography variant="body1">
             {placement
               ? t('modal.publish_project.land.select_parcel.place_scene', {
-                  coords: project.scene.base,
+                  coords: `${placement.x},${placement.y}`,
                 })
               : t('modal.publish_project.land.select_parcel.select_parcel')}
           </Typography>

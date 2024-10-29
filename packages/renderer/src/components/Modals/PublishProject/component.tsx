@@ -52,7 +52,6 @@ export function PublishProject({ open, project, onSubmit, onClose }: Props) {
       onClose={handleClose}
       size="small"
       onBack={step !== 'initial' ? handleChangeStep('initial') : undefined}
-      className="PublishProjectModal"
     >
       {step === 'initial' && <Initial onStepChange={handleChangeStep} />}
       {step === 'alternative-servers' && <AlternativeServers onClick={handleClickPublish} />}
