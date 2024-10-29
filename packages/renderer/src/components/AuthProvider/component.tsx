@@ -6,6 +6,7 @@ import { useDispatch } from '#store';
 import { AuthContext } from '/@/contexts/AuthContext';
 import Profiles from '/@/lib/profile';
 import { fetchENSList } from '/@/modules/store/ens';
+import { fetchLandList, fetchTiles } from '/@/modules/store/land';
 import { identify } from '/@/modules/store/analytics';
 import type { AuthSignInProps } from './types';
 
@@ -95,8 +96,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     if (wallet && chainId) {
-      dispatch(fetchENSList({ address: wallet, chainId }));
+      dispatch(fetchENSList({ address: wallet, chainId: ChainId.ETHEREUM_SEPOLIA }));
       dispatch(identify({ userId: wallet }));
+      dispatch(fetchTiles({ chainId: ChainId.ETHEREUM_SEPOLIA }));
+      dispatch(fetchLandList({ address: wallet, chainId: ChainId.ETHEREUM_SEPOLIA }));
     }
   }, [wallet, chainId]);
 
