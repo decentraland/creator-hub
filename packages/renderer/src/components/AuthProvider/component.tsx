@@ -96,10 +96,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     if (wallet && chainId) {
-      dispatch(fetchENSList({ address: wallet, chainId: ChainId.ETHEREUM_SEPOLIA }));
+      dispatch(fetchENSList({ address: wallet, chainId }));
       dispatch(identify({ userId: wallet }));
-      dispatch(fetchTiles({ chainId: ChainId.ETHEREUM_SEPOLIA }));
-      dispatch(fetchLandList({ address: wallet, chainId: ChainId.ETHEREUM_SEPOLIA }));
+      dispatch(fetchTiles({ chainId }));
+      dispatch(fetchLandList({ address: wallet, chainId }));
     }
   }, [wallet, chainId]);
 
