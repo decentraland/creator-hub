@@ -299,7 +299,7 @@ export async function updateProject(updatedProject: Project): Promise<Project> {
     return getProject(project.path);
   } catch (error: any) {
     throw new Error(
-      `Could not update the scene.json info with project in "${project.path}": ${error.message}`,
+      `Could not update the scene.json info with project in "${updatedProject.path}": ${error.message}`,
     );
   }
 }
