@@ -123,6 +123,7 @@ export function PublishToLand({ onClose }: { onClose: () => void }) {
         height={480}
         style={{ backgroundColor: 'black' }}
       >
+        {/* @ts-expect-error TODO: Update properties in UI2, making the not required `optional` */}
         <Atlas
           tiles={tiles}
           layers={[strokeLayer, highlightLayer, ownedLayer]}
