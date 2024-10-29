@@ -10,6 +10,9 @@ export function initIpc() {
   // electron
   handle('electron.getAppVersion', () => electron.getAppVersion());
   handle('electron.getAppHome', () => electron.getAppHome());
+  handle('electron.getWorkspaceConfigPath', (_event, path) =>
+    electron.getWorkspaceConfigPath(path),
+  );
   handle('electron.showOpenDialog', (_event, opts) => electron.showOpenDialog(opts));
   handle('electron.openExternal', (_event, url) => electron.openExternal(url));
 
@@ -29,6 +32,7 @@ export function initIpc() {
   handle('analytics.track', (_event, eventName, data) => analytics.track(eventName, data));
   handle('analytics.identify', (_event, userId, traits) => analytics.identify(userId, traits));
   handle('analytics.getAnonymousId', () => analytics.getAnonymousId());
+  handle('analytics.getProjectId', (_event, path) => analytics.getProjectId(path));
 
   // npm
   handle('npm.install', (_event, path, packages) => npm.install(path, packages));

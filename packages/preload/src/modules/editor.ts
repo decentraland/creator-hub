@@ -1,14 +1,9 @@
-import path from 'path';
-
 import type { DeployOptions } from '/shared/types/ipc';
 
 import { invoke } from './invoke';
-import * as fs from './fs';
 
-export async function getEditorHome(_path: string) {
-  const editorHomePath = path.join(_path, '.editor');
-  if (!(await fs.exists(editorHomePath))) await fs.mkdir(editorHomePath);
-  return editorHomePath;
+export async function getWorkspaceConfigPath(_path: string) {
+  return invoke('electron.getWorkspaceConfigPath', _path);
 }
 
 export async function getVersion() {

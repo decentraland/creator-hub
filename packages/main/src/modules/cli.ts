@@ -2,11 +2,21 @@ import type { DeployOptions } from '/shared/types/ipc';
 import { run, type Child } from './bin';
 import { getAvailablePort } from './port';
 import { install } from './npm';
+import { getProjectId } from './analytics';
+
+async function getEnv(path: string) {
+  const projectId = await getProjectId(path);
+  return {
+    ANALYTICS_PROJECT_ID: projectId,
+    ANALYTICS_APP_ID: 'creator-hub',
+  };
+}
 
 export async function init(path: string, repo?: string) {
   const initCommand = run('@dcl/sdk-commands', 'sdk-commands', {
     args: ['init', '--yes', '--skip-install', ...(repo ? ['--github-repo', repo] : [])],
     cwd: path,
+    env: await getEnv(path),
   });
   await initCommand.wait();
 }
@@ -20,6 +30,7 @@ export async function start(path: string) {
   previewServer = run('@dcl/sdk-commands', 'sdk-commands', {
     args: ['start', '--explorer-alpha', '--hub'],
     cwd: path,
+    env: await getEnv(path),
   });
   await previewServer.waitFor(/decentraland:\/\//i);
 }
@@ -39,6 +50,7 @@ export async function deploy({ path, target, targetContent }: DeployOptions) {
       ...(targetContent ? ['--target-content', targetContent] : []),
     ],
     cwd: path,
+    env: await getEnv(path),
   });
 
   // App ready at

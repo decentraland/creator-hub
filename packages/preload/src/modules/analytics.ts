@@ -11,3 +11,7 @@ export async function identify(userId: string, traits?: Record<string, any>) {
 export async function getAnonymousId() {
   return invoke('analytics.getAnonymousId');
 }
+
+export async function getProjectId(path: string) {
+  return invoke('analytics.getProjectId', path);
+}

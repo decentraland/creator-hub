@@ -1,4 +1,5 @@
 import path from 'path';
+import fs from 'fs/promises';
 import { app, BrowserWindow, dialog, type OpenDialogOptions, shell } from 'electron';
 
 export function getHome() {
@@ -7,6 +8,16 @@ export function getHome() {
 
 export function getAppHome() {
   return path.join(getHome(), '.decentraland');
+}
+
+export async function getWorkspaceConfigPath(_path: string) {
+  const editorHomePath = path.join(_path, '.editor');
+  try {
+    await fs.stat(_path);
+  } catch (error) {
+    await fs.mkdir(editorHomePath, { recursive: true });
+  }
+  return editorHomePath;
 }
 
 export async function showOpenDialog(opts: Partial<OpenDialogOptions>): Promise<string[]> {
