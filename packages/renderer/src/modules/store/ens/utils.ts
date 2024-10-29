@@ -1,4 +1,3 @@
-import { ChainId } from '@dcl/schemas/dist/dapps/chain-id';
 import { ENSProvider } from './types';
 
 export function extractEntityId(urn: string): string | undefined {
@@ -13,10 +12,6 @@ export function extractEntityId(urn: string): string | undefined {
 
 export function isValidENSName(name: string): boolean {
   return /^[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)?\.eth$/.test(name);
-}
-
-export function isDev(chainId: ChainId): boolean {
-  return chainId === ChainId.ETHEREUM_SEPOLIA;
 }
 
 export function getEnsProvider(subdomain: string): ENSProvider {

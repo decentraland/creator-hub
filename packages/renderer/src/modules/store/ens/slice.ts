@@ -7,8 +7,9 @@ import { getContract, ContractName } from 'decentraland-transactions';
 import { DCLNames, ENS as ENSApi } from '/@/lib/ens';
 import { Worlds } from '/@/lib/worlds';
 import type { Async } from '/@/modules/async';
+import { isDev } from '/@/modules/utils';
 import { ens as ensContract, ensResolver } from './contracts';
-import { getEnsProvider, isValidENSName, isDev } from './utils';
+import { getEnsProvider, isValidENSName } from './utils';
 import { USER_PERMISSIONS, type ENS, type ENSError } from './types';
 
 const REQUESTS_BATCH_SIZE = 25;

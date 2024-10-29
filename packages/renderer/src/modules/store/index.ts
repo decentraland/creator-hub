@@ -13,6 +13,7 @@ import * as translations from './translation';
 import * as workspace from './workspace';
 import * as analytics from './analytics';
 import * as ens from './ens';
+import * as land from './land';
 
 export function createRootReducer() {
   return {
@@ -22,6 +23,7 @@ export function createRootReducer() {
     workspace: workspace.reducer,
     analytics: analytics.reducer,
     ens: ens.reducer,
+    land: land.reducer,
   };
 }
 
