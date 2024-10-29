@@ -13,6 +13,7 @@ import WorldsPng from '/assets/images/worlds.png';
 import { Button } from '../../Button';
 import { OptionBox } from '../../EditorPage/OptionBox';
 import { PublishToWorld } from './PublishToWorld';
+import { PublishToLand } from './PublishToLand';
 
 import type { AlternativeTarget, Step, StepProps, StepValue, Props } from './types';
 
@@ -52,29 +53,15 @@ export function PublishProject({ open, project, onSubmit, onClose }: Props) {
       size="small"
       onBack={step !== 'initial' ? handleChangeStep('initial') : undefined}
     >
-      {step === 'initial' && (
-        <Initial
-          onClick={handleClickPublish}
-          onStepChange={handleChangeStep}
-        />
-      )}
+      {step === 'initial' && <Initial onStepChange={handleChangeStep} />}
       {step === 'alternative-servers' && <AlternativeServers onClick={handleClickPublish} />}
+      {step === 'publish-to-land' && <PublishToLand onClose={onClose} />}
       {step === 'publish-to-world' && <PublishToWorld onClose={onClose} />}
     </Modal>
   );
 }
 
-function Initial({
-  onClick,
-  onStepChange,
-}: StepProps & { onStepChange: (step: Step) => () => void }) {
-  const handleClick = useCallback(
-    (target: 'worlds' | 'land') => () => {
-      onClick({ target });
-    },
-    [],
-  );
-
+function Initial({ onStepChange }: { onStepChange: (step: Step) => () => void }) {
   return (
     <div className="Initial">
       <span className="select">{t('modal.publish_project.select')}</span>
@@ -92,7 +79,7 @@ function Initial({
           title={t('modal.publish_project.land.title')}
           description={t('modal.publish_project.land.description')}
           buttonText={t('modal.publish_project.land.action')}
-          onClickPublish={handleClick('land')}
+          onClickPublish={onStepChange('publish-to-land')}
           learnMoreUrl="https://docs.decentraland.org/creator/development-guide/sdk7/publishing-permissions/#land-permission-options"
         />
       </div>

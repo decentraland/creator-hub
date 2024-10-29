@@ -121,9 +121,17 @@
         }
       },
       "land": {
-        "title": "My Land",
-        "description": "Findable in Genesis City map. \nUnlimited users can join concurrently.",
-        "action": "Publish to Land"
+        "title": "Mi Tierra",
+        "description": "Ubicable en el mapa de Genesis City. \nUsuarios ilimitados pueden unirse simultáneamente.",
+        "action": "Publicar una Tierra",
+        "select_parcel": {
+          "select_parcel": "Selecciona la Tierra que hospedara tu Escena",
+          "place_scene": "Colocando Escena en {coords}",
+          "actions": {
+            "publish": "Publicar",
+            "reset": "Reiniciar"
+          }
+        }
       },
       "alternative_servers": {
         "title": "Servidores Alternativos",

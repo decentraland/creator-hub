@@ -124,7 +124,15 @@
       "land": {
         "title": "My Land",
         "description": "The parcels that make up Decentraland's Genesis City map. Buy or rent your own in the Marketplace.",
-        "action": "Publish to Land"
+        "action": "Publish to Land",
+        "select_parcel": {
+          "select_parcel": "Select the LANDs that will host your Scene",
+          "place_scene": "Placing Scene at {coords}",
+          "actions": {
+            "publish": "Publish",
+            "reset": "Reset"
+          }
+        }
       },
       "alternative_servers": {
         "title": "Publish to a different server",

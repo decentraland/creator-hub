@@ -112,6 +112,7 @@ export async function getProject(_path: string): Promise<Project> {
       description: scene.display?.description,
       thumbnail,
       layout,
+      scene: scene.scene,
       createdAt: Number(stat.birthtime),
       updatedAt: Number(stat.mtime),
       size: stat.size,
@@ -263,12 +264,13 @@ export async function createProject(opts?: { name?: string; repo?: string }): Pr
  * @returns {Promise<Project>} A Promise that resolves to the updated Project object.
  * @throws {Error} An error if the scene.json file cannot be updated.
  */
-export async function updateProject(project: Project): Promise<Project> {
+export async function updateProject(updatedProject: Project): Promise<Project> {
   // TODO: Update all properties associated to a project in the scene.json
   try {
-    const scene = await getScene(project.path);
+    const scene = await getScene(updatedProject.path);
+    let project = await getProject(updatedProject.path);
 
-    let updatedScene = JSON.parse(JSON.stringify(scene));
+    let updatedScene = JSON.parse(JSON.stringify(scene)) as Scene;
 
     // Clean up the property navmapThumbnail if the define path doesn't exists
     if (updatedScene.display?.navmapThumbnail) {
@@ -278,15 +280,14 @@ export async function updateProject(project: Project): Promise<Project> {
       }
     }
 
+    if (updatedProject.updatedAt > project.updatedAt) {
+      project = updatedProject;
+    }
+
     updatedScene = {
       ...updatedScene,
-      ...(project?.worldConfiguration
-        ? {
-            worldConfiguration: {
-              ...project.worldConfiguration,
-            },
-          }
-        : {}),
+      worldConfiguration: project?.worldConfiguration,
+      scene: { ...project.scene },
     };
 
     if (!equal(updatedScene, scene)) {
@@ -298,7 +299,7 @@ export async function updateProject(project: Project): Promise<Project> {
     return getProject(project.path);
   } catch (error: any) {
     throw new Error(
-      `Could not update the scene.json info with project in "${project.path}": ${error.message}`,
+      `Could not update the scene.json info with project in "${updatedProject.path}": ${error.message}`,
     );
   }
 }

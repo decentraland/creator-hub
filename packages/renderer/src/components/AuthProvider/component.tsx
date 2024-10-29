@@ -6,6 +6,7 @@ import { useDispatch } from '#store';
 import { AuthContext } from '/@/contexts/AuthContext';
 import Profiles from '/@/lib/profile';
 import { fetchENSList } from '/@/modules/store/ens';
+import { fetchLandList, fetchTiles } from '/@/modules/store/land';
 import { identify } from '/@/modules/store/analytics';
 import type { AuthSignInProps } from './types';
 
@@ -97,6 +98,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (wallet && chainId) {
       dispatch(fetchENSList({ address: wallet, chainId }));
       dispatch(identify({ userId: wallet }));
+      dispatch(fetchTiles({ chainId }));
+      dispatch(fetchLandList({ address: wallet, chainId }));
     }
   }, [wallet, chainId]);
 
