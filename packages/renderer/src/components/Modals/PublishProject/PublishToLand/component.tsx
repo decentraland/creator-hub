@@ -1,12 +1,17 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Box, Button, Typography } from 'decentraland-ui2';
 import { Atlas } from 'decentraland-ui2/dist/components/Atlas/Atlas';
+
+import { useSelector } from '#store';
+
 import { DEPLOY_URLS } from '/shared/types/deploy';
 import type { Project } from '/shared/types/projects';
-import { useSelector } from '#store';
+
 import { t } from '/@/modules/store/translation/utils';
 import { selectors as landSelectors } from '/@/modules/store/land';
 import { useEditor } from '/@/hooks/useEditor';
+import { useWorkspace } from '/@/hooks/useWorkspace';
+
 import { COLORS, type Coordinate } from './types';
 
 function calculateParcels(project: Project, point: Coordinate): Coordinate[] {
@@ -18,7 +23,8 @@ function calculateParcels(project: Project, point: Coordinate): Coordinate[] {
 }
 
 export function PublishToLand({ onClose }: { onClose: () => void }) {
-  const { project, publishScene, updateProject } = useEditor();
+  const { project, publishScene } = useEditor();
+  const { updateProject } = useWorkspace();
   const tiles = useSelector(state => state.land.tiles);
   const landTiles = useSelector(state => landSelectors.getLandTiles(state.land));
   const [hover, setHover] = useState<Coordinate>({ x: 0, y: 0 });

@@ -1,3 +1,5 @@
+import type { Scene } from '@dcl/schemas';
+
 import { fs, npm, scene, settings, workspace } from '#preload';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
@@ -101,4 +103,10 @@ export const runProject = createAsyncThunk(
   },
 );
 export const updateSettings = createAsyncThunk('config/updateSettings', settings.updateAppSettings);
-export const updateSceneJson = createAsyncThunk('scene/updateScene', scene.writeScene);
+export const updateSceneJson = createAsyncThunk(
+  'scene/updateScene',
+  async ({ path, updates }: { path: string; updates: Partial<Scene> }) => {
+    const _scene = await scene.getScene(path);
+    await scene.writeScene({ path, scene: { ..._scene, ...updates } });
+  },
+);

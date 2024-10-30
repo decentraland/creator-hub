@@ -63,8 +63,8 @@ export const useWorkspace = () => {
     dispatch(workspaceActions.updateProject(project));
   }, []);
 
-  const updateSceneJson = useCallback((path: string, scene: Partial<Scene>) => {
-    dispatch(workspaceActions.updateSceneJson({ path, scene }));
+  const updateSceneJson = useCallback((path: string, updates: Partial<Scene>) => {
+    dispatch(workspaceActions.updateSceneJson({ path, updates }));
   }, []);
 
   const isLoading = workspace.status === 'loading';
