@@ -26,6 +26,7 @@ import { getEnsProvider } from '/@/modules/store/ens/utils';
 import { useAuth } from '/@/hooks/useAuth';
 import { useEditor } from '/@/hooks/useEditor';
 import { useWorkspace } from '/@/hooks/useWorkspace';
+import { type TargetProps } from '../types';
 
 import EmptyWorldSVG from '/assets/images/empty-deploy-to-world.svg';
 import LogoDCLSVG from '/assets/images/logo-dcl.svg';
@@ -35,14 +36,16 @@ import { Button } from '../../../Button';
 
 import './styles.css';
 
-export function PublishToWorld({ onClose }: { onClose: () => void }) {
-  const { project, publishScene } = useEditor();
+export function PublishToWorld({ onTarget }: TargetProps) {
+  const { project } = useEditor();
   const names = useSelector(state => state.ens.data);
   const emptyNames = Object.keys(names).length === 0;
 
-  const handleClickPublish = useCallback(() => {
-    publishScene({ targetContent: import.meta.env.VITE_WORLDS_SERVER || DEPLOY_URLS.WORLDS });
-    onClose();
+  const handleNext = useCallback(() => {
+    onTarget({
+      target: 'worlds',
+      value: import.meta.env.VITE_WORLDS_SERVER || DEPLOY_URLS.WORLDS,
+    });
   }, []);
 
   return emptyNames ? (
@@ -50,7 +53,7 @@ export function PublishToWorld({ onClose }: { onClose: () => void }) {
   ) : (
     <SelectWorld
       project={project!}
-      onPublish={handleClickPublish}
+      onPublish={handleNext}
     />
   );
 }

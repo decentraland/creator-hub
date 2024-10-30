@@ -14,6 +14,7 @@ import { useEditor } from '/@/hooks/useEditor';
 import { useWorkspace } from '/@/hooks/useWorkspace';
 
 import { COLORS, type Coordinate } from './types';
+import { type TargetProps } from '../types';
 
 function calculateParcels(project: Project, point: Coordinate): Coordinate[] {
   const [baseX, baseY] = project.scene.base.split(',').map(coord => parseInt(coord, 10));
@@ -23,8 +24,8 @@ function calculateParcels(project: Project, point: Coordinate): Coordinate[] {
   });
 }
 
-export function PublishToLand({ onClose }: { onClose: () => void }) {
-  const { project, publishScene } = useEditor();
+export function PublishToLand({ onTarget }: TargetProps) {
+  const { project } = useEditor();
   const { updateProject, updateSceneJson } = useWorkspace();
   const tiles = useSelector(state => state.land.tiles);
   const landTiles = useSelector(state => landSelectors.getLandTiles(state.land));
@@ -36,10 +37,12 @@ export function PublishToLand({ onClose }: { onClose: () => void }) {
   // Memoize the project parcels centered around the hover position
   const projectParcels = useMemo(() => calculateParcels(project, hover), [project, hover]);
 
-  const handleClickPublish = useCallback(() => {
-    publishScene({ target: import.meta.env.VITE_CATALYST_SERVER || DEPLOY_URLS.CATALYST_SERVER });
-    onClose();
-  }, [publishScene, onClose]);
+  const handleNext = useCallback(() => {
+    onTarget({
+      target: 'land',
+      value: import.meta.env.VITE_CATALYST_SERVER || DEPLOY_URLS.CATALYST_SERVER,
+    });
+  }, [onTarget]);
 
   const handleHover = useCallback((x: number, y: number) => {
     setHover({ x, y });
@@ -179,7 +182,7 @@ export function PublishToLand({ onClose }: { onClose: () => void }) {
           variant="contained"
           color="primary"
           size="large"
-          onClick={handleClickPublish}
+          onClick={handleNext}
           disabled={!placement}
           sx={{ height: '45px' }}
         >

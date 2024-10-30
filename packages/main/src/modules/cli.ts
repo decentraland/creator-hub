@@ -44,6 +44,7 @@ export async function deploy({ path, target, targetContent }: DeployOptions) {
   deployServer = run('@dcl/sdk-commands', 'sdk-commands', {
     args: [
       'deploy',
+      '--no-browser',
       '--port',
       port.toString(),
       ...(target ? ['--target', target] : []),
@@ -54,7 +55,7 @@ export async function deploy({ path, target, targetContent }: DeployOptions) {
   });
 
   // App ready at
-  await deployServer.waitFor(/app ready at/i);
+  await deployServer.waitFor(/listening/i);
 
   return port;
 }

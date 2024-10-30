@@ -89,7 +89,7 @@ export function EditorPage() {
     setOpen(undefined);
   }, []);
 
-  const handleSubmitModal = useCallback(
+  const handleTarget = useCallback(
     ({ target, value }: StepValue) => {
       switch (target) {
         case 'worlds':
@@ -213,7 +213,7 @@ export function EditorPage() {
               open={open === 'publish'}
               project={project}
               onClose={handleCloseModal}
-              onSubmit={handleSubmitModal}
+              onTarget={handleTarget}
             />
           )}
         </>
