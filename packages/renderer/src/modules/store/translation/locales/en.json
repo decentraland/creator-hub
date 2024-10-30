@@ -61,7 +61,8 @@
       "size": "Size"
     },
     "results": "{count} {count, plural, one {scene} other {scenes}}",
-    "parcel_count": "{parcels} {parcels, plural, one {parcel} other {parcels}}"
+    "parcel_count": "{parcels} {parcels, plural, one {parcel} other {parcels}}",
+    "saving": "Saving..."
   },
   "navbar": {
     "menu": {

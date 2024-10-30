@@ -41,6 +41,7 @@ export function resizeImage(image: string, maxWidth: number, maxHeight: number) 
 export const BASE64_PREFIX = 'data:image/png;base64,';
 
 export function addBase64ImagePrefix(base64: string) {
+  if (base64.startsWith(BASE64_PREFIX)) return base64;
   return `${BASE64_PREFIX}${base64}`;
 }
 

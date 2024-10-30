@@ -133,6 +133,18 @@ export const slice = createSlice({
     builder.addCase(runScene.rejected, state => {
       state.loadingPreview = false;
     });
+    builder.addCase(workspaceActions.saveAndGetThumbnail.pending, state => {
+      if (state.project) state.project.status = 'loading';
+    });
+    builder.addCase(workspaceActions.saveAndGetThumbnail.fulfilled, (state, action) => {
+      if (state.project) {
+        state.project.thumbnail = action.payload;
+        state.project.status = 'succeeded';
+      }
+    });
+    builder.addCase(workspaceActions.saveAndGetThumbnail.rejected, state => {
+      if (state.project) state.project.status = 'failed';
+    });
   },
 });
 

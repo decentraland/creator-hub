@@ -32,6 +32,14 @@ export const installProject = createAsyncThunk('npm/install', async (path: strin
   npm.install(path),
 );
 export const saveThumbnail = createAsyncThunk('workspace/saveThumbnail', workspace.saveThumbnail);
+export const saveAndGetThumbnail = createAsyncThunk(
+  'workspace/saveAndGetThumbnail',
+  async (opts: Parameters<typeof workspace.saveThumbnail>[0], { dispatch }) => {
+    await dispatch(saveThumbnail(opts)).unwrap();
+    const thumbnail = await workspace.getProjectThumbnailAsBase64(opts.path);
+    return thumbnail;
+  },
+);
 export const createProjectAndInstall = createAsyncThunk(
   'workspace/createProjectAndInstall',
   async (opts: Parameters<typeof workspace.createProject>[0], { dispatch }) => {

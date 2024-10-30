@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChainId } from '@dcl/schemas/dist/dapps/chain-id';
 import {
   Checkbox,
+  CircularProgress as Loader,
   FormControl,
   InputLabel,
   MenuItem,
@@ -44,13 +45,13 @@ export function PublishToWorld({ onClose }: { onClose: () => void }) {
     onClose();
   }, []);
 
-  return !emptyNames ? (
+  return emptyNames ? (
+    <EmptyNames />
+  ) : (
     <SelectWorld
       project={project!}
       onPublish={handleClickPublish}
     />
-  ) : (
-    <EmptyNames />
   );
 }
 
@@ -131,6 +132,9 @@ function SelectWorld({ project, onPublish }: { project: Project; onPublish: () =
     }
   }, [project, name]);
 
+  // TODO: handle failed state...
+  const projectIsReady = project.status === 'succeeded';
+
   return (
     <div className="SelectWorld">
       <div>
@@ -149,10 +153,9 @@ function SelectWorld({ project, onPublish }: { project: Project; onPublish: () =
         </Typography>
       </div>
       <div className="box">
-        <img
-          className="thumbnail"
-          src={addBase64ImagePrefix(project.thumbnail)}
-        />
+        <div className="thumbnail">
+          {!projectIsReady ? <Loader /> : <img src={addBase64ImagePrefix(project.thumbnail)} />}
+        </div>
         <div className="selection">
           <Select
             variant="standard"
@@ -258,7 +261,7 @@ function SelectWorld({ project, onPublish }: { project: Project; onPublish: () =
         )}
         <Button
           onClick={handleClick}
-          disabled={!name || (hasWorldContent && !confirmWorldReplaceContent)}
+          disabled={!projectIsReady || !name || (hasWorldContent && !confirmWorldReplaceContent)}
         >
           {t('modal.publish_project.worlds.select_world.action')}
         </Button>

@@ -21,7 +21,7 @@ export const useWorkspace = () => {
     dispatch(workspaceActions.setSortBy(type));
   }, []);
 
-  const runProject = useCallback(async (project: Project) => {
+  const runProject = useCallback((project: Project) => {
     dispatch(workspaceActions.runProject(project));
     navigate('/editor');
   }, []);

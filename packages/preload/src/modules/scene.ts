@@ -28,16 +28,27 @@ export async function getScene(_path: string): Promise<Scene> {
 /**
  * Write Project's scene JSON
  */
-export async function writeScene({
-  path: _path,
-  scene: updates,
-}: {
-  path: string;
-  scene: Partial<Scene>;
-}) {
-  const scene = await getScene(_path);
-  await writeFile(getScenePath(_path), JSON.stringify({ ...scene, ...updates }, null, 2), {
-    encoding: 'utf8',
+export async function writeScene({ path: _path, scene }: { path: string; scene: Scene }) {
+  await writeFile(getScenePath(_path), JSON.stringify(scene, null, 2), { encoding: 'utf8' });
+}
+
+/**
+ * Updates the scene metadata to reference the new thumbnail path.
+ *
+ * @param path - The path to the project directory.
+ * @param thumbnailPath - The path to the newly saved thumbnail.
+ */
+export async function updateSceneThumbnail(path: string, thumbnailPath: string): Promise<void> {
+  const scene = await getScene(path);
+  await writeScene({
+    path,
+    scene: {
+      ...scene,
+      display: {
+        ...scene.display,
+        navmapThumbnail: thumbnailPath,
+      },
+    },
   });
 }
 

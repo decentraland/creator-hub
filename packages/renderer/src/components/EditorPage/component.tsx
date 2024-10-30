@@ -32,6 +32,7 @@ export function EditorPage() {
     error,
     project,
     refreshProject,
+    saveAndGetThumbnail,
     inspectorPort,
     openPreview,
     publishScene,
@@ -75,9 +76,13 @@ export function EditorPage() {
 
   const handleOpenModal = useCallback(
     (type: ModalType) => () => {
-      setOpen(type);
+      const rpc = iframeRef.current;
+      if (rpc) {
+        saveAndGetThumbnail(rpc);
+        setOpen(type);
+      }
     },
-    [],
+    [iframeRef.current],
   );
 
   const handleCloseModal = useCallback(() => {

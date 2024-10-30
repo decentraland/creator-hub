@@ -64,14 +64,18 @@ export const useEditor = () => {
     [workspaceActions.updateProject, project],
   );
 
+  const saveAndGetThumbnail = useCallback(async (rpcInfo: RPCInfo) => {
+    const thumbnail = await generateThumbnail(rpcInfo);
+    if (thumbnail) {
+      const data = { path: rpcInfo.project.path, thumbnail: stripBase64ImagePrefix(thumbnail) };
+      return dispatch(workspaceActions.saveAndGetThumbnail(data)).unwrap();
+    }
+  }, []);
+
   // TODO: find a proper name for this function
   const refreshProject = useCallback(
     async (rpcInfo: RPCInfo) => {
-      const thumbnail = await generateThumbnail(rpcInfo);
-      if (thumbnail) {
-        const data = { path: rpcInfo.project.path, thumbnail: stripBase64ImagePrefix(thumbnail) };
-        await dispatch(workspaceActions.saveThumbnail(data)).unwrap();
-      }
+      const _ = await saveAndGetThumbnail(rpcInfo);
       dispatch(workspaceActions.getProject(rpcInfo.project.path));
     },
     [workspaceActions.getProject, project],
@@ -84,6 +88,7 @@ export const useEditor = () => {
     openPreview,
     openCode,
     updateScene,
+    saveAndGetThumbnail,
     refreshProject,
   };
 };

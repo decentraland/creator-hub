@@ -1,6 +1,8 @@
 import { CircularProgress as Loader, Typography } from 'decentraland-ui2';
 import { type MouseEvent, useCallback } from 'react';
 
+import { t } from '/@/modules/store/translation/utils';
+
 import { Dropdown } from '../Dropdown';
 
 import type { Props } from './types';
@@ -102,6 +104,7 @@ function Overlay({
       onClick={handleClick}
     >
       <Loader />
+      {t('scene_list.saving')}
     </div>
   );
 }
