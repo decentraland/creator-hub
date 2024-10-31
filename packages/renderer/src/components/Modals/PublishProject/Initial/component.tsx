@@ -6,7 +6,7 @@ import type { Step } from '../types';
 
 import './styles.css';
 
-export function Initial({ onStepChange }: { onStepChange: (step: Step) => () => void }) {
+export function Initial({ onStepChange }: { onStepChange: (step: Step) => void }) {
   return (
     <div className="Initial">
       <span className="select">{t('modal.publish_project.select')}</span>
@@ -16,7 +16,7 @@ export function Initial({ onStepChange }: { onStepChange: (step: Step) => () => 
           title={t('modal.publish_project.worlds.title')}
           description={t('modal.publish_project.worlds.description')}
           buttonText={t('modal.publish_project.worlds.action')}
-          onClickPublish={onStepChange('publish-to-world')}
+          onClickPublish={() => onStepChange('publish-to-world')}
           learnMoreUrl="https://docs.decentraland.org/creator/worlds/about/#publish-a-world"
         />
         <OptionBox
@@ -24,13 +24,13 @@ export function Initial({ onStepChange }: { onStepChange: (step: Step) => () => 
           title={t('modal.publish_project.land.title')}
           description={t('modal.publish_project.land.description')}
           buttonText={t('modal.publish_project.land.action')}
-          onClickPublish={onStepChange('publish-to-land')}
+          onClickPublish={() => onStepChange('publish-to-land')}
           learnMoreUrl="https://docs.decentraland.org/creator/development-guide/sdk7/publishing-permissions/#land-permission-options"
         />
       </div>
       <span
         className="alternative_servers"
-        onClick={onStepChange('alternative-servers')}
+        onClick={() => onStepChange('alternative-servers')}
       >
         {t('modal.publish_project.alternative_servers.title')}
       </span>

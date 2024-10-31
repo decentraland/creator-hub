@@ -14,7 +14,7 @@ import { useEditor } from '/@/hooks/useEditor';
 import { useWorkspace } from '/@/hooks/useWorkspace';
 
 import { COLORS, type Coordinate } from './types';
-import { type TargetProps } from '../types';
+import { type Target } from '../types';
 
 function calculateParcels(project: Project, point: Coordinate): Coordinate[] {
   const [baseX, baseY] = project.scene.base.split(',').map(coord => parseInt(coord, 10));
@@ -24,7 +24,7 @@ function calculateParcels(project: Project, point: Coordinate): Coordinate[] {
   });
 }
 
-export function PublishToLand({ onTarget }: TargetProps) {
+export function PublishToLand({ onTarget }: { onTarget: (target: Target) => void }) {
   const { project } = useEditor();
   const { updateProject, updateSceneJson } = useWorkspace();
   const tiles = useSelector(state => state.land.tiles);

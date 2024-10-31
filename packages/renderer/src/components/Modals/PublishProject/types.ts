@@ -4,7 +4,7 @@ export type Props = {
   open: boolean;
   project: Project;
   onClose: () => void;
-  onTarget: (value: TargetValue) => void;
+  onTarget: (value: Target) => void;
 };
 
 export type Step =
@@ -16,6 +16,5 @@ export type Step =
 export type InitialTarget = 'worlds' | 'land';
 export type AlternativeTarget = 'test' | 'custom';
 
-export type Target = InitialTarget | AlternativeTarget;
-export type TargetValue = { target: Target; value?: string };
-export type TargetProps = { onTarget: (value: TargetValue) => void };
+export type TargetType = InitialTarget | AlternativeTarget;
+export type Target = { target: TargetType; value?: string };

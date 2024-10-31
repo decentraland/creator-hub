@@ -26,17 +26,17 @@ import { getEnsProvider } from '/@/modules/store/ens/utils';
 import { useAuth } from '/@/hooks/useAuth';
 import { useEditor } from '/@/hooks/useEditor';
 import { useWorkspace } from '/@/hooks/useWorkspace';
-import { type TargetProps } from '../types';
 
 import EmptyWorldSVG from '/assets/images/empty-deploy-to-world.svg';
 import LogoDCLSVG from '/assets/images/logo-dcl.svg';
 import LogoENSSVG from '/assets/images/logo-ens.svg';
 
 import { Button } from '../../../Button';
+import { type Target } from '../types';
 
 import './styles.css';
 
-export function PublishToWorld({ onTarget }: TargetProps) {
+export function PublishToWorld({ onTarget }: { onTarget: (target: Target) => void }) {
   const { project } = useEditor();
   const names = useSelector(state => state.ens.data);
   const emptyNames = Object.keys(names).length === 0;
@@ -46,7 +46,7 @@ export function PublishToWorld({ onTarget }: TargetProps) {
       target: 'worlds',
       value: import.meta.env.VITE_WORLDS_SERVER || DEPLOY_URLS.WORLDS,
     });
-  }, []);
+  }, [onTarget]);
 
   return emptyNames ? (
     <EmptyNames />

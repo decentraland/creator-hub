@@ -4,11 +4,11 @@ import { misc } from '#preload';
 import { t } from '/@/modules/store/translation/utils';
 import { isUrl } from '/shared/utils';
 import GenesisPlazaPng from '/assets/images/genesis_plaza.png';
-import type { AlternativeTarget, TargetProps, TargetValue } from '../types';
+import type { AlternativeTarget, Target } from '../types';
 
 import './styles.css';
 
-export function AlternativeServers({ onTarget: onClick }: TargetProps) {
+export function AlternativeServers({ onTarget }: { onTarget: (target: Target) => void }) {
   const [option, setOption] = useState<AlternativeTarget>('test');
   const [customUrl, setCustomUrl] = useState('');
   const [error, setError] = useState('');
@@ -17,8 +17,8 @@ export function AlternativeServers({ onTarget: onClick }: TargetProps) {
     if (option === 'custom' && !isUrl(customUrl)) {
       return setError(t('modal.publish_project.alternative_servers.errors.url'));
     }
-    const value: TargetValue = { target: option, value: customUrl };
-    onClick(value);
+    const value: Target = { target: option, value: customUrl };
+    onTarget(value);
   }, [option, customUrl]);
 
   const handleChangeSelect = useCallback((e: SelectChangeEvent<AlternativeTarget>) => {
