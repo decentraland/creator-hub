@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Modal } from 'decentraland-ui2/dist/components/Modal/Modal';
 import { t } from '/@/modules/store/translation/utils';
+import { useAuth } from '/@/hooks/useAuth';
 import { Initial } from './Initial';
 import { AlternativeServers } from './AlternativeServers';
 import { PublishToWorld } from './PublishToWorld';
@@ -12,6 +13,7 @@ import type { Target, Props, Step } from './types';
 export function PublishProject({ open, project, onTarget, onClose }: Props) {
   const [step, setStep] = useState<Step>('initial');
   const [history, setHistory] = useState<Step[]>([]);
+  const { isSignedIn } = useAuth();
 
   const handleClose = useCallback(() => {
     setStep('initial');
@@ -45,13 +47,15 @@ export function PublishProject({ open, project, onTarget, onClose }: Props) {
     <Modal
       open={open}
       title={
-        step !== 'publish-to-world'
-          ? t('modal.publish_project.title', { title: project.title })
-          : ''
+        isSignedIn
+          ? step !== 'publish-to-world'
+            ? t('modal.publish_project.title', { title: project.title })
+            : ''
+          : 'Sign In'
       }
       onClose={handleClose}
       size="small"
-      onBack={handleBack}
+      onBack={history.length > 0 ? handleBack : undefined}
     >
       {step === 'initial' && <Initial onStepChange={handleChangeStep} />}
       {step === 'alternative-servers' && <AlternativeServers onTarget={handleTarget} />}

@@ -5,8 +5,27 @@ import WorldsPng from '/assets/images/worlds.png';
 import type { Step } from '../types';
 
 import './styles.css';
+import { useAuth } from '/@/hooks/useAuth';
+import { Button } from 'decentraland-ui2';
 
 export function Initial({ onStepChange }: { onStepChange: (step: Step) => void }) {
+  const { isSignedIn, signIn } = useAuth();
+
+  if (!isSignedIn) {
+    return (
+      <div className="Initial">
+        <p>You need to sign in before you can publish your scene.</p>
+        <Button
+          color="primary"
+          variant="contained"
+          onClick={signIn}
+        >
+          Sign In
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="Initial">
       <span className="select">{t('modal.publish_project.select')}</span>
