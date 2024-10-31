@@ -61,7 +61,8 @@
       "size": "尺寸"
     },
     "results": "{count}结果",
-    "parcel_count": "{parcels} {包裹, plural, one {包裹} other {包裹}}"
+    "parcel_count": "{parcels} {包裹, plural, one {包裹} other {包裹}}",
+    "saving": "保存..."
   },
   "navbar": {
     "menu": {

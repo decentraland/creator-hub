@@ -61,7 +61,8 @@
       "size": "Tamaño"
     },
     "results": "{count} {count, plural, one {escena} other {escenas}}",
-    "parcel_count": "{parcels} {parcels, plural, one {parcela} other {parcelas}}"
+    "parcel_count": "{parcels} {parcels, plural, one {parcela} other {parcelas}}",
+    "saving": "Guardando..."
   },
   "navbar": {
     "menu": {

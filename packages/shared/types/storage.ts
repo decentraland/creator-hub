@@ -5,81 +5,70 @@ type StorageData = {
   [key: string]: unknown;
 };
 
-interface IStorage {
-  get<T>(key: string): Promise<T>;
-  has(key: string): Promise<boolean>;
-  set<T>(key: string, value: T): Promise<void>;
-}
+type FileSystemStorage = Awaited<ReturnType<typeof _createFileSystemStorage>>;
 
-export class FileSystemStorage implements IStorage {
-  private inited = false;
+async function _createFileSystemStorage(storagePath: string) {
+  const dir = path.dirname(storagePath);
+  try {
+    await fs.stat(dir);
+  } catch (error) {
+    await fs.mkdir(dir, { recursive: true });
+  }
 
-  constructor(public storagePath: string) {}
+  try {
+    await fs.stat(storagePath);
+  } catch (error) {
+    await fs.writeFile(storagePath, '{}', 'utf-8');
+  }
 
-  private async init() {
-    if (this.inited) {
-      return;
-    }
-    const dir = path.dirname(this.storagePath);
+  const read = async (): Promise<StorageData> => {
     try {
-      await fs.stat(dir);
-    } catch (error) {
-      await fs.mkdir(dir, { recursive: true });
-    }
-
-    try {
-      await fs.stat(this.storagePath);
-    } catch (error) {
-      await fs.writeFile(this.storagePath, '{}', 'utf-8');
-    }
-  }
-
-  async get<T>(key: string) {
-    if (!this.inited) {
-      await this.init();
-    }
-    const data = await this.read();
-    return data[key] as T;
-  }
-
-  async set<T>(key: string, value: T): Promise<void> {
-    if (!this.inited) {
-      await this.init();
-    }
-    const data = await this.read();
-    data[key] = value;
-    await this.write(data);
-  }
-
-  async has(key: string) {
-    if (!this.inited) {
-      await this.init();
-    }
-    const data = await this.read();
-    return key in data;
-  }
-
-  private async read(): Promise<StorageData> {
-    if (!this.inited) {
-      await this.init();
-    }
-    try {
-      const content = await fs.readFile(this.storagePath, 'utf-8');
+      const content = await fs.readFile(storagePath, 'utf-8');
       return JSON.parse(content);
     } catch (error) {
       console.error('Error reading config file:', error);
       return {};
     }
-  }
+  };
 
-  private async write(data: StorageData) {
-    if (!this.inited) {
-      await this.init();
-    }
+  const write = async (data: StorageData): Promise<void> => {
     try {
-      await fs.writeFile(this.storagePath, JSON.stringify(data, null, 2), 'utf-8');
+      await fs.writeFile(storagePath, JSON.stringify(data, null, 2), 'utf-8');
     } catch (error) {
       console.error('Error writing config file:', error);
     }
-  }
+  };
+
+  return {
+    get: async <T>(key: string): Promise<T | undefined> => {
+      const data = await read();
+      return data[key] as T | undefined;
+    },
+    set: async <T>(key: string, value: T): Promise<void> => {
+      const data = await read();
+      data[key] = value;
+      await write(data);
+    },
+    has: async (key: string): Promise<boolean> => {
+      const data = await read();
+      return key in data;
+    },
+  };
 }
+
+// In-memory Map of storages
+const storageMap = new Map<string, FileSystemStorage>();
+
+export const FileSystemStorage = {
+  async create(path: string): Promise<FileSystemStorage> {
+    const storage = await _createFileSystemStorage(path);
+    storageMap.set(path, storage);
+    return storage;
+  },
+  get(path: string): FileSystemStorage | undefined {
+    return storageMap.get(path);
+  },
+  async getOrCreate(path: string): Promise<FileSystemStorage> {
+    return storageMap.get(path) ?? (await this.create(path));
+  },
+};

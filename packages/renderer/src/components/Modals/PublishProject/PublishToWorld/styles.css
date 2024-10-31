@@ -16,6 +16,13 @@
 
 .MuiModal-root .SelectWorld .thumbnail {
   width: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.MuiModal-root .SelectWorld .thumbnail img {
+  width: 100%;
   object-fit: cover;
 }
 

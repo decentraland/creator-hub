@@ -38,10 +38,13 @@ export function resizeImage(image: string, maxWidth: number, maxHeight: number) 
   });
 }
 
+export const BASE64_PREFIX = 'data:image/png;base64,';
+
 export function addBase64ImagePrefix(base64: string) {
-  return `data:image/png;base64,${base64}`;
+  if (base64.startsWith(BASE64_PREFIX)) return base64;
+  return `${BASE64_PREFIX}${base64}`;
 }
 
 export function stripBase64ImagePrefix(base64: string) {
-  return base64.replace('data:image/png;base64,', '');
+  return base64.replace(BASE64_PREFIX, '');
 }

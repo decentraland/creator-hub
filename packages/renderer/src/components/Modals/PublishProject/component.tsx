@@ -46,7 +46,7 @@ export function PublishProject({ open, project, onSubmit, onClose }: Props) {
       open={open}
       title={
         step !== 'publish-to-world'
-          ? t('modal.publish_project.title', { title: project?.title })
+          ? t('modal.publish_project.title', { title: project.title })
           : ''
       }
       onClose={handleClose}

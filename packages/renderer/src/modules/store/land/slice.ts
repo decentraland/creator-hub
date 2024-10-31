@@ -11,7 +11,7 @@ import {
   type Authorization,
   type Land,
 } from '/@/lib/land';
-import type { Async } from '/@/modules/async';
+import type { Async } from '/shared/types/async';
 import { isDev } from '/@/modules/utils';
 
 // actions

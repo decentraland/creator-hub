@@ -1,11 +1,13 @@
-import { useCallback } from 'react';
+import { CircularProgress as Loader, Typography } from 'decentraland-ui2';
+import { type MouseEvent, useCallback } from 'react';
+
+import { t } from '/@/modules/store/translation/utils';
 
 import { Dropdown } from '../Dropdown';
 
 import type { Props } from './types';
 
 import './styles.css';
-import { Typography } from 'decentraland-ui2';
 
 export function ProjectCard({
   title,
@@ -17,6 +19,7 @@ export function ProjectCard({
   width = 256,
   height = 240,
   onClick,
+  status,
 }: Props) {
   const handleMouseEnterVideo = useCallback(
     ({ currentTarget: video }: React.MouseEvent<HTMLVideoElement>) => {
@@ -34,12 +37,20 @@ export function ProjectCard({
     [],
   );
 
+  const widthPx = `${width}px`;
+  const heightPx = `${height}px`;
+
   return (
     <div
       className="ProjectCard"
       onClick={onClick}
-      style={{ width: `${width}px`, height: `${height}px` }}
+      style={{ width: widthPx, height: heightPx }}
     >
+      <Overlay
+        status={status}
+        width={widthPx}
+        height={heightPx}
+      />
       {videoUrl ? (
         <video
           className="video"
@@ -66,6 +77,34 @@ export function ProjectCard({
         {description && <p className="description">{description}</p>}
         {content && <div className="content">{content}</div>}
       </div>
+    </div>
+  );
+}
+
+function Overlay({
+  status,
+  width,
+  height,
+}: {
+  status: Props['status'];
+  width: string;
+  height: string;
+}) {
+  if (status !== 'loading') return null;
+
+  const handleClick = useCallback((e: MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  return (
+    <div
+      className="Overlay"
+      style={{ width, height }}
+      onClick={handleClick}
+    >
+      <Loader />
+      {t('scene_list.saving')}
     </div>
   );
 }

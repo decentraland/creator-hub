@@ -1,7 +1,56 @@
+import type { Scene } from '@dcl/schemas';
+
+import fs from 'node:fs/promises';
+import path from 'node:path';
+
+import { writeFile } from './fs';
+
 export type Coords = {
   x: number;
   y: number;
 };
+
+/**
+ * Get Project's scene.json path
+ */
+function getScenePath(_path: string): string {
+  return path.join(_path, 'scene.json');
+}
+
+/**
+ * Get Project's scene JSON
+ */
+export async function getScene(_path: string): Promise<Scene> {
+  const scene = await fs.readFile(getScenePath(_path), 'utf8');
+  return JSON.parse(scene);
+}
+
+/**
+ * Write Project's scene JSON
+ */
+export async function writeScene({ path: _path, scene }: { path: string; scene: Scene }) {
+  await writeFile(getScenePath(_path), JSON.stringify(scene, null, 2), { encoding: 'utf8' });
+}
+
+/**
+ * Updates the scene metadata to reference the new thumbnail path.
+ *
+ * @param path - The path to the project directory.
+ * @param thumbnailPath - The path to the newly saved thumbnail.
+ */
+export async function updateSceneThumbnail(path: string, thumbnailPath: string): Promise<void> {
+  const scene = await getScene(path);
+  await writeScene({
+    path,
+    scene: {
+      ...scene,
+      display: {
+        ...scene.display,
+        navmapThumbnail: thumbnailPath,
+      },
+    },
+  });
+}
 
 /**
  * Parses a string representing coordinates and returns an object with x and y properties.

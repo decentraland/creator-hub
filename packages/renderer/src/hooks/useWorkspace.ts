@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import type { Scene } from '@dcl/schemas';
 
 import { useDispatch, useSelector } from '#store';
 
@@ -20,7 +21,7 @@ export const useWorkspace = () => {
     dispatch(workspaceActions.setSortBy(type));
   }, []);
 
-  const runProject = useCallback(async (project: Project) => {
+  const runProject = useCallback((project: Project) => {
     dispatch(workspaceActions.runProject(project));
     navigate('/editor');
   }, []);
@@ -58,6 +59,14 @@ export const useWorkspace = () => {
     dispatch(workspaceActions.updatePackages(project));
   }, []);
 
+  const updateProject = useCallback((project: Project) => {
+    dispatch(workspaceActions.updateProject(project));
+  }, []);
+
+  const updateSceneJson = useCallback((path: string, updates: Partial<Scene>) => {
+    dispatch(workspaceActions.updateSceneJson({ path, updates }));
+  }, []);
+
   const isLoading = workspace.status === 'loading';
 
   return {
@@ -73,6 +82,8 @@ export const useWorkspace = () => {
     unlistProjects,
     openFolder,
     updatePackages,
+    updateProject,
+    updateSceneJson,
     isLoading,
   };
 };
