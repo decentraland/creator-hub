@@ -130,7 +130,7 @@ function SelectWorld({ project, onPublish }: { project: Project; onPublish: () =
       updateSceneJson(project.path, { worldConfiguration });
       updateProject({ ...project, worldConfiguration });
     }
-  }, [project, name]);
+  }, [project, name, updateSceneJson, updateProject]);
 
   // TODO: handle failed state...
   const projectIsReady = project.status === 'succeeded';

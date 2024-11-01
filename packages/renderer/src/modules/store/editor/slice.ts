@@ -100,7 +100,7 @@ export const slice = createSlice({
       state.project = action.payload;
     });
     builder.addCase(workspaceActions.updateProject, (state, action) => {
-      state.project = action.payload;
+      if (state.project) state.project = action.payload;
     });
     builder.addCase(install.pending, state => {
       state.isInstalling = true;
