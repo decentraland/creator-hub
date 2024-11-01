@@ -57,9 +57,12 @@ export function AlternativeServers(props: Props) {
   }, [option]);
 
   return (
-    <PublishModal {...props}>
+    <PublishModal
+      title={t('modal.publish_project.alternative_servers.title')}
+      subtitle={t('modal.publish_project.select')}
+      {...props}
+    >
       <div className="AlternativeServers">
-        <span className="select">{t('modal.publish_project.select')}</span>
         <div className="box">
           <div className="selection">
             <div>

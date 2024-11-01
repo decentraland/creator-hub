@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Box, Button, Typography } from 'decentraland-ui2';
+import { Box, Button, styled, Typography } from 'decentraland-ui2';
 import { Atlas } from 'decentraland-ui2/dist/components/Atlas/Atlas';
 import type { SceneParcels } from '@dcl/schemas';
 
@@ -24,6 +24,12 @@ function calculateParcels(project: Project, point: Coordinate): Coordinate[] {
     return { x: x - baseX + point.x, y: y - baseY + point.y };
   });
 }
+
+const PublishToLandModal = styled(PublishModal)({
+  '& > .MuiPaper-root > .MuiBox-root:last-child': {
+    padding: 0,
+  },
+});
 
 export function PublishToLand(props: Props) {
   const { project, publishScene } = useEditor();
@@ -131,7 +137,11 @@ export function PublishToLand(props: Props) {
   }, []);
 
   return (
-    <PublishModal {...props}>
+    <PublishToLandModal
+      title={t('modal.publish_project.land.action')}
+      size="large"
+      {...props}
+    >
       <Box>
         <Box
           height={480}
@@ -147,7 +157,8 @@ export function PublishToLand(props: Props) {
           />
         </Box>
         <Box
-          mt={4}
+          padding={2}
+          paddingBottom={1}
           display="flex"
           justifyContent="space-between"
           alignItems="center"
@@ -192,6 +203,6 @@ export function PublishToLand(props: Props) {
           </Button>
         </Box>
       </Box>
-    </PublishModal>
+    </PublishToLandModal>
   );
 }

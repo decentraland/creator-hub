@@ -11,58 +11,60 @@ import { PublishModal } from '../../PublishModal';
 
 export function Initial(props: Props) {
   const { isSignedIn, signIn } = useAuth();
-  let content = null;
+  const { onBack: _, ...rest } = props;
   if (!isSignedIn) {
-    content = (
-      <div className="Initial">
-        <p>You need to sign in before you can publish your scene.</p>
-        <Button
-          color="primary"
-          variant="contained"
-          onClick={signIn}
-        >
-          Sign In
-        </Button>
-      </div>
+    return (
+      <PublishModal
+        title={t('home.cards.sign_in.action')}
+        subtitle={t('home.cards.sign_in.title')}
+        size="tiny"
+        {...rest}
+      >
+        <div className="Initial">
+          <Button
+            color="primary"
+            variant="contained"
+            onClick={signIn}
+          >
+            {t('home.cards.sign_in.action')}
+          </Button>
+        </div>
+      </PublishModal>
     );
   } else {
-    content = (
-      <div className="Initial">
-        <div className="options">
-          <OptionBox
-            thumbnailSrc={WorldsPng}
-            title={t('modal.publish_project.worlds.title')}
-            description={t('modal.publish_project.worlds.description')}
-            buttonText={t('modal.publish_project.worlds.action')}
-            onClickPublish={() => props.onStep('publish-to-world')}
-            learnMoreUrl="https://docs.decentraland.org/creator/worlds/about/#publish-a-world"
-          />
-          <OptionBox
-            thumbnailSrc={LandPng}
-            title={t('modal.publish_project.land.title')}
-            description={t('modal.publish_project.land.description')}
-            buttonText={t('modal.publish_project.land.action')}
-            onClickPublish={() => props.onStep('publish-to-land')}
-            learnMoreUrl="https://docs.decentraland.org/creator/development-guide/sdk7/publishing-permissions/#land-permission-options"
-          />
+    return (
+      <PublishModal
+        title={t('modal.publish_project.title', { title: props.project.title })}
+        subtitle={t('modal.publish_project.select')}
+        {...rest}
+      >
+        <div className="Initial">
+          <div className="options">
+            <OptionBox
+              thumbnailSrc={WorldsPng}
+              title={t('modal.publish_project.worlds.title')}
+              description={t('modal.publish_project.worlds.description')}
+              buttonText={t('modal.publish_project.worlds.action')}
+              onClickPublish={() => props.onStep('publish-to-world')}
+              learnMoreUrl="https://docs.decentraland.org/creator/worlds/about/#publish-a-world"
+            />
+            <OptionBox
+              thumbnailSrc={LandPng}
+              title={t('modal.publish_project.land.title')}
+              description={t('modal.publish_project.land.description')}
+              buttonText={t('modal.publish_project.land.action')}
+              onClickPublish={() => props.onStep('publish-to-land')}
+              learnMoreUrl="https://docs.decentraland.org/creator/development-guide/sdk7/publishing-permissions/#land-permission-options"
+            />
+          </div>
+          <span
+            className="alternative_servers"
+            onClick={() => props.onStep('alternative-servers')}
+          >
+            {t('modal.publish_project.alternative_servers.title')}
+          </span>
         </div>
-        <span
-          className="alternative_servers"
-          onClick={() => props.onStep('alternative-servers')}
-        >
-          {t('modal.publish_project.alternative_servers.title')}
-        </span>
-      </div>
+      </PublishModal>
     );
   }
-  const { onBack: _, ...rest } = props;
-  return (
-    <PublishModal
-      title={t('modal.publish_project.title', { title: props.project.title })}
-      subtitle={t('modal.publish_project.select')}
-      {...rest}
-    >
-      {content}
-    </PublishModal>
-  );
 }
