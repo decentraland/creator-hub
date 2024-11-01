@@ -4,7 +4,8 @@ export type Props = {
   open: boolean;
   project: Project;
   onClose: () => void;
-  onTarget: (value: Target) => void;
+  onBack?: () => void;
+  onStep: (step: Step) => void;
 };
 
 export type Step =
@@ -13,8 +14,8 @@ export type Step =
   | 'publish-to-world'
   | 'publish-to-land'
   | 'deploy';
+
 export type InitialTarget = 'worlds' | 'land';
 export type AlternativeTarget = 'test' | 'custom';
 
 export type TargetType = InitialTarget | AlternativeTarget;
-export type Target = { target: TargetType; value?: string };

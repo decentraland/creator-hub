@@ -14,7 +14,8 @@ import { useEditor } from '/@/hooks/useEditor';
 import { useWorkspace } from '/@/hooks/useWorkspace';
 
 import { COLORS, type Coordinate } from './types';
-import { type Target } from '../types';
+import { type Props } from '../../types';
+import { PublishModal } from '../../PublishModal';
 
 function calculateParcels(project: Project, point: Coordinate): Coordinate[] {
   const [baseX, baseY] = project.scene.base.split(',').map(coord => parseInt(coord, 10));
@@ -24,8 +25,8 @@ function calculateParcels(project: Project, point: Coordinate): Coordinate[] {
   });
 }
 
-export function PublishToLand({ onTarget }: { onTarget: (target: Target) => void }) {
-  const { project } = useEditor();
+export function PublishToLand(props: Props) {
+  const { project, publishScene } = useEditor();
   const { updateProject, updateSceneJson } = useWorkspace();
   const tiles = useSelector(state => state.land.tiles);
   const landTiles = useSelector(state => landSelectors.getLandTiles(state.land));
@@ -38,11 +39,11 @@ export function PublishToLand({ onTarget }: { onTarget: (target: Target) => void
   const projectParcels = useMemo(() => calculateParcels(project, hover), [project, hover]);
 
   const handleNext = useCallback(() => {
-    onTarget({
-      target: 'land',
-      value: import.meta.env.VITE_CATALYST_SERVER || DEPLOY_URLS.CATALYST_SERVER,
+    void publishScene({
+      target: import.meta.env.VITE_CATALYST_SERVER || DEPLOY_URLS.CATALYST_SERVER,
     });
-  }, [onTarget]);
+    props.onStep('deploy');
+  }, [props.onStep]);
 
   const handleHover = useCallback((x: number, y: number) => {
     setHover({ x, y });
@@ -130,65 +131,67 @@ export function PublishToLand({ onTarget }: { onTarget: (target: Target) => void
   }, []);
 
   return (
-    <Box>
-      <Box
-        height={480}
-        style={{ backgroundColor: 'black' }}
-      >
-        {/* @ts-expect-error TODO: Update properties in UI2, making the not required `optional` */}
-        <Atlas
-          tiles={tiles}
-          layers={[strokeLayer, highlightLayer, ownedLayer]}
-          onHover={handleHover}
-          onClick={handlePlacement}
-          withZoomControls
-        />
-      </Box>
-      <Box
-        mt={4}
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-      >
+    <PublishModal {...props}>
+      <Box>
         <Box
-          flex={1}
-          display="flex"
-          padding={1}
-          mr={2}
-          sx={{ border: '1px solid grey', borderRadius: '8px' }}
-          justifyContent="center"
-          alignItems="baseline"
-          height={45}
+          height={480}
+          style={{ backgroundColor: 'black' }}
         >
-          <Typography variant="body1">
-            {placement
-              ? t('modal.publish_project.land.select_parcel.place_scene', {
-                  coords: `${placement.x},${placement.y}`,
-                })
-              : t('modal.publish_project.land.select_parcel.select_parcel')}
-          </Typography>
-          {placement && (
-            <Button
-              variant="text"
-              size="small"
-              onClick={handleClearPlacement}
-              sx={{ marginLeft: 1, padding: 0 }}
-            >
-              {t('modal.publish_project.land.select_parcel.actions.reset')}
-            </Button>
-          )}
+          {/* @ts-expect-error TODO: Update properties in UI2, making the not required `optional` */}
+          <Atlas
+            tiles={tiles}
+            layers={[strokeLayer, highlightLayer, ownedLayer]}
+            onHover={handleHover}
+            onClick={handlePlacement}
+            withZoomControls
+          />
         </Box>
-        <Button
-          variant="contained"
-          color="primary"
-          size="large"
-          onClick={handleNext}
-          disabled={!placement}
-          sx={{ height: '45px' }}
+        <Box
+          mt={4}
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
         >
-          {t('modal.publish_project.land.select_parcel.actions.publish')}
-        </Button>
+          <Box
+            flex={1}
+            display="flex"
+            padding={1}
+            mr={2}
+            sx={{ border: '1px solid grey', borderRadius: '8px' }}
+            justifyContent="center"
+            alignItems="baseline"
+            height={45}
+          >
+            <Typography variant="body1">
+              {placement
+                ? t('modal.publish_project.land.select_parcel.place_scene', {
+                    coords: `${placement.x},${placement.y}`,
+                  })
+                : t('modal.publish_project.land.select_parcel.select_parcel')}
+            </Typography>
+            {placement && (
+              <Button
+                variant="text"
+                size="small"
+                onClick={handleClearPlacement}
+                sx={{ marginLeft: 1, padding: 0 }}
+              >
+                {t('modal.publish_project.land.select_parcel.actions.reset')}
+              </Button>
+            )}
+          </Box>
+          <Button
+            variant="contained"
+            color="primary"
+            size="large"
+            onClick={handleNext}
+            disabled={!placement}
+            sx={{ height: '45px' }}
+          >
+            {t('modal.publish_project.land.select_parcel.actions.publish')}
+          </Button>
+        </Box>
       </Box>
-    </Box>
+    </PublishModal>
   );
 }

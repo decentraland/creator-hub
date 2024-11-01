@@ -31,30 +31,37 @@ import EmptyWorldSVG from '/assets/images/empty-deploy-to-world.svg';
 import LogoDCLSVG from '/assets/images/logo-dcl.svg';
 import LogoENSSVG from '/assets/images/logo-ens.svg';
 
-import { Button } from '../../../Button';
-import { type Target } from '../types';
+import { Button } from '../../../../Button';
+import { type Props } from '../../types';
 
 import './styles.css';
+import { PublishModal } from '../../PublishModal';
 
-export function PublishToWorld({ onTarget }: { onTarget: (target: Target) => void }) {
-  const { project } = useEditor();
+export function PublishToWorld(props: Props) {
+  const { project, publishScene } = useEditor();
   const names = useSelector(state => state.ens.data);
   const emptyNames = Object.keys(names).length === 0;
 
   const handleNext = useCallback(() => {
-    onTarget({
-      target: 'worlds',
-      value: import.meta.env.VITE_WORLDS_SERVER || DEPLOY_URLS.WORLDS,
-    });
-  }, [onTarget]);
+    publishScene({ targetContent: import.meta.env.VITE_WORLDS_SERVER || DEPLOY_URLS.WORLDS });
+    props.onStep('deploy');
+  }, [props.onStep, publishScene]);
 
-  return emptyNames ? (
-    <EmptyNames />
-  ) : (
-    <SelectWorld
-      project={project!}
-      onPublish={handleNext}
-    />
+  return (
+    <PublishModal
+      title={t('modal.publish_project.worlds.select_world.title')}
+      subtitle={t('modal.publish_project.worlds.select_world.description')}
+      {...props}
+    >
+      {!emptyNames ? (
+        <SelectWorld
+          project={project!}
+          onPublish={handleNext}
+        />
+      ) : (
+        <EmptyNames />
+      )}
+    </PublishModal>
   );
 }
 
@@ -140,21 +147,6 @@ function SelectWorld({ project, onPublish }: { project: Project; onPublish: () =
 
   return (
     <div className="SelectWorld">
-      <div>
-        <Typography
-          variant="h5"
-          textAlign="center"
-          mb="8px"
-        >
-          {t('modal.publish_project.worlds.select_world.title')}
-        </Typography>
-        <Typography
-          variant="body2"
-          textAlign="center"
-        >
-          {t('modal.publish_project.worlds.select_world.description')}
-        </Typography>
-      </div>
       <div className="box">
         <div className="thumbnail">
           {!projectIsReady ? <Loader /> : <img src={addBase64ImagePrefix(project.thumbnail)} />}

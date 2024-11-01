@@ -1,19 +1,15 @@
 import { useCallback, useState } from 'react';
-import { Modal } from 'decentraland-ui2/dist/components/Modal/Modal';
-import { t } from '/@/modules/store/translation/utils';
-import { useAuth } from '/@/hooks/useAuth';
-import { Initial } from './Initial';
-import { AlternativeServers } from './AlternativeServers';
-import { PublishToWorld } from './PublishToWorld';
-import { PublishToLand } from './PublishToLand';
-import { Deploy } from './Deploy';
+import { Initial } from './steps/Initial';
+import { AlternativeServers } from './steps/AlternativeServers';
+import { PublishToWorld } from './steps/PublishToWorld';
+import { PublishToLand } from './steps/PublishToLand';
+import { Deploy } from './steps/Deploy';
 
-import type { Target, Props, Step } from './types';
+import type { Props, Step } from './types';
 
-export function PublishProject({ open, project, onTarget, onClose }: Props) {
+export function PublishProject({ open, project, onClose }: Omit<Props, 'onStep'>) {
   const [step, setStep] = useState<Step>('initial');
   const [history, setHistory] = useState<Step[]>([]);
-  const { isSignedIn } = useAuth();
 
   const handleClose = useCallback(() => {
     setStep('initial');
@@ -27,7 +23,7 @@ export function PublishProject({ open, project, onTarget, onClose }: Props) {
     setHistory(history => (history.length > 0 ? history.slice(0, -1) : []));
   }, [history, setStep, setHistory]);
 
-  const handleChangeStep = useCallback(
+  const handleStep = useCallback(
     (newStep: Step) => {
       setStep(newStep);
       setHistory(history => [...history, step]);
@@ -35,33 +31,21 @@ export function PublishProject({ open, project, onTarget, onClose }: Props) {
     [step, setStep, setHistory],
   );
 
-  const handleTarget = useCallback(
-    (value: Target) => {
-      onTarget(value);
-      handleChangeStep('deploy');
-    },
-    [onTarget, handleChangeStep],
-  );
+  const props: Props = {
+    open,
+    project,
+    onClose: handleClose,
+    onBack: handleBack,
+    onStep: handleStep,
+  };
 
   return (
-    <Modal
-      open={open}
-      title={
-        isSignedIn
-          ? step !== 'publish-to-world'
-            ? t('modal.publish_project.title', { title: project.title })
-            : ''
-          : 'Sign In'
-      }
-      onClose={handleClose}
-      size="small"
-      onBack={history.length > 0 ? handleBack : undefined}
-    >
-      {step === 'initial' && <Initial onStepChange={handleChangeStep} />}
-      {step === 'alternative-servers' && <AlternativeServers onTarget={handleTarget} />}
-      {step === 'publish-to-land' && <PublishToLand onTarget={handleTarget} />}
-      {step === 'publish-to-world' && <PublishToWorld onTarget={handleTarget} />}
-      {step === 'deploy' && <Deploy />}
-    </Modal>
+    <>
+      {step === 'initial' && <Initial {...props} />}
+      {step === 'alternative-servers' && <AlternativeServers {...props} />}
+      {step === 'publish-to-land' && <PublishToLand {...props} />}
+      {step === 'publish-to-world' && <PublishToWorld {...props} />}
+      {step === 'deploy' && <Deploy {...props} />}
+    </>
   );
 }

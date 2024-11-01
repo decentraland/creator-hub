@@ -8,7 +8,6 @@ import PublicIcon from '@mui/icons-material/Public';
 
 import { useSelector } from '#store';
 
-import { DEPLOY_URLS } from '/shared/types/deploy';
 import { isWorkspaceError } from '/shared/types/workspace';
 
 import { t } from '/@/modules/store/translation/utils';
@@ -17,7 +16,7 @@ import { useEditor } from '/@/hooks/useEditor';
 
 import EditorPng from '/assets/images/editor.png';
 
-import { PublishProject, type StepValue } from '../Modals/PublishProject';
+import { PublishProject } from '../Modals/PublishProject';
 import { Button } from '../Button';
 import { Header } from '../Header';
 import { Row } from '../Row';
@@ -35,7 +34,6 @@ export function EditorPage() {
     saveAndGetThumbnail,
     inspectorPort,
     openPreview,
-    publishScene,
     openCode,
     updateScene,
     loadingPreview,
@@ -88,24 +86,6 @@ export function EditorPage() {
   const handleCloseModal = useCallback(() => {
     setOpen(undefined);
   }, []);
-
-  const handleTarget = useCallback(
-    ({ target, value }: StepValue) => {
-      switch (target) {
-        case 'worlds':
-          return publishScene({
-            targetContent: import.meta.env.VITE_WORLDS_SERVER || DEPLOY_URLS.WORLDS,
-          });
-        case 'test':
-          return publishScene({ target: import.meta.env.VITE_TEST_SERVER || DEPLOY_URLS.TEST });
-        case 'custom':
-          return publishScene({ target: value });
-        default:
-          return publishScene();
-      }
-    },
-    [isReady],
-  );
 
   // inspector url
   const htmlUrl = `http://localhost:${import.meta.env.VITE_INSPECTOR_PORT || inspectorPort}`;
@@ -213,7 +193,6 @@ export function EditorPage() {
               open={open === 'publish'}
               project={project}
               onClose={handleCloseModal}
-              onTarget={handleTarget}
             />
           )}
         </>
