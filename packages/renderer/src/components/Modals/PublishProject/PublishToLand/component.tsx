@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Box, Button, Typography } from 'decentraland-ui2';
 import { Atlas } from 'decentraland-ui2/dist/components/Atlas/Atlas';
+import type { SceneParcels } from '@dcl/schemas';
 
 import { useSelector } from '#store';
 
@@ -24,7 +25,7 @@ function calculateParcels(project: Project, point: Coordinate): Coordinate[] {
 
 export function PublishToLand({ onClose }: { onClose: () => void }) {
   const { project, publishScene } = useEditor();
-  const { updateProject } = useWorkspace();
+  const { updateProject, updateSceneJson } = useWorkspace();
   const tiles = useSelector(state => state.land.tiles);
   const landTiles = useSelector(state => landSelectors.getLandTiles(state.land));
   const [hover, setHover] = useState<Coordinate>({ x: 0, y: 0 });
@@ -105,18 +106,20 @@ export function PublishToLand({ onClose }: { onClose: () => void }) {
       const newPlacement = { x, y };
       setPlacement(newPlacement);
 
+      const sceneUpdates: SceneParcels = {
+        base: `${x},${y}`,
+        parcels: calculateParcels(project, newPlacement).map(({ x, y }) => `${x},${y}`),
+      };
+
+      updateSceneJson(project.path, { scene: sceneUpdates });
       updateProject({
         ...project,
-        scene: {
-          ...project.scene,
-          base: `${x},${y}`,
-          parcels: calculateParcels(project, newPlacement).map(({ x, y }) => `${x},${y}`),
-        },
+        scene: sceneUpdates,
         worldConfiguration: undefined, // Cannot deploy to a LAND with a world configuration
         updatedAt: Date.now(),
       });
     },
-    [project, isValid, updateProject],
+    [project, isValid, updateProject, updateSceneJson],
   );
 
   const handleClearPlacement = useCallback(() => {

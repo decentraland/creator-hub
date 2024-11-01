@@ -57,6 +57,7 @@ export const useEditor = () => {
           workspaceActions.updateProject({
             ...project,
             title: scene.display?.title || project.title,
+            scene: scene.scene,
           }),
         );
       }
