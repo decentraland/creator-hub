@@ -164,10 +164,13 @@ export function PublishToLand(props: Props) {
   useEffect(() => {
     if (didAutoPlace) return;
     if (!placement && initialPlacement) {
-      setPlacement(initialPlacement);
-      setDidAutoPlace(true);
+      const initialPlacementParcels = calculateParcels(project, initialPlacement);
+      if (initialPlacementParcels.every(({ x, y }) => !!landTiles[`${x},${y}`])) {
+        setPlacement(initialPlacement);
+        setDidAutoPlace(true);
+      }
     }
-  }, [placement, setPlacement, initialPlacement, didAutoPlace, setDidAutoPlace]);
+  }, [placement, setPlacement, initialPlacement, didAutoPlace, setDidAutoPlace, landTiles]);
 
   return (
     <PublishToLandModal
