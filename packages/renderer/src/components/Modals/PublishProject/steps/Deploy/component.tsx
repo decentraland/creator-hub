@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { type AuthChain, Authenticator } from '@dcl/crypto';
+import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
 import { Loader } from '/@/components/Loader';
 import { useEditor } from '/@/hooks/useEditor';
 import { useIsMounted } from '/@/hooks/useIsMounted';
@@ -45,10 +47,55 @@ export function Deploy(props: Props) {
   const [info, setInfo] = useState<Info | null>(null);
   const { loadingPublish, publishPort, project } = useEditor();
   const isMounted = useIsMounted();
+  const [isDeploying, setIsDeploying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const url = useMemo(() => {
+    const port = import.meta.env.VITE_CLI_DEPLOY_PORT || publishPort;
+    return port ? `http://localhost:${port}/api` : null;
+  }, [publishPort]);
+
+  const handlePublish = useCallback(() => {
+    if (!url) return;
+    async function deploy(payload: { address: string; authChain: AuthChain; chainId: ChainId }) {
+      setIsDeploying(true);
+      setError(null);
+      const resp = await fetch(`${url}/deploy`, {
+        method: 'post',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      if (resp.ok) {
+        return;
+      }
+      const error = (await resp.json()).message as string;
+      throw new Error(error);
+    }
+    if (wallet && info && info.rootCID) {
+      const identity = localStorageGetIdentity(wallet);
+      if (identity && chainId) {
+        const authChain = Authenticator.signPayload(identity, info.rootCID);
+        void deploy({ address: wallet, authChain, chainId })
+          .then(() => {
+            if (!isMounted()) return;
+            setIsDeploying(false);
+            console.log('success');
+          })
+          .catch(error => {
+            setIsDeploying(false);
+            setError(error.message);
+            console.log('error', error);
+          });
+      } else {
+        setError('Invalid identity or chainId');
+      }
+    }
+  }, [wallet, info, url, chainId]);
 
   useEffect(() => {
-    const port = import.meta.env.VITE_CLI_DEPLOY_PORT || publishPort;
-    const url = `http://localhost:${port}/api`;
+    if (!url) return;
     async function fetchFiles() {
       const resp = await fetch(`${url}/files`);
       const files = await resp.json();
@@ -59,14 +106,12 @@ export function Deploy(props: Props) {
       const info = await resp.json();
       return info as Info;
     }
-    if (port) {
-      void Promise.all([fetchFiles(), fetchInfo()]).then(([files, info]) => {
-        if (!isMounted()) return;
-        setFiles(files);
-        setInfo(info);
-      });
-    }
-  }, [publishPort]);
+    void Promise.all([fetchFiles(), fetchInfo()]).then(([files, info]) => {
+      if (!isMounted()) return;
+      setFiles(files);
+      setInfo(info);
+    });
+  }, [url]);
   return (
     <PublishModal
       title={
@@ -146,7 +191,14 @@ export function Deploy(props: Props) {
                   ))}
                 </div>
                 <div className="actions">
-                  <Button size="large">Publish</Button>
+                  {error ? <p>{error}</p> : null}
+                  <Button
+                    size="large"
+                    disabled={isDeploying}
+                    onClick={handlePublish}
+                  >
+                    Publish
+                  </Button>
                 </div>
               </div>
             </div>
