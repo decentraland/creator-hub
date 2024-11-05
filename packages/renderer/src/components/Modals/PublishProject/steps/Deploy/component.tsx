@@ -191,13 +191,14 @@ export function Deploy(props: Props) {
                   ))}
                 </div>
                 <div className="actions">
-                  {error ? <p>{error}</p> : null}
+                  <p className="error">{error}</p>
                   <Button
                     size="large"
                     disabled={isDeploying}
                     onClick={handlePublish}
                   >
                     Publish
+                    {isDeploying ? <Loader size={20} /> : <i className="deploy-icon" />}
                   </Button>
                 </div>
               </div>

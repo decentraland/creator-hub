@@ -49,12 +49,24 @@ export function PublishToLand(props: Props) {
   // Memoize the project parcels centered around the hover position
   const projectParcels = useMemo(() => calculateParcels(project, hover), [project, hover]);
 
-  const handleNext = useCallback(() => {
+  const handleNext = useCallback(async () => {
+    if (!placement) return;
+    const sceneUpdates: SceneParcels = {
+      base: `${placement.x},${placement.y}`,
+      parcels: calculateParcels(project, placement).map(({ x, y }) => `${x},${y}`),
+    };
+    await updateSceneJson(project.path, { scene: sceneUpdates, worldConfiguration: undefined });
+    updateProject({
+      ...project,
+      scene: sceneUpdates,
+      worldConfiguration: undefined, // Cannot deploy to a LAND with a world configuration
+      updatedAt: Date.now(),
+    });
     void publishScene({
       target: import.meta.env.VITE_CATALYST_SERVER || DEPLOY_URLS.CATALYST_SERVER,
     });
     props.onStep('deploy');
-  }, [props.onStep]);
+  }, [placement, props.onStep]);
 
   const handleHover = useCallback((x: number, y: number) => {
     setHover({ x, y });
@@ -117,24 +129,9 @@ export function PublishToLand(props: Props) {
   const handlePlacement = useCallback(
     (x: number, y: number) => {
       if (!isValid) return;
-
-      const newPlacement = { x, y };
-      setPlacement(newPlacement);
-
-      const sceneUpdates: SceneParcels = {
-        base: `${x},${y}`,
-        parcels: calculateParcels(project, newPlacement).map(({ x, y }) => `${x},${y}`),
-      };
-
-      updateSceneJson(project.path, { scene: sceneUpdates });
-      updateProject({
-        ...project,
-        scene: sceneUpdates,
-        worldConfiguration: undefined, // Cannot deploy to a LAND with a world configuration
-        updatedAt: Date.now(),
-      });
+      setPlacement({ x, y });
     },
-    [project, isValid, updateProject, updateSceneJson],
+    [project, isValid],
   );
 
   const handleClearPlacement = useCallback(() => {

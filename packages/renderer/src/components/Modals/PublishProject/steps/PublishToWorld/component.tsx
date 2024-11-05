@@ -31,11 +31,11 @@ import EmptyWorldSVG from '/assets/images/empty-deploy-to-world.svg';
 import LogoDCLSVG from '/assets/images/logo-dcl.svg';
 import LogoENSSVG from '/assets/images/logo-ens.svg';
 
+import { PublishModal } from '../../PublishModal';
 import { Button } from '../../../../Button';
 import { type Props } from '../../types';
 
 import './styles.css';
-import { PublishModal } from '../../PublishModal';
 
 export function PublishToWorld(props: Props) {
   const { project, publishScene } = useEditor();
