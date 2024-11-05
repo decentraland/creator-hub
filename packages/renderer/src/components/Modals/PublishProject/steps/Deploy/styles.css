@@ -1,3 +1,131 @@
 .Deploy {
-  color: red;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.Deploy .Loader {
+  top: 110px;
+  position: relative;
+}
+
+.Deploy .ethereum {
+  display: flex;
+  gap: 8px;
+}
+
+.Deploy .chip {
+  min-height: 24px;
+  border-radius: 16px;
+  padding: 4px 10px;
+  font-size: 13px;
+  line-height: 18px;
+  background-color: rgba(255, 255, 255, 0.08);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.Deploy .chip.network {
+  background-color: #1f87e5;
+  text-transform: uppercase;
+}
+
+.Deploy .chip.username .verified {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  background: center no-repeat url(images/verified.svg);
+}
+
+.Deploy .chip.parcel .pin {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  background: center no-repeat url(images/pin.svg);
+}
+
+.Deploy .scene {
+  display: flex;
+  gap: 32px;
+}
+
+.Deploy .scene .info {
+  flex: 0 0 auto;
+  width: 256px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.Deploy .scene .info .thumbnail {
+  width: 100%;
+  height: 160px;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  border-radius: 8px;
+}
+
+.Deploy .scene .info .text {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.Deploy .scene .files {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  justify-content: stretch;
+  flex: 1 1 auto;
+}
+
+.Deploy .scene .files .filters {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: space-between;
+  color: #a09ba8;
+  background-color: rgba(255, 255, 255, 0.05);
+  height: 48px;
+  align-items: center;
+  padding: 0px 16px;
+  border-radius: 48px;
+}
+
+.Deploy .scene .files .filters .count {
+  flex: none;
+  text-transform: uppercase;
+}
+
+.Deploy .scene .files .filters .size {
+  flex: none;
+}
+
+.Deploy .scene .files .list {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  max-height: 400px;
+}
+
+.Deploy .scene .files .list .file {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 6px 16px;
+  color: #a09ba8;
+}
+
+.Deploy .scene .files .list .file:last-child {
+  border-bottom: none;
+}
+
+.Deploy .scene .files .actions {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: flex-end;
 }
