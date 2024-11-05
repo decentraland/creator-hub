@@ -12,7 +12,7 @@ import { addBase64ImagePrefix } from '/@/modules/image';
 import { Typography } from 'decentraland-ui2';
 import { Button } from '../../../../Button';
 
-const MAX_FILE_PATH_LENGTH = 30;
+const MAX_FILE_PATH_LENGTH = 50;
 
 function getPath(filename: string) {
   return filename.length > MAX_FILE_PATH_LENGTH
@@ -72,6 +72,7 @@ export function Deploy(props: Props) {
       title={
         info ? (info.isWorld ? 'Publish to your World' : 'Publish to your Land') : 'Loading...'
       }
+      size="large"
       {...props}
     >
       <div className="Deploy">

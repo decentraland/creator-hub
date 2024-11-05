@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Button, styled, Typography } from 'decentraland-ui2';
 import { Atlas } from 'decentraland-ui2/dist/components/Atlas/Atlas';
 import type { SceneParcels } from '@dcl/schemas';
@@ -17,10 +17,13 @@ import { COLORS, type Coordinate } from './types';
 import { type Props } from '../../types';
 import { PublishModal } from '../../PublishModal';
 
+function parseCoords(coords: string) {
+  return coords.split(',').map(coord => parseInt(coord, 10)) as [number, number];
+}
 function calculateParcels(project: Project, point: Coordinate): Coordinate[] {
-  const [baseX, baseY] = project.scene.base.split(',').map(coord => parseInt(coord, 10));
+  const [baseX, baseY] = parseCoords(project.scene.base);
   return project.scene.parcels.map(parcel => {
-    const [x, y] = parcel.split(',').map(coord => parseInt(coord, 10));
+    const [x, y] = parseCoords(parcel);
     return { x: x - baseX + point.x, y: y - baseY + point.y };
   });
 }
@@ -38,6 +41,8 @@ export function PublishToLand(props: Props) {
   const landTiles = useSelector(state => landSelectors.getLandTiles(state.land));
   const [hover, setHover] = useState<Coordinate>({ x: 0, y: 0 });
   const [placement, setPlacement] = useState<Coordinate | null>(null);
+  const [initialPlacement, setInitialPlacement] = useState<Coordinate | null>(null);
+  const [didAutoPlace, setDidAutoPlace] = useState(false);
 
   if (!project) return null;
 
@@ -136,6 +141,34 @@ export function PublishToLand(props: Props) {
     setPlacement(null);
   }, []);
 
+  // set initial placement
+  useEffect(() => {
+    if (!initialPlacement) {
+      const { base, parcels } = project.scene;
+      // use the base parcel if it's a valid coord
+      if (base in landTiles && parcels.every(parcel => parcel in landTiles)) {
+        const [x, y] = parseCoords(base);
+        setInitialPlacement({ x, y });
+      } else {
+        // if the base parcel in the scene.json is not valid (ie. it is 0,0) then select the first coord of the available tiles as the initial placement
+        const available = Object.keys(landTiles);
+        if (available.length > 0) {
+          const [x, y] = parseCoords(available[0]);
+          setInitialPlacement({ x, y });
+        }
+      }
+    }
+  }, [initialPlacement, setInitialPlacement, project, landTiles]);
+
+  // use initial placement if possible
+  useEffect(() => {
+    if (didAutoPlace) return;
+    if (!placement && initialPlacement) {
+      setPlacement(initialPlacement);
+      setDidAutoPlace(true);
+    }
+  }, [placement, setPlacement, initialPlacement, didAutoPlace, setDidAutoPlace]);
+
   return (
     <PublishToLandModal
       title={t('modal.publish_project.land.action')}
@@ -154,6 +187,8 @@ export function PublishToLand(props: Props) {
             onHover={handleHover}
             onClick={handlePlacement}
             withZoomControls
+            x={initialPlacement?.x as number}
+            y={initialPlacement?.y as number}
           />
         </Box>
         <Box
