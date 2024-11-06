@@ -49,6 +49,7 @@ export function Deploy(props: Props) {
   const isMounted = useIsMounted();
   const [isDeploying, setIsDeploying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSuccessful, setIsSuccessful] = useState(false);
 
   const url = useMemo(() => {
     const port = import.meta.env.VITE_CLI_DEPLOY_PORT || publishPort;
@@ -70,7 +71,14 @@ export function Deploy(props: Props) {
       if (resp.ok) {
         return;
       }
-      const error = (await resp.json()).message as string;
+      let error = (await resp.json()).message as string;
+      if (/Response was/.test(error)) {
+        try {
+          error = error.split('["')[1].split('"]')[0];
+        } catch (e) {
+          /* */
+        }
+      }
       throw new Error(error);
     }
     if (wallet && info && info.rootCID) {
@@ -81,12 +89,11 @@ export function Deploy(props: Props) {
           .then(() => {
             if (!isMounted()) return;
             setIsDeploying(false);
-            console.log('success');
+            setIsSuccessful(true);
           })
           .catch(error => {
             setIsDeploying(false);
             setError(error.message);
-            console.log('error', error);
           });
       } else {
         setError('Invalid identity or chainId');
@@ -95,7 +102,7 @@ export function Deploy(props: Props) {
   }, [wallet, info, url, chainId]);
 
   useEffect(() => {
-    if (!url) return;
+    if (!url || isSuccessful) return;
     async function fetchFiles() {
       const resp = await fetch(`${url}/files`);
       const files = await resp.json();
@@ -106,12 +113,22 @@ export function Deploy(props: Props) {
       const info = await resp.json();
       return info as Info;
     }
-    void Promise.all([fetchFiles(), fetchInfo()]).then(([files, info]) => {
-      if (!isMounted()) return;
-      setFiles(files);
-      setInfo(info);
-    });
-  }, [url]);
+    void Promise.all([fetchFiles(), fetchInfo()])
+      .then(([files, info]) => {
+        if (!isMounted()) return;
+        setFiles(files);
+        setInfo(info);
+      })
+      .catch();
+  }, [url, isSuccessful]);
+
+  // set publish error
+  useEffect(() => {
+    if (publishError) {
+      setError(publishError);
+    }
+  }, [publishError, setError]);
+
   return (
     <PublishModal
       title={
@@ -121,7 +138,7 @@ export function Deploy(props: Props) {
             : 'Publish to your Land'
           : loadingPublish
           ? 'Loading...'
-          : publishError
+          : error
           ? 'Error'
           : ''
       }
@@ -131,11 +148,11 @@ export function Deploy(props: Props) {
       <div className="Deploy">
         {loadingPublish ? (
           <Loader />
-        ) : publishError ? (
+        ) : error ? (
           <>
             <div className="cli-publish-error">
               <div className="Warning" />
-              <p className="message">{publishError}</p>
+              <p className="message">{error}</p>
             </div>
           </>
         ) : !info ? null : (
@@ -209,7 +226,7 @@ export function Deploy(props: Props) {
                   <p className="error">{error}</p>
                   <Button
                     size="large"
-                    disabled={isDeploying}
+                    disabled={isDeploying || isSuccessful}
                     onClick={handlePublish}
                   >
                     Publish
