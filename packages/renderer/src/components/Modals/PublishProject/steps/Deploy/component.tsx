@@ -45,7 +45,7 @@ export function Deploy(props: Props) {
   const { chainId, wallet, avatar } = useAuth();
   const [files, setFiles] = useState<File[]>([]);
   const [info, setInfo] = useState<Info | null>(null);
-  const { loadingPublish, publishPort, project } = useEditor();
+  const { loadingPublish, publishPort, project, publishError } = useEditor();
   const isMounted = useIsMounted();
   const [isDeploying, setIsDeploying] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -115,15 +115,30 @@ export function Deploy(props: Props) {
   return (
     <PublishModal
       title={
-        info ? (info.isWorld ? 'Publish to your World' : 'Publish to your Land') : 'Loading...'
+        info
+          ? info.isWorld
+            ? 'Publish to your World'
+            : 'Publish to your Land'
+          : loadingPublish
+          ? 'Loading...'
+          : publishError
+          ? 'Error'
+          : ''
       }
       size="large"
       {...props}
     >
       <div className="Deploy">
-        {loadingPublish || !info ? (
+        {loadingPublish ? (
           <Loader />
-        ) : (
+        ) : publishError ? (
+          <>
+            <div className="cli-publish-error">
+              <div className="Warning" />
+              <p className="message">{publishError}</p>
+            </div>
+          </>
+        ) : !info ? null : (
           <>
             <div className="ethereum">
               <div className="chip network">

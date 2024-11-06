@@ -55,7 +55,9 @@ export async function deploy({ path, target, targetContent }: DeployOptions) {
   });
 
   // App ready at
-  await deployServer.waitFor(/listening/i);
+  await deployServer.waitFor(/listening/i, /error:/i, { reject: 'stderr' });
+
+  deployServer.waitFor(/close the terminal/gi).then(() => deployServer?.kill());
 
   return port;
 }

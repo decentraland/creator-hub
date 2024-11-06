@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
 import log from 'electron-log';
-import type { Ipc } from '/shared/types/ipc';
+import type { Ipc, IpcError, IpcResult } from '/shared/types/ipc';
 
 // wrapper for ipcMain.handle with types
 export async function handle<T extends keyof Ipc>(
@@ -14,11 +14,19 @@ export async function handle<T extends keyof Ipc>(
           .map((arg, idx) => `args[${idx}]=${JSON.stringify(arg)}`)
           .join(' ')}`.trim(),
       );
-      const result = await handler(event, ...(args as Parameters<Ipc[T]>));
+      const value = await handler(event, ...(args as Parameters<Ipc[T]>));
+      const result: IpcResult<typeof value> = {
+        success: true,
+        value,
+      };
       return result;
     } catch (error: any) {
       log.error(`[IPC] channel=${channel} error=${error.message}`);
-      throw error;
+      const result: IpcError = {
+        success: false,
+        error: error.message,
+      };
+      return result;
     }
   });
 }

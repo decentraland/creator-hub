@@ -3,6 +3,14 @@ import { type OpenDialogOptions } from 'electron';
 import type { Outdated } from '/shared/types/npm';
 
 export type DeployOptions = { path: string; target?: string; targetContent?: string };
+export type IpcResult<T> = {
+  success: true;
+  value: T;
+};
+export type IpcError = {
+  success: false;
+  error: string;
+};
 
 export interface Ipc {
   'electron.getAppHome': () => string;

@@ -22,8 +22,9 @@ export type EditorState = {
   project?: Project;
   inspectorPort: number;
   publishPort: number;
-  loadingInspector: boolean;
   loadingPublish: boolean;
+  publishError: string | null;
+  loadingInspector: boolean;
   loadingPreview: boolean;
   isInstalling: boolean;
   isInstalled: boolean;
@@ -35,8 +36,9 @@ const initialState: EditorState = {
   version: null,
   inspectorPort: 0,
   publishPort: 0,
-  loadingInspector: false,
   loadingPublish: false,
+  publishError: null,
+  loadingInspector: false,
   loadingPreview: false,
   isInstalling: false,
   isInstalled: false,
@@ -84,13 +86,14 @@ export const slice = createSlice({
     builder.addCase(publishScene.pending, state => {
       state.publishPort = 0;
       state.loadingPublish = true;
+      state.publishError = null;
     });
     builder.addCase(publishScene.fulfilled, (state, action) => {
       state.publishPort = action.payload;
       state.loadingPublish = false;
     });
     builder.addCase(publishScene.rejected, (state, action) => {
-      state.error = action.error.message ? new Error(action.error.message) : null;
+      state.publishError = action.error.message || null;
       state.loadingPublish = false;
     });
     builder.addCase(workspaceActions.createProject.pending, state => {

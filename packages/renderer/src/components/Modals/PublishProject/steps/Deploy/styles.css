@@ -2,11 +2,13 @@
   min-height: 300px;
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
   gap: 24px;
 }
 
 .Deploy > .Loader {
-  top: 110px;
+  top: -40px;
   position: relative;
 }
 
@@ -151,4 +153,19 @@
 
 .Deploy .scene .files .error {
   color: var(--error);
+}
+
+.Deploy .cli-publish-error {
+  color: var(--dcl-silver);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.Deploy .Warning {
+  width: 81px;
+  height: 70px;
+  background: center no-repeat url(images/warning.svg);
 }
