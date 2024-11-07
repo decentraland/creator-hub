@@ -32,20 +32,20 @@ const playlist = [
     id: 'z7HF4GR01hE',
   },
   {
-    title: 'Smart Items - Interactions between items',
-    id: 'Nbdo_oE80QU',
+    title: 'Actions And Triggers',
+    id: 'm_xWCSDDxpQ',
   },
   {
-    title: 'Smart Items - Making any item smart',
-    id: 'qXjQxMC97H0',
+    title: 'Making Any Item Smart',
+    id: 'wnnEU8GCLjc',
   },
   {
-    title: 'Combine drag & drop + Code to create Decentraland scenes in SDK 7',
-    id: 'J_EO1LZkaiA',
+    title: 'Smart Item States and Conditions',
+    id: 'wm8ZD2kSyKA',
   },
   {
-    title: 'Decentraland SDK 7 scene with drag & drop + Utils library',
-    id: 'bhfMU-Ydpvg',
+    title: 'Customizing Smart Items with Code',
+    id: '55H37rygD7M',
   },
 ];
 

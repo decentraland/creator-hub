@@ -75,25 +75,22 @@ export function VideosPage() {
             ]}
           />
           <Playlist
-            title="SDK7 Tutorials"
-            list="PLAcRraQmr_GP_K8WN7csnKnImK4R2TgMA"
+            title="Editor (No Code) Tutorials"
+            list="PLAcRraQmr_GOJiVO5ZtZ86hef4unLsEkf"
             videos={[
               { id: '52LiG-4VI9c', title: 'Making a Scene with the Creator Hub' },
               { id: 'cNl02PFPdcQ', title: 'Item Positioning' },
               { id: 'UepXpH-k0EI', title: 'Using Custom 3D Art' },
               { id: 'z7HF4GR01hE', title: 'Smart Items - Basics' },
-              { id: 'Nbdo_oE80QU', title: 'Smart Items - Interactions' },
-              { id: 'hXSiPO81KJA', title: 'Smart Items - State and Conditions' },
-              { id: 'qXjQxMC97H0', title: 'Smart Items - Making any item smart' },
-              {
-                id: 'J_EO1LZkaiA',
-                title: 'Combine drag & drop + Code to create Decentraland scenes',
-              },
-              {
-                id: 'bhfMU-Ydpvg',
-                title: 'Decentraland SDK 7 scene with drag & drop + Utils library',
-              },
+              { id: 'm_xWCSDDxpQ', title: 'Actions And Triggers' },
+              { id: 'wnnEU8GCLjc', title: 'Making Any Item Smart' },
+              { id: 'wm8ZD2kSyKA', title: 'Smart Item States and Conditions' },
             ]}
+          />
+          <Playlist
+            title="SDK7 Tutorials"
+            list="PLAcRraQmr_GPrMmQekqbMWhyBxo3lXs8p"
+            videos={[{ id: '55H37rygD7M', title: 'Customizing Smart Items with Code' }]}
           />
           <Playlist
             title="Emote Tutorials"
@@ -103,15 +100,6 @@ export function VideosPage() {
               { id: 'B3Oqgg25kBY', title: 'Decentraland Tutorial - Creating an emote' },
               { id: 'EJ_z0Hs-QC8', title: 'Decentraland Tutorial - Rig Overview' },
               { id: '5PEF2pwZxtY', title: 'Emote Workshop by Isa' },
-            ]}
-          />
-          <Playlist
-            title="Editor (No Code) Tutorials"
-            list="PLAcRraQmr_GOJiVO5ZtZ86hef4unLsEkf"
-            videos={[
-              { id: 'PF7smSBxVOc', title: 'Creating a Simple Scene in Decentraland' },
-              { id: '510kDzz1mjo', title: 'Add Simple Interactions to a Scene' },
-              { id: '4wiYYX-_Hek', title: 'Add Advanced Interactions to a Scene' },
             ]}
           />
         </div>
