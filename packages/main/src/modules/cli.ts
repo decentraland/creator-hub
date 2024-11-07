@@ -59,5 +59,7 @@ export async function deploy({ path, target, targetContent }: DeployOptions) {
 
   deployServer.waitFor(/close the terminal/gi).then(() => deployServer?.kill());
 
+  deployServer.wait().catch(); // handle rejection of main promise to avoid warnings in console
+
   return port;
 }

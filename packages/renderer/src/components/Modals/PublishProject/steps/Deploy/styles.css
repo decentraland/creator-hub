@@ -144,7 +144,7 @@
   margin-left: 12px;
 }
 
-.Deploy .scene .files .Button {
+.Deploy .scene .Button {
   font-size: 15px;
   padding: 8px 22px;
   max-height: 40px;
@@ -168,4 +168,80 @@
   width: 81px;
   height: 70px;
   background: center no-repeat url(images/warning.svg);
+}
+
+.Deploy .scene .success {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  padding-left: 32px;
+  border-left: 1px solid var(--dark-gray);
+}
+
+.Deploy .scene .success .content {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 320px;
+  gap: 16px;
+}
+
+.Deploy .scene .success .content .success-icon {
+  width: 80px;
+  height: 80px;
+  background: center no-repeat url(images/success.svg);
+}
+
+.Deploy .scene .success .content .message {
+  color: var(--dcl-silver);
+  font-size: 20px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.Deploy .scene .success .content .url {
+  color: var(--light-gray);
+  border: 1px solid var(--dark-gray);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 24px;
+  letter-spacing: 0.46px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.Deploy .scene .success .content .jump-in-url label {
+  color: var(--dcl-silver);
+  line-height: 24px;
+  font-size: 14px;
+  letter-spacing: 0.17px;
+  font-weight: 500;
+  margin-bottom: 2px;
+  display: block;
+}
+
+.Deploy .scene .success .content .jump-in-url .copy-icon {
+  width: 18px;
+  height: 18px;
+  background: center no-repeat url(images/copy.svg);
+  margin-left: 8px;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.Deploy .scene .success .actions {
+  flex: none;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.Deploy .scene .success .Button .jump-in-icon {
+  width: 24px;
+  height: 24px;
+  background: center no-repeat url(images/jump-in.svg);
+  margin-left: 8px;
 }

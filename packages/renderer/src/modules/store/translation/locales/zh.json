@@ -111,7 +111,6 @@
             "dcl": "姓名",
             "ens": "ENS 域"
           },
-          "world_url_description": "在您的世界中跳躍的 URL 為：<br></br><b>{world_url}</b>",
           "world_has_content": "{world} World 中的現有內容將替換為您要發布的新內容。",
           "confirm_world_replace_content": "我了解此操作不可逆轉"
         },

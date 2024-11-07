@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ChainId } from '@dcl/schemas/dist/dapps/chain-id';
 import {
   Checkbox,
   CircularProgress as Loader,
@@ -23,7 +22,6 @@ import { t } from '/@/modules/store/translation/utils';
 import { addBase64ImagePrefix } from '/@/modules/image';
 import { ENSProvider } from '/@/modules/store/ens/types';
 import { getEnsProvider } from '/@/modules/store/ens/utils';
-import { useAuth } from '/@/hooks/useAuth';
 import { useEditor } from '/@/hooks/useEditor';
 import { useWorkspace } from '/@/hooks/useWorkspace';
 
@@ -66,7 +64,6 @@ export function PublishToWorld(props: Props) {
 }
 
 function SelectWorld({ project, onPublish }: { project: Project; onPublish: () => void }) {
-  const { chainId } = useAuth();
   const { updateSceneJson, updateProject } = useWorkspace();
   const names = useSelector(state => state.ens.data);
   const [name, setName] = useState(project.worldConfiguration?.name || '');
@@ -88,13 +85,6 @@ function SelectWorld({ project, onPublish }: { project: Project; onPublish: () =
     }
     return _names;
   }, [names, ensProvider]);
-
-  const getExplorerUrl = useMemo(() => {
-    if (chainId === ChainId.ETHEREUM_SEPOLIA) {
-      return `decentraland://?realm=${DEPLOY_URLS.DEV_WORLDS}/world/${name}&NETWORK=sepolia`;
-    }
-    return `decentraland://?realm=${name}`;
-  }, [name]);
 
   const handleClick = useCallback(() => {
     onPublish();
@@ -216,22 +206,6 @@ function SelectWorld({ project, onPublish }: { project: Project; onPublish: () =
               </MenuItem>
             </Select>
           </FormControl>
-          {!!name && (
-            <Typography variant="caption">
-              {t('modal.publish_project.worlds.select_world.world_url_description', {
-                b: (child: JSX.Element) => <b>{child}</b>,
-                br: () => <br />,
-                world_url: (
-                  <a
-                    href={getExplorerUrl}
-                    onClick={() => misc.openExternal(getExplorerUrl)}
-                  >
-                    {getExplorerUrl}
-                  </a>
-                ),
-              })}
-            </Typography>
-          )}
           {hasWorldContent && (
             <div className="WorldHasContent">
               <div className="WarningIcon">

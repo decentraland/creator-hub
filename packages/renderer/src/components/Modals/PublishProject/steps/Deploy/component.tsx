@@ -1,18 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { type AuthChain, Authenticator } from '@dcl/crypto';
 import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
+import { ChainId } from '@dcl/schemas';
+import { Typography } from 'decentraland-ui2';
+import { misc } from '#preload';
 import { Loader } from '/@/components/Loader';
 import { useEditor } from '/@/hooks/useEditor';
 import { useIsMounted } from '/@/hooks/useIsMounted';
+import { useAuth } from '/@/hooks/useAuth';
+import { addBase64ImagePrefix } from '/@/modules/image';
 import { PublishModal } from '../../PublishModal';
+import { Button } from '../../../../Button';
 import { type Props } from '../../types';
 import type { File, Info } from './types';
 import './styles.css';
-import { useAuth } from '/@/hooks/useAuth';
-import { ChainId } from '@dcl/schemas';
-import { addBase64ImagePrefix } from '/@/modules/image';
-import { Typography } from 'decentraland-ui2';
-import { Button } from '../../../../Button';
 
 const MAX_FILE_PATH_LENGTH = 50;
 
@@ -129,6 +130,32 @@ export function Deploy(props: Props) {
     }
   }, [publishError, setError]);
 
+  // jump in
+  const jumpInUrl = useMemo(() => {
+    if (info && project) {
+      if (info.isWorld) {
+        if (project.worldConfiguration) {
+          return `http://decentraland.org/play/world/${project.worldConfiguration.name}`;
+        }
+      } else {
+        return `http://decentraland.org/play?position=${project.scene.base}`;
+      }
+    }
+    return null;
+  }, [info, project]);
+
+  const handleJumpIn = useCallback(() => {
+    if (info && project) {
+      if (info.isWorld) {
+        if (project.worldConfiguration) {
+          void misc.openExternal(`decentraland://?realm=${project.worldConfiguration.name}`);
+        }
+      } else {
+        void misc.openExternal(`decentraland://?position=${project.scene.base}`);
+      }
+    }
+  }, [info, project]);
+
   return (
     <PublishModal
       title={
@@ -198,42 +225,71 @@ export function Deploy(props: Props) {
                   </Typography>
                 </div>
               </div>
-              <div className="files">
-                <div className="filters">
-                  <div className="count">{files.length} files</div>
-                  <div className="size">
-                    Total Size:{' '}
-                    <b>{getSize(files.reduce((total, file) => total + file.size, 0))}</b>
+              {!isSuccessful ? (
+                <div className="files">
+                  <div className="filters">
+                    <div className="count">{files.length} files</div>
+                    <div className="size">
+                      Total Size:{' '}
+                      <b>{getSize(files.reduce((total, file) => total + file.size, 0))}</b>
+                    </div>
+                  </div>
+                  <div className="list">
+                    {files.map(file => (
+                      <div
+                        className="file"
+                        key={file.name}
+                      >
+                        <div
+                          className="filename"
+                          title={file.name}
+                        >
+                          {getPath(file.name)}
+                        </div>
+                        <div className="size">{getSize(file.size)}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="actions">
+                    <p className="error">{error}</p>
+                    <Button
+                      size="large"
+                      disabled={isDeploying || isSuccessful}
+                      onClick={handlePublish}
+                    >
+                      Publish
+                      {isDeploying ? <Loader size={20} /> : <i className="deploy-icon" />}
+                    </Button>
                   </div>
                 </div>
-                <div className="list">
-                  {files.map(file => (
-                    <div
-                      className="file"
-                      key={file.name}
-                    >
-                      <div
-                        className="filename"
-                        title={file.name}
-                      >
-                        {getPath(file.name)}
+              ) : (
+                <div className="success">
+                  <div className="content">
+                    <i className="success-icon" />
+                    <div className="message">Your scene is successfully published</div>
+                    <div className="jump-in-url">
+                      <label>The URL to jump in your world is:</label>
+                      <div className="url">
+                        {jumpInUrl}
+                        <i
+                          className="copy-icon"
+                          onClick={() => jumpInUrl && misc.copyToClipboard(jumpInUrl)}
+                        />
                       </div>
-                      <div className="size">{getSize(file.size)}</div>
                     </div>
-                  ))}
+                  </div>
+                  <div className="actions">
+                    <Button
+                      size="large"
+                      disabled={!isSuccessful}
+                      onClick={handleJumpIn}
+                    >
+                      Jump In
+                      <i className="jump-in-icon" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="actions">
-                  <p className="error">{error}</p>
-                  <Button
-                    size="large"
-                    disabled={isDeploying || isSuccessful}
-                    onClick={handlePublish}
-                  >
-                    Publish
-                    {isDeploying ? <Loader size={20} /> : <i className="deploy-icon" />}
-                  </Button>
-                </div>
-              </div>
+              )}
             </div>
           </>
         )}

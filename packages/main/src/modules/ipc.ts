@@ -15,6 +15,7 @@ export function initIpc() {
   );
   handle('electron.showOpenDialog', (_event, opts) => electron.showOpenDialog(opts));
   handle('electron.openExternal', (_event, url) => electron.openExternal(url));
+  handle('electron.copyToClipboard', (_event, text) => electron.copyToClipboard(text));
 
   // inspector
   handle('inspector.start', () => inspector.start());

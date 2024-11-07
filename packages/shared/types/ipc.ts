@@ -18,6 +18,7 @@ export interface Ipc {
   'electron.getWorkspaceConfigPath': (path: string) => Promise<string>;
   'electron.showOpenDialog': (opts: Partial<OpenDialogOptions>) => Promise<string[]>;
   'electron.openExternal': (url: string) => Promise<void>;
+  'electron.copyToClipboard': (text: string) => Promise<void>;
   'inspector.start': () => Promise<number>;
   'bin.install': () => Promise<void>;
   'bin.code': (path: string) => Promise<void>;

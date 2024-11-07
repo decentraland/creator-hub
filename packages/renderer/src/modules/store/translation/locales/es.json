@@ -111,7 +111,6 @@
             "dcl": "NOMBRE",
             "ens": "DOMINIO ENS"
           },
-          "world_url_description": "La URL para acceder a tu mundo será:<br></br><b>{world_url}</b>",
           "world_has_content": "El contenido existente en el mundo {world} será reemplazado por el nuevo contenido que estás a punto de publicar.",
           "confirm_world_replace_content": "Entiendo que esta acción es irreversible."
         },

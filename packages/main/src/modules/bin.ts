@@ -293,8 +293,6 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
     stream!.on('data', (data: Buffer) => handleData(data, matchers, type));
   }
 
-  promise.catch(error => console.log('ERRORR', error));
-
   handleStream(forked.stdout!, 'stdout');
   handleStream(forked.stderr!, 'stderr');
 

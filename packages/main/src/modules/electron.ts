@@ -1,6 +1,6 @@
 import path from 'path';
 import fs from 'fs/promises';
-import { app, BrowserWindow, dialog, type OpenDialogOptions, shell } from 'electron';
+import { app, BrowserWindow, clipboard, dialog, type OpenDialogOptions, shell } from 'electron';
 
 export function getHome() {
   return app.getPath('home');
@@ -34,4 +34,8 @@ export async function openExternal(url: string) {
 
 export async function getAppVersion() {
   return app.getVersion();
+}
+
+export async function copyToClipboard(text: string) {
+  clipboard.writeText(text);
 }
