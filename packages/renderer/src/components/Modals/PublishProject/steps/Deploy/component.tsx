@@ -5,6 +5,7 @@ import { ChainId } from '@dcl/schemas';
 import { Typography, Checkbox } from 'decentraland-ui2';
 import { misc, workspace } from '#preload';
 import type { IFileSystemStorage } from '/shared/types/storage';
+import { t } from '/@/modules/store/translation/utils';
 import { Loader } from '/@/components/Loader';
 import { useEditor } from '/@/hooks/useEditor';
 import { useIsMounted } from '/@/hooks/useIsMounted';
@@ -202,18 +203,10 @@ export function Deploy(props: Props) {
             <div className="content">
               <div className="Warning" />
               <div className="message">
-                PLEASE READ CAREFULLY:
-                <br />
-                <ul>
-                  <li>
-                    After deployment, your scene will undergo processing before becoming available.
-                  </li>
-                  <li>This process may take 15 minutes on average.</li>
-                  <li>
-                    During this time, your scene will appear empty until it has been updated on the
-                    client.
-                  </li>
-                </ul>
+                {t('modal.publish_project.deploy.warning.message', {
+                  ul: (child: string) => <ul>{child}</ul>,
+                  li: (child: string) => <li>{child}</li>,
+                })}
               </div>
             </div>
             <div className="actions">
@@ -222,7 +215,7 @@ export function Deploy(props: Props) {
                   value={skipWarning}
                   onChange={() => setSkipWarning(!skipWarning)}
                 />
-                Don't show again
+                {t('modal.publish_project.deploy.warning.checkbox')}
               </label>
               <span className="buttons">
                 <Button
@@ -230,13 +223,13 @@ export function Deploy(props: Props) {
                   size="medium"
                   onClick={handleBack}
                 >
-                  Go Back
+                  {t('modal.publish_project.deploy.warning.back')}
                 </Button>
                 <Button
                   size="medium"
                   onClick={handlePublish}
                 >
-                  Continue
+                  {t('modal.publish_project.deploy.warning.continue')}
                 </Button>
               </span>
             </div>
@@ -255,7 +248,9 @@ export function Deploy(props: Props) {
           <>
             <div className="ethereum">
               <div className="chip network">
-                {chainId === ChainId.ETHEREUM_MAINNET ? 'Mainnet' : 'Testnet'}
+                {chainId === ChainId.ETHEREUM_MAINNET
+                  ? t('modal.publish_project.deploy.ethereum.mainnet')
+                  : t('modal.publish_project.deploy.ethereum.testnet')}
               </div>
               {wallet ? (
                 <div className="chip address">
@@ -297,10 +292,14 @@ export function Deploy(props: Props) {
               {!isSuccessful ? (
                 <div className="files">
                   <div className="filters">
-                    <div className="count">{files.length} files</div>
+                    <div className="count">
+                      {t('modal.publish_project.deploy.files.count', { count: files.length })}
+                    </div>
                     <div className="size">
-                      Total Size:{' '}
-                      <b>{getSize(files.reduce((total, file) => total + file.size, 0))}</b>
+                      {t('modal.publish_project.deploy.files.size', {
+                        size: getSize(files.reduce((total, file) => total + file.size, 0)),
+                        b: (child: string) => <b>{child}</b>,
+                      })}
                     </div>
                   </div>
                   <div className="list">
@@ -326,7 +325,7 @@ export function Deploy(props: Props) {
                       disabled={isDeploying || isSuccessful}
                       onClick={() => (skipWarning ? handlePublish() : setShowWarning(true))}
                     >
-                      Publish
+                      {t('modal.publish_project.deploy.files.publish')}
                       {isDeploying ? <Loader size={20} /> : <i className="deploy-icon" />}
                     </Button>
                   </div>
@@ -335,9 +334,17 @@ export function Deploy(props: Props) {
                 <div className="success">
                   <div className="content">
                     <i className="success-icon" />
-                    <div className="message">Your scene is successfully published</div>
+                    <div className="message">
+                      {t('modal.publish_project.deploy.success.message')}
+                    </div>
                     <div className="jump-in-url">
-                      <label>The URL to jump in your world is:</label>
+                      <label>
+                        {t('modal.publish_project.deploy.success.url', {
+                          target: info.isWorld
+                            ? t('modal.publish_project.deploy.success.world')
+                            : t('modal.publish_project.deploy.success.land'),
+                        })}
+                      </label>
                       <div className="url">
                         {jumpInUrl}
                         <i
@@ -353,7 +360,7 @@ export function Deploy(props: Props) {
                       disabled={!isSuccessful}
                       onClick={handleJumpIn}
                     >
-                      Jump In
+                      {t('modal.publish_project.deploy.success.jump_in')}
                       <i className="jump-in-icon" />
                     </Button>
                   </div>

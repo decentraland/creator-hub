@@ -149,6 +149,30 @@
         "errors": {
           "url": "Invalid URL"
         }
+      },
+      "deploy": {
+        "warning": {
+          "message": "PLEASE READ CAREFULLY:<ul><li>After deployment, your scene will undergo processing before becoming available.</li><li>This process may take 15 minutes on average.</li><li>During this time, your scene will appear empty until it has been updated on the client.</li></ul>",
+          "checkbox": "Don't show again",
+          "continue": "Continue",
+          "back": "Go back"
+        },
+        "ethereum": {
+          "mainnet": "Mainnet",
+          "testnet": "Testnet"
+        },
+        "files": {
+          "count": "{count} {count, plural, one {file} other {files}}",
+          "size": "Total Size <b>{size}</b>",
+          "publish": "Publish"
+        },
+        "success": {
+          "message": "You scene is successfully published",
+          "url": "The URL to jump in your {target} is:",
+          "world": "World",
+          "land": "Land",
+          "jump_in": "Jump In"
+        }
       }
     },
     "app_settings": {

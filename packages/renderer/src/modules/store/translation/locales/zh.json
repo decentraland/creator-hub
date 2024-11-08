@@ -147,6 +147,30 @@
         "errors": {
           "url": "无效的网址"
         }
+      },
+      "deploy": {
+        "warning": {
+          "message": "请仔细阅读：<ul><li>部署后，您的场景将进行处理，然后才能使用。</li><li>此过程平均可能需要15分钟。</li><li>在此期间，您的场景将显示为空，直到客户端更新。</li></ul>",
+          "checkbox": "不再显示",
+          "continue": "继续",
+          "back": "返回"
+        },
+        "ethereum": {
+          "mainnet": "主网",
+          "testnet": "测试网"
+        },
+        "files": {
+          "count": "{count} {count, plural, one {文件} other {文件}}",
+          "size": "总大小 <b>{size}</b>",
+          "publish": "发布"
+        },
+        "success": {
+          "message": "您的场景已成功发布",
+          "url": "跳转到您的 {target} 的URL是：",
+          "world": "世界",
+          "land": "土地",
+          "jump_in": "跳转"
+        }
       }
     },
     "app_settings": {

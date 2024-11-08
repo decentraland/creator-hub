@@ -147,6 +147,30 @@
         "errors": {
           "url": "URL inválida"
         }
+      },
+      "deploy": {
+        "warning": {
+          "message": "POR FAVOR LEA CUIDADOSAMENTE:<ul><li>Después de la implementación, tu escena pasará por un proceso antes de estar disponible.</li><li>Este proceso puede tardar en promedio 15 minutos.</li><li>Durante este tiempo, tu escena aparecerá vacía hasta que se haya actualizado en el cliente.</li></ul>",
+          "checkbox": "No mostrar de nuevo",
+          "continue": "Continuar",
+          "back": "Regresar"
+        },
+        "ethereum": {
+          "mainnet": "Mainnet",
+          "testnet": "Testnet"
+        },
+        "files": {
+          "count": "{count} {count, plural, one {archivo} other {archivos}}",
+          "size": "Tamaño Total <b>{size}</b>",
+          "publish": "Publicar"
+        },
+        "success": {
+          "message": "Tu escena se ha publicado con éxito",
+          "url": "La URL para acceder a tu {target} es:",
+          "world": "Mundo",
+          "land": "Tierra",
+          "jump_in": "Entrar"
+        }
       }
     },
     "app_settings": {
