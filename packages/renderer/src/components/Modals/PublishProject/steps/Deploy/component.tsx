@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type AuthChain, Authenticator } from '@dcl/crypto';
 import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
 import { ChainId } from '@dcl/schemas';
 import { Typography, Checkbox } from 'decentraland-ui2';
-import { misc } from '#preload';
+import { misc, workspace } from '#preload';
+import type { IFileSystemStorage } from '/shared/types/storage';
 import { Loader } from '/@/components/Loader';
 import { useEditor } from '/@/hooks/useEditor';
 import { useIsMounted } from '/@/hooks/useIsMounted';
@@ -43,6 +44,7 @@ function getSize(size: number) {
 }
 
 export function Deploy(props: Props) {
+  const infoRef = useRef<IFileSystemStorage>();
   const { chainId, wallet, avatar } = useAuth();
   const [files, setFiles] = useState<File[]>([]);
   const [info, setInfo] = useState<Info | null>(null);
@@ -52,7 +54,19 @@ export function Deploy(props: Props) {
   const [error, setError] = useState<string | null>(null);
   const [isSuccessful, setIsSuccessful] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
-  const [dontShowAgain, setDontShowAgain] = useState(false);
+  const [skipWarning, setSkipWarning] = useState(false);
+
+  // read skip warning flag
+  useEffect(() => {
+    if (project) {
+      workspace.getProjectInfo(project.path).then(info => {
+        info.get<boolean>('skipPublishWarning').then(value => {
+          setSkipWarning(!!value);
+        });
+        infoRef.current = info;
+      });
+    }
+  }, [project]);
 
   const url = useMemo(() => {
     const port = import.meta.env.VITE_CLI_DEPLOY_PORT || publishPort;
@@ -103,7 +117,14 @@ export function Deploy(props: Props) {
         setError('Invalid identity or chainId');
       }
     }
-  }, [wallet, info, url, chainId]);
+    // write skip warning flag
+    infoRef.current?.set('skipPublishWarning', skipWarning);
+  }, [wallet, info, url, chainId, skipWarning]);
+
+  const handleBack = useCallback(() => {
+    setShowWarning(false);
+    setSkipWarning(false);
+  }, []);
 
   useEffect(() => {
     if (!url || isSuccessful) return;
@@ -198,8 +219,8 @@ export function Deploy(props: Props) {
             <div className="actions">
               <label className="dont-show-again">
                 <Checkbox
-                  value={dontShowAgain}
-                  onChange={() => setDontShowAgain(!dontShowAgain)}
+                  value={skipWarning}
+                  onChange={() => setSkipWarning(!skipWarning)}
                 />
                 Don't show again
               </label>
@@ -207,7 +228,7 @@ export function Deploy(props: Props) {
                 <Button
                   variant="outlined"
                   size="medium"
-                  onClick={() => setShowWarning(false)}
+                  onClick={handleBack}
                 >
                   Go Back
                 </Button>
@@ -303,7 +324,7 @@ export function Deploy(props: Props) {
                     <Button
                       size="large"
                       disabled={isDeploying || isSuccessful}
-                      onClick={() => setShowWarning(true)}
+                      onClick={() => (skipWarning ? handlePublish() : setShowWarning(true))}
                     >
                       Publish
                       {isDeploying ? <Loader size={20} /> : <i className="deploy-icon" />}

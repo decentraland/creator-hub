@@ -185,8 +185,9 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  min-height: 320px;
   gap: 16px;
+  min-height: 380px;
+  padding-bottom: 80px;
 }
 
 .Deploy .scene .success .content .success-icon {
