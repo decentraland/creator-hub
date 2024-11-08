@@ -1,4 +1,5 @@
 .Deploy {
+  position: relative;
   min-height: 300px;
   display: flex;
   flex-direction: column;
@@ -244,4 +245,38 @@
   height: 24px;
   background: center no-repeat url(images/jump-in.svg);
   margin-left: 8px;
+}
+
+.Deploy .publish-warning {
+  position: absolute;
+  width: 600px;
+  background-color: var(--black);
+  padding: 32px 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+  top: 40px;
+  left: calc(50% - 300px);
+}
+
+.Deploy .publish-warning .content {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+  color: var(--dcl-silver);
+}
+
+.Deploy .publish-warning .actions {
+  display: flex;
+  justify-content: space-between;
+}
+
+.Deploy .publish-warning .dont-show-again {
+  display: flex;
+  align-items: center;
 }

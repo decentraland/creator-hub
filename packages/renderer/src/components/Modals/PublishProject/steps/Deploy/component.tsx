@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { type AuthChain, Authenticator } from '@dcl/crypto';
 import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
 import { ChainId } from '@dcl/schemas';
-import { Typography } from 'decentraland-ui2';
+import { Typography, Checkbox } from 'decentraland-ui2';
 import { misc } from '#preload';
 import { Loader } from '/@/components/Loader';
 import { useEditor } from '/@/hooks/useEditor';
@@ -51,6 +51,8 @@ export function Deploy(props: Props) {
   const [isDeploying, setIsDeploying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccessful, setIsSuccessful] = useState(false);
+  const [showWarning, setShowWarning] = useState(false);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
 
   const url = useMemo(() => {
     const port = import.meta.env.VITE_CLI_DEPLOY_PORT || publishPort;
@@ -59,6 +61,7 @@ export function Deploy(props: Props) {
 
   const handlePublish = useCallback(() => {
     if (!url) return;
+    setShowWarning(false);
     async function deploy(payload: { address: string; authChain: AuthChain; chainId: ChainId }) {
       setIsDeploying(true);
       setError(null);
@@ -173,6 +176,51 @@ export function Deploy(props: Props) {
       {...props}
     >
       <div className="Deploy">
+        {showWarning ? (
+          <div className="publish-warning">
+            <div className="content">
+              <div className="Warning" />
+              <div className="message">
+                PLEASE READ CAREFULLY:
+                <br />
+                <ul>
+                  <li>
+                    After deployment, your scene will undergo processing before becoming available.
+                  </li>
+                  <li>This process may take 15 minutes on average.</li>
+                  <li>
+                    During this time, your scene will appear empty until it has been updated on the
+                    client.
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div className="actions">
+              <label className="dont-show-again">
+                <Checkbox
+                  value={dontShowAgain}
+                  onChange={() => setDontShowAgain(!dontShowAgain)}
+                />
+                Don't show again
+              </label>
+              <span className="buttons">
+                <Button
+                  variant="outlined"
+                  size="medium"
+                  onClick={() => setShowWarning(false)}
+                >
+                  Go Back
+                </Button>
+                <Button
+                  size="medium"
+                  onClick={handlePublish}
+                >
+                  Continue
+                </Button>
+              </span>
+            </div>
+          </div>
+        ) : null}
         {loadingPublish ? (
           <Loader />
         ) : error ? (
@@ -255,7 +303,7 @@ export function Deploy(props: Props) {
                     <Button
                       size="large"
                       disabled={isDeploying || isSuccessful}
-                      onClick={handlePublish}
+                      onClick={() => setShowWarning(true)}
                     >
                       Publish
                       {isDeploying ? <Loader size={20} /> : <i className="deploy-icon" />}
