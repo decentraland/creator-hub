@@ -1,1 +1,1 @@
-export { PublishModal } from './component';
+export { PublishModal, onBackNoop } from './component';

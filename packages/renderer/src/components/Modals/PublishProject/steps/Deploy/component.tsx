@@ -11,7 +11,7 @@ import { useEditor } from '/@/hooks/useEditor';
 import { useIsMounted } from '/@/hooks/useIsMounted';
 import { useAuth } from '/@/hooks/useAuth';
 import { addBase64ImagePrefix } from '/@/modules/image';
-import { PublishModal } from '../../PublishModal';
+import { PublishModal, onBackNoop } from '../../PublishModal';
 import { Button } from '../../../../Button';
 import { type Props } from '../../types';
 import type { File, Info } from './types';
@@ -190,6 +190,7 @@ export function Deploy(props: Props) {
       }
       size="large"
       {...props}
+      onBack={isSuccessful ? onBackNoop : props.onBack}
     >
       <div className="Deploy">
         {showWarning ? (

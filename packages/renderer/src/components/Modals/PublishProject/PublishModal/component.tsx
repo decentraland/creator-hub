@@ -2,7 +2,7 @@ import { styled } from 'decentraland-ui2';
 import { Modal as BaseModal } from 'decentraland-ui2/dist/components/Modal/Modal';
 import { type ModalProps } from 'decentraland-ui2/dist/components/Modal/Modal.types';
 
-function noop() {}
+export function onBackNoop() {}
 
 const Modal = styled(BaseModal)(props => ({
   '& > .MuiPaper-root .MuiBox-root:first-child': {
@@ -23,7 +23,7 @@ const Modal = styled(BaseModal)(props => ({
     backgroundImage: 'none',
   },
   '& [aria-label="back"]':
-    props.onBack !== noop
+    props.onBack !== onBackNoop
       ? {}
       : {
           opacity: 0,
@@ -37,7 +37,7 @@ export function PublishModal(props: React.PropsWithChildren<ModalProps>) {
     <Modal
       size="small"
       {...rest}
-      onBack={onBack || noop}
+      onBack={onBack || onBackNoop}
     >
       {props.children}
     </Modal>
