@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Initial } from './steps/Initial';
 import { AlternativeServers } from './steps/AlternativeServers';
 import { PublishToWorld } from './steps/PublishToWorld';
@@ -8,27 +8,26 @@ import { Deploy } from './steps/Deploy';
 import type { Props, Step } from './types';
 
 export function PublishProject({ open, project, onClose }: Omit<Props, 'onStep'>) {
-  const [step, setStep] = useState<Step>('initial');
   const [history, setHistory] = useState<Step[]>([]);
+  const step = useMemo<Step>(
+    () => (history.length > 0 ? history[history.length - 1] : 'initial'),
+    [history],
+  );
 
   const handleClose = useCallback(() => {
-    setStep('initial');
     setHistory([]);
     onClose();
-  }, [setStep, setHistory, onClose]);
+  }, [setHistory, onClose]);
 
   const handleBack = useCallback(() => {
-    const prev = history.pop();
-    setStep(prev || 'initial');
     setHistory(history => (history.length > 0 ? history.slice(0, -1) : []));
-  }, [history, setStep, setHistory]);
+  }, [history, setHistory]);
 
   const handleStep = useCallback(
     (newStep: Step) => {
-      setStep(newStep);
-      setHistory(history => [...history, step]);
+      setHistory(history => [...history, newStep]);
     },
-    [step, setStep, setHistory],
+    [setHistory],
   );
 
   const props: Props = {
