@@ -160,26 +160,20 @@ export function Deploy(props: Props) {
     if (info && project) {
       if (info.isWorld) {
         if (project.worldConfiguration) {
-          return `http://decentraland.org/play/world/${project.worldConfiguration.name}`;
+          return `decentraland://?realm=${project.worldConfiguration.name}`;
         }
       } else {
-        return `http://decentraland.org/play?position=${project.scene.base}`;
+        return `decentraland://?position=${project.scene.base}`;
       }
     }
     return null;
   }, [info, project]);
 
   const handleJumpIn = useCallback(() => {
-    if (info && project) {
-      if (info.isWorld) {
-        if (project.worldConfiguration) {
-          void misc.openExternal(`decentraland://?realm=${project.worldConfiguration.name}`);
-        }
-      } else {
-        void misc.openExternal(`decentraland://?position=${project.scene.base}`);
-      }
+    if (jumpInUrl) {
+      void misc.openExternal(jumpInUrl);
     }
-  }, [info, project]);
+  }, [jumpInUrl]);
 
   return (
     <PublishModal
@@ -189,10 +183,10 @@ export function Deploy(props: Props) {
             ? 'Publish to your World'
             : 'Publish to your Land'
           : loadingPublish
-            ? 'Loading...'
-            : error
-              ? 'Error'
-              : ''
+          ? 'Loading...'
+          : error
+          ? 'Error'
+          : ''
       }
       size="large"
       {...props}
