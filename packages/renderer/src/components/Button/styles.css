@@ -45,3 +45,15 @@
 .Button.MuiButton-colorInfo:hover {
   background-color: var(--light-gray);
 }
+
+.Button.MuiButton-outlined {
+  color: var(--dcl) !important;
+  background-color: transparent;
+  border-color: var(--dcl);
+}
+
+.Button.MuiButton-outlined:hover {
+  color: var(--dcl) !important;
+  background-color: transparent;
+  border-color: var(--dcl-dark);
+}

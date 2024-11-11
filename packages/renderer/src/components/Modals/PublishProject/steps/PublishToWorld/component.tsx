@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ChainId } from '@dcl/schemas/dist/dapps/chain-id';
 import {
   Checkbox,
   CircularProgress as Loader,
@@ -23,7 +22,6 @@ import { t } from '/@/modules/store/translation/utils';
 import { addBase64ImagePrefix } from '/@/modules/image';
 import { ENSProvider } from '/@/modules/store/ens/types';
 import { getEnsProvider } from '/@/modules/store/ens/utils';
-import { useAuth } from '/@/hooks/useAuth';
 import { useEditor } from '/@/hooks/useEditor';
 import { useWorkspace } from '/@/hooks/useWorkspace';
 
@@ -31,32 +29,41 @@ import EmptyWorldSVG from '/assets/images/empty-deploy-to-world.svg';
 import LogoDCLSVG from '/assets/images/logo-dcl.svg';
 import LogoENSSVG from '/assets/images/logo-ens.svg';
 
-import { Button } from '../../../Button';
+import { PublishModal } from '../../PublishModal';
+import { Button } from '../../../../Button';
+import { type Props } from '../../types';
 
 import './styles.css';
 
-export function PublishToWorld({ onClose }: { onClose: () => void }) {
+export function PublishToWorld(props: Props) {
   const { project, publishScene } = useEditor();
   const names = useSelector(state => state.ens.data);
   const emptyNames = Object.keys(names).length === 0;
 
-  const handleClickPublish = useCallback(() => {
+  const handleNext = useCallback(() => {
     publishScene({ targetContent: import.meta.env.VITE_WORLDS_SERVER || DEPLOY_URLS.WORLDS });
-    onClose();
-  }, []);
+    props.onStep('deploy');
+  }, [props.onStep, publishScene]);
 
-  return emptyNames ? (
-    <EmptyNames />
-  ) : (
-    <SelectWorld
-      project={project!}
-      onPublish={handleClickPublish}
-    />
+  return (
+    <PublishModal
+      title={t('modal.publish_project.worlds.select_world.title')}
+      subtitle={t('modal.publish_project.worlds.select_world.description')}
+      {...props}
+    >
+      {!emptyNames ? (
+        <SelectWorld
+          project={project!}
+          onPublish={handleNext}
+        />
+      ) : (
+        <EmptyNames />
+      )}
+    </PublishModal>
   );
 }
 
 function SelectWorld({ project, onPublish }: { project: Project; onPublish: () => void }) {
-  const { chainId } = useAuth();
   const { updateSceneJson, updateProject } = useWorkspace();
   const names = useSelector(state => state.ens.data);
   const [name, setName] = useState(project.worldConfiguration?.name || '');
@@ -78,13 +85,6 @@ function SelectWorld({ project, onPublish }: { project: Project; onPublish: () =
     }
     return _names;
   }, [names, ensProvider]);
-
-  const getExplorerUrl = useMemo(() => {
-    if (chainId === ChainId.ETHEREUM_SEPOLIA) {
-      return `decentraland://?realm=${DEPLOY_URLS.DEV_WORLDS}/world/${name}&NETWORK=sepolia`;
-    }
-    return `decentraland://?realm=${name}`;
-  }, [name]);
 
   const handleClick = useCallback(() => {
     onPublish();
@@ -137,21 +137,6 @@ function SelectWorld({ project, onPublish }: { project: Project; onPublish: () =
 
   return (
     <div className="SelectWorld">
-      <div>
-        <Typography
-          variant="h5"
-          textAlign="center"
-          mb="8px"
-        >
-          {t('modal.publish_project.worlds.select_world.title')}
-        </Typography>
-        <Typography
-          variant="body2"
-          textAlign="center"
-        >
-          {t('modal.publish_project.worlds.select_world.description')}
-        </Typography>
-      </div>
       <div className="box">
         <div className="thumbnail">
           {!projectIsReady ? <Loader /> : <img src={addBase64ImagePrefix(project.thumbnail)} />}
@@ -221,22 +206,6 @@ function SelectWorld({ project, onPublish }: { project: Project; onPublish: () =
               </MenuItem>
             </Select>
           </FormControl>
-          {!!name && (
-            <Typography variant="caption">
-              {t('modal.publish_project.worlds.select_world.world_url_description', {
-                b: (child: JSX.Element) => <b>{child}</b>,
-                br: () => <br />,
-                world_url: (
-                  <a
-                    href={getExplorerUrl}
-                    onClick={() => misc.openExternal(getExplorerUrl)}
-                  >
-                    {getExplorerUrl}
-                  </a>
-                ),
-              })}
-            </Typography>
-          )}
           {hasWorldContent && (
             <div className="WorldHasContent">
               <div className="WarningIcon">

@@ -7,6 +7,7 @@ import { type DependencyState, SortBy, type Project } from '/shared/types/projec
 import { PACKAGES_LIST } from '/shared/types/pkg';
 import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import type { Template, Workspace } from '/shared/types/workspace';
+import { FileSystemStorage } from '/shared/types/storage';
 
 import { getConfig, setConfig } from './config';
 import { exists, writeFile as deepWriteFile } from './fs';
@@ -18,7 +19,6 @@ import { getDefaultScenesPath, getScenesPath } from './settings';
 import { getScene } from './scene';
 
 import { DEFAULT_THUMBNAIL, NEW_SCENE_NAME, EMPTY_SCENE_TEMPLATE_REPO } from './constants';
-import { getWorkspaceConfigPath } from './editor';
 import { getProjectId } from './analytics';
 
 /**
@@ -54,7 +54,7 @@ export async function hasNodeModules(_path: string) {
 }
 
 export async function getOldProjectThumbnailPath(_path: string) {
-  const workspaceConfigPath = await getWorkspaceConfigPath(_path);
+  const workspaceConfigPath = await getConfigPath(_path);
   return path.join(workspaceConfigPath, 'images', 'project-thumbnail.png');
 }
 
@@ -373,4 +373,15 @@ export async function saveThumbnail({
 export async function openFolder(_path: string) {
   const error = await shell.openPath(_path);
   if (error) throw new Error(error);
+}
+
+export async function getConfigPath(_path: string) {
+  return invoke('electron.getWorkspaceConfigPath', _path);
+}
+
+export async function getProjectInfo(_path: string) {
+  const configPath = await getConfigPath(_path);
+  const projectInfoPath = path.join(configPath, 'project.json');
+  const projectInfo = await FileSystemStorage.getOrCreate(projectInfoPath);
+  return projectInfo;
 }

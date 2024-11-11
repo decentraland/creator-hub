@@ -186,17 +186,23 @@ export class StreamError extends ErrorBase<Error> {
   }
 }
 
+export type StreamType = 'all' | 'stdout' | 'stderr';
+
 export type Child = {
   pkg: string;
   bin: string;
   args: string[];
   cwd: string;
   process: Electron.UtilityProcess;
-  on: (pattern: RegExp, handler: (data?: string) => void) => number;
-  once: (pattern: RegExp, handler: (data?: string) => void) => number;
+  on: (pattern: RegExp, handler: (data?: string) => void, streamType?: StreamType) => number;
+  once: (pattern: RegExp, handler: (data?: string) => void, streamType?: StreamType) => number;
   off: (index: number) => void;
   wait: () => Promise<Buffer>;
-  waitFor: (resolvePattern: RegExp, rejectPattern?: RegExp) => Promise<string>;
+  waitFor: (
+    resolvePattern: RegExp,
+    rejectPattern?: RegExp,
+    opts?: { resolve?: StreamType; reject?: StreamType },
+  ) => Promise<string>;
   kill: () => Promise<void>;
   alive: () => boolean;
 };
@@ -205,6 +211,7 @@ type Matcher = {
   pattern: RegExp;
   handler: (data: string) => void;
   enabled: boolean;
+  streamType: StreamType;
 };
 
 type RunOptions = {
@@ -245,13 +252,13 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
 
   const stdout: Uint8Array[] = [];
   forked.stdout!.on('data', (data: Buffer) => {
-    handleData(data, matchers);
+    handleData(data, matchers, 'stdout');
     stdout.push(Uint8Array.from(data));
   });
 
   const stderr: Uint8Array[] = [];
   forked.stderr!.on('data', (data: Buffer) => {
-    handleData(data, matchers);
+    handleData(data, matchers, 'stderr');
     stderr.push(Uint8Array.from(data));
   });
 
@@ -287,30 +294,27 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
     }
   });
 
-  function handleStream(stream: NodeJS.ReadableStream) {
-    stream!.on('data', (data: Buffer) => handleData(data, matchers));
-  }
-
-  handleStream(forked.stdout!);
-  handleStream(forked.stderr!);
-
   const child: Child = {
     pkg,
     bin,
     args,
     cwd,
     process: forked,
-    on: (pattern, handler) => {
+    on: (pattern, handler, streamType = 'all') => {
       if (alive) {
-        return matchers.push({ pattern, handler, enabled: true }) - 1;
+        return matchers.push({ pattern, handler, enabled: true, streamType }) - 1;
       }
       throw new Error('Process has been killed');
     },
-    once: (pattern, handler) => {
-      const index = child.on(pattern, data => {
-        handler(data);
-        child.off(index);
-      });
+    once: (pattern, handler, streamType) => {
+      const index = child.on(
+        pattern,
+        data => {
+          handler(data);
+          child.off(index);
+        },
+        streamType,
+      );
       return index;
     },
     off: index => {
@@ -319,11 +323,11 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
       }
     },
     wait: () => promise,
-    waitFor: (resolvePattern, rejectPattern) =>
+    waitFor: (resolvePattern, rejectPattern, opts) =>
       new Promise((resolve, reject) => {
-        child.once(resolvePattern, data => resolve(data!));
+        child.once(resolvePattern, data => resolve(data!), opts?.resolve);
         if (rejectPattern) {
-          child.once(rejectPattern, data => reject(new Error(data)));
+          child.once(rejectPattern, data => reject(new Error(data)), opts?.reject);
         }
       }),
     kill: async () => {
@@ -382,14 +386,21 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
   return child;
 }
 
-async function handleData(buffer: Buffer, matchers: Matcher[]) {
+async function handleData(buffer: Buffer, matchers: Matcher[], type: StreamType) {
   const data = buffer.toString('utf8');
   log.info(`[UtilityProcess] ${data}`); // pipe data to console
-  for (const { pattern, handler, enabled } of matchers) {
+  for (const { pattern, handler, enabled, streamType } of matchers) {
     if (!enabled) continue;
+    if (streamType !== 'all' && streamType !== type) continue;
     pattern.lastIndex = 0; // reset regexp
     if (pattern.test(data)) {
-      handler(data);
+      // remove control characters from data
+      const text = data.replace(
+        // eslint-disable-next-line no-control-regex
+        /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g,
+        '',
+      );
+      handler(text);
     }
   }
 }

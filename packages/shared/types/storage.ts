@@ -5,7 +5,7 @@ type StorageData = {
   [key: string]: unknown;
 };
 
-type FileSystemStorage = Awaited<ReturnType<typeof _createFileSystemStorage>>;
+export type IFileSystemStorage = Awaited<ReturnType<typeof _createFileSystemStorage>>;
 
 async function _createFileSystemStorage(storagePath: string) {
   const dir = path.dirname(storagePath);
@@ -57,18 +57,18 @@ async function _createFileSystemStorage(storagePath: string) {
 }
 
 // In-memory Map of storages
-const storageMap = new Map<string, FileSystemStorage>();
+const storageMap = new Map<string, IFileSystemStorage>();
 
 export const FileSystemStorage = {
-  async create(path: string): Promise<FileSystemStorage> {
+  async create(path: string): Promise<IFileSystemStorage> {
     const storage = await _createFileSystemStorage(path);
     storageMap.set(path, storage);
     return storage;
   },
-  get(path: string): FileSystemStorage | undefined {
+  get(path: string): IFileSystemStorage | undefined {
     return storageMap.get(path);
   },
-  async getOrCreate(path: string): Promise<FileSystemStorage> {
+  async getOrCreate(path: string): Promise<IFileSystemStorage> {
     return storageMap.get(path) ?? (await this.create(path));
   },
 };

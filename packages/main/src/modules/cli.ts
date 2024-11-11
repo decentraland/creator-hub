@@ -44,6 +44,7 @@ export async function deploy({ path, target, targetContent }: DeployOptions) {
   deployServer = run('@dcl/sdk-commands', 'sdk-commands', {
     args: [
       'deploy',
+      '--no-browser',
       '--port',
       port.toString(),
       ...(target ? ['--target', target] : []),
@@ -54,7 +55,11 @@ export async function deploy({ path, target, targetContent }: DeployOptions) {
   });
 
   // App ready at
-  await deployServer.waitFor(/app ready at/i);
+  await deployServer.waitFor(/listening/i, /error:/i, { reject: 'stderr' });
+
+  deployServer.waitFor(/close the terminal/gi).then(() => deployServer?.kill());
+
+  deployServer.wait().catch(); // handle rejection of main promise to avoid warnings in console
 
   return port;
 }
