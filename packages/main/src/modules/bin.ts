@@ -176,12 +176,7 @@ export async function install() {
 type Error = 'COMMAND_FAILED';
 
 export class StreamError extends ErrorBase<Error> {
-  constructor(
-    type: Error,
-    message: string,
-    public stdout: Buffer,
-    public stderr: Buffer,
-  ) {
+  constructor(type: Error, message: string, public stdout: Buffer, public stderr: Buffer) {
     super(type, message);
   }
 }
@@ -293,13 +288,6 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
       promise.resolve(stdoutBuf);
     }
   });
-
-  function handleStream(stream: NodeJS.ReadableStream, type: StreamType) {
-    stream!.on('data', (data: Buffer) => handleData(data, matchers, type));
-  }
-
-  handleStream(forked.stdout!, 'stdout');
-  handleStream(forked.stderr!, 'stderr');
 
   const child: Child = {
     pkg,
