@@ -183,10 +183,10 @@ export function Deploy(props: Props) {
             ? 'Publish to your World'
             : 'Publish to your Land'
           : loadingPublish
-          ? 'Loading...'
-          : error
-          ? 'Error'
-          : ''
+            ? 'Loading...'
+            : error
+              ? 'Error'
+              : ''
       }
       size="large"
       {...props}
