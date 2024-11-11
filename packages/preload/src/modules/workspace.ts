@@ -366,8 +366,8 @@ export async function saveThumbnail({
   const thumbnailPath = getProjectThumbnailPath();
   const currentThumb = scene.display?.navmapThumbnail;
   await deepWriteFile(path.join(_path, thumbnailPath), thumbnail, { encoding: 'base64' });
-  const shouldOverwrite = !currentThumb || !(await exists(path.join(_path, currentThumb)));
-  if (shouldOverwrite) await updateSceneThumbnail(_path, thumbnailPath);
+  const currentThumbPath = path.join(_path, path.normalize(currentThumb || ''));
+  if (!(await exists(currentThumbPath))) await updateSceneThumbnail(_path, thumbnailPath);
 }
 
 export async function openFolder(_path: string) {
