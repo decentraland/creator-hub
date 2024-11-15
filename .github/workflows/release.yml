@@ -140,7 +140,7 @@ jobs:
           # The following are the parameters required by the esigner-codesign action to work, we must explicitly pass in even the optional ones since we're not using the action directly, but from the checked out repo
           CODE_SIGN_SCRIPT_PATH: "${{ github.workspace }}\\esigner-codesign\\dist\\index.js"
           INPUT_COMMAND: "sign"
-          INPUT_FILE_PATH: "${{ github.workspace }}\\dist\\Decentraland Creator Hub-win-x64.exe"
+          INPUT_FILE_PATH: "${{ github.workspace }}\\dist\\Decentraland Creator Hub-${{ steps.version.outputs.version }}-win-x64.exe"
           INPUT_OVERRIDE: "true"
           INPUT_MALWARE_BLOCK: "false"
           INPUT_CLEAN_LOGS: "false"
