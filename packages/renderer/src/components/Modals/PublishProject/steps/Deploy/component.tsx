@@ -151,6 +151,7 @@ export function Deploy(props: Props) {
   // set publish error
   useEffect(() => {
     if (publishError) {
+      // TODO: JSON.parse(publishError) if possible
       setError(publishError);
     }
   }, [publishError, setError]);
