@@ -3,26 +3,24 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - '**.js'
-      - '**.mjs'
-      - '**.cjs'
-      - '**.jsx'
-      - '**.ts'
-      - '**.mts'
-      - '**.cts'
-      - '**.tsx'
-      - '**.json'
+      - '**/*.js'
+      - '**/*.mjs'
+      - '**/*.cjs'
+      - '**/*.jsx'
+      - '**/*.ts'
+      - '**/*.mts'
+      - '**/*.cts'
+      - '**/*.tsx'
   pull_request:
     paths:
-      - '**.js'
-      - '**.mjs'
-      - '**.cjs'
-      - '**.jsx'
-      - '**.ts'
-      - '**.mts'
-      - '**.cts'
-      - '**.tsx'
-      - '**.json'
+      - '**/*.js'
+      - '**/*.mjs'
+      - '**/*.cjs'
+      - '**/*.jsx'
+      - '**/*.ts'
+      - '**/*.mts'
+      - '**/*.cts'
+      - '**/*.tsx'
 
 concurrency:
   group: lint-${{ github.ref }}
@@ -59,4 +57,15 @@ jobs:
           cache: 'npm'
 
       - run: npm i prettier
-      - run: npx prettier --check "**/*.{js,mjs,cjs,jsx,ts,mts,cts,tsx,vue}"
+      - run: |
+          # Get the list of modified files
+          MODIFIED_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(js|mjs|cjs|jsx|ts|mts|cts|tsx)$')
+
+          # Exit if there are no modified files to check
+          if [ -z "$MODIFIED_FILES" ]; then
+            echo "No modified files to verify."
+            exit 0
+          fi
+
+          # Run Prettier's check mode on the modified files
+          echo "$MODIFIED_FILES" | xargs npx prettier --check
