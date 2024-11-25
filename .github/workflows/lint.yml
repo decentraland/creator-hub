@@ -11,6 +11,7 @@ on:
       - '**/*.mts'
       - '**/*.cts'
       - '**/*.tsx'
+      - '**/*.json'
   pull_request:
     paths:
       - '**/*.js'
@@ -21,6 +22,7 @@ on:
       - '**/*.mts'
       - '**/*.cts'
       - '**/*.tsx'
+      - '**/*.json'
 
 concurrency:
   group: lint-${{ github.ref }}
@@ -59,7 +61,7 @@ jobs:
       - run: npm i prettier
       - run: |
           # Get the list of modified files
-          MODIFIED_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(js|mjs|cjs|jsx|ts|mts|cts|tsx)$')
+          MODIFIED_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(js|mjs|cjs|jsx|ts|mts|cts|tsx|json)$')
 
           # Exit if there are no modified files to check
           if [ -z "$MODIFIED_FILES" ]; then
