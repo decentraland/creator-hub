@@ -11,7 +11,7 @@ on:
       - '**.mts'
       - '**.cts'
       - '**.tsx'
-      - '**.vue'
+      - '**.json'
   pull_request:
     paths:
       - '**.js'
@@ -22,7 +22,7 @@ on:
       - '**.mts'
       - '**.cts'
       - '**.tsx'
-      - '**.vue'
+      - '**.json'
 
 concurrency:
   group: lint-${{ github.ref }}
