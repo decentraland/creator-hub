@@ -134,3 +134,4 @@ The CI pipeline is configured to automate the release process for the Decentrala
    - The auto updater, as mentioned in the Update Process, will pick up this new release and update the production app.
 
 This streamlined process ensures that updates are consistently and accurately deployed to users.
+
