@@ -3,18 +3,28 @@ import { type AuthChain, Authenticator } from '@dcl/crypto';
 import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
 import { ChainId } from '@dcl/schemas';
 import { Typography, Checkbox } from 'decentraland-ui2';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+
 import { misc, workspace } from '#preload';
+
 import type { IFileSystemStorage } from '/shared/types/storage';
-import { t } from '/@/modules/store/translation/utils';
-import { Loader } from '/@/components/Loader';
+
+import { useAuth } from '/@/hooks/useAuth';
 import { useEditor } from '/@/hooks/useEditor';
 import { useIsMounted } from '/@/hooks/useIsMounted';
-import { useAuth } from '/@/hooks/useAuth';
+
+import { t } from '/@/modules/store/translation/utils';
+import { Loader } from '/@/components/Loader';
 import { addBase64ImagePrefix } from '/@/modules/image';
+
 import { PublishModal, onBackNoop } from '../../PublishModal';
+import { ConnectedSteps } from '../../../../Step';
 import { Button } from '../../../../Button';
+
+import type { Step } from '../../../../Step/types';
 import { type Props } from '../../types';
 import type { File, Info } from './types';
+
 import './styles.css';
 
 const MAX_FILE_PATH_LENGTH = 50;
@@ -108,7 +118,7 @@ export function Deploy(props: Props) {
         void deploy({ address: wallet, authChain, chainId })
           .then(() => {
             if (!isMounted()) return;
-            setDeployStatus('successful'); // TODO: this should be set after deploy actually finishes (new component for "deploying" status)
+            // setDeployStatus('successful'); // TODO: this should be set after deploy actually finishes (new component for "deploying" status)
           })
           .catch(error => {
             setDeployStatus('failed');
@@ -294,6 +304,7 @@ export function Deploy(props: Props) {
               )}
               {deployStatus === 'deploying' && (
                 <Deploying
+                  info={info}
                   url={jumpInUrl}
                   onClick={handleJumpIn}
                 />
@@ -364,18 +375,67 @@ function Idle({ files, error, onClick }: IdleProps) {
 }
 
 type DeployingProps = {
+  info: Info;
   url: string | null;
   onClick: () => void;
 };
 
-function Deploying({ url, onClick }: DeployingProps) {
+function Deploying({ info, url, onClick }: DeployingProps) {
+  const steps: Step[] = useMemo(
+    () => [
+      {
+        bulletText: '1',
+        name: t('modal.publish_project.deploy.deploying.step.catalyst'),
+        state: 'finished',
+      },
+      {
+        bulletText: '2',
+        name: t('modal.publish_project.deploy.deploying.step.asset_bundle'),
+        text: t('modal.publish_project.deploy.deploying.step.loading'),
+        state: 'active',
+      },
+      {
+        bulletText: '3',
+        name: t('modal.publish_project.deploy.deploying.step.lods'),
+      },
+    ],
+    [
+      /* some dep */
+    ],
+  );
+
+  const lastStep = steps[steps.length - 1];
+
   return (
     <div className="deploying">
       <div className="title">
         <Loader />
-        <Typography variant="body1">
-          {t('modal.publish_project.deploy.deploying.publish')}
+        <Typography variant="h5">
+          {lastStep.state === 'active'
+            ? t('modal.publish_project.deploy.deploying.finishing')
+            : t('modal.publish_project.deploy.deploying.publish')}
         </Typography>
+      </div>
+      <ConnectedSteps steps={steps} />
+      <div className="info">
+        <InfoOutlinedIcon />
+        {t('modal.publish_project.deploy.deploying.info')}
+      </div>
+      <div className="jump">
+        <JumpUrl
+          inProgress
+          info={info}
+          url={url}
+        />
+      </div>
+      <div className="actions">
+        <Button
+          size="large"
+          onClick={onClick}
+        >
+          {t('modal.publish_project.deploy.success.jump_in')}
+          <i className="jump-in-icon" />
+        </Button>
       </div>
     </div>
   );
@@ -393,22 +453,10 @@ function Success({ info, url, onClick }: SuccessProps) {
       <div className="content">
         <i className="success-icon" />
         <div className="message">{t('modal.publish_project.deploy.success.message')}</div>
-        <div className="jump-in-url">
-          <label>
-            {t('modal.publish_project.deploy.success.url', {
-              target: info.isWorld
-                ? t('modal.publish_project.deploy.success.world')
-                : t('modal.publish_project.deploy.success.land'),
-            })}
-          </label>
-          <div className="url">
-            {url}
-            <i
-              className="copy-icon"
-              onClick={() => url && misc.copyToClipboard(url)}
-            />
-          </div>
-        </div>
+        <JumpUrl
+          info={info}
+          url={url}
+        />
       </div>
       <div className="actions">
         <Button
@@ -418,6 +466,36 @@ function Success({ info, url, onClick }: SuccessProps) {
           {t('modal.publish_project.deploy.success.jump_in')}
           <i className="jump-in-icon" />
         </Button>
+      </div>
+    </div>
+  );
+}
+
+function JumpUrl({
+  inProgress,
+  info,
+  url,
+}: {
+  inProgress?: boolean;
+  info: Info;
+  url: string | null;
+}) {
+  return (
+    <div className="jump-in-url">
+      {inProgress && <label>{t('modal.publish_project.deploy.success.in_progress')}</label>}
+      <label>
+        {t('modal.publish_project.deploy.success.url', {
+          target: info.isWorld
+            ? t('modal.publish_project.deploy.success.world')
+            : t('modal.publish_project.deploy.success.land'),
+        })}
+      </label>
+      <div className="url">
+        {url}
+        <i
+          className="copy-icon"
+          onClick={() => url && misc.copyToClipboard(url)}
+        />
       </div>
     </div>
   );
