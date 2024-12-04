@@ -203,7 +203,11 @@
   text-transform: uppercase;
 }
 
-.Deploy .scene .success .content .url {
+.Deploy .scene .jump-in-url {
+  margin-bottom: 20px;
+}
+
+.Deploy .scene .jump-in-url .url {
   color: var(--light-gray);
   border: 1px solid var(--dark-gray);
   font-size: 13px;
@@ -214,11 +218,51 @@
   border-radius: 10px;
   display: flex;
   align-items: center;
+  width: fit-content;
+  margin-top: 5px;
 }
 
-.Deploy .scene .success .content .jump-in-url label {
+.Deploy .scene .deploying {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 10px;
+}
+
+.Deploy .scene .deploying .title {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+
+.Deploy .scene .deploying .title .Loader {
+  width: inherit;
+  margin-right: 12px;
+}
+
+.Deploy .scene .deploying .ConnectedSteps {
+  margin-bottom: 30px;
+}
+
+.Deploy .scene .deploying .info {
+  display: flex;
+  flex-direction: row;
+  background-color: #1764C03D;
+  border-radius: 8px;
+  padding: 20px;
+  width: 450px;
   color: var(--dcl-silver);
-  line-height: 24px;
+}
+
+.Deploy .scene .deploying .info svg {
+  color: var(--twitter);
+}
+
+.Deploy .scene .jump-in-url label {
+  color: var(--dcl-silver);
+  line-height: 20px;
   font-size: 14px;
   letter-spacing: 0.17px;
   font-weight: 500;
@@ -226,7 +270,7 @@
   display: block;
 }
 
-.Deploy .scene .success .content .jump-in-url .copy-icon {
+.Deploy .scene .jump-in-url .copy-icon {
   width: 18px;
   height: 18px;
   background: center no-repeat url(images/copy.svg);
@@ -235,13 +279,13 @@
   cursor: pointer;
 }
 
-.Deploy .scene .success .actions {
+.Deploy .scene .actions {
   flex: none;
   display: flex;
   justify-content: flex-end;
 }
 
-.Deploy .scene .success .Button .jump-in-icon {
+.Deploy .scene .Button .jump-in-icon {
   width: 24px;
   height: 24px;
   background: center no-repeat url(images/jump-in.svg);
