@@ -17,12 +17,12 @@
   margin-right: 10px;
 }
 
-.Step.active .bullet,
-.Step.finished .bullet {
+.Step.pending .bullet,
+.Step.success .bullet {
   background-color: var(--primary);
 }
 
-.Step.finished .bullet {
+.Step.success .bullet {
   color: var(--white);
 }
 
@@ -37,7 +37,7 @@
   font-weight: 100;
 }
 
-.Step.active .body h4 {
+.Step.pending .body h4 {
   font-weight: 700;
 }
 

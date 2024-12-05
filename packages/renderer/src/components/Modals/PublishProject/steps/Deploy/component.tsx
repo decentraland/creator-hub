@@ -23,7 +23,14 @@ import { Button } from '../../../../Button';
 
 import type { Step } from '../../../../Step/types';
 import { type Props } from '../../types';
-import type { File, Info } from './types';
+
+import {
+  getInitialDeploymentStatus,
+  retryDelayInMs,
+  maxRetries,
+  checkDeploymentStatus,
+} from './utils';
+import type { File, Info, DeploymentStatus, Status } from './types';
 
 import './styles.css';
 
@@ -118,7 +125,6 @@ export function Deploy(props: Props) {
         void deploy({ address: wallet, authChain, chainId })
           .then(() => {
             if (!isMounted()) return;
-            // setDeployStatus('successful'); // TODO: this should be set after deploy actually finishes (new component for "deploying" status)
           })
           .catch(error => {
             setDeployStatus('failed');
@@ -185,6 +191,11 @@ export function Deploy(props: Props) {
       void misc.openExternal(jumpInUrl);
     }
   }, [jumpInUrl]);
+
+  const handleDeployFinish = useCallback((status: DeployStatus, error?: string) => {
+    setDeployStatus(status);
+    setError(error ?? null);
+  }, []);
 
   return (
     <PublishModal
@@ -306,6 +317,7 @@ export function Deploy(props: Props) {
                 <Deploying
                   info={info}
                   url={jumpInUrl}
+                  onFinish={handleDeployFinish}
                   onClick={handleJumpIn}
                 />
               )}
@@ -377,66 +389,106 @@ function Idle({ files, error, onClick }: IdleProps) {
 type DeployingProps = {
   info: Info;
   url: string | null;
+  onFinish: (status: DeployStatus, error?: string) => void;
   onClick: () => void;
 };
 
-function Deploying({ info, url, onClick }: DeployingProps) {
-  const steps: Step[] = useMemo(
-    () => [
+function Deploying({ info, url, onFinish, onClick }: DeployingProps) {
+  const [deployState, setDeployState] = useState<DeploymentStatus>(getInitialDeploymentStatus());
+
+  useEffect(
+    () => {
+      let isCancelled = false;
+
+      // avoid race-condition for updating component's state after unmount...
+      const runIfNotCancelled = (fn: (...args: any) => void, ...args: any) => {
+        if (!isCancelled) fn(...args);
+      };
+
+      checkDeploymentStatus(
+        deployState,
+        maxRetries,
+        retryDelayInMs,
+        status => runIfNotCancelled(setDeployState, status),
+        () => isCancelled,
+      )
+        .then(() => runIfNotCancelled(onFinish, 'successful'))
+        .catch(error => runIfNotCancelled(onFinish, 'failed', error.message));
+
+      // cleanup function to cancel retries if the component unmounts
+      return () => {
+        isCancelled = true;
+      };
+    },
+    [] /* no deps, want this to run ONLY on mount */,
+  );
+
+  const text = useMemo(() => t('modal.publish_project.deploy.deploying.step.loading'), []);
+  const is = useCallback((status: Status, status2: Status) => status === status2, []);
+
+  const steps: Step[] = useMemo(() => {
+    const { catalyst, assetBundle, lods } = deployState;
+
+    return [
       {
         bulletText: '1',
         name: t('modal.publish_project.deploy.deploying.step.catalyst'),
-        state: 'finished',
+        text: is('pending', catalyst) ? text : undefined,
+        state: catalyst,
       },
       {
         bulletText: '2',
         name: t('modal.publish_project.deploy.deploying.step.asset_bundle'),
-        text: t('modal.publish_project.deploy.deploying.step.loading'),
-        state: 'active',
+        text: is('pending', assetBundle) ? text : undefined,
+        state: assetBundle,
       },
       {
         bulletText: '3',
         name: t('modal.publish_project.deploy.deploying.step.lods'),
+        text: is('pending', lods) ? text : undefined,
+        state: lods,
       },
-    ],
-    [
-      /* some dep */
-    ],
-  );
+    ];
+  }, [deployState]);
 
   const lastStep = steps[steps.length - 1];
 
   return (
-    <div className="deploying">
+    <div className="Deploying">
       <div className="title">
         <Loader />
         <Typography variant="h5">
-          {lastStep.state === 'active'
+          {lastStep.state === 'pending'
             ? t('modal.publish_project.deploy.deploying.finishing')
             : t('modal.publish_project.deploy.deploying.publish')}
         </Typography>
       </div>
       <ConnectedSteps steps={steps} />
-      <div className="info">
-        <InfoOutlinedIcon />
-        {t('modal.publish_project.deploy.deploying.info')}
-      </div>
-      <div className="jump">
-        <JumpUrl
-          inProgress
-          info={info}
-          url={url}
-        />
-      </div>
-      <div className="actions">
-        <Button
-          size="large"
-          onClick={onClick}
-        >
-          {t('modal.publish_project.deploy.success.jump_in')}
-          <i className="jump-in-icon" />
-        </Button>
-      </div>
+      {lastStep.state === 'pending' ? (
+        <>
+          <div className="jump">
+            <JumpUrl
+              inProgress
+              info={info}
+              url={url}
+            />
+          </div>
+          <div className="actions">
+            <Button
+              size="large"
+              onClick={onClick}
+            >
+              {t('modal.publish_project.deploy.success.jump_in')}
+              <i className="jump-in-icon" />
+            </Button>
+          </div>
+        </>
+      ) : (
+        <div className="info">
+          <InfoOutlinedIcon />
+          {t('modal.publish_project.deploy.deploying.info')}
+        </div>
+      )}
     </div>
   );
 }
@@ -449,7 +501,7 @@ type SuccessProps = {
 
 function Success({ info, url, onClick }: SuccessProps) {
   return (
-    <div className="success">
+    <div className="Success">
       <div className="content">
         <i className="success-icon" />
         <div className="message">{t('modal.publish_project.deploy.success.message')}</div>

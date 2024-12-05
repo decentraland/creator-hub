@@ -14,3 +14,11 @@ export type Info = {
   skipValidations: boolean;
   title: string;
 };
+
+export type Status = 'idle' | 'pending' | 'success' | 'failed';
+
+export type DeploymentStatus = {
+  catalyst: Status;
+  assetBundle: Status;
+  lods: Status;
+};
