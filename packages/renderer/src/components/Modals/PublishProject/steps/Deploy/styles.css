@@ -171,7 +171,7 @@
   background: center no-repeat url(images/warning.svg);
 }
 
-.Deploy .scene .success {
+.Deploy .scene .Success {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
@@ -179,7 +179,7 @@
   border-left: 1px solid var(--dark-gray);
 }
 
-.Deploy .scene .success .content {
+.Deploy .scene .Success .content {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
@@ -190,13 +190,13 @@
   padding-bottom: 80px;
 }
 
-.Deploy .scene .success .content .success-icon {
+.Deploy .scene .Success .content .success-icon {
   width: 80px;
   height: 80px;
   background: center no-repeat url(images/success.svg);
 }
 
-.Deploy .scene .success .content .message {
+.Deploy .scene .Success .content .message {
   color: var(--dcl-silver);
   font-size: 20px;
   font-weight: 500;
@@ -222,14 +222,14 @@
   margin-top: 5px;
 }
 
-.Deploy .scene .deploying {
+.Deploy .scene .Deploying {
   display: flex;
   flex-direction: column;
   width: 100%;
   padding: 10px;
 }
 
-.Deploy .scene .deploying .title {
+.Deploy .scene .Deploying .title {
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -237,16 +237,16 @@
   margin-bottom: 20px;
 }
 
-.Deploy .scene .deploying .title .Loader {
+.Deploy .scene .Deploying .title .Loader {
   width: inherit;
   margin-right: 12px;
 }
 
-.Deploy .scene .deploying .ConnectedSteps {
+.Deploy .scene .Deploying .ConnectedSteps {
   margin-bottom: 30px;
 }
 
-.Deploy .scene .deploying .info {
+.Deploy .scene .Deploying .info {
   display: flex;
   flex-direction: row;
   background-color: #1764C03D;
@@ -256,7 +256,7 @@
   color: var(--dcl-silver);
 }
 
-.Deploy .scene .deploying .info svg {
+.Deploy .scene .Deploying .info svg {
   color: var(--twitter);
 }
 

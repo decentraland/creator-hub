@@ -74,6 +74,7 @@
       "more": "Más"
     },
     "feedback": "Darnos feedback",
+    "report_an_issue": "Informar un problema",
     "user_menu": {
       "sign_in": "Iniciar Sesión",
       "sign_out": "Cerrar Sesión"
@@ -134,7 +135,8 @@
         }
       },
       "alternative_servers": {
-        "title": "Servidores Alternativos",
+        "title": "Publicar en un Servidor Alternativo",
+        "list": "Servidores Alternativos",
         "options": {
           "test_server": "Servidor de Prueba",
           "custom_server": "Servidor Personalizado"
@@ -164,12 +166,24 @@
           "size": "Tamaño Total <b>{size}</b>",
           "publish": "Publicar"
         },
+        "deploying": {
+          "publish": "Publicando...",
+          "finishing": "Finishing up...",
+          "info": "Este proceso puede tardar una media de 15 minutos. Durante este tiempo, su escena puede aparecer vacía hasta que se actualice en el cliente.",
+          "step": {
+            "catalyst": "Catalyst",
+            "asset_bundle": "Asset Bundle",
+            "lods": "LODs",
+            "loading": "Cargando..."
+          }
+        },
         "success": {
           "message": "Tu escena se ha publicado con éxito",
           "url": "La URL para acceder a tu {target} es:",
           "world": "Mundo",
           "land": "Tierra",
-          "jump_in": "Entrar"
+          "jump_in": "Entrar",
+          "in_progress": "Ahora puedes acceder a tu escena incluso mientras aún se está procesando."
         }
       }
     },

@@ -168,7 +168,7 @@
         },
         "deploying": {
           "publish": "Publishing...",
-          "finishing": "Finishin up...",
+          "finishing": "Finishing up...",
           "info": "This process may take 15 minutes on average. During this time, your scene may appear empty until it has been updated in the client.",
           "step": {
             "catalyst": "Catalyst",
