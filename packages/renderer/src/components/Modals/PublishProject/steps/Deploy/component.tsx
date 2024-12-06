@@ -3,18 +3,35 @@ import { type AuthChain, Authenticator } from '@dcl/crypto';
 import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
 import { ChainId } from '@dcl/schemas';
 import { Typography, Checkbox } from 'decentraland-ui2';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+
 import { misc, workspace } from '#preload';
+
 import type { IFileSystemStorage } from '/shared/types/storage';
-import { t } from '/@/modules/store/translation/utils';
-import { Loader } from '/@/components/Loader';
+
+import { useAuth } from '/@/hooks/useAuth';
 import { useEditor } from '/@/hooks/useEditor';
 import { useIsMounted } from '/@/hooks/useIsMounted';
-import { useAuth } from '/@/hooks/useAuth';
+
+import { t } from '/@/modules/store/translation/utils';
+import { Loader } from '/@/components/Loader';
 import { addBase64ImagePrefix } from '/@/modules/image';
+
 import { PublishModal, onBackNoop } from '../../PublishModal';
+import { ConnectedSteps } from '../../../../Step';
 import { Button } from '../../../../Button';
+
+import type { Step } from '../../../../Step/types';
 import { type Props } from '../../types';
-import type { File, Info } from './types';
+
+import {
+  getInitialDeploymentStatus,
+  retryDelayInMs,
+  maxRetries,
+  checkDeploymentStatus,
+} from './utils';
+import type { File, Info, DeploymentStatus, Status } from './types';
+
 import './styles.css';
 
 const MAX_FILE_PATH_LENGTH = 50;
@@ -44,6 +61,8 @@ function getSize(size: number) {
   return `${(size / GB).toFixed(2)} GB`;
 }
 
+type DeployStatus = 'idle' | 'deploying' | 'successful' | 'failed';
+
 export function Deploy(props: Props) {
   const infoRef = useRef<IFileSystemStorage>();
   const { chainId, wallet, avatar } = useAuth();
@@ -51,9 +70,8 @@ export function Deploy(props: Props) {
   const [info, setInfo] = useState<Info | null>(null);
   const { loadingPublish, publishPort, project, publishError } = useEditor();
   const isMounted = useIsMounted();
-  const [isDeploying, setIsDeploying] = useState(false);
+  const [deployStatus, setDeployStatus] = useState<DeployStatus>('idle');
   const [error, setError] = useState<string | null>(null);
-  const [isSuccessful, setIsSuccessful] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
   const [skipWarning, setSkipWarning] = useState(false);
 
@@ -78,7 +96,7 @@ export function Deploy(props: Props) {
     if (!url) return;
     setShowWarning(false);
     async function deploy(payload: { address: string; authChain: AuthChain; chainId: ChainId }) {
-      setIsDeploying(true);
+      setDeployStatus('deploying');
       setError(null);
       const resp = await fetch(`${url}/deploy`, {
         method: 'post',
@@ -107,11 +125,9 @@ export function Deploy(props: Props) {
         void deploy({ address: wallet, authChain, chainId })
           .then(() => {
             if (!isMounted()) return;
-            setIsDeploying(false);
-            setIsSuccessful(true);
           })
           .catch(error => {
-            setIsDeploying(false);
+            setDeployStatus('failed');
             setError(error.message);
           });
       } else {
@@ -128,16 +144,16 @@ export function Deploy(props: Props) {
   }, []);
 
   useEffect(() => {
-    if (!url || isSuccessful) return;
+    if (!url || deployStatus !== 'idle') return;
     async function fetchFiles() {
       const resp = await fetch(`${url}/files`);
-      const files = await resp.json();
-      return files as File[];
+      const files = (await resp.json()) as File[];
+      return files;
     }
     async function fetchInfo() {
       const resp = await fetch(`${url}/info`);
-      const info = await resp.json();
-      return info as Info;
+      const info = (await resp.json()) as Info;
+      return info;
     }
     void Promise.all([fetchFiles(), fetchInfo()])
       .then(([files, info]) => {
@@ -146,11 +162,12 @@ export function Deploy(props: Props) {
         setInfo(info);
       })
       .catch();
-  }, [url, isSuccessful]);
+  }, [url, deployStatus]);
 
   // set publish error
   useEffect(() => {
     if (publishError) {
+      // TODO: JSON.parse(publishError) if possible
       setError(publishError);
     }
   }, [publishError, setError]);
@@ -175,6 +192,11 @@ export function Deploy(props: Props) {
     }
   }, [jumpInUrl]);
 
+  const handleDeployFinish = useCallback((status: DeployStatus, error?: string) => {
+    setDeployStatus(status);
+    setError(error ?? null);
+  }, []);
+
   return (
     <PublishModal
       title={
@@ -190,7 +212,7 @@ export function Deploy(props: Props) {
       }
       size="large"
       {...props}
-      onBack={isSuccessful ? onBackNoop : props.onBack}
+      onBack={deployStatus === 'successful' ? onBackNoop : props.onBack}
     >
       <div className="Deploy">
         {showWarning ? (
@@ -284,87 +306,249 @@ export function Deploy(props: Props) {
                   </Typography>
                 </div>
               </div>
-              {!isSuccessful ? (
-                <div className="files">
-                  <div className="filters">
-                    <div className="count">
-                      {t('modal.publish_project.deploy.files.count', { count: files.length })}
-                    </div>
-                    <div className="size">
-                      {t('modal.publish_project.deploy.files.size', {
-                        size: getSize(files.reduce((total, file) => total + file.size, 0)),
-                        b: (child: string) => <b>{child}</b>,
-                      })}
-                    </div>
-                  </div>
-                  <div className="list">
-                    {files.map(file => (
-                      <div
-                        className="file"
-                        key={file.name}
-                      >
-                        <div
-                          className="filename"
-                          title={file.name}
-                        >
-                          {getPath(file.name)}
-                        </div>
-                        <div className="size">{getSize(file.size)}</div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="actions">
-                    <p className="error">{error}</p>
-                    <Button
-                      size="large"
-                      disabled={isDeploying || isSuccessful}
-                      onClick={() => (skipWarning ? handlePublish() : setShowWarning(true))}
-                    >
-                      {t('modal.publish_project.deploy.files.publish')}
-                      {isDeploying ? <Loader size={20} /> : <i className="deploy-icon" />}
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="success">
-                  <div className="content">
-                    <i className="success-icon" />
-                    <div className="message">
-                      {t('modal.publish_project.deploy.success.message')}
-                    </div>
-                    <div className="jump-in-url">
-                      <label>
-                        {t('modal.publish_project.deploy.success.url', {
-                          target: info.isWorld
-                            ? t('modal.publish_project.deploy.success.world')
-                            : t('modal.publish_project.deploy.success.land'),
-                        })}
-                      </label>
-                      <div className="url">
-                        {jumpInUrl}
-                        <i
-                          className="copy-icon"
-                          onClick={() => jumpInUrl && misc.copyToClipboard(jumpInUrl)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="actions">
-                    <Button
-                      size="large"
-                      disabled={!isSuccessful}
-                      onClick={handleJumpIn}
-                    >
-                      {t('modal.publish_project.deploy.success.jump_in')}
-                      <i className="jump-in-icon" />
-                    </Button>
-                  </div>
-                </div>
+              {deployStatus === 'idle' && (
+                <Idle
+                  files={files}
+                  error={error}
+                  onClick={() => (skipWarning ? handlePublish() : setShowWarning(true))}
+                />
+              )}
+              {deployStatus === 'deploying' && (
+                <Deploying
+                  info={info}
+                  url={jumpInUrl}
+                  onFinish={handleDeployFinish}
+                  onClick={handleJumpIn}
+                />
+              )}
+              {deployStatus === 'successful' && (
+                <Success
+                  info={info}
+                  url={jumpInUrl}
+                  onClick={handleJumpIn}
+                />
               )}
             </div>
           </>
         )}
       </div>
     </PublishModal>
+  );
+}
+
+type IdleProps = {
+  files: File[];
+  error: string | null;
+  onClick: () => void;
+};
+
+function Idle({ files, error, onClick }: IdleProps) {
+  return (
+    <div className="files">
+      <div className="filters">
+        <div className="count">
+          {t('modal.publish_project.deploy.files.count', { count: files.length })}
+        </div>
+        <div className="size">
+          {t('modal.publish_project.deploy.files.size', {
+            size: getSize(files.reduce((total, file) => total + file.size, 0)),
+            b: (child: string) => <b>{child}</b>,
+          })}
+        </div>
+      </div>
+      <div className="list">
+        {files.map(file => (
+          <div
+            className="file"
+            key={file.name}
+          >
+            <div
+              className="filename"
+              title={file.name}
+            >
+              {getPath(file.name)}
+            </div>
+            <div className="size">{getSize(file.size)}</div>
+          </div>
+        ))}
+      </div>
+      <div className="actions">
+        <p className="error">{error}</p>
+        <Button
+          size="large"
+          onClick={onClick}
+        >
+          {t('modal.publish_project.deploy.files.publish')}
+          <i className="deploy-icon" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+type DeployingProps = {
+  info: Info;
+  url: string | null;
+  onFinish: (status: DeployStatus, error?: string) => void;
+  onClick: () => void;
+};
+
+function Deploying({ info, url, onFinish, onClick }: DeployingProps) {
+  const [deployState, setDeployState] = useState<DeploymentStatus>(getInitialDeploymentStatus());
+
+  useEffect(
+    () => {
+      let isCancelled = false;
+
+      // avoid race-condition for updating component's state after unmount...
+      const runIfNotCancelled = (fn: (...args: any) => void, ...args: any) => {
+        if (!isCancelled) fn(...args);
+      };
+
+      checkDeploymentStatus(
+        deployState,
+        maxRetries,
+        retryDelayInMs,
+        status => runIfNotCancelled(setDeployState, status),
+        () => isCancelled,
+      )
+        .then(() => runIfNotCancelled(onFinish, 'successful'))
+        .catch(error => runIfNotCancelled(onFinish, 'failed', error.message));
+
+      // cleanup function to cancel retries if the component unmounts
+      return () => {
+        isCancelled = true;
+      };
+    },
+    [] /* no deps, want this to run ONLY on mount */,
+  );
+
+  const text = useMemo(() => t('modal.publish_project.deploy.deploying.step.loading'), []);
+  const is = useCallback((status: Status, status2: Status) => status === status2, []);
+
+  const steps: Step[] = useMemo(() => {
+    const { catalyst, assetBundle, lods } = deployState;
+
+    return [
+      {
+        bulletText: '1',
+        name: t('modal.publish_project.deploy.deploying.step.catalyst'),
+        text: is('pending', catalyst) ? text : undefined,
+        state: catalyst,
+      },
+      {
+        bulletText: '2',
+        name: t('modal.publish_project.deploy.deploying.step.asset_bundle'),
+        text: is('pending', assetBundle) ? text : undefined,
+        state: assetBundle,
+      },
+      {
+        bulletText: '3',
+        name: t('modal.publish_project.deploy.deploying.step.lods'),
+        text: is('pending', lods) ? text : undefined,
+        state: lods,
+      },
+    ];
+  }, [deployState]);
+
+  const lastStep = steps[steps.length - 1];
+
+  return (
+    <div className="Deploying">
+      <div className="title">
+        <Loader />
+        <Typography variant="h5">
+          {lastStep.state === 'pending'
+            ? t('modal.publish_project.deploy.deploying.finishing')
+            : t('modal.publish_project.deploy.deploying.publish')}
+        </Typography>
+      </div>
+      <ConnectedSteps steps={steps} />
+      {lastStep.state === 'pending' ? (
+        <>
+          <div className="jump">
+            <JumpUrl
+              inProgress
+              info={info}
+              url={url}
+            />
+          </div>
+          <div className="actions">
+            <Button
+              size="large"
+              onClick={onClick}
+            >
+              {t('modal.publish_project.deploy.success.jump_in')}
+              <i className="jump-in-icon" />
+            </Button>
+          </div>
+        </>
+      ) : (
+        <div className="info">
+          <InfoOutlinedIcon />
+          {t('modal.publish_project.deploy.deploying.info')}
+        </div>
+      )}
+    </div>
+  );
+}
+
+type SuccessProps = {
+  info: Info;
+  url: string | null;
+  onClick: () => void;
+};
+
+function Success({ info, url, onClick }: SuccessProps) {
+  return (
+    <div className="Success">
+      <div className="content">
+        <i className="success-icon" />
+        <div className="message">{t('modal.publish_project.deploy.success.message')}</div>
+        <JumpUrl
+          info={info}
+          url={url}
+        />
+      </div>
+      <div className="actions">
+        <Button
+          size="large"
+          onClick={onClick}
+        >
+          {t('modal.publish_project.deploy.success.jump_in')}
+          <i className="jump-in-icon" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function JumpUrl({
+  inProgress,
+  info,
+  url,
+}: {
+  inProgress?: boolean;
+  info: Info;
+  url: string | null;
+}) {
+  return (
+    <div className="jump-in-url">
+      {inProgress && <label>{t('modal.publish_project.deploy.success.in_progress')}</label>}
+      <label>
+        {t('modal.publish_project.deploy.success.url', {
+          target: info.isWorld
+            ? t('modal.publish_project.deploy.success.world')
+            : t('modal.publish_project.deploy.success.land'),
+        })}
+      </label>
+      <div className="url">
+        {url}
+        <i
+          className="copy-icon"
+          onClick={() => url && misc.copyToClipboard(url)}
+        />
+      </div>
+    </div>
   );
 }
