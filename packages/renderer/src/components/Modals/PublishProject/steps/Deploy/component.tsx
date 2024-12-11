@@ -29,8 +29,16 @@ import {
   retryDelayInMs,
   maxRetries,
   checkDeploymentStatus,
+  fetchDeploymentStatus,
+  deriveOverallStatus,
 } from './utils';
-import type { File, Info, DeploymentStatus, Status } from './types';
+import {
+  type File,
+  type Info,
+  type DeploymentStatus,
+  type Status,
+  isDeploymentError,
+} from './types';
 
 import './styles.css';
 
@@ -38,9 +46,7 @@ const MAX_FILE_PATH_LENGTH = 50;
 
 function getPath(filename: string) {
   return filename.length > MAX_FILE_PATH_LENGTH
-    ? `${filename.slice(0, MAX_FILE_PATH_LENGTH / 2)}...${filename.slice(
-        -(MAX_FILE_PATH_LENGTH / 2),
-      )}`
+    ? `${filename.slice(0, MAX_FILE_PATH_LENGTH / 2)}...${filename.slice(-(MAX_FILE_PATH_LENGTH / 2))}`
     : filename;
 }
 
@@ -61,8 +67,6 @@ function getSize(size: number) {
   return `${(size / GB).toFixed(2)} GB`;
 }
 
-type DeployStatus = 'idle' | 'deploying' | 'successful' | 'failed';
-
 export function Deploy(props: Props) {
   const infoRef = useRef<IFileSystemStorage>();
   const { chainId, wallet, avatar } = useAuth();
@@ -70,7 +74,7 @@ export function Deploy(props: Props) {
   const [info, setInfo] = useState<Info | null>(null);
   const { loadingPublish, publishPort, project, publishError } = useEditor();
   const isMounted = useIsMounted();
-  const [deployStatus, setDeployStatus] = useState<DeployStatus>('idle');
+  const [deployStatus, setDeployStatus] = useState<Status>('idle');
   const [error, setError] = useState<string | null>(null);
   const [showWarning, setShowWarning] = useState(false);
   const [skipWarning, setSkipWarning] = useState(false);
@@ -96,7 +100,7 @@ export function Deploy(props: Props) {
     if (!url) return;
     setShowWarning(false);
     async function deploy(payload: { address: string; authChain: AuthChain; chainId: ChainId }) {
-      setDeployStatus('deploying');
+      setDeployStatus('pending');
       setError(null);
       const resp = await fetch(`${url}/deploy`, {
         method: 'post',
@@ -122,7 +126,7 @@ export function Deploy(props: Props) {
       const identity = localStorageGetIdentity(wallet);
       if (identity && chainId) {
         const authChain = Authenticator.signPayload(identity, info.rootCID);
-        void deploy({ address: wallet, authChain, chainId })
+        void deploy({ address: wallet, authChain, chainId: ChainId.ETHEREUM_SEPOLIA })
           .then(() => {
             if (!isMounted()) return;
           })
@@ -192,7 +196,7 @@ export function Deploy(props: Props) {
     }
   }, [jumpInUrl]);
 
-  const handleDeployFinish = useCallback((status: DeployStatus, error?: string) => {
+  const handleDeployFinish = useCallback((status: Status, error?: string) => {
     setDeployStatus(status);
     setError(error ?? null);
   }, []);
@@ -212,7 +216,7 @@ export function Deploy(props: Props) {
       }
       size="large"
       {...props}
-      onBack={deployStatus === 'successful' ? onBackNoop : props.onBack}
+      onBack={deployStatus === 'complete' ? onBackNoop : props.onBack}
     >
       <div className="Deploy">
         {showWarning ? (
@@ -313,7 +317,7 @@ export function Deploy(props: Props) {
                   onClick={() => (skipWarning ? handlePublish() : setShowWarning(true))}
                 />
               )}
-              {deployStatus === 'deploying' && (
+              {deployStatus === 'pending' && (
                 <Deploying
                   info={info}
                   url={jumpInUrl}
@@ -321,7 +325,7 @@ export function Deploy(props: Props) {
                   onClick={handleJumpIn}
                 />
               )}
-              {deployStatus === 'successful' && (
+              {deployStatus === 'complete' && (
                 <Success
                   info={info}
                   url={jumpInUrl}
@@ -389,31 +393,69 @@ function Idle({ files, error, onClick }: IdleProps) {
 type DeployingProps = {
   info: Info;
   url: string | null;
-  onFinish: (status: DeployStatus, error?: string) => void;
+  onFinish: (status: Status, error?: string) => void;
   onClick: () => void;
 };
 
 function Deploying({ info, url, onFinish, onClick }: DeployingProps) {
+  const { wallet } = useAuth();
   const [deployState, setDeployState] = useState<DeploymentStatus>(getInitialDeploymentStatus());
+
+  const getDeploymentStatus = useCallback((): Promise<DeploymentStatus> => {
+    if (!wallet) throw new Error('No wallet provided');
+    const identity = localStorageGetIdentity(wallet);
+    if (!identity) throw new Error(`No identity found for wallet ${wallet}`);
+    return fetchDeploymentStatus(info.rootCID, identity);
+  }, [info]);
 
   useEffect(
     () => {
       let isCancelled = false;
 
-      // avoid race-condition for updating component's state after unmount...
-      const runIfNotCancelled = (fn: (...args: any) => void, ...args: any) => {
-        if (!isCancelled) fn(...args);
+      const handleUpdate = (status: DeploymentStatus) => {
+        // if catalyst deploy fails, we abort the deployment completely
+        if (status.catalyst === 'failed') {
+          isCancelled = true;
+          return onFinish(
+            'failed',
+            t('modal.publish_project.deploy.deploying.errors.catalyst_deploy'),
+          );
+        }
+        if (!isCancelled) setDeployState(status);
       };
 
+      const handleSuccess = (status: DeploymentStatus) => {
+        if (!isCancelled) onFinish(deriveOverallStatus(status));
+      };
+
+      const handleFailure = (error: any) => {
+        if (!isCancelled) {
+          // if we know the error, we can translate it
+          if (isDeploymentError(error, 'MAX_RETRIES')) {
+            return onFinish(
+              'failed',
+              t('modal.publish_project.deploy.deploying.errors.max_retries', {
+                error: error.message,
+              }),
+            );
+          }
+
+          onFinish('failed', error.message);
+        }
+      };
+
+      const shouldAbort = () => isCancelled;
+
       checkDeploymentStatus(
-        deployState,
         maxRetries,
         retryDelayInMs,
-        status => runIfNotCancelled(setDeployState, status),
-        () => isCancelled,
+        getDeploymentStatus,
+        handleUpdate,
+        shouldAbort,
+        deployState,
       )
-        .then(() => runIfNotCancelled(onFinish, 'successful'))
-        .catch(error => runIfNotCancelled(onFinish, 'failed', error.message));
+        .then(handleSuccess)
+        .catch(handleFailure);
 
       // cleanup function to cancel retries if the component unmounts
       return () => {

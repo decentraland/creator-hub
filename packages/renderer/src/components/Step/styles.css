@@ -18,11 +18,13 @@
 }
 
 .Step.pending .bullet,
-.Step.success .bullet {
+.Step.complete .bullet,
+.Step.failed .bullet {
   background-color: var(--primary);
 }
 
-.Step.success .bullet {
+.Step.complete .bullet,
+.Step.failed .bullet {
   color: var(--white);
 }
 

@@ -1,8 +1,17 @@
 import { minutes, seconds } from '/shared/time';
 import equal from 'fast-deep-equal';
+import type { AuthIdentity } from 'decentraland-crypto-fetch';
+import { type AuthChain, Authenticator } from '@dcl/crypto';
+
 import { delay } from '/shared/utils';
 
-import type { DeploymentStatus } from './types';
+import {
+  type AssetBundleRegistryResponse,
+  type Status,
+  STATUS_VALUES,
+  type DeploymentStatus,
+  DeploymentError,
+} from './types';
 
 export const getInitialDeploymentStatus = (): DeploymentStatus => ({
   catalyst: 'idle',
@@ -10,95 +19,158 @@ export const getInitialDeploymentStatus = (): DeploymentStatus => ({
   lods: 'idle',
 });
 
-export const retryDelayInMs = seconds(1); // TODO: CHANGE THIS TO 10 AFTER DEMO
-// Estimated time as of 5/12/2024 for a full deployment is around 45 minutes.
-export const maxRetries = minutes(45) / retryDelayInMs; // Total number of retries calculated based on a 45-minute retry window
+export const retryDelayInMs = seconds(10);
+// Estimated time as of 5/12/2024 for a full deployment is around 60 minutes.
+export const maxRetries = minutes(60) / retryDelayInMs; // Total number of retries calculated based on a X-minute retry window
+
+export const AUTH_CHAIN_HEADER_PREFIX = 'x-identity-auth-chain-';
+export const AUTH_TIMESTAMP_HEADER = 'x-identity-timestamp';
+export const AUTH_METADATA_HEADER = 'x-identity-metadata';
+
+export function getAuthHeaders(
+  method: string,
+  path: string,
+  chainProvider: (payload: string) => AuthChain,
+): Record<string, string> {
+  const timestamp = Date.now().toString();
+  const metadata = JSON.stringify({}); // needed for the fetch to work...
+  const payloadToSign = `${method.toLowerCase()}:${path.toLowerCase()}:${timestamp}:${metadata}`;
+
+  const chain = chainProvider(payloadToSign);
+  const headers = chain.reduce<Record<string, string>>((acc, link, index) => {
+    acc[`${AUTH_CHAIN_HEADER_PREFIX}${index}`] = JSON.stringify(link);
+    return acc;
+  }, {});
+
+  return {
+    ...headers,
+    [AUTH_TIMESTAMP_HEADER]: timestamp,
+    [AUTH_METADATA_HEADER]: metadata,
+  };
+}
 
 /**
- * Fetch the deployment status.
+ * Validates a status string against known values.
  *
- * @returns A promise that resolves with the deployment status if successful.
+ * @param status - The status string to validate.
+ * @returns A valid `Status` or `failed` if invalid.
  */
-export async function fetchDeploymentStatus(): Promise<DeploymentStatus> {
-  const response = await fetch('some-url');
+export function validateStatus(status: string): Status {
+  return STATUS_VALUES.includes(status as Status) ? (status as Status) : 'failed';
+}
+
+/**
+ * Derives an overall deployment status from different statuses.
+ *
+ * @param statuses - The deployment statuses.
+ * @returns An overall `Status`.
+ */
+export function deriveOverallStatus(statuses: Record<string, string>): Status {
+  const _statuses: Set<Status> = new Set(Object.values(statuses) as Status[]);
+  if (_statuses.has('pending')) return 'pending';
+  if (_statuses.has('complete')) return 'complete';
+  return 'failed';
+}
+
+/**
+ * Fetches the deployment status for a given scene.
+ *
+ * @param sceneId - The unique identifier of the scene.
+ * @param identity - The authentication identity for signing requests.
+ * @returns A promise resolving to the deployment status.
+ */
+export async function fetchDeploymentStatus(
+  sceneId: string,
+  identity: AuthIdentity,
+): Promise<DeploymentStatus> {
+  const method = 'get';
+  const path = `/entities/status/${sceneId}`;
+  const url = new URL(path, 'https://asset-bundle-registry.decentraland.zone');
+  const headers = getAuthHeaders(method, url.pathname, payload =>
+    Authenticator.signPayload(identity, payload),
+  );
+
+  const response = await fetch(url, { method, headers });
+
   if (!response.ok) throw new Error(`Error fetching deployment status: ${response.status}`);
-  const data = (await response.json()) as DeploymentStatus;
-  return data;
+
+  const json = (await response.json()) as AssetBundleRegistryResponse;
+
+  console.log('json: ', json);
+
+  return {
+    catalyst: validateStatus(json.catalyst),
+    assetBundle: deriveOverallStatus(json.assetBundles),
+    lods: deriveOverallStatus(json.lods),
+  };
 }
 
 /**
  * Periodically checks the deployment status and updates the caller with changes.
  * Retries the status check up to a maximum number of attempts or until the deployment succeeds.
  *
- * @param initialStatus - The initial deployment status to start with.
  * @param maxRetries - The maximum number of retries before considering the deployment a failure.
  * @param retryDelayInMs - The delay in milliseconds between consecutive retries.
+ * @param fetchStatus - A promise function that resolves to a DeploymentStatus triggered on every retry.
  * @param onChange - A callback function triggered whenever the deployment status changes.
  * @param abort - A function that returns `true` if the status check should be aborted.
- * @throws {Error} Throws an error if the maximum retries are reached without success.
+ * @param initialStatus - The initial deployment status to start with (defaults to 'idle' for every step).
+ * @returns A promise resolving to the deployment status.
+ * @throws {DeploymentError} Throws an error if the maximum retries are reached without success.
  */
 export async function checkDeploymentStatus(
-  initialStatus: DeploymentStatus,
   maxRetries: number,
   retryDelayInMs: number,
+  fetchStatus: () => Promise<DeploymentStatus>,
   onChange: (status: DeploymentStatus) => void,
   abort: () => boolean,
-): Promise<void> {
+  initialStatus: DeploymentStatus = getInitialDeploymentStatus(),
+): Promise<DeploymentStatus> {
   let currentStatus = initialStatus;
   let retries = 0;
   let error: Error | undefined = undefined;
 
   function _onChange(status: DeploymentStatus) {
-    currentStatus = status;
     onChange(status);
+    currentStatus = status;
   }
 
   while (retries < maxRetries) {
     try {
-      if (abort()) return console.log('Deployment status check aborted...');
-      const status = await fetchDeploymentStatus();
+      if (abort()) {
+        console.log('Deployment status check aborted...');
+        return currentStatus;
+      }
+      const status = await fetchStatus();
       if (!equal(currentStatus, status)) _onChange(status);
     } catch (e: any) {
-      // TODO: THIS IS ONLY FOR DEMO. REMOVE IT BEFORE MERGING!!!!!!!!
-      if (retries === 4) {
-        _onChange({ ...currentStatus, catalyst: 'pending' });
-      } else if (retries === 9) {
-        _onChange({ ...currentStatus, catalyst: 'success', assetBundle: 'pending' });
-      } else if (retries === 14) {
-        _onChange({
-          ...currentStatus,
-          catalyst: 'success',
-          assetBundle: 'success',
-          lods: 'pending',
-        });
-      } else if (retries === 19) {
-        _onChange({
-          ...currentStatus,
-          catalyst: 'success',
-          assetBundle: 'success',
-          lods: 'success',
-        });
-      }
-      // TODO: REMOVE UNTIL HERE!!!!!!!!
-
-      console.error(`Attempt ${retries + 1} failed.`, e);
-      error = e;
+      error = new DeploymentError('FETCH', 'Fetch deployment status failed.', e);
+      console.error(error);
     }
 
     retries++;
 
     // return if all components of the deployment are successful
-    const allSuccessful = Object.values(currentStatus).every($ => $ === 'success');
-    if (allSuccessful) return console.log('Deployment success!');
+    const allSuccessful = Object.values(currentStatus).every($ => $ === 'complete');
+    if (allSuccessful) {
+      console.log('Deployment success!');
+      return currentStatus;
+    }
 
     if (retries < maxRetries) {
-      console.log(`Retrying in ${retryDelayInMs}ms...`);
+      console.log(
+        `Attempt ${retries + 1}/${maxRetries} failed. Retrying in ${retryDelayInMs}ms...`,
+      );
       await delay(retryDelayInMs);
     }
   }
 
   // if maximum retries are reached, log the error and throw
-  const errMsg = 'Max retries reached. Deployment failed.';
-  console.error(errMsg, error);
-  throw new Error(errMsg, { cause: error });
+  const maxRetriesError = new DeploymentError(
+    'MAX_RETRIES',
+    'Max retries reached. Deployment failed.',
+    error,
+  );
+  console.error(maxRetriesError);
+  throw maxRetriesError;
 }

@@ -4,5 +4,5 @@ export type Step = {
   bulletText: ReactNode;
   name: string;
   text?: string;
-  state?: 'idle' | 'pending' | 'success' | 'failed';
+  state?: 'idle' | 'pending' | 'complete' | 'failed';
 };
