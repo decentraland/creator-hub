@@ -175,6 +175,10 @@
             "asset_bundle": "Asset Bundle",
             "lods": "LODs",
             "loading": "Loading..."
+          },
+          "errors": {
+            "catalyst_deploy": "Catalyst deployment failed. Try again later...",
+            "max_retries": "Max retries reached. Deployment failed.<br></br>Here is the error: {error}"
           }
         },
         "success": {

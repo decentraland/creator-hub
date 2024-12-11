@@ -107,9 +107,7 @@ export function EditorPage() {
   if (import.meta.env.VITE_ASSET_PACKS_JS_PORT && import.meta.env.VITE_ASSET_PACKS_JS_PATH) {
     // this is for local development of the asset-packs repo
     const b64 = btoa(import.meta.env.VITE_ASSET_PACKS_JS_PATH);
-    binIndexJsUrl = `http://localhost:${
-      import.meta.env.VITE_ASSET_PACKS_JS_PORT
-    }/content/contents/b64-${b64}`;
+    binIndexJsUrl = `http://localhost:${import.meta.env.VITE_ASSET_PACKS_JS_PORT}/content/contents/b64-${b64}`;
   }
 
   // this is the asset-packs javascript file

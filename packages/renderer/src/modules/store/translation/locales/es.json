@@ -175,6 +175,10 @@
             "asset_bundle": "Asset Bundle",
             "lods": "LODs",
             "loading": "Cargando..."
+          },
+          "errors": {
+            "catalyst_deploy": "Falló la actualización del Catalyst. Vuelve a intentarlo más tarde...",
+            "max_retries": "Se alcanzó el número máximo de reintentos. Error en la actualización.<br></br>Este es el error: {error}"
           }
         },
         "success": {
