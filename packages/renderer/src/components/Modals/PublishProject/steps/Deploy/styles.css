@@ -229,16 +229,28 @@
   padding: 10px;
 }
 
-.Deploy .scene .Deploying .title {
+.Deploy .scene .Deploying .header {
+  color: var(--dcl-silver);
   display: flex;
-  align-items: center;
   justify-content: flex-start;
-  text-transform: uppercase;
   margin-bottom: 20px;
+  flex-direction: column;
 }
 
-.Deploy .scene .Deploying .title .Loader {
+.Deploy .scene .Deploying .header .title {
+  display: flex;
+  align-items: center;
+  text-transform: uppercase;
+}
+
+.Deploy .scene .Deploying .header .Loader {
   width: inherit;
+  margin-right: 12px;
+}
+
+.Deploy .scene .Deploying .header .Warning {
+  background-size: contain;
+  width: 40px;
   margin-right: 12px;
 }
 

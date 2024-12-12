@@ -63,7 +63,7 @@ export function PublishToLand(props: Props) {
       updatedAt: Date.now(),
     });
     void publishScene({
-      target: import.meta.env.VITE_CATALYST_SERVER || DEPLOY_URLS.DEV_CATALYST_SERVER,
+      target: import.meta.env.VITE_CATALYST_SERVER || DEPLOY_URLS.CATALYST_SERVER,
     });
     props.onStep('deploy');
   }, [placement, props.onStep]);

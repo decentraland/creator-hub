@@ -169,16 +169,23 @@
         "deploying": {
           "publish": "出版...",
           "finishing": "整理完毕...",
+          "failed": "发布失败",
+          "try_again": "请重试",
           "info": "此过程平均可能需要 15 分钟。在此期间，您的场景可能会显示为空，直到在客户端中更新为止。",
           "step": {
             "catalyst": "Catalyst",
             "asset_bundle": "资产包",
             "lods": "LODs",
-            "loading": "加载中..."
+            "loading": "加载中...",
+            "failed": "失败的"
           },
           "errors": {
             "catalyst_deploy": "部分部署失败。稍后再试...",
             "max_retries": "已达到最大重试次数。部署失败。<br></br>错误如下：{error}"
+          },
+          "actions": {
+            "report_issue": "报告问题",
+            "retry": "重试"
           }
         },
         "success": {
