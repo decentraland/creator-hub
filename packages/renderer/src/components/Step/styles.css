@@ -23,6 +23,14 @@
   background-color: var(--primary);
 }
 
+.Step.idle {
+  color: var(--dcl-silver);
+}
+
+.Step.failed {
+  color: var(--primary);
+}
+
 .Step.complete .bullet,
 .Step.failed .bullet {
   color: var(--white);
@@ -36,7 +44,7 @@
 .Step .body h4 {
   margin: 0;
   line-height: 20px;
-  font-weight: 100;
+  font-weight: 700;
 }
 
 .Step.pending .body h4 {

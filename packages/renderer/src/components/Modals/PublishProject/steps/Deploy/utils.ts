@@ -67,9 +67,28 @@ export function validateStatus(status: string): Status {
  */
 export function deriveOverallStatus(statuses: Record<string, string>): Status {
   const _statuses: Set<Status> = new Set(Object.values(statuses) as Status[]);
+  if (_statuses.has('failed')) return 'failed';
   if (_statuses.has('pending')) return 'pending';
   if (_statuses.has('complete')) return 'complete';
-  return 'failed';
+  return 'idle';
+}
+
+/**
+ * Cleans up a `DeploymentStatus` object by resetting any 'pending' statuses to 'idle'.
+ *
+ * This function ensures that any deployment step stuck in a 'pending' state is treated
+ * as 'idle' to indicate that it hasn't started or needs to be retried.
+ *
+ * @param status - The `DeploymentStatus` object containing the current statuses of deployment steps.
+ * @returns A new `DeploymentStatus` object where all 'pending' statuses are replaced with 'idle'.
+ */
+export function cleanPendingsFromDeploymentStatus(status: DeploymentStatus): DeploymentStatus {
+  return Object.fromEntries(
+    Object.entries(status).map(([step, currentStatus]) => [
+      step,
+      currentStatus === 'pending' ? 'idle' : currentStatus,
+    ]),
+  ) as DeploymentStatus;
 }
 
 /**
@@ -95,8 +114,6 @@ export async function fetchDeploymentStatus(
   if (!response.ok) throw new Error(`Error fetching deployment status: ${response.status}`);
 
   const json = (await response.json()) as AssetBundleRegistryResponse;
-
-  console.log('json: ', json);
 
   return {
     catalyst: validateStatus(json.catalyst),
@@ -169,8 +186,27 @@ export async function checkDeploymentStatus(
   const maxRetriesError = new DeploymentError(
     'MAX_RETRIES',
     'Max retries reached. Deployment failed.',
+    currentStatus,
     error,
   );
   console.error(maxRetriesError);
   throw maxRetriesError;
+}
+
+/**
+ * Checks if the deployment is nearing completion based on a given percentage threshold.
+ *
+ * This function evaluates the `DeploymentStatus` object to determine whether the proportion
+ * of steps with a 'complete' status meets or exceeds the specified threshold (default: 60%).
+ *
+ * @param status - The `DeploymentStatus` object containing the current statuses of deployment steps.
+ * @param percentage - The completion threshold as a decimal (e.g., `0.6` for 60%). Defaults to 0.6.
+ * @returns `true` if the proportion of completed steps is greater than or equal to the threshold; otherwise, `false`.
+ */
+export function isDeployFinishing(status: DeploymentStatus, percentage: number = 0.6): boolean {
+  const statuses = Object.values(status);
+  const total = statuses.length;
+  if (total === 0) return false;
+  const completedCount = statuses.filter(value => value === 'complete').length;
+  return completedCount / total >= percentage;
 }

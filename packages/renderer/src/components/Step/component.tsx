@@ -7,7 +7,7 @@ import type { Step } from './types';
 
 import './styles.css';
 
-export function Step({ bulletText, name, text, state = 'idle' }: Step) {
+export function Step({ bulletText, name, description, state = 'idle' }: Step) {
   const bullet = useMemo(() => {
     if (state === 'complete') return <CheckIcon />;
     if (state === 'failed') return <CloseIcon />;
@@ -19,7 +19,7 @@ export function Step({ bulletText, name, text, state = 'idle' }: Step) {
       <div className="bullet">{bullet}</div>
       <div className="body">
         <h4>{name}</h4>
-        <span>{text}</span>
+        <span>{description}</span>
       </div>
     </div>
   );

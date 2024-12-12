@@ -31,6 +31,8 @@ import {
   checkDeploymentStatus,
   fetchDeploymentStatus,
   deriveOverallStatus,
+  cleanPendingsFromDeploymentStatus,
+  isDeployFinishing,
 } from './utils';
 import {
   type File,
@@ -126,7 +128,7 @@ export function Deploy(props: Props) {
       const identity = localStorageGetIdentity(wallet);
       if (identity && chainId) {
         const authChain = Authenticator.signPayload(identity, info.rootCID);
-        void deploy({ address: wallet, authChain, chainId: ChainId.ETHEREUM_SEPOLIA })
+        void deploy({ address: wallet, authChain, chainId })
           .then(() => {
             if (!isMounted()) return;
           })
@@ -196,9 +198,12 @@ export function Deploy(props: Props) {
     }
   }, [jumpInUrl]);
 
-  const handleDeployFinish = useCallback((status: Status, error?: string) => {
-    setDeployStatus(status);
-    setError(error ?? null);
+  const handleDeploySuccess = useCallback(() => {
+    setDeployStatus('complete');
+  }, []);
+
+  const handleDeployRetry = useCallback(() => {
+    props.onBack && props.onBack();
   }, []);
 
   return (
@@ -240,6 +245,7 @@ export function Deploy(props: Props) {
               </label>
               <span className="buttons">
                 <Button
+                  color="secondary"
                   variant="outlined"
                   size="medium"
                   onClick={handleBack}
@@ -321,8 +327,9 @@ export function Deploy(props: Props) {
                 <Deploying
                   info={info}
                   url={jumpInUrl}
-                  onFinish={handleDeployFinish}
+                  onSuccess={handleDeploySuccess}
                   onClick={handleJumpIn}
+                  onRetry={handleDeployRetry}
                 />
               )}
               {deployStatus === 'complete' && (
@@ -393,11 +400,12 @@ function Idle({ files, error, onClick }: IdleProps) {
 type DeployingProps = {
   info: Info;
   url: string | null;
-  onFinish: (status: Status, error?: string) => void;
+  onSuccess: () => void;
   onClick: () => void;
+  onRetry: () => void;
 };
 
-function Deploying({ info, url, onFinish, onClick }: DeployingProps) {
+function Deploying({ info, url, onSuccess, onClick, onRetry }: DeployingProps) {
   const { wallet } = useAuth();
   const [deployState, setDeployState] = useState<DeploymentStatus>(getInitialDeploymentStatus());
 
@@ -406,41 +414,37 @@ function Deploying({ info, url, onFinish, onClick }: DeployingProps) {
     const identity = localStorageGetIdentity(wallet);
     if (!identity) throw new Error(`No identity found for wallet ${wallet}`);
     return fetchDeploymentStatus(info.rootCID, identity);
-  }, [info]);
+  }, [wallet, info]);
+
+  const onReportIssue = useCallback(() => {
+    void misc.openExternal('https://decentraland.canny.io');
+  }, []);
 
   useEffect(
     () => {
       let isCancelled = false;
 
       const handleUpdate = (status: DeploymentStatus) => {
-        // if catalyst deploy fails, we abort the deployment completely
-        if (status.catalyst === 'failed') {
-          isCancelled = true;
-          return onFinish(
-            'failed',
-            t('modal.publish_project.deploy.deploying.errors.catalyst_deploy'),
-          );
+        if (!isCancelled) {
+          if (deriveOverallStatus(status) === 'failed') {
+            isCancelled = true;
+            setDeployState(cleanPendingsFromDeploymentStatus(status));
+          } else {
+            setDeployState(status);
+          }
         }
-        if (!isCancelled) setDeployState(status);
       };
 
-      const handleSuccess = (status: DeploymentStatus) => {
-        if (!isCancelled) onFinish(deriveOverallStatus(status));
+      const handleSuccess = () => {
+        if (!isCancelled) onSuccess();
       };
 
       const handleFailure = (error: any) => {
         if (!isCancelled) {
-          // if we know the error, we can translate it
+          // info: if we know the error, we can translate it
           if (isDeploymentError(error, 'MAX_RETRIES')) {
-            return onFinish(
-              'failed',
-              t('modal.publish_project.deploy.deploying.errors.max_retries', {
-                error: error.message,
-              }),
-            );
+            setDeployState(cleanPendingsFromDeploymentStatus(error.status));
           }
-
-          onFinish('failed', error.message);
         }
       };
 
@@ -465,48 +469,79 @@ function Deploying({ info, url, onFinish, onClick }: DeployingProps) {
     [] /* no deps, want this to run ONLY on mount */,
   );
 
-  const text = useMemo(() => t('modal.publish_project.deploy.deploying.step.loading'), []);
-  const is = useCallback((status: Status, status2: Status) => status === status2, []);
+  const getStepDescription = useCallback((status: Status) => {
+    switch (status) {
+      case 'pending':
+        return t('modal.publish_project.deploy.deploying.step.loading');
+      case 'failed':
+        return t('modal.publish_project.deploy.deploying.step.failed');
+      default:
+        return undefined;
+    }
+  }, []);
 
   const steps: Step[] = useMemo(() => {
     const { catalyst, assetBundle, lods } = deployState;
-
     return [
       {
         bulletText: '1',
         name: t('modal.publish_project.deploy.deploying.step.catalyst'),
-        text: is('pending', catalyst) ? text : undefined,
+        description: getStepDescription(catalyst),
         state: catalyst,
       },
       {
         bulletText: '2',
         name: t('modal.publish_project.deploy.deploying.step.asset_bundle'),
-        text: is('pending', assetBundle) ? text : undefined,
+        description: getStepDescription(assetBundle),
         state: assetBundle,
       },
       {
         bulletText: '3',
         name: t('modal.publish_project.deploy.deploying.step.lods'),
-        text: is('pending', lods) ? text : undefined,
+        description: getStepDescription(lods),
         state: lods,
       },
     ];
-  }, [deployState]);
+  }, [deployState, getStepDescription]);
 
-  const lastStep = steps[steps.length - 1];
+  const isFinishing = useMemo(() => isDeployFinishing(deployState), [deployState]);
+  const overallStatus = useMemo(() => deriveOverallStatus(deployState), [deployState]);
+  const title = useMemo(() => {
+    if (overallStatus === 'failed') return t('modal.publish_project.deploy.deploying.failed');
+    if (isFinishing) return t('modal.publish_project.deploy.deploying.finishing');
+    return t('modal.publish_project.deploy.deploying.publish');
+  }, [overallStatus, isFinishing]);
 
   return (
     <div className="Deploying">
-      <div className="title">
-        <Loader />
-        <Typography variant="h5">
-          {lastStep.state === 'pending'
-            ? t('modal.publish_project.deploy.deploying.finishing')
-            : t('modal.publish_project.deploy.deploying.publish')}
-        </Typography>
+      <div className="header">
+        <div className="title">
+          {overallStatus === 'failed' ? <div className="Warning" /> : <Loader />}
+          <Typography variant="h5">{title}</Typography>
+        </div>
+        {overallStatus === 'failed' && (
+          <span>{t('modal.publish_project.deploy.deploying.try_again')}</span>
+        )}
       </div>
       <ConnectedSteps steps={steps} />
-      {lastStep.state === 'pending' ? (
+      {overallStatus === 'failed' ? (
+        <div className="actions">
+          <Button
+            size="large"
+            variant="outlined"
+            color="secondary"
+            onClick={onReportIssue}
+          >
+            {t('modal.publish_project.deploy.deploying.actions.report_issue')}
+          </Button>
+          <Button
+            size="large"
+            onClick={onRetry}
+          >
+            {t('modal.publish_project.deploy.deploying.actions.retry')}
+          </Button>
+        </div>
+      ) : isFinishing ? (
         <>
           <div className="jump">
             <JumpUrl

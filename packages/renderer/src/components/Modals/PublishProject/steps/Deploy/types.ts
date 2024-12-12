@@ -42,7 +42,17 @@ export type AssetBundleRegistryResponse = {
 
 export type Error = 'MAX_RETRIES' | 'FETCH';
 
-export class DeploymentError extends ErrorBase<Error> {}
+export class DeploymentError extends ErrorBase<Error> {
+  constructor(
+    public name: Error,
+    public message: string = '',
+    public status: DeploymentStatus,
+    public cause?: any,
+  ) {
+    super(name, message, cause);
+    this.status = status;
+  }
+}
 
 export const isDeploymentError = (error: unknown, type: Error): error is DeploymentError =>
   error instanceof DeploymentError && error.name === type;
