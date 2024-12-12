@@ -17,6 +17,7 @@ export async function init(path: string, repo?: string) {
     args: ['init', '--yes', '--skip-install', ...(repo ? ['--github-repo', repo] : [])],
     cwd: path,
     env: await getEnv(path),
+    workspace: path,
   });
   await initCommand.wait();
 }
@@ -30,6 +31,7 @@ export async function start(path: string) {
   previewServer = run('@dcl/sdk-commands', 'sdk-commands', {
     args: ['start', '--explorer-alpha', '--hub'],
     cwd: path,
+    workspace: path,
     env: await getEnv(path),
   });
   await previewServer.waitFor(/decentraland:\/\//i);
@@ -52,6 +54,7 @@ export async function deploy({ path, target, targetContent }: DeployOptions) {
     ],
     cwd: path,
     env: await getEnv(path),
+    workspace: path,
   });
 
   // App ready at
