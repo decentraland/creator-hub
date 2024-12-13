@@ -24,6 +24,10 @@
   background-color: var(--dcl-dark);
 }
 
+.Button.MuiButton-colorPrimary:hover:has(.Actions:hover) {
+  background-color: var(--dcl);
+}
+
 /* Color secondary */
 .Button.MuiButton-colorSecondary {
   background-color: var(--dark-gray);
@@ -48,4 +52,17 @@
 
 .Button.MuiButton-outlined {
   background-color: transparent;
+}
+
+.Button.MuiButton-root .Actions {
+  display: flex;
+  margin: 5px;
+}
+
+.Button.MuiButton-root:has(.Actions) {
+  padding: 0 0 0 20px;
+}
+
+.Button.MuiButton-root .MuiIconButton-root {
+  padding: 0;
 }

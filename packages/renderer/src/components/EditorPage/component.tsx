@@ -23,7 +23,7 @@ import { Row } from '../Row';
 
 import './styles.css';
 
-type ModalType = 'publish';
+type ModalType = 'publish' | 'publish_history';
 
 export function EditorPage() {
   const navigate = useNavigate();
@@ -74,14 +74,18 @@ export function EditorPage() {
 
   const handleOpenModal = useCallback(
     (type: ModalType) => () => {
-      const rpc = iframeRef.current;
-      if (rpc) {
-        saveAndGetThumbnail(rpc);
-        setOpen(type);
-      }
+      setOpen(type);
     },
-    [iframeRef.current],
+    [],
   );
+
+  const handleOpenPublish = useCallback(() => {
+    const rpc = iframeRef.current;
+    if (rpc) {
+      saveAndGetThumbnail(rpc);
+      setOpen('publish');
+    }
+  }, [iframeRef.current]);
 
   const handleCloseModal = useCallback(() => {
     setOpen(undefined);
@@ -174,8 +178,14 @@ export function EditorPage() {
               <Button
                 color="primary"
                 disabled={loadingPublish}
-                onClick={handleOpenModal('publish')}
+                onClick={handleOpenPublish}
                 startIcon={loadingPublish ? <Loader size={20} /> : <PublicIcon />}
+                actions={[
+                  {
+                    label: t('editor.header.actions.publish_history'),
+                    onClick: handleOpenModal('publish_history'),
+                  },
+                ]}
               >
                 {t('editor.header.actions.publish')}
               </Button>

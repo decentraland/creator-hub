@@ -37,7 +37,8 @@
       "actions": {
         "code": "Code",
         "preview": "Preview",
-        "publish": "Publish"
+        "publish": "Publish",
+        "publish_history": "Publishing History"
       }
     }
   },

@@ -37,7 +37,8 @@
       "actions": {
         "code": "代码",
         "preview": "预览",
-        "publish": "发布"
+        "publish": "发布",
+        "publish_history": "出版历史"
       }
     }
   },
