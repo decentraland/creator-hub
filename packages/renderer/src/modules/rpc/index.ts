@@ -24,12 +24,13 @@ interface Callbacks {
   ) => Promise<Result[Method.WRITE_FILE]>;
 }
 
-const getBasePath = async (path: string, project: Project) => {
+const getPath = async (path: string, project: Project) => {
+  let basePath = project.path;
   if (path === 'custom' || path.startsWith('custom/')) {
     const homePath = await workspace.getPath();
-    return homePath;
+    basePath = homePath;
   }
-  return project.path;
+  return await fs.resolve(basePath, path);
 };
 
 export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partial<Callbacks> = {}) {
@@ -40,21 +41,21 @@ export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partia
   const params = { iframe, project, storage, camera };
 
   storage.handle('read_file', async ({ path }) => {
-    const file = await fs.readFile(await fs.resolve(await getBasePath(path, project), path));
+    const file = await fs.readFile(await getPath(path, project));
     return file;
   });
   storage.handle('write_file', async ({ path, content }) => {
-    await fs.writeFile(await fs.resolve(await getBasePath(path, project), path), content as any); // "content as any" since there is a mismatch in typescript's type definitions
+    await fs.writeFile(await getPath(path, project), content as any); // "content as any" since there is a mismatch in typescript's type definitions
     await cbs.writeFile?.(params, { path, content });
   });
   storage.handle('exists', async ({ path }) => {
-    return fs.exists(await fs.resolve(await getBasePath(path, project), path));
+    return fs.exists(await getPath(path, project));
   });
   storage.handle('delete', async ({ path }) => {
-    await fs.rm(await fs.resolve(await getBasePath(path, project), path));
+    await fs.rm(await getPath(path, project));
   });
   storage.handle('list', async ({ path }) => {
-    const basePath = await fs.resolve(await getBasePath(path, project), path);
+    const basePath = await getPath(path, project);
     const files = await fs.readdir(basePath);
     const list = [];
     for (const file of files) {
