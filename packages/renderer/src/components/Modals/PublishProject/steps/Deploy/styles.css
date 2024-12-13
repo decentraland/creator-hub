@@ -171,7 +171,7 @@
   background: center no-repeat url(images/warning.svg);
 }
 
-.Deploy .scene .success {
+.Deploy .scene .Success {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
@@ -179,7 +179,7 @@
   border-left: 1px solid var(--dark-gray);
 }
 
-.Deploy .scene .success .content {
+.Deploy .scene .Success .content {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
@@ -190,20 +190,24 @@
   padding-bottom: 80px;
 }
 
-.Deploy .scene .success .content .success-icon {
+.Deploy .scene .Success .content .success-icon {
   width: 80px;
   height: 80px;
   background: center no-repeat url(images/success.svg);
 }
 
-.Deploy .scene .success .content .message {
+.Deploy .scene .Success .content .message {
   color: var(--dcl-silver);
   font-size: 20px;
   font-weight: 500;
   text-transform: uppercase;
 }
 
-.Deploy .scene .success .content .url {
+.Deploy .scene .jump-in-url {
+  margin-bottom: 20px;
+}
+
+.Deploy .scene .jump-in-url .url {
   color: var(--light-gray);
   border: 1px solid var(--dark-gray);
   font-size: 13px;
@@ -214,11 +218,63 @@
   border-radius: 10px;
   display: flex;
   align-items: center;
+  width: fit-content;
+  margin-top: 5px;
 }
 
-.Deploy .scene .success .content .jump-in-url label {
+.Deploy .scene .Deploying {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 10px;
+}
+
+.Deploy .scene .Deploying .header {
   color: var(--dcl-silver);
-  line-height: 24px;
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 20px;
+  flex-direction: column;
+}
+
+.Deploy .scene .Deploying .header .title {
+  display: flex;
+  align-items: center;
+  text-transform: uppercase;
+}
+
+.Deploy .scene .Deploying .header .Loader {
+  width: inherit;
+  margin-right: 12px;
+}
+
+.Deploy .scene .Deploying .header .Warning {
+  background-size: contain;
+  width: 40px;
+  margin-right: 12px;
+}
+
+.Deploy .scene .Deploying .ConnectedSteps {
+  margin-bottom: 30px;
+}
+
+.Deploy .scene .Deploying .info {
+  display: flex;
+  flex-direction: row;
+  background-color: #1764C03D;
+  border-radius: 8px;
+  padding: 20px;
+  width: 450px;
+  color: var(--dcl-silver);
+}
+
+.Deploy .scene .Deploying .info svg {
+  color: var(--twitter);
+}
+
+.Deploy .scene .jump-in-url label {
+  color: var(--dcl-silver);
+  line-height: 20px;
   font-size: 14px;
   letter-spacing: 0.17px;
   font-weight: 500;
@@ -226,7 +282,7 @@
   display: block;
 }
 
-.Deploy .scene .success .content .jump-in-url .copy-icon {
+.Deploy .scene .jump-in-url .copy-icon {
   width: 18px;
   height: 18px;
   background: center no-repeat url(images/copy.svg);
@@ -235,13 +291,13 @@
   cursor: pointer;
 }
 
-.Deploy .scene .success .actions {
+.Deploy .scene .actions {
   flex: none;
   display: flex;
   justify-content: flex-end;
 }
 
-.Deploy .scene .success .Button .jump-in-icon {
+.Deploy .scene .Button .jump-in-icon {
   width: 24px;
   height: 24px;
   background: center no-repeat url(images/jump-in.svg);

@@ -42,3 +42,5 @@ export const throttle = <T, K extends any[]>(
     },
   ];
 };
+
+export const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));

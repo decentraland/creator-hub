@@ -34,17 +34,6 @@
   border-bottom: 2px solid white;
 }
 
-.Navbar .feedback {
-  border-radius: 6px;
-  padding: 8px;
-  text-transform: uppercase;
-  border: 1px solid var(--text);
-  font-size: 12px;
-  font-weight: 600;
-  text-align: center;
-  cursor: pointer;
-}
-
 .Navbar .actions {
   display: flex;
   align-items: center;

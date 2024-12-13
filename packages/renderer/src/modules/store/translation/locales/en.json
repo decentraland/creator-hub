@@ -166,12 +166,35 @@
           "size": "Total Size <b>{size}</b>",
           "publish": "Publish"
         },
+        "deploying": {
+          "publish": "Publishing...",
+          "finishing": "Finishing up...",
+          "failed": "Publishing failed",
+          "try_again": "Please try again",
+          "info": "This process may take 15 minutes on average. During this time, your scene may appear empty until it has been updated in the client.",
+          "step": {
+            "catalyst": "Catalyst",
+            "asset_bundle": "Asset Bundle",
+            "lods": "LODs",
+            "loading": "Loading...",
+            "failed": "Error"
+          },
+          "errors": {
+            "catalyst_deploy": "Catalyst deployment failed. Try again later...",
+            "max_retries": "Max retries reached. Deployment failed.<br></br>Here is the error: {error}"
+          },
+          "actions": {
+            "report_issue": "Report an issue",
+            "retry": "Retry"
+          }
+        },
         "success": {
           "message": "You scene is successfully published",
           "url": "The URL to jump in your {target} is:",
           "world": "World",
           "land": "Land",
-          "jump_in": "Jump In"
+          "jump_in": "Jump In",
+          "in_progress": "You can now access your scene even while it's still processing."
         }
       }
     },
