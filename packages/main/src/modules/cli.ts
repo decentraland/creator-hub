@@ -17,7 +17,6 @@ export async function init(path: string, repo?: string) {
     args: ['init', '--yes', '--skip-install', ...(repo ? ['--github-repo', repo] : [])],
     cwd: path,
     env: await getEnv(path),
-    workspace: path,
   });
   await initCommand.wait();
 }
