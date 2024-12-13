@@ -8,6 +8,7 @@ import { type Project } from '/shared/types/projects';
 
 import { UiRPC } from './ui';
 import { type Method, type Params, type Result, StorageRPC } from './storage';
+import { workspace } from '#preload';
 
 export type RPCInfo = {
   iframe: HTMLIFrameElement;
@@ -23,6 +24,15 @@ interface Callbacks {
   ) => Promise<Result[Method.WRITE_FILE]>;
 }
 
+const getPath = async (path: string, project: Project) => {
+  let basePath = project.path;
+  if (path === 'custom' || path.startsWith('custom/')) {
+    const homePath = await workspace.getPath();
+    basePath = homePath;
+  }
+  return await fs.resolve(basePath, path);
+};
+
 export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partial<Callbacks> = {}) {
   const transport = new MessageTransport(window, iframe.contentWindow!);
   const camera = new CameraRPC(transport);
@@ -31,25 +41,25 @@ export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partia
   const params = { iframe, project, storage, camera };
 
   storage.handle('read_file', async ({ path }) => {
-    const file = await fs.readFile(await fs.resolve(project.path, path));
+    const file = await fs.readFile(await getPath(path, project));
     return file;
   });
   storage.handle('write_file', async ({ path, content }) => {
-    await fs.writeFile(await fs.resolve(project.path, path), content as any); // "content as any" since there is a mismatch in typescript's type definitions
+    await fs.writeFile(await getPath(path, project), content as any); // "content as any" since there is a mismatch in typescript's type definitions
     await cbs.writeFile?.(params, { path, content });
   });
   storage.handle('exists', async ({ path }) => {
-    return fs.exists(await fs.resolve(project.path, path));
+    return fs.exists(await getPath(path, project));
   });
   storage.handle('delete', async ({ path }) => {
-    await fs.rm(await fs.resolve(project.path, path));
+    await fs.rm(await getPath(path, project));
   });
   storage.handle('list', async ({ path }) => {
-    const projectPath = await fs.resolve(project.path, path);
-    const files = await fs.readdir(projectPath);
+    const basePath = await getPath(path, project);
+    const files = await fs.readdir(basePath);
     const list = [];
     for (const file of files) {
-      const filePath = await fs.resolve(projectPath, file);
+      const filePath = await fs.resolve(basePath, file);
       list.push({
         name: file,
         isDirectory: await fs.isDirectory(filePath),
