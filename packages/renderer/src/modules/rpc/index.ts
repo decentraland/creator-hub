@@ -27,7 +27,7 @@ interface Callbacks {
 const getBasePath = async (path: string, project: Project) => {
   if (path === 'custom' || path.startsWith('custom/')) {
     const homePath = await workspace.getPath();
-    return `${homePath}`;
+    return homePath;
   }
   return project.path;
 };
