@@ -150,6 +150,9 @@ export const slice = createSlice({
       state.isInstalledProject = true;
       state.isInstallingProject = false;
     });
+    builder.addCase(workspaceActions.installProject.rejected, (state) => {
+      state.isInstallingProject = false;
+    });
     builder.addCase(workspaceActions.saveAndGetThumbnail.fulfilled, (state, action) => {
       if (state.project) {
         state.project.thumbnail = action.payload;

@@ -202,7 +202,9 @@
       "duplicate_scene_failed": "Error al duplicar escena",
       "delete_scene": "Borrando escena...",
       "delete_scene_failed": "Error al borrar escena",
-      "dependencies_updated": "Las dependencias de la escena fueron actualizadas"
+      "dependencies_updated": "Las dependencias de la escena fueron actualizadas",
+      "installing_dependencies": "Instalando dependencias...",
+      "installing_dependencies_failed": "Error al instalar dependencias"
     },
     "missing_projects": {
       "title": "{scenes} {scenes, plural, one {escena} other {escenas}} {scenes, plural, one {faltante} other {faltantes}}",
