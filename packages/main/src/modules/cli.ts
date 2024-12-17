@@ -1,7 +1,6 @@
 import type { DeployOptions } from '/shared/types/ipc';
 import { run, type Child } from './bin';
 import { getAvailablePort } from './port';
-import { install } from './npm';
 import { getProjectId } from './analytics';
 
 async function getEnv(path: string) {
@@ -26,7 +25,6 @@ export async function start(path: string) {
   if (previewServer) {
     await previewServer.kill();
   }
-  await install(path);
   previewServer = run('@dcl/sdk-commands', 'sdk-commands', {
     args: ['start', '--explorer-alpha', '--hub'],
     cwd: path,
