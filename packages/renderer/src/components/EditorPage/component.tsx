@@ -38,6 +38,7 @@ export function EditorPage() {
     updateScene,
     loadingPreview,
     loadingPublish,
+    isInstallingProject,
   } = useEditor();
   const userId = useSelector(state => state.analytics.userId);
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
@@ -167,7 +168,7 @@ export function EditorPage() {
               </Button>
               <Button
                 color="secondary"
-                disabled={loadingPreview}
+                disabled={loadingPreview || isInstallingProject}
                 onClick={openPreview}
                 startIcon={loadingPreview ? <Loader size={20} /> : <PlayCircleIcon />}
               >
@@ -175,7 +176,7 @@ export function EditorPage() {
               </Button>
               <Button
                 color="primary"
-                disabled={loadingPublish}
+                disabled={loadingPublish || isInstallingProject}
                 onClick={handleOpenModal('publish')}
                 startIcon={loadingPublish ? <Loader size={20} /> : <PublicIcon />}
               >

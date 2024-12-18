@@ -44,6 +44,29 @@ export const slice = createSlice({
           }),
         );
       })
+      .addCase(workspaceActions.installProject.pending, (state, payload) => {
+        const { requestId } = payload.meta;
+        state.notifications.push(
+          createGenericNotification('loading', t('snackbar.generic.installing_dependencies'), {
+            requestId,
+            duration: 0,
+          }),
+        );
+      })
+      .addCase(workspaceActions.installProject.fulfilled, (state, payload) => {
+        const { requestId } = payload.meta;
+        state.notifications = state.notifications.filter($ => $.id !== requestId);
+      })
+      .addCase(workspaceActions.installProject.rejected, (state, payload) => {
+        const { requestId } = payload.meta;
+        state.notifications = state.notifications.filter($ => $.id !== requestId);
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.installing_dependencies_failed'), {
+            requestId,
+            duration: 2_000,
+          }),
+        );
+      })
       .addCase(workspaceActions.importProject.fulfilled, (state, payload) => {
         const { requestId } = payload.meta;
         state.notifications = state.notifications.filter($ => $.id !== requestId);

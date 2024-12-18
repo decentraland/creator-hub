@@ -28,6 +28,8 @@ export type EditorState = {
   loadingPreview: boolean;
   isInstalling: boolean;
   isInstalled: boolean;
+  isInstallingProject: boolean;
+  isInstalledProject: boolean;
   isFetchingVersion: boolean;
   error: Error | null;
 };
@@ -41,6 +43,8 @@ const initialState: EditorState = {
   loadingInspector: false,
   loadingPreview: false,
   isInstalling: false,
+  isInstallingProject: false,
+  isInstalledProject: false,
   isInstalled: false,
   isFetchingVersion: false,
   error: null,
@@ -138,6 +142,16 @@ export const slice = createSlice({
     });
     builder.addCase(workspaceActions.saveAndGetThumbnail.pending, state => {
       if (state.project) state.project.status = 'loading';
+    });
+    builder.addCase(workspaceActions.installProject.pending, state => {
+      state.isInstallingProject = true;
+    });
+    builder.addCase(workspaceActions.installProject.fulfilled, state => {
+      state.isInstalledProject = true;
+      state.isInstallingProject = false;
+    });
+    builder.addCase(workspaceActions.installProject.rejected, state => {
+      state.isInstallingProject = false;
     });
     builder.addCase(workspaceActions.saveAndGetThumbnail.fulfilled, (state, action) => {
       if (state.project) {
