@@ -6,7 +6,11 @@ export function getHome() {
   return app.getPath('home');
 }
 
-export function getAppHome() {
+export function getUserDataPath() {
+  return app.getPath('userData');
+}
+
+export function getAppHomeLegacy() {
   return path.join(getHome(), '.decentraland');
 }
 

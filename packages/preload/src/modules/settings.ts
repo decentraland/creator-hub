@@ -1,14 +1,17 @@
+import path from 'path';
 import {
   DEPENDENCY_UPDATE_STRATEGY,
   DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
 } from '/shared/types/settings';
 import type { AppSettings } from '/shared/types/settings';
+import { SCENES_DIRECTORY } from '/shared/paths';
 
 import { invoke } from './invoke';
 import { getConfig, setConfig } from './config';
 
-export function getDefaultScenesPath() {
-  return invoke('electron.getAppHome');
+export async function getDefaultScenesPath() {
+  const userDataPath = await invoke('electron.getUserDataPath');
+  return path.join(userDataPath, SCENES_DIRECTORY);
 }
 
 export async function getScenesPath() {

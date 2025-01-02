@@ -13,7 +13,7 @@ export type IpcError = {
 };
 
 export interface Ipc {
-  'electron.getAppHome': () => string;
+  'electron.getUserDataPath': () => string;
   'electron.getAppVersion': () => Promise<string>;
   'electron.getWorkspaceConfigPath': (path: string) => Promise<string>;
   'electron.showOpenDialog': (opts: Partial<OpenDialogOptions>) => Promise<string[]>;
