@@ -2,13 +2,12 @@ import { MessageTransport } from '@dcl/mini-rpc';
 
 import { CameraRPC } from './camera';
 
-import { fs } from '#preload';
+import { fs, custom } from '#preload';
 
 import { type Project } from '/shared/types/projects';
 
 import { UiRPC } from './ui';
 import { type Method, type Params, type Result, StorageRPC } from './storage';
-import { workspace } from '#preload';
 
 export type RPCInfo = {
   iframe: HTMLIFrameElement;
@@ -27,8 +26,7 @@ interface Callbacks {
 const getPath = async (path: string, project: Project) => {
   let basePath = project.path;
   if (path === 'custom' || path.startsWith('custom/')) {
-    const homePath = await workspace.getPath();
-    basePath = homePath;
+    basePath = await custom.getPath();
   }
   return await fs.resolve(basePath, path);
 };

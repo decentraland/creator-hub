@@ -7,6 +7,7 @@ import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 
 import { invoke } from './invoke';
 import { getDefaultScenesPath } from './settings';
+import { SETTINGS_DIRECTORY } from '/shared/paths';
 
 const CONFIG_FILE_NAME = 'config.json';
 
@@ -31,13 +32,13 @@ async function getDefaultConfig(): Promise<Config> {
  * @returns {Promise<string>} The configuration file path.
  */
 export async function getConfigPath(): Promise<string> {
-  const appHome = await invoke('electron.getAppHome');
+  const userDataPath = await invoke('electron.getUserDataPath');
   try {
-    await fs.stat(appHome);
+    await fs.stat(userDataPath);
   } catch (_) {
-    await fs.mkdir(appHome);
+    await fs.mkdir(userDataPath);
   }
-  return path.join(appHome, CONFIG_FILE_NAME);
+  return path.join(userDataPath, SETTINGS_DIRECTORY, CONFIG_FILE_NAME);
 }
 
 /**

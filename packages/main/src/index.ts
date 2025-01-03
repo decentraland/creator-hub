@@ -9,6 +9,7 @@ import { deployServer, previewServer } from './modules/cli';
 import { inspectorServer } from './modules/inspector';
 import { getAnalytics, track } from './modules/analytics';
 import './security-restrictions';
+import { runMigrations } from './modules/migrations';
 
 log.initialize();
 
@@ -44,6 +45,7 @@ app.on('activate', restoreOrCreateWindow);
 app
   .whenReady()
   .then(async () => {
+    await runMigrations();
     log.info(`[App] Ready v${app.getVersion()}`);
     initIpc();
     log.info('[IPC] Ready');
