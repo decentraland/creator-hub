@@ -23,12 +23,16 @@ interface Callbacks {
   ) => Promise<Result[Method.WRITE_FILE]>;
 }
 
-const getPath = async (path: string, project: Project) => {
+const getPath = async (filePath: string, project: Project) => {
   let basePath = project.path;
-  if (path === 'custom' || path.startsWith('custom/')) {
+  const normalizedPath = filePath.replace(/\\/g, '/');
+  if (normalizedPath === 'custom' || normalizedPath.startsWith('custom/')) {
     basePath = await custom.getPath();
+    filePath =
+      normalizedPath === 'custom' ? '' : normalizedPath.substring(normalizedPath.indexOf('/') + 1);
   }
-  return await fs.resolve(basePath, path);
+  const resolvedPath = await fs.resolve(basePath, filePath);
+  return resolvedPath;
 };
 
 export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partial<Callbacks> = {}) {
