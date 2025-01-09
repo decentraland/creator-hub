@@ -128,7 +128,7 @@ export function Deploy(props: Props) {
       const identity = localStorageGetIdentity(wallet);
       if (identity && chainId) {
         const authChain = Authenticator.signPayload(identity, info.rootCID);
-        void deploy({ address: wallet, authChain, chainId })
+        void deploy({ address: wallet, authChain, chainId: ChainId.ETHEREUM_SEPOLIA })
           .then(() => {
             if (!isMounted()) return;
           })
