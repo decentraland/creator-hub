@@ -7,7 +7,7 @@ class Profiles {
     try {
       const response = await fetch(`${PEER_URL}/lambdas/profiles/${address}`);
       const profile = (await response.json()) as Profile;
-      return profile.avatars[0] as Avatar;
+      return profile.avatars[0];
     } catch (error) {
       console.error(error);
       return undefined;

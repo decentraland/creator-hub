@@ -74,6 +74,7 @@
       "more": "更多"
     },
     "feedback": "给我们反馈",
+    "report_an_issue": "报告问题",
     "user_menu": {
       "sign_in": "登录",
       "sign_out": "登出"
@@ -134,7 +135,8 @@
         }
       },
       "alternative_servers": {
-        "title": "替代服务器",
+        "title": "发布到不同的服务器",
+        "list": "备用服务器",
         "options": {
           "test_server": "测试服务器",
           "custom_server": "定制服务器"
@@ -164,12 +166,35 @@
           "size": "总大小 <b>{size}</b>",
           "publish": "发布"
         },
+        "deploying": {
+          "publish": "出版...",
+          "finishing": "整理完毕...",
+          "failed": "发布失败",
+          "try_again": "请重试",
+          "info": "此过程平均可能需要 15 分钟。在此期间，您的场景可能会显示为空，直到在客户端中更新为止。",
+          "step": {
+            "catalyst": "Catalyst",
+            "asset_bundle": "资产包",
+            "lods": "LODs",
+            "loading": "加载中...",
+            "failed": "失败的"
+          },
+          "errors": {
+            "catalyst_deploy": "部分部署失败。稍后再试...",
+            "max_retries": "已达到最大重试次数。部署失败。<br></br>错误如下：{error}"
+          },
+          "actions": {
+            "report_issue": "报告问题",
+            "retry": "重试"
+          }
+        },
         "success": {
           "message": "您的场景已成功发布",
           "url": "跳转到您的 {target} 的URL是：",
           "world": "世界",
           "land": "土地",
-          "jump_in": "跳转"
+          "jump_in": "跳转",
+          "in_progress": "现在，即使场景仍在处理中，您也可以访问该场景。"
         }
       }
     },
