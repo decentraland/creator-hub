@@ -4,6 +4,7 @@ import type { AuthIdentity } from 'decentraland-crypto-fetch';
 import { type AuthChain, Authenticator } from '@dcl/crypto';
 
 import { delay } from '/shared/utils';
+import { DEPLOY_URLS } from '/shared/types/deploy';
 
 import {
   type AssetBundleRegistryResponse,
@@ -104,7 +105,7 @@ export async function fetchDeploymentStatus(
 ): Promise<DeploymentStatus> {
   const method = 'get';
   const path = `/entities/status/${sceneId}`;
-  const url = new URL(path, 'https://asset-bundle-registry.decentraland.zone');
+  const url = new URL(path, DEPLOY_URLS.ASSET_BUNDLE_REGISTRY);
   const headers = getAuthHeaders(method, url.pathname, payload =>
     Authenticator.signPayload(identity, payload),
   );
