@@ -134,3 +134,11 @@ The CI pipeline is configured to automate the release process for the Decentrala
    - The auto updater, as mentioned in the Update Process, will pick up this new release and update the production app.
 
 This streamlined process ensures that updates are consistently and accurately deployed to users.
+
+## Related Architecture Decisions
+
+For a deeper understanding of the architecture and design decisions:
+
+- [ADR-280: Binary Management](https://adr.decentraland.org/adr/ADR-280) - Describes the approach for managing Node.js binaries and their execution within the Creator Hub, including cross-platform binary execution and process monitoring
+- [ADR-281: Items in Decentraland tooling](https://adr.decentraland.org/adr/ADR-281) - Explains the Items abstraction and how it's used in the Inspector
+- [ADR-282: Decentraland Inspector](https://adr.decentraland.org/adr/ADR-282) - Details the Inspector's architecture, integration approaches, and technical decisions
