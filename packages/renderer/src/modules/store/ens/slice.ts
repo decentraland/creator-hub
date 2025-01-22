@@ -3,12 +3,11 @@ import { ethers, Contract } from 'ethers';
 import { namehash } from '@ethersproject/hash';
 import pLimit from 'p-limit';
 import type { ChainId } from '@dcl/schemas/dist/dapps/chain-id';
-import { getContract, ContractName } from 'decentraland-transactions';
 import { DCLNames, ENS as ENSApi } from '/@/lib/ens';
 import { Worlds } from '/@/lib/worlds';
 import { isDev } from '/@/modules/utils';
 import type { Async } from '/shared/types/async';
-import { ens as ensContract, ensResolver } from './contracts';
+import { ens as ensContract, ensResolver, dclRegistrar } from './contracts';
 import { getEnsProvider, isValidENSName } from './utils';
 import { USER_PERMISSIONS, type ENS, type ENSError } from './types';
 
@@ -82,10 +81,9 @@ export const fetchDCLNames = createAsyncThunk(
       provider,
     );
 
-    const dclRegistrar = getContract(ContractName.DCLRegistrar, chainId);
     const dclRegistrarImplementation = new Contract(
-      dclRegistrar.address,
-      dclRegistrar.abi,
+      dclRegistrar[chainId].address,
+      dclRegistrar[chainId].abi,
       provider,
     );
 

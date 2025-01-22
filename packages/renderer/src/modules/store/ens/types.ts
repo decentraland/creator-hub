@@ -83,3 +83,11 @@ export type ContributableDomain = {
   owner: string;
   size: string;
 };
+
+export type ContractData = {
+  abi: object[];
+  address: string;
+  name: string;
+  version: string;
+  chainId: ChainId;
+};
