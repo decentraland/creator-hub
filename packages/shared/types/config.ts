@@ -1,4 +1,7 @@
+import deepmerge from 'deepmerge';
 import { type AppSettings } from './settings';
+import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from './settings';
+import { SCENES_DIRECTORY } from '/shared/paths';
 
 export type Config = {
   version: number;
@@ -6,4 +9,23 @@ export type Config = {
     paths: string[];
   };
   settings: AppSettings;
+  userId?: string;
 };
+
+export const DEFAULT_CONFIG: Config = {
+  version: 1,
+  workspace: {
+    paths: [],
+  },
+  settings: {
+    scenesPath: SCENES_DIRECTORY, // Base directory name, will be joined with userDataPath by main/preload
+    dependencyUpdateStrategy: DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
+  },
+};
+
+export function mergeConfig(target: Partial<Config>, source: Config): Config {
+  return deepmerge(source, target, {
+    // Clone arrays instead of merging them
+    arrayMerge: (_, sourceArray) => sourceArray,
+  });
+}
