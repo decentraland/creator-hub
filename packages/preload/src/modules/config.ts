@@ -1,29 +1,23 @@
 import fs from 'node:fs/promises';
 import path from 'path';
 import { produce, type WritableDraft } from 'immer';
+import deepmerge from 'deepmerge';
 
 import type { Config } from '/shared/types/config';
-import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
+import { DEFAULT_CONFIG, mergeConfig } from '/shared/types/config';
 
 import { invoke } from './invoke';
-import { getDefaultScenesPath } from './settings';
-import { SETTINGS_DIRECTORY } from '/shared/paths';
-
-const CONFIG_FILE_NAME = 'config.json';
+import { SETTINGS_DIRECTORY, CONFIG_FILE_NAME, getFullScenesPath } from '/shared/paths';
 
 let config: Config | undefined;
 
 async function getDefaultConfig(): Promise<Config> {
-  return {
-    version: 1,
-    workspace: {
-      paths: [],
-    },
-    settings: {
-      scenesPath: await getDefaultScenesPath(),
-      dependencyUpdateStrategy: DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
-    },
-  };
+  // Clone the default config to avoid modifying the shared constant
+  const defaultConfig = deepmerge({}, DEFAULT_CONFIG);
+  // Update the scenesPath to include the userDataPath
+  const userDataPath = await invoke('electron.getUserDataPath');
+  defaultConfig.settings.scenesPath = getFullScenesPath(userDataPath);
+  return defaultConfig;
 }
 
 /**
@@ -38,7 +32,13 @@ export async function getConfigPath(): Promise<string> {
   } catch (_) {
     await fs.mkdir(userDataPath);
   }
-  return path.join(userDataPath, SETTINGS_DIRECTORY, CONFIG_FILE_NAME);
+  const settingsDir = path.join(userDataPath, SETTINGS_DIRECTORY);
+  try {
+    await fs.stat(settingsDir);
+  } catch (_) {
+    await fs.mkdir(settingsDir);
+  }
+  return path.join(settingsDir, CONFIG_FILE_NAME);
 }
 
 /**
@@ -50,12 +50,20 @@ export async function getConfigPath(): Promise<string> {
  */
 export async function getConfig(): Promise<Readonly<Config>> {
   if (!config) {
+    const defaultConfig = await getDefaultConfig();
     try {
       const configPath = await getConfigPath();
-      config = JSON.parse(await fs.readFile(configPath, 'utf-8')) as Config;
+      const existingConfig = JSON.parse(await fs.readFile(configPath, 'utf-8')) as Partial<Config>;
+      // Deep merge existing config with default config, preserving existing values
+      config = mergeConfig(existingConfig, defaultConfig);
+      // If the merged config is different from what's on disk, write it back
+      if (JSON.stringify(existingConfig) !== JSON.stringify(config)) {
+        await writeConfig(config);
+      }
     } catch (_) {
       try {
-        await writeConfig(await getDefaultConfig());
+        config = defaultConfig;
+        await writeConfig(config);
       } catch (e) {
         console.error('[Preload] Failed initializing config file', e);
       }
