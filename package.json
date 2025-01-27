@@ -70,7 +70,7 @@
   "dependencies": {
     "@dcl/mini-rpc": "^1.0.7",
     "@dcl/schemas": "^11.10.4",
-    "@dcl/sdk": "^7.7.0",
+    "@dcl/sdk": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feature/easy-import/dcl-sdk-7.7.2-12991715740.commit-bf3f912.tgz",
     "@ethersproject/hash": "^5.7.0",
     "@segment/analytics-node": "^2.1.2",
     "cmd-shim": "^6.0.3",
