@@ -304,9 +304,11 @@ export async function duplicateProject(_path: string): Promise<Project> {
  * @throws An error if the selected directory is not a valid project.
  */
 export async function importProject(): Promise<Project | undefined> {
+  const config = await getConfig();
   const [projectPath] = await invoke('electron.showOpenDialog', {
     title: 'Import project',
     properties: ['openDirectory'],
+    defaultPath: config.settings.scenesPath,
   });
 
   const cancelled = !projectPath;
@@ -314,7 +316,6 @@ export async function importProject(): Promise<Project | undefined> {
   if (cancelled) return undefined;
 
   const pathBaseName = path.basename(projectPath);
-  const config = await getConfig();
   const [projects] = await getProjects(config.workspace.paths);
   const projectAlreadyExists = projects.find($ => $.path === projectPath);
 

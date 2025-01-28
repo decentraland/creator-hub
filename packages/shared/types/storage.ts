@@ -44,9 +44,16 @@ async function _createFileSystemStorage(storagePath: string) {
       const data = await read();
       return data[key] as T | undefined;
     },
+    getAll: async <T extends StorageData>(): Promise<T> => {
+      const data = await read();
+      return data as T;
+    },
     set: async <T>(key: string, value: T): Promise<void> => {
       const data = await read();
       data[key] = value;
+      await write(data);
+    },
+    setAll: async <T extends StorageData>(data: T): Promise<void> => {
       await write(data);
     },
     has: async (key: string): Promise<boolean> => {
