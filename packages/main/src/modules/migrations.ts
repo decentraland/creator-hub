@@ -5,6 +5,8 @@ import { future } from 'fp-future';
 import { SCENES_DIRECTORY } from '/shared/paths';
 import { getAppHomeLegacy, getUserDataPath } from './electron';
 import { CONFIG_PATH } from './config';
+import { FileSystemStorage } from '/shared/types/storage';
+import { type Config, CURRENT_CONFIG_VERSION } from '/shared/types/config';
 
 const migrationsFuture = future<void>();
 
@@ -16,11 +18,82 @@ export async function runMigrations() {
   try {
     log.info('[Migrations] Starting migrations');
     await migrateLegacyPaths();
+    await migrateToV2();
     log.info('[Migrations] Migrations completed');
     migrationsFuture.resolve();
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error));
     migrationsFuture.reject(err);
+    throw error;
+  }
+}
+
+async function migrateToV2() {
+  log.info('[Migration] Checking if migration to V2 is needed');
+
+  try {
+    const storage = await FileSystemStorage.getOrCreate(CONFIG_PATH);
+    const config = await storage.getAll<Partial<Config>>();
+
+    // Only run if version is 1
+    if (config.version !== 1) {
+      log.info('[Migration] Config version is not 1, skipping V2 migration');
+      return;
+    }
+
+    log.info('[Migration] Starting V2 migration');
+
+    // Check if scenesPath exists
+    if (config.settings?.scenesPath) {
+      log.info('[Migration] Scanning scenesPath for scenes');
+
+      const scenesPath = path.isAbsolute(config.settings.scenesPath)
+        ? config.settings.scenesPath
+        : path.join(getUserDataPath(), config.settings.scenesPath);
+
+      try {
+        // Get all directories in scenesPath
+        const entries = await fs.readdir(scenesPath, { withFileTypes: true });
+        const validScenePaths: string[] = [];
+
+        // Check each directory for valid scenes
+        for (const entry of entries) {
+          if (!entry.isDirectory()) continue;
+
+          const fullPath = path.join(scenesPath, entry.name);
+          if (await isValidScene(fullPath)) {
+            validScenePaths.push(fullPath);
+            log.info('[Migration] Found valid scene:', fullPath);
+          }
+        }
+
+        // Get existing workspace paths or empty array if none exist
+        const existingPaths = config.workspace?.paths || [];
+
+        // Combine existing paths with new valid scene paths, removing duplicates
+        const uniquePaths = [...new Set([...existingPaths, ...validScenePaths])];
+
+        // Ensure workspace object exists
+        if (!config.workspace) {
+          config.workspace = { paths: [] };
+        }
+
+        // Update workspace paths with combined unique paths
+        config.workspace.paths = uniquePaths;
+
+        log.info('[Migration] Updated workspace paths:', uniquePaths);
+      } catch (error) {
+        log.error('[Migration] Error scanning scenesPath:', error);
+        throw error;
+      }
+    }
+
+    // Update version to 2
+    config.version = CURRENT_CONFIG_VERSION;
+    await storage.setAll(config);
+    log.info('[Migration] Successfully completed V2 migration');
+  } catch (error) {
+    log.error('[Migration] Error in V2 migration:', error);
     throw error;
   }
 }
