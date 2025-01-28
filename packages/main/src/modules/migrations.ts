@@ -1,14 +1,28 @@
 import path from 'path';
 import fs from 'fs/promises';
 import log from 'electron-log/main';
+import { future } from 'fp-future';
 import { SCENES_DIRECTORY } from '/shared/paths';
 import { getAppHomeLegacy, getUserDataPath } from './electron';
 import { CONFIG_PATH } from './config';
 
+const migrationsFuture = future<void>();
+
+export async function waitForMigrations(): Promise<void> {
+  return migrationsFuture;
+}
+
 export async function runMigrations() {
-  log.info('[Migrations] Starting migrations');
-  await migrateLegacyPaths();
-  log.info('[Migrations] Migrations completed');
+  try {
+    log.info('[Migrations] Starting migrations');
+    await migrateLegacyPaths();
+    log.info('[Migrations] Migrations completed');
+    migrationsFuture.resolve();
+  } catch (error) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    migrationsFuture.reject(err);
+    throw error;
+  }
 }
 
 async function isValidScene(scenePath: string): Promise<boolean> {

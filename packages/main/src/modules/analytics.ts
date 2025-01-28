@@ -3,7 +3,7 @@ import path from 'node:path';
 import log from 'electron-log';
 import { randomUUID, type UUID } from 'node:crypto';
 import { FileSystemStorage } from '/shared/types/storage';
-import { config } from './config';
+import { getConfig } from './config';
 import { getWorkspaceConfigPath } from './electron';
 
 let analytics: Analytics | null = null;
@@ -19,6 +19,7 @@ export function setUserId(userId: string) {
 }
 
 export async function getAnonymousId() {
+  const config = await getConfig();
   const userId = await config.get<string>('userId');
   if (!userId) {
     const uuid = randomUUID();
