@@ -70,7 +70,7 @@
   "dependencies": {
     "@dcl/mini-rpc": "^1.0.7",
     "@dcl/schemas": "^11.10.4",
-    "@dcl/sdk": "^7.7.0",
+    "@dcl/sdk": "^7.7.2",
     "@ethersproject/hash": "^5.7.0",
     "@segment/analytics-node": "^2.1.2",
     "cmd-shim": "^6.0.3",
