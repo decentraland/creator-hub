@@ -35,7 +35,10 @@ export async function start(path: string, retry = true) {
       env: await getEnv(path),
     });
 
-    await previewServer.waitFor(/decentraland:\/\//i);
+    await Promise.race([
+      previewServer.waitFor(/decentraland:\/\//i, /CliError/i),
+      await previewServer.wait(),
+    ]);
   } catch (error) {
     if (retry) {
       log.info('[CLI] Something went wrong trying to start preview:', (error as Error).message);
