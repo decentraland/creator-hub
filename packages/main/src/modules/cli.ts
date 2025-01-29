@@ -1,7 +1,9 @@
+import log from 'electron-log/main';
 import type { DeployOptions } from '/shared/types/ipc';
 import { run, type Child } from './bin';
 import { getAvailablePort } from './port';
 import { getProjectId } from './analytics';
+import { install } from './npm';
 
 async function getEnv(path: string) {
   const projectId = await getProjectId(path);
@@ -21,17 +23,28 @@ export async function init(path: string, repo?: string) {
 }
 
 export let previewServer: Child | null = null;
-export async function start(path: string) {
+export async function start(path: string, retry = true) {
   if (previewServer) {
     await previewServer.kill();
   }
-  previewServer = run('@dcl/sdk-commands', 'sdk-commands', {
-    args: ['start', '--explorer-alpha', '--hub'],
-    cwd: path,
-    workspace: path,
-    env: await getEnv(path),
-  });
-  await previewServer.waitFor(/decentraland:\/\//i);
+  try {
+    previewServer = run('@dcl/sdk-commands', 'sdk-commands', {
+      args: ['start', '--explorer-alpha', '--hub'],
+      cwd: path,
+      workspace: path,
+      env: await getEnv(path),
+    });
+
+    await previewServer.waitFor(/decentraland:\/\//i);
+  } catch (error) {
+    if (retry) {
+      log.info('[CLI] Something went wrong trying to start preview:', (error as Error).message);
+      await install(path);
+      await start(path, false);
+    } else {
+      throw error;
+    }
+  }
 }
 
 export let deployServer: Child | null = null;
