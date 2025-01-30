@@ -37,7 +37,7 @@ export async function start(path: string, retry = true) {
 
     await Promise.race([
       previewServer.waitFor(/decentraland:\/\//i, /CliError/i),
-      await previewServer.wait(),
+      previewServer.wait(),
     ]);
   } catch (error) {
     if (retry) {
