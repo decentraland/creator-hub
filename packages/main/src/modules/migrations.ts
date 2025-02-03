@@ -5,7 +5,7 @@ import { future } from 'fp-future';
 import { SCENES_DIRECTORY } from '/shared/paths';
 import { getAppHomeLegacy, getUserDataPath } from './electron';
 import { CONFIG_PATH } from './config';
-import { FileSystemStorage } from '/shared/types/storage';
+import { FileSystemStorage, type IFileSystemStorage } from '/shared/types/storage';
 import { type Config, CURRENT_CONFIG_VERSION } from '/shared/types/config';
 
 const migrationsFuture = future<void>();
@@ -17,8 +17,9 @@ export async function waitForMigrations(): Promise<void> {
 export async function runMigrations() {
   try {
     log.info('[Migrations] Starting migrations');
-    await migrateLegacyPaths();
-    await migrateToV2();
+    const configStorage = await FileSystemStorage.getOrCreate(CONFIG_PATH);
+    await migrateLegacyPaths(configStorage);
+    await migrateToV2(configStorage);
     log.info('[Migrations] Migrations completed');
     migrationsFuture.resolve();
   } catch (error) {
@@ -28,11 +29,10 @@ export async function runMigrations() {
   }
 }
 
-async function migrateToV2() {
+async function migrateToV2(storage: IFileSystemStorage) {
   log.info('[Migration] Checking if migration to V2 is needed');
 
   try {
-    const storage = await FileSystemStorage.getOrCreate(CONFIG_PATH);
     const config = await storage.getAll<Partial<Config>>();
 
     // Only run if version is 1
@@ -140,7 +140,7 @@ async function copyScene(sourcePath: string, targetPath: string) {
 }
 
 // Migrations
-async function migrateLegacyPaths() {
+async function migrateLegacyPaths(configStorage: IFileSystemStorage) {
   log.info('[Migration] Starting legacy paths migration');
   const userDataPath = getUserDataPath();
   const appHomeLegacy = getAppHomeLegacy();
@@ -224,7 +224,7 @@ async function migrateLegacyPaths() {
     }
 
     log.info('[Migration] Writing updated config.json to:', CONFIG_PATH);
-    await fs.writeFile(CONFIG_PATH, JSON.stringify(config, null, 2));
+    await configStorage.setAll(config);
     log.info('[Migration] Successfully migrated config.json');
 
     log.info('[Migration] Legacy paths migration completed successfully');
