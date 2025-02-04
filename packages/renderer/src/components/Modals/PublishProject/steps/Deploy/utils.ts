@@ -14,10 +14,10 @@ import {
   DeploymentError,
 } from './types';
 
-export const getInitialDeploymentStatus = (): DeploymentStatus => ({
+export const getInitialDeploymentStatus = (isWorld: boolean = false): DeploymentStatus => ({
   catalyst: 'idle',
   assetBundle: 'idle',
-  lods: 'idle',
+  lods: isWorld ? 'complete' : 'idle', // Auto-complete for worlds
 });
 
 export const retryDelayInMs = seconds(10);
@@ -102,6 +102,7 @@ export function cleanPendingsFromDeploymentStatus(status: DeploymentStatus): Dep
 export async function fetchDeploymentStatus(
   sceneId: string,
   identity: AuthIdentity,
+  isWorld: boolean = false,
 ): Promise<DeploymentStatus> {
   const method = 'get';
   const path = `/entities/status/${sceneId}`;
@@ -119,7 +120,7 @@ export async function fetchDeploymentStatus(
   return {
     catalyst: validateStatus(json.catalyst),
     assetBundle: deriveOverallStatus(json.assetBundles),
-    lods: deriveOverallStatus(json.lods),
+    lods: isWorld ? 'complete' : deriveOverallStatus(json.lods), // Skip lods for worlds
   };
 }
 
