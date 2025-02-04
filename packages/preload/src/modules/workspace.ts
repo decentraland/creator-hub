@@ -145,24 +145,28 @@ export async function getProjects(paths: string | string[]): Promise<[Project[],
   const missing: string[] = [];
 
   for (const _path of paths) {
-    if (!(await exists(_path))) {
-      // _path doesn't exist
-      missing.push(_path);
-    } else if (await isDCL(_path)) {
-      // _path is a project
-      promises.push(getProject(_path));
-    } else {
-      // _path is a directory with projects
-      const files = await fs.readdir(_path);
-      for (const dir of files) {
-        try {
-          const projectDir = path.join(_path, dir);
-          if (await isDCL(projectDir)) {
-            promises.push(getProject(projectDir));
-          }
-          // eslint-disable-next-line no-empty
-        } catch (_) {}
+    try {
+      if (!(await exists(_path))) {
+        // _path doesn't exist
+        missing.push(_path);
+      } else if (await isDCL(_path)) {
+        // _path is a project
+        promises.push(getProject(_path));
+      } else {
+        // _path is a directory with projects
+        const files = await fs.readdir(_path);
+        for (const dir of files) {
+          try {
+            const projectDir = path.join(_path, dir);
+            if (await isDCL(projectDir)) {
+              promises.push(getProject(projectDir));
+            }
+            // eslint-disable-next-line no-empty
+          } catch (_) {}
+        }
       }
+    } catch (_) {
+      missing.push(_path);
     }
   }
 
