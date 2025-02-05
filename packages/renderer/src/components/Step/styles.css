@@ -58,7 +58,8 @@
 .ConnectedSteps {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 100px;
+  justify-content: flex-start;
 }
 
 .ConnectedSteps .Step {
@@ -68,8 +69,8 @@
 .ConnectedSteps .Step:not(:last-child)::after {
   content: '';
   background-color: var(--dcl-silver);
-  width: 81px;
+  width: 90px;
   height: 1px;
   position: absolute;
-  left: 110%;
+  left: 105%;
 }

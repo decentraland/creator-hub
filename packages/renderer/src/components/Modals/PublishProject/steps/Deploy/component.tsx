@@ -407,13 +407,15 @@ type DeployingProps = {
 
 function Deploying({ info, url, onSuccess, onClick, onRetry }: DeployingProps) {
   const { wallet } = useAuth();
-  const [deployState, setDeployState] = useState<DeploymentStatus>(getInitialDeploymentStatus());
+  const [deployState, setDeployState] = useState<DeploymentStatus>(
+    getInitialDeploymentStatus(info.isWorld),
+  );
 
   const getDeploymentStatus = useCallback((): Promise<DeploymentStatus> => {
     if (!wallet) throw new Error('No wallet provided');
     const identity = localStorageGetIdentity(wallet);
     if (!identity) throw new Error(`No identity found for wallet ${wallet}`);
-    return fetchDeploymentStatus(info.rootCID, identity);
+    return fetchDeploymentStatus(info.rootCID, identity, info.isWorld);
   }, [wallet, info]);
 
   const onReportIssue = useCallback(() => {
@@ -482,7 +484,7 @@ function Deploying({ info, url, onSuccess, onClick, onRetry }: DeployingProps) {
 
   const steps: Step[] = useMemo(() => {
     const { catalyst, assetBundle, lods } = deployState;
-    return [
+    const baseSteps = [
       {
         bulletText: '1',
         name: t('modal.publish_project.deploy.deploying.step.catalyst'),
@@ -495,14 +497,20 @@ function Deploying({ info, url, onSuccess, onClick, onRetry }: DeployingProps) {
         description: getStepDescription(assetBundle),
         state: assetBundle,
       },
-      {
+    ];
+
+    // Only add LODs step for non-world deployments
+    if (!info.isWorld) {
+      baseSteps.push({
         bulletText: '3',
         name: t('modal.publish_project.deploy.deploying.step.lods'),
         description: getStepDescription(lods),
         state: lods,
-      },
-    ];
-  }, [deployState, getStepDescription]);
+      });
+    }
+
+    return baseSteps;
+  }, [deployState, getStepDescription, info.isWorld]);
 
   const isFinishing = useMemo(() => isDeployFinishing(deployState), [deployState]);
   const overallStatus = useMemo(() => deriveOverallStatus(deployState), [deployState]);
