@@ -29,7 +29,9 @@ export async function getOutdatedDeps(_path: string, packages: string[] = []): P
     await npmOutdated.wait();
     return {};
   } catch (e) {
-    if (e instanceof StreamError) return parseOutdated(e.stdout);
+    if (e instanceof StreamError) {
+      return parseOutdated(e.stdout);
+    }
     return {};
   }
 }
