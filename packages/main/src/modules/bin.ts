@@ -12,6 +12,7 @@ import { promisify } from 'util';
 import { exec as execSync } from 'child_process';
 
 import { ErrorBase } from '/shared/types/error';
+import { createCircularBuffer } from '/shared/circular-buffer';
 
 import { APP_UNPACKED_PATH, getBinPath, getNodeCmdPath, joinEnvPaths } from './path';
 import { track } from './analytics';
@@ -173,6 +174,8 @@ export async function install() {
   }
 }
 
+const MAX_BUFFER_SIZE = 2048;
+
 type Error = 'COMMAND_FAILED';
 
 export class StreamError extends ErrorBase<Error> {
@@ -240,6 +243,9 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
 
   const binPath = getBinPath(pkg, bin, workspace);
 
+  const stdout = createCircularBuffer<Uint8Array>(MAX_BUFFER_SIZE);
+  const stderr = createCircularBuffer<Uint8Array>(MAX_BUFFER_SIZE);
+
   const forked = utilityProcess.fork(binPath, [...args], {
     cwd,
     stdio: 'pipe',
@@ -250,13 +256,11 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
     },
   });
 
-  const stdout: Uint8Array[] = [];
   forked.stdout!.on('data', (data: Buffer) => {
     handleData(data, matchers, 'stdout');
     stdout.push(Uint8Array.from(data));
   });
 
-  const stderr: Uint8Array[] = [];
   forked.stderr!.on('data', (data: Buffer) => {
     handleData(data, matchers, 'stderr');
     stderr.push(Uint8Array.from(data));
@@ -275,12 +279,12 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
   forked.on('exit', code => {
     if (!alive) return;
     alive = false;
-    const stdoutBuf = Buffer.concat(stdout);
+    const stdoutBuf = Buffer.concat(stdout.getAll());
     log.info(
       `[UtilityProcess] Exiting "${name}" with pid=${forked.pid} and exit code=${code || 0}`,
     );
     if (code !== 0 && code !== null) {
-      const stderrBuf = Buffer.concat(stderr);
+      const stderrBuf = Buffer.concat(stderr.getAll());
       promise.reject(
         new StreamError(
           'COMMAND_FAILED',
