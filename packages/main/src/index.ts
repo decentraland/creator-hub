@@ -1,5 +1,5 @@
 import { app } from 'electron';
-import { restoreOrCreateWindow } from '/@/mainWindow';
+import { restoreOrCreateMainWindow } from '/@/mainWindow';
 import { platform } from 'node:process';
 import updater from 'electron-updater';
 import log from 'electron-log/main';
@@ -21,7 +21,7 @@ if (!isSingleInstance) {
   app.quit();
   process.exit(0);
 }
-app.on('second-instance', restoreOrCreateWindow);
+app.on('second-instance', restoreOrCreateMainWindow);
 
 /**
  * Shut down background process if all windows was closed
@@ -36,7 +36,7 @@ app.on('window-all-closed', async () => {
 /**
  * @see https://www.electronjs.org/docs/latest/api/app#event-activate-macos Event: 'activate'.
  */
-app.on('activate', restoreOrCreateWindow);
+app.on('activate', restoreOrCreateMainWindow);
 
 /**
  * Create the application window when app is ready.
@@ -49,7 +49,7 @@ app
     log.info(`[App] Ready v${app.getVersion()}`);
     initIpc();
     log.info('[IPC] Ready');
-    await restoreOrCreateWindow();
+    await restoreOrCreateMainWindow();
     log.info('[BrowserWindow] Ready');
     const analytics = await getAnalytics();
     if (analytics) {
