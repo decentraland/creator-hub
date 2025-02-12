@@ -5,7 +5,6 @@ import { getAvailablePort } from './port';
 import { getProjectId } from './analytics';
 import { install } from './npm';
 
-export let previewServer: Child | null = null;
 export let deployServer: Child | null = null;
 
 async function getEnv(path: string) {
