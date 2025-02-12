@@ -191,14 +191,19 @@ export class StreamError extends ErrorBase<Error> {
 
 export type StreamType = 'all' | 'stdout' | 'stderr';
 
+export type EventOptions = {
+  type?: StreamType;
+  sanitize?: boolean;
+};
+
 export type Child = {
   pkg: string;
   bin: string;
   args: string[];
   cwd: string;
   process: Electron.UtilityProcess;
-  on: (pattern: RegExp, handler: (data?: string) => void, streamType?: StreamType) => number;
-  once: (pattern: RegExp, handler: (data?: string) => void, streamType?: StreamType) => number;
+  on: (pattern: RegExp, handler: (data?: string) => void, opts?: EventOptions) => number;
+  once: (pattern: RegExp, handler: (data?: string) => void, opts?: EventOptions) => number;
   off: (index: number) => void;
   wait: () => Promise<Buffer>;
   waitFor: (
@@ -214,7 +219,7 @@ type Matcher = {
   pattern: RegExp;
   handler: (data: string) => void;
   enabled: boolean;
-  streamType: StreamType;
+  opts?: EventOptions;
 };
 
 type RunOptions = {
@@ -232,7 +237,6 @@ type RunOptions = {
  * @returns Child
  */
 export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
-  // status
   let isKilling = false;
   let alive = true;
 
@@ -255,6 +259,17 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
       PATH,
     },
   });
+
+  const cleanup = () => {
+    for (const matcher of matchers) {
+      matcher.enabled = false;
+    }
+    forked.stdout?.removeAllListeners('data');
+    forked.stderr?.removeAllListeners('data');
+    stdout.clear();
+    stderr.clear();
+    matchers.length = 0;
+  };
 
   forked.stdout!.on('data', (data: Buffer) => {
     handleData(data, matchers, 'stdout');
@@ -296,6 +311,7 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
     } else {
       promise.resolve(stdoutBuf);
     }
+    cleanup();
   });
 
   const child: Child = {
@@ -304,20 +320,23 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
     args,
     cwd,
     process: forked,
-    on: (pattern, handler, streamType = 'all') => {
+    on: (pattern, handler, opts = {}) => {
       if (alive) {
-        return matchers.push({ pattern, handler, enabled: true, streamType }) - 1;
+        return matchers.push({ pattern, handler, enabled: true, opts: {
+          type: opts.type ?? 'all',
+          sanitize: opts.sanitize ?? true,
+        } }) - 1;
       }
       throw new Error('Process has been killed');
     },
-    once: (pattern, handler, streamType) => {
+    once: (pattern, handler, opts = {}) => {
       const index = child.on(
         pattern,
         data => {
           handler(data);
           child.off(index);
         },
-        streamType,
+        opts,
       );
       return index;
     },
@@ -329,9 +348,9 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
     wait: () => promise,
     waitFor: (resolvePattern, rejectPattern, opts) =>
       new Promise((resolve, reject) => {
-        child.once(resolvePattern, data => resolve(data!), opts?.resolve);
+        child.once(resolvePattern, data => resolve(data!), { type: opts?.resolve });
         if (rejectPattern) {
-          child.once(rejectPattern, data => reject(new Error(data)), opts?.reject);
+          child.once(rejectPattern, data => reject(new Error(data)), { type: opts?.reject });
         }
       }),
     kill: async () => {
@@ -344,27 +363,25 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
       log.info(`[UtilityProcess] Killing process "${name}" with pid=${pid}...`);
 
       // create promise to kill child
-      const promise = future<void>();
+      const killPromise = future<void>();
 
       // kill child gracefully
       treeKill(pid);
 
-      // child succesfully killed
+      // child successfully killed
       const die = (force: boolean = false) => {
         isKilling = false;
         alive = false;
-        clearInterval(interval);
-        clearTimeout(timeout);
-        for (const matcher of matchers) {
-          matcher.enabled = false;
-        }
+        cleanup();
         if (force) {
           log.info(`[UtilityProcess] Process "${name}" with pid=${pid} forcefully killed`);
           treeKill(pid!, 'SIGKILL');
         } else {
           log.info(`[UtilityProcess] Process "${name}" with pid=${pid} gracefully killed`);
         }
-        promise.resolve();
+        clearInterval(interval);
+        clearTimeout(timeout);
+        killPromise.resolve();
       };
 
       // interval to check if child still running and flag it as dead when is not running anymore
@@ -382,7 +399,7 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
       }, 5000);
 
       // return promise
-      return promise;
+      return killPromise;
     },
     alive: () => alive,
   };
@@ -393,17 +410,17 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
 async function handleData(buffer: Buffer, matchers: Matcher[], type: StreamType) {
   const data = buffer.toString('utf8');
   log.info(`[UtilityProcess] ${data}`); // pipe data to console
-  for (const { pattern, handler, enabled, streamType } of matchers) {
+  for (const { pattern, handler, enabled, opts } of matchers) {
     if (!enabled) continue;
-    if (streamType !== 'all' && streamType !== type) continue;
+    if (opts?.type !== 'all' && opts?.type !== type) continue;
     pattern.lastIndex = 0; // reset regexp
     if (pattern.test(data)) {
       // remove control characters from data
-      const text = data.replace(
+      const text = opts?.sanitize ? data.replace(
         // eslint-disable-next-line no-control-regex
         /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g,
-        '',
-      );
+          '',
+        ) : data;
       handler(text);
     }
   }
