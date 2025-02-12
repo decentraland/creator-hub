@@ -5,6 +5,9 @@ import { getAvailablePort } from './port';
 import { getProjectId } from './analytics';
 import { install } from './npm';
 
+export let previewServer: Child | null = null;
+export let deployServer: Child | null = null;
+
 async function getEnv(path: string) {
   const projectId = await getProjectId(path);
   return {
@@ -13,7 +16,7 @@ async function getEnv(path: string) {
   };
 }
 
-export async function init(path: string, repo?: string) {
+export async function init(path: string, repo?: string): Promise<void> {
   const initCommand = run('@dcl/sdk-commands', 'sdk-commands', {
     args: ['init', '--yes', '--skip-install', ...(repo ? ['--github-repo', repo] : [])],
     cwd: path,
@@ -67,8 +70,7 @@ export async function start(path: string, retry = true) {
   }
 }
 
-export let deployServer: Child | null = null;
-export async function deploy({ path, target, targetContent }: DeployOptions) {
+export async function deploy({ path, target, targetContent }: DeployOptions): Promise<number> {
   if (deployServer) {
     await deployServer.kill();
   }
