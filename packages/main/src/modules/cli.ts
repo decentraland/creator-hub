@@ -29,7 +29,7 @@ export async function killPreview(path: string) {
   await promise;
 }
 
-type Preview = { child: Child; previewURL: string }
+type Preview = { child: Child; previewURL: string };
 export const previewCache: Map<string, Preview> = new Map();
 
 export async function start(path: string, retry = true) {

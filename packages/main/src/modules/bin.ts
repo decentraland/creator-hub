@@ -410,7 +410,9 @@ export async function dclDeepLink(deepLink: string) {
   try {
     await exec(`${command} decentraland://"${deepLink}"`);
   } catch (e) {
-    log.error('Failed to open Decentraland. The Decentraland Launcher must be installed: https://decentraland.org/download/');
+    log.error(
+      'Failed to open Decentraland. The Decentraland Launcher must be installed: https://decentraland.org/download/',
+    );
   }
 }
 

@@ -44,7 +44,6 @@ export const useEditor = () => {
     }
   }, [project, editorActions.killPreviewScene]);
 
-
   const openCode = useCallback(() => {
     if (project) {
       editorApi.openCode(project.path);
