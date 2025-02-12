@@ -39,6 +39,7 @@ export function EditorPage() {
     loadingPreview,
     loadingPublish,
     isInstallingProject,
+    killPreview,
   } = useEditor();
   const userId = useSelector(state => state.analytics.userId);
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
@@ -70,6 +71,7 @@ export function EditorPage() {
   const handleBack = useCallback(async () => {
     const rpc = iframeRef.current;
     if (rpc) await refreshProject(rpc);
+    killPreview();
     navigate('/scenes');
   }, [navigate, iframeRef.current]);
 

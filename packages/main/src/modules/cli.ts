@@ -1,6 +1,6 @@
 import log from 'electron-log/main';
 import type { DeployOptions } from '/shared/types/ipc';
-import { run, type Child } from './bin';
+import { dclDeepLink, run, type Child } from './bin';
 import { getAvailablePort } from './port';
 import { getProjectId } from './analytics';
 import { install } from './npm';
@@ -22,24 +22,41 @@ export async function init(path: string, repo?: string) {
   await initCommand.wait();
 }
 
-export let previewServer: Child | null = null;
-export async function start(path: string, retry = true) {
-  if (previewServer) {
-    await previewServer.kill();
+export async function killPreview(path: string) {
+  if (previewCache[path]?.child) {
+    previewCache[path]?.child?.kill().catch(() => {});
   }
-  try {
-    previewServer = run('@dcl/sdk-commands', 'sdk-commands', {
-      args: ['start', '--explorer-alpha', '--hub'],
-      cwd: path,
-      workspace: path,
-      env: await getEnv(path),
-    });
+  previewCache[path] = null;
+}
 
-    await Promise.race([
-      previewServer.waitFor(/decentraland:\/\//i, /CliError/i),
-      previewServer.wait(),
-    ]);
+export const previewCache: Record<string, { child: Child; previewURL: string } | null> = {};
+
+export async function start(path: string, retry = true) {
+  // If we have a preview running for this path, open it
+  if (previewCache[path]?.child.alive() && previewCache[path]?.previewURL) {
+    await dclDeepLink(previewCache[path]?.previewURL);
+    return;
+  }
+
+  previewCache[path]?.child?.kill().catch(() => {});
+
+  try {
+    previewCache[path] = {
+      child: run('@dcl/sdk-commands', 'sdk-commands', {
+        args: ['start', '--explorer-alpha', '--hub'],
+        cwd: path,
+        workspace: path,
+        env: await getEnv(path),
+      }),
+      previewURL: '',
+    };
+
+    const dclLauncherURL = /decentraland:\/\/([^\s\n]*)/i;
+    const resultLogs = await previewCache[path].child.waitFor(dclLauncherURL, /CliError/i);
+    const urlMatch = resultLogs.match(dclLauncherURL);
+    previewCache[path].previewURL = urlMatch?.[1] ?? '';
   } catch (error) {
+    previewCache[path] = null;
     if (retry) {
       log.info('[CLI] Something went wrong trying to start preview:', (error as Error).message);
       await install(path);

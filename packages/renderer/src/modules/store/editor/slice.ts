@@ -14,6 +14,7 @@ export const install = createAsyncThunk('editor/install', editor.install);
 export const startInspector = createAsyncThunk('editor/startInspector', editor.startInspector);
 export const runScene = createAsyncThunk('editor/runScene', editor.runScene);
 export const publishScene = createAsyncThunk('editor/publishScene', editor.publishScene);
+export const killPreviewScene = createAsyncThunk('editor/killPreviewScene', editor.killPreviewScene);
 export const openTutorial = createAsyncThunk('editor/openTutorial', editor.openTutorial);
 
 // state
@@ -174,6 +175,7 @@ export const actions = {
   runScene,
   publishScene,
   openTutorial,
+  killPreviewScene,
 };
 export const reducer = slice.reducer;
 export const selectors = { ...slice.selectors };

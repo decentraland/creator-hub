@@ -405,6 +405,14 @@ async function handleData(buffer: Buffer, matchers: Matcher[], type: StreamType)
   }
 }
 
+export async function dclDeepLink(deepLink: string) {
+  try {
+    await exec(`open decentraland://"${deepLink}"`);
+  } catch (e) {
+    log.error('Failed to open Decentraland. The Decentraland Launcher must be installed: https://decentraland.org/download/');
+  }
+}
+
 export async function code(_path: string) {
   const normalizedPath = path.normalize(_path);
   try {
