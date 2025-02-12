@@ -2,7 +2,9 @@ import { app } from 'electron';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { createWindow, getWindowById, WindowId } from './modules/window';
+import { WindowId } from '/shared/types/window';
+
+import { createWindow, getWindowById } from './modules/window';
 
 async function createMainWindow() {
   const window = createWindow(WindowId.Main);

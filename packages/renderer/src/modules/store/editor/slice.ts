@@ -54,8 +54,6 @@ const initialState: EditorState = {
   error: null,
 };
 
-// selectors
-
 // slice
 export const slice = createSlice({
   name: 'editor',

@@ -1,9 +1,7 @@
 import { app, BrowserWindow, type BrowserWindowConstructorOptions } from 'electron';
 import { join } from 'node:path';
 
-export enum WindowId {
-  Main = 'main'
-}
+import type { WindowId } from '/shared/types/window';
 
 const windowMap = new Map<WindowId, BrowserWindow>();
 
