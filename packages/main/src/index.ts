@@ -104,7 +104,7 @@ if (import.meta.env.PROD) {
 
 export async function killAll() {
   const promises: Promise<unknown>[] = [];
-  for (const key in previewCache) {
+  for (const key in previewCache.keys()) {
     promises.push(killPreview(key));
   }
   if (deployServer) {

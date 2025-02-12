@@ -406,8 +406,9 @@ async function handleData(buffer: Buffer, matchers: Matcher[], type: StreamType)
 }
 
 export async function dclDeepLink(deepLink: string) {
+  const command = process.platform === 'win32' ? 'start' : 'open';
   try {
-    await exec(`open decentraland://"${deepLink}"`);
+    await exec(`${command} decentraland://"${deepLink}"`);
   } catch (e) {
     log.error('Failed to open Decentraland. The Decentraland Launcher must be installed: https://decentraland.org/download/');
   }
