@@ -101,15 +101,17 @@ export function EditorPage() {
 
   params.append('dataLayerRpcParentUrl', window.location.origin);
 
-  // if (import.meta.env.VITE_ASSET_PACKS_CONTENT_URL) {
+  if (import.meta.env.VITE_ASSET_PACKS_CONTENT_URL) {
     // this is for local development of the asset-packs repo, or to use a different environment like .zone
-  params.append('contentUrl', 'https://man-bright-formerly.ngrok-free.app/asset-packs');
-  // }
+    params.append('contentUrl', import.meta.env.VITE_ASSET_PACKS_CONTENT_URL);
+  }
 
   if (import.meta.env.VITE_ASSET_PACKS_JS_PORT && import.meta.env.VITE_ASSET_PACKS_JS_PATH) {
     // this is for local development of the asset-packs repo
     const b64 = btoa(import.meta.env.VITE_ASSET_PACKS_JS_PATH);
-    binIndexJsUrl = `http://localhost:${import.meta.env.VITE_ASSET_PACKS_JS_PORT}/content/contents/b64-${b64}`;
+    binIndexJsUrl = `http://localhost:${
+      import.meta.env.VITE_ASSET_PACKS_JS_PORT
+    }/content/contents/b64-${b64}`;
   }
 
   // this is the asset-packs javascript file
