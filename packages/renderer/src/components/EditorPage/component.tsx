@@ -143,7 +143,7 @@ export function EditorPage() {
   );
 
   return (
-    <div className="Editor">
+    <main className="Editor">
       {!isReady ? (
         renderLoading()
       ) : (
@@ -198,6 +198,6 @@ export function EditorPage() {
           )}
         </>
       )}
-    </div>
+    </main>
   );
 }

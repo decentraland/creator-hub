@@ -60,11 +60,21 @@
   /* TODO: Fix styles in the ui2 library */
   --mui-shape-borderRadius: 6px;
   /* --mui-palette-primary-main: #ff2d55; */
-  --mui-palette-action-disabled: #f8919d;
+  --mui-palette-action-disabled: #231113;
   --mui-palette-secondary-contrast: #ffffff;
 }
 
-html {
+.Main {
+  padding: 0px;
+  margin: 0px;
+  height: 100%;
+  /* The lib decentraland-ui2 adds a default background-color to the body */
+  background-color: #242129ff !important;
+  position: absolute;
+  top: 0px;
+  bottom: 0px;
+  right: 0px;
+  left: 0px;
   background: url(../../assets/images/background.png) #242129ff;
   background-position: center;
   background-size: cover;
@@ -73,19 +83,7 @@ html {
   font-family: var(--font-family);
   height: 100%;
   background-attachment: fixed;
-}
 
-body {
-  padding: 0px;
-  margin: 0px;
-  height: 100%;
-  /* The lib decentraland-ui2 adds a default background-color to the body */
-  background-color: unset !important;
-  position: absolute;
-  top: 0px;
-  bottom: 0px;
-  right: 0px;
-  left: 0px;
 }
 
 a {
