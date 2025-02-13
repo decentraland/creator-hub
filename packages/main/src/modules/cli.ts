@@ -1,6 +1,6 @@
 import log from 'electron-log/main';
 import type { DeployOptions } from '/shared/types/ipc';
-import { run, type Child } from './bin';
+import { dclDeepLink, run, type Child } from './bin';
 import { getAvailablePort } from './port';
 import { getProjectId } from './analytics';
 import { install } from './npm';
@@ -22,24 +22,41 @@ export async function init(path: string, repo?: string) {
   await initCommand.wait();
 }
 
-export let previewServer: Child | null = null;
+export async function killPreview(path: string) {
+  const preview = previewCache.get(path);
+  const promise = preview?.child.kill().catch(() => {});
+  previewCache.delete(path);
+  await promise;
+}
+
+type Preview = { child: Child; previewURL: string };
+export const previewCache: Map<string, Preview> = new Map();
+
 export async function start(path: string, retry = true) {
-  if (previewServer) {
-    await previewServer.kill();
+  const preview = previewCache.get(path);
+  // If we have a preview running for this path, open it
+  if (preview?.child.alive() && preview.previewURL) {
+    await dclDeepLink(preview.previewURL);
+    return;
   }
+
+  killPreview(path);
+
   try {
-    previewServer = run('@dcl/sdk-commands', 'sdk-commands', {
+    const process = run('@dcl/sdk-commands', 'sdk-commands', {
       args: ['start', '--explorer-alpha', '--hub'],
       cwd: path,
       workspace: path,
       env: await getEnv(path),
     });
 
-    await Promise.race([
-      previewServer.waitFor(/decentraland:\/\//i, /CliError/i),
-      previewServer.wait(),
-    ]);
+    const dclLauncherURL = /decentraland:\/\/([^\s\n]*)/i;
+    const resultLogs = await process.waitFor(dclLauncherURL, /CliError/i);
+    const previewURL = resultLogs.match(dclLauncherURL)?.[1] ?? '';
+
+    previewCache.set(path, { child: process, previewURL });
   } catch (error) {
+    killPreview(path);
     if (retry) {
       log.info('[CLI] Something went wrong trying to start preview:', (error as Error).message);
       await install(path);

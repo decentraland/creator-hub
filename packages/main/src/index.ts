@@ -5,7 +5,7 @@ import updater from 'electron-updater';
 import log from 'electron-log/main';
 
 import { initIpc } from './modules/ipc';
-import { deployServer, previewServer } from './modules/cli';
+import { deployServer, killPreview, previewCache } from './modules/cli';
 import { inspectorServer } from './modules/inspector';
 import { getAnalytics, track } from './modules/analytics';
 import './security-restrictions';
@@ -103,9 +103,9 @@ if (import.meta.env.PROD) {
 }
 
 export async function killAll() {
-  const promises = [];
-  if (previewServer) {
-    promises.push(previewServer.kill());
+  const promises: Promise<unknown>[] = [];
+  for (const key in previewCache.keys()) {
+    promises.push(killPreview(key));
   }
   if (deployServer) {
     promises.push(deployServer.kill());

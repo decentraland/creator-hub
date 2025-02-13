@@ -20,6 +20,11 @@ export async function runScene(path: string) {
   return port;
 }
 
+export async function killPreviewScene(path: string) {
+  const port = await invoke('cli.killPreview', path);
+  return port;
+}
+
 export async function publishScene(opts: DeployOptions) {
   const port = await invoke('cli.deploy', opts);
   return port;

@@ -24,6 +24,7 @@ export function initIpc() {
   handle('cli.init', (_event, path, repo) => cli.init(path, repo));
   handle('cli.start', (_event, path) => cli.start(path));
   handle('cli.deploy', (_event, opts) => cli.deploy(opts));
+  handle('cli.killPreview', (_event, path) => cli.killPreview(path));
 
   // bin
   handle('bin.install', () => bin.install());
