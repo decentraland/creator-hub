@@ -26,7 +26,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [wallet, setWallet] = useState<string>();
   const [avatar, setAvatar] = useState<Avatar>();
   const [isSignedIn, setIsSignedIn] = useState(false);
-  const [chainId, setChainId] = useState<ChainId>(ChainId.ETHEREUM_MAINNET);
+  const [chainId, setChainId] = useState<ChainId>(ChainId.ETHEREUM_SEPOLIA);
 
   const isSigningIn = !!initSignInResultRef?.current;
 
