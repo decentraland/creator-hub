@@ -101,10 +101,10 @@ export function EditorPage() {
 
   params.append('dataLayerRpcParentUrl', window.location.origin);
 
-  if (import.meta.env.VITE_ASSET_PACKS_CONTENT_URL) {
+  // if (import.meta.env.VITE_ASSET_PACKS_CONTENT_URL) {
     // this is for local development of the asset-packs repo, or to use a different environment like .zone
-    params.append('contentUrl', import.meta.env.VITE_ASSET_PACKS_CONTENT_URL);
-  }
+  params.append('contentUrl', 'https://man-bright-formerly.ngrok-free.app/asset-packs');
+  // }
 
   if (import.meta.env.VITE_ASSET_PACKS_JS_PORT && import.meta.env.VITE_ASSET_PACKS_JS_PATH) {
     // this is for local development of the asset-packs repo
