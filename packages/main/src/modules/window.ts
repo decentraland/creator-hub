@@ -1,12 +1,10 @@
 import { app, BrowserWindow, type BrowserWindowConstructorOptions } from 'electron';
 import { join } from 'node:path';
 
-import type { WindowId } from '/shared/types/window';
+const activeWindows = new Map<string, BrowserWindow>();
 
-const windowMap = new Map<WindowId, BrowserWindow>();
-
-export function createWindow(id: WindowId, options?: BrowserWindowConstructorOptions) {
-  const browserWindow = new BrowserWindow({
+export function createWindow(path: string, options?: BrowserWindowConstructorOptions) {
+  const window = new BrowserWindow({
     show: false, // Use the 'ready-to-show' event to show the instantiated BrowserWindow.
     webPreferences: {
       nodeIntegration: false,
@@ -18,16 +16,13 @@ export function createWindow(id: WindowId, options?: BrowserWindowConstructorOpt
     },
   });
 
-  // Setup window map
-  windowMap.set(id, browserWindow);
-  browserWindow.on('closed', () => {
-    windowMap.delete(id);
-  });
-  // Setup window map
+  // Setup active windows map. We don't want to use window.id because we want to identify the window by the path WE give it
+  activeWindows.set(path, window);
+  window.on('closed', () => activeWindows.delete(path));
 
-  return browserWindow;
+  return window;
 }
 
-export function getWindowById(id: WindowId): BrowserWindow | undefined {
-  return windowMap.get(id);
+export function getWindow(path: string): BrowserWindow | undefined {
+  return activeWindows.get(path);
 }

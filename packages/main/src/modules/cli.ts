@@ -5,7 +5,14 @@ import { getAvailablePort } from './port';
 import { getProjectId } from './analytics';
 import { install } from './npm';
 
+export type Preview = { child: Child; previewURL: string };
+
+const previewCache: Map<string, Preview> = new Map();
 export let deployServer: Child | null = null;
+
+export function getPreview(path: string) {
+  return previewCache.get(path);
+}
 
 async function getEnv(path: string) {
   const projectId = await getProjectId(path);
@@ -31,15 +38,19 @@ export async function killPreview(path: string) {
   await promise;
 }
 
-type Preview = { child: Child; previewURL: string };
-export const previewCache: Map<string, Preview> = new Map();
+export async function killAllPreviews() {
+  for (const path of previewCache.keys()) {
+    await killPreview(path);
+  }
+  previewCache.clear(); // just to be sure...
+}
 
-export async function start(path: string, retry = true) {
+export async function start(path: string, retry = true): Promise<string> {
   const preview = previewCache.get(path);
   // If we have a preview running for this path, open it
   if (preview?.child.alive() && preview.previewURL) {
     await dclDeepLink(preview.previewURL);
-    return;
+    return path;
   }
 
   killPreview(path);
@@ -52,17 +63,19 @@ export async function start(path: string, retry = true) {
       env: await getEnv(path),
     });
 
-    const dclLauncherURL = /decentraland:\/\/([^\s\n]*)/i;
-    const resultLogs = await process.waitFor(dclLauncherURL, /CliError/i);
-    const previewURL = resultLogs.match(dclLauncherURL)?.[1] ?? '';
+    // const dclLauncherURL = /decentraland:\/\/([^\s\n]*)/i;
+    // const resultLogs = await process.waitFor(dclLauncherURL, /CliError/i);
+    // const previewURL = resultLogs.match(dclLauncherURL)?.[1] ?? '';
 
-    previewCache.set(path, { child: process, previewURL });
+    const preview = { child: process, previewURL: '' };
+    previewCache.set(path, preview);
+    return path;
   } catch (error) {
     killPreview(path);
     if (retry) {
       log.info('[CLI] Something went wrong trying to start preview:', (error as Error).message);
       await install(path);
-      await start(path, false);
+      return await start(path, false);
     } else {
       throw error;
     }
