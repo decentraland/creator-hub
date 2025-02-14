@@ -33,6 +33,7 @@
     "format": "npx prettier --write \"**/*.{js,ts,tsx,json}\""
   },
   "devDependencies": {
+    "@dcl/sdk": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/add-admin-toolkit-smart-item/dcl-sdk-7.7.5-13322726812.commit-b78f7c8.tgz",
     "@reduxjs/toolkit": "^2.2.6",
     "@types/cmd-shim": "^5.0.2",
     "@types/is-running": "^2.1.2",
@@ -70,7 +71,6 @@
   "dependencies": {
     "@dcl/mini-rpc": "^1.0.7",
     "@dcl/schemas": "^11.10.4",
-    "@dcl/sdk": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/add-admin-toolkit-smart-item/dcl-sdk-7.7.5-13313003920.commit-20077f3.tgz",
     "@ethersproject/hash": "^5.7.0",
     "@segment/analytics-node": "^2.1.2",
     "cmd-shim": "^6.0.3",
