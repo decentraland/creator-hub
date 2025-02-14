@@ -34,7 +34,7 @@ export const useEditor = () => {
 
   const openPreview = useCallback(() => {
     if (project) {
-      dispatch(editorActions.runScene(project.path));
+      dispatch(editorActions.runScene({ path: project.path }));
     }
   }, [project, editorActions.runScene]);
 

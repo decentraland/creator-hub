@@ -12,7 +12,15 @@ import { actions as workspaceActions } from '../workspace';
 export const fetchVersion = createAsyncThunk('editor/fetchVersion', editor.getVersion);
 export const install = createAsyncThunk('editor/install', editor.install);
 export const startInspector = createAsyncThunk('editor/startInspector', editor.startInspector);
-export const runScene = createAsyncThunk('editor/runScene', editor.runScene);
+export const runScene = createAsyncThunk(
+  'editor/runScene',
+  async ({ path, openDebugger = true }: { path: string; openDebugger?: boolean }) => {
+    const id = await editor.runScene(path);
+    if (openDebugger) {
+      await editor.openSceneDebugger(id);
+    }
+  },
+);
 export const publishScene = createAsyncThunk('editor/publishScene', editor.publishScene);
 export const killPreviewScene = createAsyncThunk(
   'editor/killPreviewScene',

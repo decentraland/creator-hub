@@ -64,6 +64,11 @@
   --mui-palette-secondary-contrast: #ffffff;
 }
 
+html, body, #app {
+  margin: 0;
+  height: 100%;
+}
+
 .Main {
   padding: 0px;
   margin: 0px;
@@ -84,6 +89,22 @@
   height: 100%;
   background-attachment: fixed;
 
+}
+
+.Debugger {
+  padding: 10px;
+  margin: 0px;
+  height: 100%;
+  /* The lib decentraland-ui2 adds a default background-color to the body */
+  background-color: #242129ff !important;
+  color: var(--white);
+  font-family: var(--font-family);
+}
+
+.Debugger .logs {
+  display: flex;
+  flex-direction: column;
+  line-height: 30px;
 }
 
 a {

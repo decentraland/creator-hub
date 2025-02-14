@@ -2,12 +2,10 @@ import { app } from 'electron';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { WindowId } from '/shared/types/window';
+import { createWindow, getWindow } from './modules/window';
 
-import { createWindow, getWindowById } from './modules/window';
-
-async function createMainWindow() {
-  const window = createWindow(WindowId.Main);
+async function createMainWindow(id: string) {
+  const window = createWindow(id);
   window.setMenuBarVisibility(false);
   window.maximize();
 
@@ -20,7 +18,7 @@ async function createMainWindow() {
    * @see https://github.com/electron/electron/issues/25012 for the afford mentioned issue.
    */
   window.on('ready-to-show', () => {
-    window?.show();
+    window.show();
 
     if (import.meta.env.DEV) {
       window?.webContents.openDevTools();
@@ -68,10 +66,11 @@ async function createMainWindow() {
  * @returns {Promise<Electron.BrowserWindow>} A promise that resolves to the main window instance
  */
 export async function restoreOrCreateMainWindow() {
-  let window = getWindowById(WindowId.Main);
+  const id = 'main';
+  let window = getWindow(id);
 
   if (window === undefined) {
-    window = await createMainWindow();
+    window = await createMainWindow(id);
   }
 
   if (window.isMinimized()) {
