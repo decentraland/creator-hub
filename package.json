@@ -24,7 +24,7 @@
     "test:renderer": "vitest run -r packages/renderer --passWithNoTests",
     "watch": "node scripts/watch.js",
     "start": "npm run watch",
-    "lint": "eslint . --ext js,mjs,cjs,ts,mts,cts,vue",
+    "lint": "eslint . --ext js,mjs,cjs,ts,mts,cts",
     "typecheck:main": "tsc --noEmit -p packages/main/tsconfig.json",
     "typecheck:preload": "tsc --noEmit -p packages/preload/tsconfig.json",
     "typecheck:renderer": "tsc --noEmit -p packages/renderer/tsconfig.json",
@@ -33,6 +33,7 @@
     "format": "npx prettier --write \"**/*.{js,ts,tsx,json}\""
   },
   "devDependencies": {
+    "@dcl/sdk": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/add-admin-toolkit-smart-item/dcl-sdk-7.7.5-13322726812.commit-b78f7c8.tgz",
     "@reduxjs/toolkit": "^2.2.6",
     "@types/cmd-shim": "^5.0.2",
     "@types/is-running": "^2.1.2",
@@ -50,11 +51,11 @@
     "electron": "31.1.0",
     "electron-builder": "24.13.3",
     "eslint": "8.57.0",
-    "eslint-plugin-vue": "9.27.0",
     "flat": "^6.0.1",
     "happy-dom": "14.12.3",
     "nano-staged": "0.8.0",
     "playwright": "1.45.0",
+    "prettier": "^3.5.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-intl": "^6.6.8",
@@ -70,7 +71,6 @@
   "dependencies": {
     "@dcl/mini-rpc": "^1.0.7",
     "@dcl/schemas": "^11.10.4",
-    "@dcl/sdk": "^7.7.4",
     "@ethersproject/hash": "^5.7.0",
     "@segment/analytics-node": "^2.1.2",
     "cmd-shim": "^6.0.3",
