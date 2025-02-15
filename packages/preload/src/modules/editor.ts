@@ -25,18 +25,21 @@ export async function openSceneDebugger(path: string) {
   return invoke('inspector.openSceneDebugger', path);
 }
 
-export async function attachToSceneDebugger(path: string, cb: (data: string) => void): Promise<{ cleanup: () => void}> {
+export async function attachSceneDebugger(path: string, cb: (data: string) => void): Promise<{ cleanup: () => void}> {
   // TODO: what happens when there is no window or preview?
   const eventName = `debugger://${path}`;
+
+  const attached = await invoke('inspector.attachSceneDebugger', path, eventName);
+  if (!attached) return { cleanup: () => {} };
+
   const handler = (_: IpcRendererEvent, data: string) => cb(data);
-  const cleanup = () => { ipcRenderer.off(eventName, handler); };
-
-  const attached = await invoke('inspector.attachToSceneDebugger', path, eventName);
-  if (!attached) return { cleanup };
-
   ipcRenderer.on(eventName, handler);
 
-  return { cleanup };
+  return {
+    cleanup: () => {
+      ipcRenderer.off(eventName, handler);
+    },
+  };
 }
 
 export async function runScene(path: string) {

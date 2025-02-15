@@ -67,7 +67,7 @@ export async function start(path: string, retry = true): Promise<string> {
     // const resultLogs = await process.waitFor(dclLauncherURL, /CliError/i);
     // const previewURL = resultLogs.match(dclLauncherURL)?.[1] ?? '';
 
-    const preview = { child: process, previewURL: '' };
+    const preview = { child: process, previewURL: 'asd' };
     previewCache.set(path, preview);
     return path;
   } catch (error) {

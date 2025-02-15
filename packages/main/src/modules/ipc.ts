@@ -20,7 +20,7 @@ export function initIpc() {
   // inspector
   handle('inspector.start', () => inspector.start());
   handle('inspector.openSceneDebugger', (_event, path) => inspector.openSceneDebugger(path));
-  handle('inspector.attachToSceneDebugger', (_event, path, eventName) => inspector.attachToSceneDebugger(path, eventName));
+  handle('inspector.attachSceneDebugger', (_event, path, eventName) => inspector.attachSceneDebugger(path, eventName));
 
   // cli
   handle('cli.init', (_event, path, repo) => cli.init(path, repo));

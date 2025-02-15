@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import Convert from 'ansi-to-html';
 
@@ -18,18 +18,24 @@ const convert = new Convert();
 
 function Debugger() {
   const debuggerPath = getDebuggerPath();
+  const debuggerRef = useRef<HTMLDivElement>(null);
   const [logs, setLogs] = useState<string[]>([]);
 
   const log = useCallback((message: string) => {
-    console.log('LOG', message);
     setLogs((prev) => [...prev, message]);
-  }, []);
+    // Auto-scroll to the bottom
+    setTimeout(() => {
+      if (debuggerRef.current) {
+        debuggerRef.current.scrollTop = debuggerRef.current.scrollHeight;
+      }
+    }, 0);
+  }, [debuggerRef.current]);
 
   useEffect(() => {
     if (!debuggerPath) return;
 
-    let dettachFromSceneDebugger: () => void;
-    editor.attachToSceneDebugger(debuggerPath, log).then(({ cleanup }) => {
+    let dettachFromSceneDebugger: (() => void) | undefined;
+    editor.attachSceneDebugger(debuggerPath, log).then(({ cleanup }) => {
       dettachFromSceneDebugger = cleanup;
     });
 
@@ -39,15 +45,14 @@ function Debugger() {
   }, []);
 
   return (
-    <main className="Debugger">
+    <main className="Debugger" ref={debuggerRef}>
       {!debuggerPath && <div>No path provided</div>}
       {debuggerPath && (
         <>
           <div>Path provided: {debuggerPath}</div>
           <div className="logs">
-            {/* <pre>{logs.join('\n')}</pre> */}
-            {logs.map(($) => (
-              <span dangerouslySetInnerHTML={{ __html: convert.toHtml($) }} />
+            {logs.map(($, i) => (
+              <span key={i} dangerouslySetInnerHTML={{ __html: convert.toHtml($) }} />
             ))}
           </div>
         </>
