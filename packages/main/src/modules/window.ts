@@ -26,3 +26,10 @@ export function createWindow(path: string, options?: BrowserWindowConstructorOpt
 export function getWindow(path: string): BrowserWindow | undefined {
   return activeWindows.get(path);
 }
+
+export function focusWindow(window: BrowserWindow): void {
+  if (window) {
+    if (window.isMinimized()) window.restore();
+    window.focus();
+  }
+}

@@ -1,15 +1,19 @@
 import log from 'electron-log';
-import { app } from 'electron';
+import { app, type BrowserWindow } from 'electron';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { run, type Child } from './bin';
 import { getAvailablePort } from './port';
 import { APP_UNPACKED_PATH } from './path';
-import { createWindow } from './window';
+import { createWindow, focusWindow, getWindow } from './window';
 import * as cache from './cache';
 
-const debuggers: Set<string> = new Set();
+const debuggers: Map<string, { window: BrowserWindow, preview: Child, listener: number }> = new Map();
+
+export function getDebugger(path: string) {
+  return debuggers.get(path);
+}
 
 export let inspectorServer: Child | null = null;
 export async function start() {
@@ -29,6 +33,12 @@ export async function start() {
 }
 
 export async function openSceneDebugger(path: string): Promise<string> {
+  const alreadyOpen = getWindow(path);
+  if (alreadyOpen) {
+    focusWindow(alreadyOpen);
+    return path;
+  }
+
   const window = createWindow(path);
   window.setMenuBarVisibility(false);
   window.on('ready-to-show', () => window.show());
@@ -58,32 +68,46 @@ function assertDebuggerState(path: string) {
   }
 }
 
-export async function attachToSceneDebugger(path: string, eventName: string): Promise<boolean> {
+function isDebuggerAttached(path: string, window: BrowserWindow, preview: Child): boolean {
+  const _debugger = debuggers.get(path) ?? false;
+  return _debugger && _debugger.window === window && _debugger.preview === preview;
+}
+
+export async function attachSceneDebugger(path: string, eventName: string): Promise<boolean> {
   assertDebuggerState(path);
 
   const window = cache.getWindow(path)!;
-  const preview = cache.getPreview(path)!;
+  const { child: preview } = cache.getPreview(path)!;
 
-  if (window.isMinimized()) window.restore();
-  window.focus();
+  focusWindow(window);
 
-  if (debuggers.has(path)) {
-    return false; // already attached
-  } else {
-    preview.child.on(
-      /(.*)/i,
-      (data?: string) => {
-        if (data) window.webContents.send(eventName, data);
-      },
-      { sanitize: false },
-    );
-
-    debuggers.add(path);
-
-    // IMPORTANT: remove the debugger from the set when the window is closed or the preview process exits
-    window.on('closed', () => debuggers.delete(path));
-    preview.child.process.on('exit', () => debuggers.delete(path));
-
-    return true;
+  if (isDebuggerAttached(path, window, preview)) {
+    return false;
   }
+
+  // Attach the event listener to preview output to send the data to debugger window
+  const listener = preview.on(
+    /(.*)/i,
+    (data?: string) => {
+      if (data) window.webContents.send(eventName, data);
+    },
+    { sanitize: false },
+  );
+
+  debuggers.set(path, { window, preview, listener });
+
+  const cleanup = () => debuggers.delete(path);
+
+  window.on('closed', () => {
+    // Remove the event listener from the preview when the debugger window is closed
+    preview.off(listener);
+    cleanup();
+  });
+  preview.process.on('exit', () => {
+    // Destoy debugger window when the preview process exits
+    window.destroy();
+    cleanup();
+  });
+
+  return true;
 }
