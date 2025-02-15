@@ -64,41 +64,40 @@
   --mui-palette-secondary-contrast: #ffffff;
 }
 
-html, body, #app {
-  margin: 0;
+html {
+  color: var(--white);
+  font-family: var(--font-family);
   height: 100%;
 }
 
-.Main {
+body, #app {
   padding: 0px;
   margin: 0px;
   height: 100%;
   /* The lib decentraland-ui2 adds a default background-color to the body */
-  background-color: #242129ff !important;
+  background-color: unset !important;
   position: absolute;
   top: 0px;
   bottom: 0px;
   right: 0px;
   left: 0px;
+}
+
+.Main {
   background: url(../../assets/images/background.png) #242129ff;
   background-position: center;
   background-size: cover;
   background-blend-mode: overlay;
-  color: var(--white);
-  font-family: var(--font-family);
-  height: 100%;
   background-attachment: fixed;
-
+  min-height: 100vh;
 }
 
 .Debugger {
   padding: 10px;
-  margin: 0px;
-  height: 100%;
-  /* The lib decentraland-ui2 adds a default background-color to the body */
   background-color: #242129ff !important;
   color: var(--white);
   font-family: var(--font-family);
+  min-height: 100vh;
 }
 
 .Debugger .logs {
