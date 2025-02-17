@@ -322,10 +322,17 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
     process: forked,
     on: (pattern, handler, opts = {}) => {
       if (alive) {
-        return matchers.push({ pattern, handler, enabled: true, opts: {
-          type: opts.type ?? 'all',
-          sanitize: opts.sanitize ?? true,
-        } }) - 1;
+        return (
+          matchers.push({
+            pattern,
+            handler,
+            enabled: true,
+            opts: {
+              type: opts.type ?? 'all',
+              sanitize: opts.sanitize ?? true,
+            },
+          }) - 1
+        );
       }
       throw new Error('Process has been killed');
     },
@@ -416,11 +423,13 @@ async function handleData(buffer: Buffer, matchers: Matcher[], type: StreamType)
     pattern.lastIndex = 0; // reset regexp
     if (pattern.test(data)) {
       // remove control characters from data
-      const text = opts?.sanitize ? data.replace(
-        // eslint-disable-next-line no-control-regex
-        /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g,
-          '',
-        ) : data;
+      const text = opts?.sanitize
+        ? data.replace(
+            // eslint-disable-next-line no-control-regex
+            /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g,
+            '',
+          )
+        : data;
       handler(text);
     }
   }

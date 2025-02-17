@@ -9,7 +9,8 @@ import { APP_UNPACKED_PATH } from './path';
 import { createWindow, focusWindow, getWindow } from './window';
 import * as cache from './cache';
 
-const debuggers: Map<string, { window: BrowserWindow, preview: Child, listener: number }> = new Map();
+const debuggers: Map<string, { window: BrowserWindow; preview: Child; listener: number }> =
+  new Map();
 
 export function getDebugger(path: string) {
   return debuggers.get(path);
@@ -47,7 +48,10 @@ export async function openSceneDebugger(path: string): Promise<string> {
     const url = join(import.meta.env.VITE_DEV_SERVER_URL, `debugger.html?path=${path}`);
     await window.loadURL(url);
   } else {
-    const url = new URL(join(app.getAppPath(), 'packages/renderer/dist/debugger.html'), import.meta.url);
+    const url = new URL(
+      join(app.getAppPath(), 'packages/renderer/dist/debugger.html'),
+      import.meta.url,
+    );
     url.searchParams.set('path', path);
     await window.loadFile(fileURLToPath(url));
   }

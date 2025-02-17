@@ -70,7 +70,7 @@ html {
   height: 100%;
 }
 
-body, #app {
+body, #app, #debugger {
   padding: 0px;
   margin: 0px;
   height: 100%;
@@ -93,17 +93,23 @@ body, #app {
 }
 
 .Debugger {
-  padding: 10px;
-  background-color: #242129ff !important;
+  background-color: black !important;
   color: var(--white);
   font-family: var(--font-family);
-  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .Debugger .logs {
   display: flex;
   flex-direction: column;
   line-height: 30px;
+  overflow-y: auto;
+  flex: 1;
+  padding: 10px;
 }
 
 a {
