@@ -3,10 +3,11 @@ import { createRoot } from 'react-dom/client';
 import Convert from 'ansi-to-html';
 
 import { editor } from '#preload';
+import { createCircularBuffer } from '/shared/circular-buffer';
 
 import '/@/themes';
 
-const container = document.getElementById('app')!;
+const container = document.getElementById('debugger')!;
 const root = createRoot(container);
 
 function getDebuggerPath() {
@@ -14,45 +15,68 @@ function getDebuggerPath() {
   return url.searchParams.get('path');
 }
 
+const MAX_LOGS = 1000;
 const convert = new Convert();
+const logsBuffer = createCircularBuffer<string>(MAX_LOGS);
 
 function Debugger() {
   const debuggerPath = getDebuggerPath();
-  const debuggerRef = useRef<HTMLDivElement>(null);
-  const [logs, setLogs] = useState<string[]>([]);
+  const logsRef = useRef<HTMLDivElement>(null);
+  const [attachStatus, setAttachStatus] = useState<'loading' | 'attached' | 'failed'>('loading');
+  const [, forceUpdate] = useState(0);
 
   const log = useCallback((message: string) => {
-    setLogs((prev) => [...prev, message]);
+    logsBuffer.push(message);
+    forceUpdate(prev => prev + 1);
+
     // Auto-scroll to the bottom
-    setTimeout(() => {
-      if (debuggerRef.current) {
-        debuggerRef.current.scrollTop = debuggerRef.current.scrollHeight;
+    requestAnimationFrame(() => {
+      if (logsRef.current) {
+        logsRef.current.scrollTop = logsRef.current.scrollHeight;
       }
-    }, 0);
-  }, [debuggerRef.current]);
+    });
+  }, []);
 
   useEffect(() => {
     if (!debuggerPath) return;
 
     let dettachFromSceneDebugger: (() => void) | undefined;
-    editor.attachSceneDebugger(debuggerPath, log).then(({ cleanup }) => {
-      dettachFromSceneDebugger = cleanup;
-    });
+    editor
+      .attachSceneDebugger(debuggerPath, log)
+      .then(({ cleanup }) => {
+        dettachFromSceneDebugger = cleanup;
+        setAttachStatus('attached');
+      })
+      .catch(() => {
+        setAttachStatus('failed');
+      });
 
     return () => {
       dettachFromSceneDebugger?.();
     };
   }, []);
 
+  const logs = logsBuffer.getAll();
+
   return (
-    <main className="Debugger" ref={debuggerRef}>
-      {!debuggerPath && <div>No path provided</div>}
-      {debuggerPath && (
+    <main className="Debugger">
+      {!debuggerPath ? (
+        'No path provided'
+      ) : attachStatus === 'loading' ? (
+        'Loading'
+      ) : attachStatus === 'failed' ? (
+        'Failed to attach. Please close this window and launch debugger again'
+      ) : (
         <>
-          <div>Path provided: {debuggerPath}</div>
-          <div className="logs">
+          <div
+            className="logs"
+            ref={logsRef}
+          >
             {logs.map(($, i) => (
-              <span key={i} dangerouslySetInnerHTML={{ __html: convert.toHtml($) }} />
+              <span
+                key={i}
+                dangerouslySetInnerHTML={{ __html: convert.toHtml($) }}
+              />
             ))}
           </div>
         </>

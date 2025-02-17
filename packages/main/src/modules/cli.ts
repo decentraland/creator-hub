@@ -63,11 +63,11 @@ export async function start(path: string, retry = true): Promise<string> {
       env: await getEnv(path),
     });
 
-    // const dclLauncherURL = /decentraland:\/\/([^\s\n]*)/i;
-    // const resultLogs = await process.waitFor(dclLauncherURL, /CliError/i);
-    // const previewURL = resultLogs.match(dclLauncherURL)?.[1] ?? '';
+    const dclLauncherURL = /decentraland:\/\/([^\s\n]*)/i;
+    const resultLogs = await process.waitFor(dclLauncherURL, /CliError/i);
+    const previewURL = resultLogs.match(dclLauncherURL)?.[1] ?? '';
 
-    const preview = { child: process, previewURL: 'asd' };
+    const preview = { child: process, previewURL };
     previewCache.set(path, preview);
     return path;
   } catch (error) {

@@ -25,7 +25,10 @@ export async function openSceneDebugger(path: string) {
   return invoke('inspector.openSceneDebugger', path);
 }
 
-export async function attachSceneDebugger(path: string, cb: (data: string) => void): Promise<{ cleanup: () => void}> {
+export async function attachSceneDebugger(
+  path: string,
+  cb: (data: string) => void,
+): Promise<{ cleanup: () => void }> {
   // TODO: what happens when there is no window or preview?
   const eventName = `debugger://${path}`;
 

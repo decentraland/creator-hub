@@ -1,6 +1,7 @@
 export interface CircularBufferType<T> {
   push: (data: T) => void;
   getAll: () => T[];
+  getAllIterator: () => Generator<T>;
   clear: () => void;
   getLast: () => T | undefined;
   getSize: () => number;
@@ -37,6 +38,12 @@ export function createCircularBuffer<T>(maxSize: number): CircularBufferType<T> 
     return result;
   }
 
+  function* getAllIterator(): Generator<T> {
+    for (let i = 0; i < size; i++) {
+      yield buffer[(start + i) % maxSize];
+    }
+  }
+
   function getAt(index: number): T | undefined {
     if (index < 0 || index >= size) {
       return undefined;
@@ -67,6 +74,7 @@ export function createCircularBuffer<T>(maxSize: number): CircularBufferType<T> 
   return {
     push,
     getAll,
+    getAllIterator,
     clear,
     getLast,
     getSize,

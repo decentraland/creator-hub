@@ -43,11 +43,11 @@ async function createMainWindow(id: string) {
      * @see https://github.com/nodejs/node/issues/12682
      * @see https://github.com/electron/electron/issues/6869
      */
-      await window.loadFile(
-        fileURLToPath(
-          new URL(join(app.getAppPath(), 'packages/renderer/dist/index.html'), import.meta.url),
-        ),
-      );
+    await window.loadFile(
+      fileURLToPath(
+        new URL(join(app.getAppPath(), 'packages/renderer/dist/index.html'), import.meta.url),
+      ),
+    );
   }
 
   return window;
