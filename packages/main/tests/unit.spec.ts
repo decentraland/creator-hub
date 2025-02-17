@@ -1,8 +1,9 @@
 import type { MockedClass, MockedObject } from 'vitest';
 import { beforeEach, expect, test, vi } from 'vitest';
-import { restoreOrCreateMainWindow } from '../src/mainWindow';
-
 import { BrowserWindow } from 'electron';
+
+import { restoreOrCreateMainWindow } from '../src/mainWindow';
+import { destroyAllWindows } from '../src/modules/window';
 
 /**
  * Mock real electron BrowserWindow API
@@ -37,7 +38,7 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-test('Should create a new window', async () => {
+test('Should create the main window', async () => {
   const { mock } = vi.mocked(BrowserWindow);
   expect(mock.instances).toHaveLength(0);
 
@@ -52,6 +53,8 @@ test('Should create a new window', async () => {
   } else {
     expect(instance.loadFile).toHaveBeenCalledWith(expect.stringMatching(/index\.html$/));
   }
+
+  destroyAllWindows();
 });
 
 test('Should restore an existing window', async () => {
@@ -66,6 +69,8 @@ test('Should restore an existing window', async () => {
   await restoreOrCreateMainWindow();
   expect(mock.instances).toHaveLength(1);
   expect(appWindow.restore).toHaveBeenCalledOnce();
+
+  destroyAllWindows();
 });
 
 test('Should create a new window if the previous one was destroyed', async () => {
@@ -77,6 +82,10 @@ test('Should create a new window if the previous one was destroyed', async () =>
   const appWindow = vi.mocked(mock.instances[0]);
   appWindow.isDestroyed.mockReturnValueOnce(true);
 
+  destroyAllWindows();
+
   await restoreOrCreateMainWindow();
   expect(mock.instances).toHaveLength(2);
+
+  destroyAllWindows();
 });

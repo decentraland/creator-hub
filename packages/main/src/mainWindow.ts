@@ -1,8 +1,7 @@
-import { app } from 'electron';
-import { join } from 'node:path';
+import { type BrowserWindow } from 'electron';
 import { fileURLToPath } from 'node:url';
 
-import { createWindow, getWindow } from './modules/window';
+import { createWindow, focusWindow, getWindow } from './modules/window';
 
 async function createMainWindow(id: string) {
   const window = createWindow(id);
@@ -44,9 +43,7 @@ async function createMainWindow(id: string) {
      * @see https://github.com/electron/electron/issues/6869
      */
     await window.loadFile(
-      fileURLToPath(
-        new URL(join(app.getAppPath(), 'packages/renderer/dist/index.html'), import.meta.url),
-      ),
+      fileURLToPath(new URL('./../../renderer/dist/index.html', import.meta.url)),
     );
   }
 
@@ -65,7 +62,7 @@ async function createMainWindow(id: string) {
  *
  * @returns {Promise<Electron.BrowserWindow>} A promise that resolves to the main window instance
  */
-export async function restoreOrCreateMainWindow() {
+export async function restoreOrCreateMainWindow(): Promise<BrowserWindow> {
   const id = 'main';
   let window = getWindow(id);
 
@@ -73,9 +70,7 @@ export async function restoreOrCreateMainWindow() {
     window = await createMainWindow(id);
   }
 
-  if (window.isMinimized()) {
-    window.restore();
-  }
+  focusWindow(window);
 
-  window.focus();
+  return window;
 }

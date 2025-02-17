@@ -33,3 +33,8 @@ export function focusWindow(window: BrowserWindow): void {
     window.focus();
   }
 }
+
+export function destroyAllWindows(): void {
+  activeWindows.forEach(window => window.destroy());
+  activeWindows.clear();
+}
