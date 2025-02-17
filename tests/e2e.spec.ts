@@ -2,7 +2,6 @@ import type { ElectronApplication, JSHandle } from 'playwright';
 import { _electron as electron } from 'playwright';
 import { afterAll, beforeAll, expect, test } from 'vitest';
 import type { BrowserWindow } from 'electron';
-
 let electronApp: ElectronApplication;
 
 beforeAll(async () => {
