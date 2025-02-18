@@ -166,7 +166,7 @@ export async function install() {
       log.info('[Install] Skipping installation of node and npm binaries in DEV mode');
     }
     // TODO: remove this once we have merged the asset-packs PR
-    log.info('[CLI] Installing some dev dependencies...', { path });
+    log.info('[CLI] Installing some dev dependencies...', { path: APP_UNPACKED_PATH });
     for (const pkg of [
       'https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/add-admin-toolkit-smart-item/dcl-sdk-7.7.5-13322726812.commit-b78f7c8.tgz',
       'https://sdk-team-cdn.decentraland.org/@dcl/asset-packs/branch/feat/add-admin-toolkit-smart-item/dcl-asset-packs-2.1.3-13322708802.commit-059ee23.tgz',
@@ -176,7 +176,7 @@ export async function install() {
         cwd: APP_UNPACKED_PATH,
         workspace: APP_UNPACKED_PATH,
       });
-      await npmInstall.wait();
+      await npmInstall.waitFor(/added \d+ package|up to date/);
     }
     installed.resolve();
   } catch (error: any) {
