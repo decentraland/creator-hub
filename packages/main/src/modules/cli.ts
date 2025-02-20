@@ -46,8 +46,8 @@ export async function start(path: string, retry = true) {
     // TODO: remove this once we have merged the asset-packs PR
     log.info('[CLI] Installing some dev dependencies...', { path });
     for (const pkg of [
-      'https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/add-admin-toolkit-smart-item/dcl-sdk-7.7.5-13413031640.commit-519d331.tgz',
-      'https://sdk-team-cdn.decentraland.org/@dcl/asset-packs/branch/feat/add-admin-toolkit-smart-item/dcl-asset-packs-2.1.3-13412561138.commit-56c6429.tgz',
+      'https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/add-admin-toolkit-smart-item/dcl-sdk-7.7.6-13436773184.commit-89a0d27.tgz',
+      'https://sdk-team-cdn.decentraland.org/@dcl/asset-packs/branch/feat/add-admin-toolkit-smart-item/dcl-asset-packs-2.1.3-13422411975.commit-24b2ede.tgz',
     ]) {
       const npmInstall = run('npm', 'npm', {
         args: ['install', '--save-dev', pkg, '--loglevel', 'error'],
