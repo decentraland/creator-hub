@@ -4,6 +4,7 @@ import { editor as editorApi } from '#preload';
 import { useDispatch, useSelector } from '#store';
 
 import type { DeployOptions } from '/shared/types/ipc';
+import type { PreviewOptions } from '/shared/types/settings';
 
 import { actions as editorActions } from '/@/modules/store/editor';
 import { actions as workspaceActions } from '/@/modules/store/workspace';
@@ -32,11 +33,14 @@ export const useEditor = () => {
     [project, editorActions.publishScene],
   );
 
-  const openPreview = useCallback(() => {
-    if (project) {
-      dispatch(editorActions.runScene({ path: project.path }));
-    }
-  }, [project, editorActions.runScene]);
+  const openPreview = useCallback(
+    (opts: PreviewOptions) => {
+      if (project) {
+        dispatch(editorActions.runScene({ path: project.path, ...opts }));
+      }
+    },
+    [project, editorActions.runScene],
+  );
 
   const killPreview = useCallback(() => {
     if (project) {

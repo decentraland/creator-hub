@@ -36,6 +36,7 @@ vi.mock('electron', () => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  destroyAllWindows();
 });
 
 test('Should create the main window', async () => {
@@ -53,8 +54,6 @@ test('Should create the main window', async () => {
   } else {
     expect(instance.loadFile).toHaveBeenCalledWith(expect.stringMatching(/index\.html$/));
   }
-
-  destroyAllWindows();
 });
 
 test('Should restore an existing window', async () => {
@@ -69,8 +68,6 @@ test('Should restore an existing window', async () => {
   await restoreOrCreateMainWindow();
   expect(mock.instances).toHaveLength(1);
   expect(appWindow.restore).toHaveBeenCalledOnce();
-
-  destroyAllWindows();
 });
 
 test('Should create a new window if the previous one was destroyed', async () => {
@@ -86,6 +83,4 @@ test('Should create a new window if the previous one was destroyed', async () =>
 
   await restoreOrCreateMainWindow();
   expect(mock.instances).toHaveLength(2);
-
-  destroyAllWindows();
 });
