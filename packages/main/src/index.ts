@@ -1,15 +1,16 @@
 import { app } from 'electron';
-import { restoreOrCreateWindow } from '/@/mainWindow';
 import { platform } from 'node:process';
 import updater from 'electron-updater';
 import log from 'electron-log/main';
 
-import { initIpc } from './modules/ipc';
-import { deployServer, killPreview, previewCache } from './modules/cli';
-import { inspectorServer } from './modules/inspector';
-import { getAnalytics, track } from './modules/analytics';
-import './security-restrictions';
-import { runMigrations } from './modules/migrations';
+import { restoreOrCreateMainWindow } from '/@/mainWindow';
+import { initIpc } from '/@/modules/ipc';
+import { deployServer, killAllPreviews } from '/@/modules/cli';
+import { inspectorServer } from '/@/modules/inspector';
+import { getAnalytics, track } from '/@/modules/analytics';
+import { runMigrations } from '/@/modules/migrations';
+
+import '/@/security-restrictions';
 
 log.initialize();
 
@@ -21,7 +22,7 @@ if (!isSingleInstance) {
   app.quit();
   process.exit(0);
 }
-app.on('second-instance', restoreOrCreateWindow);
+app.on('second-instance', restoreOrCreateMainWindow);
 
 /**
  * Shut down background process if all windows was closed
@@ -36,7 +37,7 @@ app.on('window-all-closed', async () => {
 /**
  * @see https://www.electronjs.org/docs/latest/api/app#event-activate-macos Event: 'activate'.
  */
-app.on('activate', restoreOrCreateWindow);
+app.on('activate', restoreOrCreateMainWindow);
 
 /**
  * Create the application window when app is ready.
@@ -49,7 +50,7 @@ app
     log.info(`[App] Ready v${app.getVersion()}`);
     initIpc();
     log.info('[IPC] Ready');
-    await restoreOrCreateWindow();
+    await restoreOrCreateMainWindow();
     log.info('[BrowserWindow] Ready');
     const analytics = await getAnalytics();
     if (analytics) {
@@ -103,10 +104,7 @@ if (import.meta.env.PROD) {
 }
 
 export async function killAll() {
-  const promises: Promise<unknown>[] = [];
-  for (const key in previewCache.keys()) {
-    promises.push(killPreview(key));
-  }
+  const promises: Promise<unknown>[] = [killAllPreviews()];
   if (deployServer) {
     promises.push(deployServer.kill());
   }

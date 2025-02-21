@@ -1,3 +1,5 @@
+import { ipcRenderer, type IpcRendererEvent } from 'electron';
+
 import type { DeployOptions } from '/shared/types/ipc';
 
 import { invoke } from './invoke';
@@ -10,9 +12,37 @@ export async function install() {
   return invoke('bin.install');
 }
 
+export async function openCode(_path: string) {
+  return invoke('bin.code', _path);
+}
+
 export async function startInspector() {
   const port = await invoke('inspector.start');
   return port;
+}
+
+export async function openSceneDebugger(path: string) {
+  return invoke('inspector.openSceneDebugger', path);
+}
+
+export async function attachSceneDebugger(
+  path: string,
+  cb: (data: string) => void,
+): Promise<{ cleanup: () => void }> {
+  // TODO: what happens when there is no window or preview?
+  const eventName = `debugger://${path}`;
+
+  const attached = await invoke('inspector.attachSceneDebugger', path, eventName);
+  if (!attached) return { cleanup: () => {} };
+
+  const handler = (_: IpcRendererEvent, data: string) => cb(data);
+  ipcRenderer.on(eventName, handler);
+
+  return {
+    cleanup: () => {
+      ipcRenderer.off(eventName, handler);
+    },
+  };
 }
 
 export async function runScene(path: string) {
@@ -33,10 +63,6 @@ export async function publishScene(opts: DeployOptions) {
 export async function openPreview(port: number) {
   const url = `http://localhost:${port}`;
   await invoke('electron.openExternal', url);
-}
-
-export async function openCode(_path: string) {
-  return invoke('bin.code', _path);
 }
 
 export async function openTutorial(opts: { id: string; list?: string }) {

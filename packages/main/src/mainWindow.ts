@@ -1,21 +1,12 @@
-import { app, BrowserWindow } from 'electron';
-import { join } from 'node:path';
+import { type BrowserWindow } from 'electron';
 import { fileURLToPath } from 'node:url';
 
-async function createWindow() {
-  const browserWindow = new BrowserWindow({
-    show: false, // Use the 'ready-to-show' event to show the instantiated BrowserWindow.
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      sandbox: false, // Sandbox disabled because the demo of preload script depend on the Node.js api
-      webviewTag: false, // The webview tag is not recommended. Consider alternatives like an iframe or Electron's BrowserView. @see https://www.electronjs.org/docs/latest/api/webview-tag#warning
-      preload: join(app.getAppPath(), 'packages/preload/dist/index.mjs'),
-    },
-  });
+import { createWindow, focusWindow, getWindow } from './modules/window';
 
-  browserWindow.setMenuBarVisibility(false);
-  browserWindow.maximize();
+async function createMainWindow(id: string) {
+  const window = createWindow(id);
+  window.setMenuBarVisibility(false);
+  window.maximize();
 
   /**
    * If the 'show' property of the BrowserWindow's constructor is omitted from the initialization options,
@@ -25,11 +16,11 @@ async function createWindow() {
    *
    * @see https://github.com/electron/electron/issues/25012 for the afford mentioned issue.
    */
-  browserWindow.on('ready-to-show', () => {
-    browserWindow?.show();
+  window.on('ready-to-show', () => {
+    window.show();
 
     if (import.meta.env.DEV) {
-      browserWindow?.webContents.openDevTools();
+      window?.webContents.openDevTools();
     }
   });
 
@@ -40,7 +31,7 @@ async function createWindow() {
     /**
      * Load from the Vite dev server for development.
      */
-    await browserWindow.loadURL(import.meta.env.VITE_DEV_SERVER_URL);
+    await window.loadURL(import.meta.env.VITE_DEV_SERVER_URL);
   } else {
     /**
      * Load from the local file system for production and test.
@@ -51,27 +42,35 @@ async function createWindow() {
      * @see https://github.com/nodejs/node/issues/12682
      * @see https://github.com/electron/electron/issues/6869
      */
-    await browserWindow.loadFile(
+    await window.loadFile(
       fileURLToPath(new URL('./../../renderer/dist/index.html', import.meta.url)),
     );
   }
 
-  return browserWindow;
+  return window;
 }
 
 /**
- * Restore an existing BrowserWindow or Create a new BrowserWindow.
+ * Restores an existing main window or creates a new one if none exists.
+ * This function ensures only one main window is active at a time.
+ *
+ * The function will:
+ * 1. Check if a main window already exists
+ * 2. Create a new window if none exists
+ * 3. Restore the window if it's minimized
+ * 4. Focus the window to bring it to the foreground
+ *
+ * @returns {Promise<Electron.BrowserWindow>} A promise that resolves to the main window instance
  */
-export async function restoreOrCreateWindow() {
-  let window = BrowserWindow.getAllWindows().find(w => !w.isDestroyed());
+export async function restoreOrCreateMainWindow(): Promise<BrowserWindow> {
+  const id = 'main';
+  let window = getWindow(id);
 
   if (window === undefined) {
-    window = await createWindow();
+    window = await createMainWindow(id);
   }
 
-  if (window.isMinimized()) {
-    window.restore();
-  }
+  focusWindow(window);
 
-  window.focus();
+  return window;
 }

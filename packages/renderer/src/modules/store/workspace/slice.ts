@@ -16,6 +16,9 @@ const initialState: Async<Workspace> = {
   settings: {
     scenesPath: '',
     dependencyUpdateStrategy: DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
+    previewOptions: {
+      debugger: false,
+    },
   },
   status: 'idle',
   error: null,

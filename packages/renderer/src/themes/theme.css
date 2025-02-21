@@ -60,22 +60,17 @@
   /* TODO: Fix styles in the ui2 library */
   --mui-shape-borderRadius: 6px;
   /* --mui-palette-primary-main: #ff2d55; */
-  --mui-palette-action-disabled: #f8919d;
+  --mui-palette-action-disabled: #231113;
   --mui-palette-secondary-contrast: #ffffff;
 }
 
 html {
-  background: url(../../assets/images/background.png) #242129ff;
-  background-position: center;
-  background-size: cover;
-  background-blend-mode: overlay;
   color: var(--white);
   font-family: var(--font-family);
   height: 100%;
-  background-attachment: fixed;
 }
 
-body {
+body, #app, #debugger {
   padding: 0px;
   margin: 0px;
   height: 100%;
@@ -86,6 +81,35 @@ body {
   bottom: 0px;
   right: 0px;
   left: 0px;
+}
+
+.Main {
+  background: url(../../assets/images/background.png) #242129ff;
+  background-position: center;
+  background-size: cover;
+  background-blend-mode: overlay;
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+.Debugger {
+  background-color: black !important;
+  color: var(--white);
+  font-family: var(--font-family);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.Debugger .logs {
+  display: flex;
+  flex-direction: column;
+  line-height: 30px;
+  overflow-y: auto;
+  flex: 1;
+  padding: 10px;
 }
 
 a {

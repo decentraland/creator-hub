@@ -4,6 +4,7 @@ import { editor } from '#preload';
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
 import { type Project } from '/shared/types/projects';
+import type { PreviewOptions } from '/shared/types/settings';
 import { WorkspaceError } from '/shared/types/workspace';
 
 import { actions as workspaceActions } from '../workspace';
@@ -12,7 +13,15 @@ import { actions as workspaceActions } from '../workspace';
 export const fetchVersion = createAsyncThunk('editor/fetchVersion', editor.getVersion);
 export const install = createAsyncThunk('editor/install', editor.install);
 export const startInspector = createAsyncThunk('editor/startInspector', editor.startInspector);
-export const runScene = createAsyncThunk('editor/runScene', editor.runScene);
+export const runScene = createAsyncThunk(
+  'editor/runScene',
+  async ({ path, debugger: openDebugger }: PreviewOptions & { path: string }) => {
+    const id = await editor.runScene(path);
+    if (openDebugger) {
+      await editor.openSceneDebugger(id);
+    }
+  },
+);
 export const publishScene = createAsyncThunk('editor/publishScene', editor.publishScene);
 export const killPreviewScene = createAsyncThunk(
   'editor/killPreviewScene',
@@ -53,8 +62,6 @@ const initialState: EditorState = {
   isFetchingVersion: false,
   error: null,
 };
-
-// selectors
 
 // slice
 export const slice = createSlice({
