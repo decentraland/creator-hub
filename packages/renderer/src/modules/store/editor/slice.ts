@@ -4,6 +4,7 @@ import { editor } from '#preload';
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
 import { type Project } from '/shared/types/projects';
+import type { PreviewOptions } from '/shared/types/settings';
 import { WorkspaceError } from '/shared/types/workspace';
 
 import { actions as workspaceActions } from '../workspace';
@@ -14,7 +15,7 @@ export const install = createAsyncThunk('editor/install', editor.install);
 export const startInspector = createAsyncThunk('editor/startInspector', editor.startInspector);
 export const runScene = createAsyncThunk(
   'editor/runScene',
-  async ({ path, openDebugger = true }: { path: string; openDebugger?: boolean }) => {
+  async ({ path, debugger: openDebugger }: PreviewOptions & { path: string }) => {
     const id = await editor.runScene(path);
     if (openDebugger) {
       await editor.openSceneDebugger(id);

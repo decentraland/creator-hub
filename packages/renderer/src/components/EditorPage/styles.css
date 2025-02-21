@@ -33,6 +33,12 @@
   margin-left: 20px;
 }
 
+.Editor .Header .actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .Editor .inspector {
   flex: 1 0 auto;
   border: none;
@@ -55,4 +61,17 @@
 
 .Editor .loading span {
   margin-right: 15px;
+}
+
+.PreviewOptions {
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+}
+
+.PreviewOptions .title {
+  font-size: 12px;
+  color: var(--clear-divider);
+  margin: 0 0 10px 0;
+  text-transform: uppercase;
 }
