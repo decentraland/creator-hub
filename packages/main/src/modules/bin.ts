@@ -213,6 +213,7 @@ export type Child = {
   ) => Promise<string>;
   kill: () => Promise<void>;
   alive: () => boolean;
+  stdall: (opts?: EventOptions) => string[];
 };
 
 type Matcher = {
@@ -249,6 +250,7 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
 
   const stdout = createCircularBuffer<Uint8Array>(MAX_BUFFER_SIZE);
   const stderr = createCircularBuffer<Uint8Array>(MAX_BUFFER_SIZE);
+  const stdall = createCircularBuffer<Uint8Array>(MAX_BUFFER_SIZE); // ordered buffer of stdout and stderr
 
   const forked = utilityProcess.fork(binPath, [...args], {
     cwd,
@@ -268,17 +270,20 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
     forked.stderr?.removeAllListeners('data');
     stdout.clear();
     stderr.clear();
+    stdall.clear();
     matchers.length = 0;
   };
 
   forked.stdout!.on('data', (data: Buffer) => {
     handleData(data, matchers, 'stdout');
     stdout.push(Uint8Array.from(data));
+    stdall.push(Uint8Array.from(data));
   });
 
   forked.stderr!.on('data', (data: Buffer) => {
     handleData(data, matchers, 'stderr');
     stderr.push(Uint8Array.from(data));
+    stdall.push(Uint8Array.from(data));
   });
 
   const ready = future<void>();
@@ -320,6 +325,14 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
     args,
     cwd,
     process: forked,
+    stdall: (opts: EventOptions = {}) => {
+      const out: string[] = [];
+      for (const buf of stdall.getAllIterator()) {
+        const data = Buffer.from(buf).toString('utf8');
+        out.push(processData(data, opts));
+      }
+      return out;
+    },
     on: (pattern, handler, opts = {}) => {
       if (alive) {
         return (
@@ -422,19 +435,23 @@ async function handleData(buffer: Buffer, matchers: Matcher[], type: StreamType)
     if (opts?.type !== 'all' && opts?.type !== type) continue;
     pattern.lastIndex = 0; // reset regexp
     if (pattern.test(data)) {
-      // remove control characters from data
-      const text = opts?.sanitize
-        ? data.replace(
-            // eslint-disable-next-line no-control-regex
-            /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g,
-            '',
-          )
-        : data;
-      handler(text);
+      handler(processData(data, opts));
     }
   }
 }
 
+function processData(data: string, opts: EventOptions | undefined) {
+  const { sanitize = true } = opts ?? {};
+  // remove control characters from data
+  const text = sanitize
+    ? data.replace(
+        // eslint-disable-next-line no-control-regex
+        /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g,
+        '',
+      )
+    : data;
+  return text;
+}
 export async function dclDeepLink(deepLink: string) {
   const command = process.platform === 'win32' ? 'start' : 'open';
   try {

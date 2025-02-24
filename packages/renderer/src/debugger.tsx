@@ -25,8 +25,14 @@ function Debugger() {
   const [attachStatus, setAttachStatus] = useState<'loading' | 'attached' | 'failed'>('loading');
   const [, forceUpdate] = useState(0);
 
-  const log = useCallback((message: string) => {
-    logsBuffer.push(message);
+  const log = useCallback((messages: string[] | string) => {
+    messages = Array.isArray(messages) ? messages : [messages];
+
+    if (messages.length === 0) return;
+
+    for (const message of messages) {
+      logsBuffer.push(message);
+    }
     forceUpdate(prev => prev + 1);
 
     // Auto-scroll to the bottom

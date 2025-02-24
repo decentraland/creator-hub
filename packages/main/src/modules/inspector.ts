@@ -87,7 +87,12 @@ export async function attachSceneDebugger(path: string, eventName: string): Prom
     return false;
   }
 
-  // Attach the event listener to preview output to send the data to debugger window
+  // Send all the current logs to the debugger window
+  const stdall = preview.stdall({ sanitize: false });
+  if (stdall.length > 0) {
+    window.webContents.send(eventName, stdall);
+  }
+  // Attach the event listener to preview output to send future logs to debugger window
   const listener = preview.on(
     /(.*)/i,
     (data?: string) => {
