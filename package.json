@@ -33,7 +33,7 @@
     "format": "npx prettier --write \"**/*.{js,ts,tsx,json}\""
   },
   "devDependencies": {
-    "@dcl/sdk": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/add-admin-toolkit-smart-item/dcl-sdk-7.7.6-13567928930.commit-5772fc1.tgz",
+    "@dcl/sdk": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/add-admin-toolkit-smart-item/dcl-sdk-7.7.6-13571322937.commit-b57db83.tgz",
     "@reduxjs/toolkit": "^2.2.6",
     "@types/cmd-shim": "^5.0.2",
     "@types/is-running": "^2.1.2",
