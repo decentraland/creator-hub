@@ -165,19 +165,7 @@ export async function install() {
       // no need to install node and npm in dev mode since they should already be in the $PATH for dev environment to work
       log.info('[Install] Skipping installation of node and npm binaries in DEV mode');
     }
-    // TODO: remove this once we have merged the asset-packs PR
-    log.info('[CLI] Installing some dev dependencies...', { path: APP_UNPACKED_PATH });
-    for (const pkg of [
-      'https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/add-admin-toolkit-smart-item/dcl-sdk-7.7.6-13573314478.commit-aa2646e.tgz',
-      'https://sdk-team-cdn.decentraland.org/@dcl/asset-packs/branch/feat/add-admin-toolkit-smart-item/dcl-asset-packs-2.1.3-13573269951.commit-28bead7.tgz',
-    ]) {
-      const npmInstall = run('npm', 'npm', {
-        args: ['install', '--save-dev', pkg, '--loglevel', 'error'],
-        cwd: APP_UNPACKED_PATH,
-        workspace: APP_UNPACKED_PATH,
-      });
-      await npmInstall.waitFor(/added \d+ package|up to date/);
-    }
+
     installed.resolve();
   } catch (error: any) {
     log.error('[Install] Failed to install node and npm binaries:', error.message);
