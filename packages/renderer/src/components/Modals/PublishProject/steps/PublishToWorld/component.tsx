@@ -8,6 +8,7 @@ import {
   Select,
   Typography,
   type SelectChangeEvent,
+  FormControlLabel,
 } from 'decentraland-ui2';
 import WarningIcon from '@mui/icons-material/Warning';
 import AddIcon from '@mui/icons-material/Add';
@@ -221,11 +222,15 @@ function SelectWorld({ project, onPublish }: { project: Project; onPublish: () =
       <div className="actions">
         {hasWorldContent && (
           <div className="ConfirmWorldReplaceContent">
-            <Checkbox
-              checked={confirmWorldReplaceContent}
-              onChange={handleConfirmWorldReplaceContent}
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={confirmWorldReplaceContent}
+                  onChange={handleConfirmWorldReplaceContent}
+                />
+              }
+              label={t('modal.publish_project.worlds.select_world.confirm_world_replace_content')}
             />
-            {t('modal.publish_project.worlds.select_world.confirm_world_replace_content')}
           </div>
         )}
         <Button
