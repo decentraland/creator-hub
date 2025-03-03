@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import cx from 'classnames';
-import { Button as _Button, ButtonGroup as _ButtonGroup } from 'decentraland-ui2';
+import { Button as DclButton, ButtonGroup as DclButtonGroup } from 'decentraland-ui2';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 
 import { Popper } from '../Popper';
@@ -11,13 +11,13 @@ import './styles.css';
 
 export function Button({ children, className = '', onClick, ...props }: ButtonProps) {
   return (
-    <_Button
+    <DclButton
       {...props}
       className={cx('Button', className)}
       onClick={onClick}
     >
       {children}
-    </_Button>
+    </DclButton>
   );
 }
 
@@ -36,7 +36,7 @@ export function ButtonGroup({ extra, ...props }: GroupProps) {
 
   return (
     <>
-      <_ButtonGroup variant="contained">
+      <DclButtonGroup variant="contained">
         <Button {...props} />
         <Button
           className="extra-button"
@@ -57,7 +57,7 @@ export function ButtonGroup({ extra, ...props }: GroupProps) {
             {extra}
           </Popper>
         )}
-      </_ButtonGroup>
+      </DclButtonGroup>
     </>
   );
 }
