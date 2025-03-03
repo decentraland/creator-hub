@@ -488,13 +488,13 @@ function Deploying({ info, url, onSuccess, onClick, onRetry }: DeployingProps) {
     const baseSteps = [
       {
         bulletText: '1',
-        name: t('modal.publish_project.deploy.deploying.step.catalyst'),
+        name: t('modal.publish_project.deploy.deploying.step.uploading'),
         description: getStepDescription(catalyst),
         state: catalyst,
       },
       {
         bulletText: '2',
-        name: t('modal.publish_project.deploy.deploying.step.asset_bundle'),
+        name: t('modal.publish_project.deploy.deploying.step.converting'),
         description: getStepDescription(assetBundle),
         state: assetBundle,
       },
@@ -504,7 +504,7 @@ function Deploying({ info, url, onSuccess, onClick, onRetry }: DeployingProps) {
     if (!info.isWorld) {
       baseSteps.push({
         bulletText: '3',
-        name: t('modal.publish_project.deploy.deploying.step.lods'),
+        name: t('modal.publish_project.deploy.deploying.step.optimizing'),
         description: getStepDescription(lods),
         state: lods,
       });
