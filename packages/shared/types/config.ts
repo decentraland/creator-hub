@@ -22,6 +22,9 @@ export const DEFAULT_CONFIG: Config = {
   settings: {
     scenesPath: SCENES_DIRECTORY, // Base directory name, will be joined with userDataPath by main/preload
     dependencyUpdateStrategy: DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
+    previewOptions: {
+      debugger: false,
+    },
   },
 };
 

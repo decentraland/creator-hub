@@ -1,4 +1,4 @@
-import { type OpenDialogOptions } from 'electron';
+import type { OpenDialogOptions } from 'electron';
 
 import type { Outdated } from '/shared/types/npm';
 
@@ -20,10 +20,12 @@ export interface Ipc {
   'electron.openExternal': (url: string) => Promise<void>;
   'electron.copyToClipboard': (text: string) => Promise<void>;
   'inspector.start': () => Promise<number>;
+  'inspector.openSceneDebugger': (path: string) => Promise<string>;
+  'inspector.attachSceneDebugger': (path: string, eventName: string) => Promise<boolean>;
   'bin.install': () => Promise<void>;
   'bin.code': (path: string) => Promise<void>;
   'cli.init': (path: string, repo?: string) => Promise<void>;
-  'cli.start': (path: string) => Promise<void>;
+  'cli.start': (path: string) => Promise<string>;
   'cli.deploy': (opts: DeployOptions) => Promise<number>;
   'cli.killPreview': (path: string) => Promise<void>;
   'analytics.track': (event: string, data?: Record<string, any>) => void;

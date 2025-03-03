@@ -12,6 +12,7 @@ import { promisify } from 'util';
 import { exec as execSync } from 'child_process';
 
 import { ErrorBase } from '/shared/types/error';
+import { createCircularBuffer } from '/shared/circular-buffer';
 
 import { APP_UNPACKED_PATH, getBinPath, getNodeCmdPath, joinEnvPaths } from './path';
 import { track } from './analytics';
@@ -173,6 +174,8 @@ export async function install() {
   }
 }
 
+const MAX_BUFFER_SIZE = 2048;
+
 type Error = 'COMMAND_FAILED';
 
 export class StreamError extends ErrorBase<Error> {
@@ -188,14 +191,19 @@ export class StreamError extends ErrorBase<Error> {
 
 export type StreamType = 'all' | 'stdout' | 'stderr';
 
+export type EventOptions = {
+  type?: StreamType;
+  sanitize?: boolean;
+};
+
 export type Child = {
   pkg: string;
   bin: string;
   args: string[];
   cwd: string;
   process: Electron.UtilityProcess;
-  on: (pattern: RegExp, handler: (data?: string) => void, streamType?: StreamType) => number;
-  once: (pattern: RegExp, handler: (data?: string) => void, streamType?: StreamType) => number;
+  on: (pattern: RegExp, handler: (data?: string) => void, opts?: EventOptions) => number;
+  once: (pattern: RegExp, handler: (data?: string) => void, opts?: EventOptions) => number;
   off: (index: number) => void;
   wait: () => Promise<Buffer>;
   waitFor: (
@@ -205,13 +213,14 @@ export type Child = {
   ) => Promise<string>;
   kill: () => Promise<void>;
   alive: () => boolean;
+  stdall: (opts?: EventOptions) => string[];
 };
 
 type Matcher = {
   pattern: RegExp;
   handler: (data: string) => void;
   enabled: boolean;
-  streamType: StreamType;
+  opts?: EventOptions;
 };
 
 type RunOptions = {
@@ -229,7 +238,6 @@ type RunOptions = {
  * @returns Child
  */
 export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
-  // status
   let isKilling = false;
   let alive = true;
 
@@ -239,6 +247,10 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
   const { workspace = APP_UNPACKED_PATH, cwd = APP_UNPACKED_PATH, args = [], env = {} } = options;
 
   const binPath = getBinPath(pkg, bin, workspace);
+
+  const stdout = createCircularBuffer<Uint8Array>(MAX_BUFFER_SIZE);
+  const stderr = createCircularBuffer<Uint8Array>(MAX_BUFFER_SIZE);
+  const stdall = createCircularBuffer<Uint8Array>(MAX_BUFFER_SIZE); // ordered buffer of stdout and stderr
 
   const forked = utilityProcess.fork(binPath, [...args], {
     cwd,
@@ -250,16 +262,28 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
     },
   });
 
-  const stdout: Uint8Array[] = [];
+  const cleanup = () => {
+    for (const matcher of matchers) {
+      matcher.enabled = false;
+    }
+    forked.stdout?.removeAllListeners('data');
+    forked.stderr?.removeAllListeners('data');
+    stdout.clear();
+    stderr.clear();
+    stdall.clear();
+    matchers.length = 0;
+  };
+
   forked.stdout!.on('data', (data: Buffer) => {
     handleData(data, matchers, 'stdout');
     stdout.push(Uint8Array.from(data));
+    stdall.push(Uint8Array.from(data));
   });
 
-  const stderr: Uint8Array[] = [];
   forked.stderr!.on('data', (data: Buffer) => {
     handleData(data, matchers, 'stderr');
     stderr.push(Uint8Array.from(data));
+    stdall.push(Uint8Array.from(data));
   });
 
   const ready = future<void>();
@@ -275,12 +299,12 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
   forked.on('exit', code => {
     if (!alive) return;
     alive = false;
-    const stdoutBuf = Buffer.concat(stdout);
+    const stdoutBuf = Buffer.concat(stdout.getAll());
     log.info(
       `[UtilityProcess] Exiting "${name}" with pid=${forked.pid} and exit code=${code || 0}`,
     );
     if (code !== 0 && code !== null) {
-      const stderrBuf = Buffer.concat(stderr);
+      const stderrBuf = Buffer.concat(stderr.getAll());
       promise.reject(
         new StreamError(
           'COMMAND_FAILED',
@@ -292,6 +316,7 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
     } else {
       promise.resolve(stdoutBuf);
     }
+    cleanup();
   });
 
   const child: Child = {
@@ -300,20 +325,38 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
     args,
     cwd,
     process: forked,
-    on: (pattern, handler, streamType = 'all') => {
+    stdall: (opts: EventOptions = {}) => {
+      const out: string[] = [];
+      for (const buf of stdall.getAllIterator()) {
+        const data = Buffer.from(buf).toString('utf8');
+        out.push(processData(data, opts));
+      }
+      return out;
+    },
+    on: (pattern, handler, opts = {}) => {
       if (alive) {
-        return matchers.push({ pattern, handler, enabled: true, streamType }) - 1;
+        return (
+          matchers.push({
+            pattern,
+            handler,
+            enabled: true,
+            opts: {
+              type: opts.type ?? 'all',
+              sanitize: opts.sanitize ?? true,
+            },
+          }) - 1
+        );
       }
       throw new Error('Process has been killed');
     },
-    once: (pattern, handler, streamType) => {
+    once: (pattern, handler, opts = {}) => {
       const index = child.on(
         pattern,
         data => {
           handler(data);
           child.off(index);
         },
-        streamType,
+        opts,
       );
       return index;
     },
@@ -325,9 +368,9 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
     wait: () => promise,
     waitFor: (resolvePattern, rejectPattern, opts) =>
       new Promise((resolve, reject) => {
-        child.once(resolvePattern, data => resolve(data!), opts?.resolve);
+        child.once(resolvePattern, data => resolve(data!), { type: opts?.resolve });
         if (rejectPattern) {
-          child.once(rejectPattern, data => reject(new Error(data)), opts?.reject);
+          child.once(rejectPattern, data => reject(new Error(data)), { type: opts?.reject });
         }
       }),
     kill: async () => {
@@ -340,27 +383,25 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
       log.info(`[UtilityProcess] Killing process "${name}" with pid=${pid}...`);
 
       // create promise to kill child
-      const promise = future<void>();
+      const killPromise = future<void>();
 
       // kill child gracefully
       treeKill(pid);
 
-      // child succesfully killed
+      // child successfully killed
       const die = (force: boolean = false) => {
         isKilling = false;
         alive = false;
-        clearInterval(interval);
-        clearTimeout(timeout);
-        for (const matcher of matchers) {
-          matcher.enabled = false;
-        }
+        cleanup();
         if (force) {
           log.info(`[UtilityProcess] Process "${name}" with pid=${pid} forcefully killed`);
           treeKill(pid!, 'SIGKILL');
         } else {
           log.info(`[UtilityProcess] Process "${name}" with pid=${pid} gracefully killed`);
         }
-        promise.resolve();
+        clearInterval(interval);
+        clearTimeout(timeout);
+        killPromise.resolve();
       };
 
       // interval to check if child still running and flag it as dead when is not running anymore
@@ -378,7 +419,7 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
       }, 5000);
 
       // return promise
-      return promise;
+      return killPromise;
     },
     alive: () => alive,
   };
@@ -389,22 +430,28 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
 async function handleData(buffer: Buffer, matchers: Matcher[], type: StreamType) {
   const data = buffer.toString('utf8');
   log.info(`[UtilityProcess] ${data}`); // pipe data to console
-  for (const { pattern, handler, enabled, streamType } of matchers) {
+  for (const { pattern, handler, enabled, opts } of matchers) {
     if (!enabled) continue;
-    if (streamType !== 'all' && streamType !== type) continue;
+    if (opts?.type !== 'all' && opts?.type !== type) continue;
     pattern.lastIndex = 0; // reset regexp
     if (pattern.test(data)) {
-      // remove control characters from data
-      const text = data.replace(
-        // eslint-disable-next-line no-control-regex
-        /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g,
-        '',
-      );
-      handler(text);
+      handler(processData(data, opts));
     }
   }
 }
 
+function processData(data: string, opts: EventOptions | undefined) {
+  const { sanitize = true } = opts ?? {};
+  // remove control characters from data
+  const text = sanitize
+    ? data.replace(
+        // eslint-disable-next-line no-control-regex
+        /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g,
+        '',
+      )
+    : data;
+  return text;
+}
 export async function dclDeepLink(deepLink: string) {
   const command = process.platform === 'win32' ? 'start' : 'open';
   try {

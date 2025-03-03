@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CircularProgress as Loader } from 'decentraland-ui2';
+import {
+  Checkbox,
+  FormControlLabel,
+  FormGroup,
+  CircularProgress as Loader,
+} from 'decentraland-ui2';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import CodeIcon from '@mui/icons-material/Code';
@@ -13,6 +18,7 @@ import { isWorkspaceError } from '/shared/types/workspace';
 import { t } from '/@/modules/store/translation/utils';
 import { initRpc } from '/@/modules/rpc';
 import { useEditor } from '/@/hooks/useEditor';
+import { useSettings } from '/@/hooks/useSettings';
 
 import EditorPng from '/assets/images/editor.png';
 
@@ -20,6 +26,9 @@ import { PublishProject } from '../Modals/PublishProject';
 import { Button } from '../Button';
 import { Header } from '../Header';
 import { Row } from '../Row';
+import { ButtonGroup } from '../Button';
+
+import type { PreviewOptionsProps } from './types';
 
 import './styles.css';
 
@@ -41,9 +50,10 @@ export function EditorPage() {
     isInstallingProject,
     killPreview,
   } = useEditor();
+  const { settings, updateAppSettings } = useSettings();
   const userId = useSelector(state => state.analytics.userId);
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
-  const [open, setOpen] = useState<ModalType | undefined>();
+  const [modalOpen, setModalOpen] = useState<ModalType | undefined>();
 
   const handleIframeRef = useCallback(
     (e: React.SyntheticEvent<HTMLIFrameElement, Event>) => {
@@ -80,15 +90,26 @@ export function EditorPage() {
       const rpc = iframeRef.current;
       if (rpc) {
         saveAndGetThumbnail(rpc);
-        setOpen(type);
+        setModalOpen(type);
       }
     },
     [iframeRef.current],
   );
 
   const handleCloseModal = useCallback(() => {
-    setOpen(undefined);
+    setModalOpen(undefined);
   }, []);
+
+  const handleChangePreviewOptions = useCallback(
+    (options: PreviewOptionsProps['options']) => {
+      updateAppSettings({ ...settings, previewOptions: options });
+    },
+    [settings, updateAppSettings],
+  );
+
+  const handleOpenPreview = useCallback(() => {
+    openPreview(settings.previewOptions);
+  }, [openPreview, settings.previewOptions]);
 
   // inspector url
   const htmlUrl = `http://localhost:${import.meta.env.VITE_INSPECTOR_PORT || inspectorPort}`;
@@ -143,7 +164,7 @@ export function EditorPage() {
   );
 
   return (
-    <div className="Editor">
+    <main className="Editor">
       {!isReady ? (
         renderLoading()
       ) : (
@@ -166,14 +187,20 @@ export function EditorPage() {
               >
                 {t('editor.header.actions.code')}
               </Button>
-              <Button
+              <ButtonGroup
                 color="secondary"
                 disabled={loadingPreview || isInstallingProject}
-                onClick={openPreview}
+                onClick={handleOpenPreview}
                 startIcon={loadingPreview ? <Loader size={20} /> : <PlayCircleIcon />}
+                extra={
+                  <PreviewOptions
+                    options={settings.previewOptions}
+                    onChange={handleChangePreviewOptions}
+                  />
+                }
               >
                 {t('editor.header.actions.preview')}
-              </Button>
+              </ButtonGroup>
               <Button
                 color="primary"
                 disabled={loadingPublish || isInstallingProject}
@@ -191,13 +218,39 @@ export function EditorPage() {
           ></iframe>
           {project && (
             <PublishProject
-              open={open === 'publish'}
+              open={modalOpen === 'publish'}
               project={project}
               onClose={handleCloseModal}
             />
           )}
         </>
       )}
+    </main>
+  );
+}
+
+function PreviewOptions({ onChange, options }: PreviewOptionsProps) {
+  const handleChange = useCallback(
+    (newOptions: Partial<PreviewOptionsProps['options']>) => () => {
+      onChange({ ...options, ...newOptions });
+    },
+    [onChange, options],
+  );
+
+  return (
+    <div className="PreviewOptions">
+      <span className="title">Preview options</span>
+      <FormGroup>
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={!!options.debugger}
+              onChange={handleChange({ debugger: !options.debugger })}
+            />
+          }
+          label="Open Console Window during preview"
+        />
+      </FormGroup>
     </div>
   );
 }
