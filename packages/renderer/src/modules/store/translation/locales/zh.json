@@ -37,7 +37,8 @@
       "actions": {
         "code": "代码",
         "preview": "预览",
-        "publish": "发布"
+        "publish": "发布",
+        "publish_history": "出版历史"
       }
     }
   },
@@ -197,6 +198,9 @@
           "in_progress": "现在，即使场景仍在处理中，您也可以访问该场景。"
         }
       }
+    },
+    "publish_history": {
+      "title": "出版历史"
     },
     "app_settings": {
       "title": "應用程式設定",

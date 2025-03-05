@@ -7,7 +7,7 @@
   justify-content: space-evenly;
   align-items: center;
   text-align: center;
-  background-color: var(--light-gray);
+  background-color: var(--dark-gray);
   border-radius: 8px;
   padding: 10px 30px;
 }

@@ -4,6 +4,8 @@ import {
   Checkbox,
   FormControlLabel,
   FormGroup,
+  ListItemButton,
+  ListItemText,
   CircularProgress as Loader,
 } from 'decentraland-ui2';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
@@ -23,16 +25,21 @@ import { useSettings } from '/@/hooks/useSettings';
 import EditorPng from '/assets/images/editor.png';
 
 import { PublishProject } from '../Modals/PublishProject';
+import { PublishHistory } from '../Modals/PublishHistory';
 import { Button } from '../Button';
 import { Header } from '../Header';
 import { Row } from '../Row';
 import { ButtonGroup } from '../Button';
 
-import type { PreviewOptionsProps } from './types';
+import type {
+  ModalType,
+  PreviewOptionsProps,
+  PublishOption,
+  PublishOptionsProps,
+  ModalProps,
+} from './types';
 
 import './styles.css';
-
-type ModalType = 'publish';
 
 export function EditorPage() {
   const navigate = useNavigate();
@@ -78,6 +85,10 @@ export function EditorPage() {
 
   const isReady = !!project && inspectorPort > 0;
 
+  const openModal = useCallback((type: ModalType) => {
+    setModalOpen(type);
+  }, []);
+
   const handleBack = useCallback(async () => {
     const rpc = iframeRef.current;
     if (rpc) await refreshProject(rpc);
@@ -85,16 +96,13 @@ export function EditorPage() {
     navigate('/scenes');
   }, [navigate, iframeRef.current]);
 
-  const handleOpenModal = useCallback(
-    (type: ModalType) => () => {
-      const rpc = iframeRef.current;
-      if (rpc) {
-        saveAndGetThumbnail(rpc);
-        setModalOpen(type);
-      }
-    },
-    [iframeRef.current],
-  );
+  const handleOpenPublishModal = useCallback(() => {
+    const rpc = iframeRef.current;
+    if (rpc) {
+      saveAndGetThumbnail(rpc);
+      openModal('publish');
+    }
+  }, [iframeRef.current]);
 
   const handleCloseModal = useCallback(() => {
     setModalOpen(undefined);
@@ -110,6 +118,18 @@ export function EditorPage() {
   const handleOpenPreview = useCallback(() => {
     openPreview(settings.previewOptions);
   }, [openPreview, settings.previewOptions]);
+
+  const handleClickPublishOptions = useCallback(
+    (option: PublishOption) => {
+      switch (option.id) {
+        case 'history':
+          return openModal('publish-history');
+        default:
+          return;
+      }
+    },
+    [openModal],
+  );
 
   // inspector url
   const htmlUrl = `http://localhost:${import.meta.env.VITE_INSPECTOR_PORT || inspectorPort}`;
@@ -177,7 +197,7 @@ export function EditorPage() {
               >
                 <ArrowBackIosIcon />
               </div>
-              <div className="title">{project?.title}</div>
+              <div className="title">{project.title}</div>
             </>
             <div className="actions">
               <Button
@@ -201,14 +221,15 @@ export function EditorPage() {
               >
                 {t('editor.header.actions.preview')}
               </ButtonGroup>
-              <Button
+              <ButtonGroup
                 color="primary"
                 disabled={loadingPublish || isInstallingProject}
-                onClick={handleOpenModal('publish')}
+                onClick={handleOpenPublishModal}
                 startIcon={loadingPublish ? <Loader size={20} /> : <PublicIcon />}
+                extra={<PublishOptions onClick={handleClickPublishOptions} />}
               >
                 {t('editor.header.actions.publish')}
-              </Button>
+              </ButtonGroup>
             </div>
           </Header>
           <iframe
@@ -216,13 +237,11 @@ export function EditorPage() {
             src={iframeUrl}
             onLoad={handleIframeRef}
           ></iframe>
-          {project && (
-            <PublishProject
-              open={modalOpen === 'publish'}
-              project={project}
-              onClose={handleCloseModal}
-            />
-          )}
+          <Modal
+            type={modalOpen}
+            project={project}
+            onClose={handleCloseModal}
+          />
         </>
       )}
     </main>
@@ -253,4 +272,45 @@ function PreviewOptions({ onChange, options }: PreviewOptionsProps) {
       </FormGroup>
     </div>
   );
+}
+
+function PublishOptions({ onClick }: PublishOptionsProps) {
+  const handleClick = useCallback(
+    (id: 'history') => () => {
+      onClick({ id });
+    },
+    [onClick],
+  );
+
+  return (
+    <div className="PublishOptions">
+      <ListItemButton>
+        <ListItemText
+          onClick={handleClick('history')}
+          primary={t('editor.header.actions.publish_history')}
+        />
+      </ListItemButton>
+    </div>
+  );
+}
+
+function Modal({ type, ...props }: ModalProps) {
+  switch (type) {
+    case 'publish':
+      return (
+        <PublishProject
+          open={type === 'publish'}
+          {...props}
+        />
+      );
+    case 'publish-history':
+      return (
+        <PublishHistory
+          open={type === 'publish-history'}
+          {...props}
+        />
+      );
+    default:
+      return null;
+  }
 }

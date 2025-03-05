@@ -37,7 +37,8 @@
       "actions": {
         "code": "Code",
         "preview": "Preview",
-        "publish": "Publish"
+        "publish": "Publish",
+        "publish_history": "Publishing History"
       }
     }
   },
@@ -197,6 +198,9 @@
           "in_progress": "You can now access your scene even while it's still processing."
         }
       }
+    },
+    "publish_history": {
+      "title": "Publish History"
     },
     "app_settings": {
       "title": "App Settings",

@@ -37,7 +37,8 @@
       "actions": {
         "code": "Código",
         "preview": "Previsualizar",
-        "publish": "Publicar"
+        "publish": "Publicar",
+        "publish_history": "Historial de Publicaciones"
       }
     }
   },
@@ -197,6 +198,9 @@
           "in_progress": "Ahora puedes acceder a tu escena incluso mientras aún se está procesando."
         }
       }
+    },
+    "publish_history": {
+      "title": "Historial de Publicaciones"
     },
     "app_settings": {
       "title": "Configuración de la aplicación",
