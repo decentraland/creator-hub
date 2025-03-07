@@ -1,11 +1,11 @@
 import fs from 'fs/promises';
-import path from 'path';
+import nodePath from 'path';
 
 type WriteFileData = Parameters<typeof fs.writeFile>[1];
 type WriteFileOptions = Parameters<typeof fs.writeFile>[2];
 
 export async function resolve(...paths: string[]) {
-  return path.resolve(...paths);
+  return nodePath.resolve(...paths);
 }
 
 export async function readFile(path: string) {
@@ -13,12 +13,12 @@ export async function readFile(path: string) {
 }
 
 export async function writeFile(
-  scenePath: string,
+  path: string,
   content: WriteFileData,
   options?: WriteFileOptions,
 ) {
-  await fs.mkdir(path.dirname(scenePath), { recursive: true });
-  await fs.writeFile(scenePath, content, options);
+  await fs.mkdir(nodePath.dirname(path), { recursive: true });
+  await fs.writeFile(path, content, options);
 }
 
 export async function exists(path: string) {
