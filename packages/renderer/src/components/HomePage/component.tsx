@@ -229,10 +229,7 @@ const LearnCard: React.FC = React.memo(() => {
 });
 
 const FeedbackCard: React.FC = React.memo(() => {
-  const handleClickFeedback = useCallback(
-    () => misc.openExternal(getCannyURL()),
-    [],
-  );
+  const handleClickFeedback = useCallback(() => misc.openExternal(getCannyURL()), []);
 
   return (
     <Card className="Card FeedbackCard">
