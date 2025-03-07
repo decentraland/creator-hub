@@ -36,7 +36,6 @@ export function pathToPosix(value: string): string {
   return value.replace(/\\/g, '/');
 }
 
-
 /**
  * Updates the scene metadata to reference the new thumbnail path.
  *

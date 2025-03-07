@@ -369,7 +369,9 @@ export async function saveThumbnail({
 }): Promise<void> {
   const scene = await getScene(scenePath);
   const thumbnailPath = getProjectThumbnailPath();
-  await deepWriteFile(path.join(scenePath, thumbnailPath), thumbnailContent, { encoding: 'base64' });
+  await deepWriteFile(path.join(scenePath, thumbnailPath), thumbnailContent, {
+    encoding: 'base64',
+  });
 
   // Check if the current thumbnail file exists
   // If the current thumbnail doesn't exist, update the scene.json to point to the new thumbnail
