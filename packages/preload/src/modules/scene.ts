@@ -32,6 +32,11 @@ export async function writeScene({ path: _path, scene }: { path: string; scene: 
   await writeFile(getScenePath(_path), JSON.stringify(scene, null, 2), { encoding: 'utf8' });
 }
 
+export function pathToPosix(value: string): string {
+  return value.replace(/\\/g, '/');
+}
+
+
 /**
  * Updates the scene metadata to reference the new thumbnail path.
  *
@@ -46,7 +51,7 @@ export async function updateSceneThumbnail(path: string, thumbnailPath: string):
       ...scene,
       display: {
         ...scene.display,
-        navmapThumbnail: thumbnailPath,
+        navmapThumbnail: pathToPosix(thumbnailPath),
       },
     },
   });

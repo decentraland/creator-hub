@@ -361,18 +361,23 @@ export async function reimportProject(_path: string): Promise<Project | undefine
  * @returns {Promise<void>} A promise that resolves if everything went ok.
  */
 export async function saveThumbnail({
-  path: _path,
-  thumbnail,
+  path: scenePath,
+  thumbnail: thumbnailContent,
 }: {
   path: string;
   thumbnail: string;
 }): Promise<void> {
-  const scene = await getScene(_path);
+  const scene = await getScene(scenePath);
   const thumbnailPath = getProjectThumbnailPath();
+  await deepWriteFile(path.join(scenePath, thumbnailPath), thumbnailContent, { encoding: 'base64' });
+
+  // Check if the current thumbnail file exists
+  // If the current thumbnail doesn't exist, update the scene.json to point to the new thumbnail
   const currentThumb = scene.display?.navmapThumbnail;
-  await deepWriteFile(path.join(_path, thumbnailPath), thumbnail, { encoding: 'base64' });
-  const currentThumbPath = path.join(_path, path.normalize(currentThumb || ''));
-  if (!(await exists(currentThumbPath))) await updateSceneThumbnail(_path, thumbnailPath);
+  const currentThumbPath = path.join(scenePath, path.normalize(currentThumb || ''));
+  if (!(await exists(currentThumbPath))) {
+    await updateSceneThumbnail(scenePath, thumbnailPath);
+  }
 }
 
 export async function openFolder(_path: string) {

@@ -12,9 +12,9 @@ export async function readFile(path: string) {
   return fs.readFile(path);
 }
 
-export async function writeFile(_path: string, content: WriteFileData, options?: WriteFileOptions) {
-  await fs.mkdir(path.dirname(_path), { recursive: true });
-  await fs.writeFile(_path, content, options);
+export async function writeFile(scenePath: string, content: WriteFileData, options?: WriteFileOptions) {
+  await fs.mkdir(path.dirname(scenePath), { recursive: true });
+  await fs.writeFile(scenePath, content, options);
 }
 
 export async function exists(path: string) {
