@@ -36,10 +36,7 @@ function MenuItem(props: { item: NavbarItem; active: NavbarItem; disable?: boole
 export function Navbar(props: { active: NavbarItem }) {
   const [openAppSettings, setOpenAppSettings] = useState(false);
 
-  const handleClickReportIssue = useCallback(
-    () => misc.openExternal(getCannyURL()),
-    [],
-  );
+  const handleClickReportIssue = useCallback(() => misc.openExternal(getCannyURL()), []);
 
   const handleClickHelp = useCallback(
     () => misc.openExternal('https://decentraland.org/help/'),
