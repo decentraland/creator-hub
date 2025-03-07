@@ -12,11 +12,7 @@ export async function readFile(path: string) {
   return fs.readFile(path);
 }
 
-export async function writeFile(
-  path: string,
-  content: WriteFileData,
-  options?: WriteFileOptions,
-) {
+export async function writeFile(path: string, content: WriteFileData, options?: WriteFileOptions) {
   await fs.mkdir(nodePath.dirname(path), { recursive: true });
   await fs.writeFile(path, content, options);
 }
