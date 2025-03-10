@@ -16,6 +16,7 @@ import { useIsMounted } from '/@/hooks/useIsMounted';
 import { t } from '/@/modules/store/translation/utils';
 import { Loader } from '/@/components/Loader';
 import { addBase64ImagePrefix } from '/@/modules/image';
+import { REPORT_ISSUES_URL } from '/@/modules/utils';
 
 import { PublishModal, onBackNoop } from '../../PublishModal';
 import { ConnectedSteps } from '../../../../Step';
@@ -419,7 +420,7 @@ function Deploying({ info, url, onSuccess, onClick, onRetry }: DeployingProps) {
   }, [wallet, info]);
 
   const onReportIssue = useCallback(() => {
-    void misc.openExternal('https://decentraland.canny.io');
+    void misc.openExternal(REPORT_ISSUES_URL);
   }, []);
 
   useEffect(

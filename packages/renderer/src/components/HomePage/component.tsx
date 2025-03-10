@@ -26,6 +26,7 @@ import InfluencePng from '/assets/images/influence.png';
 import { useAuth } from '/@/hooks/useAuth';
 import { useWorkspace } from '/@/hooks/useWorkspace';
 import { t } from '/@/modules/store/translation/utils';
+import { FEEDBACK_URL } from '/@/modules/utils';
 
 import { Navbar, NavbarItem } from '../Navbar';
 
@@ -228,10 +229,7 @@ const LearnCard: React.FC = React.memo(() => {
 });
 
 const FeedbackCard: React.FC = React.memo(() => {
-  const handleClickFeedback = useCallback(
-    () => misc.openExternal('https://decentraland.canny.io'),
-    [],
-  );
+  const handleClickFeedback = useCallback(() => misc.openExternal(FEEDBACK_URL), []);
 
   return (
     <Card className="Card FeedbackCard">
