@@ -166,6 +166,7 @@ export async function install() {
       // no need to install node and npm in dev mode since they should already be in the $PATH for dev environment to work
       log.info('[Install] Skipping installation of node and npm binaries in DEV mode');
     }
+
     installed.resolve();
   } catch (error: any) {
     log.error('[Install] Failed to install node and npm binaries:', error.message);
