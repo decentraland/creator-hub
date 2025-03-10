@@ -1,5 +1,7 @@
 import { ipcMain } from 'electron';
 import log from 'electron-log';
+import * as Sentry from '@sentry/electron/main';
+
 import type { Ipc, IpcError, IpcResult } from '/shared/types/ipc';
 
 // wrapper for ipcMain.handle with types
@@ -20,6 +22,10 @@ export async function handle<T extends keyof Ipc>(
       return result;
     } catch (error: any) {
       log.error(`[IPC] channel=${channel} error=${error.message}`);
+      Sentry.captureException(error, {
+        tags: { source: 'ipc-handle' },
+        extra: { channel },
+      });
       const result: IpcError = {
         success: false,
         error: error.message,

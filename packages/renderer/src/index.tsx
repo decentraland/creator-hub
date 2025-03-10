@@ -24,10 +24,29 @@ import { DocsPage } from '/@/components/DocsPage';
 import { Install } from '/@/components/Install';
 import { Snackbar } from '/@/components/Snackbar';
 
+import { init as reactInit } from '@sentry/react';
+import {
+  init as SentryInit,
+  browserTracingIntegration,
+  replayIntegration,
+} from '@sentry/electron/renderer';
+
 import '/@/themes';
 
 const container = document.getElementById('app')!;
 const root = createRoot(container);
+
+SentryInit(
+  {
+    integrations: [browserTracingIntegration(), replayIntegration()],
+    release: import.meta.env.VITE_APP_VERSION,
+    tracesSampleRate: 0.001,
+    replaysSessionSampleRate: 0.01,
+    replaysOnErrorSampleRate: 0.01,
+    enabled: import.meta.env.PROD,
+  },
+  reactInit as any,
+);
 
 root.render(
   <React.StrictMode>

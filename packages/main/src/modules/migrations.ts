@@ -1,4 +1,5 @@
 import path from 'path';
+import * as Sentry from '@sentry/electron/main';
 import fs from 'fs/promises';
 import log from 'electron-log/main';
 import { future } from 'fp-future';
@@ -23,6 +24,9 @@ export async function runMigrations() {
     log.info('[Migrations] Migrations completed');
     migrationsFuture.resolve();
   } catch (error) {
+    Sentry.captureException(error, {
+      tags: { source: 'migrations' },
+    });
     const err = error instanceof Error ? error : new Error(String(error));
     migrationsFuture.reject(err);
     throw error;

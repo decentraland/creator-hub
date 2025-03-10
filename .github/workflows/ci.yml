@@ -74,3 +74,6 @@ jobs:
       ES_PASSWORD: ${{ secrets.ES_PASSWORD }}
       WINDOWS_CREDENTIAL_ID_SIGNER: ${{ secrets.WINDOWS_CREDENTIAL_ID_SIGNER }}
       ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
+      # Sentry AUTH Token
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
