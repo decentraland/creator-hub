@@ -36,17 +36,19 @@ import '/@/themes';
 const container = document.getElementById('app')!;
 const root = createRoot(container);
 
-SentryInit(
-  {
-    integrations: [browserTracingIntegration(), replayIntegration()],
-    release: import.meta.env.VITE_APP_VERSION,
-    tracesSampleRate: 0.001,
-    replaysSessionSampleRate: 0.01,
-    replaysOnErrorSampleRate: 0.01,
-    enabled: import.meta.env.PROD,
-  },
-  reactInit as any,
-);
+if (import.meta.env.PROD) {
+  SentryInit(
+    {
+      integrations: [browserTracingIntegration(), replayIntegration()],
+      release: import.meta.env.VITE_APP_VERSION,
+      tracesSampleRate: 0.001,
+      replaysSessionSampleRate: 0.01,
+      replaysOnErrorSampleRate: 0.01,
+      enabled: import.meta.env.PROD,
+    },
+    reactInit as any,
+  );
+}
 
 root.render(
   <React.StrictMode>
