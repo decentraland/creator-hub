@@ -45,7 +45,6 @@ const config = {
       disable: process.env.MODE === 'development' || process.env.DRY_RUN,
     }),
   ],
-
 };
 
 export default config;

@@ -19,7 +19,6 @@ if (import.meta.env.PROD) {
   Sentry.init({
     dsn: import.meta.env.VITE_SENTRY_DSN,
   });
-
 }
 
 /**
@@ -79,7 +78,7 @@ app
  * Like `npm run compile` does. It's ok 😅
  */
 if (import.meta.env.PROD) {
-    app
+  app
     .whenReady()
     .then(() => {
       updater.autoUpdater.on('checking-for-update', () => {
