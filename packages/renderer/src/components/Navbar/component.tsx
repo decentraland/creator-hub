@@ -6,7 +6,7 @@ import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { misc } from '#preload';
 import logo from '/assets/images/logo-editor.png';
-import { getReportIssuesURL } from '/@/modules/utils';
+import { REPORT_ISSUES_URL } from '/@/modules/utils';
 import { t } from '/@/modules/store/translation/utils';
 import { Header } from '../Header';
 
@@ -36,7 +36,7 @@ function MenuItem(props: { item: NavbarItem; active: NavbarItem; disable?: boole
 export function Navbar(props: { active: NavbarItem }) {
   const [openAppSettings, setOpenAppSettings] = useState(false);
 
-  const handleClickReportIssue = useCallback(() => misc.openExternal(getReportIssuesURL()), []);
+  const handleClickReportIssue = useCallback(() => misc.openExternal(REPORT_ISSUES_URL), []);
 
   const handleClickHelp = useCallback(
     () => misc.openExternal('https://decentraland.org/help/'),
