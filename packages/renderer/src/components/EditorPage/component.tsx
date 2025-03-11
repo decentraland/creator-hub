@@ -119,6 +119,7 @@ export function EditorPage() {
     openPreview(settings.previewOptions);
   }, [openPreview, settings.previewOptions]);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleClickPublishOptions = useCallback(
     (option: PublishOption) => {
       switch (option.id) {
@@ -221,15 +222,15 @@ export function EditorPage() {
               >
                 {t('editor.header.actions.preview')}
               </ButtonGroup>
-              <ButtonGroup
+              <Button
                 color="primary"
                 disabled={loadingPublish || isInstallingProject}
                 onClick={handleOpenPublishModal}
                 startIcon={loadingPublish ? <Loader size={20} /> : <PublicIcon />}
-                extra={<PublishOptions onClick={handleClickPublishOptions} />}
+                // extra={<PublishOptions onClick={handleClickPublishOptions} />}
               >
                 {t('editor.header.actions.publish')}
-              </ButtonGroup>
+              </Button>
             </div>
           </Header>
           <iframe
@@ -274,6 +275,7 @@ function PreviewOptions({ onChange, options }: PreviewOptionsProps) {
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function PublishOptions({ onClick }: PublishOptionsProps) {
   const handleClick = useCallback(
     (id: 'history') => () => {
