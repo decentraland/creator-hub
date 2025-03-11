@@ -1,4 +1,5 @@
 import { app } from 'electron';
+import * as Sentry from '@sentry/electron/main';
 import { platform } from 'node:process';
 import updater from 'electron-updater';
 import log from 'electron-log/main';
@@ -13,6 +14,12 @@ import { runMigrations } from '/@/modules/migrations';
 import '/@/security-restrictions';
 
 log.initialize();
+
+if (import.meta.env.PROD) {
+  Sentry.init({
+    dsn: import.meta.env.VITE_SENTRY_DSN,
+  });
+}
 
 /**
  * Prevent electron from running multiple instances.
@@ -91,6 +98,10 @@ if (import.meta.env.PROD) {
         log.info(`[AutoUpdater] Download progress ${info.percent.toFixed(2)}%`);
       });
       updater.autoUpdater.on('error', err => {
+        Sentry.captureException(err, {
+          tags: { source: 'auto-updater' },
+          extra: { context: 'Electron auto-update process' },
+        });
         log.error('[AutoUpdater] Error in auto-updater', err);
       });
       return updater.autoUpdater.checkForUpdatesAndNotify({
@@ -98,7 +109,13 @@ if (import.meta.env.PROD) {
         body: 'New version was installed. Restart the app to apply changes.',
       });
     })
-    .catch(error => log.error('[AutoUpdater] Failed check and install updates:', error.message));
+    .catch(error => {
+      Sentry.captureException(error, {
+        tags: { source: 'auto-updater' },
+        extra: { context: 'Electron auto-update process main' },
+      });
+      log.error('[AutoUpdater] Failed check and install updates:', error.message);
+    });
 } else {
   log.info('Skipping updates check in DEV mode');
 }
@@ -119,6 +136,10 @@ app.on('before-quit', async event => {
   try {
     await killAll();
   } catch (error) {
+    Sentry.captureException(error, {
+      tags: { source: 'before-quit' },
+      extra: { context: 'Before quit error' },
+    });
     log.error('[App] Failed to kill all servers:', error);
   }
   log.info('[App] Quit');

@@ -34,6 +34,7 @@
   },
   "devDependencies": {
     "@reduxjs/toolkit": "^2.2.6",
+    "@sentry/wizard": "^4.2.0",
     "@types/cmd-shim": "^5.0.2",
     "@types/is-running": "^2.1.2",
     "@types/node": "20.14.9",
@@ -74,6 +75,9 @@
     "@dcl/sdk": "7.7.9",
     "@ethersproject/hash": "^5.7.0",
     "@segment/analytics-node": "^2.1.2",
+    "@sentry/electron": "^6.1.0",
+    "@sentry/react": "^9.5.0",
+    "@sentry/vite-plugin": "^3.2.2",
     "cmd-shim": "^6.0.3",
     "decentraland-connect": "^7.1.0",
     "decentraland-crypto-fetch": "^2.0.1",

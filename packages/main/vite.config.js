@@ -1,3 +1,4 @@
+import { sentryVitePlugin } from '@sentry/vite-plugin';
 import { node } from '../../.electron-vendors.cache.json';
 import { join } from 'node:path';
 
@@ -37,6 +38,13 @@ const config = {
     emptyOutDir: true,
     reportCompressedSize: false,
   },
+  plugins: [
+    sentryVitePlugin({
+      org: 'decentraland',
+      project: 'creator-hub',
+      disable: process.env.MODE === 'development' || process.env.DRY_RUN,
+    }),
+  ],
 };
 
 export default config;

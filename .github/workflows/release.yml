@@ -52,7 +52,12 @@ on:
       ES_TOTP_SECRET:
         description: 'Password to decrypt the certificate file'
         required: true
-
+      SENTRY_AUTH_TOKEN:
+        description: 'Sentry auth token'
+        required: true
+      SENTRY_DSN:
+        description: 'Sentry DSN to perform the requests'
+        required: true
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: true
@@ -92,6 +97,9 @@ jobs:
           VITE_SEGMENT_CREATORS_HUB_API_KEY: ${{ secrets.VITE_SEGMENT_CREATORS_HUB_API_KEY }}
           VITE_SEGMENT_INSPECTOR_API_KEY: ${{ secrets.VITE_SEGMENT_INSPECTOR_API_KEY }}
           VITE_ALLOWED_EXTERNAL_ORIGINS: ${{ secrets.VITE_ALLOWED_EXTERNAL_ORIGINS }}
+          # Sentry AUTH Token
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          VITE_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
 
       - name: Generate release version
         id: version
