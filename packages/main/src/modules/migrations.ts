@@ -7,7 +7,13 @@ import { SCENES_DIRECTORY } from '/shared/paths';
 import { getAppHomeLegacy, getUserDataPath } from './electron';
 import { CONFIG_PATH } from './config';
 import { FileSystemStorage, type IFileSystemStorage } from '/shared/types/storage';
-import { type Config, CURRENT_CONFIG_VERSION } from '/shared/types/config';
+import {
+  type Config,
+  CURRENT_CONFIG_VERSION,
+  DEFAULT_CONFIG,
+  mergeConfig,
+} from '/shared/types/config';
+import deepmerge from 'deepmerge';
 
 const migrationsFuture = future<void>();
 
@@ -18,7 +24,7 @@ export async function waitForMigrations(): Promise<void> {
 export async function runMigrations() {
   try {
     log.info('[Migrations] Starting migrations');
-    const configStorage = await FileSystemStorage.getOrCreate(CONFIG_PATH);
+    const configStorage = await FileSystemStorage.getOrCreate<Config>(CONFIG_PATH);
     await migrateLegacyPaths(configStorage);
     await migrateToV2(configStorage);
     log.info('[Migrations] Migrations completed');
@@ -33,11 +39,11 @@ export async function runMigrations() {
   }
 }
 
-async function migrateToV2(storage: IFileSystemStorage) {
+async function migrateToV2(storage: IFileSystemStorage<Config>) {
   log.info('[Migration] Checking if migration to V2 is needed');
 
   try {
-    const config = await storage.getAll<Partial<Config>>();
+    const config = await storage.getAll();
 
     // Only run if version is 1
     if (config.version !== 1) {
@@ -144,7 +150,7 @@ async function copyScene(sourcePath: string, targetPath: string) {
 }
 
 // Migrations
-async function migrateLegacyPaths(configStorage: IFileSystemStorage) {
+async function migrateLegacyPaths(configStorage: IFileSystemStorage<Config>) {
   log.info('[Migration] Starting legacy paths migration');
   const userDataPath = getUserDataPath();
   const appHomeLegacy = getAppHomeLegacy();
@@ -228,7 +234,8 @@ async function migrateLegacyPaths(configStorage: IFileSystemStorage) {
     }
 
     log.info('[Migration] Writing updated config.json to:', CONFIG_PATH);
-    await configStorage.setAll(config);
+    const defaultConfig = deepmerge({}, DEFAULT_CONFIG);
+    await configStorage.setAll(mergeConfig(config as Partial<Config>, defaultConfig));
     log.info('[Migration] Successfully migrated config.json');
 
     log.info('[Migration] Legacy paths migration completed successfully');

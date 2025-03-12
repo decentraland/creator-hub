@@ -1,47 +1,29 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { type AuthChain, Authenticator } from '@dcl/crypto';
-import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
+import { useCallback, useMemo, useState } from 'react';
 import { ChainId } from '@dcl/schemas';
 import { Typography, Checkbox } from 'decentraland-ui2';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
-import { misc, workspace } from '#preload';
+import { misc } from '#preload';
 
-import type { IFileSystemStorage } from '/shared/types/storage';
+import type { File, Info, Status, DeploymentComponentsStatus } from '/shared/types/deploy';
 
 import { useAuth } from '/@/hooks/useAuth';
+import { useWorkspace } from '/@/hooks/useWorkspace';
 import { useEditor } from '/@/hooks/useEditor';
-import { useIsMounted } from '/@/hooks/useIsMounted';
+import { useSnackbar } from '/@/hooks/useSnackbar';
+import { useDeploy } from '/@/hooks/useDeploy';
 
 import { t } from '/@/modules/store/translation/utils';
-import { Loader } from '/@/components/Loader';
 import { addBase64ImagePrefix } from '/@/modules/image';
 import { REPORT_ISSUES_URL } from '/@/modules/utils';
 
-import { PublishModal, onBackNoop } from '../../PublishModal';
-import { ConnectedSteps } from '../../../../Step';
-import { Button } from '../../../../Button';
+import { PublishModal, onBackNoop } from '/@/components/Modals/PublishProject/PublishModal';
+import { ConnectedSteps } from '/@/components/Step';
+import { Button } from '/@/components/Button';
+import { Loader } from '/@/components/Loader';
 
-import type { Step } from '../../../../Step/types';
-import { type Props } from '../../types';
-
-import {
-  getInitialDeploymentStatus,
-  retryDelayInMs,
-  maxRetries,
-  checkDeploymentStatus,
-  fetchDeploymentStatus,
-  deriveOverallStatus,
-  cleanPendingsFromDeploymentStatus,
-  isDeployFinishing,
-} from './utils';
-import {
-  type File,
-  type Info,
-  type DeploymentStatus,
-  type Status,
-  isDeploymentError,
-} from './types';
+import type { Step } from '/@/components/Step/types';
+import type { Props } from '/@/components/Modals/PublishProject/types';
 
 import './styles.css';
 
@@ -71,158 +53,70 @@ function getSize(size: number) {
 }
 
 export function Deploy(props: Props) {
-  const infoRef = useRef<IFileSystemStorage>();
+  const { project } = props;
   const { chainId, wallet, avatar } = useAuth();
-  const [files, setFiles] = useState<File[]>([]);
-  const [info, setInfo] = useState<Info | null>(null);
-  const { loadingPublish, publishPort, project, publishError } = useEditor();
-  const isMounted = useIsMounted();
-  const [deployStatus, setDeployStatus] = useState<Status>('idle');
-  const [error, setError] = useState<string | null>(null);
+  const { updateProjectInfo } = useWorkspace();
+  const { loadingPublish } = useEditor();
+  const { getDeployment, overallStatus, isDeployFinishing, executeDeployment } = useDeploy();
+  const { pushGeneric } = useSnackbar();
   const [showWarning, setShowWarning] = useState(false);
-  const [skipWarning, setSkipWarning] = useState(false);
-
-  // read skip warning flag
-  useEffect(() => {
-    if (project) {
-      workspace.getProjectInfo(project.path).then(info => {
-        info.get<boolean>('skipPublishWarning').then(value => {
-          setSkipWarning(!!value);
-        });
-        infoRef.current = info;
-      });
-    }
-  }, [project]);
-
-  const url = useMemo(() => {
-    const port = import.meta.env.VITE_CLI_DEPLOY_PORT || publishPort;
-    return port ? `http://localhost:${port}/api` : null;
-  }, [publishPort]);
+  const [skipWarning, setSkipWarning] = useState(project.info.skipPublishWarning ?? false);
+  const deployment = getDeployment(project.path);
 
   const handlePublish = useCallback(() => {
-    if (!url) return;
     setShowWarning(false);
-    async function deploy(payload: { address: string; authChain: AuthChain; chainId: ChainId }) {
-      setDeployStatus('pending');
-      setError(null);
-      const resp = await fetch(`${url}/deploy`, {
-        method: 'post',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-      if (resp.ok) {
-        return;
-      }
-      let error = (await resp.json()).message as string;
-      if (/Response was/.test(error)) {
-        try {
-          error = error.split('["')[1].split('"]')[0];
-        } catch (e) {
-          /* */
-        }
-      }
-      throw new Error(error);
-    }
-    if (wallet && info && info.rootCID) {
-      const identity = localStorageGetIdentity(wallet);
-      if (identity && chainId) {
-        const authChain = Authenticator.signPayload(identity, info.rootCID);
-        void deploy({ address: wallet, authChain, chainId })
-          .then(() => {
-            if (!isMounted()) return;
-          })
-          .catch(error => {
-            setDeployStatus('failed');
-            setError(error.message);
-          });
-      } else {
-        setError('Invalid identity or chainId');
-      }
-    }
-    // write skip warning flag
-    infoRef.current?.set('skipPublishWarning', skipWarning);
-  }, [wallet, info, url, chainId, skipWarning]);
+    updateProjectInfo(project.path, { skipPublishWarning: skipWarning }); // write skip warning flag
+    executeDeployment(project.path);
+  }, [skipWarning, project]);
 
   const handleBack = useCallback(() => {
     setShowWarning(false);
     setSkipWarning(false);
   }, []);
 
-  useEffect(() => {
-    if (!url || deployStatus !== 'idle') return;
-    async function fetchFiles() {
-      const resp = await fetch(`${url}/files`);
-      const files = (await resp.json()) as File[];
-      return files;
-    }
-    async function fetchInfo() {
-      const resp = await fetch(`${url}/info`);
-      const info = (await resp.json()) as Info;
-      return info;
-    }
-    void Promise.all([fetchFiles(), fetchInfo()])
-      .then(([files, info]) => {
-        if (!isMounted()) return;
-        setFiles(files);
-        setInfo(info);
-      })
-      .catch();
-  }, [url, deployStatus]);
-
-  // set publish error
-  useEffect(() => {
-    if (publishError) {
-      // TODO: JSON.parse(publishError) if possible
-      setError(publishError);
-    }
-  }, [publishError, setError]);
-
   // jump in
   const jumpInUrl = useMemo(() => {
-    if (info && project) {
-      if (info.isWorld) {
-        if (project.worldConfiguration) {
-          return `decentraland://?realm=${project.worldConfiguration.name}`;
-        }
-      } else {
-        return `decentraland://?position=${project.scene.base}`;
-      }
+    if (deployment?.info.isWorld && project.worldConfiguration) {
+      return `decentraland://?realm=${project.worldConfiguration.name}`;
+    } else {
+      return `decentraland://?position=${project.scene.base}`;
     }
-    return null;
-  }, [info, project]);
+  }, [deployment, project]);
 
   const handleJumpIn = useCallback(() => {
-    if (jumpInUrl) {
-      void misc.openExternal(jumpInUrl);
-    }
+    void misc.openExternal(jumpInUrl);
   }, [jumpInUrl]);
-
-  const handleDeploySuccess = useCallback(() => {
-    setDeployStatus('complete');
-  }, []);
 
   const handleDeployRetry = useCallback(() => {
     props.onBack && props.onBack();
   }, []);
 
+  const handleClose = useCallback(() => {
+    // push snackbar notification if deploy is still pending when closing the modal
+    if (deployment?.status === 'pending') {
+      pushGeneric('loading', `${deployment.info.title} publishing is in process...`, {
+        duration: 0,
+        requestId: project.path,
+      });
+    }
+    props.onClose();
+  }, [deployment, pushGeneric]);
+
   return (
     <PublishModal
       title={
-        info
-          ? info.isWorld
+        deployment
+          ? deployment.info.isWorld
             ? 'Publish to your World'
             : 'Publish to your Land'
           : loadingPublish
             ? 'Loading...'
-            : error
-              ? 'Error'
-              : ''
+            : 'Error'
       }
       size="large"
       {...props}
-      onBack={deployStatus === 'complete' ? onBackNoop : props.onBack}
+      onClose={handleClose}
+      onBack={deployment?.status === 'complete' ? onBackNoop : props.onBack}
     >
       <div className="Deploy">
         {showWarning ? (
@@ -265,14 +159,7 @@ export function Deploy(props: Props) {
         ) : null}
         {loadingPublish ? (
           <Loader />
-        ) : error ? (
-          <>
-            <div className="cli-publish-error">
-              <div className="Warning" />
-              <p className="message">{error}</p>
-            </div>
-          </>
-        ) : !info ? null : (
+        ) : !deployment ? null : (
           <>
             <div className="ethereum">
               <div className="chip network">
@@ -285,7 +172,7 @@ export function Deploy(props: Props) {
                   {wallet.slice(0, 6)}...{wallet.slice(-4)}
                 </div>
               ) : null}
-              {info.isWorld ? (
+              {deployment.info.isWorld ? (
                 avatar ? (
                   <div className="chip username">
                     {avatar.name}
@@ -295,47 +182,47 @@ export function Deploy(props: Props) {
               ) : (
                 <div className="chip parcel">
                   <i className="pin"></i>
-                  {info.baseParcel}
+                  {deployment.info.baseParcel}
                 </div>
               )}
             </div>
             <div className="scene">
               <div className="info">
-                {project ? (
-                  <div
-                    className="thumbnail"
-                    style={{ backgroundImage: `url(${addBase64ImagePrefix(project.thumbnail)})` }}
-                  />
-                ) : null}
+                <div
+                  className="thumbnail"
+                  style={{ backgroundImage: `url(${addBase64ImagePrefix(project.thumbnail)})` }}
+                />
                 <div className="text">
-                  <Typography variant="body1">{info.title}</Typography>
+                  <Typography variant="body1">{deployment.info.title}</Typography>
                   <Typography
                     variant="body2"
                     color="#A09BA8"
                   >
-                    {info.description}
+                    {deployment.info.description}
                   </Typography>
                 </div>
               </div>
-              {deployStatus === 'idle' && (
+              {deployment.status === 'idle' && (
                 <Idle
-                  files={files}
-                  error={error}
+                  files={deployment.files}
+                  error={deployment.error}
                   onClick={() => (skipWarning ? handlePublish() : setShowWarning(true))}
                 />
               )}
-              {deployStatus === 'pending' && (
+              {(deployment.status === 'pending' || deployment.status === 'failed') && (
                 <Deploying
-                  info={info}
+                  info={deployment.info}
                   url={jumpInUrl}
-                  onSuccess={handleDeploySuccess}
+                  componentsStatus={deployment.componentsStatus}
+                  isFinishing={isDeployFinishing(deployment)}
+                  overallStatus={overallStatus(deployment)}
                   onClick={handleJumpIn}
                   onRetry={handleDeployRetry}
                 />
               )}
-              {deployStatus === 'complete' && (
+              {deployment.status === 'complete' && (
                 <Success
-                  info={info}
+                  info={deployment.info}
                   url={jumpInUrl}
                   onClick={handleJumpIn}
                 />
@@ -350,7 +237,7 @@ export function Deploy(props: Props) {
 
 type IdleProps = {
   files: File[];
-  error: string | null;
+  error?: string;
   onClick: () => void;
 };
 
@@ -389,6 +276,7 @@ function Idle({ files, error, onClick }: IdleProps) {
         <Button
           size="large"
           onClick={onClick}
+          disabled={!!error}
         >
           {t('modal.publish_project.deploy.files.publish')}
           <i className="deploy-icon" />
@@ -400,77 +288,26 @@ function Idle({ files, error, onClick }: IdleProps) {
 
 type DeployingProps = {
   info: Info;
-  url: string | null;
-  onSuccess: () => void;
+  url: string;
+  componentsStatus: DeploymentComponentsStatus;
+  isFinishing: boolean;
+  overallStatus: Status;
   onClick: () => void;
   onRetry: () => void;
 };
 
-function Deploying({ info, url, onSuccess, onClick, onRetry }: DeployingProps) {
-  const { wallet } = useAuth();
-  const [deployState, setDeployState] = useState<DeploymentStatus>(
-    getInitialDeploymentStatus(info.isWorld),
-  );
-
-  const getDeploymentStatus = useCallback((): Promise<DeploymentStatus> => {
-    if (!wallet) throw new Error('No wallet provided');
-    const identity = localStorageGetIdentity(wallet);
-    if (!identity) throw new Error(`No identity found for wallet ${wallet}`);
-    return fetchDeploymentStatus(info.rootCID, identity, info.isWorld);
-  }, [wallet, info]);
-
+function Deploying({
+  info,
+  componentsStatus,
+  url,
+  onClick,
+  onRetry,
+  isFinishing,
+  overallStatus,
+}: DeployingProps) {
   const onReportIssue = useCallback(() => {
     void misc.openExternal(REPORT_ISSUES_URL);
   }, []);
-
-  useEffect(
-    () => {
-      let isCancelled = false;
-
-      const handleUpdate = (status: DeploymentStatus) => {
-        if (!isCancelled) {
-          if (deriveOverallStatus(status) === 'failed') {
-            isCancelled = true;
-            setDeployState(cleanPendingsFromDeploymentStatus(status));
-          } else {
-            setDeployState(status);
-          }
-        }
-      };
-
-      const handleSuccess = () => {
-        if (!isCancelled) onSuccess();
-      };
-
-      const handleFailure = (error: any) => {
-        if (!isCancelled) {
-          // info: if we know the error, we can translate it
-          if (isDeploymentError(error, 'MAX_RETRIES')) {
-            setDeployState(cleanPendingsFromDeploymentStatus(error.status));
-          }
-        }
-      };
-
-      const shouldAbort = () => isCancelled;
-
-      checkDeploymentStatus(
-        maxRetries,
-        retryDelayInMs,
-        getDeploymentStatus,
-        handleUpdate,
-        shouldAbort,
-        deployState,
-      )
-        .then(handleSuccess)
-        .catch(handleFailure);
-
-      // cleanup function to cancel retries if the component unmounts
-      return () => {
-        isCancelled = true;
-      };
-    },
-    [] /* no deps, want this to run ONLY on mount */,
-  );
 
   const getStepDescription = useCallback((status: Status) => {
     switch (status) {
@@ -484,7 +321,7 @@ function Deploying({ info, url, onSuccess, onClick, onRetry }: DeployingProps) {
   }, []);
 
   const steps: Step[] = useMemo(() => {
-    const { catalyst, assetBundle, lods } = deployState;
+    const { catalyst, assetBundle, lods } = componentsStatus;
     const baseSteps = [
       {
         bulletText: '1',
@@ -511,10 +348,8 @@ function Deploying({ info, url, onSuccess, onClick, onRetry }: DeployingProps) {
     }
 
     return baseSteps;
-  }, [deployState, getStepDescription, info.isWorld]);
+  }, [componentsStatus, getStepDescription, info.isWorld]);
 
-  const isFinishing = useMemo(() => isDeployFinishing(deployState), [deployState]);
-  const overallStatus = useMemo(() => deriveOverallStatus(deployState), [deployState]);
   const title = useMemo(() => {
     if (overallStatus === 'failed') return t('modal.publish_project.deploy.deploying.failed');
     if (isFinishing) return t('modal.publish_project.deploy.deploying.finishing');
@@ -581,7 +416,7 @@ function Deploying({ info, url, onSuccess, onClick, onRetry }: DeployingProps) {
 
 type SuccessProps = {
   info: Info;
-  url: string | null;
+  url: string;
   onClick: () => void;
 };
 
@@ -609,15 +444,7 @@ function Success({ info, url, onClick }: SuccessProps) {
   );
 }
 
-function JumpUrl({
-  inProgress,
-  info,
-  url,
-}: {
-  inProgress?: boolean;
-  info: Info;
-  url: string | null;
-}) {
+function JumpUrl({ inProgress, info, url }: { inProgress?: boolean; info: Info; url: string }) {
   return (
     <div className="jump-in-url">
       {inProgress && <label>{t('modal.publish_project.deploy.success.in_progress')}</label>}
@@ -632,7 +459,7 @@ function JumpUrl({
         {url}
         <i
           className="copy-icon"
-          onClick={() => url && misc.copyToClipboard(url)}
+          onClick={() => misc.copyToClipboard(url)}
         />
       </div>
     </div>

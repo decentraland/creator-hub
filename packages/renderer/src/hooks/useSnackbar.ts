@@ -2,7 +2,12 @@ import { useCallback, type SyntheticEvent } from 'react';
 import { type SnackbarCloseReason } from 'decentraland-ui2';
 
 import { useDispatch, useSelector } from '#store';
+
 import { actions } from '/@/modules/store/snackbar';
+import {
+  createCustomNotification,
+  createGenericNotification,
+} from '/@/modules/store/snackbar/utils';
 import type { Notification } from '/@/modules/store/snackbar/types';
 
 export function useSnackbar() {
@@ -28,9 +33,33 @@ export function useSnackbar() {
     [],
   );
 
+  const push = useCallback(
+    (notification: Notification) => {
+      dispatch(actions.pushSnackbar(notification));
+    },
+    [dispatch, actions.pushSnackbar],
+  );
+
+  const pushCustom = useCallback(
+    (...params: Parameters<typeof createCustomNotification>) => {
+      dispatch(actions.pushSnackbar(createCustomNotification(...params)));
+    },
+    [dispatch, actions.pushSnackbar],
+  );
+
+  const pushGeneric = useCallback(
+    (...params: Parameters<typeof createGenericNotification>) => {
+      dispatch(actions.pushSnackbar(createGenericNotification(...params)));
+    },
+    [dispatch, actions.pushSnackbar],
+  );
+
   return {
     ...snackbar,
     close,
     dismiss,
+    push,
+    pushGeneric,
+    pushCustom,
   };
 }

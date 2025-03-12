@@ -12,10 +12,14 @@ import type { Method, Params } from '/@/modules/rpc/storage';
 import type { RPCInfo } from '/@/modules/rpc';
 import { bufferToScene } from '/@/modules/buffer';
 import { useInspector } from '/@/hooks/useInspector';
+import { useAuth } from '/@/hooks/useAuth';
+import { useDeploy } from '/@/hooks/useDeploy';
 import { stripBase64ImagePrefix } from '/@/modules/image';
 
 export const useEditor = () => {
   const dispatch = useDispatch();
+  const { chainId, wallet } = useAuth();
+  const { initializeDeployment } = useDeploy();
   const { generateThumbnail } = useInspector();
   const editor = useSelector(state => state.editor);
   const { project } = editor;
@@ -25,12 +29,17 @@ export const useEditor = () => {
   }, [dispatch, editorActions.startInspector]);
 
   const publishScene = useCallback(
-    (opts: Omit<DeployOptions, 'path'> = {}) => {
+    async (opts: Omit<DeployOptions, 'path'> = {}) => {
       if (project) {
-        dispatch(editorActions.publishScene({ ...opts, path: project.path }));
+        const port = await dispatch(
+          editorActions.publishScene({ ...opts, path: project.path }),
+        ).unwrap();
+        if (chainId && wallet) {
+          initializeDeployment(project.path, port, chainId, wallet);
+        }
       }
     },
-    [project, editorActions.publishScene],
+    [project, editorActions.publishScene, chainId, wallet, initializeDeployment],
   );
 
   const openPreview = useCallback(

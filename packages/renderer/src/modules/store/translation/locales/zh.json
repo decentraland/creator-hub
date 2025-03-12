@@ -63,7 +63,10 @@
     },
     "results": "{count}结果",
     "parcel_count": "{parcels} {包裹, plural, one {包裹} other {包裹}}",
-    "saving": "保存..."
+    "saving": "保存...",
+    "badges": {
+      "published": "已发布"
+    }
   },
   "navbar": {
     "menu": {
@@ -246,6 +249,20 @@
       "title": "偵測到新的依賴項版本",
       "actions": {
         "update": "更新"
+      }
+    },
+    "deploy": {
+      "success": {
+        "title": "{title} 已成功發布",
+        "actions": {
+          "view": "查看"
+        }
+      },
+      "error": {
+        "title": "{title} 發布過程失敗",
+        "actions": {
+          "retry": "重試"
+        }
       }
     }
   },

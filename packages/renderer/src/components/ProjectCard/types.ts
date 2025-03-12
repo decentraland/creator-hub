@@ -11,6 +11,7 @@ export type Props = {
   content?: ReactNode;
   width?: number;
   height?: number;
+  publishedAt?: number;
   dropdownOptions?: { text: string; handler: () => void }[];
   titleVariant?: TypographyProps['variant'];
   status?: Status;

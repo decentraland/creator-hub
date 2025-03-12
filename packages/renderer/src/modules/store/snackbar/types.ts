@@ -5,7 +5,8 @@ export type Severity = AlertColor | 'loading';
 export type NotificationId = string;
 export type CustomNotificationType =
   | { type: 'missing-scenes' }
-  | { type: 'new-dependency-version'; project: Project };
+  | { type: 'new-dependency-version'; project: Project }
+  | { type: 'deploy'; path: string };
 
 export type Opts = {
   requestId?: string;

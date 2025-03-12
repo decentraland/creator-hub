@@ -63,7 +63,10 @@
     },
     "results": "{count} {count, plural, one {scene} other {scenes}}",
     "parcel_count": "{parcels} {parcels, plural, one {parcel} other {parcels}}",
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "badges": {
+      "published": "Published"
+    }
   },
   "navbar": {
     "menu": {
@@ -246,6 +249,20 @@
       "title": "New dependencies version detected",
       "actions": {
         "update": "Update"
+      }
+    },
+    "deploy": {
+      "success": {
+        "title": "{title} has been published successfully",
+        "actions": {
+          "view": "View"
+        }
+      },
+      "error": {
+        "title": "{title} publishing process failed",
+        "actions": {
+          "retry": "Retry"
+        }
       }
     }
   },

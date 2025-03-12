@@ -63,7 +63,10 @@
     },
     "results": "{count} {count, plural, one {escena} other {escenas}}",
     "parcel_count": "{parcels} {parcels, plural, one {parcela} other {parcelas}}",
-    "saving": "Guardando..."
+    "saving": "Guardando...",
+    "badges": {
+      "published": "Publicado"
+    }
   },
   "navbar": {
     "menu": {
@@ -246,6 +249,20 @@
       "title": "Se detectó una nueva versión de dependencias",
       "actions": {
         "update": "Actualizar"
+      }
+    },
+    "deploy": {
+      "success": {
+        "title": "{title} se ha publicado con éxito",
+        "actions": {
+          "view": "Ver"
+        }
+      },
+      "error": {
+        "title": "{title} proceso de publicación falló",
+        "actions": {
+          "retry": "Reintentar"
+        }
       }
     }
   },

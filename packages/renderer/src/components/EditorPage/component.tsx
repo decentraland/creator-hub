@@ -98,10 +98,9 @@ export function EditorPage() {
 
   const handleOpenPublishModal = useCallback(() => {
     const rpc = iframeRef.current;
-    if (rpc) {
-      saveAndGetThumbnail(rpc);
-      openModal('publish');
-    }
+    if (!rpc) return;
+    saveAndGetThumbnail(rpc);
+    openModal('publish');
   }, [iframeRef.current]);
 
   const handleCloseModal = useCallback(() => {

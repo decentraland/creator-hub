@@ -37,7 +37,8 @@ function Deployment() {
         </div>
         <div className="row">
           <span>6:19 pm</span>
-          <CheckIcon color="success" /> {t('modal.publish_project.deploy.deploying.step.converting')}
+          <CheckIcon color="success" />{' '}
+          {t('modal.publish_project.deploy.deploying.step.converting')}
         </div>
         <div className="row">
           <span>6:49 pm</span>
