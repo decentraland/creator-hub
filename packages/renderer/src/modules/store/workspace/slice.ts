@@ -4,9 +4,10 @@ import { type Project, SortBy } from '/shared/types/projects';
 import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import { type Workspace } from '/shared/types/workspace';
 
-import type { Async } from '/shared/types//async';
+import type { Async } from '/shared/types/async';
 
 import * as thunks from './thunks';
+import * as deployment from '../deployment/slice';
 
 const initialState: Async<Workspace> = {
   sortBy: SortBy.NEWEST,
@@ -170,6 +171,13 @@ export const slice = createSlice({
         const projectIdx = state.projects.findIndex($ => $.path === meta.arg);
         if (projectIdx !== -1) {
           state.projects[projectIdx] = { ...state.projects[projectIdx], status: 'failed' };
+        }
+      })
+      .addCase(deployment.executeDeployment.fulfilled, (state, payload) => {
+        const path = payload.meta.arg;
+        const projectIdx = state.projects.findIndex($ => $.path === path);
+        if (projectIdx !== -1) {
+          state.projects[projectIdx] = { ...state.projects[projectIdx], updatedAt: Date.now() };
         }
       });
   },

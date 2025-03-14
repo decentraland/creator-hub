@@ -7,6 +7,7 @@ import { useSnackbar } from '/@/hooks/useSnackbar';
 import { MissingScenes } from './MissingScenes';
 import { Generic } from './Generic';
 import { NewDependencyVersion } from './DependencyVersion';
+import { Deploy } from './Deploy';
 
 import './styles.css';
 
@@ -23,6 +24,13 @@ export function SnackbarComponent() {
         return <MissingScenes onClose={close(notification.id)} />;
       case 'new-dependency-version':
         return <NewDependencyVersion onClose={close(notification.id)} />;
+      case 'deploy':
+        return (
+          <Deploy
+            onClose={close(notification.id)}
+            path={notification.path}
+          />
+        );
       default:
         return null;
     }

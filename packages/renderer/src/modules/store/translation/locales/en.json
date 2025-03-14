@@ -37,7 +37,14 @@
       "actions": {
         "code": "Code",
         "preview": "Preview",
-        "publish": "Publish"
+        "publish": "Publish",
+        "preview_options": {
+          "title": "Preview Options",
+          "debugger": "Open Console Window during preview"
+        },
+        "publish_options": {
+          "history": "Publishing History"
+        }
       }
     }
   },
@@ -62,7 +69,10 @@
     },
     "results": "{count} {count, plural, one {scene} other {scenes}}",
     "parcel_count": "{parcels} {parcels, plural, one {parcel} other {parcels}}",
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "badges": {
+      "published": "Published"
+    }
   },
   "navbar": {
     "menu": {
@@ -151,6 +161,10 @@
         }
       },
       "deploy": {
+        "world": "Publish to your World",
+        "land": "Publish to your Land",
+        "loading": "Loading...",
+        "error": "Error",
         "warning": {
           "message": "PLEASE READ CAREFULLY:<ul><li>After deployment, your scene will undergo processing before becoming available.</li><li>This process may take 15 minutes on average.</li><li>During this time, your scene will appear empty until it has been updated on the client.</li></ul>",
           "checkbox": "Don't show again",
@@ -173,10 +187,10 @@
           "try_again": "Please try again",
           "info": "This process may take 15 minutes on average. During this time, your scene may appear empty until it has been updated in the client.",
           "step": {
-            "catalyst": "Catalyst",
-            "asset_bundle": "Asset Bundle",
-            "lods": "LODs",
-            "loading": "Loading...",
+            "uploading": "Uploading",
+            "converting": "Converting",
+            "optimizing": "Optimizing",
+            "loading": "In process...",
             "failed": "Error"
           },
           "errors": {
@@ -197,6 +211,9 @@
           "in_progress": "You can now access your scene even while it's still processing."
         }
       }
+    },
+    "publish_history": {
+      "title": "Publish History"
     },
     "app_settings": {
       "title": "App Settings",
@@ -242,6 +259,26 @@
       "title": "New dependencies version detected",
       "actions": {
         "update": "Update"
+      }
+    },
+    "deploy": {
+      "pending": {
+        "title": "{title} publishing is in process...",
+        "actions": {
+          "view": "View"
+        }
+      },
+      "success": {
+        "title": "{title} has been published successfully",
+        "actions": {
+          "view": "View"
+        }
+      },
+      "error": {
+        "title": "{title} publishing process failed",
+        "actions": {
+          "retry": "Retry"
+        }
       }
     }
   },

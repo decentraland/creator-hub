@@ -2,7 +2,10 @@ import { Analytics, type TrackParams } from '@segment/analytics-node';
 import path from 'node:path';
 import log from 'electron-log';
 import { randomUUID, type UUID } from 'node:crypto';
+
 import { FileSystemStorage } from '/shared/types/storage';
+import type { ProjectInfo } from '/shared/types/projects';
+
 import { getConfig } from './config';
 import { getWorkspaceConfigPath } from './electron';
 
@@ -20,7 +23,7 @@ export function setUserId(userId: string) {
 
 export async function getAnonymousId() {
   const config = await getConfig();
-  const userId = await config.get<string>('userId');
+  const userId = await config.get('userId');
   if (!userId) {
     const uuid = randomUUID();
     await config.set('userId', uuid);
@@ -83,12 +86,12 @@ export async function identify(userId: string, traits: Record<string, any> = {})
 
 export async function getProjectId(_path: string): Promise<UUID> {
   const projectInfoPath = path.join(await getWorkspaceConfigPath(_path), 'project.json');
-  const projectInfo = await FileSystemStorage.getOrCreate(projectInfoPath);
-  const id = await projectInfo.get<UUID>('id');
+  const projectInfo = await FileSystemStorage.getOrCreate<ProjectInfo>(projectInfoPath);
+  const id = await projectInfo.get('id');
   if (!id) {
     const projectId = randomUUID();
     await projectInfo.set('id', projectId);
     return projectId;
   }
-  return id;
+  return id as UUID;
 }

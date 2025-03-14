@@ -1,7 +1,8 @@
-import { CircularProgress as Loader, Typography } from 'decentraland-ui2';
+import { CircularProgress as Loader, Typography, Badge } from 'decentraland-ui2';
 import { type MouseEvent, useCallback } from 'react';
 
 import { t } from '/@/modules/store/translation/utils';
+import { ago, minutes } from '/shared/time';
 
 import { Dropdown } from '../Dropdown';
 
@@ -18,6 +19,7 @@ export function ProjectCard({
   dropdownOptions,
   width = 256,
   height = 240,
+  publishedAt = 0,
   onClick,
   status,
 }: Props) {
@@ -63,6 +65,9 @@ export function ProjectCard({
           className="thumbnail"
           style={imageUrl ? { backgroundImage: `url(${imageUrl})` } : {}}
         />
+      )}
+      {ago(publishedAt, minutes(10)) && (
+        <Badge className="badge">{t('scene_list.badges.published')}</Badge>
       )}
       <div className="info">
         <div className="title">

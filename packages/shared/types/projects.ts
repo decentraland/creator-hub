@@ -16,11 +16,12 @@ export enum SortBy {
   NAME = 'name',
 }
 
+export type DependencyState = { [k in PACKAGES]?: Outdated[keyof Outdated] };
+
 export type ProjectInfo = {
   id: string;
+  skipPublishWarning: boolean;
 };
-
-export type DependencyState = { [k in PACKAGES]?: Outdated[keyof Outdated] };
 
 export type Project = {
   id: string;
@@ -32,9 +33,10 @@ export type Project = {
   scene: SceneParcels;
   createdAt: number;
   updatedAt: number;
+  publishedAt: number;
   size: number;
   worldConfiguration?: WorldConfiguration;
   dependencyAvailableUpdates: DependencyState;
-} & {
   status?: Status;
+  info: ProjectInfo;
 };

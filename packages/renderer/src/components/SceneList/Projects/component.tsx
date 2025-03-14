@@ -96,6 +96,7 @@ function Project({ project }: { project: Project }) {
         imageUrl={thumbnailUrl}
         dropdownOptions={dropdownOptions}
         content={content}
+        publishedAt={project.publishedAt}
         status={project.status}
         onClick={handleClick}
       />

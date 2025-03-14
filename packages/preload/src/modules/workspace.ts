@@ -3,7 +3,12 @@ import path from 'node:path';
 import type { Scene } from '@dcl/schemas';
 import { shell } from 'electron';
 
-import { type DependencyState, SortBy, type Project } from '/shared/types/projects';
+import {
+  type DependencyState,
+  SortBy,
+  type Project,
+  type ProjectInfo,
+} from '/shared/types/projects';
 import { PACKAGES_LIST } from '/shared/types/pkg';
 import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import type { Template, Workspace } from '/shared/types/workspace';
@@ -96,14 +101,16 @@ export async function getOutdatedPackages(_path: string): Promise<DependencyStat
 
 export async function getProject(_path: string): Promise<Project> {
   try {
-    const [id, scene, stat, dependencyAvailableUpdates] = await Promise.all([
+    const [id, scene, stat, dependencyAvailableUpdates, infoFs] = await Promise.all([
       getProjectId(_path),
       getScene(_path),
       fs.stat(_path),
       getOutdatedPackages(_path),
+      getProjectInfoFs(_path),
     ]);
     const thumbnail = await getProjectThumbnailAsBase64(_path, scene);
     const layout = getRowsAndCols(scene.scene.parcels.map($ => parseCoords($)));
+    const info = await infoFs.getAll();
 
     return {
       id,
@@ -115,9 +122,11 @@ export async function getProject(_path: string): Promise<Project> {
       scene: scene.scene,
       createdAt: Number(stat.birthtime),
       updatedAt: Number(stat.mtime),
+      publishedAt: 0, // TODO: possible to get publishedAt from catalyst?
       size: stat.size,
       worldConfiguration: scene?.worldConfiguration,
       dependencyAvailableUpdates,
+      info,
     };
   } catch (error: any) {
     throw new Error(`Could not get project in "${_path}": ${error.message}`);
@@ -391,9 +400,21 @@ export async function getConfigPath(_path: string) {
   return invoke('electron.getWorkspaceConfigPath', _path);
 }
 
-export async function getProjectInfo(_path: string) {
+export async function getProjectInfoFs(_path: string) {
   const configPath = await getConfigPath(_path);
   const projectInfoPath = path.join(configPath, 'project.json');
-  const projectInfo = await FileSystemStorage.getOrCreate(projectInfoPath);
+  const projectInfo = await FileSystemStorage.getOrCreate<ProjectInfo>(projectInfoPath);
   return projectInfo;
+}
+
+export async function updateProjectInfo({
+  path,
+  info,
+}: {
+  path: string;
+  info: Partial<ProjectInfo>;
+}) {
+  const projectInfoFs = await getProjectInfoFs(path);
+  const projectInfo = await projectInfoFs.getAll();
+  await projectInfoFs.setAll({ ...projectInfo, ...info });
 }

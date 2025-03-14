@@ -11,6 +11,7 @@ import * as editor from './editor';
 import * as snackbar from './snackbar';
 import * as translations from './translation';
 import * as workspace from './workspace';
+import * as deployment from './deployment';
 import * as analytics from './analytics';
 import * as ens from './ens';
 import * as land from './land';
@@ -21,6 +22,7 @@ export function createRootReducer() {
     snackbar: snackbar.reducer,
     translation: translations.reducer,
     workspace: workspace.reducer,
+    deployment: deployment.reducer,
     analytics: analytics.reducer,
     ens: ens.reducer,
     land: land.reducer,

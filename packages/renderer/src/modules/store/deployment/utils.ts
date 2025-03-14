@@ -2,19 +2,71 @@ import { minutes, seconds } from '/shared/time';
 import equal from 'fast-deep-equal';
 import type { AuthIdentity } from 'decentraland-crypto-fetch';
 import { type AuthChain, Authenticator } from '@dcl/crypto';
+import type { ChainId } from '@dcl/schemas';
 
 import { delay } from '/shared/utils';
-import { DEPLOY_URLS } from '/shared/types/deploy';
+import { DEPLOY_URLS, type Info } from '/shared/types/deploy';
 
 import {
   type AssetBundleRegistryResponse,
   type Status,
   STATUS_VALUES,
-  type DeploymentStatus,
+  type DeploymentComponentsStatus,
   DeploymentError,
-} from './types';
+} from '/shared/types/deploy';
 
-export const getInitialDeploymentStatus = (isWorld: boolean = false): DeploymentStatus => ({
+export const getDeploymentUrl = (publishPort: number) => {
+  const port = import.meta.env.VITE_CLI_DEPLOY_PORT || publishPort;
+  return port ? `http://localhost:${port}/api` : null;
+};
+
+export const fetchFiles = async (url: string): Promise<File[]> => {
+  if (!url) throw new Error('Invalid URL');
+  const resp = await fetch(`${url}/files`);
+  if (!resp.ok) throw new Error('Failed to fetch files');
+  return resp.json();
+};
+
+export const fetchInfo = async (url: string): Promise<Info> => {
+  if (!url) throw new Error('Invalid URL');
+  const resp = await fetch(`${url}/info`);
+  if (!resp.ok) throw new Error('Failed to fetch info');
+  return resp.json();
+};
+
+export const deploy = async (
+  url: string,
+  payload: {
+    address: string;
+    authChain: AuthChain;
+    chainId: ChainId;
+  },
+) => {
+  if (!url) throw new Error('Invalid URL');
+
+  const resp = await fetch(`${url}/deploy`, {
+    method: 'post',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!resp.ok) {
+    const data = await resp.json();
+    let error = data.message;
+    if (/Response was/.test(error)) {
+      try {
+        error = error.split('["')[1].split('"]')[0];
+      } catch (e) {
+        // Keep original error if parsing fails
+      }
+    }
+    throw new Error(error);
+  }
+};
+
+export const getInitialDeploymentStatus = (
+  isWorld: boolean = false,
+): DeploymentComponentsStatus => ({
   catalyst: 'idle',
   assetBundle: 'idle',
   lods: isWorld ? 'complete' : 'idle', // Auto-complete for worlds
@@ -83,27 +135,29 @@ export function deriveOverallStatus(statuses: Record<string, string>): Status {
  * @param status - The `DeploymentStatus` object containing the current statuses of deployment steps.
  * @returns A new `DeploymentStatus` object where all 'pending' statuses are replaced with 'idle'.
  */
-export function cleanPendingsFromDeploymentStatus(status: DeploymentStatus): DeploymentStatus {
+export function cleanPendingsFromDeploymentStatus(
+  status: DeploymentComponentsStatus,
+): DeploymentComponentsStatus {
   return Object.fromEntries(
     Object.entries(status).map(([step, currentStatus]) => [
       step,
       currentStatus === 'pending' ? 'idle' : currentStatus,
     ]),
-  ) as DeploymentStatus;
+  ) as DeploymentComponentsStatus;
 }
 
 /**
  * Fetches the deployment status for a given scene.
  *
- * @param sceneId - The unique identifier of the scene.
+ * @param info - The scene info.
  * @param identity - The authentication identity for signing requests.
  * @returns A promise resolving to the deployment status.
  */
 export async function fetchDeploymentStatus(
-  sceneId: string,
+  info: Info,
   identity: AuthIdentity,
-  isWorld: boolean = false,
-): Promise<DeploymentStatus> {
+): Promise<DeploymentComponentsStatus> {
+  const { rootCID: sceneId, isWorld } = info;
   const method = 'get';
   const path = `/entities/status/${sceneId}`;
   const url = new URL(path, DEPLOY_URLS.ASSET_BUNDLE_REGISTRY);
@@ -140,16 +194,16 @@ export async function fetchDeploymentStatus(
 export async function checkDeploymentStatus(
   maxRetries: number,
   retryDelayInMs: number,
-  fetchStatus: () => Promise<DeploymentStatus>,
-  onChange: (status: DeploymentStatus) => void,
+  fetchStatus: () => Promise<DeploymentComponentsStatus>,
+  onChange: (status: DeploymentComponentsStatus) => void,
   abort: () => boolean,
-  initialStatus: DeploymentStatus = getInitialDeploymentStatus(),
-): Promise<DeploymentStatus> {
+  initialStatus: DeploymentComponentsStatus = getInitialDeploymentStatus(),
+): Promise<DeploymentComponentsStatus> {
   let currentStatus = initialStatus;
   let retries = 0;
   let error: Error | undefined = undefined;
 
-  function _onChange(status: DeploymentStatus) {
+  function _onChange(status: DeploymentComponentsStatus) {
     onChange(status);
     currentStatus = status;
   }
@@ -205,7 +259,10 @@ export async function checkDeploymentStatus(
  * @param percentage - The completion threshold as a decimal (e.g., `0.6` for 60%). Defaults to 0.6.
  * @returns `true` if the proportion of completed steps is greater than or equal to the threshold; otherwise, `false`.
  */
-export function isDeployFinishing(status: DeploymentStatus, percentage: number = 0.6): boolean {
+export function checkDeploymentCompletion(
+  status: DeploymentComponentsStatus,
+  percentage: number = 0.6,
+): boolean {
   const statuses = Object.values(status);
   const total = statuses.length;
   if (total === 0) return false;

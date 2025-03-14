@@ -13,7 +13,6 @@ import {
 } from 'decentraland-ui2';
 import CloseIcon from '@mui/icons-material/Close';
 import FolderIcon from '@mui/icons-material/Folder';
-import { Modal } from 'decentraland-ui2/dist/components/Modal/Modal';
 import equal from 'fast-deep-equal';
 
 import { settings as settingsPreload } from '#preload';
@@ -22,6 +21,8 @@ import { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 
 import { t } from '/@/modules/store/translation/utils';
 import { useSettings } from '/@/hooks/useSettings';
+
+import { Modal } from '..';
 
 import './styles.css';
 

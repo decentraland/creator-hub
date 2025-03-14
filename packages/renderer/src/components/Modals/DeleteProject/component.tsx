@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
-import { Modal } from 'decentraland-ui2/dist/components/Modal/Modal';
 
 import { t } from '/@/modules/store/translation/utils';
 
+import { Modal } from '..';
 import { Button } from '../../Button';
 
 import type { Props } from './types';

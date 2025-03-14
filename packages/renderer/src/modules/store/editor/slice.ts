@@ -22,6 +22,7 @@ export const runScene = createAsyncThunk(
     }
   },
 );
+
 export const publishScene = createAsyncThunk('editor/publishScene', editor.publishScene);
 export const killPreviewScene = createAsyncThunk(
   'editor/killPreviewScene',
