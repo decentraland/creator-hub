@@ -38,7 +38,13 @@
         "code": "Code",
         "preview": "Preview",
         "publish": "Publish",
-        "publish_history": "Publishing History"
+        "preview_options": {
+          "title": "Preview Options",
+          "debugger": "Open Console Window during preview"
+        },
+        "publish_options": {
+          "history": "Publishing History"
+        }
       }
     }
   },

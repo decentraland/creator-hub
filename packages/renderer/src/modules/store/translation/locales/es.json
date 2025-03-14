@@ -38,7 +38,13 @@
         "code": "Código",
         "preview": "Previsualizar",
         "publish": "Publicar",
-        "publish_history": "Historial de Publicaciones"
+        "preview_options": {
+          "title": "Opciones de Previsualización",
+          "debugger": "Abrir la ventana de la Consola durante la previsualización"
+        },
+        "publish_options": {
+          "history": "Historial de Publicaciones"
+        }
       }
     }
   },

@@ -38,7 +38,13 @@
         "code": "代码",
         "preview": "预览",
         "publish": "发布",
-        "publish_history": "出版历史"
+        "preview_options": {
+          "title": "预览选项",
+          "debugger": "在预览期间打开控制台窗口"
+        },
+        "publish_options": {
+          "history": "发布历史"
+        }
       }
     }
   },

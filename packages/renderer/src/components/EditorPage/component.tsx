@@ -258,7 +258,7 @@ function PreviewOptions({ onChange, options }: PreviewOptionsProps) {
 
   return (
     <div className="PreviewOptions">
-      <span className="title">Preview options</span>
+      <span className="title">{t('editor.header.actions.preview_options.title')}</span>
       <FormGroup>
         <FormControlLabel
           control={
@@ -267,7 +267,7 @@ function PreviewOptions({ onChange, options }: PreviewOptionsProps) {
               onChange={handleChange({ debugger: !options.debugger })}
             />
           }
-          label="Open Console Window during preview"
+          label={t('editor.header.actions.preview_options.debugger')}
         />
       </FormGroup>
     </div>
@@ -288,7 +288,7 @@ function PublishOptions({ onClick }: PublishOptionsProps) {
       <ListItemButton>
         <ListItemText
           onClick={handleClick('history')}
-          primary={t('editor.header.actions.publish_history')}
+          primary={t('editor.header.actions.publish_options.history')}
         />
       </ListItemButton>
     </div>
