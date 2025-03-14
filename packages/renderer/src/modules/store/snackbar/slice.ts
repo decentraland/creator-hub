@@ -24,6 +24,7 @@ export const slice = createSlice({
   initialState,
   reducers: {
     pushSnackbar: (state, { payload: notification }: PayloadAction<Notification>) => {
+      state.notifications = state.notifications.filter($ => $.id !== notification.id);
       state.notifications.push(notification);
     },
     removeSnackbar: (state, { payload: id }: PayloadAction<Notification['id']>) => {

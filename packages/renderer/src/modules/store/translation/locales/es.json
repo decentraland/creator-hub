@@ -161,6 +161,10 @@
         }
       },
       "deploy": {
+        "world": "Publicar en tu Mundo",
+        "land": "Publicar en tu Tierra",
+        "loading": "Cargando...",
+        "error": "Error",
         "warning": {
           "message": "POR FAVOR LEA CUIDADOSAMENTE:<ul><li>Después de la implementación, tu escena pasará por un proceso antes de estar disponible.</li><li>Este proceso puede tardar en promedio 15 minutos.</li><li>Durante este tiempo, tu escena aparecerá vacía hasta que se haya actualizado en el cliente.</li></ul>",
           "checkbox": "No mostrar de nuevo",
@@ -258,6 +262,12 @@
       }
     },
     "deploy": {
+      "pending": {
+        "title": "{title} se está publicando...",
+        "actions": {
+          "view": "Ver"
+        }
+      },
       "success": {
         "title": "{title} se ha publicado con éxito",
         "actions": {

@@ -161,6 +161,10 @@
         }
       },
       "deploy": {
+        "world": "Publish to your World",
+        "land": "Publish to your Land",
+        "loading": "Loading...",
+        "error": "Error",
         "warning": {
           "message": "PLEASE READ CAREFULLY:<ul><li>After deployment, your scene will undergo processing before becoming available.</li><li>This process may take 15 minutes on average.</li><li>During this time, your scene will appear empty until it has been updated on the client.</li></ul>",
           "checkbox": "Don't show again",
@@ -258,6 +262,12 @@
       }
     },
     "deploy": {
+      "pending": {
+        "title": "{title} publishing is in process...",
+        "actions": {
+          "view": "View"
+        }
+      },
       "success": {
         "title": "{title} has been published successfully",
         "actions": {

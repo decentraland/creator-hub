@@ -58,7 +58,7 @@ export function Deploy(props: Props) {
   const { updateProjectInfo } = useWorkspace();
   const { loadingPublish } = useEditor();
   const { getDeployment, overallStatus, isDeployFinishing, executeDeployment } = useDeploy();
-  const { pushGeneric } = useSnackbar();
+  const { pushCustom } = useSnackbar();
   const [showWarning, setShowWarning] = useState(false);
   const [skipWarning, setSkipWarning] = useState(project.info.skipPublishWarning ?? false);
   const deployment = getDeployment(project.path);
@@ -94,24 +94,21 @@ export function Deploy(props: Props) {
   const handleClose = useCallback(() => {
     // push snackbar notification if deploy is still pending when closing the modal
     if (deployment?.status === 'pending') {
-      pushGeneric('loading', `${deployment.info.title} publishing is in process...`, {
-        duration: 0,
-        requestId: project.path,
-      });
+      pushCustom({ type: 'deploy', path: project.path }, { duration: 0, requestId: project.path });
     }
     props.onClose();
-  }, [deployment, pushGeneric]);
+  }, [deployment, pushCustom]);
 
   return (
     <PublishModal
       title={
         deployment
           ? deployment.info.isWorld
-            ? 'Publish to your World'
-            : 'Publish to your Land'
+            ? t('modal.publish_project.deploy.world')
+            : t('modal.publish_project.deploy.land')
           : loadingPublish
-            ? 'Loading...'
-            : 'Error'
+            ? t('modal.publish_project.deploy.loading')
+            : t('modal.publish_project.deploy.error')
       }
       size="large"
       {...props}

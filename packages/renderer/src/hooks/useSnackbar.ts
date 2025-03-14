@@ -40,16 +40,16 @@ export function useSnackbar() {
     [dispatch, actions.pushSnackbar],
   );
 
-  const pushCustom = useCallback(
-    (...params: Parameters<typeof createCustomNotification>) => {
-      dispatch(actions.pushSnackbar(createCustomNotification(...params)));
+  const pushGeneric = useCallback(
+    (...params: Parameters<typeof createGenericNotification>) => {
+      dispatch(actions.pushSnackbar(createGenericNotification(...params)));
     },
     [dispatch, actions.pushSnackbar],
   );
 
-  const pushGeneric = useCallback(
-    (...params: Parameters<typeof createGenericNotification>) => {
-      dispatch(actions.pushSnackbar(createGenericNotification(...params)));
+  const pushCustom = useCallback(
+    (...params: Parameters<typeof createCustomNotification>) => {
+      dispatch(actions.pushSnackbar(createCustomNotification(...params)));
     },
     [dispatch, actions.pushSnackbar],
   );
