@@ -177,7 +177,7 @@ export const slice = createSlice({
         const path = payload.meta.arg;
         const projectIdx = state.projects.findIndex($ => $.path === path);
         if (projectIdx !== -1) {
-          state.projects[projectIdx] = { ...state.projects[projectIdx], updatedAt: Date.now() };
+          state.projects[projectIdx] = { ...state.projects[projectIdx], publishedAt: Date.now() };
         }
       });
   },

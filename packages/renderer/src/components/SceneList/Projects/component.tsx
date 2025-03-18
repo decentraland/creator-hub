@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Typography } from 'decentraland-ui2';
 
@@ -7,6 +7,7 @@ import { misc } from '#preload';
 import type { Project } from '/shared/types/projects';
 
 import { t } from '/@/modules/store/translation/utils';
+import { useDeploy } from '/@/hooks/useDeploy';
 import { useWorkspace } from '/@/hooks/useWorkspace';
 import { addBase64ImagePrefix } from '/@/modules/image';
 
@@ -37,9 +38,11 @@ export function Projects({ projects }: Props) {
 }
 
 function Project({ project }: { project: Project }) {
+  const { getDeployment } = useDeploy();
   const { runProject, duplicateProject, deleteProject, openFolder } = useWorkspace();
   const [open, setOpen] = useState(false);
 
+  const deployment = getDeployment(project.path);
   const parcels = project.layout.cols * project.layout.rows;
 
   const handleClick = useCallback(() => {
@@ -89,6 +92,11 @@ function Project({ project }: { project: Project }) {
     </>
   );
 
+  const publishedAt = useMemo(() => {
+    if (deployment?.status === 'complete') return deployment?.lastUpdated;
+    return project.publishedAt;
+  }, [deployment, project.publishedAt]);
+
   return (
     <>
       <ProjectCard
@@ -96,7 +104,7 @@ function Project({ project }: { project: Project }) {
         imageUrl={thumbnailUrl}
         dropdownOptions={dropdownOptions}
         content={content}
-        publishedAt={project.publishedAt}
+        publishedAt={publishedAt}
         status={project.status}
         onClick={handleClick}
       />
