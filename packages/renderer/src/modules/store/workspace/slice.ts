@@ -6,8 +6,8 @@ import { type Workspace } from '/shared/types/workspace';
 
 import type { Async } from '/shared/types/async';
 
-import * as thunks from './thunks';
 import * as deployment from '../deployment/slice';
+import * as thunks from './thunks';
 
 const initialState: Async<Workspace> = {
   sortBy: SortBy.NEWEST,

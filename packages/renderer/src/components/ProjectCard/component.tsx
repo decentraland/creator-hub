@@ -2,7 +2,7 @@ import { CircularProgress as Loader, Typography, Badge } from 'decentraland-ui2'
 import { type MouseEvent, useCallback } from 'react';
 
 import { t } from '/@/modules/store/translation/utils';
-import { ago, minutes } from '/shared/time';
+import { isTimeAgo, minutes } from '/shared/time';
 
 import { Dropdown } from '../Dropdown';
 
@@ -66,7 +66,7 @@ export function ProjectCard({
           style={imageUrl ? { backgroundImage: `url(${imageUrl})` } : {}}
         />
       )}
-      {ago(publishedAt, minutes(10)) && (
+      {isTimeAgo(publishedAt, minutes(10)) && (
         <Badge className="badge">{t('scene_list.badges.published')}</Badge>
       )}
       <div className="info">

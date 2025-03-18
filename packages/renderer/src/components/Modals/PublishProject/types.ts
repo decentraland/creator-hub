@@ -4,6 +4,7 @@ export type Props = {
   open: boolean;
   project: Project;
   initialStep?: Step;
+  disableGoBack?: boolean;
   onClose: () => void;
   onBack?: () => void;
   onStep: (step: Step) => void;

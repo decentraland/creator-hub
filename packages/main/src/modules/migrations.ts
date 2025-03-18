@@ -3,9 +3,9 @@ import * as Sentry from '@sentry/electron/main';
 import fs from 'fs/promises';
 import log from 'electron-log/main';
 import { future } from 'fp-future';
+import deepmerge from 'deepmerge';
+
 import { SCENES_DIRECTORY } from '/shared/paths';
-import { getAppHomeLegacy, getUserDataPath } from './electron';
-import { CONFIG_PATH } from './config';
 import { FileSystemStorage, type IFileSystemStorage } from '/shared/types/storage';
 import {
   type Config,
@@ -13,7 +13,9 @@ import {
   DEFAULT_CONFIG,
   mergeConfig,
 } from '/shared/types/config';
-import deepmerge from 'deepmerge';
+
+import { getAppHomeLegacy, getUserDataPath } from './electron';
+import { CONFIG_PATH } from './config';
 
 const migrationsFuture = future<void>();
 

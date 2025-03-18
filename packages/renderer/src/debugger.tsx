@@ -64,13 +64,11 @@ function Debugger() {
 
   const logs = logsBuffer.getAll();
 
-  if (!debuggerPath) return null;
-
   return (
     <main className="Debugger">
       {attachStatus === 'loading' ? (
         'Loading'
-      ) : attachStatus === 'failed' ? (
+      ) : attachStatus === 'failed' || !debuggerPath ? (
         'Failed to attach. Please close this window and launch debugger again'
       ) : (
         <>

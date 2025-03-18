@@ -4,9 +4,9 @@ import CloseIcon from '@mui/icons-material/Close';
 
 import { t } from '/@/modules/store/translation/utils';
 import { useDeploy } from '/@/hooks/useDeploy';
+import { useWorkspace } from '/@/hooks/useWorkspace';
 
 import { PublishProject } from '/@/components/Modals/PublishProject';
-import { useWorkspace } from '../../../hooks/useWorkspace';
 
 export function Deploy({ path, onClose }: { path: string; onClose: () => void }) {
   const { getDeployment } = useDeploy();
@@ -70,6 +70,7 @@ function Pending({ path, title, onClose }: { path: string; title: string; onClos
       )}
       <PublishProject
         open={open}
+        disableGoBack
         project={project}
         initialStep="deploy"
         onClose={closeModal}
@@ -118,6 +119,7 @@ function Success({ path, title, onClose }: { path: string; title: string; onClos
       )}
       <PublishProject
         open={open}
+        disableGoBack
         project={project}
         initialStep="deploy"
         onClose={onClose}
@@ -166,6 +168,7 @@ function Error({ path, title, onClose }: { path: string; title: string; onClose:
       )}
       <PublishProject
         open={open}
+        disableGoBack
         project={project}
         onClose={onClose}
       />

@@ -17,7 +17,7 @@ import { t } from '/@/modules/store/translation/utils';
 import { addBase64ImagePrefix } from '/@/modules/image';
 import { REPORT_ISSUES_URL } from '/@/modules/utils';
 
-import { PublishModal, onBackNoop } from '/@/components/Modals/PublishProject/PublishModal';
+import { PublishModal } from '/@/components/Modals/PublishProject/PublishModal';
 import { ConnectedSteps } from '/@/components/Step';
 import { Button } from '/@/components/Button';
 import { Loader } from '/@/components/Loader';
@@ -113,7 +113,7 @@ export function Deploy(props: Props) {
       size="large"
       {...props}
       onClose={handleClose}
-      onBack={deployment?.status === 'complete' ? onBackNoop : props.onBack}
+      onBack={props.disableGoBack || deployment?.status === 'complete' ? undefined : props.onBack}
     >
       <div className="Deploy">
         {showWarning ? (

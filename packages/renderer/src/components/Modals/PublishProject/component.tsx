@@ -12,6 +12,7 @@ export function PublishProject({
   project,
   onClose,
   initialStep = 'initial',
+  disableGoBack = false,
 }: Omit<Props, 'onStep'>) {
   const [history, setHistory] = useState<Step[]>([]);
   const step = useMemo<Step>(
@@ -38,8 +39,9 @@ export function PublishProject({
   const props: Props = {
     open,
     project,
+    disableGoBack,
     onClose: handleClose,
-    onBack: handleBack,
+    onBack: disableGoBack ? undefined : handleBack,
     onStep: handleStep,
   };
 

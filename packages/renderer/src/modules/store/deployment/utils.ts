@@ -55,7 +55,7 @@ export const deploy = async (
     let error = data.message;
     if (/Response was/.test(error)) {
       try {
-        error = error.split('["')[1].split('"]')[0];
+        error = error.match(/\["(.*?)"\]/)?.[1] ?? error;
       } catch (e) {
         // Keep original error if parsing fails
       }
