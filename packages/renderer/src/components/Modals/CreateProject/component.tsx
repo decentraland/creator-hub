@@ -44,6 +44,7 @@ export function CreateProject({ open, initialValue, onClose, onSubmit }: Props) 
   );
 
   const handleOpenFolder = useCallback(async () => {
+    setError(null);
     setLoading(true);
     const [folder, error] = await selectNewProjectPath();
     setLoading(false);

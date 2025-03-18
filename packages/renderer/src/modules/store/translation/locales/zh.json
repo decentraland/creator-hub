@@ -245,7 +245,7 @@
         "create": "創建"
       },
       "errors": {
-        "path_exists": "路徑已存在"
+        "path_exists": "路徑不存在或已存在"
       }
     }
   },

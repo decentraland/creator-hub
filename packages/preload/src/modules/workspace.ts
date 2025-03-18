@@ -11,7 +11,7 @@ import {
 } from '/shared/types/projects';
 import { PACKAGES_LIST } from '/shared/types/pkg';
 import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
-import type { Template, Workspace } from '/shared/types/workspace';
+import type { GetProjectsOpts, Template, Workspace } from '/shared/types/workspace';
 import { FileSystemStorage } from '/shared/types/storage';
 
 import { getConfig, setConfig } from './config';
@@ -99,13 +99,19 @@ export async function getOutdatedPackages(_path: string): Promise<DependencyStat
   return outdated as DependencyState;
 }
 
-export async function getProject(_path: string): Promise<Project> {
+export async function getProject({
+  path: _path,
+  opts,
+}: {
+  path: string;
+  opts?: GetProjectsOpts;
+}): Promise<Project> {
   try {
     const [id, scene, stat, dependencyAvailableUpdates, infoFs] = await Promise.all([
       getProjectId(_path),
       getScene(_path),
       fs.stat(_path),
-      getOutdatedPackages(_path),
+      opts?.omitOutdatedPackages ? Promise.resolve({}) : getOutdatedPackages(_path),
       getProjectInfoFs(_path),
     ]);
     const thumbnail = await getProjectThumbnailAsBase64(_path, scene);
@@ -146,7 +152,10 @@ export async function getPath() {
 /**
  * Returns all decentraland projects in the provided directories (or the default one if no provided)
  */
-export async function getProjects(paths: string | string[]): Promise<[Project[], string[]]> {
+export async function getProjects(
+  paths: string | string[],
+  opts?: GetProjectsOpts,
+): Promise<[Project[], string[]]> {
   paths = Array.isArray(paths) ? paths : [paths];
   if (!paths.length) return [[], []];
 
@@ -160,7 +169,7 @@ export async function getProjects(paths: string | string[]): Promise<[Project[],
         missing.push(_path);
       } else if (await isDCL(_path)) {
         // _path is a project
-        promises.push(getProject(_path));
+        promises.push(getProject({ path: _path, opts }));
       } else {
         // _path is a directory with projects
         const files = await fs.readdir(_path);
@@ -168,7 +177,7 @@ export async function getProjects(paths: string | string[]): Promise<[Project[],
           try {
             const projectDir = path.join(_path, dir);
             if (await isDCL(projectDir)) {
-              promises.push(getProject(projectDir));
+              promises.push(getProject({ path: projectDir, opts }));
             }
             // eslint-disable-next-line no-empty
           } catch (_) {}
@@ -248,26 +257,44 @@ export async function getAvailable(_name: string = NEW_SCENE_NAME) {
  * @param {string} [opts.repo] - The repository to use as the template. Defaults to an empty scene template repository.
  * @returns {Promise<Project>} - A promise that resolves to the created project.
  */
-export async function createProject(opts?: { name?: string; repo?: string }): Promise<Project> {
-  const { name, repo } = {
-    name: opts?.name ?? NEW_SCENE_NAME,
-    repo: opts?.repo ?? EMPTY_SCENE_TEMPLATE_REPO,
-  };
+export async function createProject(opts?: {
+  name?: string;
+  path?: string;
+  repo?: string;
+}): Promise<Project> {
+  const { name, path: projectPath } =
+    opts?.path && opts?.name
+      ? { name: opts.name, path: opts.path }
+      : await getAvailable(opts?.name ?? NEW_SCENE_NAME);
 
-  const available = await getAvailable(name);
-  await fs.mkdir(available.path);
-  await invoke('cli.init', available.path, repo);
-  const scene = await getScene(available.path);
-  scene.display!.title = available.name;
-  // TODO: Fix: Remove worldConfiguration in the scene.json of the templates
-  if (repo !== EMPTY_SCENE_TEMPLATE_REPO) {
-    delete scene.worldConfiguration;
+  const templateRepo = opts?.repo ?? EMPTY_SCENE_TEMPLATE_REPO;
+
+  try {
+    await fs.mkdir(projectPath);
+
+    await invoke('cli.init', projectPath, templateRepo);
+
+    const scene = await getScene(projectPath);
+    scene.display!.title = name;
+
+    // Remove worldConfiguration for non-empty templates
+    if (templateRepo !== EMPTY_SCENE_TEMPLATE_REPO) {
+      delete scene.worldConfiguration;
+    }
+
+    const sceneJsonPath = path.join(projectPath, 'scene.json');
+    await fs.writeFile(sceneJsonPath, JSON.stringify(scene, null, 2));
+
+    const project = await getProject({ path: projectPath });
+    await setConfig(config => {
+      config.workspace.paths.push(projectPath);
+      return config;
+    });
+
+    return project;
+  } catch (error: any) {
+    throw new Error(`Failed to create project "${name}": ${error.message}`);
   }
-  const sceneJsonPath = path.join(available.path, 'scene.json');
-  await fs.writeFile(sceneJsonPath, JSON.stringify(scene, null, 2));
-  const project = await getProject(available.path);
-  await setConfig(config => config.workspace.paths.push(available.path));
-  return project;
 }
 
 /**
@@ -306,13 +333,13 @@ export async function duplicateProject(_path: string): Promise<Project> {
   await fs.cp(_path, available.path, { recursive: true });
   scene.display = { ...scene.display, title: available.name };
   await fs.writeFile(path.join(available.path, 'scene.json'), JSON.stringify(scene, null, 2));
-  const project = await getProject(available.path);
+  const project = await getProject({ path: available.path });
   return project;
 }
 
 export async function isProjectPathAvailable(projectPath: string): Promise<boolean> {
   const config = await getConfig();
-  const [projects] = await getProjects(config.workspace.paths);
+  const [projects] = await getProjects(config.workspace.paths, { omitOutdatedPackages: true });
   const projectAlreadyExists = projects.find($ => $.path === projectPath);
   return !projectAlreadyExists;
 }
@@ -356,7 +383,7 @@ export async function importProject(): Promise<Project | undefined> {
   // update workspace on config file with new path
   await setConfig(config => config.workspace.paths.push(projectPath));
 
-  const project = getProject(projectPath);
+  const project = await getProject({ path: projectPath });
   return project;
 }
 
