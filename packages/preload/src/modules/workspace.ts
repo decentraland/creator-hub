@@ -224,7 +224,7 @@ export async function getWorkspace(): Promise<Workspace> {
   };
 }
 
-export async function getAvailable(_name: string) {
+export async function getAvailable(_name: string = NEW_SCENE_NAME) {
   let availableName = _name;
   let counter = 2;
   const homePath = await getPath();
@@ -310,6 +310,33 @@ export async function duplicateProject(_path: string): Promise<Project> {
   return project;
 }
 
+export async function isProjectPathAvailable(projectPath: string): Promise<boolean> {
+  const config = await getConfig();
+  const [projects] = await getProjects(config.workspace.paths);
+  const projectAlreadyExists = projects.find($ => $.path === projectPath);
+  return !projectAlreadyExists;
+}
+
+export async function selectNewProjectPath(title = 'Import project'): Promise<string | undefined> {
+  const config = await getConfig();
+  const [projectPath] = await invoke('electron.showOpenDialog', {
+    title,
+    properties: ['openDirectory', 'createDirectory'],
+    defaultPath: config.settings.scenesPath,
+  });
+
+  if (!projectPath) return undefined;
+
+  const pathBaseName = path.basename(projectPath);
+  const isAvailable = await isProjectPathAvailable(projectPath);
+
+  if (!isAvailable) {
+    throw new Error(`"${pathBaseName}" is already on the projects library`);
+  }
+
+  return projectPath;
+}
+
 /**
  * Imports a project by allowing the user to select a directory.
  *
@@ -317,25 +344,11 @@ export async function duplicateProject(_path: string): Promise<Project> {
  * @throws An error if the selected directory is not a valid project.
  */
 export async function importProject(): Promise<Project | undefined> {
-  const config = await getConfig();
-  const [projectPath] = await invoke('electron.showOpenDialog', {
-    title: 'Import project',
-    properties: ['openDirectory'],
-    defaultPath: config.settings.scenesPath,
-  });
+  const projectPath = await selectNewProjectPath();
 
-  const cancelled = !projectPath;
-
-  if (cancelled) return undefined;
+  if (!projectPath) return undefined;
 
   const pathBaseName = path.basename(projectPath);
-  const [projects] = await getProjects(config.workspace.paths);
-  const projectAlreadyExists = projects.find($ => $.path === projectPath);
-
-  if (projectAlreadyExists) {
-    throw new Error(`"${pathBaseName}" is already on the projects library`);
-  }
-
   if (!(await isDCL(projectPath))) {
     throw new Error(`"${pathBaseName}" is not a valid project`);
   }

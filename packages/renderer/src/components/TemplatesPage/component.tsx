@@ -18,15 +18,17 @@ import { Navbar, NavbarItem } from '../Navbar';
 import { Select } from '../Select';
 import { Title } from '../Title';
 import { TutorialsWrapper } from '../Tutorials';
+import { CreateProject } from '../Modals/CreateProject';
 
-import { SortBy, Difficulty } from './types';
+import { SortBy, Difficulty, type ModalType, type CreateProjectValue } from './types';
 import { sortTemplatesBy } from './utils';
 
 import './styles.css';
 
 export function TemplatesPage() {
   const navigate = useNavigate();
-  const { createProject, templates: _templates } = useWorkspace();
+  const { createProject, templates: _templates, getAvailableProject } = useWorkspace();
+  const [openModal, setOpenModal] = useState<ModalType | undefined>();
   const [templates, setTemplates] = useState(_templates);
   const [sortBy, setSortBy] = useState(SortBy.DEFAULT);
   const [difficulty, setDifficulty] = useState<Difficulty | undefined>();
@@ -36,8 +38,20 @@ export function TemplatesPage() {
   }, [navigate]);
 
   const handleClickTemplate = useCallback(
-    (repo?: string) => () => {
-      createProject({ repo });
+    (repo?: string) => async () => {
+      const [data, error] = await getAvailableProject();
+      if (!error) {
+        const { name, path } = data;
+        setOpenModal({ type: 'create-project', payload: { name, path, repo } });
+      }
+    },
+    [],
+  );
+
+  const handleCreateProject = useCallback(
+    (value: CreateProjectValue) => {
+      createProject(value);
+      setOpenModal(undefined);
     },
     [createProject],
   );
@@ -157,6 +171,14 @@ export function TemplatesPage() {
           </div>
         </TutorialsWrapper>
       </Container>
+      {openModal?.type === 'create-project' && (
+        <CreateProject
+          open
+          initialValue={openModal.payload}
+          onClose={() => setOpenModal(undefined)}
+          onSubmit={value => handleCreateProject({ ...openModal.payload, ...value })}
+        />
+      )}
     </main>
   );
 }

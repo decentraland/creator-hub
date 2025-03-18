@@ -234,6 +234,19 @@
       "actions": {
         "apply_button": "Apply"
       }
+    },
+    "create_project": {
+      "title": "Create Project",
+      "fields": {
+        "name": "Project Name",
+        "path": "Project Path"
+      },
+      "actions": {
+        "create": "Create"
+      },
+      "errors": {
+        "path_exists": "Path already exists"
+      }
     }
   },
   "snackbar": {
