@@ -5,9 +5,10 @@
   font-weight: 400;
 }
 
-.Button.MuiButton-root + .Button.MuiButton-root,
-.Button.MuiButton-root + .MuiButtonGroup-root,
-.MuiButtonGroup-root + .Button.MuiButton-root {
+.MuiButton-root + .MuiButton-root,
+.MuiButton-root + .MuiButtonGroup-root,
+.MuiButtonGroup-root + .MuiButton-root,
+.MuiButtonGroup-root + .MuiButtonGroup-root {
   margin-left: 10px;
 }
 

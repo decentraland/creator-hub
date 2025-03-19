@@ -7,11 +7,17 @@ import { Deploy } from './steps/Deploy';
 
 import type { Props, Step } from './types';
 
-export function PublishProject({ open, project, onClose }: Omit<Props, 'onStep'>) {
+export function PublishProject({
+  open,
+  project,
+  onClose,
+  initialStep = 'initial',
+  disableGoBack = false,
+}: Omit<Props, 'onStep'>) {
   const [history, setHistory] = useState<Step[]>([]);
   const step = useMemo<Step>(
-    () => (history.length > 0 ? history[history.length - 1] : 'initial'),
-    [history],
+    () => (history.length > 0 ? history[history.length - 1] : initialStep),
+    [history, initialStep],
   );
 
   const handleClose = useCallback(() => {
@@ -33,8 +39,9 @@ export function PublishProject({ open, project, onClose }: Omit<Props, 'onStep'>
   const props: Props = {
     open,
     project,
+    disableGoBack,
     onClose: handleClose,
-    onBack: handleBack,
+    onBack: disableGoBack ? undefined : handleBack,
     onStep: handleStep,
   };
 

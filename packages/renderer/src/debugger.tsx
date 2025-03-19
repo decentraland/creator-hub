@@ -66,11 +66,9 @@ function Debugger() {
 
   return (
     <main className="Debugger">
-      {!debuggerPath ? (
-        'No path provided'
-      ) : attachStatus === 'loading' ? (
+      {attachStatus === 'loading' ? (
         'Loading'
-      ) : attachStatus === 'failed' ? (
+      ) : attachStatus === 'failed' || !debuggerPath ? (
         'Failed to attach. Please close this window and launch debugger again'
       ) : (
         <>

@@ -50,7 +50,6 @@ export function ButtonGroup({ extra, ...props }: GroupProps) {
           <Popper
             open={open}
             onClose={handleClose}
-            className="PreviewOptions"
             anchorEl={anchorEl}
             placement="bottom-end"
           >

@@ -110,3 +110,8 @@ export const updateSceneJson = createAsyncThunk(
     await scene.writeScene({ path, scene: { ..._scene, ...updates } });
   },
 );
+
+export const updateProjectInfo = createAsyncThunk(
+  'workspace/updateProjectInfo',
+  workspace.updateProjectInfo,
+);

@@ -3,6 +3,8 @@ import { type Project } from '/shared/types/projects';
 export type Props = {
   open: boolean;
   project: Project;
+  initialStep?: Step;
+  disableGoBack?: boolean;
   onClose: () => void;
   onBack?: () => void;
   onStep: (step: Step) => void;

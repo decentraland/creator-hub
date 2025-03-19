@@ -37,7 +37,14 @@
       "actions": {
         "code": "Código",
         "preview": "Previsualizar",
-        "publish": "Publicar"
+        "publish": "Publicar",
+        "preview_options": {
+          "title": "Opciones de Previsualización",
+          "debugger": "Abrir la ventana de la Consola durante la previsualización"
+        },
+        "publish_options": {
+          "history": "Historial de Publicaciones"
+        }
       }
     }
   },
@@ -62,7 +69,10 @@
     },
     "results": "{count} {count, plural, one {escena} other {escenas}}",
     "parcel_count": "{parcels} {parcels, plural, one {parcela} other {parcelas}}",
-    "saving": "Guardando..."
+    "saving": "Guardando...",
+    "badges": {
+      "published": "Publicado"
+    }
   },
   "navbar": {
     "menu": {
@@ -151,6 +161,10 @@
         }
       },
       "deploy": {
+        "world": "Publicar en tu Mundo",
+        "land": "Publicar en tu Tierra",
+        "loading": "Cargando...",
+        "error": "Error",
         "warning": {
           "message": "POR FAVOR LEA CUIDADOSAMENTE:<ul><li>Después de la implementación, tu escena pasará por un proceso antes de estar disponible.</li><li>Este proceso puede tardar en promedio 15 minutos.</li><li>Durante este tiempo, tu escena aparecerá vacía hasta que se haya actualizado en el cliente.</li></ul>",
           "checkbox": "No mostrar de nuevo",
@@ -173,10 +187,10 @@
           "try_again": "Por favor inténtalo de nuevo",
           "info": "Este proceso puede tardar una media de 15 minutos. Durante este tiempo, su escena puede aparecer vacía hasta que se actualice en el cliente.",
           "step": {
-            "catalyst": "Catalyst",
-            "asset_bundle": "Asset Bundle",
-            "lods": "LODs",
-            "loading": "Cargando...",
+            "uploading": "Subiendo",
+            "converting": "Convirtiendo",
+            "optimizing": "Optimizando",
+            "loading": "En proceso...",
             "failed": "Error"
           },
           "errors": {
@@ -197,6 +211,9 @@
           "in_progress": "Ahora puedes acceder a tu escena incluso mientras aún se está procesando."
         }
       }
+    },
+    "publish_history": {
+      "title": "Historial de Publicaciones"
     },
     "app_settings": {
       "title": "Configuración de la aplicación",
@@ -242,6 +259,26 @@
       "title": "Se detectó una nueva versión de dependencias",
       "actions": {
         "update": "Actualizar"
+      }
+    },
+    "deploy": {
+      "pending": {
+        "title": "{title} se está publicando...",
+        "actions": {
+          "view": "Ver"
+        }
+      },
+      "success": {
+        "title": "{title} se ha publicado con éxito",
+        "actions": {
+          "view": "Ver"
+        }
+      },
+      "error": {
+        "title": "{title} proceso de publicación falló",
+        "actions": {
+          "retry": "Reintentar"
+        }
       }
     }
   },

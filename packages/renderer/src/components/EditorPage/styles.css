@@ -64,6 +64,7 @@
 }
 
 .PreviewOptions {
+  padding: 20px;
   width: 300px;
   display: flex;
   flex-direction: column;
@@ -74,4 +75,9 @@
   color: var(--clear-divider);
   margin: 0 0 10px 0;
   text-transform: uppercase;
+}
+
+.PublishOptions {
+  width: 200px;
+  padding: 4px 0;
 }

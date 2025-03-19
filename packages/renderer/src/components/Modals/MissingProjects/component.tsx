@@ -1,10 +1,10 @@
 import { useCallback } from 'react';
-import { Modal } from 'decentraland-ui2/dist/components/Modal/Modal';
 
 import { useWorkspace } from '/@/hooks/useWorkspace';
 import { t } from '/@/modules/store/translation/utils';
 import { ellipsisAtMiddle } from '/@/modules/project';
 
+import { Modal } from '..';
 import { Button } from '../../Button';
 
 import type { Props } from './types';

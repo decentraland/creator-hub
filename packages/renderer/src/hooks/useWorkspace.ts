@@ -4,7 +4,7 @@ import type { Scene } from '@dcl/schemas';
 
 import { useDispatch, useSelector } from '#store';
 
-import { type Project, type SortBy } from '/shared/types/projects';
+import type { ProjectInfo, Project, SortBy } from '/shared/types/projects';
 
 import { actions as workspaceActions } from '/@/modules/store/workspace';
 
@@ -69,6 +69,10 @@ export const useWorkspace = () => {
 
   const isLoading = workspace.status === 'loading';
 
+  const updateProjectInfo = useCallback((path: string, info: Partial<ProjectInfo>) => {
+    dispatch(workspaceActions.updateProjectInfo({ path, info }));
+  }, []);
+
   return {
     ...workspace,
     getWorkspace,
@@ -85,5 +89,6 @@ export const useWorkspace = () => {
     updateProject,
     updateSceneJson,
     isLoading,
+    updateProjectInfo,
   };
 };

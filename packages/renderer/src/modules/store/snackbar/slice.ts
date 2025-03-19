@@ -4,6 +4,7 @@ import { createSlice } from '@reduxjs/toolkit';
 import { t } from '/@/modules/store/translation/utils';
 
 import { actions as workspaceActions } from '../workspace';
+import { actions as deploymentActions } from '../deployment';
 import { shouldNotifyUpdates } from '../workspace/utils';
 import { createCustomNotification, createGenericNotification } from './utils';
 import type { Notification } from './types';
@@ -22,6 +23,10 @@ export const slice = createSlice({
   name: 'snackbar',
   initialState,
   reducers: {
+    pushSnackbar: (state, { payload: notification }: PayloadAction<Notification>) => {
+      state.notifications = state.notifications.filter($ => $.id !== notification.id);
+      state.notifications.push(notification);
+    },
     removeSnackbar: (state, { payload: id }: PayloadAction<Notification['id']>) => {
       state.notifications = state.notifications.filter($ => $.id !== id);
     },
@@ -157,9 +162,22 @@ export const slice = createSlice({
             );
           }
         },
-      );
+      )
+      .addCase(deploymentActions.executeDeployment.fulfilled, (state, action) => {
+        const path = action.meta.arg;
+        state.notifications = state.notifications.filter($ => $.requestId !== path);
+        state.notifications.push(
+          createCustomNotification({ type: 'deploy', path }, { duration: 0, requestId: path }),
+        );
+      })
+      .addCase(deploymentActions.executeDeployment.rejected, (state, action) => {
+        const path = action.meta.arg;
+        state.notifications = state.notifications.filter($ => $.requestId !== path);
+        state.notifications.push(
+          createCustomNotification({ type: 'deploy', path }, { duration: 0, requestId: path }),
+        );
+      });
   },
-  selectors: {},
 });
 
 // exports

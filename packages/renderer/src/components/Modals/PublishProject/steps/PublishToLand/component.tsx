@@ -12,7 +12,6 @@ import { t } from '/@/modules/store/translation/utils';
 import { selectors as landSelectors } from '/@/modules/store/land';
 import { useEditor } from '/@/hooks/useEditor';
 import { useWorkspace } from '/@/hooks/useWorkspace';
-
 import { COLORS, type Coordinate } from './types';
 import { type Props } from '../../types';
 import { PublishModal } from '../../PublishModal';

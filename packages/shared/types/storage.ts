@@ -5,9 +5,11 @@ type StorageData = {
   [key: string]: unknown;
 };
 
-export type IFileSystemStorage = Awaited<ReturnType<typeof _createFileSystemStorage>>;
+export type IFileSystemStorage<T extends StorageData> = Awaited<
+  ReturnType<typeof _createFileSystemStorage<T>>
+>;
 
-async function _createFileSystemStorage(storagePath: string) {
+async function _createFileSystemStorage<T extends StorageData>(storagePath: string) {
   const dir = path.dirname(storagePath);
   try {
     await fs.stat(dir);
@@ -21,17 +23,17 @@ async function _createFileSystemStorage(storagePath: string) {
     await fs.writeFile(storagePath, '{}', 'utf-8');
   }
 
-  const read = async (): Promise<StorageData> => {
+  const read = async (): Promise<T> => {
     try {
       const content = await fs.readFile(storagePath, 'utf-8');
-      return JSON.parse(content);
+      return JSON.parse(content) as T;
     } catch (error) {
       console.error('Error reading config file:', error);
-      return {};
+      return {} as T;
     }
   };
 
-  const write = async (data: StorageData): Promise<void> => {
+  const write = async (data: T): Promise<void> => {
     try {
       await fs.writeFile(storagePath, JSON.stringify(data, null, 2), 'utf-8');
     } catch (error) {
@@ -40,23 +42,23 @@ async function _createFileSystemStorage(storagePath: string) {
   };
 
   return {
-    get: async <T>(key: string): Promise<T | undefined> => {
+    get: async <K extends keyof T>(key: K): Promise<T[K] | undefined> => {
       const data = await read();
-      return data[key] as T | undefined;
+      return data[key] as T[K] | undefined;
     },
-    getAll: async <T extends StorageData>(): Promise<T> => {
+    getAll: async (): Promise<T> => {
       const data = await read();
       return data as T;
     },
-    set: async <T>(key: string, value: T): Promise<void> => {
+    set: async <K extends keyof T>(key: K, value: T[K]): Promise<void> => {
       const data = await read();
       data[key] = value;
       await write(data);
     },
-    setAll: async <T extends StorageData>(data: T): Promise<void> => {
+    setAll: async (data: T): Promise<void> => {
       await write(data);
     },
-    has: async (key: string): Promise<boolean> => {
+    has: async <K extends keyof T>(key: K): Promise<boolean> => {
       const data = await read();
       return key in data;
     },
@@ -64,18 +66,21 @@ async function _createFileSystemStorage(storagePath: string) {
 }
 
 // In-memory Map of storages
-const storageMap = new Map<string, IFileSystemStorage>();
+const storageMap = new Map<string, IFileSystemStorage<StorageData>>();
 
 export const FileSystemStorage = {
-  async create(path: string): Promise<IFileSystemStorage> {
-    const storage = await _createFileSystemStorage(path);
-    storageMap.set(path, storage);
+  async create<T extends StorageData>(path: string): Promise<IFileSystemStorage<T>> {
+    const storage = await _createFileSystemStorage<T>(path);
+    storageMap.set(path, storage as any);
     return storage;
   },
-  get(path: string): IFileSystemStorage | undefined {
-    return storageMap.get(path);
+  get<T extends StorageData>(path: string): IFileSystemStorage<T> | undefined {
+    const storage = storageMap.get(path);
+    if (!storage) return undefined;
+    return storage as unknown as IFileSystemStorage<T>;
   },
-  async getOrCreate(path: string): Promise<IFileSystemStorage> {
-    return storageMap.get(path) ?? (await this.create(path));
+  async getOrCreate<T extends StorageData>(path: string): Promise<IFileSystemStorage<T>> {
+    const storage = storageMap.get(path) ?? (await this.create(path));
+    return storage as unknown as IFileSystemStorage<T>;
   },
 };
