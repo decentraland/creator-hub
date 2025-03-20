@@ -270,7 +270,7 @@ export async function createProject(opts?: {
   const templateRepo = opts?.repo ?? EMPTY_SCENE_TEMPLATE_REPO;
 
   try {
-    await fs.mkdir(projectPath);
+    await fs.mkdir(projectPath, { recursive: true });
 
     await invoke('cli.init', projectPath, templateRepo);
 
