@@ -38,6 +38,14 @@ export async function isDirectory(path: string) {
   return (await fs.stat(path)).isDirectory();
 }
 
-export async function mkdir(path: string) {
-  await fs.mkdir(path);
+export async function mkdir(path: string, options?: { recursive?: boolean }) {
+  await fs.mkdir(path, options);
+}
+
+export async function stat(path: string) {
+  return fs.stat(path);
+}
+
+export async function cp(src: string, dest: string, options?: { recursive?: boolean }) {
+  await fs.cp(src, dest, options);
 }

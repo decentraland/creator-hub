@@ -6,8 +6,8 @@ import {
 import type { AppSettings } from '/shared/types/settings';
 import { SCENES_DIRECTORY } from '/shared/paths';
 
-import { invoke } from './invoke';
-import { getConfig, setConfig } from './config';
+import { invoke } from '../services/ipc';
+import { getConfig, setConfig } from '../services/config';
 
 export async function getDefaultScenesPath() {
   const userDataPath = await invoke('electron.getUserDataPath');

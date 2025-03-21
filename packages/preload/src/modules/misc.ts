@@ -1,6 +1,6 @@
 import { isUrl } from '/shared/utils';
 
-import { invoke } from './invoke';
+import { invoke } from '../services/ipc';
 
 export async function openExternal(url: string) {
   if (!isUrl(url)) throw new Error('Invalid URL provided');

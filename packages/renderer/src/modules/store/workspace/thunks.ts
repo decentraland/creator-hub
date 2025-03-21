@@ -14,7 +14,14 @@ import { installAndGetOutdatedPackages, shouldUpdateDependencies } from './utils
 
 export const getWorkspace = createAsyncThunk('workspace/getWorkspace', workspace.getWorkspace);
 export const getProject = createAsyncThunk('workspace/getProject', workspace.getProject);
-export const createProject = createAsyncThunk('workspace/createProject', workspace.createProject);
+export const createProject = createAsyncThunk(
+  'workspace/createProject',
+  async (opts: Parameters<typeof workspace.createProject>[0]) => {
+    const { path } = await workspace.createProject(opts);
+    const project = await workspace.getProject({ path });
+    return project;
+  },
+);
 export const deleteProject = createAsyncThunk('workspace/deleteProject', workspace.deleteProject);
 export const duplicateProject = createAsyncThunk(
   'workspace/duplicateProject',

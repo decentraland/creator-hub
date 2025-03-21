@@ -27,6 +27,10 @@ export type Template = {
   resource_type: string;
 };
 
+export type GetProjectsOpts = {
+  omitOutdatedPackages?: boolean;
+};
+
 export type Error = 'PROJECT_NOT_FOUND';
 
 export class WorkspaceError extends ErrorBase<Error> {}

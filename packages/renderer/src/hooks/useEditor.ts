@@ -96,7 +96,12 @@ export const useEditor = () => {
   const refreshProject = useCallback(
     async (rpcInfo: RPCInfo) => {
       const _ = await saveAndGetThumbnail(rpcInfo);
-      dispatch(workspaceActions.getProject(rpcInfo.project.path));
+      dispatch(
+        workspaceActions.getProject({
+          path: rpcInfo.project.path,
+          opts: { omitOutdatedPackages: true },
+        }),
+      );
     },
     [workspaceActions.getProject, project],
   );

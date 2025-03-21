@@ -1,6 +1,6 @@
 import path from 'path';
 import { CUSTOM_ASSETS_DIRECTORY } from '/shared/paths';
-import { invoke } from './invoke';
+import { invoke } from '../services/ipc';
 
 export async function getPath() {
   const userDataPath = await invoke('electron.getUserDataPath');

@@ -2,9 +2,11 @@ import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Scene } from '@dcl/schemas';
 
+import { workspace as workspacePreload } from '#preload';
 import { useDispatch, useSelector } from '#store';
 
 import type { ProjectInfo, Project, SortBy } from '/shared/types/projects';
+import { tryCatch } from '/shared/try-catch';
 
 import { actions as workspaceActions } from '/@/modules/store/workspace';
 
@@ -26,7 +28,7 @@ export const useWorkspace = () => {
     navigate('/editor');
   }, []);
 
-  const createProject = useCallback((opts?: { name?: string; repo?: string }) => {
+  const createProject = useCallback((opts?: { name?: string; repo?: string; path?: string }) => {
     dispatch(workspaceActions.createProjectAndInstall(opts));
     navigate('/editor');
   }, []);
@@ -67,6 +69,21 @@ export const useWorkspace = () => {
     return dispatch(workspaceActions.updateSceneJson({ path, updates }));
   }, []);
 
+  const validateProjectPath = useCallback(async (path: string) => {
+    const valid = await workspacePreload.isProjectPathAvailable(path);
+    return valid;
+  }, []);
+
+  const selectNewProjectPath = useCallback(async () => {
+    const result = await tryCatch(workspacePreload.selectNewProjectPath());
+    return result;
+  }, []);
+
+  const getAvailableProject = useCallback(async () => {
+    const result = await tryCatch(workspacePreload.getAvailable());
+    return result;
+  }, []);
+
   const isLoading = workspace.status === 'loading';
 
   const updateProjectInfo = useCallback((path: string, info: Partial<ProjectInfo>) => {
@@ -88,6 +105,9 @@ export const useWorkspace = () => {
     updatePackages,
     updateProject,
     updateSceneJson,
+    validateProjectPath,
+    selectNewProjectPath,
+    getAvailableProject,
     isLoading,
     updateProjectInfo,
   };

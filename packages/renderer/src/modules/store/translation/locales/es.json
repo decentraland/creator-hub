@@ -234,6 +234,19 @@
       "actions": {
         "apply_button": "Guardar"
       }
+    },
+    "create_project": {
+      "title": "Crear Proyecto",
+      "fields": {
+        "name": "Nombre del Proyecto",
+        "path": "Ruta del Proyecto"
+      },
+      "actions": {
+        "create": "Crear"
+      },
+      "errors": {
+        "path_exists": "La ruta no existe o ya está en uso"
+      }
     }
   },
   "snackbar": {

@@ -6,8 +6,8 @@ import deepmerge from 'deepmerge';
 import type { Config } from '/shared/types/config';
 import { DEFAULT_CONFIG, mergeConfig } from '/shared/types/config';
 
-import { invoke } from './invoke';
 import { SETTINGS_DIRECTORY, CONFIG_FILE_NAME, getFullScenesPath } from '/shared/paths';
+import { invoke } from './ipc';
 
 let config: Config | undefined;
 
