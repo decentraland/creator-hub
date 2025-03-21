@@ -1,4 +1,4 @@
-import { invoke } from './invoke';
+import { invoke } from '../services/ipc';
 
 export async function track(event: string, data?: Record<string, any>) {
   await invoke('analytics.track', event, data);

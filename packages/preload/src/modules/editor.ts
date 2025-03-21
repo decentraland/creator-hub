@@ -2,7 +2,7 @@ import { ipcRenderer, type IpcRendererEvent } from 'electron';
 
 import type { DeployOptions } from '/shared/types/ipc';
 
-import { invoke } from './invoke';
+import { invoke } from '../services/ipc';
 
 export async function getVersion() {
   return invoke('electron.getAppVersion');
