@@ -156,7 +156,7 @@ export const slice = createSlice({
         state.settings = meta.arg;
       })
       .addCase(thunks.getProject.pending, (state, { meta }) => {
-        const projectIdx = state.projects.findIndex($ => $.path === meta.arg);
+        const projectIdx = state.projects.findIndex($ => $.path === meta.arg.path);
         if (projectIdx !== -1) {
           state.projects[projectIdx] = { ...state.projects[projectIdx], status: 'loading' };
         }
@@ -168,7 +168,7 @@ export const slice = createSlice({
         }
       })
       .addCase(thunks.getProject.rejected, (state, { meta }) => {
-        const projectIdx = state.projects.findIndex($ => $.path === meta.arg);
+        const projectIdx = state.projects.findIndex($ => $.path === meta.arg.path);
         if (projectIdx !== -1) {
           state.projects[projectIdx] = { ...state.projects[projectIdx], status: 'failed' };
         }

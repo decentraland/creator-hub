@@ -234,6 +234,19 @@
       "actions": {
         "apply_button": "申請"
       }
+    },
+    "create_project": {
+      "title": "創建場景",
+      "fields": {
+        "name": "場景名稱",
+        "path": "場景路徑"
+      },
+      "actions": {
+        "create": "創建"
+      },
+      "errors": {
+        "path_exists": "路徑不存在或已存在"
+      }
     }
   },
   "snackbar": {

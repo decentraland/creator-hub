@@ -3,7 +3,7 @@ import type { Scene } from '@dcl/schemas';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { writeFile } from './fs';
+import { writeFile } from '../services/fs';
 
 export type Coords = {
   x: number;
