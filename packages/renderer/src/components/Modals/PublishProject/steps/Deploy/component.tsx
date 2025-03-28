@@ -31,7 +31,9 @@ const MAX_FILE_PATH_LENGTH = 50;
 
 function getPath(filename: string) {
   return filename.length > MAX_FILE_PATH_LENGTH
-    ? `${filename.slice(0, MAX_FILE_PATH_LENGTH / 2)}...${filename.slice(-(MAX_FILE_PATH_LENGTH / 2))}`
+    ? `${filename.slice(0, MAX_FILE_PATH_LENGTH / 2)}...${filename.slice(
+        -(MAX_FILE_PATH_LENGTH / 2),
+      )}`
     : filename;
 }
 
@@ -57,7 +59,8 @@ export function Deploy(props: Props) {
   const { chainId, wallet, avatar } = useAuth();
   const { updateProjectInfo } = useWorkspace();
   const { loadingPublish } = useEditor();
-  const { getDeployment, overallStatus, isDeployFinishing, executeDeployment } = useDeploy();
+  const { getDeployment, overallStatus, isDeployFinishing, executeDeploymentWithRetry } =
+    useDeploy();
   const { pushCustom } = useSnackbar();
   const [showWarning, setShowWarning] = useState(false);
   const [skipWarning, setSkipWarning] = useState(project.info.skipPublishWarning ?? false);
@@ -66,7 +69,7 @@ export function Deploy(props: Props) {
   const handlePublish = useCallback(() => {
     setShowWarning(false);
     updateProjectInfo(project.path, { skipPublishWarning: skipWarning }); // write skip warning flag
-    executeDeployment(project.path);
+    executeDeploymentWithRetry(project.path);
   }, [skipWarning, project]);
 
   const handleBack = useCallback(() => {
@@ -107,8 +110,8 @@ export function Deploy(props: Props) {
             ? t('modal.publish_project.deploy.world')
             : t('modal.publish_project.deploy.land')
           : loadingPublish
-            ? t('modal.publish_project.deploy.loading')
-            : t('modal.publish_project.deploy.error')
+          ? t('modal.publish_project.deploy.loading')
+          : t('modal.publish_project.deploy.error')
       }
       size="large"
       {...props}
