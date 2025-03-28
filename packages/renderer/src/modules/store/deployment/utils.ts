@@ -2,7 +2,8 @@ import { minutes, seconds } from '/shared/time';
 import equal from 'fast-deep-equal';
 import type { AuthIdentity } from 'decentraland-crypto-fetch';
 import { type AuthChain, Authenticator } from '@dcl/crypto';
-import type { ChainId } from '@dcl/schemas';
+import { ChainId } from '@dcl/schemas';
+import { getCatalystServersFromCache } from 'dcl-catalyst-client/dist/contracts-snapshots';
 
 import { delay } from '/shared/utils';
 import { DEPLOY_URLS, type Info } from '/shared/types/deploy';
@@ -268,4 +269,17 @@ export function checkDeploymentCompletion(
   if (total === 0) return false;
   const completedCount = statuses.filter(value => value === 'complete').length;
   return completedCount / total >= percentage;
+}
+
+export function getAvailableCatalystServer(triedServers: Set<string>, chainId: ChainId): string {
+  const network = chainId === ChainId.ETHEREUM_SEPOLIA ? 'sepolia' : 'mainnet';
+  const catalystServers = getCatalystServersFromCache(network).map(server => server.address);
+  const availableServers = catalystServers.filter(server => !triedServers.has(server));
+
+  if (availableServers.length === 0) {
+    throw new Error('No available catalyst servers to try');
+  }
+
+  const randomIndex = Math.floor(Math.random() * availableServers.length);
+  return availableServers[randomIndex];
 }
