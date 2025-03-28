@@ -8,6 +8,8 @@ import { isDeploymentError } from '/shared/types/deploy';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
+import { dispatchWithRetry } from '/@/modules/store/utils';
+import { publishScene } from '/@/modules/store/editor/slice';
 import {
   checkDeploymentStatus,
   cleanPendingsFromDeploymentStatus,
@@ -20,6 +22,7 @@ import {
   getDeploymentUrl,
   fetchInfo,
   fetchFiles,
+  getAvailableCatalystServer,
 } from './utils';
 
 export interface Deployment {
@@ -126,6 +129,45 @@ export const executeDeployment = createAsyncThunk<
   }
 });
 
+export const executeDeploymentWithRetry = createAsyncThunk<
+  { info: Info; componentsStatus: DeploymentComponentsStatus },
+  string,
+  { rejectValue: { message: string; info: Info } }
+>('deployment/executeWithRetry', async (path, { dispatch, rejectWithValue, getState }) => {
+  const deployment = getState().deployment.deployments[path];
+  if (!deployment) {
+    return rejectWithValue({
+      message: 'Deployment not found. Initialize it first.',
+      info: {} as Info,
+    });
+  }
+
+  const { wallet, chainId } = deployment;
+  const triedServers = new Set<string>();
+
+  const result = await dispatchWithRetry(dispatch, executeDeployment, path, {
+    maxRetries: 3,
+    delayMs: 1000,
+    shouldRetry: (_error, attempt) => triedServers.size <= attempt,
+    onFailure: async () => {
+      const selectedServer = getAvailableCatalystServer(triedServers, chainId);
+      triedServers.add(selectedServer);
+
+      const port = await dispatch(publishScene({ path, target: selectedServer })).unwrap();
+
+      await dispatch(
+        initializeDeployment({
+          path,
+          port,
+          chainId,
+          wallet,
+        }),
+      ).unwrap();
+    },
+  });
+  return result;
+});
+
 const deploymentSlice = createSlice({
   name: 'deployment',
   initialState,
@@ -197,6 +239,7 @@ export const actions = {
   ...deploymentSlice.actions,
   initializeDeployment,
   executeDeployment,
+  executeDeploymentWithRetry,
 };
 
 export const reducer = deploymentSlice.reducer;
