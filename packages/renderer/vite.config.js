@@ -23,6 +23,7 @@ const config = {
       '/shared/': join(PROJECT_ROOT, 'packages', 'shared') + '/',
       '/assets/': join(PACKAGE_ROOT, 'assets') + '/',
       '#store': join(PACKAGE_ROOT, 'src', 'modules', 'store') + '/',
+      '#preload': join(PROJECT_ROOT, 'packages', 'preload', 'src', 'index.ts'),
     },
   },
   base: '',
@@ -44,6 +45,8 @@ const config = {
   },
   test: {
     environment: 'happy-dom',
+    setupFiles: ['./tests/setupTests.ts'],
+    include: ['./src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
   },
   plugins: [
     react(),
