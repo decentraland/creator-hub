@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { dispatchWithRetry } from './utils';
 
-const TEST_DELAY_MS = 100;
+const TEST_DELAY_MS = 1;
 
 describe('dispatchWithRetry', () => {
   const mockDispatch = vi.fn();
