@@ -73,7 +73,7 @@
   "dependencies": {
     "@dcl/mini-rpc": "^1.0.7",
     "@dcl/schemas": "^11.10.4",
-    "@dcl/sdk": "7.8.0",
+    "@dcl/sdk": "^7.8.1",
     "@ethersproject/hash": "^5.7.0",
     "@segment/analytics-node": "^2.1.2",
     "@sentry/electron": "^6.1.0",
