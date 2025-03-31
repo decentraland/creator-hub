@@ -110,8 +110,8 @@ export function Deploy(props: Props) {
             ? t('modal.publish_project.deploy.world')
             : t('modal.publish_project.deploy.land')
           : loadingPublish
-          ? t('modal.publish_project.deploy.loading')
-          : t('modal.publish_project.deploy.error')
+            ? t('modal.publish_project.deploy.loading')
+            : t('modal.publish_project.deploy.error')
       }
       size="large"
       {...props}
