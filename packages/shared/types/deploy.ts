@@ -66,3 +66,9 @@ export class DeploymentError extends ErrorBase<Error> {
 
 export const isDeploymentError = (error: unknown, type: Error): error is DeploymentError =>
   error instanceof DeploymentError && error.name === type;
+
+export const isDeploymentErrorMessage = (error: unknown): error is DeploymentError =>
+  !!error &&
+  typeof error === 'object' &&
+  'message' in error &&
+  error.message === 'Max retries reached. Deployment failed.';
