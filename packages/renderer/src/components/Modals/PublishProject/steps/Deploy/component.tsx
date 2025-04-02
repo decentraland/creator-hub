@@ -202,7 +202,7 @@ export function Deploy(props: Props) {
                   </Typography>
                 </div>
               </div>
-              {deployment.status === 'idle' && (
+              {deployment.status === 'idle' && deployment.retryAttempt === 0 && (
                 <Idle
                   files={deployment.files}
                   error={deployment.error}

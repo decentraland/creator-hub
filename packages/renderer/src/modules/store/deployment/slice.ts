@@ -4,7 +4,7 @@ import type { ChainId } from '@dcl/schemas';
 import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
 
 import type { DeploymentComponentsStatus, Info, Status } from '/shared/types/deploy';
-import { isDeploymentError } from '/shared/types/deploy';
+import { isDeploymentError, isDeploymentErrorMessage } from '/shared/types/deploy';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
@@ -36,6 +36,7 @@ export interface Deployment {
   error?: string;
   componentsStatus: DeploymentComponentsStatus;
   lastUpdated: number;
+  retryAttempt?: number;
 }
 
 export interface DeploymentState {
@@ -52,17 +53,25 @@ const initialState: DeploymentState = {
 };
 
 export const initializeDeployment = createAsyncThunk<
-  { path: string; url: string; info: Info; wallet: string; chainId: ChainId; files: File[] },
-  { path: string; port: number; wallet: string; chainId: ChainId },
+  {
+    path: string;
+    url: string;
+    info: Info;
+    wallet: string;
+    chainId: ChainId;
+    files: File[];
+    retryAttempt: number;
+  },
+  { path: string; port: number; wallet: string; chainId: ChainId; retryAttempt?: number },
   { rejectValue: { message: string; info: Info } }
 >('deployment/initialize', async (payload, { rejectWithValue }) => {
-  const { path, port, wallet, chainId } = payload;
+  const { path, port, wallet, chainId, retryAttempt = 0 } = payload;
   const url = getDeploymentUrl(port);
   if (!url) {
     return rejectWithValue({ message: 'Invalid URL', info: {} as Info });
   }
   const [info, files] = await Promise.all([fetchInfo(url), fetchFiles(url)]);
-  return { path, url, info, wallet, chainId, files };
+  return { path, url, info, wallet, chainId, files, retryAttempt };
 });
 
 export const executeDeployment = createAsyncThunk<
@@ -148,8 +157,10 @@ export const executeDeploymentWithRetry = createAsyncThunk<
   const result = await dispatchWithRetry(dispatch, executeDeployment, path, {
     maxRetries: 3,
     delayMs: 1000,
-    shouldRetry: (_error, attempt) => triedServers.size <= attempt,
-    onFailure: async () => {
+    shouldRetry: (error, attempt) => {
+      return triedServers.size <= attempt && !isDeploymentErrorMessage(error);
+    },
+    onFailure: async (_, attempt) => {
       const selectedServer = getAvailableCatalystServer(triedServers, chainId);
       triedServers.add(selectedServer);
 
@@ -161,6 +172,7 @@ export const executeDeploymentWithRetry = createAsyncThunk<
           port,
           chainId,
           wallet,
+          retryAttempt: attempt + 1,
         }),
       ).unwrap();
     },
@@ -191,7 +203,7 @@ const deploymentSlice = createSlice({
   extraReducers: builder => {
     builder
       .addCase(initializeDeployment.fulfilled, (state, action) => {
-        const { path, url, info, wallet, chainId, files } = action.payload;
+        const { path, url, info, wallet, chainId, files, retryAttempt = 0 } = action.payload;
         state.deployments[path] = {
           path,
           url,
@@ -202,6 +214,7 @@ const deploymentSlice = createSlice({
           status: 'idle',
           componentsStatus: getInitialDeploymentStatus(info.isWorld),
           lastUpdated: Date.now(),
+          retryAttempt: retryAttempt,
         };
       })
       .addCase(executeDeployment.pending, (state, action) => {
