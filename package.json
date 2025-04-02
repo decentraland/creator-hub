@@ -70,6 +70,7 @@
     "vitest": "1.6.0"
   },
   "dependencies": {
+    "@dcl/asset-packs": "https://sdk-team-cdn.decentraland.org/@dcl/asset-packs/branch/signs/dcl-asset-packs-2.2.2-14084301091.commit-7632892.tgz",
     "@dcl/mini-rpc": "^1.0.7",
     "@dcl/schemas": "^11.10.4",
     "@dcl/sdk": "7.8.0",
