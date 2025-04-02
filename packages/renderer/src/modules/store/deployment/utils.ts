@@ -273,8 +273,13 @@ export function checkDeploymentCompletion(
 
 export function getAvailableCatalystServer(triedServers: Set<string>, chainId: ChainId): string {
   const network = chainId === ChainId.ETHEREUM_SEPOLIA ? 'sepolia' : 'mainnet';
-  const catalystServers = getCatalystServersFromCache(network).map(server => server.address);
-  const availableServers = catalystServers.filter(server => !triedServers.has(server));
+  const availableServers = [];
+
+  for (const server of getCatalystServersFromCache(network)) {
+    if (!triedServers.has(server.address)) {
+      availableServers.push(server.address);
+    }
+  }
 
   if (availableServers.length === 0) {
     throw new Error('No available catalyst servers to try');
