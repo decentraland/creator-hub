@@ -31,7 +31,7 @@ export const useDeploy = () => {
   );
 
   const executeDeploymentWithRetry = useCallback(
-    async (path: string) => {
+    (path: string) => {
       dispatch(actions.executeDeploymentWithRetry(path));
     },
     [dispatch],
