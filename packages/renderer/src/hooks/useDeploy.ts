@@ -30,6 +30,13 @@ export const useDeploy = () => {
     [dispatch],
   );
 
+  const executeDeploymentWithRetry = useCallback(
+    (path: string) => {
+      dispatch(actions.executeDeploymentWithRetry(path));
+    },
+    [dispatch],
+  );
+
   const removeDeployment = useCallback(
     (path: string) => {
       dispatch(actions.removeDeployment({ path }));
@@ -52,6 +59,7 @@ export const useDeploy = () => {
     getDeployment,
     initializeDeployment,
     executeDeployment,
+    executeDeploymentWithRetry,
     overallStatus,
     isDeployFinishing,
     removeDeployment,

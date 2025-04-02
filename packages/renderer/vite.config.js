@@ -44,6 +44,8 @@ const config = {
   },
   test: {
     environment: 'happy-dom',
+    setupFiles: ['./tests/setupTests.ts'],
+    include: ['./src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
   },
   plugins: [
     react(),
