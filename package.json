@@ -73,7 +73,7 @@
   "dependencies": {
     "@dcl/mini-rpc": "^1.0.7",
     "@dcl/schemas": "^11.10.4",
-    "@dcl/sdk": "^7.8.1",
+    "@dcl/sdk": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/chore/update-asset-packs/dcl-sdk-7.8.2-14272970935.commit-75018a6.tgz",
     "@ethersproject/hash": "^5.7.0",
     "@segment/analytics-node": "^2.1.2",
     "@sentry/electron": "^6.1.0",
