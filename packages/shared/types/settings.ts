@@ -8,6 +8,8 @@ export const DEFAULT_DEPENDENCY_UPDATE_STRATEGY = DEPENDENCY_UPDATE_STRATEGY.NOT
 
 export type PreviewOptions = {
   debugger: boolean;
+  skipAuthScreen: boolean;
+  enableLandscapeTerrains: boolean;
 };
 
 export type AppSettings = {

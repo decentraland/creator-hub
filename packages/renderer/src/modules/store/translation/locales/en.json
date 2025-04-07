@@ -44,7 +44,9 @@
         "publish": "Publish",
         "preview_options": {
           "title": "Preview Options",
-          "debugger": "Open Console Window during preview"
+          "debugger": "Open Console Window during preview",
+          "skip_auth_screen": "Skip Auth Screen",
+          "landscape_terrain_enabled": "Enable Landscape Terrains"
         },
         "publish_options": {
           "history": "Publishing History"

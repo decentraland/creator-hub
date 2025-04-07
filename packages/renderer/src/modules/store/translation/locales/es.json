@@ -44,7 +44,9 @@
         "publish": "Publicar",
         "preview_options": {
           "title": "Opciones de Previsualización",
-          "debugger": "Abrir la ventana de la Consola durante la previsualización"
+          "debugger": "Abrir la ventana de la Consola durante la previsualización",
+          "skip_auth_screen": "Omitir la pantalla de autenticación",
+          "landscape_terrain_enabled": "Habilitar terrenos de vista panorámica"
         },
         "publish_options": {
           "history": "Historial de Publicaciones"
