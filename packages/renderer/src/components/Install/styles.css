@@ -15,3 +15,14 @@
 .Install .loading .message {
   margin-left: 24px;
 }
+
+.Install .error {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+
+.Install .error img {
+  margin-top: 24px;
+  width: 700px;
+}

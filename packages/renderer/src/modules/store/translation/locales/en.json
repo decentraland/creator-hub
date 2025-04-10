@@ -1,6 +1,10 @@
 {
   "install": {
-    "message": "Installing Decentraland Creator Hub v{version}"
+    "message": "Installing Decentraland Creator Hub v{version}",
+    "errors": {
+      "moveAppFailed": "Please open the Creator Hub application from inside the Applications folder",
+      "unknown": "An unknown error occurred"
+    }
   },
   "home": {
     "header": {
