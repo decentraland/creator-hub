@@ -17,6 +17,16 @@ const config = {
      */
     testTimeout: 30_000,
     hookTimeout: 30_000,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      all: true,
+      lines: 100,
+      functions: 100,
+      branches: 85,
+      statements: 100,
+      include: ['./packages/preload/src/modules/workspace.ts'],
+    },
   },
 };
 

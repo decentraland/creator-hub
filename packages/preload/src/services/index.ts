@@ -5,6 +5,7 @@ import * as fs from './fs';
 import * as npm from './npm';
 import * as ipc from './ipc';
 import * as pkg from './pkg';
+import * as project from './project';
 
 export type Services = {
   config: typeof config;
@@ -13,6 +14,7 @@ export type Services = {
   ipc: typeof ipc;
   path: typeof path;
   pkg: typeof pkg;
+  project: typeof project;
 };
 
 export const getServices = (): Services => ({
@@ -22,4 +24,5 @@ export const getServices = (): Services => ({
   ipc,
   path,
   pkg,
+  project,
 });

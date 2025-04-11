@@ -1,4 +1,5 @@
 import { vi, type Mock } from 'vitest';
+import path from 'node:path';
 
 import type { Services } from '../../src/services';
 
@@ -14,6 +15,7 @@ export const getMockServices = (): DeepMock<Services> => ({
     getConfig: vi.fn(),
     writeConfig: vi.fn(),
     setConfig: vi.fn(),
+    getWorkspaceConfigPath: vi.fn(),
   },
   fs: {
     stat: vi.fn(),
@@ -31,7 +33,9 @@ export const getMockServices = (): DeepMock<Services> => ({
     invoke: vi.fn(),
   },
   path: {
-    join: vi.fn((...args) => args.join('/')),
+    join: vi.fn((...args) => path.posix.join(...args)),
+    basename: vi.fn((arg: string) => path.posix.basename(arg)),
+    normalize: vi.fn((arg: string) => path.posix.normalize(arg)),
   } as any, // temp until we have a "path" service...
   npm: {
     install: vi.fn(),
@@ -41,5 +45,8 @@ export const getMockServices = (): DeepMock<Services> => ({
     getPackageJson: vi.fn(),
     getPackageVersion: vi.fn(),
     hasDependency: vi.fn(),
+  },
+  project: {
+    getProjectInfoFs: vi.fn(),
   },
 });
