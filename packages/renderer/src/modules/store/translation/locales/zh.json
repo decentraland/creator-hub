@@ -1,6 +1,10 @@
 {
   "install": {
-    "message": "安装 decentraland 编辑器 v${version}"
+    "message": "安装 decentraland 编辑器 v${version}",
+    "errors": {
+      "moveAppFailed": "请将 Creator Hub 应用程序移动到应用程序文件夹，并从那里打开它",
+      "unknown": "发生未知错误"
+    }
   },
   "home": {
     "header": {

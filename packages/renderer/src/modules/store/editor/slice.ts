@@ -45,7 +45,7 @@ export type EditorState = {
   isInstallingProject: boolean;
   isInstalledProject: boolean;
   isFetchingVersion: boolean;
-  error: Error | null;
+  error: Error | string | null;
 };
 
 const initialState: EditorState = {
@@ -129,7 +129,7 @@ export const slice = createSlice({
       state.isInstalled = true;
     });
     builder.addCase(install.rejected, (state, action) => {
-      state.error = action.error.message ? new Error(action.error.message) : null;
+      state.error = action.error.message || null;
       state.isInstalling = false;
     });
     builder.addCase(fetchVersion.fulfilled, (state, action) => {

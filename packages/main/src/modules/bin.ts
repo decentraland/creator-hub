@@ -35,10 +35,31 @@ export async function waitForInstall() {
 }
 
 /**
+ * Attempts to move the application to the Applications folder on macOS.
+ * This function checks if the application is not already in the Applications folder
+ * and if so, it initiates the move process.
+ */
+function moveAppToApplicationsFolder() {
+  try {
+    if (!import.meta.env.DEV && process.env.MODE !== 'test') {
+      if (process.platform === 'darwin') {
+        if (!app.isInApplicationsFolder()) {
+          app.moveToApplicationsFolder();
+        }
+      }
+    }
+  } catch (error) {
+    log.error('[Install] Failed to move app to applications folder:', error);
+    throw new Error('MOVE_APP_FAILED', { cause: 'Failed to move app to applications folder' });
+  }
+}
+
+/**
  * Installs node and npm binaries
  */
 export async function install() {
   try {
+    moveAppToApplicationsFolder();
     const nodeModulesPath = path.join(APP_UNPACKED_PATH, 'node_modules');
     const tempPath = path.join(APP_UNPACKED_PATH, 'temp');
     /** Fix a previously interruped install */
