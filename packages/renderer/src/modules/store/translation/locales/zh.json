@@ -44,7 +44,9 @@
         "publish": "发布",
         "preview_options": {
           "title": "预览选项",
-          "debugger": "在预览期间打开控制台窗口"
+          "debugger": "在预览期间打开控制台窗口",
+          "skip_auth_screen": "跳过认证屏幕",
+          "landscape_terrain_enabled": "启用景观地形"
         },
         "publish_options": {
           "history": "发布历史"

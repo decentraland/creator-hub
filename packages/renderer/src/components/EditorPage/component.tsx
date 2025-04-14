@@ -269,6 +269,24 @@ function PreviewOptions({ onChange, options }: PreviewOptionsProps) {
           }
           label={t('editor.header.actions.preview_options.debugger')}
         />
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={!!options.skipAuthScreen}
+              onChange={handleChange({ skipAuthScreen: !options.skipAuthScreen })}
+            />
+          }
+          label={t('editor.header.actions.preview_options.skip_auth_screen')}
+        />
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={!!options.enableLandscapeTerrains}
+              onChange={handleChange({ enableLandscapeTerrains: !options.enableLandscapeTerrains })}
+            />
+          }
+          label={t('editor.header.actions.preview_options.landscape_terrain_enabled')}
+        />
       </FormGroup>
     </div>
   );

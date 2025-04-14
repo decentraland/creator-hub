@@ -3,6 +3,7 @@ import { ipcRenderer, type IpcRendererEvent } from 'electron';
 import type { DeployOptions } from '/shared/types/ipc';
 
 import { invoke } from '../services/ipc';
+import type { PreviewOptions } from '/shared/types/settings';
 
 export async function getVersion() {
   return invoke('electron.getAppVersion');
@@ -45,8 +46,8 @@ export async function attachSceneDebugger(
   };
 }
 
-export async function runScene(path: string) {
-  const port = await invoke('cli.start', path);
+export async function runScene({ path, opts }: { path: string; opts: PreviewOptions }) {
+  const port = await invoke('cli.start', path, opts);
   return port;
 }
 

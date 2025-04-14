@@ -1,6 +1,7 @@
 import type { OpenDialogOptions } from 'electron';
 
 import type { Outdated } from '/shared/types/npm';
+import type { PreviewOptions } from './settings';
 
 export type DeployOptions = { path: string; target?: string; targetContent?: string };
 export type IpcResult<T> = {
@@ -25,7 +26,7 @@ export interface Ipc {
   'bin.install': () => Promise<void>;
   'bin.code': (path: string) => Promise<void>;
   'cli.init': (path: string, repo?: string) => Promise<void>;
-  'cli.start': (path: string) => Promise<string>;
+  'cli.start': (path: string, opts: PreviewOptions) => Promise<string>;
   'cli.deploy': (opts: DeployOptions) => Promise<number>;
   'cli.killPreview': (path: string) => Promise<void>;
   'analytics.track': (event: string, data?: Record<string, any>) => void;

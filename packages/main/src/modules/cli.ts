@@ -1,11 +1,14 @@
 import log from 'electron-log/main';
+
 import type { DeployOptions } from '/shared/types/ipc';
+import type { PreviewOptions } from '/shared/types/settings';
+
 import { dclDeepLink, run, type Child } from './bin';
 import { getAvailablePort } from './port';
 import { getProjectId } from './analytics';
 import { install } from './npm';
 
-export type Preview = { child: Child; previewURL: string };
+export type Preview = { child: Child; url: string; opts: PreviewOptions };
 
 const previewCache: Map<string, Preview> = new Map();
 export let deployServer: Child | null = null;
@@ -45,11 +48,42 @@ export async function killAllPreviews() {
   previewCache.clear(); // just to be sure...
 }
 
-export async function start(path: string, retry = true): Promise<string> {
+type PreviewArguments = Omit<PreviewOptions, 'debugger'>;
+
+const PREVIEW_OPTIONS_MAP: Record<keyof PreviewArguments, string> = {
+  skipAuthScreen: '--skip-auth-screen',
+  enableLandscapeTerrains: '--landscape-terrain-enabled',
+};
+
+function generatePreviewArguments(opts: PreviewOptions) {
+  const args = [];
+  for (const [opt, value] of Object.entries(PREVIEW_OPTIONS_MAP)) {
+    const key = opt as keyof PreviewArguments;
+    if (opts[key]) args.push(value);
+  }
+  return args;
+}
+
+function isPreviewRunning(opts: PreviewOptions, preview?: Preview): preview is Preview {
+  return !!(
+    preview?.child.alive() &&
+    preview.url &&
+    Object.entries(PREVIEW_OPTIONS_MAP).every(([opt]) => {
+      const key = opt as keyof PreviewArguments;
+      return opts[key] === preview.opts[key];
+    })
+  );
+}
+
+export async function start(
+  path: string,
+  opts: PreviewOptions & { retry?: boolean },
+): Promise<string> {
+  const { retry = true } = opts;
   const preview = previewCache.get(path);
-  // If we have a preview running for this path, open it
-  if (preview?.child.alive() && preview.previewURL) {
-    await dclDeepLink(preview.previewURL);
+  // If we have a preview running for this path with the same options, open it
+  if (isPreviewRunning(opts, preview)) {
+    await dclDeepLink(preview.url);
     return path;
   }
 
@@ -57,7 +91,7 @@ export async function start(path: string, retry = true): Promise<string> {
 
   try {
     const process = run('@dcl/sdk-commands', 'sdk-commands', {
-      args: ['start', '--explorer-alpha', '--hub'],
+      args: ['start', '--explorer-alpha', '--hub', ...generatePreviewArguments(opts)],
       cwd: path,
       workspace: path,
       env: await getEnv(path),
@@ -65,9 +99,9 @@ export async function start(path: string, retry = true): Promise<string> {
 
     const dclLauncherURL = /decentraland:\/\/([^\s\n]*)/i;
     const resultLogs = await process.waitFor(dclLauncherURL, /CliError/i);
-    const previewURL = resultLogs.match(dclLauncherURL)?.[1] ?? '';
+    const url = resultLogs.match(dclLauncherURL)?.[1] ?? '';
 
-    const preview = { child: process, previewURL };
+    const preview = { child: process, url, opts };
     previewCache.set(path, preview);
     return path;
   } catch (error) {
@@ -75,7 +109,7 @@ export async function start(path: string, retry = true): Promise<string> {
     if (retry) {
       log.info('[CLI] Something went wrong trying to start preview:', (error as Error).message);
       await install(path);
-      return await start(path, false);
+      return await start(path, { ...opts, retry: false });
     } else {
       throw error;
     }

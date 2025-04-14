@@ -19,6 +19,8 @@ const initialState: Async<Workspace> = {
     dependencyUpdateStrategy: DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
     previewOptions: {
       debugger: false,
+      skipAuthScreen: true,
+      enableLandscapeTerrains: true,
     },
   },
   status: 'idle',
