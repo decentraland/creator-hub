@@ -10,3 +10,4 @@ thumbs.db
 
 .vscode/settings.json
 .env
+coverage/

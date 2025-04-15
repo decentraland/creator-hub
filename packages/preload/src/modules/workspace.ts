@@ -10,7 +10,6 @@ import {
 import { PACKAGES_LIST } from '/shared/types/pkg';
 import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import type { GetProjectsOpts, Template, Workspace } from '/shared/types/workspace';
-import { FileSystemStorage } from '/shared/types/storage';
 
 import type { Services } from '../services';
 
@@ -60,7 +59,7 @@ export function initializeWorkspace(services: Services) {
   }
 
   async function getOldProjectThumbnailPath(_path: string) {
-    const workspaceConfigPath = await getConfigPath(_path);
+    const workspaceConfigPath = await config.getWorkspaceConfigPath(_path);
     return path.join(workspaceConfigPath, 'images', 'project-thumbnail.png');
   }
 
@@ -110,7 +109,7 @@ export function initializeWorkspace(services: Services) {
         getScene(_path),
         fs.stat(_path),
         opts?.omitOutdatedPackages ? Promise.resolve({}) : getOutdatedPackages(_path),
-        getProjectInfoFs(_path),
+        services.project.getProjectInfoFs(_path),
       ]);
       const thumbnail = await getProjectThumbnailAsBase64(_path, scene);
       const layout = getRowsAndCols(scene.scene.parcels.map($ => parseCoords($)));
@@ -165,17 +164,17 @@ export function initializeWorkspace(services: Services) {
         if (!(await fs.exists(_path))) {
           // _path doesn't exist
           missing.push(_path);
-        } else if (await isDCL(_path)) {
+        } else if (await workspace.isDCL(_path)) {
           // _path is a project
-          promises.push(getProject({ path: _path, opts }));
+          promises.push(workspace.getProject({ path: _path, opts }));
         } else {
           // _path is a directory with projects
           const files = await fs.readdir(_path);
           for (const dir of files) {
             try {
               const projectDir = path.join(_path, dir);
-              if (await isDCL(projectDir)) {
-                promises.push(getProject({ path: projectDir, opts }));
+              if (await workspace.isDCL(projectDir)) {
+                promises.push(workspace.getProject({ path: projectDir, opts }));
               }
               // eslint-disable-next-line no-empty
             } catch (_) {}
@@ -212,8 +211,8 @@ export function initializeWorkspace(services: Services) {
   async function getWorkspace(): Promise<Workspace> {
     const cfg = await config.getConfig();
     const [[projects, missing], templates] = await Promise.all([
-      getProjects(cfg.workspace.paths),
-      getTemplates(),
+      workspace.getProjects(cfg.workspace.paths),
+      workspace.getTemplates(),
     ]);
 
     return {
@@ -314,7 +313,7 @@ export function initializeWorkspace(services: Services) {
    * @returns A Promise that resolves when the directory has been deleted.
    */
   async function deleteProject(_path: string): Promise<void> {
-    await unlistProjects([_path]);
+    await workspace.unlistProjects([_path]);
   }
 
   /**
@@ -325,18 +324,20 @@ export function initializeWorkspace(services: Services) {
    */
   async function duplicateProject(_path: string): Promise<Project> {
     const scene = await getScene(_path);
-    const available = await getAvailable(scene.display?.title || NEW_SCENE_NAME);
+    const available = await workspace.getAvailable(scene.display?.title || NEW_SCENE_NAME);
 
     await fs.cp(_path, available.path, { recursive: true });
     scene.display = { ...scene.display, title: available.name };
     await fs.writeFile(path.join(available.path, 'scene.json'), JSON.stringify(scene, null, 2));
-    const project = await getProject({ path: available.path });
+    const project = await workspace.getProject({ path: available.path });
     return project;
   }
 
   async function isProjectPathAvailable(projectPath: string): Promise<boolean> {
     const cfg = await config.getConfig();
-    const [projects] = await getProjects(cfg.workspace.paths, { omitOutdatedPackages: true });
+    const [projects] = await workspace.getProjects(cfg.workspace.paths, {
+      omitOutdatedPackages: true,
+    });
     const projectAlreadyExists = projects.find($ => $.path === projectPath);
     return !projectAlreadyExists;
   }
@@ -352,7 +353,7 @@ export function initializeWorkspace(services: Services) {
     if (!projectPath) return undefined;
 
     const pathBaseName = path.basename(projectPath);
-    const isAvailable = await isProjectPathAvailable(projectPath);
+    const isAvailable = await workspace.isProjectPathAvailable(projectPath);
 
     if (!isAvailable) {
       throw new Error(`"${pathBaseName}" is already on the projects library`);
@@ -368,19 +369,19 @@ export function initializeWorkspace(services: Services) {
    * @throws An error if the selected directory is not a valid project.
    */
   async function importProject(): Promise<Project | undefined> {
-    const projectPath = await selectNewProjectPath();
+    const projectPath = await workspace.selectNewProjectPath();
 
     if (!projectPath) return undefined;
 
-    const pathBaseName = path.basename(projectPath);
-    if (!(await isDCL(projectPath))) {
+    if (!(await workspace.isDCL(projectPath))) {
+      const pathBaseName = path.basename(projectPath);
       throw new Error(`"${pathBaseName}" is not a valid project`);
     }
 
     // update workspace on config file with new path
     await config.setConfig(config => config.workspace.paths.push(projectPath));
 
-    const project = await getProject({ path: projectPath });
+    const project = await workspace.getProject({ path: projectPath });
     return project;
   }
 
@@ -392,8 +393,8 @@ export function initializeWorkspace(services: Services) {
    * @throws An error if the selected directory is not a valid project.
    */
   async function reimportProject(_path: string): Promise<Project | undefined> {
-    const project = await importProject();
-    if (project) await unlistProjects([_path]);
+    const project = await workspace.importProject();
+    if (project) await workspace.unlistProjects([_path]);
     return project;
   }
 
@@ -414,7 +415,7 @@ export function initializeWorkspace(services: Services) {
     thumbnail: string;
   }): Promise<void> {
     const scene = await getScene(scenePath);
-    const thumbnailPath = getProjectThumbnailPath();
+    const thumbnailPath = workspace.getProjectThumbnailPath();
     await fs.writeFile(path.join(scenePath, thumbnailPath), thumbnailContent, {
       encoding: 'base64',
     });
@@ -428,32 +429,25 @@ export function initializeWorkspace(services: Services) {
     }
   }
 
+  // TODO: move this to an invoke call on main/src/modules/electron.ts
+  /* v8 ignore next 4 */
   async function openFolder(_path: string) {
     const error = await shell.openPath(_path);
     if (error) throw new Error(error);
   }
 
-  async function getConfigPath(_path: string) {
-    return ipc.invoke('electron.getWorkspaceConfigPath', _path);
-  }
-
-  async function getProjectInfoFs(_path: string) {
-    const configPath = await getConfigPath(_path);
-    const projectInfoPath = path.join(configPath, 'project.json');
-    const projectInfo = await FileSystemStorage.getOrCreate<ProjectInfo>(projectInfoPath);
-    return projectInfo;
-  }
-
   async function updateProjectInfo({ path, info }: { path: string; info: Partial<ProjectInfo> }) {
-    const projectInfoFs = await getProjectInfoFs(path);
+    const projectInfoFs = await services.project.getProjectInfoFs(path);
     const projectInfo = await projectInfoFs.getAll();
     await projectInfoFs.setAll({ ...projectInfo, ...info });
   }
 
-  return {
+  const workspace = {
     isDCL,
     isEmpty,
     hasNodeModules,
+    getOldProjectThumbnailPath,
+    getProjectThumbnailPath,
     getProjectThumbnailAsBase64,
     getOutdatedPackages,
     getProject,
@@ -469,11 +463,11 @@ export function initializeWorkspace(services: Services) {
     reimportProject,
     saveThumbnail,
     openFolder,
-    getConfigPath,
-    getProjectInfoFs,
     updateProjectInfo,
     importProject,
     isProjectPathAvailable,
     selectNewProjectPath,
   };
+
+  return workspace;
 }
