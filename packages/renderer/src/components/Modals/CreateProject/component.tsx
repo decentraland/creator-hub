@@ -29,11 +29,11 @@ export function CreateProject({ open, initialValue, onClose, onSubmit }: Props) 
 
   const validate = useCallback(async () => {
     setLoading(true);
-    const valid = await validateProjectPath(value.path);
+    const valid = await validateProjectPath(`${value.path}/${value.name}`);
     if (!valid) setError(t('modal.create_project.errors.path_exists'));
     setLoading(false);
     return valid;
-  }, [value.path, validateProjectPath]);
+  }, [value, validateProjectPath]);
 
   const handleChange = useCallback(
     (key: keyof Value) => (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,9 +46,8 @@ export function CreateProject({ open, initialValue, onClose, onSubmit }: Props) 
   const handleOpenFolder = useCallback(async () => {
     setError(null);
     setLoading(true);
-    const [folder, error] = await selectNewProjectPath();
+    const folder = await selectNewProjectPath();
     setLoading(false);
-    if (error) return setError(t('modal.create_project.errors.path_exists'));
     if (folder) setValue({ ...value, path: folder });
   }, [value]);
 
@@ -93,7 +92,6 @@ export function CreateProject({ open, initialValue, onClose, onSubmit }: Props) 
             color="secondary"
             value={value.path}
             onChange={handleChange('path')}
-            error={!!error}
             onBlur={validate}
             endAdornment={
               <InputAdornment position="end">

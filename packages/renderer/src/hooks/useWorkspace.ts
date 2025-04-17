@@ -28,10 +28,13 @@ export const useWorkspace = () => {
     navigate('/editor');
   }, []);
 
-  const createProject = useCallback((opts?: { name?: string; repo?: string; path?: string }) => {
-    dispatch(workspaceActions.createProjectAndInstall(opts));
-    navigate('/editor');
-  }, []);
+  const createProject = useCallback(
+    (opts: Parameters<typeof workspaceActions.createProjectAndInstall>[0]) => {
+      dispatch(workspaceActions.createProjectAndInstall(opts));
+      navigate('/editor');
+    },
+    [],
+  );
 
   const deleteProject = useCallback((project: Project) => {
     dispatch(workspaceActions.deleteProject(project.path));
@@ -75,7 +78,7 @@ export const useWorkspace = () => {
   }, []);
 
   const selectNewProjectPath = useCallback(async () => {
-    const result = await tryCatch(workspacePreload.selectNewProjectPath());
+    const result = await workspacePreload.selectNewProjectPath();
     return result;
   }, []);
 

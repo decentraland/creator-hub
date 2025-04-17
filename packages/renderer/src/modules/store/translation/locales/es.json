@@ -251,7 +251,7 @@
         "create": "Crear"
       },
       "errors": {
-        "path_exists": "La ruta no existe o ya está en uso"
+        "path_exists": "La ruta ya existe"
       }
     }
   },

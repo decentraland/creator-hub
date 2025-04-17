@@ -268,11 +268,12 @@ export function initializeWorkspace(services: Services) {
     const templateRepo = opts?.repo ?? EMPTY_SCENE_TEMPLATE_REPO;
 
     try {
-      await fs.mkdir(projectPath, { recursive: true });
+      const fullName = projectPath.endsWith(name) ? projectPath : path.join(projectPath, name);
+      await fs.mkdir(fullName, { recursive: true });
 
-      await ipc.invoke('cli.init', projectPath, templateRepo);
+      await ipc.invoke('cli.init', fullName, templateRepo);
 
-      const scene = await getScene(projectPath);
+      const scene = await getScene(fullName);
       scene.display!.title = name;
 
       // Remove worldConfiguration for non-empty templates
@@ -280,15 +281,15 @@ export function initializeWorkspace(services: Services) {
         delete scene.worldConfiguration;
       }
 
-      const sceneJsonPath = path.join(projectPath, 'scene.json');
+      const sceneJsonPath = path.join(fullName, 'scene.json');
       await fs.writeFile(sceneJsonPath, JSON.stringify(scene, null, 2));
 
       await config.setConfig(config => {
-        config.workspace.paths.push(projectPath);
+        config.workspace.paths.push(fullName);
         return config;
       });
 
-      return { path: projectPath };
+      return { path: fullName };
     } catch (error: any) {
       throw new Error(`Failed to create project "${name}": ${error.message}`);
     }
@@ -337,7 +338,8 @@ export function initializeWorkspace(services: Services) {
   async function isProjectPathAvailable(projectPath: string): Promise<boolean> {
     const cfg = await config.getConfig();
     const [projects] = await getProjects(cfg.workspace.paths, { omitOutdatedPackages: true });
-    const projectAlreadyExists = projects.find($ => $.path === projectPath);
+    const projectPathNormalized = path.normalize(projectPath);
+    const projectAlreadyExists = projects.find($ => $.path === projectPathNormalized);
     return !projectAlreadyExists;
   }
 
@@ -348,15 +350,6 @@ export function initializeWorkspace(services: Services) {
       properties: ['openDirectory', 'createDirectory'],
       defaultPath: cfg.settings.scenesPath,
     });
-
-    if (!projectPath) return undefined;
-
-    const pathBaseName = path.basename(projectPath);
-    const isAvailable = await isProjectPathAvailable(projectPath);
-
-    if (!isAvailable) {
-      throw new Error(`"${pathBaseName}" is already on the projects library`);
-    }
 
     return projectPath;
   }
@@ -373,7 +366,15 @@ export function initializeWorkspace(services: Services) {
     if (!projectPath) return undefined;
 
     const pathBaseName = path.basename(projectPath);
-    if (!(await isDCL(projectPath))) {
+    const isAvailable = await isProjectPathAvailable(projectPath);
+
+    if (!isAvailable) {
+      throw new Error(`"${pathBaseName}" is already on the projects library`);
+    }
+
+    const isDCLProject = await isDCL(projectPath);
+
+    if (!isDCLProject) {
       throw new Error(`"${pathBaseName}" is not a valid project`);
     }
 
