@@ -132,6 +132,7 @@ describe('initializeWorkspace', () => {
     it('should create a project with custom name and path', async () => {
       const customName = 'My Custom Project';
       const customPath = '/custom/path';
+      const fullName = services.path.join(customPath, customName);
 
       const workspace = initializeWorkspace(services);
       const result = await workspace.createProject({
@@ -139,19 +140,21 @@ describe('initializeWorkspace', () => {
         path: customPath,
       });
 
-      expect(services.fs.mkdir).toHaveBeenCalledWith(customPath, { recursive: true });
+      expect(services.fs.mkdir).toHaveBeenCalledWith(fullName, {
+        recursive: true,
+      });
       expect(services.ipc.invoke).toHaveBeenCalledWith(
         'cli.init',
-        customPath,
+        fullName,
         EMPTY_SCENE_TEMPLATE_REPO,
       );
-      expect(getScene).toHaveBeenCalledWith(customPath);
+      expect(getScene).toHaveBeenCalledWith(fullName);
       expect(services.fs.writeFile).toHaveBeenCalledWith(
-        `${customPath}/scene.json`,
+        services.path.join(fullName, 'scene.json'),
         JSON.stringify({ display: { title: customName }, worldConfiguration: {} }, null, 2),
       );
       expect(result).toEqual({
-        path: customPath,
+        path: fullName,
       });
     });
 

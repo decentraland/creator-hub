@@ -42,7 +42,12 @@ export function TemplatesPage() {
       const [data, error] = await getAvailableProject();
       if (!error) {
         const { name, path } = data;
-        setOpenModal({ type: 'create-project', payload: { name, path, repo } });
+        const payload = {
+          name,
+          path: path.endsWith(name) ? path.slice(0, -name.length) : path,
+          repo,
+        };
+        setOpenModal({ type: 'create-project', payload });
       }
     },
     [],

@@ -251,7 +251,7 @@
         "create": "Create"
       },
       "errors": {
-        "path_exists": "Path does not exist or is already in use"
+        "path_exists": "Path already exists"
       }
     }
   },
