@@ -212,7 +212,7 @@ export function initializeWorkspace(services: Services) {
   async function getWorkspace(): Promise<Workspace> {
     const cfg = await config.getConfig();
     const [[projects, missing], templates] = await Promise.all([
-      getProjects(cfg.workspace.paths),
+      getProjects(cfg.workspace.paths, { omitOutdatedPackages: true }),
       getTemplates(),
     ]);
 
