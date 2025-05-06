@@ -22,7 +22,7 @@ export const dispatchWithRetry = async <TReturn, TArg, TRejectValue>(
     if (signal?.aborted) throw new Error('Operation aborted');
 
     try {
-      return await dispatch(thunk(arg)).unwrap();
+      return await dispatch(thunk(arg as any)).unwrap();
     } catch (error) {
       if (attempt === maxRetries || !shouldRetry(error, attempt)) throw error;
 
