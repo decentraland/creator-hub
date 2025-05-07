@@ -200,8 +200,14 @@
             "failed": "Error"
           },
           "errors": {
-            "catalyst_deploy": "Catalyst deployment failed. Try again later...",
-            "max_retries": "Max retries reached. Deployment failed.<br></br>Here is the error: {error}"
+            "fetch": "Failed to fetch deployment information.",
+            "catalyst": "Catalyst deployment failed. Try again later...",
+            "max_retries": "Maximum number of retries reached.}",
+            "not_found": "Deployment not found. Initialize it first.",
+            "failed": "Deployment failed.",
+            "unknown": "Unknown error.",
+            "invalid_url": "Invalid URL.",
+            "invalid_identity": "Invalid identity."
           },
           "actions": {
             "report_issue": "Report an issue",

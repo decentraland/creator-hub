@@ -38,7 +38,7 @@ export const fetchInfo = async (url: string): Promise<Info> => {
 export const deploy = async (
   url: string,
   payload: {
-    address: string;
+    wallet: string;
     authChain: AuthChain;
     chainId: ChainId;
   },
@@ -218,7 +218,7 @@ export async function checkDeploymentStatus(
       const status = await fetchStatus();
       if (!equal(currentStatus, status)) _onChange(status);
     } catch (e: any) {
-      error = new DeploymentError('FETCH', 'Fetch deployment status failed.', e);
+      error = new DeploymentError('FETCH', currentStatus, e);
       console.error(error);
     }
 
@@ -240,12 +240,7 @@ export async function checkDeploymentStatus(
   }
 
   // if maximum retries are reached, log the error and throw
-  const maxRetriesError = new DeploymentError(
-    'MAX_RETRIES',
-    'Max retries reached. Deployment failed.',
-    currentStatus,
-    error,
-  );
+  const maxRetriesError = new DeploymentError('MAX_RETRIES', currentStatus, error);
   console.error(maxRetriesError);
   throw maxRetriesError;
 }
@@ -271,11 +266,15 @@ export function checkDeploymentCompletion(
   return completedCount / total >= percentage;
 }
 
-export function getAvailableCatalystServer(triedServers: Set<string>, chainId: ChainId): string {
+export function getCatalystServers(chainId: ChainId) {
   const network = chainId === ChainId.ETHEREUM_SEPOLIA ? 'sepolia' : 'mainnet';
+  return getCatalystServersFromCache(network);
+}
+
+export function getAvailableCatalystServer(triedServers: Set<string>, chainId: ChainId): string {
   const availableServers = [];
 
-  for (const server of getCatalystServersFromCache(network)) {
+  for (const server of getCatalystServers(chainId)) {
     if (!triedServers.has(server.address)) {
       availableServers.push(server.address);
     }
