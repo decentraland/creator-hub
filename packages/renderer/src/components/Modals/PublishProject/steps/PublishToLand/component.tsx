@@ -61,7 +61,7 @@ export function PublishToLand(props: Props) {
       worldConfiguration: undefined, // Cannot deploy to a LAND with a world configuration
       updatedAt: Date.now(),
     });
-    void publishScene({
+    publishScene({
       target: import.meta.env.VITE_CATALYST_SERVER || DEPLOY_URLS.CATALYST_SERVER,
     });
     props.onStep('deploy');

@@ -254,6 +254,17 @@
   margin-right: 12px;
 }
 
+.Deploy .scene .Deploying .header .error {
+  color: var(--error);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.Deploy .scene .Deploying .header .error .ExpandMore {
+  margin-left: -4px;
+}
+
 .Deploy .scene .Deploying .ConnectedSteps {
   margin-bottom: 30px;
 }

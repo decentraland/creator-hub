@@ -1,13 +1,14 @@
-import { minutes, seconds } from '/shared/time';
 import equal from 'fast-deep-equal';
 import type { AuthIdentity } from 'decentraland-crypto-fetch';
 import { type AuthChain, Authenticator } from '@dcl/crypto';
 import { ChainId } from '@dcl/schemas';
 import { getCatalystServersFromCache } from 'dcl-catalyst-client/dist/contracts-snapshots';
+import { type SerializedError } from '@reduxjs/toolkit';
 
+import { t } from '/@/modules/store/translation/utils';
+import { minutes, seconds } from '/shared/time';
 import { delay } from '/shared/utils';
 import { DEPLOY_URLS, type Info } from '/shared/types/deploy';
-
 import {
   type AssetBundleRegistryResponse,
   type Status,
@@ -43,8 +44,6 @@ export const deploy = async (
     chainId: ChainId;
   },
 ) => {
-  if (!url) throw new Error('Invalid URL');
-
   const resp = await fetch(`${url}/deploy`, {
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
@@ -218,7 +217,7 @@ export async function checkDeploymentStatus(
       const status = await fetchStatus();
       if (!equal(currentStatus, status)) _onChange(status);
     } catch (e: any) {
-      error = new DeploymentError('FETCH', currentStatus, e);
+      error = new DeploymentError('FETCH_STATUS', currentStatus, e);
       console.error(error);
     }
 
@@ -286,4 +285,25 @@ export function getAvailableCatalystServer(triedServers: Set<string>, chainId: C
 
   const randomIndex = Math.floor(Math.random() * availableServers.length);
   return availableServers[randomIndex];
+}
+
+export function translateError(error: SerializedError) {
+  switch (error.name) {
+    case 'INVALID_URL':
+      return t('modal.publish_project.deploy.deploying.errors.invalid_url');
+    case 'INVALID_IDENTITY':
+      return t('modal.publish_project.deploy.deploying.errors.invalid_identity');
+    case 'MAX_RETRIES':
+      return t('modal.publish_project.deploy.deploying.errors.max_retries');
+    case 'FETCH_STATUS':
+      return t('modal.publish_project.deploy.deploying.errors.fetch_status');
+    case 'CATALYST_SERVERS_EXHAUSTED':
+      return t('modal.publish_project.deploy.deploying.errors.catalyst');
+    case 'DEPLOYMENT_NOT_FOUND':
+      return t('modal.publish_project.deploy.deploying.errors.not_found');
+    case 'DEPLOYMENT_FAILED':
+      return t('modal.publish_project.deploy.deploying.errors.failed');
+    default:
+      return t('modal.publish_project.deploy.deploying.errors.unknown');
+  }
 }
