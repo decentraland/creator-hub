@@ -22,6 +22,7 @@ import { PublishModal } from '/@/components/Modals/PublishProject/PublishModal';
 import { ConnectedSteps } from '/@/components/Step';
 import { Button } from '/@/components/Button';
 import { Loader } from '/@/components/Loader';
+import { ExpandMore } from '/@/components/ExpandMore';
 
 import type { Step } from '/@/components/Step/types';
 import type { Props } from '/@/components/Modals/PublishProject/types';
@@ -234,7 +235,7 @@ export function Deploy(props: Props) {
 
 type IdleProps = {
   files: File[];
-  error?: string;
+  error?: Deployment['error'];
   onClick: () => void;
 };
 
@@ -269,7 +270,7 @@ function Idle({ files, error, onClick }: IdleProps) {
         ))}
       </div>
       <div className="actions">
-        <p className="error">{error}</p>
+        <p className="error">{error?.message}</p>
         <Button
           size="large"
           onClick={onClick}
@@ -354,10 +355,20 @@ function Deploying({ deployment, url, onClick, onRetry }: DeployingProps) {
           {overallStatus === 'failed' ? <div className="Warning" /> : <Loader />}
           <Typography variant="h5">{title}</Typography>
         </div>
-        {overallStatus === 'failed' && (
+        {overallStatus === 'failed' && !error && (
           <span>{t('modal.publish_project.deploy.deploying.try_again')}</span>
         )}
-        {error && <span>{error}</span>}
+        {error && (
+          <span className="error">
+            {error.message}
+            {error.cause && (
+              <ExpandMore
+                title={t('modal.publish_project.deploy.deploying.errors.details')}
+                text={error.cause}
+              />
+            )}
+          </span>
+        )}
       </div>
       <ConnectedSteps steps={steps} />
       {overallStatus === 'failed' ? (

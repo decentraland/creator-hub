@@ -5,6 +5,7 @@ import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
 
 import type { DeploymentComponentsStatus, Info, Status } from '/shared/types/deploy';
 import { DeploymentError, isDeploymentError } from '/shared/types/deploy';
+import { delay } from '/shared/utils';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
@@ -22,9 +23,9 @@ import {
   fetchInfo,
   fetchFiles,
   getAvailableCatalystServer,
+  translateError,
   getCatalystServers,
 } from './utils';
-import { delay } from '@reduxjs/toolkit/dist/utils';
 
 export interface Deployment {
   path: string;
@@ -35,7 +36,7 @@ export interface Deployment {
   chainId: ChainId;
   identity: AuthIdentity;
   status: Status;
-  error?: string;
+  error?: { message: string; cause?: string };
   componentsStatus: DeploymentComponentsStatus;
   lastUpdated: number;
 }
@@ -226,10 +227,12 @@ const deploymentSlice = createSlice({
       .addCase(executeDeployment.rejected, (state, action) => {
         const path = action.meta.arg;
         const deployment = state.deployments[path];
-        console.log('asd error', action.error);
         if (deployment) {
           deployment.status = 'failed';
-          deployment.error = action.error.message || 'Unknown error';
+          deployment.error = {
+            message: translateError(action.error),
+            cause: action.error.message,
+          };
           deployment.lastUpdated = Date.now();
         }
       });

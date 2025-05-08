@@ -1,5 +1,3 @@
-import { t } from '/@/modules/store/translation/utils';
-
 import { ErrorBase } from '/shared/types/error';
 
 export const DEPLOY_URLS = {
@@ -52,59 +50,28 @@ export type AssetBundleRegistryResponse = {
   };
 };
 
-export type Error =
+export type ErrorName =
   | 'MAX_RETRIES'
-  | 'FETCH'
+  | 'FETCH_STATUS'
   | 'CATALYST_SERVERS_EXHAUSTED'
   | 'DEPLOYMENT_NOT_FOUND'
   | 'DEPLOYMENT_FAILED'
   | 'INVALID_URL'
   | 'INVALID_IDENTITY';
 
-export class DeploymentError extends ErrorBase<Error> {
+export class DeploymentError extends ErrorBase<ErrorName> {
   constructor(
-    public name: Error,
+    public name: ErrorName,
     public status: DeploymentComponentsStatus,
-    public cause?: any,
-    public message = '',
+    public error?: Error,
   ) {
-    super(name, message, cause);
-    this.status = status;
-
-    if (!message) {
-      switch (name) {
-        case 'INVALID_URL':
-          this.message = t('modal.publish_project.deploy.deploying.errors.invalid_url');
-          break;
-        case 'INVALID_IDENTITY':
-          this.message = t('modal.publish_project.deploy.deploying.errors.invalid_identity');
-          break;
-        case 'MAX_RETRIES':
-          this.message = t('modal.publish_project.deploy.deploying.errors.max_retries');
-          break;
-        case 'FETCH':
-          this.message = t('modal.publish_project.deploy.deploying.errors.fetch');
-          break;
-        case 'CATALYST_SERVERS_EXHAUSTED':
-          this.message = t('modal.publish_project.deploy.deploying.errors.catalyst');
-          break;
-        case 'DEPLOYMENT_NOT_FOUND':
-          this.message = t('modal.publish_project.deploy.deploying.errors.not_found');
-          break;
-        case 'DEPLOYMENT_FAILED':
-          this.message = t('modal.publish_project.deploy.deploying.errors.failed');
-          break;
-        default:
-          this.message = t('modal.publish_project.deploy.deploying.errors.unknown');
-          break;
-      }
-    }
+    super(name, error?.message);
   }
 }
 
 export const isDeploymentError = (
   error: unknown,
-  type: Error | Error[] | '*',
+  type: ErrorName | ErrorName[] | '*',
 ): error is DeploymentError =>
   error instanceof DeploymentError &&
   (Array.isArray(type) ? type.includes(error.name) : type === '*' || error.name === type);

@@ -40,10 +40,12 @@ export const useDeploy = () => {
     [dispatch],
   );
 
-  const deriveOverallStatus = useCallback(
-    (deployment: Deployment) => _deriveOverallStatus(deployment.componentsStatus),
-    [],
-  );
+  const deriveOverallStatus = useCallback((deployment: Deployment) => {
+    if (deployment.status === 'failed') {
+      return 'failed';
+    }
+    return _deriveOverallStatus(deployment.componentsStatus);
+  }, []);
 
   const isDeployFinishing = useCallback(
     (deployment: Deployment) => checkDeploymentCompletion(deployment.componentsStatus),

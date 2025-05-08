@@ -27,9 +27,9 @@ export const useEditor = () => {
   }, [dispatch, editorActions.startInspector]);
 
   const publishScene = useCallback(
-    async (opts: Omit<DeployOptions, 'path'> = {}) => {
+    (opts: Omit<DeployOptions, 'path'> = {}) => {
       if (project && chainId && wallet) {
-        editorActions.publishScene({ ...opts, path: project.path, chainId, wallet });
+        dispatch(editorActions.publishScene({ ...opts, path: project.path, chainId, wallet }));
       }
     },
     [project, editorActions.publishScene, chainId, wallet],
