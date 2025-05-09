@@ -123,6 +123,10 @@
   color: #a09ba8;
 }
 
+.Deploy .scene .files .list .file.invalid {
+  color: var(--error);
+}
+
 .Deploy .scene .files .list .file:last-child {
   border-bottom: none;
 }

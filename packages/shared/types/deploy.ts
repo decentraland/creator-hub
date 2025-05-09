@@ -57,7 +57,8 @@ export type ErrorName =
   | 'DEPLOYMENT_NOT_FOUND'
   | 'DEPLOYMENT_FAILED'
   | 'INVALID_URL'
-  | 'INVALID_IDENTITY';
+  | 'INVALID_IDENTITY'
+  | 'MAX_FILE_SIZE_EXCEEDED';
 
 export class DeploymentError extends ErrorBase<ErrorName> {
   constructor(

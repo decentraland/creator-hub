@@ -8,7 +8,7 @@ import { type SerializedError } from '@reduxjs/toolkit';
 import { t } from '/@/modules/store/translation/utils';
 import { minutes, seconds } from '/shared/time';
 import { delay } from '/shared/utils';
-import { DEPLOY_URLS, type Info } from '/shared/types/deploy';
+import { DEPLOY_URLS, type Info, type File } from '/shared/types/deploy';
 import {
   type AssetBundleRegistryResponse,
   type Status,
@@ -16,6 +16,8 @@ import {
   type DeploymentComponentsStatus,
   DeploymentError,
 } from '/shared/types/deploy';
+
+export const MAX_FILE_SIZE_BYTES = 50 * 1e6; // 50MB defined in sdk-commands...
 
 export const getDeploymentUrl = (publishPort: number) => {
   const port = import.meta.env.VITE_CLI_DEPLOY_PORT || publishPort;
@@ -35,6 +37,10 @@ export const fetchInfo = async (url: string): Promise<Info> => {
   if (!resp.ok) throw new Error('Failed to fetch info');
   return resp.json();
 };
+
+export function getInvalidFiles(files: File[]) {
+  return files.filter(file => file.size > MAX_FILE_SIZE_BYTES).map(file => file.name);
+}
 
 export const deploy = async (
   url: string,
@@ -303,6 +309,10 @@ export function translateError(error: SerializedError) {
       return t('modal.publish_project.deploy.deploying.errors.not_found');
     case 'DEPLOYMENT_FAILED':
       return t('modal.publish_project.deploy.deploying.errors.failed');
+    case 'MAX_FILE_SIZE_EXCEEDED':
+      return t('modal.publish_project.deploy.deploying.errors.max_file_size_exceeded', {
+        maxFileSizeInMb: MAX_FILE_SIZE_BYTES / 1e6,
+      });
     default:
       return t('modal.publish_project.deploy.deploying.errors.unknown');
   }

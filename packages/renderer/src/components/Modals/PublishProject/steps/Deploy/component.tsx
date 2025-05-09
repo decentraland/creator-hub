@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import cx from 'classnames';
 import { ChainId } from '@dcl/schemas';
 import { Typography, Checkbox } from 'decentraland-ui2';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
@@ -14,6 +15,7 @@ import { useSnackbar } from '/@/hooks/useSnackbar';
 import { useDeploy } from '/@/hooks/useDeploy';
 
 import { type Deployment } from '/@/modules/store/deployment/slice';
+import { getInvalidFiles, MAX_FILE_SIZE_BYTES } from '/@/modules/store/deployment/utils';
 import { t } from '/@/modules/store/translation/utils';
 import { addBase64ImagePrefix } from '/@/modules/image';
 import { REPORT_ISSUES_URL } from '/@/modules/utils';
@@ -240,6 +242,14 @@ type IdleProps = {
 };
 
 function Idle({ files, error, onClick }: IdleProps) {
+  const invalidFiles = getInvalidFiles(files);
+  const errorMessage =
+    invalidFiles.length > 0
+      ? t('modal.publish_project.deploy.deploying.errors.max_file_size_exceeded', {
+          maxFileSizeInMb: MAX_FILE_SIZE_BYTES / 1e6,
+        })
+      : error?.message;
+
   return (
     <div className="files">
       <div className="filters">
@@ -249,14 +259,18 @@ function Idle({ files, error, onClick }: IdleProps) {
         <div className="size">
           {t('modal.publish_project.deploy.files.size', {
             size: getSize(files.reduce((total, file) => total + file.size, 0)),
-            b: (child: string) => <b>{child}</b>,
+            b: (child: string) => (
+              <b>
+                {child}/{MAX_FILE_SIZE_BYTES / 1e6}MB
+              </b>
+            ),
           })}
         </div>
       </div>
       <div className="list">
         {files.map(file => (
           <div
-            className="file"
+            className={cx('file', { invalid: file.size > MAX_FILE_SIZE_BYTES })}
             key={file.name}
           >
             <div
@@ -270,7 +284,7 @@ function Idle({ files, error, onClick }: IdleProps) {
         ))}
       </div>
       <div className="actions">
-        <p className="error">{error?.message}</p>
+        <p className="error">{errorMessage}</p>
         <Button
           size="large"
           onClick={onClick}

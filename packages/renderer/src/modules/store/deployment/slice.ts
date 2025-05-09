@@ -3,7 +3,7 @@ import { Authenticator, type AuthIdentity } from '@dcl/crypto';
 import type { ChainId } from '@dcl/schemas';
 import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
 
-import type { DeploymentComponentsStatus, Info, Status } from '/shared/types/deploy';
+import type { DeploymentComponentsStatus, Info, Status, File } from '/shared/types/deploy';
 import { DeploymentError, isDeploymentError } from '/shared/types/deploy';
 import { delay } from '/shared/utils';
 
@@ -71,13 +71,13 @@ export const initializeDeployment = createAsyncThunk(
       throw new DeploymentError('INVALID_URL', getInitialDeploymentStatus());
     }
 
-    const [info, files] = await Promise.all([fetchInfo(url), fetchFiles(url)]);
-
     const identity = localStorageGetIdentity(wallet);
 
     if (!identity) {
       throw new DeploymentError('INVALID_IDENTITY', getInitialDeploymentStatus());
     }
+
+    const [info, files] = await Promise.all([fetchInfo(url), fetchFiles(url)]);
 
     return { ...payload, url, info, files, identity };
   },
@@ -203,6 +203,25 @@ const deploymentSlice = createSlice({
           componentsStatus: getInitialDeploymentStatus(info.isWorld),
           lastUpdated: Date.now(),
           identity,
+        };
+      })
+      .addCase(initializeDeployment.rejected, (state, action) => {
+        const { path, wallet, chainId } = action.meta.arg;
+        state.deployments[path] = {
+          path,
+          url: '',
+          info: { isWorld: false } as Info,
+          files: [],
+          wallet,
+          chainId,
+          status: 'idle',
+          error: {
+            message: translateError(action.error),
+            cause: action.error.message,
+          },
+          componentsStatus: getInitialDeploymentStatus(),
+          lastUpdated: Date.now(),
+          identity: {} as AuthIdentity,
         };
       })
       .addCase(executeDeployment.pending, (state, action) => {
