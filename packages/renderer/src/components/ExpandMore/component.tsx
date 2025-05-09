@@ -1,20 +1,10 @@
 import { useState } from 'react';
 import { Collapse, IconButton, Typography, Box } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { styled } from '@mui/material/styles';
 
 import type { Props } from './types';
 
 import './styles.css';
-
-const Arrow = styled((props: any) => {
-  return <IconButton {...props} />;
-})(({ theme, expand }: any) => ({
-  transform: !expand ? 'rotate(-90deg)' : 'rotate(0deg)',
-  transition: theme.transitions.create('transform', {
-    duration: theme.transitions.duration.shortest,
-  }),
-}));
 
 export function ExpandMore({ title, text }: Props) {
   const [expanded, setExpanded] = useState(false);
@@ -29,14 +19,20 @@ export function ExpandMore({ title, text }: Props) {
         display="flex"
         alignItems="center"
       >
-        <Arrow
-          expand={expanded}
+        <IconButton
           onClick={handleToggle}
           aria-expanded={expanded}
           aria-label={title || 'show more'}
+          sx={{
+            transform: !expanded ? 'rotate(-90deg)' : 'rotate(0deg)',
+            transition: theme =>
+              theme.transitions.create('transform', {
+                duration: theme.transitions.duration.shortest,
+              }),
+          }}
         >
           <ExpandMoreIcon />
-        </Arrow>
+        </IconButton>
         {title && (
           <Typography
             className="title"
