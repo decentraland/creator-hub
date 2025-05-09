@@ -32,7 +32,7 @@ export const publishScene = createAsyncThunk(
   async (opts: DeployOptions & { chainId: ChainId; wallet: string }, { dispatch }) => {
     const port = await editor.publishScene(opts);
     const deployment = { path: opts.path, port, chainId: opts.chainId, wallet: opts.wallet };
-    await dispatch(deploymentActions.initializeDeployment(deployment)).unwrap();
+    dispatch(deploymentActions.initializeDeployment(deployment));
     return port;
   },
 );
