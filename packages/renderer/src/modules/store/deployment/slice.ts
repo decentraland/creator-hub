@@ -84,7 +84,7 @@ export const initializeDeployment = createAsyncThunk(
 );
 
 export const deploy = createAsyncThunk(
-  'deployment/execute',
+  'deployment/deploy',
   async (deployment: Deployment, { dispatch }): Promise<void> => {
     const { path, info, identity, url, wallet, chainId } = deployment;
     const authChain = Authenticator.signPayload(identity, info.rootCID);
@@ -163,6 +163,7 @@ export const executeDeployment = createAsyncThunk(
           }),
         );
       }
+      console.log('executeDeployment.rejected 3', { path, error });
       throw error;
     }
   },
