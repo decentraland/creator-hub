@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "@reduxjs/toolkit": "^2.2.6",
-    "@sentry/wizard": "^4.2.0",
+    "@sentry/wizard": "^4.8.0",
     "@types/cmd-shim": "^5.0.2",
     "@types/is-running": "^2.1.2",
     "@types/node": "20.14.9",
