@@ -200,8 +200,16 @@
             "failed": "Error"
           },
           "errors": {
-            "catalyst_deploy": "Catalyst deployment failed. Try again later...",
-            "max_retries": "Max retries reached. Deployment failed.<br></br>Here is the error: {error}"
+            "details": "Details",
+            "fetch_status": "Failed to fetch deployment information.\nPlease, try again.",
+            "catalyst": "Deployment to the Catalyst nodes failed.\nPlease retry or check your internet connection.",
+            "max_retries": "Retry limit exceeded.\nPlease, try again later.",
+            "not_found": "Something went wrong.\nPlease, try again.",
+            "failed": "Something went wrong.\nPlease, try again.",
+            "invalid_url": "Something went wrong.\nPlease, try again.",
+            "invalid_identity": "Something went wrong.\nPlease, try again.",
+            "max_file_size_exceeded": "One or more assets exceed the allowed limit ({maxFileSizeInMb}MB).\nOptimize or remove large files and try again.",
+            "unknown": "Something went wrong.\nPlease, try again."
           },
           "actions": {
             "report_issue": "Report an issue",

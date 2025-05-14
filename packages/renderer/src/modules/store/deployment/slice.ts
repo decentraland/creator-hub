@@ -1,14 +1,14 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import { Authenticator } from '@dcl/crypto';
+import { Authenticator, type AuthIdentity } from '@dcl/crypto';
 import type { ChainId } from '@dcl/schemas';
 import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
 
-import type { DeploymentComponentsStatus, Info, Status } from '/shared/types/deploy';
-import { isDeploymentError, isDeploymentErrorMessage } from '/shared/types/deploy';
+import type { DeploymentComponentsStatus, Info, Status, File } from '/shared/types/deploy';
+import { DeploymentError, isDeploymentError } from '/shared/types/deploy';
+import { delay } from '/shared/utils';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
-import { dispatchWithRetry } from '/@/modules/store/utils';
 import { publishScene } from '/@/modules/store/editor/slice';
 import {
   checkDeploymentStatus,
@@ -18,11 +18,13 @@ import {
   getInitialDeploymentStatus,
   retryDelayInMs,
   maxRetries,
-  deploy,
+  deploy as deployFn,
   getDeploymentUrl,
   fetchInfo,
   fetchFiles,
   getAvailableCatalystServer,
+  translateError,
+  getCatalystServers,
 } from './utils';
 
 export interface Deployment {
@@ -32,15 +34,22 @@ export interface Deployment {
   files: File[];
   wallet: string;
   chainId: ChainId;
+  identity: AuthIdentity;
   status: Status;
-  error?: string;
+  error?: { message: string; cause?: string };
   componentsStatus: DeploymentComponentsStatus;
   lastUpdated: number;
-  retryAttempt?: number;
 }
 
 export interface DeploymentState {
   deployments: Record<string, Deployment>;
+}
+
+interface InitializeDeploymentPayload {
+  path: string;
+  port: number;
+  wallet: string;
+  chainId: ChainId;
 }
 
 interface UpdateDeploymentStatusPayload {
@@ -52,133 +61,113 @@ const initialState: DeploymentState = {
   deployments: {},
 };
 
-export const initializeDeployment = createAsyncThunk<
-  {
-    path: string;
-    url: string;
-    info: Info;
-    wallet: string;
-    chainId: ChainId;
-    files: File[];
-    retryAttempt: number;
-  },
-  { path: string; port: number; wallet: string; chainId: ChainId; retryAttempt?: number },
-  { rejectValue: { message: string; info: Info } }
->('deployment/initialize', async (payload, { rejectWithValue }) => {
-  const { path, port, wallet, chainId, retryAttempt = 0 } = payload;
-  const url = getDeploymentUrl(port);
-  if (!url) {
-    return rejectWithValue({ message: 'Invalid URL', info: {} as Info });
-  }
-  const [info, files] = await Promise.all([fetchInfo(url), fetchFiles(url)]);
-  return { path, url, info, wallet, chainId, files, retryAttempt };
-});
+export const initializeDeployment = createAsyncThunk(
+  'deployment/initialize',
+  async (payload: InitializeDeploymentPayload) => {
+    const { port, wallet } = payload;
+    const url = getDeploymentUrl(port);
 
-export const executeDeployment = createAsyncThunk<
-  { info: Info; componentsStatus: DeploymentComponentsStatus },
-  string,
-  { rejectValue: { message: string; info: Info } }
->('deployment/execute', async (path, { dispatch, signal, rejectWithValue, getState }) => {
-  const deployment = getState().deployment.deployments[path];
+    if (!url) {
+      throw new DeploymentError('INVALID_URL', getInitialDeploymentStatus());
+    }
 
-  if (!deployment) {
-    return rejectWithValue({
-      message: 'Deployment not found. Initialize it first.',
-      info: {} as Info,
-    });
-  }
-
-  const { url, info, wallet, chainId } = deployment;
-
-  try {
     const identity = localStorageGetIdentity(wallet);
+
     if (!identity) {
-      return rejectWithValue({ message: 'Invalid identity', info });
+      throw new DeploymentError('INVALID_IDENTITY', getInitialDeploymentStatus());
     }
+
+    const [info, files] = await Promise.all([fetchInfo(url), fetchFiles(url)]);
+
+    return { ...payload, url, info, files, identity };
+  },
+);
+
+export const deploy = createAsyncThunk(
+  'deployment/deploy',
+  async (deployment: Deployment, { dispatch }): Promise<void> => {
+    const { path, info, identity, url, wallet, chainId } = deployment;
     const authChain = Authenticator.signPayload(identity, info.rootCID);
-    await deploy(url, { address: wallet, authChain, chainId });
+    const triedServers = new Set<string>();
+    let retries = getCatalystServers(chainId).length;
+    const delayMs = 1000;
 
-    const fetchStatus = () => fetchDeploymentStatus(info, identity);
-    let isCancelled = false;
-    const shouldAbort = () => signal.aborted || isCancelled;
+    while (retries > 0) {
+      try {
+        return await deployFn(url, { wallet, authChain, chainId });
+      } catch (error: any) {
+        retries--;
+        if (retries <= 0) {
+          const componentsStatus: DeploymentComponentsStatus = {
+            ...deployment.componentsStatus,
+            catalyst: 'failed',
+          };
+          throw new DeploymentError('CATALYST_SERVERS_EXHAUSTED', componentsStatus, error);
+        }
 
-    const onStatusChange = (componentsStatus: DeploymentComponentsStatus) => {
-      isCancelled = deriveOverallStatus(componentsStatus) === 'failed';
-      dispatch(actions.updateDeploymentStatus({ path, componentsStatus }));
-    };
+        await delay(delayMs);
 
-    const currentStatus = getInitialDeploymentStatus(info.isWorld);
-    const componentsStatus = await checkDeploymentStatus(
-      maxRetries,
-      retryDelayInMs,
-      fetchStatus,
-      onStatusChange,
-      shouldAbort,
-      currentStatus,
-    );
+        const selectedServer = getAvailableCatalystServer(triedServers, chainId);
+        triedServers.add(selectedServer);
 
-    if (deriveOverallStatus(componentsStatus) === 'failed') {
-      return rejectWithValue({ message: 'Deployment failed', info });
+        await dispatch(publishScene({ path, target: selectedServer, chainId, wallet })).unwrap();
+      }
+    }
+  },
+);
+
+export const executeDeployment = createAsyncThunk(
+  'deployment/execute',
+  async (path: string, { dispatch, signal, getState }) => {
+    const deployment = getState().deployment.deployments[path];
+
+    if (!deployment) {
+      throw new DeploymentError('DEPLOYMENT_NOT_FOUND', getInitialDeploymentStatus());
     }
 
-    return { info, componentsStatus };
-  } catch (error) {
-    if (isDeploymentError(error, 'MAX_RETRIES')) {
-      dispatch(
-        actions.updateDeploymentStatus({
-          path,
-          componentsStatus: cleanPendingsFromDeploymentStatus(error.status),
-        }),
+    const { info, identity } = deployment;
+
+    try {
+      await dispatch(deploy(deployment)).unwrap();
+
+      const fetchStatus = () => fetchDeploymentStatus(info, identity);
+      let isCancelled = false;
+      const shouldAbort = () => signal.aborted || isCancelled;
+
+      const onStatusChange = (componentsStatus: DeploymentComponentsStatus) => {
+        isCancelled = deriveOverallStatus(componentsStatus) === 'failed';
+        dispatch(actions.updateDeploymentStatus({ path, componentsStatus }));
+      };
+
+      const currentStatus = getInitialDeploymentStatus(info.isWorld);
+      const componentsStatus = await checkDeploymentStatus(
+        maxRetries,
+        retryDelayInMs,
+        fetchStatus,
+        onStatusChange,
+        shouldAbort,
+        currentStatus,
       );
+
+      if (deriveOverallStatus(componentsStatus) === 'failed') {
+        throw new DeploymentError('DEPLOYMENT_FAILED', componentsStatus);
+      }
+
+      return { info, componentsStatus };
+    } catch (error: any) {
+      if (isDeploymentError(error, '*')) {
+        dispatch(
+          actions.updateDeploymentStatus({
+            path,
+            componentsStatus: cleanPendingsFromDeploymentStatus(error.status),
+          }),
+        );
+      }
+      console.log('executeDeployment.rejected 3', { path, error });
+      throw error;
     }
-    return rejectWithValue({
-      message: error instanceof Error ? error.message : 'Unknown error',
-      info,
-    });
-  }
-});
-
-export const executeDeploymentWithRetry = createAsyncThunk<
-  { info: Info; componentsStatus: DeploymentComponentsStatus },
-  string,
-  { rejectValue: { message: string; info: Info } }
->('deployment/executeWithRetry', async (path, { dispatch, rejectWithValue, getState }) => {
-  const deployment = getState().deployment.deployments[path];
-  if (!deployment) {
-    return rejectWithValue({
-      message: 'Deployment not found. Initialize it first.',
-      info: {} as Info,
-    });
-  }
-
-  const { wallet, chainId } = deployment;
-  const triedServers = new Set<string>();
-
-  const result = await dispatchWithRetry(dispatch, executeDeployment, path, {
-    maxRetries: 3,
-    delayMs: 1000,
-    shouldRetry: (error, attempt) => {
-      return triedServers.size <= attempt && !isDeploymentErrorMessage(error);
-    },
-    onFailure: async (_, attempt) => {
-      const selectedServer = getAvailableCatalystServer(triedServers, chainId);
-      triedServers.add(selectedServer);
-
-      const port = await dispatch(publishScene({ path, target: selectedServer })).unwrap();
-
-      await dispatch(
-        initializeDeployment({
-          path,
-          port,
-          chainId,
-          wallet,
-          retryAttempt: attempt + 1,
-        }),
-      ).unwrap();
-    },
-  });
-  return result;
-});
+  },
+);
 
 const deploymentSlice = createSlice({
   name: 'deployment',
@@ -203,7 +192,7 @@ const deploymentSlice = createSlice({
   extraReducers: builder => {
     builder
       .addCase(initializeDeployment.fulfilled, (state, action) => {
-        const { path, url, info, wallet, chainId, files, retryAttempt = 0 } = action.payload;
+        const { path, url, info, wallet, chainId, files, identity } = action.payload;
         state.deployments[path] = {
           path,
           url,
@@ -214,7 +203,26 @@ const deploymentSlice = createSlice({
           status: 'idle',
           componentsStatus: getInitialDeploymentStatus(info.isWorld),
           lastUpdated: Date.now(),
-          retryAttempt: retryAttempt,
+          identity,
+        };
+      })
+      .addCase(initializeDeployment.rejected, (state, action) => {
+        const { path, wallet, chainId } = action.meta.arg;
+        state.deployments[path] = {
+          path,
+          url: '',
+          info: { isWorld: false } as Info,
+          files: [],
+          wallet,
+          chainId,
+          status: 'idle',
+          error: {
+            message: translateError(action.error),
+            cause: action.error.message,
+          },
+          componentsStatus: getInitialDeploymentStatus(),
+          lastUpdated: Date.now(),
+          identity: {} as AuthIdentity,
         };
       })
       .addCase(executeDeployment.pending, (state, action) => {
@@ -241,7 +249,10 @@ const deploymentSlice = createSlice({
         const deployment = state.deployments[path];
         if (deployment) {
           deployment.status = 'failed';
-          deployment.error = action.payload?.message || 'Unknown error';
+          deployment.error = {
+            message: translateError(action.error),
+            cause: action.error.message,
+          };
           deployment.lastUpdated = Date.now();
         }
       });
@@ -252,7 +263,6 @@ export const actions = {
   ...deploymentSlice.actions,
   initializeDeployment,
   executeDeployment,
-  executeDeploymentWithRetry,
 };
 
 export const reducer = deploymentSlice.reducer;
