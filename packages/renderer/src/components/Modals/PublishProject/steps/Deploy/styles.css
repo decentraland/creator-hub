@@ -123,10 +123,6 @@
   color: #a09ba8;
 }
 
-.Deploy .scene .files .list .file.invalid {
-  color: var(--error);
-}
-
 .Deploy .scene .files .list .file:last-child {
   border-bottom: none;
 }
@@ -256,17 +252,6 @@
   background-size: contain;
   width: 40px;
   margin-right: 12px;
-}
-
-.Deploy .scene .Deploying .header .error {
-  color: var(--error);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.Deploy .scene .Deploying .header .error .ExpandMore {
-  margin-left: -4px;
 }
 
 .Deploy .scene .Deploying .ConnectedSteps {

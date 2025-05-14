@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChainId } from '@dcl/schemas';
 import { createTestStore } from '../../../../tests/utils/testStore';
-import { executeDeployment, initializeDeployment } from './slice';
+import { executeDeploymentWithRetry, initializeDeployment } from './slice';
+import { deploy, checkDeploymentStatus } from './utils';
 
 const TEST_PATH = '/test/path';
 const TEST_WALLET = '0x123';
@@ -35,8 +36,7 @@ vi.mock('./utils', async () => {
   const actual = await vi.importActual('./utils');
   return {
     ...actual,
-    getDeploymentUrl: vi.fn().mockReturnValue('http://localhost:3000/api'),
-    deploy: vi.fn().mockResolvedValue(undefined),
+    deploy: vi.fn(),
     checkDeploymentStatus: vi.fn(),
     fetchFiles: vi.fn().mockResolvedValue([]),
     fetchInfo: vi.fn().mockResolvedValue({
@@ -45,8 +45,6 @@ vi.mock('./utils', async () => {
     }),
   };
 });
-
-import { deploy, checkDeploymentStatus } from './utils';
 
 describe('deployment slice', () => {
   let store: ReturnType<typeof createTestStore>;
@@ -81,6 +79,10 @@ describe('deployment slice', () => {
     });
   };
 
+  const mockDeployAlwaysFail = () => {
+    vi.mocked(deploy).mockRejectedValue(new Error('Failed'));
+  };
+
   const mockCheckStatus = (status = 'complete') => {
     vi.mocked(checkDeploymentStatus).mockResolvedValue({ status });
   };
@@ -95,7 +97,7 @@ describe('deployment slice', () => {
     vi.clearAllMocks();
   });
 
-  describe('executeDeployment', () => {
+  describe('executeDeploymentWithRetry', () => {
     describe('when deployment exists', () => {
       beforeEach(async () => {
         store = await initDeploymentStore();
@@ -104,7 +106,7 @@ describe('deployment slice', () => {
       });
 
       it('should execute deployment successfully', async () => {
-        const result = await store.dispatch(executeDeployment(TEST_PATH)).unwrap();
+        const result = await store.dispatch(executeDeploymentWithRetry(TEST_PATH)).unwrap();
         expect(result).toEqual({
           info: TEST_SCENE_INFO,
           componentsStatus: { status: 'complete' },
@@ -112,7 +114,7 @@ describe('deployment slice', () => {
       });
 
       it('should not retry on success', async () => {
-        await store.dispatch(executeDeployment(TEST_PATH)).unwrap();
+        await store.dispatch(executeDeploymentWithRetry(TEST_PATH)).unwrap();
         expect(deploy).toHaveBeenCalledTimes(1);
       });
     });
@@ -130,7 +132,7 @@ describe('deployment slice', () => {
       });
 
       it('should retry with new server', async () => {
-        const resultPromise = store.dispatch(executeDeployment(TEST_PATH));
+        const resultPromise = store.dispatch(executeDeploymentWithRetry(TEST_PATH));
         await advanceRetryTimers(1);
         const result = await resultPromise.unwrap();
 
@@ -142,7 +144,7 @@ describe('deployment slice', () => {
       });
 
       it('should track deployment attempts', async () => {
-        const resultPromise = store.dispatch(executeDeployment(TEST_PATH));
+        const resultPromise = store.dispatch(executeDeploymentWithRetry(TEST_PATH));
         await advanceRetryTimers(1);
         await resultPromise;
         const deployment = store.getState().deployment.deployments[TEST_PATH];
@@ -156,9 +158,34 @@ describe('deployment slice', () => {
       });
 
       it('should reject with appropriate error', async () => {
-        const result = await store.dispatch(executeDeployment(TEST_PATH));
-        expect(result.type).toBe('deployment/execute/rejected');
-        expect(result.payload).toEqual(undefined);
+        const result = await store.dispatch(executeDeploymentWithRetry(TEST_PATH));
+        expect(result.type).toBe('deployment/executeWithRetry/rejected');
+        expect(result.payload).toEqual({
+          message: 'Deployment not found. Initialize it first.',
+          info: {},
+        });
+      });
+    });
+
+    describe('when max retries are reached', () => {
+      beforeEach(async () => {
+        vi.useFakeTimers();
+        store = await initDeploymentStore();
+        mockDeployAlwaysFail();
+        mockCheckStatus();
+      });
+
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      it('should fail after max retries', async () => {
+        const resultPromise = store.dispatch(executeDeploymentWithRetry(TEST_PATH));
+        await advanceRetryTimers(3);
+        const result = await resultPromise;
+
+        expect(result.type).toBe('deployment/executeWithRetry/rejected');
+        expect(deploy).toHaveBeenCalledTimes(4); // 1 initial + 3 retries
       });
     });
   });

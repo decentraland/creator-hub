@@ -50,29 +50,25 @@ export type AssetBundleRegistryResponse = {
   };
 };
 
-export type ErrorName =
-  | 'MAX_RETRIES'
-  | 'FETCH_STATUS'
-  | 'CATALYST_SERVERS_EXHAUSTED'
-  | 'DEPLOYMENT_NOT_FOUND'
-  | 'DEPLOYMENT_FAILED'
-  | 'INVALID_URL'
-  | 'INVALID_IDENTITY'
-  | 'MAX_FILE_SIZE_EXCEEDED';
+export type Error = 'MAX_RETRIES' | 'FETCH';
 
-export class DeploymentError extends ErrorBase<ErrorName> {
+export class DeploymentError extends ErrorBase<Error> {
   constructor(
-    public name: ErrorName,
+    public name: Error,
+    public message: string = '',
     public status: DeploymentComponentsStatus,
-    public error?: Error,
+    public cause?: any,
   ) {
-    super(name, error?.message);
+    super(name, message, cause);
+    this.status = status;
   }
 }
 
-export const isDeploymentError = (
-  error: unknown,
-  type: ErrorName | ErrorName[] | '*',
-): error is DeploymentError =>
-  error instanceof DeploymentError &&
-  (Array.isArray(type) ? type.includes(error.name) : type === '*' || error.name === type);
+export const isDeploymentError = (error: unknown, type: Error): error is DeploymentError =>
+  error instanceof DeploymentError && error.name === type;
+
+export const isDeploymentErrorMessage = (error: unknown): error is DeploymentError =>
+  !!error &&
+  typeof error === 'object' &&
+  'message' in error &&
+  error.message === 'Max retries reached. Deployment failed.';

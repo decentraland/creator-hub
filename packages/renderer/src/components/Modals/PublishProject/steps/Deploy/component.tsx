@@ -1,12 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
-import cx from 'classnames';
 import { ChainId } from '@dcl/schemas';
 import { Typography, Checkbox } from 'decentraland-ui2';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 import { misc } from '#preload';
 
-import type { File, Info, Status } from '/shared/types/deploy';
+import type { File, Info, Status, DeploymentComponentsStatus } from '/shared/types/deploy';
 
 import { useAuth } from '/@/hooks/useAuth';
 import { useWorkspace } from '/@/hooks/useWorkspace';
@@ -14,8 +13,6 @@ import { useEditor } from '/@/hooks/useEditor';
 import { useSnackbar } from '/@/hooks/useSnackbar';
 import { useDeploy } from '/@/hooks/useDeploy';
 
-import { type Deployment } from '/@/modules/store/deployment/slice';
-import { getInvalidFiles, MAX_FILE_SIZE_BYTES } from '/@/modules/store/deployment/utils';
 import { t } from '/@/modules/store/translation/utils';
 import { addBase64ImagePrefix } from '/@/modules/image';
 import { REPORT_ISSUES_URL } from '/@/modules/utils';
@@ -24,7 +21,6 @@ import { PublishModal } from '/@/components/Modals/PublishProject/PublishModal';
 import { ConnectedSteps } from '/@/components/Step';
 import { Button } from '/@/components/Button';
 import { Loader } from '/@/components/Loader';
-import { ExpandMore } from '/@/components/ExpandMore';
 
 import type { Step } from '/@/components/Step/types';
 import type { Props } from '/@/components/Modals/PublishProject/types';
@@ -63,7 +59,8 @@ export function Deploy(props: Props) {
   const { chainId, wallet, avatar } = useAuth();
   const { updateProjectInfo } = useWorkspace();
   const { loadingPublish } = useEditor();
-  const { getDeployment, executeDeployment } = useDeploy();
+  const { getDeployment, overallStatus, isDeployFinishing, executeDeploymentWithRetry } =
+    useDeploy();
   const { pushCustom } = useSnackbar();
   const [showWarning, setShowWarning] = useState(false);
   const [skipWarning, setSkipWarning] = useState(project.info.skipPublishWarning ?? false);
@@ -72,7 +69,7 @@ export function Deploy(props: Props) {
   const handlePublish = useCallback(() => {
     setShowWarning(false);
     updateProjectInfo(project.path, { skipPublishWarning: skipWarning }); // write skip warning flag
-    executeDeployment(project.path);
+    executeDeploymentWithRetry(project.path);
   }, [skipWarning, project]);
 
   const handleBack = useCallback(() => {
@@ -205,7 +202,7 @@ export function Deploy(props: Props) {
                   </Typography>
                 </div>
               </div>
-              {deployment.status === 'idle' && (
+              {deployment.status === 'idle' && deployment.retryAttempt === 0 && (
                 <Idle
                   files={deployment.files}
                   error={deployment.error}
@@ -214,8 +211,11 @@ export function Deploy(props: Props) {
               )}
               {(deployment.status === 'pending' || deployment.status === 'failed') && (
                 <Deploying
-                  deployment={deployment}
+                  info={deployment.info}
                   url={jumpInUrl}
+                  componentsStatus={deployment.componentsStatus}
+                  isFinishing={isDeployFinishing(deployment)}
+                  overallStatus={overallStatus(deployment)}
                   onClick={handleJumpIn}
                   onRetry={handleDeployRetry}
                 />
@@ -237,19 +237,11 @@ export function Deploy(props: Props) {
 
 type IdleProps = {
   files: File[];
-  error?: Deployment['error'];
+  error?: string;
   onClick: () => void;
 };
 
 function Idle({ files, error, onClick }: IdleProps) {
-  const invalidFiles = getInvalidFiles(files);
-  const errorMessage =
-    invalidFiles.length > 0
-      ? t('modal.publish_project.deploy.deploying.errors.max_file_size_exceeded', {
-          maxFileSizeInMb: MAX_FILE_SIZE_BYTES / 1e6,
-        })
-      : error?.message;
-
   return (
     <div className="files">
       <div className="filters">
@@ -259,18 +251,14 @@ function Idle({ files, error, onClick }: IdleProps) {
         <div className="size">
           {t('modal.publish_project.deploy.files.size', {
             size: getSize(files.reduce((total, file) => total + file.size, 0)),
-            b: (child: string) => (
-              <b>
-                {child}/{MAX_FILE_SIZE_BYTES / 1e6}MB
-              </b>
-            ),
+            b: (child: string) => <b>{child}</b>,
           })}
         </div>
       </div>
       <div className="list">
         {files.map(file => (
           <div
-            className={cx('file', { invalid: file.size > MAX_FILE_SIZE_BYTES })}
+            className="file"
             key={file.name}
           >
             <div
@@ -284,7 +272,7 @@ function Idle({ files, error, onClick }: IdleProps) {
         ))}
       </div>
       <div className="actions">
-        <p className="error">{errorMessage}</p>
+        <p className="error">{error}</p>
         <Button
           size="large"
           onClick={onClick}
@@ -299,18 +287,24 @@ function Idle({ files, error, onClick }: IdleProps) {
 }
 
 type DeployingProps = {
-  deployment: Deployment;
+  info: Info;
   url: string;
+  componentsStatus: DeploymentComponentsStatus;
+  isFinishing: boolean;
+  overallStatus: Status;
   onClick: () => void;
   onRetry: () => void;
 };
 
-function Deploying({ deployment, url, onClick, onRetry }: DeployingProps) {
-  const { isDeployFinishing, deriveOverallStatus } = useDeploy();
-  const { info, componentsStatus, error } = deployment;
-  const isFinishing = isDeployFinishing(deployment);
-  const overallStatus = deriveOverallStatus(deployment);
-
+function Deploying({
+  info,
+  componentsStatus,
+  url,
+  onClick,
+  onRetry,
+  isFinishing,
+  overallStatus,
+}: DeployingProps) {
   const onReportIssue = useCallback(() => {
     void misc.openExternal(REPORT_ISSUES_URL);
   }, []);
@@ -369,19 +363,8 @@ function Deploying({ deployment, url, onClick, onRetry }: DeployingProps) {
           {overallStatus === 'failed' ? <div className="Warning" /> : <Loader />}
           <Typography variant="h5">{title}</Typography>
         </div>
-        {overallStatus === 'failed' && !error && (
+        {overallStatus === 'failed' && (
           <span>{t('modal.publish_project.deploy.deploying.try_again')}</span>
-        )}
-        {error && (
-          <span className="error">
-            {error.message}
-            {error.cause && (
-              <ExpandMore
-                title={t('modal.publish_project.deploy.deploying.errors.details')}
-                text={error.cause}
-              />
-            )}
-          </span>
         )}
       </div>
       <ConnectedSteps steps={steps} />
