@@ -1,13 +1,14 @@
-import { minutes, seconds } from '/shared/time';
 import equal from 'fast-deep-equal';
 import type { AuthIdentity } from 'decentraland-crypto-fetch';
 import { type AuthChain, Authenticator } from '@dcl/crypto';
 import { ChainId } from '@dcl/schemas';
 import { getCatalystServersFromCache } from 'dcl-catalyst-client/dist/contracts-snapshots';
+import { type SerializedError } from '@reduxjs/toolkit';
 
+import { t } from '/@/modules/store/translation/utils';
+import { minutes, seconds } from '/shared/time';
 import { delay } from '/shared/utils';
-import { DEPLOY_URLS, type Info } from '/shared/types/deploy';
-
+import { DEPLOY_URLS, type Info, type File } from '/shared/types/deploy';
 import {
   type AssetBundleRegistryResponse,
   type Status,
@@ -15,6 +16,8 @@ import {
   type DeploymentComponentsStatus,
   DeploymentError,
 } from '/shared/types/deploy';
+
+export const MAX_FILE_SIZE_BYTES = 50 * 1e6; // 50MB defined in sdk-commands...
 
 export const getDeploymentUrl = (publishPort: number) => {
   const port = import.meta.env.VITE_CLI_DEPLOY_PORT || publishPort;
@@ -35,6 +38,10 @@ export const fetchInfo = async (url: string): Promise<Info> => {
   return resp.json();
 };
 
+export function getInvalidFiles(files: File[]) {
+  return files.filter(file => file.size > MAX_FILE_SIZE_BYTES).map(file => file.name);
+}
+
 export const deploy = async (
   url: string,
   payload: {
@@ -43,8 +50,6 @@ export const deploy = async (
     chainId: ChainId;
   },
 ) => {
-  if (!url) throw new Error('Invalid URL');
-
   const resp = await fetch(`${url}/deploy`, {
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
@@ -218,7 +223,7 @@ export async function checkDeploymentStatus(
       const status = await fetchStatus();
       if (!equal(currentStatus, status)) _onChange(status);
     } catch (e: any) {
-      error = new DeploymentError('FETCH', 'Fetch deployment status failed.', e);
+      error = new DeploymentError('FETCH_STATUS', currentStatus, e);
       console.error(error);
     }
 
@@ -240,12 +245,7 @@ export async function checkDeploymentStatus(
   }
 
   // if maximum retries are reached, log the error and throw
-  const maxRetriesError = new DeploymentError(
-    'MAX_RETRIES',
-    'Max retries reached. Deployment failed.',
-    currentStatus,
-    error,
-  );
+  const maxRetriesError = new DeploymentError('MAX_RETRIES', currentStatus, error);
   console.error(maxRetriesError);
   throw maxRetriesError;
 }
@@ -271,11 +271,15 @@ export function checkDeploymentCompletion(
   return completedCount / total >= percentage;
 }
 
-export function getAvailableCatalystServer(triedServers: Set<string>, chainId: ChainId): string {
+export function getCatalystServers(chainId: ChainId) {
   const network = chainId === ChainId.ETHEREUM_SEPOLIA ? 'sepolia' : 'mainnet';
+  return getCatalystServersFromCache(network);
+}
+
+export function getAvailableCatalystServer(triedServers: Set<string>, chainId: ChainId): string {
   const availableServers = [];
 
-  for (const server of getCatalystServersFromCache(network)) {
+  for (const server of getCatalystServers(chainId)) {
     if (!triedServers.has(server.address)) {
       availableServers.push(server.address);
     }
@@ -287,4 +291,29 @@ export function getAvailableCatalystServer(triedServers: Set<string>, chainId: C
 
   const randomIndex = Math.floor(Math.random() * availableServers.length);
   return availableServers[randomIndex];
+}
+
+export function translateError(error: SerializedError) {
+  switch (error.name) {
+    case 'INVALID_URL':
+      return t('modal.publish_project.deploy.deploying.errors.invalid_url');
+    case 'INVALID_IDENTITY':
+      return t('modal.publish_project.deploy.deploying.errors.invalid_identity');
+    case 'MAX_RETRIES':
+      return t('modal.publish_project.deploy.deploying.errors.max_retries');
+    case 'FETCH_STATUS':
+      return t('modal.publish_project.deploy.deploying.errors.fetch_status');
+    case 'CATALYST_SERVERS_EXHAUSTED':
+      return t('modal.publish_project.deploy.deploying.errors.catalyst');
+    case 'DEPLOYMENT_NOT_FOUND':
+      return t('modal.publish_project.deploy.deploying.errors.not_found');
+    case 'DEPLOYMENT_FAILED':
+      return t('modal.publish_project.deploy.deploying.errors.failed');
+    case 'MAX_FILE_SIZE_EXCEEDED':
+      return t('modal.publish_project.deploy.deploying.errors.max_file_size_exceeded', {
+        maxFileSizeInMb: MAX_FILE_SIZE_BYTES / 1e6,
+      });
+    default:
+      return t('modal.publish_project.deploy.deploying.errors.unknown');
+  }
 }
