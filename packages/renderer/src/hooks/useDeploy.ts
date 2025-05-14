@@ -4,10 +4,7 @@ import type { ChainId } from '@dcl/schemas';
 import { useDispatch, useSelector } from '#store';
 
 import { actions, type Deployment } from '/@/modules/store/deployment';
-import {
-  deriveOverallStatus as _deriveOverallStatus,
-  checkDeploymentCompletion,
-} from '/@/modules/store/deployment/utils';
+import { deriveOverallStatus, checkDeploymentCompletion } from '/@/modules/store/deployment/utils';
 
 export const useDeploy = () => {
   const dispatch = useDispatch();
@@ -33,6 +30,13 @@ export const useDeploy = () => {
     [dispatch],
   );
 
+  const executeDeploymentWithRetry = useCallback(
+    (path: string) => {
+      dispatch(actions.executeDeploymentWithRetry(path));
+    },
+    [dispatch],
+  );
+
   const removeDeployment = useCallback(
     (path: string) => {
       dispatch(actions.removeDeployment({ path }));
@@ -40,12 +44,10 @@ export const useDeploy = () => {
     [dispatch],
   );
 
-  const deriveOverallStatus = useCallback((deployment: Deployment) => {
-    if (deployment.status === 'failed') {
-      return 'failed';
-    }
-    return _deriveOverallStatus(deployment.componentsStatus);
-  }, []);
+  const overallStatus = useCallback(
+    (deployment: Deployment) => deriveOverallStatus(deployment.componentsStatus),
+    [],
+  );
 
   const isDeployFinishing = useCallback(
     (deployment: Deployment) => checkDeploymentCompletion(deployment.componentsStatus),
@@ -57,7 +59,8 @@ export const useDeploy = () => {
     getDeployment,
     initializeDeployment,
     executeDeployment,
-    deriveOverallStatus,
+    executeDeploymentWithRetry,
+    overallStatus,
     isDeployFinishing,
     removeDeployment,
   };

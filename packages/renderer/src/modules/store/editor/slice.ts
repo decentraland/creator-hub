@@ -1,15 +1,12 @@
 import { createSlice } from '@reduxjs/toolkit';
-import type { ChainId } from '@dcl/schemas';
 
 import { editor } from '#preload';
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
-import type { DeployOptions } from '/shared/types/ipc';
 import { type Project } from '/shared/types/projects';
 import type { PreviewOptions } from '/shared/types/settings';
 import { WorkspaceError } from '/shared/types/workspace';
 
-import { actions as deploymentActions } from '../deployment';
 import { actions as workspaceActions } from '../workspace';
 
 // actions
@@ -27,15 +24,7 @@ export const runScene = createAsyncThunk(
   },
 );
 
-export const publishScene = createAsyncThunk(
-  'editor/publishScene',
-  async (opts: DeployOptions & { chainId: ChainId; wallet: string }, { dispatch }) => {
-    const port = await editor.publishScene(opts);
-    const deployment = { path: opts.path, port, chainId: opts.chainId, wallet: opts.wallet };
-    dispatch(deploymentActions.initializeDeployment(deployment));
-    return port;
-  },
-);
+export const publishScene = createAsyncThunk('editor/publishScene', editor.publishScene);
 export const killPreviewScene = createAsyncThunk(
   'editor/killPreviewScene',
   editor.killPreviewScene,
