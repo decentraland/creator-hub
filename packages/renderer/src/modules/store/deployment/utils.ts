@@ -45,7 +45,7 @@ export function getInvalidFiles(files: File[]) {
 export const deploy = async (
   url: string,
   payload: {
-    wallet: string;
+    address: string;
     authChain: AuthChain;
     chainId: ChainId;
   },

@@ -94,7 +94,7 @@ export const deploy = createAsyncThunk(
 
     while (retries > 0) {
       try {
-        return await deployFn(url, { wallet, authChain, chainId });
+        return await deployFn(url, { address: wallet, authChain, chainId });
       } catch (error: any) {
         retries--;
         if (retries <= 0) {
@@ -215,7 +215,7 @@ const deploymentSlice = createSlice({
           files: [],
           wallet,
           chainId,
-          status: 'idle',
+          status: 'failed',
           error: {
             message: translateError(action.error),
             cause: action.error.message,
