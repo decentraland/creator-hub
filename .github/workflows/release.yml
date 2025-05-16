@@ -192,7 +192,7 @@ jobs:
           echo "[mac-arm64](${{ secrets.SDK_TEAM_S3_BASE_URL }}/creator-hub/branch/${{ github.head_ref }}/Decentraland%20Creator%20Hub-${{ steps.version.outputs.version }}-mac-arm64.dmg)" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
           content=$(cat ./.github/workflows/macos-instructions.md)
-          echo "content<<EOF" >> $GITHUB_ENV
+          echo "macos-instructions<<EOF" >> $GITHUB_ENV
           echo "$content" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
