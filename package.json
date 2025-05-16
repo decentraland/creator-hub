@@ -34,6 +34,7 @@
   },
   "devDependencies": {
     "@reduxjs/toolkit": "^2.2.6",
+    "@sentry/vite-plugin": "^3.2.2",
     "@sentry/wizard": "^4.2.0",
     "@types/cmd-shim": "^5.0.2",
     "@types/is-running": "^2.1.2",
@@ -85,13 +86,13 @@
     "deepmerge": "^4.3.1",
     "electron-log": "^5.1.6",
     "electron-updater": "6.2.1",
-    "http-server": "^14.1.1",
-    "immer": "^10.1.1",
-    "is-running": "^2.1.0",
-    "npm": "^10.8.1",
-    "p-limit": "^6.1.0",
-    "rimraf": "^6.0.1",
-    "semver": "^7.6.3",
-    "tree-kill": "^1.2.2"
+    "http-server": "14.1.1",
+    "immer": "10.1.1",
+    "is-running": "2.1.0",
+    "npm": "10.8.1",
+    "p-limit": "6.1.0",
+    "rimraf": "6.0.1",
+    "semver": "7.6.3",
+    "tree-kill": "1.2.2"
   }
 }
