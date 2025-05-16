@@ -9,6 +9,7 @@ import * as npm from './npm';
 export function initIpc() {
   // electron
   handle('electron.getAppVersion', () => electron.getAppVersion());
+  handle('electron.getUpdateInfo', () => electron.getUpdateInfo());
   handle('electron.getUserDataPath', () => electron.getUserDataPath());
   handle('electron.getWorkspaceConfigPath', (_event, path) =>
     electron.getWorkspaceConfigPath(path),

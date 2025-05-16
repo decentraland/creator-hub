@@ -1,6 +1,7 @@
 import path from 'path';
 import fs from 'fs/promises';
 import { app, BrowserWindow, clipboard, dialog, type OpenDialogOptions, shell } from 'electron';
+import updater from 'electron-updater';
 
 export function getHome() {
   return app.getPath('home');
@@ -42,4 +43,20 @@ export async function getAppVersion() {
 
 export async function copyToClipboard(text: string) {
   clipboard.writeText(text);
+}
+
+export async function getUpdateInfo() {
+  try {
+    //TODO: remove before release
+    updater.autoUpdater.forceDevUpdateConfig = true;
+    updater.autoUpdater.autoDownload = false;
+    updater.autoUpdater.setFeedURL('http://127.0.0.1:9000/creator-hub/creator-hub');
+
+    const result = await updater.autoUpdater.checkForUpdates();
+    console.log('result checkforUpdates', result);
+    const version = result?.updateInfo?.version ?? null;
+    return { updateAvailable: version !== null, error: null };
+  } catch (error: any) {
+    return { updateAvailable: false, error: error.message };
+  }
 }
