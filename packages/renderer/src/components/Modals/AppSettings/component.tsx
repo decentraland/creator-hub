@@ -21,13 +21,15 @@ import { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 
 import { t } from '/@/modules/store/translation/utils';
 import { useSettings } from '/@/hooks/useSettings';
+import { useEditor } from '/@/hooks/useEditor';
 
 import { Modal } from '..';
-
 import './styles.css';
 
 export function AppSettings({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { settings: _settings, updateAppSettings } = useSettings();
+  const { version: currentVersion } = useEditor();
+  const [updateAvailable, setUpdateAvailable] = useState<boolean | undefined>(undefined);
   const [settings, setSettings] = useState(_settings);
 
   useEffect(() => {
@@ -63,6 +65,20 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
 
   const isDirty = useMemo(() => !equal(_settings, settings), [settings, _settings]);
 
+  const handleCheckForUpdates = useCallback(async () => {
+    debugger;
+    const { updateAvailable } = await settingsPreload.checkForUpdates();
+    if (updateAvailable) {
+      setUpdateAvailable(true);
+    } else {
+      setUpdateAvailable(false);
+    }
+  }, []);
+
+  const handleInstallUpdate = useCallback(async () => {
+    await settingsPreload.installUpdate();
+  }, []);
+
   return (
     <Modal
       open={open}
@@ -76,6 +92,19 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
         </Box>
         <Box>
           <Typography variant="h4">{t('modal.app_settings.title')}</Typography>
+        </Box>
+        <Box>
+          <Typography variant="body1">Current Version: {currentVersion}</Typography>
+          <Button
+            variant="contained"
+            onClick={updateAvailable ? handleInstallUpdate : handleCheckForUpdates}
+          >
+            {updateAvailable ? 'Update now' : 'Check for updates'}
+          </Button>
+          {!!updateAvailable && <Typography variant="body1">Update available</Typography>}
+          {updateAvailable === false && (
+            <Typography variant="body1">No updates available</Typography>
+          )}
         </Box>
         <Box className="FormContainer">
           <FormGroup className="ScenesFolderFormControl">

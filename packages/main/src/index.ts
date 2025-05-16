@@ -77,7 +77,9 @@ app
  * if you compile production app without publishing it to distribution server.
  * Like `npm run compile` does. It's ok 😅
  */
-if (import.meta.env.PROD) {
+
+//TODO: remove before release
+if (!import.meta.env.PROD) {
   app
     .whenReady()
     .then(() => {
@@ -104,10 +106,15 @@ if (import.meta.env.PROD) {
         });
         log.error('[AutoUpdater] Error in auto-updater', err);
       });
-      return updater.autoUpdater.checkForUpdatesAndNotify({
-        title: 'Update available',
-        body: 'New version was installed. Restart the app to apply changes.',
-      });
+      console.log('DOWNLOAD VERSION', updater.autoUpdater.currentVersion);
+      updater.autoUpdater.forceDevUpdateConfig = true;
+      updater.autoUpdater.autoDownload = true;
+      updater.autoUpdater.autoInstallOnAppQuit = false;
+      updater.autoUpdater.setFeedURL(
+        'https://github.com/decentraland/creator-hub/releases/download/0.14.2',
+      );
+      updater.autoUpdater.fullChangelog = true;
+      updater.autoUpdater.checkForUpdates();
     })
     .catch(error => {
       Sentry.captureException(error, {
