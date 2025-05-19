@@ -2,6 +2,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { app, BrowserWindow, clipboard, dialog, type OpenDialogOptions, shell } from 'electron';
 import updater from 'electron-updater';
+import { downloadedVersion } from '..';
 
 export function getHome() {
   return app.getPath('home');
@@ -45,18 +46,25 @@ export async function copyToClipboard(text: string) {
   clipboard.writeText(text);
 }
 
+export async function getDownloadedVersion() {
+  return downloadedVersion;
+}
+
 export async function getUpdateInfo() {
   try {
     //TODO: remove before release
     updater.autoUpdater.forceDevUpdateConfig = true;
     updater.autoUpdater.autoDownload = false;
-    updater.autoUpdater.setFeedURL('http://127.0.0.1:9000/creator-hub/creator-hub');
-
+    updater.autoUpdater.fullChangelog = true;
+    //TODO: change to the actual feed URL
+    updater.autoUpdater.setFeedURL(
+      'https://github.com/decentraland/creator-hub/releases/download/0.14.2',
+    );
     const result = await updater.autoUpdater.checkForUpdates();
-    console.log('result checkforUpdates', result);
+    console.log('NEW VERSION DETECTED ===>', result);
     const version = result?.updateInfo?.version ?? null;
-    return { updateAvailable: version !== null, error: null };
+    return { updateAvailable: version !== null, version };
   } catch (error: any) {
-    return { updateAvailable: false, error: error.message };
+    return { updateAvailable: false, error: error.message, version: null };
   }
 }

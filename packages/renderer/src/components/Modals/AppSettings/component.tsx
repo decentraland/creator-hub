@@ -29,7 +29,10 @@ import './styles.css';
 export function AppSettings({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { settings: _settings, updateAppSettings } = useSettings();
   const { version: currentVersion } = useEditor();
-  const [updateAvailable, setUpdateAvailable] = useState<boolean | undefined>(undefined);
+  const [newVersionAvailable, setNewVersionAvailable] = useState<{
+    available: boolean | null;
+    version: string | null;
+  }>({ available: null, version: null });
   const [settings, setSettings] = useState(_settings);
 
   useEffect(() => {
@@ -66,17 +69,23 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
   const isDirty = useMemo(() => !equal(_settings, settings), [settings, _settings]);
 
   const handleCheckForUpdates = useCallback(async () => {
-    debugger;
-    const { updateAvailable } = await settingsPreload.checkForUpdates();
+    const { updateAvailable, version } = await settingsPreload.checkForUpdates();
     if (updateAvailable) {
-      setUpdateAvailable(true);
+      setNewVersionAvailable({ available: true, version: version ?? null });
+      const downloadedVersion = await settingsPreload.getDownloadedVersion();
+      debugger;
+      if (downloadedVersion && downloadedVersion === version) {
+        console.log('VERSION INSTALLED');
+      } else {
+        console.log('VERSION NOT INSTALLED');
+      }
     } else {
-      setUpdateAvailable(false);
+      setNewVersionAvailable({ available: false, version: null });
     }
   }, []);
 
   const handleInstallUpdate = useCallback(async () => {
-    await settingsPreload.installUpdate();
+    console.log('install update');
   }, []);
 
   return (
@@ -97,12 +106,14 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
           <Typography variant="body1">Current Version: {currentVersion}</Typography>
           <Button
             variant="contained"
-            onClick={updateAvailable ? handleInstallUpdate : handleCheckForUpdates}
+            onClick={newVersionAvailable.available ? handleInstallUpdate : handleCheckForUpdates}
           >
-            {updateAvailable ? 'Update now' : 'Check for updates'}
+            {newVersionAvailable.available ? 'Update now' : 'Check for updates'}
           </Button>
-          {!!updateAvailable && <Typography variant="body1">Update available</Typography>}
-          {updateAvailable === false && (
+          {newVersionAvailable.available && (
+            <Typography variant="body1">Update available: {newVersionAvailable.version}</Typography>
+          )}
+          {newVersionAvailable.available === false && (
             <Typography variant="body1">No updates available</Typography>
           )}
         </Box>
