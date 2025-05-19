@@ -14,6 +14,7 @@ import { runMigrations } from '/@/modules/migrations';
 import '/@/security-restrictions';
 
 log.initialize();
+export let downloadedVersion: string | null = null;
 
 if (import.meta.env.PROD) {
   Sentry.init({
@@ -93,8 +94,10 @@ if (!import.meta.env.PROD) {
         log.info('[AutoUpdater] Update not available');
       });
       updater.autoUpdater.on('update-downloaded', async info => {
-        log.info(`[AutoUpdater] Update downloaded (v${info.version})`);
+        downloadedVersion = info.version;
         await track('Auto Update Editor', { version: info.version });
+        log.info(`[AutoUpdater] Update downloaded (v${info.version})`);
+        console.log('DONWLOADED VERSION ===>', info);
       });
       updater.autoUpdater.on('download-progress', info => {
         log.info(`[AutoUpdater] Download progress ${info.percent.toFixed(2)}%`);
@@ -106,7 +109,7 @@ if (!import.meta.env.PROD) {
         });
         log.error('[AutoUpdater] Error in auto-updater', err);
       });
-      console.log('DOWNLOAD VERSION', updater.autoUpdater.currentVersion);
+
       updater.autoUpdater.forceDevUpdateConfig = true;
       updater.autoUpdater.autoDownload = true;
       updater.autoUpdater.autoInstallOnAppQuit = false;
@@ -115,6 +118,7 @@ if (!import.meta.env.PROD) {
       );
       updater.autoUpdater.fullChangelog = true;
       updater.autoUpdater.checkForUpdates();
+      console.log('CURRENT VERSION ===>', updater.autoUpdater.currentVersion);
     })
     .catch(error => {
       Sentry.captureException(error, {
