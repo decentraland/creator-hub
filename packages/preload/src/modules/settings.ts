@@ -43,7 +43,7 @@ export async function selectSceneFolder(): Promise<string | undefined> {
   return projectPath;
 }
 
-export async function checkForUpdates() {
+export async function getUpdateInfo() {
   return await invoke('electron.getUpdateInfo');
 }
 

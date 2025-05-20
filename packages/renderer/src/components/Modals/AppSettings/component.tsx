@@ -25,14 +25,18 @@ import { useEditor } from '/@/hooks/useEditor';
 
 import { Modal } from '..';
 import './styles.css';
+import { InfoOutlined } from '@mui/icons-material';
+import { Row } from '../../Row';
+import { Column } from '../../Column';
 
 export function AppSettings({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { settings: _settings, updateAppSettings } = useSettings();
   const { version: currentVersion } = useEditor();
-  const [newVersionAvailable, setNewVersionAvailable] = useState<{
+  const [updateInfo, setUpdateInfo] = useState<{
     available: boolean | null;
     version: string | null;
-  }>({ available: null, version: null });
+    isInstalled: boolean | null;
+  }>({ available: null, version: null, isInstalled: null });
   const [settings, setSettings] = useState(_settings);
 
   useEffect(() => {
@@ -69,24 +73,46 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
   const isDirty = useMemo(() => !equal(_settings, settings), [settings, _settings]);
 
   const handleCheckForUpdates = useCallback(async () => {
-    const { updateAvailable, version } = await settingsPreload.checkForUpdates();
-    if (updateAvailable) {
-      setNewVersionAvailable({ available: true, version: version ?? null });
-      const downloadedVersion = await settingsPreload.getDownloadedVersion();
-      debugger;
-      if (downloadedVersion && downloadedVersion === version) {
-        console.log('VERSION INSTALLED');
-      } else {
-        console.log('VERSION NOT INSTALLED');
-      }
-    } else {
-      setNewVersionAvailable({ available: false, version: null });
-    }
+    const { updateAvailable, version: newVersion } = await settingsPreload.getUpdateInfo();
+    const downloadedVersion = await settingsPreload.getDownloadedVersion();
+    setUpdateInfo({
+      available: !!updateAvailable,
+      version: newVersion ?? null,
+      isInstalled: !!downloadedVersion && downloadedVersion === newVersion,
+    });
   }, []);
 
   const handleInstallUpdate = useCallback(async () => {
     console.log('install update');
   }, []);
+
+  const handleDownloadUpdate = useCallback(async () => {
+    console.log('download update');
+  }, []);
+
+  const canInstallNewVersion = useMemo(
+    () => updateInfo.available && updateInfo.isInstalled,
+    [updateInfo.available, updateInfo.isInstalled],
+  );
+
+  const getButtonProps = useCallback(() => {
+    if (updateInfo.available) {
+      return {
+        action: updateInfo.isInstalled ? handleInstallUpdate : handleDownloadUpdate,
+        text: updateInfo.isInstalled ? 'Install now' : 'Update now',
+      };
+    }
+    return {
+      action: handleCheckForUpdates,
+      text: 'Check for updates',
+    };
+  }, [
+    updateInfo.available,
+    updateInfo.isInstalled,
+    handleInstallUpdate,
+    handleDownloadUpdate,
+    handleCheckForUpdates,
+  ]);
 
   return (
     <Modal
@@ -102,21 +128,31 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
         <Box>
           <Typography variant="h4">{t('modal.app_settings.title')}</Typography>
         </Box>
-        <Box>
+        <Column className="UpdateContainer">
           <Typography variant="body1">Current Version: {currentVersion}</Typography>
-          <Button
-            variant="contained"
-            onClick={newVersionAvailable.available ? handleInstallUpdate : handleCheckForUpdates}
-          >
-            {newVersionAvailable.available ? 'Update now' : 'Check for updates'}
-          </Button>
-          {newVersionAvailable.available && (
-            <Typography variant="body1">Update available: {newVersionAvailable.version}</Typography>
+          <Row className="UpdateButtonContainer">
+            <Button
+              variant="contained"
+              onClick={getButtonProps().action}
+            >
+              {getButtonProps().text}
+            </Button>
+            {updateInfo.available && (
+              <Typography variant="subtitle1">New version: {updateInfo.version}</Typography>
+            )}
+            {updateInfo.available === false && (
+              <Typography variant="subtitle1">Creator Hub is up to date</Typography>
+            )}
+          </Row>
+          {canInstallNewVersion && (
+            <Row className="MessageContainer">
+              <InfoOutlined />
+              <Typography variant="body2">
+                Creator Hub will auto-restart after the update.
+              </Typography>
+            </Row>
           )}
-          {newVersionAvailable.available === false && (
-            <Typography variant="body1">No updates available</Typography>
-          )}
-        </Box>
+        </Column>
         <Box className="FormContainer">
           <FormGroup className="ScenesFolderFormControl">
             <Typography variant="body1">
