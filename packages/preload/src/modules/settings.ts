@@ -50,3 +50,11 @@ export async function getUpdateInfo() {
 export async function getDownloadedVersion() {
   return await invoke('electron.getDownloadedVersion');
 }
+
+export async function quitAndInstall() {
+  return await invoke('electron.quitAndInstall');
+}
+
+export async function installUpdate() {
+  return await invoke('electron.installUpdate');
+}

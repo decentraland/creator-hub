@@ -75,6 +75,9 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
   const handleCheckForUpdates = useCallback(async () => {
     const { updateAvailable, version: newVersion } = await settingsPreload.getUpdateInfo();
     const downloadedVersion = await settingsPreload.getDownloadedVersion();
+    console.log('UPDATE available ===>', updateAvailable);
+    console.log('NEW VERSION ===>', newVersion);
+    console.log('DOWNLOADED VERSION ===>', downloadedVersion);
     setUpdateInfo({
       available: !!updateAvailable,
       version: newVersion ?? null,
@@ -84,6 +87,7 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
 
   const handleInstallUpdate = useCallback(async () => {
     console.log('install update');
+    await settingsPreload.quitAndInstall();
   }, []);
 
   const handleDownloadUpdate = useCallback(async () => {

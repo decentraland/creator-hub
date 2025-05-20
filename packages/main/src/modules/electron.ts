@@ -67,3 +67,12 @@ export async function getUpdateInfo() {
     return { updateAvailable: false, error: error.message, version: null };
   }
 }
+
+export async function quitAndInstall() {
+  console.log('ELECTRON QUIT AND INSTALL');
+  updater.autoUpdater.quitAndInstall();
+}
+
+export async function installUpdate() {
+  updater.autoUpdater.downloadUpdate();
+}

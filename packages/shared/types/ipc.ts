@@ -22,6 +22,8 @@ export interface Ipc {
     error?: any;
     version: string | null;
   }>;
+  'electron.quitAndInstall': () => Promise<void>;
+  'electron.installUpdate': () => Promise<void>;
   'electron.getWorkspaceConfigPath': (path: string) => Promise<string>;
   'electron.showOpenDialog': (opts: Partial<OpenDialogOptions>) => Promise<string[]>;
   'electron.openExternal': (url: string) => Promise<void>;
