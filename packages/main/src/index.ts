@@ -96,6 +96,7 @@ if (!import.meta.env.PROD) {
       updater.autoUpdater.on('update-downloaded', async info => {
         downloadedVersion = info.version;
         await track('Auto Update Editor', { version: info.version });
+        console.log('RELEASE NOTES ===>', info.releaseNotes);
         log.info(`[AutoUpdater] Update downloaded (v${info.version})`);
         console.log('DONWLOADED VERSION ===>', info);
       });
@@ -113,7 +114,7 @@ if (!import.meta.env.PROD) {
       updater.autoUpdater.autoDownload = true;
       updater.autoUpdater.autoInstallOnAppQuit = false;
       updater.autoUpdater.setFeedURL(
-        'https://github.com/decentraland/creator-hub/releases/download/0.14.2',
+        'https://github.com/decentraland/creator-hub/releases/download/0.14.3',
       );
       updater.autoUpdater.fullChangelog = true;
       updater.autoUpdater.checkForUpdates();
