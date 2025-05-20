@@ -52,17 +52,16 @@ export async function getDownloadedVersion() {
 
 export async function getUpdateInfo() {
   try {
-    //TODO: remove before release
+    //TODO: remove before release & update URL
     updater.autoUpdater.forceDevUpdateConfig = true;
     updater.autoUpdater.autoDownload = false;
     updater.autoUpdater.fullChangelog = true;
-    //TODO: change to the actual feed URL
     updater.autoUpdater.setFeedURL(
       'https://github.com/decentraland/creator-hub/releases/download/0.14.2',
     );
     const result = await updater.autoUpdater.checkForUpdates();
-    console.log('NEW VERSION DETECTED ===>', result);
     const version = result?.updateInfo?.version ?? null;
+    console.log('NEW VERSION DETECTED ===>', result);
     return { updateAvailable: version !== null, version };
   } catch (error: any) {
     return { updateAvailable: false, error: error.message, version: null };
