@@ -153,3 +153,9 @@
 .HomePage .Card.FeedbackCard .FeedbackButton:hover {
   color: var(--black) !important;
 }
+
+.HomePage {
+  footer {
+    margin: 12px 0;
+  }
+}

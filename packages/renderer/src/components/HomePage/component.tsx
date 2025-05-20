@@ -29,10 +29,12 @@ import { t } from '/@/modules/store/translation/utils';
 import { FEEDBACK_URL } from '/@/modules/utils';
 
 import { Navbar, NavbarItem } from '../Navbar';
+import { Footer } from '../Footer';
 
 import { type CardBannerProps, type CardItemProps, type SignInCardProps } from './types';
 
 import './styles.css';
+import { useEditor } from '/@/hooks/useEditor';
 
 const learn_resources = [
   {
@@ -255,6 +257,7 @@ const FeedbackCard: React.FC = React.memo(() => {
 
 export function HomePage() {
   const auth = useAuth();
+  const { version } = useEditor();
 
   return (
     <main className="HomePage">
@@ -297,6 +300,7 @@ export function HomePage() {
             <FeedbackCard />
           </Grid>
         </Grid>
+        {version && <Footer version={version} />}
       </Container>
     </main>
   );

@@ -57,7 +57,7 @@ export async function getUpdateInfo() {
     updater.autoUpdater.autoDownload = false;
     updater.autoUpdater.fullChangelog = true;
     updater.autoUpdater.setFeedURL(
-      'https://github.com/decentraland/creator-hub/releases/download/0.14.2',
+      'https://github.com/decentraland/creator-hub/releases/download/0.14.3',
     );
     const result = await updater.autoUpdater.checkForUpdates();
     const version = result?.updateInfo?.version ?? null;
