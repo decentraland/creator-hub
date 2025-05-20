@@ -109,7 +109,6 @@ if (!import.meta.env.PROD) {
         });
         log.error('[AutoUpdater] Error in auto-updater', err);
       });
-
       updater.autoUpdater.forceDevUpdateConfig = true;
       updater.autoUpdater.autoDownload = true;
       updater.autoUpdater.autoInstallOnAppQuit = false;

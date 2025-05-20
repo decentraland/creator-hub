@@ -9,8 +9,6 @@ import * as npm from './npm';
 export function initIpc() {
   // electron
   handle('electron.getAppVersion', () => electron.getAppVersion());
-  handle('electron.getDownloadedVersion', () => electron.getDownloadedVersion());
-  handle('electron.getUpdateInfo', () => electron.getUpdateInfo());
   handle('electron.getUserDataPath', () => electron.getUserDataPath());
   handle('electron.getWorkspaceConfigPath', (_event, path) =>
     electron.getWorkspaceConfigPath(path),
@@ -19,6 +17,11 @@ export function initIpc() {
   handle('electron.openExternal', (_event, url) => electron.openExternal(url));
   handle('electron.copyToClipboard', (_event, text) => electron.copyToClipboard(text));
 
+  // updater
+  handle('electron.getDownloadedVersion', () => electron.getDownloadedVersion());
+  handle('electron.getUpdateInfo', () => electron.getUpdateInfo());
+  handle('electron.quitAndInstall', () => electron.quitAndInstall());
+  handle('electron.installUpdate', () => electron.installUpdate());
   // inspector
   handle('inspector.start', () => inspector.start());
   handle('inspector.openSceneDebugger', (_event, path) => inspector.openSceneDebugger(path));
