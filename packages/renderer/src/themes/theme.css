@@ -23,14 +23,15 @@
   --translusent-gray: rgba(255, 255, 255, 0.08);
 
   /* fonts */
-  --font-family: system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
-    sans-serif;
-  --font-monospace: "Inconsolata", "Consolas", "Droid Sans Mono", "Monaco", "Courier New", monospace;
+  --font-family:
+    system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-monospace:
+    "Inconsolata", "Consolas", "Droid Sans Mono", "Monaco", "Courier New", monospace;
 
   --background: #18141a;
   --danger: #ffa900;
   --error: #ff0000;
-  --success: #34CE77;
+  --success: #34ce77;
   --primary: #ff2d55;
   --secondary: #242129;
   --primary-hover: #ff3d61;
@@ -71,7 +72,9 @@ html {
   height: 100%;
 }
 
-body, #app, #debugger {
+body,
+#app,
+#debugger {
   padding: 0px;
   margin: 0px;
   height: 100%;
@@ -84,6 +87,17 @@ body, #app, #debugger {
   left: 0px;
 }
 
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+footer {
+  padding: 32px;
+}
+
 .Main {
   background: url(../../assets/images/background.png) #242129ff;
   background-position: center;
@@ -91,6 +105,8 @@ body, #app, #debugger {
   background-blend-mode: overlay;
   background-attachment: fixed;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .Debugger {

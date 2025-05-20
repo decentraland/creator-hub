@@ -260,48 +260,50 @@ export function HomePage() {
   const { version } = useEditor();
 
   return (
-    <main className="HomePage">
-      <Navbar active={NavbarItem.HOME} />
-      <Container>
-        <Typography
-          variant="h3"
-          mb="48px"
-        >
-          {t('home.header.title')}
-        </Typography>
-        <Grid
-          container
-          spacing={4}
-        >
-          {!auth.isSignedIn ? (
+    <>
+      <main className="HomePage">
+        <Navbar active={NavbarItem.HOME} />
+        <Container>
+          <Typography
+            variant="h3"
+            mb="48px"
+          >
+            {t('home.header.title')}
+          </Typography>
+          <Grid
+            container
+            spacing={4}
+          >
+            {!auth.isSignedIn ? (
+              <Grid
+                item
+                xs
+              >
+                <SignInCard onClickSignIn={auth.signIn} />
+              </Grid>
+            ) : null}
             <Grid
               item
               xs
             >
-              <SignInCard onClickSignIn={auth.signIn} />
+              <ScenesCard />
             </Grid>
-          ) : null}
-          <Grid
-            item
-            xs
-          >
-            <ScenesCard />
+            <Grid
+              item
+              xs
+            >
+              <LearnCard />
+            </Grid>
+            <Grid
+              item
+              xs
+            >
+              <FeedbackCard />
+            </Grid>
           </Grid>
-          <Grid
-            item
-            xs
-          >
-            <LearnCard />
-          </Grid>
-          <Grid
-            item
-            xs
-          >
-            <FeedbackCard />
-          </Grid>
-        </Grid>
-        {version && <Footer version={version} />}
-      </Container>
-    </main>
+        </Container>
+      </main>
+      {version && <Footer version={version} />}
+    </>
   );
 }
