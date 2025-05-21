@@ -31,7 +31,6 @@ export function initIpc() {
   handle('cli.killPreview', (_event, path) => cli.killPreview(path));
 
   // bin
-  handle('bin.install', () => bin.install());
   handle('bin.code', (_event, path) => bin.code(path));
 
   // analytics

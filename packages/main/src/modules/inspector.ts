@@ -1,11 +1,11 @@
 import log from 'electron-log';
-import { type BrowserWindow } from 'electron';
-import { join } from 'node:path';
+import { app, type BrowserWindow } from 'electron';
+import { createServer } from 'http-server';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { run, type Child } from './bin';
+import { type Child } from './bin';
 import { getAvailablePort } from './port';
-import { APP_UNPACKED_PATH } from './path';
 import { createWindow, focusWindow, getWindow } from './window';
 import * as cache from './cache';
 
@@ -16,19 +16,25 @@ export function getDebugger(path: string) {
   return debuggers.get(path);
 }
 
-export let inspectorServer: Child | null = null;
+let inspectorServer: ReturnType<typeof createServer> | null = null;
+
+export function killInspectorServer() {
+  inspectorServer?.close();
+  inspectorServer?.unref();
+}
+
 export async function start() {
   if (inspectorServer) {
-    await inspectorServer.kill();
+    killInspectorServer();
   }
 
   const port = await getAvailablePort();
-  inspectorServer = run('http-server', 'http-server', {
-    args: ['--port', port.toString()],
-    cwd: join(APP_UNPACKED_PATH, './node_modules/@dcl/inspector/public'),
-  });
+  const inspectorPath = resolve(app.getAppPath(), 'node_modules', '@dcl', 'inspector', 'public');
 
-  await inspectorServer.waitFor(/available/i, /error/i).catch(error => log.error(error.message));
+  inspectorServer = createServer({ root: inspectorPath });
+  inspectorServer.listen(port, () => {
+    log.info(`Inspector running at http://localhost:${port}`);
+  });
 
   return port;
 }
