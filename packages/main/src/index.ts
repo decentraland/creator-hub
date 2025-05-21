@@ -12,9 +12,9 @@ import { getAnalytics, track } from '/@/modules/analytics';
 import { runMigrations } from '/@/modules/migrations';
 
 import '/@/security-restrictions';
+import { setDownloadedVersion } from './modules/electron';
 
 log.initialize();
-export let downloadedVersion: string | null = null;
 
 if (import.meta.env.PROD) {
   Sentry.init({
@@ -80,7 +80,7 @@ app
  */
 
 //TODO: remove before release
-if (!import.meta.env.PROD) {
+if (import.meta.env.PROD) {
   app
     .whenReady()
     .then(() => {
@@ -94,11 +94,11 @@ if (!import.meta.env.PROD) {
         log.info('[AutoUpdater] Update not available');
       });
       updater.autoUpdater.on('update-downloaded', async info => {
-        downloadedVersion = info.version;
+        setDownloadedVersion(info.version);
         await track('Auto Update Editor', { version: info.version });
         console.log('RELEASE NOTES ===>', info.releaseNotes);
         log.info(`[AutoUpdater] Update downloaded (v${info.version})`);
-        console.log('DONWLOADED VERSION ===>', info);
+        log.info('DONWLOADED VERSION ===>', info);
       });
       updater.autoUpdater.on('download-progress', info => {
         log.info(`[AutoUpdater] Download progress ${info.percent.toFixed(2)}%`);
@@ -114,7 +114,7 @@ if (!import.meta.env.PROD) {
       updater.autoUpdater.autoDownload = true;
       updater.autoUpdater.autoInstallOnAppQuit = false;
       updater.autoUpdater.setFeedURL(
-        'https://github.com/decentraland/creator-hub/releases/download/0.14.3',
+        'https://github.com/decentraland/creator-hub/releases/download/0.14.2',
       );
       updater.autoUpdater.fullChangelog = true;
       updater.autoUpdater.checkForUpdates();
