@@ -14,7 +14,7 @@ import CodeIcon from '@mui/icons-material/Code';
 import PublicIcon from '@mui/icons-material/Public';
 
 import { useSelector } from '#store';
-
+import { CLIENT_NOT_INSTALLED_ERROR } from '/shared/utils';
 import { isWorkspaceError } from '/shared/types/workspace';
 
 import { t } from '/@/modules/store/translation/utils';
@@ -26,6 +26,7 @@ import EditorPng from '/assets/images/editor.png';
 
 import { PublishProject } from '../Modals/PublishProject';
 import { PublishHistory } from '../Modals/PublishHistory';
+import { InstallClient } from '../Modals/InstallClient';
 import { Button } from '../Button';
 import { Header } from '../Header';
 import { Row } from '../Row';
@@ -114,8 +115,14 @@ export function EditorPage() {
     [settings, updateAppSettings],
   );
 
-  const handleOpenPreview = useCallback(() => {
-    openPreview(settings.previewOptions);
+  const handleOpenPreview = useCallback(async () => {
+    try {
+      await openPreview(settings.previewOptions);
+    } catch (error: any) {
+      if (error.message.includes(CLIENT_NOT_INSTALLED_ERROR)) {
+        setModalOpen('install-client');
+      }
+    }
   }, [openPreview, settings.previewOptions]);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -327,6 +334,13 @@ function Modal({ type, ...props }: ModalProps) {
         <PublishHistory
           open={type === 'publish-history'}
           {...props}
+        />
+      );
+    case 'install-client':
+      return (
+        <InstallClient
+          open={type === 'install-client'}
+          onClose={props.onClose}
         />
       );
     default:
