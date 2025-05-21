@@ -55,6 +55,6 @@ export async function quitAndInstall() {
   return await invoke('electron.quitAndInstall');
 }
 
-export async function installUpdate() {
-  return await invoke('electron.installUpdate');
+export async function downloadUpdate() {
+  return await invoke('electron.downloadUpdate');
 }

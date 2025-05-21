@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Box,
-  Button,
   IconButton,
   FormControlLabel,
   Radio,
@@ -10,6 +9,7 @@ import {
   Typography,
   FormGroup,
   InputAdornment,
+  Button,
 } from 'decentraland-ui2';
 import CloseIcon from '@mui/icons-material/Close';
 import FolderIcon from '@mui/icons-material/Folder';
@@ -31,6 +31,7 @@ import { Column } from '../../Column';
 
 export function AppSettings({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { settings: _settings, updateAppSettings } = useSettings();
+  const [isDownloading, setIsDownloading] = useState(false);
   const { version: currentVersion } = useEditor();
   const [updateInfo, setUpdateInfo] = useState<{
     available: boolean | null;
@@ -75,9 +76,6 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
   const handleCheckForUpdates = useCallback(async () => {
     const { updateAvailable, version: newVersion } = await settingsPreload.getUpdateInfo();
     const downloadedVersion = await settingsPreload.getDownloadedVersion();
-    console.log('UPDATE available ===>', updateAvailable);
-    console.log('NEW VERSION ===>', newVersion);
-    console.log('DOWNLOADED VERSION ===>', downloadedVersion);
     setUpdateInfo({
       available: !!updateAvailable,
       version: newVersion ?? null,
@@ -86,12 +84,14 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
   }, []);
 
   const handleInstallUpdate = useCallback(async () => {
-    console.log('install update');
     await settingsPreload.quitAndInstall();
   }, []);
 
   const handleDownloadUpdate = useCallback(async () => {
-    console.log('download update');
+    setIsDownloading(true);
+    await settingsPreload.downloadUpdate();
+    setIsDownloading(false);
+    handleCheckForUpdates();
   }, []);
 
   const canInstallNewVersion = useMemo(
@@ -138,6 +138,7 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
             <Button
               variant="contained"
               onClick={getButtonProps().action}
+              disabled={isDownloading}
             >
               {getButtonProps().text}
             </Button>

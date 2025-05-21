@@ -21,7 +21,7 @@ export function initIpc() {
   handle('electron.getDownloadedVersion', () => electron.getDownloadedVersion());
   handle('electron.getUpdateInfo', () => electron.getUpdateInfo());
   handle('electron.quitAndInstall', () => electron.quitAndInstall());
-  handle('electron.installUpdate', () => electron.installUpdate());
+  handle('electron.downloadUpdate', () => electron.downloadUpdate());
   // inspector
   handle('inspector.start', () => inspector.start());
   handle('inspector.openSceneDebugger', (_event, path) => inspector.openSceneDebugger(path));
