@@ -38,6 +38,7 @@
     "@sentry/vite-plugin": "^3.2.2",
     "@sentry/wizard": "^4.2.0",
     "@types/cmd-shim": "^5.0.2",
+    "@types/http-server": "^0.12.4",
     "@types/is-running": "^2.1.2",
     "@types/node": "20.14.9",
     "@types/react": "^18.3.3",
