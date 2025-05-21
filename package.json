@@ -24,7 +24,7 @@
     "test:renderer": "vitest run -r packages/renderer --passWithNoTests",
     "watch": "node scripts/watch.js",
     "start": "npm run watch",
-    "lint": "eslint . --ext js,mjs,cjs,ts,mts,cts,vue",
+    "lint": "eslint . --ext js,mjs,cjs,ts,mts,cts",
     "typecheck:main": "tsc --noEmit -p packages/main/tsconfig.json",
     "typecheck:preload": "tsc --noEmit -p packages/preload/tsconfig.json",
     "typecheck:renderer": "tsc --noEmit -p packages/renderer/tsconfig.json",
@@ -36,6 +36,7 @@
     "@reduxjs/toolkit": "^2.2.6",
     "@sentry/vite-plugin": "^3.2.2",
     "@sentry/wizard": "^4.2.0",
+    "@testing-library/react": "^16.3.0",
     "@types/cmd-shim": "^5.0.2",
     "@types/is-running": "^2.1.2",
     "@types/node": "20.14.9",
@@ -53,7 +54,6 @@
     "electron": "31.1.0",
     "electron-builder": "24.13.3",
     "eslint": "8.57.0",
-    "eslint-plugin-vue": "9.27.0",
     "flat": "^6.0.1",
     "happy-dom": "14.12.3",
     "nano-staged": "0.8.0",
@@ -72,6 +72,7 @@
     "vitest": "1.6.0"
   },
   "dependencies": {
+    "@dcl/feature-flags": "1.2.0",
     "@dcl/mini-rpc": "1.0.7",
     "@dcl/schemas": "11.10.4",
     "@dcl/sdk": "7.8.8",
