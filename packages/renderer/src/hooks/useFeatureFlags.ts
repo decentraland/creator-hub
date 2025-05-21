@@ -1,9 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import {
-  fetchFeatureFlags,
-  isFeatureFlagEnabled as checkFlag,
-  getVariant as getVariantData,
-} from '/shared/featureFlags';
+import { fetchFeatureFlags, getVariant as getVariantData } from '/shared/featureFlags';
 import { ApplicationName } from '/shared/types/featureFlags';
 import type { FeatureFlagOptions, FeatureFlagsData, FeatureName } from '/shared/types/featureFlags';
 
@@ -47,18 +43,63 @@ export const useFeatureFlags = (
     JSON.stringify(options.applicationName),
   ]);
 
+  /**
+   * Check if a feature flag is enabled
+   * @param featureName Name of the feature flag without app prefix
+   * @param applicationName Optional specific application name to check
+   * @returns Whether the feature flag is enabled
+   */
   const isFeatureFlagEnabled = useCallback(
-    (value: FeatureName | string) => {
-      return checkFlag(data, value);
+    (featureName: FeatureName | string, applicationName?: ApplicationName): boolean => {
+      if (!data?.flags) return false;
+
+      // If a specific app is provided, only check that app
+      if (applicationName) {
+        const fullFeatureName = `${applicationName}-${featureName}`;
+        return !!data.flags[fullFeatureName];
+      }
+
+      // Otherwise check all applications in the options
+      for (const appName of options.applicationName) {
+        const fullFeatureName = `${appName}-${featureName}`;
+        if (data.flags[fullFeatureName]) {
+          return true;
+        }
+      }
+
+      return false;
     },
-    [data],
+    [data, options.applicationName],
   );
 
+  /**
+   * Get variant data for a feature flag
+   * @param featureName Name of the feature flag variant without app prefix
+   * @param applicationName Optional specific application name to check
+   * @returns The variant data
+   */
   const getVariants = useCallback(
-    (value: string) => {
-      return getVariantData(data, value);
+    (featureName: string, applicationName?: ApplicationName): any => {
+      if (!data?.variants) return undefined;
+
+      // If a specific app is provided, only check that app
+      if (applicationName) {
+        const fullFeatureName = `${applicationName}-${featureName}`;
+        return getVariantData(data, fullFeatureName);
+      }
+
+      // Otherwise check all applications in the options
+      for (const appName of options.applicationName) {
+        const fullFeatureName = `${appName}-${featureName}`;
+        const variant = getVariantData(data, fullFeatureName);
+        if (variant !== undefined) {
+          return variant;
+        }
+      }
+
+      return undefined;
     },
-    [data],
+    [data, options.applicationName],
   );
 
   return {

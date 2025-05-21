@@ -1,7 +1,7 @@
 import { fetchFlags } from '@dcl/feature-flags';
 import { tryCatch } from './try-catch';
 import { ApplicationName } from './types/featureFlags';
-import type { FeatureFlagOptions, FeatureFlagsData, FeatureName } from './types/featureFlags';
+import type { FeatureFlagOptions, FeatureFlagsData } from './types/featureFlags';
 
 export async function fetchFeatureFlags(
   options: FeatureFlagOptions = { applicationName: [ApplicationName.DAPPS] },
@@ -18,22 +18,38 @@ export async function fetchFeatureFlags(
   return data as FeatureFlagsData;
 }
 
+/**
+ * Checks if a feature flag is enabled using fully qualified name (appName-featureName)
+ * This is a low-level function - usually you want to use the higher-level functions
+ * that handle the appName prefix for you.
+ * @param data Feature flags data
+ * @param fullFlagName Full flag name including app prefix (e.g., "dapps-launcher-links")
+ * @returns Whether the feature flag is enabled
+ */
 export function isFeatureFlagEnabled(
   data: FeatureFlagsData | undefined,
-  flagName: FeatureName | string,
+  fullFlagName: string,
 ): boolean {
-  return !!data?.flags && !!data.flags[flagName];
+  return !!data?.flags && !!data.flags[fullFlagName];
 }
 
-export function getVariant(data: FeatureFlagsData | undefined, variantName: string): any {
-  const payload = data?.variants?.[variantName]?.payload;
+/**
+ * Gets variant data for a feature flag using fully qualified name (appName-featureName)
+ * This is a low-level function - usually you want to use the higher-level functions
+ * that handle the appName prefix for you.
+ * @param data Feature flags data
+ * @param fullVariantName Full variant name including app prefix (e.g., "dapps-launcher-links")
+ * @returns The variant data
+ */
+export function getVariant(data: FeatureFlagsData | undefined, fullVariantName: string): any {
+  const payload = data?.variants?.[fullVariantName]?.payload;
 
   if (payload) {
     if (payload.type === 'json') {
       try {
         return JSON.parse(payload.value);
       } catch (error) {
-        console.error('Error parsing JSON for feature flag variant', variantName, error);
+        console.error('Error parsing JSON for feature flag variant', fullVariantName, error);
         return undefined;
       }
     }

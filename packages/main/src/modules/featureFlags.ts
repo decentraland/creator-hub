@@ -1,8 +1,4 @@
-import {
-  fetchFeatureFlags,
-  isFeatureFlagEnabled as checkFlag,
-  getVariant,
-} from '/shared/featureFlags';
+import { fetchFeatureFlags, getVariant as getVariantData } from '/shared/featureFlags';
 import { ApplicationName } from '/shared/types/featureFlags';
 import type { FeatureFlagOptions, FeatureFlagsData } from '/shared/types/featureFlags';
 
@@ -37,28 +33,69 @@ export async function getFeatureFlags(
 
 /**
  * Checks if a feature flag is enabled
- * @param flagName Name of the feature flag
+ * @param featureName Name of the feature flag without app prefix
  * @param options Feature flag options
+ * @param applicationName Optional specific application name to check
  * @returns Whether the feature is enabled
  */
 export async function isFeatureFlagEnabled(
-  flagName: string,
+  featureName: string,
   options?: FeatureFlagOptions,
+  applicationName?: ApplicationName,
 ): Promise<boolean> {
   const data = await getFeatureFlags(options);
-  return checkFlag(data, flagName);
+  if (!data?.flags) return false;
+
+  const appNames = options?.applicationName || [ApplicationName.DAPPS];
+
+  // If a specific app is provided, only check that app
+  if (applicationName) {
+    const fullFeatureName = `${applicationName}-${featureName}`;
+    return !!data.flags[fullFeatureName];
+  }
+
+  // Otherwise check all applications in the options
+  for (const appName of appNames) {
+    const fullFeatureName = `${appName}-${featureName}`;
+    if (data.flags[fullFeatureName]) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /**
  * Gets variant data for a feature flag
- * @param variantName Name of the variant
+ * @param featureName Name of the variant without app prefix
  * @param options Feature flag options
+ * @param applicationName Optional specific application name to check
  * @returns The variant data
  */
 export async function getFeatureFlagVariant(
-  variantName: string,
+  featureName: string,
   options?: FeatureFlagOptions,
+  applicationName?: ApplicationName,
 ): Promise<any> {
   const data = await getFeatureFlags(options);
-  return getVariant(data, variantName);
+  if (!data?.variants) return undefined;
+
+  const appNames = options?.applicationName || [ApplicationName.DAPPS];
+
+  // If a specific app is provided, only check that app
+  if (applicationName) {
+    const fullFeatureName = `${applicationName}-${featureName}`;
+    return getVariantData(data, fullFeatureName);
+  }
+
+  // Otherwise check all applications in the options
+  for (const appName of appNames) {
+    const fullFeatureName = `${appName}-${featureName}`;
+    const variant = getVariantData(data, fullFeatureName);
+    if (variant !== undefined) {
+      return variant;
+    }
+  }
+
+  return undefined;
 }
