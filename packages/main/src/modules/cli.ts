@@ -1,4 +1,6 @@
 import log from 'electron-log/main';
+import { initComponents } from '@dcl/sdk-commands/dist/components';
+import { runSdkCommand } from '@dcl/sdk-commands/dist/run-command';
 
 import type { DeployOptions } from '/shared/types/ipc';
 import type { PreviewOptions } from '/shared/types/settings';
@@ -26,12 +28,14 @@ async function getEnv(path: string) {
 }
 
 export async function init(path: string, repo?: string): Promise<void> {
-  const initCommand = run('@dcl/sdk-commands', 'sdk-commands', {
-    args: ['init', '--yes', '--skip-install', ...(repo ? ['--github-repo', repo] : [])],
-    cwd: path,
-    env: await getEnv(path),
-  });
-  await initCommand.wait();
+  // TODO: find a way to send the "getEnv()" payload to the sdk command
+  const components = await initComponents();
+  await runSdkCommand(components, 'init', [
+    '--yes',
+    '--skip-install',
+    ...['--dir', path],
+    ...(repo ? ['--github-repo', repo] : []),
+  ]);
 }
 
 export async function killPreview(path: string) {

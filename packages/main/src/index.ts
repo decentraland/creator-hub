@@ -7,7 +7,7 @@ import log from 'electron-log/main';
 import { restoreOrCreateMainWindow } from '/@/mainWindow';
 import { initIpc } from '/@/modules/ipc';
 import { deployServer, killAllPreviews } from '/@/modules/cli';
-import { inspectorServer } from '/@/modules/inspector';
+import { killInspectorServer } from '/@/modules/inspector';
 import { getAnalytics, track } from '/@/modules/analytics';
 import { runMigrations } from '/@/modules/migrations';
 
@@ -125,9 +125,7 @@ export async function killAll() {
   if (deployServer) {
     promises.push(deployServer.kill());
   }
-  if (inspectorServer) {
-    promises.push(inspectorServer.kill());
-  }
+  killInspectorServer();
   await Promise.all(promises);
 }
 

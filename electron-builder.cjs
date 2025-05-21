@@ -72,7 +72,6 @@ const config = {
       },
     ],
   },
-  asarUnpack: ['./node_modules/npm/**/*', './package.json'],
   publish: [
     {
       provider: 'github',

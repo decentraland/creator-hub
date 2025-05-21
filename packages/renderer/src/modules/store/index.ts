@@ -56,14 +56,14 @@ export const createSelector = createDraftSafeSelector.withTypes<AppState>();
 async function start() {
   try {
     // fetch app version and user id
-    await Promise.all([
-      store.dispatch(editor.actions.fetchVersion()),
-      store.dispatch(analytics.actions.fetchAnonymousId()),
-    ]);
+    // await Promise.all([
+    //   store.dispatch(editor.actions.fetchVersion()),
+    //   store.dispatch(analytics.actions.fetchAnonymousId()),
+    // ]);
 
     // install editor dependencies
-    const install = store.dispatch(editor.actions.install());
-    await install.unwrap(); // .unwrap() to make it throw if thunk is rejected
+    // const install = store.dispatch(editor.actions.install());
+    // await install.unwrap(); // .unwrap() to make it throw if thunk is rejected
 
     // start app
     await Promise.all([

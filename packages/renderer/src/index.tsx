@@ -59,12 +59,12 @@ root.render(
             <Router>
               <AuthProvider>
                 <Routes>
-                  <Route
+                  {/* <Route
                     path="/"
                     element={<Install />}
-                  />
+                  /> */}
                   <Route
-                    path="/home"
+                    path="/"
                     element={<HomePage />}
                   />
                   <Route
