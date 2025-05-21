@@ -33,8 +33,6 @@ import { Navbar, NavbarItem } from '../Navbar';
 import { type CardBannerProps, type CardItemProps, type SignInCardProps } from './types';
 
 import './styles.css';
-import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
-import { ApplicationName, FeatureName } from '/shared/types/featureFlags';
 
 const learn_resources = [
   {
@@ -257,14 +255,6 @@ const FeedbackCard: React.FC = React.memo(() => {
 
 export function HomePage() {
   const auth = useAuth();
-  const { isFeatureFlagEnabled } = useFeatureFlags();
-
-  const isLauncherLinksEnabled = isFeatureFlagEnabled(
-    FeatureName.LAUNCHER_LINKS,
-    ApplicationName.DAPPS,
-  );
-
-  console.log('isLauncherLinksEnabled', isLauncherLinksEnabled);
 
   return (
     <main className="HomePage">
