@@ -1,4 +1,4 @@
-import { ErrorBase } from './error';
+import { ErrorBase } from '../../../shared/types/error';
 import { captureException } from '@sentry/electron/renderer';
 
 export const DEPLOY_URLS = {
