@@ -1,5 +1,5 @@
 # Decentraland Creator Hub
-
+.
 Decentraland Creator Hub is an Electron-based application designed for creating, editing, and deploying Decentraland scenes. This application is distributed for both Windows and MacOS, supporting both x64 and ARM architectures.
 
 ### Features
