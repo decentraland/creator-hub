@@ -165,32 +165,40 @@ jobs:
 
       - name: Upload to S3
         if: ${{ github.event.pull_request.number }}
+        uses: shallwefootball/s3-upload-action@master
         id: upload
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.SDK_TEAM_AWS_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.SDK_TEAM_AWS_SECRET }}
-        run: |
-          npx @dcl/cdn-uploader@next \
-            --bucket ${{ secrets.SDK_TEAM_S3_BUCKET }} \
-            --local-folder dist/upload \
-            --bucket-folder creator-hub/branch/${{ github.head_ref }}
+        with:
+          aws_key_id: ${{ secrets.SDK_TEAM_AWS_ID }}
+          aws_secret_access_key: ${{ secrets.SDK_TEAM_AWS_SECRET }}
+          aws_bucket: ${{ secrets.SDK_TEAM_S3_BUCKET }}
+          source_dir: 'dist/upload'
+          destination_dir: 'creator-hub/branch/${{ github.head_ref }}'
 
-      - name: Set specific windows instructions
-        if: ${{ github.event.pull_request.number && matrix.os == 'windows-latest' }}
-        id: windows-instructions
+      # Have to write the URL's to a file so GH Actions don't mask them for being possibly sensitive data (secrets.SDK_TEAM_S3_BASE_URL is not sensitive data)
+      - name: Update S3 URL's to CDN
+        if: ${{ github.event.pull_request.number }}
+        id: update-urls
         run: |
+          urls='${{ steps.upload.outputs.object_locations }}'
+          echo "$urls" | jq -r '.[]' | sed -e 's|https://\*\*\*.s3.amazonaws.com|${{ secrets.SDK_TEAM_S3_BASE_URL }}|' -e 's|\+|%20|g' | \
+          while read url; do
+            arch=$(echo "$url" | grep -oE '(win-x64|mac-x64|mac-arm64|linux-x64)') # Extract architecture
+            echo "[$arch]($url)"  # Format as markdown link
+          done >> urls.md
+
+      - name: Set output with URLs
+        if: ${{ github.event.pull_request.number }}
+        id: url-list
+        run: |
+          content=$(cat urls.md)
           echo "list<<EOF" >> $GITHUB_ENV
-          echo "[win-x64](${{ secrets.SDK_TEAM_S3_BASE_URL }}/creator-hub/branch/${{ github.head_ref }}/Decentraland%20Creator%20Hub-${{ steps.version.outputs.version }}-win-x64.exe)" >> $GITHUB_ENV
+          echo "$content" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
       - name: Set specific macos instructions
         if: ${{ github.event.pull_request.number && matrix.os == 'macos-latest' }}
         id: macos-instructions
         run: |
-          echo "list<<EOF" >> $GITHUB_ENV
-          echo "[mac-x64](${{ secrets.SDK_TEAM_S3_BASE_URL }}/creator-hub/branch/${{ github.head_ref }}/Decentraland%20Creator%20Hub-${{ steps.version.outputs.version }}-mac-x64.dmg)" >> $GITHUB_ENV
-          echo "[mac-arm64](${{ secrets.SDK_TEAM_S3_BASE_URL }}/creator-hub/branch/${{ github.head_ref }}/Decentraland%20Creator%20Hub-${{ steps.version.outputs.version }}-mac-arm64.dmg)" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
           content=$(cat ./.github/workflows/macos-instructions.md)
           echo "macos-instructions<<EOF" >> $GITHUB_ENV
           echo "$content" >> $GITHUB_ENV
