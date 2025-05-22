@@ -8,7 +8,8 @@ import { type SerializedError } from '@reduxjs/toolkit';
 import { t } from '/@/modules/store/translation/utils';
 import { minutes, seconds } from '/shared/time';
 import { delay } from '/shared/utils';
-import { DEPLOY_URLS,
+import {
+  DEPLOY_URLS,
   type Info,
   type File,
   type AssetBundleRegistryResponse,
@@ -16,7 +17,7 @@ import { DEPLOY_URLS,
   type DeploymentComponentsStatus,
   STATUS_VALUES,
   DeploymentError,
- } from '/@/lib/deploy';
+} from '/@/lib/deploy';
 
 export const MAX_FILE_SIZE_BYTES = 50 * 1e6; // 50MB defined in sdk-commands...
 
