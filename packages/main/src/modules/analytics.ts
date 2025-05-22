@@ -2,6 +2,7 @@ import { Analytics, type TrackParams } from '@segment/analytics-node';
 import path from 'node:path';
 import log from 'electron-log';
 import { randomUUID, type UUID } from 'node:crypto';
+import * as Sentry from '@sentry/electron/main';
 
 import { FileSystemStorage } from '/shared/types/storage';
 import type { ProjectInfo } from '/shared/types/projects';
@@ -77,6 +78,7 @@ export async function identify(userId: string, traits: Record<string, any> = {})
     if (!analytics) return;
     const anonymousId = await getAnonymousId();
     setUserId(userId);
+    Sentry.setUser({ id: userId });
     analytics.identify({ userId, anonymousId, traits });
   } catch (error) {
     log.error('Error identifying user', userId, error);

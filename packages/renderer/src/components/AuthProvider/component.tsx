@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChainId, type Avatar } from '@dcl/schemas';
+import { setUser } from '@sentry/electron/renderer';
 import { AuthServerProvider } from 'decentraland-connect';
 import { useDispatch } from '#store';
 import { AuthContext } from '/@/contexts/AuthContext';
@@ -100,6 +101,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       dispatch(identify({ userId: wallet }));
       dispatch(fetchTiles({ chainId }));
       dispatch(fetchLandList({ address: wallet, chainId }));
+      setUser({ id: wallet });
     }
   }, [wallet, chainId]);
 
