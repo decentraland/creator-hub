@@ -1,9 +1,6 @@
 import path from 'path';
 import fs from 'fs/promises';
 import { app, BrowserWindow, clipboard, dialog, type OpenDialogOptions, shell } from 'electron';
-import updater from 'electron-updater';
-
-export let downloadedVersion: string | null = null;
 
 export function getHome() {
   return app.getPath('home');
@@ -45,45 +42,4 @@ export async function getAppVersion() {
 
 export async function copyToClipboard(text: string) {
   clipboard.writeText(text);
-}
-
-export function getDownloadedVersion() {
-  return downloadedVersion;
-}
-
-export function setDownloadedVersion(version: string | null) {
-  downloadedVersion = version;
-}
-
-export async function getUpdateInfo() {
-  try {
-    //TODO: remove before release & update URL
-    updater.autoUpdater.forceDevUpdateConfig = true;
-    updater.autoUpdater.autoDownload = false;
-    updater.autoUpdater.fullChangelog = true;
-    updater.autoUpdater.setFeedURL(
-      'https://github.com/decentraland/creator-hub/releases/download/0.14.2',
-    );
-    const result = await updater.autoUpdater.checkForUpdates();
-    const version = result?.updateInfo?.version ?? null;
-    console.log('NEW VERSION DETECTED ===>', result);
-    return { updateAvailable: version !== null, version };
-  } catch (error: any) {
-    return { updateAvailable: false, error: error.message, version: null };
-  }
-}
-
-export async function quitAndInstall() {
-  updater.autoUpdater.quitAndInstall();
-}
-
-export async function downloadUpdate() {
-  try {
-    const result = await updater.autoUpdater.checkForUpdates();
-    updater.autoUpdater.downloadUpdate();
-    console.log('DOWNLOADING THIS VERSION ===>', result);
-    setDownloadedVersion(result?.updateInfo?.version ?? null);
-  } catch (error: any) {
-    console.error('ERROR DOWNLOADING UPDATE', error);
-  }
 }

@@ -1,7 +1,6 @@
 import { app } from 'electron';
 import * as Sentry from '@sentry/electron/main';
 import { platform } from 'node:process';
-import updater from 'electron-updater';
 import log from 'electron-log/main';
 
 import { restoreOrCreateMainWindow } from '/@/mainWindow';
@@ -10,9 +9,9 @@ import { deployServer, killAllPreviews } from '/@/modules/cli';
 import { inspectorServer } from '/@/modules/inspector';
 import { getAnalytics, track } from '/@/modules/analytics';
 import { runMigrations } from '/@/modules/migrations';
+import * as updater from './modules/updater';
 
 import '/@/security-restrictions';
-import { setDownloadedVersion } from './modules/electron';
 
 log.initialize();
 
@@ -70,66 +69,26 @@ app
   .catch(e => log.error('Failed create window:', e));
 
 /**
- * Check for app updates, install it in background and notify user that new version was installed.
- * No reason run this in non-production build.
- * @see https://www.electron.build/auto-update.html#quick-setup-guide
- *
- * Note: It may throw "ENOENT: no such file app-update.yml"
- * if you compile production app without publishing it to distribution server.
- * Like `npm run compile` does. It's ok 😅
+ * Initialize the updater in both development and production modes
  */
-
-//TODO: remove before release
-if (import.meta.env.PROD) {
-  app
-    .whenReady()
-    .then(() => {
-      updater.autoUpdater.on('checking-for-update', () => {
-        log.info('[AutoUpdater] Checking for updates');
+app
+  .whenReady()
+  .then(() => {
+    try {
+      updater.checkForUpdates({
+        autoDownload: true, // Set to false for manual download testing
       });
-      updater.autoUpdater.on('update-available', _info => {
-        log.info('[AutoUpdater] Update available');
-      });
-      updater.autoUpdater.on('update-not-available', _info => {
-        log.info('[AutoUpdater] Update not available');
-      });
-      updater.autoUpdater.on('update-downloaded', async info => {
-        setDownloadedVersion(info.version);
-        await track('Auto Update Editor', { version: info.version });
-        console.log('RELEASE NOTES ===>', info.releaseNotes);
-        log.info(`[AutoUpdater] Update downloaded (v${info.version})`);
-        log.info('DONWLOADED VERSION ===>', info);
-      });
-      updater.autoUpdater.on('download-progress', info => {
-        log.info(`[AutoUpdater] Download progress ${info.percent.toFixed(2)}%`);
-      });
-      updater.autoUpdater.on('error', err => {
-        Sentry.captureException(err, {
-          tags: { source: 'auto-updater' },
-          extra: { context: 'Electron auto-update process' },
-        });
-        log.error('[AutoUpdater] Error in auto-updater', err);
-      });
-      updater.autoUpdater.forceDevUpdateConfig = true;
-      updater.autoUpdater.autoDownload = true;
-      updater.autoUpdater.autoInstallOnAppQuit = false;
-      updater.autoUpdater.setFeedURL(
-        'https://github.com/decentraland/creator-hub/releases/download/0.14.2',
-      );
-      updater.autoUpdater.fullChangelog = true;
-      updater.autoUpdater.checkForUpdates();
-      console.log('CURRENT VERSION ===>', updater.autoUpdater.currentVersion);
-    })
-    .catch(error => {
+    } catch (error: any) {
       Sentry.captureException(error, {
         tags: { source: 'auto-updater' },
         extra: { context: 'Electron auto-update process main' },
       });
       log.error('[AutoUpdater] Failed check and install updates:', error.message);
-    });
-} else {
-  log.info('Skipping updates check in DEV mode');
-}
+    }
+  })
+  .catch((error: Error) => {
+    log.error('[AutoUpdater] Failed to initialize updater:', error.message);
+  });
 
 export async function killAll() {
   const promises: Promise<unknown>[] = [killAllPreviews()];
