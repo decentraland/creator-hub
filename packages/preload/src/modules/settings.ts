@@ -43,8 +43,8 @@ export async function selectSceneFolder(): Promise<string | undefined> {
   return projectPath;
 }
 
-export async function checkForUpdates() {
-  return await invoke('updater.checkForUpdates');
+export async function checkForUpdates(config?: { autoDownload?: boolean }) {
+  return await invoke('updater.checkForUpdates', config);
 }
 
 export async function getDownloadedVersion() {

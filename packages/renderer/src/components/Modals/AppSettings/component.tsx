@@ -74,7 +74,9 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
   const isDirty = useMemo(() => !equal(_settings, settings), [settings, _settings]);
 
   const handleCheckForUpdates = useCallback(async () => {
-    const { updateAvailable, version: newVersion } = await settingsPreload.checkForUpdates();
+    const { updateAvailable, version: newVersion } = await settingsPreload.checkForUpdates({
+      autoDownload: false,
+    });
     const downloadedVersion = await settingsPreload.getDownloadedVersion();
     setUpdateInfo({
       available: !!updateAvailable,
@@ -88,6 +90,7 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
   }, []);
 
   const handleDownloadUpdate = useCallback(async () => {
+    debugger;
     setIsDownloading(true);
     const result = await settingsPreload.downloadUpdate({ autoDownload: true });
     console.log('DOWNLOAD RESULT ===>', result);

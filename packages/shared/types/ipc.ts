@@ -17,7 +17,7 @@ export interface Ipc {
   'electron.getUserDataPath': () => string;
   'electron.getAppVersion': () => Promise<string>;
   'updater.getDownloadedVersion': () => string | null;
-  'updater.checkForUpdates': () => Promise<{
+  'updater.checkForUpdates': (config?: { autoDownload?: boolean }) => Promise<{
     updateAvailable: boolean;
     error?: any;
     version: string | null;
