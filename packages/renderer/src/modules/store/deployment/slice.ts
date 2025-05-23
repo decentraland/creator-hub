@@ -3,8 +3,8 @@ import { Authenticator, type AuthIdentity } from '@dcl/crypto';
 import type { ChainId } from '@dcl/schemas';
 import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
 
-import type { DeploymentComponentsStatus, Info, Status, File } from '/shared/types/deploy';
-import { DeploymentError, isDeploymentError } from '/shared/types/deploy';
+import type { DeploymentComponentsStatus, Info, Status, File } from '/@/lib/deploy';
+import { DeploymentError, isDeploymentError } from '/@/lib/deploy';
 import { delay } from '/shared/utils';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';

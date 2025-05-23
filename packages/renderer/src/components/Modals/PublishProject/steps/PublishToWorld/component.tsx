@@ -16,7 +16,7 @@ import type { WorldConfiguration } from '@dcl/schemas';
 
 import { misc } from '#preload';
 import type { Project } from '/shared/types/projects';
-import { DEPLOY_URLS } from '/shared/types/deploy';
+import { DEPLOY_URLS } from '/@/lib/deploy';
 import { useSelector } from '#store';
 
 import { t } from '/@/modules/store/translation/utils';
