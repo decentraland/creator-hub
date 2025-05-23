@@ -50,14 +50,14 @@ function setupUpdaterEvents() {
 }
 
 function configureUpdater(config: UpdaterConfig) {
-  const { autoDownload = true } = config;
+  const { autoDownload = false } = config;
   updater.autoUpdater.autoDownload = autoDownload;
   updater.autoUpdater.autoInstallOnAppQuit = false;
   updater.autoUpdater.autoDownload = autoDownload;
   updater.autoUpdater.forceDevUpdateConfig = true;
   updater.autoUpdater.autoInstallOnAppQuit = false;
   updater.autoUpdater.setFeedURL(
-    'https://github.com/decentraland/creator-hub/releases/download/0.14.3',
+    'https://github.com/decentraland/creator-hub/releases/download/0.14.2',
   );
 }
 
@@ -79,20 +79,6 @@ export async function checkForUpdates(config: UpdaterConfig = {}) {
   }
 }
 
-export async function getUpdateInfo() {
-  try {
-    // Force check for updates
-    checkForUpdates({ autoDownload: true });
-    const result = await updater.autoUpdater.checkForUpdates();
-    const version = result?.updateInfo?.version ?? null;
-    console.log('UPDATE CHECK RESULT ===>', result);
-    return { updateAvailable: version !== null, version };
-  } catch (error: any) {
-    log.error('[AutoUpdater] Error checking for updates:', error);
-    return { updateAvailable: false, error: error.message, version: null };
-  }
-}
-
 export async function quitAndInstall() {
   try {
     updater.autoUpdater.quitAndInstall();
@@ -102,19 +88,9 @@ export async function quitAndInstall() {
   }
 }
 
-export async function downloadUpdate(config: UpdaterConfig = {}) {
+export async function downloadUpdate() {
   try {
-    // Ensure events are set up and updater is configured
-    configureUpdater(config);
-    setupUpdaterEvents();
-
-    // Force check for updates
-    const result = await updater.autoUpdater.checkForUpdates();
-    console.log('UPDATE CHECK RESULT ===>', result);
-
-    // Then download if available
-    const download = await updater.autoUpdater.downloadUpdate();
-    return download;
+    return checkForUpdates({ autoDownload: true });
   } catch (error: any) {
     log.error('[AutoUpdater] Error downloading update:', error);
     return error;

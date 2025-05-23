@@ -76,7 +76,7 @@ app
   .then(() => {
     try {
       updater.checkForUpdates({
-        autoDownload: true, // Set to false for manual download testing
+        autoDownload: false, // Set to false for manual download testing
       });
     } catch (error: any) {
       Sentry.captureException(error, {
