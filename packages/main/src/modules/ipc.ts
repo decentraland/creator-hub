@@ -1,5 +1,6 @@
 import { handle } from './handle';
 import * as electron from './electron';
+import * as updater from './updater';
 import * as inspector from './inspector';
 import * as cli from './cli';
 import * as bin from './bin';
@@ -18,10 +19,11 @@ export function initIpc() {
   handle('electron.copyToClipboard', (_event, text) => electron.copyToClipboard(text));
 
   // updater
-  handle('electron.getDownloadedVersion', () => electron.getDownloadedVersion());
-  handle('electron.getUpdateInfo', () => electron.getUpdateInfo());
-  handle('electron.quitAndInstall', () => electron.quitAndInstall());
-  handle('electron.downloadUpdate', () => electron.downloadUpdate());
+  handle('updater.getDownloadedVersion', () => updater.getDownloadedVersion());
+  handle('updater.checkForUpdates', () => updater.checkForUpdates());
+  handle('updater.quitAndInstall', () => updater.quitAndInstall());
+  handle('updater.downloadUpdate', (_event, config) => updater.downloadUpdate(config));
+
   // inspector
   handle('inspector.start', () => inspector.start());
   handle('inspector.openSceneDebugger', (_event, path) => inspector.openSceneDebugger(path));

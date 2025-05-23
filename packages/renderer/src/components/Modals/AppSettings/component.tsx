@@ -74,7 +74,7 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
   const isDirty = useMemo(() => !equal(_settings, settings), [settings, _settings]);
 
   const handleCheckForUpdates = useCallback(async () => {
-    const { updateAvailable, version: newVersion } = await settingsPreload.getUpdateInfo();
+    const { updateAvailable, version: newVersion } = await settingsPreload.checkForUpdates();
     const downloadedVersion = await settingsPreload.getDownloadedVersion();
     setUpdateInfo({
       available: !!updateAvailable,
@@ -89,10 +89,11 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
 
   const handleDownloadUpdate = useCallback(async () => {
     setIsDownloading(true);
-    await settingsPreload.downloadUpdate();
+    const result = await settingsPreload.downloadUpdate({ autoDownload: true });
+    console.log('DOWNLOAD RESULT ===>', result);
     setIsDownloading(false);
     handleCheckForUpdates();
-  }, []);
+  }, [handleCheckForUpdates]);
 
   const canInstallNewVersion = useMemo(
     () => updateInfo.available && updateInfo.isInstalled,

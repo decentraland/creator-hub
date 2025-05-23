@@ -43,18 +43,18 @@ export async function selectSceneFolder(): Promise<string | undefined> {
   return projectPath;
 }
 
-export async function getUpdateInfo() {
-  return await invoke('electron.getUpdateInfo');
+export async function checkForUpdates() {
+  return await invoke('updater.checkForUpdates');
 }
 
 export async function getDownloadedVersion() {
-  return await invoke('electron.getDownloadedVersion');
+  return await invoke('updater.getDownloadedVersion');
 }
 
 export async function quitAndInstall() {
-  return await invoke('electron.quitAndInstall');
+  return await invoke('updater.quitAndInstall');
 }
 
-export async function downloadUpdate() {
-  return await invoke('electron.downloadUpdate');
+export async function downloadUpdate(config?: { autoDownload?: boolean }) {
+  return await invoke('updater.downloadUpdate', config);
 }
