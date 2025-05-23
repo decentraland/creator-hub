@@ -74,9 +74,7 @@ export class DeploymentError extends ErrorBase<ErrorName> {
         source: 'deployment',
         errorType: name,
       },
-      extra: {
-        status,
-      },
+      fingerprint: ['deployment-error', name],
     });
   }
 }
