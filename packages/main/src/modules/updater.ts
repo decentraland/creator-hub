@@ -16,8 +16,8 @@ export interface UpdaterConfig {
   autoDownload?: boolean;
 }
 
-function setupUpdaterEvents() {
-  log.info('CONFIGURED UPDATER');
+function setupUpdaterEvents(event?: Electron.IpcMainInvokeEvent) {
+  log.info('UPDATER CONFIGURED');
   updater.autoUpdater.on('checking-for-update', () => {
     log.info('[AutoUpdater] Checking for updates');
   });
@@ -37,7 +37,9 @@ function setupUpdaterEvents() {
   });
 
   updater.autoUpdater.on('download-progress', info => {
-    log.info(`[AutoUpdater] Download progress ${info.percent.toFixed(2)}%`);
+    const percent = info.percent.toFixed(2);
+    log.info(`[AutoUpdater] Download progress ${percent}%`);
+    event && event.sender.send('updater.downloadProgress', percent);
   });
 
   updater.autoUpdater.on('error', err => {
@@ -50,15 +52,17 @@ function setupUpdaterEvents() {
 }
 
 function configureUpdater(config: UpdaterConfig) {
-  const { autoDownload = false } = config;
-  updater.autoUpdater.autoDownload = autoDownload;
+  const { autoDownload } = config;
+
+  updater.autoUpdater.autoDownload = autoDownload ?? false;
   updater.autoUpdater.autoInstallOnAppQuit = false;
-  updater.autoUpdater.autoDownload = autoDownload;
   updater.autoUpdater.forceDevUpdateConfig = true;
   updater.autoUpdater.autoInstallOnAppQuit = false;
   updater.autoUpdater.setFeedURL(
-    'https://github.com/decentraland/creator-hub/releases/download/0.14.2',
+    'https://github.com/decentraland/creator-hub/releases/download/0.14.3',
   );
+
+  log.info(`[AutoUpdater] Configured with autoDownload=${updater.autoUpdater.autoDownload}`);
 }
 
 export async function checkForUpdates(config: UpdaterConfig = {}) {
@@ -67,7 +71,7 @@ export async function checkForUpdates(config: UpdaterConfig = {}) {
     setupUpdaterEvents();
     const result = await updater.autoUpdater.checkForUpdates();
     const version = result?.updateInfo?.version ?? null;
-    console.log('UPDATE CHECK ===>', result);
+    console.log('UPDATE CHECK ===>', result?.updateInfo);
     return { updateAvailable: version !== null, version };
   } catch (error: any) {
     Sentry.captureException(error, {
@@ -88,11 +92,13 @@ export async function quitAndInstall() {
   }
 }
 
-export async function downloadUpdate() {
+export async function downloadUpdate(event: Electron.IpcMainInvokeEvent) {
   try {
-    return checkForUpdates({ autoDownload: true });
+    setupUpdaterEvents(event);
+    configureUpdater({ autoDownload: true });
+    return await updater.autoUpdater.downloadUpdate();
   } catch (error: any) {
     log.error('[AutoUpdater] Error downloading update:', error);
-    return error;
+    throw error;
   }
 }

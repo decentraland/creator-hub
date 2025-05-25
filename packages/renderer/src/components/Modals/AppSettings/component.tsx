@@ -28,10 +28,12 @@ import './styles.css';
 import { InfoOutlined } from '@mui/icons-material';
 import { Row } from '../../Row';
 import { Column } from '../../Column';
+import type { IpcRendererEvent } from 'electron';
 
 export function AppSettings({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { settings: _settings, updateAppSettings } = useSettings();
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
   const { version: currentVersion } = useEditor();
   const [updateInfo, setUpdateInfo] = useState<{
     available: boolean | null;
@@ -89,13 +91,21 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
     await settingsPreload.quitAndInstall();
   }, []);
 
+  const handleDownloadState = useCallback((_event: IpcRendererEvent, progress: number) => {
+    setDownloadProgress(progress);
+  }, []);
+
   const handleDownloadUpdate = useCallback(async () => {
-    debugger;
     setIsDownloading(true);
-    const result = await settingsPreload.downloadUpdate({ autoDownload: true });
-    console.log('DOWNLOAD RESULT ===>', result);
-    setIsDownloading(false);
-    handleCheckForUpdates();
+    try {
+      settingsPreload.downloadUpdate();
+      settingsPreload.downloadState(handleDownloadState);
+      await handleCheckForUpdates();
+    } catch (error) {
+      console.error('Error downloading update:', error);
+    } finally {
+      setIsDownloading(false);
+    }
   }, [handleCheckForUpdates]);
 
   const canInstallNewVersion = useMemo(
@@ -138,6 +148,7 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
         </Box>
         <Column className="UpdateContainer">
           <Typography variant="body1">Current Version: {currentVersion}</Typography>
+          <Typography variant="body1">Download Progress: {downloadProgress}%</Typography>
           <Row className="UpdateButtonContainer">
             <Button
               variant="contained"

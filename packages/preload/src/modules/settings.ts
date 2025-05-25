@@ -8,6 +8,7 @@ import { SCENES_DIRECTORY } from '/shared/paths';
 
 import { invoke } from '../services/ipc';
 import { getConfig, setConfig } from '../services/config';
+import { ipcRenderer, type IpcRendererEvent } from 'electron';
 
 export async function getDefaultScenesPath() {
   const userDataPath = await invoke('electron.getUserDataPath');
@@ -55,6 +56,16 @@ export async function quitAndInstall() {
   return await invoke('updater.quitAndInstall');
 }
 
-export async function downloadUpdate(config?: { autoDownload?: boolean }) {
-  return await invoke('updater.downloadUpdate', config);
+export async function downloadUpdate() {
+  return await invoke('updater.downloadUpdate');
+}
+
+export function downloadState(cb: (event: IpcRendererEvent, progress: number) => void) {
+  ipcRenderer.on('updater.downloadProgress', cb);
+
+  return {
+    cleanup: () => {
+      ipcRenderer.off('updater.downloadProgress', cb);
+    },
+  };
 }

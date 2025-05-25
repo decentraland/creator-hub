@@ -22,8 +22,9 @@ export interface Ipc {
     error?: any;
     version: string | null;
   }>;
+  'updater.downloadProgress': (progress: number) => void;
   'updater.quitAndInstall': () => Promise<void>;
-  'updater.downloadUpdate': (config?: { autoDownload?: boolean }) => Promise<any>;
+  'updater.downloadUpdate': () => Promise<any>;
   'electron.getWorkspaceConfigPath': (path: string) => Promise<string>;
   'electron.showOpenDialog': (opts: Partial<OpenDialogOptions>) => Promise<string[]>;
   'electron.openExternal': (url: string) => Promise<void>;
