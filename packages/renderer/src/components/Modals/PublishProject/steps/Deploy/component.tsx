@@ -6,7 +6,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 import { misc } from '#preload';
 
-import type { File, Info, Status } from '/shared/types/deploy';
+import type { File, Info, Status } from '/@/lib/deploy';
 
 import { useAuth } from '/@/hooks/useAuth';
 import { useWorkspace } from '/@/hooks/useWorkspace';

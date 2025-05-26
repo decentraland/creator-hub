@@ -9,6 +9,7 @@ import { fetchENSList } from '/@/modules/store/ens';
 import { fetchLandList, fetchTiles } from '/@/modules/store/land';
 import { identify } from '/@/modules/store/analytics';
 import type { AuthSignInProps } from './types';
+import { setUser } from '@sentry/electron/renderer';
 
 const AUTH_SERVER_URL = 'https://auth-api.decentraland.org';
 const AUTH_DAPP_URL = 'https://decentraland.org/auth';
@@ -100,6 +101,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       dispatch(identify({ userId: wallet }));
       dispatch(fetchTiles({ chainId }));
       dispatch(fetchLandList({ address: wallet, chainId }));
+      setUser({ id: wallet });
     }
   }, [wallet, chainId]);
 
