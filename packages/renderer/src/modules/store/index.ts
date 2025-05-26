@@ -15,6 +15,7 @@ import * as deployment from './deployment';
 import * as analytics from './analytics';
 import * as ens from './ens';
 import * as land from './land';
+import * as settings from './settings';
 
 export function createRootReducer() {
   return {
@@ -26,6 +27,7 @@ export function createRootReducer() {
     analytics: analytics.reducer,
     ens: ens.reducer,
     land: land.reducer,
+    settings: settings.reducer,
   };
 }
 
@@ -71,6 +73,10 @@ async function start() {
       store.dispatch(editor.actions.startInspector()),
       // load workspace
       store.dispatch(workspace.actions.getWorkspace()),
+      // subscribe to update events
+      store.dispatch(settings.actions.subscribeToDownloadingStatus()),
+      // check for updates
+      store.dispatch(settings.actions.checkForUpdates({ autoDownload: false })),
     ]);
   } catch (error: any) {
     console.error(`[Renderer]: Failed to start up error=${error.message}`);

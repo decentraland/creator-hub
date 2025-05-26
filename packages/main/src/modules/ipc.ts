@@ -20,7 +20,7 @@ export function initIpc() {
 
   // updater
   handle('updater.getDownloadedVersion', () => updater.getDownloadedVersion());
-  handle('updater.checkForUpdates', () => updater.checkForUpdates());
+  handle('updater.checkForUpdates', (event, config) => updater.checkForUpdates(event, config));
   handle('updater.quitAndInstall', () => updater.quitAndInstall());
   handle('updater.downloadUpdate', event => updater.downloadUpdate(event));
 

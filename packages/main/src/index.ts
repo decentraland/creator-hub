@@ -9,7 +9,6 @@ import { deployServer, killAllPreviews } from '/@/modules/cli';
 import { inspectorServer } from '/@/modules/inspector';
 import { getAnalytics, track } from '/@/modules/analytics';
 import { runMigrations } from '/@/modules/migrations';
-import * as updater from './modules/updater';
 
 import '/@/security-restrictions';
 
@@ -67,28 +66,6 @@ app
     }
   })
   .catch(e => log.error('Failed create window:', e));
-
-/**
- * Initialize the updater in both development and production modes
- */
-app
-  .whenReady()
-  .then(() => {
-    try {
-      updater.checkForUpdates({
-        autoDownload: false, // Set to false for manual download testing
-      });
-    } catch (error: any) {
-      Sentry.captureException(error, {
-        tags: { source: 'auto-updater' },
-        extra: { context: 'Electron auto-update process main' },
-      });
-      log.error('[AutoUpdater] Failed check and install updates:', error.message);
-    }
-  })
-  .catch((error: Error) => {
-    log.error('[AutoUpdater] Failed to initialize updater:', error.message);
-  });
 
 export async function killAll() {
   const promises: Promise<unknown>[] = [killAllPreviews()];

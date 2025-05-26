@@ -28,17 +28,24 @@ import './styles.css';
 import { InfoOutlined } from '@mui/icons-material';
 import { Row } from '../../Row';
 import { Column } from '../../Column';
-import type { IpcRendererEvent } from 'electron';
+
+import { useDispatch, useSelector } from '#store';
+import { checkForUpdates } from '/@/modules/store/settings/slice';
 
 export function AppSettings({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { settings: _settings, updateAppSettings } = useSettings();
-  const [downloadProgress, setDownloadProgress] = useState({ progress: 0, finished: false });
+  const dispatch = useDispatch();
+  const {
+    downloadingUpdate: { progress, finished },
+  } = useSelector(state => state.settings);
   const { version: currentVersion } = useEditor();
+
   const [updateInfo, setUpdateInfo] = useState<{
     available: boolean | null;
     version: string | null;
     isInstalled: boolean | null;
   }>({ available: null, version: null, isInstalled: null });
+
   const [settings, setSettings] = useState(_settings);
 
   useEffect(() => {
@@ -75,33 +82,25 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
   const isDirty = useMemo(() => !equal(_settings, settings), [settings, _settings]);
 
   const handleCheckForUpdates = useCallback(async () => {
-    const { updateAvailable, version: newVersion } = await settingsPreload.checkForUpdates({
-      autoDownload: false,
-    });
-    const downloadedVersion = await settingsPreload.getDownloadedVersion();
-    setUpdateInfo({
-      available: !!updateAvailable,
-      version: newVersion ?? null,
-      isInstalled: !!downloadedVersion && downloadedVersion === newVersion,
-    });
+    dispatch(checkForUpdates({ autoDownload: false }));
+    // const { updateAvailable, version: newVersion } = await settingsPreload.checkForUpdates({
+    //   autoDownload: false,
+    // });
+    // const downloadedVersion = await settingsPreload.getDownloadedVersion();
+    // setUpdateInfo({
+    //   available: !!updateAvailable,
+    //   version: newVersion ?? null,
+    //   isInstalled: !!downloadedVersion && downloadedVersion === newVersion,
+    // });
   }, []);
 
   const handleInstallUpdate = useCallback(async () => {
     await settingsPreload.quitAndInstall();
   }, []);
 
-  const handleDownloadState = useCallback(
-    (_event: IpcRendererEvent, progress: { percent: number; finished: boolean }) => {
-      const { percent, finished } = progress;
-      setDownloadProgress({ progress: percent, finished });
-    },
-    [],
-  );
-
   const handleDownloadUpdate = useCallback(async () => {
     try {
-      settingsPreload.downloadUpdate();
-      settingsPreload.downloadState(handleDownloadState);
+      await settingsPreload.downloadUpdate();
       handleCheckForUpdates();
     } catch (error) {
       console.error('Error downloading update:', error);
@@ -114,10 +113,10 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
   );
 
   const getButtonProps = useCallback(() => {
-    if (downloadProgress.progress > 0 && !downloadProgress.finished) {
+    if (progress > 0 && !finished) {
       return {
         action: () => {},
-        text: t('modal.app_settings.update.downloading', { progress: downloadProgress.progress }),
+        text: t('modal.app_settings.update.downloading', { progress }),
       };
     }
     if (updateInfo.available) {
@@ -138,8 +137,8 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
     handleInstallUpdate,
     handleDownloadUpdate,
     handleCheckForUpdates,
-    downloadProgress.progress,
-    downloadProgress.finished,
+    progress,
+    finished,
   ]);
 
   return (
@@ -164,16 +163,16 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
             <Button
               variant="contained"
               onClick={getButtonProps().action}
-              disabled={downloadProgress.progress > 0 && !downloadProgress.finished}
+              disabled={progress > 0 && !finished}
             >
               {getButtonProps().text}
             </Button>
-            {updateInfo.available && downloadProgress.progress === 0 && (
+            {updateInfo.available && progress === 0 && (
               <Typography variant="subtitle1">
                 {t('modal.app_settings.version.new', { version: updateInfo.version })}
               </Typography>
             )}
-            {downloadProgress.progress > 0 && !downloadProgress.finished && (
+            {progress > 0 && !finished && (
               <Box className="DownloadProgressContainer">
                 <Typography variant="body2">{t('modal.app_settings.update.applying')}</Typography>
                 <Typography variant="body2">{t('modal.app_settings.update.dont_close')}</Typography>
