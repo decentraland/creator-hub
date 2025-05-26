@@ -32,8 +32,7 @@ import type { IpcRendererEvent } from 'electron';
 
 export function AppSettings({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { settings: _settings, updateAppSettings } = useSettings();
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [downloadProgress, setDownloadProgress] = useState({ progress: 0, finished: false });
   const { version: currentVersion } = useEditor();
   const [updateInfo, setUpdateInfo] = useState<{
     available: boolean | null;
@@ -91,20 +90,21 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
     await settingsPreload.quitAndInstall();
   }, []);
 
-  const handleDownloadState = useCallback((_event: IpcRendererEvent, progress: number) => {
-    setDownloadProgress(progress);
-  }, []);
+  const handleDownloadState = useCallback(
+    (_event: IpcRendererEvent, progress: { percent: number; finished: boolean }) => {
+      const { percent, finished } = progress;
+      setDownloadProgress({ progress: percent, finished });
+    },
+    [],
+  );
 
   const handleDownloadUpdate = useCallback(async () => {
-    setIsDownloading(true);
     try {
       settingsPreload.downloadUpdate();
       settingsPreload.downloadState(handleDownloadState);
-      await handleCheckForUpdates();
+      handleCheckForUpdates();
     } catch (error) {
       console.error('Error downloading update:', error);
-    } finally {
-      setIsDownloading(false);
     }
   }, [handleCheckForUpdates]);
 
@@ -148,12 +148,12 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
         </Box>
         <Column className="UpdateContainer">
           <Typography variant="body1">Current Version: {currentVersion}</Typography>
-          <Typography variant="body1">Download Progress: {downloadProgress}%</Typography>
+          <Typography variant="body1">Download Progress: {downloadProgress.progress}%</Typography>
           <Row className="UpdateButtonContainer">
             <Button
               variant="contained"
               onClick={getButtonProps().action}
-              disabled={isDownloading}
+              disabled={downloadProgress.progress > 0 && !downloadProgress.finished}
             >
               {getButtonProps().text}
             </Button>

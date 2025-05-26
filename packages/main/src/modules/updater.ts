@@ -33,13 +33,14 @@ function setupUpdaterEvents(event?: Electron.IpcMainInvokeEvent) {
   updater.autoUpdater.on('update-downloaded', async info => {
     setDownloadedVersion(info.version);
     log.info(`[AutoUpdater] Update downloaded (v${info.version})`);
+    event && event.sender.send('updater.downloadProgress', { percent: 100, finished: true });
     log.info('DONWLOADED VERSION ===>', info);
   });
 
   updater.autoUpdater.on('download-progress', info => {
     const percent = info.percent.toFixed(2);
     log.info(`[AutoUpdater] Download progress ${percent}%`);
-    event && event.sender.send('updater.downloadProgress', percent);
+    event && event.sender.send('updater.downloadProgress', { percent, finished: false });
   });
 
   updater.autoUpdater.on('error', err => {
