@@ -63,3 +63,9 @@
     width: 16px;
   }
 }
+
+.AppSettingsModal .DownloadProgressContainer {
+  max-width: 300px;
+  align-items: center;
+  gap: 4px;
+}

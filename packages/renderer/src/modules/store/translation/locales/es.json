@@ -247,6 +247,20 @@
       },
       "actions": {
         "apply_button": "Guardar"
+      },
+      "version": {
+        "current": "Versión actual: {version}",
+        "new": "Nueva versión: {version}",
+        "up_to_date": "Creator Hub está actualizado"
+      },
+      "update": {
+        "applying": "Aplicando actualizaciones.",
+        "dont_close": "Por favor no cierres la aplicación.",
+        "auto_restart": "Creator Hub se reiniciará automáticamente después de la actualización.",
+        "downloading": "Descargando... {progress}%",
+        "install": "Instalar ahora",
+        "update": "Actualizar ahora",
+        "check": "Buscar actualizaciones"
       }
     },
     "create_project": {

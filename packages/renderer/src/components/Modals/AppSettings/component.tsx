@@ -114,15 +114,23 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
   );
 
   const getButtonProps = useCallback(() => {
+    if (downloadProgress.progress > 0 && !downloadProgress.finished) {
+      return {
+        action: () => {},
+        text: t('modal.app_settings.update.downloading', { progress: downloadProgress.progress }),
+      };
+    }
     if (updateInfo.available) {
       return {
         action: updateInfo.isInstalled ? handleInstallUpdate : handleDownloadUpdate,
-        text: updateInfo.isInstalled ? 'Install now' : 'Update now',
+        text: updateInfo.isInstalled
+          ? t('modal.app_settings.update.install')
+          : t('modal.app_settings.update.update'),
       };
     }
     return {
       action: handleCheckForUpdates,
-      text: 'Check for updates',
+      text: t('modal.app_settings.update.check'),
     };
   }, [
     updateInfo.available,
@@ -130,6 +138,8 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
     handleInstallUpdate,
     handleDownloadUpdate,
     handleCheckForUpdates,
+    downloadProgress.progress,
+    downloadProgress.finished,
   ]);
 
   return (
@@ -147,8 +157,9 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
           <Typography variant="h4">{t('modal.app_settings.title')}</Typography>
         </Box>
         <Column className="UpdateContainer">
-          <Typography variant="body1">Current Version: {currentVersion}</Typography>
-          <Typography variant="body1">Download Progress: {downloadProgress.progress}%</Typography>
+          <Typography variant="body1">
+            {t('modal.app_settings.version.current', { version: currentVersion })}
+          </Typography>
           <Row className="UpdateButtonContainer">
             <Button
               variant="contained"
@@ -157,19 +168,27 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
             >
               {getButtonProps().text}
             </Button>
-            {updateInfo.available && (
-              <Typography variant="subtitle1">New version: {updateInfo.version}</Typography>
+            {updateInfo.available && downloadProgress.progress === 0 && (
+              <Typography variant="subtitle1">
+                {t('modal.app_settings.version.new', { version: updateInfo.version })}
+              </Typography>
+            )}
+            {downloadProgress.progress > 0 && !downloadProgress.finished && (
+              <Box className="DownloadProgressContainer">
+                <Typography variant="body2">{t('modal.app_settings.update.applying')}</Typography>
+                <Typography variant="body2">{t('modal.app_settings.update.dont_close')}</Typography>
+              </Box>
             )}
             {updateInfo.available === false && (
-              <Typography variant="subtitle1">Creator Hub is up to date</Typography>
+              <Typography variant="subtitle1">
+                {t('modal.app_settings.version.up_to_date')}
+              </Typography>
             )}
           </Row>
           {canInstallNewVersion && (
             <Row className="MessageContainer">
               <InfoOutlined />
-              <Typography variant="body2">
-                Creator Hub will auto-restart after the update.
-              </Typography>
+              <Typography variant="body2">{t('modal.app_settings.update.auto_restart')}</Typography>
             </Row>
           )}
         </Column>

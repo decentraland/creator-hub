@@ -247,6 +247,20 @@
       },
       "actions": {
         "apply_button": "Apply"
+      },
+      "version": {
+        "current": "Current Version: {version}",
+        "new": "New version: {version}",
+        "up_to_date": "Creator Hub is up to date"
+      },
+      "update": {
+        "applying": "Applying updates.",
+        "dont_close": "Please don't close the app.",
+        "auto_restart": "Creator Hub will auto-restart after the update.",
+        "downloading": "Downloading... {progress}%",
+        "install": "Install now",
+        "update": "Update now",
+        "check": "Check for updates"
       }
     },
     "create_project": {
