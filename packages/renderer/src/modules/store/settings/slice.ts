@@ -102,20 +102,20 @@ export const subscribeToDownloadingStatus = createAsyncThunk(
 //   'settings/downloadUpdate',
 //   async (_, { dispatch }) => {
 //     try {
-//       dispatch(setIsUpdating(true));
-//       dispatch(setUpdatingStatus(0));
 //       await settingsPreload.downloadUpdate();
-//       const lastDownloadedVersion = await settingsPreload.getLastDownloadedVersion();
+//       const lastDownloadedVersion = await settingsPreload.getDownloadedVersion();
 //       dispatch(setlastDownloadedVersion(lastDownloadedVersion));
-//       dispatch(setUpdatedSuccess(true));
+//       dispatch(
+//         setUpdateInfo({
+//           available: true,
+//           version: lastDownloadedVersion,
+//           isInstalled: true,
+//         }),
+//       );
 //       return lastDownloadedVersion;
 //     } catch (error) {
 //       console.error('Error downloading update:', error);
-//       dispatch(setUpdatedSuccess(false));
 //       throw error;
-//     } finally {
-//       dispatch(setIsUpdating(false));
-//       dispatch(setUpdatingStatus(0));
 //     }
 //   },
 // );

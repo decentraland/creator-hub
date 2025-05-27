@@ -16,36 +16,15 @@ import FolderIcon from '@mui/icons-material/Folder';
 import equal from 'fast-deep-equal';
 
 import { settings as settingsPreload } from '#preload';
-
 import { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
-
 import { t } from '/@/modules/store/translation/utils';
 import { useSettings } from '/@/hooks/useSettings';
-import { useEditor } from '/@/hooks/useEditor';
-
 import { Modal } from '..';
+import { UpdateSettings } from './UpdateSettings';
 import './styles.css';
-import { InfoOutlined } from '@mui/icons-material';
-import { Row } from '../../Row';
-import { Column } from '../../Column';
-
-import { useDispatch, useSelector } from '#store';
-import { checkForUpdates } from '/@/modules/store/settings/slice';
 
 export function AppSettings({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { settings: _settings, updateAppSettings } = useSettings();
-  const dispatch = useDispatch();
-  const {
-    downloadingUpdate: { progress, finished },
-  } = useSelector(state => state.settings);
-  const { version: currentVersion } = useEditor();
-
-  const [updateInfo, setUpdateInfo] = useState<{
-    available: boolean | null;
-    version: string | null;
-    isInstalled: boolean | null;
-  }>({ available: null, version: null, isInstalled: null });
-
   const [settings, setSettings] = useState(_settings);
 
   useEffect(() => {
@@ -81,66 +60,6 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
 
   const isDirty = useMemo(() => !equal(_settings, settings), [settings, _settings]);
 
-  const handleCheckForUpdates = useCallback(async () => {
-    dispatch(checkForUpdates({ autoDownload: false }));
-    // const { updateAvailable, version: newVersion } = await settingsPreload.checkForUpdates({
-    //   autoDownload: false,
-    // });
-    // const downloadedVersion = await settingsPreload.getDownloadedVersion();
-    // setUpdateInfo({
-    //   available: !!updateAvailable,
-    //   version: newVersion ?? null,
-    //   isInstalled: !!downloadedVersion && downloadedVersion === newVersion,
-    // });
-  }, []);
-
-  const handleInstallUpdate = useCallback(async () => {
-    await settingsPreload.quitAndInstall();
-  }, []);
-
-  const handleDownloadUpdate = useCallback(async () => {
-    try {
-      await settingsPreload.downloadUpdate();
-      handleCheckForUpdates();
-    } catch (error) {
-      console.error('Error downloading update:', error);
-    }
-  }, [handleCheckForUpdates]);
-
-  const canInstallNewVersion = useMemo(
-    () => updateInfo.available && updateInfo.isInstalled,
-    [updateInfo.available, updateInfo.isInstalled],
-  );
-
-  const getButtonProps = useCallback(() => {
-    if (progress > 0 && !finished) {
-      return {
-        action: () => {},
-        text: t('modal.app_settings.update.downloading', { progress }),
-      };
-    }
-    if (updateInfo.available) {
-      return {
-        action: updateInfo.isInstalled ? handleInstallUpdate : handleDownloadUpdate,
-        text: updateInfo.isInstalled
-          ? t('modal.app_settings.update.install')
-          : t('modal.app_settings.update.update'),
-      };
-    }
-    return {
-      action: handleCheckForUpdates,
-      text: t('modal.app_settings.update.check'),
-    };
-  }, [
-    updateInfo.available,
-    updateInfo.isInstalled,
-    handleInstallUpdate,
-    handleDownloadUpdate,
-    handleCheckForUpdates,
-    progress,
-    finished,
-  ]);
-
   return (
     <Modal
       open={open}
@@ -155,42 +74,7 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
         <Box>
           <Typography variant="h4">{t('modal.app_settings.title')}</Typography>
         </Box>
-        <Column className="UpdateContainer">
-          <Typography variant="body1">
-            {t('modal.app_settings.version.current', { version: currentVersion })}
-          </Typography>
-          <Row className="UpdateButtonContainer">
-            <Button
-              variant="contained"
-              onClick={getButtonProps().action}
-              disabled={progress > 0 && !finished}
-            >
-              {getButtonProps().text}
-            </Button>
-            {updateInfo.available && progress === 0 && (
-              <Typography variant="subtitle1">
-                {t('modal.app_settings.version.new', { version: updateInfo.version })}
-              </Typography>
-            )}
-            {progress > 0 && !finished && (
-              <Box className="DownloadProgressContainer">
-                <Typography variant="body2">{t('modal.app_settings.update.applying')}</Typography>
-                <Typography variant="body2">{t('modal.app_settings.update.dont_close')}</Typography>
-              </Box>
-            )}
-            {updateInfo.available === false && (
-              <Typography variant="subtitle1">
-                {t('modal.app_settings.version.up_to_date')}
-              </Typography>
-            )}
-          </Row>
-          {canInstallNewVersion && (
-            <Row className="MessageContainer">
-              <InfoOutlined />
-              <Typography variant="body2">{t('modal.app_settings.update.auto_restart')}</Typography>
-            </Row>
-          )}
-        </Column>
+        <UpdateSettings />
         <Box className="FormContainer">
           <FormGroup className="ScenesFolderFormControl">
             <Typography variant="body1">
