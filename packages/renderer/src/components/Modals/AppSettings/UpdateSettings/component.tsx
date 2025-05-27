@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Box, Typography, Button } from 'decentraland-ui2';
 import { InfoOutlined } from '@mui/icons-material';
 import { Row } from '../../../Row';
@@ -6,7 +6,7 @@ import { Column } from '../../../Column';
 import { t } from '/@/modules/store/translation/utils';
 import { useEditor } from '/@/hooks/useEditor';
 import { useDispatch, useSelector } from '#store';
-import { checkForUpdates } from '/@/modules/store/settings/slice';
+import { checkForUpdates, downloadUpdate, installUpdate } from '/@/modules/store/settings/slice';
 import { settings as settingsPreload } from '#preload';
 import './styles.css';
 
@@ -23,22 +23,19 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
     downloadingUpdate: { progress, finished },
     updateInfo,
   } = useSelector(state => state.settings);
+  const [hasCheckedForUpdates, setHasCheckedForUpdates] = useState(false);
 
   const handleCheckForUpdates = useCallback(async () => {
+    setHasCheckedForUpdates(true);
     dispatch(checkForUpdates({ autoDownload: false }));
   }, [dispatch]);
 
   const handleInstallUpdate = useCallback(async () => {
-    await settingsPreload.quitAndInstall();
+    dispatch(installUpdate());
   }, []);
 
   const handleDownloadUpdate = useCallback(async () => {
-    try {
-      await settingsPreload.downloadUpdate();
-      handleCheckForUpdates();
-    } catch (error) {
-      console.error('Error downloading update:', error);
-    }
+    dispatch(downloadUpdate());
   }, [handleCheckForUpdates]);
 
   const getButtonProps = useCallback((): UpdateButtonProps => {
@@ -47,6 +44,12 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
         action: () => {},
         text: t('modal.app_settings.update.downloading', { progress }),
         disabled: true,
+      };
+    }
+    if (!hasCheckedForUpdates) {
+      return {
+        action: handleCheckForUpdates,
+        text: t('modal.app_settings.update.check'),
       };
     }
     if (updateInfo.available) {
@@ -65,6 +68,7 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
     updateInfo,
     progress,
     finished,
+    hasCheckedForUpdates,
     handleCheckForUpdates,
     handleDownloadUpdate,
     handleInstallUpdate,
@@ -92,7 +96,7 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
         >
           {buttonProps.text}
         </Button>
-        {updateInfo.available && progress === 0 && updateInfo.version && (
+        {hasCheckedForUpdates && updateInfo.available && progress === 0 && updateInfo.version && (
           <Typography variant="subtitle1">
             {t('modal.app_settings.version.new', { version: updateInfo.version })}
           </Typography>
@@ -103,7 +107,7 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
             <Typography variant="body2">{t('modal.app_settings.update.dont_close')}</Typography>
           </Box>
         )}
-        {updateInfo.available === false && (
+        {hasCheckedForUpdates && updateInfo.available === false && (
           <Typography variant="subtitle1">{t('modal.app_settings.version.up_to_date')}</Typography>
         )}
       </Row>

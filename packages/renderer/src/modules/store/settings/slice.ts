@@ -2,7 +2,6 @@ import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/tool
 import { settings as settingsPreload } from '#preload';
 import type { IpcRendererEvent } from 'electron';
 
-// Types
 export type UpdateStatus = {
   lastDownloadedVersion: string | null;
   downloadingUpdate: {
@@ -17,7 +16,6 @@ export type UpdateStatus = {
   };
 };
 
-// Initial State
 const initialState: UpdateStatus = {
   lastDownloadedVersion: null,
   downloadingUpdate: {
@@ -32,7 +30,6 @@ const initialState: UpdateStatus = {
   },
 };
 
-// Slice
 const slice = createSlice({
   name: 'settings',
   initialState,
@@ -52,10 +49,6 @@ const slice = createSlice({
   },
 });
 
-// Actions
-export const { setlastDownloadedVersion, setDownloadingUpdate, setUpdateInfo, resetUpdateState } =
-  slice.actions;
-
 export const checkForUpdates = createAsyncThunk(
   'settings/checkForUpdates',
   async ({ autoDownload = false }: { autoDownload?: boolean }, { dispatch }) => {
@@ -66,9 +59,9 @@ export const checkForUpdates = createAsyncThunk(
       });
       const lastDownloadedVersion = await settingsPreload.getDownloadedVersion();
 
-      dispatch(setlastDownloadedVersion(lastDownloadedVersion));
+      dispatch(actions.setlastDownloadedVersion(lastDownloadedVersion));
       dispatch(
-        setUpdateInfo({
+        actions.setUpdateInfo({
           available: !!updateAvailable,
           version: version ?? null,
           isInstalled: !!lastDownloadedVersion && lastDownloadedVersion === version,
@@ -87,7 +80,7 @@ export const subscribeToDownloadingStatus = createAsyncThunk(
     settingsPreload.downloadingStatus(
       (_event: IpcRendererEvent, downloadStatus: { percent: number; finished: boolean }) => {
         dispatch(
-          setDownloadingUpdate({
+          actions.setDownloadingUpdate({
             isDownloading: true,
             progress: downloadStatus.percent,
             finished: downloadStatus.finished,
@@ -98,32 +91,23 @@ export const subscribeToDownloadingStatus = createAsyncThunk(
   },
 );
 
-// export const downloadUpdate = createAsyncThunk(
-//   'settings/downloadUpdate',
-//   async (_, { dispatch }) => {
-//     try {
-//       await settingsPreload.downloadUpdate();
-//       const lastDownloadedVersion = await settingsPreload.getDownloadedVersion();
-//       dispatch(setlastDownloadedVersion(lastDownloadedVersion));
-//       dispatch(
-//         setUpdateInfo({
-//           available: true,
-//           version: lastDownloadedVersion,
-//           isInstalled: true,
-//         }),
-//       );
-//       return lastDownloadedVersion;
-//     } catch (error) {
-//       console.error('Error downloading update:', error);
-//       throw error;
-//     }
-//   },
-// );
+export const downloadUpdate = createAsyncThunk(
+  'settings/downloadUpdate',
+  async (_, { dispatch }) => {
+    try {
+      await settingsPreload.downloadUpdate();
+      dispatch(checkForUpdates({ autoDownload: false }));
+    } catch (error) {
+      console.error('Error downloading update:', error);
+      throw error;
+    }
+  },
+);
 
 export const installUpdate = createAsyncThunk('settings/installUpdate', async (_, { dispatch }) => {
   try {
-    dispatch(setDownloadingUpdate({ isDownloading: false, progress: 0, finished: false }));
-    await settingsPreload.quitAndInstall();
+    dispatch(actions.setDownloadingUpdate({ isDownloading: false, progress: 0, finished: false }));
+    settingsPreload.quitAndInstall();
   } catch (error) {
     console.error('Error installing update:', error);
     throw error;
@@ -137,5 +121,6 @@ export const actions = {
   installUpdate,
   subscribeToDownloadingStatus,
 };
+
 export const reducer = slice.reducer;
 export const selectors = { ...slice.selectors };
