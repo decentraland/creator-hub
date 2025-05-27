@@ -66,7 +66,7 @@ function configureUpdater(config: UpdaterConfig) {
   updater.autoUpdater.forceDevUpdateConfig = true;
   //TODO REMOVE THIS
   updater.autoUpdater.setFeedURL(
-    'https://github.com/decentraland/creator-hub/releases/download/0.14.2',
+    'https://github.com/decentraland/creator-hub/releases/download/0.14.3',
   );
 }
 

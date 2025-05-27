@@ -19,7 +19,7 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
   const dispatch = useDispatch();
   const { version: currentVersion } = useEditor();
   const {
-    downloadingUpdate: { progress, finished },
+    downloadingUpdate: { progress, finished, isDownloading },
     updateInfo,
   } = useSelector(state => state.settings);
   const [hasCheckedForUpdates, setHasCheckedForUpdates] = useState(false);
@@ -95,7 +95,7 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
         >
           {buttonProps.text}
         </Button>
-        {hasCheckedForUpdates && updateInfo.available && progress === 0 && updateInfo.version && (
+        {hasCheckedForUpdates && updateInfo.available && updateInfo.version && !isDownloading && (
           <Typography variant="subtitle1">
             {t('modal.app_settings.version.new', { version: updateInfo.version })}
           </Typography>
@@ -110,7 +110,7 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
           <Typography variant="subtitle1">{t('modal.app_settings.version.up_to_date')}</Typography>
         )}
       </Row>
-      {canInstallNewVersion && (
+      {canInstallNewVersion && hasCheckedForUpdates && (
         <Row className="update-settings__message-container">
           <InfoOutlined />
           <Typography variant="body2">{t('modal.app_settings.update.auto_restart')}</Typography>
