@@ -43,22 +43,17 @@ const slice = createSlice({
     setUpdateInfo: (state, action: PayloadAction<UpdateStatus['updateInfo']>) => {
       state.updateInfo = action.payload;
     },
-    resetUpdateState: state => {
-      state.downloadingUpdate = { isDownloading: false, progress: 0, finished: false };
-    },
   },
 });
 
 export const checkForUpdates = createAsyncThunk(
   'settings/checkForUpdates',
   async ({ autoDownload = false }: { autoDownload?: boolean }, { dispatch }) => {
-    console.log('dispatching check for updates', autoDownload);
     try {
       const { updateAvailable, version } = await settingsPreload.checkForUpdates({
         autoDownload,
       });
       const lastDownloadedVersion = await settingsPreload.getDownloadedVersion();
-
       dispatch(actions.setlastDownloadedVersion(lastDownloadedVersion));
       dispatch(
         actions.setUpdateInfo({

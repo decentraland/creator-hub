@@ -43,8 +43,16 @@ function setupUpdaterEvents(event?: Electron.IpcMainInvokeEvent) {
 
   updater.autoUpdater.on('error', err => {
     Sentry.captureException(err, {
-      tags: { source: 'auto-updater' },
-      extra: { context: 'Electron auto-update process' },
+      tags: {
+        source: 'auto-updater',
+        event: 'error',
+        version: downloadedVersion,
+      },
+      extra: {
+        context: 'Electron auto-update process',
+        currentVersion: updater.autoUpdater.currentVersion?.version,
+      },
+      level: 'error',
     });
     log.error('[AutoUpdater] Error in auto-updater', err);
   });
@@ -52,7 +60,6 @@ function setupUpdaterEvents(event?: Electron.IpcMainInvokeEvent) {
 
 function configureUpdater(config: UpdaterConfig) {
   const { autoDownload } = config;
-
   updater.autoUpdater.autoDownload = autoDownload ?? false;
   updater.autoUpdater.autoInstallOnAppQuit = false;
   //TODO REMOVE THIS
@@ -72,12 +79,18 @@ export async function checkForUpdates(
     setupUpdaterEvents(event);
     const result = await updater.autoUpdater.checkForUpdates();
     const version = result?.updateInfo?.version ?? null;
-    console.log('UPDATE CHECK ===>', result?.updateInfo);
     return { updateAvailable: version !== null, version };
   } catch (error: any) {
     Sentry.captureException(error, {
-      tags: { source: 'auto-updater' },
-      extra: { context: 'Electron auto-update process main' },
+      tags: {
+        source: 'auto-updater',
+        event: 'check-for-updates',
+        version: downloadedVersion,
+      },
+      extra: {
+        context: 'Electron auto-update process main',
+      },
+      level: 'error',
     });
     log.error('[AutoUpdater] Failed check and install updates:', error.message);
     throw error;
@@ -88,7 +101,18 @@ export async function quitAndInstall() {
   try {
     updater.autoUpdater.quitAndInstall();
   } catch (error: any) {
-    console.error('ERROR INSTALLING UPDATE', error);
+    Sentry.captureException(error, {
+      tags: {
+        source: 'auto-updater',
+        event: 'quit-and-install',
+        version: downloadedVersion,
+      },
+      extra: {
+        context: 'Electron installation',
+      },
+      level: 'error',
+    });
+    log.error('[AutoUpdater] Error installing update:', error);
     return error;
   }
 }
@@ -99,6 +123,13 @@ export async function downloadUpdate(event: Electron.IpcMainInvokeEvent) {
     configureUpdater({ autoDownload: true });
     return await updater.autoUpdater.downloadUpdate();
   } catch (error: any) {
+    Sentry.captureException(error, {
+      tags: {
+        source: 'auto-updater',
+        event: 'download-update',
+      },
+      level: 'error',
+    });
     log.error('[AutoUpdater] Error downloading update:', error);
     throw error;
   }

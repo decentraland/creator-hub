@@ -5,6 +5,7 @@ import {
   useDispatch as formerUseDispuseDispatch,
 } from 'react-redux';
 import logger from 'redux-logger';
+import { captureException } from '@sentry/electron/renderer';
 
 import { createAnalyticsMiddleware } from './analytics/middleware';
 import * as editor from './editor';
@@ -76,10 +77,14 @@ async function start() {
       // subscribe to update events
       store.dispatch(settings.actions.subscribeToDownloadingStatus()),
       // check for updates
-      store.dispatch(settings.actions.checkForUpdates({ autoDownload: false })),
+      store.dispatch(settings.actions.checkForUpdates({ autoDownload: true })),
     ]);
   } catch (error: any) {
     console.error(`[Renderer]: Failed to start up error=${error.message}`);
+    captureException(error, {
+      tags: { source: 'renderer-startup' },
+      extra: { context: 'Renderer startup process' },
+    });
   }
 }
 

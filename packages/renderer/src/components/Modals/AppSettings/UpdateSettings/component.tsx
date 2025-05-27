@@ -7,7 +7,6 @@ import { t } from '/@/modules/store/translation/utils';
 import { useEditor } from '/@/hooks/useEditor';
 import { useDispatch, useSelector } from '#store';
 import { checkForUpdates, downloadUpdate, installUpdate } from '/@/modules/store/settings/slice';
-import { settings as settingsPreload } from '#preload';
 import './styles.css';
 
 interface UpdateButtonProps {
