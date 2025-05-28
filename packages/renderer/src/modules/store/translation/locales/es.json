@@ -3,6 +3,9 @@
     "message": "Instalando Decentraland Creator Hub v{version}",
     "errors": {
       "moveAppFailed": "Por favor, mueva la aplicación de Creator Hub a la carpeta de aplicaciones y abra la aplicación de Creator Hub desde ella",
+      "checkUpdatesFailed": "No se pudieron verificar las actualizaciones",
+      "downloadFailed": "No se pudo descargar la actualización",
+      "installFailed": "No se pudo instalar la actualización",
       "unknown": "Ocurrió un error desconocido"
     }
   },
@@ -260,7 +263,8 @@
         "downloading": "Descargando... {progress}%",
         "install": "Instalar ahora",
         "update": "Actualizar ahora",
-        "check": "Buscar actualizaciones"
+        "check": "Buscar actualizaciones",
+        "error": "No pudimos buscar actualizaciones.\nPor favor, inténtalo de nuevo más tarde."
       }
     },
     "create_project": {
@@ -287,7 +291,10 @@
       "delete_scene_failed": "Error al borrar escena",
       "dependencies_updated": "Las dependencias de la escena fueron actualizadas",
       "installing_dependencies": "Instalando dependencias...",
-      "installing_dependencies_failed": "Error al instalar dependencias"
+      "installing_dependencies_failed": "Error al instalar dependencias",
+      "check_updates_failed": "No se pudieron verificar las actualizaciones",
+      "download_update_failed": "No se pudo descargar la actualización",
+      "install_update_failed": "No se pudo instalar la actualización"
     },
     "missing_projects": {
       "title": "{scenes} {scenes, plural, one {escena} other {escenas}} {scenes, plural, one {faltante} other {faltantes}}",

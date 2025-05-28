@@ -1,6 +1,8 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
 import { settings as settingsPreload } from '#preload';
 import type { IpcRendererEvent } from 'electron';
+import { actions as snackbarActions } from '../snackbar/slice';
+import { t } from '../translation/utils';
 
 export type UpdateStatus = {
   lastDownloadedVersion: string | null;
@@ -62,8 +64,15 @@ export const checkForUpdates = createAsyncThunk(
           isInstalled: !!lastDownloadedVersion && lastDownloadedVersion === version,
         }),
       );
-    } catch (error) {
-      console.error('Error checking for updates:', error);
+    } catch (error: any) {
+      dispatch(
+        snackbarActions.pushSnackbar({
+          id: 'check-updates-error',
+          message: t('install.errors.checkUpdatesFailed'),
+          severity: 'error',
+          type: 'generic',
+        }),
+      );
       throw error;
     }
   },
@@ -93,7 +102,14 @@ export const downloadUpdate = createAsyncThunk(
       await settingsPreload.downloadUpdate();
       dispatch(checkForUpdates({ autoDownload: false }));
     } catch (error) {
-      console.error('Error downloading update:', error);
+      dispatch(
+        snackbarActions.pushSnackbar({
+          id: 'download-update-error',
+          message: t('install.errors.downloadFailed'),
+          severity: 'error',
+          type: 'generic',
+        }),
+      );
       throw error;
     }
   },
@@ -104,7 +120,14 @@ export const installUpdate = createAsyncThunk('settings/installUpdate', async (_
     dispatch(actions.setDownloadingUpdate({ isDownloading: false, progress: 0, finished: false }));
     settingsPreload.quitAndInstall();
   } catch (error) {
-    console.error('Error installing update:', error);
+    dispatch(
+      snackbarActions.pushSnackbar({
+        id: 'install-update-error',
+        message: t('install.errors.installFailed'),
+        severity: 'error',
+        type: 'generic',
+      }),
+    );
     throw error;
   }
 });

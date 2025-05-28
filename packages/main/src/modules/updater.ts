@@ -36,9 +36,12 @@ function setupUpdaterEvents(event?: Electron.IpcMainInvokeEvent) {
   });
 
   updater.autoUpdater.on('download-progress', info => {
-    const percent = info.percent.toFixed(2);
-    log.info(`[AutoUpdater] Download progress ${percent}%`);
-    event && event.sender.send('updater.downloadProgress', { percent, finished: false });
+    log.info(`[AutoUpdater] Download progress ${info.percent.toFixed(2)}%`);
+    event &&
+      event.sender.send('updater.downloadProgress', {
+        percent: info.percent.toFixed(0),
+        finished: false,
+      });
   });
 
   updater.autoUpdater.on('error', err => {
@@ -79,7 +82,8 @@ export async function checkForUpdates(
     setupUpdaterEvents(event);
     const result = await updater.autoUpdater.checkForUpdates();
     const version = result?.updateInfo?.version ?? null;
-    return { updateAvailable: version !== null, version };
+    const currentVersion = updater.autoUpdater.currentVersion?.version;
+    return { updateAvailable: version !== null && version !== currentVersion, version };
   } catch (error: any) {
     Sentry.captureException(error, {
       tags: {
