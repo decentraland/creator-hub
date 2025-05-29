@@ -1,7 +1,8 @@
 import type { Tile } from 'react-tile-map/dist/lib/common';
 import { createAsyncThunk, createSlice, createSelector } from '@reduxjs/toolkit';
-import type { ChainId } from '@dcl/schemas/dist/dapps/chain-id';
 import type { AtlasTileProps } from 'decentraland-ui2/dist/components/Atlas/Atlas.types';
+import type { Async } from '/shared/types/async';
+import { config } from '/@/config';
 import {
   colorByRole,
   coordsToId,
@@ -11,39 +12,30 @@ import {
   type Authorization,
   type Land,
 } from '/@/lib/land';
-import type { Async } from '/shared/types/async';
-import { isDev } from '/@/modules/utils';
 
 // actions
-export const fetchTiles = createAsyncThunk(
-  'land/fetchTiles',
-  async ({ chainId }: { chainId: ChainId }) => {
-    const tilesFetch = await fetch(
-      isDev(chainId)
-        ? 'https://api.decentraland.zone/v2/tiles'
-        : 'https://api.decentraland.org/v2/tiles',
-    );
-    const tilesJson: {
-      ok: boolean;
-      data: Record<string, AtlasTileProps>;
-      error: string;
-    } = await tilesFetch.json();
+export const fetchTiles = createAsyncThunk('land/fetchTiles', async () => {
+  const tilesFetch = await fetch(`${config.get('ATLAS_SERVER_API')}/tiles`);
+  const tilesJson: {
+    ok: boolean;
+    data: Record<string, AtlasTileProps>;
+    error: string;
+  } = await tilesFetch.json();
 
-    return tilesJson.data;
-  },
-);
+  return tilesJson.data;
+});
 
-export const fetchRentalsList = async (address: string, chainId: ChainId) => {
-  const RentalsAPI = new Rentals(isDev(chainId));
+export const fetchRentalsList = async (address: string) => {
+  const RentalsAPI = new Rentals();
   return RentalsAPI.fetchRentalTokenIds(address);
 };
 
 export const fetchLandList = createAsyncThunk(
   'land/fetchLandList',
-  async ({ address, chainId }: { address: string; chainId: ChainId }) => {
-    const LandsAPI = new Lands(isDev(chainId));
+  async ({ address }: { address: string }) => {
+    const LandsAPI = new Lands();
 
-    const rentals = await fetchRentalsList(address, chainId);
+    const rentals = await fetchRentalsList(address);
     const tenantTokenIds = rentals.tenantRentals.map(rental => rental.tokenId);
     const lessorTokenIds = rentals.lessorRentals.map(rental => rental.tokenId);
 

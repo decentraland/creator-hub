@@ -3,10 +3,10 @@ import { ethers, Contract } from 'ethers';
 import { namehash } from '@ethersproject/hash';
 import pLimit from 'p-limit';
 import type { ChainId } from '@dcl/schemas/dist/dapps/chain-id';
+import type { Async } from '/shared/types/async';
+import { config } from '/@/config';
 import { DCLNames, ENS as ENSApi } from '/@/lib/ens';
 import { Worlds } from '/@/lib/worlds';
-import { isDev } from '/@/modules/utils';
-import type { Async } from '/shared/types/async';
 import { ens as ensContract, ensResolver, dclRegistrar } from './contracts';
 import { getEnsProvider, isValidENSName } from './utils';
 import { USER_PERMISSIONS, type ENS, type ENSError } from './types';
@@ -15,8 +15,8 @@ const REQUESTS_BATCH_SIZE = 25;
 const limit = pLimit(REQUESTS_BATCH_SIZE);
 
 // actions
-export const fetchWorldStatus = async (domain: string, chainId: ChainId) => {
-  const WorldAPI = new Worlds(isDev(chainId));
+export const fetchWorldStatus = async (domain: string) => {
+  const WorldAPI = new Worlds();
   const world = await WorldAPI.fetchWorld(domain);
   if (world && world.length > 0) {
     const [{ id: entityId }] = world;
@@ -29,9 +29,9 @@ export const fetchWorldStatus = async (domain: string, chainId: ChainId) => {
   return null;
 };
 
-export const fetchContributeENSNames = async (address: string, chainId: ChainId) => {
+export const fetchContributeENSNames = async (address: string) => {
   try {
-    const WorldAPI = new Worlds(isDev(chainId));
+    const WorldAPI = new Worlds();
     const domains = await WorldAPI.fetchContributableDomains(address);
     return domains.filter(domain => domain.user_permissions.includes(USER_PERMISSIONS.DEPLOYMENT));
   } catch (_) {
@@ -39,12 +39,8 @@ export const fetchContributeENSNames = async (address: string, chainId: ChainId)
   }
 };
 
-export const fetchBannedNames = async (chainId: ChainId) => {
-  let dclListsUrl = 'https://dcl-lists.decentraland.org';
-  if (isDev(chainId)) {
-    dclListsUrl = 'https://dcl-lists.decentraland.zone';
-  }
-
+export const fetchBannedNames = async () => {
+  const dclListsUrl = config.get('DCL_LISTS_URL');
   const response: Response = await fetch(`${dclListsUrl}/banned-names`, {
     method: 'POST',
   });
@@ -63,9 +59,7 @@ export const fetchDCLNames = createAsyncThunk(
   async ({ address, chainId }: { address: string; chainId: ChainId }) => {
     if (!address) return [];
 
-    const provider = new ethers.JsonRpcProvider(
-      `https://rpc.decentraland.org/${isDev(chainId) ? 'sepolia' : 'mainnet'}`,
-    );
+    const provider = new ethers.JsonRpcProvider(config.get('RPC_URL'));
 
     // TODO: Implement logic to fetch lands from the builder-server
     // const lands: Land[]
@@ -87,8 +81,8 @@ export const fetchDCLNames = createAsyncThunk(
       provider,
     );
 
-    const dclNamesApi = new DCLNames(isDev(chainId));
-    const bannedNames = await fetchBannedNames(chainId);
+    const dclNamesApi = new DCLNames();
+    const bannedNames = await fetchBannedNames();
 
     let names = await dclNamesApi.fetchNames(address);
     names = names.filter(domain => !bannedNames.includes(domain)).filter(isValidENSName);
@@ -141,7 +135,7 @@ export const fetchDCLNames = createAsyncThunk(
           }
         }
 
-        const worldStatus = await fetchWorldStatus(subdomain, chainId);
+        const worldStatus = await fetchWorldStatus(subdomain);
 
         return {
           name,
@@ -165,9 +159,9 @@ export const fetchDCLNames = createAsyncThunk(
 
 export const fetchENS = createAsyncThunk(
   'ens/fetchENS',
-  async ({ address, chainId }: { address: string; chainId: ChainId }) => {
-    const ensApi = new ENSApi(isDev(chainId));
-    const bannedNames = await fetchBannedNames(chainId);
+  async ({ address }: { address: string }) => {
+    const ensApi = new ENSApi();
+    const bannedNames = await fetchBannedNames();
     const bannedNamesSet = new Set(bannedNames.map(x => x.toLowerCase()));
 
     let names = await ensApi.fetchNames(address);
@@ -180,7 +174,7 @@ export const fetchENS = createAsyncThunk(
         const subdomain = data.toLowerCase();
         const name = subdomain.split('.')[0];
 
-        const worldStatus = await fetchWorldStatus(name, chainId);
+        const worldStatus = await fetchWorldStatus(name);
 
         return {
           name,
@@ -201,13 +195,13 @@ export const fetchENS = createAsyncThunk(
 
 export const fetchContributableNames = createAsyncThunk(
   'ens/fetchContributableNames',
-  async ({ address, chainId }: { address: string; chainId: ChainId }) => {
-    const dclNamesApi = new DCLNames(isDev(chainId));
-    const ensApi = new ENSApi(isDev(chainId));
-    const bannedNames = await fetchBannedNames(chainId);
+  async ({ address }: { address: string }) => {
+    const dclNamesApi = new DCLNames();
+    const ensApi = new ENSApi();
+    const bannedNames = await fetchBannedNames();
     const bannedNamesSet = new Set(bannedNames.map(x => x.toLowerCase()));
 
-    let names = await fetchContributeENSNames(address, chainId);
+    let names = await fetchContributeENSNames(address);
     names = names.filter(({ name }) =>
       name.split('.').every(nameSegment => !bannedNamesSet.has(nameSegment)),
     );
@@ -229,7 +223,7 @@ export const fetchContributableNames = createAsyncThunk(
         const subdomain = data.name.toLowerCase();
         const name = subdomain.split('.')[0];
 
-        const worldStatus = await fetchWorldStatus(name, chainId);
+        const worldStatus = await fetchWorldStatus(name);
 
         return {
           name,

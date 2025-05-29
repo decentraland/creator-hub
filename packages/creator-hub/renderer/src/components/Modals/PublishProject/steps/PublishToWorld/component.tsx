@@ -42,7 +42,7 @@ export function PublishToWorld(props: Props) {
   const emptyNames = Object.keys(names).length === 0;
 
   const handleNext = useCallback(() => {
-    publishScene({ targetContent: import.meta.env.VITE_WORLDS_SERVER || DEPLOY_URLS.WORLDS });
+    publishScene({ targetContent: DEPLOY_URLS.WORLDS_CONTENT_SERVER });
     props.onStep('deploy');
   }, [props.onStep, publishScene]);
 
