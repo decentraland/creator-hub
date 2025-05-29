@@ -1,0 +1,21 @@
+{
+  "CHAIN_ID": "1",
+  "ENVIRONMENT": "production",
+  "AUTH_SERVER_URL": "https://auth-api.decentraland.org",
+  "AUTH_DAPP_URL": "https://decentraland.org/auth",
+  "PEER_URL": "https://peer.decentraland.org",
+  "WORLDS_CONTENT_SERVER": "https://worlds-content-server.decentraland.org",
+  "PEER_TESTING": "https://peer-testing.decentraland.org",
+  "ASSET_BUNDLE_REGISTRY": "https://asset-bundle-registry.decentraland.org",
+  "DCL_LISTS_URL": "https://dcl-lists.decentraland.org",
+  "ATLAS_SERVER_API": "https://api.decentraland.org/v2",
+  "RPC_URL": "https://rpc.decentraland.org/mainnet",
+  "MARKETPLACE_SUBGRAPH": "https://subgraph.decentraland.org/marketplace",
+  "ENS_SUBGRAPH": "https://subgraph.decentraland.org/ens",
+  "RENTALS_SUBGRAPH": "https://subgraph.decentraland.org/rentals-ethereum-mainnet",
+  "LAND_MANAGER_SUBGRAPH": "https://subgraph.decentraland.org/land-manager",
+  "LAND_REGISTRY_ADDRESS": "0xf87e31492faf9a91b02ee0deaad50d51d56d5d4d",
+  "ESTATE_REGISTRY_ADDRESS": "0x959e104e1a4db6317fa58f8295f586e1a978c297",
+  "REPORT_ISSUES_URL": "https://decentraland.canny.io/creator-hub",
+  "FEEDBACK_URL": "https://decentraland.typeform.com/creatorhub"
+}
