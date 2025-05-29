@@ -15,7 +15,7 @@ import {
 
 // actions
 export const fetchTiles = createAsyncThunk('land/fetchTiles', async () => {
-  const tilesFetch = await fetch(`${config.get('ATLAS_SERVER_API')}/tiles`);
+  const tilesFetch = await fetch(`${config.get('ATLAS_SERVER_API_URL')}/tiles`);
   const tilesJson: {
     ok: boolean;
     data: Record<string, AtlasTileProps>;
