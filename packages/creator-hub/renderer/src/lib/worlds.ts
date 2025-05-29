@@ -137,13 +137,7 @@ export enum WorldPermissionNames {
 }
 
 export class Worlds {
-  private url = DEPLOY_URLS.WORLDS;
-
-  constructor(isDev: boolean) {
-    if (isDev) {
-      this.url = DEPLOY_URLS.DEV_WORLDS;
-    }
-  }
+  private url = DEPLOY_URLS.WORLDS_CONTENT_SERVER;
 
   private withIdentity(address: string): AuthIdentity {
     const identity = localStorageGetIdentity(address);

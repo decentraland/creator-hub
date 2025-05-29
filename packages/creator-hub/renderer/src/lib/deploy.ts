@@ -1,14 +1,12 @@
 import { captureException } from '@sentry/electron/renderer';
 import { ErrorBase } from '/shared/types/error';
+import { config } from '/@/config';
 
 export const DEPLOY_URLS = {
-  WORLDS: 'https://worlds-content-server.decentraland.org',
-  TEST: 'https://peer-testing.decentraland.org',
-  DEV_WORLDS: 'https://worlds-content-server.decentraland.zone',
-  CATALYST_SERVER: 'https://peer.decentraland.org',
-  DEV_CATALYST_SERVER: 'https://peer.decentraland.zone',
-  ASSET_BUNDLE_REGISTRY: 'https://asset-bundle-registry.decentraland.org',
-  DEV_ASSET_BUNDLE_REGISTRY: 'https://asset-bundle-registry.decentraland.zone',
+  CONTENT_SERVER: config.get('PEER_URL'),
+  WORLDS_CONTENT_SERVER: config.get('WORLDS_CONTENT_SERVER'),
+  PEER_TESTING: config.get('PEER_TESTING'),
+  ASSET_BUNDLE_REGISTRY: config.get('ASSET_BUNDLE_REGISTRY'),
 };
 
 export type File = {
