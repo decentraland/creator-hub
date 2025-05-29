@@ -1,0 +1,5 @@
+owner: decentraland
+repo: creator-hub
+provider: github
+vPrefixedTagName: false
+updaterCacheDirName: creator-hub-updater

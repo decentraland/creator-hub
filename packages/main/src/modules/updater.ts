@@ -1,5 +1,6 @@
 import updater from 'electron-updater';
 import log from 'electron-log/main';
+import semver from 'semver';
 import * as Sentry from '@sentry/electron/main';
 
 export let downloadedVersion: string | null = null;
@@ -16,7 +17,7 @@ export interface UpdaterConfig {
   autoDownload?: boolean;
 }
 
-function setupUpdaterEvents(event?: Electron.IpcMainInvokeEvent) {
+export function setupUpdaterEvents(event?: Electron.IpcMainInvokeEvent) {
   updater.autoUpdater.on('checking-for-update', () => {
     log.info('[AutoUpdater] Checking for updates');
   });
@@ -69,7 +70,7 @@ function configureUpdater(config: UpdaterConfig) {
   updater.autoUpdater.forceDevUpdateConfig = true;
   //TODO REMOVE THIS
   updater.autoUpdater.setFeedURL(
-    'https://github.com/decentraland/creator-hub/releases/download/0.14.3',
+    'https://github.com/decentraland/creator-hub/releases/download/0.14.2',
   );
 }
 
@@ -83,7 +84,7 @@ export async function checkForUpdates(
     const result = await updater.autoUpdater.checkForUpdates();
     const version = result?.updateInfo?.version ?? null;
     const currentVersion = updater.autoUpdater.currentVersion?.version;
-    return { updateAvailable: version !== null && version !== currentVersion, version };
+    return { updateAvailable: !!(version && semver.gt(version, currentVersion)), version };
   } catch (error: any) {
     Sentry.captureException(error, {
       tags: {
