@@ -1,6 +1,7 @@
 import cx from 'classnames';
 import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useEditor } from '/@/hooks/useEditor';
 import {
   Container,
   Card,
@@ -29,6 +30,7 @@ import { t } from '/@/modules/store/translation/utils';
 import { FEEDBACK_URL } from '/@/modules/utils';
 
 import { Navbar, NavbarItem } from '../Navbar';
+import { Footer } from '../Footer';
 
 import { type CardBannerProps, type CardItemProps, type SignInCardProps } from './types';
 
@@ -255,49 +257,53 @@ const FeedbackCard: React.FC = React.memo(() => {
 
 export function HomePage() {
   const auth = useAuth();
+  const { version } = useEditor();
 
   return (
-    <main className="HomePage">
-      <Navbar active={NavbarItem.HOME} />
-      <Container>
-        <Typography
-          variant="h3"
-          mb="48px"
-        >
-          {t('home.header.title')}
-        </Typography>
-        <Grid
-          container
-          spacing={4}
-        >
-          {!auth.isSignedIn ? (
+    <>
+      <main className="HomePage">
+        <Navbar active={NavbarItem.HOME} />
+        <Container>
+          <Typography
+            variant="h3"
+            mb="48px"
+          >
+            {t('home.header.title')}
+          </Typography>
+          <Grid
+            container
+            spacing={4}
+          >
+            {!auth.isSignedIn ? (
+              <Grid
+                item
+                xs
+              >
+                <SignInCard onClickSignIn={auth.signIn} />
+              </Grid>
+            ) : null}
             <Grid
               item
               xs
             >
-              <SignInCard onClickSignIn={auth.signIn} />
+              <ScenesCard />
             </Grid>
-          ) : null}
-          <Grid
-            item
-            xs
-          >
-            <ScenesCard />
+            <Grid
+              item
+              xs
+            >
+              <LearnCard />
+            </Grid>
+            <Grid
+              item
+              xs
+            >
+              <FeedbackCard />
+            </Grid>
           </Grid>
-          <Grid
-            item
-            xs
-          >
-            <LearnCard />
-          </Grid>
-          <Grid
-            item
-            xs
-          >
-            <FeedbackCard />
-          </Grid>
-        </Grid>
-      </Container>
-    </main>
+        </Container>
+      </main>
+      {version && <Footer version={version} />}
+    </>
   );
 }
