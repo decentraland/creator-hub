@@ -1,6 +1,7 @@
 import cx from 'classnames';
 import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useEditor } from '/@/hooks/useEditor';
 import {
   Container,
   Card,
@@ -34,7 +35,6 @@ import { Footer } from '../Footer';
 import { type CardBannerProps, type CardItemProps, type SignInCardProps } from './types';
 
 import './styles.css';
-import { useEditor } from '/@/hooks/useEditor';
 
 const learn_resources = [
   {

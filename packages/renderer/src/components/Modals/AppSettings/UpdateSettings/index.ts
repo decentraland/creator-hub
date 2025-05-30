@@ -1,1 +1,2 @@
-export * from './component';
+import { UpdateSettings } from './component';
+export { UpdateSettings };

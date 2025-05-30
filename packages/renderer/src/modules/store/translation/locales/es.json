@@ -291,10 +291,7 @@
       "delete_scene_failed": "Error al borrar escena",
       "dependencies_updated": "Las dependencias de la escena fueron actualizadas",
       "installing_dependencies": "Instalando dependencias...",
-      "installing_dependencies_failed": "Error al instalar dependencias",
-      "check_updates_failed": "No se pudieron verificar las actualizaciones",
-      "download_update_failed": "No se pudo descargar la actualización",
-      "install_update_failed": "No se pudo instalar la actualización"
+      "installing_dependencies_failed": "Error al instalar dependencias"
     },
     "missing_projects": {
       "title": "{scenes} {scenes, plural, one {escena} other {escenas}} {scenes, plural, one {faltante} other {faltantes}}",

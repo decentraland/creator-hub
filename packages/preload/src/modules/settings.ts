@@ -1,3 +1,4 @@
+import { ipcRenderer, type IpcRendererEvent } from 'electron';
 import path from 'path';
 import {
   DEPENDENCY_UPDATE_STRATEGY,
@@ -8,7 +9,6 @@ import { SCENES_DIRECTORY } from '/shared/paths';
 
 import { invoke } from '../services/ipc';
 import { getConfig, setConfig } from '../services/config';
-import { ipcRenderer, type IpcRendererEvent } from 'electron';
 
 export async function getDefaultScenesPath() {
   const userDataPath = await invoke('electron.getUserDataPath');
