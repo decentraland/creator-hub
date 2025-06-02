@@ -19,10 +19,9 @@ export function initIpc() {
   handle('electron.copyToClipboard', (_event, text) => electron.copyToClipboard(text));
 
   // updater
-  handle('updater.getDownloadedVersion', () => updater.getDownloadedVersion());
   handle('updater.checkForUpdates', (event, config) => updater.checkForUpdates(event, config));
   handle('updater.quitAndInstall', () => updater.quitAndInstall());
-  handle('updater.downloadUpdate', event => updater.downloadUpdate(event));
+  handle('updater.downloadUpdate', () => updater.downloadUpdate());
 
   // inspector
   handle('inspector.start', () => inspector.start());

@@ -61,7 +61,15 @@ export async function downloadUpdate() {
 }
 
 export function downloadingStatus(
-  cb: (event: IpcRendererEvent, progress: { percent: number; finished: boolean }) => void,
+  cb: (
+    event: IpcRendererEvent,
+    progress: {
+      percent: number;
+      finished: boolean;
+      version: string | null;
+      isDownloading: boolean;
+    },
+  ) => void,
 ) {
   ipcRenderer.on('updater.downloadProgress', cb);
   return {

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { autoUpdater } from 'electron-updater';
 import type { UpdateInfo, UpdateCheckResult } from 'electron-updater';
-import { checkForUpdates, setDownloadedVersion, setupUpdaterEvents } from '../src/modules/updater';
+import { checkForUpdates, setupUpdaterEvents } from '../src/modules/updater';
 
 vi.mock('@sentry/electron/main', () => {
   const mockCaptureException = vi.fn();
@@ -53,7 +53,6 @@ describe('Updater Module', () => {
   beforeEach(() => {
     autoUpdater.currentVersion.version = '3.4.0';
     vi.clearAllMocks();
-    setDownloadedVersion(null);
   });
 
   describe('checkForUpdates', () => {

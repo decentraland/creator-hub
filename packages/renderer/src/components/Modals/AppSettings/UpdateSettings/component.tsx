@@ -24,6 +24,10 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
   } = useSelector(state => state.settings);
   const [hasCheckedForUpdates, setHasCheckedForUpdates] = useState(false);
 
+  const shouldShowUpdateAvailable = useCallback(() => {
+    return hasCheckedForUpdates && updateInfo.available && updateInfo.version && !isDownloading;
+  }, [hasCheckedForUpdates, updateInfo, isDownloading]);
+
   const handleCheckForUpdates = useCallback(async () => {
     setHasCheckedForUpdates(true);
     dispatch(checkForUpdates({ autoDownload: false }));
@@ -51,10 +55,11 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
         text: t('modal.app_settings.update.check'),
       };
     }
+
     if (updateInfo.available) {
       return {
-        action: updateInfo.isInstalled ? handleInstallUpdate : handleDownloadUpdate,
-        text: updateInfo.isInstalled
+        action: updateInfo.isDownloaded ? handleInstallUpdate : handleDownloadUpdate,
+        text: updateInfo.isDownloaded
           ? t('modal.app_settings.update.install')
           : t('modal.app_settings.update.update'),
       };
@@ -74,8 +79,8 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
   ]);
 
   const canInstallNewVersion = useMemo(
-    () => updateInfo.available && updateInfo.isInstalled,
-    [updateInfo.available, updateInfo.isInstalled],
+    () => updateInfo.available && updateInfo.isDownloaded && hasCheckedForUpdates,
+    [updateInfo.available, updateInfo.isDownloaded, hasCheckedForUpdates],
   );
 
   const buttonProps = getButtonProps();
@@ -95,7 +100,7 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
         >
           {buttonProps.text}
         </Button>
-        {hasCheckedForUpdates && updateInfo.available && updateInfo.version && !isDownloading && (
+        {shouldShowUpdateAvailable() && (
           <Typography variant="subtitle1">
             {t('modal.app_settings.version.new', { version: updateInfo.version })}
           </Typography>
@@ -110,7 +115,7 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
           <Typography variant="subtitle1">{t('modal.app_settings.version.up_to_date')}</Typography>
         )}
       </Row>
-      {canInstallNewVersion && hasCheckedForUpdates && (
+      {canInstallNewVersion && (
         <Row className="update-settings__message-container">
           <InfoOutlined />
           <Typography variant="body2">{t('modal.app_settings.update.auto_restart')}</Typography>

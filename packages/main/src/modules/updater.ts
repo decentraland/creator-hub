@@ -2,17 +2,6 @@ import updater from 'electron-updater';
 import log from 'electron-log/main';
 import semver from 'semver';
 import * as Sentry from '@sentry/electron/main';
-
-export let downloadedVersion: string | null = null;
-
-export function getDownloadedVersion() {
-  return downloadedVersion;
-}
-
-export function setDownloadedVersion(version: string | null) {
-  downloadedVersion = version;
-}
-
 export interface UpdaterConfig {
   autoDownload?: boolean;
 }
@@ -32,8 +21,13 @@ export function setupUpdaterEvents(event?: Electron.IpcMainInvokeEvent) {
 
   updater.autoUpdater.on('update-downloaded', async info => {
     log.info(`[AutoUpdater] Update downloaded (v${info.version})`);
-    setDownloadedVersion(info.version);
-    event && event.sender.send('updater.downloadProgress', { percent: 100, finished: true });
+    event &&
+      event.sender.send('updater.downloadProgress', {
+        percent: 100,
+        finished: true,
+        version: info.version,
+        isDownloading: false,
+      });
   });
 
   updater.autoUpdater.on('download-progress', info => {
@@ -42,6 +36,7 @@ export function setupUpdaterEvents(event?: Electron.IpcMainInvokeEvent) {
       event.sender.send('updater.downloadProgress', {
         percent: info.percent.toFixed(0),
         finished: false,
+        isDownloading: true,
       });
   });
 
@@ -50,7 +45,6 @@ export function setupUpdaterEvents(event?: Electron.IpcMainInvokeEvent) {
       tags: {
         source: 'auto-updater',
         event: 'error',
-        version: downloadedVersion,
       },
       extra: {
         context: 'Electron auto-update process',
@@ -70,7 +64,7 @@ function configureUpdater(config: UpdaterConfig) {
   updater.autoUpdater.forceDevUpdateConfig = true;
   //TODO REMOVE THIS
   updater.autoUpdater.setFeedURL(
-    'https://github.com/decentraland/creator-hub/releases/download/0.14.2',
+    'https://github.com/decentraland/creator-hub/releases/download/0.14.3',
   );
 }
 
@@ -90,7 +84,6 @@ export async function checkForUpdates(
       tags: {
         source: 'auto-updater',
         event: 'check-for-updates',
-        version: downloadedVersion,
       },
       extra: {
         context: 'Electron auto-update process main',
@@ -110,7 +103,6 @@ export async function quitAndInstall() {
       tags: {
         source: 'auto-updater',
         event: 'quit-and-install',
-        version: downloadedVersion,
       },
       extra: {
         context: 'Electron installation',
@@ -122,10 +114,8 @@ export async function quitAndInstall() {
   }
 }
 
-export async function downloadUpdate(event: Electron.IpcMainInvokeEvent) {
+export async function downloadUpdate() {
   try {
-    setupUpdaterEvents(event);
-    configureUpdater({ autoDownload: true });
     return await updater.autoUpdater.downloadUpdate();
   } catch (error: any) {
     Sentry.captureException(error, {

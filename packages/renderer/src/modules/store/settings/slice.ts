@@ -1,8 +1,9 @@
-import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { settings as settingsPreload } from '#preload';
 import type { IpcRendererEvent } from 'electron';
 import { actions as snackbarActions } from '../snackbar/slice';
 import { t } from '../translation/utils';
+import { createAsyncThunk } from '../thunk';
 
 export type UpdateStatus = {
   lastDownloadedVersion: string | null;
@@ -10,11 +11,12 @@ export type UpdateStatus = {
     isDownloading: boolean;
     progress: number;
     finished: boolean;
+    version: string | null;
   };
   updateInfo: {
     available: boolean;
     version: string | null;
-    isInstalled: boolean;
+    isDownloaded: boolean;
   };
 };
 
@@ -24,11 +26,12 @@ const initialState: UpdateStatus = {
     isDownloading: false,
     progress: 0,
     finished: false,
+    version: null,
   },
   updateInfo: {
     available: false,
     version: null,
-    isInstalled: false,
+    isDownloaded: false,
   },
 };
 
@@ -50,18 +53,18 @@ const slice = createSlice({
 
 export const checkForUpdates = createAsyncThunk(
   'settings/checkForUpdates',
-  async ({ autoDownload = false }: { autoDownload?: boolean }, { dispatch }) => {
+
+  async ({ autoDownload = false }: { autoDownload?: boolean }, { dispatch, getState }) => {
     try {
       const { updateAvailable, version } = await settingsPreload.checkForUpdates({
         autoDownload,
       });
-      const lastDownloadedVersion = await settingsPreload.getDownloadedVersion();
-      dispatch(actions.setlastDownloadedVersion(lastDownloadedVersion));
+      const lastDownloadedVersion = getState().settings.downloadingUpdate.version;
       dispatch(
         actions.setUpdateInfo({
           available: !!updateAvailable,
           version: version ?? null,
-          isInstalled: !!lastDownloadedVersion && lastDownloadedVersion === version,
+          isDownloaded: !!lastDownloadedVersion && lastDownloadedVersion === version,
         }),
       );
     } catch (error: any) {
@@ -82,12 +85,21 @@ export const subscribeToDownloadingStatus = createAsyncThunk(
   'settings/subscribeToDownloadingStatus',
   async (_, { dispatch }) => {
     settingsPreload.downloadingStatus(
-      (_event: IpcRendererEvent, downloadStatus: { percent: number; finished: boolean }) => {
+      (
+        _event: IpcRendererEvent,
+        progress: {
+          percent: number;
+          finished: boolean;
+          version: string | null;
+          isDownloading: boolean;
+        },
+      ) => {
         dispatch(
           actions.setDownloadingUpdate({
-            isDownloading: true,
-            progress: downloadStatus.percent,
-            finished: downloadStatus.finished,
+            isDownloading: progress.isDownloading,
+            progress: progress.percent,
+            finished: progress.finished,
+            version: progress.version,
           }),
         );
       },
@@ -117,7 +129,14 @@ export const downloadUpdate = createAsyncThunk(
 
 export const installUpdate = createAsyncThunk('settings/installUpdate', async (_, { dispatch }) => {
   try {
-    dispatch(actions.setDownloadingUpdate({ isDownloading: false, progress: 0, finished: false }));
+    dispatch(
+      actions.setDownloadingUpdate({
+        isDownloading: false,
+        progress: 0,
+        finished: false,
+        version: null,
+      }),
+    );
     settingsPreload.quitAndInstall();
   } catch (error) {
     dispatch(
