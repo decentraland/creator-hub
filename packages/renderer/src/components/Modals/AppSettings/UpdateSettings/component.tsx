@@ -128,9 +128,13 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
             <Typography variant="body2">{t('modal.app_settings.update.dont_close')}</Typography>
           </Box>
         )}
-        {hasCheckedForUpdates && updateInfo.available === false && (
-          <Typography variant="subtitle1">{t('modal.app_settings.version.up_to_date')}</Typography>
-        )}
+        {hasCheckedForUpdates &&
+          updateInfo.available === false &&
+          checkForUpdatesStatus === 'succeeded' && (
+            <Typography variant="subtitle1">
+              {t('modal.app_settings.version.up_to_date')}
+            </Typography>
+          )}
       </Row>
       {canInstallNewVersion && (
         <Row className="update-settings__message-container">

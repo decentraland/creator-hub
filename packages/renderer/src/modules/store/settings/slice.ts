@@ -79,17 +79,29 @@ export const setupUpdaterEvents = createAsyncThunk('settings/setupUpdaterEvents'
 export const checkForUpdates = createAsyncThunk(
   'settings/checkForUpdates',
   async ({ autoDownload = false }: { autoDownload?: boolean }, { dispatch, getState }) => {
-    const { updateAvailable, version } = await settingsPreload.checkForUpdates({
-      autoDownload,
-    });
-    const lastDownloadedVersion = getState().settings.downloadingUpdate.version;
-    dispatch(
-      actions.setUpdateInfo({
-        available: !!updateAvailable,
-        version: version ?? null,
-        isDownloaded: !!lastDownloadedVersion && lastDownloadedVersion === version,
-      }),
-    );
+    try {
+      const { updateAvailable, version } = await settingsPreload.checkForUpdates({
+        autoDownload,
+      });
+      const lastDownloadedVersion = getState().settings.downloadingUpdate.version;
+      dispatch(
+        actions.setUpdateInfo({
+          available: !!updateAvailable,
+          version: version ?? null,
+          isDownloaded: !!lastDownloadedVersion && lastDownloadedVersion === version,
+        }),
+      );
+    } catch (error) {
+      dispatch(
+        snackbarActions.pushSnackbar({
+          id: 'check-updates-error',
+          message: t('modal.app_settings.update.error'),
+          severity: 'error',
+          type: 'generic',
+        }),
+      );
+      throw error;
+    }
   },
 );
 
