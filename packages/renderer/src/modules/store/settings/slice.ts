@@ -125,7 +125,7 @@ export const subscribeToDownloadingStatus = createAsyncThunk(
           return dispatch(
             snackbarActions.pushSnackbar({
               id: 'download-update-error',
-              message: t('install.errors.downloadFailed'),
+              message: t('install.errors.installFailed'),
               severity: 'error',
               type: 'generic',
             }),
