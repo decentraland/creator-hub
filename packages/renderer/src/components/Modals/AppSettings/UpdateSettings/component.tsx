@@ -48,7 +48,7 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
     if (checkForUpdatesStatus === 'loading') {
       return {
         action: () => {},
-        text: t('modal.app_settings.update.checking'),
+        text: t('editor.loading.title'),
         disabled: true,
       };
     }
