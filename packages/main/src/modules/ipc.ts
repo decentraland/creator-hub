@@ -22,6 +22,7 @@ export function initIpc() {
   handle('updater.checkForUpdates', (event, config) => updater.checkForUpdates(event, config));
   handle('updater.quitAndInstall', () => updater.quitAndInstall());
   handle('updater.downloadUpdate', () => updater.downloadUpdate());
+  handle('updater.setupUpdaterEvents', event => updater.setupUpdaterEvents(event));
 
   // inspector
   handle('inspector.start', () => inspector.start());

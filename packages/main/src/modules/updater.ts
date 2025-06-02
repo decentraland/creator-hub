@@ -64,7 +64,7 @@ function configureUpdater(config: UpdaterConfig) {
   updater.autoUpdater.forceDevUpdateConfig = true;
   //TODO REMOVE THIS
   updater.autoUpdater.setFeedURL(
-    'https://github.com/decentraland/creator-hub/releases/download/0.14.3',
+    'https://github.com/decentraland/creator-hub/releases/download/0.14.2',
   );
 }
 
@@ -74,7 +74,7 @@ export async function checkForUpdates(
 ) {
   try {
     configureUpdater(config);
-    setupUpdaterEvents(event);
+
     const result = await updater.autoUpdater.checkForUpdates();
     const version = result?.updateInfo?.version ?? null;
     const currentVersion = updater.autoUpdater.currentVersion?.version;

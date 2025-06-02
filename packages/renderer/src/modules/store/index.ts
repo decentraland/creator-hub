@@ -76,6 +76,8 @@ async function start() {
       store.dispatch(workspace.actions.getWorkspace()),
       // subscribe to update events
       store.dispatch(settings.actions.subscribeToDownloadingStatus()),
+      // subscribe to updater events
+      store.dispatch(settings.actions.setupUpdaterEvents()),
       // check for updates
       store.dispatch(settings.actions.checkForUpdates({ autoDownload: true })),
     ]);

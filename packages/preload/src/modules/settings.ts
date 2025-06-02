@@ -60,6 +60,10 @@ export async function downloadUpdate() {
   return await invoke('updater.downloadUpdate');
 }
 
+export async function setupUpdaterEvents() {
+  return await invoke('updater.setupUpdaterEvents');
+}
+
 export function downloadingStatus(
   cb: (
     event: IpcRendererEvent,

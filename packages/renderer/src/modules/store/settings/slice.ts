@@ -51,6 +51,10 @@ const slice = createSlice({
   },
 });
 
+export const setupUpdaterEvents = createAsyncThunk('settings/setupUpdaterEvents', async () => {
+  settingsPreload.setupUpdaterEvents();
+});
+
 export const checkForUpdates = createAsyncThunk(
   'settings/checkForUpdates',
 
@@ -157,6 +161,7 @@ export const actions = {
   checkForUpdates,
   installUpdate,
   subscribeToDownloadingStatus,
+  setupUpdaterEvents,
 };
 
 export const reducer = slice.reducer;
