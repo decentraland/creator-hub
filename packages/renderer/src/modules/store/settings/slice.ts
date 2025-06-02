@@ -4,6 +4,7 @@ import type { IpcRendererEvent } from 'electron';
 import { actions as snackbarActions } from '../snackbar/slice';
 import { t } from '../translation/utils';
 import { createAsyncThunk } from '../thunk';
+import type { Status } from '/shared/types/async';
 
 export type UpdateStatus = {
   lastDownloadedVersion: string | null;
@@ -17,6 +18,9 @@ export type UpdateStatus = {
     available: boolean;
     version: string | null;
     isDownloaded: boolean;
+  };
+  checkForUpdates: {
+    status: Status;
   };
 };
 
@@ -32,6 +36,9 @@ const initialState: UpdateStatus = {
     available: false,
     version: null,
     isDownloaded: false,
+  },
+  checkForUpdates: {
+    status: 'idle',
   },
 };
 
@@ -49,6 +56,20 @@ const slice = createSlice({
       state.updateInfo = action.payload;
     },
   },
+  extraReducers: builder => {
+    builder
+      .addCase(checkForUpdates.pending, state => {
+        state.checkForUpdates.status = 'loading';
+        state.updateInfo = initialState.updateInfo;
+      })
+      .addCase(checkForUpdates.fulfilled, (state, _action) => {
+        state.checkForUpdates.status = 'succeeded';
+      })
+      .addCase(checkForUpdates.rejected, state => {
+        state.checkForUpdates.status = 'failed';
+        state.updateInfo = initialState.updateInfo;
+      });
+  },
 });
 
 export const setupUpdaterEvents = createAsyncThunk('settings/setupUpdaterEvents', async () => {
@@ -57,31 +78,18 @@ export const setupUpdaterEvents = createAsyncThunk('settings/setupUpdaterEvents'
 
 export const checkForUpdates = createAsyncThunk(
   'settings/checkForUpdates',
-
   async ({ autoDownload = false }: { autoDownload?: boolean }, { dispatch, getState }) => {
-    try {
-      const { updateAvailable, version } = await settingsPreload.checkForUpdates({
-        autoDownload,
-      });
-      const lastDownloadedVersion = getState().settings.downloadingUpdate.version;
-      dispatch(
-        actions.setUpdateInfo({
-          available: !!updateAvailable,
-          version: version ?? null,
-          isDownloaded: !!lastDownloadedVersion && lastDownloadedVersion === version,
-        }),
-      );
-    } catch (error: any) {
-      dispatch(
-        snackbarActions.pushSnackbar({
-          id: 'check-updates-error',
-          message: t('install.errors.checkUpdatesFailed'),
-          severity: 'error',
-          type: 'generic',
-        }),
-      );
-      throw error;
-    }
+    const { updateAvailable, version } = await settingsPreload.checkForUpdates({
+      autoDownload,
+    });
+    const lastDownloadedVersion = getState().settings.downloadingUpdate.version;
+    dispatch(
+      actions.setUpdateInfo({
+        available: !!updateAvailable,
+        version: version ?? null,
+        isDownloaded: !!lastDownloadedVersion && lastDownloadedVersion === version,
+      }),
+    );
   },
 );
 

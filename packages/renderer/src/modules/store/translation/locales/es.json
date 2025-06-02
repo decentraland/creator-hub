@@ -264,6 +264,7 @@
         "install": "Instalar ahora",
         "update": "Actualizar ahora",
         "check": "Buscar actualizaciones",
+        "checking": "Buscando actualizaciones...",
         "error": "No pudimos buscar actualizaciones.\nPor favor, inténtalo de nuevo más tarde."
       }
     },

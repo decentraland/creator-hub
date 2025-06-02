@@ -264,6 +264,7 @@
         "install": "Install now",
         "update": "Update now",
         "check": "Check for updates",
+        "checking": "Checking for updates...",
         "error": "We couldn't check for updates.\nPlease try again later."
       }
     },

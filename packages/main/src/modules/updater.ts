@@ -60,21 +60,11 @@ function configureUpdater(config: UpdaterConfig) {
   const { autoDownload } = config;
   updater.autoUpdater.autoDownload = autoDownload ?? false;
   updater.autoUpdater.autoInstallOnAppQuit = false;
-  //TODO REMOVE THIS
-  updater.autoUpdater.forceDevUpdateConfig = true;
-  //TODO REMOVE THIS
-  updater.autoUpdater.setFeedURL(
-    'https://github.com/decentraland/creator-hub/releases/download/0.14.2',
-  );
 }
 
-export async function checkForUpdates(
-  event: Electron.IpcMainInvokeEvent,
-  config: UpdaterConfig = {},
-) {
+export async function checkForUpdates(config: UpdaterConfig = {}) {
   try {
     configureUpdater(config);
-
     const result = await updater.autoUpdater.checkForUpdates();
     const version = result?.updateInfo?.version ?? null;
     const currentVersion = updater.autoUpdater.currentVersion?.version;

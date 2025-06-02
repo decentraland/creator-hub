@@ -22,6 +22,9 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
     downloadingUpdate: { progress, finished, isDownloading },
     updateInfo,
   } = useSelector(state => state.settings);
+
+  const checkForUpdatesStatus = useSelector(state => state.settings.checkForUpdates.status);
+
   const [hasCheckedForUpdates, setHasCheckedForUpdates] = useState(false);
 
   const shouldShowUpdateAvailable = useCallback(() => {
@@ -42,6 +45,14 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
   }, [handleCheckForUpdates]);
 
   const getButtonProps = useCallback((): UpdateButtonProps => {
+    if (checkForUpdatesStatus === 'loading') {
+      return {
+        action: () => {},
+        text: t('modal.app_settings.update.checking'),
+        disabled: true,
+      };
+    }
+
     if (progress > 0 && !finished) {
       return {
         action: () => {},
@@ -49,7 +60,8 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
         disabled: true,
       };
     }
-    if (!hasCheckedForUpdates) {
+
+    if (!hasCheckedForUpdates || checkForUpdatesStatus === 'idle') {
       return {
         action: handleCheckForUpdates,
         text: t('modal.app_settings.update.check'),
@@ -57,22 +69,27 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
     }
 
     if (updateInfo.available) {
+      const buttonText = updateInfo.isDownloaded
+        ? t('modal.app_settings.update.install')
+        : t('modal.app_settings.update.update');
+
       return {
         action: updateInfo.isDownloaded ? handleInstallUpdate : handleDownloadUpdate,
-        text: updateInfo.isDownloaded
-          ? t('modal.app_settings.update.install')
-          : t('modal.app_settings.update.update'),
+        text: buttonText,
       };
     }
+
     return {
       action: handleCheckForUpdates,
       text: t('modal.app_settings.update.check'),
     };
   }, [
+    checkForUpdatesStatus,
     updateInfo,
     progress,
     finished,
     hasCheckedForUpdates,
+    isDownloading,
     handleCheckForUpdates,
     handleDownloadUpdate,
     handleInstallUpdate,

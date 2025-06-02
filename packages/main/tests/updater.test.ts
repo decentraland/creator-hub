@@ -70,7 +70,7 @@ describe('Updater Module', () => {
       };
       vi.mocked(autoUpdater.checkForUpdates).mockResolvedValueOnce(result);
 
-      const response = await checkForUpdates(mockEvent, { autoDownload: false });
+      const response = await checkForUpdates({ autoDownload: false });
 
       expect(response).toEqual({
         updateAvailable: true,
@@ -92,7 +92,7 @@ describe('Updater Module', () => {
       };
       vi.mocked(autoUpdater.checkForUpdates).mockResolvedValueOnce(result);
 
-      const response = await checkForUpdates(mockEvent, { autoDownload: false });
+      const response = await checkForUpdates({ autoDownload: false });
 
       expect(response).toEqual({
         updateAvailable: false,
@@ -116,7 +116,7 @@ describe('Updater Module', () => {
 
       vi.mocked(autoUpdater.checkForUpdates).mockResolvedValueOnce(result);
 
-      const response = await checkForUpdates(mockEvent, { autoDownload: false });
+      const response = await checkForUpdates({ autoDownload: false });
 
       expect(response).toEqual({
         updateAvailable: false,
@@ -128,9 +128,7 @@ describe('Updater Module', () => {
       const error = new Error('Update check failed');
       vi.mocked(autoUpdater.checkForUpdates).mockRejectedValueOnce(error);
 
-      await expect(checkForUpdates(mockEvent, { autoDownload: false })).rejects.toThrow(
-        'Update check failed',
-      );
+      await expect(checkForUpdates({ autoDownload: false })).rejects.toThrow('Update check failed');
     });
 
     test('should configure autoDownload to true when passed in config', async () => {
@@ -148,7 +146,7 @@ describe('Updater Module', () => {
 
       vi.mocked(autoUpdater.checkForUpdates).mockResolvedValueOnce(result);
 
-      await checkForUpdates(mockEvent, { autoDownload: true });
+      await checkForUpdates({ autoDownload: true });
 
       expect(autoUpdater.autoDownload).toBe(true);
     });
