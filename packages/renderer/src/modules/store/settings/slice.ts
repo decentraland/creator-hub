@@ -13,6 +13,7 @@ export type UpdateStatus = {
     progress: number;
     finished: boolean;
     version: string | null;
+    error: string | null;
   };
   updateInfo: {
     available: boolean;
@@ -31,6 +32,7 @@ const initialState: UpdateStatus = {
     progress: 0,
     finished: false,
     version: null,
+    error: null,
   },
   updateInfo: {
     available: false,
@@ -116,14 +118,26 @@ export const subscribeToDownloadingStatus = createAsyncThunk(
           finished: boolean;
           version: string | null;
           isDownloading: boolean;
+          error?: string;
         },
       ) => {
+        if (progress.error) {
+          dispatch(
+            snackbarActions.pushSnackbar({
+              id: 'download-update-error',
+              message: t('install.errors.downloadFailed'),
+              severity: 'error',
+              type: 'generic',
+            }),
+          );
+        }
         dispatch(
           actions.setDownloadingUpdate({
             isDownloading: progress.isDownloading,
             progress: progress.percent,
             finished: progress.finished,
             version: progress.version,
+            error: progress.error ?? null,
           }),
         );
       },
@@ -153,14 +167,6 @@ export const downloadUpdate = createAsyncThunk(
 
 export const installUpdate = createAsyncThunk('settings/installUpdate', async (_, { dispatch }) => {
   try {
-    dispatch(
-      actions.setDownloadingUpdate({
-        isDownloading: false,
-        progress: 0,
-        finished: false,
-        version: null,
-      }),
-    );
     settingsPreload.quitAndInstall();
   } catch (error) {
     dispatch(

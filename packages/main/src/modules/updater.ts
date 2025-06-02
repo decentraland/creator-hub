@@ -41,6 +41,10 @@ export function setupUpdaterEvents(event?: Electron.IpcMainInvokeEvent) {
   });
 
   updater.autoUpdater.on('error', err => {
+    event &&
+      event.sender.send('updater.downloadProgress', {
+        error: err.message,
+      });
     Sentry.captureException(err, {
       tags: {
         source: 'auto-updater',
@@ -52,7 +56,6 @@ export function setupUpdaterEvents(event?: Electron.IpcMainInvokeEvent) {
       },
       level: 'error',
     });
-    log.error('[AutoUpdater] Error in auto-updater', err);
   });
 }
 
@@ -60,6 +63,12 @@ function configureUpdater(config: UpdaterConfig) {
   const { autoDownload } = config;
   updater.autoUpdater.autoDownload = autoDownload ?? false;
   updater.autoUpdater.autoInstallOnAppQuit = false;
+  //TODO REMOVE THIS
+  updater.autoUpdater.forceDevUpdateConfig = true;
+  //TODO REMOVE THIS
+  updater.autoUpdater.setFeedURL(
+    'https://github.com/decentraland/creator-hub/releases/download/0.14.3',
+  );
 }
 
 export async function checkForUpdates(config: UpdaterConfig = {}) {
@@ -87,8 +96,9 @@ export async function checkForUpdates(config: UpdaterConfig = {}) {
 
 export async function quitAndInstall() {
   try {
-    updater.autoUpdater.quitAndInstall();
+    await updater.autoUpdater.quitAndInstall();
   } catch (error: any) {
+    log.info('ENTRE EN EL ERROR DE INSTALACION', error);
     Sentry.captureException(error, {
       tags: {
         source: 'auto-updater',

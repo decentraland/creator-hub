@@ -72,6 +72,7 @@ export function downloadingStatus(
       finished: boolean;
       version: string | null;
       isDownloading: boolean;
+      error?: string;
     },
   ) => void,
 ) {
