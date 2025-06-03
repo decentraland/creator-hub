@@ -61,7 +61,7 @@ export function EditorPage() {
   const { settings, updateAppSettings } = useSettings();
   const userId = useSelector(state => state.analytics.userId);
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
-  const [modalOpen, setModalOpen] = useState<ModalType | undefined>();
+  const [modalOpen, setModalOpen] = useState<ModalType | undefined>('install-client');
 
   const handleIframeRef = useCallback(
     (e: React.SyntheticEvent<HTMLIFrameElement, Event>) => {

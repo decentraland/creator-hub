@@ -1,4 +1,4 @@
-import { Box, OperativeSystem, Typography, DownloadButton } from 'decentraland-ui2';
+import { Box, OperativeSystem, Typography } from 'decentraland-ui2';
 import {
   DownloadButtonAppleIcon,
   DownloadButtonWindowsIcon,
@@ -39,10 +39,11 @@ export function InstallClient({ open, onClose }: Props) {
 
   return (
     <Modal
+      className="InstallClientModal"
       open={open}
-      size="small"
+      size="tiny"
     >
-      <Box className="InstallClientModal">
+      <Box className="InstallClientBox">
         <Box className="LogoContainer">
           <img
             src={LogoDCLSVG}
@@ -51,7 +52,7 @@ export function InstallClient({ open, onClose }: Props) {
           />
         </Box>
         <Typography
-          variant="h4"
+          variant="h5"
           className="Title"
         >
           To jump in, you'll need to install Decentraland first

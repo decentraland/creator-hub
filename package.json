@@ -50,7 +50,7 @@
     "ansi-to-html": "^0.7.2",
     "classnames": "^2.5.1",
     "cross-env": "7.0.3",
-    "decentraland-ui2": "^0.22.0",
+    "decentraland-ui2": "0.23.1",
     "electron": "31.1.0",
     "electron-builder": "24.13.3",
     "eslint": "8.57.0",
