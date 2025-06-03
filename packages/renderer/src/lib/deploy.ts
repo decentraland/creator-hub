@@ -1,4 +1,5 @@
-import { ErrorBase } from '/shared/types/error';
+import { ErrorBase } from '../../../shared/types/error';
+import { captureException } from '@sentry/electron/renderer';
 
 export const DEPLOY_URLS = {
   WORLDS: 'https://worlds-content-server.decentraland.org',
@@ -67,6 +68,14 @@ export class DeploymentError extends ErrorBase<ErrorName> {
     public error?: Error,
   ) {
     super(name, error?.message);
+    // Report the error to Sentry
+    captureException(error || this, {
+      tags: {
+        source: 'deployment',
+        errorType: name,
+      },
+      fingerprint: ['deployment-error', name],
+    });
   }
 }
 

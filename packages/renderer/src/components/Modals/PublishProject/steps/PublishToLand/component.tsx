@@ -5,7 +5,7 @@ import type { SceneParcels } from '@dcl/schemas';
 
 import { useSelector } from '#store';
 
-import { DEPLOY_URLS } from '/shared/types/deploy';
+import { DEPLOY_URLS } from '/@/lib/deploy';
 import type { Project } from '/shared/types/projects';
 
 import { t } from '/@/modules/store/translation/utils';
