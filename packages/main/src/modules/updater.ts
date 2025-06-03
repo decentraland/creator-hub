@@ -92,7 +92,6 @@ export async function quitAndInstall() {
   try {
     await updater.autoUpdater.quitAndInstall();
   } catch (error: any) {
-    log.info('ENTRE EN EL ERROR DE INSTALACION', error);
     Sentry.captureException(error, {
       tags: {
         source: 'auto-updater',
