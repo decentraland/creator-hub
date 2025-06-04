@@ -3,6 +3,9 @@
     "message": "Instalando Decentraland Creator Hub v{version}",
     "errors": {
       "moveAppFailed": "Por favor, mueva la aplicación de Creator Hub a la carpeta de aplicaciones y abra la aplicación de Creator Hub desde ella",
+      "checkUpdatesFailed": "No se pudieron verificar las actualizaciones",
+      "downloadFailed": "No se pudo descargar la actualización",
+      "installFailed": "No se pudo instalar la actualización",
       "unknown": "Ocurrió un error desconocido"
     }
   },
@@ -247,6 +250,22 @@
       },
       "actions": {
         "apply_button": "Guardar"
+      },
+      "version": {
+        "current": "Versión actual: {version}",
+        "new": "Nueva versión: {version}",
+        "up_to_date": "Creator Hub está actualizado"
+      },
+      "update": {
+        "applying": "Aplicando actualizaciones.",
+        "dont_close": "Por favor no cierres la aplicación.",
+        "auto_restart": "Creator Hub se reiniciará automáticamente después de la actualización.",
+        "downloading": "Descargando... {progress}%",
+        "install": "Instalar ahora",
+        "update": "Actualizar ahora",
+        "check": "Buscar actualizaciones",
+        "checking": "Buscando actualizaciones...",
+        "error": "No pudimos buscar actualizaciones.\nPor favor, inténtalo de nuevo más tarde."
       }
     },
     "create_project": {

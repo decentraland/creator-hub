@@ -5,6 +5,7 @@ import {
   useDispatch as formerUseDispuseDispatch,
 } from 'react-redux';
 import logger from 'redux-logger';
+import { captureException } from '@sentry/electron/renderer';
 
 import { createAnalyticsMiddleware } from './analytics/middleware';
 import * as editor from './editor';
@@ -15,6 +16,7 @@ import * as deployment from './deployment';
 import * as analytics from './analytics';
 import * as ens from './ens';
 import * as land from './land';
+import * as settings from './settings';
 
 export function createRootReducer() {
   return {
@@ -26,6 +28,7 @@ export function createRootReducer() {
     analytics: analytics.reducer,
     ens: ens.reducer,
     land: land.reducer,
+    settings: settings.reducer,
   };
 }
 
@@ -71,9 +74,19 @@ async function start() {
       store.dispatch(editor.actions.startInspector()),
       // load workspace
       store.dispatch(workspace.actions.getWorkspace()),
+      // subscribe to update events
+      store.dispatch(settings.actions.subscribeToDownloadingStatus()),
+      // subscribe to updater events
+      store.dispatch(settings.actions.setupUpdaterEvents()),
+      // check for updates
+      store.dispatch(settings.actions.checkForUpdates({ autoDownload: true })),
     ]);
   } catch (error: any) {
     console.error(`[Renderer]: Failed to start up error=${error.message}`);
+    captureException(error, {
+      tags: { source: 'renderer-startup' },
+      extra: { context: 'Renderer startup process' },
+    });
   }
 }
 

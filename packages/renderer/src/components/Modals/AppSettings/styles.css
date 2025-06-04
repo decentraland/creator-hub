@@ -38,3 +38,34 @@
   background-color: #f8919d;
   color: #fee9ec;
 }
+
+.AppSettingsModal .UpdateContainer {
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.AppSettingsModal .UpdateButtonContainer {
+  gap: 16px;
+  align-items: center;
+  justify-content: start;
+  min-height: 40px;
+
+  button {
+    min-width: 210px;
+    flex-shrink: 0;
+  }
+}
+
+.AppSettingsModal .MessageContainer {
+  gap: 10px;
+  align-items: center;
+  svg {
+    width: 16px;
+  }
+}
+
+.AppSettingsModal .DownloadProgressContainer {
+  max-width: 300px;
+  align-items: center;
+  gap: 4px;
+}

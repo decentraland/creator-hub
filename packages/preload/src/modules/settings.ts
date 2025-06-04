@@ -1,3 +1,4 @@
+import { ipcRenderer, type IpcRendererEvent } from 'electron';
 import path from 'path';
 import {
   DEPENDENCY_UPDATE_STRATEGY,
@@ -41,4 +42,44 @@ export async function selectSceneFolder(): Promise<string | undefined> {
   });
 
   return projectPath;
+}
+
+export async function checkForUpdates(config?: { autoDownload?: boolean }) {
+  return await invoke('updater.checkForUpdates', config);
+}
+
+export async function getDownloadedVersion() {
+  return await invoke('updater.getDownloadedVersion');
+}
+
+export async function quitAndInstall() {
+  return await invoke('updater.quitAndInstall');
+}
+
+export async function downloadUpdate() {
+  return await invoke('updater.downloadUpdate');
+}
+
+export async function setupUpdaterEvents() {
+  return await invoke('updater.setupUpdaterEvents');
+}
+
+export function downloadingStatus(
+  cb: (
+    event: IpcRendererEvent,
+    progress: {
+      percent: number;
+      finished: boolean;
+      version: string | null;
+      isDownloading: boolean;
+      error?: string;
+    },
+  ) => void,
+) {
+  ipcRenderer.on('updater.downloadProgress', cb);
+  return {
+    cleanup: () => {
+      ipcRenderer.off('updater.downloadProgress', cb);
+    },
+  };
 }

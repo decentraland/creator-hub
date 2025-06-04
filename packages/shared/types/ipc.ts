@@ -16,6 +16,16 @@ export type IpcError = {
 export interface Ipc {
   'electron.getUserDataPath': () => string;
   'electron.getAppVersion': () => Promise<string>;
+  'updater.getDownloadedVersion': () => string | null;
+  'updater.setupUpdaterEvents': () => void;
+  'updater.checkForUpdates': (config?: { autoDownload?: boolean }) => Promise<{
+    updateAvailable: boolean;
+    error?: any;
+    version: string | null;
+  }>;
+  'updater.downloadProgress': (progress: number) => void;
+  'updater.quitAndInstall': () => Promise<void>;
+  'updater.downloadUpdate': () => Promise<any>;
   'electron.getWorkspaceConfigPath': (path: string) => Promise<string>;
   'electron.showOpenDialog': (opts: Partial<OpenDialogOptions>) => Promise<string[]>;
   'electron.openExternal': (url: string) => Promise<void>;
