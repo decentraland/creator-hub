@@ -8,7 +8,8 @@ import type { Status } from '/shared/types/async';
 
 export type UpdateStatus = {
   lastDownloadedVersion: string | null;
-  showUpdateModal: boolean;
+  openNewUpdateModal: boolean;
+  openAppSettingsModal: boolean;
   downloadingUpdate: {
     isDownloading: boolean;
     progress: number;
@@ -28,7 +29,8 @@ export type UpdateStatus = {
 
 const initialState: UpdateStatus = {
   lastDownloadedVersion: null,
-  showUpdateModal: false,
+  openNewUpdateModal: false,
+  openAppSettingsModal: false,
   downloadingUpdate: {
     isDownloading: false,
     progress: 0,
@@ -59,8 +61,11 @@ const slice = createSlice({
     setUpdateInfo: (state, action: PayloadAction<UpdateStatus['updateInfo']>) => {
       state.updateInfo = action.payload;
     },
-    setShowUpdateModal: (state, action: PayloadAction<boolean>) => {
-      state.showUpdateModal = action.payload;
+    setOpenNewUpdateModal: (state, action: PayloadAction<boolean>) => {
+      state.openNewUpdateModal = action.payload;
+    },
+    setOpenAppSettingsModal: (state, action: PayloadAction<boolean>) => {
+      state.openAppSettingsModal = action.payload;
     },
   },
   extraReducers: builder => {
@@ -91,7 +96,6 @@ export const checkForUpdates = createAsyncThunk(
         autoDownload,
       });
       const lastDownloadedVersion = getState().settings.downloadingUpdate.version;
-      dispatch(actions.setShowUpdateModal(!!updateAvailable && !!version));
       dispatch(
         actions.setUpdateInfo({
           available: !!updateAvailable,
@@ -115,7 +119,7 @@ export const checkForUpdates = createAsyncThunk(
 
 export const subscribeToDownloadingStatus = createAsyncThunk(
   'settings/subscribeToDownloadingStatus',
-  async (_, { dispatch }) => {
+  async (_, { dispatch, getState }) => {
     settingsPreload.downloadingStatus(
       (
         _event: IpcRendererEvent,
@@ -137,6 +141,13 @@ export const subscribeToDownloadingStatus = createAsyncThunk(
             }),
           );
         }
+
+        if (progress.finished && progress.percent === 100) {
+          !getState().settings.openAppSettingsModal &&
+            dispatch(actions.setOpenNewUpdateModal(true));
+          dispatch(actions.setlastDownloadedVersion(progress.version));
+        }
+
         dispatch(
           actions.setDownloadingUpdate({
             isDownloading: progress.isDownloading,

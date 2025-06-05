@@ -263,7 +263,7 @@ export function HomePage() {
   const auth = useAuth();
   const { version } = useEditor();
   const updateInfo = useSelector((state: AppState) => state.settings.updateInfo);
-  const showUpdateModal = useSelector((state: AppState) => state.settings.showUpdateModal);
+  const openNewUpdateModal = useSelector((state: AppState) => state.settings.openNewUpdateModal);
   const dispatch = useDispatch();
 
   return (
@@ -311,8 +311,8 @@ export function HomePage() {
         </Container>
       </main>
       <UpdateAvailableModal
-        open={showUpdateModal}
-        onClose={() => dispatch(actions.setShowUpdateModal(false))}
+        open={openNewUpdateModal}
+        onClose={() => dispatch(actions.setOpenNewUpdateModal(false))}
         version={updateInfo.version ?? ''}
       />
       {version && <Footer version={version} />}
