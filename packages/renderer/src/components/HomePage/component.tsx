@@ -28,7 +28,7 @@ import InfluencePng from '/assets/images/influence.png';
 
 import { useAuth } from '/@/hooks/useAuth';
 import { useWorkspace } from '/@/hooks/useWorkspace';
-import { t } from '../../modules/store/translation/utils';
+import { t } from '/@/modules/store/translation/utils';
 import { FEEDBACK_URL } from '/@/modules/utils';
 
 import { Navbar, NavbarItem } from '../Navbar';
