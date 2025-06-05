@@ -280,6 +280,13 @@
       "errors": {
         "path_exists": "La ruta ya existe"
       }
+    },
+    "install_client": {
+      "title": "Para entrar, primero necesitarás instalar Decentraland",
+      "download": "Descargar",
+      "download_macos": "DESCARGAR PARA MACOS",
+      "download_win": "DESCARGAR PARA WINDOWS",
+      "cancel": "AHORA NO"
     }
   },
   "snackbar": {

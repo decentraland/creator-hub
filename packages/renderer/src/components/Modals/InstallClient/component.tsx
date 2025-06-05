@@ -3,7 +3,6 @@ import {
   DownloadButtonAppleIcon,
   DownloadButtonWindowsIcon,
 } from 'decentraland-ui2/dist/components/DownloadButton/DownloadButton.styled';
-import { CDNSource, getCDNRelease } from 'decentraland-ui2/dist/modules/cdnReleases';
 import { useAdvancedUserAgentData } from '@dcl/hooks';
 import { actions } from '/@/modules/store/editor';
 import { Modal } from '..';
@@ -14,6 +13,7 @@ import type { Props } from './types';
 import './styles.css';
 import { useCallback, useMemo } from 'react';
 import { useDispatch } from '#store';
+import { t } from '/@/modules/store/translation/utils';
 
 export function InstallClient({ open, onClose }: Props) {
   const [_, agent] = useAdvancedUserAgentData();
@@ -21,20 +21,17 @@ export function InstallClient({ open, onClose }: Props) {
 
   const handleDownload = useCallback(async () => {
     if (!agent) return;
-    const cdn = getCDNRelease(CDNSource.LAUNCHER);
-    const os: OperativeSystem = agent.os.name as OperativeSystem;
-    const downloadLink: string = (cdn![os] as any)[agent.cpu.architecture];
-    dispatch(actions.openExternalURL(downloadLink));
+    dispatch(actions.openExternalURL('https://decentraland.org/download/'));
     onClose();
   }, [agent, onClose]);
   const { icon, text } = useMemo(() => {
     if (!agent) {
-      return { text: 'Download', icon: <div /> };
+      return { text: t('modal.install_client.download'), icon: <div /> };
     }
     if (agent.os.name === OperativeSystem.MACOS) {
-      return { icon: <DownloadButtonAppleIcon />, text: 'DOWNLOAD FOR MAC' };
+      return { icon: <DownloadButtonAppleIcon />, text: t('modal.install_client.download_macos') };
     }
-    return { icon: <DownloadButtonWindowsIcon />, text: 'DOWNLOAD FOR WINDOWS' };
+    return { icon: <DownloadButtonWindowsIcon />, text: t('modal.install_client.download_win') };
   }, [agent]);
 
   return (
@@ -55,7 +52,7 @@ export function InstallClient({ open, onClose }: Props) {
           variant="h5"
           className="Title"
         >
-          To jump in, you'll need to install Decentraland first
+          {t('modal.install_client.title')}
         </Typography>
         <Box className="Actions">
           <Button
@@ -72,7 +69,7 @@ export function InstallClient({ open, onClose }: Props) {
             fullWidth
             onClick={onClose}
           >
-            NOT NOW
+            {t('modal.install_client.cancel')}
           </Button>
         </Box>
       </Box>
