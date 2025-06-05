@@ -254,7 +254,8 @@
       "version": {
         "current": "Current Version: {version}",
         "new": "New version: {version}",
-        "up_to_date": "Creator Hub is up to date"
+        "up_to_date": "Creator Hub is up to date",
+        "label": "Version: {version}"
       },
       "update": {
         "applying": "Applying updates.",
@@ -265,7 +266,8 @@
         "update": "Update now",
         "check": "Check for updates",
         "checking": "Checking for updates...",
-        "error": "We couldn't check for updates.\nPlease try again later."
+        "error": "We couldn't check for updates.\nPlease try again later.",
+        "update_available": "Update Available"
       }
     },
     "create_project": {
