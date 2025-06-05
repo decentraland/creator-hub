@@ -8,6 +8,8 @@ import InfluencePng from '/assets/images/influence.png';
 
 import './styles.css';
 import { Row } from '../../Row';
+import { actions } from '/@/modules/store/settings';
+import { useDispatch } from '#store';
 
 interface Props {
   open: boolean;
@@ -16,6 +18,7 @@ interface Props {
 }
 
 export function UpdateAvailableModal({ open, onClose, version }: Props) {
+  const dispatch = useDispatch();
   return (
     <Modal
       size="tiny"
@@ -43,8 +46,11 @@ export function UpdateAvailableModal({ open, onClose, version }: Props) {
             <Button
               variant="contained"
               className="actionButton"
+              onClick={() => {
+                dispatch(actions.installUpdate());
+              }}
             >
-              {t('modal.app_settings.update.update')}
+              {t('modal.app_settings.update.install')}
             </Button>
             <Row className="update-settings__message-container">
               <InfoOutlined />

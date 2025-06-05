@@ -1,5 +1,5 @@
 import cx from 'classnames';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Box, Button, IconButton } from 'decentraland-ui2';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
@@ -12,6 +12,9 @@ import { Header } from '../Header';
 
 import './styles.css';
 import { AppSettings } from '../Modals/AppSettings';
+import type { AppState } from '#store';
+import { useDispatch, useSelector } from '#store';
+import { actions } from '/@/modules/store/settings';
 
 export enum NavbarItem {
   HOME = 'home',
@@ -34,7 +37,8 @@ function MenuItem(props: { item: NavbarItem; active: NavbarItem; disable?: boole
 }
 
 export function Navbar(props: { active: NavbarItem }) {
-  const [openAppSettings, setOpenAppSettings] = useState(false);
+  const openAppSettings = useSelector((state: AppState) => state.settings.openAppSettingsModal);
+  const dispatch = useDispatch();
 
   const handleClickReportIssue = useCallback(() => misc.openExternal(REPORT_ISSUES_URL), []);
 
@@ -44,7 +48,7 @@ export function Navbar(props: { active: NavbarItem }) {
   );
 
   const handleClickSettings = useCallback(() => {
-    setOpenAppSettings(true);
+    dispatch(actions.setOpenAppSettingsModal(true));
   }, []);
 
   return (
@@ -112,7 +116,7 @@ export function Navbar(props: { active: NavbarItem }) {
         </Box>
         <AppSettings
           open={openAppSettings}
-          onClose={() => setOpenAppSettings(false)}
+          onClose={() => dispatch(actions.setOpenAppSettingsModal(false))}
         />
       </>
     </Header>
