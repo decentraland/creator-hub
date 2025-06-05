@@ -35,6 +35,7 @@ import { Footer } from '../Footer';
 import { type CardBannerProps, type CardItemProps, type SignInCardProps } from './types';
 
 import './styles.css';
+import { UpdateAvailableModal } from '../Modals/UpdateAvailableModal';
 
 const learn_resources = [
   {
@@ -303,6 +304,10 @@ export function HomePage() {
           </Grid>
         </Container>
       </main>
+      <UpdateAvailableModal
+        open={true}
+        onClose={() => {}}
+      />
       {version && <Footer version={version} />}
     </>
   );
