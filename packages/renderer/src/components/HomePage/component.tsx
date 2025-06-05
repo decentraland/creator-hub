@@ -2,6 +2,8 @@ import cx from 'classnames';
 import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useEditor } from '/@/hooks/useEditor';
+import { useDispatch, useSelector } from 'react-redux';
+import type { AppState } from '../../modules/store';
 import {
   Container,
   Card,
@@ -26,7 +28,7 @@ import InfluencePng from '/assets/images/influence.png';
 
 import { useAuth } from '/@/hooks/useAuth';
 import { useWorkspace } from '/@/hooks/useWorkspace';
-import { t } from '/@/modules/store/translation/utils';
+import { t } from '../../modules/store/translation/utils';
 import { FEEDBACK_URL } from '/@/modules/utils';
 
 import { Navbar, NavbarItem } from '../Navbar';
@@ -36,6 +38,7 @@ import { type CardBannerProps, type CardItemProps, type SignInCardProps } from '
 
 import './styles.css';
 import { UpdateAvailableModal } from '../Modals/UpdateAvailableModal';
+import { actions } from '/@/modules/store/settings';
 
 const learn_resources = [
   {
@@ -259,6 +262,9 @@ const FeedbackCard: React.FC = React.memo(() => {
 export function HomePage() {
   const auth = useAuth();
   const { version } = useEditor();
+  const updateInfo = useSelector((state: AppState) => state.settings.updateInfo);
+  const showUpdateModal = useSelector((state: AppState) => state.settings.showUpdateModal);
+  const dispatch = useDispatch();
 
   return (
     <>
@@ -305,8 +311,9 @@ export function HomePage() {
         </Container>
       </main>
       <UpdateAvailableModal
-        open={true}
-        onClose={() => {}}
+        open={showUpdateModal}
+        onClose={() => dispatch(actions.setShowUpdateModal(false))}
+        version={updateInfo.version ?? ''}
       />
       {version && <Footer version={version} />}
     </>

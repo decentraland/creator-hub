@@ -1,20 +1,21 @@
 import { Box, Button, IconButton, Typography } from 'decentraland-ui2';
 import CloseIcon from '@mui/icons-material/Close';
+import { InfoOutlined } from '@mui/icons-material';
 
 import { Modal } from '../index';
 import { t } from '/@/modules/store/translation/utils';
 import InfluencePng from '/assets/images/influence.png';
 
 import './styles.css';
-import { InfoOutlined } from '@mui/icons-material';
 import { Row } from '../../Row';
 
 interface Props {
   open: boolean;
   onClose: () => void;
+  version: string;
 }
 
-export function UpdateAvailableModal({ open, onClose }: Props) {
+export function UpdateAvailableModal({ open, onClose, version }: Props) {
   return (
     <Modal
       size="tiny"
@@ -31,7 +32,7 @@ export function UpdateAvailableModal({ open, onClose }: Props) {
           variant="body1"
           className="version"
         >
-          {t('modal.app_settings.version.label', { version: '3.4.5' })}
+          {t('modal.app_settings.version.label', { version })}
         </Typography>
         <Box className="ImageButtonContainer">
           <img

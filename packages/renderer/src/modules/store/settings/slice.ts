@@ -8,6 +8,7 @@ import type { Status } from '/shared/types/async';
 
 export type UpdateStatus = {
   lastDownloadedVersion: string | null;
+  showUpdateModal: boolean;
   downloadingUpdate: {
     isDownloading: boolean;
     progress: number;
@@ -27,6 +28,7 @@ export type UpdateStatus = {
 
 const initialState: UpdateStatus = {
   lastDownloadedVersion: null,
+  showUpdateModal: false,
   downloadingUpdate: {
     isDownloading: false,
     progress: 0,
@@ -57,6 +59,9 @@ const slice = createSlice({
     setUpdateInfo: (state, action: PayloadAction<UpdateStatus['updateInfo']>) => {
       state.updateInfo = action.payload;
     },
+    setShowUpdateModal: (state, action: PayloadAction<boolean>) => {
+      state.showUpdateModal = action.payload;
+    },
   },
   extraReducers: builder => {
     builder
@@ -86,6 +91,7 @@ export const checkForUpdates = createAsyncThunk(
         autoDownload,
       });
       const lastDownloadedVersion = getState().settings.downloadingUpdate.version;
+      dispatch(actions.setShowUpdateModal(!!updateAvailable && !!version));
       dispatch(
         actions.setUpdateInfo({
           available: !!updateAvailable,
