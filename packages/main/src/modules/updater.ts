@@ -2,9 +2,16 @@ import updater from 'electron-updater';
 import log from 'electron-log/main';
 import semver from 'semver';
 import * as Sentry from '@sentry/electron/main';
+import { FileSystemStorage } from '/shared/types/storage';
 export interface UpdaterConfig {
   autoDownload?: boolean;
 }
+
+type InstalledVersionData = {
+  installed_version?: string;
+};
+
+const VERSION_FILE_PATH = 'installed-version.json';
 
 export function setupUpdaterEvents(event?: Electron.IpcMainInvokeEvent) {
   updater.autoUpdater.on('checking-for-update', () => {
@@ -63,6 +70,10 @@ function configureUpdater(config: UpdaterConfig) {
   const { autoDownload } = config;
   updater.autoUpdater.autoDownload = autoDownload ?? false;
   updater.autoUpdater.autoInstallOnAppQuit = false;
+  updater.autoUpdater.forceDevUpdateConfig = true;
+  updater.autoUpdater.setFeedURL(
+    'https://github.com/decentraland/creator-hub/releases/download/0.14.2',
+  );
 }
 
 export async function checkForUpdates(config: UpdaterConfig = {}) {
@@ -88,9 +99,12 @@ export async function checkForUpdates(config: UpdaterConfig = {}) {
   }
 }
 
-export async function quitAndInstall() {
+export async function quitAndInstall(version: string) {
   try {
     await updater.autoUpdater.quitAndInstall();
+    if (version) {
+      await writeInstalledVersion(version);
+    }
   } catch (error: any) {
     Sentry.captureException(error, {
       tags: {
@@ -120,5 +134,29 @@ export async function downloadUpdate() {
     });
     log.error('[AutoUpdater] Error downloading update:', error);
     throw error;
+  }
+}
+
+export async function writeInstalledVersion(version: string): Promise<void> {
+  const storage = await FileSystemStorage.getOrCreate<InstalledVersionData>(VERSION_FILE_PATH);
+  await storage.set('installed_version', version);
+}
+
+export async function getInstalledVersion(): Promise<string | undefined> {
+  try {
+    const storage = await FileSystemStorage.getOrCreate<InstalledVersionData>(VERSION_FILE_PATH);
+    return await storage?.get('installed_version');
+  } catch (error) {
+    console.error('Error getting installed version:', error);
+    return undefined;
+  }
+}
+
+export async function deleteVersionFile(): Promise<void> {
+  try {
+    await FileSystemStorage.deleteFile(VERSION_FILE_PATH);
+    log.info('Deleted version file:', VERSION_FILE_PATH);
+  } catch (error) {
+    log.error('Error deleting version file:', error);
   }
 }
