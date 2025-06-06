@@ -24,7 +24,9 @@ export interface Ipc {
     version: string | null;
   }>;
   'updater.downloadProgress': (progress: number) => void;
-  'updater.quitAndInstall': () => Promise<void>;
+  'updater.quitAndInstall': (version: string) => Promise<void>;
+  'updater.getInstalledVersion': () => Promise<string | undefined>;
+  'updater.deleteVersionFile': () => Promise<void>;
   'updater.downloadUpdate': () => Promise<any>;
   'electron.getWorkspaceConfigPath': (path: string) => Promise<string>;
   'electron.showOpenDialog': (opts: Partial<OpenDialogOptions>) => Promise<string[]>;

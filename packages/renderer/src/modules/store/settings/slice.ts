@@ -88,6 +88,25 @@ export const setupUpdaterEvents = createAsyncThunk('settings/setupUpdaterEvents'
   settingsPreload.setupUpdaterEvents();
 });
 
+export const notifyUpdate = createAsyncThunk(
+  'settings/notifyUpdate',
+  async (_, { dispatch, getState }) => {
+    const newVersion = await settingsPreload.getInstalledVersion();
+    const currentVersion = getState().editor.version;
+    settingsPreload.deleteVersionFile();
+    if (newVersion && currentVersion === newVersion) {
+      dispatch(
+        snackbarActions.pushSnackbar({
+          id: 'version-updated',
+          message: `New version ${newVersion} installed`,
+          severity: 'success',
+          type: 'generic',
+        }),
+      );
+    }
+  },
+);
+
 export const checkForUpdates = createAsyncThunk(
   'settings/checkForUpdates',
   async ({ autoDownload = false }: { autoDownload?: boolean }, { dispatch, getState }) => {
@@ -182,21 +201,24 @@ export const downloadUpdate = createAsyncThunk(
   },
 );
 
-export const installUpdate = createAsyncThunk('settings/installUpdate', async (_, { dispatch }) => {
-  try {
-    settingsPreload.quitAndInstall();
-  } catch (error) {
-    dispatch(
-      snackbarActions.pushSnackbar({
-        id: 'install-update-error',
-        message: t('install.errors.installFailed'),
-        severity: 'error',
-        type: 'generic',
-      }),
-    );
-    throw error;
-  }
-});
+export const installUpdate = createAsyncThunk(
+  'settings/installUpdate',
+  async (_, { dispatch, getState }) => {
+    try {
+      settingsPreload.quitAndInstall(getState().settings.downloadingUpdate.version ?? '');
+    } catch (error) {
+      dispatch(
+        snackbarActions.pushSnackbar({
+          id: 'install-update-error',
+          message: t('install.errors.installFailed'),
+          severity: 'error',
+          type: 'generic',
+        }),
+      );
+      throw error;
+    }
+  },
+);
 
 // exports
 export const actions = {
@@ -205,6 +227,7 @@ export const actions = {
   installUpdate,
   subscribeToDownloadingStatus,
   setupUpdaterEvents,
+  notifyUpdate,
 };
 
 export const reducer = slice.reducer;
