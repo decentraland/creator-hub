@@ -280,6 +280,13 @@
       "errors": {
         "path_exists": "Path already exists"
       }
+    },
+    "install_client": {
+      "title": "To jump in, you'll need to install Decentraland first",
+      "download": "Download",
+      "download_macos": "DOWNLOAD FOR MACOS",
+      "download_win": "DOWNLOAD FOR WINDOWS",
+      "cancel": "NOT NOW"
     }
   },
   "snackbar": {

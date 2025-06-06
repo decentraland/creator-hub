@@ -71,3 +71,7 @@ export async function openTutorial(opts: { id: string; list?: string }) {
   const url = `https://youtu.be/${id}${list ? `?list=${list}` : ''}`.trim();
   await invoke('electron.openExternal', url);
 }
+
+export async function openExternalURL(url: string) {
+  await invoke('electron.openExternal', url);
+}

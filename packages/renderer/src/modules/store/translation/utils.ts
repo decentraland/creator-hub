@@ -1,7 +1,7 @@
 import { createIntl, createIntlCache, FormattedMessage } from 'react-intl';
 import { flatten } from 'flat';
 
-import type { Locale, Translation, TranslationKeys } from './types';
+import type { Locale, Translation, TranslationKeys, TranslationPath } from './types';
 import * as languages from './locales';
 
 export const locales = Object.keys(languages) as Locale[];
@@ -23,8 +23,8 @@ export function getCurrentLocale() {
   return currentLocale;
 }
 
-export function t(id: string, values?: any) {
-  return currentLocale.formatMessage({ id }, values);
+export function t(id: TranslationPath, values?: any): string {
+  return currentLocale.formatMessage({ id }, values as any);
 }
 
 export const T = FormattedMessage;
