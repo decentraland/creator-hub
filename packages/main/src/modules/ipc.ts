@@ -1,5 +1,6 @@
 import { handle } from './handle';
 import * as electron from './electron';
+import * as updater from './updater';
 import * as inspector from './inspector';
 import * as cli from './cli';
 import * as bin from './bin';
@@ -16,6 +17,12 @@ export function initIpc() {
   handle('electron.showOpenDialog', (_event, opts) => electron.showOpenDialog(opts));
   handle('electron.openExternal', (_event, url) => electron.openExternal(url));
   handle('electron.copyToClipboard', (_event, text) => electron.copyToClipboard(text));
+
+  // updater
+  handle('updater.checkForUpdates', (_event, config) => updater.checkForUpdates(config));
+  handle('updater.quitAndInstall', () => updater.quitAndInstall());
+  handle('updater.downloadUpdate', () => updater.downloadUpdate());
+  handle('updater.setupUpdaterEvents', event => updater.setupUpdaterEvents(event));
 
   // inspector
   handle('inspector.start', () => inspector.start());

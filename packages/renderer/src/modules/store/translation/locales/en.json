@@ -3,6 +3,9 @@
     "message": "Installing Decentraland Creator Hub v{version}",
     "errors": {
       "moveAppFailed": "Please, move the Creator Hub application to the Applications folder and open the Creator Hub application from it",
+      "checkUpdatesFailed": "Unable to check for updates",
+      "downloadFailed": "Unable to download the update",
+      "installFailed": "Unable to install the update",
       "unknown": "An unknown error occurred"
     }
   },
@@ -247,6 +250,22 @@
       },
       "actions": {
         "apply_button": "Apply"
+      },
+      "version": {
+        "current": "Current Version: {version}",
+        "new": "New version: {version}",
+        "up_to_date": "Creator Hub is up to date"
+      },
+      "update": {
+        "applying": "Applying updates.",
+        "dont_close": "Please don't close the app.",
+        "auto_restart": "Creator Hub will auto-restart after the update.",
+        "downloading": "Downloading... {progress}%",
+        "install": "Install now",
+        "update": "Update now",
+        "check": "Check for updates",
+        "checking": "Checking for updates...",
+        "error": "We couldn't check for updates.\nPlease try again later."
       }
     },
     "create_project": {

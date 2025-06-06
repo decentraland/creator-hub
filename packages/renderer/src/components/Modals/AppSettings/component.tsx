@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Box,
-  Button,
   IconButton,
   FormControlLabel,
   Radio,
@@ -10,20 +9,18 @@ import {
   Typography,
   FormGroup,
   InputAdornment,
+  Button,
 } from 'decentraland-ui2';
 import CloseIcon from '@mui/icons-material/Close';
 import FolderIcon from '@mui/icons-material/Folder';
 import equal from 'fast-deep-equal';
 
 import { settings as settingsPreload } from '#preload';
-
 import { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
-
 import { t } from '/@/modules/store/translation/utils';
 import { useSettings } from '/@/hooks/useSettings';
-
 import { Modal } from '..';
-
+import { UpdateSettings } from './UpdateSettings';
 import './styles.css';
 
 export function AppSettings({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -77,6 +74,7 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
         <Box>
           <Typography variant="h4">{t('modal.app_settings.title')}</Typography>
         </Box>
+        <UpdateSettings />
         <Box className="FormContainer">
           <FormGroup className="ScenesFolderFormControl">
             <Typography variant="body1">
