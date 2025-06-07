@@ -1,7 +1,6 @@
-import type { Scene } from '@dcl/schemas';
-
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import type { Scene } from '@dcl/schemas';
 
 import { writeFile } from '../services/fs';
 

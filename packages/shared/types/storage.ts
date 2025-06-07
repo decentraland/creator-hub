@@ -83,4 +83,7 @@ export const FileSystemStorage = {
     const storage = storageMap.get(path) ?? (await this.create(path));
     return storage as unknown as IFileSystemStorage<T>;
   },
+  async deleteFile(path: string): Promise<void> {
+    await fs.unlink(path);
+  },
 };

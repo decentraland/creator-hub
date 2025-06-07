@@ -2,6 +2,8 @@ import cx from 'classnames';
 import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useEditor } from '/@/hooks/useEditor';
+import { useDispatch, useSelector } from 'react-redux';
+import type { AppState } from '../../modules/store';
 import {
   Container,
   Card,
@@ -35,6 +37,8 @@ import { Footer } from '../Footer';
 import { type CardBannerProps, type CardItemProps, type SignInCardProps } from './types';
 
 import './styles.css';
+import { UpdateAvailableModal } from '../Modals/UpdateAvailableModal';
+import { actions } from '/@/modules/store/settings';
 
 const learn_resources = [
   {
@@ -258,6 +262,9 @@ const FeedbackCard: React.FC = React.memo(() => {
 export function HomePage() {
   const auth = useAuth();
   const { version } = useEditor();
+  const updateInfo = useSelector((state: AppState) => state.settings.updateInfo);
+  const openNewUpdateModal = useSelector((state: AppState) => state.settings.openNewUpdateModal);
+  const dispatch = useDispatch();
 
   return (
     <>
@@ -303,6 +310,11 @@ export function HomePage() {
           </Grid>
         </Container>
       </main>
+      <UpdateAvailableModal
+        open={openNewUpdateModal}
+        onClose={() => dispatch(actions.setOpenNewUpdateModal(false))}
+        version={updateInfo.version ?? ''}
+      />
       {version && <Footer version={version} />}
     </>
   );

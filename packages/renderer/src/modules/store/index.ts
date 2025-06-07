@@ -80,6 +80,8 @@ async function start() {
       store.dispatch(settings.actions.setupUpdaterEvents()),
       // check for updates
       store.dispatch(settings.actions.checkForUpdates({ autoDownload: true })),
+      //notify new update installed
+      store.dispatch(settings.actions.notifyUpdate()),
     ]);
   } catch (error: any) {
     console.error(`[Renderer]: Failed to start up error=${error.message}`);

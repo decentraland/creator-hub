@@ -1,5 +1,7 @@
 import type { Scene } from '@dcl/schemas';
 
+import { installAndGetOutdatedPackages, shouldUpdateDependencies } from './utils';
+import { actions } from './index';
 import { fs, npm, scene, settings, workspace } from '#preload';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
@@ -7,10 +9,6 @@ import { createAsyncThunk } from '/@/modules/store/thunk';
 import { type Project } from '/shared/types/projects';
 import type { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import { WorkspaceError } from '/shared/types/workspace';
-
-import { actions } from './index';
-
-import { installAndGetOutdatedPackages, shouldUpdateDependencies } from './utils';
 
 export const getWorkspace = createAsyncThunk('workspace/getWorkspace', workspace.getWorkspace);
 export const getProject = createAsyncThunk('workspace/getProject', workspace.getProject);

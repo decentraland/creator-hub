@@ -20,9 +20,11 @@ export function initIpc() {
 
   // updater
   handle('updater.checkForUpdates', (_event, config) => updater.checkForUpdates(config));
-  handle('updater.quitAndInstall', () => updater.quitAndInstall());
+  handle('updater.quitAndInstall', (_event, version) => updater.quitAndInstall(version));
   handle('updater.downloadUpdate', () => updater.downloadUpdate());
   handle('updater.setupUpdaterEvents', event => updater.setupUpdaterEvents(event));
+  handle('updater.getInstalledVersion', () => updater.getInstalledVersion());
+  handle('updater.deleteVersionFile', () => updater.deleteVersionFile());
 
   // inspector
   handle('inspector.start', () => inspector.start());
