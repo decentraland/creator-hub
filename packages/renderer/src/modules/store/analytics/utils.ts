@@ -1,6 +1,4 @@
 import type { Action } from '@reduxjs/toolkit';
-import { analytics } from '#preload';
-import { store } from '#store';
 import type {
   AnalyticsAction,
   EventName,
@@ -8,6 +6,8 @@ import type {
   TypedActionCreator,
   WindowWithAnalytics,
 } from './types';
+import { analytics } from '#preload';
+import { store } from '#store';
 
 export const trackedActions: Record<string, AnalyticsAction> = {};
 

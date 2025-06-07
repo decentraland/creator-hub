@@ -1,9 +1,8 @@
 import fetch from 'decentraland-crypto-fetch';
 import type { AuthIdentity } from '@dcl/crypto';
 import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
-import { DEPLOY_URLS } from './deploy';
-
 import type { ContributableDomain } from '../modules/store/ens/types';
+import { DEPLOY_URLS } from './deploy';
 
 export type WorldDeployment = {
   id: string;

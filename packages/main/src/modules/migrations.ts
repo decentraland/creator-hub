@@ -1,6 +1,6 @@
 import path from 'path';
-import * as Sentry from '@sentry/electron/main';
 import fs from 'fs/promises';
+import * as Sentry from '@sentry/electron/main';
 import log from 'electron-log/main';
 import { future } from 'fp-future';
 import deepmerge from 'deepmerge';
