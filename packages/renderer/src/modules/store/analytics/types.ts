@@ -1,5 +1,5 @@
-import { type GetState } from '#store';
 import type { Action } from '@reduxjs/toolkit';
+import { type GetState } from '#store';
 
 export type WindowWithAnalytics = Window & {
   analytics: SegmentAnalytics.AnalyticsJS;

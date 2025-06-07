@@ -2,12 +2,11 @@ import { MessageTransport } from '@dcl/mini-rpc';
 
 import { CameraRPC } from './camera';
 
-import { fs, custom } from '#preload';
-
 import { type Project } from '/shared/types/projects';
 
 import { UiRPC } from './ui';
 import { type Method, type Params, type Result, StorageRPC } from './storage';
+import { fs, custom } from '#preload';
 
 export type RPCInfo = {
   iframe: HTMLIFrameElement;

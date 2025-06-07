@@ -1,10 +1,10 @@
 /* eslint-env node */
 
+import { join } from 'node:path';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
-import { chrome } from '../../.electron-vendors.cache.json';
 import react from '@vitejs/plugin-react';
 import { renderer } from 'unplugin-auto-expose';
-import { join } from 'node:path';
+import { chrome } from '../../.electron-vendors.cache.json';
 
 const PACKAGE_ROOT = __dirname;
 const PROJECT_ROOT = join(PACKAGE_ROOT, '../..');

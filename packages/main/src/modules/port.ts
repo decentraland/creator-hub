@@ -1,5 +1,5 @@
-import { future } from 'fp-future';
 import net, { type AddressInfo } from 'net';
+import { future } from 'fp-future';
 
 export async function getAvailablePort() {
   const promise = future<number>();

@@ -1,15 +1,15 @@
-import log from 'electron-log/main';
 import fs from 'node:fs/promises';
-import { app, utilityProcess, shell } from 'electron';
 import path from 'path';
+import { promisify } from 'util';
+import { exec as execSync } from 'child_process';
+import log from 'electron-log/main';
+import { app, utilityProcess, shell } from 'electron';
 import treeKill from 'tree-kill';
 import { future } from 'fp-future';
 import isRunning from 'is-running';
 import cmdShim from 'cmd-shim';
 import { rimraf } from 'rimraf';
 import semver from 'semver';
-import { promisify } from 'util';
-import { exec as execSync } from 'child_process';
 
 import { ErrorBase } from '/shared/types/error';
 import { createCircularBuffer } from '/shared/circular-buffer';

@@ -1,7 +1,7 @@
-import log from 'electron-log';
-import { type BrowserWindow } from 'electron';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import log from 'electron-log';
+import { type BrowserWindow } from 'electron';
 
 import { run, type Child } from './bin';
 import { getAvailablePort } from './port';
