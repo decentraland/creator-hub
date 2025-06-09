@@ -131,7 +131,7 @@ jobs:
           retry_wait_seconds: 15
           retry_on: error
           shell: 'bash'
-          command: npx electron-builder --config electron-builder.cjs --config.extraMetadata.version=0.0.0 --config.mac.notarize.teamId=${{ env.APPLE_TEAM_ID }} --publish ${{ inputs.dry-run && 'never' || 'always' }}
+          command: npx electron-builder --config electron-builder.cjs --config.extraMetadata.version=0.14.3 --config.mac.notarize.teamId=${{ env.APPLE_TEAM_ID }} --publish ${{ inputs.dry-run && 'never' || 'always' }}
         env:
           # Code Signing params
           # See https://www.electron.build/code-signing
