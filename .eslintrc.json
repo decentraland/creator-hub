@@ -53,7 +53,39 @@
     "import/order": [
       "error",
       {
-        "groups": ["builtin", "external", "internal", "parent", "sibling", "index", "object"]
+        "groups": ["builtin", "external", "internal", "parent", "sibling", "index", "object"],
+        "pathGroupsExcludedImportTypes": [
+          "react",
+          "react-*/**",
+          "react-*",
+          "@dcl/**",
+          "decentraland-*/**",
+          "decentraland-*",
+          "@mui/*",
+          "@dcl/schemas/*",
+          "@emotion/*"
+        ],
+        "pathGroups": [
+          { "pattern": "react", "group": "builtin", "position": "before" },
+          { "pattern": "react-*/**", "group": "builtin" },
+          { "pattern": "react-*", "group": "builtin" },
+          { "pattern": "@dcl/**", "group": "external", "position": "after" },
+          {
+            "pattern": "decentraland-*/**",
+            "group": "external",
+            "position": "after"
+          },
+          { "pattern": "decentraland-*", "group": "external", "position": "after" },
+          { "pattern": "@mui/*", "group": "internal" },
+          { "pattern": "@emotion/*", "group": "internal" },
+          { "pattern": "@dcl/schemas/*", "group": "internal" },
+          { "pattern": "lib/**", "group": "internal", "position": "before" },
+          { "pattern": "modules/**", "group": "internal", "position": "before" },
+          { "pattern": "components/**", "group": "internal", "position": "after" },
+          { "pattern": "./*.types", "group": "sibling", "position": "after" },
+          { "pattern": "./*.styled", "group": "sibling", "position": "after" },
+          { "pattern": "./*.css", "group": "sibling", "position": "after" }
+        ]
       }
     ]
   }

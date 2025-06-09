@@ -1,7 +1,13 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { autoUpdater } from 'electron-updater';
 import type { UpdateInfo, UpdateCheckResult } from 'electron-updater';
-import { checkForUpdates, setupUpdaterEvents } from '../src/modules/updater';
+import {
+  checkForUpdates,
+  setupUpdaterEvents,
+  writeInstalledVersion,
+  getInstalledVersion,
+  deleteVersionFile,
+} from '../src/modules/updater';
 
 vi.mock('@sentry/electron/main', () => {
   const mockCaptureException = vi.fn();
@@ -9,20 +15,6 @@ vi.mock('@sentry/electron/main', () => {
     __esModule: true,
     captureException: mockCaptureException,
     default: { captureException: mockCaptureException },
-  };
-});
-
-vi.mock('electron-log/main', async importOriginal => {
-  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-  const actual = await importOriginal<typeof import('electron-log/main')>();
-  return {
-    ...actual,
-    default: {
-      info: vi.fn(),
-      error: vi.fn(),
-    },
-    info: vi.fn(),
-    error: vi.fn(),
   };
 });
 
@@ -40,6 +32,27 @@ vi.mock('electron-updater', () => {
   return {
     default: { autoUpdater },
     autoUpdater,
+  };
+});
+
+vi.mock('/shared/types/storage', () => {
+  const fileSystemStorageMocks = {
+    set: vi.fn(),
+    get: vi.fn(),
+    deleteFile: vi.fn(),
+  };
+
+  globalThis.__fileSystemStorageMocks__ = fileSystemStorageMocks;
+
+  return {
+    FileSystemStorage: {
+      getOrCreate: vi.fn().mockResolvedValue({
+        set: fileSystemStorageMocks.set,
+        get: fileSystemStorageMocks.get,
+        deleteFile: fileSystemStorageMocks.deleteFile,
+      }),
+      deleteFile: fileSystemStorageMocks.deleteFile,
+    },
   };
 });
 
@@ -167,5 +180,27 @@ describe('Updater Module', () => {
         expect(autoUpdater.on).toHaveBeenCalledWith(event, expect.any(Function)),
       );
     });
+  });
+});
+
+describe('Installed Version File', () => {
+  test('should write installed version', async () => {
+    const version = '5.6.7';
+    await writeInstalledVersion(version);
+    expect(globalThis.__fileSystemStorageMocks__.set).toHaveBeenCalledWith(
+      'installed_version',
+      version,
+    );
+  });
+
+  test('should read installed version', async () => {
+    globalThis.__fileSystemStorageMocks__.get.mockResolvedValueOnce('5.6.7');
+    const version = await getInstalledVersion();
+    expect(version).toBe('5.6.7');
+  });
+
+  test('should delete version file', async () => {
+    await deleteVersionFile();
+    expect(globalThis.__fileSystemStorageMocks__.deleteFile).toHaveBeenCalled();
   });
 });

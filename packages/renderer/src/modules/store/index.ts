@@ -1,9 +1,9 @@
-import { configureStore, createDraftSafeSelector } from '@reduxjs/toolkit';
 import {
   type TypedUseSelectorHook,
   useSelector as formerUseSelector,
   useDispatch as formerUseDispuseDispatch,
 } from 'react-redux';
+import { configureStore, createDraftSafeSelector } from '@reduxjs/toolkit';
 import logger from 'redux-logger';
 import { captureException } from '@sentry/electron/renderer';
 
