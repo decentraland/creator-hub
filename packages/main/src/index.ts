@@ -1,6 +1,6 @@
+import { platform } from 'node:process';
 import { app } from 'electron';
 import * as Sentry from '@sentry/electron/main';
-import { platform } from 'node:process';
 import log from 'electron-log/main';
 
 import { restoreOrCreateMainWindow } from '/@/mainWindow';

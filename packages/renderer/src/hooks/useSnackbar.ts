@@ -1,14 +1,13 @@
 import { useCallback, type SyntheticEvent } from 'react';
 import { type SnackbarCloseReason } from 'decentraland-ui2';
 
-import { useDispatch, useSelector } from '#store';
-
 import { actions } from '/@/modules/store/snackbar';
 import {
   createCustomNotification,
   createGenericNotification,
 } from '/@/modules/store/snackbar/utils';
 import type { Notification } from '/@/modules/store/snackbar/types';
+import { useDispatch, useSelector } from '#store';
 
 export function useSnackbar() {
   const dispatch = useDispatch();

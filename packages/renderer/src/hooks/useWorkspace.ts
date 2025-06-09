@@ -2,13 +2,12 @@ import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Scene } from '@dcl/schemas';
 
+import { tryCatch } from '/shared/try-catch';
+import { actions as workspaceActions } from '/@/modules/store/workspace';
 import { workspace as workspacePreload } from '#preload';
 import { useDispatch, useSelector } from '#store';
 
 import type { ProjectInfo, Project, SortBy } from '/shared/types/projects';
-import { tryCatch } from '/shared/try-catch';
-
-import { actions as workspaceActions } from '/@/modules/store/workspace';
 
 export const useWorkspace = () => {
   const dispatch = useDispatch();
