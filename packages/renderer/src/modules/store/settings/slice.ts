@@ -93,8 +93,8 @@ export const notifyUpdate = createAsyncThunk(
   async (_, { dispatch, getState }) => {
     const newVersion = await settingsPreload.getInstalledVersion();
     const currentVersion = getState().editor.version;
-    settingsPreload.deleteVersionFile();
     if (newVersion && currentVersion === newVersion) {
+      settingsPreload.deleteVersionFile();
       dispatch(
         snackbarActions.pushSnackbar({
           id: 'version-updated',
