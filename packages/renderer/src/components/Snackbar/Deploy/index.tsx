@@ -13,7 +13,7 @@ export function Deploy({ path, onClose }: { path: string; onClose: () => void })
   const deployment = getDeployment(path);
 
   const sceneTitle = useMemo(() => {
-    if (!deployment) return t('snackbar.deploy.no_title');
+    if (!deployment) return '';
     return deployment.info.title;
   }, [deployment]);
 

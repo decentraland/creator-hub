@@ -16,6 +16,7 @@ import { createCircularBuffer } from '/shared/circular-buffer';
 
 import { APP_UNPACKED_PATH, getBinPath, getNodeCmdPath, joinEnvPaths } from './path';
 import { track } from './analytics';
+import { CLIENT_NOT_INSTALLED_ERROR } from '/shared/utils';
 
 // the env $PATH
 let PATH = process.env.PATH;
@@ -478,9 +479,7 @@ export async function dclDeepLink(deepLink: string) {
   try {
     await exec(`${command} decentraland://"${deepLink}"`);
   } catch (e) {
-    log.error(
-      'Failed to open Decentraland. The Decentraland Launcher must be installed: https://decentraland.org/download/',
-    );
+    throw new Error(CLIENT_NOT_INSTALLED_ERROR);
   }
 }
 

@@ -41,6 +41,7 @@ export const killPreviewScene = createAsyncThunk(
   editor.killPreviewScene,
 );
 export const openTutorial = createAsyncThunk('editor/openTutorial', editor.openTutorial);
+export const openExternalURL = createAsyncThunk('editor/openExternalURL', editor.openExternalURL);
 
 // state
 export type EditorState = {
@@ -199,6 +200,7 @@ export const actions = {
   publishScene,
   openTutorial,
   killPreviewScene,
+  openExternalURL,
 };
 export const reducer = slice.reducer;
 export const selectors = { ...slice.selectors };

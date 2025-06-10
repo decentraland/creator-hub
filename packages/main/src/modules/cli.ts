@@ -2,6 +2,7 @@ import log from 'electron-log/main';
 
 import type { DeployOptions } from '/shared/types/ipc';
 import type { PreviewOptions } from '/shared/types/settings';
+import { CLIENT_NOT_INSTALLED_ERROR } from '/shared/utils';
 
 import { dclDeepLink, run, type Child } from './bin';
 import { getAvailablePort } from './port';
@@ -99,6 +100,12 @@ export async function start(
 
     const dclLauncherURL = /decentraland:\/\/([^\s\n]*)/i;
     const resultLogs = await process.waitFor(dclLauncherURL, /CliError/i);
+
+    // Check if the error indicates that Decentraland Desktop Client is not installed
+    if (resultLogs.includes(CLIENT_NOT_INSTALLED_ERROR)) {
+      throw new Error(CLIENT_NOT_INSTALLED_ERROR);
+    }
+
     const url = resultLogs.match(dclLauncherURL)?.[1] ?? '';
 
     const preview = { child: process, url, opts };
