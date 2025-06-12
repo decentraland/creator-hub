@@ -1,8 +1,12 @@
+import path from 'path';
 import updater from 'electron-updater';
 import log from 'electron-log/main';
 import semver from 'semver';
 import * as Sentry from '@sentry/electron/main';
 import { FileSystemStorage } from '/shared/types/storage';
+import { INSTALLED_VERSION_FILE_NAME } from '/shared/paths';
+import { getUserDataPath } from './electron';
+
 export interface UpdaterConfig {
   autoDownload?: boolean;
 }
@@ -11,7 +15,7 @@ type InstalledVersionData = {
   installed_version?: string;
 };
 
-const VERSION_FILE_PATH = 'installed-version.json';
+const VERSION_FILE_PATH = path.join(getUserDataPath(), INSTALLED_VERSION_FILE_NAME);
 
 export function setupUpdaterEvents(event?: Electron.IpcMainInvokeEvent) {
   updater.autoUpdater.on('checking-for-update', () => {
@@ -72,7 +76,7 @@ function configureUpdater(config: UpdaterConfig) {
   updater.autoUpdater.autoInstallOnAppQuit = false;
   updater.autoUpdater.forceDevUpdateConfig = true;
   updater.autoUpdater.setFeedURL(
-    'https://github.com/decentraland/creator-hub/releases/download/0.14.2',
+    'https://github.com/decentraland/creator-hub/releases/download/0.14.3',
   );
 }
 
@@ -139,6 +143,7 @@ export async function downloadUpdate() {
 
 export async function writeInstalledVersion(version: string): Promise<void> {
   const storage = await FileSystemStorage.getOrCreate<InstalledVersionData>(VERSION_FILE_PATH);
+
   await storage.set('installed_version', version);
 }
 
