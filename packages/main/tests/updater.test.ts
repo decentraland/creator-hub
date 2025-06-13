@@ -9,6 +9,14 @@ import {
   deleteVersionFile,
 } from '../src/modules/updater';
 
+vi.mock('electron', () => {
+  return {
+    app: {
+      getPath: vi.fn().mockReturnValue('/mock/user/data/path'),
+    },
+  };
+});
+
 vi.mock('@sentry/electron/main', () => {
   const mockCaptureException = vi.fn();
   return {
