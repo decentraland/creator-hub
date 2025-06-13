@@ -14,9 +14,9 @@ import semver from 'semver';
 import { ErrorBase } from '/shared/types/error';
 import { createCircularBuffer } from '/shared/circular-buffer';
 
+import { CLIENT_NOT_INSTALLED_ERROR } from '/shared/utils';
 import { APP_UNPACKED_PATH, getBinPath, getNodeCmdPath, joinEnvPaths } from './path';
 import { track } from './analytics';
-import { CLIENT_NOT_INSTALLED_ERROR } from '/shared/utils';
 
 // the env $PATH
 let PATH = process.env.PATH;
