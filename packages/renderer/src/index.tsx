@@ -61,7 +61,7 @@ root.render(
                 <Routes>
                   <Route
                     path="/"
-                    element={<Install />}
+                    element={<HomePage />}
                   />
                   <Route
                     path="/home"

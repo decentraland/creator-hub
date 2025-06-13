@@ -57,6 +57,8 @@ export const createSelector = createDraftSafeSelector.withTypes<AppState>();
 
 // dispatch start up actions
 async function start() {
+  console.log('[BOEDO] start invoked');
+
   try {
     // fetch app version and user id
     await Promise.all([
@@ -65,8 +67,7 @@ async function start() {
     ]);
 
     // install editor dependencies
-    const install = store.dispatch(editor.actions.install());
-    await install.unwrap(); // .unwrap() to make it throw if thunk is rejected
+    store.dispatch(editor.actions.install());
 
     // start app
     await Promise.all([

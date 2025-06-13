@@ -27,7 +27,7 @@ async function getEnv(path: string) {
 }
 
 export async function init(path: string, repo?: string): Promise<void> {
-  const initCommand = run('@dcl/sdk-commands', 'sdk-commands', {
+  const initCommand = await run('@dcl/sdk-commands', 'sdk-commands', {
     args: ['init', '--yes', '--skip-install', ...(repo ? ['--github-repo', repo] : [])],
     cwd: path,
     env: await getEnv(path),
@@ -91,7 +91,7 @@ export async function start(
   killPreview(path);
 
   try {
-    const process = run('@dcl/sdk-commands', 'sdk-commands', {
+    const process = await run('@dcl/sdk-commands', 'sdk-commands', {
       args: ['start', '--explorer-alpha', '--hub', ...generatePreviewArguments(opts)],
       cwd: path,
       workspace: path,
@@ -128,7 +128,7 @@ export async function deploy({ path, target, targetContent }: DeployOptions): Pr
     await deployServer.kill();
   }
   const port = await getAvailablePort();
-  deployServer = run('@dcl/sdk-commands', 'sdk-commands', {
+  deployServer = await run('@dcl/sdk-commands', 'sdk-commands', {
     args: [
       'deploy',
       '--no-browser',

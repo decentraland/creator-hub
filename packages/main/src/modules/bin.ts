@@ -22,7 +22,7 @@ import { track } from './analytics';
 let PATH = process.env.PATH;
 
 // install future
-const installed = future<void>();
+export const installed = future<void>();
 
 // exec async
 const exec = promisify(execSync);
@@ -42,12 +42,13 @@ export async function waitForInstall() {
  */
 function moveAppToApplicationsFolder() {
   try {
-    if (!import.meta.env.DEV && process.env.MODE !== 'test') {
-      if (process.platform === 'darwin') {
-        if (!app.isInApplicationsFolder()) {
-          app.moveToApplicationsFolder();
-        }
-      }
+    if (
+      !import.meta.env.DEV &&
+      process.env.MODE !== 'test' &&
+      process.platform === 'darwin' &&
+      !app.isInApplicationsFolder()
+    ) {
+      app.moveToApplicationsFolder();
     }
   } catch (error) {
     log.error('[Install] Failed to move app to applications folder:', error);
@@ -59,6 +60,7 @@ function moveAppToApplicationsFolder() {
  * Installs node and npm binaries
  */
 export async function install() {
+  console.log('[BOEDO] install invoked');
   try {
     moveAppToApplicationsFolder();
     const nodeModulesPath = path.join(APP_UNPACKED_PATH, 'node_modules');
@@ -157,8 +159,8 @@ export async function install() {
       if (shouldInstall) {
         // install dependencies using npm
         log.info('[Install] Installing node_modules...');
-        const npmInstall = run('npm', 'npm', {
-          args: ['install', '--loglevel', 'error'],
+        const npmInstall = await run('npm', 'npm', {
+          args: ['install', '--production', '--loglevel', 'error'],
           cwd: APP_UNPACKED_PATH,
           workspace,
         });
@@ -259,7 +261,8 @@ type RunOptions = {
  * @param options Options for the child process (args, cwd, env, workspace)
  * @returns Child
  */
-export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
+export async function run(pkg: string, bin: string, options: RunOptions = {}): Promise<Child> {
+  await installed;
   let isKilling = false;
   let alive = true;
 

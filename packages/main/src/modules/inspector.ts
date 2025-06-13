@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import log from 'electron-log';
 import { type BrowserWindow } from 'electron';
 
-import { run, type Child } from './bin';
+import { installed, run, type Child } from './bin';
 import { getAvailablePort } from './port';
 import { APP_UNPACKED_PATH } from './path';
 import { createWindow, focusWindow, getWindow } from './window';
@@ -18,12 +18,13 @@ export function getDebugger(path: string) {
 
 export let inspectorServer: Child | null = null;
 export async function start() {
+  await installed;
   if (inspectorServer) {
     await inspectorServer.kill();
   }
 
   const port = await getAvailablePort();
-  inspectorServer = run('http-server', 'http-server', {
+  inspectorServer = await run('http-server', 'http-server', {
     args: ['--port', port.toString()],
     cwd: join(APP_UNPACKED_PATH, './node_modules/@dcl/inspector/public'),
   });

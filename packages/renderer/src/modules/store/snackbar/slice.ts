@@ -6,6 +6,7 @@ import { t } from '/@/modules/store/translation/utils';
 import { actions as workspaceActions } from '../workspace';
 import { actions as deploymentActions } from '../deployment';
 import { shouldNotifyUpdates } from '../workspace/utils';
+import { actions as editorActions } from '../editor';
 import { createCustomNotification, createGenericNotification } from './utils';
 import type { Notification } from './types';
 
@@ -175,6 +176,29 @@ export const slice = createSlice({
         state.notifications = state.notifications.filter($ => $.requestId !== path);
         state.notifications.push(
           createCustomNotification({ type: 'deploy', path }, { duration: 0, requestId: path }),
+        );
+      })
+      .addCase(editorActions.install.pending, (state, payload) => {
+        const { requestId } = payload.meta;
+        state.notifications.push(
+          createGenericNotification('loading', t('snackbar.generic.installing_dependencies'), {
+            requestId,
+            duration: 0,
+          }),
+        );
+      })
+      .addCase(editorActions.install.fulfilled, (state, payload) => {
+        const { requestId } = payload.meta;
+        state.notifications = state.notifications.filter($ => $.id !== requestId);
+      })
+      .addCase(editorActions.install.rejected, (state, payload) => {
+        const { requestId } = payload.meta;
+        state.notifications = state.notifications.filter($ => $.id !== requestId);
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.installing_dependencies_failed'), {
+            requestId,
+            duration: 2_000,
+          }),
         );
       });
   },
