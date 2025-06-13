@@ -74,10 +74,6 @@ function configureUpdater(config: UpdaterConfig) {
   const { autoDownload } = config;
   updater.autoUpdater.autoDownload = autoDownload ?? false;
   updater.autoUpdater.autoInstallOnAppQuit = false;
-  updater.autoUpdater.forceDevUpdateConfig = true;
-  updater.autoUpdater.setFeedURL(
-    'https://github.com/decentraland/creator-hub/releases/download/0.14.3',
-  );
 }
 
 export async function checkForUpdates(config: UpdaterConfig = {}) {
@@ -143,7 +139,6 @@ export async function downloadUpdate() {
 
 export async function writeInstalledVersion(version: string): Promise<void> {
   const storage = await FileSystemStorage.getOrCreate<InstalledVersionData>(VERSION_FILE_PATH);
-
   await storage.set('installed_version', version);
 }
 
