@@ -1,6 +1,6 @@
+import { join } from 'node:path';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 import { node } from '../../.electron-vendors.cache.json';
-import { join } from 'node:path';
 
 const PACKAGE_ROOT = __dirname;
 const PROJECT_ROOT = join(PACKAGE_ROOT, '../..');

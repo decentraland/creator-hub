@@ -1,5 +1,5 @@
-import { ipcRenderer, type IpcRendererEvent } from 'electron';
 import path from 'path';
+import { ipcRenderer, type IpcRendererEvent } from 'electron';
 import {
   DEPENDENCY_UPDATE_STRATEGY,
   DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
@@ -52,8 +52,8 @@ export async function getDownloadedVersion() {
   return await invoke('updater.getDownloadedVersion');
 }
 
-export async function quitAndInstall() {
-  return await invoke('updater.quitAndInstall');
+export async function quitAndInstall(version: string) {
+  return await invoke('updater.quitAndInstall', version);
 }
 
 export async function downloadUpdate() {
@@ -62,6 +62,14 @@ export async function downloadUpdate() {
 
 export async function setupUpdaterEvents() {
   return await invoke('updater.setupUpdaterEvents');
+}
+
+export async function getInstalledVersion() {
+  return await invoke('updater.getInstalledVersion');
+}
+
+export async function deleteVersionFile() {
+  return await invoke('updater.deleteVersionFile');
 }
 
 export function downloadingStatus(
@@ -82,4 +90,7 @@ export function downloadingStatus(
       ipcRenderer.off('updater.downloadProgress', cb);
     },
   };
+}
+export function getCurrentVersion() {
+  throw new Error('Function not implemented.');
 }

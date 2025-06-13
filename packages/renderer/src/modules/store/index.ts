@@ -1,9 +1,9 @@
-import { configureStore, createDraftSafeSelector } from '@reduxjs/toolkit';
 import {
   type TypedUseSelectorHook,
   useSelector as formerUseSelector,
   useDispatch as formerUseDispuseDispatch,
 } from 'react-redux';
+import { configureStore, createDraftSafeSelector } from '@reduxjs/toolkit';
 import logger from 'redux-logger';
 import { captureException } from '@sentry/electron/renderer';
 
@@ -80,6 +80,8 @@ async function start() {
       store.dispatch(settings.actions.setupUpdaterEvents()),
       // check for updates
       store.dispatch(settings.actions.checkForUpdates({ autoDownload: true })),
+      //notify new update installed
+      store.dispatch(settings.actions.notifyUpdate()),
     ]);
   } catch (error: any) {
     console.error(`[Renderer]: Failed to start up error=${error.message}`);

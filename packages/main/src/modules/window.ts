@@ -1,5 +1,5 @@
-import { app, BrowserWindow, type BrowserWindowConstructorOptions } from 'electron';
 import { join } from 'node:path';
+import { app, BrowserWindow, type BrowserWindowConstructorOptions } from 'electron';
 
 const activeWindows = new Map<string, BrowserWindow>();
 

@@ -1,7 +1,7 @@
-import { Analytics, type TrackParams } from '@segment/analytics-node';
 import path from 'node:path';
-import log from 'electron-log';
 import { randomUUID, type UUID } from 'node:crypto';
+import { Analytics, type TrackParams } from '@segment/analytics-node';
+import log from 'electron-log';
 import * as Sentry from '@sentry/electron/main';
 
 import { FileSystemStorage } from '/shared/types/storage';

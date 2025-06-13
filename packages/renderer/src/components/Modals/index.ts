@@ -1,5 +1,5 @@
-import { styled } from 'decentraland-ui2';
 import { Modal as BaseModal } from 'decentraland-ui2/dist/components/Modal/Modal';
+import { styled } from 'decentraland-ui2';
 
 export function onBackNoop() {}
 

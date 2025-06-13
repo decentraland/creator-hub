@@ -7,6 +7,7 @@
   },
   "extends": [
     "eslint:recommended",
+    "plugin:import/typescript",
     /** @see https://github.com/typescript-eslint/typescript-eslint/tree/master/packages/eslint-plugin#recommended-configs */
     "plugin:@typescript-eslint/recommended"
   ],
@@ -15,8 +16,9 @@
     "ecmaVersion": 12,
     "sourceType": "module"
   },
-  "plugins": ["@typescript-eslint"],
+  "plugins": ["@typescript-eslint", "import"],
   "ignorePatterns": ["node_modules/**", "**/dist/**"],
+
   "rules": {
     "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/no-unused-vars": [
@@ -46,6 +48,49 @@
       "single",
       {
         "avoidEscape": true
+      }
+    ],
+    "import/order": [
+      "error",
+      {
+        "groups": ["builtin", "external", "internal", "parent", "sibling", "index", "object"],
+        "pathGroupsExcludedImportTypes": [
+          "react",
+          "react-*/**",
+          "react-*",
+          "@dcl/**",
+          "decentraland-*/**",
+          "decentraland-*",
+          "@mui/*",
+          "@dcl/schemas/*",
+          "@emotion/*"
+        ],
+        "pathGroups": [
+          { "pattern": "react", "group": "builtin", "position": "before" },
+          { "pattern": "react-*/**", "group": "builtin" },
+          { "pattern": "react-*", "group": "builtin" },
+          { "pattern": "@dcl/**", "group": "external", "position": "after" },
+          {
+            "pattern": "decentraland-*/**",
+            "group": "external",
+            "position": "after"
+          },
+          { "pattern": "decentraland-*", "group": "external", "position": "after" },
+          { "pattern": "@mui/*", "group": "internal" },
+          { "pattern": "@emotion/*", "group": "internal" },
+          { "pattern": "@dcl/schemas/*", "group": "internal" },
+          { "pattern": "/shared/*", "group": "internal" },
+          { "pattern": "#preload/*", "group": "internal" },
+          { "pattern": "/@/**/*", "group": "internal" },
+          { "pattern": "lib/**", "group": "internal", "position": "before" },
+          { "pattern": "modules/**", "group": "internal", "position": "before" },
+          { "pattern": "components/**", "group": "internal", "position": "after" },
+          { "pattern": "./*.ts", "group": "sibling", "position": "after" },
+          { "pattern": "./*.tsx", "group": "sibling", "position": "after" },
+          { "pattern": "./*.styled.tsx", "group": "sibling", "position": "after" },
+          { "pattern": "./*.types.ts", "group": "sibling", "position": "after" },
+          { "pattern": "./*.css", "group": "sibling", "position": "after" }
+        ]
       }
     ]
   }

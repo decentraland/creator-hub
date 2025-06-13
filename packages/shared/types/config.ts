@@ -1,7 +1,7 @@
 import deepmerge from 'deepmerge';
+import { SCENES_DIRECTORY } from '/shared/paths';
 import { type AppSettings } from './settings';
 import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from './settings';
-import { SCENES_DIRECTORY } from '/shared/paths';
 
 export const CURRENT_CONFIG_VERSION = 2;
 

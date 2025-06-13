@@ -1,5 +1,5 @@
-import { ErrorBase } from '../../../shared/types/error';
 import { captureException } from '@sentry/electron/renderer';
+import { ErrorBase } from '../../../shared/types/error';
 
 export const DEPLOY_URLS = {
   WORLDS: 'https://worlds-content-server.decentraland.org',

@@ -1,5 +1,5 @@
-import type { Scene } from '@dcl/schemas';
 import { shell } from 'electron';
+import type { Scene } from '@dcl/schemas';
 
 import {
   type DependencyState,

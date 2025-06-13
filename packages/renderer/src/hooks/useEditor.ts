@@ -1,8 +1,5 @@
 import { useCallback } from 'react';
 
-import { editor as editorApi } from '#preload';
-import { useDispatch, useSelector } from '#store';
-
 import type { DeployOptions } from '/shared/types/ipc';
 import type { PreviewOptions } from '/shared/types/settings';
 
@@ -14,6 +11,8 @@ import { bufferToScene } from '/@/modules/buffer';
 import { useInspector } from '/@/hooks/useInspector';
 import { useAuth } from '/@/hooks/useAuth';
 import { stripBase64ImagePrefix } from '/@/modules/image';
+import { editor as editorApi } from '#preload';
+import { useDispatch, useSelector } from '#store';
 
 export const useEditor = () => {
   const dispatch = useDispatch();

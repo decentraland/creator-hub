@@ -1,7 +1,7 @@
-import { createAsyncThunk, createSlice, createSelector } from '@reduxjs/toolkit';
 import type { Tile } from 'react-tile-map/dist/lib/common';
-import type { AtlasTileProps } from 'decentraland-ui2/dist/components/Atlas/Atlas.types';
+import { createAsyncThunk, createSlice, createSelector } from '@reduxjs/toolkit';
 import type { ChainId } from '@dcl/schemas/dist/dapps/chain-id';
+import type { AtlasTileProps } from 'decentraland-ui2/dist/components/Atlas/Atlas.types';
 import {
   colorByRole,
   coordsToId,

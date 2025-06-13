@@ -8,6 +8,8 @@ import type { Status } from '/shared/types/async';
 
 export type UpdateStatus = {
   lastDownloadedVersion: string | null;
+  openNewUpdateModal: boolean;
+  openAppSettingsModal: boolean;
   downloadingUpdate: {
     isDownloading: boolean;
     progress: number;
@@ -27,6 +29,8 @@ export type UpdateStatus = {
 
 const initialState: UpdateStatus = {
   lastDownloadedVersion: null,
+  openNewUpdateModal: false,
+  openAppSettingsModal: false,
   downloadingUpdate: {
     isDownloading: false,
     progress: 0,
@@ -57,6 +61,12 @@ const slice = createSlice({
     setUpdateInfo: (state, action: PayloadAction<UpdateStatus['updateInfo']>) => {
       state.updateInfo = action.payload;
     },
+    setOpenNewUpdateModal: (state, action: PayloadAction<boolean>) => {
+      state.openNewUpdateModal = action.payload;
+    },
+    setOpenAppSettingsModal: (state, action: PayloadAction<boolean>) => {
+      state.openAppSettingsModal = action.payload;
+    },
   },
   extraReducers: builder => {
     builder
@@ -77,6 +87,25 @@ const slice = createSlice({
 export const setupUpdaterEvents = createAsyncThunk('settings/setupUpdaterEvents', async () => {
   settingsPreload.setupUpdaterEvents();
 });
+
+export const notifyUpdate = createAsyncThunk(
+  'settings/notifyUpdate',
+  async (_, { dispatch, getState }) => {
+    const newVersion = await settingsPreload.getInstalledVersion();
+    const currentVersion = getState().editor.version;
+    if (newVersion && currentVersion === newVersion) {
+      settingsPreload.deleteVersionFile();
+      dispatch(
+        snackbarActions.pushSnackbar({
+          id: 'version-updated',
+          message: `New version ${newVersion} installed`,
+          severity: 'success',
+          type: 'generic',
+        }),
+      );
+    }
+  },
+);
 
 export const checkForUpdates = createAsyncThunk(
   'settings/checkForUpdates',
@@ -109,7 +138,7 @@ export const checkForUpdates = createAsyncThunk(
 
 export const subscribeToDownloadingStatus = createAsyncThunk(
   'settings/subscribeToDownloadingStatus',
-  async (_, { dispatch }) => {
+  async (_, { dispatch, getState }) => {
     settingsPreload.downloadingStatus(
       (
         _event: IpcRendererEvent,
@@ -131,6 +160,13 @@ export const subscribeToDownloadingStatus = createAsyncThunk(
             }),
           );
         }
+
+        if (progress.finished && progress.percent === 100) {
+          !getState().settings.openAppSettingsModal &&
+            dispatch(actions.setOpenNewUpdateModal(true));
+          dispatch(actions.setlastDownloadedVersion(progress.version));
+        }
+
         dispatch(
           actions.setDownloadingUpdate({
             isDownloading: progress.isDownloading,
@@ -165,21 +201,24 @@ export const downloadUpdate = createAsyncThunk(
   },
 );
 
-export const installUpdate = createAsyncThunk('settings/installUpdate', async (_, { dispatch }) => {
-  try {
-    settingsPreload.quitAndInstall();
-  } catch (error) {
-    dispatch(
-      snackbarActions.pushSnackbar({
-        id: 'install-update-error',
-        message: t('install.errors.installFailed'),
-        severity: 'error',
-        type: 'generic',
-      }),
-    );
-    throw error;
-  }
-});
+export const installUpdate = createAsyncThunk(
+  'settings/installUpdate',
+  async (_, { dispatch, getState }) => {
+    try {
+      settingsPreload.quitAndInstall(getState().settings.downloadingUpdate.version ?? '');
+    } catch (error) {
+      dispatch(
+        snackbarActions.pushSnackbar({
+          id: 'install-update-error',
+          message: t('install.errors.installFailed'),
+          severity: 'error',
+          type: 'generic',
+        }),
+      );
+      throw error;
+    }
+  },
+);
 
 // exports
 export const actions = {
@@ -188,6 +227,7 @@ export const actions = {
   installUpdate,
   subscribeToDownloadingStatus,
   setupUpdaterEvents,
+  notifyUpdate,
 };
 
 export const reducer = slice.reducer;

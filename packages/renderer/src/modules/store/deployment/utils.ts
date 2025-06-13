@@ -1,9 +1,9 @@
 import equal from 'fast-deep-equal';
-import type { AuthIdentity } from 'decentraland-crypto-fetch';
-import { type AuthChain, Authenticator } from '@dcl/crypto';
-import { ChainId } from '@dcl/schemas';
 import { getCatalystServersFromCache } from 'dcl-catalyst-client/dist/contracts-snapshots';
 import { type SerializedError } from '@reduxjs/toolkit';
+import { type AuthChain, Authenticator } from '@dcl/crypto';
+import { ChainId } from '@dcl/schemas';
+import type { AuthIdentity } from 'decentraland-crypto-fetch';
 
 import { t } from '/@/modules/store/translation/utils';
 import { minutes, seconds } from '/shared/time';

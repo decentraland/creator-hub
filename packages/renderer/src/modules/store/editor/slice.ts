@@ -1,7 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { ChainId } from '@dcl/schemas';
 
-import { editor } from '#preload';
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
 import type { DeployOptions } from '/shared/types/ipc';
@@ -11,6 +10,7 @@ import { WorkspaceError } from '/shared/types/workspace';
 
 import { actions as deploymentActions } from '../deployment';
 import { actions as workspaceActions } from '../workspace';
+import { editor } from '#preload';
 
 // actions
 export const fetchVersion = createAsyncThunk('editor/fetchVersion', editor.getVersion);
