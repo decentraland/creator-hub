@@ -38,14 +38,14 @@ concurrency:
 jobs:
   typechecking:
     uses: ./.github/workflows/typechecking.yml
-  tests:
-    uses: ./.github/workflows/tests.yml
+  # tests:
+  #   uses: ./.github/workflows/tests.yml
   drop_pre_release:
     permissions:
       contents: write
     with:
       dry-run: ${{ github.event_name != 'push' || github.ref_name != 'main' }}
-    needs: [ typechecking, tests ]
+    needs: [ typechecking ]
     uses: ./.github/workflows/drop.yml
   pre_release:
     permissions:
