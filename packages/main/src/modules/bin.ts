@@ -40,7 +40,7 @@ export async function waitForInstall() {
  * This function checks if the application is not already in the Applications folder
  * and if so, it initiates the move process.
  */
-function moveAppToApplicationsFolder() {
+export function moveAppToApplicationsFolder() {
   try {
     if (
       !import.meta.env.DEV &&
@@ -57,12 +57,26 @@ function moveAppToApplicationsFolder() {
 }
 
 /**
+ * Reads dependenciesOnInstall from package.json and returns an array of dep@version strings
+ */
+async function getDependenciesToInstall(appUnpackedPath: string): Promise<string[]> {
+  const packageJsonPath = path.join(appUnpackedPath, 'package.json');
+  const packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf8'));
+  console.log(JSON.stringify({ packageJson, packageJsonPath }, null, 2));
+  const dependenciesOnInstall: string[] = packageJson.dependenciesOnInstall || [];
+  const dependencies: Record<string, string> = packageJson.dependencies || {};
+  return dependenciesOnInstall
+    .map(dep => (dependencies[dep] ? `${dep}@${dependencies[dep]}` : null))
+    .filter((dep): dep is string => Boolean(dep));
+}
+
+/**
  * Installs node and npm binaries
  */
 export async function install() {
   console.log('[BOEDO] install invoked');
   try {
-    moveAppToApplicationsFolder();
+    // moveAppToApplicationsFolder();
     const nodeModulesPath = path.join(APP_UNPACKED_PATH, 'node_modules');
     const tempPath = path.join(APP_UNPACKED_PATH, 'temp');
     /** Fix a previously interruped install */
@@ -157,15 +171,19 @@ export async function install() {
       // if the version is different from the current one, we will install the node_modules again in case there are new dependencies
       const shouldInstall = !version || semver.lt(version, app.getVersion());
       if (shouldInstall) {
-        // install dependencies using npm
-        log.info('[Install] Installing node_modules...');
-        const npmInstall = await run('npm', 'npm', {
-          args: ['install', '--production', '--loglevel', 'error'],
-          cwd: APP_UNPACKED_PATH,
-          workspace,
-        });
-        await npmInstall.waitFor(/added \d+ package|up to date/); // wait for successs message, because when the user quits the app while installing, npm exits gracefully with an exit code=0;
-
+        // Only install selected dependencies
+        const depsToInstall = await getDependenciesToInstall(APP_UNPACKED_PATH);
+        if (depsToInstall.length > 0) {
+          log.info(`[Install] Installing only selected dependencies: ${depsToInstall.join(', ')}`);
+          const npmInstall = await run('npm', 'npm', {
+            args: ['install', ...depsToInstall, '--production', '--loglevel', 'error'],
+            cwd: APP_UNPACKED_PATH,
+            workspace,
+          });
+          await npmInstall.waitFor(/added \d+ package|up to date/);
+        } else {
+          log.info('[Install] No dependencies to install from dependenciesOnInstall.');
+        }
         // save the current version to the registry
         log.info('[Install] Writing current version to the registry');
         await fs.writeFile(
