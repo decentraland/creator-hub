@@ -10,7 +10,6 @@ import { deployServer, killAllPreviews } from '/@/modules/cli';
 import { killInspectorServer } from '/@/modules/inspector';
 import { getAnalytics, track } from '/@/modules/analytics';
 import { runMigrations } from '/@/modules/migrations';
-import { setupNodeBinary } from './modules/setup-node';
 
 import '/@/security-restrictions';
 
@@ -54,7 +53,6 @@ app.on('activate', restoreOrCreateMainWindow);
 app
   .whenReady()
   .then(async () => {
-    setupNodeBinary();
     await runMigrations();
     log.info(`[App] Ready v${app.getVersion()}`);
     initIpc();

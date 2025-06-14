@@ -11,6 +11,7 @@ import { ErrorBase } from '/shared/types/error';
 import { createCircularBuffer } from '/shared/circular-buffer';
 
 import { APP_UNPACKED_PATH, getBinPath } from './path';
+import { setupNodeBinary } from './setup-node';
 
 // Get the current PATH value
 function getPath() {
@@ -272,6 +273,11 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
 
   return child;
 }
+
+export async function install() {
+  setupNodeBinary();
+}
+
 
 async function handleData(buffer: Buffer, matchers: Matcher[], type: StreamType) {
   const data = buffer.toString('utf8');

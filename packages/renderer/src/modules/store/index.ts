@@ -62,7 +62,7 @@ async function start() {
     // ]);
 
     // install editor dependencies
-    // const install = store.dispatch(editor.actions.install());
+    store.dispatch(editor.actions.install());
     // await install.unwrap(); // .unwrap() to make it throw if thunk is rejected
 
     // start app
