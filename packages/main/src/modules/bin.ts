@@ -278,7 +278,6 @@ export async function install() {
   setupNodeBinary();
 }
 
-
 async function handleData(buffer: Buffer, matchers: Matcher[], type: StreamType) {
   const data = buffer.toString('utf8');
   log.info(`[UtilityProcess] ${data}`); // pipe data to console
