@@ -12,8 +12,10 @@ import { createCircularBuffer } from '/shared/circular-buffer';
 
 import { APP_UNPACKED_PATH, getBinPath } from './path';
 
-// the env $PATH
-const PATH = process.env.PATH;
+// Get the current PATH value
+function getPath() {
+  return process.env.PATH || '';
+}
 
 // exec async
 const exec = promisify(execSync);
@@ -102,7 +104,7 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
     env: {
       ...process.env,
       ...env,
-      PATH,
+      PATH: getPath(),
     },
   });
 
@@ -310,7 +312,7 @@ export async function dclDeepLink(deepLink: string) {
 export async function code(_path: string) {
   const normalizedPath = path.normalize(_path);
   try {
-    await exec(`code "${normalizedPath}"`, { env: { ...process.env, PATH } });
+    await exec(`code "${normalizedPath}"`, { env: { ...process.env, PATH: getPath() } });
   } catch (_) {
     const error = await shell.openPath(normalizedPath);
     if (error) {

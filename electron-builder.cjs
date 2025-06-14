@@ -6,7 +6,14 @@ const config = {
     output: 'dist',
     buildResources: 'buildResources',
   },
-  files: ['packages/**/dist/**'],
+  files: [
+    'packages/**/dist/**',
+    'node_modules/npm/**/*',
+  ],
+  asarUnpack: [
+    'node_modules/npm/**/*',
+    'node_modules/npm/**/package.json',
+  ],
   linux: {
     target: 'deb',
   },

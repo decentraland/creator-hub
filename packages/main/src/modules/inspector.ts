@@ -18,8 +18,25 @@ export function getDebugger(path: string) {
 let inspectorServer: ReturnType<typeof createServer> | null = null;
 
 export function killInspectorServer() {
-  inspectorServer?.close();
-  inspectorServer?.unref();
+  if (!inspectorServer) {
+    return;
+  }
+
+  try {
+    // Close the server and handle any errors
+    inspectorServer.close((err) => {
+      if (err) {
+        log.error('Error closing inspector server:', err);
+      } else {
+        log.info('Inspector server closed successfully');
+      }
+    });
+    
+    // Clear the reference
+    inspectorServer = null;
+  } catch (error) {
+    log.error('Error killing inspector server:', error);
+  }
 }
 
 export async function start() {
