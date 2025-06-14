@@ -8,6 +8,7 @@ import { dclDeepLink, run, type Child } from './bin';
 import { getAvailablePort } from './port';
 import { getProjectId } from './analytics';
 import { install } from './npm';
+import { APP_UNPACKED_PATH } from './path';
 
 export type Preview = { child: Child; url: string; opts: PreviewOptions };
 
@@ -31,6 +32,7 @@ export async function init(path: string, repo?: string): Promise<void> {
     args: ['init', '--yes', '--skip-install', ...(repo ? ['--github-repo', repo] : [])],
     cwd: path,
     env: await getEnv(path),
+    workspace: APP_UNPACKED_PATH + '/internal',
   });
   await initCommand.wait();
 }

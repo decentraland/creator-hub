@@ -57,17 +57,71 @@ export function moveAppToApplicationsFolder() {
 }
 
 /**
- * Reads dependenciesOnInstall from package.json and returns an array of dep@version strings
+ * Reads dependenciesOnInstall from package.json and returns the dependencies object
  */
-async function getDependenciesToInstall(appUnpackedPath: string): Promise<string[]> {
+async function getDependenciesToInstall(appUnpackedPath: string): Promise<Record<string, string>> {
   const packageJsonPath = path.join(appUnpackedPath, 'package.json');
   const packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf8'));
-  console.log(JSON.stringify({ packageJson, packageJsonPath }, null, 2));
-  const dependenciesOnInstall: string[] = packageJson.dependenciesOnInstall || [];
-  const dependencies: Record<string, string> = packageJson.dependencies || {};
-  return dependenciesOnInstall
-    .map(dep => (dependencies[dep] ? `${dep}@${dependencies[dep]}` : null))
-    .filter((dep): dep is string => Boolean(dep));
+
+  // Return the dependenciesOnInstall object directly
+  return packageJson.dependenciesOnInstall || {};
+}
+
+/**
+ * Installs dependencies in the internal directory
+ */
+async function installDependencies(dependencies: Record<string, string>, workspace: string): Promise<void> {
+  if (Object.keys(dependencies).length === 0) {
+    log.info('[Install] No dependencies to install from dependenciesOnInstall.');
+    return;
+  }
+
+  log.info(`[Install] Installing dependencies: ${Object.entries(dependencies).map(([name, version]) => `${name}@${version}`).join(', ')}`);
+  
+  const startTime = Date.now();
+  log.info('[Install] Starting installation...');
+  
+  // Create internal directory if it doesn't exist
+  const internalDir = path.join(APP_UNPACKED_PATH, 'internal');
+  try {
+    await fs.mkdir(internalDir, { recursive: true });
+    log.info('[Install] Created internal directory');
+
+    // Create a package.json in the internal directory
+    const packageJson = {
+      name: 'internal',
+      version: '1.0.0',
+      private: true,
+      dependencies,
+    };
+    await fs.writeFile(
+      path.join(internalDir, 'package.json'),
+      JSON.stringify(packageJson, null, 2),
+    );
+    log.info('[Install] Created package.json in internal directory');
+  } catch (error) {
+    log.error('[Install] Failed to setup internal directory:', error);
+    throw error;
+  }
+  
+  // Install all dependencies at once
+  const npmProcess = await run('npm', 'npm', {
+    args: [
+      'install',
+      '--no-package-lock',
+      '--no-save',
+    ],
+    cwd: internalDir,
+    workspace,
+  });
+  
+  await npmProcess.waitFor(/added \d+ package|up to date/);
+  
+  const endTime = Date.now();
+  const duration = (endTime - startTime) / 1000;
+  log.info(`[Install] Installation completed in ${duration.toFixed(2)} seconds`);
+  
+  log.info('[Install] All dependencies installed successfully');
 }
 
 /**
@@ -94,6 +148,7 @@ export async function install() {
     } catch (error) {
       // If temp folder doesn't exist, continue with regular install
     }
+
     const nodeCmdPath = getNodeCmdPath();
     const nodeBinPath = process.execPath;
     const npmBinPath = getBinPath('npm', 'npm');
@@ -159,9 +214,9 @@ export async function install() {
       }
 
       let workspace = APP_UNPACKED_PATH;
-      // on the first installation, the node_modules only contain npm, so we'll move it to a temp folder so we can use it from there on a pristine environment
+      // On first install, we need to preserve the original npm installation
       if (isFirstInstall) {
-        log.info('[Install] Creating temp folder');
+        log.info('[Install] Creating temp folder to preserve npm installation');
         await fs.mkdir(tempPath);
         log.info('[Install] Moving node_modules to temp folder');
         await fs.rename(nodeModulesPath, path.join(tempPath, 'node_modules')).catch(() => {});
@@ -171,19 +226,15 @@ export async function install() {
       // if the version is different from the current one, we will install the node_modules again in case there are new dependencies
       const shouldInstall = !version || semver.lt(version, app.getVersion());
       if (shouldInstall) {
-        // Only install selected dependencies
-        const depsToInstall = await getDependenciesToInstall(APP_UNPACKED_PATH);
-        if (depsToInstall.length > 0) {
-          log.info(`[Install] Installing only selected dependencies: ${depsToInstall.join(', ')}`);
-          const npmInstall = await run('npm', 'npm', {
-            args: ['install', ...depsToInstall, '--production', '--loglevel', 'error'],
-            cwd: APP_UNPACKED_PATH,
-            workspace,
-          });
-          await npmInstall.waitFor(/added \d+ package|up to date/);
-        } else {
-          log.info('[Install] No dependencies to install from dependenciesOnInstall.');
+        const dependencies = await getDependenciesToInstall(APP_UNPACKED_PATH);
+        await installDependencies(dependencies, workspace);
+
+        // if this was the first installation, we can now remove the temp folder
+        if (isFirstInstall) {
+          log.info('[Install] Removing temp folder');
+          await rimraf(workspace);
         }
+
         // save the current version to the registry
         log.info('[Install] Writing current version to the registry');
         await fs.writeFile(
@@ -192,12 +243,6 @@ export async function install() {
         );
       } else {
         log.info('[Install] Skipping installation of node_modules because it is up to date');
-      }
-
-      // if this was the first installation, we can now remove the temp node_modules folder
-      if (isFirstInstall) {
-        log.info('[Install] Removing temp folder');
-        await rimraf(workspace);
       }
 
       if (shouldInstall) {
@@ -280,7 +325,9 @@ type RunOptions = {
  * @returns Child
  */
 export async function run(pkg: string, bin: string, options: RunOptions = {}): Promise<Child> {
-  await installed;
+  const startTime = Date.now();
+  log.info(`[Run] Starting process for ${bin}...`);
+  
   let isKilling = false;
   let alive = true;
 
@@ -290,11 +337,13 @@ export async function run(pkg: string, bin: string, options: RunOptions = {}): P
   const { workspace = APP_UNPACKED_PATH, cwd = APP_UNPACKED_PATH, args = [], env = {} } = options;
 
   const binPath = getBinPath(pkg, bin, workspace);
+  log.info(`[Run] Using bin path: ${binPath}`);
 
   const stdout = createCircularBuffer<Uint8Array>(MAX_BUFFER_SIZE);
   const stderr = createCircularBuffer<Uint8Array>(MAX_BUFFER_SIZE);
-  const stdall = createCircularBuffer<Uint8Array>(MAX_BUFFER_SIZE); // ordered buffer of stdout and stderr
+  const stdall = createCircularBuffer<Uint8Array>(MAX_BUFFER_SIZE);
 
+  log.info(`[Run] Forking process with args: ${args.join(' ')}`);
   const forked = utilityProcess.fork(binPath, [...args], {
     cwd,
     stdio: 'pipe',
@@ -333,18 +382,20 @@ export async function run(pkg: string, bin: string, options: RunOptions = {}): P
 
   const name = `${bin} ${args.join(' ')}`.trim();
   forked.on('spawn', () => {
+    const spawnTime = Date.now() - startTime;
     log.info(
-      `[UtilityProcess] Running "${name}" using bin=${binPath} with pid=${forked.pid} in ${cwd}`,
+      `[UtilityProcess] Running "${name}" using bin=${binPath} with pid=${forked.pid} in ${cwd} (spawn took ${spawnTime}ms)`,
     );
     ready.resolve();
   });
 
   forked.on('exit', code => {
+    const totalTime = Date.now() - startTime;
     if (!alive) return;
     alive = false;
     const stdoutBuf = Buffer.concat(stdout.getAll());
     log.info(
-      `[UtilityProcess] Exiting "${name}" with pid=${forked.pid} and exit code=${code || 0}`,
+      `[UtilityProcess] Exiting "${name}" with pid=${forked.pid} and exit code=${code || 0} (total time: ${totalTime}ms)`,
     );
     if (code !== 0 && code !== null) {
       const stderrBuf = Buffer.concat(stderr.getAll());
@@ -472,7 +523,7 @@ export async function run(pkg: string, bin: string, options: RunOptions = {}): P
 
 async function handleData(buffer: Buffer, matchers: Matcher[], type: StreamType) {
   const data = buffer.toString('utf8');
-  log.info(`[UtilityProcess] ${data}`); // pipe data to console
+  // log.info(`[UtilityProcess ${type}] ${data}`);  
   for (const { pattern, handler, enabled, opts } of matchers) {
     if (!enabled) continue;
     if (opts?.type !== 'all' && opts?.type !== type) continue;
