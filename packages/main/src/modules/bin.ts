@@ -11,9 +11,12 @@ import { ErrorBase } from '/shared/types/error';
 import { createCircularBuffer } from '/shared/circular-buffer';
 
 import { APP_UNPACKED_PATH, getBinPath } from './path';
+import { setupNodeBinary } from './setup-node';
 
-// the env $PATH
-const PATH = process.env.PATH;
+// Get the current PATH value
+function getPath() {
+  return process.env.PATH || '';
+}
 
 // exec async
 const exec = promisify(execSync);
@@ -102,7 +105,7 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
     env: {
       ...process.env,
       ...env,
-      PATH,
+      PATH: getPath(),
     },
   });
 
@@ -271,6 +274,10 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
   return child;
 }
 
+export async function install() {
+  setupNodeBinary();
+}
+
 async function handleData(buffer: Buffer, matchers: Matcher[], type: StreamType) {
   const data = buffer.toString('utf8');
   log.info(`[UtilityProcess] ${data}`); // pipe data to console
@@ -310,7 +317,7 @@ export async function dclDeepLink(deepLink: string) {
 export async function code(_path: string) {
   const normalizedPath = path.normalize(_path);
   try {
-    await exec(`code "${normalizedPath}"`, { env: { ...process.env, PATH } });
+    await exec(`code "${normalizedPath}"`, { env: { ...process.env, PATH: getPath() } });
   } catch (_) {
     const error = await shell.openPath(normalizedPath);
     if (error) {

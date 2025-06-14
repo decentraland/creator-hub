@@ -1,6 +1,4 @@
 import log from 'electron-log/main';
-import { initComponents } from '@dcl/sdk-commands/dist/components';
-import { runSdkCommand } from '@dcl/sdk-commands/dist/run-command';
 
 import type { DeployOptions } from '/shared/types/ipc';
 import type { PreviewOptions } from '/shared/types/settings';
@@ -9,6 +7,7 @@ import { dclDeepLink, run, type Child } from './bin';
 import { getAvailablePort } from './port';
 import { getProjectId } from './analytics';
 import { install } from './npm';
+import { downloadGithubFolder } from './download-github-folder';
 
 export type Preview = { child: Child; url: string; opts: PreviewOptions };
 
@@ -27,15 +26,17 @@ async function getEnv(path: string) {
   };
 }
 
-export async function init(path: string, repo?: string): Promise<void> {
-  // TODO: find a way to send the "getEnv()" payload to the sdk command
-  const components = await initComponents();
-  await runSdkCommand(components, 'init', [
-    '--yes',
-    '--skip-install',
-    ...['--dir', path],
-    ...(repo ? ['--github-repo', repo] : []),
-  ]);
+export async function init(targetPath: string, repo?: string): Promise<void> {
+  if (!repo) {
+    throw new Error('Repository URL is required');
+  }
+
+  // Extract owner and repo name from the GitHub URL
+  const match = repo.match(/github\.com\/([^/]+)\/([^/]+)/);
+  if (!match) {
+    throw new Error('Invalid GitHub repository URL');
+  }
+  await downloadGithubFolder(repo, targetPath);
 }
 
 export async function killPreview(path: string) {
