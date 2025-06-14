@@ -1,7 +1,6 @@
 import { ipcRenderer, type IpcRendererEvent } from 'electron';
 
 import type { DeployOptions } from '/shared/types/ipc';
-
 import { invoke } from '../services/ipc';
 import type { PreviewOptions } from '/shared/types/settings';
 
@@ -10,6 +9,7 @@ export async function getVersion() {
 }
 
 export async function install() {
+  console.log('[BOEDO] editor.install');
   return invoke('bin.install');
 }
 

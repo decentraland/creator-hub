@@ -22,7 +22,7 @@ import { track } from './analytics';
 let PATH = process.env.PATH;
 
 // install future
-const installed = future<void>();
+export const installed = future<void>();
 
 // exec async
 const exec = promisify(execSync);
@@ -40,14 +40,15 @@ export async function waitForInstall() {
  * This function checks if the application is not already in the Applications folder
  * and if so, it initiates the move process.
  */
-function moveAppToApplicationsFolder() {
+export function moveAppToApplicationsFolder() {
   try {
-    if (!import.meta.env.DEV && process.env.MODE !== 'test') {
-      if (process.platform === 'darwin') {
-        if (!app.isInApplicationsFolder()) {
-          app.moveToApplicationsFolder();
-        }
-      }
+    if (
+      !import.meta.env.DEV &&
+      process.env.MODE !== 'test' &&
+      process.platform === 'darwin' &&
+      !app.isInApplicationsFolder()
+    ) {
+      app.moveToApplicationsFolder();
     }
   } catch (error) {
     log.error('[Install] Failed to move app to applications folder:', error);
@@ -56,11 +57,80 @@ function moveAppToApplicationsFolder() {
 }
 
 /**
+ * Reads dependenciesOnInstall from package.json and returns the dependencies object
+ */
+async function getDependenciesToInstall(appUnpackedPath: string): Promise<Record<string, string>> {
+  const packageJsonPath = path.join(appUnpackedPath, 'package.json');
+  const packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf8'));
+
+  // Return the dependenciesOnInstall object directly
+  return packageJson.dependenciesOnInstall || {};
+}
+
+/**
+ * Installs dependencies in the internal directory
+ */
+async function installDependencies(dependencies: Record<string, string>, workspace: string): Promise<void> {
+  if (Object.keys(dependencies).length === 0) {
+    log.info('[Install] No dependencies to install from dependenciesOnInstall.');
+    return;
+  }
+
+  log.info(`[Install] Installing dependencies: ${Object.entries(dependencies).map(([name, version]) => `${name}@${version}`).join(', ')}`);
+  
+  const startTime = Date.now();
+  log.info('[Install] Starting installation...');
+  
+  // Create internal directory if it doesn't exist
+  const internalDir = path.join(APP_UNPACKED_PATH, 'internal');
+  try {
+    await fs.mkdir(internalDir, { recursive: true });
+    log.info('[Install] Created internal directory');
+
+    // Create a package.json in the internal directory
+    const packageJson = {
+      name: 'internal',
+      version: '1.0.0',
+      private: true,
+      dependencies,
+    };
+    await fs.writeFile(
+      path.join(internalDir, 'package.json'),
+      JSON.stringify(packageJson, null, 2),
+    );
+    log.info('[Install] Created package.json in internal directory');
+  } catch (error) {
+    log.error('[Install] Failed to setup internal directory:', error);
+    throw error;
+  }
+  
+  // Install all dependencies at once
+  const npmProcess = await run('npm', 'npm', {
+    args: [
+      'install',
+      '--no-package-lock',
+      '--no-save',
+    ],
+    cwd: internalDir,
+    workspace,
+  });
+  
+  await npmProcess.waitFor(/added \d+ package|up to date/);
+  
+  const endTime = Date.now();
+  const duration = (endTime - startTime) / 1000;
+  log.info(`[Install] Installation completed in ${duration.toFixed(2)} seconds`);
+  
+  log.info('[Install] All dependencies installed successfully');
+}
+
+/**
  * Installs node and npm binaries
  */
 export async function install() {
+  console.log('[BOEDO] install invoked');
   try {
-    moveAppToApplicationsFolder();
+    // moveAppToApplicationsFolder();
     const nodeModulesPath = path.join(APP_UNPACKED_PATH, 'node_modules');
     const tempPath = path.join(APP_UNPACKED_PATH, 'temp');
     /** Fix a previously interruped install */
@@ -78,6 +148,7 @@ export async function install() {
     } catch (error) {
       // If temp folder doesn't exist, continue with regular install
     }
+
     const nodeCmdPath = getNodeCmdPath();
     const nodeBinPath = process.execPath;
     const npmBinPath = getBinPath('npm', 'npm');
@@ -143,9 +214,9 @@ export async function install() {
       }
 
       let workspace = APP_UNPACKED_PATH;
-      // on the first installation, the node_modules only contain npm, so we'll move it to a temp folder so we can use it from there on a pristine environment
+      // On first install, we need to preserve the original npm installation
       if (isFirstInstall) {
-        log.info('[Install] Creating temp folder');
+        log.info('[Install] Creating temp folder to preserve npm installation');
         await fs.mkdir(tempPath);
         log.info('[Install] Moving node_modules to temp folder');
         await fs.rename(nodeModulesPath, path.join(tempPath, 'node_modules')).catch(() => {});
@@ -155,14 +226,14 @@ export async function install() {
       // if the version is different from the current one, we will install the node_modules again in case there are new dependencies
       const shouldInstall = !version || semver.lt(version, app.getVersion());
       if (shouldInstall) {
-        // install dependencies using npm
-        log.info('[Install] Installing node_modules...');
-        const npmInstall = run('npm', 'npm', {
-          args: ['install', '--loglevel', 'error'],
-          cwd: APP_UNPACKED_PATH,
-          workspace,
-        });
-        await npmInstall.waitFor(/added \d+ package|up to date/); // wait for successs message, because when the user quits the app while installing, npm exits gracefully with an exit code=0;
+        const dependencies = await getDependenciesToInstall(APP_UNPACKED_PATH);
+        await installDependencies(dependencies, workspace);
+
+        // if this was the first installation, we can now remove the temp folder
+        if (isFirstInstall) {
+          log.info('[Install] Removing temp folder');
+          await rimraf(workspace);
+        }
 
         // save the current version to the registry
         log.info('[Install] Writing current version to the registry');
@@ -172,12 +243,6 @@ export async function install() {
         );
       } else {
         log.info('[Install] Skipping installation of node_modules because it is up to date');
-      }
-
-      // if this was the first installation, we can now remove the temp node_modules folder
-      if (isFirstInstall) {
-        log.info('[Install] Removing temp folder');
-        await rimraf(workspace);
       }
 
       if (shouldInstall) {
@@ -259,7 +324,10 @@ type RunOptions = {
  * @param options Options for the child process (args, cwd, env, workspace)
  * @returns Child
  */
-export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
+export async function run(pkg: string, bin: string, options: RunOptions = {}): Promise<Child> {
+  const startTime = Date.now();
+  log.info(`[Run] Starting process for ${bin}...`);
+  
   let isKilling = false;
   let alive = true;
 
@@ -269,11 +337,13 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
   const { workspace = APP_UNPACKED_PATH, cwd = APP_UNPACKED_PATH, args = [], env = {} } = options;
 
   const binPath = getBinPath(pkg, bin, workspace);
+  log.info(`[Run] Using bin path: ${binPath}`);
 
   const stdout = createCircularBuffer<Uint8Array>(MAX_BUFFER_SIZE);
   const stderr = createCircularBuffer<Uint8Array>(MAX_BUFFER_SIZE);
-  const stdall = createCircularBuffer<Uint8Array>(MAX_BUFFER_SIZE); // ordered buffer of stdout and stderr
+  const stdall = createCircularBuffer<Uint8Array>(MAX_BUFFER_SIZE);
 
+  log.info(`[Run] Forking process with args: ${args.join(' ')}`);
   const forked = utilityProcess.fork(binPath, [...args], {
     cwd,
     stdio: 'pipe',
@@ -312,18 +382,20 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
 
   const name = `${bin} ${args.join(' ')}`.trim();
   forked.on('spawn', () => {
+    const spawnTime = Date.now() - startTime;
     log.info(
-      `[UtilityProcess] Running "${name}" using bin=${binPath} with pid=${forked.pid} in ${cwd}`,
+      `[UtilityProcess] Running "${name}" using bin=${binPath} with pid=${forked.pid} in ${cwd} (spawn took ${spawnTime}ms)`,
     );
     ready.resolve();
   });
 
   forked.on('exit', code => {
+    const totalTime = Date.now() - startTime;
     if (!alive) return;
     alive = false;
     const stdoutBuf = Buffer.concat(stdout.getAll());
     log.info(
-      `[UtilityProcess] Exiting "${name}" with pid=${forked.pid} and exit code=${code || 0}`,
+      `[UtilityProcess] Exiting "${name}" with pid=${forked.pid} and exit code=${code || 0} (total time: ${totalTime}ms)`,
     );
     if (code !== 0 && code !== null) {
       const stderrBuf = Buffer.concat(stderr.getAll());
@@ -451,7 +523,7 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
 
 async function handleData(buffer: Buffer, matchers: Matcher[], type: StreamType) {
   const data = buffer.toString('utf8');
-  log.info(`[UtilityProcess] ${data}`); // pipe data to console
+  // log.info(`[UtilityProcess ${type}] ${data}`);  
   for (const { pattern, handler, enabled, opts } of matchers) {
     if (!enabled) continue;
     if (opts?.type !== 'all' && opts?.type !== type) continue;

@@ -3,7 +3,7 @@ import type { Outdated } from '/shared/types/npm';
 import { run, StreamError } from './bin';
 
 export async function install(path: string, packages: string[] = []) {
-  const installCommand = run('npm', 'npm', {
+  const installCommand = await run('npm', 'npm', {
     args: ['install', '--loglevel', 'error', ...packages.flatMap(dep => ['--save', dep])],
     cwd: path,
   });
@@ -21,7 +21,7 @@ export async function install(path: string, packages: string[] = []) {
  */
 export async function getOutdatedDeps(_path: string, packages: string[] = []): Promise<Outdated> {
   try {
-    const npmOutdated = run('npm', 'npm', {
+    const npmOutdated = await run('npm', 'npm', {
       args: ['outdated', '--depth=0', '--json', ...packages],
       cwd: _path,
     });

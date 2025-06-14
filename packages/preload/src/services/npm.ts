@@ -9,6 +9,7 @@ import { invoke } from './ipc';
  * @returns {Promise<void>} - A promise that resolves when the installation is complete.
  */
 export async function install(path: string, packages: string[] = []): Promise<void> {
+  console.log('[BOEDO] install npm');
   await invoke('npm.install', path, packages);
 }
 
