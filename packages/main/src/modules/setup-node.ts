@@ -77,4 +77,4 @@ export function setupNodeBinary() {
   log.info('[Install] node bin:', nodeBinPath);
   log.info('[Install] npm bin:', npmBinPath);
   log.info('[Install] $PATH', process.env.PATH);
-} 
+}

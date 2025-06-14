@@ -4,10 +4,7 @@ import log from 'electron-log/main';
 import fs from 'fs/promises';
 import path from 'path';
 
-async function downloadFile(
-  fileUrl: string,
-  outputPath: string,
-) {
+async function downloadFile(fileUrl: string, outputPath: string) {
   const response = await (await fetch(fileUrl)).arrayBuffer();
   const buffer = new Uint8Array(response);
   await fs.writeFile(outputPath, buffer);
@@ -39,10 +36,7 @@ function parseGitHubUrl(githubUrl: string) {
   throw new Error("URL doesn't match the expected GitHub format.");
 }
 
-export async function downloadGithubFolder(
-  githubUrl: string,
-  destination: string,
-) {
+export async function downloadGithubFolder(githubUrl: string, destination: string) {
   const { owner, repo, branch, path: subfolderPath } = parseGitHubUrl(githubUrl);
   const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${subfolderPath}?ref=${branch}`;
 
