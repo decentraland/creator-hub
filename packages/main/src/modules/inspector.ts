@@ -26,8 +26,8 @@ export async function start() {
   const port = await getAvailablePort();
   inspectorServer = await run('http-server', 'http-server', {
     args: ['--port', port.toString()],
-    cwd: join(APP_UNPACKED_PATH, 'internal', './node_modules/@dcl/inspector/public'),
-    workspace: APP_UNPACKED_PATH + '/internal',
+    cwd: join(APP_UNPACKED_PATH, './node_modules/@dcl/inspector/public'),
+    workspace: APP_UNPACKED_PATH,
   });
 
   await inspectorServer.waitFor(/available/i, /error/i).catch(error => log.error(error.message));

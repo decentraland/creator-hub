@@ -32,7 +32,7 @@ export async function init(path: string, repo?: string): Promise<void> {
     args: ['init', '--yes', '--skip-install', ...(repo ? ['--github-repo', repo] : [])],
     cwd: path,
     env: await getEnv(path),
-    workspace: APP_UNPACKED_PATH + '/internal',
+    workspace: APP_UNPACKED_PATH,
   });
   await initCommand.wait();
 }

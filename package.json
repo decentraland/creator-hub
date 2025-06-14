@@ -98,6 +98,7 @@
   },
   "dependenciesOnInstall": {
     "http-server": "14.1.1",
-    "@dcl/sdk": "7.8.10"
+    "@dcl/sdk": "7.8.10",
+    "npm": "10.8.1"
   }
 }

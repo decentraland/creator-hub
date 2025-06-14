@@ -121,6 +121,22 @@ async function installDependencies(dependencies: Record<string, string>, workspa
   const duration = (endTime - startTime) / 1000;
   log.info(`[Install] Installation completed in ${duration.toFixed(2)} seconds`);
   
+  // Move internal node_modules to APP_UNPACKED_PATH
+  const internalNodeModules = path.join(internalDir, 'node_modules');
+  const targetNodeModules = path.join(APP_UNPACKED_PATH, 'node_modules');
+  
+  try {
+    log.info('[Install] Moving internal node_modules to APP_UNPACKED_PATH');
+    // Remove existing node_modules if it exists
+    await rimraf(targetNodeModules);
+    // Move the internal node_modules
+    await fs.rename(internalNodeModules, targetNodeModules);
+    log.info('[Install] Successfully moved node_modules');
+  } catch (error) {
+    log.error('[Install] Failed to move node_modules:', error);
+    throw error;
+  }
+  
   log.info('[Install] All dependencies installed successfully');
 }
 
