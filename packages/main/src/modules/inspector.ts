@@ -3,7 +3,6 @@ import { app, type BrowserWindow } from 'electron';
 import { createServer } from 'http-server';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-
 import { type Child } from './bin';
 import { getAvailablePort } from './port';
 import { createWindow, focusWindow, getWindow } from './window';
