@@ -5,7 +5,7 @@ import type { PreviewOptions } from '/shared/types/settings';
 
 import { dclDeepLink, run, type Child } from './bin';
 import { getAvailablePort } from './port';
-import { getProjectId } from './analytics';
+import { getProjectId, track } from './analytics';
 import { install } from './npm';
 import { downloadGithubFolder } from './download-github-folder';
 
@@ -26,17 +26,18 @@ async function getEnv(path: string) {
   };
 }
 
-export async function init(targetPath: string, repo?: string): Promise<void> {
+export async function init(targetPath: string, repo: string): Promise<void> {
   if (!repo) {
     throw new Error('Repository URL is required');
   }
 
   // Extract owner and repo name from the GitHub URL
-  const match = repo.match(/github\.com\/([^/]+)\/([^/]+)/);
-  if (!match) {
+  const isGithubRepo = repo.match(/github\.com\/([^/]+)\/([^/]+)/);
+  if (!isGithubRepo) {
     throw new Error('Invalid GitHub repository URL');
   }
   await downloadGithubFolder(repo, targetPath);
+  track('Scene created', { projectType: 'github-repo', url: repo });
 }
 
 export async function killPreview(path: string) {

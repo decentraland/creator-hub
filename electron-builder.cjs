@@ -33,7 +33,9 @@ const config = {
     verifyUpdateCodeSignature: false,
   },
   nsis: {
-    createDesktopShortcut: true,
+    createDesktopShortcut: 'always',
+    createStartMenuShortcut: true,
+    shortcutName: 'Decentraland Creator Hub',
     installerSidebar: 'buildResources/background.bmp',
     installerIcon: 'buildResources/icon.ico',
   },

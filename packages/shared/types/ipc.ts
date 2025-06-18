@@ -2,6 +2,7 @@ import type { OpenDialogOptions } from 'electron';
 
 import type { Outdated } from '/shared/types/npm';
 import type { PreviewOptions } from './settings';
+import type { Events } from '/shared/types/analytics';
 
 export type DeployOptions = { path: string; target?: string; targetContent?: string };
 export type IpcResult<T> = {
@@ -25,11 +26,11 @@ export interface Ipc {
   'inspector.attachSceneDebugger': (path: string, eventName: string) => Promise<boolean>;
   'bin.install': () => Promise<void>;
   'bin.code': (path: string) => Promise<void>;
-  'cli.init': (path: string, repo?: string) => Promise<void>;
+  'cli.init': (path: string, repo: string) => Promise<void>;
   'cli.start': (path: string, opts: PreviewOptions) => Promise<string>;
   'cli.deploy': (opts: DeployOptions) => Promise<number>;
   'cli.killPreview': (path: string) => Promise<void>;
-  'analytics.track': (event: string, data?: Record<string, any>) => void;
+  'analytics.track': <T extends keyof Events>(event: T, data?: Events[T]) => void;
   'analytics.identify': (userId: string, traits?: Record<string, any>) => void;
   'analytics.getAnonymousId': () => Promise<string>;
   'analytics.getProjectId': (path: string) => Promise<string>;

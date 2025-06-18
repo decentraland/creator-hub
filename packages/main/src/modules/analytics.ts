@@ -8,6 +8,7 @@ import type { ProjectInfo } from '/shared/types/projects';
 
 import { getConfig } from './config';
 import { getWorkspaceConfigPath } from './electron';
+import type { Events } from '/shared/types/analytics';
 
 let analytics: Analytics | null = null;
 const sessionId = randomUUID();
@@ -32,7 +33,7 @@ export async function getAnonymousId() {
   return userId;
 }
 
-export async function getAnalytics(): Promise<Analytics | null> {
+export function getAnalytics(): Analytics | null {
   if (analytics) {
     return analytics;
   }
@@ -47,13 +48,16 @@ export async function getAnalytics(): Promise<Analytics | null> {
   }
 }
 
-export async function track(event: string, properties: Record<string, any> = {}) {
+export async function track<T extends keyof Events>(
+  eventName: T,
+  properties: Events[T],
+): Promise<void> {
   try {
-    const analytics = await getAnalytics();
+    const analytics = getAnalytics();
     if (!analytics) return;
     const anonymousId = await getAnonymousId();
     const params: TrackParams = {
-      event,
+      event: eventName,
       properties: {
         ...properties,
         sessionId,
@@ -73,7 +77,7 @@ export async function track(event: string, properties: Record<string, any> = {})
 
 export async function identify(userId: string, traits: Record<string, any> = {}) {
   try {
-    const analytics = await getAnalytics();
+    const analytics = getAnalytics();
     if (!analytics) return;
     const anonymousId = await getAnonymousId();
     setUserId(userId);
