@@ -34,7 +34,6 @@ import { type CardBannerProps, type CardItemProps, type SignInCardProps } from '
 
 import { misc } from '#preload';
 
-
 const learn_resources = [
   {
     title: "Let's build the metaverse together",
