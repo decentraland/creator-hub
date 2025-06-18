@@ -7,8 +7,8 @@ import { restoreOrCreateMainWindow } from '/@/mainWindow';
 import { initIpc } from '/@/modules/ipc';
 import { deployServer, killAllPreviews } from '/@/modules/cli';
 import { killInspectorServer } from '/@/modules/inspector';
-import { getAnalytics, track } from '/@/modules/analytics';
 import { runMigrations } from '/@/modules/migrations';
+import { getAnalytics, track } from './modules/analytics';
 
 import '/@/security-restrictions';
 
