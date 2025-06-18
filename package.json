@@ -51,8 +51,8 @@
     "ansi-to-html": "^0.7.2",
     "classnames": "^2.5.1",
     "cross-env": "7.0.3",
-    "decentraland-ui2": "0.23.1",
     "dcl-catalyst-client": "^21.8.1",
+    "decentraland-ui2": "0.23.1",
     "electron": "31.1.0",
     "electron-builder": "24.13.3",
     "eslint": "8.57.0",
@@ -76,7 +76,7 @@
     "vitest": "1.6.0"
   },
   "dependencies": {
-    "@dcl/inspector": "7.8.10",
+    "@dcl/inspector": "^7.8.12",
     "@dcl/mini-rpc": "1.0.7",
     "@dcl/schemas": "11.10.4",
     "@ethersproject/hash": "5.7.0",
