@@ -1,12 +1,17 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Provider as StoreProvider } from 'react-redux';
-import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
-
-import { store } from '#store';
-import { TranslationProvider } from '/@/components/TranslationProvider';
 
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
+import { init as reactInit } from '@sentry/react';
+import {
+  init as SentryInit,
+  browserTracingIntegration,
+  replayIntegration,
+} from '@sentry/electron/renderer';
+import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
+import { TranslationProvider } from '/@/components/TranslationProvider';
+
 
 import { AuthProvider } from '/@/components/AuthProvider';
 
@@ -21,15 +26,9 @@ import { TemplatesPage } from '/@/components/TemplatesPage';
 import { MorePage } from '/@/components/MorePage';
 import { VideosPage } from '/@/components/VideosPage';
 import { DocsPage } from '/@/components/DocsPage';
-import { Install } from '/@/components/Install';
 import { Snackbar } from '/@/components/Snackbar';
 
-import { init as reactInit } from '@sentry/react';
-import {
-  init as SentryInit,
-  browserTracingIntegration,
-  replayIntegration,
-} from '@sentry/electron/renderer';
+import { store } from '#store';
 
 import '/@/themes';
 
@@ -59,12 +58,12 @@ root.render(
             <Router>
               <AuthProvider>
                 <Routes>
-                  {/* <Route
-                    path="/"
-                    element={<Install />}
-                  /> */}
                   <Route
                     path="/"
+                    element={<HomePage />}
+                  />
+                  <Route
+                    path="/home"
                     element={<HomePage />}
                   />
                   <Route
