@@ -32,4 +32,5 @@ export type Events = {
     target: string;
     targetContent: string;
   };
+  'Open Code': undefined
 };

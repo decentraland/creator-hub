@@ -13,6 +13,7 @@ import { createCircularBuffer } from '/shared/circular-buffer';
 import { CLIENT_NOT_INSTALLED_ERROR } from '/shared/utils';
 import { APP_UNPACKED_PATH, getBinPath } from './path';
 import { setupNodeBinary } from './setup-node';
+import { track } from './analytics';
 
 // Get the current PATH value
 function getPath() {
@@ -317,6 +318,7 @@ export async function code(_path: string) {
   const normalizedPath = path.normalize(_path);
   try {
     await exec(`code "${normalizedPath}"`, { env: { ...process.env, PATH: getPath() } });
+    await track('Open Code', undefined);
   } catch (_) {
     const error = await shell.openPath(normalizedPath);
     if (error) {
