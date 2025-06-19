@@ -6,8 +6,9 @@ import { CLIENT_NOT_INSTALLED_ERROR } from '/shared/utils';
 
 import { dclDeepLink, run, type Child } from './bin';
 import { getAvailablePort } from './port';
-import { getProjectId } from './analytics';
+import { getProjectId, track } from './analytics';
 import { install } from './npm';
+import { downloadGithubFolder } from './download-github-folder';
 
 export type Preview = { child: Child; url: string; opts: PreviewOptions };
 
@@ -26,13 +27,18 @@ async function getEnv(path: string) {
   };
 }
 
-export async function init(path: string, repo?: string): Promise<void> {
-  const initCommand = run('@dcl/sdk-commands', 'sdk-commands', {
-    args: ['init', '--yes', '--skip-install', ...(repo ? ['--github-repo', repo] : [])],
-    cwd: path,
-    env: await getEnv(path),
-  });
-  await initCommand.wait();
+export async function init(targetPath: string, repo: string): Promise<void> {
+  if (!repo) {
+    throw new Error('Repository URL is required');
+  }
+
+  // Extract owner and repo name from the GitHub URL
+  const isGithubRepo = repo.match(/github\.com\/([^/]+)\/([^/]+)/);
+  if (!isGithubRepo) {
+    throw new Error('Invalid GitHub repository URL');
+  }
+  await downloadGithubFolder(repo, targetPath);
+  track('Scene created', { projectType: 'github-repo', url: repo });
 }
 
 export async function killPreview(path: string) {

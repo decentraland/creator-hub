@@ -1,6 +1,7 @@
+import type { Events } from '/shared/types/analytics';
 import { invoke } from '../services/ipc';
 
-export async function track(event: string, data?: Record<string, any>) {
+export async function track<T extends keyof Events>(event: T, data: Events[T]) {
   await invoke('analytics.track', event, data);
 }
 

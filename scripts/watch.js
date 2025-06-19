@@ -11,6 +11,35 @@ const mode = (process.env.MODE = process.env.MODE || 'development');
 const logLevel = 'warn';
 
 /**
+ * Setup TypeScript type checking in watch mode for all packages
+ */
+function setupTypeChecker() {
+  const processes = ['main', 'preload', 'renderer'].map(pkg => {
+    const tsc = spawn(
+      'npx',
+      ['tsc', '-w', '--preserveWatchOutput', '--noEmit', '-p', `packages/${pkg}/tsconfig.json`],
+      {
+        stdio: 'inherit',
+      },
+    );
+
+    return tsc;
+  });
+
+  // Cleanup when the process exits
+  const cleanup = () => {
+    processes.forEach(proc => proc.kill('SIGINT'));
+    process.exit();
+  };
+
+  process.on('SIGINT', cleanup);
+  process.on('SIGTERM', cleanup);
+  process.on('exit', cleanup);
+
+  return processes;
+}
+
+/**
  * Setup watcher for `main` package
  * On file changed it totally re-launch electron app.
  * @param {import('vite').ViteDevServer} watchServer Renderer watch server instance.
@@ -99,6 +128,9 @@ const rendererWatchServer = await createServer({
   logLevel,
   configFile: 'packages/renderer/vite.config.js',
 }).then(s => s.listen());
+
+// Start TypeScript type checking in watch mode
+setupTypeChecker();
 
 await setupPreloadPackageWatcher(rendererWatchServer);
 await setupMainPackageWatcher(rendererWatchServer);

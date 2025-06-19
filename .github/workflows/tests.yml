@@ -32,6 +32,10 @@ jobs:
       # That's why this special command for Ubuntu is here
       - run: xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" -- npm run test:e2e --if-present
         if: matrix.os == 'ubuntu-latest'
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
 
       - run: npm run test:e2e --if-present
         if: matrix.os != 'ubuntu-latest'
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"

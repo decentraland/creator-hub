@@ -1,9 +1,11 @@
-import cx from 'classnames';
 import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useEditor } from '/@/hooks/useEditor';
 import { useDispatch, useSelector } from 'react-redux';
-import type { AppState } from '../../modules/store';
+import cx from 'classnames';
+import LayersOutlinedIcon from '@mui/icons-material/LayersOutlined';
+import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
+import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
+import { CircularProgress as Loader } from 'decentraland-ui2';
 import {
   Container,
   Card,
@@ -13,32 +15,24 @@ import {
   Button,
   Grid,
 } from 'decentraland-ui2';
-import { CircularProgress as Loader } from 'decentraland-ui2';
-import LayersOutlinedIcon from '@mui/icons-material/LayersOutlined';
-import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
-import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
-
-import { misc } from '#preload';
-
+import { useEditor } from '/@/hooks/useEditor';
 import { type Project } from '/shared/types/projects';
-
 import EditorPng from '/assets/images/editor.png';
 import BookPng from '/assets/images/book.png';
 import InfluencePng from '/assets/images/influence.png';
-
 import { useAuth } from '/@/hooks/useAuth';
 import { useWorkspace } from '/@/hooks/useWorkspace';
 import { t } from '/@/modules/store/translation/utils';
 import { FEEDBACK_URL } from '/@/modules/utils';
-
+import './styles.css';
+import { actions } from '/@/modules/store/settings';
+import type { AppState } from '../../modules/store';
+import { UpdateAvailableModal } from '../Modals/UpdateAvailableModal';
 import { Navbar, NavbarItem } from '../Navbar';
 import { Footer } from '../Footer';
-
 import { type CardBannerProps, type CardItemProps, type SignInCardProps } from './types';
 
-import './styles.css';
-import { UpdateAvailableModal } from '../Modals/UpdateAvailableModal';
-import { actions } from '/@/modules/store/settings';
+import { misc } from '#preload';
 
 const learn_resources = [
   {

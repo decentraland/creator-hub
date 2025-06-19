@@ -44,7 +44,7 @@ export function initIpc() {
   handle('bin.code', (_event, path) => bin.code(path));
 
   // analytics
-  handle('analytics.track', (_event, eventName, data) => analytics.track(eventName, data));
+  handle('analytics.track', (_event, eventName, data) => analytics.track(eventName, data!));
   handle('analytics.identify', (_event, userId, traits) => analytics.identify(userId, traits));
   handle('analytics.getAnonymousId', () => analytics.getAnonymousId());
   handle('analytics.getProjectId', (_event, path) => analytics.getProjectId(path));

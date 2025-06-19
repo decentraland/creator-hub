@@ -1,20 +1,20 @@
-import cx from 'classnames';
 import { useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Box, Button, IconButton } from 'decentraland-ui2';
+import cx from 'classnames';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { misc } from '#preload';
+import { Box, Button, IconButton } from 'decentraland-ui2';
 import logo from '/assets/images/logo-editor.png';
 import { REPORT_ISSUES_URL } from '/@/modules/utils';
 import { t } from '/@/modules/store/translation/utils';
+import { actions } from '/@/modules/store/settings';
 import { Header } from '../Header';
 
 import './styles.css';
 import { AppSettings } from '../Modals/AppSettings';
 import type { AppState } from '#store';
 import { useDispatch, useSelector } from '#store';
-import { actions } from '/@/modules/store/settings';
+import { misc } from '#preload';
 
 export enum NavbarItem {
   HOME = 'home',
