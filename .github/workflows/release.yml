@@ -93,6 +93,7 @@ jobs:
       - name: 'Build'
         run: echo MODE=$MODE && npm run build
         env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
           MODE: ${{ !inputs.dry-run && 'production' || 'development' }}
           VITE_SEGMENT_CREATORS_HUB_API_KEY: ${{ secrets.VITE_SEGMENT_CREATORS_HUB_API_KEY }}
           VITE_SEGMENT_INSPECTOR_API_KEY: ${{ secrets.VITE_SEGMENT_INSPECTOR_API_KEY }}
