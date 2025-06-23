@@ -76,10 +76,9 @@
     "vitest": "1.6.0"
   },
   "dependencies": {
-    "@dcl/inspector": "7.8.12",
+    "@dcl/inspector": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/default-collisions/@dcl/inspector/dcl-inspector-7.8.13-15782419912.commit-aca467e.tgz",
     "@dcl/mini-rpc": "1.0.7",
     "@dcl/schemas": "11.10.4",
-    "@dcl/sdk": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/default-collisions/dcl-sdk-7.8.13-15782419912.commit-aca467e.tgz",
     "@ethersproject/hash": "5.7.0",
     "@segment/analytics-node": "2.1.2",
     "@sentry/electron": "6.1.0",
