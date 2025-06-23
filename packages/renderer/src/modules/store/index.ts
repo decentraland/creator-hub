@@ -59,10 +59,10 @@ export const createSelector = createDraftSafeSelector.withTypes<AppState>();
 async function start() {
   try {
     // fetch app version and user id
-    // await Promise.all([
-    //   store.dispatch(editor.actions.fetchVersion()),
-    //   store.dispatch(analytics.actions.fetchAnonymousId()),
-    // ]);
+    await Promise.all([
+      store.dispatch(editor.actions.fetchVersion()),
+      store.dispatch(analytics.actions.fetchAnonymousId()),
+    ]);
 
     // install editor dependencies
     store.dispatch(editor.actions.install());
