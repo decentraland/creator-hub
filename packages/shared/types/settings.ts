@@ -10,6 +10,7 @@ export type PreviewOptions = {
   debugger: boolean;
   skipAuthScreen: boolean;
   enableLandscapeTerrains: boolean;
+  openNewInstance: boolean;
 };
 
 export type AppSettings = {
