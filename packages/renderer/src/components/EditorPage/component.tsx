@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
+import PlayCircleIcon from '@mui/icons-material/PlayCircle';
+import CodeIcon from '@mui/icons-material/Code';
+import PublicIcon from '@mui/icons-material/Public';
 import {
   Checkbox,
   FormControlLabel,
@@ -8,12 +12,7 @@ import {
   ListItemText,
   CircularProgress as Loader,
 } from 'decentraland-ui2';
-import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
-import PlayCircleIcon from '@mui/icons-material/PlayCircle';
-import CodeIcon from '@mui/icons-material/Code';
-import PublicIcon from '@mui/icons-material/Public';
 
-import { useSelector } from '#store';
 import { CLIENT_NOT_INSTALLED_ERROR } from '/shared/utils';
 import { isWorkspaceError } from '/shared/types/workspace';
 
@@ -39,6 +38,7 @@ import type {
   PublishOptionsProps,
   ModalProps,
 } from './types';
+import { useSelector } from '#store';
 
 import './styles.css';
 
@@ -279,11 +279,11 @@ function PreviewOptions({ onChange, options }: PreviewOptionsProps) {
         <FormControlLabel
           control={
             <Checkbox
-              checked={!!options.skipAuthScreen}
-              onChange={handleChange({ skipAuthScreen: !options.skipAuthScreen })}
+              checked={!!options.openNewInstance}
+              onChange={handleChange({ openNewInstance: !options.openNewInstance })}
             />
           }
-          label={t('editor.header.actions.preview_options.skip_auth_screen')}
+          label={t('editor.header.actions.preview_options.open_new_instance')}
         />
         <FormControlLabel
           control={

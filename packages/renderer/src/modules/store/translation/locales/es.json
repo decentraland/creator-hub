@@ -49,6 +49,7 @@
           "title": "Opciones de Previsualización",
           "debugger": "Abrir la ventana de la Consola durante la previsualización",
           "skip_auth_screen": "Omitir la pantalla de autenticación",
+          "open_new_instance": "Abrir multiples clientes",
           "landscape_terrain_enabled": "Habilitar terrenos de vista panorámica"
         },
         "publish_options": {
