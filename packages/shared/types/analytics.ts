@@ -8,6 +8,7 @@ export type Events = {
   'Scene created': {
     projectType: 'github-repo';
     url: string;
+    project_id: string;
   };
   'Create Project': {
     project_id: string;

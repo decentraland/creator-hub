@@ -38,7 +38,11 @@ export async function init(targetPath: string, repo: string): Promise<void> {
     throw new Error('Invalid GitHub repository URL');
   }
   await downloadGithubFolder(repo, targetPath);
-  track('Scene created', { projectType: 'github-repo', url: repo });
+  track('Scene created', {
+    projectType: 'github-repo',
+    url: repo,
+    project_id: await getProjectId(targetPath),
+  });
 }
 
 export async function killPreview(path: string) {
@@ -63,10 +67,6 @@ const PREVIEW_OPTIONS_MAP: Record<keyof PreviewArguments, string> = {
   skipAuthScreen: '--skip-auth-screen',
 };
 
-function stripLeadingDashes(option: string): string {
-  return option.replace(/^-+/, '');
-}
-
 function generatePreviewArguments(opts: PreviewOptions) {
   opts.skipAuthScreen = true;
   const args: string[] = [];
@@ -83,9 +83,17 @@ function isPreviewRunning(preview?: Preview): preview is Preview {
   return !!(preview?.child.alive() && preview.url);
 }
 
+// This fn is for already created deep-link. Just to add or remove values to a generated deep-link
+// decentraland://position=80,80&skip-auth-screen=true etc
 function updateDeepLinkWithOpts(params: string, newOpts: PreviewOptions): string {
   try {
     const urlParams = new URLSearchParams(params);
+
+    // for the deep-link we need to remove the starting `--`
+    // decentraland://?skip-auth-screen=true
+    const stripLeadingDashes = (option: string): string => {
+      return option.replace(/^-+/, '');
+    };
 
     const setOrDeleteParam = (key: string, value: any) => {
       if (value) {
