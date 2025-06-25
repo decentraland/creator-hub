@@ -4,7 +4,7 @@ import { run, StreamError } from './bin';
 
 export async function install(path: string, packages: string[] = []) {
   const installCommand = run('npm', 'npm', {
-    args: ['install', '--loglevel', 'error', ...packages.flatMap(dep => ['--save', dep])],
+    args: ['install', '--loglevel', 'error', '--save-exact', ...packages],
     cwd: path,
   });
   await installCommand.wait();
