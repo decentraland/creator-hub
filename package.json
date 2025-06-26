@@ -79,6 +79,7 @@
     "@dcl/inspector": "7.8.12",
     "@dcl/mini-rpc": "1.0.7",
     "@dcl/schemas": "11.10.4",
+    "@dcl/sdk": "7.8.15",
     "@ethersproject/hash": "5.7.0",
     "@segment/analytics-node": "2.1.2",
     "@sentry/electron": "6.1.0",
