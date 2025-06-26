@@ -2,6 +2,7 @@ import { ipcRenderer, type IpcRendererEvent } from 'electron';
 
 import type { DeployOptions } from '/shared/types/ipc';
 
+import { tryCatchAsValue } from '/shared/try-catch';
 import { invoke } from '../services/ipc';
 import type { PreviewOptions } from '/shared/types/settings';
 
@@ -57,8 +58,7 @@ export async function killPreviewScene(path: string) {
 }
 
 export async function publishScene(opts: DeployOptions) {
-  const port = await invoke('cli.deploy', opts);
-  return port;
+  return tryCatchAsValue(invoke('cli.deploy', opts));
 }
 
 export async function openPreview(port: number) {

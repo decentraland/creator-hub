@@ -7,6 +7,7 @@ import type { DeployOptions } from '/shared/types/ipc';
 import { type Project } from '/shared/types/projects';
 import type { PreviewOptions } from '/shared/types/settings';
 import { WorkspaceError } from '/shared/types/workspace';
+import type { ErrorAsValue } from '/shared/try-catch';
 
 import { actions as deploymentActions } from '../deployment';
 import { actions as workspaceActions } from '../workspace';
@@ -27,10 +28,20 @@ export const runScene = createAsyncThunk(
   },
 );
 
-export const publishScene = createAsyncThunk(
+export const publishScene = createAsyncThunk<
+  number,
+  DeployOptions & { chainId: ChainId; wallet: string },
+  {
+    rejectValue: ErrorAsValue;
+  }
+>(
   'editor/publishScene',
-  async (opts: DeployOptions & { chainId: ChainId; wallet: string }, { dispatch }) => {
-    const port = await editor.publishScene(opts);
+  async (
+    opts: DeployOptions & { chainId: ChainId; wallet: string },
+    { dispatch, rejectWithValue },
+  ) => {
+    const [error, port] = await editor.publishScene(opts);
+    if (error) return rejectWithValue(error);
     const deployment = { path: opts.path, port, chainId: opts.chainId, wallet: opts.wallet };
     dispatch(deploymentActions.initializeDeployment(deployment));
     return port;
@@ -122,7 +133,7 @@ export const slice = createSlice({
       state.loadingPublish = false;
     });
     builder.addCase(publishScene.rejected, (state, action) => {
-      state.publishError = action.error.message || null;
+      state.publishError = action.payload?.name || null;
       state.loadingPublish = false;
     });
     builder.addCase(workspaceActions.createProject.pending, state => {

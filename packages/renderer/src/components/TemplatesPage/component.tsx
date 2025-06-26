@@ -39,7 +39,7 @@ export function TemplatesPage() {
 
   const handleClickTemplate = useCallback(
     (repo?: string) => async () => {
-      const [data, error] = await getAvailableProject();
+      const [error, data] = await getAvailableProject();
       if (!error) {
         const { name, path } = data;
         const payload = {
