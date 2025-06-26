@@ -76,7 +76,7 @@
     "vitest": "1.6.0"
   },
   "dependencies": {
-    "@dcl/inspector": "7.8.12",
+    "@dcl/inspector": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/fix/import-glb-animations/@dcl/inspector/dcl-inspector-7.8.15-15882689167.commit-3cf9236.tgz",
     "@dcl/mini-rpc": "1.0.7",
     "@dcl/schemas": "11.10.4",
     "@ethersproject/hash": "5.7.0",
