@@ -2,9 +2,9 @@ import { join } from 'path';
 import fs from 'fs/promises';
 import log from 'electron-log/main';
 
-import type { DeployOptions } from '/shared/types/ipc';
 import type { PreviewOptions } from '/shared/types/settings';
 import { CLIENT_NOT_INSTALLED_ERROR } from '/shared/utils';
+import type { DeployOptions } from '/shared/types/deploy';
 
 import { dclDeepLink, run, type Child } from './bin';
 import { getAvailablePort } from './port';
@@ -172,7 +172,7 @@ async function shouldRunLegacyDeploy(path: string) {
   const file = await fs.readFile(
     join(path, 'node_modules', '@dcl/sdk-commands/dist/commands/deploy/index.js'),
   );
-  return file.includes('--programmatic');
+  return !file.includes('--programmatic');
 }
 // ############################################################################################
 
@@ -192,7 +192,12 @@ async function runCommand(path: string, command: string, args: string[]) {
   return runSdkCommand(components, command, args);
 }
 
-export async function deploy({ path, target, targetContent }: DeployOptions): Promise<number> {
+export async function deploy({
+  path,
+  target,
+  targetContent,
+  language,
+}: DeployOptions): Promise<number> {
   if (deployServer) {
     await deployServer.stop();
   }
@@ -214,6 +219,7 @@ export async function deploy({ path, target, targetContent }: DeployOptions): Pr
     ...(target ? ['--target', target] : []),
     ...(targetContent ? ['--target-content', targetContent] : []),
     '--programmatic',
+    ...(language ? ['--language', language] : []),
   ]);
 
   deployServer = { stop };

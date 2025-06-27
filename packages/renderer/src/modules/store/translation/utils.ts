@@ -1,7 +1,9 @@
 import { createIntl, createIntlCache, FormattedMessage } from 'react-intl';
 import { flatten } from 'flat';
 
-import type { Locale, Translation, TranslationKeys, TranslationPath } from './types';
+import type { Locale } from '/shared/types/translation';
+
+import type { Translation, TranslationKeys, TranslationPath } from './types';
 import * as languages from './locales';
 
 export const locales = Object.keys(languages) as Locale[];

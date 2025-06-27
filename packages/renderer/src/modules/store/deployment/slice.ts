@@ -163,7 +163,6 @@ export const executeDeployment = createAsyncThunk(
           }),
         );
       }
-      console.log('executeDeployment.rejected 3', { path, error });
       throw error;
     }
   },

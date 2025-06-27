@@ -1,7 +1,9 @@
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
 
-import type { Locale, TranslationKeys } from './types';
+import type { Locale } from '/shared/types/translation';
+
+import type { TranslationKeys } from './types';
 import * as utils from './utils';
 
 // state
