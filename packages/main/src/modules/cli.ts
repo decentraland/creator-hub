@@ -172,7 +172,7 @@ async function shouldRunLegacyDeploy(path: string) {
   const file = await fs.readFile(
     join(path, 'node_modules', '@dcl/sdk-commands/dist/commands/deploy/index.js'),
   );
-  return file.includes('--programmatic');
+  return !file.includes('--programmatic');
 }
 // ############################################################################################
 
