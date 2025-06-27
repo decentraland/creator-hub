@@ -5,13 +5,15 @@ import type { Ipc, IpcError, IpcResult } from '/shared/types/ipc';
 export async function invoke<T extends keyof Ipc>(
   channel: T,
   ...args: Parameters<Ipc[T]>
-): Promise<ReturnType<Ipc[T]>> {
+): Promise<Awaited<ReturnType<Ipc[T]>>> {
   const result = await (ipcRenderer.invoke(channel, ...args) as Promise<
-    IpcResult<ReturnType<Ipc[T]>> | IpcError
+    IpcResult<Awaited<ReturnType<Ipc[T]>>> | IpcError
   >);
   if (result.success) {
     return result.value;
   } else {
-    throw new Error(result.error);
+    const error = new Error(result.error.message);
+    error.name = result.error.name;
+    throw error;
   }
 }

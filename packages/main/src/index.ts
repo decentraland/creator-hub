@@ -70,7 +70,7 @@ app
 export async function killAll() {
   const promises: Promise<unknown>[] = [killAllPreviews()];
   if (deployServer) {
-    promises.push(deployServer.kill());
+    promises.push(deployServer.stop());
   }
   killInspectorServer();
   await Promise.all(promises);

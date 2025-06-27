@@ -10,6 +10,7 @@ import { WorkspaceError } from '/shared/types/workspace';
 
 import { actions as deploymentActions } from '../deployment';
 import { actions as workspaceActions } from '../workspace';
+
 import { editor } from '#preload';
 
 // actions
@@ -26,7 +27,6 @@ export const runScene = createAsyncThunk(
     }
   },
 );
-
 export const publishScene = createAsyncThunk(
   'editor/publishScene',
   async (opts: DeployOptions & { chainId: ChainId; wallet: string }, { dispatch }) => {

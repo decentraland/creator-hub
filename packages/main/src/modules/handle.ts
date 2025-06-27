@@ -21,14 +21,18 @@ export async function handle<T extends keyof Ipc>(
       };
       return result;
     } catch (error: any) {
-      log.error(`[IPC] channel=${channel} error=${error.message}`);
+      const name = error.name || 'Error';
+      log.error(`[IPC] channel=${channel} name=${name} error=${error.message}`);
       Sentry.captureException(error, {
         tags: { source: 'ipc-handle' },
         extra: { channel },
       });
       const result: IpcError = {
         success: false,
-        error: error.message,
+        error: {
+          message: error.message,
+          name,
+        },
       };
       return result;
     }

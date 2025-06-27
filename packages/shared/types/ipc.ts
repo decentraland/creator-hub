@@ -11,7 +11,10 @@ export type IpcResult<T> = {
 };
 export type IpcError = {
   success: false;
-  error: string;
+  error: {
+    message: string;
+    name: string;
+  };
 };
 
 export interface Ipc {
