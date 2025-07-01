@@ -1,5 +1,6 @@
 import { MessageTransport } from '@dcl/mini-rpc';
 
+import { debounceByKey } from '/shared/utils';
 import { CameraRPC } from './camera';
 
 import { type Project } from '/shared/types/projects';
@@ -42,13 +43,26 @@ export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partia
   const params = { iframe, project, storage, camera };
 
   storage.handle('read_file', async ({ path }) => {
+    console.log('[BOEDO]:', 'read_file');
     const file = await fs.readFile(await getPath(path, project));
     return file;
   });
-  storage.handle('write_file', async ({ path, content }) => {
-    await fs.writeFile(await getPath(path, project), content as any); // "content as any" since there is a mismatch in typescript's type definitions
-    await cbs.writeFile?.(params, { path, content });
+
+  // Create a debounced version of the write operation, separate for each file path
+  const debouncedWrite = debounceByKey(
+    async ({ path, content }: Params[Method.WRITE_FILE]) => {
+      console.log('[BOEDO]:', 'write_file', path);
+      await fs.writeFile(await getPath(path, project), content as any);
+      await cbs.writeFile?.(params, { path, content });
+    },
+    800,
+    ({ path }) => path,
+  );
+
+  storage.handle('write_file', async params => {
+    await debouncedWrite(params);
   });
+
   storage.handle('exists', async ({ path }) => {
     return fs.exists(await getPath(path, project));
   });
