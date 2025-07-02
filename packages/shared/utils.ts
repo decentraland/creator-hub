@@ -47,90 +47,28 @@ export const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, 
 
 export const CLIENT_NOT_INSTALLED_ERROR = 'Decentraland Desktop Client failed with';
 
-interface DebounceState {
-  timer: NodeJS.Timeout | null;
-  lastCall: number;
-  lastResult: any;
-  pendingPromises: Array<{
-    resolve: (value: any) => void;
-    reject: (error: any) => void;
-  }>;
-}
-
-interface DebounceOptions {
-  leading?: boolean;
-  trailing?: boolean;
-  maxWait?: number;
-}
-
-export function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number,
-  options: DebounceOptions = {},
-): (...args: Parameters<T>) => Promise<ReturnType<T>> {
-  const state: DebounceState = {
-    timer: null,
-    lastCall: 0,
-    lastResult: undefined,
-    pendingPromises: [],
-  };
-
-  const { leading = false, trailing = true, maxWait } = options;
-
-  return (...args: Parameters<T>): Promise<ReturnType<T>> => {
-    const now = Date.now();
-    const isFirstCall = state.lastCall === 0;
-    const timeSinceLastCall = now - state.lastCall;
-    state.lastCall = now;
-
-    return new Promise((resolve, reject) => {
-      state.pendingPromises.push({ resolve, reject });
-
-      const invokeFunction = () => {
-        try {
-          state.lastResult = func(...args);
-          state.pendingPromises.forEach(({ resolve }) => resolve(state.lastResult));
-        } catch (error) {
-          state.pendingPromises.forEach(({ reject }) => reject(error));
-        }
-        state.pendingPromises = [];
-      };
-
-      const shouldInvokeLeading = leading && (isFirstCall || timeSinceLastCall >= wait);
-      const hasReachedMaxWait = maxWait && timeSinceLastCall >= maxWait;
-
-      if (state.timer) {
-        clearTimeout(state.timer);
-        state.timer = null;
-      }
-
-      if (shouldInvokeLeading || hasReachedMaxWait) {
-        invokeFunction();
-      } else if (trailing) {
-        state.timer = setTimeout(() => {
-          invokeFunction();
-          state.timer = null;
-        }, wait);
-      }
-    });
+export function debounce<F extends (...args: any[]) => void>(func: F, delay: number) {
+  let timer: ReturnType<typeof setTimeout>;
+  return function (...args: Parameters<F>) {
+    clearTimeout(timer);
+    timer = setTimeout(() => func(...args), delay);
   };
 }
 
-export function debounceByKey<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number,
-  keySelector: (...args: Parameters<T>) => string,
-  options: DebounceOptions = {},
-): (...args: Parameters<T>) => Promise<ReturnType<T>> {
+export function debounceByKey<F extends (...args: any[]) => void>(
+  func: F,
+  delay: number,
+  keySelector: (...args: Parameters<F>) => string,
+): (...args: Parameters<F>) => void {
   const debouncedFunctions = new Map<string, ReturnType<typeof debounce>>();
 
-  return (...args: Parameters<T>): Promise<ReturnType<T>> => {
+  return (...args: Parameters<F>): void => {
     const key = keySelector(...args);
 
     if (!debouncedFunctions.has(key)) {
-      debouncedFunctions.set(key, debounce(func, wait, options));
+      debouncedFunctions.set(key, debounce(func, delay));
     }
 
-    return debouncedFunctions.get(key)!(...args);
+    debouncedFunctions.get(key)!(...args);
   };
 }
