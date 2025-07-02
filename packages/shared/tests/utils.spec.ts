@@ -14,7 +14,7 @@ describe('debounce', () => {
     debouncedFn('test1');
     debouncedFn('test2');
     debouncedFn('test3');
-    
+
     expect(mockFn).toHaveBeenCalledTimes(0); // No calls yet
 
     // Advance time to trigger the debounced call
@@ -31,14 +31,14 @@ describe('debounce', () => {
 
     // First call
     debouncedFn('test1');
-    
+
     // Advance halfway
     await vi.advanceTimersByTimeAsync(150);
     expect(mockFn).toHaveBeenCalledTimes(0);
 
     // Call again - should reset timer
     debouncedFn('test2');
-    
+
     // Advance to original timeout (should not trigger)
     await vi.advanceTimersByTimeAsync(150);
     expect(mockFn).toHaveBeenCalledTimes(0);
@@ -101,7 +101,7 @@ describe('debounceByKey', () => {
     debouncedFn('a');
     debouncedFn('a');
     debouncedFn('a');
-    
+
     expect(mockFn).toHaveBeenCalledTimes(0);
 
     // Advance time
