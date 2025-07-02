@@ -55,7 +55,7 @@ export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partia
       await fs.writeFile(await getPath(path, project), content as any);
       await cbs.writeFile?.(params, { path, content });
     },
-    800,
+    1000,
     ({ path }) => path,
   );
 
