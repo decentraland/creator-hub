@@ -1,5 +1,6 @@
 import { join } from 'path';
 import fs from 'fs/promises';
+import { pathToFileURL } from 'url';
 import log from 'electron-log/main';
 
 import type { PreviewOptions } from '/shared/types/settings';
@@ -186,9 +187,9 @@ async function getComponents(path: string) {
 
 async function runCommand(path: string, command: string, args: string[]) {
   const components = await getComponents(path);
-  const { runSdkCommand } = await import(
-    join(path, 'node_modules', '@dcl/sdk-commands/dist/run-command.js')
-  );
+  const filePath = join(path, 'node_modules', '@dcl/sdk-commands/dist/run-command.js');
+  const fileUrl = pathToFileURL(filePath).href;
+  const { runSdkCommand } = await import(fileUrl);
   return runSdkCommand(components, command, args);
 }
 
