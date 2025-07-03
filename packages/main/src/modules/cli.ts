@@ -1,8 +1,11 @@
+import { join } from 'path';
+import fs from 'fs/promises';
+import { pathToFileURL } from 'url';
 import log from 'electron-log/main';
 
-import type { DeployOptions } from '/shared/types/ipc';
 import type { PreviewOptions } from '/shared/types/settings';
 import { CLIENT_NOT_INSTALLED_ERROR } from '/shared/utils';
+import type { DeployOptions } from '/shared/types/deploy';
 
 import { dclDeepLink, run, type Child } from './bin';
 import { getAvailablePort } from './port';
@@ -13,7 +16,7 @@ import { downloadGithubFolder } from './download-github-folder';
 export type Preview = { child: Child; url: string; opts: PreviewOptions };
 
 const previewCache: Map<string, Preview> = new Map();
-export let deployServer: Child | null = null;
+export let deployServer: { stop: () => Promise<void> } | null = null;
 
 export function getPreview(path: string) {
   return previewCache.get(path);
@@ -129,12 +132,18 @@ export async function start(
   }
 }
 
-export async function deploy({ path, target, targetContent }: DeployOptions): Promise<number> {
+// ############################################################################################
+// TODO: Remove this after a couple of months...
+export async function legacyDeploy({
+  path,
+  target,
+  targetContent,
+}: DeployOptions): Promise<number> {
   if (deployServer) {
-    await deployServer.kill();
+    await deployServer.stop();
   }
   const port = await getAvailablePort();
-  deployServer = run('@dcl/sdk-commands', 'sdk-commands', {
+  const process = run('@dcl/sdk-commands', 'sdk-commands', {
     args: [
       'deploy',
       '--no-browser',
@@ -149,11 +158,72 @@ export async function deploy({ path, target, targetContent }: DeployOptions): Pr
   });
 
   // App ready at
-  await deployServer.waitFor(/listening/i, /error:/i, { reject: 'stderr' });
+  await process.waitFor(/listening/i, /error:/i, { reject: 'stderr' });
 
-  deployServer.waitFor(/close the terminal/gi).then(() => deployServer?.kill());
+  process.waitFor(/close the terminal/gi).then(() => process.kill());
 
-  deployServer.wait().catch(); // handle rejection of main promise to avoid warnings in console
+  process.wait().catch(); // handle rejection of main promise to avoid warnings in console
+
+  deployServer = { stop: () => process.kill() };
+
+  return port;
+}
+
+async function shouldRunLegacyDeploy(path: string) {
+  const file = await fs.readFile(
+    join(path, 'node_modules', '@dcl/sdk-commands/dist/commands/deploy/index.js'),
+  );
+  return !file.includes('--programmatic');
+}
+// ############################################################################################
+
+async function getComponents(path: string) {
+  const { initComponents } = await import(
+    join(path, 'node_modules', '@dcl/sdk-commands/dist/components/index.js')
+  );
+  const components = await initComponents();
+  return components;
+}
+
+async function runCommand(path: string, command: string, args: string[]) {
+  const components = await getComponents(path);
+  const filePath = join(path, 'node_modules', '@dcl/sdk-commands/dist/run-command.js');
+  const fileUrl = pathToFileURL(filePath).href;
+  const { runSdkCommand } = await import(fileUrl);
+  return runSdkCommand(components, command, args);
+}
+
+export async function deploy({
+  path,
+  target,
+  targetContent,
+  language,
+}: DeployOptions): Promise<number> {
+  if (deployServer) {
+    await deployServer.stop();
+  }
+
+  const isLegacyDeploy = await shouldRunLegacyDeploy(path);
+  if (isLegacyDeploy) {
+    log.info('[CLI] Running legacy deploy');
+    return legacyDeploy({ path, target, targetContent });
+  }
+
+  const port = await getAvailablePort();
+
+  const { stop } = await runCommand(path, 'deploy', [
+    '--dir',
+    path,
+    '--no-browser',
+    '--port',
+    port.toString(),
+    ...(target ? ['--target', target] : []),
+    ...(targetContent ? ['--target-content', targetContent] : []),
+    '--programmatic',
+    ...(language ? ['--language', language] : []),
+  ]);
+
+  deployServer = { stop };
 
   return port;
 }

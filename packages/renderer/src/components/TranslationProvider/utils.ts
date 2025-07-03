@@ -1,4 +1,4 @@
-import type { Locale } from '../../modules/store/translation/types';
+import type { Locale } from '/shared/types/translation';
 
 export function getPreferredLocale(availableLocales: Locale[]): Locale | null {
   if (!availableLocales) {

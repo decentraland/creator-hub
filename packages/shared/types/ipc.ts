@@ -1,17 +1,21 @@
 import type { OpenDialogOptions } from 'electron';
 
 import type { Outdated } from '/shared/types/npm';
-import type { PreviewOptions } from './settings';
 import type { Events } from '/shared/types/analytics';
+import type { DeployOptions } from '/shared/types/deploy';
 
-export type DeployOptions = { path: string; target?: string; targetContent?: string };
+import type { PreviewOptions } from './settings';
+
 export type IpcResult<T> = {
   success: true;
   value: T;
 };
 export type IpcError = {
   success: false;
-  error: string;
+  error: {
+    message: string;
+    name: string;
+  };
 };
 
 export interface Ipc {
