@@ -37,8 +37,8 @@ export const throttle = <T, K extends any[]>(
     },
     () => {
       cancelled = true;
-      clearTimeout(timeout);
-      clearTimeout(waitFor);
+      if (timeout) clearTimeout(timeout);
+      if (waitFor) clearTimeout(waitFor);
     },
   ];
 };
@@ -46,3 +46,29 @@ export const throttle = <T, K extends any[]>(
 export const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const CLIENT_NOT_INSTALLED_ERROR = 'Decentraland Desktop Client failed with';
+
+export function debounce<F extends (...args: any[]) => void>(func: F, delay: number) {
+  let timer: ReturnType<typeof setTimeout>;
+  return function (...args: Parameters<F>) {
+    clearTimeout(timer);
+    timer = setTimeout(() => func(...args), delay);
+  };
+}
+
+export function debounceByKey<F extends (...args: any[]) => void>(
+  func: F,
+  delay: number,
+  keySelector: (...args: Parameters<F>) => string,
+): (...args: Parameters<F>) => void {
+  const debouncedFunctions = new Map<string, ReturnType<typeof debounce>>();
+
+  return (...args: Parameters<F>): void => {
+    const key = keySelector(...args);
+
+    if (!debouncedFunctions.has(key)) {
+      debouncedFunctions.set(key, debounce(func, delay));
+    }
+
+    debouncedFunctions.get(key)!(...args);
+  };
+}
