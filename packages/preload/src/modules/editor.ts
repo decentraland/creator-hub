@@ -1,6 +1,6 @@
 import { ipcRenderer, type IpcRendererEvent } from 'electron';
 
-import type { DeployOptions } from '/shared/types/ipc';
+import type { DeployOptions } from '/shared/types/deploy';
 
 import { invoke } from '../services/ipc';
 import type { PreviewOptions } from '/shared/types/settings';

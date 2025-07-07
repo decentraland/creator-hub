@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 
-import type { DeployOptions } from '/shared/types/ipc';
+import type { DeployOptions } from '/shared/types/deploy';
 import type { PreviewOptions } from '/shared/types/settings';
 
 import { actions as editorActions } from '/@/modules/store/editor';

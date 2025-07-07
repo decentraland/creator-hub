@@ -62,7 +62,7 @@ export function Deploy(props: Props) {
   const { project } = props;
   const { chainId, wallet, avatar } = useAuth();
   const { updateProjectInfo } = useWorkspace();
-  const { loadingPublish } = useEditor();
+  const { loadingPublish, publishError } = useEditor();
   const { getDeployment, executeDeployment } = useDeploy();
   const { pushCustom } = useSnackbar();
   const [showWarning, setShowWarning] = useState(false);
@@ -162,6 +162,8 @@ export function Deploy(props: Props) {
         ) : null}
         {loadingPublish ? (
           <Loader />
+        ) : publishError ? (
+          <div className="error">{publishError}</div>
         ) : !deployment ? null : (
           <>
             <div className="ethereum">

@@ -1,4 +1,5 @@
-export type Locale = 'en' | 'es' | 'zh';
+// Import the English translations type for type checking
+import type enTranslations from './locales/en.json';
 
 export interface TranslationKeys {
   [key: string]: string;
@@ -7,9 +8,6 @@ export interface TranslationKeys {
 export interface Translation {
   [locale: string]: TranslationKeys | null;
 }
-
-// Import the English translations type for type checking
-import type enTranslations from './locales/en.json';
 
 type DotNotation<T> = T extends string | number | boolean
   ? never

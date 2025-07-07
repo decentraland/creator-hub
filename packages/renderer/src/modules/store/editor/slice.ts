@@ -3,13 +3,14 @@ import type { ChainId } from '@dcl/schemas';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
-import type { DeployOptions } from '/shared/types/ipc';
+import type { DeployOptions } from '/shared/types/deploy';
 import { type Project } from '/shared/types/projects';
 import type { PreviewOptions } from '/shared/types/settings';
 import { WorkspaceError } from '/shared/types/workspace';
 
 import { actions as deploymentActions } from '../deployment';
 import { actions as workspaceActions } from '../workspace';
+
 import { editor } from '#preload';
 
 // actions
@@ -26,11 +27,11 @@ export const runScene = createAsyncThunk(
     }
   },
 );
-
 export const publishScene = createAsyncThunk(
   'editor/publishScene',
-  async (opts: DeployOptions & { chainId: ChainId; wallet: string }, { dispatch }) => {
-    const port = await editor.publishScene(opts);
+  async (opts: DeployOptions & { chainId: ChainId; wallet: string }, { dispatch, getState }) => {
+    const { translation } = getState();
+    const port = await editor.publishScene({ ...opts, language: translation.locale });
     const deployment = { path: opts.path, port, chainId: opts.chainId, wallet: opts.wallet };
     dispatch(deploymentActions.initializeDeployment(deployment));
     return port;
