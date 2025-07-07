@@ -59,7 +59,7 @@ export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partia
   storage.handle('write_file', async params => {
     // Check if the file is a .crdt or .composite file
     const isCrdtOrComposite = params.path.endsWith('.crdt') || params.path.endsWith('.composite');
-    
+
     if (isCrdtOrComposite) {
       return debouncedWrite(params);
     } else {
