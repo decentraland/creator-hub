@@ -43,24 +43,28 @@ export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partia
   const params = { iframe, project, storage, camera };
 
   storage.handle('read_file', async ({ path }) => {
-    console.log('[BOEDO]:', 'read_file');
     const file = await fs.readFile(await getPath(path, project));
     return file;
   });
 
-  // Create a debounced version of the write operation, separate for each file path
-  const debouncedWrite = debounceByKey(
-    async ({ path, content }: Params[Method.WRITE_FILE]) => {
-      console.log('[BOEDO]:', 'write_file', path);
-      await fs.writeFile(await getPath(path, project), content as any);
-      await cbs.writeFile?.(params, { path, content });
-    },
-    1000,
-    ({ path }) => path,
-  );
+  // Common write function
+  const writeFile = async ({ path, content }: Params[Method.WRITE_FILE]) => {
+    await fs.writeFile(await getPath(path, project), content as any);
+    await cbs.writeFile?.(params, { path, content });
+  };
+
+  // Create a debounced version of the write operation for crdt/composite files, separate for each file path
+  const debouncedWrite = debounceByKey(writeFile, 1000, ({ path }) => path);
 
   storage.handle('write_file', async params => {
-    await debouncedWrite(params);
+    // Check if the file is a .crdt or .composite file
+    const isCrdtOrComposite = params.path.endsWith('.crdt') || params.path.endsWith('.composite');
+    
+    if (isCrdtOrComposite) {
+      return debouncedWrite(params);
+    } else {
+      await writeFile(params);
+    }
   });
 
   storage.handle('exists', async ({ path }) => {
