@@ -1,11 +1,11 @@
 import { join } from 'path';
 import fs from 'fs/promises';
-import { pathToFileURL } from 'url';
 import log from 'electron-log/main';
 
 import type { PreviewOptions } from '/shared/types/settings';
 import { CLIENT_NOT_INSTALLED_ERROR } from '/shared/utils';
 import type { DeployOptions } from '/shared/types/deploy';
+import { dynamicImport } from '/shared/dynamic-import';
 
 import { dclDeepLink, run, type Child } from './bin';
 import { getAvailablePort } from './port';
@@ -178,9 +178,8 @@ async function shouldRunLegacyDeploy(path: string) {
 // ############################################################################################
 
 async function getComponents(path: string) {
-  const { initComponents } = await import(
-    join(path, 'node_modules', '@dcl/sdk-commands/dist/components/index.js')
-  );
+  const filePath = join(path, 'node_modules', '@dcl/sdk-commands/dist/components/index.js');
+  const { initComponents } = await dynamicImport(filePath);
   const components = await initComponents();
   return components;
 }
@@ -188,8 +187,7 @@ async function getComponents(path: string) {
 async function runCommand(path: string, command: string, args: string[]) {
   const components = await getComponents(path);
   const filePath = join(path, 'node_modules', '@dcl/sdk-commands/dist/run-command.js');
-  const fileUrl = pathToFileURL(filePath).href;
-  const { runSdkCommand } = await import(fileUrl);
+  const { runSdkCommand } = await dynamicImport(filePath);
   return runSdkCommand(components, command, args);
 }
 
