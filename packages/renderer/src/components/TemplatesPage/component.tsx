@@ -40,6 +40,7 @@ export function TemplatesPage() {
   const handleClickTemplate = useCallback(
     (repo?: string) => async () => {
       const [error, data] = await getAvailableProject();
+      console.log('handleClickTemplate', error, data);
       if (!error) {
         const { name, path } = data;
         const payload = {
@@ -47,6 +48,7 @@ export function TemplatesPage() {
           path: path.endsWith(name) ? path.slice(0, -name.length) : path,
           repo,
         };
+        console.log('handleClickTemplate payload', payload);
         setOpenModal({ type: 'create-project', payload });
       }
     },

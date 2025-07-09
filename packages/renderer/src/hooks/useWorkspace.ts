@@ -82,7 +82,9 @@ export const useWorkspace = () => {
   }, []);
 
   const getAvailableProject = useCallback(async () => {
+    console.log('getAvailableProject init');
     const result = await tryCatch(workspacePreload.getAvailable());
+    console.log('getAvailableProject result', result);
     return result;
   }, []);
 

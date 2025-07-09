@@ -232,14 +232,17 @@ export function initializeWorkspace(services: Services) {
   }
 
   async function getAvailable(_name: string = NEW_SCENE_NAME) {
+    console.log('getAvailable init', _name);
     let availableName = _name;
     let counter = 2;
     const homePath = await getPath();
     let availablePath = path.join(homePath, availableName);
+    console.log('getAvailable while', availablePath);
     while (await fs.exists(availablePath)) {
       availableName = `${_name} ${counter++}`;
       availablePath = path.join(homePath, availableName);
     }
+    console.log('getAvailable return', { name: availableName, path: availablePath });
     return { name: availableName, path: availablePath };
   }
 

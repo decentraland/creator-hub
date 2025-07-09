@@ -14,6 +14,7 @@ export async function tryCatch<T, E = Error>(promise: Promise<T>): Promise<[null
     const data = await promise;
     return [null, data];
   } catch (error) {
+    console.log('tryCatch', error);
     return [error as E, null];
   }
 }
