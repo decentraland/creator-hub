@@ -61,6 +61,7 @@ export async function track<T extends keyof Events>(
       event: eventName,
       properties: {
         ...properties,
+        os: process.platform,
         sessionId,
       },
       anonymousId,

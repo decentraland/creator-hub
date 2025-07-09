@@ -46,6 +46,7 @@
           "title": "预览选项",
           "debugger": "在预览期间打开控制台窗口",
           "skip_auth_screen": "跳过认证屏幕",
+          "open_new_instance": "打开多个实例",
           "landscape_terrain_enabled": "启用景观地形"
         },
         "publish_options": {
