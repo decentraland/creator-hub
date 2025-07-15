@@ -77,7 +77,7 @@
     "vitest": "1.6.0"
   },
   "dependencies": {
-    "@dcl/inspector": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/refresh-animation-list/@dcl/inspector/dcl-inspector-7.8.22-16290313380.commit-7774aec.tgz",
+    "@dcl/inspector": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/refresh-animation-list/@dcl/inspector/dcl-inspector-7.8.22-16297640352.commit-1b3c532.tgz",
     "@dcl/mini-rpc": "1.0.7",
     "@dcl/schemas": "11.10.4",
     "@ethersproject/hash": "5.7.0",
