@@ -14,7 +14,6 @@ const config = {
   productName: 'Decentraland Creator Hub',
   artifactName: '${productName}-${version}-${os}-${arch}.${ext}',
   win: {
-    publisherName: 'Decentraland Foundation',
     appId: 'Decentraland.CreatorsHub',
     icon: 'buildResources/icon.ico',
     target: [
@@ -25,6 +24,9 @@ const config = {
     ],
     extraResources: ['buildResources/icon.ico'],
     verifyUpdateCodeSignature: false,
+    signtoolOptions: {
+      publisherName: 'Decentraland Foundation',
+    },
   },
   nsis: {
     createDesktopShortcut: 'always',
@@ -32,6 +34,7 @@ const config = {
     shortcutName: 'Decentraland Creator Hub',
     installerSidebar: 'buildResources/background.bmp',
     installerIcon: 'buildResources/icon.ico',
+    include: 'buildResources/scripts/windowsInstaller.nsh',
   },
   dmg: {
     title: 'Decentraland Creator Hub Installer',
@@ -85,7 +88,7 @@ const config = {
 
 if (process.env.CODE_SIGN_SCRIPT_PATH) {
   console.log('CODE_SIGN_SCRIPT_PATH found in env vars:', process.env.CODE_SIGN_SCRIPT_PATH);
-  config.win.sign = configuration => {
+  config.win.signtoolOptions.sign = configuration => {
     console.log('Requested signing for ', configuration.path);
 
     // Only proceed if the versioned .exe file is in the configuration path - skip signing everything else
@@ -134,7 +137,7 @@ if (process.env.CODE_SIGN_SCRIPT_PATH) {
   };
 
   // sign only for Windows 10 and above - adjust for your code as needed
-  config.win.signingHashAlgorithms = ['sha256'];
+  config.win.signtoolOptions.signingHashAlgorithms = ['sha256'];
 }
 
 module.exports = config;
