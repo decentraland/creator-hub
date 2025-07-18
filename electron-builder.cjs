@@ -14,7 +14,6 @@ const config = {
   productName: 'Decentraland Creator Hub',
   artifactName: '${productName}-${version}-${os}-${arch}.${ext}',
   win: {
-    publisherName: 'Decentraland Foundation',
     appId: 'Decentraland.CreatorsHub',
     icon: 'buildResources/icon.ico',
     target: [
@@ -25,6 +24,9 @@ const config = {
     ],
     extraResources: ['buildResources/icon.ico'],
     verifyUpdateCodeSignature: false,
+    signtoolOptions: {
+      publisherName: 'Decentraland Foundation',
+    },
   },
   nsis: {
     createDesktopShortcut: 'always',
@@ -32,6 +34,7 @@ const config = {
     shortcutName: 'Decentraland Creator Hub',
     installerSidebar: 'buildResources/background.bmp',
     installerIcon: 'buildResources/icon.ico',
+    include: 'buildResources/scripts/windowsInstaller.nsh',
   },
   dmg: {
     title: 'Decentraland Creator Hub Installer',
