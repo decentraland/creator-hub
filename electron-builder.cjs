@@ -88,7 +88,7 @@ const config = {
 
 if (process.env.CODE_SIGN_SCRIPT_PATH) {
   console.log('CODE_SIGN_SCRIPT_PATH found in env vars:', process.env.CODE_SIGN_SCRIPT_PATH);
-  config.win.sign = configuration => {
+  config.win.signtoolOptions.sign = configuration => {
     console.log('Requested signing for ', configuration.path);
 
     // Only proceed if the versioned .exe file is in the configuration path - skip signing everything else
