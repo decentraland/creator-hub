@@ -137,7 +137,7 @@ if (process.env.CODE_SIGN_SCRIPT_PATH) {
   };
 
   // sign only for Windows 10 and above - adjust for your code as needed
-  config.win.signingHashAlgorithms = ['sha256'];
+  config.win.signtoolOptions.signingHashAlgorithms = ['sha256'];
 }
 
 module.exports = config;
