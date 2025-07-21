@@ -74,6 +74,10 @@ function configureUpdater(config: UpdaterConfig) {
   const { autoDownload } = config;
   updater.autoUpdater.autoDownload = autoDownload ?? false;
   updater.autoUpdater.autoInstallOnAppQuit = false;
+  updater.autoUpdater.forceDevUpdateConfig = true;
+  updater.autoUpdater.setFeedURL(
+    'https://github.com/decentraland/creator-hub/releases/download/0.19.1',
+  );
 }
 
 export async function checkForUpdates(config: UpdaterConfig = {}) {
