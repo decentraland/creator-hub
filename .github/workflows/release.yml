@@ -102,23 +102,18 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           VITE_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
 
-      # - name: Generate release version
-      #   id: version
-      #   uses: paulhatch/semantic-version@v5.4.0
-      #   with:
-      #     tag_prefix: ""
-      #     version_format: ${major}.${minor}.${patch}
-      #     major_pattern: "/^(major|breaking).+/"
-      #     minor_pattern: "/^(minor|feat).+/"
-      #     bump_each_commit: false
-      #     bump_each_commit_patch_pattern: "/^(patch|fix).+/"
-      #     search_commit_body: true
-      #     user_format_type: "json"
-
       - name: Generate release version
         id: version
-        run: |
-          echo "version=0.19.0-1" >> $GITHUB_OUTPUT
+        uses: paulhatch/semantic-version@v5.4.0
+        with:
+          tag_prefix: ""
+          version_format: ${major}.${minor}.${patch}
+          major_pattern: "/^(major|breaking).+/"
+          minor_pattern: "/^(minor|feat).+/"
+          bump_each_commit: false
+          bump_each_commit_patch_pattern: "/^(patch|fix).+/"
+          search_commit_body: true
+          user_format_type: "json"
 
       # Download 'SSLcom/esigner-codesign' to a folder called 'esigner-codesign' in the root of the project
       - name: Checkout esigner-codesign repository (Windows)
