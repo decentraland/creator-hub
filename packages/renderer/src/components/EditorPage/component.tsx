@@ -276,7 +276,7 @@ function PreviewOptions({ onChange, options }: PreviewOptionsProps) {
           }
           label={t('editor.header.actions.preview_options.debugger')}
         />
-        <FormControlLabel
+        {/* <FormControlLabel
           control={
             <Checkbox
               checked={!!options.openNewInstance}
@@ -284,7 +284,7 @@ function PreviewOptions({ onChange, options }: PreviewOptionsProps) {
             />
           }
           label={t('editor.header.actions.preview_options.open_new_instance')}
-        />
+        /> */}
         <FormControlLabel
           control={
             <Checkbox
