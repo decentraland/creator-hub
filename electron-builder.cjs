@@ -6,8 +6,20 @@ const config = {
     output: 'dist',
     buildResources: 'buildResources',
   },
-  files: ['packages/**/dist/**', 'node_modules/npm/**/*'],
-  asarUnpack: ['node_modules/npm/**/*', 'node_modules/npm/**/package.json'],
+  files: [
+    'packages/**/dist/**',
+    {
+      from: 'node_modules/npm',
+      to: 'node_modules/npm',
+      filter: ['**/*'],
+    },
+    {
+      from: 'node_modules/npm/node_modules',
+      to: 'node_modules/npm/node_modules',
+      filter: ['**/*'],
+    },
+  ],
+  asarUnpack: ['node_modules/npm/**/*'],
   linux: {
     target: 'deb',
   },
