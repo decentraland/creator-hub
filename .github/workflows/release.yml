@@ -83,6 +83,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
+          node-version: 22
           cache: 'npm'
 
       - name: 'Install dependencies'
@@ -134,6 +135,8 @@ jobs:
           shell: 'bash'
           command: npx electron-builder --config electron-builder.cjs --config.extraMetadata.version=${{ steps.version.outputs.version }} ${{ matrix.os == 'macos-latest' && format('--config.mac.notarize={0}', true) || '' }} --publish ${{ inputs.dry-run && 'never' || 'always' }}
         env:
+          # Disable hard links to avoid issues with npm
+          USE_HARD_LINKS: false
           # Code Signing params
           # See https://www.electron.build/code-signing
           CSC_LINK: ${{ secrets.MACOS_CSC_LINK }}
