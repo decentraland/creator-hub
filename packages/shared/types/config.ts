@@ -26,6 +26,7 @@ export const DEFAULT_CONFIG: Config = {
       debugger: false,
       skipAuthScreen: true,
       enableLandscapeTerrains: true,
+      openNewInstance: false,
     },
   },
 };

@@ -41,7 +41,11 @@ export async function init(targetPath: string, repo: string): Promise<void> {
     throw new Error('Invalid GitHub repository URL');
   }
   await downloadGithubFolder(repo, targetPath);
-  track('Scene created', { projectType: 'github-repo', url: repo });
+  track('Scene created', {
+    projectType: 'github-repo',
+    url: repo,
+    project_id: await getProjectId(targetPath),
+  });
 }
 
 export async function killPreview(path: string) {
@@ -61,28 +65,58 @@ export async function killAllPreviews() {
 type PreviewArguments = Omit<PreviewOptions, 'debugger'>;
 
 const PREVIEW_OPTIONS_MAP: Record<keyof PreviewArguments, string> = {
-  skipAuthScreen: '--skip-auth-screen',
   enableLandscapeTerrains: '--landscape-terrain-enabled',
+  openNewInstance: '-n',
+  skipAuthScreen: '--skip-auth-screen',
 };
 
 function generatePreviewArguments(opts: PreviewOptions) {
-  const args = [];
-  for (const [opt, value] of Object.entries(PREVIEW_OPTIONS_MAP)) {
-    const key = opt as keyof PreviewArguments;
-    if (opts[key]) args.push(value);
+  opts.skipAuthScreen = true;
+  const args: string[] = [];
+  for (const key in opts) {
+    const typedKey = key as keyof PreviewArguments;
+    if (opts[typedKey] && typedKey in PREVIEW_OPTIONS_MAP) {
+      args.push(PREVIEW_OPTIONS_MAP[typedKey]);
+    }
   }
   return args;
 }
 
-function isPreviewRunning(opts: PreviewOptions, preview?: Preview): preview is Preview {
-  return !!(
-    preview?.child.alive() &&
-    preview.url &&
-    Object.entries(PREVIEW_OPTIONS_MAP).every(([opt]) => {
-      const key = opt as keyof PreviewArguments;
-      return opts[key] === preview.opts[key];
-    })
-  );
+function isPreviewRunning(preview?: Preview): preview is Preview {
+  return !!(preview?.child.alive() && preview.url);
+}
+
+// This fn is for already created deep-link. Just to add or remove values to a generated deep-link
+// decentraland://position=80,80&skip-auth-screen=true etc
+function updateDeepLinkWithOpts(params: string, newOpts: PreviewOptions): string {
+  try {
+    const urlParams = new URLSearchParams(params);
+
+    // for the deep-link we need to remove the starting `--`
+    // decentraland://?skip-auth-screen=true
+    const stripLeadingDashes = (option: string): string => {
+      return option.replace(/^-+/, '');
+    };
+
+    const setOrDeleteParam = (key: string, value: any) => {
+      if (value) {
+        urlParams.set(stripLeadingDashes(key), 'true');
+      } else {
+        urlParams.delete(stripLeadingDashes(key));
+      }
+    };
+
+    // We always want to skip the auth screen
+    setOrDeleteParam(PREVIEW_OPTIONS_MAP.skipAuthScreen, true);
+    setOrDeleteParam(PREVIEW_OPTIONS_MAP.enableLandscapeTerrains, newOpts.enableLandscapeTerrains);
+
+    // this param is different from what we recieved from the CLI that the one that the launcher uses.
+    setOrDeleteParam('open-deeplink-in-new-instance', newOpts.openNewInstance);
+
+    return urlParams.toString();
+  } catch (error) {
+    return params;
+  }
 }
 
 export async function start(
@@ -91,9 +125,13 @@ export async function start(
 ): Promise<string> {
   const { retry = true } = opts;
   const preview = previewCache.get(path);
-  // If we have a preview running for this path with the same options, open it
-  if (isPreviewRunning(opts, preview)) {
-    await dclDeepLink(preview.url);
+
+  // If we have a preview running for this path open it
+  if (isPreviewRunning(preview)) {
+    // Check if options have changed and update the URL accordingly
+    const updatedUrl = updateDeepLinkWithOpts(preview.url, opts);
+    await dclDeepLink(updatedUrl);
+
     return path;
   }
 
