@@ -16,6 +16,6 @@
   "LAND_MANAGER_SUBGRAPH": "https://subgraph.decentraland.org/land-manager-sepolia",
   "LAND_REGISTRY_ADDRESS": "0x42f4ba48791e2de32f5fbf553441c2672864bb33",
   "ESTATE_REGISTRY_ADDRESS": "0x369a7fbe718c870c79f99fb423882e8dd8b20486",
-  "REPORT_ISSUES_URL": "https://decentraland.canny.io/creator-hub",
+  "REPORT_ISSUES_URL": "https://decentraland.typeform.com/creatorhub",
   "FEEDBACK_URL": "https://decentraland.typeform.com/creatorhub"
 }
