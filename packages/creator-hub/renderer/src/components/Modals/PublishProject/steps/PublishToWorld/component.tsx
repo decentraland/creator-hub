@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import AddIcon from '@mui/icons-material/Add';
+import WarningIcon from '@mui/icons-material/Warning';
+import type { WorldConfiguration } from '@dcl/schemas';
 import {
   Checkbox,
   CircularProgress as Loader,
@@ -10,15 +13,12 @@ import {
   type SelectChangeEvent,
   FormControlLabel,
 } from 'decentraland-ui2';
-import WarningIcon from '@mui/icons-material/Warning';
-import AddIcon from '@mui/icons-material/Add';
-import type { WorldConfiguration } from '@dcl/schemas';
 
-import { misc } from '#preload';
 import type { Project } from '/shared/types/projects';
-import { DEPLOY_URLS } from '/@/lib/deploy';
+import { misc } from '#preload';
 import { useSelector } from '#store';
 
+import { config } from '/@/config';
 import { t } from '/@/modules/store/translation/utils';
 import { addBase64ImagePrefix } from '/@/modules/image';
 import { ENSProvider } from '/@/modules/store/ens/types';
@@ -36,13 +36,15 @@ import { type Props } from '../../types';
 
 import './styles.css';
 
+const WORLDS_CONTENT_SERVER = config.get('WORLDS_CONTENT_SERVER_URL');
+
 export function PublishToWorld(props: Props) {
   const { project, publishScene } = useEditor();
   const names = useSelector(state => state.ens.data);
   const emptyNames = Object.keys(names).length === 0;
 
   const handleNext = useCallback(() => {
-    publishScene({ targetContent: DEPLOY_URLS.WORLDS_CONTENT_SERVER });
+    publishScene({ targetContent: WORLDS_CONTENT_SERVER });
     props.onStep('deploy');
   }, [props.onStep, publishScene]);
 
