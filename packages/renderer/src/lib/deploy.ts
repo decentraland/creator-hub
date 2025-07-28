@@ -1,13 +1,5 @@
 import { captureException } from '@sentry/electron/renderer';
 import { ErrorBase } from '/shared/types/error';
-import { config } from '/@/config';
-
-export const DEPLOY_URLS = {
-  CONTENT_SERVER: config.get('PEER_URL'),
-  WORLDS_CONTENT_SERVER: config.get('WORLDS_CONTENT_SERVER_URL'),
-  PEER_TESTING: config.get('PEER_TESTING_URL'),
-  ASSET_BUNDLE_REGISTRY: config.get('ASSET_BUNDLE_REGISTRY_URL'),
-};
 
 export type File = {
   name: string;
