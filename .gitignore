@@ -24,3 +24,9 @@ yarn-error.log*
 **/gen
 **/tsconfig.tsbuildinfo
 **/tsconfig.check.tsbuildinfo
+
+# Test artifacts
+.env.e2e
+playwright-report/
+test-results/
+tests/temp/
