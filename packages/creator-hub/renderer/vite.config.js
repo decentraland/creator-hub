@@ -25,6 +25,10 @@ const config = {
       '#store': join(PACKAGE_ROOT, 'src', 'modules', 'store') + '/',
     },
   },
+  define: {
+    'process.env.E2E': JSON.stringify(!!process.env.E2E),
+    'process.env.E2E_WALLET': JSON.stringify(process.env.E2E_WALLET?.toLowerCase()),
+  },
   base: '',
   server: {
     fs: {
