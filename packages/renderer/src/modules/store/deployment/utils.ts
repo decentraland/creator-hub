@@ -5,11 +5,12 @@ import { type AuthChain, Authenticator } from '@dcl/crypto';
 import { ChainId } from '@dcl/schemas';
 import type { AuthIdentity } from 'decentraland-crypto-fetch';
 
-import { t } from '/@/modules/store/translation/utils';
 import { minutes, seconds } from '/shared/time';
 import { delay } from '/shared/utils';
+
+import { config } from '/@/config';
+import { t } from '/@/modules/store/translation/utils';
 import {
-  DEPLOY_URLS,
   type Info,
   type File,
   type AssetBundleRegistryResponse,
@@ -20,6 +21,8 @@ import {
 } from '/@/lib/deploy';
 
 export const MAX_FILE_SIZE_BYTES = 50 * 1e6; // 50MB defined in sdk-commands...
+
+const ASSET_BUNDLE_REGISTRY = config.get('ASSET_BUNDLE_REGISTRY_URL');
 
 export const getDeploymentUrl = (publishPort: number) => {
   const port = import.meta.env.VITE_CLI_DEPLOY_PORT || publishPort;
@@ -168,7 +171,7 @@ export async function fetchDeploymentStatus(
   const { rootCID: sceneId, isWorld } = info;
   const method = 'get';
   const path = `/entities/status/${sceneId}`;
-  const url = new URL(path, DEPLOY_URLS.ASSET_BUNDLE_REGISTRY);
+  const url = new URL(path, ASSET_BUNDLE_REGISTRY);
   const headers = getAuthHeaders(method, url.pathname, payload =>
     Authenticator.signPayload(identity, payload),
   );
