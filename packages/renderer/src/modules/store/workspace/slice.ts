@@ -21,6 +21,7 @@ const initialState: Async<Workspace> = {
       debugger: false,
       skipAuthScreen: true,
       enableLandscapeTerrains: true,
+      openNewInstance: false,
     },
   },
   status: 'idle',
