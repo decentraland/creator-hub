@@ -1,8 +1,9 @@
 import type { AuthIdentity } from '@dcl/crypto';
 import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
 import fetch from 'decentraland-crypto-fetch';
-import type { ContributableDomain } from '../modules/store/ens/types';
-import { DEPLOY_URLS } from './deploy';
+
+import { config } from '/@/config';
+import type { ContributableDomain } from '/@/modules/store/ens/types';
 
 export type WorldDeployment = {
   id: string;
@@ -136,14 +137,10 @@ export enum WorldPermissionNames {
   Streaming = 'streaming',
 }
 
-export class Worlds {
-  private url = DEPLOY_URLS.WORLDS;
+const WORLD_CONTENT_SERVER_URL = config.get('WORLDS_CONTENT_SERVER_URL');
 
-  constructor(isDev: boolean) {
-    if (isDev) {
-      this.url = DEPLOY_URLS.DEV_WORLDS;
-    }
-  }
+export class Worlds {
+  private url = WORLD_CONTENT_SERVER_URL;
 
   private withIdentity(address: string): AuthIdentity {
     const identity = localStorageGetIdentity(address);
