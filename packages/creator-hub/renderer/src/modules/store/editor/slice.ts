@@ -8,10 +8,10 @@ import { ProjectError, type Project } from '/shared/types/projects';
 import type { PreviewOptions } from '/shared/types/settings';
 import { isWorkspaceError } from '/shared/types/workspace';
 
+import { editor } from '#preload';
+
 import { actions as deploymentActions } from '../deployment';
 import { actions as workspaceActions } from '../workspace';
-
-import { editor } from '#preload';
 
 // actions
 export const fetchVersion = createAsyncThunk('editor/fetchVersion', editor.getVersion);
