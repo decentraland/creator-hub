@@ -57,6 +57,7 @@ export function EditorPage() {
     loadingPreview,
     loadingPublish,
     isInstallingProject,
+    isInstalledProject,
     killPreview,
   } = useEditor();
   const { settings, updateAppSettings } = useSettings();
@@ -188,7 +189,10 @@ export function EditorPage() {
   const iframeUrl = `${htmlUrl}?${params}`;
 
   const renderLoading = () => (
-    <div className="loading">
+    <div
+      className="loading"
+      data-testid="editor-page-loading"
+    >
       <img src={EditorPng} />
       <Row>
         <Loader />
@@ -197,8 +201,13 @@ export function EditorPage() {
     </div>
   );
 
+  const isProjectReadyToRun = isReady && !isInstallingProject && isInstalledProject;
+
   return (
-    <main className="Editor">
+    <main
+      className="Editor"
+      data-testid="editor-page"
+    >
       {!isReady ? (
         renderLoading()
       ) : (
@@ -208,6 +217,7 @@ export function EditorPage() {
               <div
                 className="back"
                 onClick={handleBack}
+                data-testid="editor-page-back-button"
               >
                 <ArrowBackIosIcon />
               </div>
@@ -223,7 +233,7 @@ export function EditorPage() {
               </Button>
               <ButtonGroup
                 color="secondary"
-                disabled={loadingPreview || isInstallingProject}
+                disabled={loadingPreview || !isProjectReadyToRun}
                 onClick={handleOpenPreview}
                 startIcon={loadingPreview ? <Loader size={20} /> : <PlayCircleIcon />}
                 extra={
@@ -232,15 +242,17 @@ export function EditorPage() {
                     onChange={handleChangePreviewOptions}
                   />
                 }
+                data-testid="editor-page-preview-button-group"
               >
                 {t('editor.header.actions.preview')}
               </ButtonGroup>
               <Button
                 color="primary"
-                disabled={loadingPublish || isInstallingProject}
+                disabled={loadingPublish || !isProjectReadyToRun}
                 onClick={handleOpenPublishModal}
                 startIcon={loadingPublish ? <Loader size={20} /> : <PublicIcon />}
                 // extra={<PublishOptions onClick={handleClickPublishOptions} />}
+                data-testid="editor-page-publish-button"
               >
                 {t('editor.header.actions.publish')}
               </Button>
@@ -250,6 +262,7 @@ export function EditorPage() {
             className="inspector"
             src={iframeUrl}
             onLoad={handleIframeRef}
+            data-testid="editor-page-iframe"
           ></iframe>
           <Modal
             type={modalOpen}
@@ -271,7 +284,10 @@ function PreviewOptions({ onChange, options }: PreviewOptionsProps) {
   );
 
   return (
-    <div className="PreviewOptions">
+    <div
+      className="PreviewOptions"
+      data-testid="editor-page-preview-options"
+    >
       <span className="title">{t('editor.header.actions.preview_options.title')}</span>
       <FormGroup>
         <FormControlLabel
@@ -279,6 +295,7 @@ function PreviewOptions({ onChange, options }: PreviewOptionsProps) {
             <Checkbox
               checked={!!options.debugger}
               onChange={handleChange({ debugger: !options.debugger })}
+              data-testid="editor-page-preview-options-debugger"
             />
           }
           label={t('editor.header.actions.preview_options.debugger')}
@@ -288,6 +305,7 @@ function PreviewOptions({ onChange, options }: PreviewOptionsProps) {
             <Checkbox
               checked={!!options.openNewInstance}
               onChange={handleChange({ openNewInstance: !options.openNewInstance })}
+              data-testid="editor-page-preview-options-open-new-instance"
             />
           }
           label={t('editor.header.actions.preview_options.open_new_instance')}
@@ -297,6 +315,7 @@ function PreviewOptions({ onChange, options }: PreviewOptionsProps) {
             <Checkbox
               checked={!!options.enableLandscapeTerrains}
               onChange={handleChange({ enableLandscapeTerrains: !options.enableLandscapeTerrains })}
+              data-testid="editor-page-preview-options-landscape-terrain-enabled"
             />
           }
           label={t('editor.header.actions.preview_options.landscape_terrain_enabled')}
