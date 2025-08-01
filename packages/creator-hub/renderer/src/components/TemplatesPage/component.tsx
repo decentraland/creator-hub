@@ -122,7 +122,10 @@ export function TemplatesPage() {
   const count = templates.length + 1; // +1 for empty scene...
 
   return (
-    <main className="TemplatesPage">
+    <main
+      className="TemplatesPage"
+      data-testid="templates-page"
+    >
       <Navbar active={NavbarItem.SCENES} />
       <Container>
         <TutorialsWrapper>
@@ -151,6 +154,7 @@ export function TemplatesPage() {
               width={300}
               height={480}
               onClick={handleClickTemplate()}
+              data-testid="templates-page-new-scene-button"
             />
             {sortTemplatesBy(templates, sortBy).map(template => (
               <ProjectCard
