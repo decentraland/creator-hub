@@ -78,6 +78,23 @@ const initialState: EditorState = {
   error: null,
 };
 
+// Helper functions for common dependencies installation state updates
+const handleInstallationStart = (state: EditorState) => {
+  state.isInstallingProject = true;
+  state.error = null;
+};
+
+const handleInstallationSuccess = (state: EditorState) => {
+  state.isInstalledProject = true;
+  state.isInstallingProject = false;
+  state.error = null;
+};
+
+const handleInstallationFailure = (state: EditorState, errorMessage?: string) => {
+  state.isInstallingProject = false;
+  state.error = errorMessage ? new Error(errorMessage) : null;
+};
+
 // slice
 export const slice = createSlice({
   name: 'editor',
@@ -90,6 +107,9 @@ export const slice = createSlice({
     });
     builder.addCase(workspaceActions.runProject.fulfilled, (state, action) => {
       state.project = action.payload;
+      if (!state.isInstallingProject && !state.isInstalledProject) {
+        state.isInstalledProject = true;
+      }
       state.error = null;
     });
     builder.addCase(workspaceActions.runProject.rejected, (state, action) => {
@@ -182,13 +202,20 @@ export const slice = createSlice({
       if (state.project) state.project.status = 'loading';
     });
     builder.addCase(workspaceActions.installProject.pending, state => {
-      state.isInstallingProject = true;
+      handleInstallationStart(state);
     });
-    builder.addCase(workspaceActions.installProject.fulfilled, state => {
-      state.isInstalledProject = true;
-      state.isInstallingProject = false;
+    builder.addCase(workspaceActions.installProject.fulfilled, handleInstallationSuccess);
+    builder.addCase(workspaceActions.installProject.rejected, (state, action) => {
+      handleInstallationFailure(
+        state,
+        action.error.message || 'Failed to install project dependencies',
+      );
     });
-    builder.addCase(workspaceActions.installProject.rejected, state => {
+    builder.addCase(workspaceActions.updatePackages.pending, state => {
+      handleInstallationStart(state);
+    });
+    builder.addCase(workspaceActions.updatePackages.fulfilled, handleInstallationSuccess);
+    builder.addCase(workspaceActions.updatePackages.rejected, (state, action) => {
       state.error = new ProjectError('FAILED_TO_INSTALL_DEPENDENCIES');
       state.isInstallingProject = false;
     });
