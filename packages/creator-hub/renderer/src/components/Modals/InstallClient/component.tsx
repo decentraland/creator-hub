@@ -40,7 +40,10 @@ export function InstallClient({ open, onClose }: Props) {
       open={open}
       size="tiny"
     >
-      <Box className="InstallClientBox">
+      <Box
+        className="InstallClientBox"
+        data-testid="install-client-modal"
+      >
         <Box className="LogoContainer">
           <img
             src={LogoDCLSVG}

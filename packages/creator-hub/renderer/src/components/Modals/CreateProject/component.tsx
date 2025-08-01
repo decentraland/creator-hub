@@ -67,19 +67,24 @@ export function CreateProject({ open, initialValue, onClose, onSubmit }: Props) 
           <Button
             color="secondary"
             onClick={onClose}
+            data-testid="create-project-modal-cancel-button"
           >
             {t('modal.cancel')}
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={loading || !!error}
+            data-testid="create-project-modal-create-button"
           >
             {loading ? <Loader size={20} /> : t('modal.create_project.actions.create')}
           </Button>
         </>
       }
     >
-      <Box className="CreateProjectModal">
+      <Box
+        className="CreateProjectModal"
+        data-testid="create-project-modal"
+      >
         <FormGroup className="CreateProjectFormControl">
           <Typography variant="body1">{t('modal.create_project.fields.name')}</Typography>
           <OutlinedInput
@@ -87,6 +92,7 @@ export function CreateProject({ open, initialValue, onClose, onSubmit }: Props) 
             value={value.name}
             onChange={handleChange('name')}
             onBlur={validate}
+            data-testid="create-project-modal-name-input"
           />
           <Typography variant="body1">{t('modal.create_project.fields.path')}</Typography>
           <OutlinedInput
@@ -104,11 +110,13 @@ export function CreateProject({ open, initialValue, onClose, onSubmit }: Props) 
                 </IconButton>
               </InputAdornment>
             }
+            data-testid="create-project-modal-path-input"
           />
           {error && (
             <Typography
               variant="body1"
               className="error"
+              data-testid="create-project-modal-error"
             >
               {error}
             </Typography>

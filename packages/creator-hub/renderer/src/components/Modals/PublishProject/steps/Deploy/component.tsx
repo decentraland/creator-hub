@@ -136,9 +136,15 @@ export function Deploy(props: Props) {
       onClose={handleClose}
       onBack={props.disableGoBack || deployment?.status === 'complete' ? undefined : props.onBack}
     >
-      <div className="Deploy">
+      <div
+        className="Deploy"
+        data-testid="publish-modal-deploy"
+      >
         {showWarning ? (
-          <div className="publish-warning">
+          <div
+            className="publish-warning"
+            data-testid="publish-modal-deploy-warning"
+          >
             <div className="content">
               <div className="Warning" />
               <div className="message">
@@ -168,6 +174,7 @@ export function Deploy(props: Props) {
                 <Button
                   size="medium"
                   onClick={handlePublish}
+                  data-testid="publish-modal-deploy-warning-continue-button"
                 >
                   {t('modal.publish_project.deploy.warning.continue')}
                 </Button>
@@ -306,6 +313,7 @@ function Idle({ files, error, onClick }: IdleProps) {
           size="large"
           onClick={onClick}
           disabled={!!error}
+          data-testid="publish-modal-deploy-publish-button"
         >
           {t('modal.publish_project.deploy.files.publish')}
           <i className="deploy-icon" />
@@ -380,7 +388,10 @@ function Deploying({ deployment, url, onClick, onRetry }: DeployingProps) {
   }, [overallStatus, isFinishing]);
 
   return (
-    <div className="Deploying">
+    <div
+      className="Deploying"
+      data-testid="publish-modal-deploy-deploying"
+    >
       <div className="header">
         <div className="title">
           {overallStatus === 'failed' ? <div className="Warning" /> : <Loader />}
@@ -421,7 +432,10 @@ function Deploying({ deployment, url, onClick, onRetry }: DeployingProps) {
         </div>
       ) : isFinishing ? (
         <>
-          <div className="jump">
+          <div
+            className="jump"
+            data-testid="publish-modal-deploy-deploying-jump"
+          >
             <JumpUrl
               inProgress
               info={info}
@@ -456,7 +470,10 @@ type SuccessProps = {
 
 function Success({ info, url, onClick }: SuccessProps) {
   return (
-    <div className="Success">
+    <div
+      className="Success"
+      data-testid="publish-modal-deploy-success"
+    >
       <div className="content">
         <i className="success-icon" />
         <div className="message">{t('modal.publish_project.deploy.success.message')}</div>
