@@ -168,7 +168,10 @@ export async function fetchDeploymentStatus(
   const { rootCID: sceneId, isWorld } = info;
   const method = 'get';
   const path = `/entities/status/${sceneId}`;
-  const url = new URL(path, DEPLOY_URLS.ASSET_BUNDLE_REGISTRY);
+  const url = new URL(
+    path,
+    import.meta.env.VITE_ASSET_BUNDLE_REGISTRY || DEPLOY_URLS.ASSET_BUNDLE_REGISTRY,
+  );
   const headers = getAuthHeaders(method, url.pathname, payload =>
     Authenticator.signPayload(identity, payload),
   );

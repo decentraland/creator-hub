@@ -64,30 +64,36 @@ export function Navbar(props: { active: NavbarItem }) {
           <MenuItem
             item={NavbarItem.HOME}
             active={props.active}
+            data-testid="navbar-menu-home"
           />
           <MenuItem
             item={NavbarItem.SCENES}
             active={props.active}
+            data-testid="navbar-menu-scenes"
           />
           {/* This page will be added in a future shape */}
           <MenuItem
             item={NavbarItem.COLLECTIONS}
             active={props.active}
             disable={true}
+            data-testid="navbar-menu-collections"
           />
           <MenuItem
             item={NavbarItem.LEARN}
             active={props.active}
+            data-testid="navbar-menu-learn"
           />
           {/* This page will be added in a future shape */}
           <MenuItem
             item={NavbarItem.MANAGE}
             active={props.active}
             disable={true}
+            data-testid="navbar-menu-manage"
           />
           <MenuItem
             item={NavbarItem.MORE}
             active={props.active}
+            data-testid="navbar-menu-more"
           />
         </div>
       </>
@@ -98,18 +104,21 @@ export function Navbar(props: { active: NavbarItem }) {
             color="secondary"
             size="small"
             onClick={handleClickReportIssue}
+            data-testid="navbar-report-issue-button"
           >
             {t('navbar.report_an_issue')}
           </Button>
           <IconButton
             aria-label="help"
             onClick={handleClickHelp}
+            data-testid="navbar-help-button"
           >
             <QuestionMarkIcon />
           </IconButton>
           <IconButton
             aria-label="settings"
             onClick={handleClickSettings}
+            data-testid="navbar-settings-button"
           >
             <SettingsIcon />
           </IconButton>
