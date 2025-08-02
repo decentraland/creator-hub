@@ -2,8 +2,19 @@ import { test, expect } from '@playwright/test';
 
 import { ElectronUtils } from '../utils/electron';
 import { TestSetupHelper } from '../utils/testSetup';
+import { TempDirManager } from '../utils/tempDirManager';
 
 test.describe('login flow', () => {
+  test.beforeEach(async () => {
+    // Clean up and recreate temp directory before each test
+    await TempDirManager.cleanupAndRecreate();
+  });
+
+  test.afterEach(async () => {
+    // Clean up temp directory after each test
+    await TempDirManager.cleanup();
+  });
+
   test('should complete full login flow from home to authenticated state', async () => {
     const electronUtils = new ElectronUtils();
 
