@@ -2,6 +2,7 @@ import { test } from '@playwright/test';
 
 import { ElectronUtils } from '../../utils/electron';
 import { TestSetupHelper } from '../../utils/testSetup';
+import { TempDirManager } from '../../utils/tempDirManager';
 import { SceneTestHelper, SCENE_NAME } from './helper';
 import { DeployTestHelper } from './deployHelper';
 
@@ -13,6 +14,16 @@ test.describe('when deploying a scene', () => {
   if (!WORLD_NAME) {
     throw new Error('E2E_NAME environment variable is required for deployment tests');
   }
+
+  test.beforeEach(async () => {
+    // Clean up and recreate temp directory before each test
+    await TempDirManager.cleanupAndRecreate();
+  });
+
+  test.afterEach(async () => {
+    // Clean up temp directory after each test
+    await TempDirManager.cleanup();
+  });
 
   test.describe('and the user is not authenticated', () => {
     test('should prompt for authentication when trying to deploy, after login continue the Deploy flow', async () => {
