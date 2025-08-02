@@ -22,6 +22,7 @@ export function ProjectCard({
   publishedAt = 0,
   onClick,
   status,
+  'data-testid': dataTestId,
 }: Props) {
   const handleMouseEnterVideo = useCallback(
     ({ currentTarget: video }: React.MouseEvent<HTMLVideoElement>) => {
@@ -47,6 +48,7 @@ export function ProjectCard({
       className="ProjectCard"
       onClick={onClick}
       style={{ width: widthPx, height: heightPx }}
+      data-testid={dataTestId}
     >
       <Overlay
         status={status}
