@@ -10,3 +10,4 @@ export { SignInPage } from './ui/pages/SignInPage';
 // Utils exports
 export { ElectronUtils } from './utils/electron';
 export { FsHelper } from './utils/fsHelper';
+export { TempDirManager } from './utils/tempDirManager';

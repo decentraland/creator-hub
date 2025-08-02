@@ -2,8 +2,19 @@ import type { JSHandle } from 'playwright';
 import { test, expect } from '@playwright/test';
 
 import { ElectronUtils } from '../utils/electron';
+import { TempDirManager } from '../utils/tempDirManager';
 
 test.describe('Application startup', () => {
+  test.beforeEach(async () => {
+    // Clean up and recreate temp directory before each test
+    await TempDirManager.cleanupAndRecreate();
+  });
+
+  test.afterEach(async () => {
+    // Clean up temp directory after each test
+    await TempDirManager.cleanup();
+  });
+
   test('Main window state', async () => {
     const electronUtils = new ElectronUtils();
 

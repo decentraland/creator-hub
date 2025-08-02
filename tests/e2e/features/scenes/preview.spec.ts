@@ -2,10 +2,21 @@ import { test } from '@playwright/test';
 
 import { ElectronUtils } from '../../utils/electron';
 import { TestSetupHelper } from '../../utils/testSetup';
+import { TempDirManager } from '../../utils/tempDirManager';
 import { SceneTestHelper, SCENE_NAME } from './helper';
 
 test.describe('when previewing a scene', () => {
   test.setTimeout(120_000);
+
+  test.beforeEach(async () => {
+    // Clean up and recreate temp directory before each test
+    await TempDirManager.cleanupAndRecreate();
+  });
+
+  test.afterEach(async () => {
+    // Clean up temp directory after each test
+    await TempDirManager.cleanup();
+  });
 
   test('should complete full scene preview flow', async () => {
     const electronUtils = new ElectronUtils();
