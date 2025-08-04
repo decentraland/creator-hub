@@ -77,7 +77,7 @@
     "vitest": "1.6.0"
   },
   "dependencies": {
-    "@dcl/inspector": "7.9.2",
+    "@dcl/inspector": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/skybox-time-settings/@dcl/inspector/dcl-inspector-7.9.3-16725129358.commit-62e5a0e.tgz",
     "@dcl/mini-rpc": "1.0.7",
     "@dcl/schemas": "11.10.4",
     "@ethersproject/hash": "5.7.0",
