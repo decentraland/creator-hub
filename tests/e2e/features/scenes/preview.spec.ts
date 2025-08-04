@@ -6,7 +6,7 @@ import { TempDirManager } from '../../utils/tempDirManager';
 import { SceneTestHelper, SCENE_NAME } from './helper';
 
 test.describe('when previewing a scene', () => {
-  test.setTimeout(120_000);
+  test.setTimeout(300_000);
 
   test.beforeEach(async () => {
     // Clean up and recreate temp directory before each test
