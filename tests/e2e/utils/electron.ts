@@ -3,6 +3,7 @@ import { rm } from 'fs/promises';
 import type { ElectronApplication, Page } from 'playwright';
 import { _electron as electron } from 'playwright';
 import dotenv from 'dotenv';
+import { log } from './logger';
 
 dotenv.config({ path: '.env.e2e' });
 
@@ -88,9 +89,9 @@ export class ElectronUtils {
       // Only clear cookies, which is usually safe
       await page.context().clearCookies();
 
-      console.log('🧹 Cleared cookies safely');
+      log.info('Cleared cookies safely');
     } catch (error) {
-      console.warn('⚠️ Could not clear cookies:', error);
+      log.warn('Could not clear cookies:', error);
     }
   }
 
@@ -108,9 +109,9 @@ export class ElectronUtils {
         // Clear cookies
         await this.page.context().clearCookies();
 
-        console.log('🔄 Reset page state');
+        log.info('Reset page state');
       } catch (error) {
-        console.warn('⚠️ Could not reset page state:', error);
+        log.warn('Could not reset page state:', error);
       }
     }
   }
@@ -120,7 +121,7 @@ export class ElectronUtils {
     try {
       const singletonLockPath = path.join(userDataPath, 'SingletonLock');
       await rm(singletonLockPath, { force: true });
-      console.log('🔓 Cleaned up singleton lock');
+      log.info('Cleaned up singleton lock');
     } catch (error) {
       // Singleton lock doesn't exist, which is fine
     }
@@ -128,6 +129,6 @@ export class ElectronUtils {
 
   // Static method for backward compatibility (deprecated)
   static async resetGlobalInstance(): Promise<void> {
-    console.warn('⚠️ resetGlobalInstance is deprecated. Use instance-based approach instead.');
+    log.warn('resetGlobalInstance is deprecated. Use instance-based approach instead.');
   }
 }
