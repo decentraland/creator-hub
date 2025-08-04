@@ -1,10 +1,11 @@
 import { rm } from 'fs/promises';
 import { join, resolve } from 'path';
 import { ElectronUtils } from './utils/electron';
+import { log } from './utils/logger';
 
 async function globalTeardown() {
   // Global cleanup after all tests
-  console.log('Cleaning up e2e test environment...');
+  log.info('Cleaning up e2e test environment...');
 
   // Ensure Electron app is closed
   const electronUtils = new ElectronUtils();
@@ -19,21 +20,17 @@ async function globalTeardown() {
   try {
     // Clean up userData directory
     await rm(userDataPath, { recursive: true, force: true });
-    console.log(`🗑️ Cleaned up userData directory: ${userDataPath}`);
+    log.info(`Cleaned up userData directory: ${userDataPath}`);
 
     // Clean up home directory
     await rm(homePath, { recursive: true, force: true });
-    console.log(`🗑️ Cleaned up home directory: ${homePath}`);
+    log.info(`Cleaned up home directory: ${homePath}`);
 
     // Clean up scenes directory
     await rm(scenesPath, { recursive: true, force: true });
-    console.log(`🗑️ Cleaned up scenes directory: ${scenesPath}`);
-
-    // Optionally clean up the entire temp directory
-    // await rm(tempDir, { recursive: true, force: true });
-    // console.log(`🗑️ Cleaned up temp directory: ${tempDir}`);
+    log.info(`Cleaned up scenes directory: ${scenesPath}`);
   } catch (error) {
-    console.warn(`⚠️ Could not clean up directories: ${error}`);
+    log.warn(`Could not clean up directories: ${error}`);
   }
 }
 

@@ -45,6 +45,7 @@ test.describe('when previewing a scene', () => {
       await Promise.race([
         app.waitForEvent('window', {
           predicate: page => page.getByTestId('debugger').isVisible({ timeout: 10_000 }),
+          timeout: 30_000,
         }),
         setup.editorPage.isInstallClientModalVisible(),
       ]);
