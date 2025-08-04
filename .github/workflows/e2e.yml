@@ -38,9 +38,12 @@ jobs:
         E2E_PRIVATE_KEY: ${{ secrets.E2E_PRIVATE_KEY }}
         E2E_EXPIRATION_MINUTES: 10
 
-    - uses: actions/upload-artifact@v4
-      if: ${{ !cancelled() }}
+    - name: Upload failure artifacts
+      if: ${{ failure() }}
+      uses: actions/upload-artifact@v4
       with:
-        name: e2e-report
-        path: e2e-report/
-        retention-days: 30
+        name: e2e-failures
+        path: |
+          test-results/**/*.png
+          test-results/**/*.webm
+          test-results/**/*.zip
