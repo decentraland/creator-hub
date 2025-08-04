@@ -53,8 +53,6 @@ export const storeAuthIdentity = async (page: Page, authIdentity: AuthIdentity):
     },
     { key: storageKey, authIdentity: authIdentity },
   );
-
-  console.log(`🔐 Stored auth identity for ${walletAddress.toLowerCase()} in localStorage`);
 };
 
 /**
