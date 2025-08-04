@@ -1,5 +1,6 @@
 import { mkdir, rm } from 'fs/promises';
 import { join, resolve } from 'path';
+import { log } from './logger';
 
 export class TempDirManager {
   private static tempDir = join(resolve(process.cwd()), 'tests', 'temp');
@@ -11,13 +12,13 @@ export class TempDirManager {
   static async cleanupAndRecreate(): Promise<void> {
     try {
       // First, completely remove the /temp directory if it exists
-      console.log('🧹 Cleaning up existing /temp directory for test...');
+      log.info('Cleaning up existing /temp directory for test...');
       await rm(this.tempDir, { recursive: true, force: true });
-      console.log('✅ Removed existing /temp directory');
+      log.info('Removed existing /temp directory');
 
       // Create the base /temp directory
       await mkdir(this.tempDir, { recursive: true, mode: 0o755 });
-      console.log('✅ Created base /temp directory');
+      log.info('Created base /temp directory');
 
       // Create required subdirectories
       const userDataPath = join(this.tempDir, 'userData');
@@ -25,15 +26,15 @@ export class TempDirManager {
       const scenesPath = join(this.tempDir, 'scenes');
 
       await mkdir(userDataPath, { recursive: true, mode: 0o755 });
-      console.log(`✅ Created userData directory: ${userDataPath}`);
+      log.info(`Created userData directory: ${userDataPath}`);
 
       await mkdir(homePath, { recursive: true, mode: 0o755 });
-      console.log(`✅ Created home directory: ${homePath}`);
+      log.info(`Created home directory: ${homePath}`);
 
       await mkdir(scenesPath, { recursive: true, mode: 0o755 });
-      console.log(`✅ Created scenes directory: ${scenesPath}`);
+      log.info(`Created scenes directory: ${scenesPath}`);
     } catch (error) {
-      console.error(`❌ Failed to cleanup and recreate temp directory: ${error}`);
+      log.error(`Failed to cleanup and recreate temp directory: ${error}`);
       throw error;
     }
   }
@@ -44,9 +45,9 @@ export class TempDirManager {
   static async cleanup(): Promise<void> {
     try {
       await rm(this.tempDir, { recursive: true, force: true });
-      console.log(`🗑️ Cleaned up temp directory after test: ${this.tempDir}`);
+      log.info(`Cleaned up temp directory after test: ${this.tempDir}`);
     } catch (error) {
-      console.warn(`⚠️ Could not clean up temp directory: ${error}`);
+      log.warn(`Could not clean up temp directory: ${error}`);
     }
   }
 
