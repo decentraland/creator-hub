@@ -27,6 +27,7 @@ export function UserMenu({ avatar, isSignedIn, onClickSignOut, onClickSignIn }: 
         aria-expanded={open ? 'true' : undefined}
         onClick={handleClick}
         disableRipple
+        data-testid="header-user-menu-avatar-button"
       >
         <AvatarFace
           size="medium"
@@ -51,6 +52,7 @@ export function UserMenu({ avatar, isSignedIn, onClickSignOut, onClickSignIn }: 
       onClick={onClickSignIn}
       variant="contained"
       disableRipple
+      data-testid="header-user-menu-sign-in-button"
     >
       {t('navbar.user_menu.sign_in')}
     </Button>

@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import WarningIcon from '@mui/icons-material/Warning';
+import AddIcon from '@mui/icons-material/Add';
+import type { WorldConfiguration } from '@dcl/schemas';
 import {
   Checkbox,
   CircularProgress as Loader,
@@ -10,14 +13,11 @@ import {
   type SelectChangeEvent,
   FormControlLabel,
 } from 'decentraland-ui2';
-import WarningIcon from '@mui/icons-material/Warning';
-import AddIcon from '@mui/icons-material/Add';
-import type { WorldConfiguration } from '@dcl/schemas';
 
-import { misc } from '#preload';
 import type { Project } from '/shared/types/projects';
-import { DEPLOY_URLS } from '/@/lib/deploy';
+import { misc } from '#preload';
 import { useSelector } from '#store';
+import { DEPLOY_URLS } from '/@/lib/deploy';
 
 import { t } from '/@/modules/store/translation/utils';
 import { addBase64ImagePrefix } from '/@/modules/image';
@@ -52,14 +52,19 @@ export function PublishToWorld(props: Props) {
       subtitle={t('modal.publish_project.worlds.select_world.description')}
       {...props}
     >
-      {!emptyNames ? (
-        <SelectWorld
-          project={project!}
-          onPublish={handleNext}
-        />
-      ) : (
-        <EmptyNames />
-      )}
+      <div
+        className="PublishToWorld"
+        data-testid="publish-modal-publish-to-world"
+      >
+        {!emptyNames ? (
+          <SelectWorld
+            project={project!}
+            onPublish={handleNext}
+          />
+        ) : (
+          <EmptyNames />
+        )}
+      </div>
     </PublishModal>
   );
 }
@@ -137,7 +142,10 @@ function SelectWorld({ project, onPublish }: { project: Project; onPublish: () =
   const projectIsReady = project.status === 'succeeded';
 
   return (
-    <div className="SelectWorld">
+    <div
+      className="SelectWorld"
+      data-testid="publish-modal-publish-to-world-select-world"
+    >
       <div className="box">
         <div className="thumbnail">
           {!projectIsReady ? <Loader /> : <img src={addBase64ImagePrefix(project.thumbnail)} />}
@@ -149,14 +157,20 @@ function SelectWorld({ project, onPublish }: { project: Project; onPublish: () =
             value={ensProvider}
             onChange={handleChangeSelectProvider}
           >
-            <MenuItem value={ENSProvider.DCL}>
+            <MenuItem
+              value={ENSProvider.DCL}
+              data-testid="publish-modal-publish-to-world-select-world-ens-provider-dcl"
+            >
               <img
                 className="SelectWorld-ENSProvider-Img"
                 src={LogoDCLSVG}
               />
               {t(`modal.publish_project.worlds.select_world.ens_providers.${ENSProvider.DCL}`)}
             </MenuItem>
-            <MenuItem value={ENSProvider.ENS}>
+            <MenuItem
+              value={ENSProvider.ENS}
+              data-testid="publish-modal-publish-to-world-select-world-ens-provider-ens"
+            >
               <img
                 className="SelectWorld-ENSProvider-Img"
                 src={LogoENSSVG}
@@ -184,6 +198,7 @@ function SelectWorld({ project, onPublish }: { project: Project; onPublish: () =
 
                 return selected;
               }}
+              data-testid="publish-modal-publish-to-world-select-world-select"
             >
               <MenuItem
                 disabled
@@ -195,6 +210,7 @@ function SelectWorld({ project, onPublish }: { project: Project; onPublish: () =
                 <MenuItem
                   key={_world}
                   value={_world}
+                  data-testid={`publish-modal-publish-to-world-select-world-select-item-${_world.toLowerCase()}`}
                 >
                   {_world}
                 </MenuItem>
@@ -221,12 +237,16 @@ function SelectWorld({ project, onPublish }: { project: Project; onPublish: () =
       </div>
       <div className="actions">
         {hasWorldContent && (
-          <div className="ConfirmWorldReplaceContent">
+          <div
+            className="ConfirmWorldReplaceContent"
+            data-testid="publish-modal-publish-to-world-select-world-confirm-world-replace-content"
+          >
             <FormControlLabel
               control={
                 <Checkbox
                   checked={confirmWorldReplaceContent}
                   onChange={handleConfirmWorldReplaceContent}
+                  data-testid="publish-modal-publish-to-world-select-world-confirm-world-replace-content-checkbox"
                 />
               }
               label={t('modal.publish_project.worlds.select_world.confirm_world_replace_content')}
@@ -236,6 +256,7 @@ function SelectWorld({ project, onPublish }: { project: Project; onPublish: () =
         <Button
           onClick={handleClick}
           disabled={!projectIsReady || !name || (hasWorldContent && !confirmWorldReplaceContent)}
+          data-testid="publish-modal-publish-to-world-select-world-action"
         >
           {t('modal.publish_project.worlds.select_world.action')}
         </Button>
@@ -256,7 +277,10 @@ function EmptyNames() {
   }, []);
 
   return (
-    <div className="EmptyNames">
+    <div
+      className="EmptyNames"
+      data-testid="publish-modal-empty-names"
+    >
       <Typography
         variant="h6"
         textAlign="center"
