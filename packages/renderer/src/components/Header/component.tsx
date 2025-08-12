@@ -22,6 +22,7 @@ export function Header({ children, classNames, hideUserMenu }: Props) {
             isSigningIn={auth.isSigningIn}
             onClickSignIn={auth.signIn}
             onClickSignOut={auth.signOut}
+            data-testid="header-user-menu"
           />
         </div>
       )}

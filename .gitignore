@@ -11,3 +11,9 @@ thumbs.db
 .vscode/settings.json
 .env
 coverage/
+
+# Test artifacts
+.env.e2e
+playwright-report/
+test-results/
+tests/temp/

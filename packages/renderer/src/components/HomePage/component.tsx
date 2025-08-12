@@ -62,18 +62,21 @@ const learn_resources = [
   },
 ];
 
-const CardBanner: React.FC<CardBannerProps> = React.memo(({ image, title, onClick }) => (
-  <div
-    className={cx('CardBanner', { Clickable: !!onClick })}
-    onClick={onClick}
-  >
-    <img
-      className="CardBannerImage"
-      src={image}
-    />
-    <div className="CardBannerContent">{title}</div>
-  </div>
-));
+const CardBanner: React.FC<CardBannerProps> = React.memo(
+  ({ image, title, onClick, 'data-testid': dataTestId }) => (
+    <div
+      className={cx('CardBanner', { Clickable: !!onClick })}
+      onClick={onClick}
+      data-testid={dataTestId}
+    >
+      <img
+        className="CardBannerImage"
+        src={image}
+      />
+      <div className="CardBannerContent">{title}</div>
+    </div>
+  ),
+);
 
 const CardItem: React.FC<CardItemProps> = React.memo(({ title, icon, onClick }) => (
   <Button
@@ -90,7 +93,10 @@ const CardItem: React.FC<CardItemProps> = React.memo(({ title, icon, onClick }) 
 ));
 
 const SignInCard: React.FC<SignInCardProps> = React.memo(({ onClickSignIn }) => (
-  <Card className="Card SignInCard">
+  <Card
+    className="Card SignInCard"
+    data-testid="home-card-sign-in"
+  >
     <CardContent className="CardContent CenteredContent">
       <Typography
         className="Title"
@@ -102,6 +108,7 @@ const SignInCard: React.FC<SignInCardProps> = React.memo(({ onClickSignIn }) => 
         className="SignInButton"
         variant="contained"
         onClick={onClickSignIn}
+        data-testid="home-card-sign-in-button"
       >
         {t('home.cards.sign_in.action')}
       </Button>
@@ -127,11 +134,15 @@ const ScenesCard: React.FC = React.memo(() => {
   }, []);
 
   return (
-    <Card className="Card ScenesCard">
+    <Card
+      className="Card ScenesCard"
+      data-testid="home-card-scenes"
+    >
       <CardBanner
         image={EditorPng}
         title={t('home.cards.scenes.title')}
         onClick={handleSeeAllClick}
+        data-testid="home-card-scenes-see-all-card-banner"
       />
       <CardContent
         className={cx('CardContent', {
@@ -149,6 +160,7 @@ const ScenesCard: React.FC = React.memo(() => {
               color="secondary"
               size="small"
               onClick={handleStartBuildingClick}
+              data-testid="home-card-scenes-start-building-button"
             >
               {t('home.cards.scenes.empty_scenes.action')}
             </Button>
@@ -161,6 +173,7 @@ const ScenesCard: React.FC = React.memo(() => {
                 title={project.title}
                 icon={<LayersOutlinedIcon />}
                 onClick={() => handleProjectClick(project)}
+                data-testid="home-card-scenes-project-item"
               />
             ))}
           </div>
@@ -174,6 +187,7 @@ const ScenesCard: React.FC = React.memo(() => {
             color="secondary"
             fullWidth
             onClick={handleSeeAllClick}
+            data-testid="home-card-scenes-see-all-button"
           >
             {t('home.cards.scenes.action')}
           </Button>
@@ -262,7 +276,10 @@ export function HomePage() {
 
   return (
     <>
-      <main className="HomePage">
+      <main
+        className="HomePage"
+        data-testid="home-page"
+      >
         <Navbar active={NavbarItem.HOME} />
         <Container>
           <Typography
