@@ -4,10 +4,10 @@ const config = {
   appId: 'com.decentraland.creatorshub',
   directories: {
     output: 'dist',
-    buildResources: 'buildResources',
+    buildResources: 'packages/creator-hub/buildResources',
   },
   files: [
-    'packages/**/dist/**',
+    'packages/creator-hub/**/dist/**',
     {
       from: 'node_modules/npm',
       to: 'node_modules/npm',
@@ -27,14 +27,14 @@ const config = {
   artifactName: '${productName}-${version}-${os}-${arch}.${ext}',
   win: {
     appId: 'Decentraland.CreatorsHub',
-    icon: 'buildResources/icon.ico',
+    icon: 'packages/creator-hub/buildResources/icon.ico',
     target: [
       {
         target: 'nsis',
         arch: ['x64'],
       },
     ],
-    extraResources: ['buildResources/icon.ico'],
+    extraResources: ['packages/creator-hub/buildResources/icon.ico'],
     verifyUpdateCodeSignature: false,
     signtoolOptions: {
       publisherName: 'Decentraland Foundation',
@@ -44,13 +44,13 @@ const config = {
     createDesktopShortcut: 'always',
     createStartMenuShortcut: true,
     shortcutName: 'Decentraland Creator Hub',
-    installerSidebar: 'buildResources/background.bmp',
-    installerIcon: 'buildResources/icon.ico',
-    include: 'buildResources/scripts/windowsInstaller.nsh',
+    installerSidebar: 'packages/creator-hub/buildResources/background.bmp',
+    installerIcon: 'packages/creator-hub/buildResources/icon.ico',
+    include: 'packages/creator-hub/buildResources/scripts/windowsInstaller.nsh',
   },
   dmg: {
     title: 'Decentraland Creator Hub Installer',
-    background: 'buildResources/background.png',
+    background: 'packages/creator-hub/buildResources/background.png',
     window: {
       width: 714,
       height: 472,

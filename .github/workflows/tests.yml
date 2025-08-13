@@ -10,32 +10,48 @@ defaults:
     shell: 'bash'
 
 jobs:
-  tests:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: install
+        run: make install
+
+      - name: build
+        run: make build
+
+      - name: test
+        run: make test
+        env:
+          NODE_OPTIONS: '--max-old-space-size=4096'
+
+  tests-e2e:
     strategy:
       fail-fast: false
       matrix:
         os: [ macos-latest, windows-latest ]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
+          node-version: 22
           cache: 'npm'
-      - run: npm ci
-        env:
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
-      - run: npm run test:main --if-present
-      - run: npm run test:preload --if-present
-      - run: npm run test:renderer --if-present
 
-      # I ran into problems trying to run an electron window in ubuntu due to a missing graphics server.
-      # That's why this special command for Ubuntu is here
-      - run: xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" -- npm run test:e2e --if-present
-        if: matrix.os == 'ubuntu-latest'
-        env:
-          NODE_OPTIONS: "--max-old-space-size=8192"
+      - name: install
+        run: make install
 
-      - run: npm run test:e2e --if-present
-        if: matrix.os != 'ubuntu-latest'
+      - name: build
+        run: make build
+
+      # TODO: run test-inspector-e2e?
+
+      - name: test-e2e
+        run: make test-creator-hub-e2e
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
