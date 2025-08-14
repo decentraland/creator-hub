@@ -7,7 +7,7 @@ const config = {
     buildResources: 'packages/creator-hub/buildResources',
   },
   files: [
-    'packages/creator-hub/**/dist/**',
+    'packages/**/dist/**',
     {
       from: 'node_modules/npm',
       to: 'node_modules/npm',

@@ -12,7 +12,7 @@ on:
       - '!.github/workflows/ci.yml'
       - '!.github/workflows/typechecking.yml'
       - '!.github/workflows/tests.yml'
-      - '!.github/workflows/release.yml'
+      - '!.github/workflows/pre_release.yml'
       - '**.md'
       - .editorconfig
       - .gitignore
@@ -24,7 +24,7 @@ on:
       - '!.github/workflows/ci.yml'
       - '!.github/workflows/typechecking.yml'
       - '!.github/workflows/tests.yml'
-      - '!.github/workflows/release.yml'
+      - '!.github/workflows/pre_release.yml'
       - '**.md'
       - .editorconfig
       - .gitignore
@@ -57,5 +57,5 @@ jobs:
     with:
       dry-run: ${{ github.event_name != 'push' || github.ref_name != 'main' }}
     needs: [ drop_pre_release ]
-    uses: ./.github/workflows/release.yml
+    uses: ./.github/workflows/pre_release.yml
     secrets: inherit

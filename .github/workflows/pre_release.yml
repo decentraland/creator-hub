@@ -36,14 +36,10 @@ jobs:
           node-version: 22
           cache: 'npm'
 
-      - name: 'Install dependencies'
-        run: npm ci
+      - name: build
+        run: make build
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
-
-      - name: 'Build'
-        run: echo MODE=$MODE && npm run build
-        env:
           NODE_OPTIONS: "--max-old-space-size=8192"
           MODE: ${{ !inputs.dry-run && 'production' || 'development' }}
           VITE_SEGMENT_CREATORS_HUB_API_KEY: ${{ secrets.VITE_SEGMENT_CREATORS_HUB_API_KEY }}
@@ -74,7 +70,7 @@ jobs:
           repository: 'SSLcom/esigner-codesign'
           path: esigner-codesign
 
-      - name: Compile artifacts ${{ inputs.dry-run && ' ' || 'and upload them to github release' }}
+      - name: Compile creator-hub artifacts ${{ inputs.dry-run && ' ' || 'and upload them to github release' }}
         # I use this action because it is capable of retrying multiple times if there are any issues with the distribution server
         uses: nick-fields/retry@v3
         with:
@@ -83,7 +79,7 @@ jobs:
           retry_wait_seconds: 15
           retry_on: error
           shell: 'bash'
-          command: npx electron-builder --config electron-builder.cjs --config.extraMetadata.version=${{ steps.version.outputs.version }} ${{ matrix.os == 'macos-latest' && format('--config.mac.notarize={0}', true) || '' }} --publish ${{ inputs.dry-run && 'never' || 'always' }}
+          command: npx electron-builder --config packages/creator-hub/electron-builder.cjs --config.extraMetadata.version=${{ steps.version.outputs.version }} ${{ matrix.os == 'macos-latest' && format('--config.mac.notarize={0}', true) || '' }} --publish ${{ inputs.dry-run && 'never' || 'always' }}
         env:
           # Disable hard links to avoid issues with npm
           USE_HARD_LINKS: false
