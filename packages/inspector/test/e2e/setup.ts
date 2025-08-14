@@ -28,7 +28,7 @@ beforeAll(async () => {
 
   browser = await chromium.launch({
     headless: process.env.CI ? true : false,
-    slowMo: 50, // Reduced from 100ms
+    slowMo: process.env.CI ? 100 : 50, // Increase slowMo for CI
     args: [
       '--disable-dev-shm-usage',
       '--disable-web-security',
@@ -38,6 +38,8 @@ beforeAll(async () => {
       '--disable-renderer-backgrounding',
       '--disable-field-trial-config',
       '--disable-ipc-flooding-protection',
+      '--no-sandbox', // Add no-sandbox for CI environments
+      '--disable-setuid-sandbox', // Add disable-setuid-sandbox for CI
     ],
   });
   page = await browser.newPage();
@@ -57,8 +59,11 @@ beforeAll(async () => {
     document.head.appendChild(style);
   });
 
-  // Set viewport for consistent performance
-  await page.setViewportSize({ width: 1280, height: 720 });
+  // Set viewport for consistent performance (larger in CI)
+  const viewportSize = process.env.CI
+    ? { width: 1920, height: 1080 }
+    : { width: 1280, height: 720 };
+  await page.setViewportSize(viewportSize);
 
   (global as any).page = page;
   (global as any).E2E_URL = serverUrl;
@@ -72,8 +77,9 @@ beforeAll(async () => {
     console.log('Domcontentloaded timeout, continuing...');
   }
 
-  // Reduced wait time for app initialization
-  await new Promise(resolve => setTimeout(resolve, 500));
+  // Wait for app initialization (longer in CI)
+  const waitTime = process.env.CI ? 2000 : 500;
+  await new Promise(resolve => setTimeout(resolve, waitTime));
   console.log('Setup complete');
 
   isSetup = true;

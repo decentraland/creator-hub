@@ -17,6 +17,8 @@ SYNC_PACK = node_modules/.bin/syncpack
 install:
 	npm i --silent
 	make install-protoc
+	cd $(INSPECTOR_PATH); npm i --silent;
+	cd $(CH_PATH); npm i --silent;
 
 install-protoc:
 	mkdir -p node_modules/.bin/protobuf
@@ -39,10 +41,10 @@ build:
 	make build-creator-hub
 
 build-inspector:
-	cd $(INSPECTOR_PATH); npm i --silent; npm run build;
+	cd $(INSPECTOR_PATH); npm run build;
 
 build-creator-hub:
-	cd $(CH_PATH); npm i --silent; npm run build;
+	cd $(CH_PATH); npm run build;
 
 init:
 	make clean
