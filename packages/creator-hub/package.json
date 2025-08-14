@@ -65,6 +65,7 @@
   },
   "main": "main/dist/index.js",
   "private": true,
+  "repository": "https://github.com/decentraland/creator-hub.git",
   "scripts": {
     "build": "npm run build:main && npm run build:preload && npm run build:renderer",
     "build:main": "cd ./main && vite build",

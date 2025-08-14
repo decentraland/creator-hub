@@ -17,34 +17,12 @@ defaults:
     shell: 'bash'
 
 jobs:
-  proto:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-
-      - name: install
-        run: make install
-
-      - name: protoc
-        run: make protoc
-
-      - name: upload protoc
-        uses: actions/upload-artifact@v4
-        with:
-          name: protoc
-          path: packages/inspector/src/lib/data-layer/proto/gen
   pre_release:
     strategy:
       fail-fast: true
       matrix:
         os: [ macos-latest, windows-latest ]
-
     runs-on: ${{ matrix.os }}
-
     steps:
       - uses: actions/checkout@v4
         with:
@@ -55,6 +33,9 @@ jobs:
         with:
           node-version: 22
           cache: 'npm'
+
+      - name: install
+        run: make install
 
       - name: download protoc
         uses: actions/download-artifact@v4
@@ -105,10 +86,12 @@ jobs:
           retry_wait_seconds: 15
           retry_on: error
           shell: 'bash'
-          command: npx electron-builder --config packages/creator-hub/electron-builder.cjs --config.extraMetadata.version=${{ steps.version.outputs.version }} ${{ matrix.os == 'macos-latest' && format('--config.mac.notarize={0}', true) || '' }} --publish ${{ inputs.dry-run && 'never' || 'always' }}
+          command: cd packages/creator-hub && npx electron-builder --config electron-builder.cjs --config.extraMetadata.version=${{ steps.version.outputs.version }} ${{ matrix.os == 'macos-latest' && format('--config.mac.notarize={0}', true) || '' }} --publish ${{ inputs.dry-run && 'never' || 'always' }}
         env:
           # Disable hard links to avoid issues with npm
           USE_HARD_LINKS: false
+          # Fix C++ standard for native dependencies
+          CXXFLAGS: "-std=gnu++17"
           # Code Signing params
           # See https://www.electron.build/code-signing
           CSC_LINK: ${{ secrets.MACOS_CSC_LINK }}
@@ -119,7 +102,8 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PWD }}
           # Publishing artifacts
-          GH_TOKEN: ${{ secrets.github_token }} # GitHub token, automatically provided (No need to define this secret in the repo settings)
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # GitHub token, automatically provided (No need to define this secret in the repo settings)
+          GITHUB_REPOSITORY: ${{ github.repository }}
           EP_PRE_RELEASE: true # Publish as pre-release
           # The following are the parameters required by the esigner-codesign action to work, we must explicitly pass in even the optional ones since we're not using the action directly, but from the checked out repo
           CODE_SIGN_SCRIPT_PATH: ${{ matrix.os == 'windows-latest' && format('{0}\\esigner-codesign\\dist\\index.js', github.workspace) || '' }}
@@ -137,11 +121,13 @@ jobs:
 
       - name: Move artifacts to upload folder
         if: ${{ github.event.pull_request.number }}
+        working-directory: packages/creator-hub
         run: sh -c 'mkdir dist/upload && cp dist/*.dmg dist/*.exe dist/upload 2> /dev/null || :'
 
       - name: Upload to S3
         if: ${{ github.event.pull_request.number }}
         id: upload
+        working-directory: packages/creator-hub
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.SDK_TEAM_AWS_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.SDK_TEAM_AWS_SECRET }}
