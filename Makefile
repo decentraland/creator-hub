@@ -18,10 +18,23 @@ install:
 	npm i --silent
 	make install-protoc
 
+install-protoc:
+	mkdir -p node_modules/.bin/protobuf
+	curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v$(PROTOBUF_VERSION)/$(PROTOBUF_ZIP)
+	unzip -o $(PROTOBUF_ZIP) -d node_modules/.bin/protobuf
+	rm $(PROTOBUF_ZIP)
+	chmod +x $(PROTOC)
+
+protoc:
+	mkdir -p $(INSPECTOR_PATH)/src/lib/data-layer/proto/gen
+	$(PROTOC) \
+		--plugin=node_modules/.bin/protoc-gen-dcl_ts_proto \
+		--dcl_ts_proto_opt=esModuleInterop=true,returnObservable=false,outputServices=generic-definitions,fileSuffix=.gen,oneof=unions,useMapType=true \
+		--dcl_ts_proto_out=$(INSPECTOR_PATH)/src/lib/data-layer/proto/gen \
+		--proto_path=$(INSPECTOR_PATH)/src/lib/data-layer/proto \
+		$(INSPECTOR_PATH)/src/lib/data-layer/proto/*.proto
+
 build:
-	make clean
-	make install
-	make protoc
 	make build-inspector
 	make build-creator-hub
 
@@ -30,6 +43,12 @@ build-inspector:
 
 build-creator-hub:
 	cd $(CH_PATH); npm i --silent; npm run build;
+
+init:
+	make clean
+	make install
+	make protoc
+	make build
 
 lint:
 	npm run lint
@@ -65,25 +84,11 @@ test-creator-hub-e2e:
 format:
 	npm run format
 
-protoc:
-	mkdir -p $(INSPECTOR_PATH)/src/lib/data-layer/proto/gen
-	$(PROTOC) \
-		--plugin=node_modules/.bin/protoc-gen-dcl_ts_proto \
-		--dcl_ts_proto_opt=esModuleInterop=true,returnObservable=false,outputServices=generic-definitions,fileSuffix=.gen,oneof=unions,useMapType=true \
-		--dcl_ts_proto_out=$(INSPECTOR_PATH)/src/lib/data-layer/proto/gen \
-		--proto_path=$(INSPECTOR_PATH)/src/lib/data-layer/proto \
-		$(INSPECTOR_PATH)/src/lib/data-layer/proto/*.proto
-
-install-protoc:
-	curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v$(PROTOBUF_VERSION)/$(PROTOBUF_ZIP)
-	unzip -o $(PROTOBUF_ZIP) -d node_modules/.bin/protobuf
-	rm $(PROTOBUF_ZIP)
-	chmod +x $(PROTOC)
-
 deep-clean:
 	rm -rf node_modules/ \
 		$(INSPECTOR_PATH)/node_modules/ \
-		$(CH_PATH)/node_modules/
+		$(CH_PATH)/node_modules/ \
+    $(INSPECTOR_PATH)/src/lib/data-layer/proto/gen/ \
 	make clean
 
 clean:

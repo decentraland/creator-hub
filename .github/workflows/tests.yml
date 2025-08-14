@@ -19,18 +19,22 @@ jobs:
           node-version: 22
           cache: 'npm'
 
-      - name: install
-        run: make install
-
       - name: build
-        run: make build
+        run: make init
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
 
       - name: test
         run: make test
-        env:
-          NODE_OPTIONS: '--max-old-space-size=4096'
+
+      - name: upload protoc
+        uses: actions/upload-artifact@v4
+        with:
+          name: protoc
+          path: packages/inspector/src/lib/data-layer/proto/gen
 
   e2e:
+    needs: unit
     strategy:
       fail-fast: false
       matrix:
@@ -46,8 +50,19 @@ jobs:
       - name: install
         run: make install
 
+      - name: install Playwright browsers
+        run: npx playwright install
+
+      - name: download protoc
+        uses: actions/download-artifact@v4
+        with:
+          name: protoc
+          path: packages/inspector/src/lib/data-layer/proto/gen
+
       - name: build
         run: make build
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
 
       - name: start inspector server
         run: |

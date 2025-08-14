@@ -19,5 +19,5 @@ jobs:
         with:
           cache: 'npm'
 
-      - run: make build
+      - run: make init
       - run: npm run typecheck --if-present

@@ -17,6 +17,26 @@ defaults:
     shell: 'bash'
 
 jobs:
+  proto:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: install
+        run: make install
+
+      - name: protoc
+        run: make protoc
+
+      - name: upload protoc
+        uses: actions/upload-artifact@v4
+        with:
+          name: protoc
+          path: packages/inspector/src/lib/data-layer/proto/gen
   pre_release:
     strategy:
       fail-fast: true
@@ -35,6 +55,12 @@ jobs:
         with:
           node-version: 22
           cache: 'npm'
+
+      - name: download protoc
+        uses: actions/download-artifact@v4
+        with:
+          name: protoc
+          path: packages/inspector/src/lib/data-layer/proto/gen
 
       - name: build
         run: make build

@@ -151,7 +151,11 @@ function getEnvVars() {
   dotenv.config();
 
   for (const env in process.env) {
-    envVars[`process.env.${env}`] = JSON.stringify(process.env[env] ?? true);
+    // Skip environment variables with invalid characters for JavaScript identifiers
+    // This includes parentheses, spaces, and other special characters
+    if (/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(env)) {
+      envVars[`process.env.${env}`] = JSON.stringify(process.env[env] ?? true);
+    }
   }
 
   return envVars;
