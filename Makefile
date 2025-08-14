@@ -18,6 +18,19 @@ install:
 	npm i --silent
 	make install-protoc
 
+build:
+	make clean
+	make install
+	make protoc
+	make build-inspector
+	make build-creator-hub
+
+build-inspector:
+	cd $(INSPECTOR_PATH); npm i --silent; npm run build;
+
+build-creator-hub:
+	cd $(CH_PATH); npm i --silent; npm run build;
+
 lint:
 	npm run lint
 
@@ -66,19 +79,6 @@ install-protoc:
 	unzip -o $(PROTOBUF_ZIP) -d node_modules/.bin/protobuf
 	rm $(PROTOBUF_ZIP)
 	chmod +x $(PROTOC)
-
-build:
-	make clean
-	make install
-	make protoc
-	make build-inspector
-	make build-creator-hub
-
-build-inspector:
-	cd $(INSPECTOR_PATH); npm i --silent; npm run build;
-
-build-creator-hub:
-	cd $(CH_PATH); npm i --silent; npm run build;
 
 deep-clean:
 	rm -rf node_modules/ \

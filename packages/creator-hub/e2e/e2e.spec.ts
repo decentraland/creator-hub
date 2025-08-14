@@ -2,10 +2,14 @@ import type { ElectronApplication, JSHandle } from 'playwright';
 import { _electron as electron } from 'playwright';
 import { afterAll, beforeAll, expect, test } from 'vitest';
 import type { BrowserWindow } from 'electron';
+
 let electronApp: ElectronApplication;
 
 beforeAll(async () => {
-  electronApp = await electron.launch({ args: ['.'] });
+  electronApp = await electron.launch({
+    args: ['.'],
+    cwd: process.cwd(),
+  });
 });
 
 afterAll(async () => {
@@ -13,11 +17,8 @@ afterAll(async () => {
 });
 
 test('Main window state', async () => {
-  console.log('start');
   const page = await electronApp.firstWindow();
-  console.log('await electronApp.firstWindow');
   const window: JSHandle<BrowserWindow> = await electronApp.browserWindow(page);
-  console.log('await electronApp.browserWindow(page)');
   const windowState = await window.evaluate(
     (
       mainWindow,
@@ -39,8 +40,6 @@ test('Main window state', async () => {
       });
     },
   );
-
-  console.log('await window.evaluate');
 
   expect(windowState.isCrashed, 'The app has crashed').toBeFalsy();
   expect(windowState.isVisible, 'The main window was not visible').toBeTruthy();

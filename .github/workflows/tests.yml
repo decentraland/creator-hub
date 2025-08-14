@@ -49,9 +49,13 @@ jobs:
       - name: build
         run: make build
 
-      # TODO: run test-inspector-e2e?
+      - name: start inspector server
+        run: |
+          cd packages/inspector
+          npx http-server public -p 8000 --cors -a localhost &
+          sleep 5
 
-      - name: test-e2e
-        run: make test-creator-hub-e2e
+      - name: e2e
+        run: make test-e2e
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
