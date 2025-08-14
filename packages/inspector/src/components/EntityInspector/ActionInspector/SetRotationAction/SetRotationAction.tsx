@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActionPayload, ActionType } from '@dcl/asset-packs';
-import { recursiveCheck } from 'jest-matcher-deep-close-to/lib/recursiveCheck';
+import { recursiveCheck } from '../../../../lib/utils/deep-equal';
 import { CheckboxField, TextField } from '../../../ui';
 import type { Props } from './types';
 import { Block } from '../../../Block';

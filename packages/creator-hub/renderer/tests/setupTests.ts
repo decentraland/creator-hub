@@ -2,7 +2,7 @@ import { afterEach, vi } from 'vitest';
 
 // Mock preload modules
 vi.mock('#preload', async () => {
-  const actual = await import('../preload/src/index');
+  const actual = await import('../../preload/src/index.ts');
 
   const deepMockObject = (obj: Record<string, any>) => {
     const result: Record<string, any> = {};

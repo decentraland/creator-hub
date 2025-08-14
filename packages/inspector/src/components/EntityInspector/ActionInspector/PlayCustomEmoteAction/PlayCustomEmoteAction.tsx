@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActionPayload, ActionType } from '@dcl/asset-packs';
-import { recursiveCheck } from 'jest-matcher-deep-close-to/lib/recursiveCheck';
+import { recursiveCheck } from '../../../../lib/utils/deep-equal';
 import { CheckboxField, FileUploadField } from '../../../ui';
 import { ACCEPTED_FILE_TYPES } from '../../../ui/FileUploadField/types';
 import { useAppSelector } from '../../../../redux/hooks';

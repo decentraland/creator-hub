@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { recursiveCheck } from 'jest-matcher-deep-close-to/lib/recursiveCheck';
+import { recursiveCheck } from '../lib/utils/deep-equal';
 
 export function useArrayState<T>(initialArray: T[] = []) {
   const [array, setArray] = useState<T[]>([...initialArray]);

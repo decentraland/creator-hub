@@ -1,8 +1,8 @@
 import type { InputHTMLAttributes } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { recursiveCheck as hasDiff } from 'jest-matcher-deep-close-to/lib/recursiveCheck';
 import type { Entity } from '@dcl/ecs';
 import { CrdtMessageType } from '@dcl/ecs';
+import { recursiveCheck as hasDiff } from '../../lib/utils/deep-equal';
 import type { NestedKey } from '../../lib/logic/get-set-value';
 import { getValue, setValue } from '../../lib/logic/get-set-value';
 import type { Component } from '../../lib/sdk/components';

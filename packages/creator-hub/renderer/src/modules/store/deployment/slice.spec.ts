@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChainId } from '@dcl/schemas';
-import { createTestStore } from '../../../../../tests/utils/testStore';
+import { createTestStore } from '../../../../tests/utils/testStore';
 import { executeDeployment, initializeDeployment } from './slice';
 
 const TEST_PATH = '/test/path';

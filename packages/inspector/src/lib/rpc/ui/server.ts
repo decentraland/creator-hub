@@ -1,11 +1,11 @@
 import type { AnyAction } from '@reduxjs/toolkit';
 import type { Transport } from '@dcl/mini-rpc';
 import { RPC } from '@dcl/mini-rpc';
-import { UiRPC } from './types';
+import { name, type Method, type Params, type Result } from './types';
 
-export class UiServer extends RPC<UiRPC.Method, UiRPC.Params, UiRPC.Result> {
+export class UiServer extends RPC<Method, Params, Result> {
   constructor(transport: Transport, store: { dispatch: (action: AnyAction) => void }) {
-    super(UiRPC.name, transport);
+    super(name, transport);
 
     this.handle('toggle_component', async ({ component, enabled }) => {
       store.dispatch({ type: 'ui/toggleComponent', payload: { component, enabled } });

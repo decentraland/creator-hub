@@ -1,4 +1,6 @@
-import type { BoundingBox } from 'puppeteer';
+import { type Page } from 'playwright';
+
+declare const page: Page;
 
 export type Position = 'after' | 'inside';
 export type Positions = { x: Position; y: Position };
@@ -11,20 +13,20 @@ export async function dragAndDrop(
     y: 'inside',
   },
 ) {
-  const sourceElement = await page.waitForSelector(sourceSelector);
-  const destinationElement = await page.waitForSelector(destinationSelector);
+  const sourceElement = await page.waitForSelector(sourceSelector, { timeout: 10000 });
+  const destinationElement = await page.waitForSelector(destinationSelector, { timeout: 10000 });
 
   const sourceBox = await sourceElement!.boundingBox();
   const destinationBox = await destinationElement!.boundingBox();
 
   await page.evaluate(
-    (ss: string, ds: string, sb: BoundingBox, db: BoundingBox, dPos: Positions) => {
+    ({ ss, ds, sb, db, dPos }: { ss: string; ds: string; sb: any; db: any; dPos: Positions }) => {
       const source = document.querySelector(ss);
       const destination = document.querySelector(ds);
-      const midX = (bb: BoundingBox) => bb.x + bb.width / 2;
-      const midY = (bb: BoundingBox) => bb.y + bb.height / 2;
-      const afterX = (bb: BoundingBox) => midX(bb) + bb.width / 4;
-      const afterY = (bb: BoundingBox) => midY(bb) + bb.height / 4;
+      const midX = (bb: any) => bb.x + bb.width / 2;
+      const midY = (bb: any) => bb.y + bb.height / 2;
+      const afterX = (bb: any) => midX(bb) + bb.width / 4;
+      const afterY = (bb: any) => midY(bb) + bb.height / 4;
 
       const sourceX = midX(sb);
       const sourceY = midY(sb);
@@ -178,10 +180,12 @@ export async function dragAndDrop(
         }),
       );
     },
-    sourceSelector,
-    destinationSelector,
-    sourceBox! as any,
-    destinationBox! as any,
-    destPosition,
+    {
+      ss: sourceSelector,
+      ds: destinationSelector,
+      sb: sourceBox! as any,
+      db: destinationBox! as any,
+      dPos: destPosition,
+    },
   );
 }

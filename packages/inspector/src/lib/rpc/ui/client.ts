@@ -1,11 +1,11 @@
 import type { Transport } from '@dcl/mini-rpc';
 import { RPC } from '@dcl/mini-rpc';
 import type { AssetsTab, PanelName, SceneInspectorTab } from '../../../redux/ui/types';
-import { UiRPC } from './types';
+import { name, type Method, type Params, type Result } from './types';
 
-export class UiClient extends RPC<UiRPC.Method, UiRPC.Params, UiRPC.Result> {
+export class UiClient extends RPC<Method, Params, Result> {
   constructor(transport: Transport) {
-    super(UiRPC.name, transport);
+    super(name, transport);
   }
 
   toggleComponent = (component: string, enabled: boolean) => {

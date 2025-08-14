@@ -7,57 +7,7 @@ on:
         default: false
         required: false
         type: boolean
-    secrets:
-      MACOS_CSC_LINK:
-        description: 'Certificate to sign dmg file'
-        required: true
-      MACOS_CSC_KEY_PASSWORD:
-        description: 'Password to decrypt the certificate file'
-        required: true
-      MACOS_NOTARIZATION_APPLE_ID:
-        description: 'Apple ID used for notarization'
-        required: true
-      MACOS_NOTARIZATION_TEAM_ID:
-        description: 'Team ID used for notarization'
-        required: true
-      MACOS_NOTARIZATION_PWD:
-        description: 'Password used for notarization'
-        required: true
-      VITE_SEGMENT_CREATORS_HUB_API_KEY:
-        description: 'Segment API key used for the Decentraland Creator Hub'
-        required: true
-      VITE_SEGMENT_INSPECTOR_API_KEY:
-        description: 'Segment API key used for the Inspector'
-        required: true
-      VITE_ALLOWED_EXTERNAL_ORIGINS:
-        description: 'Allowed external origins for the app'
-        required: true
-      SDK_TEAM_AWS_ID:
-        required: true
-      SDK_TEAM_AWS_SECRET:
-        required: true
-      SDK_TEAM_S3_BUCKET:
-        required: true
-      SDK_TEAM_S3_BASE_URL:
-        required: true
-      ES_USERNAME:
-        description: 'Username to sign exe file'
-        required: true
-      ES_PASSWORD:
-        description: 'Password to sign the exe file'
-        required: true
-      WINDOWS_CREDENTIAL_ID_SIGNER:
-        description: 'Certificate to sign the exe file'
-        required: true
-      ES_TOTP_SECRET:
-        description: 'Password to decrypt the certificate file'
-        required: true
-      SENTRY_AUTH_TOKEN:
-        description: 'Sentry auth token'
-        required: true
-      SENTRY_DSN:
-        description: 'Sentry DSN to perform the requests'
-        required: true
+
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: true

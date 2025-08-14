@@ -1,4 +1,3 @@
-
 PROTOBUF_VERSION = 3.20.1
 ifeq ($(shell uname),Darwin)
 PROTOBUF_ZIP = protoc-$(PROTOBUF_VERSION)-osx-x86_64.zip
@@ -13,31 +12,29 @@ endif
 PROTOC = node_modules/.bin/protobuf/bin/protoc
 INSPECTOR_PATH = packages/inspector
 CH_PATH = packages/creator-hub
-TSC = node_modules/.bin/tsc
-ESLINT = node_modules/.bin/eslint
 SYNC_PACK = node_modules/.bin/syncpack
-JEST = node_modules/.bin/jest
 
 install:
 	npm i --silent
-	make install-protobuf
+	make install-protoc
 
 lint:
 	npm run lint
 
-typecheck:
-	npm run typecheck --if-present
+lint-fix:
+	make sync-deps
+	npm run lint:fix
 
 sync-deps:
-	$(SYNC_PACK) format --config .syncpackrc.json --source "packages/*/package.json" --source "package.json"
-	$(SYNC_PACK) fix-mismatches --config .syncpackrc.json --source "packages/*/package.json" --source "package.json"
+	npm run syncpack:format
+	npm run syncpack:fix
 
 lint-packages:
-	$(SYNC_PACK) list-mismatches --config .syncpackrc.json  --source "packages/*/package.json" --source "package.json"
-	$(SYNC_PACK) format --config .syncpackrc.json  --source "packages/*/package.json" --source "package.json"
+	npm run syncpack:list-mismatches
+	npm run syncpack:format
 
-lint-fix: sync-deps
-	npm run lint -- --fix
+typecheck:
+	npm run typecheck --if-present
 
 test:
 	npm run test
@@ -53,9 +50,18 @@ test-creator-hub-e2e:
 	cd $(CH_PATH); npm run test:e2e
 
 format:
-	npm run format -- --loglevel=error
+	npm run format
 
-install-protobuf:
+protoc:
+	mkdir -p $(INSPECTOR_PATH)/src/lib/data-layer/proto/gen
+	$(PROTOC) \
+		--plugin=node_modules/.bin/protoc-gen-dcl_ts_proto \
+		--dcl_ts_proto_opt=esModuleInterop=true,returnObservable=false,outputServices=generic-definitions,fileSuffix=.gen,oneof=unions,useMapType=true \
+		--dcl_ts_proto_out=$(INSPECTOR_PATH)/src/lib/data-layer/proto/gen \
+		--proto_path=$(INSPECTOR_PATH)/src/lib/data-layer/proto \
+		$(INSPECTOR_PATH)/src/lib/data-layer/proto/*.proto
+
+install-protoc:
 	curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v$(PROTOBUF_VERSION)/$(PROTOBUF_ZIP)
 	unzip -o $(PROTOBUF_ZIP) -d node_modules/.bin/protobuf
 	rm $(PROTOBUF_ZIP)
@@ -64,7 +70,12 @@ install-protobuf:
 build:
 	make clean
 	make install
+	make protoc
+	make build-inspector
 	make build-creator-hub
+
+build-inspector:
+	cd $(INSPECTOR_PATH); npm i --silent; npm run build;
 
 build-creator-hub:
 	cd $(CH_PATH); npm i --silent; npm run build;

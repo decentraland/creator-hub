@@ -1,10 +1,10 @@
 import type { Transport } from '@dcl/mini-rpc';
 import { RPC } from '@dcl/mini-rpc';
-import { CameraRPC } from './types';
+import { name, type Method, type Params, type Result } from './types';
 
-export class CameraClient extends RPC<CameraRPC.Method, CameraRPC.Params, CameraRPC.Result> {
+export class CameraClient extends RPC<Method, Params, Result> {
   constructor(transport: Transport) {
-    super(CameraRPC.name, transport);
+    super(name, transport);
   }
 
   takeScreenshot = (width: number, height: number, precision?: number) => {

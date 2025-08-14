@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActionPayload, ActionType, Colliders } from '@dcl/asset-packs';
-import { recursiveCheck } from 'jest-matcher-deep-close-to/lib/recursiveCheck';
+import { recursiveCheck } from '../../../../lib/utils/deep-equal';
 import { Block } from '../../../Block';
 import { Dropdown, InfoTooltip } from '../../../ui';
 import { COLLISION_LAYERS } from '../../GltfInspector/utils';

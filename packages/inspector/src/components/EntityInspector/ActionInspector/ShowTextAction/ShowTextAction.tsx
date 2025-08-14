@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActionPayload, ActionType } from '@dcl/asset-packs';
-import { recursiveCheck } from 'jest-matcher-deep-close-to/lib/recursiveCheck';
+import { recursiveCheck } from '../../../../lib/utils/deep-equal';
 import { Block } from '../../../Block';
 import { Dropdown, RangeField, TextField } from '../../../ui';
 import { FONTS, TEXT_ALIGN_MODES } from '../../TextShapeInspector/utils';

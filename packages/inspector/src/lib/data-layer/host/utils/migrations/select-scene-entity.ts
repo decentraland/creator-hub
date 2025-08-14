@@ -4,14 +4,6 @@ import type { EditorComponentsTypes } from '../../../../sdk/components';
 import { EditorComponentNames } from '../../../../sdk/components';
 import { GizmoType } from '../../../../utils/gizmo';
 
-function system(
-  engine: IEngine,
-  Selection: LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['Selection']>,
-) {
-  engine.removeSystem(system);
-  Selection!.createOrReplace(engine.RootEntity, { gizmo: GizmoType.FREE });
-}
-
 export function selectSceneEntity(engine: IEngine) {
   const Selection = engine.getComponentOrNull(
     EditorComponentNames.Selection,
@@ -22,6 +14,11 @@ export function selectSceneEntity(engine: IEngine) {
       Selection.deleteFrom(entity);
     }
 
-    engine.addSystem(() => system(engine, Selection));
+    function system() {
+      engine.removeSystem(system);
+      Selection!.createOrReplace(engine.RootEntity, { gizmo: GizmoType.FREE });
+    }
+
+    engine.addSystem(system);
   }
 }

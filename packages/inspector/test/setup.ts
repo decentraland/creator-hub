@@ -1,11 +1,16 @@
-import { TextEncoder, TextDecoder } from 'util';
 import { vi } from 'vitest';
 
-Object.assign(global, { TextDecoder, TextEncoder });
+// Ensure TextDecoder and TextEncoder are available globally in happy-dom
+if (typeof globalThis.TextDecoder === 'undefined') {
+  globalThis.TextDecoder = TextDecoder;
+}
+if (typeof globalThis.TextEncoder === 'undefined') {
+  globalThis.TextEncoder = TextEncoder;
+}
 
 // Mock DynamicTexture to prevent canvas context errors in tests
-vi.mock('@babylonjs/core', () => {
-  const originalModule = vi.importActual('@babylonjs/core');
+vi.mock('@babylonjs/core', async importOriginal => {
+  const originalModule = (await importOriginal()) as any;
   return {
     ...originalModule,
     DynamicTexture: vi.fn().mockImplementation(() => ({

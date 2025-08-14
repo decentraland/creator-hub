@@ -1,6 +1,9 @@
+import { type Page } from 'playwright';
 import type { AssetsTab } from '../../../src/redux/ui/types';
 import { dragAndDrop } from '../utils/drag-and-drop';
 import { sleep } from '../utils/sleep';
+
+declare const page: Page;
 
 class AssetsPageObject {
   async selectTab(tab: AssetsTab) {
@@ -27,11 +30,14 @@ class AssetsPageObject {
     if (await page.$('.Renderer.is-loading')) {
       await page.waitForSelector('.Renderer.is-loading');
     }
-    await page.waitForSelector('.Renderer.is-loaded', { timeout: 180_000 });
+    await page.waitForSelector('.Renderer.is-loaded', { timeout: 30_000 });
   }
 
   async addBuilderAsset(asset: string) {
-    await dragAndDrop(`.Assets .asset[data-test-label="${asset}"]`, '.Renderer canvas');
+    await dragAndDrop(
+      `.Assets .assets-catalog-asset[data-test-label="${asset}"]`,
+      '.Renderer canvas',
+    );
     await this.waitForRenderer();
   }
 

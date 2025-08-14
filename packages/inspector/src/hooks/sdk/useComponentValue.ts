@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { recursiveCheck } from 'jest-matcher-deep-close-to/lib/recursiveCheck';
 import type { DeepReadonly, Entity, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
 import { CrdtMessageType } from '@dcl/ecs';
+import { recursiveCheck } from '../../lib/utils/deep-equal';
 
 import type { Component } from '../../lib/sdk/components';
 import { useChange } from './useChange';

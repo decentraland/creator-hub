@@ -1,5 +1,5 @@
 export async function installMouseHelper(page: any): Promise<void> {
-  await page.evaluateOnNewDocument(() => {
+  await page.addInitScript(() => {
     // Install mouse helper only for top-level frame.
     if (window !== window.parent) return;
     window.addEventListener(

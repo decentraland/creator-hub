@@ -1,5 +1,7 @@
-import type { Positions } from '../utils/drag-and-drop';
-import { dragAndDrop } from '../utils/drag-and-drop';
+import { type Page } from 'playwright';
+import { type Positions, dragAndDrop } from '../utils/drag-and-drop';
+
+declare const page: Page;
 
 class HierarchyPageObject {
   getParentSelectorById(entityId: number) {
@@ -87,15 +89,13 @@ class HierarchyPageObject {
   async rename(entityId: number, newLabel: string) {
     const item = await this.getItem(entityId, this.getItemSelectorById);
     await item.click({ button: 'right' });
-    const rename = await item.$('.contexify_item[itemid="rename"');
+    const rename = await item.$('.contexify_item[itemid="rename"]');
     if (!rename) {
       throw new Error(`Can't rename entity with id=${entityId}`);
     }
     await rename.click();
-    const label = await this.getLabel(entityId);
-    for (let i = 0; i < label.length; i++) {
-      await page.keyboard.press('Backspace');
-    }
+
+    await page.keyboard.press('ControlOrMeta+a'); // select all
     await page.keyboard.type(newLabel);
     await page.keyboard.press('Enter');
   }
@@ -109,7 +109,7 @@ class HierarchyPageObject {
         `Could not click on item entityId=${entityId} and label="${label}": ${error.message}`,
       );
     }
-    const addChild = await item.$('.contexify_item[itemid="add-child"');
+    const addChild = await item.$('.contexify_item[itemid="add-child"]');
     if (!addChild) {
       throw new Error(`Can't add child to entity with id=${entityId}`);
     }
@@ -121,7 +121,7 @@ class HierarchyPageObject {
   async duplicate(entityId: number) {
     const item = await this.getItem(entityId, this.getItemSelectorById);
     await item.click({ button: 'right' });
-    const duplicate = await item.$('.contexify_item[itemid="duplicate"');
+    const duplicate = await item.$('.contexify_item[itemid="duplicate"]');
     if (!duplicate) {
       throw new Error(`Can't duplicate entity with id=${entityId}`);
     }
@@ -131,7 +131,7 @@ class HierarchyPageObject {
   async remove(entityId: number) {
     const item = await this.getItem(entityId, this.getItemSelectorById);
     await item.click({ button: 'right' });
-    const remove = await item.$('.contexify_item[itemid="delete"');
+    const remove = await item.$('.contexify_item[itemid="delete"]');
     if (!remove) {
       throw new Error(`Can't delete entity with id=${entityId}`);
     }
@@ -148,26 +148,36 @@ class HierarchyPageObject {
   }
 
   async selectMultiple(entityIds: number[]) {
+    // Close any open context menus first by clicking outside
+    await page.click('body', { position: { x: 0, y: 0 } });
+    await page.keyboard.press('Escape');
+
+    try {
+      await page.waitForSelector('.contexify', { state: 'hidden', timeout: 5000 });
+    } catch (error) {
+      /* empty */
+    }
+
     const firstItem = await this.getItem(entityIds[0], this.getItemSelectorById);
     await firstItem.click();
 
     for (let i = 1; i < entityIds.length; i++) {
       const item = await this.getItem(entityIds[i], this.getItemSelectorById);
-      await page.keyboard.down('Control');
+      await page.keyboard.down('ControlOrMeta');
       await item.click();
-      await page.keyboard.up('Control');
+      await page.keyboard.up('ControlOrMeta');
     }
   }
 
   async addComponent(entityId: number, componentName: string) {
     const item = await this.getItem(entityId, this.getItemSelectorById);
     await item.click({ button: 'right' });
-    const addComponent = await item.$('.contexify_item[itemid="add-component"');
+    const addComponent = await item.$('.contexify_item[itemid="add-component"]');
     if (!addComponent) {
       throw new Error(`Can't add components on entity with id=${entityId}`);
     }
     await addComponent.click();
-    const component = await addComponent.$(`.contexify_item[itemid="${componentName}"`);
+    const component = await addComponent.$(`.contexify_item[itemid="${componentName}"]`);
     if (!component) {
       throw new Error(
         `Can't add component with componentName=${componentName} on entity with id=${entityId}`,

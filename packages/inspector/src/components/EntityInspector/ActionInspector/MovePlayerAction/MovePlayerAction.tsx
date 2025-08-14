@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActionPayload, ActionType } from '@dcl/asset-packs';
 import { Vector3 } from '@dcl/ecs-math';
-import { recursiveCheck } from 'jest-matcher-deep-close-to/lib/recursiveCheck';
+import { recursiveCheck } from '../../../../lib/utils/deep-equal';
 import { TextField } from '../../../ui';
 import type { Props } from './types';
 

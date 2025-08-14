@@ -48,18 +48,6 @@ export function buildNodesHierarchy(engine: IEngine): Node[] {
   return Array.from(hierarchy.values());
 }
 
-/**
- * Build & set Node component value only if the component doesn't have previous value
- * @param engine engine to build upon
- */
-function hierarchySystem(
-  engine: IEngine,
-  Nodes: LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['Nodes']>,
-) {
-  engine.removeSystem(hierarchySystem);
-  Nodes!.createOrReplace(engine.RootEntity, { value: buildNodesHierarchy(engine) });
-}
-
 export function buildNodesHierarchyIfNotExists(engine: IEngine) {
   const Nodes = engine.getComponentOrNull(
     EditorComponentNames.Nodes,
@@ -69,6 +57,11 @@ export function buildNodesHierarchyIfNotExists(engine: IEngine) {
     const value = Nodes.getOrNull(engine.RootEntity)?.value || [];
     if (value.length) return;
 
-    engine.addSystem(() => hierarchySystem(engine, Nodes));
+    function hierarchySystem() {
+      engine.removeSystem(hierarchySystem);
+      Nodes!.createOrReplace(engine.RootEntity, { value: buildNodesHierarchy(engine) });
+    }
+
+    engine.addSystem(hierarchySystem);
   }
 }

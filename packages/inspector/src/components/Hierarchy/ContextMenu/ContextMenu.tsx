@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { Item, Submenu, Separator } from 'react-contexify';
-import { Entity } from '@dcl/ecs';
+import type { Entity } from '@dcl/ecs';
 import { useContextMenu } from '../../../hooks/sdk/useContextMenu';
 import { useEntityComponent } from '../../../hooks/sdk/useEntityComponent';
 import { getComponentValue } from '../../../hooks/sdk/useComponentValue';
@@ -75,16 +75,19 @@ const ContextMenu = (value: Entity) => {
             label="Add component"
             itemID="add-component"
           >
-            {availableComponents.map(({ id, name }) => (
-              <Item
-                key={id}
-                id={id.toString()}
-                itemID={name}
-                onClick={handleAction(handleAddComponent)}
-              >
-                {name}
-              </Item>
-            ))}
+            {availableComponents.map(
+              ({ id, name, isOnEntity }) =>
+                !isOnEntity && (
+                  <Item
+                    key={id}
+                    id={id.toString()}
+                    itemID={name}
+                    onClick={handleAction(handleAddComponent)}
+                  >
+                    {name}
+                  </Item>
+                ),
+            )}
           </Submenu>
         </>
       )}

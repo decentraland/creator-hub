@@ -14,6 +14,7 @@
     "resolveJsonModule": true,
     "declaration": true,
     "declarationDir": "dist",
+    "outDir": "dist",
     "jsx": "react-jsx",
     "sourceMap": true,
     "rootDir": "src/",

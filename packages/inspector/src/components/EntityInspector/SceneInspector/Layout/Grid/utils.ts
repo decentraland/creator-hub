@@ -30,7 +30,7 @@ export function chunkCoords(coords: Props['coords'], chunkSize: number): Props['
   const chunks = [];
   for (let i = 0; i < coords.length; i += chunkSize) {
     const tmp = [];
-    for (let j = i; j < i + chunkSize; j++) {
+    for (let j = i; j < i + chunkSize && j < coords.length; j++) {
       tmp.push(coords[j]);
     }
     chunks.push(tmp);
