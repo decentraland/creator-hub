@@ -48,15 +48,17 @@ jobs:
       contents: write
     with:
       dry-run: ${{ github.event_name != 'push' || github.ref_name != 'main' }}
-    needs: [ typechecking, tests ]
+    needs: [ lint, typechecking, tests ]
     uses: ./.github/workflows/drop.yml
-  build:
-    permissions:
-      contents: write
-      issues: write
-      pull-requests: write
+  inspector:
+    needs: [ drop_pre_release ]
+    uses: ./.github/workflows/inspector.yml
+    secrets: inherit
+  creator-hub:
+    needs: [ inspector ]
+    uses: ./.github/workflows/creator-hub.yml
+    secrets: inherit
     with:
       dry-run: ${{ github.event_name != 'push' || github.ref_name != 'main' }}
-    needs: [ drop_pre_release ]
-    uses: ./.github/workflows/pre_release.yml
-    secrets: inherit
+      inspector_s3_bucket_key: ${{ needs.inspector.outputs.s3_bucket_key }}
+      inspector_version: ${{ needs.inspector.outputs.version }}

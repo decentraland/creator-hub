@@ -1,0 +1,141 @@
+name: 'S3 File Upload'
+description: 'Upload a file to S3 with sanitized prefix and return the URL'
+
+inputs:
+  file-path:
+    description: 'Path to the file to upload'
+    required: true
+  bucket:
+    description: 'S3 bucket name'
+    required: true
+  region:
+    description: 'AWS region'
+    required: false
+    default: 'us-east-1'
+  prefix:
+    description: 'S3 key prefix (will be sanitized)'
+    required: false
+    default: ''
+  aws-access-key-id:
+    description: 'AWS Access Key ID'
+    required: true
+  aws-secret-access-key:
+    description: 'AWS Secret Access Key'
+    required: true
+  content-type:
+    description: 'Content type for the uploaded file'
+    required: false
+    default: ''
+  acl:
+    description: 'S3 ACL for the uploaded file'
+    required: false
+    default: ''
+  cache-control:
+    description: 'Cache-Control header for the uploaded file'
+    required: false
+    default: 'max-age=0,private'
+
+outputs:
+  s3-key:
+    description: 'The S3 key of the uploaded file'
+    value: ${{ steps.upload.outputs.s3-key }}
+  s3-url:
+    description: 'The HTTPS URL of the uploaded file'
+    value: ${{ steps.upload.outputs.s3-url }}
+  sanitized-prefix:
+    description: 'The sanitized prefix used'
+    value: ${{ steps.sanitize.outputs.sanitized-prefix }}
+  filename:
+    description: 'The basename of the uploaded file'
+    value: ${{ steps.extract-filename.outputs.filename }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Extract filename
+      shell: bash
+      run: |
+        FILENAME=$(basename "${{ inputs.file-path }}")
+        echo "filename=$FILENAME" >> $GITHUB_OUTPUT
+        echo "Extracted filename: $FILENAME"
+      id: extract-filename
+
+    - name: Sanitize prefix
+      shell: bash
+      run: |
+        PREFIX="${{ inputs.prefix }}"
+        if [ -z "$PREFIX" ]; then
+          # Use branch name as default if no prefix provided
+          PREFIX="${{ github.ref_name }}"
+        fi
+
+        # Replace invalid S3 characters with hyphens and convert to lowercase
+        SANITIZED_PREFIX=$(echo "$PREFIX" | \
+          sed 's/[^a-zA-Z0-9._/@-]/-/g' | \
+          sed 's/--*/-/g' | \
+          sed 's/^-\|-$//g' | \
+          tr '[:upper:]' '[:lower:]')
+
+        # Remove leading/trailing slashes and ensure no double slashes
+        SANITIZED_PREFIX=$(echo "$SANITIZED_PREFIX" | sed 's|^/\|/$||g' | sed 's|//\+|/|g')
+
+        echo "sanitized-prefix=$SANITIZED_PREFIX" >> $GITHUB_OUTPUT
+        echo "Original prefix: $PREFIX"
+        echo "Sanitized prefix: $SANITIZED_PREFIX"
+      id: sanitize
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ inputs.aws-access-key-id }}
+        aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
+        aws-region: ${{ inputs.region }}
+
+    - name: Upload to S3
+      shell: bash
+      run: |
+        FILE_PATH="${{ inputs.file-path }}"
+        FILENAME="${{ steps.extract-filename.outputs.filename }}"
+        SANITIZED_PREFIX="${{ steps.sanitize.outputs.sanitized-prefix }}"
+        BUCKET="${{ inputs.bucket }}"
+        REGION="${{ inputs.region }}"
+
+        # Construct S3 key
+        if [ -z "$SANITIZED_PREFIX" ]; then
+          S3_KEY="$FILENAME"
+        else
+          S3_KEY="$SANITIZED_PREFIX/$FILENAME"
+        fi
+
+        # Prepare upload command
+        UPLOAD_CMD="aws s3 cp \"$FILE_PATH\" \"s3://$BUCKET/$S3_KEY\" --region \"$REGION\""
+
+        # Add content-type if specified
+        if [ -n "${{ inputs.content-type }}" ]; then
+          UPLOAD_CMD="$UPLOAD_CMD --content-type \"${{ inputs.content-type }}\""
+        fi
+
+        # Add ACL if specified
+        if [ -n "${{ inputs.acl }}" ]; then
+          UPLOAD_CMD="$UPLOAD_CMD --acl \"${{ inputs.acl }}\""
+        fi
+
+        # Add cache-control if specified
+        if [ -n "${{ inputs.cache-control }}" ]; then
+          UPLOAD_CMD="$UPLOAD_CMD --cache-control \"${{ inputs.cache-control }}\""
+        fi
+
+        # Execute upload
+        echo "Uploading $FILE_PATH to s3://$BUCKET/$S3_KEY"
+        eval $UPLOAD_CMD
+
+        # Generate outputs
+        S3_URL="https://$BUCKET.s3.$REGION.amazonaws.com/$S3_KEY"
+
+        echo "s3-key=$S3_KEY" >> $GITHUB_OUTPUT
+        echo "s3-url=$S3_URL" >> $GITHUB_OUTPUT
+
+        echo "✅ File uploaded successfully!"
+        echo "S3 Key: $S3_KEY"
+        echo "S3 URL: $S3_URL"
+      id: upload

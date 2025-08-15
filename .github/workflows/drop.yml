@@ -22,7 +22,7 @@ jobs:
         with:
           cache: 'npm'
       - name: Drop all pre-releases
-        if: ${{github.ref == 'refs/heads/main' && !inputs.dry-run}}
+        if: ${{ github.ref == 'refs/heads/main' && !inputs.dry-run }}
         uses: sgpublic/delete-release-action@v1.2
         with:
           pre-release-drop: true
