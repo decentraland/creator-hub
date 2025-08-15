@@ -43,15 +43,16 @@ jobs:
   tests:
     uses: ./.github/workflows/tests.yml
   drop_pre_release:
+    name: drop pre-release
     permissions:
       contents: write
     with:
       dry-run: ${{ github.event_name != 'push' || github.ref_name != 'main' }}
     needs: [ typechecking, tests ]
     uses: ./.github/workflows/drop.yml
-  pre_release:
+  build:
     permissions:
-      contents: write # Allows this job to create releases
+      contents: write
       issues: write
       pull-requests: write
     with:

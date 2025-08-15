@@ -34,7 +34,7 @@ jobs:
           name: protoc
           path: packages/inspector/src/lib/data-layer/proto/gen
 
-  e2e:
+  E2E:
     needs: unit
     strategy:
       fail-fast: false

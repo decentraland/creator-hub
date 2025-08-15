@@ -14,14 +14,14 @@ defaults:
   run:
     shell: 'bash'
 jobs:
-  drop_pre_release:
+  drop:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           cache: 'npm'
-      - name: Drop pre releases
+      - name: Drop all pre-releases
         if: ${{github.ref == 'refs/heads/main' && !inputs.dry-run}}
         uses: sgpublic/delete-release-action@v1.2
         with:

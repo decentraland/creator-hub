@@ -17,7 +17,7 @@ defaults:
     shell: 'bash'
 
 jobs:
-  pre_release:
+  artifacts:
     strategy:
       fail-fast: true
       matrix:
