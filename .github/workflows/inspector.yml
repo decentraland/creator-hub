@@ -1,0 +1,138 @@
+name: Inspector
+on:
+  workflow_call:
+    outputs:
+      s3_bucket_key:
+        description: "S3 bucket key for the published Inspector package"
+        value: ${{ jobs.build.outputs.s3_bucket_key }}
+      version:
+        description: "Version of the Inspector package"
+        value: ${{ jobs.build.outputs.version }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      s3_bucket_key: ${{ steps.publish_inspector.outputs.s3-bucket-key }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: install
+        run: make install
+
+      - name: protoc
+        run: make protoc
+
+      - name: build
+        run: make build
+
+      - name: Bump release version
+        id: version
+        uses: paulhatch/semantic-version@v5.4.0
+        with:
+          tag_prefix: "@dcl/inspector@"
+          version_format: ${major}.${minor}.${patch}
+          major_pattern: "/^(major|breaking).+/"
+          minor_pattern: "/^(minor|feat).+/"
+          bump_each_commit: false
+          bump_each_commit_patch_pattern: "/^(patch|fix).+/"
+          search_commit_body: true
+          user_format_type: "json"
+          change_path: "packages/inspector"
+
+      - name: publish @dcl/inspector package
+        uses: decentraland/oddish-action@master
+        id: publish_inspector
+        with:
+          registry-url: 'https://registry.npmjs.org'
+          access: public
+          cwd: ./packages/inspector
+          deterministic-snapshot: true
+          provenance: true
+          s3-bucket: ${{ secrets.SDK_TEAM_S3_BUCKET }}
+          s3-bucket-region: ${{ secrets.SDK_TEAM_AWS_REGION }}
+          s3-bucket-key-prefix: 'creator-hub/branch/${{ github.head_ref || github.ref }}/@dcl/inspector'
+          main-branch-latest-tag: true
+        env:
+          BRANCH_NAME: ${{ github.ref_name }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.SDK_TEAM_AWS_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SDK_TEAM_AWS_SECRET }}
+  notify:
+    needs: [build]
+    if: ${{ github.event.pull_request.number }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v6
+        id: get-cloudflare-url
+        env:
+          BRANCH: ${{ github.head_ref || github.ref }}
+        with:
+          script: return `${process.env.BRANCH.replaceAll('/', '-').substr(0, 28)}.js-sdk-toolchain.pages.dev`
+          result-encoding: string
+
+      - name: Find Comment
+        uses: peter-evans/find-comment@v1
+        id: fc
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: Test @dcl/inspector pacakge
+
+      - name: Create or update comment
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            # Test @dcl/inspector pacakge
+
+            - The `@dcl/inspector` package can be tested by visiting [this url](https://${{steps.get-cloudflare-url.outputs.result}}/inspector)
+              - Or by installing it via NPM
+               ```bash
+               npm install "${{ secrets.SDK_TEAM_S3_BASE_URL }}/${{ needs.build.outputs.s3_bucket_key }}"
+               ```
+          edit-mode: replace
+
+  release:
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/main' && !github.event.pull_request.number }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get latest release
+        id: latest_release
+        uses: ./.github/actions/get-latest-release
+        with:
+          pattern: '^@dcl/inspector@[0-9]+\.[0-9]+\.[0-9]+$'
+
+      - name: Generate release notes
+        id: release_notes
+        uses: ./.github/actions/generate-release-notes
+        with:
+          previous_version: ${{ steps.latest_release.outputs.tag }}
+          current_version: ${{ needs.build.outputs.version }}
+          paths: 'packages/inspector'
+          section_names: 'Inspector Changes'
+          release_title: '@dcl/inspector'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update release description
+        uses: ./.github/actions/update-release-description
+        with:
+          tag_name: "@dcl/inspector@${{ needs.build.outputs.version }}"
+          release_notes: ${{ steps.release_notes.outputs.release_notes }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          create_if_not_exists: true
+          prerelease: false

@@ -1,4 +1,4 @@
-name: Release
+name: Creator Hub
 on:
   workflow_call:
     inputs:
@@ -7,9 +7,17 @@ on:
         default: false
         required: false
         type: boolean
+      inspector_s3_bucket_key:
+        description: 'S3 bucket key for the inspector package'
+        required: true
+        type: string
+      inspector_version:
+        description: 'Version of the inspector package'
+        required: true
+        type: string
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: creator-hub-${{ github.ref }}
   cancel-in-progress: true
 
 defaults:
@@ -17,7 +25,7 @@ defaults:
     shell: 'bash'
 
 jobs:
-  artifacts:
+  build:
     strategy:
       fail-fast: true
       matrix:
@@ -56,11 +64,11 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           VITE_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
 
-      - name: Generate release version
+      - name: Bump release version
         id: version
         uses: paulhatch/semantic-version@v5.4.0
         with:
-          tag_prefix: ""
+          tag_prefix: "creator-hub@"
           version_format: ${major}.${minor}.${patch}
           major_pattern: "/^(major|breaking).+/"
           minor_pattern: "/^(minor|feat).+/"
@@ -86,7 +94,7 @@ jobs:
           retry_wait_seconds: 15
           retry_on: error
           shell: 'bash'
-          command: cd packages/creator-hub && npx electron-builder --config electron-builder.cjs --config.extraMetadata.version=${{ steps.version.outputs.version }} ${{ matrix.os == 'macos-latest' && format('--config.mac.notarize={0}', true) || '' }} --publish ${{ inputs.dry-run && 'never' || 'always' }}
+          command: npx electron-builder --project packages/creator-hub --config electron-builder.cjs --config.extraMetadata.version=${{ steps.version.outputs.version }} --config.publish.releaseName="creator-hub@${{ steps.version.outputs.version }}" ${{ matrix.os == 'macos-latest' && format('--config.mac.notarize={0}', true) || '' }} --publish ${{ inputs.dry-run && 'never' || 'always' }}
         env:
           # Disable hard links to avoid issues with npm
           USE_HARD_LINKS: false
