@@ -1,0 +1,48 @@
+import type { Identifier } from 'dnd-core';
+import type { Asset, CustomAsset } from '../../lib/logic/catalog';
+import type { TreeNode } from '../../components/ProjectAssetExplorer/ProjectView';
+import type { AssetNodeItem } from '../../components/ProjectAssetExplorer/types';
+
+interface Drop<T, K = object> {
+  value: T;
+  context: K;
+}
+
+export type LocalAssetDrop = Drop<string, { tree: Map<string, TreeNode> }>;
+export type CatalogAssetDrop = Drop<Asset>;
+export type CustomAssetDrop = Drop<CustomAsset>;
+export type IDrop = LocalAssetDrop | CatalogAssetDrop | CustomAssetDrop;
+
+export enum DropTypesEnum {
+  LocalAsset = 'local-asset',
+  CatalogAsset = 'catalog-asset',
+  CustomAsset = 'custom-asset',
+}
+
+export type DropTypes = `${DropTypesEnum}`;
+
+export function isDropType<T extends IDrop>(
+  _: IDrop,
+  identifier: Identifier | null,
+  type: DropTypes,
+): _ is T {
+  return identifier === type;
+}
+
+export const DROP_TYPES = Object.values(DropTypesEnum);
+
+export const getNode = (
+  node: TreeNode,
+  tree: Map<string, TreeNode>,
+  isFn: (node: TreeNode) => node is AssetNodeItem,
+): AssetNodeItem | null => {
+  if (isFn(node)) return node;
+
+  const children = node.children || [];
+  for (const child of children) {
+    const childNode = tree.get(child);
+    if (childNode && isFn(childNode)) return childNode;
+  }
+
+  return null;
+};

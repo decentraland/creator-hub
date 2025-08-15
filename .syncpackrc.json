@@ -1,0 +1,9 @@
+{
+  "versionGroups": [
+    {
+      "packages": ["**"],
+      "dependencies": ["@dcl/inspector"],
+      "isIgnored": true
+    }
+  ]
+}
