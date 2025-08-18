@@ -43,7 +43,7 @@ jobs:
         id: version
         uses: paulhatch/semantic-version@v5.4.0
         with:
-          tag_prefix: "inspector-"
+          tag_prefix: "@dcl/inspector@"
           version_format: ${major}.${minor}.${patch}
           major_pattern: "/^(major|breaking).+/"
           minor_pattern: "/^(minor|feat).+/"
@@ -164,7 +164,7 @@ jobs:
         id: latest_release
         uses: ./.github/actions/get-latest-release
         with:
-          pattern: '^inspector-[0-9]+\.[0-9]+\.[0-9]+$'
+          pattern: '^@dcl/inspector@[0-9]+\.[0-9]+\.[0-9]+$'
 
       - name: Generate release notes
         id: release_notes
@@ -180,7 +180,7 @@ jobs:
       - name: Update release description
         uses: ./.github/actions/update-release-description
         with:
-          tag_name: "inspector-${{ needs.build.outputs.version }}"
+          tag_name: "@dcl/inspector@${{ needs.build.outputs.version }}"
           release_notes: ${{ steps.release_notes.outputs.release_notes }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           create_if_not_exists: true
