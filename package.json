@@ -1,5 +1,5 @@
 {
-  "name": "creators-hub-monorepo",
+  "name": "creator-hub-monorepo",
   "version": "0.0.0-dev",
   "dependencies": {
     "fast-deep-equal": "^3.1.3"

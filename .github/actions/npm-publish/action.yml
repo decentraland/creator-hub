@@ -29,15 +29,11 @@ inputs:
     description: 'Run in dry-run mode (skip actual publishing)'
     required: false
     default: 'false'
-  branch-filter:
-    description: 'Only publish on this branch (leave empty to publish on any branch)'
-    required: false
-    default: ''
 
 outputs:
   published:
     description: 'Whether the package was published (true/false)'
-    value: ${{ steps.check-branch.outputs.should-publish == 'true' && steps.publish.conclusion == 'success' }}
+    value: ${{ steps.publish.conclusion == 'success' }}
   package-name:
     description: 'The name of the published package'
     value: ${{ steps.package-info.outputs.package-name }}
@@ -57,30 +53,7 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - name: Check branch filter
-      shell: bash
-      run: |
-        SHOULD_PUBLISH="true"
-
-        if [ -n "${{ inputs.branch-filter }}" ]; then
-          CURRENT_BRANCH="${{ github.ref_name }}"
-          TARGET_BRANCH="${{ inputs.branch-filter }}"
-
-          if [ "$CURRENT_BRANCH" != "$TARGET_BRANCH" ]; then
-            SHOULD_PUBLISH="false"
-            echo "❌ Skipping npm publish: current branch '$CURRENT_BRANCH' doesn't match filter '$TARGET_BRANCH'"
-          else
-            echo "✅ Branch filter passed: '$CURRENT_BRANCH' matches '$TARGET_BRANCH'"
-          fi
-        else
-          echo "✅ No branch filter specified, will publish on any branch"
-        fi
-
-        echo "should-publish=$SHOULD_PUBLISH" >> $GITHUB_OUTPUT
-      id: check-branch
-
     - name: Get package info
-      if: steps.check-branch.outputs.should-publish == 'true'
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
@@ -104,7 +77,6 @@ runs:
       id: package-info
 
     - name: Configure npm
-      if: steps.check-branch.outputs.should-publish == 'true'
       shell: bash
       run: |
         echo "${{ inputs.registry }}:_authToken=${{ inputs.npm-token }}" > ~/.npmrc
@@ -121,7 +93,6 @@ runs:
       id: configure-npm
 
     - name: Publish package
-      if: steps.check-branch.outputs.should-publish == 'true'
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
@@ -153,7 +124,7 @@ runs:
       id: publish
 
     - name: Add additional dist-tags
-      if: steps.check-branch.outputs.should-publish == 'true' && inputs.additional-tags != '' && inputs.dry-run != 'true'
+      if: inputs.additional-tags != '' && inputs.dry-run != 'true'
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
@@ -186,40 +157,36 @@ runs:
       if: always()
       shell: bash
       run: |
-        if [ "${{ steps.check-branch.outputs.should-publish }}" = "true" ]; then
-          PACKAGE_NAME="${{ steps.package-info.outputs.package-name }}"
-          VERSION="${{ steps.package-info.outputs.version }}"
+        PACKAGE_NAME="${{ steps.package-info.outputs.package-name }}"
+        VERSION="${{ steps.package-info.outputs.version }}"
 
-          if [ "${{ steps.publish.conclusion }}" = "success" ]; then
-            echo "🎉 Publication Summary:"
-            echo "  📦 Package: $PACKAGE_NAME"
-            echo "  📋 Version: $VERSION"
-            echo "  🏷️  Initial tag: ${{ inputs.initial-tag }}"
+        if [ "${{ steps.publish.conclusion }}" = "success" ]; then
+          echo "🎉 Publication Summary:"
+          echo "  📦 Package: $PACKAGE_NAME"
+          echo "  📋 Version: $VERSION"
+          echo "  🏷️  Initial tag: ${{ inputs.initial-tag }}"
 
-            if [ -n "${{ inputs.additional-tags }}" ] && [ "${{ inputs.dry-run }}" != "true" ]; then
-              echo "  🏷️  Additional tags: ${{ inputs.additional-tags }}"
-            fi
+          if [ -n "${{ inputs.additional-tags }}" ] && [ "${{ inputs.dry-run }}" != "true" ]; then
+            echo "  🏷️  Additional tags: ${{ inputs.additional-tags }}"
+          fi
 
-            if [ "${{ inputs.dry-run }}" = "true" ]; then
-              echo "  🔍 Mode: Dry run (not actually published)"
-            else
-              echo "  🌐 URL: ${{ steps.publish.outputs.npm-url }}"
-              echo ""
-              echo "Install commands:"
-              echo "  npm install $PACKAGE_NAME@${{ inputs.initial-tag }}"
-              if [ -n "${{ inputs.additional-tags }}" ]; then
-                IFS=',' read -ra TAGS <<< "${{ inputs.additional-tags }}"
-                for tag in "${TAGS[@]}"; do
-                  tag=$(echo "$tag" | xargs)
-                  if [ -n "$tag" ]; then
-                    echo "  npm install $PACKAGE_NAME@$tag"
-                  fi
-                done
-              fi
-            fi
+          if [ "${{ inputs.dry-run }}" = "true" ]; then
+            echo "  🔍 Mode: Dry run (not actually published)"
           else
-            echo "❌ Publication failed"
+            echo "  🌐 URL: ${{ steps.publish.outputs.npm-url }}"
+            echo ""
+            echo "Install commands:"
+            echo "  npm install $PACKAGE_NAME@${{ inputs.initial-tag }}"
+            if [ -n "${{ inputs.additional-tags }}" ]; then
+              IFS=',' read -ra TAGS <<< "${{ inputs.additional-tags }}"
+              for tag in "${TAGS[@]}"; do
+                tag=$(echo "$tag" | xargs)
+                if [ -n "$tag" ]; then
+                  echo "  npm install $PACKAGE_NAME@$tag"
+                fi
+              done
+            fi
           fi
         else
-          echo "⏭️  Publication skipped due to branch filter"
+          echo "❌ Publication failed"
         fi

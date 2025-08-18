@@ -1,144 +1,292 @@
-# Decentraland Creator Hub
+# Decentraland Creator Hub Monorepo
 
-Decentraland Creator Hub is an Electron-based application designed for creating, editing, and deploying Decentraland scenes. This application is distributed for both Windows and MacOS, supporting both x64 and ARM architectures.
+This monorepo contains the Decentraland Creator Hub ecosystem, consisting of two main packages:
 
-### Features
+- **`@dcl/inspector`** - A web-based 3D scene inspector for Decentraland
+- **`creator-hub`** - An Electron-based desktop application for creating and managing Decentraland scenes
 
-- **Create Scenes**: create new SDK7 scenes, they will be saved the user's file system.
-- **Edit Scenes**: the integrated `@dcl/inspector` allows visual editing and the scene is ran under the hood using `@dcl/sdk-commands` to allow previewing while editing.
-- **Publish Scenes**: deploy scenes to Genesis City, Worlds, test or custom servers.
-- **Import Scenes**: import existing SDK7 scenes into the workspace.
+## 🏗️ Project Structure
 
-### Scripts
-
-- **Install dependencies**
-
-```bash
-npm install
+```
+creator-hub/
+├── packages/
+│   ├── creator-hub/          # Electron desktop application
+│   │   ├── main/            # Main Electron process
+│   │   ├── preload/         # Preload scripts
+│   │   ├── renderer/        # React frontend
+│   │   ├── shared/          # Shared utilities
+│   │   └── e2e/            # End-to-end tests
+│   └── inspector/           # Web-based 3D inspector
+│       ├── src/            # Source code
+│       ├── public/         # Built assets
+│       └── test/           # Tests
+├── .github/workflows/       # CI/CD workflows
+├── Makefile                # Build and development commands
+└── package.json           # Root package configuration
 ```
 
-- **Start development**
+## 🚀 Quick Start
 
-```bash
-npm start
-```
+### Prerequisites
 
-- **Build webapp**
+- **Node.js** 22.x or higher
+- **npm** (preferred over yarn)
+- **Git**
 
-```bash
-npm run build
-```
+### Initial Setup
 
-- **Compile executable** (`.exe` in windows, `.app` in MacOS)
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/decentraland/creator-hub.git
+   cd creator-hub
+   ```
 
-```bash
-npm run compile
-```
+2. **Install dependencies and initialize the project:**
+   ```bash
+   make init
+   ```
 
-- **Compile installer** (`.dmg` on MacOS)
+   This command will:
+   - Install all dependencies for the monorepo and sub-packages
+   - Download and install Protocol Buffers compiler
+   - Generate TypeScript definitions from `.proto` files
+   - Build all packages
 
-```bash
-npm run compile:installer
-```
+## 📋 Makefile Commands
 
-### Code Architecture
+The project uses a Makefile to manage common development tasks:
 
-There are three packages each compiled individually:
+### Setup Commands
 
-- **`renderer`**: This is the webapp that runs on the browser, all the UI lives here.
-- **`preload`**: This package run in a context with most of NodeJS APIs enabled. It's where we interact with the file system for example through the `fs` module. Modules exported from this package can be imported from the `renderer` by importing from the special path `#preload`, and all the wiring necessary to connect these two packages (namely the Electron's `exposeInWorld` APIs) are going to be done automatically by the bundler.
-- **`main`**: Runs the app's NodeJS process. Communication between preload and main process is handled via IPC. This is used for invoking APIs not available in the preload package, such as Electron's APIs or forking new processes required by the Decentraland CLI.
+| Command | Description |
+|---------|-------------|
+| `make install` | Install dependencies for all packages |
+| `make install-protoc` | Download and install Protocol Buffers compiler |
+| `make protoc` | Generate TypeScript definitions from `.proto` files |
+| `make init` | Complete project initialization (clean + install + protoc + build) |
 
-### Debugging
+### Build Commands
 
-While developing locally you will get the Browser's logs on the DevTools and the NodeJS logs on the console running the `npm start`.
+| Command | Description |
+|---------|-------------|
+| `make build` | Build both inspector and creator-hub packages |
+| `make build-inspector` | Build only the inspector package |
+| `make build-creator-hub` | Build only the creator-hub package |
 
-When debugging the production build (executables) you can open the DevTools via View > DevTools and the NodeJS logs are available on a logs file.
+### Development Commands
 
-On Windows (PowerShell):
-
-```bash
-Get-Content -Path "$env:APPDATA\creator-hub\logs\main.log" -Wait
-```
-
-On MacOS:
-
-```bash
-tail -f ~/Library/Logs/creator-hub/main.log
-```
-
-## Installation Process
-
-The Decentraland Creator Hub requires several binaries to be available, including Node.js, npm, and sdk-commands. Due to Apple's requirements for app distribution, the application must be packaged into an `.asar` file for proper signing and notarization. However, some binaries within the `node_modules` directory cannot be used from inside the `.asar` file. Therefore, certain components are left outside the `.asar` file, including `package.json` and npm binaries.
-
-### Steps
-
-1. **NodeJS Binary**:
-
-   - On macOS: Create a symlink in the app's unpacked directory called `node`, pointing to the Electron binary.
-   - On Windows: Create a `.cmd` file in the app's unpacked directory called `node`, pointing to the Electron binary.
-
-2. **NPM Binaries**:
-
-   - Leave npm binaries unpacked from the `.asar` file.
-
-3. **Other Binaries from `node_modules`**:
-   - Leave `package.json` unpacked outside the `.asar` file.
-   - Install `node` binaries from point 1 and `npm` binaries from point 2 into the forked process $PATH
-   - Use the forked process to run npm binaries to install all other dependencies from the unpacked `package.json`.
+| Command | Description |
+|---------|-------------|
+| `make lint` | Run ESLint across all packages |
+| `make lint-fix` | Fix ESLint issues automatically |
+| `make format` | Format code with Prettier |
+| `make typecheck` | Run TypeScript type checking |
+| `make test` | Run unit tests for all packages |
+| `make test-e2e` | Run end-to-end tests for all packages |
 
 ### Dependency Management
 
-To minimize installation time for the end user, `package.json` should include only the dependencies used on the Node.js side (main and preload packages). Dependencies used by the renderer should be listed as `devDependencies`, as they are not required by the end user (the web application is already bundled and does not need to be built by the end user).
+| Command | Description |
+|---------|-------------|
+| `make sync-deps` | Synchronize dependencies across packages using syncpack |
+| `make lint-packages` | Check for dependency mismatches |
 
-## Update Process
+### Cleanup Commands
 
-The Decentraland Creator Hub uses `electron-updater` to automatically update the production app to the latest version.
+| Command | Description |
+|---------|-------------|
+| `make clean` | Remove build artifacts and dist folders |
+| `make deep-clean` | Remove all node_modules and generated files |
 
-### Steps
+## 🔧 Package Scripts
 
-1. **Auto Update Check**:
+### Creator Hub Scripts
 
-   - Each time the app is started, `electron-updater` fetches the latest version from this GitHub repository.
+```bash
+cd packages/creator-hub
 
-2. **Download and Notification**:
+# Development
+npm run start          # Start in watch mode
 
-   - If a new version is available, it is downloaded in the background.
-   - Once the download is complete, the user is notified that a new version is available and prompted to restart the app to apply the updates.
+# Building
+npm run build          # Build all parts (main, preload, renderer)
+npm run build:main     # Build main process
+npm run build:preload  # Build preload scripts
+npm run build:renderer # Build renderer (React app)
 
-3. **Installation**:
-   - Upon closing the app, the new version is installed automatically.
+# Testing
+npm run test           # Run all tests
+npm run test:e2e       # Run end-to-end tests
+npm run test:unit      # Run unit tests
 
-This ensures that users always have the latest features and fixes without manual intervention.
+# Type checking
+npm run typecheck      # Type check all parts
+```
 
-## Release Process
+### Inspector Scripts
 
-The CI pipeline is configured to automate the release process for the Decentraland Creator Hub.
+```bash
+cd packages/inspector
 
-### Steps
+# Development
+npm run start          # Start in watch mode
 
-1. **Pre-release Creation**:
+# Building
+npm run build          # Build the inspector
 
-   - For every push to the main branch, the CI creates a pre-release.
-   - The commit message determines the type of release:
-     - Patch (fix)
-     - Minor (feat)
-     - Major (breaking change)
+# Testing
+npm run test           # Run unit tests
+npm run test:e2e       # Run end-to-end tests
 
-2. **Artifact Generation**:
+# Type checking
+npm run typecheck      # Type check the inspector
+```
 
-   - Artifacts for MacOS (x64 and ARM architectures) and Windows are generated and attached to the pre-release.
+## 🔄 CI/CD Workflow
 
-3. **Publishing the Release**:
-   - To publish a release, edit the pre-release and publish it as the latest release.
-   - The auto updater, as mentioned in the Update Process, will pick up this new release and update the production app.
+The project uses GitHub Actions with a sophisticated CI/CD pipeline:
 
-This streamlined process ensures that updates are consistently and accurately deployed to users.
+### Main CI Workflow (`ci.yml`)
 
-## Related Architecture Decisions
+The main workflow orchestrates all CI processes and runs on:
+- Push to `main` branch
+- Pull requests
 
-For a deeper understanding of the architecture and design decisions:
+**Workflow Steps:**
+1. **Lint** - Code formatting and linting
+2. **Typechecking** - TypeScript type checking
+3. **Tests** - Unit and end-to-end tests
+4. **Drop Pre-release** - Create pre-release artifacts
+5. **Inspector Build** - Build and publish inspector package
+6. **Creator Hub Build** - Build and publish creator hub
 
-- [ADR-280: Binary Management](https://adr.decentraland.org/adr/ADR-280) - Describes the approach for managing Node.js binaries and their execution within the Creator Hub, including cross-platform binary execution and process monitoring
-- [ADR-281: Items in Decentraland tooling](https://adr.decentraland.org/adr/ADR-281) - Explains the Items abstraction and how it's used in the Inspector
-- [ADR-282: Decentraland Inspector](https://adr.decentraland.org/adr/ADR-282) - Details the Inspector's architecture, integration approaches, and technical decisions
+### Test Workflow (`tests.yml`)
+
+Runs comprehensive testing:
+- **Unit Tests** - Runs on Ubuntu with Node.js 22
+- **E2E Tests** - Runs on macOS and Windows with Playwright
+- **Cross-platform Testing** - Tests both packages
+
+### Inspector Workflow (`inspector.yml`)
+
+Handles inspector package deployment:
+- Builds the inspector package
+- Publishes to S3 for branch previews
+- Deploys to GitHub Pages
+- Publishes to npm (main branch only)
+- Creates GitHub releases with release notes
+
+### Creator Hub Workflow (`creator-hub.yml`)
+
+Handles desktop application builds:
+- **Multi-platform Builds** - macOS and Windows
+- **Code Signing** - Automatic code signing for both platforms
+- **Notarization** - macOS notarization
+- **Artifact Distribution** - Uploads to S3 and GitHub releases
+- **PR Testing** - Provides download links for PR testing
+
+## 🏗️ Architecture
+
+### Monorepo Structure
+
+The project uses npm workspaces to manage the monorepo:
+
+```json
+{
+  "workspaces": ["packages/*"]
+}
+```
+
+### Dependency Management
+
+- **syncpack** is used to synchronize dependencies across packages
+- Shared dependencies are defined in the root `package.json`
+- Package-specific dependencies are in each package's `package.json`
+- The `@dcl/inspector` dependency is managed specially in `.syncpackrc.json`
+
+### Protocol Buffers
+
+The Inspector package uses Protocol Buffers for data layer communication:
+- `.proto` files are in `packages/inspector/src/lib/data-layer/proto/`
+- Generated TypeScript files are in `packages/inspector/src/lib/data-layer/proto/gen/`
+- Use `make protoc` to regenerate after `.proto` changes
+
+## 🧪 Testing
+
+### Unit Tests
+- **Creator Hub**: Uses Vitest for main, preload, renderer, and shared tests
+- **Inspector**: Uses Vitest for unit tests
+- Run with `make test` or `npm run test` in individual packages
+
+### End-to-End Tests
+- **Creator Hub**: Uses Playwright for Electron app testing
+- **Inspector**: Uses Playwright for web app testing
+- Run with `make test-e2e`
+- Tests automatically build the applications before running
+
+### Test Structure
+```
+packages/creator-hub/e2e/          # Creator Hub E2E tests
+packages/inspector/test/e2e/       # Inspector E2E tests
+```
+
+## 🚀 Development Workflow
+
+### Typical Development Flow
+
+1. **Start Development:**
+   ```bash
+   make init                    # Initial setup
+   cd packages/creator-hub
+   npm run start               # Start creator hub in watch mode
+   ```
+
+2. **In another terminal:**
+   ```bash
+   cd packages/inspector
+   npm run start               # Start inspector in watch mode
+   ```
+
+3. **Before Committing:**
+    - Lint, format & typecheck will be run automatically
+
+### Code Quality
+
+- **ESLint** - Code linting with custom rules
+- **Prettier** - Code formatting
+- **TypeScript** - Static type checking
+- **syncpack** - Dependency synchronization
+
+## 📦 Publishing
+
+### Inspector Package
+- Automatically published to npm on main branch
+- PR builds available for testing
+- GitHub Pages deployment for web previews
+
+### Creator Hub App
+- Multi-platform builds (macOS, Windows)
+- Code signed and notarized
+- Distributed via GitHub releases and S3
+- PR builds available for testing
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+The CI pipeline will automatically:
+- Lint, format & typecheck
+- Run all tests
+- Build both packages
+- Provide testing artifacts for review
+- Deploy preview versions
+
+## 📚 Additional Resources
+
+- [Creator Hub Documentation](packages/creator-hub/README.md)
+- [Inspector Documentation](packages/inspector/README.md)
+- [Contributing Guidelines](CONTRIBUTING.md)
+- [Decentraland Documentation](https://docs.decentraland.org/)

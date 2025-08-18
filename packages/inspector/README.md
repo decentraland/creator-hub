@@ -9,12 +9,6 @@ A React-based scene editor interface for Decentraland, providing a modular archi
 - **Level Editor**: 3D scene visualization with Babylon.js
 - **Asset Management**: Local assets, custom items, and asset packs support
 
-## Installation
-
-```bash
-npm install @dcl/inspector
-```
-
 ## Quick Start
 
 1. Start the CLI server:
