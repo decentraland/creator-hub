@@ -46,7 +46,13 @@ export async function start() {
   }
 
   const port = await getAvailablePort();
-  const inspectorPath = resolve(app.getAppPath(), 'node_modules', '@dcl', 'inspector', 'public');
+  let inspectorPath = '';
+
+  if (import.meta.env.DEV) {
+    inspectorPath = resolve(app.getAppPath(), '..', '..', 'packages', 'inspector', 'public');
+  } else {
+    inspectorPath = resolve(app.getAppPath(), 'node_modules', '@dcl', 'inspector', 'public');
+  }
 
   inspectorServer = createServer({ root: inspectorPath });
   inspectorServer.listen(port, () => {

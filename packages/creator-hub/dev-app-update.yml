@@ -1,0 +1,8 @@
+owner: decentraland
+repo: creator-hub
+provider: github
+updaterCacheDirName: creator-hub-updater
+
+publisherName:
+  - "Decentraland"
+  - "Decentraland Creator Hub"

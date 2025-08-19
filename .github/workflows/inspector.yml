@@ -186,4 +186,4 @@ jobs:
           release_notes: ${{ steps.release_notes.outputs.release_notes }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           create_if_not_exists: true
-          prerelease: false
+          prerelease: true

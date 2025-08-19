@@ -263,12 +263,22 @@ packages/inspector/test/e2e/       # Inspector E2E tests
 - Automatically published to npm on main branch
 - PR builds available for testing
 - GitHub Pages deployment for web previews
+- **GitHub Releases**: Always marked as pre-releases to avoid confusion with electron-updater
 
 ### Creator Hub App
 - Multi-platform builds (macOS, Windows)
 - Code signed and notarized
 - Distributed via GitHub releases and S3
 - PR builds available for testing
+- **GitHub Releases**: Always marked as pre-releases for later manual release when updated to "latest"
+
+### Release Strategy
+
+The project uses a specific release strategy to ensure electron-updater works correctly:
+
+- **Creator Hub releases** are created as pre-release and when ready, they should be marked as "latest" on GitHub, allowing the Electron app to automatically detect and download updates
+- **Other packages (e.g Inspector releases)** are ALWAYS marked as pre-releases to prevent electron-updater from accidentally downloading the wrong package type
+- This separation ensures that users only get Creator Hub app updates through the auto-update mechanism
 
 ## 🤝 Contributing
 

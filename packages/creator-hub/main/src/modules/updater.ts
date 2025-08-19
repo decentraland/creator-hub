@@ -74,6 +74,13 @@ function configureUpdater(config: UpdaterConfig) {
   const { autoDownload } = config;
   updater.autoUpdater.autoDownload = autoDownload ?? false;
   updater.autoUpdater.autoInstallOnAppQuit = false;
+  updater.autoUpdater.allowPrerelease = false;
+
+  // enable dev app update for local development
+  if (import.meta.env.VITE_ENABLE_DEV_APP_UPDATE) {
+    updater.autoUpdater.forceDevUpdateConfig = true;
+    log.info('[AutoUpdater] Dev app update enabled');
+  }
 }
 
 export async function checkForUpdates(config: UpdaterConfig = {}) {
