@@ -1,4 +1,5 @@
 import { fromUnixTime } from 'date-fns/fromUnixTime';
+import { config } from '/@/config';
 
 // TheGraph has a limit of a maximum of 1000 results per entity per query
 const MAX_RESULTS = 1000;
@@ -278,18 +279,9 @@ export const colorByRole: Record<RoleType, string> = {
 };
 
 export class Lands {
-  private subgraph = 'https://subgraph.decentraland.org/land-manager';
-  private LAND_REGISTRY_ADDRESS = '0xf87e31492faf9a91b02ee0deaad50d51d56d5d4d';
-  private ESTATE_REGISTRY_ADDRESS = '0x959e104e1a4db6317fa58f8295f586e1a978c297';
-
-  constructor(isDev: boolean) {
-    if (isDev) {
-      this.subgraph =
-        'https://api.studio.thegraph.com/query/49472/land-manager-sepolia/version/latest';
-      this.LAND_REGISTRY_ADDRESS = '0x42f4ba48791e2de32f5fbf553441c2672864bb33';
-      this.ESTATE_REGISTRY_ADDRESS = '0x369a7fbe718c870c79f99fb423882e8dd8b20486';
-    }
-  }
+  private subgraph = config.get('LAND_MANAGER_SUBGRAPH');
+  private LAND_REGISTRY_ADDRESS = config.get('LAND_REGISTRY_ADDRESS');
+  private ESTATE_REGISTRY_ADDRESS = config.get('ESTATE_REGISTRY_ADDRESS');
 
   fetchLand = async (
     _address: string,
@@ -486,18 +478,9 @@ const getRentalsQuery = () => `query Rentals($address: Bytes) {
 `;
 
 export class Rentals {
-  private subgraph = 'https://subgraph.decentraland.org/rentals-ethereum-mainnet';
-  private LAND_REGISTRY_ADDRESS = '0xf87e31492faf9a91b02ee0deaad50d51d56d5d4d';
-  private ESTATE_REGISTRY_ADDRESS = '0x959e104e1a4db6317fa58f8295f586e1a978c297';
-
-  constructor(isDev: boolean) {
-    if (isDev) {
-      this.subgraph =
-        'https://api.studio.thegraph.com/query/49472/rentals-ethereum-sepolia/version/latest';
-      this.LAND_REGISTRY_ADDRESS = '0x42f4ba48791e2de32f5fbf553441c2672864bb33';
-      this.ESTATE_REGISTRY_ADDRESS = '0x369a7fbe718c870c79f99fb423882e8dd8b20486';
-    }
-  }
+  private subgraph = config.get('RENTALS_SUBGRAPH');
+  private LAND_REGISTRY_ADDRESS = config.get('LAND_REGISTRY_ADDRESS');
+  private ESTATE_REGISTRY_ADDRESS = config.get('ESTATE_REGISTRY_ADDRESS');
 
   fetchRentalTokenIds = async (
     address: string,
