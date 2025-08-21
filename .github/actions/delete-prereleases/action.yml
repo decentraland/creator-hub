@@ -1,0 +1,93 @@
+name: Delete Pre-releases by Pattern
+description: 'Delete all pre-releases matching a regex pattern'
+
+inputs:
+  pattern:
+    description: 'Regex pattern to match release names/tags (e.g., "^[0-9]+\.[0-9]+\.[0-9]+$" for semver without prefix)'
+    required: true
+  dry_run:
+    description: 'Dry run - only show what would be deleted'
+    required: false
+    default: 'true'
+  github_token:
+    description: 'GitHub token for API access'
+    required: false
+    default: ${{ github.token }}
+
+runs:
+  using: composite
+  steps:
+    - name: Delete pre-releases by pattern
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+        PATTERN: ${{ inputs.pattern }}
+        DRY_RUN: ${{ inputs.dry_run }}
+      run: |
+        echo "Looking for pre-releases matching pattern: $PATTERN"
+        echo "Dry run mode: $DRY_RUN"
+        echo ""
+
+        releases=$(gh api repos/${{ github.repository }}/releases --paginate)
+
+        matching_releases=$(echo "$releases" | jq -r --arg pattern "$PATTERN" '
+          .[] |
+          select(.prerelease == true) |
+          select((.name | test($pattern)) or (.tag_name | test($pattern))) |
+          "ID: \(.id) | Name: \(.name) | Tag: \(.tag_name) | Created: \(.created_at)"
+        ')
+
+        if [ -z "$matching_releases" ]; then
+          echo "No pre-releases found matching pattern: $PATTERN"
+          exit 0
+        fi
+
+        echo "Found matching pre-releases:"
+        echo "$matching_releases"
+        echo ""
+
+        match_count=$(echo "$matching_releases" | wc -l)
+        echo "Total matches: $match_count"
+        echo ""
+
+        if [ "$DRY_RUN" = "true" ]; then
+          echo "🔍 DRY RUN: The following $match_count pre-release(s) would be deleted:"
+          echo "$matching_releases"
+          echo ""
+          echo "To actually delete these releases, set dry_run to false"
+        else
+          echo "🗑️  Deleting $match_count pre-releases..."
+          echo ""
+
+          release_ids=$(echo "$releases" | jq -r --arg pattern "$PATTERN" '
+            .[] |
+            select(.prerelease == true) |
+            select((.name | test($pattern)) or (.tag_name | test($pattern))) |
+            .id
+          ')
+
+          deleted_count=0
+          failed_count=0
+
+          for release_id in $release_ids; do
+            release_info=$(echo "$releases" | jq -r --arg id "$release_id" '.[] | select(.id == ($id | tonumber)) | "Name: \(.name), Tag: \(.tag_name)"')
+
+            echo "Deleting release ID: $release_id ($release_info)"
+
+            if gh api -X DELETE repos/${{ github.repository }}/releases/$release_id; then
+              echo "✅ Successfully deleted release ID: $release_id"
+              ((deleted_count++))
+            else
+              echo "❌ Failed to delete release ID: $release_id"
+              ((failed_count++))
+            fi
+            echo ""
+          done
+
+          echo "📊 Summary:"
+          echo "  - Successfully deleted: $deleted_count pre-release(s)"
+          if [ $failed_count -gt 0 ]; then
+            echo "  - Failed to delete: $failed_count pre-release(s)"
+            exit 1
+          fi
+        fi
