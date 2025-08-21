@@ -86,6 +86,9 @@ test-creator-hub-e2e:
 format:
 	npm run format
 
+format-fix:
+	npm run format:fix
+
 deep-clean:
 	rm -rf node_modules/ \
 		$(INSPECTOR_PATH)/node_modules/ \

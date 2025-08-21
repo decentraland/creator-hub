@@ -10,7 +10,7 @@ import { WebSocketTransport } from '@dcl/rpc/dist/transports/WebSocket';
 import type { IDataLayer } from '../';
 import { connected, reconnect } from '../';
 import { createLocalDataLayerRpcClient } from '../../../lib/data-layer/client/local-data-layer';
-import { DataServiceDefinition } from '../../..//lib/data-layer/proto/gen/data-layer.gen';
+import { DataServiceDefinition } from '../../../lib/data-layer/proto/gen/data-layer.gen';
 import type { DataLayerRpcClient } from '../../../lib/data-layer/types';
 import { createIframeDataLayerRpcClient } from '../../../lib/data-layer/client/iframe-data-layer';
 import type { InspectorConfig } from '../../../lib/logic/config';
