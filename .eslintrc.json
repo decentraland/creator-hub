@@ -20,6 +20,7 @@
   "ignorePatterns": ["node_modules/**", "**/dist/**"],
 
   "rules": {
+    "no-inner-declarations": "off",
     "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/no-unused-vars": [
       "error",

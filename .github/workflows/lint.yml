@@ -1,28 +1,5 @@
 name: Lint
-on:
-  workflow_dispatch:
-  push:
-    paths:
-      - '**.js'
-      - '**.mjs'
-      - '**.cjs'
-      - '**.jsx'
-      - '**.ts'
-      - '**.mts'
-      - '**.cts'
-      - '**.tsx'
-      - '**.json'
-  pull_request:
-    paths:
-      - '**.js'
-      - '**.mjs'
-      - '**.cjs'
-      - '**.jsx'
-      - '**.ts'
-      - '**.mts'
-      - '**.cts'
-      - '**.tsx'
-      - '**.json'
+on: [ workflow_call ]
 
 concurrency:
   group: lint-${{ github.ref }}
@@ -33,11 +10,11 @@ defaults:
     shell: 'bash'
 
 jobs:
-  eslint:
+  lint:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           cache: 'npm'
@@ -46,17 +23,5 @@ jobs:
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
 
-      - run: npm run lint --if-present
-
-  # This job just check code style for in-template contributions.
-  code-style:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
-      - uses: actions/setup-node@v4
-        with:
-          cache: 'npm'
-
-      - run: npm i prettier
-      - run: npx prettier --check "**/*.{js,mjs,cjs,jsx,ts,mts,cts,tsx,vue}"
+      - run: make lint
+      - run: make format

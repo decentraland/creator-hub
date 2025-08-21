@@ -1,0 +1,192 @@
+name: 'NPM Publish with Dist Tags'
+description: 'Publish an npm package with configurable dist-tags'
+
+inputs:
+  working-directory:
+    description: 'Directory containing package.json'
+    required: false
+    default: '.'
+  npm-token:
+    description: 'NPM authentication token'
+    required: true
+  initial-tag:
+    description: 'Initial dist-tag for the published package'
+    required: false
+    default: 'commit'
+  additional-tags:
+    description: 'Comma-separated list of additional dist-tags to add'
+    required: false
+    default: 'latest'
+  access:
+    description: 'Package access level (public or restricted)'
+    required: false
+    default: 'public'
+  registry:
+    description: 'NPM registry URL'
+    required: false
+    default: 'https://registry.npmjs.org/'
+  dry-run:
+    description: 'Run in dry-run mode (skip actual publishing)'
+    required: false
+    default: 'false'
+
+outputs:
+  published:
+    description: 'Whether the package was published (true/false)'
+    value: ${{ steps.publish.conclusion == 'success' }}
+  package-name:
+    description: 'The name of the published package'
+    value: ${{ steps.package-info.outputs.package-name }}
+  version:
+    description: 'The version that was published'
+    value: ${{ steps.package-info.outputs.version }}
+  initial-tag:
+    description: 'The initial tag used for publishing'
+    value: ${{ inputs.initial-tag }}
+  additional-tags:
+    description: 'The additional tags that were applied'
+    value: ${{ inputs.additional-tags }}
+  npm-url:
+    description: 'The npm package URL'
+    value: ${{ steps.publish.outputs.npm-url }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Get package info
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        if [ ! -f "package.json" ]; then
+          echo "❌ Error: package.json not found in ${{ inputs.working-directory }}"
+          exit 1
+        fi
+
+        PACKAGE_NAME=$(node -p "require('./package.json').name" 2>/dev/null || echo "")
+        VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "")
+
+        if [ -z "$PACKAGE_NAME" ] || [ -z "$VERSION" ]; then
+          echo "❌ Error: Could not read package name or version from package.json"
+          exit 1
+        fi
+
+        echo "package-name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "📦 Package: $PACKAGE_NAME"
+        echo "📋 Version: $VERSION"
+      id: package-info
+
+    - name: Configure npm
+      shell: bash
+      run: |
+        echo "${{ inputs.registry }}:_authToken=${{ inputs.npm-token }}" > ~/.npmrc
+        echo "registry=${{ inputs.registry }}" >> ~/.npmrc
+
+        # Verify authentication
+        if [ "${{ inputs.dry-run }}" != "true" ]; then
+          npm whoami > /dev/null 2>&1 || {
+            echo "❌ Error: npm authentication failed"
+            exit 1
+          }
+          echo "✅ npm authentication verified"
+        fi
+      id: configure-npm
+
+    - name: Publish package
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        PACKAGE_NAME="${{ steps.package-info.outputs.package-name }}"
+        VERSION="${{ steps.package-info.outputs.version }}"
+        INITIAL_TAG="${{ inputs.initial-tag }}"
+        REGISTRY_BASE=$(echo "${{ inputs.registry }}" | sed 's|/*$||')
+
+        # Prepare publish command
+        PUBLISH_CMD="npm publish --provenance --access ${{ inputs.access }} --tag $INITIAL_TAG"
+
+        if [ "${{ inputs.dry-run }}" = "true" ]; then
+          PUBLISH_CMD="$PUBLISH_CMD --dry-run"
+          echo "🔍 Dry run mode - not actually publishing"
+        fi
+
+        # Publish the package
+        echo "📤 Publishing $PACKAGE_NAME@$VERSION with tag '$INITIAL_TAG'..."
+        eval $PUBLISH_CMD
+
+        if [ "$?" -eq 0 ]; then
+          echo "✅ Package published successfully"
+          NPM_URL="$REGISTRY_BASE/-/web/detail/$PACKAGE_NAME"
+          echo "npm-url=$NPM_URL" >> $GITHUB_OUTPUT
+        else
+          echo "❌ Package publishing failed"
+          exit 1
+        fi
+      id: publish
+
+    - name: Add additional dist-tags
+      if: inputs.additional-tags != '' && inputs.dry-run != 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        PACKAGE_NAME="${{ steps.package-info.outputs.package-name }}"
+        VERSION="${{ steps.package-info.outputs.version }}"
+        ADDITIONAL_TAGS="${{ inputs.additional-tags }}"
+
+        # Split comma-separated tags
+        IFS=',' read -ra TAGS <<< "$ADDITIONAL_TAGS"
+
+        for tag in "${TAGS[@]}"; do
+          # Trim whitespace
+          tag=$(echo "$tag" | xargs)
+
+          if [ -n "$tag" ]; then
+            echo "🏷️  Adding dist-tag '$tag' to $PACKAGE_NAME@$VERSION..."
+            npm dist-tag add "$PACKAGE_NAME@$VERSION" "$tag"
+
+            if [ "$?" -eq 0 ]; then
+              echo "✅ Added dist-tag '$tag'"
+            else
+              echo "❌ Failed to add dist-tag '$tag'"
+              exit 1
+            fi
+          fi
+        done
+      id: add-tags
+
+    - name: Summary
+      if: always()
+      shell: bash
+      run: |
+        PACKAGE_NAME="${{ steps.package-info.outputs.package-name }}"
+        VERSION="${{ steps.package-info.outputs.version }}"
+
+        if [ "${{ steps.publish.conclusion }}" = "success" ]; then
+          echo "🎉 Publication Summary:"
+          echo "  📦 Package: $PACKAGE_NAME"
+          echo "  📋 Version: $VERSION"
+          echo "  🏷️  Initial tag: ${{ inputs.initial-tag }}"
+
+          if [ -n "${{ inputs.additional-tags }}" ] && [ "${{ inputs.dry-run }}" != "true" ]; then
+            echo "  🏷️  Additional tags: ${{ inputs.additional-tags }}"
+          fi
+
+          if [ "${{ inputs.dry-run }}" = "true" ]; then
+            echo "  🔍 Mode: Dry run (not actually published)"
+          else
+            echo "  🌐 URL: ${{ steps.publish.outputs.npm-url }}"
+            echo ""
+            echo "Install commands:"
+            echo "  npm install $PACKAGE_NAME@${{ inputs.initial-tag }}"
+            if [ -n "${{ inputs.additional-tags }}" ]; then
+              IFS=',' read -ra TAGS <<< "${{ inputs.additional-tags }}"
+              for tag in "${TAGS[@]}"; do
+                tag=$(echo "$tag" | xargs)
+                if [ -n "$tag" ]; then
+                  echo "  npm install $PACKAGE_NAME@$tag"
+                fi
+              done
+            fi
+          fi
+        else
+          echo "❌ Publication failed"
+        fi

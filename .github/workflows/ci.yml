@@ -12,7 +12,7 @@ on:
       - '!.github/workflows/ci.yml'
       - '!.github/workflows/typechecking.yml'
       - '!.github/workflows/tests.yml'
-      - '!.github/workflows/release.yml'
+      - '!.github/workflows/pre_release.yml'
       - '**.md'
       - .editorconfig
       - .gitignore
@@ -24,7 +24,7 @@ on:
       - '!.github/workflows/ci.yml'
       - '!.github/workflows/typechecking.yml'
       - '!.github/workflows/tests.yml'
-      - '!.github/workflows/release.yml'
+      - '!.github/workflows/pre_release.yml'
       - '**.md'
       - .editorconfig
       - .gitignore
@@ -36,44 +36,29 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  lint:
+    uses: ./.github/workflows/lint.yml
   typechecking:
     uses: ./.github/workflows/typechecking.yml
   tests:
     uses: ./.github/workflows/tests.yml
   drop_pre_release:
+    name: drop pre-release
     permissions:
       contents: write
     with:
       dry-run: ${{ github.event_name != 'push' || github.ref_name != 'main' }}
-    needs: [ typechecking, tests ]
+    needs: [ lint, typechecking, tests ]
     uses: ./.github/workflows/drop.yml
-  pre_release:
-    permissions:
-      contents: write # Allows this job to create releases
-      issues: write
-      pull-requests: write
+  inspector:
+    needs: [ drop_pre_release ]
+    uses: ./.github/workflows/inspector.yml
+    secrets: inherit
+  creator-hub:
+    needs: [ inspector ]
+    uses: ./.github/workflows/creator-hub.yml
+    secrets: inherit
     with:
       dry-run: ${{ github.event_name != 'push' || github.ref_name != 'main' }}
-    needs: [ drop_pre_release ]
-    uses: ./.github/workflows/release.yml
-    secrets:
-      # Secrets required to sign and notarize the app in MacOS
-      MACOS_CSC_LINK: ${{ secrets.MACOS_CSC_LINK }}
-      MACOS_CSC_KEY_PASSWORD: ${{ secrets.MACOS_CSC_KEY_PASSWORD }}
-      MACOS_NOTARIZATION_APPLE_ID: ${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}
-      MACOS_NOTARIZATION_TEAM_ID: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}
-      MACOS_NOTARIZATION_PWD: ${{ secrets.MACOS_NOTARIZATION_PWD }}
-      VITE_SEGMENT_CREATORS_HUB_API_KEY: ${{ secrets.VITE_SEGMENT_CREATORS_HUB_API_KEY }}
-      VITE_SEGMENT_INSPECTOR_API_KEY: ${{ secrets.VITE_SEGMENT_INSPECTOR_API_KEY }}
-      VITE_ALLOWED_EXTERNAL_ORIGINS: ${{ secrets.VITE_ALLOWED_EXTERNAL_ORIGINS }}
-      SDK_TEAM_AWS_ID: ${{ secrets.SDK_TEAM_AWS_ID }}
-      SDK_TEAM_AWS_SECRET: ${{ secrets.SDK_TEAM_AWS_SECRET }}
-      SDK_TEAM_S3_BUCKET: ${{ secrets.SDK_TEAM_S3_BUCKET }}
-      SDK_TEAM_S3_BASE_URL: ${{ secrets.SDK_TEAM_S3_BASE_URL }}
-      ES_USERNAME: ${{ secrets.ES_USERNAME }}
-      ES_PASSWORD: ${{ secrets.ES_PASSWORD }}
-      WINDOWS_CREDENTIAL_ID_SIGNER: ${{ secrets.WINDOWS_CREDENTIAL_ID_SIGNER }}
-      ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
-      # Sentry AUTH Token
-      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+      inspector_s3_bucket_key: ${{ needs.inspector.outputs.s3_bucket_key }}
+      inspector_version: ${{ needs.inspector.outputs.version }}
