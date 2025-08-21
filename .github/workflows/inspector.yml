@@ -162,11 +162,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: get latest release
+      - name: get latest pre-release
         id: latest_release
         uses: ./.github/actions/get-latest-release
         with:
           pattern: '^@dcl/inspector@[0-9]+\.[0-9]+\.[0-9]+$'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prerelease: true
 
       - name: generate release notes
         id: release_notes

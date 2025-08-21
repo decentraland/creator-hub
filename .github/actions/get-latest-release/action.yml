@@ -14,6 +14,9 @@ inputs:
   limit:
     description: Number of releases to fetch
     default: '100'
+  github_token:
+    description: 'GitHub token for API access'
+    required: true
 
 outputs:
   tag:
@@ -49,4 +52,4 @@ runs:
         echo "Found latest matching release: $LATEST_TAG"
         echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
       env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ inputs.github_token }}
