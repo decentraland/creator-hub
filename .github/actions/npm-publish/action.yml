@@ -29,6 +29,10 @@ inputs:
     description: 'Run in dry-run mode (skip actual publishing)'
     required: false
     default: 'false'
+  node-version:
+    description: 'Node.js version to use'
+    required: false
+    default: '22'
 
 outputs:
   published:
@@ -53,9 +57,19 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - name: Setup Node.js with npm authentication
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        registry-url: ${{ inputs.registry }}
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
+
     - name: Get package info
       shell: bash
       working-directory: ${{ inputs.working-directory }}
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
       run: |
         if [ ! -f "package.json" ]; then
           echo "❌ Error: package.json not found in ${{ inputs.working-directory }}"
@@ -76,25 +90,32 @@ runs:
         echo "📋 Version: $VERSION"
       id: package-info
 
-    - name: Configure npm
+    - name: Verify npm authentication
       shell: bash
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
       run: |
-        echo "${{ inputs.registry }}:_authToken=${{ inputs.npm-token }}" > ~/.npmrc
-        echo "registry=${{ inputs.registry }}" >> ~/.npmrc
-
         # Verify authentication
         if [ "${{ inputs.dry-run }}" != "true" ]; then
-          npm whoami > /dev/null 2>&1 || {
+          echo "🔐 Verifying npm authentication..."
+          if npm whoami > /dev/null 2>&1; then
+            echo "✅ npm authentication verified as: $(npm whoami)"
+          else
             echo "❌ Error: npm authentication failed"
+            echo "Registry: ${{ inputs.registry }}"
+            echo "Please check your NPM_TOKEN secret"
             exit 1
-          }
-          echo "✅ npm authentication verified"
+          fi
+        else
+          echo "🔍 Skipping auth verification in dry-run mode"
         fi
-      id: configure-npm
+      id: verify-auth
 
     - name: Publish package
       shell: bash
       working-directory: ${{ inputs.working-directory }}
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
       run: |
         PACKAGE_NAME="${{ steps.package-info.outputs.package-name }}"
         VERSION="${{ steps.package-info.outputs.version }}"
@@ -127,6 +148,8 @@ runs:
       if: inputs.additional-tags != '' && inputs.dry-run != 'true'
       shell: bash
       working-directory: ${{ inputs.working-directory }}
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
       run: |
         PACKAGE_NAME="${{ steps.package-info.outputs.package-name }}"
         VERSION="${{ steps.package-info.outputs.version }}"
@@ -156,6 +179,8 @@ runs:
     - name: Summary
       if: always()
       shell: bash
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
       run: |
         PACKAGE_NAME="${{ steps.package-info.outputs.package-name }}"
         VERSION="${{ steps.package-info.outputs.version }}"
