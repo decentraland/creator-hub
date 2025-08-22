@@ -4,7 +4,7 @@ on:
     outputs:
       s3_bucket_key:
         description: "S3 bucket key for the published Inspector package"
-        value: ${{ jobs.publish.outputs.s3_bucket_key }}
+        value: ${{ jobs.publish.outputs.s3_bucket_key || '' }}
       version:
         description: "Version of the Inspector package"
         value: ${{ jobs.version.outputs.version }}
@@ -144,7 +144,7 @@ jobs:
 
   notify:
     needs: [version, publish]
-    if: ${{ github.event.pull_request.number && needs.version.outputs.changed == 'true' }}
+    if: ${{ github.event.pull_request.number && needs.publish.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: find Comment
@@ -174,7 +174,7 @@ jobs:
   release:
     needs: [version, publish]
     runs-on: ubuntu-latest
-    if: ${{ github.ref == 'refs/heads/main' && !github.event.pull_request.number && needs.version.outputs.changed == 'true' }}
+    if: ${{ github.ref == 'refs/heads/main' && !github.event.pull_request.number && needs.publish.result == 'success' }}
     steps:
       - uses: actions/checkout@v4
         with:
