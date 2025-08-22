@@ -4,7 +4,7 @@ on:
     outputs:
       s3_bucket_key:
         description: "S3 bucket key for the published Inspector package"
-        value: ${{ jobs.publish.outputs.s3_bucket_key || '' }}
+        value: ${{ jobs.publish.outputs.s3_bucket_key }}
       version:
         description: "Version of the Inspector package"
         value: ${{ jobs.version.outputs.version }}
