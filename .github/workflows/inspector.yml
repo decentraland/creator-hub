@@ -18,6 +18,7 @@ jobs:
     outputs:
       changed: ${{ steps.version.outputs.changed }}
       version: ${{ steps.version.outputs.version }}
+      previous_version: ${{ steps.version.outputs.previous_version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -48,6 +49,7 @@ jobs:
     outputs:
       s3_bucket_key: ${{ steps.s3-upload.outputs.s3-key }}
       version: ${{ needs.version.outputs.version }}
+      previous_version: ${{ needs.version.outputs.previous_version }}
       changed: ${{ needs.version.outputs.changed }}
       preview_url: ${{ steps.set-preview-url.outputs.preview_url }}
     steps:
@@ -178,19 +180,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: get latest pre-release
-        id: latest_release
-        uses: ./.github/actions/get-latest-release
-        with:
-          pattern: '^@dcl/inspector@[0-9]+\.[0-9]+\.[0-9]+$'
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          prerelease: true
-
       - name: generate release notes
         id: release_notes
         uses: ./.github/actions/generate-release-notes
         with:
-          previous_version: ${{ steps.latest_release.outputs.tag }}
+          previous_version: ${{ needs.publish.outputs.previous_version }}
           current_version: ${{ needs.publish.outputs.version }}
           paths: 'packages/inspector'
           section_names: 'Inspector Changes'
