@@ -44,6 +44,7 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     needs: [version]
+    if: ${{ needs.version.outputs.changed == 'true' }}
     permissions:
       pages: write
       contents: read
@@ -133,7 +134,7 @@ jobs:
           echo "preview_url=https://decentraland.github.io/creator-hub/inspector/$safe_branch" >> $GITHUB_OUTPUT
 
       - name: publish to npm registry
-        if: ${{ github.ref == 'refs/heads/main' && needs.version.outputs.changed == 'true' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: ./.github/actions/npm-publish
         id: npm-publish
         with:
@@ -144,10 +145,10 @@ jobs:
 
   notify:
     needs: [version, publish]
+    if: ${{ github.event.pull_request.number && needs.version.outputs.changed == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: find Comment
-        if: ${{ github.event.pull_request.number }}
         uses: peter-evans/find-comment@v1
         id: fc
         with:
@@ -156,7 +157,6 @@ jobs:
           body-includes: Test @dcl/inspector package
 
       - name: create or update comment
-        if: ${{ github.event.pull_request.number }}
         uses: peter-evans/create-or-update-comment@v1
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
@@ -173,6 +173,7 @@ jobs:
 
   release:
     needs: [version, publish]
+    if: ${{ needs.version.outputs.changed == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -180,7 +181,7 @@ jobs:
           fetch-depth: 0
 
       - name: generate release notes
-        if: ${{ github.ref == 'refs/heads/main' && needs.version.outputs.changed == 'true' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         id: release_notes
         uses: ./.github/actions/generate-release-notes
         with:
@@ -193,7 +194,7 @@ jobs:
           tag_prefix: '@dcl/inspector@'
 
       - name: update release description
-        if: ${{ github.ref == 'refs/heads/main' && needs.version.outputs.changed == 'true' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: ./.github/actions/update-release-description
         with:
           tag_name: "@dcl/inspector@${{ needs.version.outputs.version }}"
