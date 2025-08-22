@@ -39,7 +39,7 @@ runs:
             --repo "$REPO" \
             --limit "$LIMIT" \
             --json tagName,isPrerelease \
-            --jq ".[] | select(.isPrerelease == false or $ALLOW_PRERELEASE == \"true\") | .tagName" |
+            --jq ".[] | select(.isPrerelease == false or \"$ALLOW_PRERELEASE\" == \"true\") | .tagName" |
           grep -E "$PATTERN" |
           head -n 1
         )
