@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [ macos-latest, windows-latest ]
+        os: [ macos-14, windows-latest ]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -106,7 +106,7 @@ jobs:
           retry_wait_seconds: 15
           retry_on: error
           shell: 'bash'
-          command: npx electron-builder --project packages/creator-hub --config electron-builder.cjs --config.extraMetadata.version=${{ steps.version.outputs.version }} ${{ matrix.os == 'macos-latest' && format('--config.mac.notarize={0}', true) || '' }} --publish ${{ inputs.dry-run && 'never' || 'always' }}
+          command: npx electron-builder --project packages/creator-hub --config electron-builder.cjs --config.extraMetadata.version=${{ steps.version.outputs.version }} ${{ matrix.os == 'macos-15' && format('--config.mac.notarize={0}', true) || '' }} --publish ${{ inputs.dry-run && 'never' || 'always' }}
         env:
           # Disable hard links to avoid issues with npm
           USE_HARD_LINKS: false
@@ -166,7 +166,7 @@ jobs:
           echo "EOF" >> $GITHUB_ENV
 
       - name: Set specific macos instructions
-        if: ${{ github.event.pull_request.number && matrix.os == 'macos-latest' }}
+        if: ${{ github.event.pull_request.number && matrix.os == 'macos-15' }}
         id: macos-instructions
         run: |
           echo "list<<EOF" >> $GITHUB_ENV
