@@ -23,6 +23,10 @@ inputs:
     description: 'Mark as draft if creating a new release (true/false)'
     required: false
     default: 'false'
+  release_title:
+    description: 'Custom title for the release (defaults to "Release {tag_name}")'
+    required: false
+    default: ''
 
 outputs:
   release_url:
@@ -52,7 +56,7 @@ runs:
           RELEASE_URL=$(echo "$RELEASE_INFO" | jq -r '.url')
 
           # Create temporary file for release notes
-          echo "${{ inputs.release_notes }}" > temp_release_notes.md
+          echo '${{ inputs.release_notes }}' > temp_release_notes.md
 
           # Update the release description
           gh release edit "${{ inputs.tag_name }}" --notes-file temp_release_notes.md
@@ -71,24 +75,36 @@ runs:
           # Release doesn't exist - create it
           echo "🆕 Release not found. Creating new release..."
 
-          # Build create command with options
-          CREATE_CMD="gh release create '${{ inputs.tag_name }}'"
+          # Create temporary file for release notes
+          echo '${{ inputs.release_notes }}' > temp_release_notes.md
 
-          # Add release notes
-          echo "${{ inputs.release_notes }}" > temp_release_notes.md
-          CREATE_CMD="$CREATE_CMD --notes-file temp_release_notes.md"
+          # Determine release title
+          if [[ -n "${{ inputs.release_title }}" ]]; then
+            TITLE="${{ inputs.release_title }}"
+          else
+            TITLE="Release ${{ inputs.tag_name }}"
+          fi
+          echo "📝 Using release title: $TITLE"
+
+          # Build create command with options
+          CREATE_CMD=("gh" "release" "create" "${{ inputs.tag_name }}")
+          CREATE_CMD+=("--title" "$TITLE")
+          CREATE_CMD+=("--notes-file" "temp_release_notes.md")
 
           # Add optional flags
           if [[ "${{ inputs.prerelease }}" == "true" ]]; then
-            CREATE_CMD="$CREATE_CMD --prerelease"
+            CREATE_CMD+=("--prerelease")
+            echo "🚧 Marking as prerelease"
           fi
 
           if [[ "${{ inputs.draft }}" == "true" ]]; then
-            CREATE_CMD="$CREATE_CMD --draft"
+            CREATE_CMD+=("--draft")
+            echo "📝 Marking as draft"
           fi
 
           # Execute create command
-          eval $CREATE_CMD
+          echo "🚀 Creating release with command: ${CREATE_CMD[*]}"
+          "${CREATE_CMD[@]}"
 
           # Get the created release info
           RELEASE_INFO=$(gh release view "${{ inputs.tag_name }}" --json id,url)
@@ -113,3 +129,4 @@ runs:
         fi
       env:
         GH_TOKEN: ${{ inputs.github_token }}
+        GITHUB_TOKEN: ${{ inputs.github_token }}
