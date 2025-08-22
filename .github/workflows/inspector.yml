@@ -4,13 +4,13 @@ on:
     outputs:
       s3_bucket_key:
         description: "S3 bucket key for the published Inspector package"
-        value: ${{ jobs.set_outputs.outputs.s3_bucket_key || '' }}
+        value: ${{ jobs.publish.outputs.s3_bucket_key || '' }}
       version:
         description: "Version of the Inspector package"
-        value: ${{ jobs.set_outputs.outputs.version }}
+        value: ${{ jobs.version.outputs.version }}
       changed:
         description: "Whether the version of the Inspector package has changed"
-        value: ${{ jobs.set_outputs.outputs.changed }}
+        value: ${{ jobs.version.outputs.changed }}
 
 jobs:
   version:
@@ -44,7 +44,6 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     needs: [version]
-    if: ${{ needs.version.outputs.changed == 'true' }}
     permissions:
       pages: write
       contents: read
@@ -75,10 +74,11 @@ jobs:
         working-directory: ./packages/inspector
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            npm version ${{ needs.version.outputs.version }} --force --no-git-tag-version --allow-same-version
+            VERSION="${{ needs.version.outputs.version }}"
           else
-            npm version ${{ needs.version.outputs.version }}-commit-${{ github.sha }} --force --no-git-tag-version --allow-same-version
+            VERSION="${{ needs.version.outputs.version }}-commit-${{ github.sha }}"
           fi
+          npm version "$VERSION" --force --no-git-tag-version --allow-same-version
 
       - name: npm pack
         working-directory: ./packages/inspector
@@ -133,7 +133,7 @@ jobs:
           echo "preview_url=https://decentraland.github.io/creator-hub/inspector/$safe_branch" >> $GITHUB_OUTPUT
 
       - name: publish to npm registry
-        if: github.ref == 'refs/heads/main'
+        if: ${{ github.ref == 'refs/heads/main' && needs.version.outputs.changed == 'true' }}
         uses: ./.github/actions/npm-publish
         id: npm-publish
         with:
@@ -142,23 +142,9 @@ jobs:
           initial-tag: 'latest'
           access: 'public'
 
-  set_outputs:
-    runs-on: ubuntu-latest
-    needs: [version, publish]
-    outputs:
-      s3_bucket_key: ${{ needs.publish.outputs.s3_bucket_key || '' }}
-      version: ${{ needs.version.outputs.version }}
-      changed: ${{ needs.version.outputs.changed }}
-    steps:
-      - run: |
-          echo "Finalizing outputs"
-          echo "s3_bucket_key=${{ needs.publish.outputs.s3_bucket_key || '' }}"
-          echo "version=${{ needs.version.outputs.version }}"
-          echo "changed=${{ needs.version.outputs.changed }}"
-
   notify:
     needs: [version, publish]
-    if: ${{ github.event.pull_request.number && needs.publish.result == 'success' }}
+    if: ${{ github.event.pull_request.number }}
     runs-on: ubuntu-latest
     steps:
       - name: find Comment
@@ -177,18 +163,17 @@ jobs:
           body: |
             # Test @dcl/inspector package
 
-            - The `@dcl/inspector` package can be tested by visiting [this url](${{ needs.publish.outputs.preview_url }})
-
-              - Or by installing it via NPM:
-               ```bash
-               npm install "${{ secrets.SDK_TEAM_S3_BASE_URL }}/${{ needs.publish.outputs.s3_bucket_key }}"
-               ```
+            - Preview: [link](${{ needs.publish.outputs.preview_url }})
+            - Install via NPM:
+              ```bash
+              npm install "${{ secrets.SDK_TEAM_S3_BASE_URL }}/${{ needs.publish.outputs.s3_bucket_key }}"
+              ```
           edit-mode: replace
 
   release:
     needs: [version, publish]
     runs-on: ubuntu-latest
-    if: ${{ github.ref == 'refs/heads/main' && !github.event.pull_request.number && needs.publish.result == 'success' }}
+    if: ${{ github.ref == 'refs/heads/main' && !github.event.pull_request.number && needs.version.outputs.changed == 'true' }}
     steps:
       - uses: actions/checkout@v4
         with:
