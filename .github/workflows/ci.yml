@@ -54,4 +54,4 @@ jobs:
       dry-run: ${{ !((github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'main') }}
       inspector_s3_bucket_key: ${{ needs.inspector.outputs.s3_bucket_key }}
       inspector_version: ${{ needs.inspector.outputs.version }}
-      inspector_changed: ${{ needs.inspector.outputs.changed }}
+      inspector_changed: ${{ needs.inspector.outputs.changed == 'true' }}
