@@ -144,10 +144,10 @@ jobs:
 
   notify:
     needs: [version, publish]
-    if: ${{ github.event.pull_request.number }}
     runs-on: ubuntu-latest
     steps:
       - name: find Comment
+        if: ${{ github.event.pull_request.number }}
         uses: peter-evans/find-comment@v1
         id: fc
         with:
@@ -156,6 +156,7 @@ jobs:
           body-includes: Test @dcl/inspector package
 
       - name: create or update comment
+        if: ${{ github.event.pull_request.number }}
         uses: peter-evans/create-or-update-comment@v1
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
@@ -173,13 +174,13 @@ jobs:
   release:
     needs: [version, publish]
     runs-on: ubuntu-latest
-    if: ${{ github.ref == 'refs/heads/main' && !github.event.pull_request.number && needs.version.outputs.changed == 'true' }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: generate release notes
+        if: ${{ github.ref == 'refs/heads/main' && needs.version.outputs.changed == 'true' }}
         id: release_notes
         uses: ./.github/actions/generate-release-notes
         with:
@@ -192,6 +193,7 @@ jobs:
           tag_prefix: '@dcl/inspector@'
 
       - name: update release description
+        if: ${{ github.ref == 'refs/heads/main' && needs.version.outputs.changed == 'true' }}
         uses: ./.github/actions/update-release-description
         with:
           tag_name: "@dcl/inspector@${{ needs.version.outputs.version }}"
