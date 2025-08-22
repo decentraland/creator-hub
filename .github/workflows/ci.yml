@@ -59,6 +59,8 @@ jobs:
     uses: ./.github/workflows/creator-hub.yml
     secrets: inherit
     with:
-      dry-run: ${{ github.event_name != 'push' || github.ref_name != 'main' }}
+      # dry-run == false only if we are on main branch and the event is a push or workflow_dispatch
+      dry-run: ${{ !((github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'main') }}
       inspector_s3_bucket_key: ${{ needs.inspector.outputs.s3_bucket_key }}
       inspector_version: ${{ needs.inspector.outputs.version }}
+      inspector_changed: ${{ needs.inspector.outputs.changed }}

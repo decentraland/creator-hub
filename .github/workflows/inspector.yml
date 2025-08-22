@@ -7,7 +7,10 @@ on:
         value: ${{ jobs.publish.outputs.s3_bucket_key }}
       version:
         description: "Version of the Inspector package"
-        value: ${{ jobs.publish.outputs.version }}
+        value: ${{ jobs.version.outputs.version }}
+      changed:
+        description: "Whether the version of the Inspector package has changed"
+        value: ${{ jobs.version.outputs.changed }}
 
 jobs:
   version:
@@ -48,9 +51,6 @@ jobs:
       id-token: write
     outputs:
       s3_bucket_key: ${{ steps.s3-upload.outputs.s3-key }}
-      version: ${{ needs.version.outputs.version }}
-      previous_version: ${{ needs.version.outputs.previous_version }}
-      changed: ${{ needs.version.outputs.changed }}
       preview_url: ${{ steps.set-preview-url.outputs.preview_url }}
     steps:
       - uses: actions/checkout@v4
@@ -143,8 +143,8 @@ jobs:
           access: 'public'
 
   notify:
-    needs: [publish]
-    if: ${{ github.event.pull_request.number && needs.publish.outputs.changed == 'true' }}
+    needs: [version, publish]
+    if: ${{ github.event.pull_request.number && needs.version.outputs.changed == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: find Comment
@@ -172,9 +172,9 @@ jobs:
           edit-mode: replace
 
   release:
-    needs: [publish]
+    needs: [version, publish]
     runs-on: ubuntu-latest
-    if: ${{ github.ref == 'refs/heads/main' && !github.event.pull_request.number && needs.publish.outputs.changed == 'true' }}
+    if: ${{ github.ref == 'refs/heads/main' && !github.event.pull_request.number && needs.version.outputs.changed == 'true' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -184,8 +184,8 @@ jobs:
         id: release_notes
         uses: ./.github/actions/generate-release-notes
         with:
-          previous_version: ${{ needs.publish.outputs.previous_version }}
-          current_version: ${{ needs.publish.outputs.version }}
+          previous_version: ${{ needs.version.outputs.previous_version }}
+          current_version: ${{ needs.version.outputs.version }}
           paths: 'packages/inspector'
           section_names: 'Inspector Changes'
           release_title: '@dcl/inspector'
@@ -195,7 +195,7 @@ jobs:
       - name: update release description
         uses: ./.github/actions/update-release-description
         with:
-          tag_name: "@dcl/inspector@${{ needs.publish.outputs.version }}"
+          tag_name: "@dcl/inspector@${{ needs.version.outputs.version }}"
           release_notes: ${{ steps.release_notes.outputs.release_notes }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           create_if_not_exists: true
