@@ -47,7 +47,6 @@ jobs:
     secrets: inherit
   creator-hub:
     needs: [ inspector ]
-    if: needs.inspector.result != 'failure'
     uses: ./.github/workflows/creator-hub.yml
     secrets: inherit
     with:

@@ -4,13 +4,13 @@ on:
     outputs:
       s3_bucket_key:
         description: "S3 bucket key for the published Inspector package"
-        value: ${{ jobs.publish.outputs.s3_bucket_key || '' }}
+        value: ${{ jobs.set_outputs.outputs.s3_bucket_key || '' }}
       version:
         description: "Version of the Inspector package"
-        value: ${{ jobs.version.outputs.version }}
+        value: ${{ jobs.set_outputs.outputs.version }}
       changed:
         description: "Whether the version of the Inspector package has changed"
-        value: ${{ jobs.version.outputs.changed }}
+        value: ${{ jobs.set_outputs.outputs.changed }}
 
 jobs:
   version:
@@ -141,6 +141,20 @@ jobs:
           npm-token: ${{ secrets.NPM_TOKEN }}
           initial-tag: 'latest'
           access: 'public'
+
+  set_outputs:
+    runs-on: ubuntu-latest
+    needs: [version, publish]
+    outputs:
+      s3_bucket_key: ${{ needs.publish.outputs.s3_bucket_key || '' }}
+      version: ${{ needs.version.outputs.version }}
+      changed: ${{ needs.version.outputs.changed }}
+    steps:
+      - run: |
+          echo "Finalizing outputs"
+          echo "s3_bucket_key=${{ needs.publish.outputs.s3_bucket_key || '' }}"
+          echo "version=${{ needs.version.outputs.version }}"
+          echo "changed=${{ needs.version.outputs.changed }}"
 
   notify:
     needs: [version, publish]
