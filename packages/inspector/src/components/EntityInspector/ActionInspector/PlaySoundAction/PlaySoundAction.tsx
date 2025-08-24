@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { ActionPayload, ActionType } from '@dcl/asset-packs';
-import { recursiveCheck } from '../../../../lib/utils/deep-equal';
+import { deepEqual } from 'fast-equals';
 
 import { useAppSelector } from '../../../../redux/hooks';
 import { selectAssetCatalog } from '../../../../redux/app';
@@ -15,25 +15,9 @@ import { Dropdown, RangeField, InfoTooltip, FileUploadField, CheckboxField } fro
 import { ACCEPTED_FILE_TYPES } from '../../../ui/FileUploadField/types';
 
 import { isValid } from './utils';
-import type { Props } from './types';
+import { PLAY_MODE, PLAY_MODE_OPTIONS, type Props } from './types';
 
 import './PlaySoundAction.css';
-
-enum PLAY_MODE {
-  PLAY_ONCE = 'play-once',
-  LOOP = 'loop',
-}
-
-const playModeOptions = [
-  {
-    label: 'Play Once',
-    value: PLAY_MODE.PLAY_ONCE,
-  },
-  {
-    label: 'Loop',
-    value: PLAY_MODE.LOOP,
-  },
-];
 
 const PlaySoundAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
   const [payload, setPayload] = useState<Partial<ActionPayload<ActionType.PLAY_SOUND>>>({
@@ -42,23 +26,27 @@ const PlaySoundAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
 
   const files = useAppSelector(selectAssetCatalog);
 
-  useEffect(() => {
-    if (!recursiveCheck(payload, value, 2) || !isValid(payload)) return;
-    onUpdate(payload);
-  }, [payload, onUpdate]);
+  const handleUpdate = useCallback(
+    (_payload: Partial<ActionPayload<ActionType.PLAY_SOUND>>) => {
+      setPayload(_payload);
+      if (!deepEqual(_payload, value) || !isValid(_payload)) return;
+      onUpdate(_payload);
+    },
+    [setPayload, value, onUpdate],
+  );
 
   const handleDrop = useCallback(
     (src: string) => {
-      setPayload({ ...payload, src });
+      handleUpdate({ ...payload, src });
     },
-    [payload, setPayload],
+    [payload, handleUpdate],
   );
 
   const handleChangePlayMode = useCallback(
     ({ target: { value } }: React.ChangeEvent<HTMLSelectElement>) => {
-      setPayload({ ...payload, loop: value === PLAY_MODE.LOOP });
+      handleUpdate({ ...payload, loop: value === PLAY_MODE.LOOP });
     },
-    [payload, setPayload],
+    [payload, handleUpdate],
   );
 
   const handleChangeVolume = useCallback(
@@ -66,17 +54,17 @@ const PlaySoundAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
       const { value } = e.target as HTMLInputElement;
 
       if (isValidVolume(value)) {
-        setPayload({ ...payload, volume: volumeToAudioSource(value) });
+        handleUpdate({ ...payload, volume: volumeToAudioSource(value) });
       }
     },
-    [payload, setPayload],
+    [payload, handleUpdate],
   );
 
   const handleChangeGlobal = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setPayload({ ...payload, global: e.target.checked });
+      handleUpdate({ ...payload, global: e.target.checked });
     },
-    [payload, setPayload],
+    [payload, handleUpdate],
   );
 
   const error = useMemo(() => {
@@ -112,7 +100,7 @@ const PlaySoundAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
           <Dropdown
             label="Play Mode"
             value={payload.loop ? PLAY_MODE.LOOP : PLAY_MODE.PLAY_ONCE}
-            options={playModeOptions}
+            options={PLAY_MODE_OPTIONS}
             onChange={handleChangePlayMode}
           />
         </div>

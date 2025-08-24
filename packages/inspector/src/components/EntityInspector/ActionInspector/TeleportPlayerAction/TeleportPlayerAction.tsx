@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { ActionPayload, ActionType } from '@dcl/asset-packs';
-import { recursiveCheck } from '../../../../lib/utils/deep-equal';
+import { deepEqual } from 'fast-equals';
 import { TextField } from '../../../ui';
 import { Block } from '../../../Block';
 import type { Props } from './types';
@@ -20,23 +20,27 @@ const TeleportPlayerAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
     ...value,
   });
 
-  useEffect(() => {
-    if (!recursiveCheck(payload, value, 2) || !isValid(payload)) return;
-    onUpdate(payload);
-  }, [payload, onUpdate]);
+  const handleUpdate = useCallback(
+    (_payload: Partial<ActionPayload<ActionType.TELEPORT_PLAYER>>) => {
+      setPayload(_payload);
+      if (!deepEqual(_payload, value) || !isValid(_payload)) return;
+      onUpdate(_payload);
+    },
+    [setPayload, value, onUpdate],
+  );
 
   const handleChangeX = useCallback(
     ({ target: { value } }: React.ChangeEvent<HTMLInputElement>) => {
-      setPayload({ ...payload, x: parseInt(value) });
+      handleUpdate({ ...payload, x: parseInt(value) });
     },
-    [payload, setPayload],
+    [payload, handleUpdate],
   );
 
   const handleChangeY = useCallback(
     ({ target: { value } }: React.ChangeEvent<HTMLInputElement>) => {
-      setPayload({ ...payload, y: parseInt(value) });
+      handleUpdate({ ...payload, y: parseInt(value) });
     },
-    [payload, setPayload],
+    [payload, handleUpdate],
   );
 
   return (

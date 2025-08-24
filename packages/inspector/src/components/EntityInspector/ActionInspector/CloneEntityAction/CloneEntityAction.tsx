@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { ActionPayload, ActionType } from '@dcl/asset-packs';
-import { Vector3 } from '@dcl/ecs-math';
-import { recursiveCheck } from '../../../../lib/utils/deep-equal';
+import React, { useCallback, useState } from 'react';
+import { deepEqual } from 'fast-equals';
+import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
+import { type Vector3 } from '@dcl/ecs-math';
 import { TextField } from '../../../ui';
 import type { Props } from './types';
 
@@ -38,51 +38,46 @@ const CloneEntityAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
     ...value,
   });
 
-  useEffect(() => {
-    if (!recursiveCheck(payload, value, 2) || !isValid(payload)) return;
-    onUpdate(payload);
-  }, [payload, onUpdate]);
+  const handleUpdate = useCallback(
+    (_payload: Partial<ActionPayload<ActionType.MOVE_PLAYER>>) => {
+      setPayload(_payload);
+      if (!deepEqual(_payload, value) || !isValid(_payload)) return;
+      onUpdate(_payload);
+    },
+    [setPayload, value, onUpdate],
+  );
 
   const handleChangePositionX = useCallback(
     ({ target: { value } }: React.ChangeEvent<HTMLInputElement>) => {
       if (!value) return;
-      setPayload({
+      handleUpdate({
         ...payload,
-        position: {
-          ...(payload.position as Vector3),
-          x: parseFloat(value),
-        },
+        position: { ...(payload.position as Vector3), x: parseFloat(value) },
       });
     },
-    [payload, setPayload],
+    [payload, handleUpdate],
   );
 
   const handleChangePositionY = useCallback(
     ({ target: { value } }: React.ChangeEvent<HTMLInputElement>) => {
       if (!value) return;
-      setPayload({
+      handleUpdate({
         ...payload,
-        position: {
-          ...(payload.position as Vector3),
-          y: parseFloat(value),
-        },
+        position: { ...(payload.position as Vector3), y: parseFloat(value) },
       });
     },
-    [payload, setPayload],
+    [payload, handleUpdate],
   );
 
   const handleChangePositionZ = useCallback(
     ({ target: { value } }: React.ChangeEvent<HTMLInputElement>) => {
       if (!value) return;
-      setPayload({
+      handleUpdate({
         ...payload,
-        position: {
-          ...(payload.position as Vector3),
-          z: parseFloat(value),
-        },
+        position: { ...(payload.position as Vector3), z: parseFloat(value) },
       });
     },
-    [payload, setPayload],
+    [payload, handleUpdate],
   );
 
   return (

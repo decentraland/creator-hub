@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { ActionPayload, ActionType } from '@dcl/asset-packs';
-import { recursiveCheck } from '../../../../lib/utils/deep-equal';
+import React, { useCallback, useState } from 'react';
+import { deepEqual } from 'fast-equals';
+import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
 import { CheckboxField, TextField } from '../../../ui';
 import { Block } from '../../../Block';
 import type { Props } from './types';
@@ -23,56 +23,51 @@ const FollowPlayerAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
     ...value,
   });
 
-  useEffect(() => {
-    if (!recursiveCheck(payload, value, 3) || !isValid(payload)) return;
-    onUpdate(payload);
-  }, [payload, onUpdate]);
+  const handleUpdate = useCallback(
+    (_payload: Partial<ActionPayload<ActionType.FOLLOW_PLAYER>>) => {
+      setPayload(_payload);
+      if (!deepEqual(_payload, value) || !isValid(_payload)) return;
+      onUpdate(_payload);
+    },
+    [setPayload, value, onUpdate],
+  );
 
   const handleChangeSpeed = useCallback(
     ({ target: { value } }: React.ChangeEvent<HTMLInputElement>) => {
-      setPayload({ ...payload, speed: parseFloat(value) });
+      handleUpdate({ ...payload, speed: parseFloat(value) });
     },
-    [payload, setPayload],
+    [payload, handleUpdate],
   );
 
   const handleChangeMinDistance = useCallback(
     ({ target: { value } }: React.ChangeEvent<HTMLInputElement>) => {
       const parsed = parseFloat(value);
       if (!isNaN(parsed)) {
-        setPayload({ ...payload, minDistance: parsed });
+        handleUpdate({ ...payload, minDistance: parsed });
       }
     },
-    [payload, setPayload],
+    [payload, handleUpdate],
   );
 
   const handleChangeX = useCallback(
     ({ target: { checked } }: React.ChangeEvent<HTMLInputElement>) => {
-      setPayload({
-        ...payload,
-        x: checked,
-      });
+      handleUpdate({ ...payload, x: checked });
     },
-    [payload, setPayload],
+    [payload, handleUpdate],
   );
 
   const handleChangeY = useCallback(
     ({ target: { checked } }: React.ChangeEvent<HTMLInputElement>) => {
-      setPayload({
-        ...payload,
-        y: checked,
-      });
+      handleUpdate({ ...payload, y: checked });
     },
-    [payload, setPayload],
+    [payload, handleUpdate],
   );
 
   const handleChangeZ = useCallback(
     ({ target: { checked } }: React.ChangeEvent<HTMLInputElement>) => {
-      setPayload({
-        ...payload,
-        z: checked,
-      });
+      handleUpdate({ ...payload, z: checked });
     },
-    [payload, setPayload],
+    [payload, handleUpdate],
   );
 
   return (
