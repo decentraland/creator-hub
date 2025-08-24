@@ -17,7 +17,7 @@ import type {
   Rewards,
   VideoScreen,
 } from '@dcl/asset-packs';
-import { ComponentName, createComponents as createAssetPacksComponents } from '@dcl/asset-packs';
+import { createComponents as createAssetPacksComponents } from '@dcl/asset-packs';
 import type { Layout } from '../../utils/layout';
 import type { GizmoType } from '../../utils/gizmo';
 import type { TransformConfig } from './TransformConfig';
@@ -29,54 +29,21 @@ import {
   SceneAgeRating,
   SceneCategory,
 } from './SceneMetadata';
+import type { ConfigComponentType } from './Config';
+import { ConfigComponentSchema } from './Config';
+import { EditorComponentNames as BaseEditorComponentNames } from './types';
 
 export { SceneAgeRating, SceneCategory };
+export { CoreComponents, AllComponentsType } from './types';
+
+// Override the Scene property with the dynamic value
+export const EditorComponentNames = {
+  ...BaseEditorComponentNames,
+  Scene: getLatestSceneComponentVersion().key,
+};
 
 export type Component<T = unknown> = ComponentDefinition<T>;
 export type Node = { entity: Entity; open?: boolean; children: Entity[] };
-
-export enum CoreComponents {
-  ANIMATOR = 'core::Animator',
-  AUDIO_SOURCE = 'core::AudioSource',
-  AUDIO_STREAM = 'core::AudioStream',
-  AVATAR_ATTACH = 'core::AvatarAttach',
-  GLTF_CONTAINER = 'core::GltfContainer',
-  NETWORK_ENTITY = 'core-schema::Network-Entity',
-  MATERIAL = 'core::Material',
-  MESH_COLLIDER = 'core::MeshCollider',
-  MESH_RENDERER = 'core::MeshRenderer',
-  NFT_SHAPE = 'core::NftShape',
-  POINTER_EVENTS = 'core::PointerEvents',
-  SYNC_COMPONENTS = 'core-schema::Sync-Components',
-  TEXT_SHAPE = 'core::TextShape',
-  TRANSFORM = 'core::Transform',
-  TWEEN = 'core::Tween',
-  TWEEN_SEQUENCE = 'core::TweenSequence',
-  VIDEO_PLAYER = 'core::VideoPlayer',
-  VISIBILITY_COMPONENT = 'core::VisibilityComponent',
-}
-
-export const EditorComponentNames = {
-  Selection: 'inspector::Selection',
-  Scene: getLatestSceneComponentVersion().key,
-  Nodes: 'inspector::Nodes',
-  ActionTypes: ComponentName.ACTION_TYPES,
-  Actions: ComponentName.ACTIONS,
-  Counter: ComponentName.COUNTER,
-  CounterBar: ComponentName.COUNTER_BAR,
-  Triggers: ComponentName.TRIGGERS,
-  States: ComponentName.STATES,
-  TransformConfig: 'inspector::TransformConfig',
-  Hide: 'inspector::Hide',
-  Lock: 'inspector::Lock',
-  Config: 'inspector::Config',
-  Ground: 'inspector::Ground',
-  Tile: 'inspector::Tile',
-  CustomAsset: 'inspector::CustomAsset',
-  AdminTools: ComponentName.ADMIN_TOOLS,
-  Rewards: ComponentName.REWARDS,
-  VideoScreen: ComponentName.VIDEO_SCREEN,
-};
 
 export type SceneSpawnPointCoord =
   | { $case: 'single'; value: number }
@@ -117,27 +84,6 @@ export type SceneComponent = {
   spawnPoints?: SceneSpawnPoint[];
 };
 
-export const AllComponents = {
-  ...CoreComponents,
-  ...EditorComponentNames,
-};
-
-type AllComponentsType =
-  | CoreComponents
-  | (typeof EditorComponentNames)[keyof typeof EditorComponentNames];
-
-export type ConfigComponent = {
-  isBasicViewEnabled: boolean;
-  componentName: string;
-  fields: {
-    name: string;
-    type: AllComponentsType;
-    layout?: string;
-    basicViewId?: string;
-  }[];
-  assetId?: string;
-};
-
 // eslint-disable-next-line @typescript-eslint/ban-types
 export type GroundComponent = {};
 // eslint-disable-next-line @typescript-eslint/ban-types
@@ -160,7 +106,7 @@ export type EditorComponentsTypes = {
   Hide: { value: boolean };
   Lock: { value: boolean };
   CounterBar: CounterBar;
-  Config: ConfigComponent;
+  Config: ConfigComponentType;
   Ground: GroundComponent;
   Tile: TileComponent;
   CustomAsset: CustomAssetComponent;
@@ -313,19 +259,7 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
     value: Schemas.Boolean,
   });
 
-  const Config = engine.defineComponent(EditorComponentNames.Config, {
-    isBasicViewEnabled: Schemas.Boolean,
-    componentName: Schemas.String,
-    fields: Schemas.Array(
-      Schemas.Map({
-        name: Schemas.String,
-        type: Schemas.EnumString<AllComponentsType>(AllComponents, AllComponents.Actions),
-        layout: Schemas.Optional(Schemas.String),
-        basicViewId: Schemas.Optional(Schemas.String),
-      }),
-    ),
-    assetId: Schemas.Optional(Schemas.String),
-  });
+  const Config = engine.defineComponent(EditorComponentNames.Config, ConfigComponentSchema);
 
   const Ground = engine.defineComponent(EditorComponentNames.Ground, {});
   const Tile = engine.defineComponent(EditorComponentNames.Tile, {});
