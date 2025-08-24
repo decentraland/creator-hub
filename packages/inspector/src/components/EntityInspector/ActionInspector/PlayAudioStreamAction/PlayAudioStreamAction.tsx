@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { ActionPayload, ActionType } from '@dcl/asset-packs';
-import { recursiveCheck } from '../../../../lib/utils/deep-equal';
+import React, { useCallback, useState } from 'react';
+import { deepEqual } from 'fast-equals';
+import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
 
 import {
   isValidVolume,
@@ -19,16 +19,20 @@ const PlayAudioStreamAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
     ...value,
   });
 
-  useEffect(() => {
-    if (!recursiveCheck(payload, value, 2) || !isValid(payload)) return;
-    onUpdate(payload);
-  }, [payload, onUpdate]);
+  const handleUpdate = useCallback(
+    (_payload: Partial<ActionPayload<ActionType.PLAY_AUDIO_STREAM>>) => {
+      setPayload(_payload);
+      if (!deepEqual(_payload, value) || !isValid(_payload)) return;
+      onUpdate(_payload);
+    },
+    [setPayload, value, onUpdate],
+  );
 
   const handleChangeUrl = useCallback(
     ({ target: { value } }: React.ChangeEvent<HTMLInputElement>) => {
-      setPayload({ ...payload, url: value });
+      handleUpdate({ ...payload, url: value });
     },
-    [payload, setPayload],
+    [payload, handleUpdate],
   );
 
   const handleChangeVolume = useCallback(
@@ -36,10 +40,10 @@ const PlayAudioStreamAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
       const { value } = e.target as HTMLInputElement;
 
       if (isValidVolume(value)) {
-        setPayload({ ...payload, volume: volumeToMediaSource(value) });
+        handleUpdate({ ...payload, volume: volumeToMediaSource(value) });
       }
     },
-    [payload, setPayload],
+    [payload, handleUpdate],
   );
 
   return (
