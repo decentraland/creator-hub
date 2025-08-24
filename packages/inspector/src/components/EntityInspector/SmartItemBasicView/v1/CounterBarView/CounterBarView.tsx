@@ -1,27 +1,28 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { Entity } from '@dcl/ecs';
 import { Action, ActionType, getJson } from '@dcl/asset-packs';
-import { withSdk, WithSdkProps } from '../../../../hoc/withSdk';
-import { useComponentInput } from '../../../../hooks/sdk/useComponentInput';
-import { useHasComponent } from '../../../../hooks/sdk/useHasComponent';
-import { useArrayState } from '../../../../hooks/useArrayState';
-import { useComponentValue } from '../../../../hooks/sdk/useComponentValue';
-import { ConfigComponent, EditorComponentsTypes } from '../../../../lib/sdk/components';
-import { Block } from '../../../Block';
-import { TextField, ColorField } from '../../../ui';
+import { withSdk, WithSdkProps } from '../../../../../hoc/withSdk';
+import { useComponentInput } from '../../../../../hooks/sdk/useComponentInput';
+import { useHasComponent } from '../../../../../hooks/sdk/useHasComponent';
+import { useArrayState } from '../../../../../hooks/useArrayState';
+import { useComponentValue } from '../../../../../hooks/sdk/useComponentValue';
+import { EditorComponentsTypes } from '../../../../../lib/sdk/components';
+import { ConfigComponentType } from '../../../../../lib/sdk/components/Config';
+import { Block } from '../../../../Block';
+import { TextField, ColorField } from '../../../../ui';
 import {
   fromCounterBar,
   isValidInput as isValidCounterBarInput,
   toCounterBar,
-} from '../../CounterBarInspector/utils';
+} from '../../../CounterBarInspector/utils';
 import {
   fromCounter,
   isValidInput as isValidCounterInput,
   toCounter,
-} from '../../CounterInspector/utils';
+} from '../../../CounterInspector/utils';
 
 export default React.memo(
-  withSdk<WithSdkProps & { entity: Entity; field: ConfigComponent['fields'][0] }>(
+  withSdk<WithSdkProps & { entity: Entity; field: ConfigComponentType['fields'][0] }>(
     ({ sdk, entity, field }) => {
       const { Counter, CounterBar, Actions } = sdk.components;
       const { getInputProps: getCounterInputProps } = useComponentInput(
