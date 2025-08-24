@@ -82,6 +82,12 @@ const InfoTooltip: React.FC<Props> = ({
       hoverable
       onOpen={handleOpen}
       onClose={handleClose}
+      popperModifiers={[
+        {
+          name: 'preventOverflow',
+          enabled: true,
+        },
+      ]}
       {...rest}
     />
   );
