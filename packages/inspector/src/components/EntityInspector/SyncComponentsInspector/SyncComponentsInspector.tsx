@@ -111,10 +111,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       onRemoveContainer={handleRemove}
     >
       Select the components of this item to sync so all users see the same changes in the scene.
-      <Container
-        label="Added components"
-        initialOpen={true}
-      >
+      <Container label="Added components">
         <Block>
           {entityComponents.map(({ id, name, displayName, potential }) => (
             <CheckboxField
