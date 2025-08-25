@@ -104,6 +104,12 @@ export const ConfigComponentSchema = {
           }),
         ),
         columns: Schemas.Optional(Schemas.Number),
+        helpTooltip: Schemas.Optional(
+          Schemas.Map({
+            text: Schemas.String,
+            link: Schemas.Optional(Schemas.String),
+          }),
+        ),
       }),
     ),
   ),
