@@ -1,8 +1,11 @@
 import React, { useCallback, useMemo } from 'react';
 import { BsFillLightningChargeFill as SmartItemIcon } from 'react-icons/bs';
 import { withSdk } from '../../../../hoc/withSdk';
+import { useHasComponent } from '../../../../hooks/sdk/useHasComponent';
 import { type ConfigComponentType } from '../../../../lib/sdk/components/Config';
-import { Container } from '../../../Container';
+import { Container, ContainerContent } from '../../../Container';
+import { Message, MessageType } from '../../../ui/Message';
+import { InfoTooltip } from '../../../ui/InfoTooltip';
 import { NftView } from './NftView';
 import { PointerEventView } from './PointerEventView';
 import { CounterBarView } from './CounterBarView';
@@ -18,8 +21,12 @@ import { type Props } from './types';
 
 import './SmartItemBasicView.css';
 
-const SmartItemBasicView = withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
-  const { Config } = sdk.components;
+const SmartItemBasicView = withSdk<Props>(({ sdk, entity }) => {
+  const { Config, Actions, Triggers } = sdk.components;
+
+  const hasActions = useHasComponent(entity, Actions);
+  const hasTriggers = useHasComponent(entity, Triggers);
+  const shouldShowHint = hasActions && !hasTriggers;
 
   const renderField = useCallback(
     (field: ConfigComponentType['fields'][0], idx: number) => {
@@ -86,9 +93,16 @@ const SmartItemBasicView = withSdk<Props>(({ sdk, entity, initialOpen = true }) 
           );
         case 'asset-packs::AdminTools':
           return (
-            <AdminToolsBasicView
-              entity={entity}
+            <ContainerContent
               key={`${idx}-${entity}`}
+              content={<AdminToolsBasicView entity={entity} />}
+              rightContent={
+                <InfoTooltip
+                  text="Admin Tools enables a whole set of in-world actions for special admin users."
+                  link="https://docs.decentraland.org/creator/editor/scene-admin/"
+                  type="help"
+                />
+              }
             />
           );
         case 'asset-packs::VideoScreen':
@@ -130,9 +144,14 @@ const SmartItemBasicView = withSdk<Props>(({ sdk, entity, initialOpen = true }) 
       label={config.componentName}
       indicator={renderSmartItemIndicator()}
       className="SmartItemBasicViewInspector"
-      initialOpen={initialOpen}
     >
       {config.fields.map((field, idx) => renderField(field, idx))}
+      {shouldShowHint && (
+        <Message
+          text="This item needs to be triggered by another smart item to work"
+          type={MessageType.WARNING}
+        />
+      )}
     </Container>
   );
 });
