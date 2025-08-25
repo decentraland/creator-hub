@@ -6,13 +6,13 @@ import { Container } from '../../Container';
 import { Block } from '../../Block';
 import { withSdk } from '../../../hoc/withSdk';
 import { ROOT } from '../../../lib/sdk/tree';
-import { fromCounterBar, toCounterBar, isValidInput } from './utils';
 import { TextField, InfoTooltip, ColorField } from '../../ui';
-import { Props } from './types';
+import { fromCounterBar, toCounterBar, isValidInput } from './utils';
+import { type Props } from './types';
 
 import './CounterBarInspector.css';
 
-export default withSdk<Props>(({ sdk, entity }) => {
+export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const { CounterBar } = sdk.components;
 
   const { getInputProps } = useComponentInput(
@@ -45,6 +45,7 @@ export default withSdk<Props>(({ sdk, entity }) => {
           type="help"
         />
       }
+      initialOpen={initialOpen}
       onRemoveContainer={handleRemove}
     >
       <TextField

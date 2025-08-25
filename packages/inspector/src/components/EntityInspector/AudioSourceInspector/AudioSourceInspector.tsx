@@ -17,7 +17,7 @@ import { ACCEPTED_FILE_TYPES } from '../../ui/FileUploadField/types';
 import { fromAudioSource, toAudioSource, isValidInput, isAudio, isValidVolume } from './utils';
 import type { Props } from './types';
 
-export default withSdk<Props>(({ sdk, entity }) => {
+export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const files = useAppSelector(selectAssetCatalog);
   const { AudioSource, GltfContainer } = sdk.components;
 
@@ -65,6 +65,7 @@ export default withSdk<Props>(({ sdk, entity }) => {
     <Container
       label="AudioSource"
       className={cx('AudioSource')}
+      initialOpen={initialOpen}
       onRemoveContainer={handleRemove}
     >
       <Block>

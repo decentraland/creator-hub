@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react';
-import { CrdtMessageType, ISyncComponentsType } from '@dcl/ecs';
 import cx from 'classnames';
+import { CrdtMessageType, type ISyncComponentsType } from '@dcl/ecs';
 
 import { withSdk } from '../../../hoc/withSdk';
 import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
@@ -12,6 +12,7 @@ import { CoreComponents } from '../../../lib/sdk/components';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { CheckboxField, InfoTooltip } from '../../ui';
+import { cleanPush } from '../../../lib/utils/array';
 import {
   ENABLED_COMPONENTS,
   getComponents,
@@ -19,12 +20,11 @@ import {
   deleteComponentIds,
   getThroughActionName,
 } from './utils';
-import { cleanPush } from '../../../lib/utils/array';
 import type { Props } from './types';
 
 import './SyncComponentsInspector.css';
 
-export default withSdk<Props>(({ sdk, entity }) => {
+export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const { NetworkEntity, SyncComponents, GltfContainer } = sdk.components;
 
   const hasSyncComponents = useHasComponent(entity, SyncComponents);
@@ -100,9 +100,10 @@ export default withSdk<Props>(({ sdk, entity }) => {
     <Container
       label="Multiplayer"
       className={cx('SyncComponents')}
+      initialOpen={initialOpen}
       rightContent={
         <InfoTooltip
-          text="Decentraland runs scenes locally in a player’s browser. By default, players are able to see each other and interact directly, but each player interacts with the environment independently. Changes in the environment aren’t shared between players by default. Seeing the same content in the same state is extremely important for players to interact in more meaningful ways."
+          text="Decentraland runs scenes locally in a player's browser. By default, players are able to see each other and interact directly, but each player interacts with the environment independently. Changes in the environment aren't shared between players by default. Seeing the same content in the same state is extremely important for players to interact in more meaningful ways."
           link="https://docs.decentraland.org/creator/development-guide/sdk7/serverless-multiplayer"
           type="help"
         />
@@ -110,7 +111,10 @@ export default withSdk<Props>(({ sdk, entity }) => {
       onRemoveContainer={handleRemove}
     >
       Select the components of this item to sync so all users see the same changes in the scene.
-      <Container label="Added components">
+      <Container
+        label="Added components"
+        initialOpen={true}
+      >
         <Block>
           {entityComponents.map(({ id, name, displayName, potential }) => (
             <CheckboxField

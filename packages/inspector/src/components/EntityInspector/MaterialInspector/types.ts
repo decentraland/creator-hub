@@ -3,6 +3,7 @@ import type { TextureInput } from './Texture/types';
 
 export interface Props {
   entity: Entity;
+  initialOpen?: boolean;
 }
 
 export enum MaterialType {

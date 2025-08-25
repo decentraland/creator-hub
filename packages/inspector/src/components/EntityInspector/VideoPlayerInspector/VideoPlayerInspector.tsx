@@ -9,7 +9,7 @@ import { getComponentValue } from '../../../hooks/sdk/useComponentValue';
 import { analytics, Event } from '../../../lib/logic/analytics';
 import { getAssetByModel } from '../../../lib/logic/catalog';
 import { CoreComponents } from '../../../lib/sdk/components';
-import { LocalAssetDrop, getNode } from '../../../lib/sdk/drag-drop';
+import { type LocalAssetDrop, getNode } from '../../../lib/sdk/drag-drop';
 import { withAssetDir } from '../../../lib/data-layer/host/fs-utils';
 import { useAppSelector } from '../../../redux/hooks';
 import { selectAssetCatalog } from '../../../redux/app';
@@ -21,7 +21,7 @@ import type { Props } from './types';
 
 const DROP_TYPES = ['local-asset'];
 
-export default withSdk<Props>(({ sdk, entity }) => {
+export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const files = useAppSelector(selectAssetCatalog);
   const { VideoPlayer, GltfContainer } = sdk.components;
 
@@ -86,9 +86,10 @@ export default withSdk<Props>(({ sdk, entity }) => {
     <Container
       label="VideoPlayer"
       className={cx('VideoPlayer', { hover: isHover })}
+      initialOpen={initialOpen}
       rightContent={
         <InfoTooltip
-          text="In case of using an URL, it must be an https URL (http URLs aren’t supported), and the source should have CORS policies (Cross Origin Resource Sharing) that permit externally accessing it"
+          text="In case of using an URL, it must be an https URL (http URLs aren't supported), and the source should have CORS policies (Cross Origin Resource Sharing) that permit externally accessing it"
           link="https://docs.decentraland.org/creator/development-guide/sdk7/audio-streaming"
           type="help"
         />

@@ -9,9 +9,10 @@ import RewardsForm from './RewardsForm';
 
 type Props = {
   entity: Entity;
+  initialOpen?: boolean;
 };
 
-export const RewardInspector = withSdk<Props>(({ sdk, entity }) => {
+export const RewardInspector = withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const { Rewards } = sdk.components;
 
   const hasRewards = useHasComponent(entity, Rewards);
@@ -23,6 +24,7 @@ export const RewardInspector = withSdk<Props>(({ sdk, entity }) => {
   return (
     <Container
       label="Rewards"
+      initialOpen={initialOpen}
       rightContent={
         <InfoTooltip
           text="Rewards enables the campaign configuration for giveaways."

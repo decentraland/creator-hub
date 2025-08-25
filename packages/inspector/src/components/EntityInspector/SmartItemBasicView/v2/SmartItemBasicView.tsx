@@ -175,7 +175,7 @@ const ActionComponentItem = withSdk<{ item: SectionItem; entity: Entity }>(
   },
 );
 
-const SmartItemBasicView = withSdk<Props>(({ sdk, entity }) => {
+const SmartItemBasicView = withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const { Config, Actions } = sdk.components;
 
   const config = useMemo(() => {
@@ -250,6 +250,7 @@ const SmartItemBasicView = withSdk<Props>(({ sdk, entity }) => {
       label={config.label || 'Smart Item'}
       indicator={renderSmartItemIndicator()}
       className="SmartItemBasicViewInspector"
+      initialOpen={initialOpen}
     >
       {config.sections.map((section, sectionIndex) =>
         renderSection(section as Section, sectionIndex),

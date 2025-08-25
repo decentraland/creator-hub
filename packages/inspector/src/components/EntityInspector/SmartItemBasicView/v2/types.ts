@@ -4,6 +4,7 @@ import type { ConfigComponentType } from '../../../../lib/sdk/components/Config'
 
 export type Props = {
   entity: Entity;
+  initialOpen?: boolean;
 };
 
 export type Section = NonNullable<ConfigComponentType['sections']>[0];

@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import cx from 'classnames';
 import { EasingFunction } from '@dcl/ecs';
+import { TweenType } from '@dcl/asset-packs';
 
 import { withSdk } from '../../../hoc/withSdk';
 import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
@@ -13,8 +14,7 @@ import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { TextField, CheckboxField, InfoTooltip, Dropdown, RangeField } from '../../ui';
 import { fromTween, toTween, fromTweenSequence, toTweenSequence } from './utils';
-import type { Props } from './types';
-import { TweenType } from '@dcl/asset-packs';
+import { type Props } from './types';
 
 const TweenMapOption: Record<string, string> = {
   [TweenType.MOVE_ITEM]: 'Move Item',
@@ -60,7 +60,7 @@ const EasingFunctionMapOption: Record<string, string> = {
   [EasingFunction.EF_EASEBOUNCE]: 'Ease in/out Bounce',
 };
 
-export default withSdk<Props>(({ sdk, entity }) => {
+export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const { Tween, TweenSequence, GltfContainer } = sdk.components;
   const hasTween = useHasComponent(entity, Tween);
   const hasTweenSequence = useHasComponent(entity, TweenSequence);
@@ -108,6 +108,7 @@ export default withSdk<Props>(({ sdk, entity }) => {
     <Container
       label="Tween"
       className={cx('Tween')}
+      initialOpen={initialOpen}
       rightContent={
         <InfoTooltip
           text="More information related the tweens in the following link."

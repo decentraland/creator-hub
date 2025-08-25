@@ -14,7 +14,7 @@ import { selectAssetCatalog } from '../../../redux/app';
 
 import './GltfInspector.css';
 
-export default withSdk<Props>(({ sdk, entity }) => {
+export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const files = useAppSelector(selectAssetCatalog);
   const { GltfContainer } = sdk.components;
 
@@ -58,6 +58,7 @@ export default withSdk<Props>(({ sdk, entity }) => {
     <Container
       label="GLTF"
       className="GltfInspector"
+      initialOpen={initialOpen}
       onRemoveContainer={handleRemove}
     >
       <Block>

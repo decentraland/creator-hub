@@ -12,7 +12,7 @@ import { TextAnnouncementControl } from './TextAnnouncementControl';
 import { type Props } from './types';
 import './AdminToolkitView.css';
 
-const AdminToolkitView = withSdk<Props>(({ sdk, entity }) => {
+const AdminToolkitView = withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const { AdminTools } = sdk.components;
   const [adminComponent, setAdminComponent] = useComponentValue(entity, AdminTools);
   const hasAdmintoolkit = useHasComponent(entity, AdminTools);
@@ -37,6 +37,7 @@ const AdminToolkitView = withSdk<Props>(({ sdk, entity }) => {
     <Container
       label="Admin Tools"
       className="AdminToolkitViewInspector"
+      initialOpen={initialOpen}
       rightContent={
         <InfoTooltip
           text="Admin Tools enables a whole set of in-world actions for special admin users."

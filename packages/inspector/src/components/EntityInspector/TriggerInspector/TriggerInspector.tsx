@@ -57,7 +57,7 @@ export const actionsConditionTypeOptions = [
   },
 ];
 
-export default withSdk<Props>(({ sdk, entity: entityId }) => {
+export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) => {
   const { Actions, Triggers, Name, States, Counter, GltfContainer } = sdk.components;
   const entitiesWithAction: Entity[] = useEntitiesWith(components => components.Actions);
   const entitiesWithStates: Entity[] = useEntitiesWith(components => components.States);
@@ -325,6 +325,7 @@ export default withSdk<Props>(({ sdk, entity: entityId }) => {
     <Container
       label="Trigger"
       className="TriggerInspector"
+      initialOpen={initialOpen}
       rightContent={
         <InfoTooltip
           text={`Triggers activate actions based on player interactions like clicks, entering/exiting areas, or global events like "on spawn".`}
