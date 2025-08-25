@@ -65,15 +65,27 @@
   width: var(--right-menu-width);
 }
 
+.SmartItemBasicViewInspector .Block .content:has(.Field + .Field) {
+  align-items: flex-end;
+}
+
 .SmartItemBasicViewInspector .Range.Field .RangeContainer .InputContainer .RangeInput::before {
   background: #ff2d55;
 }
 
-.SmartItemBasicViewInspector .Range.Field .RangeContainer .InputContainer .RangeInput::-webkit-slider-thumb {
+.SmartItemBasicViewInspector
+  .Range.Field
+  .RangeContainer
+  .InputContainer
+  .RangeInput::-webkit-slider-thumb {
   background: #ff2d55;
 }
 
-.SmartItemBasicViewInspector .Range.Field .RangeContainer .InputContainer .RangeInput::-moz-range-thumb {
+.SmartItemBasicViewInspector
+  .Range.Field
+  .RangeContainer
+  .InputContainer
+  .RangeInput::-moz-range-thumb {
   background: #ff2d55;
 }
 
@@ -81,14 +93,34 @@
   background: #ff2d55;
 }
 
-.SmartItemBasicViewInspector .Range.Field .RangeContainer .InputContainer .RangeInput::-webkit-slider-runnable-track {
-  background: linear-gradient(90deg, #ff2d55 var(--completionPercentage, 0%), #808080 var(--completionPercentage, 0%));
+.SmartItemBasicViewInspector
+  .Range.Field
+  .RangeContainer
+  .InputContainer
+  .RangeInput::-webkit-slider-runnable-track {
+  background: linear-gradient(
+    90deg,
+    #ff2d55 var(--completionPercentage, 0%),
+    #808080 var(--completionPercentage, 0%)
+  );
 }
 
-.SmartItemBasicViewInspector .Range.Field .RangeContainer .InputContainer .RangeInput::-moz-range-track {
-  background: linear-gradient(90deg, #ff2d55 var(--completionPercentage, 0%), #808080 var(--completionPercentage, 0%));
+.SmartItemBasicViewInspector
+  .Range.Field
+  .RangeContainer
+  .InputContainer
+  .RangeInput::-moz-range-track {
+  background: linear-gradient(
+    90deg,
+    #ff2d55 var(--completionPercentage, 0%),
+    #808080 var(--completionPercentage, 0%)
+  );
 }
 
 .SmartItemBasicViewInspector .Range.Field .RangeContainer .InputContainer .RangeInput::-ms-track {
-  background: linear-gradient(90deg, #ff2d55 var(--completionPercentage, 0%), #808080 var(--completionPercentage, 0%));
+  background: linear-gradient(
+    90deg,
+    #ff2d55 var(--completionPercentage, 0%),
+    #808080 var(--completionPercentage, 0%)
+  );
 }
