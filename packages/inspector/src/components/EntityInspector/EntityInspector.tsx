@@ -1,12 +1,13 @@
-import { Entity } from '@dcl/ecs';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { type Entity } from '@dcl/ecs';
 
 import { withSdk } from '../../hoc/withSdk';
-import { useChange } from '../../hooks/sdk/useChange';
 import { useEntitiesWith } from '../../hooks/sdk/useEntitiesWith';
 import { useAppSelector } from '../../redux/hooks';
 import { getHiddenComponents } from '../../redux/ui';
 import { EDITOR_ENTITIES } from '../../lib/sdk/tree';
+
+import { Divider } from '../ui';
 
 import { GltfInspector } from './GltfInspector';
 import { ActionInspector } from './ActionInspector';
@@ -81,25 +82,12 @@ const MultiEntityInspector = withSdk<{ entities: Entity[] }>(({ sdk, entities })
 
 const SingleEntityInspector = withSdk<{ entity: Entity | null }>(({ sdk, entity }) => {
   const hiddenComponents = useAppSelector(getHiddenComponents);
-  const [isBasicViewEnabled, setIsBasicViewEnabled] = useState(false);
-
-  useChange(
-    event => {
-      if (
-        event.entity === entity &&
-        event.component?.componentId === sdk.components.Config.componentId
-      ) {
-        setIsBasicViewEnabled(sdk.components.Config.getOrNull(entity)?.isBasicViewEnabled === true);
-      }
-    },
-    [entity, sdk],
-  );
-
-  useEffect(() => {
-    if (entity !== null) {
-      setIsBasicViewEnabled(sdk.components.Config.getOrNull(entity)?.isBasicViewEnabled === true);
+  const isBasicViewEnabled = useMemo(() => {
+    if (entity === null) {
+      return false;
     }
-  }, [entity, sdk, setIsBasicViewEnabled]);
+    return !!sdk.components.Config.getOrNull(entity);
+  }, [entity, sdk]);
 
   const inspectors = useMemo(
     () => [{ name: sdk.components.Transform.componentName, component: TransformInspector }],
@@ -188,17 +176,20 @@ const SingleEntityInspector = withSdk<{ entity: Entity | null }>(({ sdk, entity 
               ),
           )}
           {isBasicViewEnabled ? (
-            <SmartItemBasicView entity={entity} />
-          ) : (
-            advancedInspectorComponents.map(
-              ({ name, component: Inspector }, index) =>
-                !hiddenComponents[name] && (
-                  <Inspector
-                    key={`${index}-${entity}`}
-                    entity={entity}
-                  />
-                ),
-            )
+            <>
+              <SmartItemBasicView entity={entity} />
+              <Divider label="Advanced" />
+            </>
+          ) : null}
+          {advancedInspectorComponents.map(
+            ({ name, component: Inspector }, index) =>
+              !hiddenComponents[name] && (
+                <Inspector
+                  key={`${index}-${entity}`}
+                  entity={entity}
+                  initialOpen={!isBasicViewEnabled}
+                />
+              ),
           )}
         </>
       ) : null}
