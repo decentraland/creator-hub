@@ -1,11 +1,10 @@
-import React, { useCallback, useEffect } from 'react';
-import { Entity, PBPointerEvents, PBPointerEvents_Entry } from '@dcl/ecs';
-import { withSdk, WithSdkProps } from '../../../../../hoc/withSdk';
-import { Block } from '../../../../Block';
-import { TextField, Dropdown } from '../../../../ui';
+import React, { useCallback } from 'react';
+import { type Entity, type PBPointerEvents, type PBPointerEvents_Entry } from '@dcl/ecs';
+import { withSdk, type WithSdkProps } from '../../../../../hoc/withSdk';
 import { useComponentValue } from '../../../../../hooks/sdk/useComponentValue';
 import { useArrayState } from '../../../../../hooks/useArrayState';
-import { INPUT_ACTIONS, mapValueToInputAction } from '../../../PointerEventsInspector/utils';
+import { Block } from '../../../../Block';
+import { TextField } from '../../../../ui';
 
 export default React.memo(
   withSdk<WithSdkProps & { entity: Entity }>(({ sdk, entity }) => {
@@ -16,33 +15,29 @@ export default React.memo(
       pointerEventComponent === null ? [] : pointerEventComponent.pointerEvents,
     );
 
-    useEffect(() => {
-      if (isComponentEqual({ pointerEvents })) return;
-      setPointerEventComponentValue({ pointerEvents });
-    }, [pointerEvents]);
+    const handleUpdatePointerEvents = useCallback(
+      (updatedPointerEvents: PBPointerEvents_Entry[]) => {
+        if (isComponentEqual({ pointerEvents: updatedPointerEvents })) return;
+        setPointerEventComponentValue({ pointerEvents: updatedPointerEvents });
+      },
+      [pointerEvents, isComponentEqual, setPointerEventComponentValue],
+    );
 
     const handleHoverTextChange = useCallback(
       ({ target: { value } }: React.ChangeEvent<HTMLInputElement>) => {
-        modifyPointerEvent(0, {
-          ...pointerEvents[0],
-          eventInfo: {
-            ...pointerEvents[0].eventInfo,
-            hoverText: value,
+        modifyPointerEvent(
+          0,
+          {
+            ...pointerEvents[0],
+            eventInfo: {
+              ...pointerEvents[0].eventInfo,
+              hoverText: value,
+            },
           },
-        });
-      },
-      [pointerEvents, modifyPointerEvent],
-    );
-
-    const handleHoverInteractionChange = useCallback(
-      ({ target: { value } }: React.ChangeEvent<HTMLSelectElement>) => {
-        modifyPointerEvent(0, {
-          ...pointerEvents[0],
-          eventInfo: {
-            ...pointerEvents[0].eventInfo,
-            button: mapValueToInputAction(value)!,
+          updatedPointerEvents => {
+            handleUpdatePointerEvents(updatedPointerEvents);
           },
-        });
+        );
       },
       [pointerEvents, modifyPointerEvent],
     );
@@ -55,14 +50,6 @@ export default React.memo(
             value={pointerEvents[0]?.eventInfo?.hoverText}
             onChange={handleHoverTextChange}
             autoSelect
-          />
-        </Block>
-        <Block>
-          <Dropdown
-            label="Interaction"
-            value={pointerEvents[0]?.eventInfo?.button}
-            options={INPUT_ACTIONS}
-            onChange={handleHoverInteractionChange}
           />
         </Block>
       </>
