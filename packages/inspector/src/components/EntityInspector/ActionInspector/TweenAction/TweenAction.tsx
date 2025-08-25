@@ -48,7 +48,7 @@ const TweenAction: React.FC<Props> = ({ tween: tweenProp, onUpdateTween }: Props
   const handleUpdate = useCallback(
     (_tween: Partial<ActionPayload<ActionType.START_TWEEN>>) => {
       setTween(_tween);
-      if (!deepEqual(_tween, tweenProp) || !isValidTween(_tween)) return;
+      if (deepEqual(_tween, tweenProp) || !isValidTween(_tween)) return;
       onUpdateTween(_tween);
     },
     [setTween, tweenProp, onUpdateTween],

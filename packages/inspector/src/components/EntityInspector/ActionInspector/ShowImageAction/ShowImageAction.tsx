@@ -40,7 +40,7 @@ const ShowImageAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
   const handleUpdate = useCallback(
     (_payload: Partial<ActionPayload<ActionType.SHOW_IMAGE>>) => {
       setPayload(_payload);
-      if (!deepEqual(_payload, value) || !isValid(_payload)) return;
+      if (deepEqual(_payload, value) || !isValid(_payload)) return;
       onUpdate(_payload);
     },
     [setPayload, value, onUpdate],

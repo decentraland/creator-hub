@@ -5,7 +5,7 @@ export function useArrayState<T>(initialArray: T[] = []) {
   const [array, setArray] = useState<T[]>([...initialArray]);
 
   useEffect(() => {
-    if (!deepEqual(initialArray, array)) return;
+    if (deepEqual(initialArray, array)) return;
     setArray([...initialArray]);
   }, [initialArray]);
 

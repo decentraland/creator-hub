@@ -42,7 +42,7 @@ const LoopAction = <T extends ActionPayload<ActionType.START_LOOP | ActionType.S
   const handleUpdate = useCallback(
     (_payload: T) => {
       setPayload(_payload);
-      if (!deepEqual(_payload, value) || !isValid(_payload)) return;
+      if (deepEqual(_payload, value) || !isValid(_payload)) return;
       onUpdate(_payload);
     },
     [setPayload, value, onUpdate],
