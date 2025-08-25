@@ -24,7 +24,7 @@ import { useArrayState } from '../../../hooks/useArrayState';
 
 type ChangeEvt = React.ChangeEvent<HTMLInputElement>;
 
-export default withSdk<Props>(({ sdk, entity: entityId }) => {
+export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) => {
   const { Animator, GltfContainer } = sdk.components;
 
   const entity = sdk.sceneContext.getEntityOrNull(entityId);
@@ -108,6 +108,7 @@ export default withSdk<Props>(({ sdk, entity: entityId }) => {
     <Container
       label="Animator"
       className={cx('Animator')}
+      initialOpen={initialOpen}
       rightContent={
         <InfoTooltip
           text="The weight value of all active animations in an entity should add up to 100 at all times. If it adds up to less than 100, the weighted average will be using the default position of the armature for the remaining part of the calculation"

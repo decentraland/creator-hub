@@ -1,13 +1,13 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import cx from 'classnames';
 import { IoIosArrowDown, IoIosArrowForward } from 'react-icons/io';
 import { FiAlertTriangle as WarningIcon } from 'react-icons/fi';
 import { VscTrash as RemoveIcon } from 'react-icons/vsc';
+import cx from 'classnames';
 import { Button } from '../Button';
 import { InfoTooltip } from '../ui/InfoTooltip';
 import MoreOptionsMenu from '../EntityInspector/MoreOptionsMenu';
 
-import { Props } from './types';
+import { type Props } from './types';
 
 import './Container.css';
 

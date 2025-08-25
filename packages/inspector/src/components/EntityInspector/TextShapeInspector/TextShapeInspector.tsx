@@ -9,7 +9,7 @@ import { TextField, CheckboxField, ColorField, Dropdown, TextArea } from '../../
 import { Props } from './types';
 import { fromTextShape, toTextShape, isValidInput, TEXT_ALIGN_MODES } from './utils';
 
-export default withSdk<Props>(({ sdk, entity }) => {
+export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const { TextShape } = sdk.components;
 
   const hasTextShape = useHasComponent(entity, TextShape);
@@ -32,6 +32,7 @@ export default withSdk<Props>(({ sdk, entity }) => {
     <Container
       label="TextShape"
       className="TextShape"
+      initialOpen={initialOpen}
       onRemoveContainer={handleRemove}
     >
       <Block>

@@ -110,7 +110,7 @@ const ActionMapOption: Record<string, string> = {
   [ActionType.CLAIM_AIRDROP]: 'Claim Airdrop',
 };
 
-export default withSdk<Props>(({ sdk, entity: entityId }) => {
+export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) => {
   const { Actions, States, Counter, GltfContainer, Rewards } = sdk.components;
   const [componentValue, setComponentValue, isComponentEqual] = useComponentValue<
     EditorComponentsTypes['Actions']
@@ -995,6 +995,7 @@ export default withSdk<Props>(({ sdk, entity: entityId }) => {
     <Container
       label="Action"
       className="ActionInspector"
+      initialOpen={initialOpen}
       rightContent={
         <InfoTooltip
           text="Actions list the capabilities of entities, from playing animations to changing visibility. Customize or add new actions, which are activated by triggers."

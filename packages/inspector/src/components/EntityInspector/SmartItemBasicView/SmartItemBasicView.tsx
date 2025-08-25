@@ -6,7 +6,7 @@ import { type Props } from './types';
 
 const CONFIG_VERSION = 2;
 
-const SmartItemBasicView = withSdk<Props>(({ sdk, entity }) => {
+const SmartItemBasicView = withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const { Config } = sdk.components;
 
   const config = useMemo(() => {
@@ -17,9 +17,19 @@ const SmartItemBasicView = withSdk<Props>(({ sdk, entity }) => {
 
   switch (config?.version) {
     case CONFIG_VERSION:
-      return <SmartItemBasicViewV2 entity={entity} />;
+      return (
+        <SmartItemBasicViewV2
+          entity={entity}
+          initialOpen={initialOpen}
+        />
+      );
     default:
-      return <SmartItemBasicViewV1 entity={entity} />;
+      return (
+        <SmartItemBasicViewV1
+          entity={entity}
+          initialOpen={initialOpen}
+        />
+      );
   }
 });
 

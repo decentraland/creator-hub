@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import cx from 'classnames';
-import { PBVisibilityComponent, PBGltfContainer, PBMeshCollider } from '@dcl/ecs';
+import { type PBVisibilityComponent, type PBGltfContainer, type PBMeshCollider } from '@dcl/ecs';
 
 import { withSdk } from '../../../hoc/withSdk';
 import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
@@ -13,9 +13,9 @@ import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { Dropdown } from '../../ui/Dropdown';
 import { COLLISION_LAYERS } from '../GltfInspector/utils';
-import { Props } from './types';
+import { type Props } from './types';
 
-export default withSdk<Props>(({ sdk, entity }) => {
+export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const { VisibilityComponent, GltfContainer, MeshCollider } = sdk.components;
   const hasVisibilityComponent = useHasComponent(entity, VisibilityComponent);
   const [componentValue, setComponentValue] = useComponentValue<PBVisibilityComponent>(
@@ -113,6 +113,7 @@ export default withSdk<Props>(({ sdk, entity }) => {
     <Container
       label="Visibility"
       className={cx('VisibilityContainer')}
+      initialOpen={initialOpen}
       onRemoveContainer={handleRemove}
     >
       <Block>

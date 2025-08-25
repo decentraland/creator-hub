@@ -17,7 +17,7 @@ import { Link, Props as LinkProps } from './Link';
 
 import './TransformInspector.css';
 
-export default withSdk<Props>(({ sdk, entities }) => {
+export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
   const { Transform, TransformConfig } = sdk.components;
   const entity = entities.find(entity => Transform.has(entity)) || entities[0];
 
@@ -54,6 +54,7 @@ export default withSdk<Props>(({ sdk, entities }) => {
     <Container
       label="Transform"
       className="Transform"
+      initialOpen={initialOpen}
     >
       <Block label="Position">
         <TextField

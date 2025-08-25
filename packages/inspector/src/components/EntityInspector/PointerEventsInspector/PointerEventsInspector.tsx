@@ -25,7 +25,7 @@ import { AddButton } from '../AddButton';
 
 type ChangeEvt = React.ChangeEvent<HTMLInputElement>;
 
-export default withSdk<Props>(({ sdk, entity: entityId }) => {
+export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) => {
   const { PointerEvents, GltfContainer } = sdk.components;
 
   const hasPointerEvents = useHasComponent(entityId, PointerEvents);
@@ -84,6 +84,7 @@ export default withSdk<Props>(({ sdk, entity: entityId }) => {
     <Container
       label="PointerEvents"
       className={cx('PointerEvents')}
+      initialOpen={initialOpen}
       onRemoveContainer={handleRemoveComponent}
     >
       {pointerEvents.map(($, idx) => (

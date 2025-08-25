@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from 'react';
 import { BsFillLightningChargeFill as SmartItemIcon } from 'react-icons/bs';
 import { withSdk } from '../../../../hoc/withSdk';
-import { ConfigComponentType } from '../../../../lib/sdk/components/Config';
+import { type ConfigComponentType } from '../../../../lib/sdk/components/Config';
 import { Container } from '../../../Container';
 import { NftView } from './NftView';
 import { PointerEventView } from './PointerEventView';
@@ -18,7 +18,7 @@ import { type Props } from './types';
 
 import './SmartItemBasicView.css';
 
-const SmartItemBasicView = withSdk<Props>(({ sdk, entity }) => {
+const SmartItemBasicView = withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const { Config } = sdk.components;
 
   const renderField = useCallback(
@@ -130,6 +130,7 @@ const SmartItemBasicView = withSdk<Props>(({ sdk, entity }) => {
       label={config.componentName}
       indicator={renderSmartItemIndicator()}
       className="SmartItemBasicViewInspector"
+      initialOpen={initialOpen}
     >
       {config.fields.map((field, idx) => renderField(field, idx))}
     </Container>

@@ -17,7 +17,7 @@ import { getUniqueState, isRepeated, isValidInput } from './utils';
 
 import './StatesInspector.css';
 
-export default withSdk<Props>(({ sdk, entity }) => {
+export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const { States, GltfContainer } = sdk.components;
 
   const hasStates = useHasComponent(entity, States);
@@ -99,6 +99,7 @@ export default withSdk<Props>(({ sdk, entity }) => {
     <Container
       label="States"
       className="StatesInspector"
+      initialOpen={initialOpen}
       rightContent={
         <InfoTooltip
           text="States specify the status of entities. Use triggers to check or change states, and set actions accordingly."
