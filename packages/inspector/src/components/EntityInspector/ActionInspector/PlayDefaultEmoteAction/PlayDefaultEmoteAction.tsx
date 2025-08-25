@@ -20,7 +20,7 @@ const PlayDefaultEmoteAction: React.FC<Props> = ({ value, onUpdate }: Props) => 
   const handleUpdate = useCallback(
     (_payload: Partial<ActionPayload<ActionType.PLAY_DEFAULT_EMOTE>>) => {
       setPayload(_payload);
-      if (!deepEqual(_payload, value) || !isValid(_payload)) return;
+      if (deepEqual(_payload, value) || !isValid(_payload)) return;
       onUpdate(_payload);
     },
     [setPayload, value, onUpdate],

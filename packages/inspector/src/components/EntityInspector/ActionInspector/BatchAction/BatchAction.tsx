@@ -22,7 +22,7 @@ const BatchAction: React.FC<Props> = ({ availableActions, value, onUpdate }: Pro
   const handleUpdate = useCallback(
     (_payload: Partial<ActionPayload<ActionType.RANDOM>>) => {
       setPayload(_payload);
-      if (!deepEqual(_payload, value) || !isValid(_payload)) return;
+      if (deepEqual(_payload, value) || !isValid(_payload)) return;
       onUpdate(_payload);
     },
     [setPayload, value, onUpdate],

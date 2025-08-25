@@ -41,7 +41,7 @@ const MovePlayerAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
   const handleUpdate = useCallback(
     (_payload: Partial<ActionPayload<ActionType.MOVE_PLAYER>>) => {
       setPayload(_payload);
-      if (!deepEqual(_payload, value) || !isValid(_payload)) return;
+      if (deepEqual(_payload, value) || !isValid(_payload)) return;
       onUpdate(_payload);
     },
     [setPayload, value, onUpdate],
