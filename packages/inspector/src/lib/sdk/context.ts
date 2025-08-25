@@ -28,9 +28,11 @@ export type SdkContextEvents = {
   dispose: undefined;
 };
 
+export type SdkContextComponents = EditorComponents & SdkComponents;
+
 export type SdkContextValue = {
   engine: IEngine;
-  components: EditorComponents & SdkComponents;
+  components: SdkContextComponents;
   scene: Scene;
   sceneContext: SceneContext;
   events: Emitter<SdkContextEvents>;

@@ -105,7 +105,7 @@ const Option: React.FC<Props> = props => {
             {renderSelectedOption()}
             {renderLeftContent()}
             <span
-              className="Option"
+              className={cx('Option', { Disabled: disabled })}
               style={{ minWidth: minWidth }}
             >
               {label ?? value}
