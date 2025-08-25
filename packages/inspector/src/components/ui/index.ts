@@ -14,3 +14,4 @@ export { Label } from './Label';
 export { Pill } from './Pill';
 export { Vector3Field } from './Vector3Field';
 export { Accordion } from './Accordion';
+export { Divider } from './Divider';
