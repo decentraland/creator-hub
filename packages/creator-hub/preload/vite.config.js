@@ -4,7 +4,7 @@ import { preload } from 'unplugin-auto-expose';
 import { chrome } from '../.electron-vendors.cache.json';
 
 const PACKAGE_ROOT = __dirname;
-const PROJECT_ROOT = join(PACKAGE_ROOT, '../..');
+const PACKAGE_DIR = join(PACKAGE_ROOT, '..');
 
 /**
  * @type {import('vite').UserConfig}
@@ -13,7 +13,7 @@ const PROJECT_ROOT = join(PACKAGE_ROOT, '../..');
 const config = {
   mode: process.env.MODE,
   root: PACKAGE_ROOT,
-  envDir: PROJECT_ROOT,
+  envDir: PACKAGE_DIR,
   resolve: {
     alias: {
       '/shared/': join(PACKAGE_ROOT, '../shared') + '/',
