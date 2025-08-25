@@ -13,6 +13,7 @@ import { ErrorBase } from '/shared/types/error';
 import { createCircularBuffer } from '/shared/circular-buffer';
 
 import { CLIENT_NOT_INSTALLED_ERROR } from '/shared/utils';
+import { getConfig } from './config';
 import { APP_UNPACKED_PATH, getBinPath } from './path';
 import { setupNodeBinary } from './setup-node';
 import { track } from './analytics';
@@ -26,6 +27,31 @@ function getPath() {
 const exec = promisify(execSync);
 
 const MAX_BUFFER_SIZE = 2048;
+
+export enum EditorType {
+  VSCode = 'Visual Studio Code',
+  Cursor = 'Cursor',
+}
+
+const EDITOR_PATHS = {
+  win32: {
+    [EditorType.VSCode]: (username: string) => [
+      `C:\\Users\\${username}\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe`,
+      'C:\\Program Files\\Microsoft VS Code\\Code.exe',
+    ],
+    [EditorType.Cursor]: (username: string) => [
+      `C:\\Users\\${username}\\AppData\\Local\\Programs\\Cursor\\Cursor.exe`,
+      'C:\\Program Files\\Cursor\\Cursor.exe',
+    ],
+  },
+  darwin: {
+    [EditorType.VSCode]: [
+      '/Applications/Visual Studio Code.app',
+      '~/Applications/Visual Studio Code.app',
+    ],
+    [EditorType.Cursor]: ['/Applications/Cursor.app', '~/Applications/Cursor.app'],
+  },
+};
 
 type Error = 'COMMAND_FAILED';
 
@@ -316,95 +342,6 @@ export async function dclDeepLink(deepLink: string) {
   }
 }
 
-export async function findEditors(): Promise<EditorConfig[]> {
-  const editors = [];
-  let hasVSCode = false;
-
-  if (process.platform === 'win32') {
-    const username = process.env.USERNAME || '';
-    const vscodePaths = [
-      `C:\\Users\\${username}\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe`,
-      'C:\\Program Files\\Microsoft VS Code\\Code.exe',
-    ];
-    const cursorPaths = [
-      `C:\\Users\\${username}\\AppData\\Local\\Programs\\Cursor\\Cursor.exe`,
-      'C:\\Program Files\\Cursor\\Cursor.exe',
-    ];
-
-    for (const path of vscodePaths) {
-      try {
-        await fs.stat(path);
-        hasVSCode = true;
-        editors.push({
-          name: 'Visual Studio Code',
-          path,
-          isDefault: false,
-        });
-        log.info(`[Editors] Found VS Code at: ${path}`);
-        break;
-      } catch (error) {
-        log.debug(`[Editors] VS Code not found at: ${path}`);
-      }
-    }
-
-    for (const path of cursorPaths) {
-      try {
-        await fs.stat(path);
-        editors.push({
-          name: 'Cursor',
-          path,
-          isDefault: false,
-        });
-        log.info(`[Editors] Found Cursor at: ${path}`);
-        break;
-      } catch (error) {
-        log.debug(`[Editors] Cursor not found at: ${path}`);
-      }
-    }
-  } else {
-    try {
-      await fs.stat('/Applications/Visual Studio Code.app');
-      hasVSCode = true;
-      editors.push({
-        name: 'Visual Studio Code',
-        path: '/Applications/Visual Studio Code.app',
-        isDefault: false,
-      });
-      log.info('[Editors] Found VS Code at: /Applications/Visual Studio Code.app');
-    } catch (error) {
-      log.debug('[Editors] VS Code not found in /Applications');
-    }
-
-    try {
-      await fs.stat('/Applications/Cursor.app');
-      editors.push({
-        name: 'Cursor',
-        path: '/Applications/Cursor.app',
-        isDefault: false,
-      });
-      log.info('[Editors] Found Cursor at: /Applications/Cursor.app');
-    } catch (error) {
-      log.debug('[Editors] Cursor not found in /Applications');
-    }
-  }
-
-  if (editors.length > 0) {
-    if (hasVSCode) {
-      const vscodeEditor = editors.find(e => e.name === 'Visual Studio Code');
-      if (vscodeEditor) {
-        vscodeEditor.isDefault = true;
-        log.info('[Editors] Set VS Code as default editor');
-      }
-    } else {
-      editors[0].isDefault = true;
-      log.info(`[Editors] Set ${editors[0].name} as default editor`);
-    }
-  }
-
-  log.info(`[Editors] Found ${editors.length} editors:`, editors);
-  return editors;
-}
-
 export async function code(_path: string) {
   const normalizedPath = path.normalize(_path);
   try {
@@ -415,5 +352,56 @@ export async function code(_path: string) {
     if (error) {
       throw new Error(error);
     }
+  }
+}
+
+export async function addEditorPathsToConfig() {
+  const config = await getConfig();
+  const existingEditors = (await config.get('editors')) || [];
+
+  const platform = process.platform as 'win32' | 'darwin';
+  const username = platform === 'win32' ? process.env.USERNAME || '' : '';
+
+  const findEditorPath = async (type: EditorType): Promise<string | null> => {
+    const paths =
+      platform === 'win32' ? EDITOR_PATHS.win32[type](username) : EDITOR_PATHS.darwin[type];
+
+    for (const path of paths) {
+      try {
+        await fs.stat(path);
+        return path;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  };
+
+  const foundEditors: EditorConfig[] = [];
+  const vscodePath = await findEditorPath(EditorType.VSCode);
+  if (vscodePath) {
+    foundEditors.push({
+      name: EditorType.VSCode,
+      path: vscodePath,
+      isDefault: true,
+    });
+  }
+
+  const cursorPath = await findEditorPath(EditorType.Cursor);
+  if (cursorPath) {
+    foundEditors.push({
+      name: EditorType.Cursor,
+      path: cursorPath,
+      isDefault: !vscodePath,
+    });
+  }
+
+  const newEditors = foundEditors.filter(
+    editor => !existingEditors.find(existing => existing.name === editor.name),
+  );
+
+  if (newEditors.length > 0) {
+    const allEditors = [...existingEditors, ...newEditors];
+    await config.set('editors', allEditors);
   }
 }

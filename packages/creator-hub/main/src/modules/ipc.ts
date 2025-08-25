@@ -42,7 +42,7 @@ export function initIpc() {
   // bin
   handle('bin.install', () => bin.install());
   handle('bin.code', (_event, path) => bin.code(path));
-  handle('bin.findEditors', () => bin.findEditors());
+  handle('bin.addEditorPathsToConfig', () => bin.addEditorPathsToConfig());
 
   // analytics
   handle('analytics.track', (_event, eventName, data) => analytics.track(eventName, data!));

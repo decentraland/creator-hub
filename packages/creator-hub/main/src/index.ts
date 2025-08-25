@@ -9,7 +9,7 @@ import { deployServer, killAllPreviews } from '/@/modules/cli';
 import { killInspectorServer } from '/@/modules/inspector';
 import { runMigrations } from '/@/modules/migrations';
 import { getAnalytics, track } from './modules/analytics';
-import { findEditors } from './modules/bin';
+import { addEditorPathsToConfig } from './modules/bin';
 
 import '/@/security-restrictions';
 
@@ -60,9 +60,7 @@ app
     await restoreOrCreateMainWindow();
     log.info('[BrowserWindow] Ready');
 
-    // Buscar editores instalados
-    const editors = await findEditors();
-    log.info('[App] Found editors:', editors);
+    await addEditorPathsToConfig();
     const analytics = await getAnalytics();
     if (analytics) {
       await track('Open Editor', { version: app.getVersion() });

@@ -76,6 +76,6 @@ export async function openExternalURL(url: string) {
   await invoke('electron.openExternal', url);
 }
 
-export async function findEditors() {
-  return invoke('bin.findEditors');
+export async function addEditorPathsToConfig() {
+  return invoke('bin.addEditorPathsToConfig');
 }
