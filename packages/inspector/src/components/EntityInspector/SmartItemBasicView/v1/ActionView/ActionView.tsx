@@ -1,11 +1,17 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
-import { Entity } from '@dcl/ecs';
-import { Action, ActionType, getActionSchema, getJson, getPayload } from '@dcl/asset-packs';
-import { WithSdkProps, withSdk } from '../../../../../hoc/withSdk';
+import { type Entity } from '@dcl/ecs';
+import {
+  getActionSchema,
+  getJson,
+  getPayload,
+  type Action,
+  type ActionType,
+} from '@dcl/asset-packs';
+import { type WithSdkProps, withSdk } from '../../../../../hoc/withSdk';
 import { useComponentValue } from '../../../../../hooks/sdk/useComponentValue';
 import { useArrayState } from '../../../../../hooks/useArrayState';
-import { EditorComponentsTypes } from '../../../../../lib/sdk/components';
-import { ConfigComponentType } from '../../../../../lib/sdk/components/Config';
+import { type EditorComponentsTypes } from '../../../../../lib/sdk/components';
+import { type ConfigComponentType } from '../../../../../lib/sdk/components/Config';
 import { capitalize, transformPropertyToLabel } from '../../../../../lib/utils/strings';
 import { Block } from '../../../../Block';
 import { Dropdown, RangeField, TextField, TextArea } from '../../../../ui';
@@ -75,7 +81,8 @@ export default React.memo(
             case 'Dropdown': {
               const options = (
                 schemaProperties[property]?.enum ??
-                schemaProperties[property]?.optionalJsonSchema?.enum
+                schemaProperties[property]?.optionalJsonSchema?.enum ??
+                []
               ).map((value: string) => ({
                 label: transformPropertyToLabel(value),
                 value,
