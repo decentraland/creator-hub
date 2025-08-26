@@ -14,7 +14,7 @@ import { getInputType, getStep, getMin, getMax } from './constraints';
 import { applyTransform } from './utils';
 import { getDataSourceOptions } from './dataSources';
 import { TriggerSection } from './TriggerSection';
-import { WidgetProps } from './types';
+import { type WidgetProps } from './types';
 
 const DynamicField: React.FC<WidgetProps> = ({
   entity,
@@ -56,7 +56,7 @@ const DynamicField: React.FC<WidgetProps> = ({
           />
         );
 
-      case 'RangeField':
+      case 'RangeField': {
         // Transform constraints to work with stored values
         const transformedConstraints = constraints
           ? {
@@ -84,7 +84,7 @@ const DynamicField: React.FC<WidgetProps> = ({
             max={getMax(transformedConstraints)}
           />
         );
-
+      }
       case 'ColorField':
         return <ColorField {...commonProps} />;
 
