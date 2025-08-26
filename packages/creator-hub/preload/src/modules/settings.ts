@@ -94,3 +94,11 @@ export function downloadingStatus(
 export function getCurrentVersion() {
   throw new Error('Function not implemented.');
 }
+
+export async function getEditors() {
+  return invoke('bin.getEditors');
+}
+
+export async function addEditorPathsToConfig() {
+  return invoke('bin.addEditorPathsToConfig');
+}

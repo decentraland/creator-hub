@@ -244,6 +244,10 @@
             "notify": "有新版本更新時通知我",
             "do_nothing": "什麼也不做"
           }
+        },
+        "code_editor": {
+          "label": "首选代码编辑器",
+          "choose_device": "从设备中选择..."
         }
       },
       "actions": {

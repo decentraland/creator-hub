@@ -247,6 +247,10 @@
             "notify": "Notify me of new version updates",
             "do_nothing": "Do nothing"
           }
+        },
+        "code_editor": {
+          "label": "Code editor of choice",
+          "choose_device": "Choose from your device..."
         }
       },
       "actions": {

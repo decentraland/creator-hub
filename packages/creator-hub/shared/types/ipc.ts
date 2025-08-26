@@ -5,6 +5,7 @@ import type { Events } from '/shared/types/analytics';
 import type { DeployOptions } from '/shared/types/deploy';
 
 import type { PreviewOptions } from './settings';
+import type { EditorConfig } from './config';
 
 export type IpcResult<T> = {
   success: true;
@@ -43,6 +44,7 @@ export interface Ipc {
   'bin.install': () => Promise<void>;
   'bin.code': (path: string) => Promise<void>;
   'bin.addEditorPathsToConfig': () => Promise<void>;
+  'bin.getEditors': () => Promise<EditorConfig[]>;
   'cli.init': (path: string, repo: string) => Promise<void>;
   'cli.start': (path: string, opts: PreviewOptions) => Promise<string>;
   'cli.deploy': (opts: DeployOptions) => Promise<number>;

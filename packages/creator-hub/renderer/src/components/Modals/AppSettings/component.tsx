@@ -1,4 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import CheckIcon from '@mui/icons-material/Check';
+import CloseIcon from '@mui/icons-material/Close';
+import FolderIcon from '@mui/icons-material/Folder';
+import equal from 'fast-deep-equal';
 import {
   Box,
   IconButton,
@@ -10,22 +14,30 @@ import {
   FormGroup,
   InputAdornment,
   Button,
+  Select,
+  MenuItem,
+  CircularProgress,
 } from 'decentraland-ui2';
-import CloseIcon from '@mui/icons-material/Close';
-import FolderIcon from '@mui/icons-material/Folder';
-import equal from 'fast-deep-equal';
+import { loadEditors } from '/@/modules/store/editors';
 
-import { settings as settingsPreload } from '#preload';
 import { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import { t } from '/@/modules/store/translation/utils';
 import { useSettings } from '/@/hooks/useSettings';
 import { Modal } from '..';
 import { UpdateSettings } from './UpdateSettings';
+import { useDispatch, useSelector } from '#store';
+import { settings as settingsPreload } from '#preload';
 import './styles.css';
 
 export function AppSettings({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const dispatch = useDispatch();
   const { settings: _settings, updateAppSettings } = useSettings();
   const [settings, setSettings] = useState(_settings);
+  const { editors, loading } = useSelector(state => state.editors);
+
+  useEffect(() => {
+    dispatch(loadEditors());
+  }, [dispatch]);
 
   useEffect(() => {
     if (!equal(_settings, settings)) setSettings(_settings);
@@ -120,6 +132,36 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
                 label={t('modal.app_settings.fields.scene_editor_dependencies.options.do_nothing')}
               />
             </RadioGroup>
+          </FormGroup>
+          <FormGroup>
+            <Typography variant="body1">
+              {t('modal.app_settings.fields.code_editor.label')}
+            </Typography>
+            {loading ? (
+              <CircularProgress size={24} />
+            ) : (
+              <Select
+                value={editors.find(e => e.isDefault)?.name || ''}
+                className="editor-select"
+              >
+                {editors.map(editor => (
+                  <MenuItem
+                    key={editor.path}
+                    value={editor.name}
+                  >
+                    {editor.name}
+                    {editor.isDefault && <CheckIcon className="default-icon" />}
+                  </MenuItem>
+                ))}
+                <MenuItem
+                  value="custom"
+                  className="custom-editor"
+                  onClick={() => console.log('custom')}
+                >
+                  {t('modal.app_settings.fields.code_editor.choose_device')}
+                </MenuItem>
+              </Select>
+            )}
           </FormGroup>
           <Button
             className="ApplyButton"

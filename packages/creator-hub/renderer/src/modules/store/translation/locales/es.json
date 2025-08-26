@@ -247,6 +247,10 @@
             "notify": "Notificarme cuando exista una nueva version",
             "do_nothing": "No hacer nada"
           }
+        },
+        "code_editor": {
+          "label": "Editor de código preferido",
+          "choose_device": "Elegir desde tu dispositivo..."
         }
       },
       "actions": {

@@ -17,6 +17,7 @@ import * as analytics from './analytics';
 import * as ens from './ens';
 import * as land from './land';
 import * as settings from './settings';
+import * as editors from './editors';
 
 export function createRootReducer() {
   return {
@@ -29,6 +30,7 @@ export function createRootReducer() {
     ens: ens.reducer,
     land: land.reducer,
     settings: settings.reducer,
+    editors: editors.reducer,
   };
 }
 

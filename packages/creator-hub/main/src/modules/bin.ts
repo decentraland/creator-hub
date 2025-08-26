@@ -355,6 +355,12 @@ export async function code(_path: string) {
   }
 }
 
+export async function getEditors() {
+  const config = await getConfig();
+  const editors = (await config.get('editors')) || [];
+  return editors;
+}
+
 export async function addEditorPathsToConfig() {
   const config = await getConfig();
   const existingEditors = (await config.get('editors')) || [];
