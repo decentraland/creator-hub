@@ -104,16 +104,16 @@ const RangeField = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
   );
 
   const handleOnBlur: React.FocusEventHandler<HTMLInputElement> = useCallback(
-    event => {
+    e => {
       if (isValid(inputValue)) {
         const formattedValue = formatInput(inputValue);
         onChange &&
           onChange({
-            ...event,
-            target: { ...event.target, value: formattedValue },
+            ...e,
+            target: { ...e.target, value: formattedValue },
           } as React.ChangeEvent<HTMLInputElement>);
         setInputValue(formattedValue);
-        onBlur && onBlur(event);
+        onBlur && onBlur(e);
       }
     },
     [inputValue, setInputValue, formatInput, onChange, isValid],
