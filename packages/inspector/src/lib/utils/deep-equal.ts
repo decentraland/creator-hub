@@ -22,9 +22,15 @@ function deepEqualWithToleranceRecursive(actual: any, expected: any, tolerance: 
 
   // Handle primitive types
   if (typeof actual !== 'object' || typeof expected !== 'object') {
-    if (typeof actual === 'number' && typeof expected === 'number') {
+    // Only apply tolerance for floating-point numbers
+    if (
+      typeof actual === 'number' &&
+      typeof expected === 'number' &&
+      (!Number.isInteger(actual) || !Number.isInteger(expected))
+    ) {
       return Math.abs(actual - expected) <= tolerance;
     }
+
     return actual === expected;
   }
 
