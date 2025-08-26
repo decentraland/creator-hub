@@ -18,7 +18,7 @@ import {
   MenuItem,
   CircularProgress,
 } from 'decentraland-ui2';
-import { loadEditors } from '/@/modules/store/editors';
+import { loadEditors, setDefaultEditor } from '/@/modules/store/editors';
 
 import { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import { t } from '/@/modules/store/translation/utils';
@@ -141,13 +141,19 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
               <CircularProgress size={24} />
             ) : (
               <Select
-                value={editors.find(e => e.isDefault)?.name || ''}
+                value={editors.find(e => e.isDefault)?.path || ''}
                 className="editor-select"
+                onChange={event => {
+                  const selectedPath = event.target.value;
+                  if (selectedPath) {
+                    dispatch(setDefaultEditor(selectedPath));
+                  }
+                }}
               >
                 {editors.map(editor => (
                   <MenuItem
                     key={editor.path}
-                    value={editor.name}
+                    value={editor.path}
                   >
                     {editor.name}
                     {editor.isDefault && <CheckIcon className="default-icon" />}
@@ -156,7 +162,12 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
                 <MenuItem
                   value="custom"
                   className="custom-editor"
-                  onClick={() => console.log('custom')}
+                  onClick={async () => {
+                    const [editorPath] = await settingsPreload.selectEditorPath();
+                    if (editorPath) {
+                      dispatch(setDefaultEditor(editorPath));
+                    }
+                  }}
                 >
                   {t('modal.app_settings.fields.code_editor.choose_device')}
                 </MenuItem>

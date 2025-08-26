@@ -44,6 +44,13 @@ export async function selectSceneFolder(): Promise<string | undefined> {
   return projectPath;
 }
 
+export async function selectEditorPath(): Promise<string[]> {
+  return invoke('electron.showOpenDialog', {
+    title: 'Select Code Editor',
+    properties: ['openDirectory', 'treatPackageAsDirectory'],
+  });
+}
+
 export async function checkForUpdates(config?: { autoDownload?: boolean }) {
   return await invoke('updater.checkForUpdates', config);
 }
@@ -101,4 +108,8 @@ export async function getEditors() {
 
 export async function addEditorPathsToConfig() {
   return invoke('bin.addEditorPathsToConfig');
+}
+
+export async function setDefaultEditor(editorPath: string) {
+  return invoke('bin.setDefaultEditor', editorPath);
 }

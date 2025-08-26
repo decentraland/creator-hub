@@ -44,6 +44,7 @@ export function initIpc() {
   handle('bin.code', (_event, path) => bin.code(path));
   handle('bin.addEditorPathsToConfig', () => bin.addEditorPathsToConfig());
   handle('bin.getEditors', () => bin.getEditors());
+  handle('bin.setDefaultEditor', (_event, path) => bin.setDefaultEditor(path));
 
   // analytics
   handle('analytics.track', (_event, eventName, data) => analytics.track(eventName, data!));

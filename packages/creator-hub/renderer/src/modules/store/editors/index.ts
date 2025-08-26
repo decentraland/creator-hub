@@ -19,6 +19,13 @@ export const loadEditors = createAsyncThunk('editors/load', async () => {
   return settingsApi.getEditors();
 });
 
+export const setDefaultEditor = createAsyncThunk(
+  'editors/setDefault',
+  async (editorPath: string) => {
+    return settingsApi.setDefaultEditor(editorPath);
+  },
+);
+
 const slice = createSlice({
   name: 'editors',
   initialState,
@@ -36,6 +43,12 @@ const slice = createSlice({
       .addCase(loadEditors.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to load editors';
+      })
+      .addCase(setDefaultEditor.fulfilled, (state, action) => {
+        state.editors = action.payload;
+      })
+      .addCase(setDefaultEditor.rejected, (state, action) => {
+        state.error = action.error.message || 'Failed to set default editor';
       });
   },
 });

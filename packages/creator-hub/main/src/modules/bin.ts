@@ -361,6 +361,35 @@ export async function getEditors() {
   return editors;
 }
 
+export async function setDefaultEditor(editorPath: string) {
+  const config = await getConfig();
+  const editors = (await config.get('editors')) || [];
+  const name = editorPath.split('/').pop()?.replace('.app', '') || 'Custom Editor';
+
+  const existingIndex = editors.findIndex(e => e.name === name);
+  const updatedEditors = editors.map(editor => ({
+    ...editor,
+    isDefault: false,
+  }));
+
+  if (existingIndex >= 0) {
+    updatedEditors[existingIndex] = {
+      ...updatedEditors[existingIndex],
+      path: editorPath,
+      isDefault: true,
+    };
+  } else {
+    updatedEditors.push({
+      name,
+      path: editorPath,
+      isDefault: true,
+    });
+  }
+
+  await config.set('editors', updatedEditors);
+  return updatedEditors;
+}
+
 export async function addEditorPathsToConfig() {
   const config = await getConfig();
   const existingEditors = (await config.get('editors')) || [];
