@@ -133,7 +133,10 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
               />
             </RadioGroup>
           </FormGroup>
-          <FormGroup>
+          <FormGroup
+            sx={{ gap: '16px' }}
+            className="editor-form"
+          >
             <Typography variant="body1">
               {t('modal.app_settings.fields.code_editor.label')}
             </Typography>
@@ -141,8 +144,8 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
               <CircularProgress size={24} />
             ) : (
               <Select
+                fullWidth
                 value={editors.find(e => e.isDefault)?.path || ''}
-                className="editor-select"
                 onChange={event => {
                   const selectedPath = event.target.value;
                   if (selectedPath) {
@@ -154,15 +157,16 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
                   <MenuItem
                     key={editor.path}
                     value={editor.path}
+                    className="editor-select"
                   >
-                    {editor.name}
-                    {editor.isDefault && <CheckIcon className="default-icon" />}
+                    <span>{editor.name}</span>
+                    {editor.isDefault && <CheckIcon className="default-icon menu-only" />}
                   </MenuItem>
                 ))}
                 <MenuItem
-                  value="custom"
                   className="custom-editor"
-                  onClick={async () => {
+                  onMouseDown={async e => {
+                    e.preventDefault();
                     const [editorPath] = await settingsPreload.selectEditorPath();
                     if (editorPath) {
                       dispatch(setDefaultEditor(editorPath));

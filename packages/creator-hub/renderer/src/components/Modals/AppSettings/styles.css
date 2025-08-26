@@ -69,3 +69,17 @@
   align-items: center;
   gap: 4px;
 }
+
+.editor-select {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.MuiSelect-select .menu-only {
+  display: none;
+}
+
+.MuiList-root .menu-only {
+  display: flex;
+}
