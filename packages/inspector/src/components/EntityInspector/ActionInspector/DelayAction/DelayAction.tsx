@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { deepEqual } from 'fast-equals';
 import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
+import { recursiveCheck } from '../../../../lib/utils/deep-equal';
 import { Block } from '../../../Block';
 import { Dropdown, RangeField } from '../../../ui';
 import type { DropdownChangeEvent } from '../../../ui';
@@ -42,7 +42,7 @@ const DelayAction = <T extends ActionPayload<ActionType.START_DELAY | ActionType
   const handleUpdate = useCallback(
     (_payload: T) => {
       setPayload(_payload);
-      if (deepEqual(_payload, value) || !isValid(_payload)) return;
+      if (!recursiveCheck(_payload, value, 2) || !isValid(_payload)) return;
       onUpdate(_payload);
     },
     [setPayload, value, onUpdate],

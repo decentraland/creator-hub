@@ -1,12 +1,11 @@
 import React, { useCallback, useState } from 'react';
-import { deepEqual } from 'fast-equals';
 import {
   TweenType,
   InterpolationType,
   type ActionPayload,
   type ActionType,
 } from '@dcl/asset-packs';
-
+import { recursiveCheck } from '../../../../lib/utils/deep-equal';
 import { Block } from '../../../Block';
 import { Dropdown, TextField, RangeField, InfoTooltip, CheckboxField } from '../../../ui';
 import { isValidTween } from './utils';
@@ -48,7 +47,7 @@ const TweenAction: React.FC<Props> = ({ tween: tweenProp, onUpdateTween }: Props
   const handleUpdate = useCallback(
     (_tween: Partial<ActionPayload<ActionType.START_TWEEN>>) => {
       setTween(_tween);
-      if (deepEqual(_tween, tweenProp) || !isValidTween(_tween)) return;
+      if (!recursiveCheck(_tween, tweenProp, 2) || !isValidTween(_tween)) return;
       onUpdateTween(_tween);
     },
     [setTween, tweenProp, onUpdateTween],

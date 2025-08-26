@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import { ActionPayload, ActionType } from '@dcl/asset-packs';
-import { deepEqual } from 'fast-equals';
+import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
+import { recursiveCheck } from '../../../../lib/utils/deep-equal';
 import { CheckboxField, TextField } from '../../../ui';
 import { Block } from '../../../Block';
 import type { Props } from './types';
@@ -28,7 +28,7 @@ const SetPositionAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
   const handleUpdate = useCallback(
     (_payload: Partial<ActionPayload<ActionType.SET_POSITION>>) => {
       setPayload(_payload);
-      if (deepEqual(_payload, value) || !isValid(_payload)) return;
+      if (!recursiveCheck(_payload, value, 2) || !isValid(_payload)) return;
       onUpdate(_payload);
     },
     [setPayload, value, onUpdate],

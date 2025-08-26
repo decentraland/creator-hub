@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import { ActionPayload, ActionType, ProximityLayer } from '@dcl/asset-packs';
-import { deepEqual } from 'fast-equals';
+import { type ActionPayload, type ActionType, ProximityLayer } from '@dcl/asset-packs';
+import { recursiveCheck } from '../../../../lib/utils/deep-equal';
 import { Dropdown, TextField } from '../../../ui';
 import { type Props, LayerOptions } from './types';
 
@@ -20,7 +20,7 @@ const TriggerProximityAction: React.FC<Props> = ({ value, onUpdate }: Props) => 
   const handleUpdate = useCallback(
     (_payload: Partial<ActionPayload<ActionType.DAMAGE>>) => {
       setPayload(_payload);
-      if (deepEqual(_payload, value) || !isValid(_payload)) return;
+      if (!recursiveCheck(_payload, value, 2) || !isValid(_payload)) return;
       onUpdate(_payload);
     },
     [setPayload, value, onUpdate],

@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import { ActionPayload, ActionType } from '@dcl/asset-packs';
-import { deepEqual } from 'fast-equals';
+import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
+import { recursiveCheck } from '../../../../lib/utils/deep-equal';
 import { Block } from '../../../Block';
 import { Dropdown, RangeField, TextField } from '../../../ui';
 import { FONTS, TEXT_ALIGN_MODES } from '../../TextShapeInspector/utils';
@@ -22,7 +22,7 @@ const ShowTextAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
   const handleUpdate = useCallback(
     (_payload: Partial<ActionPayload<ActionType.SHOW_TEXT>>) => {
       setPayload(_payload);
-      if (deepEqual(_payload, value) || !isValid(_payload)) return;
+      if (!recursiveCheck(_payload, value, 2) || !isValid(_payload)) return;
       onUpdate(_payload);
     },
     [setPayload, value, onUpdate],
