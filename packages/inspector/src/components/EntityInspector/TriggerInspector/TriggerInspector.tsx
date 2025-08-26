@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useMemo } from 'react';
-import { Entity } from '@dcl/ecs';
+import { type Entity } from '@dcl/ecs';
 import {
-  Action,
-  Trigger,
-  TriggerType,
-  TriggerAction,
+  ComponentName,
   TriggerConditionOperation,
   TriggerConditionType,
-  States,
-  TriggerCondition,
-  ComponentName,
+  TriggerType,
+  type Action,
+  type Trigger,
+  type TriggerAction,
+  type States,
+  type TriggerCondition,
 } from '@dcl/asset-packs';
 
 import { withSdk } from '../../../hoc/withSdk';
@@ -19,7 +19,7 @@ import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
 import { useEntitiesWith } from '../../../hooks/sdk/useEntitiesWith';
 import { analytics, Event } from '../../../lib/logic/analytics';
 import { getAssetByModel } from '../../../lib/logic/catalog';
-import { EditorComponentsTypes } from '../../../lib/sdk/components';
+import { type EditorComponentsTypes } from '../../../lib/sdk/components';
 
 import { Container } from '../../Container';
 import { AddButton } from '../AddButton';
@@ -58,7 +58,14 @@ export const actionsConditionTypeOptions = [
 ];
 
 export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) => {
-  const { Actions, Triggers, Name, States, Counter, GltfContainer } = sdk.components;
+  const {
+    Actions,
+    Triggers,
+    Name,
+    States: StatesComponent,
+    Counter,
+    GltfContainer,
+  } = sdk.components;
   const entitiesWithAction: Entity[] = useEntitiesWith(components => components.Actions);
   const entitiesWithStates: Entity[] = useEntitiesWith(components => components.States);
   const entitiesWithCounter: Entity[] = useEntitiesWith(components => components.Counter);
@@ -71,7 +78,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
   );
 
   const hasTriggers = useHasComponent(entityId, Triggers);
-  const hasStates = useHasComponent(entityId, States);
+  const hasStates = useHasComponent(entityId, StatesComponent);
   const hasCounter = useHasComponent(entityId, Counter);
 
   const areValidActions = useCallback(
@@ -152,7 +159,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
 
   const availableStates: Map<number, { name: string; states: States['value'] }> = useMemo(() => {
     return entitiesWithStates?.reduce((states, entityWithState) => {
-      const statesComponentValue = getComponentValue(entityWithState, States);
+      const statesComponentValue = getComponentValue(entityWithState, StatesComponent);
       const name = Name.getOrNull(entityWithState)?.value ?? entityWithState.toString();
       if (statesComponentValue.value.length > 0) {
         states.set(statesComponentValue.id, {
@@ -187,8 +194,8 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
         conditions: [],
       };
       result.set(entity, entityConditions);
-      if (States.has(entity)) {
-        const { id } = States.get(entity);
+      if (StatesComponent.has(entity)) {
+        const { id } = StatesComponent.get(entity);
         for (const option of statesConditionTypeOptions) {
           entityConditions.conditions.push({
             value: { id, type: option.value },
@@ -216,7 +223,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       }
     }
     return result;
-  }, [entitiesWithStates, entitiesWithCounter, Actions, States, Counter, Name]);
+  }, [entitiesWithStates, entitiesWithCounter, Actions, StatesComponent, Counter, Name]);
 
   const handleRemove = useCallback(async () => {
     sdk.operations.removeComponent(entityId, Triggers);
@@ -328,7 +335,9 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       initialOpen={initialOpen}
       rightContent={
         <InfoTooltip
-          text={`Triggers activate actions based on player interactions like clicks, entering/exiting areas, or global events like "on spawn".`}
+          text={
+            'Triggers activate actions based on player interactions like clicks, entering/exiting areas, or global events like "on spawn".'
+          }
           link="https://docs.decentraland.org/creator/editor/smart-items-advanced/"
           type="help"
         />
