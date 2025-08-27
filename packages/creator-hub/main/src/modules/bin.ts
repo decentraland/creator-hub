@@ -344,14 +344,80 @@ export async function dclDeepLink(deepLink: string) {
 
 export async function code(_path: string) {
   const normalizedPath = path.normalize(_path);
+  log.info('Opening project at path:', normalizedPath);
+
+  const config = await getConfig();
+  const editors = (await config.get('editors')) || [];
+  const defaultEditor = editors.find(editor => editor.isDefault);
+
+  log.info('Available editors:', editors);
+  log.info('Default editor:', defaultEditor);
+
   try {
-    await exec(`code "${normalizedPath}"`, { env: { ...process.env, PATH: getPath() } });
-    await track('Open Code', undefined);
-  } catch (_) {
-    const error = await shell.openPath(normalizedPath);
-    if (error) {
-      throw new Error(error);
+    if (defaultEditor) {
+      log.info('Opening with default editor:', defaultEditor.name, 'at path:', defaultEditor.path);
+      let command: string;
+      if (process.platform === 'darwin') {
+        const macosPath = path.join(defaultEditor.path, 'Contents', 'MacOS');
+        try {
+          const files = await fs.readdir(macosPath);
+
+          const executableFiles = await Promise.all(
+            files.map(async file => {
+              const filePath = path.join(macosPath, file);
+              try {
+                const stats = await fs.stat(filePath);
+
+                return stats.isFile() && stats.mode & 0o111 ? file : null;
+              } catch (error) {
+                return null;
+              }
+            }),
+          ).then(results => results.filter((file): file is string => file !== null));
+
+          log.info('Found executable files:', executableFiles);
+
+          if (executableFiles.length === 0) {
+            throw new Error('No executable files found in MacOS directory');
+          }
+
+          let executableName: string;
+          if (executableFiles.length === 1) {
+            executableName = executableFiles[0];
+          } else {
+            const editorWords = defaultEditor.name.toLowerCase().split(/\s+/);
+            executableName =
+              executableFiles.find(file =>
+                editorWords.some(word => file.toLowerCase().includes(word)),
+              ) || executableFiles[0];
+          }
+
+          log.info('Found executable:', executableName, 'from options:', executableFiles);
+          command = `"${defaultEditor.path}/Contents/MacOS/${executableName}" "${normalizedPath}"`;
+        } catch (error) {
+          log.error('Error reading MacOS directory:', error);
+
+          command = `"${defaultEditor.path}/Contents/MacOS/${defaultEditor.name}" "${normalizedPath}"`;
+        }
+      } else {
+        command = `"${defaultEditor.path}" "${normalizedPath}"`;
+      }
+      log.info('Executing command:', command);
+      await exec(command, {
+        env: { ...process.env, PATH: getPath() },
+      });
+      await track('Open Code', undefined);
+    } else {
+      log.info('No default editor found, trying VS Code');
+      await exec(`code "${normalizedPath}"`, { env: { ...process.env, PATH: getPath() } });
+      await track('Open Code', undefined);
     }
+  } catch (error) {
+    log.info(
+      'Failed to open with configured editor, falling back to system default. Error:',
+      error,
+    );
+    await shell.openPath(normalizedPath);
   }
 }
 
@@ -364,7 +430,24 @@ export async function getEditors() {
 export async function setDefaultEditor(editorPath: string) {
   const config = await getConfig();
   const editors = (await config.get('editors')) || [];
-  const name = editorPath.split('/').pop()?.replace('.app', '') || 'Custom Editor';
+
+  let name: string;
+  if (process.platform === 'darwin') {
+    const fileName = editorPath.split('/').pop() || '';
+    if (!fileName.endsWith('.app')) {
+      throw new Error('Invalid application selected. Please select a valid .app bundle.');
+    }
+
+    const macosPath = path.join(editorPath, 'Contents', 'MacOS');
+    try {
+      await fs.stat(macosPath);
+    } catch {
+      throw new Error('Invalid application bundle structure. Missing Contents/MacOS directory.');
+    }
+    name = fileName.replace('.app', '');
+  } else {
+    name = editorPath.split('\\').pop()?.replace('.exe', '') || 'Custom Editor';
+  }
 
   const existingIndex = editors.findIndex(e => e.name === name);
   const updatedEditors = editors.map(editor => ({
