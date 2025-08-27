@@ -421,10 +421,50 @@ export async function code(_path: string) {
   }
 }
 
+async function validateEditor(editor: EditorConfig): Promise<boolean> {
+  try {
+    if (process.platform === 'darwin') {
+      const macosPath = path.join(editor.path, 'Contents', 'MacOS');
+      await fs.stat(macosPath);
+    } else {
+      await fs.stat(editor.path);
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function getEditors() {
   const config = await getConfig();
   const editors = (await config.get('editors')) || [];
-  return editors;
+
+  // Validar cada editor y filtrar los que ya no existen
+  const validEditors = [];
+  let defaultFound = false;
+
+  for (const editor of editors) {
+    if (await validateEditor(editor)) {
+      validEditors.push(editor);
+      if (editor.isDefault) {
+        defaultFound = true;
+      }
+    } else {
+      log.info(`Editor ${editor.name} at ${editor.path} no longer exists, removing from config`);
+    }
+  }
+
+  // Si el editor por defecto fue removido, establecer el primero como default
+  if (!defaultFound && validEditors.length > 0) {
+    validEditors[0].isDefault = true;
+  }
+
+  // Actualizar la configuración si se removió algún editor
+  if (validEditors.length !== editors.length) {
+    await config.set('editors', validEditors);
+  }
+
+  return validEditors;
 }
 
 export async function setDefaultEditor(editorPath: string) {
