@@ -1,5 +1,8 @@
+import { useMemo } from 'react';
+import { type Entity } from '@dcl/ecs';
 import { AllComponents } from '../../../lib/sdk/components/types';
 import type { SdkContextValue, SdkContextComponents } from '../../../lib/sdk/context';
+import { useTree } from '../../../hooks/sdk/useTree';
 
 export function getEnumKeyByValue(value: string): keyof typeof AllComponents | undefined {
   return Object.entries(AllComponents).find(([_, v]) => v === value)?.[0] as
@@ -35,3 +38,57 @@ export function getComponentByType(sdk: SdkContextValue, type: string): any {
     return null;
   }
 }
+
+// Utility function to check if an entity or any of its children have actions or triggers
+export const useEntityOrChildrenHasComponents = (entity: Entity, sdk: SdkContextValue) => {
+  const { Actions, Triggers } = sdk.components;
+  const { getChildren } = useTree();
+
+  return useMemo(() => {
+    const hasActions = Actions.has(entity);
+    const hasTriggers = Triggers.has(entity);
+
+    // If the entity itself has the components, return early
+    if (hasActions || hasTriggers) {
+      return { hasActions, hasTriggers };
+    }
+
+    // Check children recursively
+    const checkChildren = (parentEntity: Entity): { hasActions: boolean; hasTriggers: boolean } => {
+      const children = getChildren(parentEntity);
+
+      if (children.length === 0) {
+        return { hasActions: false, hasTriggers: false };
+      }
+
+      let childrenHasActions = false;
+      let childrenHasTriggers = false;
+
+      for (const childEntity of children) {
+        const childHasActions = Actions.has(childEntity);
+        const childHasTriggers = Triggers.has(childEntity);
+
+        if (childHasActions || childHasTriggers) {
+          childrenHasActions = childrenHasActions || childHasActions;
+          childrenHasTriggers = childrenHasTriggers || childHasTriggers;
+
+          // Early return if we found both
+          if (childrenHasActions && childrenHasTriggers) {
+            break;
+          }
+        }
+
+        // Recursively check grandchildren if we haven't found both yet
+        if (!childrenHasActions || !childrenHasTriggers) {
+          const grandChildrenResult = checkChildren(childEntity);
+          childrenHasActions = childrenHasActions || grandChildrenResult.hasActions;
+          childrenHasTriggers = childrenHasTriggers || grandChildrenResult.hasTriggers;
+        }
+      }
+
+      return { hasActions: childrenHasActions, hasTriggers: childrenHasTriggers };
+    };
+
+    return checkChildren(entity);
+  }, [entity, Actions, Triggers, getChildren]);
+};
