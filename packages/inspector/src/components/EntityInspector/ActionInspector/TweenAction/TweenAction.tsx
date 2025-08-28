@@ -1,7 +1,11 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { TweenType, InterpolationType } from '@dcl/asset-packs';
+import React, { useCallback, useState } from 'react';
+import {
+  TweenType,
+  InterpolationType,
+  type ActionPayload,
+  type ActionType,
+} from '@dcl/asset-packs';
 import { recursiveCheck } from '../../../../lib/utils/deep-equal';
-
 import { Block } from '../../../Block';
 import { Dropdown, TextField, RangeField, InfoTooltip, CheckboxField } from '../../../ui';
 import { isValidTween } from './utils';
@@ -39,51 +43,53 @@ function parseDuration(value: string | number): string {
 
 const TweenAction: React.FC<Props> = ({ tween: tweenProp, onUpdateTween }: Props) => {
   const [tween, setTween] = useState(tweenProp);
-  const [endPosition, setEndPosition] = useState(tween.end);
 
-  useEffect(() => {
-    if (!recursiveCheck(tween, tweenProp, 2) || !isValidTween(tween)) return;
-    onUpdateTween(tween);
-  }, [tween, onUpdateTween]);
+  const handleUpdate = useCallback(
+    (_tween: Partial<ActionPayload<ActionType.START_TWEEN>>) => {
+      setTween(_tween);
+      if (!recursiveCheck(_tween, tweenProp, 2) || !isValidTween(_tween)) return;
+      onUpdateTween(_tween);
+    },
+    [setTween, tweenProp, onUpdateTween],
+  );
 
   const handleChangeType = useCallback(
     ({ target: { value } }: React.ChangeEvent<HTMLSelectElement>) => {
-      setTween({ ...tween, type: value });
+      handleUpdate({ ...tween, type: value });
     },
-    [tween, setTween],
+    [tween, handleUpdate],
   );
 
   const handleChangeEndPosition = useCallback(
     (e: React.ChangeEvent<HTMLElement>, axis: string) => {
       const { value } = e.target as HTMLInputElement;
-      setEndPosition({ ...endPosition, [axis]: value });
+      handleUpdate({ ...tween, end: { ...tween.end, [axis]: value } });
     },
-    [endPosition, setTween],
+    [tween, handleUpdate],
   );
 
   const handleBlurEndPosition = useCallback(
     (e: React.ChangeEvent<HTMLElement>, axis: string) => {
       const { value } = e.target as HTMLInputElement;
       const validValue = isNaN(parseFloat(value)) ? parseFloat('0') : parseFloat(value);
-      setTween({ ...tween, end: { ...tween.end, [axis]: validValue } });
-      setEndPosition({ ...endPosition, [axis]: validValue.toFixed(2) });
+      handleUpdate({ ...tween, end: { ...tween.end, [axis]: validValue } });
     },
-    [tween, setTween],
+    [tween, handleUpdate],
   );
 
   const handleChangeRelative = useCallback(
     (e: React.ChangeEvent<HTMLElement>) => {
       const { checked } = e.target as HTMLInputElement;
-      setTween({ ...tween, relative: checked });
+      handleUpdate({ ...tween, relative: checked });
     },
-    [tween, setTween],
+    [tween, handleUpdate],
   );
 
   const handleChangeInterpolationType = useCallback(
     ({ target: { value } }: React.ChangeEvent<HTMLSelectElement>) => {
-      setTween({ ...tween, interpolationType: value });
+      handleUpdate({ ...tween, interpolationType: value });
     },
-    [tween, setTween],
+    [tween, handleUpdate],
   );
 
   const isValidDuration = useCallback((value: string) => {
@@ -95,10 +101,10 @@ const TweenAction: React.FC<Props> = ({ tween: tweenProp, onUpdateTween }: Props
       const { value } = e.target as HTMLInputElement;
 
       if (isValidDuration(value)) {
-        setTween({ ...tween, duration: parseDuration(value) });
+        handleUpdate({ ...tween, duration: parseDuration(value) });
       }
     },
-    [tween, setTween, isValidDuration],
+    [tween, handleUpdate, isValidDuration],
   );
 
   const renderTweenInfo = () => {
@@ -161,8 +167,8 @@ const TweenAction: React.FC<Props> = ({ tween: tweenProp, onUpdateTween }: Props
         <TextField
           leftLabel="X"
           type="number"
-          value={endPosition.x}
-          error={isNaN(parseFloat(endPosition.x))}
+          value={tween.end.x}
+          error={isNaN(parseFloat(tween.end.x))}
           onChange={e => handleChangeEndPosition(e, 'x')}
           onBlur={e => handleBlurEndPosition(e, 'x')}
           autoSelect
@@ -170,8 +176,8 @@ const TweenAction: React.FC<Props> = ({ tween: tweenProp, onUpdateTween }: Props
         <TextField
           leftLabel="Y"
           type="number"
-          value={endPosition.y}
-          error={isNaN(parseFloat(endPosition.y))}
+          value={tween.end.y}
+          error={isNaN(parseFloat(tween.end.y))}
           onChange={e => handleChangeEndPosition(e, 'y')}
           onBlur={e => handleBlurEndPosition(e, 'y')}
           autoSelect
@@ -179,8 +185,8 @@ const TweenAction: React.FC<Props> = ({ tween: tweenProp, onUpdateTween }: Props
         <TextField
           leftLabel="Z"
           type="number"
-          value={endPosition.z}
-          error={isNaN(parseFloat(endPosition.z))}
+          value={tween.end.z}
+          error={isNaN(parseFloat(tween.end.z))}
           onChange={e => handleChangeEndPosition(e, 'z')}
           onBlur={e => handleBlurEndPosition(e, 'z')}
           autoSelect

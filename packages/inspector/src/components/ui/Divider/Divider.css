@@ -1,0 +1,24 @@
+.Divider {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin: 6px 0;
+}
+
+.Divider::before,
+.Divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background-color: var(--base-14);
+}
+
+.Divider .DividerLabel {
+  padding: 0 12px;
+  color: var(--base-14);
+  font-size: 12px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  white-space: nowrap;
+}

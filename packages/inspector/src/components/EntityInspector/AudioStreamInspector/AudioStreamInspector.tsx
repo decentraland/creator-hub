@@ -14,7 +14,7 @@ import { TextField, CheckboxField, RangeField, InfoTooltip } from '../../ui';
 import { fromAudioStream, toAudioStream, isValidInput, isValidVolume } from './utils';
 import type { Props } from './types';
 
-export default withSdk<Props>(({ sdk, entity }) => {
+export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const { AudioStream, GltfContainer } = sdk.components;
 
   const hasAudioStream = useHasComponent(entity, AudioStream);
@@ -49,9 +49,10 @@ export default withSdk<Props>(({ sdk, entity }) => {
     <Container
       label="AudioStream"
       className={cx('AudioStream')}
+      initialOpen={initialOpen}
       rightContent={
         <InfoTooltip
-          text="The audio in the source must be in one of the following formats: .mp3, ogg, or aac. The source must also be an https URL (http URLs aren’t supported), and the source should have CORS policies (Cross Origin Resource Sharing) that permit externally accessing it."
+          text="The audio in the source must be in one of the following formats: .mp3, ogg, or aac. The source must also be an https URL (http URLs aren't supported), and the source should have CORS policies (Cross Origin Resource Sharing) that permit externally accessing it."
           link="https://docs.decentraland.org/creator/development-guide/sdk7/audio-streaming"
           type="help"
         />

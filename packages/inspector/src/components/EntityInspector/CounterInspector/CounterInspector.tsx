@@ -15,7 +15,7 @@ import { Props } from './types';
 
 import './CounterInspector.css';
 
-export default withSdk<Props>(({ sdk, entity }) => {
+export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const { Counter, GltfContainer } = sdk.components;
 
   const hasCounter = useHasComponent(entity, Counter);
@@ -47,6 +47,7 @@ export default withSdk<Props>(({ sdk, entity }) => {
     <Container
       label="Counter"
       className="CounterInspector"
+      initialOpen={initialOpen}
       rightContent={
         <InfoTooltip
           text="Counter tracks numerical values that change based on player actions. Use it for conditional logic and to trigger actions when reaching certain values."

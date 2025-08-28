@@ -1,50 +1,38 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { ActionPayload, ActionType } from '@dcl/asset-packs';
+import React, { useCallback, useState } from 'react';
+import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
 import { recursiveCheck } from '../../../../lib/utils/deep-equal';
 import { Dropdown } from '../../../ui/Dropdown';
 import { isValid } from './utils';
-import type { Props } from './types';
+import { PLAY_MODE, PLAY_MODE_OPTIONS, type Props } from './types';
 
 import './PlayAnimationAction.css';
-
-enum PLAY_MODE {
-  PLAY_ONCE = 'play-once',
-  LOOP = 'loop',
-}
-
-const playModeOptions = [
-  {
-    label: 'Play Once',
-    value: PLAY_MODE.PLAY_ONCE,
-  },
-  {
-    label: 'Loop',
-    value: PLAY_MODE.LOOP,
-  },
-];
 
 const PlayAnimationAction: React.FC<Props> = ({ value, animations, onUpdate }: Props) => {
   const [payload, setPayload] = useState<Partial<ActionPayload<ActionType.PLAY_ANIMATION>>>({
     ...value,
   });
 
-  useEffect(() => {
-    if (!recursiveCheck(payload, value, 2) || !isValid(payload)) return;
-    onUpdate(payload);
-  }, [payload, onUpdate]);
+  const handleUpdate = useCallback(
+    (_payload: Partial<ActionPayload<ActionType.PLAY_ANIMATION>>) => {
+      setPayload(_payload);
+      if (!recursiveCheck(_payload, value, 2) || !isValid(_payload)) return;
+      onUpdate(_payload);
+    },
+    [setPayload, value, onUpdate],
+  );
 
   const handleChangeAnimation = useCallback(
     ({ target: { value } }: React.ChangeEvent<HTMLSelectElement>) => {
-      setPayload({ ...payload, animation: value });
+      handleUpdate({ ...payload, animation: value });
     },
-    [payload, setPayload],
+    [payload, handleUpdate],
   );
 
   const handleChangePlayMode = useCallback(
     ({ target: { value } }: React.ChangeEvent<HTMLSelectElement>) => {
-      setPayload({ ...payload, loop: value === PLAY_MODE.LOOP });
+      handleUpdate({ ...payload, loop: value === PLAY_MODE.LOOP });
     },
-    [payload, setPayload],
+    [payload, handleUpdate],
   );
 
   return (
@@ -65,7 +53,7 @@ const PlayAnimationAction: React.FC<Props> = ({ value, animations, onUpdate }: P
           <Dropdown
             label="Play Mode"
             value={payload.loop ? PLAY_MODE.LOOP : PLAY_MODE.PLAY_ONCE}
-            options={playModeOptions}
+            options={PLAY_MODE_OPTIONS}
             onChange={handleChangePlayMode}
           />
         </div>

@@ -1,22 +1,22 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDrop } from 'react-dnd';
+import { VscFolderOpened as FolderIcon } from 'react-icons/vsc';
 import cx from 'classnames';
 import { v4 as uuidv4 } from 'uuid';
-import { VscFolderOpened as FolderIcon } from 'react-icons/vsc';
 
 import { selectAssetCatalog, selectUploadFile, updateUploadFile } from '../../../redux/app';
 import { useAppDispatch, useAppSelector } from '../../../redux/hooks';
 import { importAsset } from '../../../redux/data-layer';
-import { DropTypesEnum, LocalAssetDrop, getNode } from '../../../lib/sdk/drag-drop';
+import { getNode, DropTypesEnum, type LocalAssetDrop } from '../../../lib/sdk/drag-drop';
 import { DIRECTORY, EXTENSIONS, withAssetDir } from '../../../lib/data-layer/host/fs-utils';
+import { isValidHttpsUrl } from '../../../lib/utils/url';
 
 import { buildAssetPath, convertAssetToBinary, processAssets } from '../../ImportAsset/utils';
 import { isModel } from '../../EntityInspector/GltfInspector/utils';
 import { isAudio } from '../../EntityInspector/AudioSourceInspector/utils';
 import { isModel as isTexture } from '../../EntityInspector/MaterialInspector/Texture/utils';
-import { TreeNode } from '../../ProjectAssetExplorer/ProjectView';
-import { AssetNodeItem } from '../../ProjectAssetExplorer/types';
-import { isValidHttpsUrl } from '../../../lib/utils/url';
+import { type TreeNode } from '../../ProjectAssetExplorer/ProjectView';
+import { type AssetNodeItem } from '../../ProjectAssetExplorer/types';
 
 import { TextField } from '../TextField';
 import { Message, MessageType } from '../Message';
@@ -52,6 +52,10 @@ const FileUploadField: React.FC<Props> = ({
   const id = useRef(uuidv4());
 
   useEffect(() => {
+    setPath(value?.toString());
+  }, [value]);
+
+  useEffect(() => {
     if (
       uploadFile[id.current] &&
       typeof uploadFile[id.current] === 'string' &&
@@ -84,6 +88,7 @@ const FileUploadField: React.FC<Props> = ({
     (src: string) => {
       setPath(src);
       onDrop && onDrop(src);
+      onChange && onChange({ target: { value: src } } as React.ChangeEvent<HTMLInputElement>);
     },
     [onDrop],
   );
@@ -174,12 +179,13 @@ const FileUploadField: React.FC<Props> = ({
         dispatch(updateUploadFile(newUploadFile));
         setPath(assetPath);
         onDrop && onDrop(assetPath);
+        onChange && onChange({ ...event, target: { ...event.target, value: assetPath } });
       } else {
         setDropError(true);
       }
       if (inputRef.current) inputRef.current.value = '';
     },
-    [inputRef, setPath, setDropError, uploadFile, onDrop],
+    [inputRef, setPath, setDropError, uploadFile, onDrop, onChange],
   );
 
   const hasError = useMemo(() => {
