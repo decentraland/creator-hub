@@ -262,6 +262,19 @@ const SmartItemBasicView = withSdk<Props>(({ sdk, entity }) => {
     [renderSectionItem],
   );
 
+  const renderHelpTooltip = useCallback(() => {
+    if (config?.helpTooltip) {
+      return (
+        <InfoTooltip
+          text={config.helpTooltip.text}
+          link={config.helpTooltip.link}
+          type="help"
+        />
+      );
+    }
+    return undefined;
+  }, [config?.helpTooltip]);
+
   if (!config || !config.sections || config.sections.length === 0) {
     return null;
   }
@@ -271,6 +284,7 @@ const SmartItemBasicView = withSdk<Props>(({ sdk, entity }) => {
       label={config.label || 'Smart Item'}
       indicator={renderSmartItemIndicator()}
       className="SmartItemBasicViewInspector"
+      rightContent={renderHelpTooltip()}
     >
       {config.sections.map((section, sectionIndex) =>
         renderSection(section as Section, sectionIndex),

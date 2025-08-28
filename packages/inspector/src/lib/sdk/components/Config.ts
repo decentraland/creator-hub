@@ -113,6 +113,12 @@ export const ConfigComponentSchema = {
       }),
     ),
   ),
+  helpTooltip: Schemas.Optional(
+    Schemas.Map({
+      text: Schemas.String,
+      link: Schemas.Optional(Schemas.String),
+    }),
+  ),
   version: Schemas.Optional(Schemas.Number),
 };
 
