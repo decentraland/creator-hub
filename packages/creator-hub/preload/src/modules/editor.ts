@@ -75,7 +75,3 @@ export async function openTutorial(opts: { id: string; list?: string }) {
 export async function openExternalURL(url: string) {
   await invoke('electron.openExternal', url);
 }
-
-export async function addEditorPathsToConfig() {
-  return invoke('bin.addEditorPathsToConfig');
-}

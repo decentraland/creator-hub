@@ -439,7 +439,6 @@ export async function getEditors() {
   const config = await getConfig();
   const editors = (await config.get('editors')) || [];
 
-  // Validar cada editor y filtrar los que ya no existen
   const validEditors = [];
   let defaultFound = false;
 
@@ -454,12 +453,10 @@ export async function getEditors() {
     }
   }
 
-  // Si el editor por defecto fue removido, establecer el primero como default
   if (!defaultFound && validEditors.length > 0) {
     validEditors[0].isDefault = true;
   }
 
-  // Actualizar la configuración si se removió algún editor
   if (validEditors.length !== editors.length) {
     await config.set('editors', validEditors);
   }
@@ -516,7 +513,6 @@ export async function setDefaultEditor(editorPath: string) {
 export async function addEditorPathsToConfig() {
   const config = await getConfig();
   const existingEditors = (await config.get('editors')) || [];
-
   const platform = process.platform as 'win32' | 'darwin';
   const username = platform === 'win32' ? process.env.USERNAME || '' : '';
 
