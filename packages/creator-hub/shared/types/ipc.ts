@@ -43,9 +43,9 @@ export interface Ipc {
   'inspector.attachSceneDebugger': (path: string, eventName: string) => Promise<boolean>;
   'bin.install': () => Promise<void>;
   'bin.code': (path: string) => Promise<void>;
-  'bin.addEditorsPathsToConfig': () => Promise<void>;
-  'bin.getEditors': () => Promise<EditorConfig[]>;
-  'bin.setDefaultEditor': (path: string) => Promise<EditorConfig[]>;
+
+  'defaultEditor.getEditors': () => Promise<EditorConfig[]>;
+  'defaultEditor.setDefaultEditor': (path: string) => Promise<EditorConfig[]>;
   'cli.init': (path: string, repo: string) => Promise<void>;
   'cli.start': (path: string, opts: PreviewOptions) => Promise<string>;
   'cli.deploy': (opts: DeployOptions) => Promise<number>;

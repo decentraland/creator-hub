@@ -103,13 +103,9 @@ export function getCurrentVersion() {
 }
 
 export async function getEditors() {
-  return invoke('bin.getEditors');
-}
-
-export async function addEditorsPathsToConfig() {
-  return invoke('bin.addEditorsPathsToConfig');
+  return invoke('defaultEditor.getEditors');
 }
 
 export async function setDefaultEditor(editorPath: string) {
-  return invoke('bin.setDefaultEditor', editorPath);
+  return invoke('defaultEditor.setDefaultEditor', editorPath);
 }

@@ -4,6 +4,7 @@ import * as updater from './updater';
 import * as inspector from './inspector';
 import * as cli from './cli';
 import * as bin from './bin';
+import * as defaultEditorSettings from './default-editor-settings';
 import * as analytics from './analytics';
 import * as npm from './npm';
 
@@ -42,9 +43,13 @@ export function initIpc() {
   // bin
   handle('bin.install', () => bin.install());
   handle('bin.code', (_event, path) => bin.code(path));
-  handle('bin.addEditorsPathsToConfig', () => bin.addEditorsPathsToConfig());
-  handle('bin.getEditors', () => bin.getEditors());
-  handle('bin.setDefaultEditor', (_event, path) => bin.setDefaultEditor(path));
+
+  // editor settings
+
+  handle('defaultEditor.getEditors', () => defaultEditorSettings.getEditors());
+  handle('defaultEditor.setDefaultEditor', (_event, path) =>
+    defaultEditorSettings.setDefaultEditor(path),
+  );
 
   // analytics
   handle('analytics.track', (_event, eventName, data) => analytics.track(eventName, data!));
