@@ -18,9 +18,11 @@ import {
   MenuItem,
   CircularProgress,
 } from 'decentraland-ui2';
-import { loadEditors, setDefaultEditor } from '/@/modules/store/editors';
+import { loadEditors, setDefaultEditor } from '/@/modules/store/defaultEditor';
 
 import { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
+import type { EditorConfig } from '/shared/types/config';
+
 import { t } from '/@/modules/store/translation/utils';
 import { useSettings } from '/@/hooks/useSettings';
 import { Modal } from '..';
@@ -33,11 +35,13 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
   const dispatch = useDispatch();
   const { settings: _settings, updateAppSettings } = useSettings();
   const [settings, setSettings] = useState(_settings);
-  const { editors, loading } = useSelector(state => state.editors);
+  const { editors, loading } = useSelector(state => state.defaultEditor);
 
   useEffect(() => {
-    dispatch(loadEditors());
-  }, [dispatch]);
+    if (open) {
+      dispatch(loadEditors());
+    }
+  }, [dispatch, open]);
 
   useEffect(() => {
     if (!equal(_settings, settings)) setSettings(_settings);
@@ -153,7 +157,7 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
                   }
                 }}
               >
-                {editors.map(editor => (
+                {editors.map((editor: EditorConfig) => (
                   <MenuItem
                     key={editor.path}
                     value={editor.path}
@@ -165,7 +169,7 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
                 ))}
                 <MenuItem
                   className="custom-editor"
-                  onMouseDown={async e => {
+                  onMouseDown={async (e: React.MouseEvent) => {
                     e.preventDefault();
                     const [editorPath] = await settingsPreload.selectEditorPath();
                     if (editorPath) {

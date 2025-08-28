@@ -37,8 +37,10 @@ async function validateEditor(editor: EditorConfig): Promise<boolean> {
     } else {
       await fs.stat(editor.path);
     }
+    log.info(`Editor ${editor.path} validation successful`);
     return true;
   } catch {
+    log.info(`Editor ${editor.path} validation failed - path does not exist`);
     return false;
   }
 }

@@ -2,31 +2,31 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { settings as settingsApi } from '#preload';
 import type { EditorConfig } from '/shared/types/config';
 
-export type EditorsState = {
+export type DefaultEditorState = {
   editors: EditorConfig[];
   loading: boolean;
   error: string | null;
 };
 
-const initialState: EditorsState = {
+const initialState: DefaultEditorState = {
   editors: [],
   loading: false,
   error: null,
 };
 
-export const loadEditors = createAsyncThunk('editors/load', async () => {
+export const loadEditors = createAsyncThunk('defaultEditor/load', async () => {
   return settingsApi.getEditors();
 });
 
 export const setDefaultEditor = createAsyncThunk(
-  'editors/setDefault',
+  'defaultEditor/setDefault',
   async (editorPath: string) => {
     return settingsApi.setDefaultEditor(editorPath);
   },
 );
 
 const slice = createSlice({
-  name: 'editors',
+  name: 'defaultEditor',
   initialState,
   reducers: {},
   extraReducers: builder => {
@@ -55,6 +55,7 @@ const slice = createSlice({
 export const actions = {
   ...slice.actions,
   loadEditors,
+  setDefaultEditor,
 };
 
 export const reducer = slice.reducer;
