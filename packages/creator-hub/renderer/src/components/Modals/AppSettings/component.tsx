@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import FolderIcon from '@mui/icons-material/Folder';
@@ -13,7 +13,6 @@ import {
   Typography,
   FormGroup,
   InputAdornment,
-  Button,
   Select,
   MenuItem,
   CircularProgress,
@@ -49,32 +48,33 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
 
   const handleChangeSceneFolder = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      setSettings({ ...settings, scenesPath: event.target.value });
+      const newSettings = { ...settings, scenesPath: event.target.value };
+      setSettings(newSettings);
+      updateAppSettings(newSettings);
     },
-    [settings],
+    [settings, updateAppSettings],
   );
 
   const handleChangeUpdateDependenciesStrategy = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      setSettings({
+      const newSettings = {
         ...settings,
         dependencyUpdateStrategy: event.target.value as DEPENDENCY_UPDATE_STRATEGY,
-      });
+      };
+      setSettings(newSettings);
+      updateAppSettings(newSettings);
     },
-    [settings],
+    [settings, updateAppSettings],
   );
-
-  const handleClickApply = useCallback(() => {
-    updateAppSettings(settings);
-    onClose();
-  }, [settings, updateAppSettings]);
 
   const handleOpenFolder = useCallback(async () => {
     const folder = await settingsPreload.selectSceneFolder();
-    if (folder) setSettings({ ...settings, scenesPath: folder });
-  }, [settings]);
-
-  const isDirty = useMemo(() => !equal(_settings, settings), [settings, _settings]);
+    if (folder) {
+      const newSettings = { ...settings, scenesPath: folder };
+      setSettings(newSettings);
+      updateAppSettings(newSettings);
+    }
+  }, [settings, updateAppSettings]);
 
   return (
     <Modal
@@ -111,31 +111,6 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
                 </InputAdornment>
               }
             />
-          </FormGroup>
-          <FormGroup sx={{ gap: '16px' }}>
-            <Typography variant="body1">
-              {t('modal.app_settings.fields.scene_editor_dependencies.label')}
-            </Typography>
-            <RadioGroup
-              value={settings.dependencyUpdateStrategy}
-              onChange={handleChangeUpdateDependenciesStrategy}
-            >
-              <FormControlLabel
-                value={DEPENDENCY_UPDATE_STRATEGY.AUTO_UPDATE}
-                control={<Radio />}
-                label={t('modal.app_settings.fields.scene_editor_dependencies.options.auto_update')}
-              />
-              <FormControlLabel
-                value={DEPENDENCY_UPDATE_STRATEGY.NOTIFY}
-                control={<Radio />}
-                label={t('modal.app_settings.fields.scene_editor_dependencies.options.notify')}
-              />
-              <FormControlLabel
-                value={DEPENDENCY_UPDATE_STRATEGY.DO_NOTHING}
-                control={<Radio />}
-                label={t('modal.app_settings.fields.scene_editor_dependencies.options.do_nothing')}
-              />
-            </RadioGroup>
           </FormGroup>
           <FormGroup
             sx={{ gap: '16px' }}
@@ -182,14 +157,31 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
               </Select>
             )}
           </FormGroup>
-          <Button
-            className="ApplyButton"
-            variant="contained"
-            disabled={!isDirty}
-            onClick={handleClickApply}
-          >
-            {t('modal.app_settings.actions.apply_button')}
-          </Button>
+          <FormGroup sx={{ gap: '16px' }}>
+            <Typography variant="body1">
+              {t('modal.app_settings.fields.scene_editor_dependencies.label')}
+            </Typography>
+            <RadioGroup
+              value={settings.dependencyUpdateStrategy}
+              onChange={handleChangeUpdateDependenciesStrategy}
+            >
+              <FormControlLabel
+                value={DEPENDENCY_UPDATE_STRATEGY.AUTO_UPDATE}
+                control={<Radio />}
+                label={t('modal.app_settings.fields.scene_editor_dependencies.options.auto_update')}
+              />
+              <FormControlLabel
+                value={DEPENDENCY_UPDATE_STRATEGY.NOTIFY}
+                control={<Radio />}
+                label={t('modal.app_settings.fields.scene_editor_dependencies.options.notify')}
+              />
+              <FormControlLabel
+                value={DEPENDENCY_UPDATE_STRATEGY.DO_NOTHING}
+                control={<Radio />}
+                label={t('modal.app_settings.fields.scene_editor_dependencies.options.do_nothing')}
+              />
+            </RadioGroup>
+          </FormGroup>
         </Box>
       </Box>
     </Modal>
