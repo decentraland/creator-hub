@@ -1,6 +1,9 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { settings as settingsApi } from '#preload';
+import { createSlice } from '@reduxjs/toolkit';
+import { t } from '../translation/utils';
+import { createAsyncThunk } from '../thunk';
+import { actions as snackbarActions } from '../snackbar/slice';
 import type { EditorConfig } from '/shared/types/config';
+import { settings as settingsApi } from '#preload';
 
 export type DefaultEditorState = {
   editors: EditorConfig[];
@@ -14,14 +17,46 @@ const initialState: DefaultEditorState = {
   error: null,
 };
 
-export const loadEditors = createAsyncThunk('defaultEditor/load', async () => {
-  return settingsApi.getEditors();
+export const loadEditors = createAsyncThunk('defaultEditor/load', async (_, { dispatch }) => {
+  try {
+    return await settingsApi.getEditors();
+  } catch (error) {
+    dispatch(
+      snackbarActions.pushSnackbar({
+        id: 'load-editors-error',
+        type: 'generic',
+        severity: 'error',
+        message: t('modal.app_settings.fields.code_editor.errors.set'),
+      }),
+    );
+    throw error;
+  }
 });
 
 export const setDefaultEditor = createAsyncThunk(
   'defaultEditor/setDefault',
-  async (editorPath: string) => {
-    return settingsApi.setDefaultEditor(editorPath);
+  async (editorPath: string, { dispatch }) => {
+    try {
+      return await settingsApi.setDefaultEditor(editorPath);
+    } catch (error: any) {
+      let errorKey = 'unknown';
+      if (error.message.includes('invalid_app_extension')) {
+        errorKey = 'invalid_app_extension';
+      } else if (error.message.includes('invalid_app_bundle')) {
+        errorKey = 'invalid_app_bundle';
+      } else if (error.message.includes('invalid_exe_file')) {
+        errorKey = 'invalid_exe_file';
+      }
+      dispatch(
+        snackbarActions.pushSnackbar({
+          id: 'set-default-editor-error',
+          type: 'generic',
+          severity: 'error',
+          message: t(('modal.app_settings.fields.code_editor.errors.' + errorKey) as any),
+        }),
+      );
+      throw error;
+    }
   },
 );
 

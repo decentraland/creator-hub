@@ -250,7 +250,15 @@
         },
         "code_editor": {
           "label": "Code editor of choice",
-          "choose_device": "Choose from your device..."
+          "choose_device": "Choose from your device...",
+          "errors": {
+            "load": "Failed to load code editors",
+            "set": "Failed to set default editor",
+            "invalid_app_extension": "Invalid application selected. Please select a valid .app bundle",
+            "invalid_app_bundle": "Invalid application bundle structure",
+            "invalid_exe_file": "Invalid application selected. Please select a valid .exe file",
+            "unknown": "Failed to set default editor"
+          }
         }
       },
       "actions": {

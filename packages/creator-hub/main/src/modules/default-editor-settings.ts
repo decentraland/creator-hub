@@ -2,6 +2,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import log from 'electron-log/main';
 import { type EditorConfig } from '/shared/types/config';
+
 import { getConfig } from './config';
 
 export enum EditorType {
@@ -82,18 +83,22 @@ export async function setDefaultEditor(editorPath: string) {
   if (process.platform === 'darwin') {
     const fileName = editorPath.split('/').pop() || '';
     if (!fileName.endsWith('.app')) {
-      throw new Error('Invalid application selected. Please select a valid .app bundle.');
+      throw new Error('invalid_app_extension');
     }
 
     const macosPath = path.join(editorPath, 'Contents', 'MacOS');
     try {
       await fs.stat(macosPath);
     } catch {
-      throw new Error('Invalid application bundle structure. Missing Contents/MacOS directory.');
+      throw new Error('invalid_app_bundle');
     }
     name = fileName.replace('.app', '');
   } else {
-    name = editorPath.split('\\').pop()?.replace('.exe', '') || 'Custom Editor';
+    const fileName = editorPath.split('\\').pop() || '';
+    if (!fileName.endsWith('.exe')) {
+      throw new Error('invalid_exe_file');
+    }
+    name = fileName.replace('.exe', '') || 'Custom Editor';
   }
 
   const existingIndex = editors.findIndex(e => e.name === name);
