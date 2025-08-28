@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { deepEqual } from 'fast-equals';
+import { recursiveCheck } from '../lib/utils/deep-equal';
 
 export function useArrayState<T>(initialArray: T[] = []) {
   const [array, setArray] = useState<T[]>([...initialArray]);
 
   useEffect(() => {
-    if (deepEqual(initialArray, array)) return;
+    if (!recursiveCheck(initialArray, array, 2)) return;
     setArray([...initialArray]);
   }, [initialArray]);
 
