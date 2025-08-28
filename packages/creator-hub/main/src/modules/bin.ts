@@ -510,7 +510,7 @@ export async function setDefaultEditor(editorPath: string) {
   return updatedEditors;
 }
 
-export async function addEditorPathsToConfig() {
+export async function addEditorsPathsToConfig() {
   const config = await getConfig();
   const existingEditors = (await config.get('editors')) || [];
   const platform = process.platform as 'win32' | 'darwin';

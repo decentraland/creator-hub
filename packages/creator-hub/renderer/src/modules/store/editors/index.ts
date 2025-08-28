@@ -15,7 +15,6 @@ const initialState: EditorsState = {
 };
 
 export const loadEditors = createAsyncThunk('editors/load', async () => {
-  await settingsApi.addEditorPathsToConfig();
   return settingsApi.getEditors();
 });
 

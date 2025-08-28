@@ -106,8 +106,8 @@ export async function getEditors() {
   return invoke('bin.getEditors');
 }
 
-export async function addEditorPathsToConfig() {
-  return invoke('bin.addEditorPathsToConfig');
+export async function addEditorsPathsToConfig() {
+  return invoke('bin.addEditorsPathsToConfig');
 }
 
 export async function setDefaultEditor(editorPath: string) {

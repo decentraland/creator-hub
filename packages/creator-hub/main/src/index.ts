@@ -9,7 +9,7 @@ import { deployServer, killAllPreviews } from '/@/modules/cli';
 import { killInspectorServer } from '/@/modules/inspector';
 import { runMigrations } from '/@/modules/migrations';
 import { getAnalytics, track } from './modules/analytics';
-import { addEditorPathsToConfig } from './modules/bin';
+import { addEditorsPathsToConfig } from './modules/bin';
 
 import '/@/security-restrictions';
 
@@ -59,8 +59,7 @@ app
     log.info('[IPC] Ready');
     await restoreOrCreateMainWindow();
     log.info('[BrowserWindow] Ready');
-
-    await addEditorPathsToConfig();
+    await addEditorsPathsToConfig();
     const analytics = await getAnalytics();
     if (analytics) {
       await track('Open Editor', { version: app.getVersion() });

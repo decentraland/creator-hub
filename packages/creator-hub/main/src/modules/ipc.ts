@@ -42,7 +42,7 @@ export function initIpc() {
   // bin
   handle('bin.install', () => bin.install());
   handle('bin.code', (_event, path) => bin.code(path));
-  handle('bin.addEditorPathsToConfig', () => bin.addEditorPathsToConfig());
+  handle('bin.addEditorsPathsToConfig', () => bin.addEditorsPathsToConfig());
   handle('bin.getEditors', () => bin.getEditors());
   handle('bin.setDefaultEditor', (_event, path) => bin.setDefaultEditor(path));
 
