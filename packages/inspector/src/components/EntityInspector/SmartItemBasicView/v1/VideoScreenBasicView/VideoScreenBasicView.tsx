@@ -4,6 +4,8 @@ import { MediaSource, LIVEKIT_STREAM_SRC } from '@dcl/asset-packs';
 
 import { withSdk } from '../../../../../hoc/withSdk';
 import { useComponentValue } from '../../../../../hooks/sdk/useComponentValue';
+import { isValidHttpsUrl } from '../../../../../lib/utils/url';
+import { Block } from '../../../../Block';
 import { Container } from '../../../../Container';
 import {
   CheckboxField,
@@ -13,10 +15,8 @@ import {
   RangeField,
   TextField,
 } from '../../../../ui';
-import { type Props } from '../../../AdminToolkitView/types';
 import { isValidVolume } from '../../../VideoPlayerInspector/utils';
-import { Block } from '../../../../Block';
-import { isValidHttpsUrl } from '../../../../../lib/utils/url';
+import { type Props } from '../../../AdminToolkitView/types';
 
 import './VideoScreenBasicView.css';
 
@@ -49,6 +49,7 @@ const VideoScreenBasicView = withSdk<Props>(({ sdk, entity }) => {
     },
     [videoPlayerComponent, setVideoPlayerComponent],
   );
+
   useEffect(() => {
     if (
       videoScreenComponent.defaultMediaSource === MediaSource.LiveStream &&
@@ -83,10 +84,10 @@ const VideoScreenBasicView = withSdk<Props>(({ sdk, entity }) => {
       >
         <RangeField
           value={Math.round((videoPlayerComponent.volume ?? 1) * 100)}
-          onChange={(e: any) => {
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             setVideoPlayerComponent({
               ...videoPlayerComponent,
-              volume: Number(e.target.value / 100),
+              volume: Number(e.target.value) / 100,
             });
           }}
           isValidValue={isValidVolume}

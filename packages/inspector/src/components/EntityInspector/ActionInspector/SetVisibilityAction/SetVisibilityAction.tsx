@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import { ActionPayload, ActionType, Colliders } from '@dcl/asset-packs';
-import { deepEqual } from 'fast-equals';
+import { type ActionPayload, type ActionType, Colliders } from '@dcl/asset-packs';
+import { recursiveCheck } from '../../../../lib/utils/deep-equal';
 import { Block } from '../../../Block';
 import { Dropdown, InfoTooltip } from '../../../ui';
 import { COLLISION_LAYERS } from '../../GltfInspector/utils';
@@ -22,7 +22,7 @@ const SetVisibilityAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
   const handleUpdate = useCallback(
     (_payload: Partial<ActionPayload<ActionType.SET_VISIBILITY>>) => {
       setPayload(_payload);
-      if (deepEqual(_payload, value) || !isValid(_payload)) return;
+      if (!recursiveCheck(_payload, value, 2) || !isValid(_payload)) return;
       onUpdate(_payload);
     },
     [setPayload, value, onUpdate],

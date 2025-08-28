@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { deepEqual } from 'fast-equals';
 import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
+import { recursiveCheck } from '../../../../lib/utils/deep-equal';
 import { Block } from '../../../Block';
 import { Dropdown } from '../../../ui';
 import type { DropdownChangeEvent } from '../../../ui';
@@ -22,7 +22,7 @@ const BatchAction: React.FC<Props> = ({ availableActions, value, onUpdate }: Pro
   const handleUpdate = useCallback(
     (_payload: Partial<ActionPayload<ActionType.RANDOM>>) => {
       setPayload(_payload);
-      if (deepEqual(_payload, value) || !isValid(_payload)) return;
+      if (!recursiveCheck(_payload, value, 2) || !isValid(_payload)) return;
       onUpdate(_payload);
     },
     [setPayload, value, onUpdate],

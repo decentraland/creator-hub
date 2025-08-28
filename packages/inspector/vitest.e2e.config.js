@@ -13,7 +13,7 @@ export default defineConfig({
     pool: 'forks', // use forks instead of threads for better isolation
     poolOptions: {
       forks: {
-        singleFork: true, // run tests sequentially in a single fork
+        singleFork: true,
       },
     },
   },

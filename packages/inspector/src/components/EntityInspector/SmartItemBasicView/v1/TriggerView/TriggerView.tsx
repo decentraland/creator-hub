@@ -73,9 +73,12 @@ export default React.memo(
           if (name && actionsComponentValue.value.length > 0) {
             const isBasicViewEnabled =
               Config.getOrNull(entityWithAction as Entity)?.isBasicViewEnabled === true;
-            const _actions = actionsComponentValue.value.filter(action =>
-              isBasicViewEnabled ? !!action.allowedInBasicView : true,
-            ) as Action[];
+            const _actions = [...actionsComponentValue.value] as Action[];
+            if (isBasicViewEnabled) {
+              _actions.sort((a, b) =>
+                a.allowedInBasicView === b.allowedInBasicView ? 0 : a.allowedInBasicView ? -1 : 1,
+              );
+            }
             actions.set(actionsComponentValue.id, { name: name.value, actions: _actions });
           }
           return actions;

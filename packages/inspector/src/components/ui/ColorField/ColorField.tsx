@@ -31,17 +31,17 @@ const ColorField: React.FC<Props> = ({ label, value, onChange, basic = false }) 
   const basicOptions = useMemo(() => {
     const options = getColorOptions();
 
-    if (!isValidColor) {
+    if (!isValidColor && value) {
       options.unshift({
         label: '-- Mixed Values --',
         selected: true,
         disabled: true,
-        value: value ?? '',
+        value: value,
       });
     }
 
     return options;
-  }, [isValidColor]);
+  }, [value, isValidColor]);
 
   if (basic) {
     return (

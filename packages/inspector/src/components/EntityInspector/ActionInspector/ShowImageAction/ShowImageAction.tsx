@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { ActionPayload, ActionType } from '@dcl/asset-packs';
-import { deepEqual } from 'fast-equals';
+import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
+import { recursiveCheck } from '../../../../lib/utils/deep-equal';
 import { useAppSelector } from '../../../../redux/hooks';
 import { selectAssetCatalog } from '../../../../redux/app';
 import { Block } from '../../../Block';
@@ -40,7 +40,7 @@ const ShowImageAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
   const handleUpdate = useCallback(
     (_payload: Partial<ActionPayload<ActionType.SHOW_IMAGE>>) => {
       setPayload(_payload);
-      if (deepEqual(_payload, value) || !isValid(_payload)) return;
+      if (!recursiveCheck(_payload, value, 2) || !isValid(_payload)) return;
       onUpdate(_payload);
     },
     [setPayload, value, onUpdate],

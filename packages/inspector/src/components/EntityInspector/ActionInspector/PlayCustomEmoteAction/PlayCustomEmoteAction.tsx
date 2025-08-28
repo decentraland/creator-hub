@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { deepEqual } from 'fast-equals';
 import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
+import { recursiveCheck } from '../../../../lib/utils/deep-equal';
 import { CheckboxField, FileUploadField } from '../../../ui';
 import { ACCEPTED_FILE_TYPES } from '../../../ui/FileUploadField/types';
 import { useAppSelector } from '../../../../redux/hooks';
@@ -26,7 +26,7 @@ const PlayCustomEmoteAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
   const handleUpdate = useCallback(
     (_payload: Partial<ActionPayload<ActionType.PLAY_CUSTOM_EMOTE>>) => {
       setPayload(_payload);
-      if (deepEqual(_payload, value) || !isValid(_payload)) return;
+      if (!recursiveCheck(_payload, value, 2) || !isValid(_payload)) return;
       onUpdate(_payload);
     },
     [setPayload, value, onUpdate],

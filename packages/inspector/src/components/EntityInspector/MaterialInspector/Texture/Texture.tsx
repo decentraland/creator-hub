@@ -7,7 +7,7 @@ import { Dropdown, FileUploadField, TextField } from '../../../ui';
 import { ACCEPTED_FILE_TYPES } from '../../../ui/FileUploadField/types';
 import { isModel, isValidTexture } from './utils';
 
-import { Props, Texture, TEXTURE_TYPES, WRAP_MODES, FILTER_MODES } from './types';
+import { type Props, Texture, TEXTURE_TYPES, WRAP_MODES, FILTER_MODES } from './types';
 
 function TextureInspector({ label, texture, files, getInputProps }: Props) {
   const getTextureProps = useCallback(
@@ -20,7 +20,8 @@ function TextureInspector({ label, texture, files, getInputProps }: Props) {
   const handleDrop = useCallback(
     (src: string) => {
       const srcInput = getTextureProps('src');
-      // The src comes with the basePath, so we need to remove it before setting the value because the utils fromTexture is adding it again
+      // The component FileUploadField build the asset path with the format: assets/scene/ASSET_CATEGORY/filename.extension
+      // The utils fromTexture is adding the basePath again, as the toTexture is removing the basePath, so we need to remove it again
       // TODO: Refactor EntityInspector/MaterialInspector/Texture/utils.ts::fromTexture util to not remove the basePath
       const value = removeBasePath(files?.basePath ?? '', src);
       srcInput?.onChange &&
@@ -59,6 +60,7 @@ function TextureInspector({ label, texture, files, getInputProps }: Props) {
           getTextureProps={getTextureProps}
           handleDrop={handleDrop}
           isValid={isValid}
+          files={files}
         />
       )}
       <Block>
@@ -81,12 +83,28 @@ function NormalTexture({
   getTextureProps,
   handleDrop,
   isValid,
+  files,
 }: {
   getTextureProps: (key: string) => ReturnType<Props['getInputProps']>;
   handleDrop: (src: string) => void;
   isValid: (value: string | number | readonly string[]) => boolean;
+  files?: Props['files'];
 }) {
   const src = getTextureProps('src');
+
+  const handleChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      // The component FileUploadField build the asset path with the format: assets/scene/ASSET_CATEGORY/filename.extension
+      // The utils fromTexture is adding the basePath again, as the toTexture is removing the basePath, so we need to remove it again
+      // TODO: Refactor EntityInspector/MaterialInspector/Texture/utils.ts::fromTexture util to not remove the basePath
+      const value = removeBasePath(files?.basePath ?? '', event.target.value);
+      src?.onChange &&
+        src.onChange({
+          target: { value },
+        } as React.ChangeEvent<HTMLInputElement>);
+    },
+    [files, src],
+  );
 
   return (
     <>
@@ -96,6 +114,7 @@ function NormalTexture({
           label="Path"
           accept={ACCEPTED_FILE_TYPES['image']}
           onDrop={handleDrop}
+          onChange={handleChange}
           error={!!src.value && !isValid(src.value)}
           isValidFile={isModel}
           acceptURLs

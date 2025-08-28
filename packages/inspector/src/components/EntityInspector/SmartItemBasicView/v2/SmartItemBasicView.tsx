@@ -5,14 +5,13 @@ import { type ActionType, getJson, getPayload } from '@dcl/asset-packs';
 import { withSdk } from '../../../../hoc/withSdk';
 import { useComponentInput } from '../../../../hooks/sdk/useComponentInput';
 import { useComponentValue } from '../../../../hooks/sdk/useComponentValue';
-import { useHasComponent } from '../../../../hooks/sdk/useHasComponent';
 import { getValue, setValue } from '../../../../lib/logic/get-set-value';
 import { type EditorComponentsTypes } from '../../../../lib/sdk/components';
 import { Container } from '../../../Container';
 import { Block } from '../../../Block';
 import { InfoTooltip } from '../../../ui/InfoTooltip';
 import { Message, MessageType } from '../../../ui/Message';
-import { getComponentByType, isBooleanValue } from '../utils';
+import { getComponentByType, isBooleanValue, useEntityOrChildrenHasComponents } from '../utils';
 import DynamicField from './DynamicField';
 import { validateConstraints } from './constraints';
 import { applyTransform } from './utils';
@@ -181,10 +180,9 @@ const ActionComponentItem = withSdk<{ item: SectionItem; entity: Entity }>(
 );
 
 const SmartItemBasicView = withSdk<Props>(({ sdk, entity }) => {
-  const { Config, Actions, Triggers } = sdk.components;
+  const { Config, Actions } = sdk.components;
 
-  const hasActions = useHasComponent(entity, Actions);
-  const hasTriggers = useHasComponent(entity, Triggers);
+  const { hasActions, hasTriggers } = useEntityOrChildrenHasComponents(entity, sdk);
   const shouldShowHint = hasActions && !hasTriggers;
 
   const config = useMemo(() => {
@@ -264,6 +262,19 @@ const SmartItemBasicView = withSdk<Props>(({ sdk, entity }) => {
     [renderSectionItem],
   );
 
+  const renderHelpTooltip = useCallback(() => {
+    if (config?.helpTooltip) {
+      return (
+        <InfoTooltip
+          text={config.helpTooltip.text}
+          link={config.helpTooltip.link}
+          type="help"
+        />
+      );
+    }
+    return undefined;
+  }, [config?.helpTooltip]);
+
   if (!config || !config.sections || config.sections.length === 0) {
     return null;
   }
@@ -273,6 +284,7 @@ const SmartItemBasicView = withSdk<Props>(({ sdk, entity }) => {
       label={config.label || 'Smart Item'}
       indicator={renderSmartItemIndicator()}
       className="SmartItemBasicViewInspector"
+      rightContent={renderHelpTooltip()}
     >
       {config.sections.map((section, sectionIndex) =>
         renderSection(section as Section, sectionIndex),

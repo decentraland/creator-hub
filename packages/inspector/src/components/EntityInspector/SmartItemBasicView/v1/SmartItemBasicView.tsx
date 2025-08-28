@@ -1,11 +1,11 @@
 import React, { useCallback, useMemo } from 'react';
 import { BsFillLightningChargeFill as SmartItemIcon } from 'react-icons/bs';
 import { withSdk } from '../../../../hoc/withSdk';
-import { useHasComponent } from '../../../../hooks/sdk/useHasComponent';
 import { type ConfigComponentType } from '../../../../lib/sdk/components/Config';
 import { Container, ContainerContent } from '../../../Container';
 import { Message, MessageType } from '../../../ui/Message';
 import { InfoTooltip } from '../../../ui/InfoTooltip';
+import { useEntityOrChildrenHasComponents } from '../utils';
 import { NftView } from './NftView';
 import { PointerEventView } from './PointerEventView';
 import { CounterBarView } from './CounterBarView';
@@ -22,10 +22,9 @@ import { type Props } from './types';
 import './SmartItemBasicView.css';
 
 const SmartItemBasicView = withSdk<Props>(({ sdk, entity }) => {
-  const { Config, Actions, Triggers } = sdk.components;
+  const { Config } = sdk.components;
 
-  const hasActions = useHasComponent(entity, Actions);
-  const hasTriggers = useHasComponent(entity, Triggers);
+  const { hasActions, hasTriggers } = useEntityOrChildrenHasComponents(entity, sdk);
   const shouldShowHint = hasActions && !hasTriggers;
 
   const renderField = useCallback(
