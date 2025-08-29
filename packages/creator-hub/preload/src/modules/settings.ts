@@ -47,7 +47,7 @@ export async function selectSceneFolder(): Promise<string | undefined> {
 export async function selectEditorPath(): Promise<string[]> {
   return invoke('electron.showOpenDialog', {
     title: 'Select Code Editor',
-    properties: ['openFile', 'noResolveAliases', 'treatPackageAsDirectory'],
+    properties: ['openFile'],
   });
 }
 
