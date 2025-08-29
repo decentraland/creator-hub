@@ -317,8 +317,6 @@ export async function dclDeepLink(deepLink: string) {
 
 export async function code(_path: string) {
   const normalizedPath = path.normalize(_path);
-  log.info('Opening project at path:', normalizedPath);
-
   const config = await getConfig();
   const editors = (await config.get('editors')) || [];
   const defaultEditor = editors.find(editor => editor.isDefault);
@@ -330,31 +328,36 @@ export async function code(_path: string) {
     if (defaultEditor) {
       log.info('Opening with default editor:', defaultEditor.name, 'at path:', defaultEditor.path);
       let command: string;
+
       if (process.platform === 'darwin') {
         const macosPath = path.join(defaultEditor.path, 'Contents', 'MacOS');
+        // Check if there are executable files in the MacOS directory, if there is only one, we use it,
+        // if there are more, use the one that contains the name of the editor
         try {
           const files = await fs.readdir(macosPath);
-
-          const executableFiles = await Promise.all(
-            files.map(async file => {
-              const filePath = path.join(macosPath, file);
-              try {
-                const stats = await fs.stat(filePath);
-
-                return stats.isFile() && stats.mode & 0o111 ? file : null;
-              } catch (error) {
+          const executableFiles = (
+            await Promise.all(
+              files.map(async fileName => {
+                const filePath = path.join(macosPath, fileName);
+                try {
+                  const stats = await fs.stat(filePath);
+                  if (stats.isFile() && stats.mode & 0o111) {
+                    return fileName;
+                  }
+                } catch (error) {
+                  log.error(`Error checking file ${fileName}:`, error);
+                }
                 return null;
-              }
-            }),
-          ).then(results => results.filter((file): file is string => file !== null));
-
-          log.info('Found executable files:', executableFiles);
+              }),
+            )
+          ).filter((file): file is string => file !== null);
 
           if (executableFiles.length === 0) {
             throw new Error('No executable files found in MacOS directory');
           }
 
           let executableName: string;
+
           if (executableFiles.length === 1) {
             executableName = executableFiles[0];
           } else {
@@ -369,7 +372,6 @@ export async function code(_path: string) {
           command = `"${defaultEditor.path}/Contents/MacOS/${executableName}" "${normalizedPath}"`;
         } catch (error) {
           log.error('Error reading MacOS directory:', error);
-
           command = `"${defaultEditor.path}/Contents/MacOS/${defaultEditor.name}" "${normalizedPath}"`;
         }
       } else {
