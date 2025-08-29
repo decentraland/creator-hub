@@ -5,6 +5,12 @@ import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from './settings';
 
 export const CURRENT_CONFIG_VERSION = 2;
 
+export type EditorConfig = {
+  name: string;
+  path: string;
+  isDefault?: boolean;
+};
+
 export type Config = {
   version: number;
   workspace: {
@@ -12,6 +18,7 @@ export type Config = {
   };
   settings: AppSettings;
   userId?: string;
+  editors?: EditorConfig[];
 };
 
 export const DEFAULT_CONFIG: Config = {
@@ -29,6 +36,7 @@ export const DEFAULT_CONFIG: Config = {
       openNewInstance: false,
     },
   },
+  editors: [],
 };
 
 export function mergeConfig(target: Partial<Config>, source: Config): Config {

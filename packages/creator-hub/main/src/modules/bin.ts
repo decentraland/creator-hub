@@ -1,4 +1,5 @@
 import path from 'path';
+import fs from 'fs/promises';
 import { promisify } from 'util';
 import { exec as execSync } from 'child_process';
 import log from 'electron-log/main';
@@ -6,11 +7,11 @@ import { utilityProcess, shell } from 'electron';
 import treeKill from 'tree-kill';
 import { future } from 'fp-future';
 import isRunning from 'is-running';
-
 import { ErrorBase } from '/shared/types/error';
 import { createCircularBuffer } from '/shared/circular-buffer';
 
 import { CLIENT_NOT_INSTALLED_ERROR } from '/shared/utils';
+import { getConfig } from './config';
 import { APP_UNPACKED_PATH, getBinPath } from './path';
 import { setupNodeBinary } from './setup-node';
 import { track } from './analytics';
@@ -316,13 +317,81 @@ export async function dclDeepLink(deepLink: string) {
 
 export async function code(_path: string) {
   const normalizedPath = path.normalize(_path);
+  const config = await getConfig();
+  const editors = (await config.get('editors')) || [];
+  const defaultEditor = editors.find(editor => editor.isDefault);
+
+  log.info('Available editors:', editors);
+  log.info('Default editor:', defaultEditor);
+
   try {
-    await exec(`code "${normalizedPath}"`, { env: { ...process.env, PATH: getPath() } });
-    await track('Open Code', undefined);
-  } catch (_) {
-    const error = await shell.openPath(normalizedPath);
-    if (error) {
-      throw new Error(error);
+    if (defaultEditor) {
+      log.info('Opening with default editor:', defaultEditor.name, 'at path:', defaultEditor.path);
+      let command: string;
+
+      if (process.platform === 'darwin') {
+        const macosPath = path.join(defaultEditor.path, 'Contents', 'MacOS');
+        // Check if there are executable files in the MacOS directory, if there is only one, we use it,
+        // if there are more, use the one that contains the name of the editor
+        try {
+          const files = await fs.readdir(macosPath);
+          const executableFiles = (
+            await Promise.all(
+              files.map(async fileName => {
+                const filePath = path.join(macosPath, fileName);
+                try {
+                  const stats = await fs.stat(filePath);
+                  if (stats.isFile() && stats.mode & 0o111) {
+                    return fileName;
+                  }
+                } catch (error) {
+                  log.error(`Error checking file ${fileName}:`, error);
+                }
+                return null;
+              }),
+            )
+          ).filter((file): file is string => file !== null);
+
+          if (executableFiles.length === 0) {
+            throw new Error('No executable files found in MacOS directory');
+          }
+
+          let executableName: string;
+
+          if (executableFiles.length === 1) {
+            executableName = executableFiles[0];
+          } else {
+            const editorWords = defaultEditor.name.toLowerCase().split(/\s+/);
+            executableName =
+              executableFiles.find(file =>
+                editorWords.some(word => file.toLowerCase().includes(word)),
+              ) || executableFiles[0];
+          }
+
+          log.info('Found executable:', executableName, 'from options:', executableFiles);
+          command = `"${defaultEditor.path}/Contents/MacOS/${executableName}" "${normalizedPath}"`;
+        } catch (error) {
+          log.error('Error reading MacOS directory:', error);
+          command = `"${defaultEditor.path}/Contents/MacOS/${defaultEditor.name}" "${normalizedPath}"`;
+        }
+      } else {
+        command = `"${defaultEditor.path}" "${normalizedPath}"`;
+      }
+      log.info('Executing command:', command);
+      await exec(command, {
+        env: { ...process.env, PATH: getPath() },
+      });
+      await track('Open Code', undefined);
+    } else {
+      log.info('No default editor found, trying VS Code');
+      await exec(`code "${normalizedPath}"`, { env: { ...process.env, PATH: getPath() } });
+      await track('Open Code', undefined);
     }
+  } catch (error) {
+    log.info(
+      'Failed to open with configured editor, falling back to system default. Error:',
+      error,
+    );
+    await shell.openPath(normalizedPath);
   }
 }

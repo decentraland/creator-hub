@@ -244,6 +244,18 @@
             "notify": "有新版本更新時通知我",
             "do_nothing": "什麼也不做"
           }
+        },
+        "code_editor": {
+          "label": "首选代码编辑器",
+          "choose_device": "从设备中选择...",
+          "errors": {
+            "load": "加载代码编辑器失败",
+            "set": "设置默认编辑器失败",
+            "invalid_app_extension": "应用程序无效。请选择有效的 .app 文件",
+            "invalid_app_bundle": "应用程序包结构无效",
+            "invalid_exe_file": "应用程序无效。请选择有效的 .exe 文件",
+            "unknown": "设置默认编辑器失败"
+          }
         }
       },
       "actions": {
