@@ -75,56 +75,6 @@ export async function getEditors() {
   return validEditors;
 }
 
-export async function setDefaultEditor(editorPath: string) {
-  const config = await getConfig();
-  const editors = (await config.get('editors')) || [];
-
-  let name: string;
-  if (process.platform === 'darwin') {
-    const fileName = editorPath.split('/').pop() || '';
-    if (!fileName.endsWith('.app')) {
-      throw new Error('invalid_app_extension');
-    }
-
-    const macosPath = path.join(editorPath, 'Contents', 'MacOS');
-    try {
-      await fs.stat(macosPath);
-    } catch {
-      throw new Error('invalid_app_bundle');
-    }
-    name = fileName.replace('.app', '');
-  } else {
-    const fileName = editorPath.split('\\').pop() || '';
-    if (!fileName.endsWith('.exe')) {
-      throw new Error('invalid_exe_file');
-    }
-    name = fileName.replace('.exe', '') || 'Custom Editor';
-  }
-
-  const existingIndex = editors.findIndex(e => e.name === name);
-  const updatedEditors = editors.map(editor => ({
-    ...editor,
-    isDefault: false,
-  }));
-
-  if (existingIndex >= 0) {
-    updatedEditors[existingIndex] = {
-      ...updatedEditors[existingIndex],
-      path: editorPath,
-      isDefault: true,
-    };
-  } else {
-    updatedEditors.push({
-      name,
-      path: editorPath,
-      isDefault: true,
-    });
-  }
-
-  await config.set('editors', updatedEditors);
-  return updatedEditors;
-}
-
 export async function addEditorsPathsToConfig() {
   const config = await getConfig();
   const existingEditors = (await config.get('editors')) || [];

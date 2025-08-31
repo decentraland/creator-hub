@@ -79,7 +79,7 @@ const slice = createSlice({
         state.error = action.error.message || 'Failed to load editors';
       })
       .addCase(setDefaultEditor.fulfilled, (state, action) => {
-        state.editors = action.payload;
+        state.editors = action.payload || [];
       })
       .addCase(setDefaultEditor.rejected, (state, action) => {
         state.error = action.error.message || 'Failed to set default editor';

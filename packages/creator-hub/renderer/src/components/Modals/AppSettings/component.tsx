@@ -124,7 +124,11 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
             ) : (
               <Select
                 fullWidth
-                value={editors.find(e => e.isDefault)?.path || ''}
+                displayEmpty
+                value={editors?.find(e => e.isDefault)?.path || ''}
+                renderValue={value =>
+                  editors?.find(e => e.path === value)?.name || 'Add or select a default editor'
+                }
                 onChange={event => {
                   const selectedPath = event.target.value;
                   if (selectedPath) {
@@ -132,7 +136,7 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
                   }
                 }}
               >
-                {editors.map((editor: EditorConfig) => (
+                {(editors || []).map((editor: EditorConfig) => (
                   <MenuItem
                     key={editor.path}
                     value={editor.path}

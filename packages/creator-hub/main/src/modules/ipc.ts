@@ -47,9 +47,6 @@ export function initIpc() {
   // editor settings
 
   handle('defaultEditor.getEditors', () => defaultEditorSettings.getEditors());
-  handle('defaultEditor.setDefaultEditor', (_event, path) =>
-    defaultEditorSettings.setDefaultEditor(path),
-  );
 
   // analytics
   handle('analytics.track', (_event, eventName, data) => analytics.track(eventName, data!));
