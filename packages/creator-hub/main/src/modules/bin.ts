@@ -383,9 +383,8 @@ export async function code(_path: string) {
       });
       await track('Open Code', undefined);
     } else {
-      log.info('No default editor found, trying VS Code');
-      await exec(`code "${normalizedPath}"`, { env: { ...process.env, PATH: getPath() } });
-      await track('Open Code', undefined);
+      log.info('No default editor found, falling back to system default');
+      await shell.openPath(normalizedPath);
     }
   } catch (error) {
     log.info(
