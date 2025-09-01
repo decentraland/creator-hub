@@ -315,6 +315,46 @@ export async function dclDeepLink(deepLink: string) {
   }
 }
 
+async function findMacOSExecutable(
+  defaultEditor: { path: string; name: string },
+  filePath: string,
+): Promise<string> {
+  const macosPath = path.join(defaultEditor.path, 'Contents', 'MacOS');
+  const files = await fs.readdir(macosPath);
+  const editorWords = defaultEditor.name.toLowerCase().split(/\s+/);
+
+  let firstExecutable: string | null = null;
+  let preferredExecutable: string | null = null;
+
+  for (const fileName of files) {
+    const executablePath = path.join(macosPath, fileName);
+
+    try {
+      const stats = await fs.stat(executablePath);
+      if (!stats.isFile() || !(stats.mode & 0o111)) continue;
+
+      if (!firstExecutable) {
+        firstExecutable = fileName;
+      }
+
+      if (editorWords.some(word => fileName.toLowerCase().includes(word))) {
+        preferredExecutable = fileName;
+        break;
+      }
+    } catch (error) {
+      log.error(`Error checking file ${fileName}:`, error);
+    }
+  }
+
+  const executableName = preferredExecutable || firstExecutable;
+  if (!executableName) {
+    throw new Error('No executable files found in MacOS directory');
+  }
+
+  log.info('Found executable:', executableName);
+  return `"${defaultEditor.path}/Contents/MacOS/${executableName}" "${filePath}"`;
+}
+
 export async function code(_path: string) {
   const normalizedPath = path.normalize(_path);
   const config = await getConfig();
@@ -327,56 +367,11 @@ export async function code(_path: string) {
   try {
     if (defaultEditor) {
       log.info('Opening with default editor:', defaultEditor.name, 'at path:', defaultEditor.path);
-      let command: string;
 
-      if (process.platform === 'darwin') {
-        const macosPath = path.join(defaultEditor.path, 'Contents', 'MacOS');
-        // Check if there are executable files in the MacOS directory, if there is only one, we use it,
-        // if there are more, use the one that contains the name of the editor
-        try {
-          const files = await fs.readdir(macosPath);
-          const executableFiles = (
-            await Promise.all(
-              files.map(async fileName => {
-                const filePath = path.join(macosPath, fileName);
-                try {
-                  const stats = await fs.stat(filePath);
-                  if (stats.isFile() && stats.mode & 0o111) {
-                    return fileName;
-                  }
-                } catch (error) {
-                  log.error(`Error checking file ${fileName}:`, error);
-                }
-                return null;
-              }),
-            )
-          ).filter((file): file is string => file !== null);
-
-          if (executableFiles.length === 0) {
-            throw new Error('No executable files found in MacOS directory');
-          }
-
-          let executableName: string;
-
-          if (executableFiles.length === 1) {
-            executableName = executableFiles[0];
-          } else {
-            const editorWords = defaultEditor.name.toLowerCase().split(/\s+/);
-            executableName =
-              executableFiles.find(file =>
-                editorWords.some(word => file.toLowerCase().includes(word)),
-              ) || executableFiles[0];
-          }
-
-          log.info('Found executable:', executableName, 'from options:', executableFiles);
-          command = `"${defaultEditor.path}/Contents/MacOS/${executableName}" "${normalizedPath}"`;
-        } catch (error) {
-          log.error('Error reading MacOS directory:', error);
-          command = `"${defaultEditor.path}/Contents/MacOS/${defaultEditor.name}" "${normalizedPath}"`;
-        }
-      } else {
-        command = `"${defaultEditor.path}" "${normalizedPath}"`;
-      }
+      const command =
+        process.platform === 'darwin'
+          ? await findMacOSExecutable(defaultEditor, normalizedPath)
+          : `"${defaultEditor.path}" "${normalizedPath}"`;
       log.info('Executing command:', command);
       await exec(command, {
         env: { ...process.env, PATH: getPath() },
