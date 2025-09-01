@@ -45,7 +45,6 @@ export function initIpc() {
   handle('bin.code', (_event, path) => bin.code(path));
 
   // editor settings
-
   handle('defaultEditor.getEditors', () => defaultEditorSettings.getEditors());
 
   // analytics

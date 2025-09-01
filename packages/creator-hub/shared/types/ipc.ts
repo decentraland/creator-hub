@@ -45,7 +45,6 @@ export interface Ipc {
   'bin.code': (path: string) => Promise<void>;
 
   'defaultEditor.getEditors': () => Promise<EditorConfig[]>;
-  'defaultEditor.setDefaultEditor': (path: string) => Promise<EditorConfig[]>;
   'cli.init': (path: string, repo: string) => Promise<void>;
   'cli.start': (path: string, opts: PreviewOptions) => Promise<string>;
   'cli.deploy': (opts: DeployOptions) => Promise<number>;
