@@ -1,4 +1,8 @@
 const { execSync } = require('child_process');
+const path = require('path');
+
+const projectDir = __dirname;
+const rootDir = path.resolve(projectDir, '../..');
 
 const config = {
   appId: 'com.decentraland.creatorshub',
@@ -12,12 +16,12 @@ const config = {
     'preload/dist/**',
     'renderer/dist/**',
     {
-      from: 'node_modules/npm',
+      from: path.join(rootDir, 'node_modules/npm'),
       to: 'node_modules/npm',
       filter: ['**/*'],
     },
     {
-      from: 'node_modules/npm/node_modules',
+      from: path.join(rootDir, 'node_modules/npm/node_modules'),
       to: 'node_modules/npm/node_modules',
       filter: ['**/*'],
     },
