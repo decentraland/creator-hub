@@ -21,7 +21,6 @@ async function main() {
     bundle: true,
     platform: 'browser',
     outfile: 'public/bundle.js',
-    format: 'cjs',
     sourcemap: 'linked',
     minify: PRODUCTION,
     loader: {

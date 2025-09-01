@@ -12,6 +12,7 @@
     "module": "esnext",
     "moduleResolution": "node",
     "resolveJsonModule": true,
+    "emitDeclarationOnly": true,
     "declaration": true,
     "declarationDir": "dist",
     "outDir": "dist",
