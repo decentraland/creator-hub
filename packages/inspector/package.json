@@ -67,7 +67,7 @@
     "test": "npm run test:unit",
     "test:e2e": "vitest run --config vitest.e2e.config.js",
     "test:unit": "vitest run",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.check.json"
   },
   "types": "dist/tooling-entrypoint.d.ts",
   "typings": "dist/tooling-entrypoint.d.ts"
