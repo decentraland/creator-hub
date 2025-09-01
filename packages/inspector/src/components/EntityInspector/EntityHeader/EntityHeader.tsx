@@ -19,11 +19,13 @@ import { Edit as EditInput } from '../../Tree/Edit';
 import CustomAssetIcon from '../../Icons/CustomAsset';
 import { Container } from '../../Container';
 import { Dropdown } from '../../ui';
+import { Divider } from '../../ui/Divider';
 
 import MoreOptionsMenu from '../MoreOptionsMenu';
 import { RemoveButton } from '../RemoveButton';
 
 import './EntityHeader.css';
+import { TagsInspector } from '../TagsInspector';
 
 export const getLabel = (sdk: SdkContextValue, entity: Entity) => {
   const nameComponent = sdk.components.Name.getOrNull(entity);
@@ -395,15 +397,19 @@ export default React.memo(
             ) : null}
           </div>
         </div>
-        {instanceOf && (
-          <Container className="InstanceOf">
-            <span>Instance of:</span>
-            <span className="Chip">
-              <CustomAssetIcon />
-              {instanceOf}
-            </span>
-          </Container>
-        )}
+        <Container className="componentInfo">
+          {instanceOf && (
+            <div className="customItemContainer">
+              <span>Instance of:</span>
+              <span className="Chip">
+                <CustomAssetIcon />
+                {instanceOf}
+              </span>
+              <Divider />
+            </div>
+          )}
+          <TagsInspector entity={entity} />
+        </Container>
       </div>
     );
   }),
