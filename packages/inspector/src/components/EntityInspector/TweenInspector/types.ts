@@ -3,6 +3,7 @@ import type { TweenType } from '@dcl/asset-packs';
 
 export interface Props {
   entity: Entity;
+  initialOpen?: boolean;
 }
 
 export type TweenInput = {

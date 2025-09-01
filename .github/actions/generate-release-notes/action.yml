@@ -68,9 +68,7 @@ runs:
         COMMITS=$(git log $TAG_REF..HEAD --oneline --no-merges --pretty=format:"%H|%s|%an|%ae" $PATH_ARGS)
 
         # Initialize release notes
-        echo "## ${{ inputs.release_title }} v${{ inputs.current_version }}" > release_notes.md
-        echo "" >> release_notes.md
-        echo "### Changes:" >> release_notes.md
+        echo "### Changes:" > release_notes.md
         echo "" >> release_notes.md
 
         # Create associative arrays for each path

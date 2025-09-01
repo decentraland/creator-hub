@@ -7,7 +7,10 @@ on:
         value: ${{ jobs.publish.outputs.s3_bucket_key }}
       version:
         description: "Version of the Inspector package"
-        value: ${{ jobs.publish.outputs.version }}
+        value: ${{ jobs.version.outputs.version }}
+      changed:
+        description: "Whether the version of the Inspector package has changed"
+        value: ${{ jobs.version.outputs.changed }}
 
 jobs:
   version:
@@ -48,9 +51,6 @@ jobs:
       id-token: write
     outputs:
       s3_bucket_key: ${{ steps.s3-upload.outputs.s3-key }}
-      version: ${{ needs.version.outputs.version }}
-      previous_version: ${{ needs.version.outputs.previous_version }}
-      changed: ${{ needs.version.outputs.changed }}
       preview_url: ${{ steps.set-preview-url.outputs.preview_url }}
     steps:
       - uses: actions/checkout@v4
@@ -75,10 +75,11 @@ jobs:
         working-directory: ./packages/inspector
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            npm version ${{ needs.version.outputs.version }} --force --no-git-tag-version --allow-same-version
+            VERSION="${{ needs.version.outputs.version }}"
           else
-            npm version ${{ needs.version.outputs.version }}-commit-${{ github.sha }} --force --no-git-tag-version --allow-same-version
+            VERSION="${{ needs.version.outputs.version }}-commit-${{ github.sha }}"
           fi
+          npm version "$VERSION" --force --no-git-tag-version --allow-same-version
 
       - name: npm pack
         working-directory: ./packages/inspector
@@ -133,7 +134,7 @@ jobs:
           echo "preview_url=https://decentraland.github.io/creator-hub/inspector/$safe_branch" >> $GITHUB_OUTPUT
 
       - name: publish to npm registry
-        if: github.ref == 'refs/heads/main'
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: ./.github/actions/npm-publish
         id: npm-publish
         with:
@@ -143,8 +144,8 @@ jobs:
           access: 'public'
 
   notify:
-    needs: [publish]
-    if: ${{ github.event.pull_request.number && needs.publish.outputs.changed == 'true' }}
+    needs: [version, publish]
+    if: ${{ github.event.pull_request.number && needs.version.outputs.changed == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: find Comment
@@ -163,29 +164,29 @@ jobs:
           body: |
             # Test @dcl/inspector package
 
-            - The `@dcl/inspector` package can be tested by visiting [this url](${{ needs.publish.outputs.preview_url }})
-
-              - Or by installing it via NPM:
-               ```bash
-               npm install "${{ secrets.SDK_TEAM_S3_BASE_URL }}/${{ needs.publish.outputs.s3_bucket_key }}"
-               ```
+            - Preview: [link](${{ needs.publish.outputs.preview_url }})
+            - Install via NPM:
+              ```bash
+              npm install "${{ secrets.SDK_TEAM_S3_BASE_URL }}/${{ needs.publish.outputs.s3_bucket_key }}"
+              ```
           edit-mode: replace
 
   release:
-    needs: [publish]
+    needs: [version, publish]
+    if: ${{ needs.version.outputs.changed == 'true' }}
     runs-on: ubuntu-latest
-    if: ${{ github.ref == 'refs/heads/main' && !github.event.pull_request.number && needs.publish.outputs.changed == 'true' }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: generate release notes
+        if: ${{ github.ref == 'refs/heads/main' }}
         id: release_notes
         uses: ./.github/actions/generate-release-notes
         with:
-          previous_version: ${{ needs.publish.outputs.previous_version }}
-          current_version: ${{ needs.publish.outputs.version }}
+          previous_version: ${{ needs.version.outputs.previous_version }}
+          current_version: ${{ needs.version.outputs.version }}
           paths: 'packages/inspector'
           section_names: 'Inspector Changes'
           release_title: '@dcl/inspector'
@@ -193,9 +194,10 @@ jobs:
           tag_prefix: '@dcl/inspector@'
 
       - name: update release description
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: ./.github/actions/update-release-description
         with:
-          tag_name: "@dcl/inspector@${{ needs.publish.outputs.version }}"
+          tag_name: "@dcl/inspector@${{ needs.version.outputs.version }}"
           release_notes: ${{ steps.release_notes.outputs.release_notes }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           create_if_not_exists: true

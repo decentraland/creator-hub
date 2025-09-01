@@ -108,7 +108,7 @@ const CATEGORIES_OPTIONS = [
   },
 ];
 
-export default withSdk<Props>(({ sdk, entity }) => {
+export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const { Scene } = sdk.components;
 
   const hasScene = useHasComponent(entity, Scene);
@@ -410,6 +410,7 @@ export default withSdk<Props>(({ sdk, entity }) => {
     <Container
       className="Scene"
       gap
+      initialOpen={initialOpen}
     >
       <Tabs className="SceneTabs">
         {hiddenSceneInspectorTabs[SceneInspectorTab.DETAILS] ? null : (

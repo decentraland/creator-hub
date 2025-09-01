@@ -15,6 +15,10 @@ on:
         description: 'Version of the inspector package'
         required: true
         type: string
+      inspector_changed:
+        description: 'Whether the version of the inspector package has changed'
+        required: true
+        type: boolean
 
 concurrency:
   group: creator-hub-${{ github.ref }}
@@ -48,9 +52,14 @@ jobs:
       - name: install inspector
         working-directory: packages/creator-hub
         run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          # If the inspector version hasn't changed or we are on main branch, we need to install the latest version
+          # Otherwise, we need to install the version from the S3 bucket
+
+          if [[ "${{ github.ref }}" == "refs/heads/main" || ${{ inputs.inspector_changed }} == "false" ]]; then
+            echo "Installing latest inspector version: ${{ inputs.inspector_version }}"
             npm install @dcl/inspector@${{ inputs.inspector_version }}
           else
+            echo "Installing inspector version from S3 bucket: ${{ inputs.inspector_s3_bucket_key }}"
             npm install ${{ secrets.SDK_TEAM_S3_BASE_URL }}/${{ inputs.inspector_s3_bucket_key }}
           fi
 

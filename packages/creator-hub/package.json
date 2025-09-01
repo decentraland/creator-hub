@@ -50,7 +50,7 @@
     "cross-env": "7.0.3",
     "dcl-catalyst-client": "21.8.1",
     "decentraland-ui2": "0.23.1",
-    "electron": "37.2.3",
+    "electron": "37.3.1",
     "electron-builder": "26.0.12",
     "flat": "6.0.1",
     "nano-staged": "0.8.0",

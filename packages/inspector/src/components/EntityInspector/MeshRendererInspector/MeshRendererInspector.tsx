@@ -10,7 +10,7 @@ import { fromMeshRenderer, toMeshRenderer, isValidInput, SHAPES } from './utils'
 
 import { Props, MeshType } from './types';
 
-export default withSdk<Props>(({ sdk, entity }) => {
+export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const { MeshRenderer } = sdk.components;
 
   const hasMeshRenderer = useHasComponent(entity, MeshRenderer);
@@ -65,6 +65,7 @@ export default withSdk<Props>(({ sdk, entity }) => {
     <Container
       label="MeshRenderer"
       className="MeshRenderer"
+      initialOpen={initialOpen}
       onRemoveContainer={handleRemove}
     >
       <Block>

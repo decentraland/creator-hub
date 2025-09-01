@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionPayload, ActionType } from '@dcl/asset-packs';
+import React, { useCallback, useMemo, useState } from 'react';
+import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
 import { recursiveCheck } from '../../../../lib/utils/deep-equal';
 import { CheckboxField, FileUploadField } from '../../../ui';
 import { ACCEPTED_FILE_TYPES } from '../../../ui/FileUploadField/types';
@@ -23,29 +23,27 @@ const PlayCustomEmoteAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
 
   const files = useAppSelector(selectAssetCatalog);
 
-  useEffect(() => {
-    if (!recursiveCheck(payload, value, 2) || !isValid(payload)) return;
-    onUpdate(payload);
-  }, [payload, onUpdate]);
+  const handleUpdate = useCallback(
+    (_payload: Partial<ActionPayload<ActionType.PLAY_CUSTOM_EMOTE>>) => {
+      setPayload(_payload);
+      if (!recursiveCheck(_payload, value, 2) || !isValid(_payload)) return;
+      onUpdate(_payload);
+    },
+    [setPayload, value, onUpdate],
+  );
 
   const handleChangeSrc = useCallback(
     (path: string) => {
-      setPayload({
-        ...payload,
-        src: path,
-      });
+      handleUpdate({ ...payload, src: path });
     },
-    [payload, setPayload],
+    [payload, handleUpdate],
   );
 
   const handleChangeLoop = useCallback(
     ({ target: { checked } }: React.ChangeEvent<HTMLInputElement>) => {
-      setPayload({
-        ...payload,
-        loop: checked,
-      });
+      handleUpdate({ ...payload, loop: checked });
     },
-    [payload, setPayload],
+    [payload, handleUpdate],
   );
 
   const error = useMemo(() => {

@@ -7,10 +7,10 @@ import { useAppSelector } from '../../../redux/hooks';
 import { selectAssetCatalog } from '../../../redux/app';
 import { Block } from '../../Block';
 import { CheckboxField, Dropdown, RangeField } from '../../ui';
-import { Container } from '../../Container';
-import { Texture, Props as TextureProps } from './Texture';
 import { ColorField } from '../../ui/ColorField';
-import { Props, MaterialType, TextureType } from './types';
+import { Container } from '../../Container';
+import { Texture, type Props as TextureProps } from './Texture';
+import { type Props, MaterialType, TextureType } from './types';
 import {
   fromMaterial,
   toMaterial,
@@ -19,7 +19,7 @@ import {
   TRANSPARENCY_MODES,
 } from './utils';
 
-export default withSdk<Props>(({ sdk, entity }) => {
+export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const files = useAppSelector(selectAssetCatalog);
   const { Material } = sdk.components;
 
@@ -47,6 +47,7 @@ export default withSdk<Props>(({ sdk, entity }) => {
     <Container
       label="Material"
       className="Material"
+      initialOpen={initialOpen}
       onRemoveContainer={handleRemove}
     >
       <Block>

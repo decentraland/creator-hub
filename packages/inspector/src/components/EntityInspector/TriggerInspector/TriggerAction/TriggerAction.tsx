@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect } from 'react';
 import { VscTrash as RemoveIcon } from 'react-icons/vsc';
-import { TriggerAction } from '@dcl/asset-packs';
-import { Entity } from '@dcl/ecs';
-import { WithSdkProps, withSdk } from '../../../../hoc/withSdk';
+import { type TriggerAction } from '@dcl/asset-packs';
+import { type Entity } from '@dcl/ecs';
+import { withSdk, type WithSdkProps } from '../../../../hoc/withSdk';
 import { useArrayState } from '../../../../hooks/useArrayState';
 import { useComponentsWith } from '../../../../hooks/sdk/useComponentsWith';
-import { Component } from '../../../../lib/sdk/components';
+import { type Component } from '../../../../lib/sdk/components';
 import { Button } from '../../../Button';
 import { EntityField, Dropdown } from '../../../ui';
 import { AddButton } from '../../AddButton';
@@ -74,15 +74,15 @@ const TriggerActionContainer: React.FC<WithSdkProps & Props> = ({ sdk, ...props 
         const actionEntity = getActionEntity(action);
         const isBasicViewEnabled =
           sdk.components.Config.getOrNull(actionEntity as Entity)?.isBasicViewEnabled === true;
-        const actions = action.id
-          ? (
-              availableActions
-                .get(action.id)
-                ?.actions.filter(_action =>
-                  isBasicViewEnabled ? !!_action?.allowedInBasicView : true,
-                ) ?? []
-            ).map(({ name }) => ({ value: name, label: name }))
+        const availableActionsList = action.id
+          ? [...(availableActions.get(action.id)?.actions ?? [])]
           : [];
+        if (isBasicViewEnabled) {
+          availableActionsList.sort((a, b) =>
+            a.allowedInBasicView === b.allowedInBasicView ? 0 : a.allowedInBasicView ? -1 : 1,
+          );
+        }
+        const actions = availableActionsList.map(({ name }) => ({ value: name, label: name }));
         return (
           <div
             className="TriggerAction"
@@ -97,7 +97,7 @@ const TriggerActionContainer: React.FC<WithSdkProps & Props> = ({ sdk, ...props 
               <Dropdown
                 placeholder="Select an Action"
                 disabled={!action.id || !availableActions.get(action.id)}
-                options={action.id && availableActions.get(action.id)?.actions ? [...actions] : []}
+                options={actions}
                 value={action.name}
                 searchable
                 onChange={e => handleChangeAction(e, idx)}

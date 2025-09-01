@@ -4,6 +4,7 @@ import type { MeshType } from '../MeshRendererInspector/types';
 
 export interface Props {
   entity: Entity;
+  initialOpen?: boolean;
 }
 
 export type MeshColliderInput = {

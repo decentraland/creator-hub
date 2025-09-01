@@ -8,7 +8,7 @@ import { type PackageJson } from '/shared/types/pkg';
  */
 export const APP_UNPACKED_PATH = path.join(
   app.getAppPath(),
-  import.meta.env.DEV ? '.' : '../app.asar.unpacked',
+  import.meta.env.DEV ? '../../' : '../app.asar.unpacked',
 );
 
 /**

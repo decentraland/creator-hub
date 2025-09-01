@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { ActionPayload, ActionType } from '@dcl/asset-packs';
+import React, { useCallback, useState } from 'react';
+import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
 import { recursiveCheck } from '../../../../lib/utils/deep-equal';
-import type { Props } from './types';
 import { TextField } from '../../../ui';
+import type { Props } from './types';
 
 import './OpenLinkAction.css';
 
@@ -17,19 +17,20 @@ const OpenLinkAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
     ...value,
   });
 
-  useEffect(() => {
-    if (!recursiveCheck(payload, value, 2) || !isValid(payload)) return;
-    onUpdate(payload);
-  }, [payload, onUpdate]);
+  const handleUpdate = useCallback(
+    (_payload: Partial<ActionPayload<ActionType.OPEN_LINK>>) => {
+      setPayload(_payload);
+      if (!recursiveCheck(_payload, value, 2) || !isValid(_payload)) return;
+      onUpdate(_payload);
+    },
+    [setPayload, value, onUpdate],
+  );
 
   const handleChangeEmote = useCallback(
     ({ target: { value } }: React.ChangeEvent<HTMLInputElement>) => {
-      setPayload({
-        ...payload,
-        url: value,
-      });
+      handleUpdate({ ...payload, url: value });
     },
-    [payload, setPayload],
+    [payload, handleUpdate],
   );
 
   return (

@@ -33,7 +33,7 @@ runs:
         matching_releases=$(echo "$releases" | jq -r --arg pattern "$PATTERN" '
           .[] |
           select(.prerelease == true) |
-          select((.name | test($pattern)) or (.tag_name | test($pattern))) |
+          select(((.name // "") | test($pattern)) or ((.tag_name // "") | test($pattern))) |
           "ID: \(.id) | Name: \(.name) | Tag: \(.tag_name) | Created: \(.created_at)"
         ')
 
@@ -62,7 +62,7 @@ runs:
           release_ids=$(echo "$releases" | jq -r --arg pattern "$PATTERN" '
             .[] |
             select(.prerelease == true) |
-            select((.name | test($pattern)) or (.tag_name | test($pattern))) |
+            select(((.name // "") | test($pattern)) or ((.tag_name // "") | test($pattern))) |
             .id
           ')
 
@@ -76,17 +76,17 @@ runs:
 
             if gh api -X DELETE repos/${{ github.repository }}/releases/$release_id; then
               echo "✅ Successfully deleted release ID: $release_id"
-              ((deleted_count++))
+              deleted_count=$((deleted_count + 1))
             else
               echo "❌ Failed to delete release ID: $release_id"
-              ((failed_count++))
+              failed_count=$((failed_count + 1))
             fi
             echo ""
           done
 
           echo "📊 Summary:"
           echo "  - Successfully deleted: $deleted_count pre-release(s)"
-          if [ $failed_count -gt 0 ]; then
+          if [ "$failed_count" -gt 0 ]; then
             echo "  - Failed to delete: $failed_count pre-release(s)"
             exit 1
           fi

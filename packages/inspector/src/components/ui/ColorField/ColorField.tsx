@@ -1,11 +1,62 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { HybridField, Types as HybridFieldTypes } from '../HybridField';
+import { Dropdown } from '../Dropdown';
 import { OPTIONS, COLORS, Options } from './utils';
-import { Props } from './types';
+import { type Props, type ColorOptions } from './types';
 
 import './ColorField.css';
 
-const ColorField: React.FC<Props> = ({ label, value, onChange }) => {
+const getColorOptions = (): ColorOptions[] => {
+  return COLORS.map(color => ({
+    ...color,
+    leftContent: (
+      <div
+        className="ColorPreview"
+        style={{ backgroundColor: color.value }}
+      />
+    ),
+    secondaryText: color.value,
+  }));
+};
+
+const ColorField: React.FC<Props> = ({ label, value, onChange, basic = false }) => {
+  const isValidColor = useMemo(() => {
+    if (value) {
+      return COLORS.some(color => color.value === value);
+    }
+
+    return true;
+  }, [value]);
+
+  const basicOptions = useMemo(() => {
+    const options = getColorOptions();
+
+    if (!isValidColor && value) {
+      options.unshift({
+        label: '-- Mixed Values --',
+        selected: true,
+        disabled: true,
+        value: value,
+      });
+    }
+
+    return options;
+  }, [value, isValidColor]);
+
+  if (basic) {
+    return (
+      <div className="Color Field">
+        <Dropdown
+          label={label}
+          options={basicOptions}
+          value={value}
+          onChange={onChange}
+        />
+      </div>
+    );
+  }
+
+  // Existing HybridField logic for full-featured mode
   const stockColor = COLORS.find($ => $.value === value)?.value;
   const isStockColor = !!stockColor;
   const initialOption = isStockColor ? Options.BASICS : Options.CUSTOM;
@@ -38,16 +89,7 @@ const ColorField: React.FC<Props> = ({ label, value, onChange }) => {
             ? HybridFieldTypes.FieldType.DROPDOWN
             : HybridFieldTypes.FieldType.COLOR_PICKER
         }
-        secondaryOptions={COLORS.map(color => ({
-          ...color,
-          leftContent: (
-            <div
-              className="ColorPreview"
-              style={{ backgroundColor: color.value }}
-            />
-          ),
-          secondaryText: color.value,
-        }))}
+        secondaryOptions={getColorOptions()}
         secondaryValue={selectedOption === Options.BASICS ? (stockColor ?? COLORS[0].value) : value}
         onChange={handleOptionChange}
         onChangeSecondary={onChange}
