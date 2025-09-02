@@ -1,7 +1,7 @@
 import React, { useEffect, useCallback, useMemo } from 'react';
-import { Entity, PBTween, TweenLoop } from '@dcl/ecs';
-import { Action, ActionPayload, ActionType, getJson } from '@dcl/asset-packs';
-import { WithSdkProps, withSdk } from '../../../../../hoc/withSdk';
+import { type Entity, type PBTween, TweenLoop } from '@dcl/ecs';
+import { type Action, type ActionPayload, type ActionType, getJson } from '@dcl/asset-packs';
+import { type WithSdkProps, withSdk } from '../../../../../hoc/withSdk';
 import { useArrayState } from '../../../../../hooks/useArrayState';
 import { useComponentValue } from '../../../../../hooks/sdk/useComponentValue';
 import { Block } from '../../../../Block';
@@ -29,7 +29,7 @@ export default React.memo(
     const [actions, _, modifyAction] = useArrayState<Action>(
       actionComponent === null ? [] : actionComponent.value,
     );
-
+    const [transformComponent] = useComponentValue(entity, Transform);
     const config = useMemo(() => Config.get(entity), [entity]);
     const isHorizontal = config.componentName === 'Horizontal Platform';
 
@@ -105,9 +105,9 @@ export default React.memo(
     );
 
     useEffect(() => {
-      if (!tweenComponent || tweenComponent.mode?.$case !== 'move') return;
+      if (!tweenComponent || tweenComponent.mode?.$case !== 'move' || !transformComponent?.position)
+        return;
 
-      const transformComponent = Transform.get(entity);
       const start = {
         x: transformComponent.position.x ?? 0,
         y: transformComponent.position.y ?? 0,
@@ -141,10 +141,10 @@ export default React.memo(
     }, [
       entity,
       tweenComponent,
+      transformComponent,
       setTweenComponentValue,
       handleUpdateActionsDistance,
       isHorizontal,
-      Transform,
       isTweenComponentEqual,
     ]);
 
