@@ -12,6 +12,8 @@ import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { TextField } from '../../ui/TextField';
 import { ColorField } from '../../ui/ColorField';
+import { Dropdown, InfoTooltip } from '../../ui';
+import type { UrnTokens } from './utils';
 import {
   fromNftShape,
   toNftShape,
@@ -20,12 +22,10 @@ import {
   NETWORKS,
   isValidUrn,
   buildTokens,
-  UrnTokens,
   getUrn,
   DEFAULT_NETWORK,
 } from './utils';
 import type { Props } from './types';
-import { Dropdown, InfoTooltip } from '../../ui';
 
 import './NftShapeInspector.css';
 
