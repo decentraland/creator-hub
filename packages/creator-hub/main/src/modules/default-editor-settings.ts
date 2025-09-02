@@ -65,16 +65,12 @@ async function findMacEditors(): Promise<EditorConfig[]> {
 async function findWindowsEditors(): Promise<EditorConfig[]> {
   log.info('[Editor Search] Starting Windows editor discovery');
   try {
-    const command = `
-      Get-ItemProperty "HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*",
-                      "HKLM:\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*",
-                      "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*" |
-      Where-Object DisplayName |
-      Select-Object DisplayName, InstallLocation |
-      ConvertTo-Json
-    `;
+    const command =
+      'Get-ItemProperty "HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*","HKLM:\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*","HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*" | Where-Object InstallLocation | Select-Object DisplayName,InstallLocation | ConvertTo-Json';
 
-    const { stdout: installedApps } = await exec('powershell.exe -Command "' + command + '"');
+    const { stdout: installedApps } = await exec(
+      `powershell.exe -Command "${command.replace(/"/g, '\\"')}"`,
+    );
 
     const apps = JSON.parse(installedApps);
 
