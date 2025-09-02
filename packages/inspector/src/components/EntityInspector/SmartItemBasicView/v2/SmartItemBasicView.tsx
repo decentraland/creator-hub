@@ -123,25 +123,29 @@ const ActionComponentItem = withSdk<{ item: SectionItem; entity: Entity }>(
 
     const currentValue = useMemo(() => {
       const raw = getValue(parsedActionValue, item.path || '') ?? item.constraints?.default ?? '';
-      return applyTransform(raw, item.transform, 'in');
+      return applyTransform(raw, item.transform, 'in') || '';
     }, [parsedActionValue, item.path, item.constraints?.default, item.transform]);
 
     const handleChange = useCallback(
       (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!action || actionIdx < 0 || !actionComponent) return;
         const inputValue = e.target.value;
-        const converted = applyTransform(inputValue, item.transform, 'out');
-        if (!validateConstraints(converted, item.constraints)) return;
+        const convertedValue = applyTransform(inputValue, item.transform, 'out');
+
+        if (!validateConstraints(convertedValue, item.constraints)) {
+          return;
+        }
 
         try {
           const newPayload = getJson({
             ...getPayload<ActionType>(action),
-            [item.path || '']: converted,
+            [item.path || '']: convertedValue,
           });
           const newAction = { ...action, jsonPayload: newPayload };
-          const updated = [...actionComponent.value];
-          updated[actionIdx] = newAction;
-          setActionComponentValue({ ...actionComponent, value: updated });
+
+          const updatedActions = [...actionComponent.value];
+          updatedActions[actionIdx] = newAction;
+          setActionComponentValue({ ...actionComponent, value: updatedActions });
         } catch {
           /* noop */
         }
@@ -159,7 +163,7 @@ const ActionComponentItem = withSdk<{ item: SectionItem; entity: Entity }>(
 
     const inputProps = useMemo(
       () => ({
-        value: (currentValue ?? '').toString(),
+        value: currentValue.toString(),
         onChange: handleChange,
         onFocus: () => {},
         onBlur: () => {},
