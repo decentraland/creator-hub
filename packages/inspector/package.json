@@ -2,7 +2,7 @@
   "name": "@dcl/inspector",
   "version": "0.1.0",
   "dependencies": {
-    "@dcl/asset-packs": "2.5.7",
+    "@dcl/asset-packs": "2.5.8",
     "ts-deepmerge": "^7.0.0"
   },
   "devDependencies": {
@@ -67,7 +67,7 @@
     "test": "npm run test:unit",
     "test:e2e": "vitest run --config vitest.e2e.config.js",
     "test:unit": "vitest run",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.check.json"
   },
   "types": "dist/tooling-entrypoint.d.ts",
   "typings": "dist/tooling-entrypoint.d.ts"
