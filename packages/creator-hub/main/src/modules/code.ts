@@ -3,18 +3,16 @@ import fs from 'fs/promises';
 import { promisify } from 'util';
 import { exec as execCallback } from 'child_process';
 import log from 'electron-log/main';
-import { type EditorConfig } from '/shared/types/config';
+import { shell } from 'electron';
 
-import { getConfig } from './config';
+import { type EditorConfig } from '/shared/types/config';
+import { EditorType } from '/shared/types/code';
+import { track } from './analytics';
 
 const exec = promisify(execCallback);
 
-export enum EditorType {
-  VSCode = 'Visual Studio Code',
-  Cursor = 'Cursor',
-  Notepad = 'Notepad++',
-  Sublime = 'Sublime Text',
-  Eclipse = 'Eclipse',
+function getPath() {
+  return process.env.PATH || '';
 }
 
 interface MacAppInfo {
@@ -25,6 +23,85 @@ interface MacAppInfo {
 
 interface MacSystemProfiler {
   SPApplicationsDataType: MacAppInfo[];
+}
+
+export async function getEditors(): Promise<EditorConfig[]> {
+  return process.platform === 'darwin' ? await findMacEditors() : await findWindowsEditors();
+}
+
+async function findMacOSExecutable(
+  defaultEditor: { path: string; name: string },
+  filePath: string,
+): Promise<string> {
+  const macosPath = path.join(defaultEditor.path, 'Contents', 'MacOS');
+  const files = await fs.readdir(macosPath);
+  const editorWords = defaultEditor.name.toLowerCase().split(/\s+/);
+
+  let firstExecutable: string | null = null;
+  let preferredExecutable: string | null = null;
+
+  for (const fileName of files) {
+    const executablePath = path.join(macosPath, fileName);
+
+    try {
+      const stats = await fs.stat(executablePath);
+      if (!stats.isFile() || !(stats.mode & 0o111)) continue;
+
+      if (!firstExecutable) {
+        firstExecutable = fileName;
+      }
+
+      if (editorWords.some(word => fileName.toLowerCase().includes(word))) {
+        preferredExecutable = fileName;
+        break;
+      }
+    } catch (error) {
+      log.error(`Error checking file ${fileName}:`, error);
+    }
+  }
+
+  const executableName = preferredExecutable || firstExecutable;
+  if (!executableName) {
+    throw new Error('No executable files found in MacOS directory');
+  }
+
+  log.info('Found executable:', executableName);
+  return `"${defaultEditor.path}/Contents/MacOS/${executableName}" "${filePath}"`;
+}
+
+export async function open(_path: string) {
+  const normalizedPath = path.normalize(_path);
+  const config = await getConfig();
+  const editors = (await config.get('editors')) || [];
+  const defaultEditor = editors.find(editor => editor.isDefault);
+
+  log.info('Available editors:', editors);
+  log.info('Default editor:', defaultEditor);
+
+  try {
+    if (defaultEditor) {
+      log.info('Opening with default editor:', defaultEditor.name, 'at path:', defaultEditor.path);
+
+      const command =
+        process.platform === 'darwin'
+          ? await findMacOSExecutable(defaultEditor, normalizedPath)
+          : `"${defaultEditor.path}" "${normalizedPath}"`;
+      log.info('Executing command:', command);
+      await exec(command, {
+        env: { ...process.env, PATH: getPath() },
+      });
+      await track('Open Code', undefined);
+    } else {
+      log.info('No default editor found, falling back to system default');
+      await shell.openPath(normalizedPath);
+    }
+  } catch (error) {
+    log.info(
+      'Failed to open with configured editor, falling back to system default. Error:',
+      error,
+    );
+    await shell.openPath(normalizedPath);
+  }
 }
 
 async function findMacEditors(): Promise<EditorConfig[]> {
@@ -185,8 +262,7 @@ export async function addEditorsPathsToConfig() {
   const existingEditors = (await config.get('editors')) || [];
   log.info('Existing editors:', existingEditors);
 
-  const foundEditors =
-    process.platform === 'darwin' ? await findMacEditors() : await findWindowsEditors();
+  const foundEditors = await getEditors();
 
   log.info('Found editors:', foundEditors);
 

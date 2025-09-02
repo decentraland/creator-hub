@@ -1,9 +1,7 @@
-import path from 'path';
-import fs from 'fs/promises';
 import { promisify } from 'util';
 import { exec as execSync } from 'child_process';
 import log from 'electron-log/main';
-import { utilityProcess, shell } from 'electron';
+import { utilityProcess } from 'electron';
 import treeKill from 'tree-kill';
 import { future } from 'fp-future';
 import isRunning from 'is-running';
@@ -11,10 +9,8 @@ import { ErrorBase } from '/shared/types/error';
 import { createCircularBuffer } from '/shared/circular-buffer';
 
 import { CLIENT_NOT_INSTALLED_ERROR } from '/shared/utils';
-import { getConfig } from './config';
 import { APP_UNPACKED_PATH, getBinPath } from './path';
 import { setupNodeBinary } from './setup-node';
-import { track } from './analytics';
 
 // Get the current PATH value
 function getPath() {
@@ -312,80 +308,5 @@ export async function dclDeepLink(deepLink: string) {
     await exec(`${command} decentraland://"${deepLink}"`);
   } catch (e) {
     throw new Error(CLIENT_NOT_INSTALLED_ERROR);
-  }
-}
-
-async function findMacOSExecutable(
-  defaultEditor: { path: string; name: string },
-  filePath: string,
-): Promise<string> {
-  const macosPath = path.join(defaultEditor.path, 'Contents', 'MacOS');
-  const files = await fs.readdir(macosPath);
-  const editorWords = defaultEditor.name.toLowerCase().split(/\s+/);
-
-  let firstExecutable: string | null = null;
-  let preferredExecutable: string | null = null;
-
-  for (const fileName of files) {
-    const executablePath = path.join(macosPath, fileName);
-
-    try {
-      const stats = await fs.stat(executablePath);
-      if (!stats.isFile() || !(stats.mode & 0o111)) continue;
-
-      if (!firstExecutable) {
-        firstExecutable = fileName;
-      }
-
-      if (editorWords.some(word => fileName.toLowerCase().includes(word))) {
-        preferredExecutable = fileName;
-        break;
-      }
-    } catch (error) {
-      log.error(`Error checking file ${fileName}:`, error);
-    }
-  }
-
-  const executableName = preferredExecutable || firstExecutable;
-  if (!executableName) {
-    throw new Error('No executable files found in MacOS directory');
-  }
-
-  log.info('Found executable:', executableName);
-  return `"${defaultEditor.path}/Contents/MacOS/${executableName}" "${filePath}"`;
-}
-
-export async function code(_path: string) {
-  const normalizedPath = path.normalize(_path);
-  const config = await getConfig();
-  const editors = (await config.get('editors')) || [];
-  const defaultEditor = editors.find(editor => editor.isDefault);
-
-  log.info('Available editors:', editors);
-  log.info('Default editor:', defaultEditor);
-
-  try {
-    if (defaultEditor) {
-      log.info('Opening with default editor:', defaultEditor.name, 'at path:', defaultEditor.path);
-
-      const command =
-        process.platform === 'darwin'
-          ? await findMacOSExecutable(defaultEditor, normalizedPath)
-          : `"${defaultEditor.path}" "${normalizedPath}"`;
-      log.info('Executing command:', command);
-      await exec(command, {
-        env: { ...process.env, PATH: getPath() },
-      });
-      await track('Open Code', undefined);
-    } else {
-      log.info('No default editor found, falling back to system default');
-      await shell.openPath(normalizedPath);
-    }
-  } catch (error) {
-    log.info(
-      'Failed to open with configured editor, falling back to system default. Error:',
-      error,
-    );
-    await shell.openPath(normalizedPath);
   }
 }

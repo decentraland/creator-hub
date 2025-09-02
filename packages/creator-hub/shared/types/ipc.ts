@@ -41,10 +41,12 @@ export interface Ipc {
   'inspector.start': () => Promise<number>;
   'inspector.openSceneDebugger': (path: string) => Promise<string>;
   'inspector.attachSceneDebugger': (path: string, eventName: string) => Promise<boolean>;
-  'bin.install': () => Promise<void>;
-  'bin.code': (path: string) => Promise<void>;
 
-  'defaultEditor.getEditors': () => Promise<EditorConfig[]>;
+  'bin.install': () => Promise<void>;
+
+  'code.open': (path: string) => Promise<void>;
+  'code.getEditors': () => Promise<EditorConfig[]>;
+
   'cli.init': (path: string, repo: string) => Promise<void>;
   'cli.start': (path: string, opts: PreviewOptions) => Promise<string>;
   'cli.deploy': (opts: DeployOptions) => Promise<number>;
