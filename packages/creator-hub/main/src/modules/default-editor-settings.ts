@@ -32,7 +32,7 @@ async function findMacEditors(): Promise<EditorConfig[]> {
     const { stdout: installedApps } = await exec(
       'system_profiler -detailLevel basic -json SPApplicationsDataType',
     );
-    console.log('[MacOS] Command output:', installedApps);
+    log.info('[MacOS] Command output:', installedApps);
     const data = JSON.parse(installedApps) as MacSystemProfiler;
     const apps = data.SPApplicationsDataType;
 
@@ -72,8 +72,8 @@ async function findWindowsEditors(): Promise<EditorConfig[]> {
     const { stdout: installedApps } = await exec(
       `powershell.exe -Command "${command.replace(/"/g, '\\"')}"`,
     );
-    console.log('[Windows] Command output:', installedApps);
-    console.log('[Windows] Parsed apps:', JSON.parse(installedApps));
+    log.info('[Windows] Command output:', installedApps);
+    log.info('[Windows] Parsed apps:', JSON.parse(installedApps));
 
     const apps = JSON.parse(installedApps);
 
