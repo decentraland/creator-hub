@@ -19,10 +19,9 @@ import { type Props, type Section, type SectionItem } from './types';
 
 import './SmartItemBasicView.css';
 
-const RegularComponentItem = withSdk<{ item: SectionItem; entity: Entity }>(
+const RegularComponentItemInner = withSdk<{ item: SectionItem; entity: Entity }>(
   ({ sdk, item, entity }) => {
     const component = getComponentByType(sdk, item.component);
-    if (!component) return null;
 
     const { getInputProps } = useComponentInput(
       entity,
@@ -84,26 +83,36 @@ const RegularComponentItem = withSdk<{ item: SectionItem; entity: Entity }>(
   },
 );
 
+const RegularComponentItem = withSdk<{ item: SectionItem; entity: Entity }>(
+  ({ sdk, item, entity }) => {
+    const component = getComponentByType(sdk, item.component);
+    if (!component) return null;
+    return (
+      <RegularComponentItemInner
+        item={item}
+        entity={entity}
+      />
+    );
+  },
+);
+
 // Component for rendering action component items
 const ActionComponentItem = withSdk<{ item: SectionItem; entity: Entity }>(
   ({ sdk, item, entity }) => {
     const { Actions } = sdk.components;
+
     const [actionComponent, setActionComponentValue] = useComponentValue<
       EditorComponentsTypes['Actions']
     >(entity, Actions);
 
-    if (!item.basicViewId || !item.path) return null;
-
-    const [action, actionIdx] = useMemo(() => {
-      const actionIdx = actionComponent?.value.findIndex(
-        action => action.basicViewId === item.basicViewId,
-      );
-      return [actionIdx !== -1 ? actionComponent?.value[actionIdx] : undefined, actionIdx];
+    const { action, actionIdx } = useMemo(() => {
+      if (!item.basicViewId) return { action: undefined, actionIdx: -1 };
+      const idx = actionComponent?.value.findIndex(a => a.basicViewId === item.basicViewId) ?? -1;
+      return { action: idx !== -1 ? actionComponent?.value[idx] : undefined, actionIdx: idx };
     }, [actionComponent?.value, item.basicViewId]);
 
-    if (!action) return null;
-
-    const parsedActionValue = useMemo(() => {
+    const parsedActionValue = useMemo<Record<string, any>>(() => {
+      if (!action) return {};
       try {
         const actionValue = getJson(getPayload<ActionType>(action));
         return JSON.parse(actionValue);
@@ -113,39 +122,34 @@ const ActionComponentItem = withSdk<{ item: SectionItem; entity: Entity }>(
     }, [action]);
 
     const currentValue = useMemo(() => {
-      const rawValue =
-        getValue(parsedActionValue, item.path || '') || item.constraints?.default || '';
-      return applyTransform(rawValue, item.transform, 'in');
+      const raw = getValue(parsedActionValue, item.path || '') ?? item.constraints?.default ?? '';
+      return applyTransform(raw, item.transform, 'in');
     }, [parsedActionValue, item.path, item.constraints?.default, item.transform]);
 
     const handleChange = useCallback(
       (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!action || actionIdx < 0 || !actionComponent) return;
         const inputValue = e.target.value;
-        const convertedValue = applyTransform(inputValue, item.transform, 'out');
-
-        if (!validateConstraints(convertedValue, item.constraints)) {
-          return;
-        }
+        const converted = applyTransform(inputValue, item.transform, 'out');
+        if (!validateConstraints(converted, item.constraints)) return;
 
         try {
           const newPayload = getJson({
             ...getPayload<ActionType>(action),
-            [item.path || '']: convertedValue,
+            [item.path || '']: converted,
           });
           const newAction = { ...action, jsonPayload: newPayload };
-
-          const updatedActions = [...actionComponent.value];
-          updatedActions[actionIdx] = newAction;
-          setActionComponentValue({ ...actionComponent, value: updatedActions });
+          const updated = [...actionComponent.value];
+          updated[actionIdx] = newAction;
+          setActionComponentValue({ ...actionComponent, value: updated });
         } catch {
-          // Do nothing
+          /* noop */
         }
       },
       [
         action,
         actionIdx,
         actionComponent,
-        item.basicViewId,
         item.path,
         item.transform,
         item.constraints,
@@ -155,13 +159,15 @@ const ActionComponentItem = withSdk<{ item: SectionItem; entity: Entity }>(
 
     const inputProps = useMemo(
       () => ({
-        value: currentValue.toString(),
+        value: (currentValue ?? '').toString(),
         onChange: handleChange,
         onFocus: () => {},
         onBlur: () => {},
       }),
       [currentValue, handleChange],
     );
+
+    if (!item.basicViewId || !item.path || !action) return null;
 
     return (
       <DynamicField
@@ -205,45 +211,40 @@ const SmartItemBasicView = withSdk<Props>(({ sdk, entity }) => {
       if (isActionComponent && item.basicViewId) {
         return (
           <ActionComponentItem
-            key={`${item.component}-${item.path}-${itemIndex}`}
-            item={item}
-            entity={entity}
-          />
-        );
-      } else {
-        return (
-          <RegularComponentItem
-            key={`${item.component}-${item.path}-${itemIndex}`}
+            key={`${item.component}-${item.path}-${item.widget}-${itemIndex}`}
             item={item}
             entity={entity}
           />
         );
       }
+
+      return (
+        <RegularComponentItem
+          key={`${item.component}-${item.path}-${item.widget}-${itemIndex}`}
+          item={item}
+          entity={entity}
+        />
+      );
     },
     [sdk, Actions, entity],
   );
 
   const renderSection = useCallback(
     (section: Section, sectionIndex: number) => {
-      const renderSectionRightContent = useCallback(() => {
-        if (section.helpTooltip) {
-          return (
-            <InfoTooltip
-              text={section.helpTooltip.text}
-              link={section.helpTooltip.link}
-              type="help"
-            />
-          );
-        }
-        return undefined;
-      }, [section.helpTooltip]);
+      const rightContent = section.helpTooltip ? (
+        <InfoTooltip
+          text={section.helpTooltip.text}
+          link={section.helpTooltip.link}
+          type="help"
+        />
+      ) : undefined;
 
       return (
         <Container
           key={`${section.id}-${sectionIndex}`}
           label={section.label}
           className="SmartItemBasicViewSection"
-          rightContent={renderSectionRightContent()}
+          rightContent={rightContent}
         >
           {section.columns && section.columns > 1 ? (
             <Block>
