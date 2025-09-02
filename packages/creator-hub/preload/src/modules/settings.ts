@@ -141,11 +141,8 @@ export async function setDefaultEditor(editorPath: string) {
     });
 
     if (existingIndex >= 0) {
-      config.editors[existingIndex] = {
-        ...config.editors[existingIndex],
-        path: editorPath,
-        isDefault: true,
-      };
+      config.editors[existingIndex].path = editorPath;
+      config.editors[existingIndex].isDefault = true;
     } else {
       config.editors.push({
         name,
@@ -153,6 +150,7 @@ export async function setDefaultEditor(editorPath: string) {
         isDefault: true,
       });
     }
+    return config;
   });
 
   const updatedConfig = await getConfig();
