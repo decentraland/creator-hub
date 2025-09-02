@@ -32,6 +32,7 @@ async function findMacEditors(): Promise<EditorConfig[]> {
     const { stdout: installedApps } = await exec(
       'system_profiler -detailLevel basic -json SPApplicationsDataType',
     );
+    console.log('[MacOS] Command output:', installedApps);
     const data = JSON.parse(installedApps) as MacSystemProfiler;
     const apps = data.SPApplicationsDataType;
 
@@ -71,6 +72,8 @@ async function findWindowsEditors(): Promise<EditorConfig[]> {
     const { stdout: installedApps } = await exec(
       `powershell.exe -Command "${command.replace(/"/g, '\\"')}"`,
     );
+    console.log('[Windows] Command output:', installedApps);
+    console.log('[Windows] Parsed apps:', JSON.parse(installedApps));
 
     const apps = JSON.parse(installedApps);
 
@@ -110,44 +113,6 @@ async function findWindowsEditors(): Promise<EditorConfig[]> {
               return currentLower.length < bestLower.length ? current : best;
             });
             exePath = path.join(app.InstallLocation, bestMatch);
-          }
-
-          if (exePath) {
-            if (process.platform === 'darwin' && exePath.endsWith('.app')) {
-              const macosPath = path.join(exePath, 'Contents', 'MacOS');
-              log.info(`[Editor Search] Looking for executable in ${macosPath}`);
-
-              try {
-                const macosFiles = await fs.readdir(macosPath);
-                log.info(
-                  `[Editor Search] Found ${macosFiles.length} files in MacOS directory:`,
-                  macosFiles,
-                );
-
-                for (const file of macosFiles) {
-                  const filePath = path.join(macosPath, file);
-                  try {
-                    const stats = await fs.stat(filePath);
-                    const isExecutable = stats.isFile() && stats.mode & 0o111;
-
-                    log.info(`[Editor Search] Checking file ${file}:`, {
-                      isExecutable,
-                      mode: stats.mode,
-                    });
-
-                    if (isExecutable) {
-                      exePath = filePath;
-                      log.info(`[Editor Search] Found macOS executable: ${exePath}`);
-                      break;
-                    }
-                  } catch (error) {
-                    log.error(`[Editor Search] Error checking file ${file}:`, error);
-                  }
-                }
-              } catch (error) {
-                log.error(`[Editor Search] Error reading MacOS directory: ${error}`);
-              }
-            }
           }
 
           if (exePath) {
