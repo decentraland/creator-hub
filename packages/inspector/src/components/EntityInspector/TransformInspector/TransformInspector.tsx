@@ -41,8 +41,8 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
   useEffect(() => {
     if (!hasTransform) return;
     if (!config) {
+      // no need to dispatch here, it will be dispatched with next user changes
       sdk.operations.addComponent(entity, TransformConfig.componentId);
-      void sdk.operations.dispatch();
     }
   }, [hasTransform]);
 
