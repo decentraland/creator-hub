@@ -397,19 +397,21 @@ export default React.memo(
             ) : null}
           </div>
         </div>
-        <Container className="componentInfo">
-          {instanceOf && (
-            <div className="customItemContainer">
-              <span>Instance of:</span>
-              <span className="Chip">
-                <CustomAssetIcon />
-                {instanceOf}
-              </span>
-              <Divider />
-            </div>
-          )}
-          <TagsInspector entity={entity} />
-        </Container>
+        {!isRoot(entity) && (
+          <Container className="componentInfo">
+            {instanceOf && (
+              <div className="customItemContainer">
+                <span>Instance of:</span>
+                <span className="Chip">
+                  <CustomAssetIcon />
+                  {instanceOf}
+                </span>
+                <Divider />
+              </div>
+            )}
+            <TagsInspector entity={entity} />
+          </Container>
+        )}
       </div>
     );
   }),
