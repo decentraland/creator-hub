@@ -1,16 +1,18 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import './TagsInspector.css';
-import { FaTag as TagIcon } from 'react-icons/fa';
+import { FaTag as TagIcon, FaPlus } from 'react-icons/fa';
 import type { Entity } from '@dcl/ecs';
+import type { Tags } from '@dcl/asset-packs';
+
 import { useEntityComponent } from '../../../hooks/sdk/useEntityComponent';
 import { withSdk } from '../../../hoc/withSdk';
 import { Dropdown } from '../../ui/Dropdown';
-import './TagsInspector.css';
+import CreateEditTagModal from './CreateEditTagModal';
+import { TAG_PREFIX, DEFAULT_TAGS, type Tag } from './types';
 
 const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
-  const TAG_PREFIX = 'tag::';
-
   const { getComponents, addComponent, removeComponent } = useEntityComponent();
+  const [open, setOpen] = useState(false);
   const entityComponents = Array.from(getComponents(entity, false).entries()).map(([id, name]) => ({
     id,
     name,
@@ -33,7 +35,14 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
   }, [sdk.engine]);
 
   const removePrefix = (name: string) => name.replace(TAG_PREFIX, '');
-  const tags = allComponents.filter(component => component.name.startsWith(TAG_PREFIX));
+  const tags: Tag[] = allComponents
+    .filter(component => component.name.startsWith(TAG_PREFIX))
+    ?.map(tag => ({
+      id: tag.id,
+      name: tag.name,
+      isDefault: DEFAULT_TAGS.includes(tag.name as Tags),
+    }));
+
   const entityTags = entityComponents.filter(component => component.name.startsWith(TAG_PREFIX));
 
   const value = entityTags.map(tag => tag.id.toString());
@@ -41,6 +50,7 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
     label: removePrefix(tag.name),
     value: tag.id.toString(),
   }));
+
   console.log('ALL COMPONENTS', allComponents);
   console.log('TAGS COMPONENTS', tags);
   console.log('ENTITY TAGS COMPONENTS', entityTags);
@@ -49,16 +59,13 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
     return null;
   }
 
-  const handleCreateNewTag = () => {
-    console.log('Create new tag');
+  const handleCreateNewTag = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    e.preventDefault();
+    setOpen(true);
   };
 
   const handleTagChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const newValues = event.target.value as unknown as string[];
-    if (newValues.includes('create')) {
-      handleCreateNewTag();
-      return;
-    }
 
     const newValuesAsNumbers = newValues.map(option => Number(option));
     const currentValues = value.map(Number);
@@ -87,13 +94,27 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
       </div>
       <div className="tags-selector">
         <Dropdown
-          placeholder="Add tags"
+          placeholder="Add or create tags"
           multiple
           onChange={handleTagChange}
           value={value}
-          options={[...options, { label: 'Create a new tag', value: 'create' }]}
+          options={[
+            ...options,
+            {
+              label: 'Create a new tag',
+              value: 'create',
+              isField: false,
+              onClick: handleCreateNewTag,
+              leftIcon: <FaPlus />,
+              className: 'create-new-tag-option',
+            },
+          ]}
         />
       </div>
+      <CreateEditTagModal
+        open={open}
+        onClose={() => setOpen(false)}
+      />
     </div>
   );
 });

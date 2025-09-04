@@ -22,3 +22,8 @@
 .TagsInspector .tags-selector {
   width: 85%;
 }
+
+.TagsInspector .create-new-tag-option {
+  width: 100%;
+  border-top: 1px solid var(--base-10);
+}
