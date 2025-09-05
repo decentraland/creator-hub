@@ -15,7 +15,12 @@ async function mockedRpcInit() {
     },
   });
   const engine = engineContext.engine;
-  return { fs, engine, callbackFunctions };
+
+  const addEngineListener = (fn: OnChangeFunction) => {
+    callbackFunctions.push(fn);
+  };
+
+  return { fs, engine, addEngineListener };
 }
 
 describe('Init RPC Methods', () => {
@@ -34,9 +39,8 @@ describe('Init RPC Methods', () => {
 
   it('should return default inspector preferences', async () => {
     const mocked = await mockedRpcInit();
-    const methods = await initRpcMethods(mocked.fs, mocked.engine, mocked.callbackFunctions);
-    console.log('mocked.fs', mocked.fs);
-    expect(await methods.getInspectorPreferences({}, {} as any)).toMatchObject({
+    const methods = await initRpcMethods(mocked.fs, mocked.engine, mocked.addEngineListener);
+    expect(await methods.getInspectorPreferences()).toMatchObject({
       freeCameraInvertRotation: false,
       autosaveEnabled: true,
     });
@@ -56,7 +60,7 @@ describe('Init RPC Methods', () => {
     const jsonComposite = Composite.toJson(composite);
     const compositeDest = getCurrentCompositePath();
     await mocked.fs.writeFile(compositeDest, Buffer.from(JSON.stringify(jsonComposite), 'utf-8'));
-    await initRpcMethods(mocked.fs, mocked.engine, mocked.callbackFunctions);
+    await initRpcMethods(mocked.fs, mocked.engine, mocked.addEngineListener);
 
     const EntityNodeComponent = mocked.engine.getComponentOrNull('inspector::EntityNode');
     expect(EntityNodeComponent?.get(entity)).toMatchObject({ label: 'Boedo', parent: 10 });
