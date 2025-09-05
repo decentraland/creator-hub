@@ -125,7 +125,7 @@ export class CompositeProvider implements StateProvider {
   }
 
   private async initializeComponents(): Promise<void> {
-    initComponents(this.engine as any);
+    initComponents(this.engine);
   }
 
   private async overrideWithSceneJson(): Promise<void> {

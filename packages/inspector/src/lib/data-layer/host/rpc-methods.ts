@@ -78,6 +78,14 @@ export async function initRpcMethods(
       });
     },
 
+    async getUndoRedoState() {
+      const historySize = undoRedoProvider.getHistorySize();
+      return {
+        canUndo: historySize.undoCount > 0,
+        canRedo: historySize.redoCount > 0,
+      };
+    },
+
     crdtStream(iter) {
       return createStream(iter, { engine });
     },
