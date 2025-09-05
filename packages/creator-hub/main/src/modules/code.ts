@@ -197,24 +197,28 @@ async function findWindowsEditors(): Promise<EditorConfig[]> {
           const files = await fs.readdir(app.InstallLocation);
           log.info('[Editor Search] All files found:', files);
 
-          // Intentar encontrar ejecutables
+          const editorWords = installedEditors.toLowerCase().split(/\s+/);
+          log.info('[Editor Search] Editor name words:', editorWords);
+
           const executables = [];
           for (const file of files) {
-            const filePath = path.join(app.InstallLocation, file);
-            try {
-              const stats = await fs.stat(filePath);
-              const isExecutable = stats.mode & 0o111; // Verificar si es ejecutable
-              log.info('[Editor Search] Checking file: ${file} - Is Executable: ${isExecutable}');
+            const lowerFile = file.toLowerCase();
+            log.info(`[Editor Search] Checking file: ${file}`);
 
-              if (stats.isFile() && isExecutable) {
-                executables.push(file);
-              }
-            } catch (error) {
-              log.error(`[Editor Search] Error checking file ${file}:`, error);
+            const matchingWords = editorWords.filter(word => lowerFile.includes(word));
+            log.info(`[Editor Search] Words found in filename: ${matchingWords}`);
+
+            if (
+              matchingWords.length > 0 &&
+              lowerFile.endsWith('.exe') &&
+              !lowerFile.includes('unins')
+            ) {
+              log.info(`[Editor Search] Found matching executable: ${file}`);
+              executables.push(file);
             }
           }
 
-          log.info('[Editor Search] Found executables:', executables);
+          log.info('[Editor Search] All matching executables:', executables);
 
           let exePath = '';
           if (executables.length === 1) {
