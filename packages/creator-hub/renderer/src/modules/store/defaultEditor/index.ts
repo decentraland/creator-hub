@@ -33,11 +33,11 @@ export const loadEditors = createAsyncThunk('defaultEditor/load', async (_, { di
   }
 });
 
-export const setDefaultEditor = createAsyncThunk(
-  'defaultEditor/setDefault',
+export const addEditor = createAsyncThunk(
+  'defaultEditor/add',
   async (editorPath: string, { dispatch }) => {
     try {
-      return await settingsApi.setDefaultEditor(editorPath);
+      return await settingsApi.addEditor(editorPath);
     } catch (error: any) {
       let errorKey = 'unknown';
       if (error.message.includes('invalid_app_extension')) {
@@ -49,10 +49,29 @@ export const setDefaultEditor = createAsyncThunk(
       }
       dispatch(
         snackbarActions.pushSnackbar({
-          id: 'set-default-editor-error',
+          id: 'add-editor-error',
           type: 'generic',
           severity: 'error',
           message: t(('modal.app_settings.fields.code_editor.errors.' + errorKey) as any),
+        }),
+      );
+      throw error;
+    }
+  },
+);
+
+export const setDefaultEditor = createAsyncThunk(
+  'defaultEditor/setDefault',
+  async (editorPath: string, { dispatch }) => {
+    try {
+      return await settingsApi.setDefaultEditor(editorPath);
+    } catch (error: any) {
+      dispatch(
+        snackbarActions.pushSnackbar({
+          id: 'set-default-editor-error',
+          type: 'generic',
+          severity: 'error',
+          message: t('modal.app_settings.fields.code_editor.errors.unknown'),
         }),
       );
       throw error;
@@ -78,6 +97,12 @@ const slice = createSlice({
         state.loading = false;
         state.error = action.error.message || 'Failed to load editors';
       })
+      .addCase(addEditor.fulfilled, (state, action) => {
+        state.editors = action.payload || [];
+      })
+      .addCase(addEditor.rejected, (state, action) => {
+        state.error = action.error.message || 'Failed to add editor';
+      })
       .addCase(setDefaultEditor.fulfilled, (state, action) => {
         state.editors = action.payload || [];
       })
@@ -90,6 +115,7 @@ const slice = createSlice({
 export const actions = {
   ...slice.actions,
   loadEditors,
+  addEditor,
   setDefaultEditor,
 };
 

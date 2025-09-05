@@ -17,7 +17,7 @@ import {
   MenuItem,
   CircularProgress,
 } from 'decentraland-ui2';
-import { loadEditors, setDefaultEditor } from '/@/modules/store/defaultEditor';
+import { loadEditors, setDefaultEditor, addEditor } from '/@/modules/store/defaultEditor';
 
 import { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import type { EditorConfig } from '/shared/types/config';
@@ -152,7 +152,7 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
                     e.preventDefault();
                     const [editorPath] = await settingsPreload.selectEditorPath();
                     if (editorPath) {
-                      dispatch(setDefaultEditor(editorPath));
+                      dispatch(addEditor(editorPath));
                     }
                   }}
                 >

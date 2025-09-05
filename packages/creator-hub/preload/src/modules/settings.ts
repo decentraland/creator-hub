@@ -1,5 +1,4 @@
 import path from 'path';
-import fs from 'fs/promises';
 import { ipcRenderer, type IpcRendererEvent } from 'electron';
 import {
   DEPENDENCY_UPDATE_STRATEGY,
@@ -107,52 +106,10 @@ export async function getEditors() {
   return invoke('code.getEditors');
 }
 
+export async function addEditor(editorPath: string) {
+  return await invoke('code.addEditor', editorPath);
+}
+
 export async function setDefaultEditor(editorPath: string) {
-  let name: string;
-  if (process.platform === 'darwin') {
-    const fileName = path.basename(editorPath);
-    if (!fileName.endsWith('.app')) {
-      throw new Error('invalid_app_extension');
-    }
-    const macosPath = path.join(editorPath, 'Contents', 'MacOS');
-    try {
-      await fs.stat(macosPath);
-    } catch {
-      throw new Error('invalid_app_bundle');
-    }
-    name = fileName.replace('.app', '');
-  } else {
-    const fileName = path.basename(editorPath);
-    if (!fileName.endsWith('.exe')) {
-      throw new Error('invalid_exe_file');
-    }
-    name = fileName.replace('.exe', '') || 'Custom Editor';
-  }
-
-  await setConfig(config => {
-    if (!config.editors) {
-      config.editors = [];
-    }
-
-    const existingIndex = config.editors.findIndex(e => e.name === name);
-
-    config.editors.forEach(editor => {
-      editor.isDefault = false;
-    });
-
-    if (existingIndex >= 0) {
-      config.editors[existingIndex].path = editorPath;
-      config.editors[existingIndex].isDefault = true;
-    } else {
-      config.editors.push({
-        name,
-        path: editorPath,
-        isDefault: true,
-      });
-    }
-    return config;
-  });
-
-  const updatedConfig = await getConfig();
-  return updatedConfig.editors;
+  return await invoke('code.setDefaultEditor', editorPath);
 }
