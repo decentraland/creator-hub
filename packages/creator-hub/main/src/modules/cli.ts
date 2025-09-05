@@ -1,6 +1,8 @@
 import { join } from 'path';
 import fs from 'fs/promises';
+import { realpathSync } from 'fs';
 import log from 'electron-log/main';
+import { app } from 'electron';
 
 import type { PreviewOptions } from '/shared/types/settings';
 import { CLIENT_NOT_INSTALLED_ERROR } from '/shared/utils';
@@ -112,10 +114,25 @@ function updateDeepLinkWithOpts(params: string, newOpts: PreviewOptions): string
 
     // this param is different from what we recieved from the CLI that the one that the launcher uses.
     setOrDeleteParam('open-deeplink-in-new-instance', newOpts.openNewInstance);
+    setOrDeleteParam('creator-hub-bin-path', selfBinPath());
 
     return urlParams.toString();
   } catch (error) {
     return params;
+  }
+}
+
+// Returns self bin path for both dev and build in Windows and MacOS
+// This hook allows the client to request creator hub back with commands
+function selfBinPath(): string {
+  const exe = app.getPath('exe');
+
+  // Resolve symlinks (common on macOS; harmless elsewhere)
+  try {
+    const realpathNative = realpathSync.native as (p: string) => string | undefined;
+    return (realpathNative ? realpathNative(exe) : realpathSync(exe)) || exe;
+  } catch {
+    return exe;
   }
 }
 
