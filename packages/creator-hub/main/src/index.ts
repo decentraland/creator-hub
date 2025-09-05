@@ -9,7 +9,7 @@ import { deployServer, killAllPreviews } from '/@/modules/cli';
 import { killInspectorServer } from '/@/modules/inspector';
 import { runMigrations } from '/@/modules/migrations';
 import { getAnalytics, track } from './modules/analytics';
-import { addEditorsPathsToConfig } from './modules/default-editor-settings';
+import { addEditorsPathsToConfig } from './modules/code';
 
 import '/@/security-restrictions';
 

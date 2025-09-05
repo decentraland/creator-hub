@@ -104,7 +104,7 @@ export function getCurrentVersion() {
 }
 
 export async function getEditors() {
-  return invoke('defaultEditor.getEditors');
+  return invoke('code.getEditors');
 }
 
 export async function setDefaultEditor(editorPath: string) {

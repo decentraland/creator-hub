@@ -7,6 +7,7 @@ import * as bin from './bin';
 import * as code from './code';
 import * as analytics from './analytics';
 import * as npm from './npm';
+import * as config from './config';
 
 export function initIpc() {
   // electron
@@ -39,6 +40,10 @@ export function initIpc() {
   handle('cli.start', (_event, path, opts) => cli.start(path, opts));
   handle('cli.deploy', (_event, opts) => cli.deploy(opts));
   handle('cli.killPreview', (_event, path) => cli.killPreview(path));
+
+  // config
+  handle('config.getConfig', () => config.getConfig());
+  handle('config.writeConfig', (_event, _config) => config.writeConfig(_config));
 
   // bin
   handle('bin.install', () => bin.install());

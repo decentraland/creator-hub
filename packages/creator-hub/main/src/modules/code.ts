@@ -8,6 +8,7 @@ import { shell } from 'electron';
 import { type EditorConfig } from '/shared/types/config';
 import { EditorType } from '/shared/types/code';
 import { track } from './analytics';
+import { getConfigStorage } from './config';
 
 const exec = promisify(execCallback);
 
@@ -25,7 +26,8 @@ interface MacSystemProfiler {
   SPApplicationsDataType: MacAppInfo[];
 }
 
-export async function getEditors(): Promise<EditorConfig[]> {
+//todo, remove???
+export async function getInstalledEditors(): Promise<EditorConfig[]> {
   return process.platform === 'darwin' ? await findMacEditors() : await findWindowsEditors();
 }
 
@@ -71,7 +73,7 @@ async function findMacOSExecutable(
 
 export async function open(_path: string) {
   const normalizedPath = path.normalize(_path);
-  const config = await getConfig();
+  const config = await getConfigStorage();
   const editors = (await config.get('editors')) || [];
   const defaultEditor = editors.find(editor => editor.isDefault);
 
@@ -233,7 +235,7 @@ async function editorStillInstalled(editor: EditorConfig): Promise<boolean> {
 }
 
 export async function getEditors() {
-  const config = await getConfig();
+  const config = await getConfigStorage();
   const editors = (await config.get('editors')) || [];
   log.info('[Editor Config] Current editors in config:', editors);
 
@@ -258,11 +260,11 @@ export async function getEditors() {
 }
 
 export async function addEditorsPathsToConfig() {
-  const config = await getConfig();
+  const config = await getConfigStorage();
   const existingEditors = (await config.get('editors')) || [];
   log.info('Existing editors:', existingEditors);
 
-  const foundEditors = await getEditors();
+  const foundEditors = await getInstalledEditors();
 
   log.info('Found editors:', foundEditors);
 

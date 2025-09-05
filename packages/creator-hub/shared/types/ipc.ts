@@ -5,7 +5,7 @@ import type { Events } from '/shared/types/analytics';
 import type { DeployOptions } from '/shared/types/deploy';
 
 import type { PreviewOptions } from './settings';
-import type { EditorConfig } from './config';
+import type { Config, EditorConfig } from './config';
 
 export type IpcResult<T> = {
   success: true;
@@ -41,7 +41,8 @@ export interface Ipc {
   'inspector.start': () => Promise<number>;
   'inspector.openSceneDebugger': (path: string) => Promise<string>;
   'inspector.attachSceneDebugger': (path: string, eventName: string) => Promise<boolean>;
-
+  'config.getConfig': () => Promise<Config>;
+  'config.writeConfig': (config: Config) => Promise<void>;
   'bin.install': () => Promise<void>;
 
   'code.open': (path: string) => Promise<void>;
