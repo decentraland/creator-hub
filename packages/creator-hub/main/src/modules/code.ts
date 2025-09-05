@@ -180,9 +180,16 @@ async function findWindowsEditors(): Promise<EditorConfig[]> {
     const editorNames = Object.values(EditorType);
 
     for (const app of apps) {
-      const installedEditors = editorNames.find(name =>
-        app.DisplayName?.toLowerCase().includes(name.toLowerCase()),
-      );
+      log.info(`[Editor Search] Checking app: ${app.DisplayName}`);
+
+      const installedEditors = editorNames.find(name => {
+        const editorName = name.toLowerCase();
+        const displayName = app.DisplayName?.toLowerCase() || '';
+        const found = displayName.includes(editorName);
+
+        log.info(`[Editor Search] Comparing "${displayName}" with "${editorName}" -> ${found}`);
+        return found;
+      });
 
       if (installedEditors && app.InstallLocation) {
         try {
@@ -282,15 +289,12 @@ export async function getEditors() {
 export async function addEditor(editorPath: string): Promise<EditorConfig[]> {
   let name: string;
   let executablePath: string;
-
-  // First validate that the path exists
   try {
     await fs.stat(editorPath);
   } catch {
     throw new Error('file_not_found');
   }
 
-  // Validate and get the executable path based on platform
   if (process.platform === 'darwin') {
     const fileName = path.basename(editorPath);
     if (!fileName.endsWith('.app')) {
