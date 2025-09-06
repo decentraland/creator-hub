@@ -16,12 +16,12 @@ async function startDevToolsFrontendStaticServerIfNot(): Promise<ServerPort> {
   if (runningServerPort !== null) return runningServerPort;
 
   const serverPath = await waitReadyForServerPath();
-  const port = await startExpressStatic(serverPath);
+  const port = await startExpressStaticServer(serverPath);
   runningServerPort = port;
   return runningServerPort;
 }
 
-export async function startExpressStatic(root?: string): Promise<ServerPort> {
+export async function startExpressStaticServer(root?: string): Promise<ServerPort> {
   const app = express();
   const staticRoot =
     root ??

@@ -12,6 +12,8 @@ import extract from 'extract-zip';
 
 type Status = 'unavailable' | 'downloading' | 'installed';
 
+type DownloadResult = 'alredy-downloaded' | 'fresh-download' | 'error';
+
 const SERVER_DIR_PATH = join(app.getPath('userData'), 'chrome-devtools-frontend');
 //TODO url from env vars
 const DOWNLOAD_URL = '';
@@ -57,11 +59,11 @@ async function newTempFilePath(): Promise<string> {
   return join(tempDir, fileName) + '.tmp';
 }
 
-async function downloadDevToolsServerIfRequiredInternal(): Promise<void> {
+async function downloadDevToolsServerIfRequiredInternal(): Promise<DownloadResult> {
   const initialStatus = await currentStatus();
   if (initialStatus !== 'unavailable') {
     log.info('[DAEMON] dowload is not required: ' + initialStatus);
-    return;
+    return 'alredy-downloaded';
   }
 
   const tempDir = tempDirPath();
@@ -70,11 +72,11 @@ async function downloadDevToolsServerIfRequiredInternal(): Promise<void> {
   const res = await net.fetch(DOWNLOAD_URL);
   if (!res.ok) {
     log.error(`[DAEMON] cannot download: HTTP ${res.status} ${res.statusText}`);
-    return;
+    return 'error';
   }
   if (!res.body) {
     log.error('[DAEMON] cannot download: no response body');
-    return;
+    return 'error';
   }
 
   const body = res.body as unknown as NodeReadableStream<Uint8Array>;
@@ -91,13 +93,21 @@ async function downloadDevToolsServerIfRequiredInternal(): Promise<void> {
 
   // clean up temp
   await fsp.rm(currentTempFileArchive);
+  return 'fresh-download';
 }
 
 export async function downloadDevToolsServerIfRequired(): Promise<void> {
   try {
-    await downloadDevToolsServerIfRequiredInternal();
+    const result = await downloadDevToolsServerIfRequiredInternal();
+    if (result === 'fresh-download') {
+      log.info('[DAEMON] downloaded devtools server');
+    } else if (result === 'alredy-downloaded') {
+      log.info('[DAEMON] devtools server is already downloaded');
+    } else if (result === 'error') {
+      log.error('[DAEMON] cannot download devtools server due an error');
+    }
   } catch (e) {
-    log.info('[DAEMON] cannot download devtools server: ' + e);
+    log.error('[DAEMON] cannot download devtools server: ' + e);
   }
 }
 
