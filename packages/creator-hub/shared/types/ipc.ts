@@ -52,4 +52,6 @@ export interface Ipc {
   'analytics.getProjectId': (path: string) => Promise<string>;
   'npm.install': (path: string, packages?: string[]) => Promise<void>;
   'npm.getOutdatedDeps': (path: string, packages?: string[]) => Promise<Outdated>;
+  'chrome-devtools.downloadInProgress': () => void;
+  'chrome-devtools.tabOpened': () => void;
 }

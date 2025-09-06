@@ -1,5 +1,6 @@
 import * as path from 'path';
 import log from 'electron-log/main';
+import { openDevToolsTab } from './chrome-devtools/tab';
 
 type ParsedArgs = {
   devtoolsPort: number | null;
@@ -45,5 +46,8 @@ export function processArgs(argv: string[]): void {
   const args = normalizedArgs(argv);
   const parsed = parsedArgs(args);
   log.info('[Args] processing args: ' + JSON.stringify(parsed));
-  //TODO consume arg
+
+  if (parsed.devtoolsPort !== null) {
+    void openDevToolsTab(parsed.devtoolsPort);
+  }
 }
