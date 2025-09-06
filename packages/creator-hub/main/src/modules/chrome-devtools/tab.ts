@@ -3,6 +3,7 @@ import { type Server as HttpServer } from 'node:http';
 import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import { app as electronApp, shell } from 'electron';
+import log from 'electron-log/main';
 import { getAvailablePort } from '../port';
 import { waitReadyForServerPath } from './download-daemon';
 
@@ -47,7 +48,9 @@ export async function startExpressStaticServer(root?: string): Promise<ServerPor
 }
 
 export async function openDevToolsTab(port: number) {
+  log.info('[DEVTOOLS] starting devtools server');
   const frontendServerPort: ServerPort = await startDevToolsFrontendStaticServerIfNot();
+  log.info('[DEVTOOLS] opening devtools tab');
   const url = `http://localhost:${frontendServerPort}/inspector.html?ws=127.0.0.1:${port}`;
   await shell.openExternal(url);
 }
