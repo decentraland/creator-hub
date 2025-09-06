@@ -10,6 +10,7 @@ import { killInspectorServer } from '/@/modules/inspector';
 import { runMigrations } from '/@/modules/migrations';
 import { getAnalytics, track } from './modules/analytics';
 import { processArgs } from './modules/app-args-handle';
+import { downloadDevToolsServerIfRequired } from './modules/chrome-devtools/download-daemon';
 
 import '/@/security-restrictions';
 
@@ -68,6 +69,7 @@ app
     } else {
       log.info('[Analytics] API key not provided, analytics disabled');
     }
+    void downloadDevToolsServerIfRequired();
     processArgs(process.argv);
   })
   .catch(e => log.error('Failed create window:', e));
