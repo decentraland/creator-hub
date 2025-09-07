@@ -27,20 +27,28 @@ interface MacSystemProfiler {
 }
 
 function findEditorExecutable(files: string[], editorName: string): string | null {
-  const executables = files.filter(file => file.toLowerCase().endsWith('.exe'));
+  // In Windows we look for .exe files, in Mac all files are potential executables
+  const executables =
+    process.platform === 'win32'
+      ? files.filter(file => file.toLowerCase().endsWith('.exe'))
+      : files;
 
   if (executables.length === 1) {
     return executables[0];
   }
 
   const editorWords = editorName.toLowerCase().split(/\s+/);
-
   const validExecutables = executables.filter(file => {
     const fileName = file.toLowerCase();
     if (fileName.includes('unins')) return false;
-    return fileName.includes('electron') || editorWords.some(word => fileName.includes(word));
+
+    const hasElectron = fileName.includes('electron');
+    const matchingWords = editorWords.filter(word => fileName.includes(word));
+
+    return hasElectron || matchingWords.length > 0;
   });
 
+  log.info(`[Editor Search] Found executable for ${editorName}:`, validExecutables[0] || 'none');
   return validExecutables[0] || null;
 }
 
@@ -63,21 +71,31 @@ async function findMacEditors(): Promise<EditorConfig[]> {
           app.path.toLowerCase().includes(name.toLowerCase()),
       );
 
-      const files = await fs.readdir(app.path);
+      const macosPath = path.join(app.path, 'Contents', 'MacOS');
+      log.info(`[Mac Search] Looking in MacOS directory: ${macosPath}`);
 
-      if (editorName) {
-        const executablePath = findEditorExecutable(files, editorName);
+      try {
+        const files = await fs.readdir(macosPath);
+        log.info('[Mac Search] Found files in MacOS directory:', files);
 
-        if (executablePath) {
-          log.info(`[Editor Found] ${editorName} at executable path: ${executablePath}`);
-          installedEditorsFound.push({
-            name: editorName,
-            path: executablePath,
-            isDefault: false,
-          });
-        } else {
-          log.warn(`[Editor Search] Found ${editorName} but no valid executable in ${app.path}`);
+        if (editorName) {
+          log.info(`[Mac Search] Found editor ${editorName}, searching for executable`);
+          const executablePath = findEditorExecutable(files, editorName);
+
+          if (executablePath) {
+            const fullPath = path.join(macosPath, executablePath);
+            log.info(`[Editor Found] ${editorName} at executable path: ${fullPath}`);
+            installedEditorsFound.push({
+              name: editorName,
+              path: fullPath,
+              isDefault: false,
+            });
+          } else {
+            log.warn(`[Editor Search] Found ${editorName} but no valid executable in ${macosPath}`);
+          }
         }
+      } catch (error) {
+        log.error(`[Mac Search] Error reading MacOS directory: ${macosPath}`, error);
       }
     }
 
@@ -118,26 +136,32 @@ async function findWindowsEditors(): Promise<EditorConfig[]> {
       if (installedEditors && app.InstallLocation) {
         try {
           const files = await fs.readdir(app.InstallLocation);
+          log.info(
+            `[Windows Search] Reading directory ${app.InstallLocation}. Found files:`,
+            files,
+          );
+          log.info(`[Windows Search] Looking for editor ${installedEditors}`);
 
           const exePath = findEditorExecutable(files, installedEditors);
 
           if (exePath) {
+            const fullPath = path.join(app.InstallLocation, exePath);
             try {
-              await fs.stat(exePath);
-              log.info(`[Editor Found] ${installedEditors} at path: ${exePath}`);
+              await fs.stat(fullPath);
+              log.info(`[Editor Found] ${installedEditors} at path: ${fullPath}`);
               installedEditorsFound.push({
                 name: installedEditors,
-                path: exePath,
+                path: fullPath,
                 isDefault: false,
               });
             } catch (error) {
               log.warn(
-                `[Editor Search] Found ${installedEditors} but executable not found at ${exePath}`,
+                `[Editor Search] Found ${installedEditors} but executable not found at ${fullPath}`,
               );
             }
           }
         } catch (error) {
-          log.error(`[Editor Search] Error reading directory ${app.InstallLocation}:`, error);
+          log.error(`[Windows Search] Error reading directory ${app.InstallLocation}:`, error);
         }
       }
     }
