@@ -26,92 +26,22 @@ interface MacSystemProfiler {
   SPApplicationsDataType: MacAppInfo[];
 }
 
-async function getMacOSExecutable(editor: { path: string; name: string }): Promise<string | null> {
-  const macosPath = path.join(editor.path, 'Contents', 'MacOS');
+function findEditorExecutable(files: string[], editorName: string): string | null {
+  const executables = files.filter(file => file.toLowerCase().endsWith('.exe'));
 
-  try {
-    const files = await fs.readdir(macosPath);
-
-    if (!files.length) {
-      return null;
-    }
-
-    // Si hay un solo archivo, verificamos que sea ejecutable
-    if (files.length === 1) {
-      const executablePath = path.join(macosPath, files[0]);
-      try {
-        const stats = await fs.stat(executablePath);
-        if (stats.isFile() && stats.mode & 0o111) {
-          return executablePath;
-        }
-      } catch (error) {
-        log.error(`Error checking file ${files[0]}:`, error);
-      }
-      return null;
-    }
-
-    const editorWords = editor.name.toLowerCase().split(/\s+/);
-    let firstExecutable: string | null = null;
-    let preferredExecutable: string | null = null;
-
-    // Si hay múltiples archivos, buscamos el que mejor coincida
-    for (const fileName of files) {
-      const executablePath = path.join(macosPath, fileName);
-
-      try {
-        const stats = await fs.stat(executablePath);
-        if (!stats.isFile() || !(stats.mode & 0o111)) continue;
-
-        if (!firstExecutable) {
-          firstExecutable = executablePath;
-        }
-
-        if (editorWords.some(word => fileName.toLowerCase().includes(word))) {
-          preferredExecutable = executablePath;
-          break;
-        }
-      } catch (error) {
-        log.error(`Error checking file ${fileName}:`, error);
-      }
-    }
-
-    return preferredExecutable || firstExecutable;
-  } catch (error) {
-    log.error(`Error reading MacOS directory: ${macosPath}`, error);
-    return null;
+  if (executables.length === 1) {
+    return executables[0];
   }
-}
 
-export async function open(_path: string) {
-  const normalizedPath = path.normalize(_path);
-  const config = await getConfigStorage();
-  const editors = (await config.get('editors')) || [];
-  const defaultEditor = editors.find(editor => editor.isDefault);
+  const editorWords = editorName.toLowerCase().split(/\s+/);
 
-  log.info('Available editors:', editors);
-  log.info('Default editor:', defaultEditor);
+  const validExecutables = executables.filter(file => {
+    const fileName = file.toLowerCase();
+    if (fileName.includes('unins')) return false;
+    return fileName.includes('electron') || editorWords.some(word => fileName.includes(word));
+  });
 
-  try {
-    if (defaultEditor) {
-      log.info('Opening with default editor:', defaultEditor.name, 'at path:', defaultEditor.path);
-
-      const command = `"${defaultEditor.path}" "${normalizedPath}"`;
-      log.info('Executing command:', command);
-      await exec(command, {
-        env: { ...process.env, PATH: getPath() },
-      });
-      await track('Open Code', undefined);
-    } else {
-      log.info('No default editor found, falling back to system default');
-      await shell.openPath(normalizedPath);
-    }
-  } catch (error) {
-    log.info(
-      'Failed to open with configured editor, falling back to system default. Error:',
-      error,
-    );
-    await shell.openPath(normalizedPath);
-  }
+  return validExecutables[0] || null;
 }
 
 async function findMacEditors(): Promise<EditorConfig[]> {
@@ -133,11 +63,10 @@ async function findMacEditors(): Promise<EditorConfig[]> {
           app.path.toLowerCase().includes(name.toLowerCase()),
       );
 
+      const files = await fs.readdir(app.path);
+
       if (editorName) {
-        const executablePath = await getMacOSExecutable({
-          path: app.path,
-          name: editorName,
-        });
+        const executablePath = findEditorExecutable(files, editorName);
 
         if (executablePath) {
           log.info(`[Editor Found] ${editorName} at executable path: ${executablePath}`);
@@ -171,8 +100,6 @@ async function findWindowsEditors(): Promise<EditorConfig[]> {
     const { stdout: installedApps } = await exec(
       `powershell.exe -Command "${command.replace(/"/g, '\\"')}"`,
     );
-    log.info('[Windows] Command output:', installedApps);
-    log.info('[Windows] Parsed apps:', JSON.parse(installedApps));
 
     const apps = JSON.parse(installedApps);
 
@@ -180,62 +107,19 @@ async function findWindowsEditors(): Promise<EditorConfig[]> {
     const editorNames = Object.values(EditorType);
 
     for (const app of apps) {
-      log.info(`[Editor Search] Checking app: ${app.DisplayName}`);
-
       const installedEditors = editorNames.find(name => {
         const editorName = name.toLowerCase();
         const displayName = app.DisplayName?.toLowerCase() || '';
         const found = displayName.includes(editorName);
 
-        log.info(`[Editor Search] Comparing "${displayName}" with "${editorName}" -> ${found}`);
         return found;
       });
 
       if (installedEditors && app.InstallLocation) {
         try {
-          log.info('[Editor Search] Searching in directory: ${app.InstallLocation}');
           const files = await fs.readdir(app.InstallLocation);
-          log.info('[Editor Search] All files found:', files);
 
-          const editorWords = installedEditors.toLowerCase().split(/\s+/);
-          log.info('[Editor Search] Editor name words:', editorWords);
-
-          const executables = [];
-          for (const file of files) {
-            const lowerFile = file.toLowerCase();
-            log.info(`[Editor Search] Checking file: ${file}`);
-
-            const matchingWords = editorWords.filter(word => lowerFile.includes(word));
-            log.info(`[Editor Search] Words found in filename: ${matchingWords}`);
-
-            if (
-              matchingWords.length > 0 &&
-              lowerFile.endsWith('.exe') &&
-              !lowerFile.includes('unins')
-            ) {
-              log.info(`[Editor Search] Found matching executable: ${file}`);
-              executables.push(file);
-            }
-          }
-
-          log.info('[Editor Search] All matching executables:', executables);
-
-          let exePath = '';
-          if (executables.length === 1) {
-            exePath = path.join(app.InstallLocation, executables[0]);
-          } else if (executables.length > 1) {
-            const editorName = installedEditors.toLowerCase().replace(/[^a-z0-9]/gi, '');
-            const bestMatch = executables.reduce((best, current) => {
-              const currentLower = current.toLowerCase();
-              const bestLower = best.toLowerCase();
-
-              if (currentLower === editorName + '.exe') return current;
-              if (bestLower === editorName + '.exe') return best;
-
-              return currentLower.length < bestLower.length ? current : best;
-            });
-            exePath = path.join(app.InstallLocation, bestMatch);
-          }
+          const exePath = findEditorExecutable(files, installedEditors);
 
           if (exePath) {
             try {
@@ -266,37 +150,27 @@ async function findWindowsEditors(): Promise<EditorConfig[]> {
   }
 }
 
-async function editorStillInstalled(editor: EditorConfig): Promise<boolean> {
-  try {
-    await fs.stat(editor.path);
-    log.info(`[Editor Validation] Editor ${editor.path} validation successful`);
-    return true;
-  } catch {
-    log.info(`[Editor Validation] Editor ${editor.path} validation failed - path does not exist`);
-    return false;
-  }
-}
-
 export async function getEditors() {
   const config = await getConfigStorage();
   const editors = (await config.get('editors')) || [];
   log.info('[Editor Config] Current editors in config:', editors);
 
-  const validEditors: EditorConfig[] = [];
+  const validEditors = [];
+  let configNeedsUpdate = false;
 
   for (const editor of editors) {
-    if (await editorStillInstalled(editor)) {
+    try {
+      await fs.stat(editor.path);
       validEditors.push(editor);
-    } else {
-      log.info(
-        `[Editor Config] Editor ${editor.name} at ${editor.path} no longer exists, removing from config`,
-      );
+    } catch {
+      log.info(`[Editor Config] Removing ${editor.name} - Not found at ${editor.path}`);
+      configNeedsUpdate = true;
     }
   }
 
-  if (validEditors.length !== editors.length) {
+  if (configNeedsUpdate) {
+    log.info('[Editor Config] Updating config - Removed editors that no longer exist');
     await config.set('editors', validEditors);
-    log.info('[Editor Config] Updated config with valid editors:', validEditors);
   }
 
   return validEditors;
@@ -317,8 +191,8 @@ export async function addEditor(editorPath: string): Promise<EditorConfig[]> {
       throw new Error('invalid_app_extension');
     }
 
-    // Check if it's a valid app bundle
     const macosPath = path.join(editorPath, 'Contents', 'MacOS');
+    const files = await fs.readdir(macosPath);
     try {
       const stats = await fs.stat(macosPath);
       if (!stats.isDirectory()) {
@@ -328,10 +202,7 @@ export async function addEditor(editorPath: string): Promise<EditorConfig[]> {
       throw new Error('invalid_app_bundle');
     }
 
-    const macExecutablePath = await getMacOSExecutable({
-      path: editorPath,
-      name: fileName.replace('.app', ''),
-    });
+    const macExecutablePath = findEditorExecutable(files, fileName.replace('.app', ''));
 
     if (!macExecutablePath) {
       throw new Error('invalid_app_bundle');
@@ -352,10 +223,8 @@ export async function addEditor(editorPath: string): Promise<EditorConfig[]> {
   const config = await getConfigStorage();
   const editors = (await config.get('editors')) || [];
 
-  // Update editors list
   const existingIndex = editors.findIndex(e => e.name === name);
 
-  // Set all editors to non-default
   editors.forEach(editor => {
     editor.isDefault = false;
   });
@@ -379,13 +248,11 @@ export async function setDefaultEditor(editorPath: string): Promise<EditorConfig
   const config = await getConfigStorage();
   const editors = (await config.get('editors')) || [];
 
-  // Find editor by path
   const editorToSet = editors.find(editor => editor.path === editorPath);
   if (!editorToSet) {
     throw new Error('editor_not_found');
   }
 
-  // Update default status
   editors.forEach(editor => {
     editor.isDefault = editor.path === editorPath;
   });
@@ -439,5 +306,34 @@ export async function addEditorsPathsToConfig() {
 
     await config.set('editors', allEditors);
     log.info('[Editor Discovery] Updated config with editors:', allEditors);
+  }
+}
+
+export async function open(_path: string) {
+  const normalizedPath = path.normalize(_path);
+  const config = await getConfigStorage();
+  const editors = (await config.get('editors')) || [];
+  const defaultEditor = editors.find(editor => editor.isDefault);
+
+  log.info('Default editor:', defaultEditor);
+
+  try {
+    if (defaultEditor) {
+      log.info('Opening with default editor:', defaultEditor.name, 'at path:', defaultEditor.path);
+      const command = `"${defaultEditor.path}" "${normalizedPath}"`;
+      await exec(command, {
+        env: { ...process.env, PATH: getPath() },
+      });
+      await track('Open Code', undefined);
+    } else {
+      log.info('No default editor found, falling back to system default');
+      await shell.openPath(normalizedPath);
+    }
+  } catch (error) {
+    log.info(
+      'Failed to open with configured editor, falling back to system default. Error:',
+      error,
+    );
+    await shell.openPath(normalizedPath);
   }
 }
