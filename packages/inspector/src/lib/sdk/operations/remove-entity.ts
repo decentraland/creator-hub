@@ -24,7 +24,9 @@ export function removeEntity(engine: IEngine) {
       const parentToSelect = getParent(entity, nodes);
       // Find the first selected entity in the tree to get its gizmo
       const firstSelectedEntity = entityTree.find(e => Selection.has(e));
-      const selectedGizmo =  firstSelectedEntity ? Selection.getOrNull(firstSelectedEntity)?.gizmo || 0 : 0;
+      const selectedGizmo = firstSelectedEntity
+        ? Selection.getOrNull(firstSelectedEntity)?.gizmo || 0
+        : 0;
       Selection.createOrReplace(parentToSelect, { gizmo: selectedGizmo });
     }
 
