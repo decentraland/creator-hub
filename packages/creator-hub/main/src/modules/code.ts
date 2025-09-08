@@ -40,7 +40,7 @@ function findEditorExecutable(files: string[], editorName: string): string | nul
   const editorWords = editorName.toLowerCase().split(/\s+/);
   const validExecutables = executables.filter(file => {
     const fileName = file.toLowerCase();
-    if (fileName.includes('unins')) return false;
+    if (fileName.includes('unins') || fileName.includes('setup')) return false;
 
     const hasElectron = fileName.includes('electron');
     const matchingWords = editorWords.filter(word => fileName.includes(word));
@@ -57,7 +57,7 @@ async function findMacEditors(): Promise<EditorConfig[]> {
     const { stdout: installedApps } = await exec(
       'system_profiler -detailLevel basic -json SPApplicationsDataType',
     );
-    log.info('[MacOS] Command output:', installedApps);
+
     const data = JSON.parse(installedApps) as MacSystemProfiler;
     const apps = data.SPApplicationsDataType;
 
@@ -71,15 +71,13 @@ async function findMacEditors(): Promise<EditorConfig[]> {
           app.path.toLowerCase().includes(name.toLowerCase()),
       );
 
-      const macosPath = path.join(app.path, 'Contents', 'MacOS');
-      log.info(`[Mac Search] Looking in MacOS directory: ${macosPath}`);
+      if (editorName) {
+        const macosPath = path.join(app.path, 'Contents', 'MacOS');
+        log.info(`[Mac Search] Looking in MacOS directory: ${macosPath}`);
 
-      try {
-        const files = await fs.readdir(macosPath);
-        log.info('[Mac Search] Found files in MacOS directory:', files);
-
-        if (editorName) {
-          log.info(`[Mac Search] Found editor ${editorName}, searching for executable`);
+        try {
+          const files = await fs.readdir(macosPath);
+          log.info('[Mac Search] Found files in MacOS directory:', files);
           const executablePath = findEditorExecutable(files, editorName);
 
           if (executablePath) {
@@ -93,9 +91,9 @@ async function findMacEditors(): Promise<EditorConfig[]> {
           } else {
             log.warn(`[Editor Search] Found ${editorName} but no valid executable in ${macosPath}`);
           }
+        } catch (error) {
+          log.error(`[Editor Search] Error reading directory: ${app.path}`, error);
         }
-      } catch (error) {
-        log.error(`[Mac Search] Error reading MacOS directory: ${macosPath}`, error);
       }
     }
 
@@ -266,6 +264,16 @@ export async function addEditor(editorPath: string): Promise<EditorConfig[]> {
 
   await config.set('editors', editors);
   return editors;
+}
+
+export async function removeEditor(editorPath: string): Promise<EditorConfig[]> {
+  const config = await getConfigStorage();
+  const editors = (await config.get('editors')) || [];
+
+  const newEditors = editors.filter(editor => editor.path !== editorPath);
+  await config.set('editors', newEditors);
+
+  return newEditors;
 }
 
 export async function setDefaultEditor(editorPath: string): Promise<EditorConfig[]> {

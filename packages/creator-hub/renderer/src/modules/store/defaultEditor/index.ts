@@ -60,6 +60,25 @@ export const addEditor = createAsyncThunk(
   },
 );
 
+export const removeEditor = createAsyncThunk(
+  'defaultEditor/remove',
+  async (editorPath: string, { dispatch }) => {
+    try {
+      return await settingsApi.removeEditor(editorPath);
+    } catch (error: any) {
+      dispatch(
+        snackbarActions.pushSnackbar({
+          id: 'remove-editor-error',
+          type: 'generic',
+          severity: 'error',
+          message: t('modal.app_settings.fields.code_editor.errors.unknown'),
+        }),
+      );
+      throw error;
+    }
+  },
+);
+
 export const setDefaultEditor = createAsyncThunk(
   'defaultEditor/setDefault',
   async (editorPath: string, { dispatch }) => {
@@ -108,6 +127,12 @@ const slice = createSlice({
       })
       .addCase(setDefaultEditor.rejected, (state, action) => {
         state.error = action.error.message || 'Failed to set default editor';
+      })
+      .addCase(removeEditor.fulfilled, (state, action) => {
+        state.editors = action.payload || [];
+      })
+      .addCase(removeEditor.rejected, (state, action) => {
+        state.error = action.error.message || 'Failed to remove editor';
       });
   },
 });
@@ -117,6 +142,7 @@ export const actions = {
   loadEditors,
   addEditor,
   setDefaultEditor,
+  removeEditor,
 };
 
 export const reducer = slice.reducer;

@@ -53,6 +53,7 @@ export function initIpc() {
   handle('code.getEditors', () => code.getEditors());
   handle('code.addEditor', (_event, path) => code.addEditor(path));
   handle('code.setDefaultEditor', (_event, path) => code.setDefaultEditor(path));
+  handle('code.removeEditor', (_event, path) => code.removeEditor(path));
 
   // analytics
   handle('analytics.track', (_event, eventName, data) => analytics.track(eventName, data!));

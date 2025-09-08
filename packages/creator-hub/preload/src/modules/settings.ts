@@ -113,3 +113,7 @@ export async function addEditor(editorPath: string) {
 export async function setDefaultEditor(editorPath: string) {
   return await invoke('code.setDefaultEditor', editorPath);
 }
+
+export async function removeEditor(editorPath: string) {
+  return await invoke('code.removeEditor', editorPath);
+}

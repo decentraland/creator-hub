@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import FolderIcon from '@mui/icons-material/Folder';
+import DeleteIcon from '@mui/icons-material/Delete';
 import equal from 'fast-deep-equal';
 import {
   Box,
@@ -17,7 +18,12 @@ import {
   MenuItem,
   CircularProgress,
 } from 'decentraland-ui2';
-import { loadEditors, setDefaultEditor, addEditor } from '/@/modules/store/defaultEditor';
+import {
+  loadEditors,
+  setDefaultEditor,
+  addEditor,
+  removeEditor,
+} from '/@/modules/store/defaultEditor';
 
 import { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import type { EditorConfig } from '/shared/types/config';
@@ -143,7 +149,18 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
                     className="editor-select"
                   >
                     <span>{editor.name}</span>
-                    {editor.isDefault && <CheckIcon className="default-icon menu-only" />}
+                    <Box sx={{ display: 'flex', gap: 1, ml: 'auto' }}>
+                      {editor.isDefault && <CheckIcon className="default-icon menu-only" />}
+                      <IconButton
+                        size="small"
+                        onClick={e => {
+                          e.stopPropagation();
+                          dispatch(removeEditor(editor.path));
+                        }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
                   </MenuItem>
                 ))}
                 <MenuItem
