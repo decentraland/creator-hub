@@ -28,7 +28,6 @@ export function removeEntity(engine: IEngine) {
           Selection.getOrNull(entityTree.find(e => Selection.has(e))!)?.gizmo) ||
         0;
       Selection.createOrReplace(parentToSelect, { gizmo: selectedGizmo });
-
     }
 
     // Remove entity and all its children
