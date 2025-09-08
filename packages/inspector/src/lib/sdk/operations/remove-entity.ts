@@ -21,7 +21,7 @@ export function removeEntity(engine: IEngine) {
     // Get parent and gizmo before removing entity (for potential selection)
     if (wasSelected) {
       const nodes = Nodes.getOrNull(engine.RootEntity)?.value || [];
-     const parentToSelect = getParent(entity, nodes);
+      const parentToSelect = getParent(entity, nodes);
       const selectedGizmo =
         Selection.getOrNull(entity)?.gizmo ||
         (entityTree.find(e => Selection.has(e)) &&
