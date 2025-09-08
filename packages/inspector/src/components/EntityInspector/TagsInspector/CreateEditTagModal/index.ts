@@ -1,1 +1,2 @@
-export { CreateEditTagModal as default } from './component';
+import CreateEditTagModal from './component';
+export { CreateEditTagModal };

@@ -7,7 +7,7 @@ import type { Tags } from '@dcl/asset-packs';
 import { useEntityComponent } from '../../../hooks/sdk/useEntityComponent';
 import { withSdk } from '../../../hoc/withSdk';
 import { Dropdown } from '../../ui/Dropdown';
-import CreateEditTagModal from './CreateEditTagModal';
+import { CreateEditTagModal } from './CreateEditTagModal';
 import { TAG_PREFIX, DEFAULT_TAGS, type Tag } from './types';
 
 const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
@@ -112,6 +112,7 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
         />
       </div>
       <CreateEditTagModal
+        entityId={entity}
         open={open}
         onClose={() => setOpen(false)}
       />

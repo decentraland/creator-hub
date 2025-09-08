@@ -18,6 +18,7 @@ import setGround from './set-ground';
 import lock from './lock';
 import hide from './hide';
 import createCustomAsset from './create-custom-asset';
+import { addTag } from './add-tag';
 
 export interface Dispatch {
   dirty?: boolean;
@@ -32,6 +33,7 @@ export function createOperations(engine: IEngine) {
     setParent: setParent(engine),
     reorder: reorder(engine),
     addComponent: addComponent(engine),
+    addTag: addTag(engine),
     removeComponent: removeComponent(engine),
     updateSelectedEntity: updateSelectedEntity(engine),
     removeSelectedEntities: removeSelectedEntities(engine),
