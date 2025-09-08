@@ -22,11 +22,9 @@ export function removeEntity(engine: IEngine) {
     if (wasSelected) {
       const nodes = Nodes.getOrNull(engine.RootEntity)?.value || [];
       const parentToSelect = getParent(entity, nodes);
-      const selectedGizmo =
-        Selection.getOrNull(entity)?.gizmo ||
-        (entityTree.find(e => Selection.has(e)) &&
-          Selection.getOrNull(entityTree.find(e => Selection.has(e))!)?.gizmo) ||
-        0;
+      // Find the first selected entity in the tree to get its gizmo
+      const firstSelectedEntity = entityTree.find(e => Selection.has(e));
+      const selectedGizmo =  firstSelectedEntity ? Selection.getOrNull(firstSelectedEntity)?.gizmo || 0 : 0;
       Selection.createOrReplace(parentToSelect, { gizmo: selectedGizmo });
     }
 
