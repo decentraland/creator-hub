@@ -12,10 +12,8 @@ import type { Result } from 'ts-results';
 import { Ok, Err } from 'ts-results';
 
 const SERVER_DIR_PATH = join(app.getPath('userData'), 'chrome-devtools-frontend');
-//TODO url from env vars
-const DOWNLOAD_URL = '';
+const DOWNLOAD_URL = import.meta.env.CHROME_DEVTOOLS_ARCHIVE_DOWNLOAD_URL;
 
-// TODO status owns data
 type Status = 'unavailable' | 'downloading' | 'installed';
 
 export type ChromeDevToolsDownloadDaemon = {
