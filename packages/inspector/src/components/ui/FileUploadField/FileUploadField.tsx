@@ -140,11 +140,13 @@ const FileUploadField: React.FC<Props> = ({
   const handleChangeTextField = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const { value } = event.target;
-      if (value && (isValidFileName(value) || (acceptURLs && isValidHttpsUrl(value)))) {
-        setPath(addBase(value));
+      if (!value || (isValidFileName(value) || (acceptURLs && isValidHttpsUrl(value)))) {
+        // The value is a valid file name or a valid https url or it's empty (valid as the field is optional).
+        setPath(value ? addBase(value) : '');
         onChange && onChange(event);
         setDropError(false);
-      } else {
+      } else if (value) {
+        // There's a value but it's not a valid file name nor a valid https url.
         setDropError(true);
         setErrorMessage(
           acceptURLs && !isValidHttpsUrl(value)
