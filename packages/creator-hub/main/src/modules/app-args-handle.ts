@@ -44,22 +44,24 @@ function parsedArgsFrom(args: Args): ParsedArgs {
   const out: ParsedArgs = { devtoolsPort: null };
   for (let i = 0; i < args.list.length; i++) {
     const a: string = args.list[i];
-    if (a === OPEN_DEVTOOLS_ARG) {
+    if (a.startsWith(OPEN_DEVTOOLS_ARG)) {
       if (out.devtoolsPort !== null) {
         log.error('[Args] --open-devtools-with-port already assigned');
         continue;
       }
 
-      const next = i + 1;
-      if (next >= args.list.length) {
+      // MacOS may change order of arguments
+      // format --arg=VALUE allows to safely pass the data
+      const value: string | null = a.includes('=') ? a.substring(a.indexOf('=') + 1) : null;
+
+      if (value === null) {
         log.error('[Args] --open-devtools-with-port provided without port');
         continue;
       }
 
-      const raw = args.list[next];
-      const port = Number.parseInt(raw);
+      const port = Number.parseInt(value);
       if (Number.isNaN(port)) {
-        log.error('[Args] --open-devtools-with-port provided without port');
+        log.error(`[Args] --open-devtools-with-port cannot parse port: ${value}`);
         continue;
       }
 
