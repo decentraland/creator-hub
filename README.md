@@ -250,6 +250,14 @@ packages/inspector/test/e2e/       # Inspector E2E tests
 3. **Before Committing:**
     - Lint, format & typecheck will be run automatically
 
+#### Launch Build Locally
+
+To launch build locally on MacOS first run the command:
+
+```
+xattr -c /Applications/Decentraland\ Creator\ Hub.app/
+```
+
 ### Code Quality
 
 - **ESLint** - Code linting with custom rules
