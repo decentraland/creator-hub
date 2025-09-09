@@ -1,5 +1,5 @@
 import { AsyncQueue } from '@well-known-components/pushable-channel';
-import type { IEngine, Transport } from '@dcl/ecs';
+import { Schemas, type IEngine, type Transport } from '@dcl/ecs';
 
 import type { CrdtStreamMessage } from '../data-layer/remote-data-layer';
 import type { DataLayerRpcClient } from '../data-layer/types';
@@ -11,6 +11,10 @@ export function connectCrdtToEngine(
   dataLayerStream: DataLayerRpcClient['crdtStream'],
   engineKey: string,
 ) {
+  const Tuvieja = engine.defineComponent('tuvieja', {
+    value: Schemas.String,
+  });
+  Tuvieja.create(512 as any, { value: 'DALE MIERDA' });
   // <HERE BE DRAGONS (TRANSPORT)>
   const outgoingMessagesStream = new AsyncQueue<CrdtStreamMessage>((_, _action) => {});
 
