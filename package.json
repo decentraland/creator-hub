@@ -7,7 +7,6 @@
   "devDependencies": {
     "@dcl/ts-proto": "1.154.0",
     "@testing-library/react": "14.0.0",
-    "@types/express": "^5.0.3",
     "@typescript-eslint/eslint-plugin": "7.15.0",
     "eslint": "8.57.0",
     "eslint-plugin-import": "2.31.0",
