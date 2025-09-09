@@ -114,7 +114,7 @@ function updateDeepLinkWithOpts(params: string, newOpts: PreviewOptions): string
 
     // this param is different from what we recieved from the CLI that the one that the launcher uses.
     setOrDeleteParam('open-deeplink-in-new-instance', newOpts.openNewInstance);
-    setOrDeleteParam('creator-hub-bin-path', selfBinPath());
+    urlParams.set('creator-hub-bin-path', selfBinPath());
 
     return urlParams.toString();
   } catch (error) {
