@@ -1,8 +1,8 @@
 import { type Server as HttpServer } from 'node:http';
 import * as path from 'path';
 
-import type { Result } from 'ts-results';
-import { Ok, Err } from 'ts-results';
+import type { Result } from 'ts-results-es';
+import { Ok, Err } from 'ts-results-es';
 import type { Express, NextFunction, Request, Response } from 'express';
 import express from 'express';
 

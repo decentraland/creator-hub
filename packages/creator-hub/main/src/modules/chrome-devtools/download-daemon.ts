@@ -8,8 +8,8 @@ import { Readable } from 'node:stream';
 import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { app, net } from 'electron';
 import extract from 'extract-zip';
-import type { Result } from 'ts-results';
-import { Ok, Err } from 'ts-results';
+import type { Result } from 'ts-results-es';
+import { Ok, Err } from 'ts-results-es';
 
 const SERVER_DIR_PATH = join(app.getPath('userData'), 'chrome-devtools-frontend');
 const DOWNLOAD_URL = import.meta.env.CHROME_DEVTOOLS_ARCHIVE_DOWNLOAD_URL;
@@ -106,10 +106,10 @@ export function newChromeDevToolsDownloadDaemon(): ChromeDevToolsDownloadDaemon 
     if (status === 'downloading') {
       const defaultTimeoutMs = 600_000; // 5 minutes
       const result = await waitForInstalledStatus(defaultTimeoutMs);
-      if (result.ok) {
+      if (result.isOk()) {
         return new Ok(undefined);
       } else {
-        return new Err('Cannot download: ' + result.val);
+        return new Err('Cannot download: ' + result.error);
       }
     }
 
