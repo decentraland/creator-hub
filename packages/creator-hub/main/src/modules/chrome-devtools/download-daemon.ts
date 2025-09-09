@@ -12,7 +12,6 @@ import type { Result } from 'ts-results-es';
 import { Ok, Err } from 'ts-results-es';
 
 const SERVER_DIR_PATH = join(app.getPath('userData'), 'chrome-devtools-frontend');
-const DOWNLOAD_URL = import.meta.env.CHROME_DEVTOOLS_ARCHIVE_DOWNLOAD_URL;
 
 type Status = 'unavailable' | 'downloading' | 'installed';
 
@@ -62,7 +61,12 @@ export function newChromeDevToolsDownloadDaemon(): ChromeDevToolsDownloadDaemon 
     const tempDir = tempDirPath();
     currentTempFileArchive = await newTempFilePath();
 
-    const res = await net.fetch(DOWNLOAD_URL);
+    const urlResult = archiveDownloadUrl();
+    if (urlResult.isOk() === false) {
+      return new Err('cannot download: ' + urlResult.error);
+    }
+
+    const res = await net.fetch(urlResult.value);
     if (!res.ok) {
       return new Err(`cannot download: HTTP ${res.status} ${res.statusText}`);
     }
@@ -131,6 +135,23 @@ const pump = promisify(pipeline);
 
 async function sleep(ms: number): Promise<void> {
   return new Promise<void>(r => setTimeout(r, ms));
+}
+
+function archiveDownloadUrl(): Result<string, string> {
+  const urlFromEnv = import.meta.env.CHROME_DEVTOOLS_ARCHIVE_DOWNLOAD_URL;
+  if (urlFromEnv) {
+    return new Ok(urlFromEnv);
+  }
+
+  const rawArgs = process.argv;
+  for (let i = 0; i < rawArgs.length - 1; i++) {
+    const candidate = rawArgs[i];
+    if (candidate == '--override-chrome-devtools-download-url') {
+      return new Ok(rawArgs[i + 1]);
+    }
+  }
+
+  return new Err('Download url is not provided niether from env var or cmd arg');
 }
 
 async function dirExists(p: string): Promise<boolean> {

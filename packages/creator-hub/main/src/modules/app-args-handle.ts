@@ -2,6 +2,8 @@ import * as path from 'path';
 import log from 'electron-log/main';
 import type { ChromeDevToolsClient, ServerPort } from './chrome-devtools/client';
 
+const OPEN_DEVTOOLS_ARG = '--open-devtools-with-port';
+
 type ParsedArgs = {
   devtoolsPort: ServerPort | null;
 };
@@ -18,7 +20,7 @@ export function newAppArgsHandle(client: ChromeDevToolsClient): AppArgsHandle {
   function handle(argv: string[]): void {
     const args: Args = argsFrom(argv);
     const parsed: ParsedArgs = parsedArgsFrom(args);
-    log.info('[Args] processing args: ' + JSON.stringify(parsed));
+    log.info(`[Args] processing args: ${JSON.stringify(parsed)} from ${argv}`);
 
     if (parsed.devtoolsPort !== null) {
       void client.openTab(parsed.devtoolsPort);
@@ -42,7 +44,7 @@ function parsedArgsFrom(args: Args): ParsedArgs {
   const out: ParsedArgs = { devtoolsPort: null };
   for (let i = 0; i < args.list.length; i++) {
     const a: string = args.list[i];
-    if (a === '--open-devtools-with-port') {
+    if (a === OPEN_DEVTOOLS_ARG) {
       if (out.devtoolsPort !== null) {
         log.error('[Args] --open-devtools-with-port already assigned');
         continue;
