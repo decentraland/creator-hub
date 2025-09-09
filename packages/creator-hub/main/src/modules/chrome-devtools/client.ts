@@ -25,7 +25,7 @@ export function newChromeDevToolsClient(
     return `http://localhost:${frontendPort}/inspector.html?ws=127.0.0.1:${backendPort}`;
   }
 
-  async function openTab(backendPort: ServerPort): Promise<Result<void, string>> {
+  async function openTabInternal(backendPort: ServerPort): Promise<Result<void, string>> {
     if (chromeDevToolsFrontendServer === null) {
       const downloadResult = await downloadDaemon.ensureDownloaded();
       if (downloadResult.ok === false) {
@@ -59,6 +59,16 @@ export function newChromeDevToolsClient(
     const url = newTargetUrl(frontendServerPort.port, backendPort.port);
     await shell.openExternal(url);
     return Ok(undefined);
+  }
+
+  async function openTab(backendPort: ServerPort): Promise<Result<void, string>> {
+    const result = await openTabInternal(backendPort);
+    if (result.ok) {
+      log.info('[DEVTOOLS] opened devtools tab for port ' + backendPort.port);
+    } else {
+      log.error('[DEVTOOLS] failed to open devtools tab: ' + result.val);
+    }
+    return result;
   }
 
   return {
