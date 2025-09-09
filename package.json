@@ -2,6 +2,7 @@
   "name": "creator-hub-monorepo",
   "version": "0.0.0-dev",
   "dependencies": {
+    "@dcl/asset-packs": "https://sdk-team-cdn.decentraland.org/@dcl/asset-packs/branch/ambient-music/dcl-asset-packs-2.5.10-17595070113.commit-108e1ae.tgz",
     "fast-deep-equal": "3.1.3"
   },
   "devDependencies": {
