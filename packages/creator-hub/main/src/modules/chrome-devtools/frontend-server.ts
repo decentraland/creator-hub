@@ -1,5 +1,3 @@
-import { once } from 'node:events';
-
 import type { Server as NetServer } from 'node:net';
 
 import log from 'electron-log/main';
@@ -45,12 +43,17 @@ export function newChromeDevToolsFrontendServer(
 
     const port = await getAvailablePort();
 
+    let ready = false;
     serverInstance = createServer({ root: staticServerDirPath });
     serverInstance.listen(port, () => {
+      ready = true;
       log.info(`DevTools server running at http://localhost:${port}`);
     });
 
-    await once(serverInstance, 'listening');
+    const readyResult = await waitUntil(() => ready);
+    if (readyResult.isOk() === false) {
+      return new Err(`Cannot start server: ${readyResult.error}`);
+    }
 
     runningServerPort = { port };
     return new Ok(runningServerPort);
@@ -61,4 +64,26 @@ export function newChromeDevToolsFrontendServer(
     start,
     port,
   };
+}
+
+function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function waitUntil(
+  condition: () => boolean,
+  intervalMs = 100,
+  timeoutMs = 20000,
+): Promise<Result<void, string>> {
+  const start = Date.now();
+
+  while (condition() === false) {
+    if (Date.now() - start > timeoutMs) {
+      return new Err('waitUntil: timed out');
+    }
+
+    await sleep(intervalMs);
+  }
+
+  return new Ok(undefined);
 }
