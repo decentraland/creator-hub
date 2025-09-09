@@ -83,7 +83,15 @@ app
     } else {
       log.info('[Analytics] API key not provided, analytics disabled');
     }
-    void chromeDevToolsDownloadDaemon.ensureDownloaded();
+
+    async function startDownloadIfRequired() {
+      const result = await chromeDevToolsDownloadDaemon.ensureDownloaded();
+      if (result.isOk() === false) {
+        log.error(`[Daemon] cannot download chrome devtools: ${result.error}`);
+      }
+    }
+
+    void startDownloadIfRequired();
     appArgsHandle.handle(process.argv);
   })
   .catch(e => log.error('Failed create window:', e));
