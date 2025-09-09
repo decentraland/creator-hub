@@ -1,22 +1,47 @@
 import * as path from 'path';
 import log from 'electron-log/main';
-import { openDevToolsTab } from './chrome-devtools/tab';
+import type { ChromeDevToolsClient, ServerPort } from './chrome-devtools/client';
 
 type ParsedArgs = {
-  devtoolsPort: number | null;
+  devtoolsPort: ServerPort | null;
 };
 
-function normalizedArgs(argv: string[]): string[] {
+type Args = {
+  list: string[];
+};
+
+export type AppArgsHandle = {
+  handle(argv: string[]): void;
+};
+
+export function newAppArgsHandle(client: ChromeDevToolsClient): AppArgsHandle {
+  function handle(argv: string[]): void {
+    const args: Args = argsFrom(argv);
+    const parsed: ParsedArgs = parsedArgsFrom(args);
+    log.info('[Args] processing args: ' + JSON.stringify(parsed));
+
+    if (parsed.devtoolsPort !== null) {
+      void client.openTab(parsed.devtoolsPort);
+    }
+  }
+
+  return { handle };
+}
+
+function argsFrom(argv: string[]): Args {
   // dev: [node, electron, ...args]  -> slice(2)
   // prod: [app.exe, ...args]        -> slice(1)
   const dev = process.defaultApp || /electron(\.exe)?$/i.test(path.basename(process.execPath));
-  return dev ? argv.slice(2) : argv.slice(1);
+  const sliced = dev ? argv.slice(2) : argv.slice(1);
+  return {
+    list: sliced,
+  };
 }
 
-function parsedArgs(args: string[]): ParsedArgs {
+function parsedArgsFrom(args: Args): ParsedArgs {
   const out: ParsedArgs = { devtoolsPort: null };
-  for (let i = 0; i < args.length; i++) {
-    const a = args[i];
+  for (let i = 0; i < args.list.length; i++) {
+    const a: string = args.list[i];
     if (a === '--open-devtools-with-port') {
       if (out.devtoolsPort !== null) {
         log.error('[Args] --open-devtools-with-port already assigned');
@@ -24,30 +49,20 @@ function parsedArgs(args: string[]): ParsedArgs {
       }
 
       const next = i + 1;
-      if (next >= args.length) {
+      if (next >= args.list.length) {
         log.error('[Args] --open-devtools-with-port provided without port');
         continue;
       }
 
-      const raw = args[next];
+      const raw = args.list[next];
       const port = Number.parseInt(raw);
       if (Number.isNaN(port)) {
         log.error('[Args] --open-devtools-with-port provided without port');
         continue;
       }
 
-      out.devtoolsPort = port;
+      out.devtoolsPort = { port };
     }
   }
   return out;
-}
-
-export function processArgs(argv: string[]): void {
-  const args = normalizedArgs(argv);
-  const parsed = parsedArgs(args);
-  log.info('[Args] processing args: ' + JSON.stringify(parsed));
-
-  if (parsed.devtoolsPort !== null) {
-    void openDevToolsTab(parsed.devtoolsPort);
-  }
 }

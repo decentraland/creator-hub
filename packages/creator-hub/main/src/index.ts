@@ -9,10 +9,24 @@ import { deployServer, killAllPreviews } from '/@/modules/cli';
 import { killInspectorServer } from '/@/modules/inspector';
 import { runMigrations } from '/@/modules/migrations';
 import { getAnalytics, track } from './modules/analytics';
-import { processArgs } from './modules/app-args-handle';
-import { downloadDevToolsServerIfRequired } from './modules/chrome-devtools/download-daemon';
+import { newAppArgsHandle, type AppArgsHandle } from './modules/app-args-handle';
+import {
+  newChromeDevToolsDownloadDaemon,
+  type ChromeDevToolsDownloadDaemon,
+} from './modules/chrome-devtools/download-daemon';
+import {
+  newChromeDevToolsClient,
+  type ChromeDevToolsClient,
+} from './modules/chrome-devtools/client';
 
 import '/@/security-restrictions';
+
+const chromeDevToolsDownloadDaemon: ChromeDevToolsDownloadDaemon =
+  newChromeDevToolsDownloadDaemon();
+const chromeDevToolsClient: ChromeDevToolsClient = newChromeDevToolsClient(
+  chromeDevToolsDownloadDaemon,
+);
+const appArgsHandle: AppArgsHandle = newAppArgsHandle(chromeDevToolsClient);
 
 log.initialize();
 
@@ -32,7 +46,7 @@ if (!isSingleInstance) {
 }
 app.on('second-instance', async (_e: unknown, argv: string[]) => {
   await restoreOrCreateMainWindow();
-  processArgs(argv);
+  appArgsHandle.handle(argv);
 });
 
 /**
@@ -69,8 +83,8 @@ app
     } else {
       log.info('[Analytics] API key not provided, analytics disabled');
     }
-    void downloadDevToolsServerIfRequired();
-    processArgs(process.argv);
+    void chromeDevToolsDownloadDaemon.ensureDownloaded();
+    appArgsHandle.handle(process.argv);
   })
   .catch(e => log.error('Failed create window:', e));
 

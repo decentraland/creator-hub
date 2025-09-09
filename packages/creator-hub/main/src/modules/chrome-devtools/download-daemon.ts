@@ -6,21 +6,130 @@ import { pipeline } from 'stream';
 import { promisify } from 'util';
 import { Readable } from 'node:stream';
 import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
-import log from 'electron-log/main';
 import { app, net } from 'electron';
 import extract from 'extract-zip';
-
-type Status = 'unavailable' | 'downloading' | 'installed';
-
-type DownloadResult = 'alredy-downloaded' | 'fresh-download' | 'error';
+import type { Result } from 'ts-results';
+import { Ok, Err } from 'ts-results';
 
 const SERVER_DIR_PATH = join(app.getPath('userData'), 'chrome-devtools-frontend');
 //TODO url from env vars
 const DOWNLOAD_URL = '';
 
-const pump = promisify(pipeline);
+// TODO status owns data
+type Status = 'unavailable' | 'downloading' | 'installed';
 
-let currentTempFileArchive: string | null = null;
+export type ChromeDevToolsDownloadDaemon = {
+  staticServerPath(): Promise<Result<string, string>>;
+
+  ensureDownloaded(): Promise<Result<void, string>>;
+};
+
+export function newChromeDevToolsDownloadDaemon(): ChromeDevToolsDownloadDaemon {
+  let currentTempFileArchive: string | null = null;
+
+  async function currentStatus(): Promise<Status> {
+    const exists = await dirExists(SERVER_DIR_PATH);
+    if (exists) {
+      return 'installed';
+    }
+
+    if (currentTempFileArchive !== null) {
+      return 'downloading';
+    }
+
+    return 'unavailable';
+  }
+
+  async function waitForInstalledStatus(timeoutMs: number): Promise<Result<void, string>> {
+    const intervalMs = 200;
+    const start = Date.now();
+
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const status = await currentStatus();
+      if (status !== 'installed') {
+        await sleep(intervalMs);
+      } else {
+        return new Ok(undefined);
+      }
+
+      const elapsed = Date.now() - start;
+      if (elapsed >= timeoutMs) {
+        return new Err('timeout');
+      }
+    }
+  }
+
+  async function downloadStaticServer(): Promise<Result<void, string>> {
+    const tempDir = tempDirPath();
+    currentTempFileArchive = await newTempFilePath();
+
+    const res = await net.fetch(DOWNLOAD_URL);
+    if (!res.ok) {
+      return new Err(`cannot download: HTTP ${res.status} ${res.statusText}`);
+    }
+    if (!res.body) {
+      return new Err('cannot download: no response body');
+    }
+
+    const body = res.body as unknown as NodeReadableStream<Uint8Array>;
+    const readable = Readable.fromWeb(body);
+    await pump(readable, createWriteStream(currentTempFileArchive));
+
+    // unpack archive
+    const tempServerDirPath = join(tempDir, 'devtools-server-temp');
+    await fsp.mkdir(tempServerDirPath, { recursive: true });
+    await extract(currentTempFileArchive, { dir: tempServerDirPath });
+
+    // move to app dir
+    await fsp.rename(tempServerDirPath, SERVER_DIR_PATH);
+
+    // clean up temp
+    await fsp.rm(currentTempFileArchive);
+    return new Ok(undefined);
+  }
+
+  async function staticServerPath(): Promise<Result<string, string>> {
+    const status = await currentStatus();
+    if (status !== 'installed') {
+      return new Err('static server is not yet installed');
+    }
+
+    return new Ok(SERVER_DIR_PATH);
+  }
+
+  async function ensureDownloaded(): Promise<Result<void, string>> {
+    const status = await currentStatus();
+
+    if (status === 'installed') {
+      return new Ok(undefined);
+    }
+
+    if (status === 'downloading') {
+      const defaultTimeoutMs = 600_000; // 5 minutes
+      const result = await waitForInstalledStatus(defaultTimeoutMs);
+      if (result.ok) {
+        return new Ok(undefined);
+      } else {
+        return new Err('Cannot download: ' + result.val);
+      }
+    }
+
+    if (status === 'unavailable') {
+      const result = await downloadStaticServer();
+      return result;
+    }
+
+    return new Err('Unknown status: ' + status);
+  }
+
+  return {
+    staticServerPath,
+    ensureDownloaded,
+  };
+}
+
+const pump = promisify(pipeline);
 
 async function sleep(ms: number): Promise<void> {
   return new Promise<void>(r => setTimeout(r, ms));
@@ -34,19 +143,6 @@ async function dirExists(p: string): Promise<boolean> {
   }
 }
 
-async function currentStatus(): Promise<Status> {
-  const exists = await dirExists(SERVER_DIR_PATH);
-  if (exists) {
-    return 'installed';
-  }
-
-  if (currentTempFileArchive !== null) {
-    return 'downloading';
-  }
-
-  return 'unavailable';
-}
-
 function tempDirPath(): string {
   return app.getPath('temp');
 }
@@ -57,66 +153,4 @@ async function newTempFilePath(): Promise<string> {
 
   const fileName = randomUUID();
   return join(tempDir, fileName) + '.tmp';
-}
-
-async function downloadDevToolsServerIfRequiredInternal(): Promise<DownloadResult> {
-  const initialStatus = await currentStatus();
-  if (initialStatus !== 'unavailable') {
-    log.info('[DAEMON] dowload is not required: ' + initialStatus);
-    return 'alredy-downloaded';
-  }
-
-  const tempDir = tempDirPath();
-  currentTempFileArchive = await newTempFilePath();
-
-  const res = await net.fetch(DOWNLOAD_URL);
-  if (!res.ok) {
-    log.error(`[DAEMON] cannot download: HTTP ${res.status} ${res.statusText}`);
-    return 'error';
-  }
-  if (!res.body) {
-    log.error('[DAEMON] cannot download: no response body');
-    return 'error';
-  }
-
-  const body = res.body as unknown as NodeReadableStream<Uint8Array>;
-  const readable = Readable.fromWeb(body);
-  await pump(readable, createWriteStream(currentTempFileArchive));
-
-  // unpack archive
-  const tempServerDirPath = join(tempDir, 'devtools-server-temp);');
-  await fsp.mkdir(tempServerDirPath, { recursive: true });
-  await extract(currentTempFileArchive, { dir: tempServerDirPath });
-
-  // move to app dir
-  await fsp.rename(tempServerDirPath, SERVER_DIR_PATH);
-
-  // clean up temp
-  await fsp.rm(currentTempFileArchive);
-  return 'fresh-download';
-}
-
-export async function downloadDevToolsServerIfRequired(): Promise<void> {
-  try {
-    const result = await downloadDevToolsServerIfRequiredInternal();
-    if (result === 'fresh-download') {
-      log.info('[DAEMON] downloaded devtools server');
-    } else if (result === 'alredy-downloaded') {
-      log.info('[DAEMON] devtools server is already downloaded');
-    } else if (result === 'error') {
-      log.error('[DAEMON] cannot download devtools server due an error');
-    }
-  } catch (e) {
-    log.error('[DAEMON] cannot download devtools server: ' + e);
-  }
-}
-
-export async function waitReadyForServerPath(): Promise<string> {
-  const intervalMs = 200;
-
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    if (await dirExists(SERVER_DIR_PATH)) return SERVER_DIR_PATH;
-    await sleep(intervalMs);
-  }
 }
