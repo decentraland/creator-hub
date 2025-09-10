@@ -12,7 +12,9 @@ import extract from 'extract-zip';
 import type { Result } from 'ts-results-es';
 import { Ok, Err } from 'ts-results-es';
 
-const SERVER_DIR_PATH = join(app.getPath('userData'), 'chrome-devtools-frontend');
+import { getUserDataPath } from '../electron';
+
+const SERVER_DIR_PATH = join(getUserDataPath(), 'chrome-devtools-frontend');
 
 type Status = 'unavailable' | 'downloading' | 'installed';
 
