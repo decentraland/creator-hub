@@ -50,12 +50,20 @@ export function newChromeDevToolsDownloadDaemon(): ChromeDevToolsDownloadDaemon 
     const intervalMs = 200;
     const start = Date.now();
 
+    await sleep(intervalMs);
+
     // eslint-disable-next-line no-constant-condition
     while (true) {
+      if (downloadLock === 'busy') {
+        await sleep(intervalMs);
+        continue;
+      }
+
       const status = await currentStatus();
 
       if (status === 'downloading') {
         await sleep(intervalMs);
+        continue;
       }
 
       if (status === 'unavailable') {
@@ -213,7 +221,7 @@ export function newChromeDevToolsDownloadDaemon(): ChromeDevToolsDownloadDaemon 
     if (result.isOk()) {
       return new Ok(undefined);
     } else {
-      return new Err('Cannot download: ' + result.error);
+      return new Err('Wait for download complition failed: ' + result.error);
     }
   }
 
