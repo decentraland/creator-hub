@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
 import { recursiveCheck } from '../../../../lib/utils/deep-equal';
+import { addBasePath } from '../../../../lib/logic/add-base-path';
 import { useAppSelector } from '../../../../redux/hooks';
 import { selectAssetCatalog } from '../../../../redux/app';
 import { Block } from '../../../Block';
@@ -23,10 +24,7 @@ function isValid(
   payload: Partial<ActionPayload<ActionType.SHOW_IMAGE>>,
 ): payload is ActionPayload<ActionType.SHOW_IMAGE> {
   return (
-    payload.src !== undefined &&
-    payload.src !== '' &&
-    payload.height !== undefined &&
-    payload.width !== undefined
+    typeof payload.src === 'string' && payload.height !== undefined && payload.width !== undefined
   );
 }
 
@@ -51,6 +49,14 @@ const ShowImageAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
       handleUpdate({ ...payload, src });
     },
     [payload, handleUpdate],
+  );
+
+  const handleChangeSrc = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const path = addBasePath(files?.basePath ?? '', e.target.value);
+      handleUpdate({ ...payload, src: path });
+    },
+    [payload, handleUpdate, files?.basePath],
   );
 
   const handleChangeText = useCallback(
@@ -112,6 +118,7 @@ const ShowImageAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
           value={payload.src}
           accept={ACCEPTED_FILE_TYPES['image']}
           onDrop={handleDrop}
+          onChange={handleChangeSrc}
           error={files && (!isValid || error)}
           isValidFile={isModel}
         />
