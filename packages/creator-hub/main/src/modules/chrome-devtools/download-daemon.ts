@@ -109,7 +109,8 @@ export function newChromeDevToolsDownloadDaemon(): ChromeDevToolsDownloadDaemon 
     await extract(currentTempFileArchive, { dir: tempServerDirPath });
 
     // move to app dir
-    await fsp.rename(tempServerDirPath, SERVER_DIR_PATH);
+    const archiveRoot = join(tempServerDirPath, 'front_end_backup');
+    await fsp.rename(archiveRoot, SERVER_DIR_PATH);
 
     return new Ok(undefined);
   }
