@@ -5,6 +5,7 @@ import { CheckboxField, FileUploadField } from '../../../ui';
 import { ACCEPTED_FILE_TYPES } from '../../../ui/FileUploadField/types';
 import { useAppSelector } from '../../../../redux/hooks';
 import { selectAssetCatalog } from '../../../../redux/app';
+import { addBasePath } from '../../../../lib/logic/add-base-path';
 import type { Props } from './types';
 import { isModel } from './utils';
 
@@ -41,15 +42,8 @@ const PlayCustomEmoteAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
 
   const handleChangeSrc = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const rawValue = e.target.value;
-
-      // Add basePath if it doesn't already have the basePath included
-      let processedPath = rawValue;
-      if (rawValue && files?.basePath && !rawValue.startsWith(files.basePath)) {
-        processedPath = `${files.basePath}/${rawValue}`;
-      }
-
-      handleUpdate({ ...payload, src: processedPath });
+      const path = addBasePath(files?.basePath ?? '', e.target.value);
+      handleUpdate({ ...payload, src: path });
     },
     [payload, handleUpdate, files?.basePath],
   );
