@@ -24,6 +24,9 @@ interface ImportMetaEnv {
   VITE_SEGMENT_CREATORS_HUB_API_KEY: string | undefined;
   VITE_SEGMENT_INSPECTOR_API_KEY: string | undefined;
 
+  // Chrome DevTools
+  VITE_CHROME_DEVTOOLS_ARCHIVE_DOWNLOAD_URL: string | undefined;
+
   // Local Development
   VITE_INSPECTOR_PORT: string | undefined;
   VITE_ASSET_PACKS_CONTENT_URL: string | undefined;

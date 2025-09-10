@@ -138,7 +138,7 @@ async function sleep(ms: number): Promise<void> {
 }
 
 function archiveDownloadUrl(): Result<string, string> {
-  const urlFromEnv = import.meta.env.CHROME_DEVTOOLS_ARCHIVE_DOWNLOAD_URL;
+  const urlFromEnv = import.meta.env.VITE_CHROME_DEVTOOLS_ARCHIVE_DOWNLOAD_URL;
   if (urlFromEnv) {
     return new Ok(urlFromEnv);
   }
