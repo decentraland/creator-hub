@@ -128,7 +128,7 @@ export function newChromeDevToolsDownloadDaemon(): ChromeDevToolsDownloadDaemon 
       } else {
         log.info(`[Daemon] Downloaded ${downloaded} bytes`);
       }
-    }, 500);
+    }, 1000); // 1 second
 
     const progress = new Transform({
       transform(chunk, encoding, callback) {
