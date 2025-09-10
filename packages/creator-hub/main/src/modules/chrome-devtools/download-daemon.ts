@@ -6,6 +6,7 @@ import { pipeline } from 'stream';
 import { promisify } from 'util';
 import { Readable } from 'node:stream';
 import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
+import log from 'electron-log/main';
 import { app, net } from 'electron';
 import extract from 'extract-zip';
 import type { Result } from 'ts-results-es';
@@ -44,9 +45,16 @@ export function newChromeDevToolsDownloadDaemon(): ChromeDevToolsDownloadDaemon 
     // eslint-disable-next-line no-constant-condition
     while (true) {
       const status = await currentStatus();
-      if (status !== 'installed') {
+
+      if (status === 'downloading') {
         await sleep(intervalMs);
-      } else {
+      }
+
+      if (status === 'unavailable') {
+        return new Err('download operation failed');
+      }
+
+      if (status === 'installed') {
         return new Ok(undefined);
       }
 
@@ -57,7 +65,21 @@ export function newChromeDevToolsDownloadDaemon(): ChromeDevToolsDownloadDaemon 
     }
   }
 
-  async function downloadStaticServer(): Promise<Result<void, string>> {
+  async function cleanupTempDirForce() {
+    if (currentTempFileArchive === null) {
+      return;
+    }
+
+    try {
+      await fsp.rm(currentTempFileArchive);
+    } catch (e: unknown) {
+      log.warn(`[Daemon] cannot cleanup temp dir: ${e}`);
+    } finally {
+      currentTempFileArchive = null;
+    }
+  }
+
+  async function downloadStaticServerInternal(): Promise<Result<void, string>> {
     const tempDir = tempDirPath();
     currentTempFileArchive = await newTempFilePath();
 
@@ -86,9 +108,18 @@ export function newChromeDevToolsDownloadDaemon(): ChromeDevToolsDownloadDaemon 
     // move to app dir
     await fsp.rename(tempServerDirPath, SERVER_DIR_PATH);
 
-    // clean up temp
-    await fsp.rm(currentTempFileArchive);
     return new Ok(undefined);
+  }
+
+  async function downloadStaticServer(): Promise<Result<void, string>> {
+    try {
+      const result = await downloadStaticServerInternal();
+      return result;
+    } catch (e) {
+      return new Err(`Cannot download static server: ${e}`);
+    } finally {
+      await cleanupTempDirForce();
+    }
   }
 
   async function staticServerPath(): Promise<Result<string, string>> {
