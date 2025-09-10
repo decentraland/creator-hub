@@ -9,7 +9,7 @@ export type ChromeDevToolsRendererIpcBridge = {
 
 export function newChromeDevToolsRendererIpcBridge(): ChromeDevToolsRendererIpcBridge {
   function notify(event: ChromeDevToolsEvent): void {
-    log.info(`[ChromeDevToolsIPC] notify: ${event}`);
+    log.info(`[ChromeDevToolsIPC] notify: ${JSON.stringify(event)}`);
     const mainWindow = getWindow(MAIN_WINDOW_ID);
     if (mainWindow) {
       mainWindow.webContents.send('chrome-devtools.event', event);

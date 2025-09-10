@@ -113,15 +113,19 @@ export function newChromeDevToolsDownloadDaemon(): ChromeDevToolsDownloadDaemon 
     const body = res.body as unknown as NodeReadableStream<Uint8Array>;
     const readable = Readable.fromWeb(body);
 
+    const debounceLogProgressFn = debounce(() => {
+      if (total) {
+        const percent = ((downloaded / total) * 100).toFixed(2);
+        log.info(`[Daemon] Downloading... ${percent}%`);
+      } else {
+        log.info(`[Daemon] Downloaded ${downloaded} bytes`);
+      }
+    }, 500);
+
     const progress = new Transform({
       transform(chunk, encoding, callback) {
         downloaded += chunk.length;
-        if (total) {
-          const percent = ((downloaded / total) * 100).toFixed(2);
-          log.info(`[Daemon] Downloading... ${percent}%`);
-        } else {
-          log.info(`[Daemon] Downloaded ${downloaded} bytes`);
-        }
+        debounceLogProgressFn();
         callback(null, chunk);
       },
     });
@@ -150,6 +154,7 @@ export function newChromeDevToolsDownloadDaemon(): ChromeDevToolsDownloadDaemon 
       downloadLock = 'busy';
       log.info('[Daemon] downloading static server');
       const result = await downloadStaticServerInternal();
+      log.info('[Daemon] download complete for static server');
       if (result.isOk()) {
         return new Ok('success');
       } else {
@@ -257,4 +262,15 @@ async function newTempFilePath(): Promise<string> {
 
   const fileName = randomUUID();
   return join(tempDir, fileName) + '.tmp';
+}
+
+function debounce(fn: () => void, delay: number) {
+  let last = 0;
+  return () => {
+    const now = Date.now();
+    if (now - last >= delay) {
+      last = now;
+      fn();
+    }
+  };
 }
