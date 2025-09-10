@@ -9,6 +9,7 @@ export type EditorConfig = {
   name: string;
   path: string;
   isDefault?: boolean;
+  hidden?: boolean;
 };
 
 export type Config = {

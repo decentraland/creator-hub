@@ -87,6 +87,7 @@ async function findMacEditors(): Promise<EditorConfig[]> {
               name: editorName,
               path: fullPath,
               isDefault: false,
+              hidden: false,
             });
           } else {
             log.warn(`[Editor Search] Found ${editorName} but no valid executable in ${macosPath}`);
@@ -199,8 +200,9 @@ export async function getEditors() {
 }
 
 export async function addEditor(editorPath: string): Promise<EditorConfig[]> {
+  log.info('[Editor Config] Adding editor:', editorPath);
   let name: string;
-  let executablePath: string;
+  let editorFullPath: string;
   try {
     await fs.stat(editorPath);
   } catch {
@@ -224,21 +226,20 @@ export async function addEditor(editorPath: string): Promise<EditorConfig[]> {
       throw new Error('invalid_app_bundle');
     }
 
-    const macExecutablePath = findEditorExecutable(files, fileName.replace('.app', ''));
+    const executablePath = findEditorExecutable(files, fileName.replace('.app', ''));
 
-    if (!macExecutablePath) {
+    if (!executablePath) {
       throw new Error('invalid_app_bundle');
     }
 
-    executablePath = macExecutablePath;
+    editorFullPath = path.join(macosPath, executablePath);
     name = fileName.replace('.app', '');
   } else {
     const fileName = path.basename(editorPath);
     if (!fileName.endsWith('.exe')) {
       throw new Error('invalid_exe_file');
     }
-
-    executablePath = editorPath;
+    editorFullPath = editorPath;
     name = fileName.replace('.exe', '') || 'Custom Editor';
   }
 
@@ -252,13 +253,15 @@ export async function addEditor(editorPath: string): Promise<EditorConfig[]> {
   });
 
   if (existingIndex >= 0) {
-    editors[existingIndex].path = executablePath;
+    editors[existingIndex].path = editorFullPath;
     editors[existingIndex].isDefault = true;
+    editors[existingIndex].hidden = false;
   } else {
     editors.push({
       name,
-      path: executablePath,
+      path: editorFullPath,
       isDefault: true,
+      hidden: false,
     });
   }
 
@@ -270,9 +273,10 @@ export async function removeEditor(editorPath: string): Promise<EditorConfig[]> 
   const config = await getConfigStorage();
   const editors = (await config.get('editors')) || [];
 
-  const newEditors = editors.filter(editor => editor.path !== editorPath);
+  const newEditors = editors.map(editor =>
+    editor.path === editorPath ? { ...editor, hidden: true } : editor,
+  );
   await config.set('editors', newEditors);
-
   return newEditors;
 }
 
@@ -324,7 +328,9 @@ export async function addEditorsPathsToConfig() {
     const hasDefaultEditor = allEditors.some(editor => editor.isDefault);
 
     if (!hasDefaultEditor) {
-      const vscode = allEditors.find(editor => editor.name === EditorType.VSCode);
+      const vscode = allEditors.find(editor =>
+        editor.name.toLowerCase().includes(EditorType.VSCode.toLowerCase()),
+      );
       if (vscode) {
         // Set VS Code as default editor if it exists
         vscode.isDefault = true;

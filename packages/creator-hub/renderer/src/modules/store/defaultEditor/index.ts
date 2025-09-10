@@ -64,7 +64,7 @@ export const removeEditor = createAsyncThunk(
   'defaultEditor/remove',
   async (editorPath: string, { dispatch }) => {
     try {
-      return await settingsApi.removeEditor(editorPath);
+      return settingsApi.removeEditor(editorPath);
     } catch (error: any) {
       dispatch(
         snackbarActions.pushSnackbar({
@@ -136,6 +136,9 @@ const slice = createSlice({
       });
   },
 });
+export const getEditors = (state: { defaultEditor: DefaultEditorState }) => {
+  return state.defaultEditor.editors.filter(editor => !editor.hidden);
+};
 
 export const actions = {
   ...slice.actions,

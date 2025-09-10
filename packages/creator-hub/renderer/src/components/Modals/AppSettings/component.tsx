@@ -23,6 +23,7 @@ import {
   setDefaultEditor,
   addEditor,
   removeEditor,
+  getEditors,
 } from '/@/modules/store/defaultEditor';
 
 import { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
@@ -40,7 +41,8 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
   const dispatch = useDispatch();
   const { settings: _settings, updateAppSettings } = useSettings();
   const [settings, setSettings] = useState(_settings);
-  const { editors, loading } = useSelector(state => state.defaultEditor);
+  const { loading } = useSelector(state => state.defaultEditor);
+  const editors = useSelector(getEditors);
 
   useEffect(() => {
     if (open) {
@@ -131,9 +133,10 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
               <Select
                 fullWidth
                 displayEmpty
-                value={editors?.find(e => e.isDefault)?.path || ''}
+                value={(editors && editors.find(e => e.isDefault)?.path) || ''}
                 renderValue={value =>
-                  editors?.find(e => e.path === value)?.name || 'Add or select a default editor'
+                  (editors && editors.find(e => e.path === value)?.name) ||
+                  'Add or select a default editor'
                 }
                 onChange={event => {
                   const selectedPath = event.target.value;
