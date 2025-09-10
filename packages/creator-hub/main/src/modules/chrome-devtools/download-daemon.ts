@@ -1,14 +1,17 @@
 import { join } from 'path';
 import * as fs from 'fs';
-import { createWriteStream, promises as fsp } from 'fs';
 import { randomUUID } from 'crypto';
-import { pipeline } from 'stream';
-import { promisify } from 'util';
-import { Readable } from 'node:stream';
+
 import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
+import { Readable, Transform } from 'stream';
+import { createWriteStream, promises as fsp } from 'fs';
+import { pipeline } from 'stream/promises';
+
 import log from 'electron-log/main';
 import { app, net } from 'electron';
+
 import extract from 'extract-zip';
+
 import type { Result } from 'ts-results-es';
 import { Ok, Err } from 'ts-results-es';
 
@@ -18,6 +21,8 @@ const SERVER_DIR_PATH = join(getUserDataPath(), 'chrome-devtools-frontend');
 
 type Status = 'unavailable' | 'downloading' | 'installed';
 
+type DownloadAttepmtStatus = 'success' | 'alreadyInProgress';
+
 export type ChromeDevToolsDownloadDaemon = {
   staticServerPath(): Promise<Result<string, string>>;
 
@@ -26,6 +31,7 @@ export type ChromeDevToolsDownloadDaemon = {
 
 export function newChromeDevToolsDownloadDaemon(): ChromeDevToolsDownloadDaemon {
   let currentTempFileArchive: string | null = null;
+  let downloadLock: 'free' | 'busy' = 'free';
 
   async function currentStatus(): Promise<Status> {
     const exists = await dirExists(SERVER_DIR_PATH);
@@ -88,43 +94,73 @@ export function newChromeDevToolsDownloadDaemon(): ChromeDevToolsDownloadDaemon 
 
     const urlResult = archiveDownloadUrl();
     if (urlResult.isOk() === false) {
-      return new Err('cannot download: ' + urlResult.error);
+      return new Err('Cannot download: ' + urlResult.error);
     }
 
-    const res = await net.fetch(urlResult.value);
+    const url = urlResult.value;
+    log.info(`[Daemon] downloading from url: ${url}`);
+    const res = await net.fetch(url);
     if (!res.ok) {
-      return new Err(`cannot download: HTTP ${res.status} ${res.statusText}`);
+      return new Err(`Cannot download: HTTP ${res.status} ${res.statusText}`);
     }
     if (!res.body) {
-      return new Err('cannot download: no response body');
+      return new Err('Cannot download: no response body');
     }
+
+    const total: number = Number(res.headers.get('content-length') ?? 0);
+    let downloaded = 0;
 
     const body = res.body as unknown as NodeReadableStream<Uint8Array>;
     const readable = Readable.fromWeb(body);
-    await pump(readable, createWriteStream(currentTempFileArchive));
 
-    // unpack archive
+    const progress = new Transform({
+      transform(chunk, encoding, callback) {
+        downloaded += chunk.length;
+        if (total) {
+          const percent = ((downloaded / total) * 100).toFixed(2);
+          log.info(`[Daemon] Downloading... ${percent}%`);
+        } else {
+          log.info(`[Daemon] Downloaded ${downloaded} bytes`);
+        }
+        callback(null, chunk);
+      },
+    });
+
+    log.info('[Daemon] writing to disk');
+    await pipeline(readable, progress, createWriteStream(currentTempFileArchive));
+
+    log.info('[Daemon] unpacking archive');
     const tempServerDirPath = join(tempDir, 'devtools-server-temp');
     await fsp.mkdir(tempServerDirPath, { recursive: true });
     await extract(currentTempFileArchive, { dir: tempServerDirPath });
 
-    // move to app dir
+    log.info('[Daemon] copying unpacked dir');
     const archiveRoot = join(tempServerDirPath, 'front_end_backup');
     await fsp.rename(archiveRoot, SERVER_DIR_PATH);
 
     return new Ok(undefined);
   }
 
-  async function downloadStaticServer(): Promise<Result<void, string>> {
+  async function downloadStaticServer(): Promise<Result<DownloadAttepmtStatus, string>> {
+    if (downloadLock === 'busy') {
+      return new Ok('alreadyInProgress');
+    }
+
     try {
+      downloadLock = 'busy';
       log.info('[Daemon] downloading static server');
       const result = await downloadStaticServerInternal();
-      return result;
+      if (result.isOk()) {
+        return new Ok('success');
+      } else {
+        return new Err(result.error);
+      }
     } catch (e) {
       log.error(`[Daemon] downloading failed: ${e}`);
       return new Err(`Cannot download static server: ${e}`);
     } finally {
       await cleanupTempDirForce();
+      downloadLock = 'free';
     }
   }
 
@@ -146,21 +182,34 @@ export function newChromeDevToolsDownloadDaemon(): ChromeDevToolsDownloadDaemon 
     }
 
     if (status === 'downloading') {
-      const defaultTimeoutMs = 600_000; // 5 minutes
-      const result = await waitForInstalledStatus(defaultTimeoutMs);
-      if (result.isOk()) {
-        return new Ok(undefined);
-      } else {
-        return new Err('Cannot download: ' + result.error);
-      }
+      return await waitForDownloadCompletion();
     }
 
     if (status === 'unavailable') {
       const result = await downloadStaticServer();
-      return result;
+
+      if (result.isOk() && result.value === 'alreadyInProgress') {
+        return await waitForDownloadCompletion();
+      }
+
+      if (result.isOk()) {
+        return new Ok(undefined);
+      } else {
+        return new Err(result.error);
+      }
     }
 
     return new Err('Unknown status: ' + status);
+  }
+
+  async function waitForDownloadCompletion(): Promise<Result<void, string>> {
+    const defaultTimeoutMs = 600_000; // 5 minutes
+    const result = await waitForInstalledStatus(defaultTimeoutMs);
+    if (result.isOk()) {
+      return new Ok(undefined);
+    } else {
+      return new Err('Cannot download: ' + result.error);
+    }
   }
 
   return {
@@ -168,8 +217,6 @@ export function newChromeDevToolsDownloadDaemon(): ChromeDevToolsDownloadDaemon 
     ensureDownloaded,
   };
 }
-
-const pump = promisify(pipeline);
 
 async function sleep(ms: number): Promise<void> {
   return new Promise<void>(r => setTimeout(r, ms));
