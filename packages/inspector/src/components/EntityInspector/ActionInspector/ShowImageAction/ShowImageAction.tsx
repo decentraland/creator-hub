@@ -23,9 +23,7 @@ function isValid(
   payload: Partial<ActionPayload<ActionType.SHOW_IMAGE>>,
 ): payload is ActionPayload<ActionType.SHOW_IMAGE> {
   return (
-    typeof payload.src === 'string' &&
-    payload.height !== undefined &&
-    payload.width !== undefined
+    typeof payload.src === 'string' && payload.height !== undefined && payload.width !== undefined
   );
 }
 

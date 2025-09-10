@@ -42,13 +42,13 @@ const PlayCustomEmoteAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
   const handleChangeSrc = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const rawValue = e.target.value;
-      
+
       // Add basePath if it doesn't already have the basePath included
       let processedPath = rawValue;
       if (rawValue && files?.basePath && !rawValue.startsWith(files.basePath)) {
         processedPath = `${files.basePath}/${rawValue}`;
       }
-      
+
       handleUpdate({ ...payload, src: processedPath });
     },
     [payload, handleUpdate, files?.basePath],
