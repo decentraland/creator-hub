@@ -18,6 +18,13 @@ export type IpcError = {
   };
 };
 
+export type ChromeDevToolsEvent =
+  | { kind: 'CreatingDevToolsServer' }
+  | { kind: 'StartingDevToolsServer' }
+  | { kind: 'OpeningTab' }
+  | { kind: 'OpenedTab' }
+  | { kind: 'FlowError' };
+
 export interface Ipc {
   'electron.getUserDataPath': () => string;
   'electron.getAppVersion': () => Promise<string>;
@@ -52,6 +59,5 @@ export interface Ipc {
   'analytics.getProjectId': (path: string) => Promise<string>;
   'npm.install': (path: string, packages?: string[]) => Promise<void>;
   'npm.getOutdatedDeps': (path: string, packages?: string[]) => Promise<Outdated>;
-  'chrome-devtools.downloadInProgress': () => void;
-  'chrome-devtools.tabOpened': () => void;
+  'chrome-devtools.event': (event: ChromeDevToolsEvent) => void;
 }
