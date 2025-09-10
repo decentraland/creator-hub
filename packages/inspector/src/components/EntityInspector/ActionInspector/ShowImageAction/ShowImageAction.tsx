@@ -23,8 +23,7 @@ function isValid(
   payload: Partial<ActionPayload<ActionType.SHOW_IMAGE>>,
 ): payload is ActionPayload<ActionType.SHOW_IMAGE> {
   return (
-    payload.src !== undefined &&
-    payload.src !== '' &&
+    typeof payload.src === 'string' &&
     payload.height !== undefined &&
     payload.width !== undefined
   );
@@ -51,6 +50,18 @@ const ShowImageAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
       handleUpdate({ ...payload, src });
     },
     [payload, handleUpdate],
+  );
+
+  const handleChangeSrc = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const rawValue = e.target.value;
+      let processedPath = rawValue;
+      if (rawValue && files?.basePath && !rawValue.startsWith(files.basePath)) {
+        processedPath = `${files.basePath}/${rawValue}`;
+      }
+      handleUpdate({ ...payload, src: processedPath });
+    },
+    [payload, handleUpdate, files?.basePath],
   );
 
   const handleChangeText = useCallback(
@@ -112,6 +123,7 @@ const ShowImageAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
           value={payload.src}
           accept={ACCEPTED_FILE_TYPES['image']}
           onDrop={handleDrop}
+          onChange={handleChangeSrc}
           error={files && (!isValid || error)}
           isValidFile={isModel}
         />

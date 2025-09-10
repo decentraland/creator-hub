@@ -13,7 +13,7 @@ import './PlayCustomEmoteAction.css';
 function isValid(
   payload: Partial<ActionPayload<ActionType.PLAY_CUSTOM_EMOTE>>,
 ): payload is ActionPayload<ActionType.PLAY_CUSTOM_EMOTE> {
-  return typeof payload.src === 'string' && payload.src.length > 0;
+  return typeof payload.src === 'string';
 }
 
 const PlayCustomEmoteAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
@@ -32,11 +32,26 @@ const PlayCustomEmoteAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
     [setPayload, value, onUpdate],
   );
 
-  const handleChangeSrc = useCallback(
+  const handleDrop = useCallback(
     (path: string) => {
       handleUpdate({ ...payload, src: path });
     },
     [payload, handleUpdate],
+  );
+
+  const handleChangeSrc = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const rawValue = e.target.value;
+      
+      // Add basePath if it doesn't already have the basePath included
+      let processedPath = rawValue;
+      if (rawValue && files?.basePath && !rawValue.startsWith(files.basePath)) {
+        processedPath = `${files.basePath}/${rawValue}`;
+      }
+      
+      handleUpdate({ ...payload, src: processedPath });
+    },
+    [payload, handleUpdate, files?.basePath],
   );
 
   const handleChangeLoop = useCallback(
@@ -59,7 +74,8 @@ const PlayCustomEmoteAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
         <FileUploadField
           value={payload.src}
           accept={ACCEPTED_FILE_TYPES['model']}
-          onDrop={handleChangeSrc}
+          onDrop={handleDrop}
+          onChange={handleChangeSrc}
           error={files && (!isValid || error)}
           isValidFile={isModel}
         />
