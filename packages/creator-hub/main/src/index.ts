@@ -18,13 +18,20 @@ import {
   newChromeDevToolsClient,
   type ChromeDevToolsClient,
 } from './modules/chrome-devtools/client';
+import {
+  newChromeDevToolsRendererIpcBridge,
+  type ChromeDevToolsRendererIpcBridge,
+} from './modules/chrome-devtools/ipc-bridge';
 
 import '/@/security-restrictions';
 
+const chromeDevToolsRendererIpcBridge: ChromeDevToolsRendererIpcBridge =
+  newChromeDevToolsRendererIpcBridge();
 const chromeDevToolsDownloadDaemon: ChromeDevToolsDownloadDaemon =
   newChromeDevToolsDownloadDaemon();
 const chromeDevToolsClient: ChromeDevToolsClient = newChromeDevToolsClient(
   chromeDevToolsDownloadDaemon,
+  chromeDevToolsRendererIpcBridge,
 );
 const appArgsHandle: AppArgsHandle = newAppArgsHandle(chromeDevToolsClient);
 
