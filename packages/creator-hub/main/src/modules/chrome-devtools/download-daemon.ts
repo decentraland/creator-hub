@@ -84,6 +84,7 @@ export function newChromeDevToolsDownloadDaemon(): ChromeDevToolsDownloadDaemon 
   async function downloadStaticServerInternal(): Promise<Result<void, string>> {
     const tempDir = tempDirPath();
     currentTempFileArchive = await newTempFilePath();
+    log.info(`[Daemon] use temp path: ${currentTempFileArchive}`);
 
     const urlResult = archiveDownloadUrl();
     if (urlResult.isOk() === false) {
@@ -115,9 +116,11 @@ export function newChromeDevToolsDownloadDaemon(): ChromeDevToolsDownloadDaemon 
 
   async function downloadStaticServer(): Promise<Result<void, string>> {
     try {
+      log.info('[Daemon] downloading static server');
       const result = await downloadStaticServerInternal();
       return result;
     } catch (e) {
+      log.error(`[Daemon] downloading failed: ${e}`);
       return new Err(`Cannot download static server: ${e}`);
     } finally {
       await cleanupTempDirForce();
@@ -135,6 +138,7 @@ export function newChromeDevToolsDownloadDaemon(): ChromeDevToolsDownloadDaemon 
 
   async function ensureDownloaded(): Promise<Result<void, string>> {
     const status = await currentStatus();
+    log.info(`[Daemon] ensuring app has downloaded files, status: ${status}`);
 
     if (status === 'installed') {
       return new Ok(undefined);

@@ -1,3 +1,4 @@
+import log from 'electron-log/main';
 import { getWindow } from '../window';
 import { type ChromeDevToolsEvent } from '/shared/types/ipc';
 import { MAIN_WINDOW_ID } from '../../mainWindow';
@@ -8,6 +9,7 @@ export type ChromeDevToolsRendererIpcBridge = {
 
 export function newChromeDevToolsRendererIpcBridge(): ChromeDevToolsRendererIpcBridge {
   function notify(event: ChromeDevToolsEvent): void {
+    log.info(`[ChromeDevToolsIPC] notify: ${event}`);
     const mainWindow = getWindow(MAIN_WINDOW_ID);
     if (mainWindow) {
       mainWindow.webContents.send('chrome-devtools.event', event);
