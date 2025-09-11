@@ -132,12 +132,23 @@ function updateDeepLinkWithOpts(params: string, newOpts: PreviewOptions): string
 function selfBinPath(): string {
   const exe = app.getPath('exe');
 
-  // Resolve symlinks (common on macOS; harmless elsewhere)
-  try {
-    const realpathNative = realpathSync.native as (p: string) => string | undefined;
-    return (realpathNative ? realpathNative(exe) : realpathSync(exe)) || exe;
-  } catch {
-    return exe;
+  function realPath(): string {
+    // Resolve symlinks (common on macOS; harmless elsewhere)
+    try {
+      const realpathNative = realpathSync.native as (p: string) => string | undefined;
+      return (realpathNative ? realpathNative(exe) : realpathSync(exe)) || exe;
+    } catch {
+      return exe;
+    }
+  }
+
+  const path = realPath();
+
+  // trim trailing slash symbol
+  if (path.endsWith('/')) {
+    return path.slice(0, -1);
+  } else {
+    return path;
   }
 }
 
