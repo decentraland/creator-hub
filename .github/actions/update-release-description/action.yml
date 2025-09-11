@@ -56,7 +56,9 @@ runs:
           RELEASE_URL=$(echo "$RELEASE_INFO" | jq -r '.url')
 
           # Create temporary file for release notes
-          echo '${{ inputs.release_notes }}' > temp_release_notes.md
+          cat << 'EOF' > temp_release_notes.md
+          ${{ inputs.release_notes }}
+          EOF
 
           # Update the release description
           gh release edit "${{ inputs.tag_name }}" --notes-file temp_release_notes.md
@@ -76,7 +78,9 @@ runs:
           echo "🆕 Release not found. Creating new release..."
 
           # Create temporary file for release notes
-          echo '${{ inputs.release_notes }}' > temp_release_notes.md
+          cat << 'EOF' > temp_release_notes.md
+          ${{ inputs.release_notes }}
+          EOF
 
           # Determine release title
           if [[ -n "${{ inputs.release_title }}" ]]; then
@@ -87,24 +91,23 @@ runs:
           echo "📝 Using release title: $TITLE"
 
           # Build create command with options
-          CREATE_CMD=("gh" "release" "create" "${{ inputs.tag_name }}")
-          CREATE_CMD+=("--title" "$TITLE")
-          CREATE_CMD+=("--notes-file" "temp_release_notes.md")
+          PRERELEASE_FLAG=""
+          DRAFT_FLAG=""
 
           # Add optional flags
           if [[ "${{ inputs.prerelease }}" == "true" ]]; then
-            CREATE_CMD+=("--prerelease")
+            PRERELEASE_FLAG="--prerelease"
             echo "🚧 Marking as prerelease"
           fi
 
           if [[ "${{ inputs.draft }}" == "true" ]]; then
-            CREATE_CMD+=("--draft")
+            DRAFT_FLAG="--draft"
             echo "📝 Marking as draft"
           fi
 
           # Execute create command
-          echo "🚀 Creating release with command: ${CREATE_CMD[*]}"
-          "${CREATE_CMD[@]}"
+          echo "🚀 Creating release with command: gh release create \"${{ inputs.tag_name }}\" --title \"$TITLE\" --notes-file temp_release_notes.md $PRERELEASE_FLAG $DRAFT_FLAG"
+          gh release create "${{ inputs.tag_name }}" --title "$TITLE" --notes-file temp_release_notes.md $PRERELEASE_FLAG $DRAFT_FLAG
 
           # Get the created release info
           RELEASE_INFO=$(gh release view "${{ inputs.tag_name }}" --json id,url)
