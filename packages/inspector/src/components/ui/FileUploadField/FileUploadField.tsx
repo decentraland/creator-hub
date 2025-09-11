@@ -142,7 +142,9 @@ const FileUploadField: React.FC<Props> = ({
       const { value } = event.target;
       if (!value || isValidFileName(value) || (acceptURLs && isValidHttpsUrl(value))) {
         // The value is a valid file name or a valid https url or it's empty (valid as the field is optional).
-        setPath(value ? addBase(value) : '');
+        const formattedValue = value && !isValidHttpsUrl(value) ? addBase(value) : value; // Add base only if it's a file path.
+        event.target.value = formattedValue;
+        setPath(formattedValue);
         onChange && onChange(event);
         setDropError(false);
       } else if (value) {
