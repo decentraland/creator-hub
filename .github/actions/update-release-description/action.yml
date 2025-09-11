@@ -57,8 +57,8 @@ runs:
 
           # Create temporary file for release notes
           cat << 'EOF' > temp_release_notes.md
-          ${{ inputs.release_notes }}
-          EOF
+${{ inputs.release_notes }}
+EOF
 
           # Update the release description
           gh release edit "${{ inputs.tag_name }}" --notes-file temp_release_notes.md
@@ -79,8 +79,8 @@ runs:
 
           # Create temporary file for release notes
           cat << 'EOF' > temp_release_notes.md
-          ${{ inputs.release_notes }}
-          EOF
+${{ inputs.release_notes }}
+EOF
 
           # Determine release title
           if [[ -n "${{ inputs.release_title }}" ]]; then
