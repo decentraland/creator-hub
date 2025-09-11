@@ -35,5 +35,7 @@ export function* addCustomComponent(action: { type: string; payload: { name: str
     const encoder = new TextEncoder();
     const schemaBytes = encoder.encode(JSON.stringify(schema));
     yield call(dataLayer.addCustomComponent, { name, schema: schemaBytes });
+    newTagComponent.create(512 as any, {});
+    inspector.update(1);
   }
 }
