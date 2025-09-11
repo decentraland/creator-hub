@@ -121,7 +121,7 @@ function updateDeepLinkWithOpts(params: string, newOpts: PreviewOptions): string
     return output;
   } catch (e) {
     log.error(
-      `[CLI] error occuring when adding additional arguments to deeplink, fallback to deeplink without params: ${e}`
+      `[CLI] error occuring when adding additional arguments to deeplink, fallback to deeplink without params: ${e}`,
     );
     return params;
   }
