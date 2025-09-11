@@ -116,8 +116,13 @@ function updateDeepLinkWithOpts(params: string, newOpts: PreviewOptions): string
     setOrDeleteParam('open-deeplink-in-new-instance', newOpts.openNewInstance);
     urlParams.set('creator-hub-bin-path', selfBinPath());
 
-    return urlParams.toString();
-  } catch (error) {
+    const output = urlParams.toString();
+    log.info(`[CLI] created deeplink with options: ${output}`);
+    return output;
+  } catch (e) {
+    log.error(
+      `[CLI] error occuring when adding additional arguments to deeplink, fallback to deeplink without params: ${e}`
+    );
     return params;
   }
 }
