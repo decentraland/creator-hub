@@ -171,18 +171,8 @@ export async function start(
   killPreview(path);
 
   try {
-    const selfPath = selfBinPath();
-    log.info(`[CLI] self bin path: ${selfPath}`);
-
     const process = run('@dcl/sdk-commands', 'sdk-commands', {
-      args: [
-        'start',
-        '--explorer-alpha',
-        '--hub',
-        '--creator-hub-bin-path',
-        selfPath,
-        ...generatePreviewArguments(opts),
-      ],
+      args: ['start', '--explorer-alpha', '--hub', ...generatePreviewArguments(opts)],
       cwd: path,
       workspace: path,
       env: await getEnv(path),
