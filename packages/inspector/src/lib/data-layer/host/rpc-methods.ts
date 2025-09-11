@@ -17,8 +17,6 @@ import { initSceneProvider } from './scene';
 import { compositeAndDirty } from './utils/composite-dirty';
 import { installBin } from './utils/install-bin';
 
-import { Schemas } from '@dcl/ecs';
-
 const INSPECTOR_PREFERENCES_PATH = 'inspector-preferences.json';
 
 export async function initRpcMethods(
@@ -61,15 +59,24 @@ export async function initRpcMethods(
       const type = await undoRedoManager.undo();
       return type;
     },
-    addCustomComponent(name, spec) {
-      engine.defineComponent(name, spec);
+    async addCustomComponent(request: { name: string; schema: Uint8Array }) {
+      console.log('RPC: addCustomComponent called with', request);
+      try {
+        const schema = JSON.parse(new TextDecoder().decode(request.schema));
+        const newTagComponent = engine.defineComponent(request.name, schema);
+        engine.update(1);
+        console.log('RPC: new tag component', newTagComponent);
+      } catch (error) {
+        console.error('RPC: error in addCustomComponent:', error);
+        throw error;
+      }
+      return {};
     },
     /**
      * This method receives an incoming message iterator and returns an async iterable.
      * It adds the undo's operations of the components changed (grouped) on every tick
      */
     crdtStream(iter) {
-      engine.defineComponent('tuvieja', {});
       return stream(iter, { engine }, () => undoRedoManager?.addUndoCrdt());
     },
     async getAssetData(req) {

@@ -16,7 +16,6 @@ import { TextField } from '../../ui';
 import { Link, Props as LinkProps } from './Link';
 
 import './TransformInspector.css';
-import { Button } from '../../Button';
 
 export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
   const { Transform, TransformConfig } = sdk.components;
@@ -49,14 +48,6 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
 
   const _getConfigProps = getConfigProps as LinkProps['getInputProps'];
 
-  const handleTest = async () => {
-    // const Tuvieja = sdk.engine.defineComponent('tuvieja', {});
-    // Tuvieja.create(entity, {});
-    // await sdk.operations.dispatch();
-    const Tuvieja = sdk.engine.getComponent('tuvieja');
-    console.log(Tuvieja.get(512 as any));
-  };
-
   if (!hasTransform) return null;
 
   return (
@@ -65,7 +56,6 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
       className="Transform"
       initialOpen={initialOpen}
     >
-      <Button onClick={handleTest} />
       <Block label="Position">
         <TextField
           leftLabel="X"
