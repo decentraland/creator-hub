@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
 import { recursiveCheck } from '../../../../lib/utils/deep-equal';
+import { addBasePath } from '../../../../lib/logic/add-base-path';
 
 import { useAppSelector } from '../../../../redux/hooks';
 import { selectAssetCatalog } from '../../../../redux/app';
@@ -40,6 +41,14 @@ const PlaySoundAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
       handleUpdate({ ...payload, src });
     },
     [payload, handleUpdate],
+  );
+
+  const handleChangeSrc = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const path = addBasePath(files?.basePath ?? '', e.target.value);
+      handleUpdate({ ...payload, src: path });
+    },
+    [payload, handleUpdate, files?.basePath],
   );
 
   const handleChangePlayMode = useCallback(
@@ -92,6 +101,7 @@ const PlaySoundAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
             value={payload.src}
             accept={ACCEPTED_FILE_TYPES['audio']}
             onDrop={handleDrop}
+            onChange={handleChangeSrc}
             error={files && (!isValid || error)}
             isValidFile={isAudio}
           />

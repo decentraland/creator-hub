@@ -43,6 +43,8 @@ export function volumeToVideoPlayer(volume: string | undefined): number {
 }
 
 export function isValidInput({ basePath, assets }: AssetCatalogResponse, src: string): boolean {
+  // Allow empty strings (optional field)
+  if (!src) return true;
   return (
     isValidHttpsUrl(src) || !!assets.find($ => (basePath ? basePath + '/' + src : src) === $.path)
   );
