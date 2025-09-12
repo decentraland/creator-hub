@@ -1,11 +1,12 @@
 import type { Scene } from '@babylonjs/core';
 import { PBRMaterial, StandardMaterial, Texture, Vector3 } from '@babylonjs/core';
-import type { PBMaterial, TextureUnion } from '@dcl/ecs';
+import type { PBMaterial, TextureUnion, Texture as ImageTexture } from '@dcl/ecs';
 import { ComponentType, MaterialTransparencyMode } from '@dcl/ecs';
 
 import type { ComponentOperation } from '../component-operations';
 import type { EcsEntity } from '../EcsEntity';
 import { memoize } from '../../../logic/once';
+import { isValidHttpsUrl } from '../../../utils/url';
 
 export const putMaterialComponent: ComponentOperation = (entity, component) => {
   if (component.componentType === ComponentType.LastWriteWinElementSet) {
@@ -124,23 +125,31 @@ export function setMeshRendererMaterial(entity: EcsEntity) {
   }
 }
 
+function createTextureFromUrl(url: string, imageTexture: ImageTexture, scene: Scene) {
+  const texture = new Texture(url, scene, true, true);
+  texture.uOffset = imageTexture.offset?.x ?? 0;
+  texture.vOffset = imageTexture.offset?.y ?? 0;
+  texture.uScale = imageTexture.tiling?.x ?? 1;
+  texture.vScale = imageTexture.tiling?.y ?? 1;
+  return texture;
+}
+
 async function loadTexture(entity: EcsEntity, tx: TextureUnion['tex']): Promise<Texture | null> {
   if (!tx) return null;
   if (tx.$case === 'texture') {
-    return entity.context
-      .deref()!
-      .getFile(tx.texture.src)
-      .then(content => {
-        if (!content) return null;
-        const textureBlob = new Blob([content]);
-        const textureUrl = URL.createObjectURL(textureBlob);
-        const texture = new Texture(textureUrl, entity.getScene(), true, true);
-        texture.uOffset = tx.texture.offset?.x ?? 0;
-        texture.vOffset = tx.texture.offset?.y ?? 0;
-        texture.uScale = tx.texture.tiling?.x ?? 1;
-        texture.vScale = tx.texture.tiling?.y ?? 1;
-        return texture;
-      });
+    if (isValidHttpsUrl(tx.texture.src)) {
+      return createTextureFromUrl(tx.texture.src, tx.texture, entity.getScene());
+    } else {
+      return entity.context
+        .deref()!
+        .getFile(tx.texture.src)
+        .then(content => {
+          if (!content) return null;
+          const textureBlob = new Blob([content]);
+          const textureUrl = URL.createObjectURL(textureBlob);
+          return createTextureFromUrl(textureUrl, tx.texture, entity.getScene());
+        });
+    }
   }
 
   return null;
