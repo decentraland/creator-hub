@@ -78,6 +78,8 @@ async function start() {
       store.dispatch(settings.actions.subscribeToDownloadingStatus()),
       // subscribe to updater events
       store.dispatch(settings.actions.setupUpdaterEvents()),
+      // subscribe to Chrome DevTools events
+      store.dispatch(settings.actions.subscribeToChromeDevToolsEvents()),
       // check for updates
       store.dispatch(settings.actions.checkForUpdates({ autoDownload: true })),
       //notify new update installed
