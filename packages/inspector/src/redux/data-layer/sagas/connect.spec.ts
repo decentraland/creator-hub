@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-types */
+import { expect, it, describe, vi } from 'vitest';
 import { expectSaga, testSaga } from 'redux-saga-test-plan';
 import { call } from 'redux-saga/effects';
 import * as codegen from '@dcl/rpc/dist/codegen';
@@ -30,6 +31,7 @@ describe('WebSocket Connection Saga', () => {
         reloadAssets: [],
         assetToRename: undefined,
         stagedCustomAsset: undefined,
+        undoRedoState: { canUndo: false, canRedo: false },
       })
       .run();
     expect(getDataLayerInterface()).toBe(dataLayer);

@@ -2,6 +2,7 @@ import type { IEngine } from '@dcl/ecs';
 
 import { updateCanSave } from '../../../redux/app';
 import { store } from '../../../redux/store';
+import { refreshUndoRedoState } from '../../../redux/data-layer';
 import removeEntity from './remove-entity';
 import updateValue from './update-value';
 import addChild from './add-child';
@@ -39,6 +40,7 @@ export function createOperations(engine: IEngine) {
     createCustomAsset: createCustomAsset(engine),
     dispatch: async ({ dirty = true }: Dispatch = {}) => {
       store.dispatch(updateCanSave({ dirty }));
+      store.dispatch(refreshUndoRedoState());
       await engine.update(1);
     },
     getSelectedEntities: getSelectedEntities(engine),

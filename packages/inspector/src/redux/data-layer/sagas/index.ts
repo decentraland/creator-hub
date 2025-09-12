@@ -8,8 +8,6 @@ import {
   reconnect,
   save,
   getAssetCatalog,
-  undo,
-  redo,
   importAsset,
   removeAsset,
   getThumbnails,
@@ -24,7 +22,7 @@ import { saveSaga } from './save';
 import { getInspectorPreferencesSaga } from './get-inspector-preferences';
 import { setInspectorPreferencesSaga } from './set-inspector-preferences';
 import { getAssetCatalogSaga } from './get-asset-catalog';
-import { redoSaga, undoSaga } from './undo-redo';
+import { undoRedoSaga } from './undo-redo';
 import { importAssetSaga } from './import-asset';
 import { removeAssetSaga } from './remove-asset';
 import { connectedSaga } from './connected';
@@ -42,8 +40,7 @@ export function* dataLayerSaga() {
   yield takeEvery(getInspectorPreferences.type, getInspectorPreferencesSaga);
   yield takeEvery(setInspectorPreferences.type, setInspectorPreferencesSaga);
   yield takeEvery(getAssetCatalog.type, getAssetCatalogSaga);
-  yield takeEvery(undo.type, undoSaga);
-  yield takeEvery(redo.type, redoSaga);
+  yield undoRedoSaga();
   yield takeEvery(importAsset.type, importAssetSaga);
   yield takeEvery(removeAsset.type, removeAssetSaga);
   yield takeEvery(getThumbnails.type, getThumbnailsSaga);

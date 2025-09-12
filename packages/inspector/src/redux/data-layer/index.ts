@@ -47,6 +47,10 @@ export interface DataLayerState {
   stagedCustomAsset:
     | { entities: Entity[]; previousTab: AssetsTab; initialName: string }
     | undefined;
+  undoRedoState: {
+    canUndo: boolean;
+    canRedo: boolean;
+  };
 }
 
 export const initialState: DataLayerState = {
@@ -56,6 +60,10 @@ export const initialState: DataLayerState = {
   reloadAssets: [],
   assetToRename: undefined,
   stagedCustomAsset: undefined,
+  undoRedoState: {
+    canUndo: false,
+    canRedo: false,
+  },
 };
 
 export const dataLayer = createSlice({
@@ -87,6 +95,7 @@ export const dataLayer = createSlice({
     getAssetCatalog: () => {},
     undo: () => {},
     redo: () => {},
+    refreshUndoRedoState: () => {},
     importAsset: (state, payload: PayloadAction<ImportAssetRequest & { reload?: boolean }>) => {
       const { reload, ...importAssetRequest } = payload.payload;
       state.reloadAssets = reload ? Array.from(importAssetRequest.content.keys()) : [];
@@ -127,6 +136,12 @@ export const dataLayer = createSlice({
     clearStagedCustomAsset: state => {
       state.stagedCustomAsset = undefined;
     },
+    updateUndoRedoState: (
+      state,
+      payload: PayloadAction<{ canUndo: boolean; canRedo: boolean }>,
+    ) => {
+      state.undoRedoState = payload.payload;
+    },
   },
 });
 
@@ -142,6 +157,7 @@ export const {
   getAssetCatalog,
   undo,
   redo,
+  refreshUndoRedoState,
   importAsset,
   removeAsset,
   clearRemoveAsset,
@@ -154,6 +170,7 @@ export const {
   clearAssetToRename,
   stageCustomAsset,
   clearStagedCustomAsset,
+  updateUndoRedoState,
 } = dataLayer.actions;
 
 // Selectors
@@ -164,6 +181,8 @@ export const selectDataLayerRemovingAsset = (state: RootState) => state.dataLaye
 export const getReloadAssets = (state: RootState) => state.dataLayer.reloadAssets;
 export const selectAssetToRename = (state: RootState) => state.dataLayer.assetToRename;
 export const selectStagedCustomAsset = (state: RootState) => state.dataLayer.stagedCustomAsset;
+export const selectCanUndo = (state: RootState) => state.dataLayer.undoRedoState.canUndo;
+export const selectCanRedo = (state: RootState) => state.dataLayer.undoRedoState.canRedo;
 
 // Reducer
 export default dataLayer.reducer;

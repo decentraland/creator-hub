@@ -127,6 +127,7 @@ export async function compositeAndDirty(
         fs,
       );
 
+      dirty = DirtyEnum.None;
       return composite;
     } catch (e) {
       console.log('Failed saving composite');
@@ -137,15 +138,6 @@ export async function compositeAndDirty(
   async function saveComposite(dump: boolean = true) {
     composite = (await dumpEngineAndGetComposite(dump)) ?? composite;
   }
-
-  engine.addSystem(() => {
-    if (dirty !== DirtyEnum.None) {
-      void saveComposite(
-        getInspectorPreferences().autosaveEnabled && dirty === DirtyEnum.DirtyAndDump,
-      );
-    }
-    dirty = DirtyEnum.None;
-  }, -1_000_000_000);
 
   return {
     onChange: (
@@ -171,6 +163,9 @@ export async function compositeAndDirty(
         return;
       }
       dirty = DirtyEnum.DirtyAndDump;
+      const shouldDump =
+        getInspectorPreferences().autosaveEnabled && dirty === DirtyEnum.DirtyAndDump;
+      void saveComposite(shouldDump);
     },
     get composite() {
       return composite;

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect } from 'react';
-import { PBAnimationState, PBAnimator } from '@dcl/ecs';
 import cx from 'classnames';
+import type { PBAnimationState, PBAnimator } from '@dcl/ecs';
 
 import { withSdk } from '../../../hoc/withSdk';
 import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
@@ -11,6 +11,7 @@ import { CoreComponents } from '../../../lib/sdk/components';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { TextField, CheckboxField, RangeField, InfoTooltip } from '../../ui';
+import { useArrayState } from '../../../hooks/useArrayState';
 import {
   fromNumber,
   toNumber,
@@ -20,7 +21,6 @@ import {
   mapAnimationGroupsToStates,
 } from './utils';
 import type { Props } from './types';
-import { useArrayState } from '../../../hooks/useArrayState';
 
 type ChangeEvt = React.ChangeEvent<HTMLInputElement>;
 
@@ -42,16 +42,23 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
   useEffect(() => {
     if (!entity || !gltfValue || hasAnimator) return;
 
-    const initializeComponent = async () => {
+    const checkAndInitializeAnimator = async () => {
       try {
-        await initializeAnimatorComponent(sdk, entityId, []);
+        const { animationGroups } = await entity.onGltfContainerLoaded();
+
+        // only add Animator component if there are actual animations
+        if (animationGroups.length > 0) {
+          await initializeAnimatorComponent(sdk, entityId, animationGroups);
+          const newStates = mapAnimationGroupsToStates(animationGroups);
+          setStates(newStates);
+        }
       } catch (error) {
         // eslint-disable-next-line no-console
-        console.warn('Failed to initialize animator component:', error);
+        console.warn('Failed to check animations or initialize animator component:', error);
       }
     };
 
-    void initializeComponent();
+    void checkAndInitializeAnimator();
   }, [entity, gltfValue, hasAnimator]);
 
   useEffect(() => {
