@@ -7,7 +7,7 @@ import * as Sentry from '@sentry/electron/main';
 import { FileSystemStorage } from '/shared/types/storage';
 import type { ProjectInfo } from '/shared/types/projects';
 
-import { getConfig } from './config';
+import { getConfigStorage } from './config';
 import { getWorkspaceConfigPath } from './electron';
 import type { Events } from '/shared/types/analytics';
 
@@ -24,7 +24,7 @@ export function setUserId(userId: string) {
 }
 
 export async function getAnonymousId() {
-  const config = await getConfig();
+  const config = await getConfigStorage();
   const userId = await config.get('userId');
   if (!userId) {
     const uuid = randomUUID();

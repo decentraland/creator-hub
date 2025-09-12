@@ -1,4 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import CheckIcon from '@mui/icons-material/Check';
+import CloseIcon from '@mui/icons-material/Close';
+import FolderIcon from '@mui/icons-material/Folder';
+import DeleteIcon from '@mui/icons-material/Delete';
+import equal from 'fast-deep-equal';
 import {
   Box,
   IconButton,
@@ -9,23 +14,41 @@ import {
   Typography,
   FormGroup,
   InputAdornment,
-  Button,
+  Select,
+  MenuItem,
+  CircularProgress,
 } from 'decentraland-ui2';
-import CloseIcon from '@mui/icons-material/Close';
-import FolderIcon from '@mui/icons-material/Folder';
-import equal from 'fast-deep-equal';
+import {
+  loadEditors,
+  setDefaultEditor,
+  addEditor,
+  removeEditor,
+  getEditors,
+} from '/@/modules/store/defaultEditor';
 
-import { settings as settingsPreload } from '#preload';
 import { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
+import type { EditorConfig } from '/shared/types/config';
+
 import { t } from '/@/modules/store/translation/utils';
 import { useSettings } from '/@/hooks/useSettings';
 import { Modal } from '..';
 import { UpdateSettings } from './UpdateSettings';
+import { useDispatch, useSelector } from '#store';
+import { settings as settingsPreload } from '#preload';
 import './styles.css';
 
 export function AppSettings({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const dispatch = useDispatch();
   const { settings: _settings, updateAppSettings } = useSettings();
   const [settings, setSettings] = useState(_settings);
+  const { loading } = useSelector(state => state.defaultEditor);
+  const editors = useSelector(getEditors);
+
+  useEffect(() => {
+    if (open) {
+      dispatch(loadEditors());
+    }
+  }, [dispatch, open]);
 
   useEffect(() => {
     if (!equal(_settings, settings)) setSettings(_settings);
@@ -33,32 +56,33 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
 
   const handleChangeSceneFolder = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      setSettings({ ...settings, scenesPath: event.target.value });
+      const newSettings = { ...settings, scenesPath: event.target.value };
+      setSettings(newSettings);
+      updateAppSettings(newSettings);
     },
-    [settings],
+    [settings, updateAppSettings],
   );
 
   const handleChangeUpdateDependenciesStrategy = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      setSettings({
+      const newSettings = {
         ...settings,
         dependencyUpdateStrategy: event.target.value as DEPENDENCY_UPDATE_STRATEGY,
-      });
+      };
+      setSettings(newSettings);
+      updateAppSettings(newSettings);
     },
-    [settings],
+    [settings, updateAppSettings],
   );
-
-  const handleClickApply = useCallback(() => {
-    updateAppSettings(settings);
-    onClose();
-  }, [settings, updateAppSettings]);
 
   const handleOpenFolder = useCallback(async () => {
     const folder = await settingsPreload.selectSceneFolder();
-    if (folder) setSettings({ ...settings, scenesPath: folder });
-  }, [settings]);
-
-  const isDirty = useMemo(() => !equal(_settings, settings), [settings, _settings]);
+    if (folder) {
+      const newSettings = { ...settings, scenesPath: folder };
+      setSettings(newSettings);
+      updateAppSettings(newSettings);
+    }
+  }, [settings, updateAppSettings]);
 
   return (
     <Modal
@@ -96,6 +120,67 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
               }
             />
           </FormGroup>
+          <FormGroup
+            sx={{ gap: '16px' }}
+            className="editor-form"
+          >
+            <Typography variant="body1">
+              {t('modal.app_settings.fields.code_editor.label')}
+            </Typography>
+            {loading ? (
+              <CircularProgress size={24} />
+            ) : (
+              <Select
+                fullWidth
+                displayEmpty
+                value={(editors && editors.find(e => e.isDefault)?.path) || ''}
+                renderValue={value =>
+                  (editors && editors.find(e => e.path === value)?.name) ||
+                  'Add or select a default editor'
+                }
+                onChange={event => {
+                  const selectedPath = event.target.value;
+                  if (selectedPath) {
+                    dispatch(setDefaultEditor(selectedPath));
+                  }
+                }}
+              >
+                {(editors || []).map((editor: EditorConfig) => (
+                  <MenuItem
+                    key={editor.path}
+                    value={editor.path}
+                    className="editor-select"
+                  >
+                    <span>{editor.name}</span>
+                    <Box sx={{ display: 'flex', gap: 1, ml: 'auto' }}>
+                      {editor.isDefault && <CheckIcon className="default-icon menu-only" />}
+                      <IconButton
+                        size="small"
+                        onClick={e => {
+                          e.stopPropagation();
+                          dispatch(removeEditor(editor.path));
+                        }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </MenuItem>
+                ))}
+                <MenuItem
+                  className="custom-editor"
+                  onMouseDown={async (e: React.MouseEvent) => {
+                    e.preventDefault();
+                    const [editorPath] = await settingsPreload.selectEditorPath();
+                    if (editorPath) {
+                      dispatch(addEditor(editorPath));
+                    }
+                  }}
+                >
+                  {t('modal.app_settings.fields.code_editor.choose_device')}
+                </MenuItem>
+              </Select>
+            )}
+          </FormGroup>
           <FormGroup sx={{ gap: '16px' }}>
             <Typography variant="body1">
               {t('modal.app_settings.fields.scene_editor_dependencies.label')}
@@ -121,14 +206,6 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
               />
             </RadioGroup>
           </FormGroup>
-          <Button
-            className="ApplyButton"
-            variant="contained"
-            disabled={!isDirty}
-            onClick={handleClickApply}
-          >
-            {t('modal.app_settings.actions.apply_button')}
-          </Button>
         </Box>
       </Box>
     </Modal>

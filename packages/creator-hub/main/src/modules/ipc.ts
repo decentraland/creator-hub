@@ -4,8 +4,10 @@ import * as updater from './updater';
 import * as inspector from './inspector';
 import * as cli from './cli';
 import * as bin from './bin';
+import * as code from './code';
 import * as analytics from './analytics';
 import * as npm from './npm';
+import * as config from './config';
 
 export function initIpc() {
   // electron
@@ -39,9 +41,19 @@ export function initIpc() {
   handle('cli.deploy', (_event, opts) => cli.deploy(opts));
   handle('cli.killPreview', (_event, path) => cli.killPreview(path));
 
+  // config
+  handle('config.getConfig', () => config.getConfig());
+  handle('config.writeConfig', (_event, _config) => config.writeConfig(_config));
+
   // bin
   handle('bin.install', () => bin.install());
-  handle('bin.code', (_event, path) => bin.code(path));
+
+  // code settings
+  handle('code.open', (_event, path) => code.open(path));
+  handle('code.getEditors', () => code.getEditors());
+  handle('code.addEditor', (_event, path) => code.addEditor(path));
+  handle('code.setDefaultEditor', (_event, path) => code.setDefaultEditor(path));
+  handle('code.removeEditor', (_event, path) => code.removeEditor(path));
 
   // analytics
   handle('analytics.track', (_event, eventName, data) => analytics.track(eventName, data!));

@@ -14,7 +14,7 @@ export async function install() {
 }
 
 export async function openCode(_path: string) {
-  return invoke('bin.code', _path);
+  return invoke('code.open', _path);
 }
 
 export async function startInspector() {
