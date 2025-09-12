@@ -22,10 +22,10 @@ export function* connectStream(): Generator<any, void, any> {
 
   console.log('[sagas] tags', tags);
 
-  tags.forEach((tag: any) => {
+  for (const tag of tags) {
     engines.inspector?.defineComponent(tag.componentName, tag.schema);
     engines.renderer?.defineComponent(tag.componentName, tag.schema);
-  });
+  }
 }
 
 //TODO rename to defineCustomComponent
@@ -44,7 +44,6 @@ export function* addCustomComponent(action: {
     const schema = {};
     inspector.defineComponent(name, schema);
     renderer.defineComponent(name, schema);
-    console.log('[sagas] newTagComponentRenderer');
 
     const encoder = new TextEncoder();
     const schemaBytes = encoder.encode(JSON.stringify(schema));

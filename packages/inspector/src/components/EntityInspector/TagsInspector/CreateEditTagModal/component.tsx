@@ -21,9 +21,7 @@ const CreateEditTagModal = withSdk<Props>(({ open, onClose, entityId, sdk }) => 
   const handleCreateTag = async () => {
     if (tagName) {
       const name = `${TAG_PREFIX}${tagName}`;
-      console.log('Modal: creating tag', { name });
       dispatch(addCustomComponentAction({ name }));
-
       onClose();
     }
   };
