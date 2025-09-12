@@ -95,6 +95,10 @@ message AddCustomComponentRequest {
   bytes schema = 2;
 }
 
+message GetCustomComponentsDefinitionsResponse {
+  repeated bytes custom_components = 1;
+}
+
 service DataService {
   rpc CrdtStream(stream CrdtStreamMessage) returns (stream CrdtStreamMessage) {}
   rpc Undo(Empty) returns (UndoRedoResponse) {}
@@ -116,4 +120,5 @@ service DataService {
   rpc DeleteCustomAsset(DeleteCustomAssetRequest) returns (Empty) {}
   rpc RenameCustomAsset(RenameCustomAssetRequest) returns (Empty) {}
   rpc addCustomComponent(AddCustomComponentRequest) returns (Empty) {}
+  rpc getCustomComponentsDefinitions(Empty) returns (GetCustomComponentsDefinitionsResponse) {}
 }

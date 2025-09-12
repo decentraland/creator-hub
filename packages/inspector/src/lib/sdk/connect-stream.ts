@@ -11,13 +11,8 @@ export function connectCrdtToEngine(
   dataLayerStream: DataLayerRpcClient['crdtStream'],
   engineKey: string,
 ) {
-  // const Tuvieja = engine.defineComponent('tuvieja', {
-  //   value: Schemas.String,
-  // });
-  // Tuvieja.create(512 as any, { value: 'DALE MIERDA' });
   // <HERE BE DRAGONS (TRANSPORT)>
   const outgoingMessagesStream = new AsyncQueue<CrdtStreamMessage>((_, _action) => {});
-
   const transport: Transport = {
     filter() {
       return !outgoingMessagesStream.closed;

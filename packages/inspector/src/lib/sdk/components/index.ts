@@ -259,11 +259,7 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
     value: Schemas.Boolean,
   });
 
-  engine.defineComponent('tag::holis', {});
-  engine.defineComponent('tag::untagsolo', {});
-
   const Config = engine.defineComponent(EditorComponentNames.Config, ConfigComponentSchema);
-
   const Ground = engine.defineComponent(EditorComponentNames.Ground, {});
   const Tile = engine.defineComponent(EditorComponentNames.Tile, {});
   const CustomAsset = engine.defineComponent(EditorComponentNames.CustomAsset, {

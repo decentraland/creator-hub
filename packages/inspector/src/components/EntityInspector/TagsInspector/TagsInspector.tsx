@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import './TagsInspector.css';
 import { FaTag as TagIcon, FaPlus } from 'react-icons/fa';
 import type { Entity } from '@dcl/ecs';
@@ -18,10 +18,9 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
     name,
   }));
 
-  const allComponents = useMemo(() => {
+  const allComponents = () => {
     const ids = new Set<number>();
     const components: Array<{ id: number; name: string }> = [];
-
     for (const component of sdk.engine.componentsIter()) {
       if (!ids.has(component.componentId)) {
         ids.add(component.componentId);
@@ -32,10 +31,10 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
       }
     }
     return components;
-  }, [sdk.engine]);
+  };
 
   const removePrefix = (name: string) => name.replace(TAG_PREFIX, '');
-  const tags: Tag[] = allComponents
+  const tags: Tag[] = allComponents()
     .filter(component => component.name.startsWith(TAG_PREFIX))
     ?.map(tag => ({
       id: tag.id,
@@ -48,10 +47,10 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
   const value = entityTags.map(tag => tag.id.toString());
   const options = tags.map(tag => ({
     label: removePrefix(tag.name),
-    value: tag.id.toString(),
+    value: tag.id,
   }));
 
-  console.log('ALL COMPONENTS', allComponents);
+  console.log('ALL COMPONENTS', allComponents());
   console.log('TAGS COMPONENTS', tags);
   console.log('ENTITY TAGS COMPONENTS', entityTags);
 
@@ -65,16 +64,14 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
   };
 
   const handleTagChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    debugger;
     const newValues = event.target.value as unknown as string[];
-
-    const newValuesAsNumbers = newValues.map(option => Number(option));
-    const currentValues = value.map(Number);
-
-    const tagsToAdd = newValuesAsNumbers.filter(id => !currentValues.includes(id));
-    const tagsToRemove = currentValues.filter(id => !newValuesAsNumbers.includes(id));
+    const currentValues = value;
+    const tagsToAdd = newValues.filter(id => !currentValues.includes(id));
+    const tagsToRemove = currentValues.filter(id => !newValues.includes(id));
 
     for (const tagId of tagsToAdd) {
-      addComponent(entity, tagId);
+      addComponent(entity, Number(tagId));
     }
 
     for (const tagId of tagsToRemove) {

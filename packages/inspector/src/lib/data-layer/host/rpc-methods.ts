@@ -36,6 +36,7 @@ export async function initRpcMethods(
     },
     currentCompositeResourcePath,
   );
+
   const undoRedoManager = initUndoRedo(fs, engine, () => compositeManager.composite);
 
   // Create containers and attach onChange logic.
@@ -71,6 +72,20 @@ export async function initRpcMethods(
         throw error;
       }
       return {};
+    },
+    async getCustomComponentsDefinitions() {
+      const allComponents = Array.from(engine.componentsIter());
+      const customComponents = allComponents
+        .filter(component => component.componentName.startsWith('tag::'))
+        .map(component => {
+          const componentData = {
+            componentId: component.componentId,
+            componentName: component.componentName,
+            schema: component.schema,
+          };
+          return new Uint8Array(Buffer.from(JSON.stringify(componentData)));
+        });
+      return { customComponents };
     },
     /**
      * This method receives an incoming message iterator and returns an async iterable.
