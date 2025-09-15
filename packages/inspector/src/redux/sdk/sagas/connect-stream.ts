@@ -11,21 +11,26 @@ export function* connectStream(): Generator<any, void, any> {
 
   if (!dataLayer || !engines.inspector || !engines.renderer) return;
 
-  yield call(connectCrdtToEngine, engines.inspector, dataLayer.crdtStream, 'Inspector');
-  yield call(connectCrdtToEngine, engines.renderer, dataLayer.crdtStream, 'Renderer');
   const response: any = yield call(dataLayer.getCustomComponentsDefinitions, {});
-
   const tags = response.customComponents.map((bytes: Uint8Array) => {
     const componentData = JSON.parse(new TextDecoder().decode(bytes));
     return componentData;
   });
 
-  console.log('[sagas] tags', tags);
+  const encoder = new TextEncoder();
+  const schemaBytes = encoder.encode(JSON.stringify({}));
 
   for (const tag of tags) {
     engines.inspector?.defineComponent(tag.componentName, tag.schema);
     engines.renderer?.defineComponent(tag.componentName, tag.schema);
+    yield call(dataLayer.addCustomComponent, { name: tag.componentName, schema: schemaBytes });
+
+    engines.inspector?.update(1);
+    engines.renderer?.update(1);
   }
+
+  yield call(connectCrdtToEngine, engines.inspector, dataLayer.crdtStream, 'Inspector');
+  yield call(connectCrdtToEngine, engines.renderer, dataLayer.crdtStream, 'Renderer');
 }
 
 //TODO rename to defineCustomComponent
