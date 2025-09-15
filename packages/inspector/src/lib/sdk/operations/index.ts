@@ -40,8 +40,8 @@ export function createOperations(engine: IEngine) {
     createCustomAsset: createCustomAsset(engine),
     dispatch: async ({ dirty = true }: Dispatch = {}) => {
       store.dispatch(updateCanSave({ dirty }));
-      store.dispatch(refreshUndoRedoState());
       await engine.update(1);
+      store.dispatch(refreshUndoRedoState());
     },
     getSelectedEntities: getSelectedEntities(engine),
     setGround: setGround(engine),

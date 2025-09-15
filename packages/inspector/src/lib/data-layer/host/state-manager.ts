@@ -221,9 +221,9 @@ export class StateManager {
   }
 
   private async processTransaction(transaction: Transaction): Promise<void> {
-    const providersByPriority = this.getProvidersByPriority();
+    const providers = Array.from(this.providers.values());
 
-    for (const provider of providersByPriority) {
+    for (const provider of providers) {
       const handledOperations = transaction.operations.filter(op => provider.canHandle(op));
 
       if (handledOperations.length > 0) {
@@ -242,7 +242,7 @@ export class StateManager {
     }
 
     // complete transactions sequentially to maintain consistency
-    for (const provider of providersByPriority) {
+    for (const provider of providers) {
       try {
         await provider.onTransactionComplete(transaction);
       } catch (error) {
@@ -253,27 +253,6 @@ export class StateManager {
         );
       }
     }
-  }
-
-  private getProvidersByPriority(): StateProvider[] {
-    // order here matters!!!!: undo-redo, scene, composite
-    const orderedProviders: StateProvider[] = [];
-
-    const undoRedo = this.providers.get('undo-redo');
-    const scene = this.providers.get('scene');
-    const composite = this.providers.get('composite');
-
-    if (undoRedo) orderedProviders.push(undoRedo);
-    if (scene) orderedProviders.push(scene);
-    if (composite) orderedProviders.push(composite);
-
-    for (const provider of this.providers.values()) {
-      if (!['undo-redo', 'scene', 'composite'].includes(provider.name)) {
-        orderedProviders.push(provider);
-      }
-    }
-
-    return orderedProviders;
   }
 
   async executeTransaction<T>(

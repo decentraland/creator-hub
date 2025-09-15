@@ -47,6 +47,7 @@ export interface UndoRedoOptions {
   persistToStorage?: boolean;
   storageKey?: string;
   maxStorageSize?: number; // max size in bytes for localStorage
+  ignoredComponents?: string[]; // components to ignore for undo/redo
 }
 
 interface SerializedUndoRedo {
@@ -107,6 +108,7 @@ export class UndoRedoProvider implements StateProvider {
       persistToStorage: options.persistToStorage ?? false,
       storageKey: options.storageKey ?? 'inspector-undo-redo-history',
       maxStorageSize: options.maxStorageSize ?? 1024 * 1024 * 10, // 10MB limit for localStorage
+      ignoredComponents: options.ignoredComponents ?? [], // components to ignore for undo/redo
     };
 
     this.undoList = UndoRedoArray(this.options.maxEntries, this.options.maxSize);
@@ -364,6 +366,11 @@ export class UndoRedoProvider implements StateProvider {
   ): Promise<void> {
     const composite = this.getComposite();
     if (!composite) return;
+
+    // Skip capturing undo operation if component is in ignore list
+    if (this.options.ignoredComponents.includes(operation.componentName)) {
+      return;
+    }
 
     const prevValue = findPrevValue(composite, operation.componentName, operation.entity);
     const crdtOperation: CrdtOperation = {

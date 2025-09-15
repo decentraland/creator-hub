@@ -4,6 +4,7 @@ import type { DataLayerRpcServer, FileSystemInterface } from '../types';
 import { readPreferencesFromFile, serializeInspectorPreferences } from '../../logic/preferences/io';
 import type { AssetData } from '../../logic/catalog';
 import type { InspectorPreferences } from '../../logic/preferences/types';
+import { EditorComponentNames } from '../../sdk/components/types';
 import {
   DIRECTORY,
   EXTENSIONS,
@@ -21,6 +22,10 @@ import { UndoRedoProvider } from './undo-redo-provider';
 import { createStream } from './stream';
 
 const INSPECTOR_PREFERENCES_PATH = 'inspector-preferences.json';
+
+function getIgnoredUndoRedoComponents() {
+  return [EditorComponentNames.Selection, EditorComponentNames.TransformConfig];
+}
 
 export async function initRpcMethods(
   fs: FileSystemInterface,
@@ -56,11 +61,13 @@ export async function initRpcMethods(
     enableValidation: true,
     enableStateVerification: true,
     persistToStorage: false, // disabled for now
+    ignoredComponents: getIgnoredUndoRedoComponents(),
   });
 
+  // order here matters!!!!: undo-redo, scene, composite
+  stateManager.registerProvider(undoRedoProvider);
   stateManager.registerProvider(sceneProvider);
   stateManager.registerProvider(compositeProvider);
-  stateManager.registerProvider(undoRedoProvider);
 
   await installBin(fs);
 

@@ -20,7 +20,7 @@ function* updateUndoRedoAvailability(): Generator<any, void, any> {
   if (!dataLayer) return;
 
   try {
-    const state: any = yield call((dataLayer as any).getUndoRedoState, {});
+    const state: any = yield call(dataLayer.getUndoRedoState, {});
     if (state) {
       yield put(
         updateUndoRedoState({
