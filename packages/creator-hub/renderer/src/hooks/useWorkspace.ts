@@ -35,8 +35,8 @@ export const useWorkspace = () => {
     [],
   );
 
-  const deleteProject = useCallback((project: Project) => {
-    dispatch(workspaceActions.deleteProject(project.path));
+  const deleteProject = useCallback((project: Project, shouldDeleteFiles: boolean) => {
+    dispatch(workspaceActions.deleteProject({ path: project.path, shouldDeleteFiles }));
   }, []);
 
   const duplicateProject = useCallback((project: Project) => {
