@@ -39,10 +39,27 @@ export const useComponentInput = <ComponentValueType extends object, InputType e
   fromInputToComponentValue: (input: InputType) => ComponentValueType,
   validateInput: (input: InputType) => boolean = () => true,
   deps: unknown[] = [],
+  tolerance: number = 2, // floating-point tolerance for comparisons (default: 2 decimal places)
 ) => {
+  // Create a normalization function that handles the round-trip transformation
+  const normalizeForComparison = useCallback(
+    (value: ComponentValueType): ComponentValueType => {
+      try {
+        const inputForm = fromComponentValueToInput(value);
+        return fromInputToComponentValue(inputForm);
+      } catch (error) {
+        console.warn('Failed to normalize component value for comparison:', error);
+        return value; // if transformation fails, return original value
+      }
+    },
+    [fromComponentValueToInput, fromInputToComponentValue],
+  );
+
   const [componentValue, setComponentValue, isEqual] = useComponentValue<ComponentValueType>(
     entity,
     component,
+    normalizeForComparison,
+    tolerance,
   );
   const [input, setInput] = useState<InputType | null>(
     componentValue === null ? null : fromComponentValueToInput(componentValue),

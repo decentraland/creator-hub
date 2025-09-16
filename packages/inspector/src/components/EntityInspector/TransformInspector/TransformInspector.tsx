@@ -8,12 +8,12 @@ import {
 import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
 import { withSdk } from '../../../hoc/withSdk';
 
-import { Props } from './types';
-import { fromTransform, toTransform, fromTransformConfig } from './utils';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { TextField } from '../../ui';
-import { Link, Props as LinkProps } from './Link';
+import { fromTransform, toTransform, fromTransformConfig } from './utils';
+import type { Props } from './types';
+import { Link, type Props as LinkProps } from './Link';
 
 import './TransformInspector.css';
 
