@@ -1,20 +1,12 @@
 PROTOBUF_VERSION = 3.20.1
-
-UNAME_S := $(shell uname)
-UNAME_M := $(shell uname -m)
-
-ifeq ($(UNAME_S),Darwin)
-    ifeq ($(UNAME_M),arm64)
-        PROTOBUF_ZIP = protoc-$(PROTOBUF_VERSION)-osx-aarch_64.zip
-    else
-        PROTOBUF_ZIP = protoc-$(PROTOBUF_VERSION)-osx-x86_64.zip
-    endif
-else ifeq ($(UNAME_S),Linux)
-    ifeq ($(UNAME_M),aarch64)
-        PROTOBUF_ZIP = protoc-$(PROTOBUF_VERSION)-linux-aarch_64.zip
-    else
-        PROTOBUF_ZIP = protoc-$(PROTOBUF_VERSION)-linux-x86_64.zip
-    endif
+ifeq ($(shell uname),Darwin)
+PROTOBUF_ZIP = protoc-$(PROTOBUF_VERSION)-osx-x86_64.zip
+else
+ifeq ($(shell arch),aarch64)
+PROTOBUF_ZIP = protoc-$(PROTOBUF_VERSION)-linux-aarch_64.zip
+else
+PROTOBUF_ZIP = protoc-$(PROTOBUF_VERSION)-linux-x86_64.zip
+endif
 endif
 
 PROTOC = node_modules/.bin/protobuf/bin/protoc
