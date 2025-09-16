@@ -61,17 +61,10 @@ export async function initRpcMethods(
       return type;
     },
     async addCustomComponent(request: { name: string; schema: Uint8Array }) {
-      console.log('RPC: addCustomComponent called with', request);
-      try {
-        const schema = JSON.parse(new TextDecoder().decode(request.schema));
-        const newTagComponent = engine.defineComponent(request.name, schema);
-        engine.update(1);
-        console.log('RPC: new tag component', newTagComponent);
-      } catch (error) {
-        console.error('RPC: error in addCustomComponent:', error);
-        throw error;
-      }
-      return {};
+      const schema = JSON.parse(new TextDecoder().decode(request.schema));
+      const newTagComponent = engine.defineComponent(request.name, schema);
+      engine.update(1);
+      return newTagComponent;
     },
     async getCustomComponentsDefinitions() {
       const allComponents = Array.from(engine.componentsIter());

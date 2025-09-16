@@ -1,65 +1,23 @@
-import React, { useCallback, useState, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import './TagsInspector.css';
 import { FaTag as TagIcon, FaPlus } from 'react-icons/fa';
 import type { Entity } from '@dcl/ecs';
-import type { Tags } from '@dcl/asset-packs';
 
 import { useEntityComponent } from '../../../hooks/sdk/useEntityComponent';
 import { withSdk } from '../../../hoc/withSdk';
 import { Dropdown, type DropdownChangeEvent } from '../../ui/Dropdown';
+import { getSceneTags, updateTagsForEntity } from '../../../lib/sdk/components/Tags';
 import { CreateEditTagModal } from './CreateEditTagModal';
-import { TAG_PREFIX, DEFAULT_TAGS, type Tag } from './types';
 
 const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
-  const { getComponents, addComponent, removeComponent } = useEntityComponent();
+  const { getComponents } = useEntityComponent();
   const [open, setOpen] = useState(false);
   const entityComponents = Array.from(getComponents(entity, false).entries()).map(([id, name]) => ({
     id,
     name,
   }));
 
-  const allComponents = () => {
-    const ids = new Set<number>();
-    const components: Array<{ id: number; name: string }> = [];
-    for (const component of sdk.engine.componentsIter()) {
-      if (!ids.has(component.componentId)) {
-        ids.add(component.componentId);
-        components.push({
-          id: component.componentId,
-          name: component.componentName,
-        });
-      }
-    }
-    return components;
-  };
-
-  const removePrefix = (name: string) => name.replace(TAG_PREFIX, '');
-  const tags: Tag[] = allComponents()
-    .filter(component => component.name.startsWith(TAG_PREFIX))
-    ?.map(tag => ({
-      id: tag.id,
-      name: tag.name,
-      isDefault: DEFAULT_TAGS.includes(tag.name as Tags),
-    }));
-
-  const entityTags = useMemo(
-    () => entityComponents.filter(component => component.name.startsWith(TAG_PREFIX)),
-    [entityComponents, entity],
-  );
-
-  const value = entityTags.map(tag => tag.id.toString());
-  const options = tags.map(tag => ({
-    label: removePrefix(tag.name),
-    value: tag.id.toString(),
-  }));
-
-  console.log('ALL COMPONENTS', allComponents());
-  console.log('TAGS COMPONENTS', tags);
-  console.log('ENTITY TAGS COMPONENTS', entityTags);
-
-  if (tags.length === 0) {
-    return null;
-  }
+  const tags = useMemo(() => getSceneTags(sdk.engine), [entity]);
 
   const handleCreateNewTag = (e: React.ChangeEvent<HTMLSelectElement>) => {
     e.preventDefault();
@@ -68,27 +26,9 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
 
   const handleTagChange = useCallback(
     ({ target: { value } }: DropdownChangeEvent) => {
-      const newValues = value as unknown as string[];
-      const currentTagIds = entityTags.map(tag => tag.id.toString());
-
-      newValues.forEach(tagId => {
-        if (!currentTagIds.includes(tagId)) {
-          addComponent(entity, Number(tagId), {});
-        }
-      });
-
-      currentTagIds.forEach(tagId => {
-        if (!newValues.includes(tagId)) {
-          const component = sdk.engine.getComponentOrNull(Number(tagId));
-          if (component) {
-            removeComponent(entity, component as any);
-          }
-        }
-      });
-
-      void sdk.operations.dispatch();
+      updateTagsForEntity(sdk.engine, entity, value[0]);
     },
-    [entity, entityTags, sdk, addComponent, removeComponent],
+    [entity, sdk],
   );
 
   return (
@@ -101,9 +41,9 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
           placeholder="Add or create tags"
           multiple
           onChange={handleTagChange}
-          value={value}
+          value={'h'}
           options={[
-            ...options,
+            ...tags.map(tag => ({ label: tag.name, value: tag.name })),
             {
               label: 'Create a new tag',
               value: 'create',

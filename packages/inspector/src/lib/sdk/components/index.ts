@@ -115,7 +115,7 @@ export type EditorComponentsTypes = {
   AdminTools: AdminTools;
   VideoScreen: VideoScreen;
   Rewards: Rewards;
-  Tags: Tag[];
+  Tags: { tags: Tag[] };
 };
 
 export type EditorComponents = {
@@ -271,7 +271,6 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
   });
 
   const Tags = defineTagsComponents(engine);
-
   return {
     Selection,
     Scene,
