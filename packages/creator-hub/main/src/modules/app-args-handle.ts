@@ -1,5 +1,6 @@
 import * as path from 'path';
 import log from 'electron-log/main';
+import { BrowserWindow } from 'electron';
 import type { ChromeDevToolsClient, ServerPort } from './chrome-devtools/client';
 
 const OPEN_DEVTOOLS_ARG = '--open-devtools-with-port';
@@ -16,14 +17,18 @@ export type AppArgsHandle = {
   handle(argv: string[]): void;
 };
 
-export function newAppArgsHandle(client: ChromeDevToolsClient): AppArgsHandle {
+export function newAppArgsHandle(_client: ChromeDevToolsClient): AppArgsHandle {
   function handle(argv: string[]): void {
     const args: Args = argsFrom(argv);
     const parsed: ParsedArgs = parsedArgsFrom(args);
     log.info(`[Args] processing args: ${JSON.stringify(parsed)} from ${argv}`);
 
     if (parsed.devtoolsPort !== null) {
-      void client.openTab(parsed.devtoolsPort);
+      // Test internal devtools: void client.openTab(parsed.devtoolsPort);
+      const devtoolsWindow = new BrowserWindow();
+      devtoolsWindow.loadURL(
+        'devtools://devtools/bundled/inspector.html?ws=127.0.0.1:' + parsed.devtoolsPort.port,
+      );
     }
   }
 
