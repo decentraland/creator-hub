@@ -35,6 +35,7 @@ export const getTagComponent = (engine: IEngine) => {
   return engine.getComponentOrNull(EditorComponentNames.Tags) as EditorComponents['Tags'];
 };
 
+//TODO: create if not exists??
 export function getSceneTags(engine: IEngine) {
   return getTagsForEntity(engine, engine.RootEntity);
 }
@@ -60,9 +61,29 @@ export function updateTagsForEntity(engine: IEngine, entity: Entity, tags: Tag[]
 //TODO: validate no repeat names :)
 export function createTag(engine: IEngine, name: string) {
   const Tags = getTagComponent(engine);
-  const currentTags = Tags.getOrNull(engine.RootEntity)?.tags ?? [];
+  const currentTags = getSceneTags(engine);
   if (Tags) {
     Tags.getMutable(engine.RootEntity).tags = [...currentTags, { name, type: TagType.Custom }];
     engine.update(1);
   }
 }
+
+//TODO: validate that is not a engine tag
+export function removeTag(engine: IEngine, name: string) {
+  const Tags = getTagComponent(engine);
+  const entitiesWithTags = engine.getEntitiesWith(Tags);
+
+  // Remove tag from all entities including root
+  for (const [entity] of entitiesWithTags) {
+    const tags = Tags.getMutable(entity).tags;
+    const newTags = tags.filter($ => $.name !== name);
+    Tags.getMutable(entity).tags = newTags;
+  }
+
+  engine.update(1);
+}
+
+// const tags = Tags.get(engine.RootEntity).tags;
+// const newTags = tags.filter($ => $.name === '' && $.type === TagType.Custom);
+
+// Tags.getMutable(engine.RootEntity).tags = newTags;

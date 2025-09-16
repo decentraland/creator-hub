@@ -7,7 +7,13 @@ import type { Props as OptionProp } from '../../ui/Dropdown/Option/types';
 
 import { withSdk } from '../../../hoc/withSdk';
 import { Dropdown, type DropdownChangeEvent } from '../../ui/Dropdown';
-import { getTagComponent, updateTagsForEntity, TagType } from '../../../lib/sdk/components/Tags';
+import type { Tag } from '../../../lib/sdk/components/Tags';
+import {
+  getTagComponent,
+  updateTagsForEntity,
+  TagType,
+  removeTag,
+} from '../../../lib/sdk/components/Tags';
 import { useComponentValue } from '../../../hooks/sdk/useComponentValue';
 import { CreateEditTagModal } from './CreateEditTagModal';
 
@@ -27,6 +33,18 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
     setOpen(true);
   };
 
+  const handleRemoveTag = (e: React.MouseEvent<SVGElement>, tag: Tag) => {
+    e.preventDefault();
+    e.stopPropagation();
+    removeTag(sdk.engine, tag.name);
+  };
+
+  const handleEditTag = (e: React.MouseEvent<SVGElement>, tag: Tag) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('edit tag', tag);
+  };
+
   const getTagOptions = () => {
     const options: OptionProp[] = sceneTags.map(tag => ({
       label: tag.name,
@@ -35,8 +53,8 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
       rightIcon:
         tag.type === TagType.Custom ? (
           <>
-            <RemoveIcon onClick={() => console.log('remove tag')} />
-            <EditIcon onClick={() => console.log('edit tag')} />
+            <RemoveIcon onClick={e => handleRemoveTag(e, tag)} />
+            <EditIcon onClick={e => handleEditTag(e, tag)} />
           </>
         ) : null,
     }));

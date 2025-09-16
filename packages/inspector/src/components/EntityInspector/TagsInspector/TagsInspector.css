@@ -38,7 +38,7 @@
   .RightIcon {
     width: 100%;
     gap: 8px;
-    svg {
+    :is(svg) {
       width: 14px;
       height: 14px;
     }
