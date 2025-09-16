@@ -26,8 +26,8 @@ export function DeleteProject({ open, project, onClose, onSubmit }: Props) {
     <Modal
       open={open}
       title={t('modal.delete_project.title', { title: project.title })}
-      onClose={onClose}
       size="tiny"
+      className="DeleteProjectModal"
       actions={
         <>
           <Button
@@ -40,19 +40,21 @@ export function DeleteProject({ open, project, onClose, onSubmit }: Props) {
         </>
       }
     >
-      <Box className="DeleteProjectModal">
-        <p>{t('modal.delete_project.remove_imported_scene', { title: project.title })}</p>
-        <label className="delete-files">
-          <Checkbox
-            value={shouldDeleteFiles}
-            onChange={handleCheckboxChange}
-          />
-          <span>{t('modal.delete_project.files_checkbox')}</span>
-        </label>
-        {shouldDeleteFiles && (
-          <p className="delete-files-warning">{t('modal.delete_project.files_warning')}</p>
-        )}
-      </Box>
+      <label className="delete-files">
+        <Checkbox
+          value={shouldDeleteFiles}
+          onChange={handleCheckboxChange}
+        />
+        <span>{t('modal.delete_project.files_checkbox')}</span>
+      </label>
+
+      {shouldDeleteFiles ? (
+        <p className="delete-files-warning">{t('modal.delete_project.files_warning')}</p>
+      ) : (
+        <p className="delete-files-description">
+          {t('modal.delete_project.remove_imported_scene')}
+        </p>
+      )}
     </Modal>
   );
 }

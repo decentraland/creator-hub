@@ -1,3 +1,8 @@
+.DeleteProjectModal .MuiPaper-root .MuiBox-root:first-child h5:first-child {
+  text-align: center;
+  line-height: 1.5;
+}
+
 .DeleteProjectModal .delete-files {
   display: flex;
   align-items: center;
@@ -5,7 +10,14 @@
   width: max-content;
 }
 
-.DeleteProjectModal .delete-files-warning {
-  color: var(--danger);
+.DeleteProjectModal .delete-files-warning,
+.DeleteProjectModal .delete-files-description {
+  margin-bottom: 0;
   font-size: 0.9rem;
+  text-align: center;
+  white-space: pre-line;
+}
+
+.DeleteProjectModal .delete-files-warning {
+  color: var(--error);
 }

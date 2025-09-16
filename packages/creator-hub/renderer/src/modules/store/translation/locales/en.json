@@ -111,9 +111,9 @@
     },
     "delete_project": {
       "title": "Are you sure you want to delete \"{title}\"?",
-      "remove_imported_scene": "This will only remove \"{title}\" from the Editor. The original scene files on your computer will not be affected",
-      "files_checkbox": "Also delete files from disk",
-      "files_warning": "⚠️ Warning: This will permanently delete all project files from your computer. This action cannot be undone."
+      "remove_imported_scene": "If unchecked, this will only remove your scene items from the scene’s list. \nThe original files on your computer will remain unaffected.",
+      "files_checkbox": "Also delete scene files from my device",
+      "files_warning": "Your scene files will be permanently deleted from your device. \nThis action cannot be undone."
     },
     "publish_project": {
       "title": "Publish \"{title}\"",

@@ -111,9 +111,9 @@
     },
     "delete_project": {
       "title": "Estas seguro que quieres eliminar \"{title}\"?",
-      "remove_imported_scene": "Esto eliminará \"{title}\" del Editor. Los archivos originales permaneceran en tu sistema.",
-      "files_checkbox": "También eliminar archivos del disco",
-      "files_warning": "⚠️ Advertencia: Esto eliminará permanentemente todos los archivos del proyecto de tu computadora. Esta acción no se puede deshacer."
+      "remove_imported_scene": "Si no se selecciona, solo se eliminará la escena de la lista de escenas. \nLos archivos originales de la escena en tu computadora permanecerán intactos.",
+      "files_checkbox": "También eliminar los archivos de la escena de mi dispositivo",
+      "files_warning": "Los archivos de la escena se eliminarán permanentemente de tu dispositivo. \nEsta acción no se puede deshacer."
     },
     "publish_project": {
       "title": "Publicar escena \"{title}\"",
