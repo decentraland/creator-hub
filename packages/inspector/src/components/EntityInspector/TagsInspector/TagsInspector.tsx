@@ -3,21 +3,21 @@ import './TagsInspector.css';
 import { FaTag as TagIcon, FaPlus } from 'react-icons/fa';
 import type { Entity } from '@dcl/ecs';
 
-import { useEntityComponent } from '../../../hooks/sdk/useEntityComponent';
 import { withSdk } from '../../../hoc/withSdk';
 import { Dropdown, type DropdownChangeEvent } from '../../ui/Dropdown';
-import { getSceneTags, updateTagsForEntity } from '../../../lib/sdk/components/Tags';
+import {
+  getSceneTags,
+  getTagsForEntity,
+  updateTagsForEntity,
+} from '../../../lib/sdk/components/Tags';
 import { CreateEditTagModal } from './CreateEditTagModal';
 
 const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
-  const { getComponents } = useEntityComponent();
   const [open, setOpen] = useState(false);
-  const entityComponents = Array.from(getComponents(entity, false).entries()).map(([id, name]) => ({
-    id,
-    name,
-  }));
 
   const tags = useMemo(() => getSceneTags(sdk.engine), [entity]);
+
+  const entityTags = useMemo(() => getTagsForEntity(sdk.engine, entity), [entity, sdk]);
 
   const handleCreateNewTag = (e: React.ChangeEvent<HTMLSelectElement>) => {
     e.preventDefault();
@@ -26,9 +26,10 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
 
   const handleTagChange = useCallback(
     ({ target: { value } }: DropdownChangeEvent) => {
-      updateTagsForEntity(sdk.engine, entity, value[0]);
+      const selectedTags = tags.filter(tag => value.includes(tag.name));
+      updateTagsForEntity(sdk.engine, entity, selectedTags);
     },
-    [entity, sdk],
+    [entity, sdk, tags],
   );
 
   return (
@@ -41,7 +42,7 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
           placeholder="Add or create tags"
           multiple
           onChange={handleTagChange}
-          value={'h'}
+          value={entityTags.map(tag => tag.name)}
           options={[
             ...tags.map(tag => ({ label: tag.name, value: tag.name })),
             {

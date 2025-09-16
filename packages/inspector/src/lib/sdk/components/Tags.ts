@@ -31,12 +31,16 @@ export function defineTagsComponents(engine: IEngine) {
   return Tags;
 }
 
+export const getTagComponent = (engine: IEngine) => {
+  return engine.getComponentOrNull(EditorComponentNames.Tags) as EditorComponents['Tags'];
+};
+
 export function getSceneTags(engine: IEngine) {
   return getTagsForEntity(engine, engine.RootEntity);
 }
 
 export function getTagsForEntity(engine: IEngine, entity: Entity) {
-  const tagsComponent = engine.getComponentOrNull(EditorComponentNames.Tags);
+  const tagsComponent = getTagComponent(engine);
   try {
     return tagsComponent ? (tagsComponent.get(entity) as { tags: Tag[] }).tags : [];
   } catch (error) {
@@ -44,20 +48,11 @@ export function getTagsForEntity(engine: IEngine, entity: Entity) {
   }
 }
 
-export function updateTagsForEntity(engine: IEngine, entity: Entity, tagName: string) {
-  const Tags = engine.getComponentOrNull(EditorComponentNames.Tags) as EditorComponents['Tags'];
-  const sceneTags = getSceneTags(engine);
-  const entityTags = getTagsForEntity(engine, entity);
+export function updateTagsForEntity(engine: IEngine, entity: Entity, tags: Tag[]) {
+  const Tags = getTagComponent(engine);
   if (Tags) {
-    const isTagCreated = sceneTags.some(tag => tag.name === tagName);
-    if (isTagCreated) {
-      Tags.createOrReplace(entity, {
-        tags: [...entityTags, { name: tagName, type: TagType.Custom }],
-      });
-      engine.update(1);
-    } else {
-      throw new Error('Tag is not created yet');
-    }
+    Tags.createOrReplace(entity, { tags });
+    engine.update(1);
   }
 }
 
