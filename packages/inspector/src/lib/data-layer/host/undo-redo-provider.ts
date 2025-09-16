@@ -443,7 +443,10 @@ export class UndoRedoProvider implements StateProvider {
     }
   }
 
-  private async validateFileOperation(operation: FileOperation): Promise<boolean> {
+  private async validateFileOperation(
+    operation: FileOperation,
+    getValue: UndoRedoGetter,
+  ): Promise<boolean> {
     if (!this.options.enableValidation) return true;
 
     try {
@@ -451,10 +454,15 @@ export class UndoRedoProvider implements StateProvider {
         ? operation.path
         : withAssetDir(operation.path);
 
-      if (!operation.newValue) {
+      // Get the actual value that will be executed (prevValue for undo, newValue for redo)
+      const valueToExecute = getValue(operation);
+
+      // If we're deleting the file (valueToExecute is null), no parent directory validation needed
+      if (isNil(valueToExecute)) {
         return true;
       }
 
+      // Only validate parent directory for file creation/update operations
       const parentDir = filePath.substring(0, filePath.lastIndexOf('/'));
       if (parentDir && !(await this.fs.existFile(parentDir))) {
         ErrorHandler.handleError('Parent directory no longer exists for file operation', {
@@ -521,7 +529,7 @@ export class UndoRedoProvider implements StateProvider {
       } else if (message.$case === 'file') {
         for (const operation of message.operations) {
           try {
-            const isValid = await this.validateFileOperation(operation);
+            const isValid = await this.validateFileOperation(operation, getValue);
             if (!isValid) {
               failedOperations.push({
                 operation,
