@@ -1,6 +1,10 @@
-PROTOBUF_VERSION = 3.20.1
+PROTOBUF_VERSION = 21.12
 ifeq ($(shell uname),Darwin)
+ifeq ($(shell uname -m),arm64)
+PROTOBUF_ZIP = protoc-$(PROTOBUF_VERSION)-osx-aarch_64.zip
+else
 PROTOBUF_ZIP = protoc-$(PROTOBUF_VERSION)-osx-x86_64.zip
+endif
 else
 ifeq ($(shell arch),aarch64)
 PROTOBUF_ZIP = protoc-$(PROTOBUF_VERSION)-linux-aarch_64.zip
