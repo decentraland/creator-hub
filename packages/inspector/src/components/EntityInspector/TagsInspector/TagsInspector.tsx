@@ -18,7 +18,10 @@ import { useComponentValue } from '../../../hooks/sdk/useComponentValue';
 import { CreateEditTagModal } from './CreateEditTagModal';
 
 const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
-  const [open, setOpen] = useState(false);
+  const [createEditModal, setCreateEditModal] = useState<{ isOpen: boolean; tag: Tag | null }>({
+    isOpen: false,
+    tag: null,
+  });
   const [sceneTagsComponent] = useComponentValue(
     sdk.engine.RootEntity,
     getTagComponent(sdk.engine),
@@ -30,7 +33,7 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
 
   const handleCreateNewTag = (e: React.ChangeEvent<HTMLSelectElement>) => {
     e.preventDefault();
-    setOpen(true);
+    setCreateEditModal({ isOpen: true, tag: null });
   };
 
   const handleRemoveTag = (e: React.MouseEvent<SVGElement>, tag: Tag) => {
@@ -42,7 +45,7 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
   const handleEditTag = (e: React.MouseEvent<SVGElement>, tag: Tag) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('edit tag', tag);
+    setCreateEditModal({ isOpen: true, tag });
   };
 
   const getTagOptions = () => {
@@ -92,8 +95,9 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
         />
       </div>
       <CreateEditTagModal
-        open={open}
-        onClose={() => setOpen(false)}
+        open={createEditModal.isOpen}
+        onClose={() => setCreateEditModal({ isOpen: false, tag: null })}
+        tag={createEditModal.tag}
       />
     </div>
   );

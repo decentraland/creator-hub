@@ -28,19 +28,20 @@
   border-top: 1px solid var(--base-10);
 }
 
+.TagsInspector .AddTagOption .OptionContent {
+  height: 32px;
+}
+
 .TagsInspector .TagOption .OptionContent {
   height: 32px;
   width: 100%;
 }
 
-.TagsInspector .TagOption .RightContent {
-  width: 30%;
-  .RightIcon {
-    width: 100%;
-    gap: 8px;
-    :is(svg) {
-      width: 14px;
-      height: 14px;
-    }
+.TagsInspector .TagOption .RightIcon {
+  width: 100%;
+  gap: 8px;
+  :is(svg) {
+    width: 14px;
+    height: 14px;
   }
 }

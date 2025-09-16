@@ -40,6 +40,7 @@ export function getSceneTags(engine: IEngine) {
   return getTagsForEntity(engine, engine.RootEntity);
 }
 
+//TODO I can use getMutable or null
 export function getTagsForEntity(engine: IEngine, entity: Entity) {
   const tagsComponent = getTagComponent(engine);
   try {
@@ -73,15 +74,27 @@ export function removeTag(engine: IEngine, name: string) {
   const Tags = getTagComponent(engine);
   const entitiesWithTags = engine.getEntitiesWith(Tags);
 
-  // Remove tag from all entities including root
   for (const [entity] of entitiesWithTags) {
-    const tags = Tags.getMutable(entity).tags;
-    const newTags = tags.filter($ => $.name !== name);
+    const currentTags = Tags.getMutable(entity).tags;
+    const newTags = currentTags.filter($ => $.name !== name);
     Tags.getMutable(entity).tags = newTags;
   }
 
   engine.update(1);
 }
+
+export const renameTag = (engine: IEngine, tag: string, newName: string) => {
+  const Tags = getTagComponent(engine);
+  const entitiesWithTags = engine.getEntitiesWith(Tags);
+
+  for (const [entity] of entitiesWithTags) {
+    const currentTags = Tags.getMutable(entity).tags;
+    const newTags = currentTags.map($ => ($.name === tag ? { ...$, name: newName } : $));
+    Tags.getMutable(entity).tags = newTags;
+  }
+
+  engine.update(1);
+};
 
 // const tags = Tags.get(engine.RootEntity).tags;
 // const newTags = tags.filter($ => $.name === '' && $.type === TagType.Custom);
