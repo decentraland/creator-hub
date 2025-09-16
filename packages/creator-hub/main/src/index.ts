@@ -10,30 +10,10 @@ import { killInspectorServer } from '/@/modules/inspector';
 import { runMigrations } from '/@/modules/migrations';
 import { getAnalytics, track } from './modules/analytics';
 import { newAppArgsHandle, type AppArgsHandle } from './modules/app-args-handle';
-import {
-  newChromeDevToolsDownloadDaemon,
-  type ChromeDevToolsDownloadDaemon,
-} from './modules/chrome-devtools/download-daemon';
-import {
-  newChromeDevToolsClient,
-  type ChromeDevToolsClient,
-} from './modules/chrome-devtools/client';
-import {
-  newChromeDevToolsRendererIpcBridge,
-  type ChromeDevToolsRendererIpcBridge,
-} from './modules/chrome-devtools/ipc-bridge';
 
 import '/@/security-restrictions';
 
-const chromeDevToolsRendererIpcBridge: ChromeDevToolsRendererIpcBridge =
-  newChromeDevToolsRendererIpcBridge();
-const chromeDevToolsDownloadDaemon: ChromeDevToolsDownloadDaemon =
-  newChromeDevToolsDownloadDaemon();
-const chromeDevToolsClient: ChromeDevToolsClient = newChromeDevToolsClient(
-  chromeDevToolsDownloadDaemon,
-  chromeDevToolsRendererIpcBridge,
-);
-const appArgsHandle: AppArgsHandle = newAppArgsHandle(chromeDevToolsClient);
+const appArgsHandle: AppArgsHandle = newAppArgsHandle();
 
 log.initialize();
 
@@ -91,14 +71,6 @@ app
       log.info('[Analytics] API key not provided, analytics disabled');
     }
 
-    async function startDownloadIfRequired() {
-      const result = await chromeDevToolsDownloadDaemon.ensureDownloaded();
-      if (result.isOk() === false) {
-        log.error(`[Daemon] cannot download chrome devtools: ${result.error}`);
-      }
-    }
-
-    void startDownloadIfRequired();
     appArgsHandle.handle(process.argv);
   })
   .catch(e => log.error('Failed create window:', e));
