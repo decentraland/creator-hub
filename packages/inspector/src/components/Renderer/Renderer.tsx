@@ -324,8 +324,7 @@ const Renderer: React.FC = () => {
           basePath: withAssetDir(destFolder),
           assetPackageName,
         });
-        // Refresh asset catalog after import
-        dispatch(getAssetCatalog());
+        // Note: importAsset already handles asset catalog refresh internally
       }
     }
 

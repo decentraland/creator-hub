@@ -148,7 +148,9 @@ export async function initRpcMethods(
           await upsertAsset(fs, filePath, fileContent);
         }
 
-        undoRedoProvider.addUndoFile(undoAcc);
+        if (undoAcc.length > 0) {
+          undoRedoProvider.addUndoFile(undoAcc);
+        }
         return {};
       });
     },

@@ -280,7 +280,7 @@ export class StateManager {
   }
 
   async dispose(): Promise<void> {
-    for (const timeout of this.pendingTimeouts) {
+    for (const timeout of Array.from(this.pendingTimeouts)) {
       clearTimeout(timeout);
     }
     this.pendingTimeouts.clear();

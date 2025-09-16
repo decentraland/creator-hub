@@ -20,6 +20,11 @@ import { ErrorHandler } from './error-handler';
 
 export type UndoRedoCrdt = { $case: 'crdt'; operations: CrdtOperation[] };
 export type UndoRedoFile = { $case: 'file'; operations: FileOperation[] };
+export type UndoRedoComposite = {
+  $case: 'composite';
+  fileOperations: FileOperation[];
+  crdtOperations: CrdtOperation[];
+};
 
 export type CrdtOperation = {
   entity: Entity;
@@ -35,8 +40,8 @@ export type FileOperation = {
   newValue: Uint8Array | null;
 };
 
-export type UndoRedo = UndoRedoFile | UndoRedoCrdt;
-export type UndoRedoOp = UndoRedo['operations'][0];
+export type UndoRedo = UndoRedoFile | UndoRedoCrdt | UndoRedoComposite;
+export type UndoRedoOp = CrdtOperation | FileOperation;
 export type UndoRedoGetter = <T extends UndoRedoOp>(op: T) => T['newValue'];
 
 export interface UndoRedoOptions {
@@ -51,14 +56,26 @@ export interface UndoRedoOptions {
 }
 
 interface SerializedUndoRedo {
-  $case: 'crdt' | 'file';
-  operations: Array<{
+  $case: 'crdt' | 'file' | 'composite';
+  operations?: Array<{
     entity?: Entity;
     componentName?: string;
     operation?: CrdtMessageType;
     prevValue?: string; // JSON serialized
     newValue?: string; // JSON serialized
     path?: string; // for file operations
+  }>;
+  fileOperations?: Array<{
+    path: string;
+    prevValue?: string; // base64 encoded
+    newValue?: string; // base64 encoded
+  }>;
+  crdtOperations?: Array<{
+    entity: Entity;
+    componentName: string;
+    operation: CrdtMessageType;
+    prevValue?: string; // JSON serialized
+    newValue?: string; // JSON serialized
   }>;
   timestamp: number;
 }
@@ -89,6 +106,8 @@ export class UndoRedoProvider implements StateProvider {
   private readonly getComposite: () => CompositeDefinition | null;
   private readonly options: Required<UndoRedoOptions>;
   private isExecutingUndoRedo = false;
+  private deferredFileOperations: FileOperation[] | null = null;
+  private deferredTimeout: NodeJS.Timeout | null = null;
 
   constructor(
     fs: FileSystemInterface,
@@ -240,6 +259,23 @@ export class UndoRedoProvider implements StateProvider {
           })),
           timestamp: Date.now(),
         };
+      } else if (operation.$case === 'composite') {
+        return {
+          $case: 'composite',
+          fileOperations: operation.fileOperations.map(op => ({
+            path: op.path,
+            prevValue: this.serializeFileValue(op.prevValue),
+            newValue: this.serializeFileValue(op.newValue),
+          })),
+          crdtOperations: operation.crdtOperations.map(op => ({
+            entity: op.entity,
+            componentName: op.componentName,
+            operation: op.operation,
+            prevValue: this.serializeValue(op.prevValue),
+            newValue: this.serializeValue(op.newValue),
+          })),
+          timestamp: Date.now(),
+        };
       }
     } catch (error) {
       ErrorHandler.handleError(
@@ -256,7 +292,7 @@ export class UndoRedoProvider implements StateProvider {
       if (serialized.$case === 'crdt') {
         return {
           $case: 'crdt',
-          operations: serialized.operations.map(op => ({
+          operations: serialized.operations!.map(op => ({
             entity: op.entity!,
             componentName: op.componentName!,
             operation: op.operation!,
@@ -267,10 +303,26 @@ export class UndoRedoProvider implements StateProvider {
       } else if (serialized.$case === 'file') {
         return {
           $case: 'file',
-          operations: serialized.operations.map(op => ({
+          operations: serialized.operations!.map(op => ({
             path: op.path!,
             prevValue: this.deserializeFileValue(op.prevValue),
             newValue: this.deserializeFileValue(op.newValue),
+          })),
+        };
+      } else if (serialized.$case === 'composite') {
+        return {
+          $case: 'composite',
+          fileOperations: serialized.fileOperations!.map(op => ({
+            path: op.path,
+            prevValue: this.deserializeFileValue(op.prevValue),
+            newValue: this.deserializeFileValue(op.newValue),
+          })),
+          crdtOperations: serialized.crdtOperations!.map(op => ({
+            entity: op.entity,
+            componentName: op.componentName,
+            operation: op.operation,
+            prevValue: this.deserializeValue(op.prevValue),
+            newValue: this.deserializeValue(op.newValue),
           })),
         };
       }
@@ -307,7 +359,7 @@ export class UndoRedoProvider implements StateProvider {
   private serializeFileValue(value: Uint8Array | null): string | undefined {
     if (!value) return undefined;
     try {
-      return btoa(String.fromCharCode(...value));
+      return btoa(String.fromCharCode(...Array.from(value)));
     } catch (error) {
       return undefined;
     }
@@ -392,9 +444,35 @@ export class UndoRedoProvider implements StateProvider {
   async onTransactionComplete(transaction: Transaction): Promise<void> {
     const operations = this.pendingCrdtOperations.get(transaction.id);
     if (operations && operations.length > 0) {
+      // Check if we're in deferred mode and should create a composite entry
+      if (this.deferredFileOperations) {
+        // Clear the timeout since we're creating a composite entry
+        if (this.deferredTimeout) {
+          clearTimeout(this.deferredTimeout);
+          this.deferredTimeout = null;
+        }
+
+        this.redoList.clear();
+        this.undoList.push({
+          $case: 'composite',
+          fileOperations: this.deferredFileOperations,
+          crdtOperations: operations,
+        });
+        this.saveToStorage();
+        this.deferredFileOperations = null;
+      } else {
+        // Normal CRDT-only operation
+        this.redoList.clear();
+        this.undoList.push({ $case: 'crdt', operations });
+        this.saveToStorage();
+      }
+    } else if (this.deferredFileOperations) {
+      // we had deferred file operations but no CRDT operations followed
+      // this shouldn't normally happen, but we'll handle it gracefully
       this.redoList.clear();
-      this.undoList.push({ $case: 'crdt', operations });
+      this.undoList.push({ $case: 'file', operations: this.deferredFileOperations });
       this.saveToStorage();
+      this.deferredFileOperations = null;
     }
 
     this.pendingCrdtOperations.delete(transaction.id);
@@ -456,7 +534,7 @@ export class UndoRedoProvider implements StateProvider {
         return true;
       }
 
-      // Only validate parent directory for file creation/update operations
+      // only validate parent directory for file creation/update operations
       // Note: We skip parent directory validation because the file system should handle
       // directory creation automatically during writeFile operations
       // This prevents validation failures during redo when directories were cleaned up
@@ -545,10 +623,83 @@ export class UndoRedoProvider implements StateProvider {
             );
           }
         }
+      } else if (message.$case === 'composite') {
+        // Execute file operations first, then CRDT operations
+        for (const operation of message.fileOperations) {
+          try {
+            const isValid = await this.validateFileOperation(operation, getValue);
+            if (!isValid) {
+              failedOperations.push({
+                operation,
+                error: new Error('File operation validation failed'),
+              });
+              continue;
+            }
+
+            const filePath = isFileInAssetDir(operation.path)
+              ? operation.path
+              : withAssetDir(operation.path);
+
+            await upsertAsset(this.fs, filePath, getValue(operation));
+            successfulOperations.push(operation);
+          } catch (error) {
+            failedOperations.push({ operation, error: error as Error });
+            ErrorHandler.handleError(
+              'File operation failed during composite undo/redo',
+              {
+                component: operation.path,
+                operation: message.$case,
+              },
+              error as Error,
+            );
+          }
+        }
+
+        // Then execute CRDT operations
+        for (const operation of message.crdtOperations) {
+          try {
+            const isValid = await this.validateCrdtOperation(operation);
+            if (!isValid) {
+              failedOperations.push({
+                operation,
+                error: new Error('Operation validation failed'),
+              });
+              continue;
+            }
+
+            const component = this.engine.getComponent(
+              operation.componentName,
+            ) as LastWriteWinElementSetComponentDefinition<unknown>;
+
+            const value = getValue(operation);
+
+            if (isNil(value)) {
+              component.deleteFrom(operation.entity);
+            } else {
+              component.createOrReplace(operation.entity, value);
+            }
+
+            successfulOperations.push(operation);
+          } catch (error) {
+            failedOperations.push({ operation, error: error as Error });
+            ErrorHandler.handleError(
+              'CRDT operation failed during composite undo/redo',
+              {
+                component: operation.componentName,
+                entity: operation.entity,
+                operation: message.$case,
+              },
+              error as Error,
+            );
+          }
+        }
       }
 
       if (failedOperations.length > 0) {
-        const totalOps = message.operations.length;
+        const totalOps =
+          message.$case === 'composite'
+            ? message.fileOperations.length + message.crdtOperations.length
+            : (message as UndoRedoCrdt | UndoRedoFile).operations.length;
         const failedCount = failedOperations.length;
         const successCount = successfulOperations.length;
 
@@ -574,9 +725,46 @@ export class UndoRedoProvider implements StateProvider {
   }
 
   addUndoFile(operations: FileOperation[]): void {
+    if (operations.length === 0) {
+      return;
+    }
+    // start deferred mode to potentially group with subsequent CRDT operations
+    this.startDeferredMode(operations);
+  }
+
+  addUndoComposite(fileOperations: FileOperation[], crdtOperations: CrdtOperation[]): void {
+    if (fileOperations.length === 0 && crdtOperations.length === 0) {
+      return;
+    }
     this.redoList.clear();
-    this.undoList.push({ $case: 'file', operations });
+    this.undoList.push({ $case: 'composite', fileOperations, crdtOperations });
     this.saveToStorage();
+  }
+
+  startDeferredMode(fileOperations: FileOperation[]): void {
+    if (this.deferredTimeout) {
+      clearTimeout(this.deferredTimeout);
+    }
+
+    this.deferredFileOperations = fileOperations;
+
+    this.deferredTimeout = setTimeout(() => {
+      if (this.deferredFileOperations) {
+        this.redoList.clear();
+        this.undoList.push({ $case: 'file', operations: this.deferredFileOperations });
+        this.saveToStorage();
+        this.deferredFileOperations = null;
+      }
+      this.deferredTimeout = null;
+    }, 100); // 100ms timeout - should be enough for immediate CRDT operations
+  }
+
+  endDeferredMode(): void {
+    if (this.deferredTimeout) {
+      clearTimeout(this.deferredTimeout);
+      this.deferredTimeout = null;
+    }
+    this.deferredFileOperations = null;
   }
 
   clearHistory(): void {
@@ -592,10 +780,6 @@ export class UndoRedoProvider implements StateProvider {
     };
   }
 
-  /**
-   * Verify that the engine state is consistent with the composite state.
-   * This helps detect when the undo system might be working with stale data.
-   */
   private async verifyStateIntegrity(): Promise<boolean> {
     try {
       const composite = this.getComposite();
@@ -771,6 +955,12 @@ export class UndoRedoProvider implements StateProvider {
   dispose(): void {
     if (this.options.persistToStorage) {
       this.saveToStorage();
+    }
+
+    // Clean up deferred timeout
+    if (this.deferredTimeout) {
+      clearTimeout(this.deferredTimeout);
+      this.deferredTimeout = null;
     }
 
     this.clearHistory();
