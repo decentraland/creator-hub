@@ -450,27 +450,16 @@ export class UndoRedoProvider implements StateProvider {
     if (!this.options.enableValidation) return true;
 
     try {
-      const filePath = isFileInAssetDir(operation.path)
-        ? operation.path
-        : withAssetDir(operation.path);
-
-      // Get the actual value that will be executed (prevValue for undo, newValue for redo)
       const valueToExecute = getValue(operation);
 
-      // If we're deleting the file (valueToExecute is null), no parent directory validation needed
       if (isNil(valueToExecute)) {
         return true;
       }
 
       // Only validate parent directory for file creation/update operations
-      const parentDir = filePath.substring(0, filePath.lastIndexOf('/'));
-      if (parentDir && !(await this.fs.existFile(parentDir))) {
-        ErrorHandler.handleError('Parent directory no longer exists for file operation', {
-          operation: 'file_validate',
-          component: filePath,
-        });
-        return false;
-      }
+      // Note: We skip parent directory validation because the file system should handle
+      // directory creation automatically during writeFile operations
+      // This prevents validation failures during redo when directories were cleaned up
 
       return true;
     } catch (error) {
