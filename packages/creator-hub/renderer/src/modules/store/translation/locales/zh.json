@@ -108,7 +108,9 @@
     },
     "delete_project": {
       "title": "您确定要删除 \"{title}\" 吗？",
-      "remove_imported_scene": "这只会从编辑器中删除 \"{title}\"。您计算机上的原始场景文件不会受到影响。"
+      "remove_imported_scene": "这只会从编辑器中删除 \"{title}\"。您计算机上的原始场景文件不会受到影响。",
+      "files_checkbox": "同时从磁盘中删除文件",
+      "files_warning": "⚠️ 警告：这将永久删除您计算机上的所有项目文件。此操作无法撤消。"
     },
     "publish_project": {
       "title": "公共场所 \"{title}\"",

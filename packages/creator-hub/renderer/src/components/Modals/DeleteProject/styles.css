@@ -1,0 +1,11 @@
+.DeleteProjectModal .delete-files {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  width: max-content;
+}
+
+.DeleteProjectModal .delete-files-warning {
+  color: var(--danger);
+  font-size: 0.9rem;
+}
