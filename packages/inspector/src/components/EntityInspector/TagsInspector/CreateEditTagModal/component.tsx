@@ -37,16 +37,31 @@ const CreateEditTagModal = withSdk<Props>(({ open, onClose, sdk, tag }) => {
       onRequestClose={onClose}
       className="CreateEditTagModal"
     >
-      <h2>{tag ? 'Edit tag' : 'Create tag'}</h2>
-      {tag && <span>Editing tag {tag.name}</span>}
-      <TextField
-        label="Tag name"
-        autoSelect
-        value={tag?.name || ''}
-        onChange={handleNameChange}
-      />
-      <Button onClick={onClose}>Cancel</Button>
-      <Button onClick={tag ? handleSaveTag : handleCreateTag}>{tag ? 'Save' : 'Create'}</Button>
+      <div className="content">
+        <h2 className="title">{tag ? 'Edit tag' : 'Create tag'}</h2>
+        {tag && <span>Editing tag {tag.name}</span>}
+        <TextField
+          label="Tag name"
+          autoSelect
+          value={tag?.name || ''}
+          onChange={handleNameChange}
+        />
+      </div>
+      <div className="actions">
+        <Button
+          size="big"
+          onClick={onClose}
+        >
+          Cancel
+        </Button>
+        <Button
+          size="big"
+          type="danger"
+          onClick={tag ? handleSaveTag : handleCreateTag}
+        >
+          {tag ? 'Save tag' : 'Create tag'}
+        </Button>
+      </div>
     </Modal>
   );
 });

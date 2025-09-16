@@ -1,10 +1,18 @@
 .CreateEditTagModal {
   background-color: var(--modal);
+  min-width: 350px;
 }
 
 .CreateEditTagModal .actions {
   display: flex;
-  justify-content: flex-end;
-  gap: 8px;
+  flex-direction: column;
   margin-top: 24px;
+  padding: 24px;
+  gap: 8px;
+}
+
+.CreateEditTagModal .content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
