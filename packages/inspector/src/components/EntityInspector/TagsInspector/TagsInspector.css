@@ -23,7 +23,24 @@
   width: 85%;
 }
 
-.TagsInspector .create-new-tag-option {
+.TagsInspector .AddTagOption {
   width: 100%;
   border-top: 1px solid var(--base-10);
+}
+
+.TagsInspector .TagOption .OptionContent {
+  height: 32px;
+  width: 100%;
+}
+
+.TagsInspector .TagOption .RightContent {
+  width: 30%;
+  .RightIcon {
+    width: 100%;
+    gap: 8px;
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
 }

@@ -1,17 +1,15 @@
 import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
+
 import { Button } from '../../../Button';
 import { TextField } from '../../../ui/TextField';
 import { Modal } from '../../../Modal';
 import { withSdk } from '../../../../hoc/withSdk';
-import { addCustomComponentAction } from '../../../../redux/sdk';
+import { createTag } from '../../../../lib/sdk/components/Tags';
 
-import { TAG_PREFIX } from '../types';
 import type { Props } from './types';
 import './styles.css';
 
-const CreateEditTagModal = withSdk<Props>(({ open, onClose, entityId, sdk }) => {
-  const dispatch = useDispatch();
+const CreateEditTagModal = withSdk<Props>(({ open, onClose, sdk }) => {
   const [tagName, setTagName] = useState('');
 
   const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -20,8 +18,7 @@ const CreateEditTagModal = withSdk<Props>(({ open, onClose, entityId, sdk }) => 
 
   const handleCreateTag = async () => {
     if (tagName) {
-      const name = `${TAG_PREFIX}${tagName}`;
-      dispatch(addCustomComponentAction({ name }));
+      createTag(sdk.engine, tagName);
       onClose();
     }
   };

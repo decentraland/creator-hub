@@ -1,17 +1,18 @@
 import React, { useCallback, useState } from 'react';
 import './TagsInspector.css';
-import { FaTag as TagIcon, FaPlus } from 'react-icons/fa';
+import { FaTag as TagIcon, FaPlus, FaPencilAlt as EditIcon } from 'react-icons/fa';
+import { VscTrash as RemoveIcon } from 'react-icons/vsc';
 import type { Entity } from '@dcl/ecs';
+import type { Props as OptionProp } from '../../ui/Dropdown/Option/types';
 
 import { withSdk } from '../../../hoc/withSdk';
 import { Dropdown, type DropdownChangeEvent } from '../../ui/Dropdown';
-import { getTagComponent, updateTagsForEntity } from '../../../lib/sdk/components/Tags';
+import { getTagComponent, updateTagsForEntity, TagType } from '../../../lib/sdk/components/Tags';
 import { useComponentValue } from '../../../hooks/sdk/useComponentValue';
 import { CreateEditTagModal } from './CreateEditTagModal';
 
 const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
   const [open, setOpen] = useState(false);
-
   const [sceneTagsComponent] = useComponentValue(
     sdk.engine.RootEntity,
     getTagComponent(sdk.engine),
@@ -24,6 +25,30 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
   const handleCreateNewTag = (e: React.ChangeEvent<HTMLSelectElement>) => {
     e.preventDefault();
     setOpen(true);
+  };
+
+  const getTagOptions = () => {
+    const options: OptionProp[] = sceneTags.map(tag => ({
+      label: tag.name,
+      value: tag.name,
+      className: 'TagOption',
+      rightIcon:
+        tag.type === TagType.Custom ? (
+          <>
+            <RemoveIcon onClick={() => console.log('remove tag')} />
+            <EditIcon onClick={() => console.log('edit tag')} />
+          </>
+        ) : null,
+    }));
+    options.push({
+      label: 'Create a new tag',
+      value: 'create',
+      isField: false,
+      onClick: handleCreateNewTag,
+      leftIcon: <FaPlus />,
+      className: 'AddTagOption',
+    });
+    return options;
   };
 
   const handleTagChange = useCallback(
@@ -45,21 +70,10 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
           multiple
           onChange={handleTagChange}
           value={entityTags.map(tag => tag.name)}
-          options={[
-            ...sceneTags.map(tag => ({ label: tag.name, value: tag.name })),
-            {
-              label: 'Create a new tag',
-              value: 'create',
-              isField: false,
-              onClick: handleCreateNewTag,
-              leftIcon: <FaPlus />,
-              className: 'create-new-tag-option',
-            },
-          ]}
+          options={getTagOptions()}
         />
       </div>
       <CreateEditTagModal
-        entityId={entity}
         open={open}
         onClose={() => setOpen(false)}
       />
