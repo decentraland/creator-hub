@@ -48,12 +48,8 @@ export function DeleteProject({ open, project, onClose, onSubmit }: Props) {
         <span>{t('modal.delete_project.files_checkbox')}</span>
       </label>
 
-      {shouldDeleteFiles ? (
+      {shouldDeleteFiles && (
         <p className="delete-files-warning">{t('modal.delete_project.files_warning')}</p>
-      ) : (
-        <p className="delete-files-description">
-          {t('modal.delete_project.remove_imported_scene')}
-        </p>
       )}
     </Modal>
   );

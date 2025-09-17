@@ -10,14 +10,10 @@
   width: max-content;
 }
 
-.DeleteProjectModal .delete-files-warning,
-.DeleteProjectModal .delete-files-description {
+.DeleteProjectModal .delete-files-warning {
+  color: var(--error);
   margin-bottom: 0;
   font-size: 0.9rem;
   text-align: center;
   white-space: pre-line;
-}
-
-.DeleteProjectModal .delete-files-warning {
-  color: var(--error);
 }
