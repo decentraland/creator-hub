@@ -110,15 +110,16 @@
       "discard_all": "Descartar todas"
     },
     "delete_project": {
-      "title": "Estas seguro que quieres eliminar \"{title}\"?",
-      "remove_imported_scene": "Esto eliminará \"{title}\" del Editor. Los archivos originales permaneceran en tu sistema."
+      "title": "Estas seguro que quieres eliminar {title} de 'Mis Escenas'?",
+      "files_checkbox": "También eliminar los archivos de la escena de mi computadora",
+      "files_warning": "Los archivos de la escena se eliminarán permanentemente de tu computadora, no podrás acceder a esta escena nuevamente."
     },
     "publish_project": {
       "title": "Publicar escena \"{title}\"",
-      "select": "Select where you want to deploy this scene:",
+      "select": "Selecciona dónde quieres publicar tu escena",
       "worlds": {
         "title": "Worlds",
-        "description": "Not findable in Genesis City map. \nUp to 100 users can join concurrently.",
+        "description": "No se puede encontrar en el mapa de Genesis City. \nHasta 100 usuarios pueden unirse simultáneamente.",
         "action": "Publicar Mundo",
         "select_world": {
           "title": "Publicar Mundo",

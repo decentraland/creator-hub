@@ -1,0 +1,19 @@
+.DeleteProjectModal .MuiPaper-root .MuiBox-root:first-child h5:first-child {
+  text-align: center;
+  line-height: 1.5;
+}
+
+.DeleteProjectModal .delete-files {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  width: max-content;
+}
+
+.DeleteProjectModal .delete-files-warning {
+  color: var(--error);
+  margin-bottom: 0;
+  font-size: 0.9rem;
+  text-align: center;
+  white-space: pre-line;
+}

@@ -110,8 +110,9 @@
       "discard_all": "Delete all"
     },
     "delete_project": {
-      "title": "Are you sure you want to delete \"{title}\"?",
-      "remove_imported_scene": "This will only remove \"{title}\" from the Editor. The original scene files on your computer will not be affected"
+      "title": "Are you sure you want to delete {title} from 'My Scenes'?",
+      "files_checkbox": "Also delete this scene's files from my computer",
+      "files_warning": "Deleting scene files from your computer is permanent, you won't be able to access this scene again."
     },
     "publish_project": {
       "title": "Publish \"{title}\"",
