@@ -58,7 +58,7 @@ runs:
           # Create temporary file for release notes
           # IMPORTANT: The 'EOF' delimiters below must start at column 0 (no spaces or tabs).
           # Otherwise, the heredoc will break and the release notes won't be written correctly.
-cat << 'EOF' > temp_release_notes.md
+          cat << 'EOF' > temp_release_notes.md
 ${{ inputs.release_notes }}
 EOF
 
@@ -82,7 +82,7 @@ EOF
           # Create temporary file for release notes
           # IMPORTANT: The 'EOF' delimiters below must start at column 0 (no spaces or tabs).
           # Otherwise, the heredoc will break and the release notes won't be written correctly.
-cat << 'EOF' > temp_release_notes.md
+          cat << 'EOF' > temp_release_notes.md
 ${{ inputs.release_notes }}
 EOF
 
