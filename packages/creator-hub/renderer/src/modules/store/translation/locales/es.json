@@ -247,6 +247,18 @@
             "notify": "Notificarme cuando exista una nueva version",
             "do_nothing": "No hacer nada"
           }
+        },
+        "code_editor": {
+          "label": "Editor de código preferido",
+          "choose_device": "Elegir desde tu dispositivo...",
+          "errors": {
+            "load": "Error al cargar los editores de código",
+            "set": "Error al establecer el editor por defecto",
+            "invalid_app_extension": "Aplicación inválida. Por favor selecciona un archivo .app válido",
+            "invalid_app_bundle": "Estructura de aplicación inválida",
+            "invalid_exe_file": "Aplicación inválida. Por favor selecciona un archivo .exe válido",
+            "unknown": "Error al establecer el editor por defecto"
+          }
         }
       },
       "actions": {
