@@ -105,8 +105,3 @@ export const getEntitiesWithTag = (engine: IEngine, tagName: string) => {
     )
     .map(([entity]) => entity);
 };
-
-// const tags = Tags.get(engine.RootEntity).tags;
-// const newTags = tags.filter($ => $.name === '' && $.type === TagType.Custom);
-
-// Tags.getMutable(engine.RootEntity).tags = newTags;

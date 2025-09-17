@@ -34,14 +34,11 @@ export const sdkEngines = createSlice({
     clearError: state => {
       state.error = undefined;
     },
-    addCustomComponentAction: (state, { payload }: PayloadAction<{ name: string }>) => {
-      console.log('[redux] addCustomComponentAction', payload.name);
-    },
   },
 });
 
 // Actions
-export const { addEngines, error, clearError, addCustomComponentAction } = sdkEngines.actions;
+export const { addEngines, error, clearError } = sdkEngines.actions;
 
 // Selectors
 export const selectEngines = (state: RootState) => ({

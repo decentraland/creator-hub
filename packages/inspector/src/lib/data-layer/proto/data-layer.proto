@@ -90,15 +90,6 @@ message RenameCustomAssetRequest {
   string new_name = 2;
 }
 
-message AddCustomComponentRequest {
-  string name = 1;
-  bytes schema = 2;
-}
-
-message GetCustomComponentsDefinitionsResponse {
-  repeated bytes custom_components = 1;
-}
-
 service DataService {
   rpc CrdtStream(stream CrdtStreamMessage) returns (stream CrdtStreamMessage) {}
   rpc Undo(Empty) returns (UndoRedoResponse) {}
@@ -119,6 +110,4 @@ service DataService {
   rpc GetCustomAssets(Empty) returns (GetCustomAssetsResponse) {}
   rpc DeleteCustomAsset(DeleteCustomAssetRequest) returns (Empty) {}
   rpc RenameCustomAsset(RenameCustomAssetRequest) returns (Empty) {}
-  rpc addCustomComponent(AddCustomComponentRequest) returns (Empty) {}
-  rpc getCustomComponentsDefinitions(Empty) returns (GetCustomComponentsDefinitionsResponse) {}
 }
