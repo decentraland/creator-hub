@@ -96,6 +96,16 @@ export const renameTag = (engine: IEngine, tag: string, newName: string) => {
   engine.update(1);
 };
 
+export const getEntitiesWithTag = (engine: IEngine, tagName: string) => {
+  const Tags = getTagComponent(engine);
+  return Array.from(engine.getEntitiesWith(Tags))
+    .filter(
+      ([entity, component]) =>
+        entity !== engine.RootEntity && component.tags.some(tag => tag.name === tagName),
+    )
+    .map(([entity]) => entity);
+};
+
 // const tags = Tags.get(engine.RootEntity).tags;
 // const newTags = tags.filter($ => $.name === '' && $.type === TagType.Custom);
 

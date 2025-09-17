@@ -1,18 +1,23 @@
 .CreateEditTagModal {
   background-color: var(--modal);
   min-width: 350px;
+  max-width: 400px;
 }
 
-.CreateEditTagModal .actions {
-  display: flex;
-  flex-direction: column;
-  margin-top: 24px;
-  padding: 24px;
-  gap: 8px;
+.CreateEditTagModalOverlay {
+  z-index: 2;
 }
 
 .CreateEditTagModal .content {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+}
+
+.CreateEditTagModal .actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 24px 24px;
 }

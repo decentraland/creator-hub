@@ -16,6 +16,7 @@ import {
 } from '../../../lib/sdk/components/Tags';
 import { useComponentValue } from '../../../hooks/sdk/useComponentValue';
 import { CreateEditTagModal } from './CreateEditTagModal';
+import { DeleteConfirmationModal } from './DeleteConfirmationModal';
 
 const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
   const [createEditModal, setCreateEditModal] = useState<{ isOpen: boolean; tag: Tag | null }>({
@@ -36,10 +37,19 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
     setCreateEditModal({ isOpen: true, tag: null });
   };
 
+  const [tagToDelete, setTagToDelete] = useState<Tag | null>(null);
+
   const handleRemoveTag = (e: React.MouseEvent<SVGElement>, tag: Tag) => {
     e.preventDefault();
     e.stopPropagation();
-    removeTag(sdk.engine, tag.name);
+    setTagToDelete(tag);
+  };
+
+  const handleConfirmDelete = () => {
+    if (tagToDelete) {
+      removeTag(sdk.engine, tagToDelete.name);
+      setTagToDelete(null);
+    }
   };
 
   const handleEditTag = (e: React.MouseEvent<SVGElement>, tag: Tag) => {
@@ -99,6 +109,14 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
         onClose={() => setCreateEditModal({ isOpen: false, tag: null })}
         tag={createEditModal.tag}
       />
+      {tagToDelete && (
+        <DeleteConfirmationModal
+          tag={tagToDelete}
+          open={!!tagToDelete}
+          onClose={() => setTagToDelete(null)}
+          onConfirm={handleConfirmDelete}
+        />
+      )}
     </div>
   );
 });

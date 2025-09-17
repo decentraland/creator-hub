@@ -36,6 +36,7 @@ const CreateEditTagModal = withSdk<Props>(({ open, onClose, sdk, tag }) => {
       isOpen={open}
       onRequestClose={onClose}
       className="CreateEditTagModal"
+      overlayClassName="CreateEditTagModalOverlay"
     >
       <div className="content">
         <h2 className="title">{tag ? 'Edit tag' : 'Create tag'}</h2>
