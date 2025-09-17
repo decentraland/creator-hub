@@ -107,10 +107,9 @@
       "discard_all": "全部丢弃"
     },
     "delete_project": {
-      "title": "您确定要删除 \"{title}\" 吗？",
-      "remove_imported_scene": "如果未选中，这只会从场景列表中移除您的场景项目。\n您计算机上的原始文件将不会受到影响。",
-      "files_checkbox": "同时从磁盘中删除文件",
-      "files_warning": "您的场景文件将从您的设备中永久删除。\n此操作无法撤消。"
+      "title": "您确定要从「我的场景」中删除 {title} 吗？",
+      "files_checkbox": "也从我的电脑中删除场景文件",
+      "files_warning": "您的场景文件将从您的电脑中永久删除，您将无法再次访问此场景。"
     },
     "publish_project": {
       "title": "公共场所 \"{title}\"",

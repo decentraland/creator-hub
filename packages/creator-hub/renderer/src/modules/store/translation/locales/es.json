@@ -110,10 +110,9 @@
       "discard_all": "Descartar todas"
     },
     "delete_project": {
-      "title": "Estas seguro que quieres eliminar \"{title}\"?",
-      "remove_imported_scene": "Si no se selecciona, solo se eliminará la escena de la lista de escenas. \nLos archivos originales de la escena en tu computadora permanecerán intactos.",
-      "files_checkbox": "También eliminar los archivos de la escena de mi dispositivo",
-      "files_warning": "Los archivos de la escena se eliminarán permanentemente de tu dispositivo. \nEsta acción no se puede deshacer."
+      "title": "Estas seguro que quieres eliminar {title} de 'Mis Escenas'?",
+      "files_checkbox": "También eliminar los archivos de la escena de mi computadora",
+      "files_warning": "Los archivos de la escena se eliminarán permanentemente de tu computadora, no podrás acceder a esta escena nuevamente."
     },
     "publish_project": {
       "title": "Publicar escena \"{title}\"",

@@ -110,10 +110,9 @@
       "discard_all": "Delete all"
     },
     "delete_project": {
-      "title": "Are you sure you want to delete \"{title}\"?",
-      "remove_imported_scene": "If unchecked, this will only remove your scene items from the scene’s list. \nThe original files on your computer will remain unaffected.",
-      "files_checkbox": "Also delete scene files from my device",
-      "files_warning": "Your scene files will be permanently deleted from your device. \nThis action cannot be undone."
+      "title": "Are you sure you want to delete {title} from 'My Scenes'?",
+      "files_checkbox": "Also delete this scene's files from my computer",
+      "files_warning": "Deleting scene files from your computer is permanent, you won't be able to access this scene again."
     },
     "publish_project": {
       "title": "Publish \"{title}\"",
