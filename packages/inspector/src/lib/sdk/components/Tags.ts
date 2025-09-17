@@ -87,9 +87,8 @@ export const renameTag = (engine: IEngine, tag: string, newName: string) => {
   const Tags = getTagComponent(engine);
   const entitiesWithTags = engine.getEntitiesWith(Tags);
 
-  for (const [entity] of entitiesWithTags) {
-    const currentTags = Tags.getMutable(entity).tags;
-    const newTags = currentTags.map($ => ($.name === tag ? { ...$, name: newName } : $));
+  for (const [entity, component] of entitiesWithTags) {
+    const newTags = component.tags.map($ => ($.name === tag ? { ...$, name: newName } : $));
     Tags.getMutable(entity).tags = newTags;
   }
 
@@ -98,10 +97,11 @@ export const renameTag = (engine: IEngine, tag: string, newName: string) => {
 
 export const getEntitiesWithTag = (engine: IEngine, tagName: string) => {
   const Tags = getTagComponent(engine);
-  return Array.from(engine.getEntitiesWith(Tags))
-    .filter(
-      ([entity, component]) =>
-        entity !== engine.RootEntity && component.tags.some(tag => tag.name === tagName),
-    )
-    .map(([entity]) => entity);
+  const entities: Entity[] = [];
+  for (const [entity, component] of engine.getEntitiesWith(Tags)) {
+    if (entity !== engine.RootEntity && component.tags.some(tag => tag.name === tagName)) {
+      entities.push(entity);
+    }
+  }
+  return entities;
 };
