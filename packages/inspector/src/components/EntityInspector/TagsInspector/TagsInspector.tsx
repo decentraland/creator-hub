@@ -105,6 +105,7 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
         open={createEditModal.isOpen}
         onClose={() => setCreateEditModal({ isOpen: false, tag: null })}
         tag={createEditModal.tag}
+        entity={entity}
       />
       {tagToDelete && (
         <DeleteConfirmationModal

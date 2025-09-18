@@ -14,35 +14,6 @@ const Tag = Schemas.Map({
   name: Schemas.String,
 });
 
-const DEFAULT_TAGS = ['Tag Group 1', 'Tag Group 2', 'Tag Group 3', 'Tag Group 4'];
-
-export function initializeDefaultTags(engine: IEngine) {
-  const sceneTags = Tags.getMutableOrNull(engine.RootEntity);
-  if (!sceneTags) {
-    Tags.createOrReplace(engine.RootEntity, { tags: DEFAULT_TAGS });
-    engine.update(1);
-  }
-  return Tags;
-}
-
-//TODO I can use getMutable or null
-export function getTagsForEntity(engine: IEngine, entity: Entity) {
-  console.log('ALE: getTagsForEntity called', entity);
-  try {
-    const entityTags = Tags.get(entity);
-    console.log('ALE: entity tags ====>', entityTags);
-    return entityTags;
-  } catch (error) {
-    return [];
-  }
-}
-
-//TODO: validation of duplicates??
-export function updateTagsForEntity(engine: IEngine, entity: Entity, tags: string[]) {
-  Tags.createOrReplace(entity, { tags });
-  engine.update(1);
-}
-
 //TODO: validate no repeat names :)
 export function createTag(engine: IEngine, tagName: string) {
   console.log('ALE: createTag called', tagName);

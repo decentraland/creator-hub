@@ -4,29 +4,38 @@ import { Button } from '../../../Button';
 import { TextField } from '../../../ui/TextField';
 import { Modal } from '../../../Modal';
 import { withSdk } from '../../../../hoc/withSdk';
-import { createTag, renameTag } from '../../../../lib/sdk/components/Tags';
 
 import type { Props } from './types';
 import './styles.css';
 
 const CreateEditTagModal = withSdk<Props>(({ open, onClose, sdk, tag }) => {
-  const [tagName, setTagName] = useState(tag || '');
+  const [newTagName, setTagName] = useState(tag || '');
+  const { Tags } = sdk.components;
 
   const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setTagName(event.target.value);
   };
 
   const handleSaveTag = async () => {
-    if (tagName && tag) {
-      console.log('change tag name', tagName);
-      renameTag(sdk.engine, tag, tagName);
+    if (newTagName && tag) {
+      const entitiesWithTag = sdk.engine.getEntitiesByTag(tag);
+      for (const entity of entitiesWithTag) {
+        Tags.remove(entity, tag);
+        Tags.add(entity, newTagName);
+      }
+      Tags.remove(sdk.engine.RootEntity, tag);
+      Tags.add(sdk.engine.RootEntity, newTagName);
+      sdk.operations.dispatch();
       onClose();
     }
   };
 
   const handleCreateTag = async () => {
-    if (tagName) {
-      createTag(sdk.engine, tagName);
+    //TODO: validate no repeat names :)
+    if (newTagName) {
+      console.log('ALE: createTag called', newTagName);
+      Tags.add(sdk.engine.RootEntity, newTagName);
+      sdk.operations.dispatch();
       onClose();
     }
   };
