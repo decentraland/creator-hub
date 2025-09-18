@@ -10,6 +10,7 @@ import { killInspectorServer } from '/@/modules/inspector';
 import { runMigrations } from '/@/modules/migrations';
 import { getAnalytics, track } from './modules/analytics';
 import { newAppArgsHandle, type AppArgsHandle } from './modules/app-args-handle';
+import { addEditorsPathsToConfig } from './modules/code';
 
 import '/@/security-restrictions';
 
@@ -64,6 +65,7 @@ app
     log.info('[IPC] Ready');
     await restoreOrCreateMainWindow();
     log.info('[BrowserWindow] Ready');
+    await addEditorsPathsToConfig();
     const analytics = await getAnalytics();
     if (analytics) {
       await track('Open Editor', { version: app.getVersion() });

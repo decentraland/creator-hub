@@ -2,8 +2,6 @@ import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Typography } from 'decentraland-ui2';
 
-import { misc } from '#preload';
-
 import type { Project } from '/shared/types/projects';
 
 import { t } from '/@/modules/store/translation/utils';
@@ -15,6 +13,7 @@ import { DeleteProject } from '../../Modals/DeleteProject';
 import { ProjectCard } from '../../ProjectCard';
 
 import type { Props } from './types';
+import { misc } from '#preload';
 
 export function Projects({ projects }: Props) {
   const navigate = useNavigate();
@@ -65,10 +64,13 @@ function Project({ project }: { project: Project }) {
     setOpen(false);
   }, []);
 
-  const handleDeleteProject = useCallback(() => {
-    deleteProject(project);
-    handleCloseModal();
-  }, [project, deleteProject]);
+  const handleDeleteProject = useCallback(
+    (_p: Project, shouldDeleteFiles: boolean) => {
+      deleteProject(project, shouldDeleteFiles);
+      handleCloseModal();
+    },
+    [project, deleteProject],
+  );
 
   const dropdownOptions = [
     {

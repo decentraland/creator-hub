@@ -20,10 +20,7 @@
   gap: 16px;
 }
 
-.AppSettingsModal
-  .ScenesFolderFormControl
-  .MuiInputBase-root
-  fieldset.MuiOutlinedInput-notchedOutline {
+.AppSettingsModal .MuiInputBase-root .MuiOutlinedInput-notchedOutline {
   /* TODO: Fix styles in the ui2 library */
   border-color: #ffffff3b;
 }
@@ -68,4 +65,18 @@
   max-width: 300px;
   align-items: center;
   gap: 4px;
+}
+
+.editor-select {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.MuiSelect-select .menu-only {
+  display: none;
+}
+
+.MuiList-root .menu-only {
+  display: flex;
 }
