@@ -11,6 +11,11 @@ import './styles.css';
 const CreateEditTagModal = withSdk<Props>(({ open, onClose, sdk, tag }) => {
   const [newTagName, setTagName] = useState(tag || '');
   const { Tags } = sdk.components;
+  const sceneTags = Tags.getOrNull(sdk.engine.RootEntity);
+
+  const isDuplicatedTag = () => {
+    return sceneTags?.tags.some(t => t === newTagName);
+  };
 
   const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setTagName(event.target.value);
@@ -50,13 +55,17 @@ const CreateEditTagModal = withSdk<Props>(({ open, onClose, sdk, tag }) => {
       <div className="content">
         <h2 className="title">{tag ? 'Edit tag' : 'Create tag'}</h2>
         {tag && <span>Editing tag {tag}</span>}
-        <TextField
-          label="Tag name"
-          autoSelect
-          value={tag || ''}
-          onChange={handleNameChange}
-        />
+        <div>
+          <TextField
+            label="Tag name"
+            autoSelect
+            value={tag || ''}
+            onChange={handleNameChange}
+          />
+          <div className="warning">{isDuplicatedTag() && 'This tag already exists'}</div>
+        </div>
       </div>
+
       <div className="actions">
         <Button
           size="big"
@@ -65,6 +74,7 @@ const CreateEditTagModal = withSdk<Props>(({ open, onClose, sdk, tag }) => {
           Cancel
         </Button>
         <Button
+          disabled={isDuplicatedTag()}
           size="big"
           type="danger"
           onClick={tag ? handleSaveTag : handleCreateTag}

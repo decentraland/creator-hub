@@ -60,6 +60,7 @@ export class SceneContext {
   GltfContainer = components.GltfContainer(this.engine);
   TextShape = components.TextShape(this.engine);
   Name = components.Name(this.engine);
+  Tags = components.Tags(this.engine);
   Animator = components.Animator(this.engine);
   NftShape = components.NftShape(this.engine);
   VideoPlayer = components.VideoPlayer(this.engine);

@@ -9,7 +9,6 @@ import type { DeleteConfirmationModalProps } from './types';
 
 export const DeleteConfirmationModal = withSdk<DeleteConfirmationModalProps>(
   ({ tag, open, onClose, onConfirm, sdk }) => {
-    const { Tags } = sdk.components;
     const entitiesCount = Array.from(sdk.engine.getEntitiesByTag(tag)).length;
 
     return (

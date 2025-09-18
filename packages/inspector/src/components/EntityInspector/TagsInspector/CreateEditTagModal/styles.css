@@ -21,3 +21,11 @@
   gap: 8px;
   padding: 0 24px 24px;
 }
+
+.CreateEditTagModal .warning {
+  color: var(--error);
+  font-size: 12px;
+  min-height: 20px;
+  display: flex;
+  align-items: center;
+}
