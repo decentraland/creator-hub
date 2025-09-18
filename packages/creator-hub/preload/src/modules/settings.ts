@@ -5,7 +5,6 @@ import {
   DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
 } from '/shared/types/settings';
 import type { AppSettings } from '/shared/types/settings';
-import type { ChromeDevToolsEvent } from '/shared/types/ipc';
 import { SCENES_DIRECTORY } from '/shared/paths';
 
 import { invoke } from '../services/ipc';
@@ -94,15 +93,4 @@ export function downloadingStatus(
 }
 export function getCurrentVersion() {
   throw new Error('Function not implemented.');
-}
-
-export function onChromeDevToolsEvent(
-  cb: (event: IpcRendererEvent, chromeDevToolsEvent: ChromeDevToolsEvent) => void,
-) {
-  ipcRenderer.on('chrome-devtools.event', cb);
-  return {
-    cleanup: () => {
-      ipcRenderer.off('chrome-devtools.event', cb);
-    },
-  };
 }

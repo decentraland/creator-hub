@@ -5,7 +5,6 @@ import { actions as snackbarActions } from '../snackbar/slice';
 import { t } from '../translation/utils';
 import { createAsyncThunk } from '../thunk';
 import type { Status } from '/shared/types/async';
-import type { ChromeDevToolsEvent } from '/shared/types/ipc';
 
 export type UpdateStatus = {
   lastDownloadedVersion: string | null;
@@ -105,49 +104,6 @@ export const notifyUpdate = createAsyncThunk(
         }),
       );
     }
-  },
-);
-
-export const subscribeToChromeDevToolsEvents = createAsyncThunk(
-  'settings/subscribeToChromeDevToolsEvents',
-  async (_, { dispatch }) => {
-    settingsPreload.onChromeDevToolsEvent(
-      (_event: IpcRendererEvent, chromeDevToolsEvent: ChromeDevToolsEvent) => {
-        let message: string;
-        let severity: 'info' | 'success' | 'warning' | 'error' = 'info';
-
-        switch (chromeDevToolsEvent.kind) {
-          case 'CreatingDevToolsServer':
-            message = 'Creating Chrome DevTools server...';
-            break;
-          case 'StartingDevToolsServer':
-            message = 'Starting Chrome DevTools server...';
-            break;
-          case 'OpeningTab':
-            message = 'Opening Chrome DevTools tab...';
-            break;
-          case 'OpenedTab':
-            message = 'Chrome DevTools tab opened successfully';
-            severity = 'success';
-            break;
-          case 'FlowError':
-            message = 'Chrome DevTools error occurred';
-            severity = 'error';
-            break;
-          default:
-            message = 'Chrome DevTools event received';
-        }
-
-        dispatch(
-          snackbarActions.pushSnackbar({
-            id: `chrome-devtools-${chromeDevToolsEvent.kind}-${Date.now()}`,
-            message,
-            severity,
-            type: 'generic',
-          }),
-        );
-      },
-    );
   },
 );
 
@@ -272,7 +228,6 @@ export const actions = {
   subscribeToDownloadingStatus,
   setupUpdaterEvents,
   notifyUpdate,
-  subscribeToChromeDevToolsEvents,
 };
 
 export const reducer = slice.reducer;
