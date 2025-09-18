@@ -1,15 +1,16 @@
 import React from 'react';
-import './styles.css';
 
 import { Modal } from '../../../Modal';
 import { Button } from '../../../Button';
 import { withSdk } from '../../../../hoc/withSdk';
-import { getEntitiesWithTag } from '../../../../lib/sdk/components/Tags';
+import './styles.css';
+
 import type { DeleteConfirmationModalProps } from './types';
 
 export const DeleteConfirmationModal = withSdk<DeleteConfirmationModalProps>(
   ({ tag, open, onClose, onConfirm, sdk }) => {
-    const entitiesCount = getEntitiesWithTag(sdk.engine, tag.name).length;
+    const { Tags } = sdk.components;
+    const entitiesCount = Array.from(sdk.engine.getEntitiesByTag(tag)).length;
 
     return (
       <Modal
@@ -21,7 +22,7 @@ export const DeleteConfirmationModal = withSdk<DeleteConfirmationModalProps>(
         <div className="content">
           <h2 className="title">Delete tag</h2>
           <div className="description">
-            Deleting "{tag.name}" will remove it from the tag list and from every associated entity
+            Deleting "{tag}" will remove it from the tag list and from every associated entity
             within this scene.
           </div>
           {entitiesCount > 0 && (

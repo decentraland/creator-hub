@@ -7,7 +7,7 @@ import type { Props as OptionProp } from '../../ui/Dropdown/Option/types';
 
 import { withSdk } from '../../../hoc/withSdk';
 import { Dropdown, type DropdownChangeEvent } from '../../ui/Dropdown';
-import { removeTag } from '../../../lib/sdk/components/Tags';
+
 import { useComponentValue } from '../../../hooks/sdk/useComponentValue';
 import { CreateEditTagModal } from './CreateEditTagModal';
 import { DeleteConfirmationModal } from './DeleteConfirmationModal';
@@ -19,6 +19,7 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
     isOpen: false,
     tag: null,
   });
+  const [tagToDelete, setTagToDelete] = useState<string | null>(null);
   const [sceneTagsComponent] = useComponentValue(sdk.engine.RootEntity, Tags);
   const [entityTagsComponent] = useComponentValue(entity, Tags);
 
@@ -30,8 +31,6 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
     setCreateEditModal({ isOpen: true, tag: null });
   };
 
-  const [tagToDelete, setTagToDelete] = useState<string | null>(null);
-
   const handleRemoveTag = (e: React.MouseEvent<SVGElement>, tag: string) => {
     e.preventDefault();
     e.stopPropagation();
@@ -40,7 +39,12 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
 
   const handleConfirmDelete = () => {
     if (tagToDelete) {
-      removeTag(sdk.engine, tagToDelete);
+      const entitiesWithTag = sdk.engine.getEntitiesByTag(tagToDelete);
+      for (const entity of entitiesWithTag) {
+        Tags.remove(entity, tagToDelete);
+      }
+      Tags.remove(sdk.engine.RootEntity, tagToDelete);
+      sdk.operations.dispatch();
       setTagToDelete(null);
     }
   };
