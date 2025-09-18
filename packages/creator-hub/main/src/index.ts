@@ -9,9 +9,12 @@ import { deployServer, killAllPreviews } from '/@/modules/cli';
 import { killInspectorServer } from '/@/modules/inspector';
 import { runMigrations } from '/@/modules/migrations';
 import { getAnalytics, track } from './modules/analytics';
+import { newAppArgsHandle, type AppArgsHandle } from './modules/app-args-handle';
 import { addEditorsPathsToConfig } from './modules/code';
 
 import '/@/security-restrictions';
+
+const appArgsHandle: AppArgsHandle = newAppArgsHandle();
 
 log.initialize();
 
@@ -29,7 +32,10 @@ if (!isSingleInstance) {
   app.quit();
   process.exit(0);
 }
-app.on('second-instance', restoreOrCreateMainWindow);
+app.on('second-instance', async (_e: unknown, argv: string[]) => {
+  await restoreOrCreateMainWindow();
+  appArgsHandle.handle(argv);
+});
 
 /**
  * Shut down background process if all windows was closed
@@ -66,6 +72,8 @@ app
     } else {
       log.info('[Analytics] API key not provided, analytics disabled');
     }
+
+    appArgsHandle.handle(process.argv);
   })
   .catch(e => log.error('Failed create window:', e));
 
