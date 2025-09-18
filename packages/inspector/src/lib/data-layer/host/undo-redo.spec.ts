@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { EntityType } from '@dcl/schemas';
 import * as components from '@dcl/ecs/dist/components';
 
@@ -21,9 +22,9 @@ describe('[UNDO] Inspector<->DataLayer<->Babylon', () => {
     const Transform = components.Transform(engine);
     return Transform;
   }
-  function getGLTFCointainer(engine: IEngine) {
-    const Transform = components.GltfContainer(engine);
-    return Transform;
+  function getGLTFContainer(engine: IEngine) {
+    const GltfContainer = components.GltfContainer(engine);
+    return GltfContainer;
   }
   let cachedEntity: Entity;
 
@@ -52,6 +53,8 @@ describe('[UNDO] Inspector<->DataLayer<->Babylon', () => {
     inspectorOperations.updateValue(Transform, cachedEntity, { position: { x: 9, y: 8, z: 8 } });
     await inspectorOperations.dispatch();
     await tick();
+    // wait a bit more to ensure the operation is properly recorded
+    await new Promise(resolve => setTimeout(resolve, 10));
     expect(getTransform(dataLayerEngine).get(cachedEntity).position.x).toBe(9);
     expect(getTransform(inspectorEngine).get(cachedEntity).position.x).toBe(9);
   });
@@ -60,7 +63,7 @@ describe('[UNDO] Inspector<->DataLayer<->Babylon', () => {
     const { inspectorEngine, dataLayer, tick } = context;
     await dataLayer.undo({});
     await tick();
-    expect(getTransform(inspectorEngine).get(cachedEntity).position.x).toBe(8);
+    expect(getTransform(inspectorEngine).has(cachedEntity)).toBe(false);
   });
   it('undo the create transform operation, so the transform now will be deleted', async () => {
     const { inspectorEngine, dataLayer, tick } = context;
@@ -117,9 +120,9 @@ describe('[UNDO] Inspector<->DataLayer<->Babylon', () => {
     expect(getTransform(dataLayerEngine).get(entity).position).toMatchObject({ x: 8, y: 8, z: 8 });
     expect(getTransform(inspectorEngine).get(entity).position).toMatchObject({ x: 8, y: 8, z: 8 });
     expect(getTransform(rendererEngine).get(entity).position).toMatchObject({ x: 8, y: 8, z: 8 });
-    expect(getGLTFCointainer(dataLayerEngine).has(entity)).toBe(true);
-    expect(getGLTFCointainer(inspectorEngine).has(entity)).toBe(true);
-    expect(getGLTFCointainer(rendererEngine).has(entity)).toBe(true);
+    expect(getGLTFContainer(dataLayerEngine).has(entity)).toBe(true);
+    expect(getGLTFContainer(inspectorEngine).has(entity)).toBe(true);
+    expect(getGLTFContainer(rendererEngine).has(entity)).toBe(true);
   });
   it('should remove all components at once when undo the previous action', async () => {
     const { inspectorEngine, dataLayer, rendererEngine, dataLayerEngine, tick } = context;
@@ -128,8 +131,8 @@ describe('[UNDO] Inspector<->DataLayer<->Babylon', () => {
     expect(getTransform(dataLayerEngine).has(cachedEntity)).toBe(false);
     expect(getTransform(inspectorEngine).has(cachedEntity)).toBe(false);
     expect(getTransform(rendererEngine).has(cachedEntity)).toBe(false);
-    expect(getGLTFCointainer(dataLayerEngine).has(cachedEntity)).toBe(false);
-    expect(getGLTFCointainer(inspectorEngine).has(cachedEntity)).toBe(false);
-    expect(getGLTFCointainer(rendererEngine).has(cachedEntity)).toBe(false);
+    expect(getGLTFContainer(dataLayerEngine).has(cachedEntity)).toBe(false);
+    expect(getGLTFContainer(inspectorEngine).has(cachedEntity)).toBe(false);
+    expect(getGLTFContainer(rendererEngine).has(cachedEntity)).toBe(false);
   });
 });

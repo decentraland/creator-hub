@@ -90,7 +90,6 @@ const TextField = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
   const handleWheel: React.WheelEventHandler<HTMLInputElement> = useCallback(
     event => {
       if (type === 'number') {
-        event.preventDefault();
         event.stopPropagation();
         event.currentTarget.blur();
         onBlur?.(buildBlurEvent(event));

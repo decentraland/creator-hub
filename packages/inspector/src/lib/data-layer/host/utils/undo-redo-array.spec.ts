@@ -1,6 +1,12 @@
+import { describe, beforeEach, it, expect } from 'vitest';
 import type { Entity } from '@dcl/ecs';
 import { CrdtMessageType } from '@dcl/ecs';
-import type { UndoRedo, UndoRedoFile } from '../undo-redo';
+import type {
+  UndoRedo,
+  UndoRedoFile,
+  UndoRedoCrdt,
+  UndoRedoComposite,
+} from '../undo-redo-provider';
 import { UndoRedoArray } from './undo-redo-array';
 
 describe('UndoRedoArray', () => {
@@ -29,8 +35,8 @@ describe('UndoRedoArray', () => {
     myBuff.push(undoRedo('casla-3'));
     myBuff.push(undoRedo('casla-4'));
     const values = myBuff.values();
-    expect(values[0].operations[0].newValue).toBe('casla-3');
-    expect(values[1].operations[0].newValue).toBe('casla-4');
+    expect((values[0] as UndoRedoCrdt).operations[0].newValue).toBe('casla-3');
+    expect((values[1] as UndoRedoCrdt).operations[0].newValue).toBe('casla-4');
     expect(values[2]).toBeUndefined();
   });
 
@@ -176,5 +182,52 @@ describe('UndoRedoArray', () => {
     buffer.push(undoRedo3);
 
     expect(buffer.values()).toEqual([undoRedo2, undoRedo3]);
+  });
+
+  it('should handle composite operations with both file and CRDT operations', () => {
+    const compositeUndoRedo: UndoRedoComposite = {
+      $case: 'composite',
+      fileOperations: [
+        { path: '/file1', prevValue: null, newValue: new Uint8Array([1, 2, 3]) },
+        { path: '/file2', prevValue: null, newValue: new Uint8Array([4, 5, 6]) },
+      ],
+      crdtOperations: [
+        {
+          entity: 1 as Entity,
+          componentName: 'TestComponent',
+          prevValue: null,
+          newValue: { value: 'test' },
+          operation: CrdtMessageType.PUT_COMPONENT,
+        },
+      ],
+    };
+
+    buffer.push(compositeUndoRedo);
+
+    expect(buffer.values()).toEqual([compositeUndoRedo]);
+    expect(buffer.memorySize).toEqual(6); // 2 file operations: 3 + 3 bytes
+  });
+
+  it('should handle popping composite operations and update memory correctly', () => {
+    const compositeUndoRedo: UndoRedoComposite = {
+      $case: 'composite',
+      fileOperations: [{ path: '/file1', prevValue: null, newValue: new Uint8Array([1, 2, 3]) }],
+      crdtOperations: [
+        {
+          entity: 1 as Entity,
+          componentName: 'TestComponent',
+          prevValue: null,
+          newValue: { value: 'test' },
+          operation: CrdtMessageType.PUT_COMPONENT,
+        },
+      ],
+    };
+
+    buffer.push(compositeUndoRedo);
+    expect(buffer.memorySize).toEqual(3);
+
+    buffer.pop();
+    expect(buffer.values()).toEqual([]);
+    expect(buffer.memorySize).toEqual(0);
   });
 });

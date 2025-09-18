@@ -28,6 +28,8 @@ export const deleteEntitySelectedComponent: ComponentOperation = (entity, compon
   if (component.componentType === ComponentType.LastWriteWinElementSet) {
     unsetGizmoManager(entity);
 
+    entity.cleanupBoundingBox();
+
     if (entity.boundingInfoMesh) {
       entity.boundingInfoMesh.onAfterWorldMatrixUpdateObservable.notifyObservers(
         entity.boundingInfoMesh,

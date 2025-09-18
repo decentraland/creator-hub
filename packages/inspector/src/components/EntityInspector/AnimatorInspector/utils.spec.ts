@@ -96,5 +96,30 @@ describe('NumberUtils', () => {
       expect(sdk.operations.updateValue).toHaveBeenCalledWith(Animator, entity, result);
       expect(sdk.operations.dispatch).toHaveBeenCalled();
     });
+
+    it('initializes animator component with empty animations array', async () => {
+      const sdk = {
+        operations: {
+          addComponent: vi.fn(),
+          updateValue: vi.fn(),
+          dispatch: vi.fn(),
+        },
+      };
+      const entity: Entity = 512 as Entity;
+      const animations: AnimationGroup[] = [];
+
+      const result = await initializeAnimatorComponent(
+        sdk as any as SdkContextValue,
+        entity,
+        animations,
+      );
+
+      expect(result).toEqual({
+        states: [],
+      });
+      expect(sdk.operations.addComponent).toHaveBeenCalledWith(entity, Animator.componentId);
+      expect(sdk.operations.updateValue).toHaveBeenCalledWith(Animator, entity, result);
+      expect(sdk.operations.dispatch).toHaveBeenCalled();
+    });
   });
 });

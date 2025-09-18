@@ -7,7 +7,12 @@ import { Entity } from '@dcl/ecs';
 
 import { DIRECTORY, withAssetDir } from '../../lib/data-layer/host/fs-utils';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
-import { getDataLayerInterface, importAsset, saveThumbnail } from '../../redux/data-layer';
+import {
+  getDataLayerInterface,
+  importAsset,
+  saveThumbnail,
+  getAssetCatalog,
+} from '../../redux/data-layer';
 import {
   getNode,
   CatalogAssetDrop,
@@ -309,17 +314,18 @@ const Renderer: React.FC = () => {
       }),
     );
 
-    // TODO: review this async/await
+    // Use direct data layer interface to ensure proper sequencing with undo system
     const content = new Map(Object.entries(fileContent));
     if (content.size > 0) {
-      dispatch(
-        importAsset({
+      const dataLayer = getDataLayerInterface();
+      if (dataLayer) {
+        await dataLayer.importAsset({
           content,
           basePath: withAssetDir(destFolder),
           assetPackageName,
-          reload: true,
-        }),
-      );
+        });
+        // Note: importAsset already handles asset catalog refresh internally
+      }
     }
 
     if (thumbnail) {

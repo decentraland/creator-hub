@@ -90,10 +90,16 @@ message RenameCustomAssetRequest {
   string new_name = 2;
 }
 
+message UndoRedoStateResponse {
+  bool can_undo = 1;
+  bool can_redo = 2;
+}
+
 service DataService {
   rpc CrdtStream(stream CrdtStreamMessage) returns (stream CrdtStreamMessage) {}
   rpc Undo(Empty) returns (UndoRedoResponse) {}
   rpc Redo(Empty) returns (UndoRedoResponse) {}
+  rpc GetUndoRedoState(Empty) returns (UndoRedoStateResponse) {}
 
   rpc getFiles(GetFilesRequest) returns (GetFilesResponse) {}
   rpc saveFile(SaveFileRequest) returns (Empty) {}

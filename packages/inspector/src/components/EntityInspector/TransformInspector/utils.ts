@@ -45,7 +45,7 @@ export function toTransform(currentValue?: TransformType, config?: TransformConf
     );
     const scale = mapToNumber(inputs.scale);
 
-    return {
+    const result: TransformType = {
       position: mapToNumber(inputs.position),
       scale: currentValue
         ? getScale(currentValue.scale, scale, !!config?.porportionalScaling)
@@ -57,6 +57,8 @@ export function toTransform(currentValue?: TransformType, config?: TransformConf
         w: quaternion.w,
       },
     };
+
+    return normalizeTransform(result);
   };
 }
 
@@ -107,5 +109,30 @@ export const getScale = (
 export function fromTransformConfig(value: TransformConfig) {
   return {
     porportionalScaling: !!value.porportionalScaling,
+  };
+}
+
+/**
+ * Normalizes a TransformType to ensure consistent precision
+ * This helps with equality comparisons by rounding values to 2 decimal places
+ */
+export function normalizeTransform(transform: TransformType): TransformType {
+  const normalizeVector3 = (v: Vector3Type): Vector3Type => ({
+    x: Math.round(v.x * 100) / 100,
+    y: Math.round(v.y * 100) / 100,
+    z: Math.round(v.z * 100) / 100,
+  });
+
+  const normalizeQuaternion = (q: { x: number; y: number; z: number; w: number }) => ({
+    x: Math.round(q.x * 10000) / 10000,
+    y: Math.round(q.y * 10000) / 10000,
+    z: Math.round(q.z * 10000) / 10000,
+    w: Math.round(q.w * 10000) / 10000,
+  });
+
+  return {
+    position: normalizeVector3(transform.position),
+    scale: normalizeVector3(transform.scale),
+    rotation: normalizeQuaternion(transform.rotation),
   };
 }

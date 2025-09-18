@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { DeepReadonly, Entity, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
 import { CrdtMessageType } from '@dcl/ecs';
-import { recursiveCheck } from '../../lib/utils/deep-equal';
+import { recursiveCheck, deepEqualWithTolerance } from '../../lib/utils/deep-equal';
 
 import type { Component } from '../../lib/sdk/components';
 import { useChange } from './useChange';
@@ -21,6 +21,8 @@ export const getComponentValue = <T>(entity: Entity, component: Component<T>): D
 export const useComponentValue = <ComponentValueType>(
   entity: Entity,
   component: Component<ComponentValueType>,
+  normalizeForComparison?: (value: ComponentValueType) => ComponentValueType,
+  tolerance: number = 2, // floating-point tolerance for numeric comparisons (default: 2 decimal places)
 ) => {
   const componentValueType = getComponentValue(entity, component);
   const [value, setValue] = useState<ComponentValueType>(componentValueType as ComponentValueType);
@@ -63,7 +65,16 @@ export const useComponentValue = <ComponentValueType>(
   );
 
   function isComponentEqual(val: ComponentValueType) {
-    return !recursiveCheck(getComponentValue(entity, component), val, 2);
+    const currentValue = getComponentValue(entity, component);
+
+    if (normalizeForComparison) {
+      const normalizedCurrent = normalizeForComparison(currentValue as ComponentValueType);
+      const normalizedVal = normalizeForComparison(val);
+      return deepEqualWithTolerance(normalizedCurrent, normalizedVal, tolerance);
+    }
+
+    // fallback to original comparison
+    return !recursiveCheck(currentValue, val, tolerance);
   }
 
   return [value, setValue, isComponentEqual] as const;

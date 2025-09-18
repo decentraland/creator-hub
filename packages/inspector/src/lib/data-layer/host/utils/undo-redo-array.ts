@@ -1,4 +1,4 @@
-import type { UndoRedo } from '../undo-redo';
+import type { UndoRedo } from '../undo-redo-provider';
 
 const ONE_MB_IN_BYTES = 1_048_576;
 const ONE_GB_IN_BYTES = ONE_MB_IN_BYTES * 1024;
@@ -11,6 +11,12 @@ export function UndoRedoArray(maxEntries: number, maxSize: number = ONE_GB_IN_BY
     let fileSize: number = 0;
     if (val?.$case === 'file') {
       for (const operation of val.operations) {
+        fileSize += operation.newValue?.length ?? 0;
+        fileSize += operation.prevValue?.length ?? 0;
+      }
+    } else if (val?.$case === 'composite') {
+      // Calculate size for file operations in composite
+      for (const operation of val.fileOperations) {
         fileSize += operation.newValue?.length ?? 0;
         fileSize += operation.prevValue?.length ?? 0;
       }
