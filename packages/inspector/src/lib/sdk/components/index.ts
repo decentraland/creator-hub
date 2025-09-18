@@ -32,8 +32,6 @@ import {
 import type { ConfigComponentType } from './Config';
 import { ConfigComponentSchema } from './Config';
 import { EditorComponentNames as BaseEditorComponentNames } from './types';
-import { defineTagsComponents } from './Tags';
-import type { Tag } from './Tags';
 
 export { SceneAgeRating, SceneCategory };
 export { CoreComponents, AllComponentsType } from './types';
@@ -115,7 +113,6 @@ export type EditorComponentsTypes = {
   AdminTools: AdminTools;
   VideoScreen: VideoScreen;
   Rewards: Rewards;
-  Tags: { tags: Tag[] };
 };
 
 export type EditorComponents = {
@@ -140,7 +137,6 @@ export type EditorComponents = {
   AdminTools: LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['AdminTools']>;
   VideoScreen: LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['VideoScreen']>;
   Rewards: LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['Rewards']>;
-  Tags: LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['Tags']>;
 };
 
 export type SdkComponents = {
@@ -164,6 +160,7 @@ export type SdkComponents = {
   TweenSequence: ReturnType<typeof components.TweenSequence>;
   VideoPlayer: ReturnType<typeof components.VideoPlayer>;
   VisibilityComponent: ReturnType<typeof components.VisibilityComponent>;
+  Tags: ReturnType<typeof components.Tags>;
 };
 
 export function createComponents(engine: IEngine): SdkComponents {
@@ -187,6 +184,7 @@ export function createComponents(engine: IEngine): SdkComponents {
   const TweenSequence = components.TweenSequence(engine);
   const VideoPlayer = components.VideoPlayer(engine);
   const VisibilityComponent = components.VisibilityComponent(engine);
+  const Tags = components.Tags(engine);
 
   return {
     Animator,
@@ -203,6 +201,7 @@ export function createComponents(engine: IEngine): SdkComponents {
     NftShape,
     PointerEvents,
     SyncComponents,
+    Tags,
     TextShape,
     Transform,
     Tween,
@@ -270,7 +269,6 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
     assetId: Schemas.String,
   });
 
-  const Tags = defineTagsComponents(engine);
   return {
     Selection,
     Scene,
@@ -314,9 +312,6 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
     >,
     Rewards: Rewards as unknown as LastWriteWinElementSetComponentDefinition<
       EditorComponentsTypes['Rewards']
-    >,
-    Tags: Tags as unknown as LastWriteWinElementSetComponentDefinition<
-      EditorComponentsTypes['Tags']
     >,
   };
 }

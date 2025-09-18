@@ -1,6 +1,4 @@
-import { type Entity, type IEngine, Schemas } from '@dcl/ecs';
-import { EditorComponentNames } from './types';
-import type { EditorComponents } from '.';
+import { type Entity, type IEngine, Schemas, Tags } from '@dcl/ecs';
 
 export enum TagType {
   Engine = 1,
@@ -14,92 +12,73 @@ export type Tag = {
 
 const Tag = Schemas.Map({
   name: Schemas.String,
-  type: Schemas.EnumNumber(TagType, TagType.Custom),
 });
 
-const DEFAULT_TAGS = [
-  { name: 'Tag Group 1', type: TagType.Engine },
-  { name: 'Tag Group 2', type: TagType.Engine },
-  { name: 'Tag Group 3', type: TagType.Engine },
-  { name: 'Tag Group 4', type: TagType.Engine },
-];
+const DEFAULT_TAGS = ['Tag Group 1', 'Tag Group 2', 'Tag Group 3', 'Tag Group 4'];
 
-export function defineTagsComponents(engine: IEngine) {
-  const Tags = engine.defineComponent(EditorComponentNames.Tags, { tags: Schemas.Array(Tag) });
-  Tags.createOrReplace(engine.RootEntity, { tags: DEFAULT_TAGS });
-  engine.update(1);
+export function initializeDefaultTags(engine: IEngine) {
+  const sceneTags = Tags.getMutableOrNull(engine.RootEntity);
+  if (!sceneTags) {
+    Tags.createOrReplace(engine.RootEntity, { tags: DEFAULT_TAGS });
+    engine.update(1);
+  }
   return Tags;
-}
-
-export const getTagComponent = (engine: IEngine) => {
-  return engine.getComponentOrNull(EditorComponentNames.Tags) as EditorComponents['Tags'];
-};
-
-//TODO: create if not exists??
-export function getSceneTags(engine: IEngine) {
-  return getTagsForEntity(engine, engine.RootEntity);
 }
 
 //TODO I can use getMutable or null
 export function getTagsForEntity(engine: IEngine, entity: Entity) {
-  const tagsComponent = getTagComponent(engine);
+  console.log('ALE: getTagsForEntity called', entity);
   try {
-    return tagsComponent ? (tagsComponent.get(entity) as { tags: Tag[] }).tags : [];
+    const entityTags = Tags.get(entity);
+    console.log('ALE: entity tags ====>', entityTags);
+    return entityTags;
   } catch (error) {
     return [];
   }
 }
 
 //TODO: validation of duplicates??
-export function updateTagsForEntity(engine: IEngine, entity: Entity, tags: Tag[]) {
-  const Tags = getTagComponent(engine);
-  if (Tags) {
-    Tags.createOrReplace(entity, { tags });
-    engine.update(1);
-  }
+export function updateTagsForEntity(engine: IEngine, entity: Entity, tags: string[]) {
+  Tags.createOrReplace(entity, { tags });
+  engine.update(1);
 }
 
 //TODO: validate no repeat names :)
-export function createTag(engine: IEngine, name: string) {
-  const Tags = getTagComponent(engine);
-  const currentTags = getSceneTags(engine);
-  if (Tags) {
-    Tags.getMutable(engine.RootEntity).tags = [...currentTags, { name, type: TagType.Custom }];
-    engine.update(1);
-  }
+export function createTag(engine: IEngine, tagName: string) {
+  console.log('ALE: createTag called', tagName);
+  const currentTags = Tags.getOrNull(engine.RootEntity);
+  Tags.getMutable(engine.RootEntity).tags = [...(currentTags?.tags ?? []), tagName];
+  engine.update(1);
 }
 
 //TODO: validate that is not a engine tag
 export function removeTag(engine: IEngine, name: string) {
-  const Tags = getTagComponent(engine);
-  const entitiesWithTags = engine.getEntitiesWith(Tags);
+  console.log('ALE: removeTag called', name);
 
+  const entitiesWithTags = engine.getEntitiesWith(Tags);
   for (const [entity] of entitiesWithTags) {
     const currentTags = Tags.getMutable(entity).tags;
-    const newTags = currentTags.filter($ => $.name !== name);
+    const newTags = currentTags.filter(tag => tag !== name);
     Tags.getMutable(entity).tags = newTags;
   }
-
   engine.update(1);
 }
 
 export const renameTag = (engine: IEngine, tag: string, newName: string) => {
-  const Tags = getTagComponent(engine);
+  console.log('ALE: renameTag called', tag, newName);
   const entitiesWithTags = engine.getEntitiesWith(Tags);
-
   for (const [entity, component] of entitiesWithTags) {
-    const newTags = component.tags.map($ => ($.name === tag ? { ...$, name: newName } : $));
+    const newTags = component.tags.map($ => ($ === tag ? newName : $));
     Tags.getMutable(entity).tags = newTags;
   }
-
   engine.update(1);
 };
 
 export const getEntitiesWithTag = (engine: IEngine, tagName: string) => {
-  const Tags = getTagComponent(engine);
+  console.log('ALE: getEntitiesWithTag called', tagName);
   const entities: Entity[] = [];
   for (const [entity, component] of engine.getEntitiesWith(Tags)) {
-    if (entity !== engine.RootEntity && component.tags.some(tag => tag.name === tagName)) {
+    if (entity !== engine.RootEntity && component.tags.some(tag => tag === tagName)) {
       entities.push(entity);
     }
   }

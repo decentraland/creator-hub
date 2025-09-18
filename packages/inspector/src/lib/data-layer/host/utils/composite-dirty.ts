@@ -1,4 +1,11 @@
-import type { ComponentDefinition, CompositeDefinition, Entity, IEngine } from '@dcl/ecs';
+import type {
+  ComponentDefinition,
+  CompositeDefinition,
+  Entity,
+  IEngine,
+  LastWriteWinElementSetComponentDefinition,
+  TagsType,
+} from '@dcl/ecs';
 import { Composite, CrdtMessageType, EntityMappingMode } from '@dcl/ecs';
 import { initComponents } from '@dcl/asset-packs';
 import type { EditorComponents } from '../../../sdk/components';
@@ -74,6 +81,22 @@ async function instanciateComposite(
   });
 
   runMigrations(engine);
+
+  //TODO this needs to be a migration
+  const Tags = engine.getComponentOrNull(
+    'core-schema::Tags',
+  ) as LastWriteWinElementSetComponentDefinition<TagsType> | null;
+
+  console.log('?? TAGS ====>', Tags);
+  if (Tags) {
+    const engineSceneTags = Tags.getMutableOrNull(engine.RootEntity);
+    console.log('ENGINE SCENE TAGS ====>', engineSceneTags);
+    if (!engineSceneTags || engineSceneTags.tags.length === 0) {
+      console.log('CREATING TAGS ON ROOT');
+      Tags.createOrReplace(engine.RootEntity, { tags: ['Tag Group 1', 'Tag Group 2'] });
+      engine.update(1);
+    }
+  }
 
   initComponents(engine as any);
 

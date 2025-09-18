@@ -2,32 +2,25 @@ import React, { useCallback, useState } from 'react';
 import './TagsInspector.css';
 import { FaTag as TagIcon, FaPlus, FaPencilAlt as EditIcon } from 'react-icons/fa';
 import { VscTrash as RemoveIcon } from 'react-icons/vsc';
-import type { Entity } from '@dcl/ecs';
+import { type Entity } from '@dcl/ecs';
 import type { Props as OptionProp } from '../../ui/Dropdown/Option/types';
 
 import { withSdk } from '../../../hoc/withSdk';
 import { Dropdown, type DropdownChangeEvent } from '../../ui/Dropdown';
-import type { Tag } from '../../../lib/sdk/components/Tags';
-import {
-  getTagComponent,
-  updateTagsForEntity,
-  TagType,
-  removeTag,
-} from '../../../lib/sdk/components/Tags';
+import { removeTag } from '../../../lib/sdk/components/Tags';
 import { useComponentValue } from '../../../hooks/sdk/useComponentValue';
 import { CreateEditTagModal } from './CreateEditTagModal';
 import { DeleteConfirmationModal } from './DeleteConfirmationModal';
 
 const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
-  const [createEditModal, setCreateEditModal] = useState<{ isOpen: boolean; tag: Tag | null }>({
+  const { Tags } = sdk.components;
+
+  const [createEditModal, setCreateEditModal] = useState<{ isOpen: boolean; tag: string | null }>({
     isOpen: false,
     tag: null,
   });
-  const [sceneTagsComponent] = useComponentValue(
-    sdk.engine.RootEntity,
-    getTagComponent(sdk.engine),
-  );
-  const [entityTagsComponent] = useComponentValue(entity, getTagComponent(sdk.engine));
+  const [sceneTagsComponent] = useComponentValue(sdk.engine.RootEntity, Tags);
+  const [entityTagsComponent] = useComponentValue(entity, Tags);
 
   const sceneTags = sceneTagsComponent?.tags || [];
   const entityTags = entityTagsComponent?.tags || [];
@@ -37,9 +30,9 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
     setCreateEditModal({ isOpen: true, tag: null });
   };
 
-  const [tagToDelete, setTagToDelete] = useState<Tag | null>(null);
+  const [tagToDelete, setTagToDelete] = useState<string | null>(null);
 
-  const handleRemoveTag = (e: React.MouseEvent<SVGElement>, tag: Tag) => {
+  const handleRemoveTag = (e: React.MouseEvent<SVGElement>, tag: string) => {
     e.preventDefault();
     e.stopPropagation();
     setTagToDelete(tag);
@@ -47,12 +40,12 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
 
   const handleConfirmDelete = () => {
     if (tagToDelete) {
-      removeTag(sdk.engine, tagToDelete.name);
+      removeTag(sdk.engine, tagToDelete);
       setTagToDelete(null);
     }
   };
 
-  const handleEditTag = (e: React.MouseEvent<SVGElement>, tag: Tag) => {
+  const handleEditTag = (e: React.MouseEvent<SVGElement>, tag: string) => {
     e.preventDefault();
     e.stopPropagation();
     setCreateEditModal({ isOpen: true, tag });
@@ -60,16 +53,15 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
 
   const getTagOptions = () => {
     const options: OptionProp[] = sceneTags.map(tag => ({
-      label: tag.name,
-      value: tag.name,
+      label: tag,
+      value: tag,
       className: 'TagOption',
-      rightIcon:
-        tag.type === TagType.Custom ? (
-          <>
-            <RemoveIcon onClick={e => handleRemoveTag(e, tag)} />
-            <EditIcon onClick={e => handleEditTag(e, tag)} />
-          </>
-        ) : null,
+      rightIcon: (
+        <>
+          <RemoveIcon onClick={e => handleRemoveTag(e, tag)} />
+          <EditIcon onClick={e => handleEditTag(e, tag)} />
+        </>
+      ),
     }));
     options.push({
       label: 'Create a new tag',
@@ -84,8 +76,13 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
 
   const handleTagChange = useCallback(
     ({ target: { value } }: DropdownChangeEvent) => {
-      const selectedTags = sceneTags.filter(tag => value.includes(tag.name));
-      updateTagsForEntity(sdk.engine, entity, selectedTags);
+      const selectedTags = sceneTags.filter(tag => value.includes(tag));
+      if (Tags.getOrNull(entity)) {
+        sdk.operations.updateValue(Tags, entity, { tags: selectedTags });
+      } else {
+        sdk.operations.addComponent(entity, Tags.componentId, { tags: selectedTags });
+      }
+      sdk.operations.dispatch();
     },
     [entity, sdk, sceneTags],
   );
@@ -100,7 +97,7 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
           placeholder="Add or create tags"
           multiple
           onChange={handleTagChange}
-          value={entityTags.map(tag => tag.name)}
+          value={entityTags}
           options={getTagOptions()}
         />
       </div>

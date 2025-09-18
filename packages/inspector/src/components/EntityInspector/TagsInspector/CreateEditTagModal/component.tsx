@@ -10,16 +10,16 @@ import type { Props } from './types';
 import './styles.css';
 
 const CreateEditTagModal = withSdk<Props>(({ open, onClose, sdk, tag }) => {
-  const [tagName, setTagName] = useState(tag?.name || '');
+  const [tagName, setTagName] = useState(tag || '');
 
   const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setTagName(event.target.value);
   };
 
   const handleSaveTag = async () => {
-    if (tagName && tag?.name) {
+    if (tagName && tag) {
       console.log('change tag name', tagName);
-      renameTag(sdk.engine, tag.name, tagName);
+      renameTag(sdk.engine, tag, tagName);
       onClose();
     }
   };
@@ -40,11 +40,11 @@ const CreateEditTagModal = withSdk<Props>(({ open, onClose, sdk, tag }) => {
     >
       <div className="content">
         <h2 className="title">{tag ? 'Edit tag' : 'Create tag'}</h2>
-        {tag && <span>Editing tag {tag.name}</span>}
+        {tag && <span>Editing tag {tag}</span>}
         <TextField
           label="Tag name"
           autoSelect
-          value={tag?.name || ''}
+          value={tag || ''}
           onChange={handleNameChange}
         />
       </div>
