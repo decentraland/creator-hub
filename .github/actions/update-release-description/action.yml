@@ -59,8 +59,8 @@ runs:
           # IMPORTANT: The 'EOF' delimiters below must start at column 0 (no spaces or tabs).
           # Otherwise, the heredoc will break and the release notes won't be written correctly.
           cat << 'EOF' > temp_release_notes.md
-${{ inputs.release_notes }}
-EOF
+          ${{ inputs.release_notes }}
+          EOF
 
           # Update the release description
           gh release edit "${{ inputs.tag_name }}" --notes-file temp_release_notes.md
@@ -83,8 +83,8 @@ EOF
           # IMPORTANT: The 'EOF' delimiters below must start at column 0 (no spaces or tabs).
           # Otherwise, the heredoc will break and the release notes won't be written correctly.
           cat << 'EOF' > temp_release_notes.md
-${{ inputs.release_notes }}
-EOF
+          ${{ inputs.release_notes }}
+          EOF
 
           # Determine release title
           if [[ -n "${{ inputs.release_title }}" ]]; then
