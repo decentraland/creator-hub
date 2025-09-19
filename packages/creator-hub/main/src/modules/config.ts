@@ -13,6 +13,12 @@ export const CONFIG_PATH = path.join(getUserDataPath(), SETTINGS_DIRECTORY, CONF
 
 let configStorage: IFileSystemStorage<Config> | undefined;
 
+export function getDefaultConfig(): Config {
+  const defaultConfig = deepmerge({}, DEFAULT_CONFIG);
+  defaultConfig.settings.scenesPath = getFullScenesPath(getUserDataPath());
+  return defaultConfig;
+}
+
 export async function getConfigStorage(): Promise<IFileSystemStorage<Config>> {
   await waitForMigrations();
 
@@ -20,10 +26,7 @@ export async function getConfigStorage(): Promise<IFileSystemStorage<Config>> {
     configStorage = await FileSystemStorage.getOrCreate(CONFIG_PATH);
 
     // Initialize with default values if empty or merge with defaults if partial
-    const defaultConfig = deepmerge({}, DEFAULT_CONFIG);
-
-    defaultConfig.settings.scenesPath = getFullScenesPath(getUserDataPath());
-
+    const defaultConfig = getDefaultConfig();
     const existingConfig = await configStorage.getAll();
 
     // Deep merge with defaults if config exists but might be missing properties
