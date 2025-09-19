@@ -226,7 +226,7 @@ export function initializeWorkspace(services: Services) {
         // TODO: implement migrations for config file...
         dependencyUpdateStrategy:
           cfg.settings?.dependencyUpdateStrategy ?? DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
-        scenesPath: cfg.settings?.scenesPath ?? (await getDefaultScenesPath()),
+        scenesPath: cfg.settings?.scenesPath || (await getDefaultScenesPath()),
       },
     };
   }
