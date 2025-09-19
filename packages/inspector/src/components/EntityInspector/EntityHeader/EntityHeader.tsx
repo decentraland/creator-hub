@@ -19,7 +19,6 @@ import { Edit as EditInput } from '../../Tree/Edit';
 import CustomAssetIcon from '../../Icons/CustomAsset';
 import { Container } from '../../Container';
 import { Dropdown } from '../../ui';
-import { Divider } from '../../ui/Divider';
 
 import MoreOptionsMenu from '../MoreOptionsMenu';
 import { RemoveButton } from '../RemoveButton';
@@ -406,7 +405,6 @@ export default React.memo(
                   <CustomAssetIcon />
                   {instanceOf}
                 </span>
-                <Divider />
               </div>
             )}
             <TagsInspector entity={entity} />

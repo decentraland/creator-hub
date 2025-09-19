@@ -42,7 +42,6 @@ export const EditorComponentNames = {
   AdminTools: ComponentName.ADMIN_TOOLS,
   Rewards: ComponentName.REWARDS,
   VideoScreen: ComponentName.VIDEO_SCREEN,
-  Tags: 'core::Tags',
 };
 
 export type AllComponentsType =
