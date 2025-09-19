@@ -135,23 +135,23 @@
   margin-top: 2px;
 }
 
-.EntityHeader .InstanceOf {
+.EntityHeader .componentInfo {
   width: 100%;
   font-size: 11px;
   font-weight: 400;
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 4px;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.EntityHeader .InstanceOf .content {
+.EntityHeader .componentInfo .content {
+  width: 100%;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
 }
 
-.EntityHeader .InstanceOf .Chip {
+.EntityHeader .componentInfo .Chip {
   font-weight: 500;
   background-color: var(--base-14);
   padding: 4px 8px;
@@ -159,5 +159,27 @@
   display: flex;
   flex-direction: row;
   align-items: center;
+  gap: 4px;
+}
+
+.EntityHeader .componentInfo .customItemContainer {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.EntityHeader .componentInfo .tagsContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+}
+
+.EntityHeader .componentInfo .tags {
+  display: flex;
+  flex-wrap: wrap;
   gap: 4px;
 }

@@ -1,0 +1,47 @@
+.TagsInspector {
+  display: flex;
+  gap: 24px;
+  width: 100%;
+}
+
+.TagsInspector .title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--white);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.TagsInspector .title svg {
+  width: 14px;
+  height: 14px;
+  color: var(--white);
+}
+
+.TagsInspector .tags-selector {
+  width: 85%;
+}
+
+.TagsInspector .AddTagOption {
+  width: 100%;
+  border-top: 1px solid var(--base-10);
+}
+
+.TagsInspector .AddTagOption .OptionContent {
+  height: 32px;
+}
+
+.TagsInspector .TagOption .OptionContent {
+  height: 32px;
+  width: 100%;
+}
+
+.TagsInspector .TagOption .RightIcon {
+  width: 100%;
+  gap: 8px;
+  :is(svg) {
+    width: 14px;
+    height: 14px;
+  }
+}
