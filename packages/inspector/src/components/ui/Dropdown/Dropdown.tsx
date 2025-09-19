@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { VscChevronDown as DownArrowIcon } from 'react-icons/vsc';
 import cx from 'classnames';
+import { VscChevronDown as DownArrowIcon } from 'react-icons/vsc';
 import { useOutsideClick } from '../../../hooks/useOutsideClick';
 import { useContainerSize } from '../../../hooks/useContainerSize';
 import { Label } from '../Label';

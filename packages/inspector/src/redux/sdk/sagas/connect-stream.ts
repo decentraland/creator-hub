@@ -5,7 +5,7 @@ import { connectCrdtToEngine } from '../../../lib/sdk/connect-stream';
 import type { IDataLayer } from '../../data-layer';
 import { getDataLayerInterface } from '../../data-layer';
 
-export function* connectStream(): Generator<any, void, any> {
+export function* connectStream() {
   const engines: ReturnType<typeof selectEngines> = yield select(selectEngines);
   const dataLayer: IDataLayer = yield call(getDataLayerInterface);
 
