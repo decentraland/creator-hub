@@ -62,7 +62,9 @@ const CreateEditTagModal = withSdk<Props>(({ open, onClose, sdk, tag }) => {
             value={tag || ''}
             onChange={handleNameChange}
           />
-          <div className="warning">{isDuplicatedTag() && 'This tag already exists'}</div>
+          <div className="warning">
+            {isDuplicatedTag() && !(tag && newTagName === tag) && 'This tag already exists'}
+          </div>
         </div>
       </div>
 
@@ -74,7 +76,7 @@ const CreateEditTagModal = withSdk<Props>(({ open, onClose, sdk, tag }) => {
           Cancel
         </Button>
         <Button
-          disabled={isDuplicatedTag()}
+          disabled={isDuplicatedTag() && !(tag && newTagName === tag)}
           size="big"
           type="danger"
           onClick={tag ? handleSaveTag : handleCreateTag}
