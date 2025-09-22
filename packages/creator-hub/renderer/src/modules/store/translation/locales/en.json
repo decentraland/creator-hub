@@ -409,7 +409,11 @@
     },
     "new_scene": {
       "title": "Empty Scene",
-      "description": "Start your own scene from scratch"
+      "description": "Start your own scene from scratch",
+      "errors": {
+        "invalid_scenes_path": "Invalid Scenes Folder. Please configure a valid Scenes Folder in Settings before creating a scene.",
+        "create_scene_failed": "An error occurred while trying to create the scene. Please try again."
+      }
     },
     "filters": {
       "title": "Filter by",

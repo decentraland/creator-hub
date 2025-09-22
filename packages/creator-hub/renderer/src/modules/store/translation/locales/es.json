@@ -409,7 +409,11 @@
     },
     "new_scene": {
       "title": "Escena Vacía",
-      "description": "Comienza tu propia escena desde cero"
+      "description": "Comienza tu propia escena desde cero",
+      "errors": {
+        "invalid_scenes_path": "Carpeta de escenas inválida. Por favor, ingresa una carpeta de escenas válida en la configuración de la aplicación antes de crear una escena.",
+        "create_scene_failed": "Ocurrió un error al crear la escena. Por favor, inténtalo nuevamente."
+      }
     },
     "filters": {
       "title": "Filtrar por",

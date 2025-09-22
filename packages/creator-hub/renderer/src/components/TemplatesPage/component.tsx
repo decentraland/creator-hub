@@ -2,11 +2,10 @@ import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MenuItem, type SelectChangeEvent, Chip, Typography } from 'decentraland-ui2';
 
-import { misc } from '#preload';
-
 import type { Template } from '/shared/types/workspace';
 
 import { useWorkspace } from '/@/hooks/useWorkspace';
+import { useSnackbar } from '/@/hooks/useSnackbar';
 import { ProjectCard } from '/@/components/ProjectCard';
 import { t } from '/@/modules/store/translation/utils';
 
@@ -23,11 +22,14 @@ import { CreateProject } from '../Modals/CreateProject';
 import { SortBy, Difficulty, type ModalType, type CreateProjectValue } from './types';
 import { sortTemplatesBy } from './utils';
 
+import { misc } from '#preload';
+
 import './styles.css';
 
 export function TemplatesPage() {
   const navigate = useNavigate();
   const { createProject, templates: _templates, getAvailableProject } = useWorkspace();
+  const { pushGeneric } = useSnackbar();
   const [openModal, setOpenModal] = useState<ModalType | undefined>();
   const [templates, setTemplates] = useState(_templates);
   const [sortBy, setSortBy] = useState(SortBy.DEFAULT);
@@ -48,9 +50,20 @@ export function TemplatesPage() {
           repo,
         };
         setOpenModal({ type: 'create-project', payload });
+      } else {
+        // Check if error is related to invalid/missing scenes path to show instructions to solve it.
+        const errorMessage = error?.message || error?.toString() || '';
+        const isPathError = errorMessage.includes('mkdir');
+
+        pushGeneric(
+          'error',
+          isPathError
+            ? t('templates.new_scene.errors.invalid_scenes_path')
+            : t('templates.new_scene.errors.create_scene_failed'),
+        );
       }
     },
-    [],
+    [getAvailableProject, pushGeneric],
   );
 
   const handleCreateProject = useCallback(

@@ -406,7 +406,11 @@
     },
     "new_scene": {
       "title": "空景",
-      "description": "从头开始创建自己的场景"
+      "description": "从头开始创建自己的场景",
+      "errors": {
+        "invalid_scenes_path": "无效的场景文件夹。请在创建场景之前在设置中配置有效的场景文件夹。",
+        "create_scene_failed": "尝试创建场景时发生错误。请重试。"
+      }
     },
     "filters": {
       "title": "过滤依据",
