@@ -8,12 +8,16 @@ import { withSdk } from '../../../../hoc/withSdk';
 import type { Props } from './types';
 import './styles.css';
 
-const CreateEditTagModal = withSdk<Props>(({ open, onClose, sdk, tag }) => {
-  const [newTagName, setTagName] = useState(tag || '');
+const CreateEditTagModal = withSdk<Props>(({ open, onClose, sdk, editingTag }) => {
+  const [newTagName, setTagName] = useState(editingTag || '');
   const { Tags } = sdk.components;
   const sceneTags = Tags.getOrNull(sdk.engine.RootEntity);
 
   const isDuplicatedTag = () => {
+    if (!newTagName) return false;
+    if (editingTag) {
+      return sceneTags?.tags.some(sceneTag => sceneTag === newTagName && sceneTag !== editingTag);
+    }
     return sceneTags?.tags.some(t => t === newTagName);
   };
 
@@ -22,25 +26,25 @@ const CreateEditTagModal = withSdk<Props>(({ open, onClose, sdk, tag }) => {
   };
 
   const handleSaveTag = async () => {
-    if (newTagName && tag) {
-      const entitiesWithTag = sdk.engine.getEntitiesByTag(tag);
+    if (newTagName && editingTag) {
+      const entitiesWithTag = sdk.engine.getEntitiesByTag(editingTag);
       for (const entity of entitiesWithTag) {
-        Tags.remove(entity, tag);
+        Tags.remove(entity, editingTag);
         Tags.add(entity, newTagName);
       }
-      Tags.remove(sdk.engine.RootEntity, tag);
+      Tags.remove(sdk.engine.RootEntity, editingTag);
       Tags.add(sdk.engine.RootEntity, newTagName);
       sdk.operations.dispatch();
+      setTagName('');
       onClose();
     }
   };
 
   const handleCreateTag = async () => {
-    //TODO: validate no repeat names :)
     if (newTagName) {
-      console.log('ALE: createTag called', newTagName);
       Tags.add(sdk.engine.RootEntity, newTagName);
       sdk.operations.dispatch();
+      setTagName('');
       onClose();
     }
   };
@@ -53,35 +57,31 @@ const CreateEditTagModal = withSdk<Props>(({ open, onClose, sdk, tag }) => {
       overlayClassName="CreateEditTagModalOverlay"
     >
       <div className="content">
-        <h2 className="title">{tag ? 'Edit tag' : 'Create tag'}</h2>
-        {tag && <span>Editing tag {tag}</span>}
+        <h2 className="title">{editingTag ? 'Edit tag' : 'Create tag'}</h2>
         <div>
           <TextField
             label="Tag name"
             autoSelect
-            value={tag || ''}
+            value={editingTag || ''}
             onChange={handleNameChange}
           />
-          <div className="warning">
-            {isDuplicatedTag() && !(tag && newTagName === tag) && 'This tag already exists'}
-          </div>
+          <div className="warning">{isDuplicatedTag() && 'This tag already exists'}</div>
         </div>
       </div>
 
       <div className="actions">
         <Button
           size="big"
+          type="danger"
+          onClick={editingTag ? handleSaveTag : handleCreateTag}
+        >
+          {editingTag ? 'Save tag' : 'Create tag'}
+        </Button>
+        <Button
+          size="big"
           onClick={onClose}
         >
           Cancel
-        </Button>
-        <Button
-          disabled={isDuplicatedTag() && !(tag && newTagName === tag)}
-          size="big"
-          type="danger"
-          onClick={tag ? handleSaveTag : handleCreateTag}
-        >
-          {tag ? 'Save tag' : 'Create tag'}
         </Button>
       </div>
     </Modal>

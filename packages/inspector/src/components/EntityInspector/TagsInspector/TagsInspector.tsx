@@ -62,8 +62,8 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
       className: 'TagOption',
       rightIcon: (
         <>
-          <RemoveIcon onClick={e => handleRemoveTag(e, tag)} />
           <EditIcon onClick={e => handleEditTag(e, tag)} />
+          <RemoveIcon onClick={e => handleRemoveTag(e, tag)} />
         </>
       ),
     }));
@@ -108,7 +108,7 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
       <CreateEditTagModal
         open={createEditModal.isOpen}
         onClose={() => setCreateEditModal({ isOpen: false, tag: null })}
-        tag={createEditModal.tag}
+        editingTag={createEditModal.tag}
         entity={entity}
       />
       {tagToDelete && (
