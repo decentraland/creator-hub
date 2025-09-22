@@ -87,6 +87,7 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
       const newSettings = { ...settings, scenesPath: folder };
       setSettings(newSettings);
       updateAppSettings(newSettings);
+      setError(null);
     }
   }, [settings, updateAppSettings]);
 
