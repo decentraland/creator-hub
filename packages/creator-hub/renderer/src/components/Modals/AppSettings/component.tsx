@@ -66,7 +66,7 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
       const isValid = await validateScenesPath(newSettings.scenesPath);
       setError(!isValid ? t('modal.app_settings.fields.scenes_folder.errors.invalid_path') : null);
     },
-    [settings, updateAppSettings],
+    [settings, updateAppSettings, validateScenesPath],
   );
 
   const handleChangeUpdateDependenciesStrategy = useCallback(
