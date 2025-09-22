@@ -71,6 +71,11 @@ export const useWorkspace = () => {
     return dispatch(workspaceActions.updateSceneJson({ path, updates }));
   }, []);
 
+  const validateScenesPath = useCallback(async (path: string) => {
+    const isDir = await workspacePreload.isDirectory(path);
+    return isDir;
+  }, []);
+
   const validateProjectPath = useCallback(async (path: string) => {
     const valid = await workspacePreload.isProjectPathAvailable(path);
     return valid;
@@ -107,6 +112,7 @@ export const useWorkspace = () => {
     updatePackages,
     updateProject,
     updateSceneJson,
+    validateScenesPath,
     validateProjectPath,
     selectNewProjectPath,
     getAvailableProject,

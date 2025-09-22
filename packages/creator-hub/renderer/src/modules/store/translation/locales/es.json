@@ -239,7 +239,10 @@
       "fields": {
         "scenes_folder": {
           "label": "Carpeta de escenas",
-          "change_button": "Cambiar carpeta"
+          "change_button": "Cambiar carpeta",
+          "errors": {
+            "invalid_path": "Carpeta inválida. Por favor selecciona una carpeta válida."
+          }
         },
         "scene_editor_dependencies": {
           "label": "Dependencias del editor de escenas",

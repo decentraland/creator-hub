@@ -31,6 +31,7 @@ import type { EditorConfig } from '/shared/types/config';
 
 import { t } from '/@/modules/store/translation/utils';
 import { useSettings } from '/@/hooks/useSettings';
+import { useWorkspace } from '/@/hooks/useWorkspace';
 import { Modal } from '..';
 import { UpdateSettings } from './UpdateSettings';
 import { useDispatch, useSelector } from '#store';
@@ -40,7 +41,9 @@ import './styles.css';
 export function AppSettings({ open, onClose }: { open: boolean; onClose: () => void }) {
   const dispatch = useDispatch();
   const { settings: _settings, updateAppSettings } = useSettings();
+  const { validateScenesPath } = useWorkspace();
   const [settings, setSettings] = useState(_settings);
+  const [error, setError] = useState<string | null>(null);
   const { loading } = useSelector(state => state.defaultEditor);
   const editors = useSelector(getEditors);
 
@@ -55,10 +58,13 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
   }, [_settings]);
 
   const handleChangeSceneFolder = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
       const newSettings = { ...settings, scenesPath: event.target.value };
       setSettings(newSettings);
       updateAppSettings(newSettings);
+
+      const isValid = await validateScenesPath(newSettings.scenesPath);
+      setError(!isValid ? t('modal.app_settings.fields.scenes_folder.errors.invalid_path') : null);
     },
     [settings, updateAppSettings],
   );
@@ -108,6 +114,7 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
               color="secondary"
               value={settings.scenesPath}
               onChange={handleChangeSceneFolder}
+              error={!!error}
               endAdornment={
                 <InputAdornment position="end">
                   <IconButton
@@ -119,6 +126,14 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
                 </InputAdornment>
               }
             />
+            {error && (
+              <Typography
+                variant="body1"
+                className="error"
+              >
+                {error}
+              </Typography>
+            )}
           </FormGroup>
           <FormGroup
             sx={{ gap: '16px' }}

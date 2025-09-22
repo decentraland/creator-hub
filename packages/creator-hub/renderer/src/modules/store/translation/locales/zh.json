@@ -236,7 +236,10 @@
       "fields": {
         "scenes_folder": {
           "label": "場景資料夾",
-          "change_button": "更改資料夾"
+          "change_button": "更改資料夾",
+          "errors": {
+            "invalid_path": "無效的場景資料夾。請選擇有效的資料夾。"
+          }
         },
         "scene_editor_dependencies": {
           "label": "場景編輯器依賴項",

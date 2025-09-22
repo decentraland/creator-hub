@@ -239,7 +239,10 @@
       "fields": {
         "scenes_folder": {
           "label": "Scenes Folder",
-          "change_button": "Change Folder"
+          "change_button": "Change Folder",
+          "errors": {
+            "invalid_path": "Invalid Scenes Folder. Please select a valid folder."
+          }
         },
         "scene_editor_dependencies": {
           "label": "Scene Editor Dependencies",

@@ -51,6 +51,15 @@ export function initializeWorkspace(services: Services) {
     }
   }
 
+  async function isDirectory(_path: string) {
+    try {
+      const result = await fs.isDirectory(_path);
+      return result;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /**
    * Return whether or not the provided directory has a node_modules directory
    */
@@ -464,6 +473,7 @@ export function initializeWorkspace(services: Services) {
   return {
     isDCL,
     isEmpty,
+    isDirectory,
     hasNodeModules,
     getProjectThumbnailAsBase64,
     getOutdatedPackages,
