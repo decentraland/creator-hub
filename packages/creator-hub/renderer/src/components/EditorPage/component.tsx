@@ -21,6 +21,7 @@ import { t } from '/@/modules/store/translation/utils';
 import { initRpc } from '/@/modules/rpc';
 import { useEditor } from '/@/hooks/useEditor';
 import { useSettings } from '/@/hooks/useSettings';
+import { useSnackbar } from '/@/hooks/useSnackbar';
 
 import EditorPng from '/assets/images/editor.png';
 
@@ -61,6 +62,7 @@ export function EditorPage() {
   } = useEditor();
   const { settings, updateAppSettings } = useSettings();
   const userId = useSelector(state => state.analytics.userId);
+  const { pushGeneric } = useSnackbar();
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
   const [modalOpen, setModalOpen] = useState<ModalType | undefined>();
 
@@ -75,12 +77,13 @@ export function EditorPage() {
   );
 
   useEffect(() => {
-    if (
-      isWorkspaceError(error, 'PROJECT_NOT_FOUND') ||
-      isProjectError(error, 'PROJECT_NOT_CREATED')
-    ) {
+    if (isWorkspaceError(error, 'PROJECT_NOT_FOUND')) {
+      navigate('/scenes');
+    } else if (isProjectError(error, 'PROJECT_NOT_CREATED')) {
+      pushGeneric('error', t('templates.new_scene.errors.create_scene_failed'));
       navigate('/scenes');
     }
+
     return () => {
       const rpc = iframeRef.current;
       if (rpc) {
