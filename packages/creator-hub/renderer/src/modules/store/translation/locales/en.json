@@ -241,7 +241,7 @@
           "label": "Scenes Folder",
           "change_button": "Change Folder",
           "errors": {
-            "invalid_path": "Invalid Scenes Folder. Please select a valid folder."
+            "invalid_path": "Folder doesn't exist or can't save files there. Please choose a different folder."
           }
         },
         "scene_editor_dependencies": {
@@ -297,7 +297,7 @@
         "create": "Create"
       },
       "errors": {
-        "path_exists": "Path already exists"
+        "path_exists_or_not_writable": "Path already exists or can't save files there. Please choose a different folder."
       }
     },
     "install_client": {

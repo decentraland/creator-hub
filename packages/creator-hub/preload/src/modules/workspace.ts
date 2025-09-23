@@ -51,13 +51,27 @@ export function initializeWorkspace(services: Services) {
     }
   }
 
+  /**
+   * Returns whether or not the provided path exists
+   */
+  async function exists(_path: string) {
+    return await fs.exists(_path);
+  }
+
+  /**
+   * Returns whether or not the provided path is a directory or not
+   */
   async function isDirectory(_path: string) {
-    try {
-      const result = await fs.isDirectory(_path);
-      return result;
-    } catch (_) {
-      return false;
-    }
+    const isDir = await fs.isDirectory(_path);
+    return isDir;
+  }
+
+  /**
+   * Returns whether or not the provided directory is writable (can create files/folders inside it)
+   */
+  async function isWritable(_path: string) {
+    const isWritable = await fs.isWritable(_path);
+    return isWritable;
   }
 
   /**
@@ -474,6 +488,8 @@ export function initializeWorkspace(services: Services) {
     isDCL,
     isEmpty,
     isDirectory,
+    isWritable,
+    exists,
     hasNodeModules,
     getProjectThumbnailAsBase64,
     getOutdatedPackages,

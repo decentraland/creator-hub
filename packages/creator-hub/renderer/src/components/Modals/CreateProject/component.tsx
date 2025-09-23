@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import FolderIcon from '@mui/icons-material/Folder';
 import {
   Box,
   IconButton,
@@ -8,7 +9,6 @@ import {
   InputAdornment,
   CircularProgress as Loader,
 } from 'decentraland-ui2';
-import FolderIcon from '@mui/icons-material/Folder';
 
 import { t } from '/@/modules/store/translation/utils';
 
@@ -30,7 +30,7 @@ export function CreateProject({ open, initialValue, onClose, onSubmit }: Props) 
   const validate = useCallback(async () => {
     setLoading(true);
     const valid = await validateProjectPath(`${value.path}/${value.name}`);
-    if (!valid) setError(t('modal.create_project.errors.path_exists'));
+    if (!valid) setError(t('modal.create_project.errors.path_exists_or_not_writable'));
     setLoading(false);
     return valid;
   }, [value, validateProjectPath]);

@@ -35,7 +35,31 @@ export async function readdir(path: string) {
 }
 
 export async function isDirectory(path: string) {
-  return (await fs.stat(path)).isDirectory();
+  try {
+    const stats = await fs.stat(path);
+    return stats.isDirectory();
+  } catch (_) {
+    return false;
+  }
+}
+
+/**
+ * Returns whether or not the provided path is writable (can create files/folders inside it)
+ */
+export async function isWritable(path: string): Promise<boolean> {
+  try {
+    // First, try to access the exact path if it exists
+    await fs.access(path, fs.constants.W_OK);
+    return true; // Path exists and is writable
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      // Path doesn't exist, so check the nearest existing parent directory
+      const parentPath = nodePath.dirname(path);
+      if (parentPath === path) return false; // Reached filesystem root without finding an existing parent
+      return await isWritable(parentPath);
+    }
+    return false; // Permission denied or some other error
+  }
 }
 
 export async function mkdir(path: string, options?: { recursive?: boolean }) {

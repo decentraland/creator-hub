@@ -238,7 +238,7 @@
           "label": "場景資料夾",
           "change_button": "更改資料夾",
           "errors": {
-            "invalid_path": "無效的場景資料夾。請選擇有效的資料夾。"
+            "invalid_path": "文件夹不存在或无法在其中保存文件。请选择其他文件夹。"
           }
         },
         "scene_editor_dependencies": {
@@ -294,7 +294,7 @@
         "create": "創建"
       },
       "errors": {
-        "path_exists": "路徑已存在"
+        "path_exists_or_not_writable": "项目路径已存在或无法在其中保存文件。请选择其他文件夹。"
       }
     },
     "install_client": {

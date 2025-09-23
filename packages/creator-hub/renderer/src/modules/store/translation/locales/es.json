@@ -241,7 +241,7 @@
           "label": "Carpeta de escenas",
           "change_button": "Cambiar carpeta",
           "errors": {
-            "invalid_path": "Carpeta inválida. Por favor selecciona una carpeta válida."
+            "invalid_path": "La carpeta no existe o no tienes permiso para crear archivos allí. Por favor, elige otra carpeta."
           }
         },
         "scene_editor_dependencies": {
@@ -297,7 +297,7 @@
         "create": "Crear"
       },
       "errors": {
-        "path_exists": "La ruta ya existe"
+        "path_exists_or_not_writable": "La ruta ya existe o no tienes permiso para crear archivos allí. Por favor, elige otra carpeta."
       }
     },
     "install_client": {

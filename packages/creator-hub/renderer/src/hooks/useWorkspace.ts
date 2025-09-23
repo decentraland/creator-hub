@@ -73,12 +73,15 @@ export const useWorkspace = () => {
 
   const validateScenesPath = useCallback(async (path: string) => {
     const isDir = await workspacePreload.isDirectory(path);
-    return isDir;
+    const exists = await workspacePreload.exists(path);
+    const isWritable = await workspacePreload.isWritable(path);
+    return isWritable && (isDir || !exists); // Allow non-existing paths as they can be created
   }, []);
 
   const validateProjectPath = useCallback(async (path: string) => {
-    const valid = await workspacePreload.isProjectPathAvailable(path);
-    return valid;
+    const pathAvailable = await workspacePreload.isProjectPathAvailable(path);
+    const dirAvailable = await validateScenesPath(path);
+    return pathAvailable && dirAvailable;
   }, []);
 
   const selectNewProjectPath = useCallback(async () => {
