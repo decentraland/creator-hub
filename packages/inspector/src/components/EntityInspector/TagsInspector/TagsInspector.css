@@ -26,14 +26,23 @@
 .TagsInspector .AddTagOption {
   width: 100%;
   border-top: 1px solid var(--base-10);
+  align-items: baseline;
+}
+
+.TagsInspector .AddTagOption .SelectedContent {
+  display: none;
 }
 
 .TagsInspector .AddTagOption .OptionContent {
-  height: 32px;
+  height: 20px;
+}
+
+.TagsInspector .OptionList {
+  max-height: 250px;
 }
 
 .TagsInspector .TagOption .OptionContent {
-  height: 32px;
+  height: 20px;
   width: 100%;
 }
 
@@ -41,7 +50,7 @@
   width: 100%;
   gap: 8px;
   :is(svg) {
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
   }
 }
