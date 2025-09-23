@@ -86,6 +86,7 @@ export function CreateProject({ open, initialValue, onClose, onSubmit }: Props) 
             color="secondary"
             value={value.name}
             onChange={handleChange('name')}
+            onBlur={validate}
           />
           <Typography variant="body1">{t('modal.create_project.fields.path')}</Typography>
           <OutlinedInput
