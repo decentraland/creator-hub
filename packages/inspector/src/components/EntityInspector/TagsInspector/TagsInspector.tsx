@@ -91,7 +91,7 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
         sdk.operations.addComponent(entity, Tags.componentId, { tags: selectedTags });
       }
       analytics.track(Event.ASSIGN_TAGS, {
-        tagName: selectedTags.join(','),
+        tagsName: selectedTags.join(','),
         itemId: asset?.id || '',
         itemPath: gltfContainer.src,
       });

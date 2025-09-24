@@ -78,6 +78,7 @@ const CreateEditTagModal = withSdk<Props>(({ open, onClose, sdk, editingTag }) =
           size="big"
           type="danger"
           onClick={editingTag ? handleSaveTag : handleCreateTag}
+          disabled={isDuplicatedTag()}
         >
           {editingTag ? 'Save tag' : 'Create tag'}
         </Button>

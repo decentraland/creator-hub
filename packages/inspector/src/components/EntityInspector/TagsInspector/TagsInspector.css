@@ -14,8 +14,6 @@
 }
 
 .TagsInspector .title svg {
-  width: 14px;
-  height: 14px;
   color: var(--white);
 }
 
@@ -53,4 +51,9 @@
     width: 12px;
     height: 12px;
   }
+}
+
+.TagsInspector .OptionContainer .LeftContent .LeftIcon {
+  height: 100%;
+  width: 100%;
 }

@@ -73,7 +73,7 @@ export type Events = {
     tagName: string;
   };
   [Event.ASSIGN_TAGS]: {
-    tagName: string;
+    tagsName: string;
     itemId: string;
     itemPath: string;
   };
