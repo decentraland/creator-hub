@@ -8,9 +8,11 @@ import type { Props as OptionProp } from '../../ui/Dropdown/Option/types';
 import { withSdk } from '../../../hoc/withSdk';
 import { Dropdown, type DropdownChangeEvent } from '../../ui/Dropdown';
 
-import { useComponentValue } from '../../../hooks/sdk/useComponentValue';
+import { getComponentValue, useComponentValue } from '../../../hooks/sdk/useComponentValue';
 import { CreateEditTagModal } from './CreateEditTagModal';
 import { DeleteConfirmationModal } from './DeleteConfirmationModal';
+import { analytics, Event } from '../../../lib/logic/analytics';
+import { getAssetByModel } from '../../../lib/logic/catalog';
 
 const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
   const { Tags } = sdk.components;
@@ -81,11 +83,18 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
   const handleTagChange = useCallback(
     ({ target: { value } }: DropdownChangeEvent) => {
       const selectedTags = sceneTags.filter(tag => value.includes(tag));
+      const gltfContainer = getComponentValue(entity, sdk.components.GltfContainer);
+      const asset = getAssetByModel(gltfContainer.src);
       if (Tags.getOrNull(entity)) {
         sdk.operations.updateValue(Tags, entity, { tags: selectedTags });
       } else {
         sdk.operations.addComponent(entity, Tags.componentId, { tags: selectedTags });
       }
+      analytics.track(Event.ASSIGN_TAGS, {
+        tagName: selectedTags.join(','),
+        itemId: asset?.id || '',
+        itemPath: gltfContainer.src,
+      });
       sdk.operations.dispatch();
     },
     [entity, sdk, sceneTags],

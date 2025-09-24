@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 
 import { Button } from '../../../Button';
+import { analytics, Event } from '../../../../lib/logic/analytics';
 import { TextField } from '../../../ui/TextField';
 import { Modal } from '../../../Modal';
 import { withSdk } from '../../../../hoc/withSdk';
@@ -35,6 +36,9 @@ const CreateEditTagModal = withSdk<Props>(({ open, onClose, sdk, editingTag }) =
       Tags.remove(sdk.engine.RootEntity, editingTag);
       Tags.add(sdk.engine.RootEntity, newTagName);
       sdk.operations.dispatch();
+      analytics.track(Event.CREATE_TAG, {
+        tagName: newTagName,
+      });
       setTagName('');
       onClose();
     }

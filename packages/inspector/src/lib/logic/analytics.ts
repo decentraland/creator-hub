@@ -14,6 +14,8 @@ export enum Event {
   CREATE_CUSTOM_ITEM = 'Create Custom Item',
   DELETE_CUSTOM_ITEM = 'Delete Custom Item',
   RENAME_CUSTOM_ITEM = 'Rename Custom Item',
+  CREATE_TAG = 'Create Tags',
+  ASSIGN_TAGS = 'Assign Tags to Entity',
 }
 
 export type Events = {
@@ -66,6 +68,14 @@ export type Events = {
   };
   [Event.RENAME_CUSTOM_ITEM]: {
     itemId: string;
+  };
+  [Event.CREATE_TAG]: {
+    tagName: string;
+  };
+  [Event.ASSIGN_TAGS]: {
+    tagName: string;
+    itemId: string;
+    itemPath: string;
   };
 };
 
