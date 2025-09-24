@@ -452,7 +452,8 @@ export function initializeWorkspace(services: Services) {
   }
 
   async function openFolder(_path: string) {
-    const error = await shell.openPath(_path);
+    const absolutePath = path.resolve(_path);
+    const error = await shell.openPath(absolutePath);
     if (error) throw new Error(error);
   }
 
