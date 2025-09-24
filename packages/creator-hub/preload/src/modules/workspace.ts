@@ -52,29 +52,6 @@ export function initializeWorkspace(services: Services) {
   }
 
   /**
-   * Returns whether or not the provided path exists
-   */
-  async function exists(_path: string) {
-    return await fs.exists(_path);
-  }
-
-  /**
-   * Returns whether or not the provided path is a directory or not
-   */
-  async function isDirectory(_path: string) {
-    const isDir = await fs.isDirectory(_path);
-    return isDir;
-  }
-
-  /**
-   * Returns whether or not the provided directory is writable (can create files/folders inside it)
-   */
-  async function isWritable(_path: string) {
-    const isWritable = await fs.isWritable(_path);
-    return isWritable;
-  }
-
-  /**
    * Return whether or not the provided directory has a node_modules directory
    */
   async function hasNodeModules(_path: string) {
@@ -368,6 +345,16 @@ export function initializeWorkspace(services: Services) {
     return project;
   }
 
+  /**
+   * Returns whether or not the provided directory is a valid base path to create new scenes/projects
+   */
+  async function validateScenesPath(_path: string) {
+    const isDir = await fs.isDirectory(_path);
+    const exists = await fs.exists(_path);
+    const isWritable = await fs.isWritable(_path);
+    return isWritable && (isDir || !exists); // Allow non-existing paths as they can be created
+  }
+
   async function isProjectPathAvailable(projectPath: string): Promise<boolean> {
     const cfg = await config.getConfig();
     const [projects] = await getProjects(cfg.workspace.paths, { omitOutdatedPackages: true });
@@ -487,9 +474,6 @@ export function initializeWorkspace(services: Services) {
   return {
     isDCL,
     isEmpty,
-    isDirectory,
-    isWritable,
-    exists,
     hasNodeModules,
     getProjectThumbnailAsBase64,
     getOutdatedPackages,
@@ -507,6 +491,7 @@ export function initializeWorkspace(services: Services) {
     saveThumbnail,
     openFolder,
     getConfigPath,
+    validateScenesPath,
     getProjectInfoFs,
     updateProjectInfo,
     importProject,

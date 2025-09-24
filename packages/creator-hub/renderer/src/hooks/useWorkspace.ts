@@ -71,17 +71,22 @@ export const useWorkspace = () => {
     return dispatch(workspaceActions.updateSceneJson({ path, updates }));
   }, []);
 
+  /**
+   * Returns whether or not the provided directory is a valid base path to create new scenes/projects
+   */
   const validateScenesPath = useCallback(async (path: string) => {
-    const isDir = await workspacePreload.isDirectory(path);
-    const exists = await workspacePreload.exists(path);
-    const isWritable = await workspacePreload.isWritable(path);
-    return isWritable && (isDir || !exists); // Allow non-existing paths as they can be created
+    const isValid = await workspacePreload.validateScenesPath(path);
+    return isValid;
   }, []);
 
+  /**
+   * Returns whether or not the provided directory is a valid path to create a new project.
+   * It ensures that the path is not used by another project yet.
+   */
   const validateProjectPath = useCallback(async (path: string) => {
-    const pathAvailable = await workspacePreload.isProjectPathAvailable(path);
-    const dirAvailable = await validateScenesPath(path);
-    return pathAvailable && dirAvailable;
+    const isPathAvailable = await workspacePreload.isProjectPathAvailable(path);
+    const isValidDirectory = await workspacePreload.validateScenesPath(path);
+    return isPathAvailable && isValidDirectory;
   }, []);
 
   const selectNewProjectPath = useCallback(async () => {
