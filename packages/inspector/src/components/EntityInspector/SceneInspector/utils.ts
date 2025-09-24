@@ -72,7 +72,7 @@ export function fromScene(value: EditorComponentsTypes['Scene']): SceneInput {
   return {
     name: value.name || 'My Scene',
     description: value.description || '',
-    thumbnail: value.thumbnail || 'assets/scene/thumbnail.png',
+    thumbnail: value.thumbnail || '',
     ageRating: value.ageRating || SceneAgeRating.Teen,
     categories: value.categories || [],
     tags: value.tags ? value.tags.join(', ') : '',

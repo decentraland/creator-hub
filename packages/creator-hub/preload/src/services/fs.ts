@@ -26,8 +26,8 @@ export async function exists(path: string) {
   }
 }
 
-export async function rm(path: string) {
-  await fs.rm(path);
+export async function rm(path: string, options?: { recursive?: boolean }) {
+  await fs.rm(path, options);
 }
 
 export async function readdir(path: string) {

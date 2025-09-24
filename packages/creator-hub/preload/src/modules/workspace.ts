@@ -309,13 +309,23 @@ export function initializeWorkspace(services: Services) {
   }
 
   /**
-   * Deletes a project directory and all its contents.
+   * Unlists a project from the workspace and optionally deletes its files from disk.
    *
-   * @param _path - The path of the directory to be deleted.
-   * @returns A Promise that resolves when the directory has been deleted.
+   * @param path - The path of the project to be deleted from the workspace.
+   * @param shouldDeleteFiles - Whether to delete the project files from disk. Defaults to false.
+   * @returns A Promise that resolves when the project has been deleted.
    */
-  async function deleteProject(_path: string): Promise<void> {
-    await unlistProjects([_path]);
+  async function deleteProject({
+    path,
+    shouldDeleteFiles = false,
+  }: {
+    path: string;
+    shouldDeleteFiles?: boolean;
+  }): Promise<void> {
+    await unlistProjects([path]);
+    if (shouldDeleteFiles) {
+      await fs.rm(path, { recursive: true });
+    }
   }
 
   /**

@@ -75,14 +75,14 @@ export const slice = createSlice({
       .addCase(thunks.deleteProject.fulfilled, (state, action) => {
         return {
           ...state,
-          projects: state.projects.filter($ => $.path !== action.meta.arg),
+          projects: state.projects.filter($ => $.path !== action.meta.arg.path),
           status: 'succeeded',
           error: null,
         };
       })
       .addCase(thunks.deleteProject.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.error.message || `Failed to delete project ${action.meta.arg}`;
+        state.error = action.error.message || `Failed to delete project ${action.meta.arg.path}`;
       })
       .addCase(thunks.duplicateProject.pending, _state => {})
       .addCase(thunks.duplicateProject.fulfilled, (state, action) => {

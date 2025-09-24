@@ -4,5 +4,5 @@ export type Props = {
   open: boolean;
   project: Project;
   onClose: () => void;
-  onSubmit: (project: Project) => void;
+  onSubmit: (project: Project, shouldDeleteFiles: boolean) => void;
 };

@@ -88,11 +88,20 @@ export class EcsEntity extends BABYLON.TransformNode {
       this.deleteComponent(component);
     }
 
+    // clean up bounding box state before disposal
+    this.cleanupBoundingBox();
+
     // then dispose the boundingInfoMesh if exists
     this.boundingInfoMesh?.dispose();
 
     // and then proceed with the native engine disposal
     super.dispose(true, false);
+  }
+
+  cleanupBoundingBox() {
+    if (this.boundingInfoMesh) {
+      this.boundingInfoMesh.showBoundingBox = false;
+    }
   }
 
   getMeshesBoundingBox(_children: BABYLON.AbstractMesh[] = []) {
@@ -280,7 +289,10 @@ function updateMeshBoundingBoxVisibility(entity: EcsEntity, mesh: BABYLON.Abstra
     ? entity.gltfContainer.getChildMeshes(false)
     : entity.getChildMeshes(true);
 
-  const shouldShowBoundingBox = (isSelected || isParentSelected) && isEntityOutsideLayout(mesh);
+  const hasVisibleContent =
+    children.length > 0 && children.some(child => child.isEnabled() && child.material);
+  const shouldShowBoundingBox =
+    (isSelected || isParentSelected) && isEntityOutsideLayout(mesh) && hasVisibleContent;
 
   if (shouldShowBoundingBox) {
     mesh.showBoundingBox = true;

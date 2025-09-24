@@ -110,15 +110,16 @@
       "discard_all": "Descartar todas"
     },
     "delete_project": {
-      "title": "Estas seguro que quieres eliminar \"{title}\"?",
-      "remove_imported_scene": "Esto eliminará \"{title}\" del Editor. Los archivos originales permaneceran en tu sistema."
+      "title": "Estas seguro que quieres eliminar {title} de 'Mis Escenas'?",
+      "files_checkbox": "También eliminar los archivos de la escena de mi computadora",
+      "files_warning": "Los archivos de la escena se eliminarán permanentemente de tu computadora, no podrás acceder a esta escena nuevamente."
     },
     "publish_project": {
       "title": "Publicar escena \"{title}\"",
-      "select": "Select where you want to deploy this scene:",
+      "select": "Selecciona dónde quieres publicar tu escena",
       "worlds": {
         "title": "Worlds",
-        "description": "Not findable in Genesis City map. \nUp to 100 users can join concurrently.",
+        "description": "No se puede encontrar en el mapa de Genesis City. \nHasta 100 usuarios pueden unirse simultáneamente.",
         "action": "Publicar Mundo",
         "select_world": {
           "title": "Publicar Mundo",
@@ -246,6 +247,18 @@
             "auto_update": "Actualizar automáticamente las dependencias",
             "notify": "Notificarme cuando exista una nueva version",
             "do_nothing": "No hacer nada"
+          }
+        },
+        "code_editor": {
+          "label": "Editor de código preferido",
+          "choose_device": "Elegir desde tu dispositivo...",
+          "errors": {
+            "load": "Error al cargar los editores de código",
+            "set": "Error al establecer el editor por defecto",
+            "invalid_app_extension": "Aplicación inválida. Por favor selecciona un archivo .app válido",
+            "invalid_app_bundle": "Estructura de aplicación inválida",
+            "invalid_exe_file": "Aplicación inválida. Por favor selecciona un archivo .exe válido",
+            "unknown": "Error al establecer el editor por defecto"
           }
         }
       },
