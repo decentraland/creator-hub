@@ -349,9 +349,11 @@ export function initializeWorkspace(services: Services) {
    * Returns whether or not the provided directory is a valid base path to create new scenes/projects
    */
   async function validateScenesPath(_path: string) {
-    const isDir = await fs.isDirectory(_path);
-    const exists = await fs.exists(_path);
-    const isWritable = await fs.isWritable(_path);
+    const [isDir, exists, isWritable] = await Promise.all([
+      fs.isDirectory(_path),
+      fs.exists(_path),
+      fs.isWritable(_path),
+    ]);
     return isWritable && (isDir || !exists); // Allow non-existing paths as they can be created
   }
 
