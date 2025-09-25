@@ -62,18 +62,16 @@ describe('Init RPC Methods', () => {
     await mocked.fs.writeFile(compositeDest, Buffer.from(JSON.stringify(jsonComposite), 'utf-8'));
     await initRpcMethods(mocked.fs, mocked.engine, mocked.addEngineListener);
 
-    const NameComponent = mocked.engine.getComponent(Name.componentId) as typeof Name;
-    const entitiesWithName = Array.from(mocked.engine.getEntitiesWith(NameComponent));
-    const entityWithBoedo = entitiesWithName.find(([_, nameValue]) => nameValue.value === 'Boedo');
-    expect(entityWithBoedo).toBeDefined();
-    const [migratedEntity, nameValue] = entityWithBoedo!;
-    expect(nameValue).toMatchObject({ value: 'Boedo' });
+    const EntityNodeComponent = mocked.engine.getComponentOrNull('inspector::EntityNode');
+    expect(EntityNodeComponent?.get(entity)).toMatchObject({ label: 'Boedo', parent: 10 });
+    await mocked.engine.update(1);
 
+    const NameComponent = mocked.engine.getComponent(Name.componentId) as typeof Name;
     const TransformComponent = mocked.engine.getComponent(
       Transform.componentId,
     ) as typeof Transform;
-    const transformValue = TransformComponent.get(migratedEntity);
-    expect(transformValue.parent).toBe(10);
+    expect(NameComponent.get(entity)).toMatchObject({ value: 'Boedo' });
+    expect(TransformComponent.get(entity).parent).toBe(10);
     expect(mocked.engine.getComponentOrNull('inspector::EntityNode')).toBe(null);
 
     await mocked.engine.update(1);
