@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect, useMemo } from 'react';
 import FolderIcon from '@mui/icons-material/Folder';
 import {
   Box,
@@ -11,6 +11,7 @@ import {
 } from 'decentraland-ui2';
 
 import { t } from '/@/modules/store/translation/utils';
+import { debounce } from '/shared/utils';
 
 import { useWorkspace } from '/@/hooks/useWorkspace';
 
@@ -27,13 +28,29 @@ export function CreateProject({ open, initialValue, onClose, onSubmit }: Props) 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const validate = useCallback(async () => {
-    setLoading(true);
-    const valid = await validateProjectPath(`${value.path}/${value.name}`);
-    if (!valid) setError(t('modal.create_project.errors.path_exists_or_not_writable'));
-    setLoading(false);
-    return valid;
-  }, [value, validateProjectPath]);
+  const validate = useCallback(
+    async (path: string, name: string) => {
+      setLoading(true);
+      const valid = await validateProjectPath(`${path}/${name}`);
+      if (!valid) setError(t('modal.create_project.errors.path_exists_or_not_writable'));
+      setLoading(false);
+      return valid;
+    },
+    [value, validateProjectPath],
+  );
+
+  // Create debounced validation function using the utility
+  const debouncedValidation = useMemo(
+    () => debounce(validate, 500), // 500ms debounce
+    [validate],
+  );
+
+  // Effect to trigger validation when value changes
+  useEffect(() => {
+    if (value.path && value.name) {
+      debouncedValidation(value.path, value.name);
+    }
+  }, [value.path, value.name, debouncedValidation]);
 
   const handleChange = useCallback(
     (key: keyof Value) => (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,7 +69,7 @@ export function CreateProject({ open, initialValue, onClose, onSubmit }: Props) 
   }, [value]);
 
   const handleSubmit = useCallback(async () => {
-    const valid = await validate();
+    const valid = await validate(value.path, value.name);
     if (valid) onSubmit(value);
   }, [onSubmit, value, validate, error]);
 
@@ -86,14 +103,12 @@ export function CreateProject({ open, initialValue, onClose, onSubmit }: Props) 
             color="secondary"
             value={value.name}
             onChange={handleChange('name')}
-            onBlur={validate}
           />
           <Typography variant="body1">{t('modal.create_project.fields.path')}</Typography>
           <OutlinedInput
             color="secondary"
             value={value.path}
             onChange={handleChange('path')}
-            onBlur={validate}
             endAdornment={
               <InputAdornment position="end">
                 <IconButton
