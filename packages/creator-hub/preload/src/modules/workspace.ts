@@ -272,7 +272,6 @@ export function initializeWorkspace(services: Services) {
         opts?.path && opts?.name
           ? { name: opts.name, path: opts.path }
           : await getAvailable(opts?.name ?? NEW_SCENE_NAME);
-
       const templateRepo = opts?.repo ?? EMPTY_SCENE_TEMPLATE_REPO;
 
       const fullName = projectPath.endsWith(name) ? projectPath : path.join(projectPath, name);
@@ -298,7 +297,9 @@ export function initializeWorkspace(services: Services) {
 
       return { path: fullName };
     } catch (error: any) {
-      throw new Error(`Failed to create project "${name}": ${error.message}`);
+      throw new Error(
+        `Failed to create project "${opts?.name || NEW_SCENE_NAME}": ${error.message}`,
+      );
     }
   }
 
