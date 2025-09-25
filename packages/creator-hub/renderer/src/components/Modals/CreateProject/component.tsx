@@ -36,7 +36,7 @@ export function CreateProject({ open, initialValue, onClose, onSubmit }: Props) 
       setLoading(false);
       return valid;
     },
-    [value, validateProjectPath],
+    [validateProjectPath],
   );
 
   // Create debounced validation function using the utility
@@ -47,9 +47,7 @@ export function CreateProject({ open, initialValue, onClose, onSubmit }: Props) 
 
   // Effect to trigger validation when value changes
   useEffect(() => {
-    if (value.path && value.name) {
-      debouncedValidation(value.path, value.name);
-    }
+    debouncedValidation(value.path, value.name);
   }, [value.path, value.name, debouncedValidation]);
 
   const handleChange = useCallback(
