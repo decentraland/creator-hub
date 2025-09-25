@@ -56,10 +56,6 @@ export async function isWritable(path: string): Promise<boolean> {
     await fs.rm(testFilePath);
     return true;
   } catch (error) {
-    console.error(
-      `WINDOWS Error occurred while testing write permissions for path ${path}:`,
-      error,
-    );
     return false; // Permission denied, directory does't exist or some other error
   }
 }
