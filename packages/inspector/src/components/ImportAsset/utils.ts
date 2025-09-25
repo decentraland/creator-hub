@@ -1,7 +1,6 @@
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-import type { BaseAsset, ModelAsset, ValidationError, Asset, Gltf, AssetType } from './types';
+import { validateBytes } from 'gltf-validator-ts';
+import type { Gltf, BaseAsset, ModelAsset, ValidationError, Asset, AssetType } from './types';
 import { isModelAsset } from './types';
-const validator = require('gltf-validator');
 
 const sampleIndex = (list: any[]) => Math.floor(Math.random() * list.length);
 
@@ -125,7 +124,7 @@ export async function getGltf(
 ): Promise<Gltf> {
   try {
     const buffer = await file.arrayBuffer();
-    const result: Gltf = await validator.validateBytes(new Uint8Array(buffer), {
+    const result: Gltf = await validateBytes(new Uint8Array(buffer), {
       ignoredIssues: IGNORED_ERROR_CODES,
       externalResourceFunction: getExternalResource,
     });
@@ -215,7 +214,7 @@ async function getModel(asset: BaseAsset, fileMap: Map<string, BaseAsset>): Prom
 
   for (const resource of gltf.info.resources || []) {
     if (resource.storage === 'external') {
-      const normalizedName = normalizeFileName(resource.uri);
+      const normalizedName = normalizeFileName(resource.uri || '');
       const uri = fileMap.get(normalizedName);
       if (uri) {
         if (resource.pointer.includes('buffer')) buffers.push(uri);

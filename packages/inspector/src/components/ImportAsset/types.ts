@@ -1,3 +1,13 @@
+import type { ValidationResult as Gltf } from 'gltf-validator-ts';
+
+export type {
+  ValidationResult as Gltf,
+  ValidationInfo as GltfInfo,
+  Resource as GltfResource,
+  Issues as GltfIssues,
+  ValidationMessage as GltfMessage,
+} from 'gltf-validator-ts';
+
 export type BaseAsset = {
   blob: File;
   name: string;
@@ -28,41 +38,7 @@ export const isModelAsset = (asset: Asset): asset is ModelAsset => {
   return _asset.buffers && _asset.images;
 };
 
-export interface Gltf {
-  mimeType: string;
-  validatorVersion: string;
-  validatedAt: Date;
-  issues: GltfIssues;
-  info: GltfInfo;
-}
-
-export interface GltfInfo {
-  version: string;
-  generator: string;
-  resources: GltfResource[];
-  animationCount: number;
-  materialCount: number;
-  hasMorphTargets: boolean;
-  hasSkins: boolean;
-  hasTextures: boolean;
-  hasDefaultScene: boolean;
-  drawCallCount: number;
-  totalVertexCount: number;
-  totalTriangleCount: number;
-  maxUVs: number;
-  maxInfluences: number;
-  maxAttributes: number;
-}
-
-export interface GltfResource {
-  pointer: string;
-  mimeType: string;
-  storage: string;
-  uri: string;
-  byteLength?: number;
-  image?: GltfImage;
-}
-
+// this interface is specific to our implementation and not available in gltf-validator-ts
 export interface GltfImage {
   width: number;
   height: number;
@@ -70,24 +46,4 @@ export interface GltfImage {
   primaries: string;
   transfer: string;
   bits: number;
-}
-
-export interface GltfIssues {
-  numErrors: number;
-  numWarnings: number;
-  numInfos: number;
-  numHints: number;
-  messages: GltfMessage[];
-  truncated: boolean;
-}
-
-/*
-  Severity codes are Error (0), Warning (1), Information (2), Hint (3).
-  https://github.com/KhronosGroup/glTF-Validator/blob/main/lib/src/errors.dart
-*/
-export interface GltfMessage {
-  code: string;
-  message: string;
-  severity: number;
-  pointer: string;
 }
