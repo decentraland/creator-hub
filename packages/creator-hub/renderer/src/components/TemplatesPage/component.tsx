@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { MenuItem, type SelectChangeEvent, Chip, Typography } from 'decentraland-ui2';
 
 import type { Template } from '/shared/types/workspace';
+import { isProjectError, ProjectError } from '/shared/types/projects';
 
 import { useWorkspace } from '/@/hooks/useWorkspace';
 import { useSnackbar } from '/@/hooks/useSnackbar';
@@ -25,6 +26,7 @@ import { sortTemplatesBy } from './utils';
 import { misc } from '#preload';
 
 import './styles.css';
+import { ErrorBase } from '/shared/types/error';
 
 export function TemplatesPage() {
   const navigate = useNavigate();
@@ -42,6 +44,7 @@ export function TemplatesPage() {
   const handleClickTemplate = useCallback(
     (repo?: string) => async () => {
       const [error, data] = await getAvailableProject();
+      console.log('Project available: ', { error, data });
       if (!error) {
         const { name, path } = data;
         const payload = {
@@ -52,9 +55,20 @@ export function TemplatesPage() {
         setOpenModal({ type: 'create-project', payload });
       } else {
         // Check if error is related to invalid/missing scenes path to show instructions to solve it.
-        const errorMessage = error?.message || error?.toString() || '';
-        const isPathError = errorMessage.includes('mkdir');
-
+        const isPathError =
+          isProjectError(error, 'INVALID_PATH') ||
+          (error instanceof Error && error.message === 'INVALID_PATH'); /// Temporary, until fixing the error typing.
+        console.log(
+          'isProjectError?',
+          isPathError,
+          'Error from getAvailable: name ',
+          error.name,
+          ' - message ',
+          error?.message || error?.toString() || '',
+          error instanceof Error,
+          error instanceof ErrorBase,
+          error instanceof ProjectError,
+        ); ///
         pushGeneric(
           'error',
           isPathError

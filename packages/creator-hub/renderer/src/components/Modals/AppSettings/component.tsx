@@ -42,7 +42,7 @@ import './styles.css';
 export function AppSettings({ open, onClose }: { open: boolean; onClose: () => void }) {
   const dispatch = useDispatch();
   const { settings: _settings, updateAppSettings } = useSettings();
-  const { validateScenesPath } = useWorkspace();
+  const { validateProjectPath } = useWorkspace();
   const [settings, setSettings] = useState(_settings);
   const [error, setError] = useState<string | null>(null);
   const { loading } = useSelector(state => state.defaultEditor);
@@ -51,16 +51,9 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
   useEffect(() => {
     if (open) {
       dispatch(loadEditors());
+      validateScenesPathField(settings.scenesPath);
     }
   }, [dispatch, open]);
-
-  useEffect(() => {
-    if (open) {
-      validateScenesPathField(settings.scenesPath);
-    } else {
-      setError(null);
-    }
-  }, [open]);
 
   useEffect(() => {
     if (!equal(_settings, settings)) setSettings(_settings);
@@ -68,20 +61,20 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
 
   const validateScenesPathField = useCallback(
     debounce(async (path: string) => {
-      const isValid = await validateScenesPath(path);
+      const isValid = await validateProjectPath(path);
       setError(!isValid ? t('modal.app_settings.fields.scenes_folder.errors.invalid_path') : null);
     }, 500),
-    [validateScenesPath],
+    [validateProjectPath],
   );
 
   const handleChangeSceneFolder = useCallback(
-    async (event: React.ChangeEvent<HTMLInputElement>) => {
+    (event: React.ChangeEvent<HTMLInputElement>) => {
       const newSettings = { ...settings, scenesPath: event.target.value };
       setSettings(newSettings);
       updateAppSettings(newSettings);
       validateScenesPathField(newSettings.scenesPath);
     },
-    [settings, updateAppSettings, validateScenesPath],
+    [settings, updateAppSettings, validateProjectPath],
   );
 
   const handleChangeUpdateDependenciesStrategy = useCallback(
