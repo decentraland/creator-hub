@@ -38,7 +38,7 @@ export async function updateAppSettings(settings: AppSettings) {
 export async function selectSceneFolder(): Promise<string | undefined> {
   const [projectPath] = await invoke('electron.showOpenDialog', {
     title: 'Select Scenes Folder',
-    properties: ['openDirectory'],
+    properties: ['openDirectory', 'createDirectory', 'promptToCreate'],
   });
 
   return projectPath;

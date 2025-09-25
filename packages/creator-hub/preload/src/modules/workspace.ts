@@ -367,7 +367,7 @@ export function initializeWorkspace(services: Services) {
     const cfg = await config.getConfig();
     const [projectPath] = await ipc.invoke('electron.showOpenDialog', {
       title,
-      properties: ['openDirectory', 'createDirectory'],
+      properties: ['openDirectory', 'createDirectory', 'promptToCreate'],
       defaultPath: cfg.settings.scenesPath,
     });
 
