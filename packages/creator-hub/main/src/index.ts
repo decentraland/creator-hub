@@ -9,12 +9,10 @@ import { deployServer, killAllPreviews } from '/@/modules/cli';
 import { killInspectorServer } from '/@/modules/inspector';
 import { runMigrations } from '/@/modules/migrations';
 import { getAnalytics, track } from './modules/analytics';
-import { newAppArgsHandle, type AppArgsHandle } from './modules/app-args-handle';
+import { tryOpenDevToolsOnPort } from './modules/app-args-handle';
 import { addEditorsPathsToConfig } from './modules/code';
 
 import '/@/security-restrictions';
-
-const appArgsHandle: AppArgsHandle = newAppArgsHandle();
 
 log.initialize();
 
@@ -34,7 +32,7 @@ if (!isSingleInstance) {
 }
 app.on('second-instance', async (_e: unknown, argv: string[]) => {
   await restoreOrCreateMainWindow();
-  appArgsHandle.handle(argv);
+  tryOpenDevToolsOnPort(argv);
 });
 
 /**
@@ -73,7 +71,7 @@ app
       log.info('[Analytics] API key not provided, analytics disabled');
     }
 
-    appArgsHandle.handle(process.argv);
+    tryOpenDevToolsOnPort(process.argv);
   })
   .catch(e => log.error('Failed create window:', e));
 

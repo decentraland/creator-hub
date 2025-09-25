@@ -2,78 +2,26 @@ import * as path from 'path';
 import log from 'electron-log/main';
 import { BrowserWindow } from 'electron';
 
-const OPEN_DEVTOOLS_ARG = '--open-devtools-with-port';
+// Inlined approach proposed by Nico: https://github.com/decentraland/creator-hub/pull/766#discussion_r2359198135
+// If we will need more structured option refer to the original implementation: https://github.com/decentraland/creator-hub/pull/766#discussion_r2359459892
+export function tryOpenDevToolsOnPort(argv: string[]): void {
+  const isDev = process.defaultApp || /electron(\.exe)?$/i.test(path.basename(process.execPath));
+  const args = isDev ? argv.slice(2) : argv.slice(1);
 
-type ServerPort = {
-  port: number;
-};
+  for (const arg of args) {
+    if (arg.startsWith('--open-devtools-with-port=')) {
+      const portStr = arg.split('=')[1];
+      const port = parseInt(portStr);
 
-type ParsedArgs = {
-  devtoolsPort: ServerPort | null;
-};
+      if (isNaN(port)) {
+        log.error(`Invalid port: ${portStr}`);
+        continue;
+      }
 
-type Args = {
-  list: string[];
-};
-
-export type AppArgsHandle = {
-  handle(argv: string[]): void;
-};
-
-export function newAppArgsHandle(): AppArgsHandle {
-  function handle(argv: string[]): void {
-    const args: Args = argsFrom(argv);
-    const parsed: ParsedArgs = parsedArgsFrom(args);
-    log.info(`[Args] processing args: ${JSON.stringify(parsed)} from ${argv}`);
-
-    if (parsed.devtoolsPort !== null) {
+      log.info(`Opening devtools on port ${port}`);
       const devtoolsWindow = new BrowserWindow();
-      devtoolsWindow.loadURL(
-        'devtools://devtools/bundled/inspector.html?ws=127.0.0.1:' + parsed.devtoolsPort.port,
-      );
+      devtoolsWindow.loadURL(`devtools://devtools/bundled/inspector.html?ws=127.0.0.1:${port}`);
+      break;
     }
   }
-
-  return { handle };
-}
-
-function argsFrom(argv: string[]): Args {
-  // dev: [node, electron, ...args]  -> slice(2)
-  // prod: [app.exe, ...args]        -> slice(1)
-  const dev = process.defaultApp || /electron(\.exe)?$/i.test(path.basename(process.execPath));
-  const sliced = dev ? argv.slice(2) : argv.slice(1);
-  return {
-    list: sliced,
-  };
-}
-
-function parsedArgsFrom(args: Args): ParsedArgs {
-  const out: ParsedArgs = { devtoolsPort: null };
-  for (let i = 0; i < args.list.length; i++) {
-    const a: string = args.list[i];
-    if (a.startsWith(OPEN_DEVTOOLS_ARG)) {
-      if (out.devtoolsPort !== null) {
-        log.error('[Args] --open-devtools-with-port already assigned');
-        continue;
-      }
-
-      // MacOS may change order of arguments
-      // format --arg=VALUE allows to safely pass the data
-      const value: string | null = a.includes('=') ? a.substring(a.indexOf('=') + 1) : null;
-
-      if (value === null) {
-        log.error('[Args] --open-devtools-with-port provided without port');
-        continue;
-      }
-
-      const port = Number.parseInt(value);
-      if (Number.isNaN(port)) {
-        log.error(`[Args] --open-devtools-with-port cannot parse port: ${value}`);
-        continue;
-      }
-
-      out.devtoolsPort = { port };
-    }
-  }
-  return out;
 }
