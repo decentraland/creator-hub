@@ -48,6 +48,11 @@ export async function isDirectory(path: string) {
  */
 export async function isWritable(path: string): Promise<boolean> {
   try {
+    if (process.platform === 'win32') {
+      console.log(`Attempting to write a test file on windows ${path}`);
+      return await tryActualWrite(path);
+    }
+
     // First, try to access the exact path if it exists
     await fs.access(path, fs.constants.W_OK);
     return true; // Path exists and is writable
@@ -63,11 +68,6 @@ export async function isWritable(path: string): Promise<boolean> {
     }
 
     console.log(`Access check failed for path ${path} with error code: ${errno}`);
-    // On Windows, W_OK can be unreliable - try actual write test for permission errors
-    if (process.platform === 'win32' && (errno === 'EACCES' || errno === 'EPERM')) {
-      console.log(`Path ${path} is not writable, attempting to write a test file on windows...`);
-      return await tryActualWrite(path);
-    }
 
     return false; // Permission denied or some other error
   }
@@ -88,9 +88,8 @@ async function tryActualWrite(path: string): Promise<boolean> {
       await fs.mkdir(path, { recursive: true });
     }
 
-    // Try to write a test file
+    // Try to write a test file and then delete it
     await fs.writeFile(testFilePath, '');
-    // Clean up immediately
     await fs.rm(testFilePath);
     return true;
   } catch (error) {

@@ -357,33 +357,7 @@ export function initializeWorkspace(services: Services) {
 
     console.log('Scene path validation:', { isDir, exists, isWritable });
 
-    if (process.platform === 'win32') {
-      return await validateScenesPathWindows(_path);
-    }
-
     return isWritable && (isDir || !exists); // Allow non-existing paths as they can be created
-  }
-
-  /**
-   * Windows-specific path validation with enhanced permission checking
-   */
-  async function validateScenesPathWindows(_path: string): Promise<boolean> {
-    try {
-      // Test write permissions by creating a test folder
-      const testPath = path.join(_path, 'test-folder');
-      try {
-        await fs.mkdir(testPath);
-        await fs.rmdir(testPath);
-        console.log('Write permission test passed');
-        return true;
-      } catch (error) {
-        console.log('Write permission test failed:', error);
-        return false;
-      }
-    } catch (error) {
-      console.log('Windows path validation error:', error);
-      return false;
-    }
   }
 
   async function isProjectPathAvailable(projectPath: string): Promise<boolean> {

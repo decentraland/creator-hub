@@ -28,6 +28,7 @@ import {
 
 import { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import type { EditorConfig } from '/shared/types/config';
+import { debounce } from '/shared/utils';
 
 import { t } from '/@/modules/store/translation/utils';
 import { useSettings } from '/@/hooks/useSettings';
@@ -54,17 +55,31 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
   }, [dispatch, open]);
 
   useEffect(() => {
+    if (open) {
+      validateScenesPathField(settings.scenesPath);
+    } else {
+      setError(null);
+    }
+  }, [open]);
+
+  useEffect(() => {
     if (!equal(_settings, settings)) setSettings(_settings);
   }, [_settings]);
+
+  const validateScenesPathField = useCallback(
+    debounce(async (path: string) => {
+      const isValid = await validateScenesPath(path);
+      setError(!isValid ? t('modal.app_settings.fields.scenes_folder.errors.invalid_path') : null);
+    }, 500),
+    [validateScenesPath],
+  );
 
   const handleChangeSceneFolder = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
       const newSettings = { ...settings, scenesPath: event.target.value };
       setSettings(newSettings);
       updateAppSettings(newSettings);
-
-      const isValid = await validateScenesPath(newSettings.scenesPath);
-      setError(!isValid ? t('modal.app_settings.fields.scenes_folder.errors.invalid_path') : null);
+      validateScenesPathField(newSettings.scenesPath);
     },
     [settings, updateAppSettings, validateScenesPath],
   );
@@ -87,7 +102,7 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
       const newSettings = { ...settings, scenesPath: folder };
       setSettings(newSettings);
       updateAppSettings(newSettings);
-      setError(null);
+      validateScenesPathField(newSettings.scenesPath);
     }
   }, [settings, updateAppSettings]);
 
