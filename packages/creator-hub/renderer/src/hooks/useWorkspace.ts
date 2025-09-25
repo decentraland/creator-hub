@@ -83,9 +83,11 @@ export const useWorkspace = () => {
    * Returns whether or not the provided directory is a valid path to create a new project.
    * It ensures that the path is not used by another project yet.
    */
-  const validateProjectPath = useCallback(async (path: string) => {
-    const isPathAvailable = await workspacePreload.isProjectPathAvailable(path);
-    const isValidDirectory = await workspacePreload.validateScenesPath(path);
+  const validateProjectPath = useCallback(async (projectPath: string, projectName: string) => {
+    const isValidDirectory = await workspacePreload.validateScenesPath(projectPath);
+    const isPathAvailable = await workspacePreload.isProjectPathAvailable(
+      `${projectPath}/${projectName}`,
+    );
     return isPathAvailable && isValidDirectory;
   }, []);
 

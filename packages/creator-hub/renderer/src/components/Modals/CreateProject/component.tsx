@@ -31,7 +31,7 @@ export function CreateProject({ open, initialValue, onClose, onSubmit }: Props) 
   const validate = useCallback(
     async (path: string, name: string) => {
       setLoading(true);
-      const valid = await validateProjectPath(`${path}/${name}`);
+      const valid = await validateProjectPath(path, name);
       if (!valid) setError(t('modal.create_project.errors.path_exists_or_not_writable'));
       setLoading(false);
       return valid;

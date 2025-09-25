@@ -346,18 +346,13 @@ export function initializeWorkspace(services: Services) {
   }
 
   /**
-   * Returns whether or not the provided directory is a valid base path to create new scenes/projects
+   * Returns whether or not the provided directory is a valid base path to create new scenes/projects.
+   * A valid base path is a writable directory.
    */
   async function validateScenesPath(_path: string) {
-    const [isDir, exists, isWritable] = await Promise.all([
-      fs.isDirectory(_path),
-      fs.exists(_path),
-      fs.isWritable(_path),
-    ]);
-
-    console.log('Scene path validation:', { isDir, exists, isWritable });
-
-    return isWritable && (isDir || !exists); // Allow non-existing paths as they can be created
+    const isDir = await fs.isDirectory(_path);
+    if (isDir) return await fs.isWritable(_path);
+    return false;
   }
 
   async function isProjectPathAvailable(projectPath: string): Promise<boolean> {

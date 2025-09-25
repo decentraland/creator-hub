@@ -44,51 +44,14 @@ export async function isDirectory(path: string) {
 }
 
 /**
- * Returns whether or not the provided path is writable (can create files/folders inside it)
+ * Returns whether or not the provided directory is writable (can create files/folders inside it).
+ * The directory should exist. If it doesn't, it will return false.
  */
 export async function isWritable(path: string): Promise<boolean> {
-  try {
-    if (process.platform === 'win32') {
-      console.log(`Attempting to write a test file on windows ${path}`);
-      return await tryActualWrite(path);
-    }
-
-    // First, try to access the exact path if it exists
-    await fs.access(path, fs.constants.W_OK);
-    return true; // Path exists and is writable
-  } catch (error) {
-    const errno = (error as NodeJS.ErrnoException).code;
-
-    if (errno === 'ENOENT') {
-      // Path doesn't exist, so check the nearest existing parent directory
-      console.log(`Path ${path} does not exist, checking parent directory for writability...`);
-      const parentPath = nodePath.dirname(path);
-      if (parentPath === path) return false; // Reached filesystem root without finding an existing parent
-      return await isWritable(parentPath);
-    }
-
-    console.log(`Access check failed for path ${path} with error code: ${errno}`);
-
-    return false; // Permission denied or some other error
-  }
-}
-
-/**
- * Windows-specific: Try to actually write a test file to verify write permissions
- */
-async function tryActualWrite(path: string): Promise<boolean> {
-  const testFileName = '.temp-write-test-' + Date.now();
-  const testFilePath = nodePath.join(path, testFileName);
+  const testFilePath = nodePath.join(path, '.Test-Write' + Date.now());
 
   try {
-    // Check if the directory exists first
-    const pathExists = await exists(path);
-    if (!pathExists) {
-      // Try to create the directory
-      await fs.mkdir(path, { recursive: true });
-    }
-
-    // Try to write a test file and then delete it
+    // Try to create the file and then delete it
     await fs.writeFile(testFilePath, '');
     await fs.rm(testFilePath);
     return true;
@@ -97,7 +60,7 @@ async function tryActualWrite(path: string): Promise<boolean> {
       `WINDOWS Error occurred while testing write permissions for path ${path}:`,
       error,
     );
-    return false;
+    return false; // Permission denied, directory does't exist or some other error
   }
 }
 
