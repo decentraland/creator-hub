@@ -6,7 +6,6 @@ import {
   SortBy,
   type Project,
   type ProjectInfo,
-  ProjectError,
 } from '/shared/types/projects';
 import { PACKAGES_LIST } from '/shared/types/pkg';
 import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
@@ -235,19 +234,13 @@ export function initializeWorkspace(services: Services) {
   async function getAvailable(_name: string = NEW_SCENE_NAME) {
     let availableName = _name;
     let counter = 2;
-    try {
-      const homePath = await getPath();
-      let availablePath = path.join(homePath, availableName);
-      while (await fs.exists(availablePath)) {
-        availableName = `${_name} ${counter++}`;
-        availablePath = path.join(homePath, availableName);
-      }
-      return { name: availableName, path: availablePath };
-    } catch (error) {
-      console.log('Here throwing error', error); ///
-      throw new ProjectError('INVALID_PATH', 'INVALID_PATH');
-      /// Error type is lost here (because it goes through other protocol to the renderer, probably the error is standardized, only error.message is kept)
+    const homePath = await getPath();
+    let availablePath = path.join(homePath, availableName);
+    while (await fs.exists(availablePath)) {
+      availableName = `${_name} ${counter++}`;
+      availablePath = path.join(homePath, availableName);
     }
+    return { name: availableName, path: availablePath };
   }
 
   /**

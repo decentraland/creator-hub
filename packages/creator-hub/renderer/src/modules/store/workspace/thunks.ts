@@ -6,7 +6,7 @@ import { fs, npm, scene, settings, workspace } from '#preload';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
-import { type Project } from '/shared/types/projects';
+import { type Project, ProjectError } from '/shared/types/projects';
 import type { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import { WorkspaceError } from '/shared/types/workspace';
 
@@ -77,14 +77,14 @@ export const updateAvailableDependencyUpdates = createAsyncThunk(
 );
 export const runProject = createAsyncThunk(
   'workspace/runProject',
-  async (project: Project, { dispatch, getState }): Promise<Project> => {
+  async (project: Project, { dispatch, getState, rejectWithValue }) => {
     const { workspace: _workspace } = getState();
     const strategy = _workspace.settings.dependencyUpdateStrategy;
 
     if (!(await fs.exists(project.path))) {
       // if project is on the project's list but directory doesn't exist, then it was removed while app was running...
       dispatch(actions.moveProjectToMissing(project));
-      throw new WorkspaceError('PROJECT_NOT_FOUND');
+      return rejectWithValue(new WorkspaceError('PROJECT_NOT_FOUND'));
     }
 
     // It's possible for "node_modules" to not exist because it was never installed before
@@ -119,4 +119,16 @@ export const updateSceneJson = createAsyncThunk(
 export const updateProjectInfo = createAsyncThunk(
   'workspace/updateProjectInfo',
   workspace.updateProjectInfo,
+);
+
+export const getAvailable = createAsyncThunk(
+  'workspace/getAvailable',
+  async (name: string = 'New Scene', { rejectWithValue }) => {
+    try {
+      const result = await workspace.getAvailable(name);
+      return result;
+    } catch (error: any) {
+      return rejectWithValue(new ProjectError('INVALID_PATH', error.message));
+    }
+  },
 );

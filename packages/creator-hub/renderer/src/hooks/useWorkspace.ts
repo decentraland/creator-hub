@@ -2,7 +2,6 @@ import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Scene } from '@dcl/schemas';
 
-import { tryCatch } from '/shared/try-catch';
 import { actions as workspaceActions } from '/@/modules/store/workspace';
 import { workspace as workspacePreload } from '#preload';
 import { useDispatch, useSelector } from '#store';
@@ -89,8 +88,8 @@ export const useWorkspace = () => {
     return result;
   }, []);
 
-  const getAvailableProject = useCallback(async () => {
-    const result = await tryCatch(workspacePreload.getAvailable());
+  const getAvailableProject = useCallback(async (name: string = 'New Scene') => {
+    const result = await dispatch(workspaceActions.getAvailable(name)).unwrap();
     return result;
   }, []);
 

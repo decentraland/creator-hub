@@ -43,9 +43,9 @@ export function TemplatesPage() {
 
   const handleClickTemplate = useCallback(
     (repo?: string) => async () => {
-      const [error, data] = await getAvailableProject();
-      console.log('Project available: ', { error, data });
-      if (!error) {
+      try {
+        const data = await getAvailableProject();
+        console.log('Project available: ', { data });
         const { name, path } = data;
         const payload = {
           name,
@@ -53,22 +53,20 @@ export function TemplatesPage() {
           repo,
         };
         setOpenModal({ type: 'create-project', payload });
-      } else {
-        // Check if error is related to invalid/missing scenes path to show instructions to solve it.
-        const isPathError =
-          isProjectError(error, 'INVALID_PATH') ||
-          (error instanceof Error && error.message === 'INVALID_PATH'); /// Temporary, until fixing the error typing.
+      } catch (error) {
+        // Now we can properly check for ProjectError types with rejectWithValue
+        const isPathError = isProjectError(error, 'INVALID_PATH');
         console.log(
           'isProjectError?',
           isPathError,
           'Error from getAvailable: name ',
-          error.name,
+          error instanceof Error ? error.name : 'unknown',
           ' - message ',
-          error?.message || error?.toString() || '',
+          error instanceof Error ? error.message : String(error),
           error instanceof Error,
           error instanceof ErrorBase,
           error instanceof ProjectError,
-        ); ///
+        );
         pushGeneric(
           'error',
           isPathError
