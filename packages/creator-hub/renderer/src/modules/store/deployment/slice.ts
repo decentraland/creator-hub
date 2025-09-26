@@ -1,4 +1,4 @@
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, type PayloadAction, isRejectedWithValue } from '@reduxjs/toolkit';
 import { Authenticator, type AuthIdentity } from '@dcl/crypto';
 import type { ChainId } from '@dcl/schemas';
 import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
@@ -26,6 +26,16 @@ import {
   translateError,
   getCatalystServers,
 } from './utils';
+
+const getErrorForTranslation = (action: any) =>
+  isRejectedWithValue(action) ? action.payload : action.error;
+
+const getCauseMessage = (action: any): string | undefined => {
+  if (isRejectedWithValue(action)) {
+    return action.payload?.message;
+  }
+  return action.error?.message;
+};
 
 export interface Deployment {
   path: string;
@@ -63,18 +73,18 @@ const initialState: DeploymentState = {
 
 export const initializeDeployment = createAsyncThunk(
   'deployment/initialize',
-  async (payload: InitializeDeploymentPayload) => {
+  async (payload: InitializeDeploymentPayload, { rejectWithValue }) => {
     const { port, wallet } = payload;
     const url = getDeploymentUrl(port);
 
     if (!url) {
-      throw new DeploymentError('INVALID_URL', getInitialDeploymentStatus());
+      return rejectWithValue(new DeploymentError('INVALID_URL', getInitialDeploymentStatus()));
     }
 
     const identity = localStorageGetIdentity(wallet);
 
     if (!identity) {
-      throw new DeploymentError('INVALID_IDENTITY', getInitialDeploymentStatus());
+      return rejectWithValue(new DeploymentError('INVALID_IDENTITY', getInitialDeploymentStatus()));
     }
 
     const [info, files] = await Promise.all([fetchInfo(url), fetchFiles(url)]);
@@ -85,7 +95,7 @@ export const initializeDeployment = createAsyncThunk(
 
 export const deploy = createAsyncThunk(
   'deployment/deploy',
-  async (deployment: Deployment, { dispatch }): Promise<void> => {
+  async (deployment: Deployment, { dispatch, rejectWithValue }) => {
     const { path, info, identity, url, wallet, chainId } = deployment;
     const authChain = Authenticator.signPayload(identity, info.rootCID);
     const triedServers = new Set<string>();
@@ -102,7 +112,7 @@ export const deploy = createAsyncThunk(
             ...deployment.componentsStatus,
             catalyst: 'failed',
           };
-          throw new DeploymentError('CATALYST_SERVERS_EXHAUSTED', componentsStatus, error);
+          return rejectWithValue(new DeploymentError('CATALYST_SERVERS_EXHAUSTED', componentsStatus, error));
         }
 
         await delay(delayMs);
@@ -118,11 +128,11 @@ export const deploy = createAsyncThunk(
 
 export const executeDeployment = createAsyncThunk(
   'deployment/execute',
-  async (path: string, { dispatch, signal, getState }) => {
+  async (path: string, { dispatch, signal, getState, rejectWithValue }) => {
     const deployment = getState().deployment.deployments[path];
 
     if (!deployment) {
-      throw new DeploymentError('DEPLOYMENT_NOT_FOUND', getInitialDeploymentStatus());
+      return rejectWithValue(new DeploymentError('DEPLOYMENT_NOT_FOUND', getInitialDeploymentStatus()));
     }
 
     const { info, identity } = deployment;
@@ -150,7 +160,7 @@ export const executeDeployment = createAsyncThunk(
       );
 
       if (deriveOverallStatus(componentsStatus) === 'failed') {
-        throw new DeploymentError('DEPLOYMENT_FAILED', componentsStatus);
+        return rejectWithValue(new DeploymentError('DEPLOYMENT_FAILED', componentsStatus));
       }
 
       return { info, componentsStatus };
@@ -216,8 +226,8 @@ const deploymentSlice = createSlice({
           chainId,
           status: 'failed',
           error: {
-            message: translateError(action.error),
-            cause: action.error.message,
+            message: translateError(getErrorForTranslation(action)),
+            cause: getCauseMessage(action),
           },
           componentsStatus: getInitialDeploymentStatus(),
           lastUpdated: Date.now(),
@@ -249,8 +259,8 @@ const deploymentSlice = createSlice({
         if (deployment) {
           deployment.status = 'failed';
           deployment.error = {
-            message: translateError(action.error),
-            cause: action.error.message,
+            message: translateError(getErrorForTranslation(action)),
+            cause: getCauseMessage(action),
           };
           deployment.lastUpdated = Date.now();
         }

@@ -1,4 +1,4 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, isRejectedWithValue } from '@reduxjs/toolkit';
 import type { ChainId } from '@dcl/schemas';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
@@ -6,7 +6,7 @@ import { createAsyncThunk } from '/@/modules/store/thunk';
 import type { DeployOptions } from '/shared/types/deploy';
 import { type Project } from '/shared/types/projects';
 import type { PreviewOptions } from '/shared/types/settings';
-import { WorkspaceError } from '/shared/types/workspace';
+import { isWorkspaceError } from '/shared/types/workspace';
 
 import { actions as deploymentActions } from '../deployment';
 import { actions as workspaceActions } from '../workspace';
@@ -92,12 +92,11 @@ export const slice = createSlice({
       state.project = action.payload;
       state.error = null;
     });
-    builder.addCase(workspaceActions.runProject.rejected, (state, payload) => {
-      // TODO: Thunks return a SerializedError instead of the actual error thrown, so we have to do this
-      // ugly hack 👇 to check for the error name, which instead should be using "isWorkspaceError" to check that.
-      // Maybe there is a better way...
-      if (payload.error.name === 'PROJECT_NOT_FOUND') {
-        state.error = new WorkspaceError(payload.error.name);
+    builder.addCase(workspaceActions.runProject.rejected, (state, action) => {
+      if (isRejectedWithValue(action) && isWorkspaceError(action.payload, 'PROJECT_NOT_FOUND')) {
+        state.error = action.payload;
+      } else {
+        state.error = action.error.message || 'Failed to run project';
       }
       state.project = undefined;
     });
