@@ -8,6 +8,7 @@ import { actions as deploymentActions } from '../deployment';
 import { shouldNotifyUpdates } from '../workspace/utils';
 import { createCustomNotification, createGenericNotification } from './utils';
 import type { Notification } from './types';
+import { isProjectError } from '/shared/types/projects';
 
 // state
 export type SnackbarState = {
@@ -45,6 +46,29 @@ export const slice = createSlice({
         state.notifications.push(
           createGenericNotification('loading', t('snackbar.generic.import_scene'), {
             duration: 0,
+            requestId,
+          }),
+        );
+      })
+
+      .addCase(workspaceActions.getAvailable.rejected, (state, payload) => {
+        const isPathError = isProjectError(payload.error, 'INVALID_PATH');
+        const translatedError = isPathError
+          ? t('templates.new_scene.errors.invalid_scenes_path')
+          : t('templates.new_scene.errors.create_scene_failed');
+        const { requestId } = payload.meta;
+        state.notifications = state.notifications.filter($ => $.id !== requestId);
+        state.notifications.push(
+          createGenericNotification('error', translatedError, {
+            requestId,
+          }),
+        );
+      })
+      .addCase(workspaceActions.createProject.rejected, (state, payload) => {
+        const { requestId } = payload.meta;
+        state.notifications = state.notifications.filter($ => $.id !== requestId);
+        state.notifications.push(
+          createGenericNotification('error', t('templates.new_scene.errors.create_scene_failed'), {
             requestId,
           }),
         );

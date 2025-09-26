@@ -3,10 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { MenuItem, type SelectChangeEvent, Chip, Typography } from 'decentraland-ui2';
 
 import type { Template } from '/shared/types/workspace';
-import { isProjectError, ProjectError } from '/shared/types/projects';
 
 import { useWorkspace } from '/@/hooks/useWorkspace';
-import { useSnackbar } from '/@/hooks/useSnackbar';
 import { ProjectCard } from '/@/components/ProjectCard';
 import { t } from '/@/modules/store/translation/utils';
 
@@ -26,12 +24,10 @@ import { sortTemplatesBy } from './utils';
 import { misc } from '#preload';
 
 import './styles.css';
-import { ErrorBase } from '/shared/types/error';
 
 export function TemplatesPage() {
   const navigate = useNavigate();
   const { createProject, templates: _templates, getAvailableProject } = useWorkspace();
-  const { pushGeneric } = useSnackbar();
   const [openModal, setOpenModal] = useState<ModalType | undefined>();
   const [templates, setTemplates] = useState(_templates);
   const [sortBy, setSortBy] = useState(SortBy.DEFAULT);
@@ -43,9 +39,8 @@ export function TemplatesPage() {
 
   const handleClickTemplate = useCallback(
     (repo?: string) => async () => {
-      try {
-        const data = await getAvailableProject();
-        console.log('Project available: ', { data });
+      const [error, data] = await getAvailableProject();
+      if (!error) {
         const { name, path } = data;
         const payload = {
           name,
@@ -53,29 +48,9 @@ export function TemplatesPage() {
           repo,
         };
         setOpenModal({ type: 'create-project', payload });
-      } catch (error) {
-        // Now we can properly check for ProjectError types with rejectWithValue
-        const isPathError = isProjectError(error, 'INVALID_PATH');
-        console.log(
-          'isProjectError?',
-          isPathError,
-          'Error from getAvailable: name ',
-          error instanceof Error ? error.name : 'unknown',
-          ' - message ',
-          error instanceof Error ? error.message : String(error),
-          error instanceof Error,
-          error instanceof ErrorBase,
-          error instanceof ProjectError,
-        );
-        pushGeneric(
-          'error',
-          isPathError
-            ? t('templates.new_scene.errors.invalid_scenes_path')
-            : t('templates.new_scene.errors.create_scene_failed'),
-        );
       }
     },
-    [getAvailableProject, pushGeneric],
+    [getAvailableProject],
   );
 
   const handleCreateProject = useCallback(
