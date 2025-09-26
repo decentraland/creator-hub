@@ -20,6 +20,10 @@
   gap: 16px;
 }
 
+.AppSettingsModal .error {
+  color: var(--error);
+}
+
 .AppSettingsModal .MuiInputBase-root .MuiOutlinedInput-notchedOutline {
   /* TODO: Fix styles in the ui2 library */
   border-color: #ffffff3b;

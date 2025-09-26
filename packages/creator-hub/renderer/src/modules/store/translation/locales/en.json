@@ -239,7 +239,10 @@
       "fields": {
         "scenes_folder": {
           "label": "Scenes Folder",
-          "change_button": "Change Folder"
+          "change_button": "Change Folder",
+          "errors": {
+            "invalid_path": "Folder doesn't exist or can't save files there. Please choose a different folder."
+          }
         },
         "scene_editor_dependencies": {
           "label": "Scene Editor Dependencies",
@@ -294,7 +297,7 @@
         "create": "Create"
       },
       "errors": {
-        "path_exists": "Path already exists"
+        "path_exists_or_not_writable": "Path already exists or can't save files there. Please choose a different folder."
       }
     },
     "install_client": {
@@ -409,7 +412,11 @@
     },
     "new_scene": {
       "title": "Empty Scene",
-      "description": "Start your own scene from scratch"
+      "description": "Start your own scene from scratch",
+      "errors": {
+        "invalid_scenes_path": "Invalid Scenes Folder. Please configure a valid Scenes Folder in Settings before creating a scene.",
+        "create_scene_failed": "An error occurred while trying to create the scene. Please try again."
+      }
     },
     "filters": {
       "title": "Filter by",

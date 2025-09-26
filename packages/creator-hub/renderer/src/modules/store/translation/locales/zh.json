@@ -236,7 +236,10 @@
       "fields": {
         "scenes_folder": {
           "label": "場景資料夾",
-          "change_button": "更改資料夾"
+          "change_button": "更改資料夾",
+          "errors": {
+            "invalid_path": "文件夹不存在或无法在其中保存文件。请选择其他文件夹。"
+          }
         },
         "scene_editor_dependencies": {
           "label": "場景編輯器依賴項",
@@ -291,7 +294,7 @@
         "create": "創建"
       },
       "errors": {
-        "path_exists": "路徑已存在"
+        "path_exists_or_not_writable": "项目路径已存在或无法在其中保存文件。请选择其他文件夹。"
       }
     },
     "install_client": {
@@ -406,7 +409,11 @@
     },
     "new_scene": {
       "title": "空景",
-      "description": "从头开始创建自己的场景"
+      "description": "从头开始创建自己的场景",
+      "errors": {
+        "invalid_scenes_path": "无效的场景文件夹。请在创建场景之前在设置中配置有效的场景文件夹。",
+        "create_scene_failed": "尝试创建场景时发生错误。请重试。"
+      }
     },
     "filters": {
       "title": "过滤依据",

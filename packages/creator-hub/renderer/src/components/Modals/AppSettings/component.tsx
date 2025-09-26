@@ -28,9 +28,11 @@ import {
 
 import { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import type { EditorConfig } from '/shared/types/config';
+import { debounce } from '/shared/utils';
 
 import { t } from '/@/modules/store/translation/utils';
 import { useSettings } from '/@/hooks/useSettings';
+import { useWorkspace } from '/@/hooks/useWorkspace';
 import { Modal } from '..';
 import { UpdateSettings } from './UpdateSettings';
 import { useDispatch, useSelector } from '#store';
@@ -40,13 +42,16 @@ import './styles.css';
 export function AppSettings({ open, onClose }: { open: boolean; onClose: () => void }) {
   const dispatch = useDispatch();
   const { settings: _settings, updateAppSettings } = useSettings();
+  const { validateProjectPath } = useWorkspace();
   const [settings, setSettings] = useState(_settings);
+  const [error, setError] = useState<string | null>(null);
   const { loading } = useSelector(state => state.defaultEditor);
   const editors = useSelector(getEditors);
 
   useEffect(() => {
     if (open) {
       dispatch(loadEditors());
+      validateScenesPathField(settings.scenesPath);
     }
   }, [dispatch, open]);
 
@@ -54,13 +59,22 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
     if (!equal(_settings, settings)) setSettings(_settings);
   }, [_settings]);
 
+  const validateScenesPathField = useCallback(
+    debounce(async (path: string) => {
+      const isValid = await validateProjectPath(path);
+      setError(!isValid ? t('modal.app_settings.fields.scenes_folder.errors.invalid_path') : null);
+    }, 500),
+    [validateProjectPath],
+  );
+
   const handleChangeSceneFolder = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const newSettings = { ...settings, scenesPath: event.target.value };
       setSettings(newSettings);
       updateAppSettings(newSettings);
+      validateScenesPathField(newSettings.scenesPath);
     },
-    [settings, updateAppSettings],
+    [settings, updateAppSettings, validateProjectPath],
   );
 
   const handleChangeUpdateDependenciesStrategy = useCallback(
@@ -81,6 +95,7 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
       const newSettings = { ...settings, scenesPath: folder };
       setSettings(newSettings);
       updateAppSettings(newSettings);
+      validateScenesPathField(newSettings.scenesPath);
     }
   }, [settings, updateAppSettings]);
 
@@ -108,6 +123,7 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
               color="secondary"
               value={settings.scenesPath}
               onChange={handleChangeSceneFolder}
+              error={!!error}
               endAdornment={
                 <InputAdornment position="end">
                   <IconButton
@@ -119,6 +135,14 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
                 </InputAdornment>
               }
             />
+            {error && (
+              <Typography
+                variant="body1"
+                className="error"
+              >
+                {error}
+              </Typography>
+            )}
           </FormGroup>
           <FormGroup
             sx={{ gap: '16px' }}

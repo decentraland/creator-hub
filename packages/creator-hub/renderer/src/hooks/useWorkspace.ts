@@ -71,9 +71,17 @@ export const useWorkspace = () => {
     return dispatch(workspaceActions.updateSceneJson({ path, updates }));
   }, []);
 
-  const validateProjectPath = useCallback(async (path: string) => {
-    const valid = await workspacePreload.isProjectPathAvailable(path);
-    return valid;
+  /**
+   * Returns whether or not the provided directory is a valid path to create a new project.
+   * If the project name is provided, it ensures that the path is not used by another project yet.
+   */
+  const validateProjectPath = useCallback(async (projectPath: string, projectName?: string) => {
+    const isValidDirectory = await workspacePreload.validateScenesPath(projectPath);
+    if (!projectName) return isValidDirectory; // If no name provided, just validate the directory
+    const isPathAvailable = await workspacePreload.isProjectPathAvailable(
+      `${projectPath}/${projectName}`,
+    );
+    return isValidDirectory && isPathAvailable;
   }, []);
 
   const selectNewProjectPath = useCallback(async () => {
@@ -81,8 +89,8 @@ export const useWorkspace = () => {
     return result;
   }, []);
 
-  const getAvailableProject = useCallback(async () => {
-    const result = await tryCatch(workspacePreload.getAvailable());
+  const getAvailableProject = useCallback(async (name: string = 'New Scene') => {
+    const result = await tryCatch(dispatch(workspaceActions.getAvailable(name)).unwrap());
     return result;
   }, []);
 

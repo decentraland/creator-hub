@@ -85,7 +85,7 @@ export const initializeDeployment = createAsyncThunk(
 
 export const deploy = createAsyncThunk(
   'deployment/deploy',
-  async (deployment: Deployment, { dispatch }): Promise<void> => {
+  async (deployment: Deployment, { dispatch }) => {
     const { path, info, identity, url, wallet, chainId } = deployment;
     const authChain = Authenticator.signPayload(identity, info.rootCID);
     const triedServers = new Set<string>();

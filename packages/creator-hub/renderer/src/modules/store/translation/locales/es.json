@@ -239,7 +239,10 @@
       "fields": {
         "scenes_folder": {
           "label": "Carpeta de escenas",
-          "change_button": "Cambiar carpeta"
+          "change_button": "Cambiar carpeta",
+          "errors": {
+            "invalid_path": "La carpeta no existe o no tienes permiso para crear archivos allí. Por favor, elige otra carpeta."
+          }
         },
         "scene_editor_dependencies": {
           "label": "Dependencias del editor de escenas",
@@ -294,7 +297,7 @@
         "create": "Crear"
       },
       "errors": {
-        "path_exists": "La ruta ya existe"
+        "path_exists_or_not_writable": "La ruta ya existe o no tienes permiso para crear archivos allí. Por favor, elige otra carpeta."
       }
     },
     "install_client": {
@@ -409,7 +412,11 @@
     },
     "new_scene": {
       "title": "Escena Vacía",
-      "description": "Comienza tu propia escena desde cero"
+      "description": "Comienza tu propia escena desde cero",
+      "errors": {
+        "invalid_scenes_path": "Carpeta de escenas inválida. Por favor, ingresa una carpeta de escenas válida en la configuración de la aplicación antes de crear una escena.",
+        "create_scene_failed": "Ocurrió un error al crear la escena. Por favor, inténtalo nuevamente."
+      }
     },
     "filters": {
       "title": "Filtrar por",

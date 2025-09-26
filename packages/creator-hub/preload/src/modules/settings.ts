@@ -17,7 +17,7 @@ export async function getDefaultScenesPath() {
 
 export async function getScenesPath() {
   const config = await getConfig();
-  return config.settings?.scenesPath ?? (await getDefaultScenesPath());
+  return config.settings?.scenesPath || (await getDefaultScenesPath());
 }
 
 export function isValidUpdateStrategy(value?: string): value is DEPENDENCY_UPDATE_STRATEGY {
@@ -38,7 +38,7 @@ export async function updateAppSettings(settings: AppSettings) {
 export async function selectSceneFolder(): Promise<string | undefined> {
   const [projectPath] = await invoke('electron.showOpenDialog', {
     title: 'Select Scenes Folder',
-    properties: ['openDirectory'],
+    properties: ['openDirectory', 'createDirectory', 'promptToCreate'],
   });
 
   return projectPath;

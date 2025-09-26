@@ -3,19 +3,13 @@ import fs from 'fs/promises';
 import * as Sentry from '@sentry/electron/main';
 import log from 'electron-log/main';
 import { future } from 'fp-future';
-import deepmerge from 'deepmerge';
 
 import { SCENES_DIRECTORY } from '/shared/paths';
 import { FileSystemStorage, type IFileSystemStorage } from '/shared/types/storage';
-import {
-  type Config,
-  CURRENT_CONFIG_VERSION,
-  DEFAULT_CONFIG,
-  mergeConfig,
-} from '/shared/types/config';
+import { type Config, CURRENT_CONFIG_VERSION, mergeConfig } from '/shared/types/config';
 
 import { getAppHomeLegacy, getUserDataPath } from './electron';
-import { CONFIG_PATH } from './config';
+import { CONFIG_PATH, getDefaultConfig } from './config';
 
 const migrationsFuture = future<void>();
 
@@ -236,7 +230,7 @@ async function migrateLegacyPaths(configStorage: IFileSystemStorage<Config>) {
     }
 
     log.info('[Migration] Writing updated config.json to:', CONFIG_PATH);
-    const defaultConfig = deepmerge({}, DEFAULT_CONFIG);
+    const defaultConfig = getDefaultConfig();
     await configStorage.setAll(mergeConfig(config as Partial<Config>, defaultConfig));
     log.info('[Migration] Successfully migrated config.json');
 
