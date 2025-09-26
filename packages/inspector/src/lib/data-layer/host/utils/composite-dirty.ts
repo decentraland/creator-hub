@@ -22,6 +22,7 @@ import { addNodesComponentsToPlayerAndCamera } from './migrations/add-nodes-to-p
 import { fixNetworkEntityValues } from './migrations/fix-network-entity-values';
 import { selectSceneEntity } from './migrations/select-scene-entity';
 import { migrateSceneMetadata } from './migrations/migrate-scene-metadata';
+import { createTagsComponent } from './migrations/create-tags-components';
 
 enum DirtyEnum {
   // No changes
@@ -46,6 +47,8 @@ function runMigrations(engine: IEngine) {
   selectSceneEntity(engine);
   // Migrate SceneMetadata component
   migrateSceneMetadata(engine);
+  // Create Tags component
+  createTagsComponent(engine);
 }
 
 async function instanciateComposite(
@@ -74,7 +77,6 @@ async function instanciateComposite(
   });
 
   runMigrations(engine);
-
   initComponents(engine as any);
 
   // override SceneMetadata with scene.json

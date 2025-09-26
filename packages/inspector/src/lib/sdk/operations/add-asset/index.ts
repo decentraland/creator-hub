@@ -10,6 +10,7 @@ import {
   GltfContainer as GltfEngine,
   NetworkEntity as NetworkEntityEngine,
   Name,
+  Tags as TagsEngine,
 } from '@dcl/ecs';
 import type { Actions } from '@dcl/asset-packs';
 import {
@@ -44,6 +45,7 @@ export function addAsset(engine: IEngine) {
     custom?: boolean,
   ): Entity {
     const Transform = engine.getComponent(TransformEngine.componentId) as typeof TransformEngine;
+    const Tags = engine.getComponent(TagsEngine.componentId) as typeof TagsEngine;
     const GltfContainer = engine.getComponent(GltfEngine.componentId) as typeof GltfEngine;
     const NetworkEntity = engine.getComponent(
       NetworkEntityEngine.componentId,
@@ -360,6 +362,35 @@ export function addAsset(engine: IEngine) {
 
       if (assetId && custom) {
         CustomAsset.createOrReplace(mainEntity, { assetId });
+      }
+
+      if (custom) {
+        const customItemTags = composite.components.find(
+          component => component.name === Tags.componentName,
+        );
+        if (customItemTags) {
+          const customItemTagsSet = new Set<string>();
+          for (const [_, component] of Object.entries(customItemTags.data)) {
+            if (component.json?.tags) {
+              for (const tag of component.json.tags) {
+                customItemTagsSet.add(tag);
+              }
+            }
+          }
+
+          const currentSceneTags = Tags.getMutableOrNull(engine.RootEntity)?.tags || [];
+          const newTags = Array.from(customItemTagsSet).filter(
+            tag => !currentSceneTags.includes(tag),
+          );
+
+          if (newTags.length > 0) {
+            if (currentSceneTags) {
+              newTags.forEach(tag => currentSceneTags.push(tag));
+            } else {
+              Tags.create(engine.RootEntity, { tags: newTags });
+            }
+          }
+        }
       }
 
       // update selection

@@ -72,7 +72,9 @@ const OptionList: React.FC<Props> = props => {
             ? (selectedValue as OptionProp[]).map(({ value }) => (value ?? '').toString())
             : [];
         const optionValue = multiple
-          ? [...formatSelectedValue, option.value]
+          ? formatSelectedValue.includes(option.value.toString())
+            ? formatSelectedValue
+            : [...formatSelectedValue, option.value.toString()]
           : option.value.toString();
         onChange &&
           onChange({

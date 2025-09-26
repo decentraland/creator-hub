@@ -24,6 +24,7 @@ import MoreOptionsMenu from '../MoreOptionsMenu';
 import { RemoveButton } from '../RemoveButton';
 
 import './EntityHeader.css';
+import { TagsInspector } from '../TagsInspector';
 
 export const getLabel = (sdk: SdkContextValue, entity: Entity) => {
   const nameComponent = sdk.components.Name.getOrNull(entity);
@@ -395,13 +396,18 @@ export default React.memo(
             ) : null}
           </div>
         </div>
-        {instanceOf && (
-          <Container className="InstanceOf">
-            <span>Instance of:</span>
-            <span className="Chip">
-              <CustomAssetIcon />
-              {instanceOf}
-            </span>
+        {!isRoot(entity) && (
+          <Container className="componentInfo">
+            {instanceOf && (
+              <div className="customItemContainer">
+                <span>Instance of:</span>
+                <span className="Chip">
+                  <CustomAssetIcon />
+                  {instanceOf}
+                </span>
+              </div>
+            )}
+            <TagsInspector entity={entity} />
           </Container>
         )}
       </div>
