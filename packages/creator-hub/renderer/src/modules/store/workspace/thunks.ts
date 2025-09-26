@@ -77,14 +77,14 @@ export const updateAvailableDependencyUpdates = createAsyncThunk(
 );
 export const runProject = createAsyncThunk(
   'workspace/runProject',
-  async (project: Project, { dispatch, getState, rejectWithValue }) => {
+  async (project: Project, { dispatch, getState }): Promise<Project> => {
     const { workspace: _workspace } = getState();
     const strategy = _workspace.settings.dependencyUpdateStrategy;
 
     if (!(await fs.exists(project.path))) {
       // if project is on the project's list but directory doesn't exist, then it was removed while app was running...
       dispatch(actions.moveProjectToMissing(project));
-      return rejectWithValue(new WorkspaceError('PROJECT_NOT_FOUND'));
+      throw new WorkspaceError('PROJECT_NOT_FOUND');
     }
 
     // It's possible for "node_modules" to not exist because it was never installed before
@@ -123,7 +123,7 @@ export const updateProjectInfo = createAsyncThunk(
 
 export const getAvailable = createAsyncThunk(
   'workspace/getAvailable',
-  async (name: string = 'New Scene', { rejectWithValue }) => {
+  async (name: string, { rejectWithValue }) => {
     try {
       const result = await workspace.getAvailable(name);
       return result;
