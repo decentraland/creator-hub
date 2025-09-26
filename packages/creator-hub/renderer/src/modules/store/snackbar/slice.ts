@@ -1,6 +1,7 @@
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
 
+import { isProjectError } from '/shared/types/projects';
 import { t } from '/@/modules/store/translation/utils';
 
 import { actions as workspaceActions } from '../workspace';
@@ -8,7 +9,6 @@ import { actions as deploymentActions } from '../deployment';
 import { shouldNotifyUpdates } from '../workspace/utils';
 import { createCustomNotification, createGenericNotification } from './utils';
 import type { Notification } from './types';
-import { isProjectError } from '/shared/types/projects';
 
 // state
 export type SnackbarState = {
@@ -52,7 +52,7 @@ export const slice = createSlice({
       })
 
       .addCase(workspaceActions.getAvailable.rejected, (state, payload) => {
-        const isPathError = isProjectError(payload.error, 'INVALID_PATH');
+        const isPathError = isProjectError(payload.payload, 'INVALID_PATH');
         const translatedError = isPathError
           ? t('templates.new_scene.errors.invalid_scenes_path')
           : t('templates.new_scene.errors.create_scene_failed');
