@@ -369,16 +369,25 @@ export function addAsset(engine: IEngine) {
           component => component.name === Tags.componentName,
         );
         if (customItemTags) {
+          const customItemTagsSet = new Set<string>();
           for (const [_, component] of Object.entries(customItemTags.data)) {
             if (component.json?.tags) {
               for (const tag of component.json.tags) {
-                const currentSceneTags = Tags.getMutableOrNull(engine.RootEntity);
-                if (currentSceneTags) {
-                  currentSceneTags.tags.push(tag);
-                } else {
-                  Tags.create(engine.RootEntity, { tags: [tag] });
-                }
+                customItemTagsSet.add(tag);
               }
+            }
+          }
+
+          const currentSceneTags = Tags.getMutableOrNull(engine.RootEntity)?.tags || [];
+          const newTags = Array.from(customItemTagsSet).filter(
+            tag => !currentSceneTags.includes(tag),
+          );
+
+          if (newTags.length > 0) {
+            if (currentSceneTags) {
+              newTags.forEach(tag => currentSceneTags.push(tag));
+            } else {
+              Tags.create(engine.RootEntity, { tags: newTags });
             }
           }
         }
