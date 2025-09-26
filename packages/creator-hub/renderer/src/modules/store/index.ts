@@ -39,9 +39,7 @@ export function createRootReducer() {
 const store = configureStore({
   reducer: createRootReducer(),
   middleware: getDefaultMiddleware =>
-    getDefaultMiddleware({ serializableCheck: false })
-      .concat(logger)
-      .concat(createAnalyticsMiddleware()),
+    getDefaultMiddleware().concat(logger).concat(createAnalyticsMiddleware()),
 });
 
 const isDevelopment = true; // todo
