@@ -13,6 +13,7 @@
     "@babylonjs/materials": "8.7.0",
     "@dcl/ecs": "7.10.4",
     "@dcl/ecs-math": "2.1.0",
+    "@dcl/gltf-validator-ts": "^1.0.1",
     "@dcl/mini-rpc": "^1.0.7",
     "@dcl/rpc": "^1.1.1",
     "@dcl/schemas": "11.10.4",
