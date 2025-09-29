@@ -112,7 +112,9 @@ export const deploy = createAsyncThunk(
             ...deployment.componentsStatus,
             catalyst: 'failed',
           };
-          return rejectWithValue(new DeploymentError('CATALYST_SERVERS_EXHAUSTED', componentsStatus, error));
+          return rejectWithValue(
+            new DeploymentError('CATALYST_SERVERS_EXHAUSTED', componentsStatus, error),
+          );
         }
 
         await delay(delayMs);
@@ -132,7 +134,9 @@ export const executeDeployment = createAsyncThunk(
     const deployment = getState().deployment.deployments[path];
 
     if (!deployment) {
-      return rejectWithValue(new DeploymentError('DEPLOYMENT_NOT_FOUND', getInitialDeploymentStatus()));
+      return rejectWithValue(
+        new DeploymentError('DEPLOYMENT_NOT_FOUND', getInitialDeploymentStatus()),
+      );
     }
 
     const { info, identity } = deployment;
