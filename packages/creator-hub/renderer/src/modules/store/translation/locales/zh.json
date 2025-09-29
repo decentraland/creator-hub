@@ -315,7 +315,9 @@
       "delete_scene_failed": "删除场景失败",
       "dependencies_updated": "場景相依性已更新",
       "installing_dependencies": "安装依赖项",
-      "installing_dependencies_failed": "安装依赖项失败"
+      "installing_dependencies_failed": "安装依赖项失败",
+      "invalid_scenes_folder": "无效的场景文件夹。请在创建场景之前在设置中配置有效的场景文件夹。",
+      "create_scene_failed": "尝试创建场景时发生错误。请重试。"
     },
     "missing_projects": {
       "title": "{scenes} 丢失的 {scenes, plural, one {场景} other {场景}} 成立",
@@ -409,11 +411,7 @@
     },
     "new_scene": {
       "title": "空景",
-      "description": "从头开始创建自己的场景",
-      "errors": {
-        "invalid_scenes_path": "无效的场景文件夹。请在创建场景之前在设置中配置有效的场景文件夹。",
-        "create_scene_failed": "尝试创建场景时发生错误。请重试。"
-      }
+      "description": "从头开始创建自己的场景"
     },
     "filters": {
       "title": "过滤依据",

@@ -54,8 +54,8 @@ export const slice = createSlice({
       .addCase(workspaceActions.getAvailable.rejected, (state, payload) => {
         const isPathError = isProjectError(payload.payload, 'INVALID_PATH');
         const translatedError = isPathError
-          ? t('templates.new_scene.errors.invalid_scenes_path')
-          : t('templates.new_scene.errors.create_scene_failed');
+          ? t('snackbar.generic.invalid_scenes_folder')
+          : t('snackbar.generic.create_scene_failed');
         const { requestId } = payload.meta;
         state.notifications = state.notifications.filter($ => $.id !== requestId);
         state.notifications.push(
@@ -68,7 +68,7 @@ export const slice = createSlice({
         const { requestId } = payload.meta;
         state.notifications = state.notifications.filter($ => $.id !== requestId);
         state.notifications.push(
-          createGenericNotification('error', t('templates.new_scene.errors.create_scene_failed'), {
+          createGenericNotification('error', t('snackbar.generic.create_scene_failed'), {
             requestId,
           }),
         );
