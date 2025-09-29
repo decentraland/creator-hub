@@ -374,7 +374,9 @@ export function addAsset(engine: IEngine) {
               for (const tag of component.json.tags) {
                 const currentSceneTags = Tags.getMutableOrNull(engine.RootEntity);
                 if (currentSceneTags) {
-                  currentSceneTags.tags.push(tag);
+                  if (!currentSceneTags.tags.includes(tag)) {
+                    currentSceneTags.tags.push(tag);
+                  }
                 } else {
                   Tags.create(engine.RootEntity, { tags: [tag] });
                 }
