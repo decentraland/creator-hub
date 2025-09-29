@@ -158,7 +158,7 @@ describe('deployment slice', () => {
       it('should reject with appropriate error', async () => {
         const result = await store.dispatch(executeDeployment(TEST_PATH));
         expect(result.type).toBe('deployment/execute/rejected');
-        expect(result.payload).toEqual(undefined);
+        expect(result.payload.name).toBe('DEPLOYMENT_NOT_FOUND');
       });
     });
   });
