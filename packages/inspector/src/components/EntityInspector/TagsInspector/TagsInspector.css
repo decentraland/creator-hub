@@ -1,0 +1,59 @@
+.TagsInspector {
+  display: flex;
+  gap: 24px;
+  width: 100%;
+}
+
+.TagsInspector .title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--white);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.TagsInspector .title svg {
+  color: var(--white);
+}
+
+.TagsInspector .tags-selector {
+  width: 85%;
+}
+
+.TagsInspector .AddTagOption {
+  width: 100%;
+  border-top: 1px solid var(--base-10);
+  align-items: baseline;
+}
+
+.TagsInspector .AddTagOption .SelectedContent {
+  display: none;
+}
+
+.TagsInspector .AddTagOption .OptionContent {
+  height: 20px;
+}
+
+.TagsInspector .OptionList {
+  max-height: 250px;
+}
+
+.TagsInspector .TagOption .OptionContent {
+  height: 20px;
+  width: 100%;
+}
+
+.TagsInspector .TagOption .RightIcon {
+  width: 100%;
+  gap: 8px;
+  :is(svg) {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+.TagsInspector .OptionContainer .LeftContent .LeftIcon {
+  height: 100%;
+  width: 100%;
+}
