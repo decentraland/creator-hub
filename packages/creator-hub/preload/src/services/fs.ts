@@ -35,11 +35,37 @@ export async function readdir(path: string) {
 }
 
 export async function isDirectory(path: string) {
-  return (await fs.stat(path)).isDirectory();
+  try {
+    const stats = await fs.stat(path);
+    return stats.isDirectory();
+  } catch (_) {
+    return false;
+  }
+}
+
+/**
+ * Returns whether or not the provided directory is writable (can create files/folders inside it).
+ * The directory should exist. If it doesn't, it will return false.
+ */
+export async function isWritable(path: string): Promise<boolean> {
+  const testFilePath = nodePath.join(path, '.Test-Write' + Date.now());
+
+  try {
+    // Try to create the file and then delete it
+    await fs.writeFile(testFilePath, '');
+    await fs.rm(testFilePath);
+    return true;
+  } catch (error) {
+    return false; // Permission denied, directory does't exist or some other error
+  }
 }
 
 export async function mkdir(path: string, options?: { recursive?: boolean }) {
   await fs.mkdir(path, options);
+}
+
+export async function rmdir(path: string) {
+  await fs.rmdir(path);
 }
 
 export async function stat(path: string) {

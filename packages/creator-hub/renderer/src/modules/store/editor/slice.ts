@@ -4,7 +4,7 @@ import type { ChainId } from '@dcl/schemas';
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
 import type { DeployOptions } from '/shared/types/deploy';
-import { type Project } from '/shared/types/projects';
+import { ProjectError, type Project } from '/shared/types/projects';
 import type { PreviewOptions } from '/shared/types/settings';
 import { isWorkspaceError } from '/shared/types/workspace';
 
@@ -130,6 +130,10 @@ export const slice = createSlice({
     });
     builder.addCase(workspaceActions.createProject.fulfilled, (state, action) => {
       state.project = action.payload;
+    });
+    builder.addCase(workspaceActions.createProject.rejected, state => {
+      state.error = new ProjectError('PROJECT_NOT_CREATED');
+      state.project = undefined;
     });
     builder.addCase(workspaceActions.updateProject, (state, action) => {
       if (state.project) state.project = action.payload;

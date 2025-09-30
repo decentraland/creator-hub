@@ -6,7 +6,7 @@ import { fs, npm, scene, settings, workspace } from '#preload';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
-import { type Project } from '/shared/types/projects';
+import { type Project, ProjectError } from '/shared/types/projects';
 import type { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import { WorkspaceError } from '/shared/types/workspace';
 
@@ -119,4 +119,16 @@ export const updateSceneJson = createAsyncThunk(
 export const updateProjectInfo = createAsyncThunk(
   'workspace/updateProjectInfo',
   workspace.updateProjectInfo,
+);
+
+export const getAvailable = createAsyncThunk(
+  'workspace/getAvailable',
+  async (name: string, { rejectWithValue }) => {
+    try {
+      const result = await workspace.getAvailable(name);
+      return result;
+    } catch (error: any) {
+      return rejectWithValue(new ProjectError('INVALID_PATH', error.message));
+    }
+  },
 );
