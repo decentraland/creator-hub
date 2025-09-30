@@ -17,6 +17,7 @@ import {
   type DeploymentComponentsStatus,
   STATUS_VALUES,
   DeploymentError,
+  DeploymentErrorType,
 } from '/@/lib/deploy';
 
 export const MAX_FILE_SIZE_BYTES = 50 * 1e6; // 50MB defined in sdk-commands...
@@ -225,7 +226,7 @@ export async function checkDeploymentStatus(
       const status = await fetchStatus();
       if (!equal(currentStatus, status)) _onChange(status);
     } catch (e: any) {
-      error = new DeploymentError('FETCH_STATUS', currentStatus, e);
+      error = new DeploymentError(DeploymentErrorType.FETCH_STATUS, currentStatus, e);
       console.error(error);
     }
 
@@ -247,7 +248,11 @@ export async function checkDeploymentStatus(
   }
 
   // if maximum retries are reached, log the error and throw
-  const maxRetriesError = new DeploymentError('MAX_RETRIES', currentStatus, error);
+  const maxRetriesError = new DeploymentError(
+    DeploymentErrorType.MAX_RETRIES,
+    currentStatus,
+    error,
+  );
   console.error(maxRetriesError);
   throw maxRetriesError;
 }

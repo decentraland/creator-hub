@@ -4,9 +4,9 @@ import type { ChainId } from '@dcl/schemas';
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
 import type { DeployOptions } from '/shared/types/deploy';
-import { ProjectError, type Project } from '/shared/types/projects';
+import { ProjectError, ProjectErrorType, type Project } from '/shared/types/projects';
 import type { PreviewOptions } from '/shared/types/settings';
-import { isWorkspaceError } from '/shared/types/workspace';
+import { isWorkspaceError, WorkspaceErrorType } from '/shared/types/workspace';
 
 import { actions as deploymentActions } from '../deployment';
 import { actions as workspaceActions } from '../workspace';
@@ -93,7 +93,10 @@ export const slice = createSlice({
       state.error = null;
     });
     builder.addCase(workspaceActions.runProject.rejected, (state, action) => {
-      if (isRejectedWithValue(action) && isWorkspaceError(action.payload, 'PROJECT_NOT_FOUND')) {
+      if (
+        isRejectedWithValue(action) &&
+        isWorkspaceError(action.payload, WorkspaceErrorType.PROJECT_NOT_FOUND)
+      ) {
         state.error = action.payload;
       } else {
         state.error = action.error.message || 'Failed to run project';
@@ -132,7 +135,7 @@ export const slice = createSlice({
       state.project = action.payload;
     });
     builder.addCase(workspaceActions.createProject.rejected, state => {
-      state.error = new ProjectError('PROJECT_NOT_CREATED');
+      state.error = new ProjectError(ProjectErrorType.PROJECT_NOT_CREATED);
       state.project = undefined;
     });
     builder.addCase(workspaceActions.updateProject, (state, action) => {

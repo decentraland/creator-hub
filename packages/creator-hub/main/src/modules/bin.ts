@@ -22,11 +22,13 @@ const exec = promisify(execSync);
 
 const MAX_BUFFER_SIZE = 2048;
 
-type Error = 'COMMAND_FAILED';
+enum BinError {
+  COMMAND_FAILED = 'COMMAND_FAILED',
+}
 
-export class StreamError extends ErrorBase<Error> {
+export class StreamError extends ErrorBase<typeof BinError> {
   constructor(
-    type: Error,
+    type: BinError,
     message: string,
     public stdout: Buffer,
     public stderr: Buffer,
@@ -153,7 +155,7 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
       const stderrBuf = Buffer.concat(stderr.getAll());
       promise.reject(
         new StreamError(
-          'COMMAND_FAILED',
+          BinError.COMMAND_FAILED,
           `Error: process "${name}" with pid=${forked.pid} exited with code=${code}`,
           stdoutBuf,
           stderrBuf,
