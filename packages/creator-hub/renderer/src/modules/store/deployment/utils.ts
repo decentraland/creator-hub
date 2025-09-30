@@ -302,21 +302,21 @@ export function getAvailableCatalystServer(triedServers: Set<string>, chainId: C
 
 export function translateError(error: SerializedError) {
   switch (error.name) {
-    case 'INVALID_URL':
+    case DeploymentErrorType.INVALID_URL:
       return t('modal.publish_project.deploy.deploying.errors.invalid_url');
-    case 'INVALID_IDENTITY':
+    case DeploymentErrorType.INVALID_IDENTITY:
       return t('modal.publish_project.deploy.deploying.errors.invalid_identity');
-    case 'MAX_RETRIES':
+    case DeploymentErrorType.MAX_RETRIES:
       return t('modal.publish_project.deploy.deploying.errors.max_retries');
-    case 'FETCH_STATUS':
+    case DeploymentErrorType.FETCH_STATUS:
       return t('modal.publish_project.deploy.deploying.errors.fetch_status');
-    case 'CATALYST_SERVERS_EXHAUSTED':
+    case DeploymentErrorType.CATALYST_SERVERS_EXHAUSTED:
       return t('modal.publish_project.deploy.deploying.errors.catalyst');
-    case 'DEPLOYMENT_NOT_FOUND':
+    case DeploymentErrorType.DEPLOYMENT_NOT_FOUND:
       return t('modal.publish_project.deploy.deploying.errors.not_found');
-    case 'DEPLOYMENT_FAILED':
+    case DeploymentErrorType.DEPLOYMENT_FAILED:
       return t('modal.publish_project.deploy.deploying.errors.failed');
-    case 'MAX_FILE_SIZE_EXCEEDED':
+    case DeploymentErrorType.MAX_FILE_SIZE_EXCEEDED:
       return t('modal.publish_project.deploy.deploying.errors.max_file_size_exceeded', {
         maxFileSizeInMb: MAX_FILE_SIZE_BYTES / 1e6,
       });
