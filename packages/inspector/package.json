@@ -15,7 +15,7 @@
     "@dcl/mini-rpc": "^1.0.7",
     "@dcl/rpc": "^1.1.1",
     "@dcl/schemas": "11.10.4",
-    "@dcl/sdk": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/getEntitiesByTag/dcl-sdk-7.10.3-17916718146.commit-5d250fc.tgz",
+    "@dcl/sdk": "7.10.4",
     "@reduxjs/toolkit": "2.2.6",
     "@segment/analytics-node": "2.1.2",
     "@types/node": "20.14.9",
