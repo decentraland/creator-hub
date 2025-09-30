@@ -4,10 +4,7 @@ import { RiListSettingsLine } from 'react-icons/ri';
 import { FaPencilAlt } from 'react-icons/fa';
 
 import { withSdk } from '../../hoc/withSdk';
-import { Gizmos } from './Gizmos';
-import { Preferences } from './Preferences';
-import { ToolbarButton } from './ToolbarButton';
-import { save, undo, redo } from '../../redux/data-layer';
+import { save, undo, redo, selectCanRedo, selectCanUndo } from '../../redux/data-layer';
 import { selectCanSave } from '../../redux/app';
 import { useAppSelector, useAppDispatch } from '../../redux/hooks';
 import {
@@ -21,10 +18,16 @@ import {
   UNDO_ALT,
   useHotkey,
 } from '../../hooks/useHotkey';
+import { Gizmos } from './Gizmos';
+import { Preferences } from './Preferences';
+import { ToolbarButton } from './ToolbarButton';
+
 import './Toolbar.css';
 
 const Toolbar = withSdk(({ sdk }) => {
   const canSave = useAppSelector(selectCanSave);
+  const canUndo = useAppSelector(selectCanUndo);
+  const canRedo = useAppSelector(selectCanRedo);
   const dispatch = useAppDispatch();
 
   // TODO: Remove withSdk
@@ -62,14 +65,16 @@ const Toolbar = withSdk(({ sdk }) => {
       <ToolbarButton
         className="undo"
         title="Undo"
-        onClick={handleUndo}
+        disabled={!canUndo}
+        onClick={canUndo ? handleUndo : undefined}
       >
         <BiUndo />
       </ToolbarButton>
       <ToolbarButton
         className="redo"
         title="Redo"
-        onClick={handleRedo}
+        disabled={!canRedo}
+        onClick={canRedo ? handleRedo : undefined}
       >
         <BiRedo />
       </ToolbarButton>
