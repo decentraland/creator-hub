@@ -1,23 +1,23 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Entity } from '@dcl/ecs';
 import { AiOutlineSound as AudioIcon } from 'react-icons/ai';
 import { IoIosImage as ImageIcon } from 'react-icons/io';
 import { IoCubeOutline as ModelIcon, IoVideocamOutline as VideoIcon } from 'react-icons/io5';
 import { FaFile as OtherIcon } from 'react-icons/fa';
+import type { Entity } from '@dcl/ecs';
 
 import { useSdk } from '../../hooks/sdk/useSdk';
-import { Tile } from './Tile';
 import { Tree } from '../Tree';
 import { Modal } from '../Modal';
 import { Button } from '../Button';
 import FolderIcon from '../Icons/Folder';
-import { AssetNodeFolder } from './types';
-import { getFilterFromTree, getFullNodePath } from './utils';
 import Search from '../Search';
 import { withAssetDir } from '../../lib/data-layer/host/fs-utils';
 import { removeAsset } from '../../redux/data-layer';
 import { useAppDispatch } from '../../redux/hooks';
 import { determineAssetType, extractFileExtension } from '../ImportAsset/utils';
+import { getFilterFromTree, getFullNodePath } from './utils';
+import type { AssetNodeFolder } from './types';
+import { Tile } from './Tile';
 import { generateAssetTree, getChildren as _getChildren, TreeNode, ROOT, getTiles } from './tree';
 import { Filters } from './Filters';
 import { Filter } from './Filters/types';
@@ -216,18 +216,21 @@ function ProjectView({ folders, thumbnails }: Props) {
           />
         </div>
         <div className="FolderView">
-          {tiles.map(node => (
-            <Tile
-              key={node.name}
-              valueId={getFullNodePath(node).slice(1)}
-              value={node}
-              getDragContext={handleDragContext}
-              onSelect={handleClickFolder(node)}
-              onRemove={handleRemove}
-              getThumbnail={getThumbnail}
-              dndType={DRAG_N_DROP_ASSET_KEY}
-            />
-          ))}
+          {tiles.map(node => {
+            const valueId = getFullNodePath(node).slice(1);
+            return (
+              <Tile
+                key={valueId}
+                valueId={valueId}
+                value={node}
+                getDragContext={handleDragContext}
+                onSelect={handleClickFolder(node)}
+                onRemove={handleRemove}
+                getThumbnail={getThumbnail}
+                dndType={DRAG_N_DROP_ASSET_KEY}
+              />
+            );
+          })}
         </div>
       </div>
     </>
