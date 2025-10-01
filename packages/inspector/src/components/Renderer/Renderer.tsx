@@ -3,35 +3,29 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useDrop } from 'react-dnd';
 import cx from 'classnames';
 import { Vector3 } from '@babylonjs/core';
-import { Entity } from '@dcl/ecs';
+import type { Entity } from '@dcl/ecs';
 
 import { DIRECTORY, withAssetDir } from '../../lib/data-layer/host/fs-utils';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
-import {
-  getDataLayerInterface,
-  importAsset,
-  saveThumbnail,
-  getAssetCatalog,
-} from '../../redux/data-layer';
-import {
-  getNode,
+import { getDataLayerInterface, importAsset, saveThumbnail } from '../../redux/data-layer';
+import type {
   CatalogAssetDrop,
-  DROP_TYPES,
   IDrop,
   LocalAssetDrop,
-  isDropType,
-  DropTypesEnum,
   CustomAssetDrop,
 } from '../../lib/sdk/drag-drop';
+import { getNode, DROP_TYPES, isDropType, DropTypesEnum } from '../../lib/sdk/drag-drop';
 import { useRenderer } from '../../hooks/sdk/useRenderer';
 import { useSdk } from '../../hooks/sdk/useSdk';
 import { getPointerCoords } from '../../lib/babylon/decentraland/mouse-utils';
 import { snapPosition } from '../../lib/babylon/decentraland/snap-manager';
 import { getConfig } from '../../lib/logic/config';
 import { ROOT } from '../../lib/sdk/tree';
-import { Asset, CustomAsset, isGround, isSmart } from '../../lib/logic/catalog';
+import type { Asset, CustomAsset } from '../../lib/logic/catalog';
+import { isGround, isSmart } from '../../lib/logic/catalog';
 import { areGizmosDisabled, getHiddenPanels, isGroundGridDisabled } from '../../redux/ui';
-import { AssetNodeItem } from '../ProjectAssetExplorer/types';
+import { PanelName } from '../../redux/ui/types';
+import type { AssetNodeItem } from '../ProjectAssetExplorer/types';
 import { Loading } from '../Loading';
 import { isModel, isAsset } from '../EntityInspector/GltfInspector/utils';
 import { useIsMounted } from '../../hooks/useIsMounted';
@@ -58,12 +52,12 @@ import { Shortcuts } from './Shortcuts';
 import { Metrics } from './Metrics';
 
 import './Renderer.css';
-import { PanelName } from '../../redux/ui/types';
 
 const ZOOM_DELTA = new Vector3(0, 0, 1.1);
 const fixedNumber = (val: number) => Math.round(val * 1e2) / 1e2;
 
 const SINGLE_TILE_HINT_OFFSET = 30;
+const THUMBNAIL_PATH = 'thumbnail.png';
 
 const Renderer: React.FC = () => {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
@@ -286,6 +280,19 @@ const Renderer: React.FC = () => {
     await addAsset(model, position, basePath, true);
   };
 
+  /**
+   * Get the URL to fetch a content by its hash, adding any necessary query parameters.
+   * Note: for thumbnails, we add a `?resize` query parameter as it is necessary on this endpoint to avoid CORS issues due to missing response headers.
+   */
+  const getContentFetchUrl = useCallback(
+    (path: string, contentHash: string) => {
+      let url = `${config.contentUrl}/contents/${contentHash}`;
+      if (path === THUMBNAIL_PATH) url += '?resize';
+      return url;
+    },
+    [config.contentUrl],
+  );
+
   const importCatalogAsset = async (asset: Asset) => {
     const position = await getDropPosition();
     const fileContent: Record<string, Uint8Array> = {};
@@ -299,10 +306,10 @@ const Renderer: React.FC = () => {
     await Promise.all(
       Object.entries(asset.contents).map(async ([path, contentHash]) => {
         try {
-          const url = `${config.contentUrl}/contents/${contentHash}`;
+          const url = getContentFetchUrl(path, contentHash);
           const response = await fetch(url);
           const content = new Uint8Array(await response.arrayBuffer());
-          if (path === 'thumbnail.png') {
+          if (path === THUMBNAIL_PATH) {
             thumbnail = content;
           } else {
             fileContent[path] = content;
