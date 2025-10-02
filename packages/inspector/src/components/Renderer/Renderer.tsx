@@ -335,12 +335,12 @@ const Renderer: React.FC = () => {
     }
 
     if (thumbnail) {
-      const name = path ? (path.split('/').pop() as string) : asset.name;
-      const ext = name.split('.').pop() as string;
+      // Build the full asset path for hash generation
+      const fullAssetPath = `${destFolder}/${assetPackageName}/${path || asset.name}`;
       dispatch(
         saveThumbnail({
           content: thumbnail,
-          path: `${DIRECTORY.THUMBNAILS}/${name.replace(`.${ext}`, '.png')}`,
+          assetPath: fullAssetPath,
         }),
       );
     }

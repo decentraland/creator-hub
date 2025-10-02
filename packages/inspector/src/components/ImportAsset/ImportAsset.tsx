@@ -1,6 +1,7 @@
-import React, { PropsWithChildren, useCallback, useEffect, useState, useMemo } from 'react';
-import cx from 'classnames';
+import type { PropsWithChildren } from 'react';
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import { HiOutlineUpload } from 'react-icons/hi';
+import cx from 'classnames';
 
 import { removeBasePath } from '../../lib/logic/remove-base-path';
 import {
@@ -19,7 +20,7 @@ import {
 
 import FileInput from '../FileInput';
 import { Modal } from '../Modal';
-import { InputRef } from '../FileInput/FileInput';
+import type { InputRef } from '../FileInput/FileInput';
 import { Slider } from './Slider';
 
 import {
@@ -30,7 +31,7 @@ import {
   convertAssetToBinary,
   buildAssetPath,
 } from './utils';
-import { Asset } from './types';
+import type { Asset } from './types';
 
 import './ImportAsset.css';
 import { Error } from './Error';
@@ -93,10 +94,12 @@ const ImportAsset = React.forwardRef<InputRef, PropsWithChildren<PropTypes>>(
           );
 
           if (asset.thumbnail) {
+            // Build the full asset path for hash generation (relative path from assets directory)
+            const fullAssetPath = `${DIRECTORY.SCENE}/${assetPackageName}/${formatFileName(asset)}`;
             dispatch(
               saveThumbnail({
-                content: transformBase64ResourceToBinary(asset.thumbnail),
-                path: `${DIRECTORY.THUMBNAILS}/${asset.name}.png`,
+                content: new Uint8Array(transformBase64ResourceToBinary(asset.thumbnail)),
+                assetPath: fullAssetPath,
               }),
             );
           }

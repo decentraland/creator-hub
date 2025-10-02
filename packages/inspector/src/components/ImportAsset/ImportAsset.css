@@ -4,6 +4,7 @@
 
 .ImportAsset {
   height: 100%;
+  overflow: hidden;
 }
 
 .ImportAsset > div:first-child {

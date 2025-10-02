@@ -8,7 +8,7 @@ import type { InspectorPreferences } from '../../lib/logic/preferences/types';
 import type {
   Asset,
   ImportAssetRequest,
-  SaveFileRequest,
+  SaveThumbnailRequest,
 } from '../../lib/data-layer/remote-data-layer';
 import type { AssetsTab } from '../ui/types';
 
@@ -106,7 +106,7 @@ export const dataLayer = createSlice({
     clearRemoveAsset: (state, payload: PayloadAction<Asset>) => {
       delete state.removingAsset[payload.payload.path];
     },
-    saveThumbnail: (_state, _payload: PayloadAction<SaveFileRequest>) => {},
+    saveThumbnail: (_state, _payload: PayloadAction<SaveThumbnailRequest>) => {},
     getThumbnails: () => {},
     createCustomAsset: (
       _state,

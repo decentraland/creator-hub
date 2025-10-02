@@ -15,8 +15,9 @@ import { withAssetDir } from '../../lib/data-layer/host/fs-utils';
 import { removeAsset } from '../../redux/data-layer';
 import { useAppDispatch } from '../../redux/hooks';
 import { determineAssetType, extractFileExtension } from '../ImportAsset/utils';
+import { getThumbnailHashNameForAsset } from '../../lib/utils/hash';
 import { getFilterFromTree, getFullNodePath } from './utils';
-import type { AssetNodeFolder } from './types';
+import type { AssetNodeFolder, AssetNodeItem } from './types';
 import { Tile } from './Tile';
 import { generateAssetTree, getChildren as _getChildren, TreeNode, ROOT, getTiles } from './tree';
 import { Filters } from './Filters';
@@ -138,9 +139,15 @@ function ProjectView({ folders, thumbnails }: Props) {
   );
 
   const getThumbnail = useCallback(
-    (value: string) => {
-      const [name] = value.split('.');
-      const thumbnail = thumbnails.find($ => $.path.endsWith(name + '.png'));
+    async (value: AssetNodeItem) => {
+      // First try to find thumbnail using hash-based lookup
+      const hashedThumbnailName = await getThumbnailHashNameForAsset(value.asset.src);
+      let thumbnail = thumbnails.find($ => $.path.endsWith(hashedThumbnailName));
+      if (!thumbnail) {
+        // Fallback to legacy name-based lookup for backwards compatibility
+        const [name] = value.name.split('.');
+        thumbnail = thumbnails.find($ => $.path.endsWith(name + '.png'));
+      }
       if (thumbnail) return thumbnail.content;
     },
     [thumbnails],
