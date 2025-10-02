@@ -324,15 +324,14 @@ const Renderer: React.FC = () => {
     // Use direct data layer interface to ensure proper sequencing with undo system
     const content = new Map(Object.entries(fileContent));
     if (content.size > 0) {
-      const dataLayer = getDataLayerInterface();
-      if (dataLayer) {
-        await dataLayer.importAsset({
+      dispatch(
+        importAsset({
           content,
           basePath: withAssetDir(destFolder),
           assetPackageName,
-        });
-        // Note: importAsset already handles asset catalog refresh internally
-      }
+        }),
+      );
+      // Note: importAsset already handles asset catalog refresh internally
     }
 
     if (thumbnail) {
