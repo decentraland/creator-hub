@@ -335,12 +335,10 @@ const Renderer: React.FC = () => {
     }
 
     if (thumbnail) {
-      // Build the full asset path for hash generation
-      const fullAssetPath = `${destFolder}/${assetPackageName}/${path || asset.name}`;
       dispatch(
         saveThumbnail({
           content: thumbnail,
-          assetPath: fullAssetPath,
+          path: `${destFolder}/${assetPackageName}/${path || asset.name}`, // Full asset path for hash generation
         }),
       );
     }

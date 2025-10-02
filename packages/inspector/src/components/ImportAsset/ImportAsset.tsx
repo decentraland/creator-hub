@@ -94,12 +94,10 @@ const ImportAsset = React.forwardRef<InputRef, PropsWithChildren<PropTypes>>(
           );
 
           if (asset.thumbnail) {
-            // Build the full asset path for hash generation (relative path from assets directory)
-            const fullAssetPath = `${DIRECTORY.SCENE}/${assetPackageName}/${formatFileName(asset)}`;
             dispatch(
               saveThumbnail({
                 content: new Uint8Array(transformBase64ResourceToBinary(asset.thumbnail)),
-                assetPath: fullAssetPath,
+                path: `${DIRECTORY.SCENE}/${assetPackageName}/${formatFileName(asset)}`, // Full asset path for hash generation (relative path from assets directory)
               }),
             );
           }
