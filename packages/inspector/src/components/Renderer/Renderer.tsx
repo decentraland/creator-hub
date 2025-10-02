@@ -309,7 +309,7 @@ const Renderer: React.FC = () => {
           const url = getContentFetchUrl(path, contentHash);
           const response = await fetch(url);
           const content = new Uint8Array(await response.arrayBuffer());
-          if (path === THUMBNAIL_PATH) {
+          if (path.endsWith(THUMBNAIL_PATH)) {
             thumbnail = content;
           } else {
             fileContent[path] = content;
