@@ -198,5 +198,3 @@ For a deeper understanding of the architecture and design decisions:
 ## License
 
 Apache 2.0
-
-test
