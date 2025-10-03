@@ -1,7 +1,7 @@
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
 
-import { isProjectError } from '/shared/types/projects';
+import { isProjectError, ProjectErrorType } from '/shared/types/projects';
 import { t } from '/@/modules/store/translation/utils';
 
 import { actions as workspaceActions } from '../workspace';
@@ -52,7 +52,7 @@ export const slice = createSlice({
       })
 
       .addCase(workspaceActions.getAvailable.rejected, (state, payload) => {
-        const isPathError = isProjectError(payload.payload, 'INVALID_PATH');
+        const isPathError = isProjectError(payload.payload, ProjectErrorType.INVALID_PATH);
         const translatedError = isPathError
           ? t('snackbar.generic.invalid_scenes_folder')
           : t('snackbar.generic.create_scene_failed');

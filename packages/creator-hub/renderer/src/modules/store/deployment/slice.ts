@@ -4,7 +4,7 @@ import type { ChainId } from '@dcl/schemas';
 import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
 
 import type { DeploymentComponentsStatus, Info, Status, File } from '/@/lib/deploy';
-import { DeploymentError, isDeploymentError } from '/@/lib/deploy';
+import { DeploymentError, DeploymentErrorType, isDeploymentError } from '/@/lib/deploy';
 import { delay } from '/shared/utils';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
@@ -78,13 +78,17 @@ export const initializeDeployment = createAsyncThunk(
     const url = getDeploymentUrl(port);
 
     if (!url) {
-      return rejectWithValue(new DeploymentError('INVALID_URL', getInitialDeploymentStatus()));
+      return rejectWithValue(
+        new DeploymentError(DeploymentErrorType.INVALID_URL, getInitialDeploymentStatus()),
+      );
     }
 
     const identity = localStorageGetIdentity(wallet);
 
     if (!identity) {
-      return rejectWithValue(new DeploymentError('INVALID_IDENTITY', getInitialDeploymentStatus()));
+      return rejectWithValue(
+        new DeploymentError(DeploymentErrorType.INVALID_IDENTITY, getInitialDeploymentStatus()),
+      );
     }
 
     const [info, files] = await Promise.all([fetchInfo(url), fetchFiles(url)]);
@@ -113,7 +117,11 @@ export const deploy = createAsyncThunk(
             catalyst: 'failed',
           };
           return rejectWithValue(
-            new DeploymentError('CATALYST_SERVERS_EXHAUSTED', componentsStatus, error),
+            new DeploymentError(
+              DeploymentErrorType.CATALYST_SERVERS_EXHAUSTED,
+              componentsStatus,
+              error,
+            ),
           );
         }
 
@@ -135,7 +143,7 @@ export const executeDeployment = createAsyncThunk(
 
     if (!deployment) {
       return rejectWithValue(
-        new DeploymentError('DEPLOYMENT_NOT_FOUND', getInitialDeploymentStatus()),
+        new DeploymentError(DeploymentErrorType.DEPLOYMENT_NOT_FOUND, getInitialDeploymentStatus()),
       );
     }
 
@@ -164,7 +172,9 @@ export const executeDeployment = createAsyncThunk(
       );
 
       if (deriveOverallStatus(componentsStatus) === 'failed') {
-        return rejectWithValue(new DeploymentError('DEPLOYMENT_FAILED', componentsStatus));
+        return rejectWithValue(
+          new DeploymentError(DeploymentErrorType.DEPLOYMENT_FAILED, componentsStatus),
+        );
       }
 
       return { info, componentsStatus };
