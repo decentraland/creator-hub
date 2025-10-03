@@ -3,11 +3,16 @@ import { call, put } from 'redux-saga/effects';
 import type { IDataLayer, saveThumbnail } from '..';
 import { ErrorType, error, getDataLayerInterface, getThumbnails } from '..';
 import type { Empty } from '../../../lib/data-layer/remote-data-layer';
+import { getThumbnailHashNameForAsset } from '../../../lib/utils/hash';
+import { DIRECTORY } from '../../../lib/data-layer/host/fs-utils';
 
 export function* saveThumbnailSaga(action: ReturnType<typeof saveThumbnail>) {
   const dataLayer: IDataLayer = yield call(getDataLayerInterface);
   if (!dataLayer) return;
   try {
+    const hashedFileName: string = yield call(getThumbnailHashNameForAsset, action.payload.path);
+    action.payload.path = `${DIRECTORY.THUMBNAILS}/${hashedFileName}`;
+
     const _response: Empty = yield call(dataLayer.saveFile, action.payload);
 
     // Fetch thumbnails again

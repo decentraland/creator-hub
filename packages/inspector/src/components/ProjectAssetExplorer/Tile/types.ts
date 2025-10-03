@@ -1,4 +1,5 @@
 import type { TreeNode } from '../ProjectView';
+import type { AssetNodeItem } from '../types';
 
 export interface Props {
   valueId: string;
@@ -7,5 +8,5 @@ export interface Props {
   onSelect: () => void;
   onRemove: (value: string) => void;
   dndType: string;
-  getThumbnail: (value: string) => Uint8Array | undefined;
+  getThumbnail: (value: AssetNodeItem) => Promise<Uint8Array | undefined>;
 }

@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AiFillDelete as DeleteIcon, AiOutlineSound as AudioIcon } from 'react-icons/ai';
 import { IoIosImage as ImageIcon } from 'react-icons/io';
 import { IoCubeOutline as ModelIcon, IoVideocamOutline as VideoIcon } from 'react-icons/io5';
@@ -18,7 +18,8 @@ import FolderIcon from '../../Icons/Folder';
 import { withContextMenu } from '../../../hoc/withContextMenu';
 import { useContextMenu } from '../../../hooks/sdk/useContextMenu';
 import { determineAssetType, extractFileExtension } from '../../ImportAsset/utils';
-import { Props } from './types';
+import type { AssetNodeItem } from '../types';
+import type { Props } from './types';
 
 import './Tile.css';
 
@@ -33,8 +34,16 @@ export const Tile = withContextMenu<Props>(
     dndType,
     getThumbnail,
   }) => {
+    const [thumbnail, setThumbnail] = useState<Uint8Array | null>(null);
     const { handleAction } = useContextMenu();
     const isRemovingAsset = useAppSelector(selectDataLayerRemovingAsset);
+
+    // Load thumbnail when value changes
+    useEffect(() => {
+      if (value?.type === 'asset' && getThumbnail) {
+        getThumbnail(value as AssetNodeItem).then(data => setThumbnail(data ? data : null));
+      }
+    }, [value]);
 
     const isLoading = useMemo(() => {
       const path = withAssetDir(valueId);
@@ -54,7 +63,6 @@ export const Tile = withContextMenu<Props>(
 
     const renderThumbnail = useCallback(() => {
       if (value.type === 'folder') return <FolderIcon />;
-      const thumbnail = getThumbnail(value.name);
       if (thumbnail)
         return (
           <img
@@ -75,7 +83,7 @@ export const Tile = withContextMenu<Props>(
         case 'Other':
           return <OtherIcon />;
       }
-    }, []);
+    }, [thumbnail, value]);
 
     const renderOverlayLoading = useCallback(() => {
       if (isLoading) {
