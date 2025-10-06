@@ -4,6 +4,7 @@ import type { Status } from '/shared/types/async';
 
 import type { Outdated } from './npm';
 import type { PACKAGES } from './pkg';
+import { ErrorBase } from './error';
 
 export type Layout = {
   rows: number;
@@ -40,3 +41,13 @@ export type Project = {
   status?: Status;
   info: ProjectInfo;
 };
+
+export type CreateError = 'PROJECT_NOT_CREATED';
+export type PathError = 'INVALID_PATH';
+
+export type Error = CreateError | PathError;
+
+export class ProjectError extends ErrorBase<Error> {}
+
+export const isProjectError = (error: unknown, type: Error): error is ProjectError =>
+  error instanceof ProjectError && (error.name === type || error.message === type);

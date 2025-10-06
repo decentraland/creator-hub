@@ -8,6 +8,7 @@ import type {
 import { CrdtMessageType } from '@dcl/ecs';
 import type { FileSystemInterface } from '../types';
 import type { InspectorPreferences } from '../../logic/preferences/types';
+import { EditorComponentNames } from '../../sdk/components';
 import { ErrorHandler } from './error-handler';
 
 export enum OperationType {
@@ -132,9 +133,9 @@ export class StateManager {
     if (!component) return OperationType.COMPOSITE_UPDATE;
 
     switch (component.componentName) {
-      case 'inspector::Scene':
+      case EditorComponentNames.Scene:
         return OperationType.SCENE_UPDATE;
-      case 'inspector::Selection':
+      case EditorComponentNames.Selection:
         return OperationType.UNDO_CAPTURE;
       default:
         if (

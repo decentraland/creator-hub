@@ -226,7 +226,7 @@ export function initializeWorkspace(services: Services) {
         // TODO: implement migrations for config file...
         dependencyUpdateStrategy:
           cfg.settings?.dependencyUpdateStrategy ?? DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
-        scenesPath: cfg.settings?.scenesPath ?? (await getDefaultScenesPath()),
+        scenesPath: cfg.settings?.scenesPath || (await getDefaultScenesPath()),
       },
     };
   }
@@ -260,14 +260,13 @@ export function initializeWorkspace(services: Services) {
     path?: string;
     repo?: string;
   }): Promise<{ path: string }> {
-    const { name, path: projectPath } =
-      opts?.path && opts?.name
-        ? { name: opts.name, path: opts.path }
-        : await getAvailable(opts?.name ?? NEW_SCENE_NAME);
-
-    const templateRepo = opts?.repo ?? EMPTY_SCENE_TEMPLATE_REPO;
-
     try {
+      const { name, path: projectPath } =
+        opts?.path && opts?.name
+          ? { name: opts.name, path: opts.path }
+          : await getAvailable(opts?.name ?? NEW_SCENE_NAME);
+      const templateRepo = opts?.repo ?? EMPTY_SCENE_TEMPLATE_REPO;
+
       const fullName = projectPath.endsWith(name) ? projectPath : path.join(projectPath, name);
       await fs.mkdir(fullName, { recursive: true });
 
@@ -291,7 +290,9 @@ export function initializeWorkspace(services: Services) {
 
       return { path: fullName };
     } catch (error: any) {
-      throw new Error(`Failed to create project "${name}": ${error.message}`);
+      throw new Error(
+        `Failed to create project "${opts?.name || NEW_SCENE_NAME}": ${error.message}`,
+      );
     }
   }
 
@@ -345,6 +346,16 @@ export function initializeWorkspace(services: Services) {
     return project;
   }
 
+  /**
+   * Returns whether or not the provided directory is a valid base path to create new scenes/projects.
+   * A valid base path is a writable directory.
+   */
+  async function validateScenesPath(_path: string) {
+    const isDir = await fs.isDirectory(_path);
+    if (isDir) return await fs.isWritable(_path);
+    return false;
+  }
+
   async function isProjectPathAvailable(projectPath: string): Promise<boolean> {
     const cfg = await config.getConfig();
     const [projects] = await getProjects(cfg.workspace.paths, { omitOutdatedPackages: true });
@@ -357,7 +368,7 @@ export function initializeWorkspace(services: Services) {
     const cfg = await config.getConfig();
     const [projectPath] = await ipc.invoke('electron.showOpenDialog', {
       title,
-      properties: ['openDirectory', 'createDirectory'],
+      properties: ['openDirectory', 'createDirectory', 'promptToCreate'],
       defaultPath: cfg.settings.scenesPath,
     });
 
@@ -440,7 +451,8 @@ export function initializeWorkspace(services: Services) {
   }
 
   async function openFolder(_path: string) {
-    const error = await shell.openPath(_path);
+    const absolutePath = path.resolve(_path);
+    const error = await shell.openPath(absolutePath);
     if (error) throw new Error(error);
   }
 
@@ -481,6 +493,7 @@ export function initializeWorkspace(services: Services) {
     saveThumbnail,
     openFolder,
     getConfigPath,
+    validateScenesPath,
     getProjectInfoFs,
     updateProjectInfo,
     importProject,

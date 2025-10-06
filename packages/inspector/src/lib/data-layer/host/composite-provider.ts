@@ -1,3 +1,4 @@
+import type { Scene } from '@dcl/schemas';
 import type { CompositeDefinition, Entity, IEngine } from '@dcl/ecs';
 import { Composite, CrdtMessageType, EntityMappingMode } from '@dcl/ecs';
 import { initComponents } from '@dcl/asset-packs';
@@ -8,7 +9,6 @@ import { getMinimalComposite } from '../client/feeded-local-fs';
 import type { InspectorPreferences } from '../../logic/preferences/types';
 import { buildNodesHierarchyIfNotExists } from './utils/migrations/build-nodes-hierarchy';
 import { removeLegacyEntityNodeComponents } from './utils/migrations/legacy-entity-node';
-import { bufferToScene } from './scene';
 import { DIRECTORY, withAssetDir } from './fs-utils';
 import {
   dumpEngineToComposite,
@@ -28,6 +28,7 @@ import {
   type Transaction,
   OperationType,
 } from './state-manager';
+import { createTagsComponent } from './utils/migrations/create-tags-components';
 
 enum DirtyState {
   Clean = 'clean',
@@ -122,10 +123,15 @@ export class CompositeProvider implements StateProvider {
     fixNetworkEntityValues(this.engine);
     selectSceneEntity(this.engine);
     migrateSceneMetadata(this.engine);
+    createTagsComponent(this.engine);
   }
 
   private async initializeComponents(): Promise<void> {
     initComponents(this.engine);
+  }
+
+  private bufferToScene(buffer: Buffer): Scene {
+    return JSON.parse(new TextDecoder().decode(buffer));
   }
 
   private async overrideWithSceneJson(): Promise<void> {
@@ -136,7 +142,7 @@ export class CompositeProvider implements StateProvider {
     if (await this.fs.existFile('scene.json')) {
       console.log('Overriding SceneMetadata with scene.json');
       const sceneJsonBuffer = await this.fs.readFile('scene.json');
-      const sceneJson = bufferToScene(sceneJsonBuffer);
+      const sceneJson = this.bufferToScene(sceneJsonBuffer);
       SceneMetadata.createOrReplace(this.engine.RootEntity, toSceneComponent(sceneJson));
     }
   }

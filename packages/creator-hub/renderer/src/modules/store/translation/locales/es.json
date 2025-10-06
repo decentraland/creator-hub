@@ -239,7 +239,10 @@
       "fields": {
         "scenes_folder": {
           "label": "Carpeta de escenas",
-          "change_button": "Cambiar carpeta"
+          "change_button": "Cambiar carpeta",
+          "errors": {
+            "invalid_path": "La carpeta no existe o no tienes permiso para crear archivos allí. Por favor, elige otra carpeta."
+          }
         },
         "scene_editor_dependencies": {
           "label": "Dependencias del editor de escenas",
@@ -294,7 +297,7 @@
         "create": "Crear"
       },
       "errors": {
-        "path_exists": "La ruta ya existe"
+        "path_exists_or_not_writable": "La ruta ya existe o no tienes permiso para crear archivos allí. Por favor, elige otra carpeta."
       }
     },
     "install_client": {
@@ -315,7 +318,9 @@
       "delete_scene_failed": "Error al borrar escena",
       "dependencies_updated": "Las dependencias de la escena fueron actualizadas",
       "installing_dependencies": "Instalando dependencias...",
-      "installing_dependencies_failed": "Error al instalar dependencias"
+      "installing_dependencies_failed": "Error al instalar dependencias",
+      "invalid_scenes_folder": "Carpeta de escenas inválida. Por favor, ingresa una carpeta de escenas válida en la configuración de la aplicación antes de crear una escena.",
+      "create_scene_failed": "Ocurrió un error al crear la escena. Por favor, inténtalo nuevamente."
     },
     "missing_projects": {
       "title": "{scenes} {scenes, plural, one {escena} other {escenas}} {scenes, plural, one {faltante} other {faltantes}}",

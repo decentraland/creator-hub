@@ -3,6 +3,8 @@ import { type BrowserWindow } from 'electron';
 
 import { createWindow, focusWindow, getWindow } from './modules/window';
 
+export const MAIN_WINDOW_ID = 'main';
+
 async function createMainWindow(id: string) {
   const window = createWindow(id);
   window.setMenuBarVisibility(false);
@@ -63,7 +65,7 @@ async function createMainWindow(id: string) {
  * @returns {Promise<Electron.BrowserWindow>} A promise that resolves to the main window instance
  */
 export async function restoreOrCreateMainWindow(): Promise<BrowserWindow> {
-  const id = 'main';
+  const id = MAIN_WINDOW_ID;
   let window = getWindow(id);
 
   if (window === undefined) {

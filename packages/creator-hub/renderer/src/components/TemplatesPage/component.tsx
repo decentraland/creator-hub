@@ -2,8 +2,6 @@ import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MenuItem, type SelectChangeEvent, Chip, Typography } from 'decentraland-ui2';
 
-import { misc } from '#preload';
-
 import type { Template } from '/shared/types/workspace';
 
 import { useWorkspace } from '/@/hooks/useWorkspace';
@@ -22,6 +20,8 @@ import { CreateProject } from '../Modals/CreateProject';
 
 import { SortBy, Difficulty, type ModalType, type CreateProjectValue } from './types';
 import { sortTemplatesBy } from './utils';
+
+import { misc } from '#preload';
 
 import './styles.css';
 
@@ -50,7 +50,7 @@ export function TemplatesPage() {
         setOpenModal({ type: 'create-project', payload });
       }
     },
-    [],
+    [getAvailableProject],
   );
 
   const handleCreateProject = useCallback(
