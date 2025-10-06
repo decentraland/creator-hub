@@ -7,7 +7,7 @@ import type { Entity } from '@dcl/ecs';
 
 import { DIRECTORY, withAssetDir } from '../../lib/data-layer/host/fs-utils';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
-import { getDataLayerInterface, importAsset, saveThumbnail } from '../../redux/data-layer';
+import { getDataLayerInterface, getAssetCatalog, saveThumbnail } from '../../redux/data-layer';
 import type {
   CatalogAssetDrop,
   IDrop,
@@ -276,7 +276,8 @@ const Renderer: React.FC = () => {
     };
     const basePath = withAssetDir(`${destFolder}/${assetPackageName}`);
 
-    dispatch(importAsset({ content, basePath, assetPackageName: '', reload: true }));
+    await dataLayer.importAsset({ content, basePath, assetPackageName: '' });
+    dispatch(getAssetCatalog()); // Refresh catalog after import
     await addAsset(model, position, basePath, true);
   };
 
@@ -324,14 +325,15 @@ const Renderer: React.FC = () => {
     // Use direct data layer interface to ensure proper sequencing with undo system
     const content = new Map(Object.entries(fileContent));
     if (content.size > 0) {
-      dispatch(
-        importAsset({
+      const dataLayer = getDataLayerInterface();
+      if (dataLayer) {
+        await dataLayer.importAsset({
           content,
           basePath: withAssetDir(destFolder),
           assetPackageName,
-        }),
-      );
-      // Note: importAsset already handles asset catalog refresh internally
+        });
+        dispatch(getAssetCatalog()); // Refresh catalog after import
+      }
     }
 
     if (thumbnail) {
