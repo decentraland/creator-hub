@@ -28,6 +28,7 @@ import {
   type Transaction,
   OperationType,
 } from './state-manager';
+import { createTagsComponent } from './utils/migrations/create-tags-components';
 
 enum DirtyState {
   Clean = 'clean',
@@ -122,6 +123,7 @@ export class CompositeProvider implements StateProvider {
     fixNetworkEntityValues(this.engine);
     selectSceneEntity(this.engine);
     migrateSceneMetadata(this.engine);
+    createTagsComponent(this.engine);
   }
 
   private async initializeComponents(): Promise<void> {

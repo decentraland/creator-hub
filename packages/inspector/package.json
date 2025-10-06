@@ -11,7 +11,7 @@
     "@babylonjs/inspector": "8.7.0",
     "@babylonjs/loaders": "8.7.0",
     "@babylonjs/materials": "8.7.0",
-    "@dcl/ecs": "7.9.5",
+    "@dcl/ecs": "7.10.4",
     "@dcl/ecs-math": "2.1.0",
     "@dcl/mini-rpc": "^1.0.7",
     "@dcl/rpc": "^1.1.1",

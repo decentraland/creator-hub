@@ -160,6 +160,7 @@ export type SdkComponents = {
   TweenSequence: ReturnType<typeof components.TweenSequence>;
   VideoPlayer: ReturnType<typeof components.VideoPlayer>;
   VisibilityComponent: ReturnType<typeof components.VisibilityComponent>;
+  Tags: ReturnType<typeof components.Tags>;
 };
 
 export function createComponents(engine: IEngine): SdkComponents {
@@ -183,6 +184,7 @@ export function createComponents(engine: IEngine): SdkComponents {
   const TweenSequence = components.TweenSequence(engine);
   const VideoPlayer = components.VideoPlayer(engine);
   const VisibilityComponent = components.VisibilityComponent(engine);
+  const Tags = components.Tags(engine);
 
   return {
     Animator,
@@ -199,6 +201,7 @@ export function createComponents(engine: IEngine): SdkComponents {
     NftShape,
     PointerEvents,
     SyncComponents,
+    Tags,
     TextShape,
     Transform,
     Tween,

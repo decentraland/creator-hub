@@ -62,16 +62,23 @@ describe('Init RPC Methods', () => {
     await mocked.fs.writeFile(compositeDest, Buffer.from(JSON.stringify(jsonComposite), 'utf-8'));
     await initRpcMethods(mocked.fs, mocked.engine, mocked.addEngineListener);
 
+    // After migration, the legacy EntityNode component should be removed
     const EntityNodeComponent = mocked.engine.getComponentOrNull('inspector::EntityNode');
-    expect(EntityNodeComponent?.get(entity)).toMatchObject({ label: 'Boedo', parent: 10 });
-    await mocked.engine.update(1);
+    expect(EntityNodeComponent).toBeNull();
 
+    // And the entity should have Name and Transform components instead
     const NameComponent = mocked.engine.getComponent(Name.componentId) as typeof Name;
     const TransformComponent = mocked.engine.getComponent(
       Transform.componentId,
     ) as typeof Transform;
-    expect(NameComponent.get(entity)).toMatchObject({ value: 'Boedo' });
-    expect(TransformComponent.get(entity).parent).toBe(10);
+
+    // Find the migrated entity by its Name component value
+    const entitiesWithName = Array.from(mocked.engine.getEntitiesWith(NameComponent));
+    const entityWithBoedo = entitiesWithName.find(([_, nameValue]) => nameValue.value === 'Boedo');
+    expect(entityWithBoedo).toBeDefined();
+    const [migratedEntity] = entityWithBoedo!;
+    expect(NameComponent.get(migratedEntity)).toMatchObject({ value: 'Boedo' });
+    expect(TransformComponent.get(migratedEntity).parent).toBe(10);
     expect(mocked.engine.getComponentOrNull('inspector::EntityNode')).toBe(null);
 
     await mocked.engine.update(1);
