@@ -9,7 +9,7 @@ export function createTagsComponent(engine: IEngine) {
 
   if (Tags) {
     const sceneTags = Tags.getMutableOrNull(engine.RootEntity);
-    if (!sceneTags || sceneTags.tags.length === 0) {
+    if (!sceneTags) {
       Tags.createOrReplace(engine.RootEntity, { tags: DEFAULT_TAGS });
       engine.update(1);
     }

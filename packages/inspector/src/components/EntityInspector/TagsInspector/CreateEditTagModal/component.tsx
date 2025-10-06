@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 
 import { Button } from '../../../Button';
 import { analytics, Event } from '../../../../lib/logic/analytics';
@@ -14,19 +14,19 @@ const CreateEditTagModal = withSdk<Props>(({ open, onClose, sdk, editingTag }) =
   const { Tags } = sdk.components;
   const sceneTags = Tags.getOrNull(sdk.engine.RootEntity);
 
-  const isDuplicatedTag = () => {
+  const isDuplicatedTag = useMemo(() => {
     if (!newTagName) return false;
     if (editingTag) {
       return sceneTags?.tags.some(sceneTag => sceneTag === newTagName && sceneTag !== editingTag);
     }
     return sceneTags?.tags.some(t => t === newTagName);
-  };
+  }, [newTagName, editingTag, sceneTags?.tags]);
 
-  const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     setTagName(event.target.value);
-  };
+  }, []);
 
-  const handleSaveTag = async () => {
+  const handleSaveTag = useCallback(async () => {
     if (newTagName && editingTag) {
       const entitiesWithTag = sdk.engine.getEntitiesByTag(editingTag);
       for (const entity of entitiesWithTag) {
@@ -42,16 +42,16 @@ const CreateEditTagModal = withSdk<Props>(({ open, onClose, sdk, editingTag }) =
       setTagName('');
       onClose();
     }
-  };
+  }, [newTagName, editingTag, sdk.engine, sdk.operations, Tags, onClose]);
 
-  const handleCreateTag = async () => {
+  const handleCreateTag = useCallback(async () => {
     if (newTagName) {
       Tags.add(sdk.engine.RootEntity, newTagName);
       sdk.operations.dispatch();
       setTagName('');
       onClose();
     }
-  };
+  }, [newTagName, sdk.engine.RootEntity, sdk.operations, Tags, onClose]);
 
   return (
     <Modal
@@ -69,7 +69,7 @@ const CreateEditTagModal = withSdk<Props>(({ open, onClose, sdk, editingTag }) =
             value={editingTag || ''}
             onChange={handleNameChange}
           />
-          <div className="warning">{isDuplicatedTag() && 'This tag already exists'}</div>
+          <div className="warning">{isDuplicatedTag && 'This tag already exists'}</div>
         </div>
       </div>
 
@@ -78,7 +78,7 @@ const CreateEditTagModal = withSdk<Props>(({ open, onClose, sdk, editingTag }) =
           size="big"
           type="danger"
           onClick={editingTag ? handleSaveTag : handleCreateTag}
-          disabled={isDuplicatedTag()}
+          disabled={isDuplicatedTag}
         >
           {editingTag ? 'Save tag' : 'Create tag'}
         </Button>
