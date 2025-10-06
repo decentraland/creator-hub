@@ -1,6 +1,7 @@
 .ProjectFilters {
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
   padding: 10px;
   height: calc(100% - 30px);
   overflow-y: auto;

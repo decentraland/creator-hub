@@ -9,24 +9,10 @@ import { Container } from '../../Container';
 import { TextField } from '../../ui/TextField';
 import { FileUploadField } from '../../ui/FileUploadField';
 import { ACCEPTED_FILE_TYPES } from '../../ui/FileUploadField/types';
-import { Props } from './types';
-import {
-  fromScene,
-  toScene,
-  isValidInput,
-  isImage,
-  fromSceneSpawnPoint,
-  toSceneSpawnPoint,
-  MIDDAY_SECONDS,
-} from './utils';
 
 import './SceneInspector.css';
-import {
-  EditorComponentsTypes,
-  SceneAgeRating,
-  SceneCategory,
-  SceneSpawnPoint,
-} from '../../../lib/sdk/components';
+import type { EditorComponentsTypes, SceneSpawnPoint } from '../../../lib/sdk/components';
+import { SceneAgeRating, SceneCategory } from '../../../lib/sdk/components';
 import { Dropdown } from '../../ui/Dropdown';
 import { TextArea } from '../../ui';
 import { Tabs } from '../Tabs';
@@ -47,8 +33,18 @@ import { SceneInspectorTab } from '../../../redux/ui/types';
 import { Tab } from '../Tab';
 import { transformBinaryToBase64Resource } from '../../../lib/data-layer/host/fs-utils';
 import { selectThumbnails } from '../../../redux/app';
-import { Layout } from './Layout';
 import { TransitionMode } from '../../../lib/sdk/components/SceneMetadata';
+import { Layout } from './Layout';
+import type { Props } from './types';
+import {
+  fromScene,
+  toScene,
+  isValidInput,
+  isImage,
+  fromSceneSpawnPoint,
+  toSceneSpawnPoint,
+  MIDDAY_SECONDS,
+} from './utils';
 
 const AGE_RATING_OPTIONS = [
   {

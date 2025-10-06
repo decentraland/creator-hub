@@ -6,7 +6,7 @@ import { useAssetTree } from '../../hooks/catalog/useAssetTree';
 
 import ProjectView from './ProjectView';
 
-import { AssetNodeFolder } from './types';
+import type { AssetNodeFolder } from './types';
 
 import './ProjectAssetExplorer.css';
 
