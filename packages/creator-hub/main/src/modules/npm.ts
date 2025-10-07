@@ -6,6 +6,10 @@ export async function install(path: string, packages: string[] = []) {
   const installCommand = run('npm', 'npm', {
     args: ['install', '--loglevel', 'info', '--save-exact', ...packages],
     cwd: path,
+    env: {
+      npm_config_unsafe_perm: 'true',
+      npm_config_foreground_scripts: 'true',
+    },
   });
   await installCommand.wait();
 }
