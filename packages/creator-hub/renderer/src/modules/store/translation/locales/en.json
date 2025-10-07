@@ -378,6 +378,10 @@
     "cards": {
       "create": {
         "title": "Create",
+        "submit_event": {
+          "title": "Submit Event",
+          "description": "Host your own event on Decentraland."
+        },
         "legacy_web_editor": {
           "title": "Legacy Web Editor",
           "description": "Access the old web editor to continue working on your scenes."

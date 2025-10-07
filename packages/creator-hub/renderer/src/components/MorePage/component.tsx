@@ -11,12 +11,14 @@ import CollectionsPng from '/assets/images/collections.png';
 import NamesPng from '/assets/images/names.png';
 import WorldPng from '/assets/images/world.png';
 import LandPng from '/assets/images/land.png';
+import NewEventPng from '/assets/images/new-event.png';
 
 import { Navbar, NavbarItem } from '../Navbar';
 
 import './styles.css';
 
 const BUILDER_URL = 'https://decentraland.org/builder';
+const SUBMIT_EVENT_URL = 'https://decentraland.org/events/submit';
 
 const HorizontalCardWithImage: React.FC<{
   className?: string;
@@ -69,6 +71,20 @@ export function MorePage() {
           spacing={3}
           mb="48px"
         >
+          <Grid
+            item
+            xs={12}
+            sm={6}
+            md={6}
+            lg={4}
+          >
+            <HorizontalCardWithImage
+              title={t('more.cards.create.submit_event.title')}
+              description={t('more.cards.create.submit_event.description')}
+              action={() => misc.openExternal(SUBMIT_EVENT_URL)}
+              image={NewEventPng}
+            />
+          </Grid>
           <Grid
             item
             xs={12}
