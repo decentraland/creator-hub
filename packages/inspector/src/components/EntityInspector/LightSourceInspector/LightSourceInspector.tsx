@@ -93,14 +93,14 @@ const fromComponent = (value: PBLightSource): LightInput => {
       (value as any).shadowMaskTexture?.tex?.$case === 'texture'
         ? (value as any).shadowMaskTexture.tex.texture.src
         : '',
-    range: value.range !== undefined ? String(value.range) : '',
+    range: String(value.range ?? -1),
     spot: undefined,
   };
 
   if (value.type?.$case === 'spot') {
     base.spot = {
       innerAngle: String(value.type.spot.innerAngle ?? 30),
-      outerAngle: String(value.type.spot.outerAngle ?? 35),
+      outerAngle: String(value.type.spot.outerAngle ?? 40),
     };
   }
 
