@@ -47,11 +47,24 @@ const fromComponent =
     };
   };
 
+function coerceSwaps(input: Input['swaps']): SwapInput[] {
+  if (Array.isArray(input)) return input as SwapInput[];
+  if (input && typeof input === 'object') {
+    const obj = input as any;
+    const keys = Object.keys(obj)
+      .filter(k => /^\d+$/.test(k))
+      .sort((a, b) => Number(a) - Number(b));
+    return keys.map(k => obj[k]) as SwapInput[];
+  }
+  return [] as SwapInput[];
+}
+
 const toComponent =
   (basePath: string) =>
   (input: Input): PBGltfNodeModifiers => {
+    const swaps = coerceSwaps((input as any).swaps);
     return {
-      modifiers: input.swaps.map(sw => ({
+      modifiers: swaps.map(sw => ({
         path: sw.path ?? '',
         castShadows: !!sw.castShadows,
         material: toMaterial(basePath)(sw.material) as any,
