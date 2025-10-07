@@ -81,8 +81,6 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     await sdk.operations.dispatch();
   }, [entity, GltfNodeModifiers]);
 
-  if (!has) return null;
-
   // Manage list of swaps locally via nested inputs
   // We rely on nested paths swaps.N to bind fields
 
@@ -103,6 +101,8 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     const current = componentValue ?? ({ modifiers: [] } as PBGltfNodeModifiers);
     return fromComponent(files?.basePath ?? '')(current).swaps;
   }, [componentValue, files]);
+
+  if (!has) return null;
 
   const removeSwap = (idx: number) => {
     const newSwaps = swapsValue.filter((_, i) => i !== idx);
