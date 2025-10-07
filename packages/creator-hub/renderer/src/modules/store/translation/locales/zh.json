@@ -375,6 +375,10 @@
     "cards": {
       "create": {
         "title": "创建",
+        "submit_event": {
+          "title": "提交事件",
+          "description": "在 Decentraland 上舉辦您自己的活動。"
+        },
         "legacy_web_editor": {
           "title": "旧版网页编辑器",
           "description": "访问旧版网页编辑器继续编辑你的场景。"
