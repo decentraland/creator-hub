@@ -175,6 +175,9 @@ function MaterialProxy({
   const getTextureProps = ((key: string, getter?: any) =>
     getInputProps(`${getInputPropsPrefix}.${key}`, getter)) as TextureProps['getInputProps'];
 
+  const typeProps = getInputProps(`${getInputPropsPrefix}.type`);
+  const materialType = typeProps?.value;
+
   return (
     <Container
       label="Material"
@@ -198,24 +201,23 @@ function MaterialProxy({
         />
       </Block>
 
-      {/* UNLIT SECTION */}
-      <Container
-        label="Unlit"
-        border
-        initialOpen={false}
-      >
-        <Block label="Diffuse color">
-          <ColorField {...getInputProps(`${getInputPropsPrefix}.diffuseColor`)} />
-        </Block>
-        <Block>
-          <RangeField
-            label="Alpha test"
-            max={1}
-            step={0.1}
-            {...getInputProps(`${getInputPropsPrefix}.alphaTest`)}
-          />
-        </Block>
-        <Block>
+      {materialType === MaterialType.MT_UNLIT && (
+        <Container
+          label="Unlit"
+          border
+          initialOpen={false}
+        >
+          <Block label="Diffuse color">
+            <ColorField {...getInputProps(`${getInputPropsPrefix}.diffuseColor`)} />
+          </Block>
+          <Block>
+            <RangeField
+              label="Alpha test"
+              max={1}
+              step={0.1}
+              {...getInputProps(`${getInputPropsPrefix}.alphaTest`)}
+            />
+          </Block>
           <Texture
             label="Texture"
             texture={TextureType.TT_TEXTURE}
@@ -228,121 +230,122 @@ function MaterialProxy({
             files={files}
             getInputProps={(k: any, g?: any) => getTextureProps(`alphaTexture.${k}`, g)}
           />
-        </Block>
-      </Container>
+        </Container>
+      )}
 
-      {/* PBR SECTION */}
-      <Container
-        label="PBR"
-        border
-        initialOpen={false}
-      >
-        <Block>
-          <RangeField
-            label="Metallic"
-            max={1}
-            step={0.1}
-            {...getInputProps(`${getInputPropsPrefix}.metallic`)}
-          />
-        </Block>
-        <Block>
-          <RangeField
-            label="Roughness"
-            max={1}
-            step={0.1}
-            {...getInputProps(`${getInputPropsPrefix}.roughness`)}
-          />
-        </Block>
-        <Block>
-          <ColorField
-            label="Color"
-            {...getInputProps(`${getInputPropsPrefix}.albedoColor`)}
-          />
-        </Block>
-        <Block>
-          <ColorField
-            label="Reflectivity color"
-            {...getInputProps(`${getInputPropsPrefix}.reflectivityColor`)}
-          />
-        </Block>
-        <Texture
-          label="Texture"
-          texture={TextureType.TT_TEXTURE}
-          files={files}
-          getInputProps={(k: any, g?: any) => getTextureProps(`texture.${k}`, g)}
-        />
+      {materialType === MaterialType.MT_PBR && (
         <Container
-          label="Intensity"
-          border
-          initialOpen={false}
-        >
-          <RangeField
-            label="Specular"
-            max={1}
-            step={0.1}
-            {...getInputProps(`${getInputPropsPrefix}.specularIntensity`)}
-          />
-          <RangeField
-            label="Direct"
-            max={1}
-            step={0.1}
-            {...getInputProps(`${getInputPropsPrefix}.directIntensity`)}
-          />
-        </Container>
-        <Container
-          label="Transparency"
-          border
-          initialOpen={false}
-        >
-          <Block>
-            <Dropdown
-              label="Transparency Mode"
-              options={TRANSPARENCY_MODES}
-              {...getInputProps(`${getInputPropsPrefix}.transparencyMode`)}
-            />
-          </Block>
-          <Block>
-            <RangeField
-              label="Alpha test"
-              max={1}
-              step={0.1}
-              {...getInputProps(`${getInputPropsPrefix}.alphaTest`)}
-            />
-          </Block>
-        </Container>
-        <Container
-          label="Emissive"
+          label="PBR"
           border
           initialOpen={false}
         >
           <Block>
             <RangeField
-              label="Emissive Intensity"
+              label="Metallic"
               max={1}
               step={0.1}
-              {...getInputProps(`${getInputPropsPrefix}.emissiveIntensity`)}
+              {...getInputProps(`${getInputPropsPrefix}.metallic`)}
+            />
+          </Block>
+          <Block>
+            <RangeField
+              label="Roughness"
+              max={1}
+              step={0.1}
+              {...getInputProps(`${getInputPropsPrefix}.roughness`)}
             />
           </Block>
           <Block>
             <ColorField
-              label="Emissive color"
-              {...getInputProps(`${getInputPropsPrefix}.emissiveColor`)}
+              label="Color"
+              {...getInputProps(`${getInputPropsPrefix}.albedoColor`)}
+            />
+          </Block>
+          <Block>
+            <ColorField
+              label="Reflectivity color"
+              {...getInputProps(`${getInputPropsPrefix}.reflectivityColor`)}
             />
           </Block>
           <Texture
-            label="Emissive texture"
-            texture={TextureType.TT_EMISSIVE_TEXTURE}
+            label="Texture"
+            texture={TextureType.TT_TEXTURE}
             files={files}
-            getInputProps={(k: any, g?: any) => getTextureProps(`emissiveTexture.${k}`, g)}
+            getInputProps={(k: any, g?: any) => getTextureProps(`texture.${k}`, g)}
+          />
+          <Container
+            label="Intensity"
+            border
+            initialOpen={false}
+          >
+            <RangeField
+              label="Specular"
+              max={1}
+              step={0.1}
+              {...getInputProps(`${getInputPropsPrefix}.specularIntensity`)}
+            />
+            <RangeField
+              label="Direct"
+              max={1}
+              step={0.1}
+              {...getInputProps(`${getInputPropsPrefix}.directIntensity`)}
+            />
+          </Container>
+          <Container
+            label="Transparency"
+            border
+            initialOpen={false}
+          >
+            <Block>
+              <Dropdown
+                label="Transparency Mode"
+                options={TRANSPARENCY_MODES}
+                {...getInputProps(`${getInputPropsPrefix}.transparencyMode`)}
+              />
+            </Block>
+            <Block>
+              <RangeField
+                label="Alpha test"
+                max={1}
+                step={0.1}
+                {...getInputProps(`${getInputPropsPrefix}.alphaTest`)}
+              />
+            </Block>
+          </Container>
+          <Container
+            label="Emissive"
+            border
+            initialOpen={false}
+          >
+            <Block>
+              <RangeField
+                label="Emissive Intensity"
+                max={1}
+                step={0.1}
+                {...getInputProps(`${getInputPropsPrefix}.emissiveIntensity`)}
+              />
+            </Block>
+            <Block>
+              <ColorField
+                label="Emissive color"
+                {...getInputProps(`${getInputPropsPrefix}.emissiveColor`)}
+              />
+            </Block>
+            <Texture
+              label="Emissive texture"
+              texture={TextureType.TT_EMISSIVE_TEXTURE}
+              files={files}
+              getInputProps={(k: any, g?: any) => getTextureProps(`emissiveTexture.${k}`, g)}
+            />
+          </Container>
+          <Texture
+            label="Bump texture"
+            texture={TextureType.TT_BUMP_TEXTURE}
+            files={files}
+            getInputProps={(k: any, g?: any) => getTextureProps(`bumpTexture.${k}`, g)}
           />
         </Container>
-        <Texture
-          label="Bump texture"
-          texture={TextureType.TT_BUMP_TEXTURE}
-          files={files}
-          getInputProps={(k: any, g?: any) => getTextureProps(`bumpTexture.${k}`, g)}
-        />
-      </Container>
+      )}
     </Container>
   );
 }
