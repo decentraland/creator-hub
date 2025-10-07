@@ -4,6 +4,7 @@ import type { Entity, PBGltfNodeModifiers } from '@dcl/ecs';
 import { withSdk } from '../../../hoc/withSdk';
 import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
 import { useComponentInput } from '../../../hooks/sdk/useComponentInput';
+import { useComponentValue } from '../../../hooks/sdk/useComponentValue';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { CheckboxField, TextField, RangeField } from '../../ui';
@@ -73,6 +74,8 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     isValidInput,
   );
 
+  const [componentValue] = useComponentValue<PBGltfNodeModifiers>(entity, GltfNodeModifiers);
+
   const handleRemove = useCallback(async () => {
     sdk.operations.removeComponent(entity, GltfNodeModifiers);
     await sdk.operations.dispatch();
@@ -96,7 +99,10 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     getInputProps('swaps').onChange?.({ target: { value: newSwaps } } as any);
   };
 
-  const swapsValue = (getInputProps('swaps').value as any[]) || [];
+  const swapsValue = React.useMemo(() => {
+    const current = componentValue ?? ({ modifiers: [] } as PBGltfNodeModifiers);
+    return fromComponent(files?.basePath ?? '')(current).swaps;
+  }, [componentValue, files]);
 
   const removeSwap = (idx: number) => {
     const newSwaps = swapsValue.filter((_, i) => i !== idx);

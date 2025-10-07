@@ -53,7 +53,29 @@ function toHexColor(c?: { r?: number; g?: number; b?: number; a?: number }) {
 }
 
 function fromHexColor(hex: string) {
-  const v = hex.replace('#', '');
+  // Accept named basic colors from the palette used by the ColorField
+  const BASIC: Record<string, string> = {
+    red: '#ff0000',
+    green: '#00ff00',
+    blue: '#0000ff',
+    white: '#ffffff',
+    yellow: '#ffff00',
+    cyan: '#00ffff',
+    magenta: '#ff00ff',
+    gray: '#808080',
+    grey: '#808080',
+  };
+  let v = hex.trim();
+  if (!v.startsWith('#')) {
+    const mapped = BASIC[v.toLowerCase()];
+    v = mapped ?? '#ffffff';
+  }
+  v = v.replace('#', '');
+  if (v.length === 3)
+    v = v
+      .split('')
+      .map(ch => ch + ch)
+      .join('');
   const r = parseInt(v.substring(0, 2), 16) / 255;
   const g = parseInt(v.substring(2, 4), 16) / 255;
   const b = parseInt(v.substring(4, 6), 16) / 255;
@@ -65,7 +87,7 @@ const fromComponent = (value: PBLightSource): LightInput => {
     type: value.type?.$case === 'spot' ? LightKind.SPOT : LightKind.POINT,
     active: !!value.active,
     color: toHexColor(value.color),
-    intensity: String(value.intensity ?? 1000),
+    intensity: String(value.intensity ?? 16000),
     shadow: !!(value as any).shadow,
     shadowMaskSrc:
       (value as any).shadowMaskTexture?.tex?.$case === 'texture'
@@ -77,8 +99,8 @@ const fromComponent = (value: PBLightSource): LightInput => {
 
   if (value.type?.$case === 'spot') {
     base.spot = {
-      innerAngle: String(value.type.spot.innerAngle ?? 0),
-      outerAngle: String(value.type.spot.outerAngle ?? 0),
+      innerAngle: String(value.type.spot.innerAngle ?? 30),
+      outerAngle: String(value.type.spot.outerAngle ?? 35),
     };
   }
 
@@ -185,7 +207,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       </Block>
       <Block label="Intensity">
         <RangeField
-          min={1000}
+          min={0}
           max={1000000}
           step={1}
           {...intensity}
