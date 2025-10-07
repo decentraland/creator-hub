@@ -1,14 +1,19 @@
 import { type ChangeEvent, useCallback, useState } from 'react';
 import { Button, MenuItem, Select, type SelectChangeEvent } from 'decentraland-ui2';
-import { misc } from '#preload';
-import { t } from '/@/modules/store/translation/utils';
+
 import { isUrl } from '/shared/utils';
+
+import { t } from '/@/modules/store/translation/utils';
+import { useEditor } from '/@/hooks/useEditor';
+
 import GenesisPlazaPng from '/assets/images/genesis_plaza.png';
+
+import { PublishModal } from '../../PublishModal';
 import type { AlternativeTarget, Props } from '../../types';
 
+import { misc } from '#preload';
+
 import './styles.css';
-import { useEditor } from '/@/hooks/useEditor';
-import { PublishModal } from '../../PublishModal';
 
 export function AlternativeServers(props: Props) {
   const { publishScene } = useEditor();

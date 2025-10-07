@@ -1,10 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import cx from 'classnames';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { ChainId } from '@dcl/schemas';
 import { Typography, Checkbox } from 'decentraland-ui2';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-
-import { misc } from '#preload';
 
 import type { File, Info, Status } from '/@/lib/deploy';
 
@@ -28,6 +26,8 @@ import { ExpandMore } from '/@/components/ExpandMore';
 
 import type { Step } from '/@/components/Step/types';
 import type { Props } from '/@/components/Modals/PublishProject/types';
+
+import { misc } from '#preload';
 
 import './styles.css';
 
@@ -59,7 +59,7 @@ function getSize(size: number) {
 }
 
 export function Deploy(props: Props) {
-  const { project } = props;
+  const { project, previousStep } = props;
   const { chainId, wallet, avatar } = useAuth();
   const { updateProjectInfo } = useWorkspace();
   const { loadingPublish, publishError } = useEditor();
@@ -105,17 +105,30 @@ export function Deploy(props: Props) {
     props.onClose();
   }, [deployment, pushCustom]);
 
+  const title = useMemo(() => {
+    if (!deployment) {
+      return loadingPublish
+        ? t('modal.publish_project.deploy.loading')
+        : t('modal.publish_project.deploy.error');
+    }
+
+    switch (previousStep) {
+      case 'publish-to-world':
+        return t('modal.publish_project.deploy.world');
+      case 'publish-to-land':
+        return t('modal.publish_project.deploy.land');
+      case 'alternative-servers':
+        return t('modal.publish_project.deploy.server');
+      default:
+        return deployment.info.isWorld
+          ? t('modal.publish_project.deploy.world')
+          : t('modal.publish_project.deploy.land');
+    }
+  }, [deployment, loadingPublish, previousStep]);
+
   return (
     <PublishModal
-      title={
-        deployment
-          ? deployment.info.isWorld
-            ? t('modal.publish_project.deploy.world')
-            : t('modal.publish_project.deploy.land')
-          : loadingPublish
-            ? t('modal.publish_project.deploy.loading')
-            : t('modal.publish_project.deploy.error')
-      }
+      title={title}
       size="large"
       {...props}
       onClose={handleClose}
