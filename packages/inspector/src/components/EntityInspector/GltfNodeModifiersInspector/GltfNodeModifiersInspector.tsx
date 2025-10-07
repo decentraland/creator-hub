@@ -7,7 +7,7 @@ import { useComponentInput } from '../../../hooks/sdk/useComponentInput';
 import { useComponentValue } from '../../../hooks/sdk/useComponentValue';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
-import { CheckboxField, TextField, RangeField } from '../../ui';
+import { CheckboxField, TextField, RangeField, InfoTooltip } from '../../ui';
 import { Dropdown } from '../../ui';
 import { AddButton } from '../AddButton';
 import { type MaterialInput, MaterialType, TextureType } from '../MaterialInspector/types';
@@ -114,6 +114,13 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       label="Swap Materials"
       className="GltfNodeModifiers"
       initialOpen={initialOpen}
+      rightContent={
+        <InfoTooltip
+          text="Use this component to swap the material of a GLTF or GLB model. You can affect the entire model, or choose individual paths inside the model. See SDK7 docs."
+          link="https://docs.decentraland.org/creator/development-guide/sdk7/materials/#modify-gltf-materials"
+          type="help"
+        />
+      }
       onRemoveContainer={handleRemove}
     >
       {swapsValue.map((_, idx) => (
