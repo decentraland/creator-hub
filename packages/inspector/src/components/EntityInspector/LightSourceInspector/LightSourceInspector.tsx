@@ -8,6 +8,7 @@ import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { CheckboxField, Dropdown, RangeField, InfoTooltip } from '../../ui';
 import { ColorField } from '../../ui/ColorField';
+import { toHex, toColor3 } from '../../ui/ColorField/utils';
 import { FileUploadField } from '../../ui';
 import { ACCEPTED_FILE_TYPES } from '../../ui/FileUploadField/types';
 import { useAppSelector } from '../../../redux/hooks';
@@ -39,54 +40,13 @@ type LightInput = {
   };
 };
 
-function toHexColor(c?: { r?: number; g?: number; b?: number; a?: number }) {
-  const r = Math.round((c?.r ?? 1) * 255)
-    .toString(16)
-    .padStart(2, '0');
-  const g = Math.round((c?.g ?? 1) * 255)
-    .toString(16)
-    .padStart(2, '0');
-  const b = Math.round((c?.b ?? 1) * 255)
-    .toString(16)
-    .padStart(2, '0');
-  return `#${r}${g}${b}`;
-}
-
-function fromHexColor(hex: string) {
-  // Accept named basic colors from the palette used by the ColorField
-  const BASIC: Record<string, string> = {
-    red: '#ff0000',
-    green: '#00ff00',
-    blue: '#0000ff',
-    white: '#ffffff',
-    yellow: '#ffff00',
-    cyan: '#00ffff',
-    magenta: '#ff00ff',
-    gray: '#808080',
-    grey: '#808080',
-  };
-  let v = hex.trim();
-  if (!v.startsWith('#')) {
-    const mapped = BASIC[v.toLowerCase()];
-    v = mapped ?? '#ffffff';
-  }
-  v = v.replace('#', '');
-  if (v.length === 3)
-    v = v
-      .split('')
-      .map(ch => ch + ch)
-      .join('');
-  const r = parseInt(v.substring(0, 2), 16) / 255;
-  const g = parseInt(v.substring(2, 4), 16) / 255;
-  const b = parseInt(v.substring(4, 6), 16) / 255;
-  return { r, g, b } as PBLightSource['color'];
-}
+// Use shared ColorField utils to preserve case/behavior of basic colors
 
 const fromComponent = (value: PBLightSource): LightInput => {
   const base: LightInput = {
     type: value.type?.$case === 'spot' ? LightKind.SPOT : LightKind.POINT,
     active: !!value.active,
-    color: toHexColor(value.color),
+    color: toHex(value.color),
     intensity: String(value.intensity ?? 16000),
     shadow: !!(value as any).shadow,
     shadowMaskSrc:
@@ -134,7 +94,7 @@ const toComponent = (input: LightInput): PBLightSource => {
   return {
     type: type as any,
     active: !!input.active,
-    color: fromHexColor(input.color),
+    color: toColor3(input.color),
     intensity: Number(input.intensity || 0),
     shadow: !!input.shadow,
     range: input.range && input.range.length > 0 ? Number(input.range) : undefined,
