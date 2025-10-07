@@ -45,7 +45,7 @@ type LightInput = {
 const fromComponent = (value: PBLightSource): LightInput => {
   const base: LightInput = {
     type: value.type?.$case === 'spot' ? LightKind.SPOT : LightKind.POINT,
-    active: !!value.active,
+    active: value.active === undefined ? true : !!value.active,
     color: toHex(value.color),
     intensity: String(value.intensity ?? 16000),
     shadow: !!(value as any).shadow,
@@ -175,14 +175,16 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       <Block label="Intensity">
         <RangeField
           min={0}
-          max={1000000}
+          max={300000}
           step={1}
           {...intensity}
         />
       </Block>
-      <Block label="Cast Shadows">
-        <CheckboxField {...shadow} />
-      </Block>
+      {isSpot && (
+        <Block label="Cast Shadows">
+          <CheckboxField {...shadow} />
+        </Block>
+      )}
       <Block label="Shadow mask texture">
         <FileUploadField
           label="Path"
