@@ -52,7 +52,7 @@ const toComponent =
   (input: Input): PBGltfNodeModifiers => {
     return {
       modifiers: input.swaps.map(sw => ({
-        ...(sw.path ? { path: sw.path } : {}),
+        path: sw.path ?? '',
         castShadows: !!sw.castShadows,
         material: toMaterial(basePath)(sw.material) as any,
       })),
@@ -85,13 +85,14 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   // We rely on nested paths swaps.N to bind fields
 
   const addSwap = () => {
-    const swaps = (getInputProps('swaps').value as any[]) || [];
+    const current = componentValue ?? ({ modifiers: [] } as PBGltfNodeModifiers);
+    const existing = fromComponent(files?.basePath ?? '')(current).swaps;
     const newSwaps = [
-      ...swaps,
+      ...existing,
       {
         path: '',
         castShadows: true,
-        material: { type: MaterialType.MT_PBR },
+        material: { type: MaterialType.MT_PBR } as any,
       },
     ];
     getInputProps('swaps').onChange?.({ target: { value: newSwaps } } as any);
