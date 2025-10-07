@@ -6,7 +6,7 @@ import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
 import { useComponentInput } from '../../../hooks/sdk/useComponentInput';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
-import { CheckboxField, Dropdown, RangeField } from '../../ui';
+import { CheckboxField, Dropdown, RangeField, InfoTooltip } from '../../ui';
 import { ColorField } from '../../ui/ColorField';
 import { FileUploadField } from '../../ui';
 import { ACCEPTED_FILE_TYPES } from '../../ui/FileUploadField/types';
@@ -190,6 +190,13 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       label="Light Source"
       className="LightSource"
       initialOpen={initialOpen}
+      rightContent={
+        <InfoTooltip
+          text="Use lights to illuminate your scene beyond the default environmental light. See SDK7 Lights docs."
+          link="https://docs.decentraland.org/creator/development-guide/sdk7/lights/"
+          type="help"
+        />
+      }
       onRemoveContainer={handleRemove}
     >
       <Block>
