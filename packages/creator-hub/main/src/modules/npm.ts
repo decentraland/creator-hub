@@ -1,13 +1,85 @@
 import type { Outdated } from '/shared/types/npm';
+import { spawn } from 'child_process';
+import log from 'electron-log/main';
 
 import { run, StreamError } from './bin';
 
-export async function install(path: string, packages: string[] = []) {
-  const installCommand = run('npm', 'npm', {
-    args: ['install', '--loglevel', 'error', '--save-exact', ...packages],
-    cwd: path,
+export function spawnInstall(scenePath: string, packages: string[] = []): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    log.info(`[ALE] Installing dependencies in path: ${scenePath}`);
+
+    const args = [
+      'install',
+      '--loglevel',
+      'verbose',
+      '--save-exact',
+      '--foreground-scripts=true',
+      '--unsafe-perm=true',
+      '--ignore-scripts=false',
+      ...packages,
+    ];
+
+    const child = spawn('npm', args, {
+      cwd: scenePath,
+      shell: true,
+      env: {
+        ...process.env,
+        npm_config_unsafe_perm: 'true',
+        npm_config_foreground_scripts: 'true',
+        npm_config_ignore_scripts: 'false',
+      },
+    });
+
+    child.stdout?.on('data', data => log.info(`[ALE stdout] ${data.toString()}`));
+    child.stderr?.on('data', data => log.error(`[ALE stderr] ${data.toString()}`));
+
+    child.on('error', error => {
+      log.error(`[ALE] Process error: ${error.message}`);
+      reject(error);
+    });
+
+    child.on('exit', code => {
+      if (code === 0) {
+        log.info(`[ALE] npm install completado en ${scenePath}`);
+        resolve();
+      } else {
+        log.error(`[ALE] npm install falló con código ${code} en ${scenePath}`);
+        reject(new Error(`npm install falló con código ${code}`));
+      }
+    });
   });
-  await installCommand.wait();
+}
+
+export async function install(path: string, packages: string[] = []) {
+  log.info(`[ALE] Installing dependencies in path: ${path}`);
+
+  try {
+    await spawnInstall(path, packages);
+    log.info('[ALE] Installation completed successfully via spawn');
+  } catch (error) {
+    log.warn(`[ALE] spawnInstall failed, trying utilityProcess fallback: ${error}`);
+
+    const installCommand = run('npm', 'npm', {
+      args: [
+        'install',
+        '--loglevel',
+        'verbose',
+        '--save-exact',
+        '--foreground-scripts=true',
+        '--unsafe-perm=true',
+        '--ignore-scripts=false',
+        ...packages,
+      ],
+      cwd: path,
+      env: {
+        npm_config_unsafe_perm: 'true',
+        npm_config_foreground_scripts: 'true',
+        npm_config_ignore_scripts: 'false',
+      },
+    });
+    await installCommand.wait();
+    log.info('[ALE] Installation completed successfully via utilityProcess');
+  }
 }
 
 /**

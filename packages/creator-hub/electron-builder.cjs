@@ -96,6 +96,8 @@ const config = {
         arch: 'x64',
       },
     ],
+    entitlements: 'buildResources/entitlements.mac.plist',
+    entitlementsInherit: 'buildResources/entitlements.mac.plist',
   },
   publish: [
     {
