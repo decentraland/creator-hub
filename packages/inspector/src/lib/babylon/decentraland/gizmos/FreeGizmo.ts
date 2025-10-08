@@ -1,9 +1,8 @@
-import type { Scene, AbstractMesh, PickingInfo } from '@babylonjs/core';
+import type { Scene, AbstractMesh } from '@babylonjs/core';
 import {
   Vector3,
   TransformNode,
   UtilityLayerRenderer,
-  PointerDragBehavior,
   MeshBuilder,
   StandardMaterial,
   Color3,
@@ -28,8 +27,6 @@ export class FreeGizmo implements IGizmoTransformer {
   private snapDistance = 0;
   private isWorldAligned = true;
 
-  private dragBehavior: PointerDragBehavior;
-
   private pivotPosition: Vector3 | null = null;
   private lastSnappedPivotPosition: Vector3 | null = null;
   private entityOffsets = new Map<Entity, Vector3>();
@@ -46,9 +43,7 @@ export class FreeGizmo implements IGizmoTransformer {
   constructor(
     private scene: Scene,
     private utilityLayer: UtilityLayerRenderer = new UtilityLayerRenderer(scene),
-  ) {
-    this.dragBehavior = this.createDragBehavior();
-  }
+  ) {}
 
   setup(): void {
     this.cleanup();
@@ -62,7 +57,6 @@ export class FreeGizmo implements IGizmoTransformer {
 
   cleanup(): void {
     this.removeSceneObservers();
-    this.detachDragBehavior();
     this.removeGizmoIndicator();
     this.resetState();
   }
@@ -117,14 +111,6 @@ export class FreeGizmo implements IGizmoTransformer {
     this.utilityLayer.dispose();
   }
 
-  private createDragBehavior(): PointerDragBehavior {
-    const behavior = new PointerDragBehavior({ dragPlaneNormal: new Vector3(0, 1, 0) });
-    behavior.useObjectOrientationForDragging = false;
-    behavior.dragButtons = [LEFT_BUTTON];
-    behavior.moveAttached = false;
-    return behavior;
-  }
-
   private resetState(): void {
     this.selectedEntities = [];
     this.pivotPosition = null;
@@ -139,18 +125,17 @@ export class FreeGizmo implements IGizmoTransformer {
   private resetDragState(): void {
     this.pivotPosition = null;
     this.entityOffsets.clear();
-    this.detachDragBehavior();
   }
 
   private setupSceneObservers(): void {
-    this.scene.onPointerDown = (event, pickResult) => {
+    this.scene.onPointerDown = event => {
       // Only start drag on left mouse button to avoid interfering with camera controls
-      if (event.button !== LEFT_BUTTON || !this.canStartDrag(pickResult)) return;
+      if (event.button !== LEFT_BUTTON || this.selectedEntities.length === 0) return;
 
       const clickedEntity = this.findClickedEntityFromSelected();
       if (!clickedEntity) return; // Entity pointed is not selected
 
-      this.startDrag(clickedEntity.entity, clickedEntity.mesh);
+      this.startDrag();
     };
 
     this.scene.onPointerMove = () => {
@@ -175,14 +160,6 @@ export class FreeGizmo implements IGizmoTransformer {
     this.scene.onPointerUp = () => {};
   }
 
-  private canStartDrag(_pickResult: PickingInfo | null): boolean {
-    return this.selectedEntities.length > 0;
-  }
-
-  private detachDragBehavior(): void {
-    this.dragBehavior.detach();
-  }
-
   private handleDrag(eventData: { delta: Vector3 }): void {
     if (
       !this.isDragging ||
@@ -201,7 +178,6 @@ export class FreeGizmo implements IGizmoTransformer {
 
   private handleDragEnd(): void {
     this.isDragging = false;
-    this.detachDragBehavior();
     this.pivotPosition = null;
     this.dragPlanePosition = null;
     this.entityOffsets.clear();
@@ -327,31 +303,14 @@ export class FreeGizmo implements IGizmoTransformer {
     return null;
   }
 
-  private startDrag(clickedEntity: EcsEntity, pickedMesh: AbstractMesh): void {
+  private startDrag(): void {
     this.isDragging = true;
     this.initializePivotPosition();
     this.initializeEntityOffsets();
-    this.attachDragBehavior(clickedEntity, pickedMesh);
 
     // Cache the pivot position for raycasting plane intersection during drag.
     if (this.pivotPosition) {
       this.dragPlanePosition = this.pivotPosition.clone();
-    }
-  }
-
-  private attachDragBehavior(clickedEntity: EcsEntity, pickedMesh: AbstractMesh): void {
-    const dragMesh = this.getDragMesh(clickedEntity, pickedMesh);
-    this.dragBehavior.attach(dragMesh);
-  }
-
-  private getDragMesh(clickedEntity: EcsEntity, pickedMesh: AbstractMesh): AbstractMesh {
-    if (clickedEntity.meshRenderer) {
-      return clickedEntity.meshRenderer;
-    } else if (clickedEntity.gltfContainer) {
-      return clickedEntity.gltfContainer;
-    } else {
-      const childMeshes = clickedEntity.getChildMeshes();
-      return childMeshes.length > 0 ? childMeshes[0] : pickedMesh;
     }
   }
 
