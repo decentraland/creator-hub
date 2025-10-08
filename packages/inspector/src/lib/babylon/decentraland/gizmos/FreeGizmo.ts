@@ -288,7 +288,9 @@ export class FreeGizmo implements IGizmoTransformer {
   }
 
   private initializePivotPosition(): void {
-    this.pivotPosition = this.getCentroid();
+    // Use cursor position at drag start as pivot to avoid entities jumping to center
+    const pickInfo = this.scene.pick(this.scene.pointerX, this.scene.pointerY);
+    this.pivotPosition = pickInfo?.pickedPoint ? pickInfo.pickedPoint.clone() : this.getCentroid();
     this.lastSnappedPivotPosition = this.pivotPosition.clone();
   }
 
