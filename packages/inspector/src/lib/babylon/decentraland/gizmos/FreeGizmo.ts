@@ -160,7 +160,6 @@ export class FreeGizmo implements IGizmoTransformer {
     this.scene.onPointerMove = () => {
       if (!this.isDragging) return;
 
-      console.log('FreeGizmo: handling pointer move during drag');
       const delta = this.calculateDragDelta();
       if (!delta) return;
 
