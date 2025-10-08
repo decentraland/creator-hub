@@ -151,10 +151,10 @@ export class FreeGizmo implements IGizmoTransformer {
       // Only start drag on left mouse button to avoid interfering with camera controls
       if (event.button !== LEFT_BUTTON || !this.canStartDrag(pickResult)) return;
 
-      const result = this.findClickedEntityFromSelected();
-      if (!result) return; // Entity pointed is not selected
+      const clickedEntity = this.findClickedEntityFromSelected();
+      if (!clickedEntity) return; // Entity pointed is not selected
 
-      this.startDrag(result.entity, result.mesh);
+      this.startDrag(clickedEntity.entity, clickedEntity.mesh);
     };
 
     this.scene.onPointerMove = () => {
