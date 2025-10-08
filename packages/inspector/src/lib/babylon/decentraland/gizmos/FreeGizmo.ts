@@ -1,4 +1,4 @@
-import type { Scene, AbstractMesh, Nullable, Observer, PickingInfo } from '@babylonjs/core';
+import type { Scene, AbstractMesh, PickingInfo } from '@babylonjs/core';
 import {
   Vector3,
   TransformNode,
@@ -29,9 +29,6 @@ export class FreeGizmo implements IGizmoTransformer {
   private isWorldAligned = true;
 
   private dragBehavior: PointerDragBehavior;
-  private dragStartObserver: Nullable<Observer<any>> = null;
-  private dragObserver: Nullable<Observer<any>> = null;
-  private dragEndObserver: Nullable<Observer<any>> = null;
 
   private pivotPosition: Vector3 | null = null;
   private lastSnappedPivotPosition: Vector3 | null = null;
@@ -60,12 +57,11 @@ export class FreeGizmo implements IGizmoTransformer {
   }
 
   enable(): void {
-    this.setupDragObservers();
+    // No-op: drag is handled entirely by setupSceneObservers
   }
 
   cleanup(): void {
     this.removeSceneObservers();
-    this.cleanupDragObservers();
     this.detachDragBehavior();
     this.removeGizmoIndicator();
     this.resetState();
@@ -181,37 +177,6 @@ export class FreeGizmo implements IGizmoTransformer {
 
   private canStartDrag(_pickResult: PickingInfo | null): boolean {
     return this.selectedEntities.length > 0;
-  }
-
-  private setupDragObservers(): void {
-    this.dragStartObserver = this.dragBehavior.onDragStartObservable.add(() => {
-      this.isDragging = true;
-    });
-
-    this.dragObserver = this.dragBehavior.onDragObservable.add(eventData => {
-      this.handleDrag(eventData);
-    });
-
-    this.dragEndObserver = this.dragBehavior.onDragEndObservable.add(() => {
-      this.handleDragEnd();
-    });
-  }
-
-  private cleanupDragObservers(): void {
-    if (this.dragStartObserver) {
-      this.dragBehavior.onDragStartObservable.remove(this.dragStartObserver);
-      this.dragStartObserver = null;
-    }
-
-    if (this.dragObserver) {
-      this.dragBehavior.onDragObservable.remove(this.dragObserver);
-      this.dragObserver = null;
-    }
-
-    if (this.dragEndObserver) {
-      this.dragBehavior.onDragEndObservable.remove(this.dragEndObserver);
-      this.dragEndObserver = null;
-    }
   }
 
   private detachDragBehavior(): void {
