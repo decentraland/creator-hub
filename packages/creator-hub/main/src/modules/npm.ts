@@ -4,11 +4,21 @@ import { run, StreamError } from './bin';
 
 export async function install(path: string, packages: string[] = []) {
   const installCommand = run('npm', 'npm', {
-    args: ['install', '--loglevel', 'info', '--save-exact', ...packages],
+    args: [
+      'install',
+      '--loglevel',
+      'verbose',
+      '--save-exact',
+      '--foreground-scripts=true',
+      '--unsafe-perm=true',
+      '--ignore-scripts=false',
+      ...packages,
+    ],
     cwd: path,
     env: {
       npm_config_unsafe_perm: 'true',
       npm_config_foreground_scripts: 'true',
+      npm_config_ignore_scripts: 'false',
     },
   });
   await installCommand.wait();
