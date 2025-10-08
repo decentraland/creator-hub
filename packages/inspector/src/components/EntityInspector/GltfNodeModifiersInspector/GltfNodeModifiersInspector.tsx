@@ -35,14 +35,39 @@ type Input = {
   swaps: SwapInput[];
 };
 
+function ensureTextureDefaults(material: MaterialInput): MaterialInput {
+  const withDefaults = { ...(material as any) } as any;
+
+  const apply = (key: string) => {
+    if (!withDefaults[key]) return; // only apply if field exists
+    const tx = withDefaults[key];
+    tx.type = tx.type ?? TextureType.TT_TEXTURE;
+    tx.wrapMode = tx.wrapMode ?? '0'; // Repeat
+    tx.filterMode = tx.filterMode ?? '0'; // Point
+    tx.offset = tx.offset ?? { x: '0', y: '0' };
+    tx.offset.x = tx.offset.x ?? '0';
+    tx.offset.y = tx.offset.y ?? '0';
+    tx.tiling = tx.tiling ?? { x: '1', y: '1' };
+    tx.tiling.x = tx.tiling.x ?? '1';
+    tx.tiling.y = tx.tiling.y ?? '1';
+  };
+
+  apply('texture');
+  apply('alphaTexture');
+  apply('bumpTexture');
+  apply('emissiveTexture');
+
+  return withDefaults as MaterialInput;
+}
+
 const fromComponent =
   (basePath: string) =>
   (value: PBGltfNodeModifiers): Input => {
     return {
       swaps: (value.modifiers ?? []).map(sw => ({
         path: sw.path || '',
-        castShadows: !!sw.castShadows,
-        material: fromMaterial(basePath)(sw.material as any),
+        castShadows: sw.castShadows === undefined ? true : !!sw.castShadows,
+        material: ensureTextureDefaults(fromMaterial(basePath)(sw.material as any)),
       })),
     };
   };
@@ -105,7 +130,33 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       {
         path: '',
         castShadows: true,
-        material: { type: MaterialType.MT_PBR } as any,
+        material: ensureTextureDefaults({
+          type: MaterialType.MT_PBR,
+          texture: {
+            type: TextureType.TT_TEXTURE,
+            src: '',
+            wrapMode: '0',
+            filterMode: '0',
+            offset: { x: '0', y: '0' },
+            tiling: { x: '1', y: '1' },
+          } as any,
+          bumpTexture: {
+            type: TextureType.TT_TEXTURE,
+            src: '',
+            wrapMode: '0',
+            filterMode: '0',
+            offset: { x: '0', y: '0' },
+            tiling: { x: '1', y: '1' },
+          } as any,
+          emissiveTexture: {
+            type: TextureType.TT_TEXTURE,
+            src: '',
+            wrapMode: '0',
+            filterMode: '0',
+            offset: { x: '0', y: '0' },
+            tiling: { x: '1', y: '1' },
+          } as any,
+        } as any),
       },
     ];
     getInputProps('swaps').onChange?.({ target: { value: newSwaps } } as any);
