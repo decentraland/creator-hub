@@ -24,17 +24,9 @@ export async function getContextFiles(path: string) {
   contextCommand.on(
     /.*/,
     data => {
-      log.info(`[ALE get-context] ${data}`);
+      log.info(`[Get-context-files] ${data}`);
     },
     { type: 'stdout' },
-  );
-
-  contextCommand.on(
-    /.*/,
-    data => {
-      log.error(`[ALE get-context stderr] ${data}`);
-    },
-    { type: 'stderr' },
   );
 
   await contextCommand.wait();
