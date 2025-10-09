@@ -32,22 +32,22 @@ export async function getContextFiles(path: string) {
       child.stderr?.on('data', data => log.error(`[ALE get-context] ${data.toString()}`));
 
       child.on('error', error => {
-        log.error(`[ALE] get-context-files process error: ${error.message}`);
+        log.error(`[get-context-files] execution failed: ${error.message}`);
         reject(error);
       });
 
       child.on('exit', code => {
         if (code === 0) {
-          log.info(`[ALE] get-context-files completed successfully in ${path}`);
+          log.info(`[get-context-files] completed successfully in ${path}`);
           resolve();
         } else {
-          log.error(`[ALE] get-context-files failed with code ${code} in ${path}`);
+          log.error(`[get-context-files] execution failed with code ${code} in ${path}`);
           reject(new Error(`get-context-files failed with code ${code}`));
         }
       });
     });
   } catch (error) {
-    log.error(`[ALE] Failed to run get-context-files: ${error}`);
+    log.error(`[get-context-files] Failed to run get-context-files: ${error}`);
     throw error;
   }
 }
