@@ -17,11 +17,15 @@ export async function getContextFiles(path: string) {
   log.info(`[ALE] Running get-context-files in path: ${path}`);
 
   try {
-    const child = spawn('npx', ['@dcl/sdk', 'get-context-files'], {
-      cwd: path,
-      shell: true,
-      env: { ...process.env },
-    });
+    const child = spawn(
+      'npx',
+      ['@dcl/sdk-commands', 'get-context-files', '--loglevel', 'verbose'],
+      {
+        cwd: path,
+        shell: true,
+        env: { ...process.env },
+      },
+    );
 
     return new Promise<void>((resolve, reject) => {
       child.stdout?.on('data', data => log.info(`[ALE get-context] ${data.toString()}`));
