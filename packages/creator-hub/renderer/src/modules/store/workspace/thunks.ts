@@ -102,8 +102,6 @@ export const runProject = createAsyncThunk(
           return workspace.getOutdatedPackages(project.path);
         })();
 
-    console.log('dependencyAvailableUpdates', dependencyAvailableUpdates);
-
     if (shouldUpdateDependencies(strategy, dependencyAvailableUpdates)) {
       await dispatch(updatePackages({ ...project, dependencyAvailableUpdates })).unwrap();
       return { ...project, dependencyAvailableUpdates: {} };
