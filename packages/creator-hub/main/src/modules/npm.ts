@@ -13,7 +13,7 @@ export async function install(path: string, packages: string[] = []) {
 }
 
 export async function getContextFiles(path: string) {
-  log.info(`[ALE] Running get-context-files in path: ${path}`);
+  log.info(`[Get-context-files] Running get-context-files in path: ${path}`);
 
   const contextCommand = run('@dcl/sdk-commands', 'sdk-commands', {
     args: ['get-context-files'],
