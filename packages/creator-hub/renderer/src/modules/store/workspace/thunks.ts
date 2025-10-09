@@ -35,9 +35,10 @@ export const unlistProjects = createAsyncThunk(
   workspace.unlistProjects,
 );
 export const openFolder = createAsyncThunk('workspace/openFolder', workspace.openFolder);
-export const installProject = createAsyncThunk('npm/install', async (path: string) =>
-  npm.install(path),
-);
+export const installProject = createAsyncThunk('npm/install', async (path: string) => {
+  await npm.install(path);
+  await npm.getContextFiles(path);
+});
 export const saveThumbnail = createAsyncThunk('workspace/saveThumbnail', workspace.saveThumbnail);
 export const saveAndGetThumbnail = createAsyncThunk(
   'workspace/saveAndGetThumbnail',
@@ -61,6 +62,7 @@ export const updatePackages = createAsyncThunk(
       ([pkg, { latest }]) => `${pkg}@${latest}`,
     );
     await npm.install(project.path, latestPackages);
+    await npm.getContextFiles(project.path);
   },
 );
 export const updateAvailableDependencyUpdates = createAsyncThunk(

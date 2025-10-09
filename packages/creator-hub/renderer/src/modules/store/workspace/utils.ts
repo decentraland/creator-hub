@@ -23,5 +23,6 @@ export const shouldNotifyUpdates = (
 
 export const installAndGetOutdatedPackages = async (path: string) => {
   await npm.install(path);
+  await npm.getContextFiles(path);
   return workspace.getOutdatedPackages(path);
 };

@@ -1,13 +1,51 @@
 import type { Outdated } from '/shared/types/npm';
+import { spawn } from 'child_process';
+import log from 'electron-log/main';
 
 import { run, StreamError } from './bin';
 
 export async function install(path: string, packages: string[] = []) {
+  log.info(`[ALE] Installing dependencies in path: ${path}`);
   const installCommand = run('npm', 'npm', {
     args: ['install', '--loglevel', 'error', '--save-exact', ...packages],
     cwd: path,
   });
   await installCommand.wait();
+}
+
+export async function getContextFiles(path: string) {
+  log.info(`[ALE] Running get-context-files in path: ${path}`);
+
+  try {
+    const child = spawn('npx', ['@dcl/sdk', 'get-context-files'], {
+      cwd: path,
+      shell: true,
+      env: { ...process.env },
+    });
+
+    return new Promise<void>((resolve, reject) => {
+      child.stdout?.on('data', data => log.info(`[ALE get-context] ${data.toString()}`));
+      child.stderr?.on('data', data => log.error(`[ALE get-context] ${data.toString()}`));
+
+      child.on('error', error => {
+        log.error(`[ALE] get-context-files process error: ${error.message}`);
+        reject(error);
+      });
+
+      child.on('exit', code => {
+        if (code === 0) {
+          log.info(`[ALE] get-context-files completed successfully in ${path}`);
+          resolve();
+        } else {
+          log.error(`[ALE] get-context-files failed with code ${code} in ${path}`);
+          reject(new Error(`get-context-files failed with code ${code}`));
+        }
+      });
+    });
+  } catch (error) {
+    log.error(`[ALE] Failed to run get-context-files: ${error}`);
+    throw error;
+  }
 }
 
 /**
