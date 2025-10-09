@@ -64,7 +64,7 @@ export const updatePackages = createAsyncThunk(
     const latestPackages = Object.entries(project.dependencyAvailableUpdates).map(
       ([pkg, { latest }]) => `${pkg}@${latest}`,
     );
-    await dispatch(installProject({ path: project.path, packages: latestPackages }));
+    dispatch(installProject({ path: project.path, packages: latestPackages }));
   },
 );
 export const updateAvailableDependencyUpdates = createAsyncThunk(
@@ -98,7 +98,7 @@ export const runProject = createAsyncThunk(
     const dependencyAvailableUpdates = hasNodeModules
       ? await workspace.getOutdatedPackages(project.path)
       : await (async () => {
-          await dispatch(installProject({ path: project.path }));
+          await dispatch(installProject({ path: project.path })).unwrap();
           return workspace.getOutdatedPackages(project.path);
         })();
 
