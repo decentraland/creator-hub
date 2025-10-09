@@ -1,5 +1,4 @@
 import type { Outdated } from '/shared/types/npm';
-import { spawn } from 'child_process';
 import log from 'electron-log/main';
 
 import { run, StreamError } from './bin';
@@ -16,40 +15,28 @@ export async function install(path: string, packages: string[] = []) {
 export async function getContextFiles(path: string) {
   log.info(`[ALE] Running get-context-files in path: ${path}`);
 
-  try {
-    const child = spawn(
-      'npx',
-      ['@dcl/sdk-commands', 'get-context-files', '--loglevel', 'verbose'],
-      {
-        cwd: path,
-        shell: true,
-        env: { ...process.env },
-      },
-    );
+  const contextCommand = run('npm', 'npm', {
+    args: ['exec', '@dcl/sdk-commands', 'get-context-files', '--loglevel', 'verbose'],
+    cwd: path,
+  });
 
-    return new Promise<void>((resolve, reject) => {
-      child.stdout?.on('data', data => log.info(`[ALE get-context] ${data.toString()}`));
-      child.stderr?.on('data', data => log.error(`[ALE get-context] ${data.toString()}`));
+  contextCommand.on(
+    /.*/,
+    data => {
+      log.info(`[ALE get-context] ${data}`);
+    },
+    { type: 'stdout' },
+  );
 
-      child.on('error', error => {
-        log.error(`[get-context-files] execution failed: ${error.message}`);
-        reject(error);
-      });
+  contextCommand.on(
+    /.*/,
+    data => {
+      log.error(`[ALE get-context stderr] ${data}`);
+    },
+    { type: 'stderr' },
+  );
 
-      child.on('exit', code => {
-        if (code === 0) {
-          log.info(`[get-context-files] completed successfully in ${path}`);
-          resolve();
-        } else {
-          log.error(`[get-context-files] execution failed with code ${code} in ${path}`);
-          reject(new Error(`get-context-files failed with code ${code}`));
-        }
-      });
-    });
-  } catch (error) {
-    log.error(`[get-context-files] Failed to run get-context-files: ${error}`);
-    throw error;
-  }
+  await contextCommand.wait();
 }
 
 /**
