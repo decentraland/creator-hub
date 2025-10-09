@@ -52,7 +52,7 @@ export function CreateProject({ open, initialValue, onClose, onSubmit }: Props) 
   }, [value]);
 
   const handleSubmit = useCallback(async () => {
-    const valid = await validate();
+    const valid = await validateProjectPath(value.path, value.name);
     if (valid) onSubmit(value);
   }, [onSubmit, value, validate, error]);
 
