@@ -1,5 +1,3 @@
-import { npm, workspace } from '#preload';
-
 import { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import { type DependencyState } from '/shared/types/projects';
 
@@ -19,10 +17,4 @@ export const shouldNotifyUpdates = (
   deps: DependencyState,
 ) => {
   return strategy === DEPENDENCY_UPDATE_STRATEGY.NOTIFY && hasOutdatedDependencies(deps);
-};
-
-export const installAndGetOutdatedPackages = async (path: string) => {
-  await npm.install(path);
-  await npm.getContextFiles(path);
-  return workspace.getOutdatedPackages(path);
 };
