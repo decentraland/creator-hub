@@ -167,7 +167,10 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
         />
       </Block>
       <Block label="Active">
-        <CheckboxField {...active} />
+        <CheckboxField
+          checked={!!active.value}
+          {...active}
+        />
       </Block>
       <Block label="Color">
         <ColorField {...color} />
@@ -182,7 +185,10 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       </Block>
       {isSpot && (
         <Block label="Cast Shadows">
-          <CheckboxField {...shadow} />
+          <CheckboxField
+            checked={!!shadow.value}
+            {...shadow}
+          />
         </Block>
       )}
       <Block label="Shadow mask texture">
@@ -212,7 +218,10 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
               min={0}
               max={180}
               step={1}
-              {...(getInputProps as any)('spot.innerAngle')}
+              value={(getInputProps as any)('spot.innerAngle').value || '30'}
+              onChange={(getInputProps as any)('spot.innerAngle').onChange}
+              onFocus={(getInputProps as any)('spot.innerAngle').onFocus}
+              onBlur={(getInputProps as any)('spot.innerAngle').onBlur}
             />
           </Block>
           <Block label="Outer angle">
@@ -220,7 +229,10 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
               min={0}
               max={180}
               step={1}
-              {...(getInputProps as any)('spot.outerAngle')}
+              value={(getInputProps as any)('spot.outerAngle').value || '40'}
+              onChange={(getInputProps as any)('spot.outerAngle').onChange}
+              onFocus={(getInputProps as any)('spot.outerAngle').onFocus}
+              onBlur={(getInputProps as any)('spot.outerAngle').onBlur}
             />
           </Block>
         </Container>
