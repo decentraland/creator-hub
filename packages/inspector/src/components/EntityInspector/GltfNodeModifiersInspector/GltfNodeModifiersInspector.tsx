@@ -38,12 +38,21 @@ type Input = {
 function ensureTextureDefaults(material: MaterialInput): MaterialInput {
   const withDefaults = { ...(material as any) } as any;
 
+  const ensure = () => ({
+    type: TextureType.TT_TEXTURE,
+    src: '',
+    wrapMode: '0', // Repeat
+    filterMode: '0', // Point
+    offset: { x: '0', y: '0' },
+    tiling: { x: '1', y: '1' },
+  });
+
   const apply = (key: string) => {
-    if (!withDefaults[key]) return; // only apply if field exists
+    if (!withDefaults[key]) withDefaults[key] = ensure();
     const tx = withDefaults[key];
     tx.type = tx.type ?? TextureType.TT_TEXTURE;
-    tx.wrapMode = tx.wrapMode ?? '0'; // Repeat
-    tx.filterMode = tx.filterMode ?? '0'; // Point
+    tx.wrapMode = tx.wrapMode ?? '0';
+    tx.filterMode = tx.filterMode ?? '0';
     tx.offset = tx.offset ?? { x: '0', y: '0' };
     tx.offset.x = tx.offset.x ?? '0';
     tx.offset.y = tx.offset.y ?? '0';
@@ -199,7 +208,10 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
             <TextField {...getInputProps(`swaps.${idx}.path`)} />
           </Block>
           <Block label="Cast Shadows">
-            <CheckboxField {...getInputProps(`swaps.${idx}.castShadows`, e => e.target.checked)} />
+            <CheckboxField
+              checked={!!getInputProps(`swaps.${idx}.castShadows`).value}
+              {...getInputProps(`swaps.${idx}.castShadows`, e => e.target.checked)}
+            />
           </Block>
           {/* Reuse Material UI by scoping getInputProps to swaps.idx.material */}
           <MaterialProxy
@@ -258,6 +270,7 @@ function MaterialProxy({
       <Block>
         <CheckboxField
           label="Cast shadows"
+          checked={!!getInputProps(`${getInputPropsPrefix}.castShadows`).value || true}
           {...getInputProps(
             `${getInputPropsPrefix}.castShadows`,
             ((e: React.ChangeEvent<HTMLInputElement>) => e.target.checked) as any,
