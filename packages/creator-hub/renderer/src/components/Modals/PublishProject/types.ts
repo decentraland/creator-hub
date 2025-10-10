@@ -5,6 +5,7 @@ export type Props = {
   project: Project;
   initialStep?: Step;
   disableGoBack?: boolean;
+  previousStep?: Step;
   onClose: () => void;
   onBack?: () => void;
   onStep: (step: Step) => void;
