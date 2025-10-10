@@ -4,16 +4,14 @@ import cx from 'classnames';
 
 import { AssetPreview } from '../../AssetPreview';
 import { Input } from '../../Input';
-import { Loading } from '../../Loading';
 
 import { getAssetSize, getAssetResources } from '../utils';
 import { Asset } from '../types';
-import { AssetWithEmote, Thumbnails } from './types';
+import { AssetWithEmote } from './types';
 
 interface AssetSlidesProps {
   uploadedAssets: AssetWithEmote[];
   currentSlide: number;
-  screenshots: Thumbnails;
   onSlideChange: (newSlide: number) => void;
   onScreenshot: (file: Asset) => (thumbnail: string) => void;
   onNameChange: (fileIdx: number) => (newName: string) => void;
@@ -23,7 +21,6 @@ interface AssetSlidesProps {
 export function AssetSlides({
   uploadedAssets,
   currentSlide,
-  screenshots,
   onSlideChange,
   onScreenshot,
   onNameChange,
@@ -64,14 +61,6 @@ export function AssetSlides({
                 onScreenshot={onScreenshot($)}
                 isEmote={$.isEmote}
               />
-              {screenshots[$.blob.name] ? (
-                <div
-                  className="thumbnail"
-                  style={{ backgroundImage: `url(${screenshots[$.blob.name]})` }}
-                ></div>
-              ) : (
-                <Loading dimmer={false} />
-              )}
               <Input
                 value={$.name}
                 onChange={onNameChange(i)}
