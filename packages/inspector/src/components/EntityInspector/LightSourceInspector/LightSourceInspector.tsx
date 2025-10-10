@@ -46,7 +46,7 @@ const fromComponent = (value: PBLightSource): LightInput => {
   const base: LightInput = {
     type: value.type?.$case === 'spot' ? LightKind.SPOT : LightKind.POINT,
     active: value.active === undefined ? true : !!value.active,
-    color: toHex(value.color),
+    color: toHex(value.color).toUpperCase(),
     intensity: String(value.intensity ?? 16000),
     shadow: !!(value as any).shadow,
     shadowMaskSrc:
