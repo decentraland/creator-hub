@@ -1,13 +1,35 @@
 import type { Outdated } from '/shared/types/npm';
+import log from 'electron-log/main';
 
 import { run, StreamError } from './bin';
 
 export async function install(path: string, packages: string[] = []) {
+  log.info(`[ALE] Installing dependencies in path: ${path}`);
   const installCommand = run('npm', 'npm', {
     args: ['install', '--loglevel', 'error', '--save-exact', ...packages],
     cwd: path,
   });
   await installCommand.wait();
+}
+
+export async function getContextFiles(path: string) {
+  log.info(`[Get-context-files] Running get-context-files in path: ${path}`);
+
+  const contextCommand = run('@dcl/sdk-commands', 'sdk-commands', {
+    args: ['get-context-files'],
+    cwd: path,
+    workspace: path,
+  });
+
+  contextCommand.on(
+    /.*/,
+    data => {
+      log.info(`[Get-context-files] ${data}`);
+    },
+    { type: 'stdout' },
+  );
+
+  await contextCommand.wait();
 }
 
 /**
