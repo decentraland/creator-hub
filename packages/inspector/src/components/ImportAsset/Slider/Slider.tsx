@@ -123,7 +123,6 @@ export function Slider({ assets, onSubmit, isNameValid }: PropTypes) {
           <AssetSlides
             uploadedAssets={uploadedAssets}
             currentSlide={slide}
-            screenshots={screenshots}
             onSlideChange={setSlide}
             onScreenshot={handleScreenshot}
             onNameChange={handleNameChange}

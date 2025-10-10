@@ -1,13 +1,22 @@
-.AssetPreview {
+.assetPreview {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.AssetPreview canvas {
+.assetPreview canvas {
   width: 100%;
 }
 
-.AssetPreview .GltfPreview.hidden {
+.assetPreview .GltfPreview.hidden {
   visibility: hidden;
+}
+
+.assetPreview .loading {
+  margin-bottom: 12px;
+  width: 150px;
+  height: 150px;
+  background-color: var(--background-gray);
+  background-size: cover;
+  background-position: center;
 }

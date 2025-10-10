@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState, useRef } from 'react';
-import { AiFillSound } from 'react-icons/ai';
+import { AiOutlineSound } from 'react-icons/ai';
 import { IoVideocamOutline } from 'react-icons/io5';
 import { FaFile } from 'react-icons/fa';
 import cx from 'classnames';
@@ -8,6 +8,7 @@ import { WearablePreview } from 'decentraland-ui';
 
 import { toEmoteWithBlobs, toWearableWithBlobs } from './utils';
 import { type Props } from './types';
+import { Loading } from '../Loading';
 
 import './AssetPreview.css';
 
@@ -42,15 +43,15 @@ export function AssetPreview({ value, resources, onScreenshot, onLoad, isEmote }
       case 'mp3':
       case 'wav':
       case 'ogg':
-        return <AiFillSound />;
+        return <AiOutlineSound size="large" />;
       case 'mp4':
-        return <IoVideocamOutline />;
+        return <IoVideocamOutline size="large" />;
       default:
-        return <FaFile />;
+        return <FaFile size="large" />;
     }
   }, []);
 
-  return <div className="AssetPreview">{preview}</div>;
+  return <div className="assetPreview">{preview}</div>;
 }
 
 function GltfPreview({ value, resources, onScreenshot, onLoad, isEmote }: Props) {
@@ -92,6 +93,7 @@ function GltfPreview({ value, resources, onScreenshot, onLoad, isEmote }: Props)
 
   return (
     <>
+      <div>{loading && <Loading dimmer={false} />}</div>
       <div className={cx('GltfPreview', { hidden: loading })}>
         <WearablePreview
           id={value.name}
@@ -111,6 +113,7 @@ function GltfPreview({ value, resources, onScreenshot, onLoad, isEmote }: Props)
 }
 
 function PngPreview({ value, onScreenshot, onLoad }: Props) {
+  const [loading, setLoading] = useState(true);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const url = URL.createObjectURL(value);
@@ -145,16 +148,21 @@ function PngPreview({ value, onScreenshot, onLoad }: Props) {
       ctx.drawImage(img, 0, 0, WIDTH, HEIGHT);
 
       onScreenshot(canvas.toDataURL('image/png'));
+      setLoading(false);
 
       canvas2.remove();
     }
   };
 
   return (
-    <canvas
-      ref={canvasRef}
-      id="asset-png-preview"
-      touch-action="none"
-    ></canvas>
+    <>
+      <div>{loading && <Loading dimmer={false} />}</div>
+      <canvas
+        ref={canvasRef}
+        id="asset-png-preview"
+        touch-action="none"
+        style={{ display: loading ? 'none' : 'block' }}
+      ></canvas>
+    </>
   );
 }
