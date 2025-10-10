@@ -66,6 +66,11 @@ function ensureTextureDefaults(material: MaterialInput): MaterialInput {
   apply('bumpTexture');
   apply('emissiveTexture');
 
+  // default castShadows for both unlit and pbr
+  if (withDefaults.castShadows === undefined) {
+    withDefaults.castShadows = true;
+  }
+
   return withDefaults as MaterialInput;
 }
 
@@ -172,9 +177,22 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   };
 
   const swapsValue = React.useMemo(() => {
+    const raw = (getInputProps('swaps').value as any) ?? [];
+    const coerce = (val: any) => {
+      if (Array.isArray(val)) return val;
+      if (val && typeof val === 'object') {
+        const keys = Object.keys(val)
+          .filter(k => /^\d+$/.test(k))
+          .sort((a, b) => Number(a) - Number(b));
+        return keys.map(k => val[k]);
+      }
+      return [] as any[];
+    };
+    const fromInput = coerce(raw);
+    if (fromInput.length > 0) return fromInput;
     const current = componentValue ?? ({ modifiers: [] } as PBGltfNodeModifiers);
     return fromComponent(files?.basePath ?? '')(current).swaps;
-  }, [componentValue, files]);
+  }, [componentValue, files, getInputProps]);
 
   if (!has) return null;
 
