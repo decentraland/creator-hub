@@ -10,6 +10,8 @@ import { Container } from '../../Container';
 import { CheckboxField, TextField, RangeField, InfoTooltip } from '../../ui';
 import { Dropdown } from '../../ui';
 import { AddButton } from '../AddButton';
+import MoreOptionsMenu from '../MoreOptionsMenu';
+import { RemoveButton } from '../RemoveButton';
 import { type MaterialInput, MaterialType, TextureType } from '../MaterialInspector/types';
 import {
   fromMaterial,
@@ -240,7 +242,11 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
             ) => (getInputProps as any)(path, getter)}
             files={files}
           />
-          <AddButton onClick={() => removeSwap(idx)}>Remove Swap</AddButton>
+          <div className="RightMenu">
+            <MoreOptionsMenu>
+              <RemoveButton onClick={() => removeSwap(idx)}>Remove Material Swap</RemoveButton>
+            </MoreOptionsMenu>
+          </div>
         </Container>
       ))}
       <AddButton onClick={addSwap}>Add Material Swap</AddButton>
