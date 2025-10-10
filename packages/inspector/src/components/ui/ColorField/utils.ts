@@ -22,10 +22,6 @@ export const COLORS = [
     label: 'White',
   },
   {
-    value: '#000000',
-    label: 'Black',
-  },
-  {
     value: '#FFA500',
     label: 'Orange',
   },

@@ -34,6 +34,8 @@ import { TweenInspector } from './TweenInspector';
 import { SmartItemBasicView } from './SmartItemBasicView';
 import { AdminToolkitView } from './AdminToolkitView';
 import { RewardInspector } from './RewardInspector';
+import { LightSourceInspector } from './LightSourceInspector';
+import { GltfNodeModifiersInspector } from './GltfNodeModifiersInspector';
 
 import './EntityInspector.css';
 
@@ -157,6 +159,11 @@ const SingleEntityInspector = withSdk<{ entity: Entity | null }>(({ sdk, entity 
       { name: sdk.components.CounterBar.componentName, component: CounterBarInspector },
       { name: sdk.components.AdminTools.componentName, component: AdminToolkitView },
       { name: sdk.components.Rewards.componentName, component: RewardInspector },
+      { name: sdk.components.LightSource.componentName, component: LightSourceInspector },
+      {
+        name: sdk.components.GltfNodeModifiers.componentName,
+        component: GltfNodeModifiersInspector,
+      },
     ],
     [sdk],
   );
