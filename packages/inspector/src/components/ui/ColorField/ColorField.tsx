@@ -29,7 +29,13 @@ const ColorField: React.FC<Props> = ({ label, value, onChange, basic = false }) 
   }, [value]);
 
   const basicOptions = useMemo(() => {
-    const options = getColorOptions();
+    const options = [
+      {
+        label: 'Undefined',
+        value: '',
+      },
+      ...getColorOptions(),
+    ];
 
     if (!isValidColor && value) {
       options.unshift({
@@ -49,7 +55,7 @@ const ColorField: React.FC<Props> = ({ label, value, onChange, basic = false }) 
         <Dropdown
           label={label}
           options={basicOptions}
-          value={value}
+          value={value ?? ''}
           onChange={onChange}
         />
       </div>
@@ -89,8 +95,8 @@ const ColorField: React.FC<Props> = ({ label, value, onChange, basic = false }) 
             ? HybridFieldTypes.FieldType.DROPDOWN
             : HybridFieldTypes.FieldType.COLOR_PICKER
         }
-        secondaryOptions={getColorOptions()}
-        secondaryValue={selectedOption === Options.BASICS ? (stockColor ?? COLORS[0].value) : value}
+        secondaryOptions={[{ label: 'Undefined', value: '' }, ...getColorOptions()]}
+        secondaryValue={selectedOption === Options.BASICS ? (stockColor ?? '') : (value ?? '')}
         onChange={handleOptionChange}
         onChangeSecondary={onChange}
       />
