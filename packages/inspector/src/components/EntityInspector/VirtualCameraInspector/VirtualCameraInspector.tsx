@@ -6,7 +6,7 @@ import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
 import { useComponentInput } from '../../../hooks/sdk/useComponentInput';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
-import { CheckboxField, Dropdown, RangeField, TextField, InfoTooltip } from '../../ui';
+import { CheckboxField, Dropdown, RangeField, TextField, EntityField, InfoTooltip } from '../../ui';
 
 type Props = { entity: Entity; initialOpen?: boolean };
 
@@ -59,23 +59,6 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
 
   if (!has) return null;
 
-  const lookAt = getInputProps('lookAtEntity');
-  const lookAtOptions = React.useMemo(() => {
-    const options: Array<{ label: string; value: string | number }> = [
-      { label: 'None', value: '' },
-    ];
-    const { Name, Nodes } = sdk.components;
-    const nodes = Nodes.getOrNull(sdk.engine.RootEntity)?.value || [];
-    const player = (sdk.engine as any).PlayerEntity;
-    const camera = sdk.engine.CameraEntity;
-    for (const { entity: e } of nodes) {
-      if (e === 0 || e === entity || e === camera) continue;
-      const label = e === player ? 'Player' : (Name.getOrNull(e)?.value ?? String(e));
-      options.push({ label, value: e });
-    }
-    return options;
-  }, [sdk, entity]);
-
   return (
     <Container
       label="Virtual Camera"
@@ -91,9 +74,9 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       onRemoveContainer={handleRemove}
     >
       <Block label="Look at entity (optional)">
-        <Dropdown
-          options={lookAtOptions}
-          {...lookAt}
+        <EntityField
+          components={[] as any}
+          {...getInputProps('lookAtEntity')}
         />
       </Block>
       <Container
