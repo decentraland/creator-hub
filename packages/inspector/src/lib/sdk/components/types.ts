@@ -20,6 +20,7 @@ export enum CoreComponents {
   TWEEN_SEQUENCE = 'core::TweenSequence',
   VIDEO_PLAYER = 'core::VideoPlayer',
   VISIBILITY_COMPONENT = 'core::VisibilityComponent',
+  VIRTUAL_CAMERA = 'core::VirtualCamera',
 }
 
 export const EditorComponentNames = {

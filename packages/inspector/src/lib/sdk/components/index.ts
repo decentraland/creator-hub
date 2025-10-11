@@ -161,6 +161,7 @@ export type SdkComponents = {
   VideoPlayer: ReturnType<typeof components.VideoPlayer>;
   VisibilityComponent: ReturnType<typeof components.VisibilityComponent>;
   Tags: ReturnType<typeof components.Tags>;
+  VirtualCamera: ReturnType<any>;
 };
 
 export function createComponents(engine: IEngine): SdkComponents {
@@ -185,6 +186,7 @@ export function createComponents(engine: IEngine): SdkComponents {
   const VideoPlayer = components.VideoPlayer(engine);
   const VisibilityComponent = components.VisibilityComponent(engine);
   const Tags = components.Tags(engine);
+  const VirtualCamera = components.VirtualCamera(engine);
 
   return {
     Animator,
@@ -208,6 +210,7 @@ export function createComponents(engine: IEngine): SdkComponents {
     TweenSequence,
     VideoPlayer,
     VisibilityComponent,
+    VirtualCamera,
   };
 }
 
