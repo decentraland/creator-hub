@@ -14,8 +14,8 @@ import {
 } from 'decentraland-ui2';
 
 import { CLIENT_NOT_INSTALLED_ERROR } from '/shared/utils';
-import { isProjectError } from '/shared/types/projects';
-import { isWorkspaceError } from '/shared/types/workspace';
+import { isProjectError, ProjectErrorType } from '/shared/types/projects';
+import { isWorkspaceError, WorkspaceErrorType } from '/shared/types/workspace';
 
 import { t } from '/@/modules/store/translation/utils';
 import { initRpc } from '/@/modules/rpc';
@@ -76,8 +76,8 @@ export function EditorPage() {
 
   useEffect(() => {
     if (
-      isWorkspaceError(error, 'PROJECT_NOT_FOUND') ||
-      isProjectError(error, 'PROJECT_NOT_CREATED')
+      isWorkspaceError(error, WorkspaceErrorType.PROJECT_NOT_FOUND) ||
+      isProjectError(error, ProjectErrorType.PROJECT_NOT_CREATED)
     ) {
       navigate('/scenes');
     }
