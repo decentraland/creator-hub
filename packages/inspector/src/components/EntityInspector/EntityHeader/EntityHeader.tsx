@@ -201,6 +201,35 @@ export default React.memo(
           ),
         },
         {
+          id: (sdk.components as any).GltfNodeModifiers?.componentId,
+          value: 'Swap material',
+          onClick: () =>
+            handleClickAddComponent(
+              (sdk.components as any).GltfNodeModifiers.componentId,
+              (sdk.components as any).GltfNodeModifiers.componentName,
+            ),
+          disabled: isComponentDisabled((sdk.components as any).GltfNodeModifiers?.componentId),
+          tooltip: getComponentTooltip(
+            (sdk.components as any).GltfNodeModifiers?.componentId,
+            'Override GLTF/GLB materials',
+          ),
+        },
+        {
+          id: (sdk.components as any).LightSource?.componentId,
+          value: 'Light Source',
+          onClick: () =>
+            handleClickAddComponent(
+              (sdk.components as any).LightSource.componentId,
+              (sdk.components as any).LightSource.componentName,
+            ),
+          disabled: isComponentDisabled((sdk.components as any).LightSource?.componentId),
+          tooltip: getComponentTooltip(
+            (sdk.components as any).LightSource?.componentId,
+            'Add a point or spot light',
+            'https://docs.decentraland.org/creator/development-guide/sdk7/lights/',
+          ),
+        },
+        {
           id: sdk.components.MeshCollider.componentId,
           value: 'Mesh Collider',
           onClick: () =>
