@@ -1,4 +1,4 @@
-import type { ValidationResult as Gltf } from 'gltf-validator-ts';
+import type { ValidationResult as Gltf } from '@dcl/gltf-validator-ts';
 
 export type {
   ValidationResult as Gltf,
@@ -6,7 +6,7 @@ export type {
   Resource as GltfResource,
   Issues as GltfIssues,
   ValidationMessage as GltfMessage,
-} from 'gltf-validator-ts';
+} from '@dcl/gltf-validator-ts';
 
 export type BaseAsset = {
   blob: File;

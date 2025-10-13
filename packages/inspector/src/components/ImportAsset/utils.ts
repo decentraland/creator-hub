@@ -1,4 +1,4 @@
-import { validateBytes } from 'gltf-validator-ts';
+import { validateBytes } from '@dcl/gltf-validator-ts';
 import type { Gltf, BaseAsset, ModelAsset, ValidationError, Asset, AssetType } from './types';
 import { isModelAsset } from './types';
 
