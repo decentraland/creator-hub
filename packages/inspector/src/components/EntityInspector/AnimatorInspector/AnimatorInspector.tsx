@@ -49,8 +49,6 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
         // only add Animator component if there are actual animations
         if (animationGroups.length > 0) {
           await initializeAnimatorComponent(sdk, entityId, animationGroups);
-          const newStates = mapAnimationGroupsToStates(animationGroups);
-          setStates(newStates);
         }
       } catch (error) {
         // eslint-disable-next-line no-console
@@ -150,10 +148,13 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
           <Block label="Weight">
             <RangeField
               onChange={(e: ChangeEvt) =>
-                handleStateChange({ weight: toNumber(e.target.value) }, idx)
+                handleStateChange({ weight: Number(e.target.value) }, idx)
               }
-              value={fromNumber($.weight ?? 1)}
+              value={$.weight ?? 1}
               isValidValue={isValidWeight}
+              step={0.01}
+              min={0}
+              max={1}
             />
           </Block>
           <Block label="Speed">

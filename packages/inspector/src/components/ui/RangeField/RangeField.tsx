@@ -70,6 +70,9 @@ const RangeField = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
 
   const formatInput = useCallback(
     (value: Props['value'] = 0) => {
+      if (Number.isInteger(Number(value))) {
+        return Number(value.toString());
+      }
       const decimals = isFloat(step) ? 2 : 0;
       return parseFloat(value.toString()).toFixed(decimals);
     },
@@ -80,11 +83,11 @@ const RangeField = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
 
-      setInputValue(value);
-
       const isValidValue = isValid(value);
 
       const formattedValue = isValidValue ? formatInput(value) : value;
+
+      setInputValue(formattedValue);
 
       onChange &&
         onChange({
