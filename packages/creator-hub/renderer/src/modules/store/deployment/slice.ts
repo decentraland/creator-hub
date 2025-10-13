@@ -9,7 +9,6 @@ import { delay } from '/shared/utils';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
-import { publishScene } from '/@/modules/store/editor/slice';
 import {
   checkDeploymentStatus,
   cleanPendingsFromDeploymentStatus,
@@ -26,6 +25,8 @@ import {
   translateError,
   getCatalystServers,
 } from './utils';
+
+import { editor } from '#preload';
 
 const getErrorForTranslation = (action: any) =>
   isRejectedWithValue(action) ? action.payload : action.error;
@@ -93,23 +94,48 @@ export const initializeDeployment = createAsyncThunk(
   },
 );
 
+const updateDeploymentTarget = createAsyncThunk(
+  'deployment/updateTarget',
+  async (
+    payload: { path: string; target: string; chainId: ChainId; wallet: string },
+    { rejectWithValue, getState },
+  ) => {
+    const { path, target } = payload;
+    const { translation } = getState();
+
+    const port = await editor.publishScene({ path, target, language: translation.locale });
+    const url = getDeploymentUrl(port);
+
+    if (!url) {
+      return rejectWithValue(new DeploymentError('INVALID_URL', getInitialDeploymentStatus()));
+    }
+
+    const [info, files] = await Promise.all([fetchInfo(url), fetchFiles(url)]);
+
+    return { path, url, info, files };
+  },
+);
+
 export const deploy = createAsyncThunk(
   'deployment/deploy',
-  async (deployment: Deployment, { dispatch, rejectWithValue }) => {
-    const { path, info, identity, url, wallet, chainId } = deployment;
+  async (deployment: Deployment, { dispatch, getState, rejectWithValue }) => {
+    const { path, info, identity, wallet, chainId } = deployment;
     const authChain = Authenticator.signPayload(identity, info.rootCID);
     const triedServers = new Set<string>();
     let retries = getCatalystServers(chainId).length;
     const delayMs = 1000;
 
+    let currentUrl = deployment.url;
+
     while (retries > 0) {
       try {
-        return await deployFn(url, { address: wallet, authChain, chainId });
+        return await deployFn(currentUrl, { address: wallet, authChain, chainId });
       } catch (error: any) {
         retries--;
         if (retries <= 0) {
+          const currentDeployment = getState().deployment.deployments[path];
           const componentsStatus: DeploymentComponentsStatus = {
-            ...deployment.componentsStatus,
+            ...currentDeployment.componentsStatus,
             catalyst: 'failed',
           };
           return rejectWithValue(
@@ -122,7 +148,11 @@ export const deploy = createAsyncThunk(
         const selectedServer = getAvailableCatalystServer(triedServers, chainId);
         triedServers.add(selectedServer);
 
-        await dispatch(publishScene({ path, target: selectedServer, chainId, wallet })).unwrap();
+        const result = await dispatch(
+          updateDeploymentTarget({ path, target: selectedServer, chainId, wallet }),
+        ).unwrap();
+
+        currentUrl = result.url;
       }
     }
   },
@@ -206,18 +236,37 @@ const deploymentSlice = createSlice({
     builder
       .addCase(initializeDeployment.fulfilled, (state, action) => {
         const { path, url, info, wallet, chainId, files, identity } = action.payload;
-        state.deployments[path] = {
-          path,
-          url,
-          info,
-          files,
-          wallet,
-          chainId,
-          status: 'idle',
-          componentsStatus: getInitialDeploymentStatus(info.isWorld),
-          lastUpdated: Date.now(),
-          identity,
-        };
+        const existingDeployment = state.deployments[path];
+
+        if (
+          !existingDeployment ||
+          existingDeployment.status === 'idle' ||
+          existingDeployment.status === 'failed'
+        ) {
+          state.deployments[path] = {
+            path,
+            url,
+            info,
+            files,
+            wallet,
+            chainId,
+            status: 'idle',
+            componentsStatus: getInitialDeploymentStatus(info.isWorld),
+            lastUpdated: Date.now(),
+            identity,
+          };
+        }
+      })
+      .addCase(updateDeploymentTarget.fulfilled, (state, action) => {
+        const { path, url, info, files } = action.payload;
+        const deployment = state.deployments[path];
+        // we are preserving componentsStatus, status, and error
+        if (deployment) {
+          deployment.url = url;
+          deployment.info = info;
+          deployment.files = files;
+          deployment.lastUpdated = Date.now();
+        }
       })
       .addCase(initializeDeployment.rejected, (state, action) => {
         const { path, wallet, chainId } = action.meta.arg;

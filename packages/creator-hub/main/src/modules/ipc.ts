@@ -64,4 +64,5 @@ export function initIpc() {
   // npm
   handle('npm.install', (_event, path, packages) => npm.install(path, packages));
   handle('npm.getOutdatedDeps', (_event, path, packages) => npm.getOutdatedDeps(path, packages));
+  handle('npm.getContextFiles', (_event, path) => npm.getContextFiles(path));
 }

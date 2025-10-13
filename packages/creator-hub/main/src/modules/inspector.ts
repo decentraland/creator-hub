@@ -78,7 +78,7 @@ export async function openSceneDebugger(path: string): Promise<string> {
     await window.loadURL(url);
   } else {
     await window.loadFile(
-      fileURLToPath(new URL('./../renderer/dist/debugger.html', import.meta.url)),
+      fileURLToPath(new URL('./../../renderer/dist/debugger.html', import.meta.url)),
       { query: { path } },
     );
   }
