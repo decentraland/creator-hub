@@ -30,6 +30,11 @@ import {
   selectSceneInspectorTab,
 } from '../../../redux/ui';
 import { SceneInspectorTab } from '../../../redux/ui/types';
+import {
+  selectSceneInfo,
+  saveSceneInfoContent,
+  setSceneInfoContent,
+} from '../../../redux/scene-info';
 import { Tab } from '../Tab';
 import { transformBinaryToBase64Resource } from '../../../lib/data-layer/host/fs-utils';
 import { selectThumbnails } from '../../../redux/app';
@@ -353,6 +358,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
 
   const hiddenSceneInspectorTabs = useAppSelector(getHiddenSceneInspectorTabs);
   const selectedSceneInspectorTab = useAppSelector(getSelectedSceneInspectorTab);
+  const sceneInfo = useAppSelector(selectSceneInfo);
   const dispatch = useAppDispatch();
 
   const thumbnails = useAppSelector(selectThumbnails);
@@ -401,6 +407,17 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     },
     [componentValue],
   );
+
+  const handleSceneDescriptionChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const content = e.target.value;
+    dispatch(setSceneInfoContent(content));
+  }, []);
+
+  // Scene description handler - save directly on change with debouncing via blur
+  const handleSceneDescriptionBlur = useCallback((e: React.FocusEvent<HTMLTextAreaElement>) => {
+    const content = e.target.value;
+    dispatch(saveSceneInfoContent(content));
+  }, []);
 
   return (
     <Container
@@ -485,6 +502,19 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
             autoSelect
             label="Email (optional)"
             {...emailProps}
+          />
+          <TextArea
+            label={
+              <span className="SceneInfoLabel">
+                Scene Info Panel (supports <span className="MarkdownLink">markdown</span>)
+              </span>
+            }
+            value={sceneInfo.content}
+            onChange={handleSceneDescriptionChange}
+            onBlur={handleSceneDescriptionBlur}
+            placeholder="Add markdown content to display in the Scene Info panel. Supports headings, lists, links, images, tables, and code blocks with syntax highlighting."
+            rows={6}
+            error={sceneInfo.error || undefined}
           />
         </>
       ) : null}

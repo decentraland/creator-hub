@@ -78,3 +78,11 @@
   right: 8px;
   top: 4px;
 }
+
+.Container.Scene .SceneInfoLabel {
+  gap: 0;
+}
+
+.Container.Scene .MarkdownLink {
+  text-decoration: underline;
+}

@@ -1,0 +1,79 @@
+.SceneInfoHeader {
+  font-size: 16px;
+  padding-bottom: 12px;
+  font-weight: 600;
+  text-align: left;
+
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.SceneInfoHeader .TitleWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.SceneInfoHeader .TitleWrapper > svg {
+  margin-left: 5px;
+  width: 18px;
+  height: 18px;
+}
+
+.SceneInfoHeader .RightContent {
+  display: flex;
+  flex-grow: 1;
+  justify-content: flex-end;
+  align-items: center;
+  font-size: 14px;
+}
+
+.SceneInfoPanel {
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--main-bg-color);
+  color: var(--text-color);
+}
+
+.SceneInfoPanel .Actions {
+  display: flex;
+  gap: 8px;
+}
+
+.SceneInfoPanel .Actions .CloseButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-color);
+  cursor: pointer;
+}
+
+.SceneInfoPanel .Actions .CloseButton > svg {
+  width: 16px;
+  height: 16px;
+}
+
+.SceneInfoPanel .Content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.SceneInfoPanel .Loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+}
