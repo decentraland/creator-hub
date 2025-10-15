@@ -79,6 +79,10 @@
   top: 4px;
 }
 
+.Container.Scene .SceneInfoInput textarea {
+  resize: none;
+}
+
 .Container.Scene .SceneInfoLabel {
   gap: 0;
 }

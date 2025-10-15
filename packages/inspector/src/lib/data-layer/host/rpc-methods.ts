@@ -5,6 +5,7 @@ import { readPreferencesFromFile, serializeInspectorPreferences } from '../../lo
 import type { AssetData } from '../../logic/catalog';
 import type { InspectorPreferences } from '../../logic/preferences/types';
 import { EditorComponentNames } from '../../sdk/components/types';
+import type { InspectorUIStateMessage } from '../remote-data-layer';
 import {
   DIRECTORY,
   EXTENSIONS,
@@ -400,6 +401,34 @@ export async function initRpcMethods(
         }
 
         throw new Error(`Custom asset with id ${assetId} not found`);
+      });
+    },
+
+    async getInspectorUIState() {
+      const InspectorUIState = engine.getComponent(EditorComponentNames.InspectorUIState);
+      const RootEntity = engine.RootEntity;
+
+      if (InspectorUIState && InspectorUIState.has(RootEntity)) {
+        const state = InspectorUIState.get(RootEntity) as InspectorUIStateMessage;
+        return state;
+      }
+
+      // Return default state if component doesn't exist
+      return { sceneInfoPanelVisible: undefined };
+    },
+
+    async setInspectorUIState(req) {
+      return stateManager.executeTransaction('external', async () => {
+        const InspectorUIState = engine.getComponent(EditorComponentNames.InspectorUIState) as any;
+        const RootEntity = engine.RootEntity;
+
+        if (InspectorUIState) {
+          InspectorUIState.createOrReplace(RootEntity, req);
+
+          await compositeProvider.saveComposite(true);
+        }
+
+        return {};
       });
     },
   };

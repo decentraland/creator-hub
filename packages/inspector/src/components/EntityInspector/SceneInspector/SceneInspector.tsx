@@ -504,6 +504,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
             {...emailProps}
           />
           <TextArea
+            className="SceneInfoInput"
             label={
               <span className="SceneInfoLabel">
                 Scene Info Panel (supports <span className="MarkdownLink">markdown</span>)
@@ -512,7 +513,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
             value={sceneInfo.content}
             onChange={handleSceneDescriptionChange}
             onBlur={handleSceneDescriptionBlur}
-            placeholder="Add markdown content to display in the Scene Info panel. Supports headings, lists, links, images, tables, and code blocks with syntax highlighting."
+            placeholder="Add markdown content to display in the Scene Info panel. Supports headings, lists, links, images, videos and more."
             rows={6}
             error={sceneInfo.error || undefined}
           />

@@ -1,28 +1,33 @@
-import { call, put, select } from 'redux-saga/effects';
+import { call, put } from 'redux-saga/effects';
 
 import type { IDataLayer } from '../../data-layer';
 import { getDataLayerInterface } from '../../data-layer';
-import {
-  getSceneInfoContent,
-  selectSceneInfo,
-  setSceneInfoOpenedInPreviousSession,
-  toggleInfoPanel,
-} from '../';
+import { getSceneInfoContent, SCENE_DESCRIPTION_FILE, toggleInfoPanel } from '../';
+import type { GetFileResponse, InspectorUIStateMessage } from '../../../tooling-entrypoint';
 
 export function* initializeSceneInfoPanelSaga() {
   const dataLayer: IDataLayer = yield call(getDataLayerInterface);
   if (!dataLayer) return;
 
   try {
-    yield put(getSceneInfoContent());
-    /// TODO: we should get this boolean from persistent storage.
-    const { openedInPreviousSession } = yield select(selectSceneInfo);
+    // Check if scene_description.md file exists
+    const response: GetFileResponse = yield call(dataLayer.getFile, {
+      path: SCENE_DESCRIPTION_FILE,
+    });
 
-    // File exists. Restore previous state (open/closed). Default to open if no previous state.
-    const openPanel = openedInPreviousSession ?? true;
-    yield put(toggleInfoPanel(openPanel));
+    const hasContent = response && response.content && response.content.length > 0;
+    if (hasContent) {
+      // Get saved UI state from component
+      const uiState: InspectorUIStateMessage = yield call(dataLayer.getInspectorUIState, {});
+
+      // If sceneInfoPanelVisible is undefined (never set), default to true (open)
+      // Otherwise use the saved state
+      const shouldOpen = uiState.sceneInfoPanelVisible ?? true;
+      yield put(toggleInfoPanel(shouldOpen));
+    }
+
+    yield put(getSceneInfoContent());
   } catch (e) {
     yield put(toggleInfoPanel(false));
-    yield put(setSceneInfoOpenedInPreviousSession(null));
   }
 }

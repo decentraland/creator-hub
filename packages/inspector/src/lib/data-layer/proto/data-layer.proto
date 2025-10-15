@@ -95,6 +95,10 @@ message UndoRedoStateResponse {
   bool can_redo = 2;
 }
 
+message InspectorUIStateMessage {
+  optional bool scene_info_panel_visible = 1;
+}
+
 service DataService {
   rpc CrdtStream(stream CrdtStreamMessage) returns (stream CrdtStreamMessage) {}
   rpc Undo(Empty) returns (UndoRedoResponse) {}
@@ -116,4 +120,6 @@ service DataService {
   rpc GetCustomAssets(Empty) returns (GetCustomAssetsResponse) {}
   rpc DeleteCustomAsset(DeleteCustomAssetRequest) returns (Empty) {}
   rpc RenameCustomAsset(RenameCustomAssetRequest) returns (Empty) {}
+  rpc GetInspectorUIState(Empty) returns (InspectorUIStateMessage) {}
+  rpc SetInspectorUIState(InspectorUIStateMessage) returns (Empty) {}
 }

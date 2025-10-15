@@ -8,14 +8,12 @@ export interface SceneInfoState {
   content: string;
   isLoading: boolean;
   error: string | null;
-  openedInPreviousSession: boolean | null;
 }
 
 export const initialState: SceneInfoState = {
   content: '',
   isLoading: false,
   error: null,
-  openedInPreviousSession: null,
 };
 
 export const sceneInfo = createSlice({
@@ -34,13 +32,8 @@ export const sceneInfo = createSlice({
     setSceneInfoError: (state, { payload }: PayloadAction<string | null>) => {
       state.error = payload;
     },
-    setSceneInfoOpenedInPreviousSession: (state, { payload }: PayloadAction<boolean | null>) => {
-      state.openedInPreviousSession = payload;
-    },
     initializeSceneInfoPanel: () => {},
-    toggleInfoPanel: (state, { payload }: PayloadAction<boolean>) => {
-      state.openedInPreviousSession = payload;
-    },
+    toggleInfoPanel: (_state, { payload: _ }: PayloadAction<boolean>) => {},
   },
 });
 
@@ -51,7 +44,6 @@ export const {
   setSceneInfoContent,
   setSceneInfoLoading,
   setSceneInfoError,
-  setSceneInfoOpenedInPreviousSession,
   initializeSceneInfoPanel,
   toggleInfoPanel,
 } = sceneInfo.actions;

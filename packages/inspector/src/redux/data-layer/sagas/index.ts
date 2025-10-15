@@ -16,16 +16,7 @@ import {
   deleteCustomAsset,
   renameCustomAsset,
 } from '..';
-import {
-  getSceneInfoContent,
-  saveSceneInfoContent,
-  initializeSceneInfoPanel,
-  toggleInfoPanel,
-} from '../../scene-info';
-import { getSceneInfoContentSaga } from '../../scene-info/sagas/get-content';
-import { saveSceneInfoContentSaga } from '../../scene-info/sagas/save-content';
-import { initializeSceneInfoPanelSaga } from '../../scene-info/sagas/initialize-panel';
-import { toggleInfoPanelSaga } from '../../scene-info/sagas/toggle-panel';
+import { sceneInfoSaga } from '../../scene-info/sagas';
 import { connectSaga } from './connect';
 import { reconnectSaga } from './reconnect';
 import { saveSaga } from './save';
@@ -58,10 +49,7 @@ export function* dataLayerSaga() {
   yield takeEvery(createCustomAsset.type, createCustomAssetSaga);
   yield takeLatest(deleteCustomAsset.type, deleteCustomAssetSaga);
   yield takeEvery(renameCustomAsset.type, renameCustomAssetSaga);
-  yield takeEvery(getSceneInfoContent.type, getSceneInfoContentSaga);
-  yield takeEvery(saveSceneInfoContent.type, saveSceneInfoContentSaga);
-  yield takeEvery(initializeSceneInfoPanel.type, initializeSceneInfoPanelSaga);
-  yield takeEvery(toggleInfoPanel.type, toggleInfoPanelSaga);
+  yield sceneInfoSaga();
 }
 
 export default dataLayerSaga;
