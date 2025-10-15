@@ -47,7 +47,7 @@ jobs:
     if: ${{ needs.version.outputs.changed == 'true' }}
     permissions:
       pages: write
-      contents: read
+      contents: write
       id-token: write
     outputs:
       s3_bucket_key: ${{ steps.s3-upload.outputs.s3-key }}
@@ -110,22 +110,13 @@ jobs:
           safe_branch=${branch//\//-}  # replace / with -
           echo "safe_branch=$safe_branch" >> $GITHUB_OUTPUT
 
-      - name: prepare deployment folder ("hack" for subpaths in github pages url)
-        run: |
-          safe_branch=${{ steps.sanitize-branch.outputs.safe_branch }}
-          mkdir -p ./deploy/inspector/$safe_branch
-          cp -r ./packages/inspector/public/* ./deploy/inspector/$safe_branch/
-
-      - name: upload inspector artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./deploy
-          name: inspector
-
       - name: deploy to gh-pages
-        uses: actions/deploy-pages@v4
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          artifact_name: inspector
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./packages/inspector/public
+          destination_dir: inspector/${{ steps.sanitize-branch.outputs.safe_branch }}
+          keep_files: true
 
       - name: set preview url
         id: set-preview-url
