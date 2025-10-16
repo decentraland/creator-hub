@@ -3,6 +3,10 @@ import { toColor3, toHex } from '../../ui/ColorField/utils';
 import type { LightInput } from './types';
 import { LightKind } from './types';
 
+const DEFAULT_INTENSITY = 16000;
+const DEFAULT_INNER_ANGLE = 30;
+const DEFAULT_OUTER_ANGLE = 40;
+
 export const isValidInput = (input: LightInput) => {
   const intensity = Number(input.intensity);
   if (isNaN(intensity)) return false;
@@ -21,7 +25,7 @@ export const fromComponent = (value: PBLightSource): LightInput => {
     type: value.type?.$case === 'spot' ? LightKind.SPOT : LightKind.POINT,
     active: value.active === undefined ? true : !!value.active,
     color: toHex(value.color).toUpperCase(),
-    intensity: String(value.intensity ?? 16000),
+    intensity: String(value.intensity ?? DEFAULT_INTENSITY),
     shadow: !!value.shadow,
     shadowMaskSrc:
       value.shadowMaskTexture?.tex?.$case === 'texture'
@@ -32,8 +36,8 @@ export const fromComponent = (value: PBLightSource): LightInput => {
 
   if (value.type?.$case === 'spot') {
     base.spot = {
-      innerAngle: String(value.type.spot.innerAngle ?? 30),
-      outerAngle: String(value.type.spot.outerAngle ?? 40),
+      innerAngle: String(value.type.spot.innerAngle ?? DEFAULT_INNER_ANGLE),
+      outerAngle: String(value.type.spot.outerAngle ?? DEFAULT_OUTER_ANGLE),
     };
   }
 
@@ -46,8 +50,8 @@ export const toComponent = (input: LightInput): PBLightSource => {
     ? {
         $case: 'spot',
         spot: {
-          innerAngle: Number(input.spot?.innerAngle || 30),
-          outerAngle: Number(input.spot?.outerAngle || 40),
+          innerAngle: Number(input.spot?.innerAngle ?? DEFAULT_INNER_ANGLE),
+          outerAngle: Number(input.spot?.outerAngle ?? DEFAULT_OUTER_ANGLE),
         },
       }
     : { $case: 'point', point: {} };
@@ -68,9 +72,9 @@ export const toComponent = (input: LightInput): PBLightSource => {
     type,
     active: !!input.active,
     color: toColor3(input.color),
-    intensity: Number(input.intensity || 0),
+    intensity: Number(input.intensity ?? DEFAULT_INTENSITY),
     shadow: !!input.shadow,
-    range: input.range && input.range.length > 0 ? Number(input.range) : undefined,
+    range: Number(input.range ?? -1),
     shadowMaskTexture,
   } as PBLightSource;
 };

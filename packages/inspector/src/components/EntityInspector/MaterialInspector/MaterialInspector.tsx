@@ -7,11 +7,12 @@ import { selectAssetCatalog } from '../../../redux/app';
 import { Block } from '../../Block';
 import { Dropdown } from '../../ui';
 import { Container } from '../../Container';
-import { type Props as TextureProps } from './Texture';
-import { type Props, MaterialType } from './types';
 import { fromMaterial, toMaterial, isValidMaterial, MATERIAL_TYPES } from './utils';
 import UnlitMaterial from './UnlitMaterial/UnlitMaterial';
 import { PbrMaterial } from './PbrMaterial';
+
+import { type Props as TextureProps } from './Texture';
+import { type Props, MaterialType } from './types';
 
 export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const files = useAppSelector(selectAssetCatalog);

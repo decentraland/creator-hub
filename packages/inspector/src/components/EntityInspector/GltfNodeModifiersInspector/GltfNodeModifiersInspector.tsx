@@ -44,8 +44,8 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     await sdk.operations.dispatch();
   }, [entity, GltfNodeModifiers]);
 
-  const addSwap = () => {
-    const current = componentValue ?? ({ modifiers: [] } as PBGltfNodeModifiers);
+  const addSwap = useCallback(() => {
+    const current = componentValue ?? { modifiers: [] };
     const existing = fromComponent(files?.basePath ?? '')(current).swaps;
     const newSwaps = [
       ...existing,
@@ -82,32 +82,22 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       },
     ];
     getInputProps('swaps').onChange?.({ target: { value: newSwaps } } as any);
-  };
-
-  const swapsValue = useMemo(() => {
-    const raw = (getInputProps('swaps').value as any) ?? [];
-    const coerce = (val: any) => {
-      if (Array.isArray(val)) return val;
-      if (val && typeof val === 'object') {
-        const keys = Object.keys(val)
-          .filter(k => /^\d+$/.test(k))
-          .sort((a, b) => Number(a) - Number(b));
-        return keys.map(k => val[k]);
-      }
-      return [] as any[];
-    };
-    const fromInput = coerce(raw);
-    if (fromInput.length > 0) return fromInput;
-    const current = componentValue ?? ({ modifiers: [] } as PBGltfNodeModifiers);
-    return fromComponent(files?.basePath ?? '')(current).swaps;
   }, [componentValue, files, getInputProps]);
 
-  if (!hasComponent) return null;
+  const swapsValue = useMemo(() => {
+    const current = componentValue ?? { modifiers: [] };
+    return fromComponent(files?.basePath ?? '')(current).swaps;
+  }, [componentValue, files]);
 
-  const removeSwap = (idx: number) => {
-    const newSwaps = swapsValue.filter((_, i) => i !== idx);
-    getInputProps('swaps').onChange?.({ target: { value: newSwaps } } as any);
-  };
+  const removeSwap = useCallback(
+    (idx: number) => {
+      const newSwaps = swapsValue.filter((_, i) => i !== idx);
+      getInputProps('swaps').onChange?.({ target: { value: newSwaps } } as any);
+    },
+    [swapsValue, getInputProps],
+  );
+
+  if (!hasComponent) return null;
 
   return (
     <Container
