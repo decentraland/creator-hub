@@ -42,12 +42,19 @@ export type Project = {
   info: ProjectInfo;
 };
 
-export type CreateError = 'PROJECT_NOT_CREATED';
-export type PathError = 'INVALID_PATH';
+export enum ProjectErrorType {
+  PROJECT_NOT_CREATED = 'PROJECT_NOT_CREATED',
+  INVALID_PATH = 'INVALID_PATH',
+}
 
-export type Error = CreateError | PathError;
+export class ProjectError extends ErrorBase<typeof ProjectErrorType> {
+  constructor(
+    public name: ProjectErrorType,
+    message?: string,
+  ) {
+    super(name, message);
+  }
+}
 
-export class ProjectError extends ErrorBase<Error> {}
-
-export const isProjectError = (error: unknown, type: Error): error is ProjectError =>
+export const isProjectError = (error: unknown, type: ProjectErrorType): error is ProjectError =>
   error instanceof ProjectError && (error.name === type || error.message === type);

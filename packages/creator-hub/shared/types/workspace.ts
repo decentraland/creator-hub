@@ -31,9 +31,20 @@ export type GetProjectsOpts = {
   omitOutdatedPackages?: boolean;
 };
 
-export type Error = 'PROJECT_NOT_FOUND';
+export enum WorkspaceErrorType {
+  PROJECT_NOT_FOUND = 'PROJECT_NOT_FOUND',
+}
 
-export class WorkspaceError extends ErrorBase<Error> {}
+export class WorkspaceError extends ErrorBase<typeof WorkspaceErrorType> {
+  constructor(
+    public name: WorkspaceErrorType,
+    message?: string,
+  ) {
+    super(name, message);
+  }
+}
 
-export const isWorkspaceError = (error: unknown, type: Error): error is WorkspaceError =>
-  error instanceof WorkspaceError && error.name === type;
+export const isWorkspaceError = (
+  error: unknown,
+  type: WorkspaceErrorType,
+): error is WorkspaceError => error instanceof WorkspaceError && error.name === type;

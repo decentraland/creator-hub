@@ -51,19 +51,20 @@ export type AssetBundleRegistryResponse = {
   };
 };
 
-export type ErrorName =
-  | 'MAX_RETRIES'
-  | 'FETCH_STATUS'
-  | 'CATALYST_SERVERS_EXHAUSTED'
-  | 'DEPLOYMENT_NOT_FOUND'
-  | 'DEPLOYMENT_FAILED'
-  | 'INVALID_URL'
-  | 'INVALID_IDENTITY'
-  | 'MAX_FILE_SIZE_EXCEEDED';
+export enum DeploymentErrorType {
+  MAX_RETRIES = 'MAX_RETRIES',
+  FETCH_STATUS = 'FETCH_STATUS',
+  CATALYST_SERVERS_EXHAUSTED = 'CATALYST_SERVERS_EXHAUSTED',
+  DEPLOYMENT_NOT_FOUND = 'DEPLOYMENT_NOT_FOUND',
+  DEPLOYMENT_FAILED = 'DEPLOYMENT_FAILED',
+  INVALID_URL = 'INVALID_URL',
+  INVALID_IDENTITY = 'INVALID_IDENTITY',
+  MAX_FILE_SIZE_EXCEEDED = 'MAX_FILE_SIZE_EXCEEDED',
+}
 
-export class DeploymentError extends ErrorBase<ErrorName> {
+export class DeploymentError extends ErrorBase<typeof DeploymentErrorType> {
   constructor(
-    public name: ErrorName,
+    public name: DeploymentErrorType,
     public status: DeploymentComponentsStatus,
     public error?: Error,
   ) {
@@ -81,7 +82,7 @@ export class DeploymentError extends ErrorBase<ErrorName> {
 
 export const isDeploymentError = (
   error: unknown,
-  type: ErrorName | ErrorName[] | '*',
+  type: DeploymentErrorType | DeploymentErrorType[] | '*',
 ): error is DeploymentError =>
   error instanceof DeploymentError &&
   (Array.isArray(type) ? type.includes(error.name) : type === '*' || error.name === type);
