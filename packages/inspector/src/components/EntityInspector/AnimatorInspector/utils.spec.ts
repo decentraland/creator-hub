@@ -40,11 +40,16 @@ describe('NumberUtils', () => {
 
   describe('isValidWeight', () => {
     it('returns true for a valid weight', () => {
-      const result = isValidWeight('50');
+      const result = isValidWeight('0.50');
       expect(result).toBe(true);
     });
 
-    it('returns false for an invalid weight', () => {
+    it('returns false for a invalid weight, number', () => {
+      const result = isValidWeight('50');
+      expect(result).toBe(false);
+    });
+
+    it('returns false for an invalid weight, string', () => {
       const result = isValidWeight('invalid');
       expect(result).toBe(false);
     });
