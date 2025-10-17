@@ -306,6 +306,22 @@ export default React.memo(
             'https://docs.decentraland.org/creator/development-guide/sdk7/click-events',
           ),
         },
+        { header: 'Camera' },
+        {
+          id: (sdk.components as any).VirtualCamera.componentId,
+          value: 'Virtual Camera',
+          onClick: () =>
+            handleClickAddComponent(
+              (sdk.components as any).VirtualCamera.componentId,
+              (sdk.components as any).VirtualCamera.componentName,
+            ),
+          disabled: isComponentDisabled((sdk.components as any).VirtualCamera.componentId),
+          tooltip: getComponentTooltip(
+            (sdk.components as any).VirtualCamera.componentId,
+            'Configure a virtual camera and transitions. See docs',
+            'https://docs.decentraland.org/creator/development-guide/sdk7/camera/',
+          ),
+        },
       ];
 
       const optionIds = options.reduce((set, option) => {
