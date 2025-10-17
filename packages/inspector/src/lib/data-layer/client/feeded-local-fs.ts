@@ -193,7 +193,7 @@ export async function feededFileSystem(mappings: Record<string, string> = builde
     'thumbnails/scene/feeded-thumbnail.png': Buffer.from(THUMBNAIL, 'base64'),
     'assets/scene/feeded-thumbnail.png': Buffer.from(THUMBNAIL, 'base64'),
     'scene.json': Buffer.from(JSON.stringify(scene), 'utf-8'),
-    'README.md': Buffer.from(SCENE_INFO_MARKDOWN, 'utf-8'),
+    'SCENE_README.md': Buffer.from(SCENE_INFO_MARKDOWN, 'utf-8'),
   });
 
   return createFileSystemInterface(storage);
