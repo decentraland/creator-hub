@@ -14,7 +14,7 @@ export function toNumber(value: string | number, div: number = 100) {
 
 export function isValidWeight(weight: string | undefined): boolean {
   const value = (weight ?? '').toString();
-  return !isNaN(parseFloat(value)) && parseFloat(value) >= 0 && parseFloat(value) <= 100;
+  return !isNaN(parseFloat(value)) && parseFloat(value) >= 0 && parseFloat(value) <= 1;
 }
 
 export function isValidSpeed(speed: string | undefined): boolean {

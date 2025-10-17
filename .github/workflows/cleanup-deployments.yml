@@ -1,0 +1,99 @@
+name: Cleanup Deployments
+
+on:
+  pull_request:
+    types: [closed]
+  schedule:
+    - cron: '0 0 * * 0'  # every Sunday at midnight UTC
+  workflow_dispatch:  # allow manual trigger
+
+jobs:
+  cleanup-pr-deployment:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          fetch-depth: 0
+
+      - name: Remove PR deployment
+        run: |
+          branch="${{ github.event.pull_request.head.ref }}"
+          safe_branch=${branch//\//-}
+
+          if [ -d "inspector/$safe_branch" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git rm -rf "inspector/$safe_branch"
+            git commit -m "Clean up deployment for closed PR #${{ github.event.pull_request.number }}: $branch"
+            git push
+            echo "✅ Cleaned up deployment: inspector/$safe_branch"
+          else
+            echo "ℹ️ No deployment found for: inspector/$safe_branch"
+          fi
+
+  cleanup-stale-deployments:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          fetch-depth: 0
+
+      - name: Cleanup stale branches
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          echo "Fetching active branches..."
+          active_branches=$(gh api repos/${{ github.repository }}/branches --paginate --jq '.[].name' | sed 's/\//-/g')
+
+          if [ -d "inspector" ]; then
+            for dir in inspector/*/; do
+              if [ ! -d "$dir" ]; then
+                continue
+              fi
+
+              branch_name=$(basename "$dir")
+
+              if [[ "$branch_name" == "main" ]]; then
+                echo "⏭️ Keeping: $branch_name (main branch)"
+                continue
+              fi
+
+              if echo "$active_branches" | grep -q "^${branch_name}$"; then
+                echo "⏭️ Keeping: $branch_name (active branch)"
+                continue
+              fi
+
+              # check if folder is older than 30 days
+              last_commit=$(git log -1 --format=%ct -- "$dir" 2>/dev/null || echo 0)
+              current_time=$(date +%s)
+              days_old=$(( (current_time - last_commit) / 86400 ))
+
+              if [ $days_old -gt 30 ]; then
+                echo "🗑️ Removing: $branch_name (inactive for $days_old days)"
+                git rm -rf "$dir"
+              else
+                echo "⏭️ Keeping: $branch_name (only $days_old days old)"
+              fi
+            done
+
+            if git diff --staged --quiet; then
+              echo "✅ No stale deployments to remove"
+            else
+              git commit -m "Clean up stale deployments older than 30 days"
+              git push
+              echo "✅ Cleaned up stale deployments"
+            fi
+          else
+            echo "ℹ️ No inspector deployments found"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
