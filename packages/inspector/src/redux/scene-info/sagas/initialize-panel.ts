@@ -14,18 +14,14 @@ export function* initializeSceneInfoPanelSaga() {
     const response: GetFileResponse = yield call(dataLayer.getFile, {
       path: SCENE_INFO_FILE,
     });
-
     const hasContent = response && response.content && response.content.length > 0;
-    if (hasContent) {
-      // Get saved UI state from component
-      const uiState: InspectorUIStateMessage = yield call(dataLayer.getInspectorUIState, {});
 
-      // If sceneInfoPanelVisible is undefined (never set), default to true (open)
-      // Otherwise use the saved state
-      const shouldOpen = uiState.sceneInfoPanelVisible ?? true;
-      yield put(toggleInfoPanel(shouldOpen));
-    }
+    // Get saved UI state from component
+    const uiState: InspectorUIStateMessage = yield call(dataLayer.getInspectorUIState, {});
+    const shouldBeVisible = uiState.sceneInfoPanelVisible ?? true; // If sceneInfoPanelVisible is undefined (never set), default to true (open)
 
+    const shouldOpen = hasContent && shouldBeVisible;
+    yield put(toggleInfoPanel(shouldOpen));
     yield put(getSceneInfoContent());
   } catch (e) {
     yield put(toggleInfoPanel(false));

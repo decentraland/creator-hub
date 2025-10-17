@@ -2,7 +2,7 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
 import type { RootState } from '../store';
 
-export const SCENE_INFO_FILE = 'README.md';
+export const SCENE_INFO_FILE = 'SCENE_README.md';
 
 export interface SceneInfoState {
   content: string;
