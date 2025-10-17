@@ -1,4 +1,8 @@
-import type { IEngine, OnChangeFunction } from '@dcl/ecs';
+import type {
+  IEngine,
+  LastWriteWinElementSetComponentDefinition,
+  OnChangeFunction,
+} from '@dcl/ecs';
 
 import type { DataLayerRpcServer, FileSystemInterface } from '../types';
 import { readPreferencesFromFile, serializeInspectorPreferences } from '../../logic/preferences/io';
@@ -405,11 +409,10 @@ export async function initRpcMethods(
     },
 
     async getInspectorUIState() {
-      const InspectorUIState = engine.getComponent(EditorComponentNames.InspectorUIState);
-      const RootEntity = engine.RootEntity;
+      const InspectorUIState = engine.getComponentOrNull(EditorComponentNames.InspectorUIState);
 
-      if (InspectorUIState && InspectorUIState.has(RootEntity)) {
-        const state = InspectorUIState.get(RootEntity) as InspectorUIStateMessage;
+      if (InspectorUIState && InspectorUIState.has(engine.RootEntity)) {
+        const state = InspectorUIState.get(engine.RootEntity) as InspectorUIStateMessage;
         return state;
       }
 
@@ -418,18 +421,14 @@ export async function initRpcMethods(
     },
 
     async setInspectorUIState(req) {
-      return stateManager.executeTransaction('external', async () => {
-        const InspectorUIState = engine.getComponent(EditorComponentNames.InspectorUIState) as any;
-        const RootEntity = engine.RootEntity;
-
-        if (InspectorUIState) {
-          InspectorUIState.createOrReplace(RootEntity, req);
-
-          await compositeProvider.saveComposite(true);
-        }
-
-        return {};
-      });
+      const InspectorUIState = engine.getComponentOrNull(
+        EditorComponentNames.InspectorUIState,
+      ) as LastWriteWinElementSetComponentDefinition<unknown>;
+      if (InspectorUIState) {
+        InspectorUIState.createOrReplace(engine.RootEntity, req);
+        await compositeProvider.saveComposite(true);
+      }
+      return {};
     },
   };
 }

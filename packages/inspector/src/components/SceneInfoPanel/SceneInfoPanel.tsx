@@ -22,6 +22,14 @@ const SceneInfoPanel: React.FC = () => {
         <div className="TitleWrapper">
           <InfoIcon />
           <div className="Title">Scene Info</div>
+          {isLoading && (
+            <div className="Loading">
+              <Loading
+                dimmer={false}
+                size="small"
+              />
+            </div>
+          )}
         </div>
 
         <div className="Actions">
@@ -34,15 +42,7 @@ const SceneInfoPanel: React.FC = () => {
           </button>
         </div>
       </div>
-      <div className="Content">
-        {isLoading ? (
-          <div className="Loading">
-            <Loading dimmer={false} />
-          </div>
-        ) : content ? (
-          <MarkdownRenderer content={content} />
-        ) : null}
-      </div>
+      {!!content && <MarkdownRenderer content={content} />}
     </div>
   );
 };

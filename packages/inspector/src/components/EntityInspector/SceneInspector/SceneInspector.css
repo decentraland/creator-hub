@@ -10,7 +10,7 @@
   font-size: 14px;
 }
 
-.Container.Scene .SpawnPointContainer > .content {
+.Container.Scene .SpawnPointContainer>.content {
   padding: 12px;
   border-radius: 4px;
   border: 1px solid #303031;
@@ -77,16 +77,4 @@
   position: absolute;
   right: 8px;
   top: 4px;
-}
-
-.Container.Scene .SceneInfoInput textarea {
-  resize: none;
-}
-
-.Container.Scene .SceneInfoLabel {
-  gap: 0;
-}
-
-.Container.Scene .MarkdownLink {
-  text-decoration: underline;
 }

@@ -1,4 +1,14 @@
-.SceneInfoHeader {
+.SceneInfoPanel {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  height: 100%;
+  background: var(--tree-bg-color);
+  color: var(--text-color);
+}
+
+.SceneInfoPanel .SceneInfoHeader {
   font-size: 16px;
   padding-bottom: 12px;
   font-weight: 600;
@@ -12,33 +22,29 @@
   width: 100%;
 }
 
-.SceneInfoHeader .TitleWrapper {
+.SceneInfoPanel .SceneInfoHeader .TitleWrapper {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.SceneInfoHeader .TitleWrapper > svg {
+.SceneInfoPanel .SceneInfoHeader .TitleWrapper>svg {
   margin-left: 5px;
   width: 18px;
   height: 18px;
 }
 
-.SceneInfoHeader .RightContent {
+.SceneInfoPanel .SceneInfoHeader .Loading {
+  margin-left: 16px;
+  position: relative;
+}
+
+.SceneInfoPanel .SceneInfoHeader .RightContent {
   display: flex;
   flex-grow: 1;
   justify-content: flex-end;
   align-items: center;
   font-size: 14px;
-}
-
-.SceneInfoPanel {
-  padding: 12px 8px;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  background: var(--main-bg-color);
-  color: var(--text-color);
 }
 
 .SceneInfoPanel .Actions {
@@ -59,21 +65,7 @@
   cursor: pointer;
 }
 
-.SceneInfoPanel .Actions .CloseButton > svg {
+.SceneInfoPanel .Actions .CloseButton>svg {
   width: 16px;
   height: 16px;
-}
-
-.SceneInfoPanel .Content {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-.SceneInfoPanel .Loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  width: 100%;
 }

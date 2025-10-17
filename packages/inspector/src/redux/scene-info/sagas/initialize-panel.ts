@@ -2,7 +2,7 @@ import { call, put } from 'redux-saga/effects';
 
 import type { IDataLayer } from '../../data-layer';
 import { getDataLayerInterface } from '../../data-layer';
-import { getSceneInfoContent, SCENE_DESCRIPTION_FILE, toggleInfoPanel } from '../';
+import { getSceneInfoContent, SCENE_INFO_FILE, toggleInfoPanel } from '../';
 import type { GetFileResponse, InspectorUIStateMessage } from '../../../tooling-entrypoint';
 
 export function* initializeSceneInfoPanelSaga() {
@@ -10,9 +10,9 @@ export function* initializeSceneInfoPanelSaga() {
   if (!dataLayer) return;
 
   try {
-    // Check if scene_description.md file exists
+    // Check if scene info .md file exists
     const response: GetFileResponse = yield call(dataLayer.getFile, {
-      path: SCENE_DESCRIPTION_FILE,
+      path: SCENE_INFO_FILE,
     });
 
     const hasContent = response && response.content && response.content.length > 0;
