@@ -16,8 +16,10 @@ export const getMimeType = (path: string): string => {
 };
 
 /** Check if a URL is external (http/https) */
-export const isExternalUrl = (url: string | undefined): boolean => {
-  return !!url && (url.startsWith('http://') || url.startsWith('https://'));
+export const isExternalUrl = (url: any): boolean => {
+  return (
+    !!url && typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'))
+  );
 };
 
 /**
