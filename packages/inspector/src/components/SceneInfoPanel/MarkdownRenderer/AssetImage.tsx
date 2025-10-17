@@ -20,9 +20,9 @@ export const AssetImage: React.FC<AssetImageProps> = ({ src, alt, ...props }) =>
 
   return (
     <img
+      {...props}
       src={imageSrc}
       alt={alt || ''}
-      {...props}
     />
   );
 };

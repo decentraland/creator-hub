@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import Markdown from 'markdown-to-jsx';
 
-import { isExternalUrl } from '../utils';
+import { isExternalUrl } from './utils';
 import { AssetImage } from './AssetImage';
 import { AssetVideo } from './AssetVideo';
 import { AssetIframe } from './AssetIframe';

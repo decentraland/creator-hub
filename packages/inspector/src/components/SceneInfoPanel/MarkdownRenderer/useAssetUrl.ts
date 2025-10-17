@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getDataLayerInterface } from '../../../redux/data-layer';
 import type { GetFileResponse } from '../../../lib/data-layer/remote-data-layer';
-import { getMimeType, isExternalUrl, normalizePath } from '../utils';
+import { getMimeType, isExternalUrl, normalizePath } from './utils';
 
 /**
  * Hook that loads an asset from either an external URL or the scene filesystem

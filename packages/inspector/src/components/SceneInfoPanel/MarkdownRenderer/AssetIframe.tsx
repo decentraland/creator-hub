@@ -24,9 +24,9 @@ export const AssetIframe: React.FC<AssetIframeProps> = ({ src, ...props }) => {
   return (
     <div className="IframeContainer">
       <iframe
+        {...props}
         src={iframeSrc}
         sandbox="allow-scripts allow-same-origin"
-        {...props}
       />
     </div>
   );
