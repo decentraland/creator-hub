@@ -27,6 +27,8 @@ export const POTENTIAL_COMPONENTS: string[] = [
   CoreComponents.TWEEN,
   CoreComponents.VIDEO_PLAYER,
   CoreComponents.VISIBILITY_COMPONENT,
+  CoreComponents.LIGHT_SOURCE,
+  CoreComponents.GLTF_NODE_MODIFIERS,
 ];
 
 export function getComponents(entity: Entity, engine: IEngine): Component[][] {

@@ -1,7 +1,11 @@
 import type { PBMaterial } from '@dcl/ecs';
 import { MaterialTransparencyMode } from '@dcl/ecs';
 
-import { toColor3, toColor4, toHex } from '../../ui/ColorField/utils';
+import {
+  toColor3OrUndefined,
+  toColor4OrUndefined,
+  toHexOrUndefined,
+} from '../../ui/ColorField/utils';
 import { mapSelectFieldOptions } from '../../ui/Dropdown/utils';
 import { toString } from '../utils';
 import { fromTexture, toTexture } from './Texture/utils';
@@ -17,7 +21,7 @@ export const fromMaterial =
           type: MaterialType.MT_UNLIT,
           alphaTest: String(value.material.unlit.alphaTest ?? 0.5),
           castShadows: !!(value.material.unlit.castShadows ?? true),
-          diffuseColor: toHex(value.material.unlit.diffuseColor),
+          diffuseColor: toHexOrUndefined(value.material.unlit.diffuseColor),
           texture: fromTexture(base, value.material.unlit.texture ?? {}),
           alphaTexture: fromTexture(base, value.material.unlit.alphaTexture ?? {}),
         };
@@ -36,9 +40,9 @@ export const fromMaterial =
           specularIntensity: toString(value.material?.pbr.specularIntensity ?? 1),
           emissiveIntensity: toString(value.material?.pbr.emissiveIntensity ?? 0),
           directIntensity: toString(value.material?.pbr.directIntensity ?? 1),
-          albedoColor: toHex(value.material?.pbr.albedoColor),
-          emissiveColor: toHex(value.material?.pbr.emissiveColor),
-          reflectivityColor: toHex(value.material?.pbr.reflectivityColor),
+          albedoColor: toHexOrUndefined(value.material?.pbr.albedoColor),
+          emissiveColor: toHexOrUndefined(value.material?.pbr.emissiveColor),
+          reflectivityColor: toHexOrUndefined(value.material?.pbr.reflectivityColor),
           texture: fromTexture(base, value.material?.pbr.texture ?? {}),
           alphaTexture: fromTexture(base, value.material?.pbr.alphaTexture ?? {}),
           bumpTexture: fromTexture(base, value.material?.pbr.bumpTexture ?? {}),
@@ -58,7 +62,7 @@ export const toMaterial =
             unlit: {
               alphaTest: Number(value.alphaTest ?? 0.5),
               castShadows: !!(value.castShadows ?? true),
-              diffuseColor: toColor4(value.diffuseColor),
+              diffuseColor: toColor4OrUndefined(value.diffuseColor),
               texture: toTexture(base, value.texture),
               alphaTexture: toTexture(base, value.alphaTexture),
             },
@@ -78,9 +82,9 @@ export const toMaterial =
               specularIntensity: Number(value.specularIntensity || 1),
               emissiveIntensity: Number(value.emissiveIntensity || 0),
               directIntensity: Number(value.directIntensity || 1),
-              albedoColor: toColor4(value.albedoColor),
-              emissiveColor: toColor3(value.emissiveColor),
-              reflectivityColor: toColor3(value.reflectivityColor),
+              albedoColor: toColor4OrUndefined(value.albedoColor),
+              emissiveColor: toColor3OrUndefined(value.emissiveColor),
+              reflectivityColor: toColor3OrUndefined(value.reflectivityColor),
               texture: toTexture(base, value.texture),
               alphaTexture: toTexture(base, value.alphaTexture),
               bumpTexture: toTexture(base, value.bumpTexture),
