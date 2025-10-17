@@ -5,7 +5,6 @@
   align-items: stretch;
   height: 100%;
   background: var(--tree-bg-color);
-  color: var(--text-color);
 }
 
 .SceneInfoPanel .SceneInfoHeader {
@@ -61,7 +60,6 @@
   padding: 0;
   border: none;
   background: transparent;
-  color: var(--text-color);
   cursor: pointer;
 }
 
