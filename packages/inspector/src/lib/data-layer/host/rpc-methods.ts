@@ -10,6 +10,7 @@ import type { AssetData } from '../../logic/catalog';
 import type { InspectorPreferences } from '../../logic/preferences/types';
 import { EditorComponentNames } from '../../sdk/components/types';
 import type { InspectorUIStateMessage } from '../remote-data-layer';
+import { getStorage } from '../client/iframe-data-layer';
 import {
   DIRECTORY,
   EXTENSIONS,
@@ -427,6 +428,14 @@ export async function initRpcMethods(
       if (InspectorUIState) {
         InspectorUIState.createOrReplace(engine.RootEntity, req);
         await compositeProvider.saveComposite(true);
+      }
+      return {};
+    },
+
+    async openFile(req) {
+      const storage = getStorage();
+      if (storage) {
+        storage.openFile(req.path);
       }
       return {};
     },

@@ -7,7 +7,7 @@ import { type Project } from '/shared/types/projects';
 
 import { UiRPC } from './ui';
 import { type Method, type Params, type Result, StorageRPC } from './storage';
-import { fs, custom } from '#preload';
+import { fs, custom, editor } from '#preload';
 
 export type RPCInfo = {
   iframe: HTMLIFrameElement;
@@ -86,6 +86,11 @@ export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partia
     }
 
     return list;
+  });
+
+  storage.handle('open_file', async ({ path }) => {
+    const resolvedPath = await getPath(path, project);
+    await editor.openCode(resolvedPath);
   });
 
   void Promise.all([ui.selectAssetsTab('AssetsPack'), ui.selectSceneInspectorTab('details')]).catch(
