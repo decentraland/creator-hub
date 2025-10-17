@@ -36,7 +36,7 @@ const ALLOWED_ORIGINS_AND_PERMISSIONS = new Map<string, Set<Permission>>(
 type AllowedOrigins<IsDev extends boolean> = IsDev extends true
   ? `http://${string}` | `https://${string}`
   : `https://${string}`;
-const ALLOWED_EXTERNAL_ORIGINS = new Set<AllowedOrigins<typeof IS_DEV>>([
+const _ALLOWED_EXTERNAL_ORIGINS = new Set<AllowedOrigins<typeof IS_DEV>>([
   'https://decentraland.org',
   'https://decentraland.today',
   'https://decentraland.zone',
@@ -116,12 +116,13 @@ app.on('web-contents-created', (_, contents) => {
    * @see https://www.electronjs.org/docs/latest/tutorial/security#15-do-not-use-openexternal-with-untrusted-content
    */
   contents.setWindowOpenHandler(({ url }) => {
-    const { origin } = new URL(url);
-    if (ALLOWED_EXTERNAL_ORIGINS.has(origin as AllowedOrigins<typeof IS_DEV>)) {
-      // Open url in default browser.
+    const { protocol } = new URL(url);
+
+    // Allow all HTTPS links (and HTTP in dev) to open in default browser
+    if (protocol === 'https:' || (IS_DEV && protocol === 'http:')) {
       shell.openExternal(url).catch(console.error);
     } else if (IS_DEV) {
-      console.warn(`Blocked the opening of a disallowed origin: ${origin}`);
+      console.warn(`Blocked opening non-HTTPS URL: ${url}`);
     }
 
     // Prevent creating a new window.

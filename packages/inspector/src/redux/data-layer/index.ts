@@ -142,6 +142,7 @@ export const dataLayer = createSlice({
     ) => {
       state.undoRedoState = payload.payload;
     },
+    openFile: (_state, _payload: PayloadAction<{ path: string }>) => {},
   },
 });
 
@@ -171,6 +172,7 @@ export const {
   stageCustomAsset,
   clearStagedCustomAsset,
   updateUndoRedoState,
+  openFile,
 } = dataLayer.actions;
 
 // Selectors
