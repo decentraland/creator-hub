@@ -21,12 +21,6 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true
   },
-  "include": [
-    "src/**/*.vue",
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "types/**/*.d.ts",
-    "../types/**/*.d.ts"
-  ],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "types/**/*.d.ts", "../types/**/*.d.ts"],
   "exclude": ["**/*.spec.ts", "**/*.test.ts"]
 }

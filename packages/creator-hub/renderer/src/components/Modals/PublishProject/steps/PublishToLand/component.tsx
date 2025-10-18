@@ -1,20 +1,22 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Box, Button, styled, Typography } from 'decentraland-ui2';
-import { Atlas } from 'decentraland-ui2/dist/components/Atlas/Atlas';
 import type { SceneParcels } from '@dcl/schemas';
+import { Atlas } from 'decentraland-ui2/dist/components/Atlas/Atlas';
+import { Box, Button, styled, Typography } from 'decentraland-ui2';
 
 import { useSelector } from '#store';
 
-import { DEPLOY_URLS } from '/@/lib/deploy';
 import type { Project } from '/shared/types/projects';
 
+import { config } from '/@/config';
 import { t } from '/@/modules/store/translation/utils';
 import { selectors as landSelectors } from '/@/modules/store/land';
 import { useEditor } from '/@/hooks/useEditor';
 import { useWorkspace } from '/@/hooks/useWorkspace';
-import { COLORS, type Coordinate } from './types';
 import { type Props } from '../../types';
 import { PublishModal } from '../../PublishModal';
+import { COLORS, type Coordinate } from './types';
+
+const CONTENT_SERVER = config.get('PEER_URL');
 
 function parseCoords(coords: string) {
   return coords.split(',').map(coord => parseInt(coord, 10)) as [number, number];
@@ -61,9 +63,7 @@ export function PublishToLand(props: Props) {
       worldConfiguration: undefined, // Cannot deploy to a LAND with a world configuration
       updatedAt: Date.now(),
     });
-    publishScene({
-      target: import.meta.env.VITE_CATALYST_SERVER || DEPLOY_URLS.CATALYST_SERVER,
-    });
+    publishScene({ target: CONTENT_SERVER });
     props.onStep('deploy');
   }, [placement, props.onStep]);
 

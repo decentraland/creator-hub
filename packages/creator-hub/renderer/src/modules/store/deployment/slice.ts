@@ -3,12 +3,11 @@ import { Authenticator, type AuthIdentity } from '@dcl/crypto';
 import type { ChainId } from '@dcl/schemas';
 import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
 
+import { editor } from '#preload';
+import { delay } from '/shared/utils';
 import type { DeploymentComponentsStatus, Info, Status, File } from '/@/lib/deploy';
 import { DeploymentError, isDeploymentError } from '/@/lib/deploy';
-import { delay } from '/shared/utils';
-
 import { createAsyncThunk } from '/@/modules/store/thunk';
-
 import {
   checkDeploymentStatus,
   cleanPendingsFromDeploymentStatus,
@@ -25,8 +24,6 @@ import {
   translateError,
   getCatalystServers,
 } from './utils';
-
-import { editor } from '#preload';
 
 const getErrorForTranslation = (action: any) =>
   isRejectedWithValue(action) ? action.payload : action.error;
