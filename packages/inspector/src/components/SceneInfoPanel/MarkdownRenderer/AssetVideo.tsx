@@ -20,9 +20,10 @@ export const AssetVideo: React.FC<AssetVideoProps> = ({ src, ...props }) => {
 
   return (
     <video
+      {...props}
       src={videoSrc}
       controls
-      {...props}
+      autoPlay={false}
     />
   );
 };

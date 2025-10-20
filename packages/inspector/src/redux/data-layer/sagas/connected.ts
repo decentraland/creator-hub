@@ -7,7 +7,7 @@ import {
   getInspectorPreferences,
   getThumbnails,
 } from '../';
-import { getSceneInfoContent, initializeSceneInfoPanel } from '../../scene-info';
+import { getSceneInfoContent } from '../../scene-info';
 
 export function* connectedSaga() {
   const dataLayer: IDataLayer = yield call(getDataLayerInterface);
@@ -16,5 +16,4 @@ export function* connectedSaga() {
   yield put(getAssetCatalog());
   yield put(getThumbnails());
   yield put(getSceneInfoContent());
-  yield put(initializeSceneInfoPanel());
 }

@@ -8,9 +8,8 @@ import cx from 'classnames';
 import { withSdk } from '../../hoc/withSdk';
 import { save, undo, redo, selectCanRedo, selectCanUndo } from '../../redux/data-layer';
 import { selectCanSave } from '../../redux/app';
-import { getHiddenPanels } from '../../redux/ui';
-import { PanelName } from '../../redux/ui/types';
-import { toggleInfoPanel, selectSceneInfo } from '../../redux/scene-info';
+import { selectSceneInfo } from '../../redux/scene-info';
+import { useInspectorUIState } from '../../hooks/sdk/useInspectorUIState';
 import { useAppSelector, useAppDispatch } from '../../redux/hooks';
 import {
   REDO,
@@ -34,10 +33,11 @@ const Toolbar = withSdk(({ sdk }) => {
   const canUndo = useAppSelector(selectCanUndo);
   const canRedo = useAppSelector(selectCanRedo);
   const sceneInfoContent = useAppSelector(selectSceneInfo).content;
-  const hiddenPanels = useAppSelector(getHiddenPanels);
   const dispatch = useAppDispatch();
+  const [uiState, updateUIState] = useInspectorUIState();
+
   const showSceneInfoButton = !!sceneInfoContent;
-  const isSceneInfoPanelOpen = !hiddenPanels[PanelName.SCENE_INFO];
+  const isSceneInfoPanelOpen = !!uiState?.sceneInfoPanelVisible;
 
   // TODO: Remove withSdk
   const handleInspector = useCallback(() => {
@@ -52,10 +52,9 @@ const Toolbar = withSdk(({ sdk }) => {
   const handleSaveClick = useCallback(() => dispatch(save()), []);
   const handleUndo = useCallback(() => dispatch(undo()), []);
   const handleRedo = useCallback(() => dispatch(redo()), []);
-  const handleToggleSceneInfo = useCallback(
-    () => dispatch(toggleInfoPanel(!isSceneInfoPanelOpen)),
-    [isSceneInfoPanelOpen],
-  );
+  const handleToggleSceneInfo = useCallback(() => {
+    updateUIState({ sceneInfoPanelVisible: !isSceneInfoPanelOpen });
+  }, [isSceneInfoPanelOpen, updateUIState]);
 
   useHotkey([SAVE, SAVE_ALT], handleSaveClick);
   useHotkey([UNDO, UNDO_ALT], handleUndo);

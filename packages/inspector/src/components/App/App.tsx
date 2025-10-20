@@ -3,6 +3,7 @@ import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
 import cx from 'classnames';
 
 import { useSelectedEntity } from '../../hooks/sdk/useSelectedEntity';
+import { useInspectorUIState } from '../../hooks/sdk/useInspectorUIState';
 import { useWindowSize } from '../../hooks/useWindowSize';
 import { useAppSelector } from '../../redux/hooks';
 import { selectDataLayerError } from '../../redux/data-layer';
@@ -29,6 +30,7 @@ const App = () => {
   const hiddenPanels = useAppSelector(getHiddenPanels);
   const sceneInfoContent = useAppSelector(selectSceneInfo).content;
   const disconnected = useAppSelector(selectDataLayerError);
+  const [uiState] = useInspectorUIState();
 
   const [isAssetsPanelCollapsed, setIsAssetsPanelCollapsed] = useState(false);
 
@@ -86,7 +88,7 @@ const App = () => {
                 <Renderer />
               </Box>
             </Panel>
-            {!hiddenPanels[PanelName.SCENE_INFO] && !!sceneInfoContent && (
+            {uiState?.sceneInfoPanelVisible && !!sceneInfoContent && (
               <>
                 <PanelResizeHandle className="horizontal-handle" />
                 <Panel

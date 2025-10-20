@@ -23,7 +23,6 @@ const SceneInfoInput: React.FC = () => {
     dispatch(setSceneInfoContent(content)); // Only update local state while editing
   }, []);
 
-  // Scene description handler - save directly on change with debouncing via blur
   const handleSceneInfoSave = useCallback((e: React.FocusEvent<HTMLTextAreaElement>) => {
     const content = e.target.value;
     dispatch(saveSceneInfoContent(content)); // Save to scene on blur

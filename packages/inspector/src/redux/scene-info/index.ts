@@ -32,8 +32,6 @@ export const sceneInfo = createSlice({
     setSceneInfoError: (state, { payload }: PayloadAction<string | null>) => {
       state.error = payload;
     },
-    initializeSceneInfoPanel: () => {},
-    toggleInfoPanel: (_state, { payload: _ }: PayloadAction<boolean>) => {},
   },
 });
 
@@ -44,8 +42,6 @@ export const {
   setSceneInfoContent,
   setSceneInfoLoading,
   setSceneInfoError,
-  initializeSceneInfoPanel,
-  toggleInfoPanel,
 } = sceneInfo.actions;
 
 // Selectors
