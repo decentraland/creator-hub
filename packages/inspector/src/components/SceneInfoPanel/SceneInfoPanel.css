@@ -61,6 +61,7 @@
   border: none;
   background: transparent;
   cursor: pointer;
+  color: var(--text)
 }
 
 .SceneInfoPanel .Actions .CloseButton>svg {

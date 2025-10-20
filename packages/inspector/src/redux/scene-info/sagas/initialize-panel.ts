@@ -3,7 +3,8 @@ import { call, put } from 'redux-saga/effects';
 import type { IDataLayer } from '../../data-layer';
 import { getDataLayerInterface } from '../../data-layer';
 import { getSceneInfoContent, SCENE_INFO_FILE, toggleInfoPanel } from '../';
-import type { GetFileResponse, InspectorUIStateMessage } from '../../../tooling-entrypoint';
+import type { GetFileResponse } from '../../../tooling-entrypoint';
+import { EditorComponentNames } from '../../../lib/sdk/components/types';
 
 export function* initializeSceneInfoPanelSaga() {
   const dataLayer: IDataLayer = yield call(getDataLayerInterface);
@@ -14,14 +15,29 @@ export function* initializeSceneInfoPanelSaga() {
     const response: GetFileResponse = yield call(dataLayer.getFile, {
       path: SCENE_INFO_FILE,
     });
+
     const hasContent = response && response.content && response.content.length > 0;
+    if (hasContent) {
+      // Read InspectorUIState component value directly from engine
+      // The engine is exposed globally for debugging
+      const engine = (globalThis as any).dataLayerEngine;
+      if (engine) {
+        const InspectorUIState = engine.getComponentOrNull(EditorComponentNames.InspectorUIState);
 
-    // Get saved UI state from component
-    const uiState: InspectorUIStateMessage = yield call(dataLayer.getInspectorUIState, {});
-    const shouldBeVisible = uiState.sceneInfoPanelVisible ?? true; // If sceneInfoPanelVisible is undefined (never set), default to true (open)
+        let shouldOpen = false;
+        if (InspectorUIState && InspectorUIState.has(engine.RootEntity)) {
+          const state = InspectorUIState.get(engine.RootEntity);
+          // If sceneInfoPanelVisible is undefined (old scenes), default to false (closed)
+          // For new scenes, it will be explicitly set to true
+          shouldOpen = state.sceneInfoPanelVisible ?? false;
+        }
 
-    const shouldOpen = hasContent && shouldBeVisible;
-    yield put(toggleInfoPanel(shouldOpen));
+        yield put(toggleInfoPanel(shouldOpen));
+      }
+    } else {
+      yield put(toggleInfoPanel(false));
+    }
+
     yield put(getSceneInfoContent());
   } catch (e) {
     yield put(toggleInfoPanel(false));

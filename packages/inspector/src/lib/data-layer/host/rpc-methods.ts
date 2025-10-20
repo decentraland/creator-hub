@@ -1,15 +1,10 @@
-import type {
-  IEngine,
-  LastWriteWinElementSetComponentDefinition,
-  OnChangeFunction,
-} from '@dcl/ecs';
+import type { IEngine, OnChangeFunction } from '@dcl/ecs';
 
 import type { DataLayerRpcServer, FileSystemInterface } from '../types';
 import { readPreferencesFromFile, serializeInspectorPreferences } from '../../logic/preferences/io';
 import type { AssetData } from '../../logic/catalog';
 import type { InspectorPreferences } from '../../logic/preferences/types';
 import { EditorComponentNames } from '../../sdk/components/types';
-import type { InspectorUIStateMessage } from '../remote-data-layer';
 import {
   DIRECTORY,
   EXTENSIONS,
@@ -406,29 +401,6 @@ export async function initRpcMethods(
 
         throw new Error(`Custom asset with id ${assetId} not found`);
       });
-    },
-
-    async getInspectorUIState() {
-      const InspectorUIState = engine.getComponentOrNull(EditorComponentNames.InspectorUIState);
-
-      if (InspectorUIState && InspectorUIState.has(engine.RootEntity)) {
-        const state = InspectorUIState.get(engine.RootEntity) as InspectorUIStateMessage;
-        return state;
-      }
-
-      // Return default state if component doesn't exist
-      return { sceneInfoPanelVisible: undefined };
-    },
-
-    async setInspectorUIState(req) {
-      const InspectorUIState = engine.getComponentOrNull(
-        EditorComponentNames.InspectorUIState,
-      ) as LastWriteWinElementSetComponentDefinition<unknown>;
-      if (InspectorUIState) {
-        InspectorUIState.createOrReplace(engine.RootEntity, req);
-        await compositeProvider.saveComposite(true);
-      }
-      return {};
     },
   };
 }
