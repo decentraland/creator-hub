@@ -55,6 +55,13 @@ export function addAsset(engine: IEngine) {
       EditorComponentNames.CustomAsset,
     ) as EditorComponents['CustomAsset'];
 
+    // Normalize position to plain object (fixes serialization issues with BabylonJS Vector3)
+    const normalizedPosition: Vector3Type = {
+      x: position.x ?? 0,
+      y: position.y ?? 0,
+      z: position.z ?? 0,
+    };
+
     if (composite) {
       // Get all unique entity IDs from components
       const entityIds = new Set<Entity>();
@@ -122,15 +129,15 @@ export function addAsset(engine: IEngine) {
       // If multiple roots, create a new root as main entity
       if (roots.size > 1) {
         mainEntity = addChild(engine)(parent, `${name}_root`);
-        Transform.createOrReplace(mainEntity, { parent, position });
+        Transform.createOrReplace(mainEntity, { parent, position: normalizedPosition });
         defaultParent = mainEntity;
       }
 
       // If single entity, use it as root and main entity
       if (entityIds.size === 1) {
         mainEntity = addChild(engine)(parent, name);
-        Transform.createOrReplace(mainEntity, { parent, position });
-        entities.set(entityIds.values().next().value, mainEntity);
+        Transform.createOrReplace(mainEntity, { parent, position: normalizedPosition });
+        entities.set(entityIds.values().next().value as Entity, mainEntity);
       } else {
         // Track orphaned entities that need to be reparented
         const orphanedEntities = new Map<Entity, Entity>();
@@ -202,7 +209,7 @@ export function addAsset(engine: IEngine) {
         if (roots.size === 1) {
           const root = Array.from(roots)[0];
           mainEntity = entities.get(root)!;
-          Transform.createOrReplace(mainEntity, { parent, position });
+          Transform.createOrReplace(mainEntity, { parent, position: normalizedPosition });
         }
       }
 
@@ -392,7 +399,7 @@ export function addAsset(engine: IEngine) {
     } else {
       // Handle non-composite case
       const mainEntity = addChild(engine)(parent, name);
-      Transform.createOrReplace(mainEntity, { parent, position });
+      Transform.createOrReplace(mainEntity, { parent, position: normalizedPosition });
 
       GltfContainer.create(mainEntity, {
         src: `${base}/${src}`,
