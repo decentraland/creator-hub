@@ -33,8 +33,6 @@ const MarkdownRenderer: React.FC<Props> = ({ content }) => {
             return `${value}`; // Source is not an URL, return the original string value as it will be handled as a local scene file.
           }
         } else if (tag === 'script') {
-          console.log('sanitize', tag, attribute);
-
           return ''; // Disallow script tags entirely
         } else {
           return value; // For all other tags/attributes, return the value as is
