@@ -114,7 +114,7 @@ jobs:
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./packages/inspector/public
+          publish_dir: "${{ github.workspace }}/packages/inspector/public"
           destination_dir: inspector/${{ steps.sanitize-branch.outputs.safe_branch }}
           keep_files: true
 
