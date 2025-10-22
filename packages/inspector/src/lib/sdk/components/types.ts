@@ -21,6 +21,8 @@ export enum CoreComponents {
   VIDEO_PLAYER = 'core::VideoPlayer',
   VISIBILITY_COMPONENT = 'core::VisibilityComponent',
   VIRTUAL_CAMERA = 'core::VirtualCamera',
+  LIGHT_SOURCE = 'core::LightSource',
+  GLTF_NODE_MODIFIERS = 'core::GltfNodeModifiers',
 }
 
 export const EditorComponentNames = {

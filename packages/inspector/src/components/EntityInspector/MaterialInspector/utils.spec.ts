@@ -1,5 +1,4 @@
 import type { PBMaterial, PBMaterial_PbrMaterial, PBMaterial_UnlitMaterial } from '@dcl/ecs';
-import { COLORS } from '../../ui/ColorField/utils';
 import type { MaterialInput } from './types';
 import { MaterialType } from './types';
 import { fromMaterial, toMaterial, isValidMaterial } from './utils';
@@ -95,7 +94,7 @@ describe('fromMaterial', () => {
     });
     expect(result.metallic).toBe('0.5');
     expect(result.specularIntensity).toBe('1');
-    expect(result.albedoColor).toBe(COLORS[0].value);
+    expect(result.albedoColor).toBeUndefined();
     expect(result.emissiveColor).toEqual('#FF0000');
   });
 });
