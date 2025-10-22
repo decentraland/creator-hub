@@ -72,6 +72,9 @@ export default React.memo(
 
     const hasGltfContainer = useHasComponent(entity, sdk.components.GltfContainer);
     const hasMeshCollider = useHasComponent(entity, sdk.components.MeshCollider);
+    const isGltfContainerOnEntity = sdk.components.GltfContainer.has(entity);
+    const isMeshRendererOnEntity = sdk.components.MeshRenderer.has(entity);
+    const isTextShapeOnEntity = sdk.components.TextShape.has(entity);
 
     const handleAddComponent = useCallback(
       (componentId: number, componentName: string, value?: any) => {
@@ -101,13 +104,21 @@ export default React.memo(
           return !hasGltfContainer && !hasMeshCollider;
         }
 
+        if (componentId === sdk.components.NftShape.componentId) {
+          return isGltfContainerOnEntity || isMeshRendererOnEntity || isTextShapeOnEntity;
+        }
+
         return false;
       },
       [
         availableComponents,
         hasGltfContainer,
         hasMeshCollider,
+        isGltfContainerOnEntity,
+        isMeshRendererOnEntity,
+        isTextShapeOnEntity,
         sdk.components.VisibilityComponent.componentId,
+        sdk.components.NftShape.componentId,
       ],
     );
 
@@ -242,6 +253,21 @@ export default React.memo(
             sdk.components.MeshCollider.componentId,
             'MeshCollider defines the collision properties of an item, based on its invisible collision geometry. Collisions serve to make an item clickable or to block the player from walking through an item',
             'https://docs.decentraland.org/creator/development-guide/sdk7/colliders/',
+          ),
+        },
+        {
+          id: sdk.components.NftShape.componentId,
+          value: 'Nft Shape',
+          onClick: () =>
+            handleClickAddComponent(
+              sdk.components.NftShape.componentId,
+              sdk.components.NftShape.componentName,
+            ),
+          disabled: isComponentDisabled(sdk.components.NftShape.componentId),
+          tooltip: getComponentTooltip(
+            sdk.components.NftShape.componentId,
+            'NftShape defines the shape of an item, based on its NFT',
+            'https://docs.decentraland.org/creator/development-guide/sdk7/display-a-certified-nft/',
           ),
         },
         { header: 'Interaction' },
