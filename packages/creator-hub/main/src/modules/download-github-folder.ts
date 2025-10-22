@@ -3,6 +3,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import log from 'electron-log/main';
+import extract from 'extract-zip';
 
 async function downloadFile(fileUrl: string, outputPath: string) {
   const response = await (await fetch(fileUrl)).arrayBuffer();
@@ -36,11 +37,29 @@ function parseGitHubUrl(githubUrl: string) {
   throw new Error("URL doesn't match the expected GitHub format.");
 }
 
-export async function downloadGithubFolder(githubUrl: string, destination: string) {
+export async function downloadGithubRepo(githubUrl: string, destination: string) {
   const { owner, repo, branch, path: subfolderPath } = parseGitHubUrl(githubUrl);
-  const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${subfolderPath}?ref=${branch}`;
+  const apiUrl = `https://api.github.com/repos/${owner}/${repo}/zipball//${branch}`;
+
+  console.log('Here about to download repo:', apiUrl, subfolderPath); ///
 
   try {
+    const ghResponse = await fetch(apiUrl);
+    if (!ghResponse.ok) {
+      throw new Error(`GitHub API request failed with status ${ghResponse.status}`);
+    }
+
+    const tempZipPath = path.join(destination, `${repo}.zip`);
+    const zipContent = await ghResponse.bytes();
+    await fs.writeFile(tempZipPath, zipContent);
+
+    await extract(tempZipPath, { dir: destination });
+
+    await fs.rm(tempZipPath);
+    console.log('Here after extract', tempZipPath, destination);
+
+    return;
+
     const data: any = await (await fetch(apiUrl)).json();
 
     if (Array.isArray(data)) {
@@ -66,6 +85,6 @@ export async function downloadGithubFolder(githubUrl: string, destination: strin
       await downloadFile(data.download_url, filePath);
     }
   } catch (error: any) {
-    log.error(`Error downloading folder: ${apiUrl} \n ${error.message}`);
+    log.error(`Error downloading GitHub repository: ${apiUrl} \n ${error.message}`);
   }
 }

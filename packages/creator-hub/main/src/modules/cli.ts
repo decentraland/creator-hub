@@ -13,7 +13,7 @@ import { dclDeepLink, run, type Child } from './bin';
 import { getAvailablePort } from './port';
 import { getProjectId, track } from './analytics';
 import { install } from './npm';
-import { downloadGithubFolder } from './download-github-folder';
+import { downloadGithubRepo } from './download-github-folder';
 
 export type Preview = { child: Child; url: string; opts: PreviewOptions };
 
@@ -42,7 +42,7 @@ export async function init(targetPath: string, repo: string): Promise<void> {
   if (!isGithubRepo) {
     throw new Error('Invalid GitHub repository URL');
   }
-  await downloadGithubFolder(repo, targetPath);
+  await downloadGithubRepo(repo, targetPath);
   track('Scene created', {
     projectType: 'github-repo',
     url: repo,
