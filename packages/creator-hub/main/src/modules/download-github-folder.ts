@@ -1,15 +1,10 @@
 /* eslint-disable no-useless-escape */
 
 import fs from 'fs/promises';
+import { createWriteStream } from 'fs';
 import path from 'path';
 import log from 'electron-log/main';
-import extract from 'extract-zip';
-
-async function downloadFile(fileUrl: string, outputPath: string) {
-  const response = await (await fetch(fileUrl)).arrayBuffer();
-  const buffer = new Uint8Array(response);
-  await fs.writeFile(outputPath, buffer);
-}
+import yauzl from 'yauzl';
 
 // Function to parse GitHub URL for root or subfolder
 function parseGitHubUrl(githubUrl: string) {
@@ -39,9 +34,7 @@ function parseGitHubUrl(githubUrl: string) {
 
 export async function downloadGithubRepo(githubUrl: string, destination: string) {
   const { owner, repo, branch, path: subfolderPath } = parseGitHubUrl(githubUrl);
-  const apiUrl = `https://api.github.com/repos/${owner}/${repo}/zipball//${branch}`;
-
-  console.log('Here about to download repo:', apiUrl, subfolderPath); ///
+  const apiUrl = `https://api.github.com/repos/${owner}/${repo}/zipball/${branch}`;
 
   try {
     const ghResponse = await fetch(apiUrl);
@@ -49,41 +42,77 @@ export async function downloadGithubRepo(githubUrl: string, destination: string)
       throw new Error(`GitHub API request failed with status ${ghResponse.status}`);
     }
 
-    const tempZipPath = path.join(destination, `${repo}.zip`);
-    const zipContent = await ghResponse.bytes();
-    await fs.writeFile(tempZipPath, zipContent);
+    const zipContent = Buffer.from(await ghResponse.arrayBuffer());
 
-    await extract(tempZipPath, { dir: destination });
-
-    await fs.rm(tempZipPath);
-    console.log('Here after extract', tempZipPath, destination);
-
-    return;
-
-    const data: any = await (await fetch(apiUrl)).json();
-
-    if (Array.isArray(data)) {
-      for await (const file of data) {
-        const filePath = path.join(destination, file.name);
-
-        if (file.type === 'file') {
-          await downloadFile(file.download_url, filePath);
-        } else if (file.type === 'dir') {
-          try {
-            await fs.access(filePath);
-          } catch {
-            await fs.mkdir(filePath, { recursive: true });
-          }
-          const nextUrl = `https://github.com/${owner}/${repo}/tree/${branch}/${file.path}`;
-
-          await downloadGithubFolder(nextUrl, filePath);
+    await new Promise<void>((resolve, reject) => {
+      yauzl.fromBuffer(zipContent, { lazyEntries: true }, (err, zipfile) => {
+        if (err || !zipfile) {
+          reject(err || new Error('Failed to open zip file'));
+          return;
         }
-      }
-    } else {
-      // Handle single file or root without subfolders
-      const filePath = path.join(destination, data.name);
-      await downloadFile(data.download_url, filePath);
-    }
+
+        let rootPrefix: string | null = null;
+
+        /** Returns the folder prefix for a given file path inside the zip,
+         * taking into account zip root folder and repo subfolder if specified
+         */
+        const getRootPrefix = (filePath: string) => {
+          if (!rootPrefix) {
+            // Detect root folder prefix if not set
+            const parts = filePath.split('/');
+            rootPrefix = parts.length > 1 ? parts[0] + '/' : '';
+            if (subfolderPath) rootPrefix += subfolderPath + '/';
+          }
+          return rootPrefix;
+        };
+
+        zipfile.readEntry();
+        zipfile.on('end', () => resolve());
+        zipfile.on('error', reject);
+
+        zipfile.on('entry', async (entry: yauzl.Entry) => {
+          // Normalize the entry path (convert Windows backslashes)
+          const filePath = entry.fileName.replace(/\\/g, '/');
+          const rootPrefix = getRootPrefix(filePath);
+
+          if (filePath.length <= rootPrefix.length || !filePath.startsWith(rootPrefix)) {
+            // Skip this entry if it doesn't belong to the desired subfolder
+            zipfile.readEntry();
+            return;
+          }
+
+          // Strip root folder prefix
+          const outputPath = path.join(destination, filePath.slice(rootPrefix.length));
+
+          // Handle directories
+          if (outputPath.endsWith('/')) {
+            try {
+              await fs.access(outputPath);
+            } catch {
+              await fs.mkdir(outputPath, { recursive: true });
+            } finally {
+              zipfile.readEntry();
+            }
+          } else {
+            // Handle files
+            await fs.mkdir(path.dirname(outputPath), { recursive: true });
+            zipfile.openReadStream(entry, (err, readStream) => {
+              if (err || !readStream) {
+                reject(err || new Error('Failed to open read stream'));
+                return;
+              }
+
+              const writeStream = createWriteStream(outputPath);
+              readStream.pipe(writeStream);
+
+              writeStream.on('finish', () => zipfile.readEntry());
+              writeStream.on('error', reject);
+              readStream.on('error', reject);
+            });
+          }
+        });
+      });
+    });
   } catch (error: any) {
     log.error(`Error downloading GitHub repository: ${apiUrl} \n ${error.message}`);
   }
