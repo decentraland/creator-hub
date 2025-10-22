@@ -111,7 +111,9 @@ const updateDeploymentTarget = createAsyncThunk(
     const url = getDeploymentUrl(port);
 
     if (!url) {
-      return rejectWithValue(new DeploymentError('INVALID_URL', getInitialDeploymentStatus()));
+      return rejectWithValue(
+        new DeploymentError(DeploymentErrorType.INVALID_URL, getInitialDeploymentStatus()),
+      );
     }
 
     const [info, files] = await Promise.all([fetchInfo(url), fetchFiles(url)]);
