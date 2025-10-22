@@ -15,12 +15,6 @@ on:
 
 jobs:
   ai-review:
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'pull_request' && github.event.label.name == 'ai-review') ||
-      (github.event_name == 'issue_comment' && 
-       github.event.issue.pull_request &&
-       contains(github.event.comment.body, 'ai-review'))
     uses: decentraland/actions/.github/workflows/ai-pr-review.yml@feat/smart-pr
     with:
       script_branch: feat/smart-pr
