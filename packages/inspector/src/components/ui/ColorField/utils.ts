@@ -52,12 +52,27 @@ export function toHex(value?: Color4 | Color3): string {
   return Color3.toHexString(value);
 }
 
-export function toColor4(value?: string) {
+export function toColor4(value?: string): Color4 {
   if (!value) return Color4.fromHexString(COLORS[0].value);
   return Color4.fromHexString(value);
 }
 
-export function toColor3(value?: string) {
+export function toColor3(value?: string): Color3 {
   if (!value) return Color3.fromHexString(COLORS[0].value);
+  return Color3.fromHexString(value);
+}
+
+export function toHexOrUndefined(value?: Color4 | Color3): string | undefined {
+  if (!value) return undefined;
+  return Color3.toHexString(value);
+}
+
+export function toColor4OrUndefined(value?: string): Color4 | undefined {
+  if (!value) return undefined;
+  return Color4.fromHexString(value);
+}
+
+export function toColor3OrUndefined(value?: string): Color3 | undefined {
+  if (!value) return undefined;
   return Color3.fromHexString(value);
 }
