@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { setUser } from '@sentry/electron/renderer';
 import { ChainId, type Avatar } from '@dcl/schemas';
 import { AuthServerProvider } from 'decentraland-connect';
 import { useDispatch } from '#store';
@@ -10,7 +11,6 @@ import { fetchLandList, fetchTiles } from '/@/modules/store/land';
 import { identify } from '/@/modules/store/analytics';
 import { AuthContext } from '/@/contexts/AuthContext';
 import type { AuthSignInProps } from './types';
-import { setUser } from '@sentry/electron/renderer';
 
 // Initialize the provider
 AuthServerProvider.setAuthServerUrl(config.get('AUTH_SERVER_URL'));
@@ -32,18 +32,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const isSigningIn = !!initSignInResultRef?.current;
 
-  const fetchAvatar = useCallback(
-    async (address: string) => {
-      try {
-        const profile = new Profiles();
-        const avatar = await profile.fetchProfile(address);
-        setAvatar(avatar);
-      } catch (error) {
-        console.error(error);
-      }
-    },
-    [chainId],
-  );
+  const fetchAvatar = useCallback(async (address: string) => {
+    try {
+      const profile = new Profiles();
+      const avatar = await profile.fetchProfile(address);
+      setAvatar(avatar);
+    } catch (error) {
+      console.error(error);
+    }
+  }, []);
 
   const finishSignIn = useCallback(async () => {
     const hasValidIdentity = AuthServerProvider.hasValidIdentity();
