@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { useAppDispatch } from '../../../redux/hooks';
-import { openFile } from '../../../redux/data-layer';
+import { getStorage } from '../../../lib/data-layer/client/iframe-data-layer';
 import { isExternalUrl, normalizePath } from './utils';
 
 interface AssetLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {}
@@ -17,6 +17,21 @@ interface AssetLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
 export const AssetLink: React.FC<AssetLinkProps> = ({ href, children, ...props }) => {
   const dispatch = useAppDispatch();
 
+  const handleOpenFile = useCallback(
+    (path: string) => {
+      const normalizedPath = normalizePath(path);
+      const storage = getStorage();
+      if (!storage) return;
+
+      try {
+        storage.openFile(normalizedPath);
+      } catch (error) {
+        console.error('Error opening file:', error);
+      }
+    },
+    [dispatch],
+  );
+
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLAnchorElement>) => {
       if (!href) return;
@@ -24,10 +39,9 @@ export const AssetLink: React.FC<AssetLinkProps> = ({ href, children, ...props }
       // For external URLs, let the browser handle it normally
       if (isExternalUrl(href)) return;
 
-      // For local paths, prevent default and dispatch Redux action
+      // For local paths, open the file in the editor
       e.preventDefault();
-      const normalizedHref = normalizePath(href);
-      dispatch(openFile({ path: normalizedHref }));
+      handleOpenFile(href);
     },
     [href, dispatch],
   );
