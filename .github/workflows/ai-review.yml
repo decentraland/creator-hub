@@ -1,0 +1,19 @@
+name: AI Pull Request Review
+
+on:
+  workflow_dispatch:
+    inputs:
+      force_refresh:
+        description: 'Force refresh analysis (ignore cache)'
+        required: false
+        default: 'false'
+        type: boolean
+  pull_request:
+    types: [opened, synchronize, reopened]
+  issue_comment:
+    types: [created, edited]
+
+jobs:
+  ai-review:
+    uses: decentraland/actions/.github/workflows/ai-pr-review.yml@feat/smart-pr
+    secrets: inherit
