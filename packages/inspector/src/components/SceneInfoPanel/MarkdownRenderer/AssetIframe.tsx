@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useAssetUrl } from './useAssetUrl';
+import { isAllowedExternalIframeOrigin } from './utils';
 
 interface AssetIframeProps extends React.IframeHTMLAttributes<HTMLIFrameElement> {}
 
 /**
  * Component that renders iframes from both external URLs and local scene assets.
  *
- * - For external URLs (http/https), the iframe is rendered directly.
+ * - For external URLs (http/https), the iframe is rendered directly. Only URLS from allowed domains are permitted.
  * - For local paths, the component fetches the file through the data layer and creates a blob URL for rendering.
  *   All local paths are normalized to prevent directory traversal attacks.
  *
@@ -18,15 +19,21 @@ interface AssetIframeProps extends React.IframeHTMLAttributes<HTMLIFrameElement>
  */
 export const AssetIframe: React.FC<AssetIframeProps> = ({ src, ...props }) => {
   const iframeSrc = useAssetUrl(src);
+  const isAllowedOrigin = useMemo(
+    () => !!iframeSrc && isAllowedExternalIframeOrigin(iframeSrc),
+    [iframeSrc],
+  );
 
-  if (!iframeSrc) return null; // No iframe is shown on error or while loading.
+  if (!iframeSrc || !isAllowedOrigin) return null; // No iframe is shown on error or while loading.
 
   return (
     <div className="IframeContainer">
       <iframe
-        {...props}
         src={iframeSrc}
-        sandbox="allow-scripts allow-same-origin"
+        title={props.title}
+        referrerPolicy="no-referrer"
+        allowFullScreen={false}
+        sandbox="allow-scripts allow-same-origin allow-popups"
       />
     </div>
   );

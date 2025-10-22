@@ -1,3 +1,9 @@
+const ALLOWED_EXTERNAL_IFRAME_ORIGINS = new Set<string>([
+  'https://www.youtube.com',
+  'https://youtube.com',
+  'https://player.vimeo.com',
+]);
+
 const MIME_TYPES: Record<string, string> = {
   png: 'image/png',
   jpg: 'image/jpeg',
@@ -27,9 +33,19 @@ export const isExternalUrl = (url: any): boolean => {
  * Ensures the path stays within the scene folder.
  */
 export const normalizePath = (path: string): string => {
-  const normalizedParts = path
+  const normalizedParts = `${path}` // Ensure it's a string
     .replace(/\\/g, '/') // Normalize backslashes to forward slashes
     .split('/') // Split into parts and filter out . and .. to prevent traversal
     .filter(part => part && part !== '.' && part !== '..');
   return normalizedParts.join('/');
+};
+
+/** Check if an external URL is allowed to be embedded in an iframe */
+export const isAllowedExternalIframeOrigin = (url: string): boolean => {
+  try {
+    const { origin } = new URL(url);
+    return ALLOWED_EXTERNAL_IFRAME_ORIGINS.has(origin);
+  } catch {
+    return false;
+  }
 };
