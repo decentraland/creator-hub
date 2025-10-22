@@ -10,6 +10,7 @@ import {
   GltfContainer as GltfEngine,
   NetworkEntity as NetworkEntityEngine,
   Name,
+  Tags as TagsEngine,
 } from '@dcl/ecs';
 import type { Actions } from '@dcl/asset-packs';
 import {
@@ -44,6 +45,7 @@ export function addAsset(engine: IEngine) {
     custom?: boolean,
   ): Entity {
     const Transform = engine.getComponent(TransformEngine.componentId) as typeof TransformEngine;
+    const Tags = engine.getComponent(TagsEngine.componentId) as typeof TagsEngine;
     const GltfContainer = engine.getComponent(GltfEngine.componentId) as typeof GltfEngine;
     const NetworkEntity = engine.getComponent(
       NetworkEntityEngine.componentId,
@@ -52,6 +54,13 @@ export function addAsset(engine: IEngine) {
     const CustomAsset = engine.getComponent(
       EditorComponentNames.CustomAsset,
     ) as EditorComponents['CustomAsset'];
+
+    // Normalize position to plain object (fixes serialization issues with BabylonJS Vector3)
+    const normalizedPosition: Vector3Type = {
+      x: position.x ?? 0,
+      y: position.y ?? 0,
+      z: position.z ?? 0,
+    };
 
     if (composite) {
       // Get all unique entity IDs from components
@@ -120,15 +129,15 @@ export function addAsset(engine: IEngine) {
       // If multiple roots, create a new root as main entity
       if (roots.size > 1) {
         mainEntity = addChild(engine)(parent, `${name}_root`);
-        Transform.createOrReplace(mainEntity, { parent, position });
+        Transform.createOrReplace(mainEntity, { parent, position: normalizedPosition });
         defaultParent = mainEntity;
       }
 
       // If single entity, use it as root and main entity
       if (entityIds.size === 1) {
         mainEntity = addChild(engine)(parent, name);
-        Transform.createOrReplace(mainEntity, { parent, position });
-        entities.set(entityIds.values().next().value, mainEntity);
+        Transform.createOrReplace(mainEntity, { parent, position: normalizedPosition });
+        entities.set(entityIds.values().next().value as Entity, mainEntity);
       } else {
         // Track orphaned entities that need to be reparented
         const orphanedEntities = new Map<Entity, Entity>();
@@ -200,7 +209,7 @@ export function addAsset(engine: IEngine) {
         if (roots.size === 1) {
           const root = Array.from(roots)[0];
           mainEntity = entities.get(root)!;
-          Transform.createOrReplace(mainEntity, { parent, position });
+          Transform.createOrReplace(mainEntity, { parent, position: normalizedPosition });
         }
       }
 
@@ -362,13 +371,35 @@ export function addAsset(engine: IEngine) {
         CustomAsset.createOrReplace(mainEntity, { assetId });
       }
 
+      if (custom) {
+        const customItemTags = composite.components.find(
+          component => component.name === Tags.componentName,
+        );
+        if (customItemTags) {
+          for (const [_, component] of Object.entries(customItemTags.data)) {
+            if (component.json?.tags) {
+              for (const tag of component.json.tags) {
+                const currentSceneTags = Tags.getMutableOrNull(engine.RootEntity);
+                if (currentSceneTags) {
+                  if (!currentSceneTags.tags.includes(tag)) {
+                    currentSceneTags.tags.push(tag);
+                  }
+                } else {
+                  Tags.create(engine.RootEntity, { tags: [tag] });
+                }
+              }
+            }
+          }
+        }
+      }
+
       // update selection
       updateSelectedEntity(engine)(mainEntity);
       return mainEntity;
     } else {
       // Handle non-composite case
       const mainEntity = addChild(engine)(parent, name);
-      Transform.createOrReplace(mainEntity, { parent, position });
+      Transform.createOrReplace(mainEntity, { parent, position: normalizedPosition });
 
       GltfContainer.create(mainEntity, {
         src: `${base}/${src}`,

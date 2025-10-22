@@ -1,13 +1,13 @@
-import type { Scene, AbstractMesh, Nullable, Observer } from '@babylonjs/core';
+import type { Scene, AbstractMesh } from '@babylonjs/core';
 import {
   Vector3,
   TransformNode,
   UtilityLayerRenderer,
-  PointerDragBehavior,
   MeshBuilder,
   StandardMaterial,
   Color3,
   Mesh,
+  Plane,
 } from '@babylonjs/core';
 import type { Entity } from '@dcl/ecs';
 import type { EcsEntity } from '../EcsEntity';
@@ -27,14 +27,10 @@ export class FreeGizmo implements IGizmoTransformer {
   private snapDistance = 0;
   private isWorldAligned = true;
 
-  private dragBehavior: PointerDragBehavior;
-  private dragStartObserver: Nullable<Observer<any>> = null;
-  private dragObserver: Nullable<Observer<any>> = null;
-  private dragEndObserver: Nullable<Observer<any>> = null;
-
   private pivotPosition: Vector3 | null = null;
   private lastSnappedPivotPosition: Vector3 | null = null;
   private entityOffsets = new Map<Entity, Vector3>();
+  private dragPlanePosition: Vector3 | null = null; // Cache initial ground plane position
 
   private gizmoIndicator: AbstractMesh | null = null;
 
@@ -47,9 +43,7 @@ export class FreeGizmo implements IGizmoTransformer {
   constructor(
     private scene: Scene,
     private utilityLayer: UtilityLayerRenderer = new UtilityLayerRenderer(scene),
-  ) {
-    this.dragBehavior = this.createDragBehavior();
-  }
+  ) {}
 
   setup(): void {
     this.cleanup();
@@ -58,13 +52,11 @@ export class FreeGizmo implements IGizmoTransformer {
   }
 
   enable(): void {
-    this.setupDragObservers();
+    // No-op: drag is handled entirely by setupSceneObservers
   }
 
   cleanup(): void {
     this.removeSceneObservers();
-    this.cleanupDragObservers();
-    this.detachDragBehavior();
     this.removeGizmoIndicator();
     this.resetState();
   }
@@ -119,14 +111,6 @@ export class FreeGizmo implements IGizmoTransformer {
     this.utilityLayer.dispose();
   }
 
-  private createDragBehavior(): PointerDragBehavior {
-    const behavior = new PointerDragBehavior({ dragPlaneNormal: new Vector3(0, 1, 0) });
-    behavior.useObjectOrientationForDragging = false;
-    behavior.dragButtons = [LEFT_BUTTON];
-    behavior.moveAttached = false;
-    return behavior;
-  }
-
   private resetState(): void {
     this.selectedEntities = [];
     this.pivotPosition = null;
@@ -141,71 +125,42 @@ export class FreeGizmo implements IGizmoTransformer {
   private resetDragState(): void {
     this.pivotPosition = null;
     this.entityOffsets.clear();
-    this.detachDragBehavior();
   }
 
   private setupSceneObservers(): void {
-    this.scene.onPointerDown = (_event, pickResult) => {
-      if (!this.canStartDrag(pickResult)) return;
+    this.scene.onPointerDown = event => {
+      // Only start drag on left mouse button to avoid interfering with camera controls
+      if (event.button !== LEFT_BUTTON || this.selectedEntities.length === 0) return;
 
-      const clickedEntity = this.findClickedEntity(pickResult.pickedMesh!);
-      if (!clickedEntity) return;
+      const clickedEntity = this.findClickedEntityFromSelected();
+      if (!clickedEntity) return; // Entity pointed is not selected
 
-      this.startDrag(clickedEntity, pickResult.pickedMesh!);
+      this.startDrag();
+    };
+
+    this.scene.onPointerMove = () => {
+      if (!this.isDragging) return;
+
+      const delta = this.calculateDragDelta();
+      if (!delta) return;
+
+      this.handleDrag({ delta });
     };
 
     this.scene.onPointerUp = () => {
       if (this.isDragging) {
-        this.endDrag();
+        this.handleDragEnd();
       }
     };
   }
 
   private removeSceneObservers(): void {
     this.scene.onPointerDown = () => {};
+    this.scene.onPointerMove = () => {};
     this.scene.onPointerUp = () => {};
   }
 
-  private canStartDrag(pickResult: any): boolean {
-    return pickResult.pickedMesh && this.selectedEntities.length > 0;
-  }
-
-  private setupDragObservers(): void {
-    this.dragStartObserver = this.dragBehavior.onDragStartObservable.add(() => {
-      this.isDragging = true;
-    });
-
-    this.dragObserver = this.dragBehavior.onDragObservable.add(eventData => {
-      this.handleDrag(eventData);
-    });
-
-    this.dragEndObserver = this.dragBehavior.onDragEndObservable.add(() => {
-      this.handleDragEnd();
-    });
-  }
-
-  private cleanupDragObservers(): void {
-    if (this.dragStartObserver) {
-      this.dragBehavior.onDragStartObservable.remove(this.dragStartObserver);
-      this.dragStartObserver = null;
-    }
-
-    if (this.dragObserver) {
-      this.dragBehavior.onDragObservable.remove(this.dragObserver);
-      this.dragObserver = null;
-    }
-
-    if (this.dragEndObserver) {
-      this.dragBehavior.onDragEndObservable.remove(this.dragEndObserver);
-      this.dragEndObserver = null;
-    }
-  }
-
-  private detachDragBehavior(): void {
-    this.dragBehavior.detach();
-  }
-
-  private handleDrag(eventData: any): void {
+  private handleDrag(eventData: { delta: Vector3 }): void {
     if (
       !this.isDragging ||
       !eventData.delta ||
@@ -223,7 +178,9 @@ export class FreeGizmo implements IGizmoTransformer {
 
   private handleDragEnd(): void {
     this.isDragging = false;
-    this.detachDragBehavior();
+    this.pivotPosition = null;
+    this.dragPlanePosition = null;
+    this.entityOffsets.clear();
     this.updateGizmoIndicator();
     this.dispatchOperations?.();
     this.onDragEndCallback?.();
@@ -271,7 +228,9 @@ export class FreeGizmo implements IGizmoTransformer {
   }
 
   private initializePivotPosition(): void {
-    this.pivotPosition = this.getCentroid();
+    // Use cursor position at drag start as pivot to avoid entities jumping to center
+    const pickInfo = this.scene.pick(this.scene.pointerX, this.scene.pointerY);
+    this.pivotPosition = pickInfo?.pickedPoint ? pickInfo.pickedPoint.clone() : this.getCentroid();
     this.lastSnappedPivotPosition = this.pivotPosition.clone();
   }
 
@@ -283,48 +242,76 @@ export class FreeGizmo implements IGizmoTransformer {
     }
   }
 
-  private findClickedEntity(pickedMesh: AbstractMesh): EcsEntity | null {
+  /** Manual drag implementation: raycast against a horizontal plane at the drag start Y position.
+   * This approach is necessary because PointerDragBehavior cannot be attached after pointer down.
+   * Raycasting against a plane (instead of full scene picking) maintains performance while
+   * providing accurate cursor-to-world position mapping regardless of camera angle.
+   */
+  private calculateDragDelta(): Vector3 | null {
+    if (!this.pivotPosition || !this.dragPlanePosition) return null;
+
+    const camera = this.scene.activeCamera;
+    if (!camera) return null;
+
+    const ray = this.scene.createPickingRay(this.scene.pointerX, this.scene.pointerY, null, camera);
+
+    const dragPlane = Plane.FromPositionAndNormal(
+      new Vector3(0, this.dragPlanePosition.y, 0),
+      Vector3.Up(),
+    );
+
+    const distance = ray.intersectsPlane(dragPlane);
+    if (distance === null) return null;
+
+    const newPosition = ray.origin.add(ray.direction.scale(distance));
+    const delta = newPosition.subtract(this.pivotPosition);
+
+    return delta;
+  }
+
+  /** Custom picking with predicate to only consider selected entities' meshes.
+   * By filtering to only selected entities,
+   * we ensure the user can interact with the currently selected entity even if others overlap.
+   */
+  private findClickedEntityFromSelected(): { entity: EcsEntity; mesh: AbstractMesh } | null {
+    const pickResult = this.scene.pick(this.scene.pointerX, this.scene.pointerY, mesh => {
+      for (const entity of this.selectedEntities) {
+        if (
+          mesh.isDescendantOf(entity) ||
+          mesh === entity.meshRenderer ||
+          mesh === entity.gltfContainer
+        ) {
+          return true;
+        }
+      }
+      return false;
+    });
+
+    if (!pickResult?.hit || !pickResult.pickedMesh) return null;
+
+    // Find which entity the picked mesh belongs to
     for (const entity of this.selectedEntities) {
-      if (pickedMesh.isDescendantOf(entity)) {
-        return entity;
+      if (
+        pickResult.pickedMesh.isDescendantOf(entity) ||
+        pickResult.pickedMesh === entity.meshRenderer ||
+        pickResult.pickedMesh === entity.gltfContainer
+      ) {
+        return { entity, mesh: pickResult.pickedMesh };
       }
     }
 
-    return (
-      this.selectedEntities.find(
-        entity => entity.meshRenderer === pickedMesh || entity.gltfContainer === pickedMesh,
-      ) || null
-    );
+    return null;
   }
 
-  private startDrag(clickedEntity: EcsEntity, pickedMesh: AbstractMesh): void {
+  private startDrag(): void {
+    this.isDragging = true;
     this.initializePivotPosition();
     this.initializeEntityOffsets();
-    this.attachDragBehavior(clickedEntity, pickedMesh);
-  }
 
-  private attachDragBehavior(clickedEntity: EcsEntity, pickedMesh: AbstractMesh): void {
-    const dragMesh = this.getDragMesh(clickedEntity, pickedMesh);
-    this.dragBehavior.attach(dragMesh);
-  }
-
-  private getDragMesh(clickedEntity: EcsEntity, pickedMesh: AbstractMesh): AbstractMesh {
-    if (clickedEntity.meshRenderer) {
-      return clickedEntity.meshRenderer;
-    } else if (clickedEntity.gltfContainer) {
-      return clickedEntity.gltfContainer;
-    } else {
-      const childMeshes = clickedEntity.getChildMeshes();
-      return childMeshes.length > 0 ? childMeshes[0] : pickedMesh;
+    // Cache the pivot position for raycasting plane intersection during drag.
+    if (this.pivotPosition) {
+      this.dragPlanePosition = this.pivotPosition.clone();
     }
-  }
-
-  private endDrag(): void {
-    this.isDragging = false;
-    this.detachDragBehavior();
-    this.pivotPosition = null;
-    this.entityOffsets.clear();
-    this.onDragEndCallback?.();
   }
 
   private applyWorldPositionToEntity(entity: EcsEntity, worldPosition: Vector3): void {

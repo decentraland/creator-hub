@@ -82,7 +82,7 @@ runs:
           if [[ -n "${{ inputs.release_title }}" ]]; then
             TITLE="${{ inputs.release_title }}"
           else
-            TITLE="Release ${{ inputs.tag_name }}"
+            TITLE="${{ inputs.tag_name }}"
           fi
           echo "📝 Using release title: $TITLE"
 

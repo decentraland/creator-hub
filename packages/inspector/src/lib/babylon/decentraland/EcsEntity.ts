@@ -10,6 +10,7 @@ import type {
   PBTextShape,
   TransformType,
   PBMaterial,
+  TagsType,
 } from '@dcl/ecs';
 import { getRoot } from '../../sdk/nodes';
 import type { SceneContext } from './SceneContext';
@@ -23,6 +24,7 @@ export type EcsComponents = Partial<{
   pointerEvents: PBPointerEvents;
   textShape: PBTextShape;
   transform: TransformType;
+  tags: TagsType;
 }>;
 
 export class EcsEntity extends BABYLON.TransformNode {

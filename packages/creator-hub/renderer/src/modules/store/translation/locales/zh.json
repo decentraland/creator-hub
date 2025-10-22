@@ -171,6 +171,7 @@
       "deploy": {
         "world": "发布到您的世界",
         "land": "发布到您的土地",
+        "server": "发布到服务器",
         "loading": "加载中...",
         "error": "错误",
         "warning": {
@@ -375,6 +376,10 @@
     "cards": {
       "create": {
         "title": "创建",
+        "submit_event": {
+          "title": "提交事件",
+          "description": "在 Decentraland 上舉辦您自己的活動。"
+        },
         "legacy_web_editor": {
           "title": "旧版网页编辑器",
           "description": "访问旧版网页编辑器继续编辑你的场景。"

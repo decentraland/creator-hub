@@ -36,10 +36,13 @@ export function PublishProject({
     [setHistory],
   );
 
+  const previousStep = history.length > 1 ? history[history.length - 2] : undefined;
+
   const props: Props = {
     open,
     project,
     disableGoBack,
+    previousStep,
     onClose: handleClose,
     onBack: disableGoBack ? undefined : handleBack,
     onStep: handleStep,

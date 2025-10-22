@@ -52,7 +52,7 @@
 
 .Deploy .scene {
   display: flex;
-  gap: 32px;
+  gap: 20px;
 }
 
 .Deploy .scene .info {

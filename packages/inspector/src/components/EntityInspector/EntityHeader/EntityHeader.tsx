@@ -24,6 +24,7 @@ import MoreOptionsMenu from '../MoreOptionsMenu';
 import { RemoveButton } from '../RemoveButton';
 
 import './EntityHeader.css';
+import { TagsInspector } from '../TagsInspector';
 
 export const getLabel = (sdk: SdkContextValue, entity: Entity) => {
   const nameComponent = sdk.components.Name.getOrNull(entity);
@@ -197,6 +198,35 @@ export default React.memo(
             sdk.components.MeshRenderer.componentId,
             'Use MeshRenderer to assign a primitive 3D shape to the item. Instead of using a 3D file from GLTF, assign a simple cube, plane, sphere, or cylinder. These shapes can be used together with Materials',
             'https://docs.decentraland.org/creator/development-guide/sdk7/shape-components/',
+          ),
+        },
+        {
+          id: sdk.components.GltfNodeModifiers.componentId,
+          value: 'Swap material',
+          onClick: () =>
+            handleClickAddComponent(
+              sdk.components.GltfNodeModifiers.componentId,
+              sdk.components.GltfNodeModifiers.componentName,
+            ),
+          disabled: isComponentDisabled(sdk.components.GltfNodeModifiers.componentId),
+          tooltip: getComponentTooltip(
+            sdk.components.GltfNodeModifiers.componentId,
+            'Override GLTF/GLB materials',
+          ),
+        },
+        {
+          id: sdk.components.LightSource.componentId,
+          value: 'Light Source',
+          onClick: () =>
+            handleClickAddComponent(
+              sdk.components.LightSource.componentId,
+              sdk.components.LightSource.componentName,
+            ),
+          disabled: isComponentDisabled(sdk.components.LightSource.componentId),
+          tooltip: getComponentTooltip(
+            sdk.components.LightSource.componentId,
+            'Add a point or spot light',
+            'https://docs.decentraland.org/creator/development-guide/sdk7/lights/',
           ),
         },
         {
@@ -395,13 +425,18 @@ export default React.memo(
             ) : null}
           </div>
         </div>
-        {instanceOf && (
-          <Container className="InstanceOf">
-            <span>Instance of:</span>
-            <span className="Chip">
-              <CustomAssetIcon />
-              {instanceOf}
-            </span>
+        {!isRoot(entity) && (
+          <Container className="componentInfo">
+            {instanceOf && (
+              <div className="customItemContainer">
+                <span>Instance of:</span>
+                <span className="Chip">
+                  <CustomAssetIcon />
+                  {instanceOf}
+                </span>
+              </div>
+            )}
+            <TagsInspector entity={entity} />
           </Container>
         )}
       </div>

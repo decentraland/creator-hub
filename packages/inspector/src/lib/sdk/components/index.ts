@@ -160,6 +160,9 @@ export type SdkComponents = {
   TweenSequence: ReturnType<typeof components.TweenSequence>;
   VideoPlayer: ReturnType<typeof components.VideoPlayer>;
   VisibilityComponent: ReturnType<typeof components.VisibilityComponent>;
+  Tags: ReturnType<typeof components.Tags>;
+  LightSource: ReturnType<typeof components.LightSource>;
+  GltfNodeModifiers: ReturnType<typeof components.GltfNodeModifiers>;
 };
 
 export function createComponents(engine: IEngine): SdkComponents {
@@ -183,6 +186,9 @@ export function createComponents(engine: IEngine): SdkComponents {
   const TweenSequence = components.TweenSequence(engine);
   const VideoPlayer = components.VideoPlayer(engine);
   const VisibilityComponent = components.VisibilityComponent(engine);
+  const Tags = components.Tags(engine);
+  const LightSource = components.LightSource(engine);
+  const GltfNodeModifiers = components.GltfNodeModifiers(engine);
 
   return {
     Animator,
@@ -199,12 +205,15 @@ export function createComponents(engine: IEngine): SdkComponents {
     NftShape,
     PointerEvents,
     SyncComponents,
+    Tags,
     TextShape,
     Transform,
     Tween,
     TweenSequence,
     VideoPlayer,
     VisibilityComponent,
+    LightSource,
+    GltfNodeModifiers,
   };
 }
 

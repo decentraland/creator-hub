@@ -1,6 +1,6 @@
 import type { Scene } from '@dcl/schemas';
 
-import { installAndGetOutdatedPackages, shouldUpdateDependencies } from './utils';
+import { shouldUpdateDependencies } from './utils';
 import { actions } from './index';
 import { fs, npm, scene, settings, workspace } from '#preload';
 
@@ -35,8 +35,12 @@ export const unlistProjects = createAsyncThunk(
   workspace.unlistProjects,
 );
 export const openFolder = createAsyncThunk('workspace/openFolder', workspace.openFolder);
-export const installProject = createAsyncThunk('npm/install', async (path: string) =>
-  npm.install(path),
+export const installProject = createAsyncThunk(
+  'npm/install',
+  async ({ path, packages }: { path: string; packages?: string[] }) => {
+    await npm.install(path, packages);
+    await npm.getContextFiles(path);
+  },
 );
 export const saveThumbnail = createAsyncThunk('workspace/saveThumbnail', workspace.saveThumbnail);
 export const saveAndGetThumbnail = createAsyncThunk(
@@ -51,16 +55,16 @@ export const createProjectAndInstall = createAsyncThunk(
   'workspace/createProjectAndInstall',
   async (opts: Parameters<typeof workspace.createProject>[0], { dispatch }) => {
     const { path } = await dispatch(createProject(opts)).unwrap();
-    dispatch(installProject(path));
+    dispatch(installProject({ path }));
   },
 );
 export const updatePackages = createAsyncThunk(
   'workspace/updatePackages',
-  async (project: Project) => {
+  async (project: Project, { dispatch }) => {
     const latestPackages = Object.entries(project.dependencyAvailableUpdates).map(
       ([pkg, { latest }]) => `${pkg}@${latest}`,
     );
-    await npm.install(project.path, latestPackages);
+    dispatch(installProject({ path: project.path, packages: latestPackages }));
   },
 );
 export const updateAvailableDependencyUpdates = createAsyncThunk(
@@ -93,7 +97,10 @@ export const runProject = createAsyncThunk(
     const hasNodeModules = await workspace.hasNodeModules(project.path);
     const dependencyAvailableUpdates = hasNodeModules
       ? await workspace.getOutdatedPackages(project.path)
-      : await installAndGetOutdatedPackages(project.path);
+      : await (async () => {
+          await dispatch(installProject({ path: project.path })).unwrap();
+          return workspace.getOutdatedPackages(project.path);
+        })();
 
     if (shouldUpdateDependencies(strategy, dependencyAvailableUpdates)) {
       await dispatch(updatePackages({ ...project, dependencyAvailableUpdates })).unwrap();
