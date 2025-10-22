@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { InspectorUIStateType } from '../../lib/sdk/components/InspectorUIState';
 import { useChange } from './useChange';
 import { useSdk } from './useSdk';
@@ -8,33 +8,23 @@ import { useSdk } from './useSdk';
  * This component is stored on the RootEntity and persists UI state across sessions.
  */
 export const useInspectorUIState = () => {
-  const sdk = useSdk();
   const [uiState, setUiState] = useState<InspectorUIStateType | null>(null);
 
-  useEffect(() => {
-    // Initialize state from the component
-    if (!sdk) return;
-    const { engine, components } = sdk;
+  const sdk = useSdk(({ engine, components }) => {
     const currentState = components.InspectorUIState.getOrNull(engine.RootEntity);
     setUiState(currentState || {});
-  }, [sdk]);
+  });
 
   // Listen for changes to the component
-  useChange(
-    event => {
-      if (!sdk) return;
-      const { engine, components } = sdk;
-
-      if (
-        event.entity === engine.RootEntity &&
-        event.component?.componentId === components.InspectorUIState.componentId
-      ) {
-        const currentState = components.InspectorUIState.getOrNull(engine.RootEntity);
-        setUiState(currentState || {});
-      }
-    },
-    [sdk],
-  );
+  useChange((event, { engine, components }) => {
+    if (
+      event.entity === engine.RootEntity &&
+      event.component?.componentId === components.InspectorUIState.componentId
+    ) {
+      const currentState = components.InspectorUIState.getOrNull(engine.RootEntity);
+      setUiState(currentState || {});
+    }
+  });
 
   const updateUIState = (partialState: Partial<InspectorUIStateType>) => {
     if (!sdk) return;
