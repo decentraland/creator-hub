@@ -42,7 +42,9 @@ export async function init(targetPath: string, repo: string): Promise<void> {
   if (!isGithubRepo) {
     throw new Error('Invalid GitHub repository URL');
   }
+  log.info('[CLI] Downloading GitHub repository', { repo, targetPath });
   await downloadGithubRepo(repo, targetPath);
+  log.info('[CLI] GitHub repository downloaded successfully');
   track('Scene created', {
     projectType: 'github-repo',
     url: repo,
