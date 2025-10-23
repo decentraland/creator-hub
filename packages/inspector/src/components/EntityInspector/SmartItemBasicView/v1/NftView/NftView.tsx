@@ -1,19 +1,14 @@
-import React, { useCallback, useMemo } from 'react';
-import { type Entity, NftFrameType } from '@dcl/ecs';
+import React, { useCallback, useMemo, useState, type ChangeEvent } from 'react';
+import type { Entity } from '@dcl/ecs';
 import { withSdk, type WithSdkProps } from '../../../../../hoc/withSdk';
-import { useHasComponent } from '../../../../../hooks/sdk/useHasComponent';
-import { useEntityComponent } from '../../../../../hooks/sdk/useEntityComponent';
 import { Block } from '../../../../Block';
-import { TextField, Dropdown, ColorField, type DropdownChangeEvent } from '../../../../ui';
-import { toColor3 } from '../../../../ui/ColorField/utils';
-import { AddButton } from '../../../AddButton';
+import { TextField, Dropdown, ColorField } from '../../../../ui';
 import {
   fromNftShape,
   toNftShape,
   isValidInput,
   type UrnTokens,
   getUrn,
-  isValidUrn,
   NETWORKS,
   NFT_STYLES,
   buildUrnTokens,
@@ -23,9 +18,8 @@ import { useComponentInput } from '../../../../../hooks/sdk/useComponentInput';
 export default React.memo(
   withSdk<WithSdkProps & { entity: Entity }>(({ sdk, entity }) => {
     const { NftShape } = sdk.components;
-    const { addComponent } = useEntityComponent();
-    const hasNftShape = useHasComponent(entity, NftShape);
     const handleInputValidation = useCallback(({ urn }: { urn: string }) => isValidInput(urn), []);
+    const [touchedFields, setTouchedFields] = useState({ contract: false, token: false });
     const { getInputProps } = useComponentInput(
       entity,
       NftShape,
@@ -35,49 +29,34 @@ export default React.memo(
     );
     const color = getInputProps('color');
     const style = getInputProps('style');
-    const urnValue = getInputProps('urn').value as string | undefined;
+    const urnField = getInputProps('urn');
+    const urnValue = urnField.value as string | undefined;
     const urnTokens = useMemo<UrnTokens>(() => buildUrnTokens(urnValue), [urnValue]);
+
+    const getFieldError = useCallback(
+      (field: 'contract' | 'token') => {
+        if (touchedFields[field] && !urnTokens[field]) {
+          return `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
+        }
+        return undefined;
+      },
+      [touchedFields, urnTokens],
+    );
+
+    const handleFieldBlur = useCallback((field: 'contract' | 'token') => {
+      setTouchedFields(prev => ({ ...prev, [field]: true }));
+    }, []);
 
     const handleUrnTokenChange = useCallback(
       async (tokens: UrnTokens) => {
         const newTokens = { ...urnTokens, ...tokens };
         const urn = getUrn(newTokens);
-        if (isValidUrn(urn)) {
-          sdk.operations.updateValue(NftShape, entity, { ...NftShape.get(entity), urn });
-          await sdk.operations.dispatch();
+        if (isValidInput(urn)) {
+          urnField?.onChange?.({ target: { value: urn } } as ChangeEvent<HTMLInputElement>);
         }
       },
       [urnTokens],
     );
-
-    const handleColorChange = useCallback(
-      async ({ target: { value } }: React.ChangeEvent<HTMLInputElement>) => {
-        sdk.operations.updateValue(NftShape, entity, {
-          ...NftShape.get(entity),
-          color: toColor3(value),
-        });
-        await sdk.operations.dispatch();
-      },
-      [],
-    );
-
-    const handleStyleChange = useCallback(async ({ target: { value } }: DropdownChangeEvent) => {
-      const style = Number(value) as NftFrameType;
-      sdk.operations.updateValue(NftShape, entity, {
-        ...NftShape.get(entity),
-        style,
-      });
-      await sdk.operations.dispatch();
-    }, []);
-
-    const handleAddComponent = useCallback(async () => {
-      sdk.operations.addComponent(entity, NftShape.componentId);
-      await sdk.operations.dispatch();
-    }, [addComponent, entity, NftShape]);
-
-    if (!hasNftShape) {
-      return <AddButton onClick={handleAddComponent}>Add NFT Portrait Component</AddButton>;
-    }
 
     return (
       <>
@@ -92,6 +71,8 @@ export default React.memo(
           label="NFT Collection Contract"
           value={urnTokens.contract}
           onChange={e => handleUrnTokenChange({ contract: e.target.value.toLowerCase() })}
+          onBlur={() => handleFieldBlur('contract')}
+          error={getFieldError('contract')}
           autoSelect
         />
         <TextField
@@ -99,20 +80,20 @@ export default React.memo(
           label="Token ID"
           value={urnTokens.token}
           onChange={e => handleUrnTokenChange({ token: e.target.value })}
+          onBlur={() => handleFieldBlur('token')}
+          error={getFieldError('token')}
           autoSelect
         />
         <Block label="Background Color">
           <ColorField
             key={`nft-view-color-${color.value?.toString() ?? ''}`}
-            value={color.value}
-            onChange={handleColorChange}
+            {...color}
           />
         </Block>
         <Block label="Frame Type">
           <Dropdown
             options={NFT_STYLES}
-            value={style.value ?? NftFrameType.NFT_NONE}
-            onChange={handleStyleChange}
+            {...style}
           />
         </Block>
       </>

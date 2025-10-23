@@ -72,9 +72,8 @@ export default React.memo(
 
     const hasGltfContainer = useHasComponent(entity, sdk.components.GltfContainer);
     const hasMeshCollider = useHasComponent(entity, sdk.components.MeshCollider);
-    const isGltfContainerOnEntity = sdk.components.GltfContainer.has(entity);
-    const isMeshRendererOnEntity = sdk.components.MeshRenderer.has(entity);
-    const isTextShapeOnEntity = sdk.components.TextShape.has(entity);
+    const hasMeshRenderer = useHasComponent(entity, sdk.components.MeshRenderer);
+    const hasTextShape = useHasComponent(entity, sdk.components.TextShape);
 
     const handleAddComponent = useCallback(
       (componentId: number, componentName: string, value?: any) => {
@@ -105,7 +104,7 @@ export default React.memo(
         }
 
         if (componentId === sdk.components.NftShape.componentId) {
-          return isGltfContainerOnEntity || isMeshRendererOnEntity || isTextShapeOnEntity;
+          return hasGltfContainer || hasMeshRenderer || hasTextShape;
         }
 
         return false;
@@ -114,9 +113,8 @@ export default React.memo(
         availableComponents,
         hasGltfContainer,
         hasMeshCollider,
-        isGltfContainerOnEntity,
-        isMeshRendererOnEntity,
-        isTextShapeOnEntity,
+        hasMeshRenderer,
+        hasTextShape,
         sdk.components.VisibilityComponent.componentId,
         sdk.components.NftShape.componentId,
       ],

@@ -110,6 +110,19 @@ jobs:
           safe_branch=${branch//\//-}  # replace / with -
           echo "safe_branch=$safe_branch" >> $GITHUB_OUTPUT
 
+      - name: print public folder
+        run: |
+          echo "Current directory (pwd):"
+          pwd
+          echo ""
+          echo "github.workspace: ${{ github.workspace }}"
+          echo ""
+          echo "Contents of packages/inspector/public:"
+          ls -la packages/inspector/public
+          echo ""
+          echo "Contents of publish folder:"
+          ls -la "${{ github.workspace }}/packages/inspector/public"
+
       - name: deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:

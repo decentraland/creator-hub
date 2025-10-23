@@ -28,6 +28,7 @@ export function isValidUrn(urn: string): boolean {
 }
 
 export function isValidInput(urn: string): boolean {
+  if (!urn) return true;
   return isValidUrn(urn);
 }
 
