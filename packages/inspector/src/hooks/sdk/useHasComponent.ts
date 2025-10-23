@@ -6,6 +6,7 @@ import { useChange } from './useChange';
 
 export const useHasComponent = (entity: Entity, component: Component) => {
   const [hasComponent, setHasComponent] = useState<boolean>(component.has(entity));
+  console.log('hasComponent', hasComponent);
 
   useChange(event => {
     if (event.component?.componentId === component.componentId && event.entity === entity) {
