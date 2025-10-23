@@ -3,7 +3,6 @@
 import fs from 'fs/promises';
 import { createWriteStream } from 'fs';
 import path from 'path';
-import log from 'electron-log/main';
 import yauzl from 'yauzl';
 
 // Function to parse GitHub URL for root or subfolder
@@ -35,9 +34,7 @@ function parseGitHubUrl(githubUrl: string) {
 async function createFolderIfNotExists(folderPath: string) {
   try {
     await fs.access(folderPath);
-    log.silly('[downloadGithubRepo] directory exists', { folderPath });
   } catch (e) {
-    log.silly('[downloadGithubRepo] creating directory', { folderPath });
     await fs.mkdir(folderPath, { recursive: true });
   }
 }
@@ -102,16 +99,9 @@ export async function downloadGithubRepo(githubUrl: string, destination: string)
 
             // Handle directories
             if (outputPath.endsWith('/')) {
-              log.silly('[downloadGithubRepo] it is a folder', {
-                outputPath,
-              });
               await createFolderIfNotExists(outputPath);
-              log.silly('[downloadGithubRepo] directory processed', {
-                outputPath,
-              });
               zipfile.readEntry();
             } else {
-              log.silly('[downloadGithubRepo] it is a file', { outputPath });
               // Handle files
               await createFolderIfNotExists(path.dirname(outputPath));
               zipfile.openReadStream(entry, (err, readStream) => {
@@ -122,19 +112,6 @@ export async function downloadGithubRepo(githubUrl: string, destination: string)
 
                 const writeStream = createWriteStream(outputPath);
                 readStream.pipe(writeStream);
-
-                let wroteBytes = 0;
-
-                readStream.on('data', chunk => {
-                  wroteBytes += chunk.length;
-                  // Log large entries progress occasionally
-                  if (wroteBytes % (1024 * 1024) === 0) {
-                    log.debug('[downloadGithubRepo] writing file progress', {
-                      outputPath,
-                      wroteBytes,
-                    });
-                  }
-                });
 
                 writeStream.on('finish', () => zipfile.readEntry());
                 writeStream.on('error', reject);
