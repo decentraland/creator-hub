@@ -77,18 +77,7 @@ const Shortcuts: React.FC<Props> = ({ canvas, onResetCamera, onZoomIn, onZoomOut
           <div className="Items">
             <h5 className="SubHeader">General</h5>
             <div className="Item">
-              <div className="Title">Pan Camera</div>
-              <div className="Description">
-                <span className="Key">W</span>
-                <span className="Key">A</span>
-                <span className="Key">S</span>
-                <span className="Key">D</span>
-                <span className="Key">Q</span>
-                <span className="Key">E</span>
-              </div>
-            </div>
-            <div className="Item">
-              <div className="Title">Rotate Camera</div>
+              <div className="Title">Rotate Camera (Orbit)</div>
               <div className="Description Vertical">
                 <div>
                   <span className="Key">Right Mouse Button</span>+<span className="Key">Drag</span>
@@ -96,7 +85,27 @@ const Shortcuts: React.FC<Props> = ({ canvas, onResetCamera, onZoomIn, onZoomOut
                 <span className="Option">or</span>
                 <div>
                   Hold <span className="Key">{isMac ? 'Option' : 'Alt'}</span>+
-                  <span className="Key">Click & Drag</span>
+                  <span className="Key">Left Click & Drag</span>
+                </div>
+              </div>
+            </div>
+            <div className="Item">
+              <div className="Title">Pan Camera</div>
+              <div className="Description">
+                <span className="Key">{isMac ? 'Option' : 'Alt'}</span>+
+                <span className="Key">Middle Click & Drag</span>
+              </div>
+            </div>
+            <div className="Item">
+              <div className="Title">Zoom Camera</div>
+              <div className="Description Vertical">
+                <div>
+                  <span className="Key">Mouse Wheel</span>
+                </div>
+                <span className="Option">or</span>
+                <div>
+                  <span className="Key">{isMac ? 'Option' : 'Alt'}</span>+
+                  <span className="Key">Right Click & Drag</span>
                 </div>
               </div>
             </div>
@@ -142,6 +151,12 @@ const Shortcuts: React.FC<Props> = ({ canvas, onResetCamera, onZoomIn, onZoomOut
                 <span className="Key">space</span>
               </div>
             </div>
+            <div className="Item">
+              <div className="Title">Focus on Selected</div>
+              <div className="Description">
+                <span className="Key">F</span>
+              </div>
+            </div>
           </div>
           <div className="Items">
             <h5 className="SubHeader">Item Selected</h5>
@@ -152,21 +167,27 @@ const Shortcuts: React.FC<Props> = ({ canvas, onResetCamera, onZoomIn, onZoomOut
               </div>
             </div>
             <div className="Item">
-              <div className="Title">Toggle Positioning</div>
+              <div className="Title">Move Tool</div>
               <div className="Description">
-                <span className="Key">M</span>
+                <span className="Key">W</span>
               </div>
             </div>
             <div className="Item">
-              <div className="Title">Toggle Rotating</div>
+              <div className="Title">Rotate Tool</div>
+              <div className="Description">
+                <span className="Key">E</span>
+              </div>
+            </div>
+            <div className="Item">
+              <div className="Title">Scale Tool</div>
               <div className="Description">
                 <span className="Key">R</span>
               </div>
             </div>
             <div className="Item">
-              <div className="Title">Toggle Scaling</div>
+              <div className="Title">Free Tool</div>
               <div className="Description">
-                <span className="Key">X</span>
+                <span className="Key">Q</span>
               </div>
             </div>
             <div className="Item">

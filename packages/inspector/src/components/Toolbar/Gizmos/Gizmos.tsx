@@ -55,10 +55,10 @@ export const Gizmos = withSdk(({ sdk }) => {
     [selection, setSelection],
   );
 
-  useHotkey(['M'], handlePositionGizmo);
-  useHotkey(['R'], handleRotationGizmo);
-  useHotkey(['X'], handleScaleGizmo);
-  useHotkey(['F'], handleFreeGizmo);
+  useHotkey(['W'], handlePositionGizmo);
+  useHotkey(['E'], handleRotationGizmo);
+  useHotkey(['R'], handleScaleGizmo);
+  useHotkey(['Q'], handleFreeGizmo);
 
   const { isGizmoWorldAligned, setGizmoWorldAligned } = useGizmoAlignment();
 

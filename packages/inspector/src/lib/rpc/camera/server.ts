@@ -1,11 +1,11 @@
-import type { Engine, FreeCamera } from '@babylonjs/core';
+import type { Engine, ArcRotateCamera } from '@babylonjs/core';
 import { ScreenshotTools, Vector3 } from '@babylonjs/core';
 import type { Transport } from '@dcl/mini-rpc';
 import { RPC } from '@dcl/mini-rpc';
 import { name, type Method, type Params, type Result } from './types';
 
 export class CameraServer extends RPC<Method, Params, Result> {
-  constructor(transport: Transport, engine: Engine, camera: FreeCamera) {
+  constructor(transport: Transport, engine: Engine, camera: ArcRotateCamera) {
     super(name, transport);
 
     this.handle('set_position', async ({ x, y, z }) => {
