@@ -78,16 +78,10 @@ export async function downloadGithubRepo(githubUrl: string, destination: string)
 
         zipfile.readEntry();
         zipfile.on('end', () => {
-          log.info('[downloadGithubRepo] Zip processing ended', {
-            totalEntries,
-            processedEntries,
-            skippedEntries,
-            extractedFiles,
-            extractedDirs,
-          });
+          log.info('[downloadGithubRepo] Zip processing ended', { totalEntries, processedEntries, skippedEntries, extractedFiles, extractedDirs });
           resolve();
         });
-        zipfile.on('error', e => {
+        zipfile.on('error', (e) => {
           log.error('[downloadGithubRepo] Zipfile error', e);
           reject(e);
         });
@@ -96,24 +90,14 @@ export async function downloadGithubRepo(githubUrl: string, destination: string)
           totalEntries++;
           // Normalize the entry path (convert Windows backslashes)
           const zipEntryPath = entry.fileName.replace(/\\/g, '/');
-          log.debug('[downloadGithubRepo] entry', {
-            index: totalEntries,
-            zipEntryPath,
-            isDirectory: entry.fileName.endsWith('/'),
-          });
+          log.debug('[downloadGithubRepo] entry', { index: totalEntries, zipEntryPath, isDirectory: entry.fileName.endsWith('/') });
 
           const currentRootPrefix = getRootPrefix(zipEntryPath);
 
-          if (
-            zipEntryPath.length <= currentRootPrefix.length ||
-            !zipEntryPath.startsWith(currentRootPrefix)
-          ) {
+          if (zipEntryPath.length <= currentRootPrefix.length || !zipEntryPath.startsWith(currentRootPrefix)) {
             // Skip this entry if it doesn't belong to the desired subfolder
             skippedEntries++;
-            log.silly('[downloadGithubRepo] skipping entry outside rootPrefix', {
-              zipEntryPath,
-              currentRootPrefix,
-            });
+            log.silly('[downloadGithubRepo] skipping entry outside rootPrefix', { zipEntryPath, currentRootPrefix });
             zipfile.readEntry();
             return;
           }
@@ -142,10 +126,7 @@ export async function downloadGithubRepo(githubUrl: string, destination: string)
             await fs.mkdir(path.dirname(outputPath), { recursive: true });
             zipfile.openReadStream(entry, (err, readStream) => {
               if (err || !readStream) {
-                log.error('[downloadGithubRepo] failed to open read stream for entry', {
-                  zipEntryPath,
-                  error: err,
-                });
+                log.error('[downloadGithubRepo] failed to open read stream for entry', { zipEntryPath, error: err });
                 reject(err || new Error('Failed to open read stream'));
                 return;
               }
@@ -153,14 +134,11 @@ export async function downloadGithubRepo(githubUrl: string, destination: string)
               const writeStream = createWriteStream(outputPath);
               let wroteBytes = 0;
 
-              readStream.on('data', chunk => {
+              readStream.on('data', (chunk) => {
                 wroteBytes += chunk.length;
                 // Log large entries progress occasionally
                 if (wroteBytes % (1024 * 1024) === 0) {
-                  log.debug('[downloadGithubRepo] writing file progress', {
-                    outputPath,
-                    wroteBytes,
-                  });
+                  log.debug('[downloadGithubRepo] writing file progress', { outputPath, wroteBytes });
                 }
               });
 
@@ -172,11 +150,11 @@ export async function downloadGithubRepo(githubUrl: string, destination: string)
                 log.silly('[downloadGithubRepo] file extracted', { outputPath, bytes: wroteBytes });
                 zipfile.readEntry();
               });
-              writeStream.on('error', e => {
+              writeStream.on('error', (e) => {
                 log.error('[downloadGithubRepo] writeStream error', { outputPath, error: e });
                 reject(e);
               });
-              readStream.on('error', e => {
+              readStream.on('error', (e) => {
                 log.error('[downloadGithubRepo] readStream error', { zipEntryPath, error: e });
                 reject(e);
               });
