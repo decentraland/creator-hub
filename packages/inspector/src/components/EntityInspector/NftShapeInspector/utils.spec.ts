@@ -28,7 +28,7 @@ describe('NftShapeUtils', () => {
         urn: 'urn:example:123',
         style: NftFrameType.NFT_BAROQUE_ORNAMENT,
       });
-      expect(result).toEqual({ urn: 'urn:example:123', color: undefined, style: '1' });
+      expect(result).toEqual({ urn: 'urn:example:123', color: '#FFFFFF', style: '1' });
     });
   });
 
@@ -42,7 +42,7 @@ describe('NftShapeUtils', () => {
       const result = toNftShape({ urn: 'urn:example:123', style: '1' });
       expect(result).toEqual({
         urn: 'urn:example:123',
-        color: undefined,
+        color: { r: 1, g: 1, b: 1 },
         style: NftFrameType.NFT_BAROQUE_ORNAMENT,
       });
     });
