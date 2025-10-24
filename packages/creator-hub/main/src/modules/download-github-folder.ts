@@ -50,8 +50,10 @@ export async function downloadGithubRepo(githubUrl: string, destination: string)
     // Determine the extracted folder name.
     // GitHub zips contain a root folder with a name like owner-repo-commitHash
     const files = await fs.readdir(destination);
-    const extractedFolderName = files.find(file => file.startsWith(`${owner}-${repo}-`));
-    if (!extractedFolderName) return; // Unable to determine root extracted folder
+    const extractedFolderName = files.length === 1 ? files[0] : null;
+    if (!extractedFolderName) {
+      throw new Error('Unable to determine the extracted folder name.');
+    }
 
     // If a subfolder path is specified, navigate into it
     const extractedFolderPath = path.join(destination, extractedFolderName);
