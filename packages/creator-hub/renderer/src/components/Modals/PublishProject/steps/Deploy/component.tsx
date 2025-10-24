@@ -33,6 +33,8 @@ import './styles.css';
 
 const MAX_FILE_PATH_LENGTH = 50;
 
+const DCL_ENV = import.meta.env.MODE.toLowerCase() === 'development' ? 'zone' : 'org';
+
 function getPath(filename: string) {
   return filename.length > MAX_FILE_PATH_LENGTH
     ? `${filename.slice(0, MAX_FILE_PATH_LENGTH / 2)}...${filename.slice(
@@ -83,9 +85,9 @@ export function Deploy(props: Props) {
   // jump in
   const jumpInUrl = useMemo(() => {
     if (deployment?.info.isWorld && project.worldConfiguration) {
-      return `decentraland://?realm=${project.worldConfiguration.name}`;
+      return `decentraland://?realm=${project.worldConfiguration.name}&dclenv=${DCL_ENV}`;
     } else {
-      return `decentraland://?position=${project.scene.base}`;
+      return `decentraland://?position=${project.scene.base}&dclenv=${DCL_ENV}`;
     }
   }, [deployment, project]);
 

@@ -1,22 +1,23 @@
 import React, { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { setUser } from '@sentry/electron/renderer';
 import { ChainId, type Avatar } from '@dcl/schemas';
 import { AuthServerProvider } from 'decentraland-connect';
 import { useDispatch } from '#store';
-import { AuthContext } from '/@/contexts/AuthContext';
-import Profiles from '/@/lib/profile';
+import { config } from '/@/config';
+import { Profiles } from '/@/lib/profile';
 import { fetchENSList } from '/@/modules/store/ens';
 import { fetchLandList, fetchTiles } from '/@/modules/store/land';
 import { identify } from '/@/modules/store/analytics';
+import { AuthContext } from '/@/contexts/AuthContext';
 import type { AuthSignInProps } from './types';
-import { setUser } from '@sentry/electron/renderer';
-
-const AUTH_SERVER_URL = 'https://auth-api.decentraland.org';
-const AUTH_DAPP_URL = 'https://decentraland.org/auth';
 
 // Initialize the provider
-AuthServerProvider.setAuthServerUrl(AUTH_SERVER_URL);
-AuthServerProvider.setAuthDappUrl(AUTH_DAPP_URL);
+AuthServerProvider.setAuthServerUrl(config.get('AUTH_SERVER_URL'));
+AuthServerProvider.setAuthDappUrl(config.get('AUTH_DAPP_URL'));
+
+const DEFAULT_CHAIN_ID: ChainId = (config.get('CHAIN_ID') ??
+  ChainId.ETHEREUM_MAINNET) as unknown as ChainId;
 
 export const provider = new AuthServerProvider();
 
@@ -27,13 +28,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [wallet, setWallet] = useState<string>();
   const [avatar, setAvatar] = useState<Avatar>();
   const [isSignedIn, setIsSignedIn] = useState(false);
-  const [chainId, setChainId] = useState<ChainId>(ChainId.ETHEREUM_MAINNET);
+  const [chainId, setChainId] = useState<ChainId>(DEFAULT_CHAIN_ID);
 
   const isSigningIn = !!initSignInResultRef?.current;
 
   const fetchAvatar = useCallback(async (address: string) => {
     try {
-      const avatar = await Profiles.fetchProfile(address);
+      const profile = new Profiles();
+      const avatar = await profile.fetchProfile(address);
       setAvatar(avatar);
     } catch (error) {
       console.error(error);
@@ -72,7 +74,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     AuthServerProvider.deactivate();
   }, []);
 
-  const changeNetwork = useCallback(async (chainId: ChainId = ChainId.ETHEREUM_MAINNET) => {
+  const changeNetwork = useCallback(async (chainId: ChainId = DEFAULT_CHAIN_ID) => {
     try {
       await provider.request({
         method: 'wallet_switchEthereumChain',
@@ -80,7 +82,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
       setChainId(chainId);
     } catch (error) {
-      setChainId(ChainId.ETHEREUM_MAINNET);
+      setChainId(DEFAULT_CHAIN_ID);
       console.error(error);
     }
   }, []);
@@ -99,8 +101,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (wallet && chainId) {
       dispatch(fetchENSList({ address: wallet, chainId }));
       dispatch(identify({ userId: wallet }));
-      dispatch(fetchTiles({ chainId }));
-      dispatch(fetchLandList({ address: wallet, chainId }));
+      dispatch(fetchTiles());
+      dispatch(fetchLandList({ address: wallet }));
       setUser({ id: wallet });
     }
   }, [wallet, chainId]);

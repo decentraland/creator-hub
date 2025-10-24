@@ -1,7 +1,8 @@
 import type { Action } from '@reduxjs/toolkit';
-import { analyticsConfig } from './track';
 import { analytics } from '#preload';
 import { store } from '#store';
+
+import { analyticsConfig } from './track';
 
 export async function handleAction(action: Action) {
   if (isActionTrackable(action)) {
