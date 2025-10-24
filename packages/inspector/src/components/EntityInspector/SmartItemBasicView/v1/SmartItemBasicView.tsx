@@ -6,6 +6,7 @@ import { Container, ContainerContent } from '../../../Container';
 import { Message, MessageType } from '../../../ui/Message';
 import { InfoTooltip } from '../../../ui/InfoTooltip';
 import { useEntityOrChildrenHasComponents } from '../utils';
+import { useHasComponent } from '../../../../hooks/sdk/useHasComponent';
 import { NftView } from './NftView';
 import { PointerEventView } from './PointerEventView';
 import { CounterBarView } from './CounterBarView';
@@ -22,10 +23,10 @@ import { type Props } from './types';
 import './SmartItemBasicView.css';
 
 const SmartItemBasicView = withSdk<Props>(({ sdk, entity }) => {
-  const { Config } = sdk.components;
-
+  const { Config, NftShape } = sdk.components;
   const { hasActions, hasTriggers } = useEntityOrChildrenHasComponents(entity, sdk);
   const shouldShowHint = hasActions && !hasTriggers;
+  const hasNftShape = useHasComponent(entity, NftShape);
 
   const renderField = useCallback(
     (field: ConfigComponentType['fields'][0], idx: number) => {
@@ -136,7 +137,13 @@ const SmartItemBasicView = withSdk<Props>(({ sdk, entity }) => {
     return Config.getOrNull(entity);
   }, [entity]);
 
+  const hasNftField = useMemo(
+    () => config?.fields.some(field => field.type === 'core::NftShape'),
+    [config],
+  );
+
   if (!config) return null;
+  if (hasNftField && !hasNftShape) return null;
 
   return (
     <Container
