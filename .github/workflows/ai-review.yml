@@ -29,21 +29,14 @@ jobs:
           fi
           ORG="decentraland"
           
-          echo "Checking membership for user: $USERNAME"
-          echo "Organization: $ORG"
-          
-          RESPONSE=$(curl -s -H "Authorization: token ${{ secrets.PAT_GITHUB }}" \
+          # Use private endpoint with token and check HTTP status
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: token ${{ secrets.PAT_GITHUB }}" \
             "https://api.github.com/orgs/$ORG/members/$USERNAME")
           
-          echo "API Response: $RESPONSE"
-          echo "Response length: ${#RESPONSE}"
-          
-          if echo "$RESPONSE" | grep -q '"login"'; then
+          if [ "$HTTP_CODE" = "204" ]; then
             echo "is-member=true" >> $GITHUB_OUTPUT
-            echo "✅ User is a member of $ORG"
           else
             echo "is-member=false" >> $GITHUB_OUTPUT
-            echo "❌ User is not a member of $ORG"
           fi
 
   ai-review:
