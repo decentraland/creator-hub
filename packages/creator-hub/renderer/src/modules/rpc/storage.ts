@@ -6,6 +6,7 @@ export enum Method {
   EXISTS = 'exists',
   DELETE = 'delete',
   LIST = 'list',
+  OPEN_FILE = 'open_file',
 }
 
 export type Params = {
@@ -25,6 +26,9 @@ export type Params = {
   [Method.LIST]: {
     path: string;
   };
+  [Method.OPEN_FILE]: {
+    path: string;
+  };
 };
 
 export type Result = {
@@ -36,6 +40,7 @@ export type Result = {
     name: string;
     isDirectory: boolean;
   }[];
+  [Method.OPEN_FILE]: void;
 };
 
 export class StorageRPC extends RPC<Method, Params, Result> {

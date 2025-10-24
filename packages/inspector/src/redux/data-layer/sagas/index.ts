@@ -16,6 +16,7 @@ import {
   deleteCustomAsset,
   renameCustomAsset,
 } from '..';
+import { sceneInfoSaga } from '../../scene-info/sagas';
 import { connectSaga } from './connect';
 import { reconnectSaga } from './reconnect';
 import { saveSaga } from './save';
@@ -48,6 +49,7 @@ export function* dataLayerSaga() {
   yield takeEvery(createCustomAsset.type, createCustomAssetSaga);
   yield takeLatest(deleteCustomAsset.type, deleteCustomAssetSaga);
   yield takeEvery(renameCustomAsset.type, renameCustomAssetSaga);
+  yield sceneInfoSaga();
 }
 
 export default dataLayerSaga;

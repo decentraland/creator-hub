@@ -31,6 +31,8 @@ import {
 } from './SceneMetadata';
 import type { ConfigComponentType } from './Config';
 import { ConfigComponentSchema } from './Config';
+import type { InspectorUIStateType } from './InspectorUIState';
+import { InspectorUIStateSchema } from './InspectorUIState';
 import { EditorComponentNames as BaseEditorComponentNames } from './types';
 
 export { SceneAgeRating, SceneCategory };
@@ -113,6 +115,7 @@ export type EditorComponentsTypes = {
   AdminTools: AdminTools;
   VideoScreen: VideoScreen;
   Rewards: Rewards;
+  InspectorUIState: InspectorUIStateType;
 };
 
 export type EditorComponents = {
@@ -137,6 +140,9 @@ export type EditorComponents = {
   AdminTools: LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['AdminTools']>;
   VideoScreen: LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['VideoScreen']>;
   Rewards: LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['Rewards']>;
+  InspectorUIState: LastWriteWinElementSetComponentDefinition<
+    EditorComponentsTypes['InspectorUIState']
+  >;
 };
 
 export type SdkComponents = {
@@ -270,6 +276,11 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
 
   const Config = engine.defineComponent(EditorComponentNames.Config, ConfigComponentSchema);
 
+  const InspectorUIState = engine.defineComponent(
+    EditorComponentNames.InspectorUIState,
+    InspectorUIStateSchema,
+  );
+
   const Ground = engine.defineComponent(EditorComponentNames.Ground, {});
   const Tile = engine.defineComponent(EditorComponentNames.Tile, {});
   const CustomAsset = engine.defineComponent(EditorComponentNames.CustomAsset, {
@@ -284,6 +295,7 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
     Hide,
     Lock,
     Config,
+    InspectorUIState,
     ActionTypes: ActionTypes as unknown as LastWriteWinElementSetComponentDefinition<
       EditorComponentsTypes['ActionTypes']
     >,

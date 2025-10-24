@@ -13,6 +13,7 @@ export enum PanelName {
   TOOLBAR = 'toolbar',
   SHORTCUTS = 'shortcuts',
   METRICS = 'metrics',
+  SCENE_INFO = 'scene_info',
 }
 
 export enum SceneInspectorTab {
