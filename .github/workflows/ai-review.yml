@@ -9,20 +9,23 @@ on:
 
 jobs:
   check-member:
-    if: github.event_name == 'issue_comment' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     outputs:
       is-member: ${{ steps.check.outputs.is-member }}
     steps:
       - name: Check if user is organization member
         id: check
+        env:
+          SENDER_LOGIN: ${{ github.event.sender.login }}
+          COMMENT_USER_LOGIN: ${{ github.event.comment.user.login }}
+          ACTOR: ${{ github.actor }}
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            USERNAME="${{ github.event.sender.login }}"
+            USERNAME="$SENDER_LOGIN"
           elif [ "${{ github.event_name }}" = "issue_comment" ]; then
-            USERNAME="${{ github.event.comment.user.login }}"
+            USERNAME="$COMMENT_USER_LOGIN"
           elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            USERNAME="${{ github.actor }}"
+            USERNAME="$ACTOR"
           else
             echo "is-member=false" >> $GITHUB_OUTPUT
             exit 0
