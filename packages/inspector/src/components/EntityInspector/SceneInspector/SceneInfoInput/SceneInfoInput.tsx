@@ -6,7 +6,7 @@ import {
   saveSceneInfoContent,
   selectSceneInfo,
   setSceneInfoContent,
-} from '../../../../redux/scene-info';
+} from '../../../../redux/data-layer';
 import { Loading } from '../../../Loading';
 import './SceneInfoInput.css';
 

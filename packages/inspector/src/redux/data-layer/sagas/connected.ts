@@ -6,8 +6,8 @@ import {
   getDataLayerInterface,
   getInspectorPreferences,
   getThumbnails,
+  getSceneInfoContent,
 } from '../';
-import { getSceneInfoContent } from '../../scene-info';
 
 export function* connectedSaga() {
   const dataLayer: IDataLayer = yield call(getDataLayerInterface);

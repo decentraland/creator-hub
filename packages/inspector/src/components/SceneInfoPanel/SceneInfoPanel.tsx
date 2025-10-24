@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { AiOutlineClose as CloseIcon, AiOutlineInfoCircle as InfoIcon } from 'react-icons/ai';
 
 import { useAppSelector } from '../../redux/hooks';
-import { selectSceneInfo } from '../../redux/scene-info';
+import { selectSceneInfo } from '../../redux/data-layer';
 import { useInspectorUIState } from '../../hooks/sdk/useInspectorUIState';
 import { Loading } from '../Loading';
 import { MarkdownRenderer } from './MarkdownRenderer';

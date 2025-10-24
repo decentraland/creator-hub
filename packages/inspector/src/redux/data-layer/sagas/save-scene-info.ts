@@ -1,9 +1,14 @@
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { call, put } from 'redux-saga/effects';
 
-import type { IDataLayer } from '../../data-layer';
-import { getDataLayerInterface } from '../../data-layer';
-import { SCENE_INFO_FILE, setSceneInfoContent, setSceneInfoError, setSceneInfoLoading } from '../';
+import type { IDataLayer } from '..';
+import {
+  SCENE_INFO_FILE,
+  setSceneInfoContent,
+  setSceneInfoError,
+  setSceneInfoLoading,
+  getDataLayerInterface,
+} from '../';
 
 export function* saveSceneInfoContentSaga(action: PayloadAction<string>) {
   const dataLayer: IDataLayer = yield call(getDataLayerInterface);

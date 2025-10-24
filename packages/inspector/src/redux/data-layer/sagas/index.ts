@@ -15,8 +15,10 @@ import {
   createCustomAsset,
   deleteCustomAsset,
   renameCustomAsset,
+  getSceneInfoContent,
+  saveSceneInfoContent,
 } from '..';
-import { sceneInfoSaga } from '../../scene-info/sagas';
+
 import { connectSaga } from './connect';
 import { reconnectSaga } from './reconnect';
 import { saveSaga } from './save';
@@ -32,6 +34,8 @@ import { saveThumbnailSaga } from './save-thumbnail';
 import { createCustomAssetSaga } from './create-custom-asset';
 import { deleteCustomAssetSaga } from './delete-custom-asset';
 import { renameCustomAssetSaga } from './rename-custom-asset';
+import { getSceneInfoContentSaga } from './get-scene-info';
+import { saveSceneInfoContentSaga } from './save-scene-info';
 
 export function* dataLayerSaga() {
   yield takeEvery(connect.type, connectSaga);
@@ -49,7 +53,8 @@ export function* dataLayerSaga() {
   yield takeEvery(createCustomAsset.type, createCustomAssetSaga);
   yield takeLatest(deleteCustomAsset.type, deleteCustomAssetSaga);
   yield takeEvery(renameCustomAsset.type, renameCustomAssetSaga);
-  yield sceneInfoSaga();
+  yield takeEvery(getSceneInfoContent.type, getSceneInfoContentSaga);
+  yield takeEvery(saveSceneInfoContent.type, saveSceneInfoContentSaga);
 }
 
 export default dataLayerSaga;

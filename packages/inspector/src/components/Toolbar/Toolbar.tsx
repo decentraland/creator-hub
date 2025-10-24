@@ -6,9 +6,15 @@ import { AiOutlineInfoCircle as InfoIcon } from 'react-icons/ai';
 import cx from 'classnames';
 
 import { withSdk } from '../../hoc/withSdk';
-import { save, undo, redo, selectCanRedo, selectCanUndo } from '../../redux/data-layer';
+import {
+  save,
+  undo,
+  redo,
+  selectCanRedo,
+  selectCanUndo,
+  selectSceneInfo,
+} from '../../redux/data-layer';
 import { selectCanSave } from '../../redux/app';
-import { selectSceneInfo } from '../../redux/scene-info';
 import { useInspectorUIState } from '../../hooks/sdk/useInspectorUIState';
 import { useAppSelector, useAppDispatch } from '../../redux/hooks';
 import {

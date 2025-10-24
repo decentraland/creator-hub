@@ -6,10 +6,9 @@ import { useSelectedEntity } from '../../hooks/sdk/useSelectedEntity';
 import { useInspectorUIState } from '../../hooks/sdk/useInspectorUIState';
 import { useWindowSize } from '../../hooks/useWindowSize';
 import { useAppSelector } from '../../redux/hooks';
-import { selectDataLayerError } from '../../redux/data-layer';
+import { selectDataLayerError, selectSceneInfo } from '../../redux/data-layer';
 import { selectEngines } from '../../redux/sdk';
 import { getHiddenPanels } from '../../redux/ui';
-import { selectSceneInfo } from '../../redux/scene-info';
 import { PanelName } from '../../redux/ui/types';
 
 import { EntityInspector } from '../EntityInspector';
