@@ -44,12 +44,14 @@ import {
   RESET_CAMERA,
   DUPLICATE,
   DUPLICATE_ALT,
+  FOCUS_SELECTED,
 } from '../../hooks/useHotkey';
 import { analytics, Event } from '../../lib/logic/analytics';
 import { Warnings } from '../Warnings';
 import { CameraSpeed } from './CameraSpeed';
 import { Shortcuts } from './Shortcuts';
 import { Metrics } from './Metrics';
+import { AxisHelper } from './AxisHelper';
 
 import './Renderer.css';
 
@@ -141,6 +143,24 @@ const Renderer: React.FC = () => {
     sdk.editorCamera.resetCamera();
   }, [sdk]);
 
+  const focusOnSelected = useCallback(() => {
+    if (!sdk) return;
+    const selectedEntities = sdk.operations.getSelectedEntities();
+    if (selectedEntities.length > 0) {
+      // Get the entity ID
+      const entityId = selectedEntities[0];
+      // Find the entity in the scene by checking all nodes
+      const allNodes = sdk.scene.getNodes();
+      for (const node of allNodes) {
+        // Check if this node has an entityId property matching our selection
+        if ((node as any).entityId === entityId) {
+          sdk.editorCamera.centerViewOnEntity(node as any);
+          break;
+        }
+      }
+    }
+  }, [sdk]);
+
   useHotkey([DELETE, BACKSPACE], deleteSelectedEntities, document.body);
   useHotkey([COPY, COPY_ALT], copySelectedEntities, document.body);
   useHotkey([PASTE, PASTE_ALT], pasteSelectedEntities, document.body);
@@ -148,6 +168,7 @@ const Renderer: React.FC = () => {
   useHotkey([ZOOM_OUT, ZOOM_OUT_ALT], zoomOut, document.body);
   useHotkey([RESET_CAMERA], resetCamera, document.body);
   useHotkey([DUPLICATE, DUPLICATE_ALT], duplicateSelectedEntities, document.body);
+  useHotkey([FOCUS_SELECTED], focusOnSelected, document.body);
 
   // listen to ctrl key to place single tile
   useEffect(() => {
@@ -421,6 +442,7 @@ const Renderer: React.FC = () => {
       {isLoading && <Loading />}
       <Warnings />
       <CameraSpeed />
+      <AxisHelper />
       {!hiddenPanels[PanelName.METRICS] && <Metrics />}
       {!hiddenPanels[PanelName.SHORTCUTS] && (
         <Shortcuts

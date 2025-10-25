@@ -27,6 +27,7 @@ export const SAVE = `${CTRL}+s`;
 export const SAVE_ALT = `${COMMAND}+s`;
 export const DUPLICATE = `${CTRL}+d`;
 export const DUPLICATE_ALT = `${COMMAND}+d`;
+export const FOCUS_SELECTED = 'f';
 
 /**
  * Hook that listens for key presses and triggers a callback function when the specified keys are pressed.
