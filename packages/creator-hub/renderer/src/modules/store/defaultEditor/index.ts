@@ -1,9 +1,9 @@
 import { createSlice } from '@reduxjs/toolkit';
+import { settings as settingsApi } from '#preload';
+import type { EditorConfig } from '/shared/types/config';
 import { t } from '../translation/utils';
 import { createAsyncThunk } from '../thunk';
 import { actions as snackbarActions } from '../snackbar/slice';
-import type { EditorConfig } from '/shared/types/config';
-import { settings as settingsApi } from '#preload';
 
 export type DefaultEditorState = {
   editors: EditorConfig[];

@@ -72,6 +72,8 @@ export default React.memo(
 
     const hasGltfContainer = useHasComponent(entity, sdk.components.GltfContainer);
     const hasMeshCollider = useHasComponent(entity, sdk.components.MeshCollider);
+    const hasMeshRenderer = useHasComponent(entity, sdk.components.MeshRenderer);
+    const hasTextShape = useHasComponent(entity, sdk.components.TextShape);
 
     const handleAddComponent = useCallback(
       (componentId: number, componentName: string, value?: any) => {
@@ -101,13 +103,20 @@ export default React.memo(
           return !hasGltfContainer && !hasMeshCollider;
         }
 
+        if (componentId === sdk.components.NftShape.componentId) {
+          return hasGltfContainer || hasMeshRenderer || hasTextShape;
+        }
+
         return false;
       },
       [
         availableComponents,
         hasGltfContainer,
         hasMeshCollider,
+        hasMeshRenderer,
+        hasTextShape,
         sdk.components.VisibilityComponent.componentId,
+        sdk.components.NftShape.componentId,
       ],
     );
 
@@ -201,6 +210,35 @@ export default React.memo(
           ),
         },
         {
+          id: sdk.components.GltfNodeModifiers.componentId,
+          value: 'Swap material',
+          onClick: () =>
+            handleClickAddComponent(
+              sdk.components.GltfNodeModifiers.componentId,
+              sdk.components.GltfNodeModifiers.componentName,
+            ),
+          disabled: isComponentDisabled(sdk.components.GltfNodeModifiers.componentId),
+          tooltip: getComponentTooltip(
+            sdk.components.GltfNodeModifiers.componentId,
+            'Override GLTF/GLB materials',
+          ),
+        },
+        {
+          id: sdk.components.LightSource.componentId,
+          value: 'Light Source',
+          onClick: () =>
+            handleClickAddComponent(
+              sdk.components.LightSource.componentId,
+              sdk.components.LightSource.componentName,
+            ),
+          disabled: isComponentDisabled(sdk.components.LightSource.componentId),
+          tooltip: getComponentTooltip(
+            sdk.components.LightSource.componentId,
+            'Add a point or spot light',
+            'https://docs.decentraland.org/creator/development-guide/sdk7/lights/',
+          ),
+        },
+        {
           id: sdk.components.MeshCollider.componentId,
           value: 'Mesh Collider',
           onClick: () =>
@@ -213,6 +251,21 @@ export default React.memo(
             sdk.components.MeshCollider.componentId,
             'MeshCollider defines the collision properties of an item, based on its invisible collision geometry. Collisions serve to make an item clickable or to block the player from walking through an item',
             'https://docs.decentraland.org/creator/development-guide/sdk7/colliders/',
+          ),
+        },
+        {
+          id: sdk.components.NftShape.componentId,
+          value: 'Nft Shape',
+          onClick: () =>
+            handleClickAddComponent(
+              sdk.components.NftShape.componentId,
+              sdk.components.NftShape.componentName,
+            ),
+          disabled: isComponentDisabled(sdk.components.NftShape.componentId),
+          tooltip: getComponentTooltip(
+            sdk.components.NftShape.componentId,
+            'NftShape defines the shape of an item, based on its NFT',
+            'https://docs.decentraland.org/creator/development-guide/sdk7/display-a-certified-nft/',
           ),
         },
         { header: 'Interaction' },

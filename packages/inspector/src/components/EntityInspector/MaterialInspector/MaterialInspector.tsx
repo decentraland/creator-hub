@@ -1,23 +1,18 @@
 import { useCallback } from 'react';
-
 import { withSdk } from '../../../hoc/withSdk';
 import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
 import { useComponentInput } from '../../../hooks/sdk/useComponentInput';
 import { useAppSelector } from '../../../redux/hooks';
 import { selectAssetCatalog } from '../../../redux/app';
 import { Block } from '../../Block';
-import { CheckboxField, Dropdown, RangeField } from '../../ui';
-import { ColorField } from '../../ui/ColorField';
+import { Dropdown } from '../../ui';
 import { Container } from '../../Container';
-import { Texture, type Props as TextureProps } from './Texture';
-import { type Props, MaterialType, TextureType } from './types';
-import {
-  fromMaterial,
-  toMaterial,
-  isValidMaterial,
-  MATERIAL_TYPES,
-  TRANSPARENCY_MODES,
-} from './utils';
+import { fromMaterial, toMaterial, isValidMaterial, MATERIAL_TYPES } from './utils';
+import UnlitMaterial from './UnlitMaterial/UnlitMaterial';
+import { PbrMaterial } from './PbrMaterial';
+
+import { type Props as TextureProps } from './Texture';
+import { type Props, MaterialType } from './types';
 
 export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const files = useAppSelector(selectAssetCatalog);
@@ -57,155 +52,31 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
           {...materialType}
         />
       </Block>
+
       {materialType.value === MaterialType.MT_UNLIT && (
-        <>
-          <Block label="Diffuse color">
-            <ColorField {...getInputProps('diffuseColor')} />
-          </Block>
-          <Block>
-            <CheckboxField
-              label="Cast shadows"
-              checked={!!castShadows.value}
-              {...castShadows}
-            />
-          </Block>
-          <Block>
-            <RangeField
-              label="Alpha test"
-              max={1}
-              step={0.1}
-              {...getInputProps('alphaTest')}
-            />
-          </Block>
-          <Texture
-            label="Texture"
-            texture={TextureType.TT_TEXTURE}
-            files={files}
-            getInputProps={getTextureProps}
-          />
-          <Texture
-            label="Alpha texture"
-            texture={TextureType.TT_ALPHA_TEXTURE}
-            files={files}
-            getInputProps={getTextureProps}
-          />
-        </>
+        <UnlitMaterial
+          diffuseColor={getInputProps('diffuseColor')}
+          castShadows={castShadows}
+          alphaTest={getInputProps('alphaTest')}
+          getTextureProps={getTextureProps}
+        />
       )}
+
       {materialType.value === MaterialType.MT_PBR && (
-        <>
-          <Block>
-            <CheckboxField
-              label="Cast shadows"
-              checked={!!castShadows.value}
-              {...castShadows}
-            />
-          </Block>
-          <Block>
-            <RangeField
-              label="Metallic"
-              max={1}
-              step={0.1}
-              {...getInputProps('metallic')}
-            />
-          </Block>
-          <Block>
-            <RangeField
-              label="Roughness"
-              max={1}
-              step={0.1}
-              {...getInputProps('roughness')}
-            />
-          </Block>
-          <Block>
-            <ColorField
-              label="Color"
-              {...getInputProps('albedoColor')}
-            />
-          </Block>
-          <Block>
-            <ColorField
-              label="Reflectivity color"
-              {...getInputProps('reflectivityColor')}
-            />
-          </Block>
-          <Texture
-            label="Texture"
-            texture={TextureType.TT_TEXTURE}
-            files={files}
-            getInputProps={getTextureProps}
-          />
-          <Container
-            label="Intensity"
-            border
-            initialOpen={false}
-          >
-            <RangeField
-              label="Specular"
-              max={1}
-              step={0.1}
-              {...getInputProps('specularIntensity')}
-            />
-            <RangeField
-              label="Direct"
-              max={1}
-              step={0.1}
-              {...getInputProps('directIntensity')}
-            />
-          </Container>
-          <Container
-            label="Transparency"
-            border
-            initialOpen={false}
-          >
-            <Block>
-              <Dropdown
-                label="Transparency Mode"
-                options={TRANSPARENCY_MODES}
-                {...getInputProps('transparencyMode')}
-              />
-            </Block>
-            <Block>
-              <RangeField
-                label="Alpha test"
-                max={1}
-                step={0.1}
-                {...getInputProps('alphaTest')}
-              />
-            </Block>
-          </Container>
-          <Container
-            label="Emissive"
-            border
-            initialOpen={false}
-          >
-            <Block>
-              <RangeField
-                label="Emissive Intensity"
-                max={1}
-                step={0.1}
-                {...getInputProps('emissiveIntensity')}
-              />
-            </Block>
-            <Block>
-              <ColorField
-                label="Emissive color"
-                {...getInputProps('emissiveColor')}
-              />
-            </Block>
-            <Texture
-              label="Emissive texture"
-              texture={TextureType.TT_EMISSIVE_TEXTURE}
-              files={files}
-              getInputProps={getTextureProps}
-            />
-          </Container>
-          <Texture
-            label="Bump texture"
-            texture={TextureType.TT_BUMP_TEXTURE}
-            files={files}
-            getInputProps={getTextureProps}
-          />
-        </>
+        <PbrMaterial
+          castShadows={castShadows}
+          metallic={getInputProps('metallic')}
+          roughness={getInputProps('roughness')}
+          albedoColor={getInputProps('albedoColor')}
+          reflectivityColor={getInputProps('reflectivityColor')}
+          specularIntensity={getInputProps('specularIntensity')}
+          directIntensity={getInputProps('directIntensity')}
+          transparencyMode={getInputProps('transparencyMode')}
+          alphaTest={getInputProps('alphaTest')}
+          emissiveIntensity={getInputProps('emissiveIntensity')}
+          emissiveColor={getInputProps('emissiveColor')}
+          getTextureProps={getTextureProps}
+        />
       )}
     </Container>
   );

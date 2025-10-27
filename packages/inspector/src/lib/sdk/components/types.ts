@@ -20,6 +20,8 @@ export enum CoreComponents {
   TWEEN_SEQUENCE = 'core::TweenSequence',
   VIDEO_PLAYER = 'core::VideoPlayer',
   VISIBILITY_COMPONENT = 'core::VisibilityComponent',
+  LIGHT_SOURCE = 'core::LightSource',
+  GLTF_NODE_MODIFIERS = 'core::GltfNodeModifiers',
 }
 
 export const EditorComponentNames = {

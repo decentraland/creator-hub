@@ -1,3 +1,5 @@
+import { config } from '/@/config';
+
 const BATCH_SIZE = 1000;
 
 export type Domain = { name: string };
@@ -18,12 +20,7 @@ export type OwnerByENSQueryResult =
   | { errors: any };
 
 export class ENS {
-  private subgraph = 'https://subgraph.decentraland.org/ens';
-  constructor(isDev: boolean) {
-    if (isDev) {
-      this.subgraph = 'https://subgraph.decentraland.org/ens-sepolia';
-    }
-  }
+  private subgraph = config.get('ENS_SUBGRAPH');
 
   public async fetchNames(address: string) {
     const response: Response = await fetch(this.subgraph, {
@@ -114,12 +111,7 @@ export type DCLOwnerByNameQueryResult = {
 };
 
 export class DCLNames {
-  private subgraph = 'https://subgraph.decentraland.org/marketplace';
-  constructor(isDev: boolean) {
-    if (isDev) {
-      this.subgraph = 'https://subgraph.decentraland.org/marketplace-sepolia';
-    }
-  }
+  private subgraph = config.get('MARKETPLACE_SUBGRAPH');
 
   public async fetchNames(address: string) {
     let results: string[] = [];

@@ -2,13 +2,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
-import log from 'electron-log/main';
-
-async function downloadFile(fileUrl: string, outputPath: string) {
-  const response = await (await fetch(fileUrl)).arrayBuffer();
-  const buffer = new Uint8Array(response);
-  await fs.writeFile(outputPath, buffer);
-}
+import extract from 'extract-zip';
 
 // Function to parse GitHub URL for root or subfolder
 function parseGitHubUrl(githubUrl: string) {
@@ -36,36 +30,48 @@ function parseGitHubUrl(githubUrl: string) {
   throw new Error("URL doesn't match the expected GitHub format.");
 }
 
-export async function downloadGithubFolder(githubUrl: string, destination: string) {
+export async function downloadGithubRepo(githubUrl: string, destination: string) {
   const { owner, repo, branch, path: subfolderPath } = parseGitHubUrl(githubUrl);
-  const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${subfolderPath}?ref=${branch}`;
+  const apiUrl = `https://api.github.com/repos/${owner}/${repo}/zipball//${branch}`;
 
   try {
-    const data: any = await (await fetch(apiUrl)).json();
-
-    if (Array.isArray(data)) {
-      for await (const file of data) {
-        const filePath = path.join(destination, file.name);
-
-        if (file.type === 'file') {
-          await downloadFile(file.download_url, filePath);
-        } else if (file.type === 'dir') {
-          try {
-            await fs.access(filePath);
-          } catch {
-            await fs.mkdir(filePath, { recursive: true });
-          }
-          const nextUrl = `https://github.com/${owner}/${repo}/tree/${branch}/${file.path}`;
-
-          await downloadGithubFolder(nextUrl, filePath);
-        }
-      }
-    } else {
-      // Handle single file or root without subfolders
-      const filePath = path.join(destination, data.name);
-      await downloadFile(data.download_url, filePath);
+    const ghResponse = await fetch(apiUrl);
+    if (!ghResponse.ok) {
+      throw new Error(`GitHub API request failed with status ${ghResponse.status}`);
     }
+
+    // Download and extract the zip file
+    const tempZipPath = path.join(destination, `${repo}.zip`);
+    const zipContent = await ghResponse.arrayBuffer();
+    await fs.writeFile(tempZipPath, new Uint8Array(zipContent));
+    await extract(tempZipPath, { dir: destination });
+    await fs.rm(tempZipPath);
+
+    // Determine the extracted folder name.
+    // GitHub zips contain a root folder with a name like owner-repo-commitHash
+    const files = await fs.readdir(destination);
+    const extractedFolderName = files.length === 1 ? files[0] : null;
+    if (!extractedFolderName) {
+      throw new Error('Unable to determine the extracted folder name.');
+    }
+
+    // If a subfolder path is specified, navigate into it
+    const extractedFolderPath = path.join(destination, extractedFolderName);
+    const targetFolderPath = subfolderPath
+      ? path.join(extractedFolderPath, subfolderPath)
+      : extractedFolderPath;
+
+    // Copy contents of the extracted folder (or subfolder) to the destination directory
+    const items = await fs.readdir(targetFolderPath);
+    for (const item of items) {
+      const srcPath = path.join(targetFolderPath, item);
+      const destPath = path.join(destination, item);
+      await fs.rename(srcPath, destPath);
+    }
+
+    // Cleanup the extracted folder root
+    await fs.rm(extractedFolderPath, { recursive: true, force: true });
   } catch (error: any) {
-    log.error(`Error downloading folder: ${apiUrl} \n ${error.message}`);
+    throw new Error(`Error downloading GitHub repository: ${apiUrl} \n ${error.message}`);
   }
 }

@@ -1,13 +1,13 @@
 import { MessageTransport } from '@dcl/mini-rpc';
 
 import { debounceByKey } from '/shared/utils';
-import { CameraRPC } from './camera';
-
 import { type Project } from '/shared/types/projects';
 
+import { fs, custom, editor } from '#preload';
+
+import { CameraRPC } from './camera';
 import { UiRPC } from './ui';
 import { type Method, type Params, type Result, StorageRPC } from './storage';
-import { fs, custom, editor } from '#preload';
 
 export type RPCInfo = {
   iframe: HTMLIFrameElement;

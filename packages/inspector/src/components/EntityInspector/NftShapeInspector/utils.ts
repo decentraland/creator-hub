@@ -7,7 +7,7 @@ import type { NftShapeInput } from './types';
 export const fromNftShape = (value: PBNftShape): NftShapeInput => {
   return {
     urn: value.urn,
-    color: value.color ? toHex(value.color) : undefined,
+    color: toHex(value.color),
     style: (value.style ?? NftFrameType.NFT_NONE).toString(),
   };
 };
@@ -15,7 +15,7 @@ export const fromNftShape = (value: PBNftShape): NftShapeInput => {
 export const toNftShape = (value: NftShapeInput): PBNftShape => {
   return {
     urn: value.urn,
-    color: value.color ? toColor3(value.color) : undefined,
+    color: toColor3(value.color),
     style: Number(value.style || NftFrameType.NFT_NONE),
   };
 };
@@ -28,6 +28,7 @@ export function isValidUrn(urn: string): boolean {
 }
 
 export function isValidInput(urn: string): boolean {
+  if (!urn) return true;
   return isValidUrn(urn);
 }
 
@@ -170,12 +171,12 @@ export function getUrn({ network, contract, token }: UrnTokens): string {
   return `urn:decentraland:${_network}:erc721:${contract}:${token}`;
 }
 
-export function buildTokens(nft: PBNftShape | null) {
-  const urn = nft?.urn || '';
+export function buildUrnTokens(urn?: string): UrnTokens {
+  if (!urn) return { network: DEFAULT_NETWORK.value, contract: '', token: '' };
   const [_, _2, network, _3, contract, ...rest] = urn.split(':');
   return {
     network: NETWORKS.find($ => $.label === network)?.value || DEFAULT_NETWORK.value,
-    contract: contract ?? '',
+    contract: contract?.toLowerCase() ?? '',
     token: rest.join(':'),
   };
 }
