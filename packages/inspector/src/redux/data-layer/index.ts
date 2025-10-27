@@ -51,7 +51,10 @@ export interface DataLayerState {
     canUndo: boolean;
     canRedo: boolean;
   };
+  sceneInfo: { content: string; isLoading: boolean; error: string | null };
 }
+
+export const SCENE_INFO_FILE = 'SCENE_README.md';
 
 export const initialState: DataLayerState = {
   reconnectAttempts: 0,
@@ -63,6 +66,11 @@ export const initialState: DataLayerState = {
   undoRedoState: {
     canUndo: false,
     canRedo: false,
+  },
+  sceneInfo: {
+    content: '',
+    isLoading: false,
+    error: null,
   },
 };
 
@@ -142,6 +150,18 @@ export const dataLayer = createSlice({
     ) => {
       state.undoRedoState = payload.payload;
     },
+    getSceneInfoContent: () => {},
+    saveSceneInfoContent: (_state, { payload: _ }: PayloadAction<string>) => {},
+    setSceneInfoContent: (state, { payload }: PayloadAction<string>) => {
+      state.sceneInfo.content = payload;
+      state.sceneInfo.error = null;
+    },
+    setSceneInfoLoading: (state, { payload }: PayloadAction<boolean>) => {
+      state.sceneInfo.isLoading = payload;
+    },
+    setSceneInfoError: (state, { payload }: PayloadAction<string | null>) => {
+      state.sceneInfo.error = payload;
+    },
   },
 });
 
@@ -171,6 +191,11 @@ export const {
   stageCustomAsset,
   clearStagedCustomAsset,
   updateUndoRedoState,
+  getSceneInfoContent,
+  saveSceneInfoContent,
+  setSceneInfoContent,
+  setSceneInfoLoading,
+  setSceneInfoError,
 } = dataLayer.actions;
 
 // Selectors
@@ -183,6 +208,7 @@ export const selectAssetToRename = (state: RootState) => state.dataLayer.assetTo
 export const selectStagedCustomAsset = (state: RootState) => state.dataLayer.stagedCustomAsset;
 export const selectCanUndo = (state: RootState) => state.dataLayer.undoRedoState.canUndo;
 export const selectCanRedo = (state: RootState) => state.dataLayer.undoRedoState.canRedo;
+export const selectSceneInfo = (state: RootState) => state.dataLayer.sceneInfo;
 
 // Reducer
 export default dataLayer.reducer;

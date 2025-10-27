@@ -11,7 +11,7 @@ import { createInMemoryStorage } from '../../logic/storage/in-memory';
 import { SceneAgeRating } from '../../sdk/components';
 import { TransitionMode } from '../../sdk/components/SceneMetadata';
 import { downloadAssets } from './builder-utils';
-import { THUMBNAIL } from './constants';
+import { SCENE_INFO_MARKDOWN, THUMBNAIL } from './constants';
 
 export function createTempEngineContext() {
   const { engine, components } = createEngineContext();
@@ -77,6 +77,7 @@ export function generateFeededComposite({ engine, components }: TempEngine, scen
   const entity = engine.addEntity();
   const gltfEntity = engine.addEntity();
 
+  components.InspectorUIState.create(engine.RootEntity, { sceneInfoPanelVisible: false });
   components.Transform.create(entity, { position: { x: 8, y: 1, z: 8 } });
   components.MeshRenderer.setBox(entity);
   cubeIdComponent.create(entity);
@@ -192,6 +193,7 @@ export async function feededFileSystem(mappings: Record<string, string> = builde
     'thumbnails/scene/feeded-thumbnail.png': Buffer.from(THUMBNAIL, 'base64'),
     'assets/scene/feeded-thumbnail.png': Buffer.from(THUMBNAIL, 'base64'),
     'scene.json': Buffer.from(JSON.stringify(scene), 'utf-8'),
+    'SCENE_README.md': Buffer.from(SCENE_INFO_MARKDOWN, 'utf-8'),
   });
 
   return createFileSystemInterface(storage);

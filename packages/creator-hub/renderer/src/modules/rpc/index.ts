@@ -3,7 +3,7 @@ import { MessageTransport } from '@dcl/mini-rpc';
 import { debounceByKey } from '/shared/utils';
 import { type Project } from '/shared/types/projects';
 
-import { fs, custom } from '#preload';
+import { fs, custom, editor } from '#preload';
 
 import { CameraRPC } from './camera';
 import { UiRPC } from './ui';
@@ -86,6 +86,11 @@ export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partia
     }
 
     return list;
+  });
+
+  storage.handle('open_file', async ({ path }) => {
+    const resolvedPath = await getPath(path, project);
+    await editor.openCode(resolvedPath);
   });
 
   void Promise.all([ui.selectAssetsTab('AssetsPack'), ui.selectSceneInspectorTab('details')]).catch(

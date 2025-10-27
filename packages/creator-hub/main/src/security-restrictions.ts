@@ -42,6 +42,9 @@ const ALLOWED_EXTERNAL_ORIGINS = new Set<AllowedOrigins<typeof IS_DEV>>([
   'https://decentraland.zone',
   'https://studios.decentraland.org',
   'https://docs.decentraland.org',
+  'https://youtube.com',
+  'https://www.youtube.com',
+  'https://github.com',
   ...(import.meta.env.VITE_ALLOWED_EXTERNAL_ORIGINS ?? '').split(',').filter(Boolean),
 ] as AllowedOrigins<typeof IS_DEV>[]);
 

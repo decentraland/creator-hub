@@ -6,6 +6,7 @@ import {
   getDataLayerInterface,
   getInspectorPreferences,
   getThumbnails,
+  getSceneInfoContent,
 } from '../';
 
 export function* connectedSaga() {
@@ -14,4 +15,5 @@ export function* connectedSaga() {
   yield put(getInspectorPreferences());
   yield put(getAssetCatalog());
   yield put(getThumbnails());
+  yield put(getSceneInfoContent());
 }
