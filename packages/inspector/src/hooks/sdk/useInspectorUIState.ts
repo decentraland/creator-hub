@@ -3,6 +3,10 @@ import type { InspectorUIStateType } from '../../lib/sdk/components/InspectorUIS
 import { useChange } from './useChange';
 import { useSdk } from './useSdk';
 
+const INITIAL_UI_STATE: InspectorUIStateType = {
+  sceneInfoPanelVisible: true, // Open by default the first time
+};
+
 /**
  * Hook to read and update the InspectorUIState ECS component.
  * This component is stored on the RootEntity and persists UI state across sessions.
@@ -12,7 +16,7 @@ export const useInspectorUIState = () => {
 
   const sdk = useSdk(({ engine, components }) => {
     const currentState = components.InspectorUIState.getOrNull(engine.RootEntity);
-    setUiState(currentState || {});
+    setUiState(currentState || INITIAL_UI_STATE);
   });
 
   // Listen for changes to the component
