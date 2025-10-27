@@ -1,5 +1,7 @@
 # Decentraland Creator Hub Monorepo
 
+Let's suppose we added an enhacement to README.md file of the project
+
 This monorepo contains the Decentraland Creator Hub ecosystem, consisting of two main packages:
 
 - **`@dcl/inspector`** - A web-based 3D scene inspector for Decentraland
