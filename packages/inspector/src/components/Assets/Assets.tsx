@@ -1,10 +1,11 @@
-import React, { useCallback, useRef } from 'react';
-import cx from 'classnames';
+import React, { useCallback, useMemo, useRef } from 'react';
 import { MdImageSearch } from 'react-icons/md';
 import { HiOutlinePlus } from 'react-icons/hi';
 import { HiOutlineRefresh as RefreshIcon } from 'react-icons/hi';
+import { IoIosFolderOpen } from 'react-icons/io';
+import cx from 'classnames';
 
-import { AssetPack, catalog, isSmart } from '../../lib/logic/catalog';
+import { type AssetPack, catalog, isSmart } from '../../lib/logic/catalog';
 import { getConfig } from '../../lib/logic/config';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import {
@@ -22,7 +23,7 @@ import { CustomAssets } from '../CustomAssets';
 import { selectCustomAssets } from '../../redux/app';
 import { RenameAsset } from '../RenameAsset';
 import { CreateCustomAsset } from '../CreateCustomAsset';
-import { InputRef } from '../FileInput/FileInput';
+import { type InputRef } from '../FileInput/FileInput';
 import { Button } from '../Button';
 
 import './Assets.css';
@@ -63,6 +64,31 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
     dispatch(getAssetCatalog());
   }, [dispatch]);
 
+  const showOpenInExplorerButton = useMemo(() => {
+    return (
+      config.dataLayerRpcParentUrl &&
+      (tab === AssetsTab.FileSystem || tab === AssetsTab.CustomAssets)
+    );
+  }, [tab, config.dataLayerRpcParentUrl]);
+
+  const handleOpenInExplorer = useCallback(async () => {
+    try {
+      const storage = (globalThis as any).storage as Storage;
+      if (!storage || typeof storage.openPath !== 'function') {
+        console.error('Storage openPath method not available');
+        return;
+      }
+
+      if (tab === AssetsTab.CustomAssets) {
+        await storage.openPath('custom');
+      } else {
+        await storage.openPath('.');
+      }
+    } catch (error) {
+      console.error('Failed to open folder:', error);
+    }
+  }, [tab]);
+
   return (
     <div className="Assets">
       <div className="Assets-buttons">
@@ -72,9 +98,15 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
             IMPORT ASSETS
           </Button>
           <RefreshIcon
-            className="refresh"
+            className="icon-item"
             onClick={handleRefreshClick}
           />
+          {showOpenInExplorerButton && (
+            <IoIosFolderOpen
+              className="icon-item"
+              onClick={handleOpenInExplorer}
+            />
+          )}
         </div>
         <div
           className="tab"

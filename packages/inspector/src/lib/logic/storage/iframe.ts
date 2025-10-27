@@ -9,6 +9,7 @@ export enum Method {
   DELETE = 'delete',
   LIST = 'list',
   OPEN_FILE = 'open_file',
+  OPEN_PATH = 'open_path',
 }
 
 export type Params = {
@@ -18,6 +19,7 @@ export type Params = {
   [Method.EXISTS]: { path: string };
   [Method.LIST]: { path: string };
   [Method.OPEN_FILE]: { path: string };
+  [Method.OPEN_PATH]: { path: string };
 };
 
 export type Result = {
@@ -27,6 +29,7 @@ export type Result = {
   [Method.EXISTS]: boolean;
   [Method.LIST]: { name: string; isDirectory: boolean }[];
   [Method.OPEN_FILE]: void;
+  [Method.OPEN_PATH]: void;
 };
 
 export const id = 'IframeStorage';
@@ -58,6 +61,10 @@ export class Client extends RPC<Method, Params, Result> {
 
   openFile(path: string) {
     return this.request('open_file', { path });
+  }
+
+  openPath(path: string) {
+    return this.request('open_path', { path });
   }
 }
 

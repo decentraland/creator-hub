@@ -93,6 +93,11 @@ export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partia
     await editor.openCode(resolvedPath);
   });
 
+  storage.handle('open_path', async ({ path }) => {
+    const resolvedPath = await getPath(path, project);
+    await fs.openPath(resolvedPath);
+  });
+
   void Promise.all([ui.selectAssetsTab('AssetsPack'), ui.selectSceneInspectorTab('details')]).catch(
     console.error,
   );

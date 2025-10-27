@@ -7,6 +7,7 @@ export enum Method {
   DELETE = 'delete',
   LIST = 'list',
   OPEN_FILE = 'open_file',
+  OPEN_PATH = 'open_path',
 }
 
 export type Params = {
@@ -29,6 +30,9 @@ export type Params = {
   [Method.OPEN_FILE]: {
     path: string;
   };
+  [Method.OPEN_PATH]: {
+    path: string;
+  };
 };
 
 export type Result = {
@@ -41,6 +45,7 @@ export type Result = {
     isDirectory: boolean;
   }[];
   [Method.OPEN_FILE]: void;
+  [Method.OPEN_PATH]: void;
 };
 
 export class StorageRPC extends RPC<Method, Params, Result> {

@@ -6,4 +6,5 @@ export interface Storage {
   delete(path: string): Promise<void>;
   list(path: string): Promise<{ name: string; isDirectory: boolean }[]>;
   openFile(path: string): Promise<void>;
+  openPath(path: string): Promise<void>;
 }
