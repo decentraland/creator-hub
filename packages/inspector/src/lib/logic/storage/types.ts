@@ -1,3 +1,5 @@
+import type { UIRequest } from './iframe';
+
 // storage interface
 export interface Storage {
   readFile(path: string): Promise<Buffer>;
@@ -5,6 +7,5 @@ export interface Storage {
   exists(path: string): Promise<boolean>;
   delete(path: string): Promise<void>;
   list(path: string): Promise<{ name: string; isDirectory: boolean }[]>;
-  openFile(path: string): Promise<void>;
-  openPath(path: string): Promise<void>;
+  requestUI(request: UIRequest): Promise<void>;
 }

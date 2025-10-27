@@ -4,7 +4,7 @@ import { HiOutlinePlus } from 'react-icons/hi';
 import { HiOutlineRefresh as RefreshIcon } from 'react-icons/hi';
 import { IoIosFolderOpen } from 'react-icons/io';
 import cx from 'classnames';
-
+import { getStorage } from '../../lib/data-layer/client/iframe-data-layer';
 import { type AssetPack, catalog, isSmart } from '../../lib/logic/catalog';
 import { getConfig } from '../../lib/logic/config';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
@@ -73,17 +73,11 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
 
   const handleOpenInExplorer = useCallback(async () => {
     try {
-      const storage = (globalThis as any).storage as Storage;
-      if (!storage || typeof storage.openPath !== 'function') {
-        console.error('Storage openPath method not available');
-        return;
-      }
+      const storage = getStorage();
+      if (!storage) return;
 
-      if (tab === AssetsTab.CustomAssets) {
-        await storage.openPath('custom');
-      } else {
-        await storage.openPath('.');
-      }
+      const path = tab === AssetsTab.CustomAssets ? 'custom' : '.';
+      await storage.requestUI({ action: 'open_directory', path });
     } catch (error) {
       console.error('Failed to open folder:', error);
     }

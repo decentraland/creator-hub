@@ -24,7 +24,7 @@ export const AssetLink: React.FC<AssetLinkProps> = ({ href, children, ...props }
       if (!storage) return;
 
       try {
-        storage.openFile(normalizedPath);
+        storage.requestUI({ action: 'open_file', path: normalizedPath });
       } catch (error) {
         console.error('Error opening file:', error);
       }

@@ -6,9 +6,12 @@ export enum Method {
   EXISTS = 'exists',
   DELETE = 'delete',
   LIST = 'list',
-  OPEN_FILE = 'open_file',
-  OPEN_PATH = 'open_path',
+  UI_REQUEST = 'ui_request',
 }
+
+export type UIRequest =
+  | { action: 'open_file'; path: string }
+  | { action: 'open_directory'; path: string };
 
 export type Params = {
   [Method.READ_FILE]: {
@@ -27,12 +30,7 @@ export type Params = {
   [Method.LIST]: {
     path: string;
   };
-  [Method.OPEN_FILE]: {
-    path: string;
-  };
-  [Method.OPEN_PATH]: {
-    path: string;
-  };
+  [Method.UI_REQUEST]: UIRequest;
 };
 
 export type Result = {
@@ -44,8 +42,7 @@ export type Result = {
     name: string;
     isDirectory: boolean;
   }[];
-  [Method.OPEN_FILE]: void;
-  [Method.OPEN_PATH]: void;
+  [Method.UI_REQUEST]: void;
 };
 
 export class StorageRPC extends RPC<Method, Params, Result> {
