@@ -15,11 +15,23 @@ import { TransitionMode } from '../../../lib/sdk/components/SceneMetadata';
 import type { SceneInput, SpawnPointInput } from './types';
 
 function getValue(coord: SceneSpawnPointCoord) {
-  return coord.$case === 'range' ? (coord.value[0] + coord.value[1]) / 2 : coord.value;
+  if (coord.$case === 'range') {
+    if (coord.value.length === 1) {
+      return coord.value[0];
+    }
+    return (coord.value[0] + coord.value[1]) / 2;
+  }
+  return coord.value;
 }
 
 function getOffset(value: number | number[]) {
-  return Array.isArray(value) ? (value[1] - value[0]) / 2 : 0;
+  if (Array.isArray(value)) {
+    if (value.length === 1) {
+      return 0;
+    }
+    return (value[1] - value[0]) / 2;
+  }
+  return 0;
 }
 
 function toValue(value: number, offset: number): SceneSpawnPointCoord {
