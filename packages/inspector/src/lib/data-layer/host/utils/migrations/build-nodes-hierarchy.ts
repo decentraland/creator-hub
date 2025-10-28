@@ -32,7 +32,12 @@ export function buildNodesHierarchy(engine: IEngine): Node[] {
   // Update children for nodes in the hierarchy based on Transform's parent value.
   // If there is no parent value, push it to RootEntity children
   for (const [entity] of hierarchy) {
-    if (entity === engine.RootEntity) continue;
+    if (
+      entity === engine.RootEntity ||
+      entity === engine.PlayerEntity ||
+      entity === engine.CameraEntity
+    )
+      continue;
     const parent = Transform.getOrNull(entity)?.parent;
     if (parent) {
       const children = hierarchy.get(parent)?.children || [];
