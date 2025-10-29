@@ -178,6 +178,10 @@
 .CleanAssets .RightPanel .FileList .FileItem svg {
   height: 16px;
   width: 16px;
+  fill: var(--base-11);
+}
+.CleanAssets .RightPanel .FileList .FileItem.selected svg {
+  fill: var(--text);
 }
 
 .CleanAssets .RightPanel .FileList .FileItem .checkbox {

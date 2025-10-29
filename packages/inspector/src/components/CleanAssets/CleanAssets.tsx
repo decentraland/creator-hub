@@ -56,10 +56,12 @@ const CleanAssets: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   const handleScan = useCallback(() => {
     setIsScanning(true);
     setTimeout(() => {
+      /// This will be replaced with actual scanning logic
+      const assets = MOCK_ASSETS;
+      setAssets(assets);
+      setSelectedAssets(new Set(assets.filter(a => a.unused).map(a => a.path))); // Select unused by default
       setIsScanning(false);
-      setAssets(MOCK_ASSETS);
     }, 2000);
-    /// This will be replaced with actual scanning logic
   }, []);
 
   const handleRemoveSelected = useCallback(() => {
@@ -134,7 +136,7 @@ const CleanAssets: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
                       className="checkbox"
                     />
                     <span>{asset.path}</span>
-                    {selectedAssets.has(asset.path) && <CleanupIcon />}
+                    {asset.unused && <CleanupIcon />}
                     <span className="size">{formatBytes(asset.size)}</span>
                   </label>
                 ))}
