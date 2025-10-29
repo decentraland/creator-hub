@@ -10,6 +10,8 @@ export enum Method {
   SELECT_SCENE_INSPECTOR_TAB = 'select_scene_inspector_tab',
   TOGGLE_SCENE_INSPECTOR_TAB = 'toggle_scene_inspector_tab',
   TOGGLE_GROUND_GRID = 'toggle_ground_grid',
+  OPEN_FILE = 'open_file',
+  OPEN_DIRECTORY = 'open_directory',
 }
 
 export type Params = {
@@ -20,6 +22,8 @@ export type Params = {
   [Method.SELECT_SCENE_INSPECTOR_TAB]: { tab: `${SceneInspectorTab}` };
   [Method.TOGGLE_SCENE_INSPECTOR_TAB]: { tab: `${SceneInspectorTab}`; enabled: boolean };
   [Method.TOGGLE_GROUND_GRID]: { enabled: boolean };
+  [Method.OPEN_FILE]: { path: string };
+  [Method.OPEN_DIRECTORY]: { path: string };
 };
 
 export type Result = {
@@ -30,4 +34,6 @@ export type Result = {
   [Method.SELECT_SCENE_INSPECTOR_TAB]: void;
   [Method.TOGGLE_SCENE_INSPECTOR_TAB]: void;
   [Method.TOGGLE_GROUND_GRID]: void;
+  [Method.OPEN_FILE]: void;
+  [Method.OPEN_DIRECTORY]: void;
 };

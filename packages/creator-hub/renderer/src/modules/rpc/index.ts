@@ -88,29 +88,18 @@ export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partia
     return list;
   });
 
-  storage.handle('ui_request', async request => {
-    const resolvedPath = request.path ? await getPath(request.path, project) : null;
+  ui.handle('open_file', async ({ path }) => {
+    const resolvedPath = await getPath(path, project);
+    await editor.openCode(resolvedPath);
+  });
 
-    switch (request.action) {
-      case 'open_file':
-        if (resolvedPath) {
-          await editor.openCode(resolvedPath);
-        }
-        break;
-
-      case 'open_directory':
-        if (resolvedPath) {
-          const isDir = await fs.isDirectory(resolvedPath);
-          if (isDir) {
-            await fs.openPath(resolvedPath);
-          } else {
-            console.error(`Path ${resolvedPath} is not a directory`);
-          }
-        }
-        break;
-
-      default:
-        console.error('Unknown UI request:');
+  ui.handle('open_directory', async ({ path }) => {
+    const resolvedPath = await getPath(path, project);
+    const isDir = await fs.isDirectory(resolvedPath);
+    if (isDir) {
+      await fs.openPath(resolvedPath);
+    } else {
+      console.error(`Path ${resolvedPath} is not a directory`);
     }
   });
 

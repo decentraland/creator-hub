@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { useAppDispatch } from '../../../redux/hooks';
-import { getStorage } from '../../../lib/data-layer/client/iframe-data-layer';
+import { getUiClient } from '../../../lib/rpc/ui';
 import { isExternalUrl, normalizePath } from './utils';
 
 interface AssetLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {}
@@ -20,11 +20,11 @@ export const AssetLink: React.FC<AssetLinkProps> = ({ href, children, ...props }
   const handleOpenFile = useCallback(
     (path: string) => {
       const normalizedPath = normalizePath(path);
-      const storage = getStorage();
-      if (!storage) return;
+      const uiClient = getUiClient();
+      if (!uiClient) return;
 
       try {
-        storage.requestUI({ action: 'open_file', path: normalizedPath });
+        uiClient.openFile(normalizedPath);
       } catch (error) {
         console.error('Error opening file:', error);
       }

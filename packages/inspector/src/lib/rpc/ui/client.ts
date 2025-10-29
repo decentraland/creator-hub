@@ -35,4 +35,12 @@ export class UiClient extends RPC<Method, Params, Result> {
   toggleSceneInspectorTab = (tab: `${SceneInspectorTab}`, enabled: boolean) => {
     return this.request('toggle_scene_inspector_tab', { tab, enabled });
   };
+
+  openFile = (path: string) => {
+    return this.request('open_file', { path });
+  };
+
+  openDirectory = (path: string) => {
+    return this.request('open_directory', { path });
+  };
 }

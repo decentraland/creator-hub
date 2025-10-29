@@ -1,4 +1,3 @@
-import type { UIRequest } from './iframe';
 import type { Storage } from './types';
 
 export function createInMemoryStorage(initialFs: Record<string, Buffer> = {}): Storage {
@@ -44,6 +43,5 @@ export function createInMemoryStorage(initialFs: Record<string, Buffer> = {}): S
 
       return files;
     },
-    async requestUI(_request: UIRequest) {},
   };
 }
