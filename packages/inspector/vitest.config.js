@@ -24,4 +24,7 @@ export default defineConfig({
       '@babylonjs/materials',
     ],
   },
+  ssr: {
+    noExternal: ['@dcl/gltf-validator-ts'],
+  },
 });
