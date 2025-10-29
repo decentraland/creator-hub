@@ -1,10 +1,11 @@
-import React, { useCallback, useRef } from 'react';
-import cx from 'classnames';
+import React, { useCallback, useRef, useState } from 'react';
 import { MdImageSearch } from 'react-icons/md';
 import { HiOutlinePlus } from 'react-icons/hi';
 import { HiOutlineRefresh as RefreshIcon } from 'react-icons/hi';
+import cx from 'classnames';
 
-import { AssetPack, catalog, isSmart } from '../../lib/logic/catalog';
+import type { AssetPack } from '../../lib/logic/catalog';
+import { catalog, isSmart } from '../../lib/logic/catalog';
 import { getConfig } from '../../lib/logic/config';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import {
@@ -15,6 +16,7 @@ import {
 import { getSelectedAssetsTab, selectAssetsTab } from '../../redux/ui';
 import { AssetsTab } from '../../redux/ui/types';
 import { FolderOpen } from '../Icons/Folder';
+import CleanupIcon from '../Icons/Cleanup';
 import { AssetsCatalog } from '../AssetsCatalog';
 import { ProjectAssetExplorer } from '../ProjectAssetExplorer';
 import ImportAsset from '../ImportAsset';
@@ -22,7 +24,8 @@ import { CustomAssets } from '../CustomAssets';
 import { selectCustomAssets } from '../../redux/app';
 import { RenameAsset } from '../RenameAsset';
 import { CreateCustomAsset } from '../CreateCustomAsset';
-import { InputRef } from '../FileInput/FileInput';
+import { CleanAssets } from '../CleanAssets';
+import type { InputRef } from '../FileInput/FileInput';
 import { Button } from '../Button';
 
 import './Assets.css';
@@ -38,6 +41,7 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
   const dispatch = useAppDispatch();
   const tab = useAppSelector(getSelectedAssetsTab);
   const customAssets = useAppSelector(selectCustomAssets);
+  const [showCleanAssetsModal, setShowCleanAssetsModal] = useState(false);
   const inputRef = useRef<InputRef>(null);
 
   const handleTabClick = useCallback(
@@ -63,18 +67,31 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
     dispatch(getAssetCatalog());
   }, [dispatch]);
 
+  const handleCleanAssetsClick = useCallback(() => {
+    setShowCleanAssetsModal(true);
+  }, []);
+
   return (
     <div className="Assets">
       <div className="Assets-buttons">
         <div className="Assets-buttons-left">
-          <Button onClick={handleImportClick}>
+          <Button
+            className="import-button"
+            onClick={handleImportClick}
+          >
             <HiOutlinePlus />
             IMPORT ASSETS
           </Button>
           <RefreshIcon
-            className="refresh"
+            className="icon-item"
             onClick={handleRefreshClick}
           />
+          <button
+            className="icon-item"
+            onClick={handleCleanAssetsClick}
+          >
+            <CleanupIcon />
+          </button>
         </div>
         <div
           className="tab"
@@ -126,6 +143,11 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
           {tab === AssetsTab.CreateCustomAsset && stagedCustomAsset && <CreateCustomAsset />}
         </div>
       </ImportAsset>
+      <CleanAssets
+        isOpen={showCleanAssetsModal}
+        onClose={() => setShowCleanAssetsModal(false)}
+        onSave={() => setShowCleanAssetsModal(false)} /// Should refresh the asset list after cleaning
+      />
     </div>
   );
 }

@@ -1,0 +1,216 @@
+.CleanAssetsModal {
+  padding: 32px;
+}
+
+.CleanAssets {
+  height: 420px;
+  display: flex;
+  flex-flow: row nowrap;
+  gap: 32px;
+}
+
+/* Header */
+
+.CleanAssetsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.CleanAssetsHeader h2 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 600;
+}
+
+.CleanAssetsHeader .CloseButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--base-01);
+  height: 32px;
+}
+
+/* Left Panel */
+
+.CleanAssets .LeftPanel {
+  width: 300px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-right: 32px;
+  border-right: 1px solid var(--base-14);
+}
+
+.CleanAssets .LeftPanel p {
+  color: var(--base-08);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.CleanAssets .LeftPanel .considerations {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.CleanAssets .LeftPanel .considerations p {
+  color: var(--danger);
+}
+
+.CleanAssets .LeftPanel .considerations > div {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px;
+}
+
+.CleanAssets .LeftPanel .considerations svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  width: 16px;
+  height: 16px;
+  color: var(--danger);
+}
+
+/* Right Panel */
+
+.CleanAssets .RightPanel {
+  width: 600px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scanning View */
+.CleanAssets .RightPanel .LoadingContainer {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.CleanAssets .RightPanel .LoadingContainer .SpinnerContainer {
+  position: relative;
+  width: 40px;
+  height: 40px;
+}
+
+.CleanAssets .RightPanel .LoadingContainer p {
+  color: var(--base-08);
+  font-size: 20px;
+  font-weight: 500;
+}
+
+/* Stats */
+.CleanAssets .RightPanel .stats {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 10px 24px;
+  border-radius: 100px;
+  background: var(--base-17);
+}
+
+.CleanAssets .RightPanel .stats p {
+  color: var(--base-08);
+  font-size: 14px;
+  font-weight: 400;
+  margin: 0;
+}
+
+.CleanAssets .RightPanel .stats .FilesCounter {
+  text-transform: uppercase;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.CleanAssets .RightPanel .stats .ReducedSize {
+  color: var(--text);
+  font-weight: 700;
+}
+
+/* File List */
+.CleanAssets .RightPanel .FileList {
+  flex: 1;
+  overflow: auto;
+  margin: 16px 0 32px;
+  padding-right: 10px;
+}
+
+.CleanAssets .RightPanel .FileList .FileItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 16px;
+  cursor: pointer;
+  background-color: transparent;
+  transition: background-color 0.2s;
+}
+
+.CleanAssets .RightPanel .FileList .FileItem:hover {
+  background-color: var(--base-18);
+}
+
+.CleanAssets .RightPanel .FileList .FileItem:not(:last-child) {
+  border-bottom: 0.5px solid var(--base-14);
+}
+
+.CleanAssets .RightPanel .FileList .FileItem span {
+  color: var(--base-11);
+  margin: 0;
+}
+
+.CleanAssets .RightPanel .FileList .FileItem.selected span {
+  color: var(--text);
+}
+
+.CleanAssets .RightPanel .FileList .FileItem .size {
+  margin-left: auto;
+}
+
+.CleanAssets .RightPanel .FileList .FileItem svg {
+  height: 16px;
+  width: 16px;
+}
+
+.CleanAssets .RightPanel .FileList .FileItem .checkbox {
+  flex-grow: 0;
+}
+
+.CleanAssets .RightPanel .FileList .FileItem .checkbox input {
+  border: 2px solid var(--base-11);
+  background-color: transparent;
+}
+
+.CleanAssets .RightPanel .FileList .FileItem .checkbox input:checked {
+  border-color: var(--text);
+}
+
+/* Footer */
+.CleanAssets .RightPanel .footer {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+}
+
+.CleanAssets .RightPanel .footer button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  padding: 8px 22px;
+  height: 40px;
+}
+
+.CleanAssets .RightPanel .footer .ScanButton {
+  border: 1px solid var(--base-09);
+}
