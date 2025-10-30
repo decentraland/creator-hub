@@ -12,6 +12,7 @@ import { AssetsTab, PanelName, SceneInspectorTab } from '../../../redux/ui/types
 import { UiClient } from './client';
 import { UiServer } from './server';
 
+// TODO: check this tests after RPC refactor
 describe('UiRPC', () => {
   const parent = new InMemoryTransport();
   const iframe = new InMemoryTransport();

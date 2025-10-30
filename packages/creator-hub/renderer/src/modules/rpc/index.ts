@@ -3,17 +3,17 @@ import { MessageTransport } from '@dcl/mini-rpc';
 import { debounceByKey } from '/shared/utils';
 import { type Project } from '/shared/types/projects';
 
-import { fs, custom, editor } from '#preload';
+import { fs, custom } from '#preload';
 
-import { SceneRPC } from './scene';
-import { UiRPC } from './ui';
+import { SceneRpcClient } from './scene/client';
+import { SceneRpcServer } from './scene/server';
 import { type Method, type Params, type Result, StorageRPC } from './storage';
 
 export type RPCInfo = {
   iframe: HTMLIFrameElement;
   project: Project;
   storage: StorageRPC;
-  sceneRPC: SceneRPC;
+  scene: SceneRpcClient;
 };
 
 interface Callbacks {
@@ -23,7 +23,7 @@ interface Callbacks {
   ) => Promise<Result[Method.WRITE_FILE]>;
 }
 
-const getPath = async (filePath: string, project: Project) => {
+export const getPath = async (filePath: string, project: Project) => {
   let basePath = project.path;
   const normalizedPath = filePath.replace(/\\/g, '/');
   if (normalizedPath === 'custom' || normalizedPath.startsWith('custom/')) {
@@ -37,10 +37,10 @@ const getPath = async (filePath: string, project: Project) => {
 
 export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partial<Callbacks> = {}) {
   const transport = new MessageTransport(window, iframe.contentWindow!);
-  const sceneRPC = new SceneRPC(transport);
-  const ui = new UiRPC(transport);
-  const storage = new StorageRPC(transport);
-  const params = { iframe, project, storage, sceneRPC };
+  const sceneClient = new SceneRpcClient(transport);
+  const _sceneServer = new SceneRpcServer(transport, project);
+  const storage = new StorageRPC(transport); // TODO: move all storage handlers inside the StorageRPC class
+  const params = { iframe, project, storage, scene: sceneClient };
 
   storage.handle('read_file', async ({ path }) => {
     const file = await fs.readFile(await getPath(path, project));
@@ -88,24 +88,10 @@ export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partia
     return list;
   });
 
-  ui.handle('open_file', async ({ path }) => {
-    const resolvedPath = await getPath(path, project);
-    await editor.openCode(resolvedPath);
-  });
-
-  ui.handle('open_directory', async ({ path }) => {
-    const resolvedPath = await getPath(path, project);
-    const isDir = await fs.isDirectory(resolvedPath);
-    if (isDir) {
-      await fs.openPath(resolvedPath);
-    } else {
-      console.error(`Path ${resolvedPath} is not a directory`);
-    }
-  });
-
-  void Promise.all([ui.selectAssetsTab('AssetsPack'), ui.selectSceneInspectorTab('details')]).catch(
-    console.error,
-  );
+  void Promise.all([
+    sceneClient.selectAssetsTab('AssetsPack'),
+    sceneClient.selectSceneInspectorTab('details'),
+  ]).catch(console.error);
 
   return {
     ...params,
@@ -115,7 +101,7 @@ export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partia
   };
 }
 
-export async function takeScreenshot(iframe: HTMLIFrameElement, sceneRPC?: SceneRPC) {
+export async function takeScreenshot(iframe: HTMLIFrameElement, sceneRPC?: SceneRpcClient) {
   // TODO:
   // 1. make the camera position/target relative to parcels rows & columns
   // 2. the SceneServer only allows to reposition the main camera, so repositioning it, will also
@@ -124,7 +110,8 @@ export async function takeScreenshot(iframe: HTMLIFrameElement, sceneRPC?: Scene
   //
   // leaving the next line just for reference:
   // await Promise.all([camera.setPosition(x, y, z), camera.setTarget(x, y, z)]);
-  const _sceneRPC = sceneRPC ?? new SceneRPC(new MessageTransport(window, iframe.contentWindow!));
+  const _sceneRPC =
+    sceneRPC ?? new SceneRpcClient(new MessageTransport(window, iframe.contentWindow!));
   const screenshot = await _sceneRPC.takeScreenshot(+iframe.width, +iframe.height);
   return screenshot;
 }

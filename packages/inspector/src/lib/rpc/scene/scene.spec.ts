@@ -1,8 +1,9 @@
 import { FreeCamera, NullEngine, Scene, Vector3, ScreenshotTools } from '@babylonjs/core';
 import { InMemoryTransport } from '@dcl/mini-rpc';
-import { SceneClient } from './client';
-import { SceneServer } from './server';
+import { SceneClient } from '../scene/client';
+import { SceneServer } from '../scene/server';
 
+// TODO: check this tests after RPC refactor
 describe('SceneRPC', () => {
   const parent = new InMemoryTransport();
   const iframe = new InMemoryTransport();

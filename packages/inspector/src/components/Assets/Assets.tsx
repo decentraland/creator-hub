@@ -4,9 +4,9 @@ import { HiOutlinePlus } from 'react-icons/hi';
 import { HiOutlineRefresh as RefreshIcon } from 'react-icons/hi';
 import { IoIosFolderOpen } from 'react-icons/io';
 import cx from 'classnames';
-import { getUiClient } from '../../lib/rpc/ui';
 import { type AssetPack, catalog, isSmart } from '../../lib/logic/catalog';
 import { getConfig } from '../../lib/logic/config';
+import { getSceneClient } from '../../lib/rpc/scene';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import {
   selectAssetToRename,
@@ -73,11 +73,11 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
 
   const handleOpenInExplorer = useCallback(async () => {
     try {
-      const uiClient = getUiClient();
-      if (!uiClient) return;
+      const sceneClient = getSceneClient();
+      if (!sceneClient) return;
 
       const path = tab === AssetsTab.CustomAssets ? 'custom' : '.';
-      await uiClient.openDirectory(path);
+      await sceneClient.openDirectory(path);
     } catch (error) {
       console.error('Failed to open folder:', error);
     }

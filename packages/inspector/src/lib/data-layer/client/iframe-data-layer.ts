@@ -3,7 +3,7 @@ import { createIframeStorage } from '../../logic/storage';
 import { createDataLayerHost } from '../host';
 import type { DataLayerRpcClient } from '../types';
 import type { Storage } from '../../logic/storage/types';
-import { createIframeUi } from '../../rpc/ui';
+import { createIframeScene } from '../../rpc/scene';
 
 let storageInstance: Storage | undefined;
 
@@ -15,7 +15,7 @@ export async function createIframeDataLayerRpcClient(origin: string): Promise<Da
   const storage = createIframeStorage(origin);
   storageInstance = storage;
 
-  createIframeUi(origin);
+  createIframeScene(origin);
 
   const fs = createFileSystemInterface(storage);
   const localDataLayerHost = await createDataLayerHost(fs);

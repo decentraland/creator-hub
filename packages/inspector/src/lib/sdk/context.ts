@@ -8,9 +8,11 @@ import { initRenderer } from '../babylon/setup/init';
 import type { Gizmos } from '../babylon/decentraland/GizmoManager';
 import type { CameraManager } from '../babylon/decentraland/camera';
 import type { InspectorPreferences } from '../logic/preferences/types';
+import { SceneMetricsServer } from '../../lib/rpc/scene-metrics/server';
 import { SceneServer } from '../rpc/scene/server';
 import { getConfig } from '../logic/config';
 import type { AssetPack } from '../logic/catalog';
+import { store } from '../../redux/store';
 import { createOperations } from './operations';
 import { createInspectorEngine } from './inspector-engine';
 import { getHardcodedLoadableScene } from './test-local-scene';
@@ -71,8 +73,10 @@ export async function createSdkContext(
   // if there is a parent, initialize rpc servers
   const config = getConfig();
   if (config.dataLayerRpcParentUrl) {
+    console.log('ASD: INITIALIZING RPC SERVERS');
     const transport = new MessageTransport(window, window.parent, config.dataLayerRpcParentUrl);
-    new SceneServer(transport, renderer.engine, renderer.editorCamera.getCamera());
+    new SceneServer(transport, store, renderer);
+    new SceneMetricsServer(transport, store);
   }
 
   return {

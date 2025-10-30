@@ -1,10 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 import createSagaMiddleware from 'redux-saga';
-import { MessageTransport } from '@dcl/mini-rpc';
 
-import { UiServer } from '../lib/rpc/ui/server';
-import { SceneMetricsServer } from '../lib/rpc/scene-metrics/server';
-import { getConfig } from '../lib/logic/config';
 import appStateReducer from './app';
 import dataLayerReducer from './data-layer';
 import sdkReducer from './sdk';
@@ -27,14 +23,6 @@ export const store = configureStore({
   },
 });
 
-// if there is a parent, initialize rpc servers
-const config = getConfig();
-if (config.dataLayerRpcParentUrl) {
-  const tranport = new MessageTransport(window, window.parent, config.dataLayerRpcParentUrl);
-  new UiServer(tranport, store);
-  new SceneMetricsServer(tranport, store);
-}
-
 sagaMiddleware.run(sagas);
 
 // global store
@@ -42,3 +30,4 @@ sagaMiddleware.run(sagas);
 
 export type AppDispatch = typeof store.dispatch;
 export type RootState = ReturnType<typeof store.getState>;
+export type Store = typeof store;
