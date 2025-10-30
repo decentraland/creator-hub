@@ -16,8 +16,8 @@ enum Method {
   TOGGLE_GROUND_GRID = 'toggle_ground_grid',
   OPEN_FILE = 'open_file',
   OPEN_DIRECTORY = 'open_directory',
-  SET_POSITION = 'set_position',
-  SET_TARGET = 'set_target',
+  SET_CAMERA_POSITION = 'set_camera_position',
+  SET_CAMERA_TARGET = 'set_camera_target',
   TAKE_SCREENSHOT = 'take_screenshot',
 }
 
@@ -31,8 +31,8 @@ type Params = {
   [Method.TOGGLE_GROUND_GRID]: { enabled: boolean };
   [Method.OPEN_FILE]: { path: string };
   [Method.OPEN_DIRECTORY]: { path: string };
-  [Method.SET_POSITION]: { x: number; y: number; z: number };
-  [Method.SET_TARGET]: { x: number; y: number; z: number };
+  [Method.SET_CAMERA_POSITION]: { x: number; y: number; z: number };
+  [Method.SET_CAMERA_TARGET]: { x: number; y: number; z: number };
   [Method.TAKE_SCREENSHOT]: { width: number; height: number; precision?: number };
 };
 
@@ -46,8 +46,8 @@ type Result = {
   [Method.TOGGLE_GROUND_GRID]: void;
   [Method.OPEN_FILE]: void;
   [Method.OPEN_DIRECTORY]: void;
-  [Method.SET_POSITION]: void;
-  [Method.SET_TARGET]: void;
+  [Method.SET_CAMERA_POSITION]: void;
+  [Method.SET_CAMERA_TARGET]: void;
   [Method.TAKE_SCREENSHOT]: string;
 };
 
@@ -84,11 +84,11 @@ export class SceneServer extends RPC<Method, Params, Result> {
       store.dispatch({ type: 'ui/toggleGroundGrid', payload: { enabled } });
     });
 
-    this.handle('set_position', async ({ x, y, z }) => {
+    this.handle('set_camera_position', async ({ x, y, z }) => {
       camera.position.set(x, y, z);
     });
 
-    this.handle('set_target', async ({ x, y, z }) => {
+    this.handle('set_camera_target', async ({ x, y, z }) => {
       camera.setTarget(new Vector3(x, y, z));
     });
 

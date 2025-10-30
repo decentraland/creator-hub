@@ -73,7 +73,6 @@ export async function createSdkContext(
   // if there is a parent, initialize rpc servers
   const config = getConfig();
   if (config.dataLayerRpcParentUrl) {
-    console.log('ASD: INITIALIZING RPC SERVERS');
     const transport = new MessageTransport(window, window.parent, config.dataLayerRpcParentUrl);
     new SceneServer(transport, store, renderer);
     new SceneMetricsServer(transport, store);
