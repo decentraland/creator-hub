@@ -1,11 +1,9 @@
-import { MessageTransport } from '@dcl/mini-rpc';
 import { createFileSystemInterface } from '../../logic/file-system-interface';
 import { createIframeStorage } from '../../logic/storage';
 import { createDataLayerHost } from '../host';
 import type { DataLayerRpcClient } from '../types';
 import type { Storage } from '../../logic/storage/types';
-import { UiClient } from '../../rpc/ui/client';
-import { setUiClient } from '../../rpc/ui';
+import { createIframeUi } from '../../rpc/ui';
 
 let storageInstance: Storage | undefined;
 
@@ -17,9 +15,7 @@ export async function createIframeDataLayerRpcClient(origin: string): Promise<Da
   const storage = createIframeStorage(origin);
   storageInstance = storage;
 
-  const transport = new MessageTransport(window, window.parent, origin);
-  const uiClient = new UiClient(transport);
-  setUiClient(uiClient);
+  createIframeUi(origin);
 
   const fs = createFileSystemInterface(storage);
   const localDataLayerHost = await createDataLayerHost(fs);

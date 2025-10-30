@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 
 import { takeScreenshot as takeScreenshotRPC } from '/@/modules/rpc';
 import { resizeImage } from '/@/modules/image';
-import { type SceneRPC } from '../modules/rpc/scene';
+import { type SceneRPC } from '/@/modules/rpc/scene';
 
 type Screenshot = {
   iframe: HTMLIFrameElement;
