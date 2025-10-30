@@ -53,7 +53,7 @@ type Result = {
 
 export class SceneServer extends RPC<Method, Params, Result> {
   constructor(transport: Transport, store: Store, renderer: ReturnType<typeof initRenderer>) {
-    super('nico', transport);
+    super('SceneRpcInbound', transport);
     const camera = renderer.editorCamera.getCamera();
 
     this.handle('toggle_component', async ({ component, enabled }) => {

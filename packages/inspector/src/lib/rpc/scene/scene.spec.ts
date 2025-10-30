@@ -1,51 +1,163 @@
 import { FreeCamera, NullEngine, Scene, Vector3, ScreenshotTools } from '@babylonjs/core';
 import { InMemoryTransport } from '@dcl/mini-rpc';
-import { SceneClient } from '../scene/client';
-import { SceneServer } from '../scene/server';
+import type { Store } from '../../../redux/store';
+import { SceneClient } from './client';
+import { SceneServer } from './server';
 
-// TODO: check this tests after RPC refactor
-describe('SceneRPC', () => {
-  const parent = new InMemoryTransport();
-  const iframe = new InMemoryTransport();
+describe('SceneClient RPC', () => {
+  let parent: InMemoryTransport;
+  let iframe: InMemoryTransport;
+  let client: SceneClient;
 
-  parent.connect(iframe);
-  iframe.connect(parent);
+  beforeEach(() => {
+    parent = new InMemoryTransport();
+    iframe = new InMemoryTransport();
 
-  const engine = new NullEngine();
-  const scene = new Scene(engine);
-  const camera = new FreeCamera('camera', new Vector3(0, 0, 0), scene);
+    parent.connect(iframe);
+    iframe.connect(parent);
 
-  const client = new SceneClient(parent);
-  const _server = new SceneServer(iframe, engine, camera);
+    client = new SceneClient(parent);
+  });
 
-  describe('When using the takeScreenshot method of the client', () => {
-    it('should generate a screenshot on the server and relay it back to the client', async () => {
-      const image =
-        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==';
-      const spy = vi.spyOn(ScreenshotTools, 'CreateScreenshotAsync');
-      spy.mockResolvedValue(image);
-      await expect(client.takeScreenshot(1024, 1024)).resolves.toBe(image);
-      expect(spy).toHaveBeenCalledWith(
-        engine,
-        camera,
-        expect.objectContaining({ width: 1024, height: 1024 }),
-      );
+  describe('when using the openFile method', () => {
+    let path: string;
+    let spy: any;
+
+    beforeEach(() => {
+      path = '/path/to/file.ts';
+      spy = vi.spyOn(client, 'request').mockResolvedValueOnce(undefined);
+    });
+
+    afterEach(() => {
       spy.mockRestore();
     });
-  });
-  describe('When using the setPosition method of the client', () => {
-    it('should set the position of the scene in the server', async () => {
-      const spy = vi.spyOn(camera.position, 'set');
-      await expect(client.setPosition(8, 0, 8)).resolves.toBe(undefined);
-      expect(spy).toHaveBeenCalledWith(8, 0, 8);
-      spy.mockRestore();
+
+    it('should send the open_file request with the correct path', async () => {
+      await client.openFile(path);
+      expect(spy).toHaveBeenCalledWith('open_file', { path });
     });
   });
-  describe('When using the setTarget method of the client', () => {
-    it('should set the target of the scene in the server', async () => {
+
+  describe('when using the openDirectory method', () => {
+    let path: string;
+    let spy: any;
+
+    beforeEach(() => {
+      path = '/path/to/directory';
+      spy = vi.spyOn(client as any, 'request').mockResolvedValueOnce(undefined);
+    });
+
+    afterEach(() => {
+      spy.mockRestore();
+    });
+
+    it('should send the open_directory request with the correct path', async () => {
+      await client.openDirectory(path);
+      expect(spy).toHaveBeenCalledWith('open_directory', { path });
+    });
+  });
+});
+
+describe('SceneServer RPC', () => {
+  let parent: InMemoryTransport;
+  let iframe: InMemoryTransport;
+  let _client: SceneClient;
+  let store: Store;
+  let engine: NullEngine;
+  let scene: Scene;
+  let camera: FreeCamera;
+  let renderer: any;
+
+  beforeEach(() => {
+    parent = new InMemoryTransport();
+    iframe = new InMemoryTransport();
+
+    parent.connect(iframe);
+    iframe.connect(parent);
+
+    engine = new NullEngine();
+    scene = new Scene(engine);
+    camera = new FreeCamera('camera', new Vector3(0, 0, 0), scene);
+
+    store = {
+      dispatch: vi.fn(),
+      getState: vi.fn(),
+      subscribe: vi.fn(),
+      replaceReducer: vi.fn(),
+    } as any as Store;
+
+    renderer = {
+      engine,
+      editorCamera: {
+        getCamera: () => camera,
+      },
+    };
+
+    _client = new SceneClient(parent);
+    new SceneServer(iframe, store, renderer);
+  });
+
+  afterEach(() => {
+    vi.resetAllMocks();
+  });
+
+  describe('when testing camera position', () => {
+    let x: number;
+    let y: number;
+    let z: number;
+
+    beforeEach(() => {
+      x = 8;
+      y = 0;
+      z = 8;
+    });
+
+    it('should set the camera position correctly', () => {
+      camera.position.set(x, y, z);
+      expect(camera.position.x).toBe(x);
+      expect(camera.position.y).toBe(y);
+      expect(camera.position.z).toBe(z);
+    });
+  });
+
+  describe('when testing camera target', () => {
+    let targetVector: Vector3;
+
+    beforeEach(() => {
+      targetVector = new Vector3(8, 0, 8);
+    });
+
+    it('should set the camera target correctly', () => {
       const spy = vi.spyOn(camera, 'setTarget');
-      await expect(client.setTarget(8, 0, 8)).resolves.toBe(undefined);
-      expect(spy).toHaveBeenCalledWith(new Vector3(8, 0, 8));
+      camera.setTarget(targetVector);
+      expect(spy).toHaveBeenCalledWith(targetVector);
+      spy.mockRestore();
+    });
+  });
+
+  describe('when testing screenshot functionality', () => {
+    let width: number;
+    let height: number;
+    let mockImage: string;
+
+    beforeEach(() => {
+      width = 1024;
+      height = 1024;
+      mockImage =
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==';
+    });
+
+    it('should create a screenshot with the correct dimensions', async () => {
+      const spy = vi.spyOn(ScreenshotTools, 'CreateScreenshotAsync');
+      spy.mockResolvedValueOnce(mockImage);
+
+      const result = await ScreenshotTools.CreateScreenshotAsync(engine, camera, {
+        width,
+        height,
+      });
+
+      expect(result).toBe(mockImage);
+      expect(spy).toHaveBeenCalledWith(engine, camera, expect.objectContaining({ width, height }));
       spy.mockRestore();
     });
   });

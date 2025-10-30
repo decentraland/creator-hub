@@ -23,7 +23,7 @@ export type Result = {
 
 export class SceneRpcServer extends RPC<Method, Params, Result> {
   constructor(transport: Transport, project: Project) {
-    super('pola', transport);
+    super('SceneRpcOutbound', transport);
 
     this.handle('open_file', async ({ path }) => {
       const resolvedPath = await getPath(path, project);

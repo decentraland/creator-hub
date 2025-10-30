@@ -68,7 +68,7 @@ export type Result = {
 
 export class SceneRpcClient extends RPC<Method, Params, Result> {
   constructor(transport: Transport) {
-    super('nico', transport);
+    super('SceneRpcInbound', transport);
   }
 
   toggleComponent = (component: string, enabled: boolean) => {

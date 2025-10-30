@@ -18,7 +18,7 @@ type Result = {
 
 export class SceneClient extends RPC<Method, Params, Result> {
   constructor(transport: Transport) {
-    super('pola', transport);
+    super('SceneRpcOutbound', transport);
   }
 
   openFile = (path: string) => {
