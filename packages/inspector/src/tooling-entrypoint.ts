@@ -1,5 +1,5 @@
 export * from './lib/data-layer/remote-data-layer';
-export * from './lib/rpc/camera/client';
+export * from './lib/rpc/scene/client';
 export * from './lib/rpc/ui/client';
 export * from './lib/logic/storage';
 export * from './lib/rpc/scene-metrics/client';

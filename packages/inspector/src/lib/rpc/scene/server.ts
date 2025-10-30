@@ -4,7 +4,7 @@ import type { Transport } from '@dcl/mini-rpc';
 import { RPC } from '@dcl/mini-rpc';
 import { name, type Method, type Params, type Result } from './types';
 
-export class CameraServer extends RPC<Method, Params, Result> {
+export class SceneServer extends RPC<Method, Params, Result> {
   constructor(transport: Transport, engine: Engine, camera: FreeCamera) {
     super(name, transport);
 

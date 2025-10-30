@@ -1,4 +1,4 @@
-export const name = 'CameraRPC';
+export const name = 'SceneRPC';
 
 export enum Method {
   TAKE_SCREENSHOT = 'take_screenshot',

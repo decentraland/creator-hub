@@ -8,7 +8,7 @@ import { initRenderer } from '../babylon/setup/init';
 import type { Gizmos } from '../babylon/decentraland/GizmoManager';
 import type { CameraManager } from '../babylon/decentraland/camera';
 import type { InspectorPreferences } from '../logic/preferences/types';
-import { CameraServer } from '../rpc/camera/server';
+import { SceneServer } from '../rpc/scene/server';
 import { getConfig } from '../logic/config';
 import type { AssetPack } from '../logic/catalog';
 import { createOperations } from './operations';
@@ -71,8 +71,8 @@ export async function createSdkContext(
   // if there is a parent, initialize rpc servers
   const config = getConfig();
   if (config.dataLayerRpcParentUrl) {
-    const tranport = new MessageTransport(window, window.parent, config.dataLayerRpcParentUrl);
-    new CameraServer(tranport, renderer.engine, renderer.editorCamera.getCamera());
+    const transport = new MessageTransport(window, window.parent, config.dataLayerRpcParentUrl);
+    new SceneServer(transport, renderer.engine, renderer.editorCamera.getCamera());
   }
 
   return {

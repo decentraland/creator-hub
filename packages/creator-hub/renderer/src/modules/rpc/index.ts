@@ -5,7 +5,7 @@ import { type Project } from '/shared/types/projects';
 
 import { fs, custom, editor } from '#preload';
 
-import { CameraRPC } from './camera';
+import { SceneRPC } from './scene';
 import { UiRPC } from './ui';
 import { type Method, type Params, type Result, StorageRPC } from './storage';
 
@@ -13,7 +13,7 @@ export type RPCInfo = {
   iframe: HTMLIFrameElement;
   project: Project;
   storage: StorageRPC;
-  camera: CameraRPC;
+  sceneRPC: SceneRPC;
 };
 
 interface Callbacks {
@@ -37,10 +37,10 @@ const getPath = async (filePath: string, project: Project) => {
 
 export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partial<Callbacks> = {}) {
   const transport = new MessageTransport(window, iframe.contentWindow!);
-  const camera = new CameraRPC(transport);
+  const sceneRPC = new SceneRPC(transport);
   const ui = new UiRPC(transport);
   const storage = new StorageRPC(transport);
-  const params = { iframe, project, storage, camera };
+  const params = { iframe, project, storage, sceneRPC };
 
   storage.handle('read_file', async ({ path }) => {
     const file = await fs.readFile(await getPath(path, project));
@@ -115,16 +115,16 @@ export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partia
   };
 }
 
-export async function takeScreenshot(iframe: HTMLIFrameElement, camera?: CameraRPC) {
+export async function takeScreenshot(iframe: HTMLIFrameElement, sceneRPC?: SceneRPC) {
   // TODO:
   // 1. make the camera position/target relative to parcels rows & columns
-  // 2. the CameraServer only allows to reposition the main camera, so repositioning it, will also
+  // 2. the SceneServer only allows to reposition the main camera, so repositioning it, will also
   //    reposition the content creator's view. We need a way to specify a different camera or a way to
   //    save the current position, move it for a screenshot, and restore it
   //
   // leaving the next line just for reference:
   // await Promise.all([camera.setPosition(x, y, z), camera.setTarget(x, y, z)]);
-  const _camera = camera ?? new CameraRPC(new MessageTransport(window, iframe.contentWindow!));
-  const screenshot = await _camera.takeScreenshot(+iframe.width, +iframe.height);
+  const _sceneRPC = sceneRPC ?? new SceneRPC(new MessageTransport(window, iframe.contentWindow!));
+  const screenshot = await _sceneRPC.takeScreenshot(+iframe.width, +iframe.height);
   return screenshot;
 }

@@ -1,6 +1,6 @@
 import { RPC, type Transport } from '@dcl/mini-rpc';
 
-export const name = 'CameraRPC';
+export const name = 'SceneRPC';
 
 export enum Method {
   TAKE_SCREENSHOT = 'take_screenshot',
@@ -20,7 +20,7 @@ export type Result = {
   [Method.SET_POSITION]: void;
 };
 
-export class CameraRPC extends RPC<Method, Params, Result> {
+export class SceneRPC extends RPC<Method, Params, Result> {
   constructor(transport: Transport) {
     super(name, transport);
   }
