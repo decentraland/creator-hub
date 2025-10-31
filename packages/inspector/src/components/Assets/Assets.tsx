@@ -1,12 +1,12 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useState, useMemo, useRef } from 'react';
 import { MdImageSearch } from 'react-icons/md';
 import { HiOutlinePlus } from 'react-icons/hi';
 import { HiOutlineRefresh as RefreshIcon } from 'react-icons/hi';
+import { IoIosFolderOpen } from 'react-icons/io';
 import cx from 'classnames';
-
-import type { AssetPack } from '../../lib/logic/catalog';
-import { catalog, isSmart } from '../../lib/logic/catalog';
+import { type AssetPack, catalog, isSmart } from '../../lib/logic/catalog';
 import { getConfig } from '../../lib/logic/config';
+import { getSceneClient } from '../../lib/rpc/scene';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import {
   selectAssetToRename,
@@ -27,6 +27,7 @@ import { CreateCustomAsset } from '../CreateCustomAsset';
 import { CleanAssets } from '../CleanAssets';
 import type { InputRef } from '../FileInput/FileInput';
 import { Button } from '../Button';
+import { InfoTooltip } from '../ui';
 
 import './Assets.css';
 
@@ -71,6 +72,30 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
     setShowCleanAssetsModal(true);
   }, []);
 
+  const showOpenInExplorerButton = useMemo(() => {
+    return (
+      config.dataLayerRpcParentUrl &&
+      (tab === AssetsTab.FileSystem || tab === AssetsTab.CustomAssets)
+    );
+  }, [tab, config.dataLayerRpcParentUrl]);
+
+  const handleOpenInExplorer = useCallback(async () => {
+    try {
+      const sceneClient = getSceneClient();
+      if (!sceneClient) return;
+
+      const path = tab === AssetsTab.CustomAssets ? 'custom' : '.';
+      await sceneClient.openDirectory(path);
+    } catch (error) {
+      console.error('Failed to open folder:', error);
+    }
+  }, [tab]);
+
+  const openInExplorerTooltipText = useMemo(() => {
+    const text = tab === AssetsTab.CustomAssets ? 'custom items' : 'scene';
+    return `Open ${text} folder in Explorer`;
+  }, [tab]);
+
   return (
     <div className="Assets">
       <div className="Assets-buttons">
@@ -86,6 +111,32 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
             className="icon-item"
             onClick={handleRefreshClick}
           />
+          <InfoTooltip
+            text="Refresh assets"
+            trigger={
+              <RefreshIcon
+                className="icon-item"
+                onClick={handleRefreshClick}
+              />
+            }
+            openOnTriggerMouseEnter={true}
+            closeOnTriggerClick={true}
+            position="top center"
+          />
+          {showOpenInExplorerButton && (
+            <InfoTooltip
+              text={openInExplorerTooltipText}
+              trigger={
+                <IoIosFolderOpen
+                  className="icon-item"
+                  onClick={handleOpenInExplorer}
+                />
+              }
+              openOnTriggerMouseEnter={true}
+              closeOnTriggerClick={true}
+              position="top center"
+            />
+          )}
           <button
             className="icon-item"
             onClick={handleCleanAssetsClick}

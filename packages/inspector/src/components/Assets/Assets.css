@@ -86,10 +86,11 @@
 }
 
 .Assets .Assets-buttons .Assets-buttons-left .icon-item {
-  width: 20px;
-  height: 20px;
-  padding: 2px;
+  width: 25px;
+  height: 25px;
+  padding: 5px;
   border-radius: 6px;
+  color: var(--base-01);
   cursor: pointer;
 }
 

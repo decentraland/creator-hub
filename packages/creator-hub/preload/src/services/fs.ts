@@ -1,5 +1,6 @@
 import fs from 'fs/promises';
 import nodePath from 'path';
+import { shell } from 'electron';
 
 type WriteFileData = Parameters<typeof fs.writeFile>[1];
 type WriteFileOptions = Parameters<typeof fs.writeFile>[2];
@@ -74,4 +75,8 @@ export async function stat(path: string) {
 
 export async function cp(src: string, dest: string, options?: { recursive?: boolean }) {
   await fs.cp(src, dest, options);
+}
+
+export async function openPath(path: string) {
+  await shell.openPath(path);
 }

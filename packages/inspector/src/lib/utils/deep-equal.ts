@@ -28,6 +28,7 @@ function deepEqualWithToleranceRecursive(actual: any, expected: any, tolerance: 
       typeof expected === 'number' &&
       (!Number.isInteger(actual) || !Number.isInteger(expected))
     ) {
+      if (isNaN(actual) && isNaN(expected)) return true; // consider NaN equal to NaN
       return Math.abs(actual - expected) < Math.pow(10, -tolerance);
     }
 
