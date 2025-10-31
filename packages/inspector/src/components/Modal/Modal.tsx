@@ -1,7 +1,7 @@
 import React from 'react';
 import _Modal from 'react-modal';
 
-import { Props } from './types';
+import type { Props } from './types';
 
 import './Modal.css';
 

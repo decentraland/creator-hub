@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useState, useMemo, useRef } from 'react';
 import { MdImageSearch } from 'react-icons/md';
 import { HiOutlinePlus } from 'react-icons/hi';
 import { HiOutlineRefresh as RefreshIcon } from 'react-icons/hi';
@@ -16,6 +16,7 @@ import {
 import { getSelectedAssetsTab, selectAssetsTab } from '../../redux/ui';
 import { AssetsTab } from '../../redux/ui/types';
 import { FolderOpen } from '../Icons/Folder';
+import CleanupIcon from '../Icons/Cleanup';
 import { AssetsCatalog } from '../AssetsCatalog';
 import { ProjectAssetExplorer } from '../ProjectAssetExplorer';
 import ImportAsset from '../ImportAsset';
@@ -23,7 +24,8 @@ import { CustomAssets } from '../CustomAssets';
 import { selectCustomAssets } from '../../redux/app';
 import { RenameAsset } from '../RenameAsset';
 import { CreateCustomAsset } from '../CreateCustomAsset';
-import { type InputRef } from '../FileInput/FileInput';
+import { CleanAssets } from '../CleanAssets';
+import type { InputRef } from '../FileInput/FileInput';
 import { Button } from '../Button';
 import { InfoTooltip } from '../ui';
 
@@ -40,6 +42,7 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
   const dispatch = useAppDispatch();
   const tab = useAppSelector(getSelectedAssetsTab);
   const customAssets = useAppSelector(selectCustomAssets);
+  const [showCleanAssetsModal, setShowCleanAssetsModal] = useState(false);
   const inputRef = useRef<InputRef>(null);
 
   const handleTabClick = useCallback(
@@ -64,6 +67,10 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
   const handleRefreshClick = useCallback(() => {
     dispatch(getAssetCatalog());
   }, [dispatch]);
+
+  const handleCleanAssetsClick = useCallback(() => {
+    setShowCleanAssetsModal(true);
+  }, []);
 
   const showOpenInExplorerButton = useMemo(() => {
     return (
@@ -93,10 +100,17 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
     <div className="Assets">
       <div className="Assets-buttons">
         <div className="Assets-buttons-left">
-          <Button onClick={handleImportClick}>
+          <Button
+            className="import-button"
+            onClick={handleImportClick}
+          >
             <HiOutlinePlus />
             IMPORT ASSETS
           </Button>
+          <RefreshIcon
+            className="icon-item"
+            onClick={handleRefreshClick}
+          />
           <InfoTooltip
             text="Refresh assets"
             trigger={
@@ -123,6 +137,13 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
               position="top center"
             />
           )}
+          <button
+            className="icon-item"
+            onClick={handleCleanAssetsClick}
+            title="Clean unused assets"
+          >
+            <CleanupIcon />
+          </button>
         </div>
         <div
           className="tab"
@@ -174,6 +195,10 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
           {tab === AssetsTab.CreateCustomAsset && stagedCustomAsset && <CreateCustomAsset />}
         </div>
       </ImportAsset>
+      <CleanAssets
+        isOpen={showCleanAssetsModal}
+        onClose={() => setShowCleanAssetsModal(false)}
+      />
     </div>
   );
 }

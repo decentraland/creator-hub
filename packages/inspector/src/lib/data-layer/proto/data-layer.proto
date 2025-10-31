@@ -28,6 +28,19 @@ message GetFilesResponse {
   repeated File files = 1;
 }
 
+message GetFilesSizesRequest {
+  string path = 1;
+  repeated string ignore = 2;
+}
+
+message GetFilesSizesResponse {
+  message FileSize {
+    string path = 1;
+    int64 size = 2;
+  }
+  repeated FileSize files = 1;
+}
+
 message SaveFileRequest {
   string path = 1;
   bytes content = 2;
@@ -35,6 +48,7 @@ message SaveFileRequest {
 
 message Asset {
   string path = 1;
+  optional bool skip_undo = 2;
 }
 
 message AssetCatalogResponse {
@@ -95,6 +109,15 @@ message UndoRedoStateResponse {
   bool can_redo = 2;
 }
 
+message RemoveFilesRequest {
+  repeated string file_paths = 1;
+}
+
+message RemoveFilesResponse {
+  repeated string success = 1;
+  repeated string failed = 2;
+}
+
 service DataService {
   rpc CrdtStream(stream CrdtStreamMessage) returns (stream CrdtStreamMessage) {}
   rpc Undo(Empty) returns (UndoRedoResponse) {}
@@ -102,11 +125,13 @@ service DataService {
   rpc GetUndoRedoState(Empty) returns (UndoRedoStateResponse) {}
 
   rpc getFiles(GetFilesRequest) returns (GetFilesResponse) {}
+  rpc getFilesSizes(GetFilesSizesRequest) returns (GetFilesSizesResponse) {}
   rpc saveFile(SaveFileRequest) returns (Empty) {}
   rpc GetAssetCatalog(Empty) returns (AssetCatalogResponse) {}
   rpc GetAssetData(Asset) returns (AssetData) {}
   rpc ImportAsset(ImportAssetRequest) returns (Empty) {}
   rpc RemoveAsset(Asset) returns (Empty) {}
+  rpc RemoveFiles(RemoveFilesRequest) returns (RemoveFilesResponse) {}
   rpc Save(Empty) returns (Empty) {}
   rpc GetInspectorPreferences(Empty) returns (InspectorPreferencesMessage) {}
   rpc SetInspectorPreferences(InspectorPreferencesMessage) returns (Empty) {}

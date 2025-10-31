@@ -19,6 +19,7 @@
 
 .ModalOverlay {
   position: fixed;
+  z-index: 10;
   inset: 0px;
   background-color: var(--modal-overlay-bg-color);
 }
