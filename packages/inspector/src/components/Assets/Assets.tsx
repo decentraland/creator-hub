@@ -25,6 +25,7 @@ import { RenameAsset } from '../RenameAsset';
 import { CreateCustomAsset } from '../CreateCustomAsset';
 import { type InputRef } from '../FileInput/FileInput';
 import { Button } from '../Button';
+import { InfoTooltip } from '../ui';
 
 import './Assets.css';
 
@@ -83,6 +84,11 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
     }
   }, [tab]);
 
+  const openInExplorerTooltipText = useMemo(() => {
+    const text = tab === AssetsTab.CustomAssets ? 'custom items' : 'scene';
+    return `Open ${text} folder in Explorer`;
+  }, [tab]);
+
   return (
     <div className="Assets">
       <div className="Assets-buttons">
@@ -91,14 +97,30 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
             <HiOutlinePlus />
             IMPORT ASSETS
           </Button>
-          <RefreshIcon
-            className="icon-item"
-            onClick={handleRefreshClick}
+          <InfoTooltip
+            text="Refresh assets"
+            trigger={
+              <RefreshIcon
+                className="icon-item"
+                onClick={handleRefreshClick}
+              />
+            }
+            openOnTriggerMouseEnter={true}
+            closeOnTriggerClick={true}
+            position="top center"
           />
           {showOpenInExplorerButton && (
-            <IoIosFolderOpen
-              className="icon-item"
-              onClick={handleOpenInExplorer}
+            <InfoTooltip
+              text={openInExplorerTooltipText}
+              trigger={
+                <IoIosFolderOpen
+                  className="icon-item"
+                  onClick={handleOpenInExplorer}
+                />
+              }
+              openOnTriggerMouseEnter={true}
+              closeOnTriggerClick={true}
+              position="top center"
             />
           )}
         </div>
