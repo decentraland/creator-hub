@@ -5,5 +5,4 @@ export interface Storage {
   exists(path: string): Promise<boolean>;
   delete(path: string): Promise<void>;
   list(path: string): Promise<{ name: string; isDirectory: boolean }[]>;
-  openFile(path: string): Promise<void>;
 }

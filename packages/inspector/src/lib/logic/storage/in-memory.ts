@@ -43,6 +43,5 @@ export function createInMemoryStorage(initialFs: Record<string, Buffer> = {}): S
 
       return files;
     },
-    async openFile(_path: string) {},
   };
 }
