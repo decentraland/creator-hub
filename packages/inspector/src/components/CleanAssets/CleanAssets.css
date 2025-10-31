@@ -144,6 +144,16 @@
   padding-right: 10px;
 }
 
+.CleanAssets .RightPanel .FileList .EmptyFiles {
+  font-size: 24px;
+  font-weight: 500;
+  text-align: center;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .CleanAssets .RightPanel .FileList .FileItem {
   display: flex;
   align-items: center;
@@ -169,16 +179,21 @@
 
 .CleanAssets .RightPanel .FileList .FileItem.selected span {
   color: var(--text);
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-wrap: break-word;
 }
 
 .CleanAssets .RightPanel .FileList .FileItem .size {
   margin-left: auto;
+  min-width: max-content;
 }
 
 .CleanAssets .RightPanel .FileList .FileItem svg {
   height: 16px;
   width: 16px;
   fill: var(--base-11);
+  flex-shrink: 0;
 }
 .CleanAssets .RightPanel .FileList .FileItem.selected svg {
   fill: var(--text);
@@ -217,4 +232,49 @@
 
 .CleanAssets .RightPanel .footer .ScanButton {
   border: 1px solid var(--base-09);
+}
+
+/* Confirmation Modal */
+.ConfirmationModal {
+  padding: 32px;
+  max-width: 400px;
+  min-width: min-content;
+}
+
+.ConfirmationModal .content {
+  margin-bottom: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  justify-items: center;
+  align-items: center;
+  text-align: center;
+}
+
+.ConfirmationModal .title {
+  font-size: 24px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.ConfirmationModal .warning {
+  font-size: 14px;
+  color: var(--primary);
+  margin: 0;
+}
+
+.ConfirmationModal .actions {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+}
+
+.ConfirmationModal .actions button {
+  width: 100%;
+  padding: 8px 22px;
+  height: 40px;
+  font-weight: 600;
+  text-transform: uppercase;
 }

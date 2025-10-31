@@ -89,6 +89,7 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
           <button
             className="icon-item"
             onClick={handleCleanAssetsClick}
+            title="Clean unused assets"
           >
             <CleanupIcon />
           </button>
@@ -146,7 +147,6 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
       <CleanAssets
         isOpen={showCleanAssetsModal}
         onClose={() => setShowCleanAssetsModal(false)}
-        onSave={() => setShowCleanAssetsModal(false)} /// Should refresh the asset list after cleaning
       />
     </div>
   );
