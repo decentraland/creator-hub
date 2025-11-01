@@ -167,6 +167,7 @@ export type SdkComponents = {
   VideoPlayer: ReturnType<typeof components.VideoPlayer>;
   VisibilityComponent: ReturnType<typeof components.VisibilityComponent>;
   Tags: ReturnType<typeof components.Tags>;
+  VirtualCamera: ReturnType<any>;
   LightSource: ReturnType<typeof components.LightSource>;
   GltfNodeModifiers: ReturnType<typeof components.GltfNodeModifiers>;
 };
@@ -193,6 +194,7 @@ export function createComponents(engine: IEngine): SdkComponents {
   const VideoPlayer = components.VideoPlayer(engine);
   const VisibilityComponent = components.VisibilityComponent(engine);
   const Tags = components.Tags(engine);
+  const VirtualCamera = components.VirtualCamera(engine);
   const LightSource = components.LightSource(engine);
   const GltfNodeModifiers = components.GltfNodeModifiers(engine);
 
@@ -218,6 +220,7 @@ export function createComponents(engine: IEngine): SdkComponents {
     TweenSequence,
     VideoPlayer,
     VisibilityComponent,
+    VirtualCamera,
     LightSource,
     GltfNodeModifiers,
   };
