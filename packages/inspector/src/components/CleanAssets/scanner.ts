@@ -107,8 +107,8 @@ export async function scanForUnusedAssets(
     unused: !usedAssets.has(file.path),
   }));
 
-  // Sort by size descending (largest files first)
-  results.sort((a, b) => b.size - a.size);
+  // Sort by type (unused files first) and size descending (largest files first)
+  results.sort((a, b) => (a.unused === b.unused ? b.size - a.size : a.unused ? -1 : 1));
 
   return results;
 }
