@@ -5,9 +5,15 @@ import { fs, editor } from '#preload';
 
 import { type Project } from '/shared/types/projects';
 import { getPath } from '../';
-import type { Notification } from '../../store/snackbar/types';
+import type { Severity } from '../../store/snackbar/types';
 import { store } from '../../store';
 import { actions as snackbarActions } from '../../store/snackbar';
+import { createGenericNotification } from '../../store/snackbar/utils';
+
+type NotificationRequest = {
+  severity: Severity;
+  message: string;
+};
 
 export enum Method {
   OPEN_FILE = 'open_file',
@@ -19,7 +25,7 @@ export enum Method {
 export type Params = {
   [Method.OPEN_FILE]: { path: string };
   [Method.OPEN_DIRECTORY]: { path: string };
-  [Method.PUSH_NOTIFICATION]: { notification: Notification };
+  [Method.PUSH_NOTIFICATION]: { notification: NotificationRequest };
   [Method.REMOVE_NOTIFICATION]: { id: string };
 };
 
@@ -50,11 +56,11 @@ export class SceneRpcServer extends RPC<Method, Params, Result> {
     });
 
     this.handle('push_notification', async ({ notification }) => {
-      store.dispatch(snackbarActions.pushSnackbar(notification));
-    });
-
-    this.handle('remove_notification', async ({ id }) => {
-      store.dispatch(snackbarActions.removeSnackbar(id));
+      store.dispatch(
+        snackbarActions.pushSnackbar(
+          createGenericNotification(notification.severity, notification.message),
+        ),
+      );
     });
   }
 }

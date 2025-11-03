@@ -12,4 +12,5 @@ export type AssetFile = {
 export type Props = {
   isOpen: boolean;
   onClose: () => void;
+  ignoredPatterns?: string[];
 };

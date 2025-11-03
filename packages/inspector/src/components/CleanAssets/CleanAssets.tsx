@@ -4,7 +4,7 @@ import { FiAlertTriangle } from 'react-icons/fi';
 import cx from 'classnames';
 import { DIRECTORY } from '../../lib/data-layer/host/fs-utils';
 import { useSdk } from '../../hooks/sdk/useSdk';
-import { useSnackbar } from '../../hooks/snackbar';
+import { useSnackbar } from '../../hooks/useSnackbar';
 import { getAssetCatalog, getDataLayerInterface } from '../../redux/data-layer';
 import { useAppDispatch } from '../../redux/hooks';
 import { Loading } from '../Loading';
@@ -26,7 +26,7 @@ const CleanAssets: React.FC<Props> = ({ isOpen, onClose, ignoredPatterns = [] })
   const [assets, setAssets] = useState<AssetFile[]>([]);
   const [selectedAssets, setSelectedAssets] = useState<Set<string>>(new Set());
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const { pushGeneric } = useSnackbar();
+  const { pushNotification } = useSnackbar();
 
   const totalSize = useMemo(() => assets.reduce((sum, a) => sum + a.size, 0), [assets]);
   const selectedSize = useMemo(
@@ -94,7 +94,7 @@ const CleanAssets: React.FC<Props> = ({ isOpen, onClose, ignoredPatterns = [] })
     if (removedFiles.failed.length > 0) {
       message += ` ${removedFiles.failed.length} ${removedFiles.failed.length === 1 ? 'file' : 'files'} could not be removed.`;
     }
-    pushGeneric('success', message);
+    pushNotification('success', message);
 
     // Refresh asset catalog and reset state
     dispatch(getAssetCatalog());
@@ -103,7 +103,7 @@ const CleanAssets: React.FC<Props> = ({ isOpen, onClose, ignoredPatterns = [] })
     setSelectedAssets(new Set());
     setIsRemoving(false);
     onClose();
-  }, [selectedAssets, onClose, pushGeneric, dispatch]);
+  }, [selectedAssets, onClose, pushNotification, dispatch]);
 
   const validateRemove = useCallback(() => {
     if (selectedAssets.size === 0) return;
