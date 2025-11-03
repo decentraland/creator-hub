@@ -72,6 +72,7 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
     setShowCleanAssetsModal(true);
   }, []);
 
+  const showCleanAssetsButton = useMemo(() => tab === AssetsTab.FileSystem, [tab]);
   const showOpenInExplorerButton = useMemo(() => {
     return (
       config.dataLayerRpcParentUrl &&
@@ -133,13 +134,22 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
               position="top center"
             />
           )}
-          <button
-            className="icon-item"
-            onClick={handleCleanAssetsClick}
-            title="Clean unused assets"
-          >
-            <CleanupIcon />
-          </button>
+          {showCleanAssetsButton && (
+            <InfoTooltip
+              text="Clean unused assets"
+              trigger={
+                <button
+                  className="icon-item"
+                  onClick={handleCleanAssetsClick}
+                >
+                  <CleanupIcon />
+                </button>
+              }
+              openOnTriggerMouseEnter={true}
+              closeOnTriggerClick={true}
+              position="top center"
+            />
+          )}
         </div>
         <div
           className="tab"
