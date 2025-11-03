@@ -1,11 +1,12 @@
 import type { Avatar, Profile } from '@dcl/schemas';
+import { config } from '/@/config';
 
-const PEER_URL = 'https://peer.decentraland.org';
+export class Profiles {
+  private url = config.get('PEER_URL');
 
-class Profiles {
   public async fetchProfile(address: string): Promise<Avatar | undefined> {
     try {
-      const response = await fetch(`${PEER_URL}/lambdas/profiles/${address}`);
+      const response = await fetch(`${this.url}/lambdas/profiles/${address}`);
       const profile = (await response.json()) as Profile;
       return profile.avatars[0];
     } catch (error) {

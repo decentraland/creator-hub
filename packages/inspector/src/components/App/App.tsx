@@ -3,9 +3,10 @@ import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
 import cx from 'classnames';
 
 import { useSelectedEntity } from '../../hooks/sdk/useSelectedEntity';
+import { useInspectorUIState } from '../../hooks/sdk/useInspectorUIState';
 import { useWindowSize } from '../../hooks/useWindowSize';
 import { useAppSelector } from '../../redux/hooks';
-import { selectDataLayerError } from '../../redux/data-layer';
+import { selectDataLayerError, selectSceneInfo } from '../../redux/data-layer';
 import { selectEngines } from '../../redux/sdk';
 import { getHiddenPanels } from '../../redux/ui';
 import { PanelName } from '../../redux/ui/types';
@@ -16,6 +17,7 @@ import { Renderer } from '../Renderer';
 import { Box } from '../Box';
 import { Toolbar } from '../Toolbar';
 import Assets from '../Assets';
+import { SceneInfoPanel } from '../SceneInfoPanel';
 
 import './App.css';
 
@@ -24,8 +26,10 @@ const App = () => {
   const { height } = useWindowSize();
 
   const sdkInitialized = useAppSelector(selectEngines).inspector;
-
   const hiddenPanels = useAppSelector(getHiddenPanels);
+  const sceneInfoContent = useAppSelector(selectSceneInfo).content;
+  const disconnected = useAppSelector(selectDataLayerError);
+  const [uiState] = useInspectorUIState();
 
   const [isAssetsPanelCollapsed, setIsAssetsPanelCollapsed] = useState(false);
 
@@ -38,7 +42,6 @@ const App = () => {
   // Footer's height is 48 pixels, so we need to calculate the percentage of the screen that it takes to pass as the minSize prop for the Panel
   const footerMin = (48 / Math.max(1, height ?? 1)) * 100;
 
-  const disconnected = useAppSelector(selectDataLayerError);
   return (
     <div
       className={cx('App', { 'is-ready': !!sdkInitialized })}
@@ -84,13 +87,27 @@ const App = () => {
                 <Renderer />
               </Box>
             </Panel>
-            {!hiddenPanels[PanelName.COMPONENTS] && selectedEntity !== null && (
+            {uiState?.sceneInfoPanelVisible && !!sceneInfoContent && (
               <>
                 <PanelResizeHandle className="horizontal-handle" />
                 <Panel
                   defaultSize={25.5}
                   minSize={20}
                   order={3}
+                >
+                  <Box className="scene-info-panel">
+                    <SceneInfoPanel />
+                  </Box>
+                </Panel>
+              </>
+            )}
+            {!hiddenPanels[PanelName.COMPONENTS] && selectedEntity !== null && (
+              <>
+                <PanelResizeHandle className="horizontal-handle" />
+                <Panel
+                  defaultSize={25.5}
+                  minSize={20}
+                  order={4}
                 >
                   <Box className="entity-inspector">
                     <EntityInspector />

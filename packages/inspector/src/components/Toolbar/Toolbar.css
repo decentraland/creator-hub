@@ -30,10 +30,27 @@
   transform: translateY(2px);
 }
 
-.Toolbar .edit-scene svg {
+.Toolbar .edit-scene svg,
+.Toolbar .scene-info svg {
   width: 18px;
   height: 18px;
   transform: translateY(2px);
+}
+
+.Toolbar .edit-scene:not(:last-child) {
+  margin-right: 0px;
+  border-top-right-radius: 0px;
+  border-bottom-right-radius: 0px;
+}
+
+.Toolbar .scene-info:not(:first-child) {
+  margin-left: 1px;
+  border-top-left-radius: 0px;
+  border-bottom-left-radius: 0px;
+}
+
+.Toolbar .scene-info.active {
+  background-color: var(--primary-main) !important;
 }
 
 .Toolbar .RightContent {

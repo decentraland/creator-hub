@@ -1,0 +1,16 @@
+.SceneInfoInput textarea {
+	resize: none;
+}
+
+.SceneInfoInput .SceneInfoLabel {
+	gap: 0;
+}
+
+.SceneInfoInput .SceneInfoLabel .MarkdownLink {
+	text-decoration: underline;
+}
+
+.SceneInfoInput .SceneInfoLabel .LoadingContainer {
+	margin-left: 12px;
+	position: relative;
+}

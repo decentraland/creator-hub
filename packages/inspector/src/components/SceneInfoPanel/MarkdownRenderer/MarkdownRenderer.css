@@ -1,0 +1,189 @@
+.MarkdownRenderer {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 4px;
+
+  color: var(--base-04);
+  line-height: 1.45;
+  font-size: 12px;
+}
+
+/* Headings */
+.MarkdownRenderer h1,
+.MarkdownRenderer h2,
+.MarkdownRenderer h3,
+.MarkdownRenderer h4,
+.MarkdownRenderer h5,
+.MarkdownRenderer h6 {
+  margin: 12px 0;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.MarkdownRenderer h1 {
+  margin-top: 16px;
+  font-size: 1.3em;
+}
+
+.MarkdownRenderer h2 {
+  font-size: 1.1em;
+}
+
+.MarkdownRenderer h3 {
+  font-size: 1em;
+}
+
+.MarkdownRenderer h4 {
+  font-size: 0.95em;
+}
+
+.MarkdownRenderer h5 {
+  font-size: 0.9em;
+}
+
+.MarkdownRenderer h6 {
+  font-size: 0.85em;
+}
+
+/* Paragraphs and text */
+.MarkdownRenderer p {
+  margin: 12px 0;
+}
+
+.MarkdownRenderer strong {
+  font-weight: 600;
+}
+
+.MarkdownRenderer a {
+  text-decoration: underline;
+}
+
+/* Lists */
+.MarkdownRenderer ul,
+.MarkdownRenderer ol {
+  margin: 12px 0;
+  padding-left: 18px;
+}
+
+.MarkdownRenderer li {
+  margin-top: 4px;
+}
+
+/* Code blocks and inline code */
+.MarkdownRenderer code {
+  font-family: "Courier New", Courier, monospace;
+  background-color: var(--background-gray);
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  white-space: break-spaces;
+}
+
+.MarkdownRenderer pre {
+  margin: 12px 0;
+  padding: 8px 12px;
+  overflow: auto;
+  background-color: var(--background-gray);
+  border-radius: 6px;
+}
+
+.MarkdownRenderer pre code {
+  padding: 0;
+  margin: 0;
+  background-color: transparent;
+  border-radius: 0;
+  overflow: visible;
+  word-wrap: normal;
+}
+
+/* Horizontal rule */
+.MarkdownRenderer hr {
+  height: 1.5px;
+  border: 0;
+  padding: 0;
+  margin: 20px 0;
+  background-color: var(--base-14);
+}
+
+/* Blockquotes */
+.MarkdownRenderer blockquote {
+  margin: 12px 0;
+  padding: 8px 12px;
+  border-radius: 4px;
+  background-color: #FF2D5533;
+}
+
+.MarkdownRenderer blockquote> :first-child {
+  margin-top: 0;
+}
+
+.MarkdownRenderer blockquote> :last-child {
+  margin-bottom: 0;
+}
+
+.MarkdownRenderer blockquote header {
+  font-weight: 400;
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+/* Tables */
+.MarkdownRenderer table {
+  border-collapse: collapse;
+  border-spacing: 0;
+  margin: 12px 0;
+  width: 100%;
+  overflow: auto;
+  display: block;
+  --border-color: var(--background-gray);
+}
+
+.MarkdownRenderer table th {
+  font-weight: 600;
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
+  background-color: var(--base-17);
+}
+
+.MarkdownRenderer table td {
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
+}
+
+.MarkdownRenderer table tr {
+  background-color: transparent;
+  border-top: 1px solid var(--border-color);
+}
+
+.MarkdownRenderer table tr:nth-child(2n) {
+  background-color: var(--base-18)
+}
+
+/* Images & Video */
+.MarkdownRenderer img,
+.MarkdownRenderer video {
+  max-width: 100%;
+  height: auto;
+  margin: 12px 0;
+}
+
+/* Iframe container with responsive aspect ratio */
+.MarkdownRenderer .IframeContainer {
+  position: relative;
+  /* 16:9 aspect ratio */
+  aspect-ratio: 16 / 9;
+  padding-bottom: 56.25%;
+  height: 0;
+  overflow: hidden;
+  margin: 12px 0;
+}
+
+.MarkdownRenderer .IframeContainer iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}

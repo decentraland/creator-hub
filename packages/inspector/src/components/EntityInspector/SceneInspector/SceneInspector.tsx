@@ -45,6 +45,7 @@ import {
   toSceneSpawnPoint,
   MIDDAY_SECONDS,
 } from './utils';
+import { SceneInfoInput } from './SceneInfoInput';
 
 const AGE_RATING_OPTIONS = [
   {
@@ -486,6 +487,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
             label="Email (optional)"
             {...emailProps}
           />
+          <SceneInfoInput />
         </>
       ) : null}
 

@@ -32,6 +32,7 @@ describe('WebSocket Connection Saga', () => {
         assetToRename: undefined,
         stagedCustomAsset: undefined,
         undoRedoState: { canUndo: false, canRedo: false },
+        sceneInfo: { content: '', isLoading: false, error: null },
       })
       .run();
     expect(getDataLayerInterface()).toBe(dataLayer);

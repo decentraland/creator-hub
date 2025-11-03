@@ -1,9 +1,7 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState, type ChangeEvent } from 'react';
 import cx from 'classnames';
-
 import { withSdk } from '../../../hoc/withSdk';
 import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
-import { useComponentInput } from '../../../hooks/sdk/useComponentInput';
 import { getComponentValue } from '../../../hooks/sdk/useComponentValue';
 import { analytics, Event } from '../../../lib/logic/analytics';
 import { getAssetByModel } from '../../../lib/logic/catalog';
@@ -13,6 +11,7 @@ import { Container } from '../../Container';
 import { TextField } from '../../ui/TextField';
 import { ColorField } from '../../ui/ColorField';
 import { Dropdown, InfoTooltip } from '../../ui';
+import { useComponentInput } from '../../../hooks/sdk/useComponentInput';
 import type { UrnTokens } from './utils';
 import {
   fromNftShape,
@@ -20,10 +19,8 @@ import {
   isValidInput,
   NFT_STYLES,
   NETWORKS,
-  isValidUrn,
-  buildTokens,
   getUrn,
-  DEFAULT_NETWORK,
+  buildUrnTokens,
 } from './utils';
 import type { Props } from './types';
 
@@ -31,16 +28,30 @@ import './NftShapeInspector.css';
 
 export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const { NftShape, GltfContainer } = sdk.components;
-  const [urnTokens, setUrnTokens] = useState<UrnTokens>(buildTokens(NftShape.getOrNull(entity)));
-
   const hasNftShape = useHasComponent(entity, NftShape);
   const handleInputValidation = useCallback(({ urn }: { urn: string }) => isValidInput(urn), []);
+  const [touchedFields, setTouchedFields] = useState({ contract: false, token: false });
   const { getInputProps } = useComponentInput(
     entity,
     NftShape,
     fromNftShape,
     toNftShape,
     handleInputValidation,
+  );
+  const color = getInputProps('color');
+  const style = getInputProps('style');
+  const urnField = getInputProps('urn');
+  const urnValue = urnField.value as string | undefined;
+  const urnTokens = useMemo<UrnTokens>(() => buildUrnTokens(urnValue), [urnValue]);
+
+  const getFieldError = useCallback(
+    (field: 'contract' | 'token') => {
+      if (touchedFields[field] && !urnTokens[field]) {
+        return `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
+      }
+      return undefined;
+    },
+    [touchedFields, urnTokens],
   );
 
   const handleRemove = useCallback(async () => {
@@ -55,23 +66,22 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     });
   }, []);
 
-  if (!hasNftShape) return null;
-
-  const color = getInputProps('color');
-  const style = getInputProps('style');
-
   const handleUrnTokenChange = useCallback(
     async (tokens: UrnTokens) => {
       const newTokens = { ...urnTokens, ...tokens };
       const urn = getUrn(newTokens);
-      if (isValidUrn(urn)) {
-        sdk.operations.updateValue(NftShape, entity, { ...NftShape.get(entity), urn });
-        await sdk.operations.dispatch();
+      if (isValidInput(urn)) {
+        urnField?.onChange?.({ target: { value: urn } } as ChangeEvent<HTMLInputElement>);
       }
-      setUrnTokens(newTokens);
     },
     [urnTokens],
   );
+
+  const handleFieldBlur = useCallback((field: 'contract' | 'token') => {
+    setTouchedFields(prev => ({ ...prev, [field]: true }));
+  }, []);
+
+  if (!hasNftShape) return null;
 
   return (
     <Container
@@ -94,26 +104,33 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
         <Dropdown
           options={NETWORKS}
           label="Network"
-          value={urnTokens.network || DEFAULT_NETWORK.value}
+          value={urnTokens.network}
           onChange={e => handleUrnTokenChange({ network: Number(e.target.value) })}
         />
         <TextField
           type="text"
           label="Contract"
-          value={urnTokens.contract || ''}
-          onChange={e => handleUrnTokenChange({ contract: e.target.value })}
+          value={urnTokens.contract}
+          onChange={e => handleUrnTokenChange({ contract: e.target.value.toLowerCase() })}
+          onBlur={() => handleFieldBlur('contract')}
+          error={getFieldError('contract')}
           autoSelect
         />
         <TextField
           type="text"
           label="Token"
-          value={urnTokens.token || ''}
+          value={urnTokens.token}
           onChange={e => handleUrnTokenChange({ token: e.target.value })}
+          onBlur={() => handleFieldBlur('token')}
+          error={getFieldError('token')}
           autoSelect
         />
       </Block>
       <Block label="Color">
-        <ColorField {...color} />
+        <ColorField
+          key={`nft-shape-inspector-color-${color.value?.toString() ?? ''}`}
+          {...color}
+        />
       </Block>
       <Block label="Frame style">
         <Dropdown
