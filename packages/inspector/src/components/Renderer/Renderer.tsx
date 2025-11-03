@@ -52,6 +52,8 @@ import { CameraSpeed } from './CameraSpeed';
 import { Shortcuts } from './Shortcuts';
 import { Metrics } from './Metrics';
 import { AxisHelper } from './AxisHelper';
+import { BoxSelection } from './BoxSelection';
+import { initBoxSelection, type BoxSelectionState } from '../../lib/babylon/setup/boxSelection';
 
 import './Renderer.css';
 
@@ -76,12 +78,30 @@ const Renderer: React.FC = () => {
   const [placeSingleTile, setPlaceSingleTile] = useState(false);
   const [showSingleTileHint, setShowSingleTileHint] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [boxSelectionState, setBoxSelectionState] = useState<BoxSelectionState>({
+    isActive: false,
+    startX: 0,
+    startY: 0,
+    currentX: 0,
+    currentY: 0,
+  });
 
   useEffect(() => {
     if (sdk) {
       sdk.gizmos.setEnabled(!gizmosDisabled);
     }
   }, [sdk, gizmosDisabled]);
+
+  // Initialize box selection
+  useEffect(() => {
+    if (sdk && sdk.scene && sdk.sceneContext) {
+      initBoxSelection(sdk.scene, sdk.sceneContext, {
+        onStart: state => setBoxSelectionState({ ...state }),
+        onUpdate: state => setBoxSelectionState({ ...state }),
+        onEnd: state => setBoxSelectionState({ ...state }),
+      });
+    }
+  }, [sdk]);
 
   useEffect(() => {
     if (sdk) {
@@ -457,6 +477,7 @@ const Renderer: React.FC = () => {
         id="canvas"
         touch-action="none"
       />
+      <BoxSelection selectionState={boxSelectionState} />
       <div
         style={{
           top: mousePosition.y + SINGLE_TILE_HINT_OFFSET,

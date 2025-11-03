@@ -1,0 +1,11 @@
+.BoxSelection {
+  position: absolute;
+  pointer-events: none;
+  border: 1px dashed rgba(255, 255, 255, 0.8);
+  background-color: rgba(200, 200, 200, 0.05);
+  z-index: 1000;
+  box-sizing: border-box;
+  outline: 1px dashed rgba(0, 0, 0, 0.6);
+  outline-offset: -2px;
+}
+
