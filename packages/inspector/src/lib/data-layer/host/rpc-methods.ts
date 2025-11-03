@@ -123,8 +123,8 @@ export async function initRpcMethods(
       const filesInDir = await getFilesInDirectory(fs, path, [], true, ignoredFiles);
       const files = await Promise.all(
         filesInDir.map(async $ => {
-          const content = await fs.readFile($);
-          return { path: $, size: content.length };
+          const stats = await fs.stat($);
+          return { path: $, size: stats.size };
         }),
       );
       return { files };

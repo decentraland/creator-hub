@@ -36,6 +36,9 @@ export function createFileSystemInterface(storage: Storage): FileSystemInterface
       const resolvedDirPath = normalizePath(dirPath).replace(/^\.\/|^\.+/g, '');
       return storage.list(resolvedDirPath);
     },
+    async stat(filePath: string): Promise<{ size: number }> {
+      return storage.stat(normalizePath(filePath));
+    },
     cwd(): string {
       return 'scene';
     },
