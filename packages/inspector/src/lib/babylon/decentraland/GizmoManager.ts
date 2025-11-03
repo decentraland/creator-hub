@@ -29,7 +29,7 @@ export function createGizmoManager(context: SceneContext) {
   gizmoManager.usePointerToAttachGizmos = false;
 
   // Create transformers
-  const positionTransformer = new PositionGizmo(gizmoManager, snapPosition);
+  const positionTransformer = new PositionGizmo(gizmoManager, snapPosition, context.scene);
   const rotationTransformer = new RotationGizmo(gizmoManager, snapRotation);
   const scaleTransformer = new ScaleGizmo(gizmoManager, snapScale);
   const freeTransformer = new FreeGizmo(context.scene);
@@ -368,27 +368,6 @@ export function createGizmoManager(context: SceneContext) {
             currentTransformer.enable();
           }
 
-          // Disable the camera gizmo (white circle) - only use X/Y/Z axes
-          // Must be done AFTER enabling to ensure it exists
-          if (gizmoManager.gizmos.rotationGizmo) {
-            const rotGizmo = gizmoManager.gizmos.rotationGizmo as any;
-            console.log('[GizmoManager] Disabling camera gizmo (white circle)');
-
-            // Try multiple possible property names
-            if (rotGizmo.cameraGizmo) {
-              console.log('[GizmoManager] Found cameraGizmo, disabling...');
-              rotGizmo.cameraGizmo.isEnabled = false;
-            }
-            if (rotGizmo.viewGizmo) {
-              console.log('[GizmoManager] Found viewGizmo, disabling...');
-              rotGizmo.viewGizmo.isEnabled = false;
-            }
-            if (rotGizmo.screenAxisGizmo) {
-              console.log('[GizmoManager] Found screenAxisGizmo, disabling...');
-              rotGizmo.screenAxisGizmo.isEnabled = false;
-            }
-          }
-
           if ('setSnapDistance' in currentTransformer) {
             currentTransformer.setSnapDistance(
               snapManager.isEnabled() ? snapManager.getRotationSnap() : 0,
@@ -436,8 +415,8 @@ export function createGizmoManager(context: SceneContext) {
           currentTransformer.setEntities(selectedEntities);
 
           // Pass GizmoManager reference to FreeGizmo for centroid calculation
-          if ('setGizmoManager' in currentTransformer) {
-            (currentTransformer as any).setGizmoManager(calculateCentroid);
+          if (currentTransformer.setGizmoManager) {
+            currentTransformer.setGizmoManager({ calculateCentroid });
           }
 
           // Set up callbacks for ECS updates

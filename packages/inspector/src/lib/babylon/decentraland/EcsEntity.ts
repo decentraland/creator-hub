@@ -282,20 +282,22 @@ async function validateEntityIsOutsideLayout(entity: EcsEntity) {
 function updateMeshBoundingBoxVisibility(entity: EcsEntity, mesh: BABYLON.AbstractMesh) {
   const scene = mesh.getScene();
   const { isEntityOutsideLayout } = getLayoutManager(scene);
-  const context = entity.context.deref();
-  const isSelected = context?.editorComponents.Selection.has(entity.entityId) || false;
-  const isParentSelected = hasSelectedParent(entity, context);
   const children = entity.gltfContainer
     ? entity.gltfContainer.getChildMeshes(false)
     : entity.getChildMeshes(true);
 
   const hasVisibleContent =
     children.length > 0 && children.some(child => child.isEnabled() && child.material);
-  const shouldShowBoundingBox =
-    (isSelected || isParentSelected) && isEntityOutsideLayout(mesh) && hasVisibleContent;
+
+  // Show red bounding box whenever object is outside layout (regardless of selection)
+  const shouldShowBoundingBox = isEntityOutsideLayout(mesh) && hasVisibleContent;
 
   if (shouldShowBoundingBox) {
     mesh.showBoundingBox = true;
+    // Set red color for out-of-bounds warning with alpha for thinner appearance
+    const bbRenderer = scene.getBoundingBoxRenderer();
+    bbRenderer.frontColor = new BABYLON.Color3(1.0, 0.0, 0.0); // Pure red
+    bbRenderer.backColor = new BABYLON.Color3(1.0, 0.0, 0.0);
   } else {
     mesh.showBoundingBox = false;
   }
@@ -311,7 +313,7 @@ function updateMeshBoundingBoxVisibility(entity: EcsEntity, mesh: BABYLON.Abstra
   }
 }
 
-function hasSelectedParent(entity: EcsEntity, context: any): boolean {
+function _hasSelectedParent(entity: EcsEntity, context: any): boolean {
   let parent = entity.parent;
   while (parent) {
     if (parent instanceof EcsEntity) {

@@ -1,4 +1,4 @@
-import type { GizmoManager } from '@babylonjs/core';
+import type { GizmoManager, Scene } from '@babylonjs/core';
 import { Vector3, TransformNode, Quaternion } from '@babylonjs/core';
 import type { Entity } from '@dcl/ecs';
 import type { EcsEntity } from '../EcsEntity';
@@ -34,6 +34,7 @@ export class PositionGizmo implements IGizmoTransformer {
   constructor(
     private gizmoManager: GizmoManager,
     private snapPosition: (position: Vector3) => Vector3,
+    private scene: Scene,
   ) {}
 
   setup(): void {
@@ -73,47 +74,70 @@ export class PositionGizmo implements IGizmoTransformer {
     if (!positionGizmo) return;
 
     const offset = 0.25;
-    const planeScale = 0.375; // 25% bigger (0.3 * 1.25)
+    const tolerance = 0.001; // Small tolerance for floating point comparison
     let allMeshesFound = true;
+    let allPositionsCorrect = true;
 
-    // Force re-apply scale ratio and reposition each planar gizmo
+    // Reposition each planar gizmo (scaleRatio is already set in setup())
     if (positionGizmo.xPlaneGizmo) {
-      positionGizmo.xPlaneGizmo.scaleRatio = planeScale;
       const gizmo = positionGizmo.xPlaneGizmo as any;
       const mesh = gizmo._gizmoMesh || gizmo._rootMesh;
       if (mesh && mesh.position) {
-        mesh.position.y = offset;
-        mesh.position.z = offset;
+        // Only update positions if they're not already at the correct offset
+        if (
+          Math.abs(mesh.position.y - offset) > tolerance ||
+          Math.abs(mesh.position.z - offset) > tolerance
+        ) {
+          mesh.position.y = offset;
+          mesh.position.z = offset;
+          allPositionsCorrect = false;
+        }
       } else {
         allMeshesFound = false;
+        allPositionsCorrect = false;
       }
     }
 
     if (positionGizmo.yPlaneGizmo) {
-      positionGizmo.yPlaneGizmo.scaleRatio = planeScale;
       const gizmo = positionGizmo.yPlaneGizmo as any;
       const mesh = gizmo._gizmoMesh || gizmo._rootMesh;
       if (mesh && mesh.position) {
-        mesh.position.x = offset;
-        mesh.position.z = offset;
+        // Only update positions if they're not already at the correct offset
+        if (
+          Math.abs(mesh.position.x - offset) > tolerance ||
+          Math.abs(mesh.position.z - offset) > tolerance
+        ) {
+          mesh.position.x = offset;
+          mesh.position.z = offset;
+          allPositionsCorrect = false;
+        }
       } else {
         allMeshesFound = false;
+        allPositionsCorrect = false;
       }
     }
 
     if (positionGizmo.zPlaneGizmo) {
-      positionGizmo.zPlaneGizmo.scaleRatio = planeScale;
       const gizmo = positionGizmo.zPlaneGizmo as any;
       const mesh = gizmo._gizmoMesh || gizmo._rootMesh;
       if (mesh && mesh.position) {
-        mesh.position.x = offset;
-        mesh.position.y = offset;
+        // Only update positions if they're not already at the correct offset
+        if (
+          Math.abs(mesh.position.x - offset) > tolerance ||
+          Math.abs(mesh.position.y - offset) > tolerance
+        ) {
+          mesh.position.x = offset;
+          mesh.position.y = offset;
+          allPositionsCorrect = false;
+        }
       } else {
         allMeshesFound = false;
+        allPositionsCorrect = false;
       }
     }
 
-    if (allMeshesFound && this.renderObserver) {
+    // Stop observer when all meshes are found and positions are correct
+    if (allMeshesFound && allPositionsCorrect && this.renderObserver) {
       this.stopRepositionObserver();
     }
   }
@@ -125,12 +149,8 @@ export class PositionGizmo implements IGizmoTransformer {
     // Reset attempt counter
     this.repositionAttempts = 0;
 
-    // Get the scene from the gizmo manager
-    const scene = this.gizmoManager.gizmos.positionGizmo?._rootMesh?.getScene();
-    if (!scene) return;
-
     // Set up a render observer that tries to reposition every frame
-    this.renderObserver = scene.onBeforeRenderObservable.add(() => {
+    this.renderObserver = this.scene.onBeforeRenderObservable.add(() => {
       this.repositionAttempts++;
 
       // Try to reposition
@@ -145,10 +165,7 @@ export class PositionGizmo implements IGizmoTransformer {
 
   private stopRepositionObserver(): void {
     if (this.renderObserver) {
-      const scene = this.gizmoManager.gizmos.positionGizmo?._rootMesh?.getScene();
-      if (scene) {
-        scene.onBeforeRenderObservable.remove(this.renderObserver);
-      }
+      this.scene.onBeforeRenderObservable.remove(this.renderObserver);
       this.renderObserver = null;
       this.repositionAttempts = 0;
     }
