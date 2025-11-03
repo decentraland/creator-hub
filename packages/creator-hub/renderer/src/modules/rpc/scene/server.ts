@@ -5,20 +5,29 @@ import { fs, editor } from '#preload';
 
 import { type Project } from '/shared/types/projects';
 import { getPath } from '../';
+import type { Notification } from '../../store/snackbar/types';
+import { store } from '../../store';
+import { actions as snackbarActions } from '../../store/snackbar';
 
 export enum Method {
   OPEN_FILE = 'open_file',
   OPEN_DIRECTORY = 'open_directory',
+  PUSH_NOTIFICATION = 'push_notification',
+  REMOVE_NOTIFICATION = 'remove_notification',
 }
 
 export type Params = {
   [Method.OPEN_FILE]: { path: string };
   [Method.OPEN_DIRECTORY]: { path: string };
+  [Method.PUSH_NOTIFICATION]: { notification: Notification };
+  [Method.REMOVE_NOTIFICATION]: { id: string };
 };
 
 export type Result = {
   [Method.OPEN_FILE]: void;
   [Method.OPEN_DIRECTORY]: void;
+  [Method.PUSH_NOTIFICATION]: void;
+  [Method.REMOVE_NOTIFICATION]: void;
 };
 
 export class SceneRpcServer extends RPC<Method, Params, Result> {
@@ -38,6 +47,14 @@ export class SceneRpcServer extends RPC<Method, Params, Result> {
       } else {
         console.error(`Path ${resolvedPath} is not a directory`);
       }
+    });
+
+    this.handle('push_notification', async ({ notification }) => {
+      store.dispatch(snackbarActions.pushSnackbar(notification));
+    });
+
+    this.handle('remove_notification', async ({ id }) => {
+      store.dispatch(snackbarActions.removeSnackbar(id));
     });
   }
 }

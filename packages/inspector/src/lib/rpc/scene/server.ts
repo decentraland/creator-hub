@@ -14,8 +14,6 @@ enum Method {
   SELECT_SCENE_INSPECTOR_TAB = 'select_scene_inspector_tab',
   TOGGLE_SCENE_INSPECTOR_TAB = 'toggle_scene_inspector_tab',
   TOGGLE_GROUND_GRID = 'toggle_ground_grid',
-  OPEN_FILE = 'open_file',
-  OPEN_DIRECTORY = 'open_directory',
   SET_CAMERA_POSITION = 'set_camera_position',
   SET_CAMERA_TARGET = 'set_camera_target',
   TAKE_SCREENSHOT = 'take_screenshot',
@@ -29,8 +27,6 @@ type Params = {
   [Method.SELECT_SCENE_INSPECTOR_TAB]: { tab: `${SceneInspectorTab}` };
   [Method.TOGGLE_SCENE_INSPECTOR_TAB]: { tab: `${SceneInspectorTab}`; enabled: boolean };
   [Method.TOGGLE_GROUND_GRID]: { enabled: boolean };
-  [Method.OPEN_FILE]: { path: string };
-  [Method.OPEN_DIRECTORY]: { path: string };
   [Method.SET_CAMERA_POSITION]: { x: number; y: number; z: number };
   [Method.SET_CAMERA_TARGET]: { x: number; y: number; z: number };
   [Method.TAKE_SCREENSHOT]: { width: number; height: number; precision?: number };
@@ -44,8 +40,6 @@ type Result = {
   [Method.SELECT_SCENE_INSPECTOR_TAB]: void;
   [Method.TOGGLE_SCENE_INSPECTOR_TAB]: void;
   [Method.TOGGLE_GROUND_GRID]: void;
-  [Method.OPEN_FILE]: void;
-  [Method.OPEN_DIRECTORY]: void;
   [Method.SET_CAMERA_POSITION]: void;
   [Method.SET_CAMERA_TARGET]: void;
   [Method.TAKE_SCREENSHOT]: string;
