@@ -107,10 +107,6 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
             <HiOutlinePlus />
             IMPORT ASSETS
           </Button>
-          <RefreshIcon
-            className="icon-item"
-            onClick={handleRefreshClick}
-          />
           <InfoTooltip
             text="Refresh assets"
             trigger={
