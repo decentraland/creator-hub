@@ -12,9 +12,9 @@ import { Modal } from '../Modal';
 import { Button } from '../Button';
 import CleanupIcon from '../Icons/Cleanup';
 import { CheckboxField } from '../ui';
-import { scanForUnusedAssets } from './scanner';
+import { normalizeBytes } from '../ImportAsset/utils';
+import { scanForUnusedAssets } from './utils';
 import type { Props, AssetFile } from './types';
-import { formatBytes } from './utils';
 
 import './CleanAssets.css';
 
@@ -174,8 +174,8 @@ const CleanAssets: React.FC<Props> = ({ isOpen, onClose }) => {
             <>
               <div className="stats">
                 <p className="FilesCounter">{assets.length} FILES</p>
-                <p className="TotalSize">Total size: {formatBytes(totalSize)}</p>
-                <p className="ReducedSize">Reduced size: {formatBytes(reducedSize)}</p>
+                <p className="TotalSize">Total size: {normalizeBytes(totalSize)}</p>
+                <p className="ReducedSize">Reduced size: {normalizeBytes(reducedSize)}</p>
               </div>
 
               <div className="FileList">
@@ -197,7 +197,7 @@ const CleanAssets: React.FC<Props> = ({ isOpen, onClose }) => {
                       />
                       <span>{asset.path}</span>
                       {asset.unused && <CleanupIcon />}
-                      <span className="size">{formatBytes(asset.size)}</span>
+                      <span className="size">{normalizeBytes(asset.size)}</span>
                     </label>
                   ))
                 )}
