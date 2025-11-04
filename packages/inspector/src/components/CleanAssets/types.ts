@@ -11,6 +11,10 @@ export type AssetFile = {
 
 export type Props = {
   isOpen: boolean;
+  assets: AssetFile[];
+  isScanning: boolean;
+  selectedAssets: Set<string>;
   onClose: () => void;
-  ignoredPatterns?: string[];
+  onScan: () => void;
+  onSelect: (asset: string) => void;
 };

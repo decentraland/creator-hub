@@ -1,46 +1,39 @@
+import ignore from 'ignore';
 import type { FileSystemInterface } from '../types';
 
 /**
- * Checks if a filename should be ignored based on glob-like patterns.
+ * Recursively collects files from a directory, applying ignore patterns similar to dclignore.
+ * This implementation uses the 'ignore' library to match the DCL ignore behavior exactly.
  *
- * Supported patterns:
- * - Exact match: "node_modules" matches only "node_modules"
- * - Prefix match: "test*" matches "test.js", "testing.ts", "test-file.txt"
- * - Suffix match: "*.log" matches "error.log", "debug.log", "app.log"
- * - Contains match: "*temp*" matches "my-temp-file.txt", "temporary.js"
- * - Complex patterns: "test-*.log" matches "test-error.log", "test-debug.log"
+ * @param fs - File system interface
+ * @param dirPath - Directory path to scan
+ * @param files - Array to accumulate file paths
+ * @param recursive - Whether to recurse into subdirectories
+ * @param ignorePatterns - Array of .gitignore-style patterns to ignore
+ * @returns Promise resolving to array of file paths
  */
-function shouldIgnore(name: string, patterns: string[]): boolean {
-  return patterns.some(pattern => {
-    // Exact match (no wildcards)
-    if (!pattern.includes('*')) {
-      return name === pattern;
-    }
-
-    // Convert glob pattern to regex. Escape special regex characters except *
-    const regexPattern = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
-    const regex = new RegExp(`^${regexPattern}$`);
-    return regex.test(name);
-  });
-}
-
 export async function getFilesInDirectory(
   fs: FileSystemInterface,
   dirPath: string,
   files: string[],
   recursive: boolean = true,
-  ignore: string[] = [],
+  ignorePatterns: string[] = [],
 ): Promise<string[]> {
   try {
+    // Create an ignore instance with the patterns
+    const ig = ignore().add(ignorePatterns);
+
     const currentDirFiles = await fs.readdir(dirPath);
     for (const currentPath of currentDirFiles) {
-      if (shouldIgnore(currentPath.name, ignore)) continue;
-
       const slashIfRequire = (dirPath.length && !dirPath.endsWith('/') && '/') || '';
       const fullPath = dirPath + slashIfRequire + currentPath.name;
 
+      // Check if this path should be ignored using the ignore library
+      // The ignore library expects paths relative to root, so use fullPath
+      if (ig.ignores(fullPath)) continue;
+
       if (currentPath.isDirectory && recursive) {
-        await getFilesInDirectory(fs, fullPath, files, recursive, ignore);
+        await getFilesInDirectory(fs, fullPath, files, recursive, ignorePatterns);
       } else {
         files.push(fullPath);
       }
