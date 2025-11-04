@@ -33,6 +33,34 @@ export const DEFAULT_DCL_IGNORE_PATTERNS = [
   '*.rar',
 ];
 
+/**
+ * Reads the .dclignore file from the scene root and parses it into an array of patterns.
+ *
+ * @param dataLayer - Data layer RPC client
+ * @returns Array of ignore patterns from .dclignore file, or default patterns if file doesn't exist
+ */
+async function getDclIgnorePatterns(
+  dataLayer: ReturnType<typeof getDataLayerInterface>,
+): Promise<string[]> {
+  if (!dataLayer) return DEFAULT_DCL_IGNORE_PATTERNS;
+
+  try {
+    const response = await dataLayer.getFile({ path: '.dclignore' });
+    const content = Buffer.from(response.content).toString('utf-8');
+
+    // Parse the file: split by lines and filter out empty lines and comments
+    const patterns = content
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0 && !line.startsWith('#'));
+
+    return patterns.length > 0 ? patterns : DEFAULT_DCL_IGNORE_PATTERNS;
+  } catch (error) {
+    // File doesn't exist or can't be read, just return default patterns
+    return DEFAULT_DCL_IGNORE_PATTERNS;
+  }
+}
+
 export interface UseCleanAssetsResult {
   assets: AssetFile[];
   isScanning: boolean;
@@ -62,8 +90,8 @@ export function useScanAssets(ignoredPatterns: string[] = []): UseCleanAssetsRes
     try {
       setIsScanning(true);
 
-      // Combine default DCL ignore patterns with custom ignored patterns
-      const allIgnoredPatterns = [...DEFAULT_DCL_IGNORE_PATTERNS, ...ignoredPatterns];
+      const dclIgnorePatterns = await getDclIgnorePatterns(dataLayer);
+      const allIgnoredPatterns = [...dclIgnorePatterns, ...ignoredPatterns];
       const uniquePatterns = Array.from(new Set(allIgnoredPatterns)); // Remove duplicates
 
       const { files } = await dataLayer.getFilesSizes({
