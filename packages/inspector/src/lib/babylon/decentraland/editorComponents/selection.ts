@@ -40,20 +40,14 @@ export const deleteEntitySelectedComponent: ComponentOperation = (entity, compon
 
 export function toggleMeshSelection(mesh: AbstractMesh, value: boolean) {
   mesh.renderOverlay = value;
-  mesh.overlayColor = new Color3(0.9, 0.9, 0.9); // 10% grey (90% brightness instead of 100%)
-  mesh.overlayAlpha = 0.12; // 20% opacity - more visible than before
+  mesh.overlayColor = Color3.White();
+  mesh.overlayAlpha = 0.2;
   const hl = highlightedMeshes.get(mesh);
   if (value && !hl) {
-    const newHl = new HighlightLayer('hl1', mesh.getScene(), {
-      mainTextureRatio: 2, // Higher resolution for sharper edges
-      blurTextureSizeRatio: 0.5, // Sharper blur
-      isStroke: false,
-      camera: null,
-    });
-    newHl.addMesh(mesh as Mesh, Color3.FromHexString('#FFFF00')); // Bright pure yellow
-    newHl.blurHorizontalSize = 0.5; // More blur for more visible glow
-    newHl.blurVerticalSize = 0.5;
-    newHl.innerGlow = false; // Only outer glow for cleaner look
+    const newHl = new HighlightLayer('hl1', mesh.getScene());
+    newHl.addMesh(mesh as Mesh, Color3.Yellow());
+    newHl.blurHorizontalSize = 0.1;
+    newHl.blurVerticalSize = 0.1;
     highlightedMeshes.set(mesh, newHl);
   } else if (!value && hl) {
     hl.removeMesh(mesh as Mesh);
