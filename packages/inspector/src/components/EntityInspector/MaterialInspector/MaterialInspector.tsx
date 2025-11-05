@@ -37,14 +37,15 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   }, []);
 
   const availableVideoPlayers: VideoTexture = useMemo(() => {
-    return entitiesWithVideoPlayer?.reduce((videoPlayers, entityWithVideoPlayer) => {
+    const videoPlayers = new Map() as VideoTexture;
+    for (const entityWithVideoPlayer of entitiesWithVideoPlayer) {
       const name = Name.getOrNull(entityWithVideoPlayer);
       const material = Material.getOrNull(entityWithVideoPlayer);
       if (name && material) {
         videoPlayers.set(entityWithVideoPlayer, { name: name.value, material });
       }
-      return videoPlayers;
-    }, new Map() as VideoTexture);
+    }
+    return videoPlayers;
   }, [entitiesWithVideoPlayer]);
 
   if (!hasMaterial) return null;
