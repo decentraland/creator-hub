@@ -2,6 +2,7 @@ import * as BABYLON from '@babylonjs/core';
 import type { EcsEntity } from '../decentraland/EcsEntity';
 import { keyState, Keys } from '../decentraland/keys';
 import type { SceneContext } from '../decentraland/SceneContext';
+import { boxSelectionManager } from '../decentraland/box-selection-manager';
 
 export type BoxSelectionState = {
   isActive: boolean;
@@ -27,33 +28,59 @@ let boxSelectionState: BoxSelectionState = {
 
 let callbacks: BoxSelectionCallbacks | null = null;
 let sceneContext: SceneContext | null = null;
+let pointerObserver: BABYLON.Nullable<BABYLON.Observer<BABYLON.PointerInfo>> = null;
 
 export function initBoxSelection(
   scene: BABYLON.Scene,
   context: SceneContext,
   selectionCallbacks: BoxSelectionCallbacks,
 ) {
+  // Clean up any existing observer before creating a new one
+  disposeBoxSelection(scene);
+
   callbacks = selectionCallbacks;
   sceneContext = context;
 
   // Listen for pointer events
-  scene.onPointerObservable.add(e => {
-    if (e.type === BABYLON.PointerEventTypes.POINTERDOWN) {
-      const evt = e.event as PointerEvent;
-      if (evt.button === 0) {
-        // Left click only
-        handlePointerDown(scene, evt.offsetX, evt.offsetY);
+  // Register with NO MASK to capture all pointer event types (down, move, up)
+  // Register at the start of the observer list to process before other handlers
+  pointerObserver = scene.onPointerObservable.add(
+    e => {
+      if (e.type === BABYLON.PointerEventTypes.POINTERDOWN) {
+        const evt = e.event as PointerEvent;
+        if (evt.button === 0) {
+          // Left click only
+          handlePointerDown(scene, evt.offsetX, evt.offsetY);
+        }
+      } else if (e.type === BABYLON.PointerEventTypes.POINTERMOVE) {
+        const evt = e.event as PointerEvent;
+        handlePointerMove(evt.offsetX, evt.offsetY);
+      } else if (e.type === BABYLON.PointerEventTypes.POINTERUP) {
+        const evt = e.event as PointerEvent;
+        if (evt.button === 0) {
+          handlePointerUp(scene, evt.offsetX, evt.offsetY);
+        }
       }
-    } else if (e.type === BABYLON.PointerEventTypes.POINTERMOVE) {
-      const evt = e.event as PointerEvent;
-      handlePointerMove(evt.offsetX, evt.offsetY);
-    } else if (e.type === BABYLON.PointerEventTypes.POINTERUP) {
-      const evt = e.event as PointerEvent;
-      if (evt.button === 0) {
-        handlePointerUp(scene, evt.offsetX, evt.offsetY);
-      }
-    }
-  });
+    },
+    undefined,
+    true,
+  ); // mask=undefined (all events), insertFirst=true (priority)
+}
+
+/**
+ * Cleanup function to remove box selection event listeners
+ * Should be called when component unmounts or scene changes
+ */
+export function disposeBoxSelection(scene: BABYLON.Scene) {
+  if (pointerObserver) {
+    scene.onPointerObservable.remove(pointerObserver);
+    pointerObserver = null;
+  }
+
+  // Reset state
+  boxSelectionState.isActive = false;
+  callbacks = null;
+  sceneContext = null;
 }
 
 function handlePointerDown(scene: BABYLON.Scene, x: number, y: number) {
@@ -198,6 +225,126 @@ function handlePointerUp(scene: BABYLON.Scene, x: number, y: number) {
   }
 }
 
+/**
+ * Check if an entity is visible from the camera using screen-space picking.
+ * This method samples multiple points on the entity's screen-space bounding box
+ * and uses scene.pick() to check if the actual mesh geometry is visible.
+ *
+ * This is more accurate than raycasting to bounding box corners, especially for
+ * complex, thin, or curved meshes.
+ */
+function isEntityVisibleFromCamera(
+  scene: BABYLON.Scene,
+  camera: BABYLON.Camera,
+  entity: EcsEntity,
+  selectionBox: { minX: number; maxX: number; minY: number; maxY: number },
+): boolean {
+  const engine = scene.getEngine();
+  const canvas = engine.getRenderingCanvas();
+  if (!canvas) return false;
+
+  const canvasWidth = canvas.width;
+  const canvasHeight = canvas.height;
+
+  // Get all child meshes of the entity
+  const childMeshes = entity.getChildMeshes(false);
+  if (childMeshes.length === 0) return false;
+
+  // Build screen-space bounding box by projecting all vertices
+  let screenMinX = Infinity;
+  let screenMaxX = -Infinity;
+  let screenMinY = Infinity;
+  let screenMaxY = -Infinity;
+  let hasValidProjection = false;
+
+  for (const mesh of childMeshes) {
+    if (!mesh.isVisible || mesh.name.startsWith('gizmo')) continue;
+
+    // Get vertex positions
+    const positions = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+    if (!positions) continue;
+
+    const worldMatrix = mesh.getWorldMatrix();
+
+    // Sample vertices (for performance, sample every Nth vertex for large meshes)
+    const vertexCount = positions.length / 3;
+    const sampleRate = vertexCount > 100 ? Math.ceil(vertexCount / 100) : 1;
+
+    for (let i = 0; i < positions.length; i += 3 * sampleRate) {
+      const localPos = new BABYLON.Vector3(positions[i], positions[i + 1], positions[i + 2]);
+      const worldPos = BABYLON.Vector3.TransformCoordinates(localPos, worldMatrix);
+
+      // Project to screen space
+      const screenPos = BABYLON.Vector3.Project(
+        worldPos,
+        BABYLON.Matrix.Identity(),
+        scene.getTransformMatrix(),
+        camera.viewport,
+      );
+
+      // Check if point is in front of camera
+      if (screenPos.z >= 0 && screenPos.z <= 1) {
+        const screenX = screenPos.x * canvasWidth;
+        const screenY = screenPos.y * canvasHeight;
+
+        screenMinX = Math.min(screenMinX, screenX);
+        screenMaxX = Math.max(screenMaxX, screenX);
+        screenMinY = Math.min(screenMinY, screenY);
+        screenMaxY = Math.max(screenMaxY, screenY);
+        hasValidProjection = true;
+      }
+    }
+  }
+
+  if (!hasValidProjection) return false;
+
+  // Check if screen-space bounding box overlaps with selection box
+  const overlapsSelection =
+    screenMinX <= selectionBox.maxX &&
+    screenMaxX >= selectionBox.minX &&
+    screenMinY <= selectionBox.maxY &&
+    screenMaxY >= selectionBox.minY;
+
+  if (!overlapsSelection) return false;
+
+  // Find the overlap region
+  const overlapMinX = Math.max(screenMinX, selectionBox.minX);
+  const overlapMaxX = Math.min(screenMaxX, selectionBox.maxX);
+  const overlapMinY = Math.max(screenMinY, selectionBox.minY);
+  const overlapMaxY = Math.min(screenMaxY, selectionBox.maxY);
+
+  // Sample points within the overlap region to verify actual mesh visibility
+  // We'll test a grid of points (5x5 = 25 points, adjust for performance)
+  const samplesPerAxis = 5;
+  const stepX = (overlapMaxX - overlapMinX) / (samplesPerAxis - 1);
+  const stepY = (overlapMaxY - overlapMinY) / (samplesPerAxis - 1);
+
+  for (let ix = 0; ix < samplesPerAxis; ix++) {
+    for (let iy = 0; iy < samplesPerAxis; iy++) {
+      const testX = overlapMinX + ix * stepX;
+      const testY = overlapMinY + iy * stepY;
+
+      // Use scene.pick() to check if we hit this entity's mesh
+      const pickResult = scene.pick(testX, testY, mesh => {
+        // Only check visible meshes, not gizmos
+        if (!mesh.isVisible || mesh.name.startsWith('gizmo')) return false;
+        return true;
+      });
+
+      if (pickResult?.hit && pickResult.pickedMesh) {
+        const pickedEntity = findParentEntity(pickResult.pickedMesh);
+        if (pickedEntity === entity) {
+          // We successfully picked this entity's mesh - it's visible!
+          return true;
+        }
+      }
+    }
+  }
+
+  // None of the sample points hit the entity's mesh - it's fully occluded
+  return false;
+}
+
 function getEntitiesInBox(
   scene: BABYLON.Scene,
   minX: number,
@@ -216,6 +363,9 @@ function getEntitiesInBox(
 
   const canvasWidth = canvas.width;
   const canvasHeight = canvas.height;
+
+  // Check if "Select Through" is enabled
+  const selectThroughEnabled = boxSelectionManager.isSelectThroughEnabled();
 
   // Get all meshes in the scene
   const allMeshes = scene.meshes;
@@ -263,6 +413,13 @@ function getEntitiesInBox(
       screenY >= minY &&
       screenY <= maxY
     ) {
+      // If "Select Through" is disabled, perform occlusion test using screen-space picking
+      if (!selectThroughEnabled) {
+        if (!isEntityVisibleFromCamera(scene, camera, entity, { minX, maxX, minY, maxY })) {
+          continue; // Entity is occluded, skip it
+        }
+      }
+
       selectedEntities.push(entity);
     }
   }

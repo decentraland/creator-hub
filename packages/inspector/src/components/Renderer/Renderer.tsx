@@ -53,7 +53,11 @@ import { Shortcuts } from './Shortcuts';
 import { Metrics } from './Metrics';
 import { AxisHelper } from './AxisHelper';
 import { BoxSelection } from './BoxSelection';
-import { initBoxSelection, type BoxSelectionState } from '../../lib/babylon/setup/boxSelection';
+import {
+  initBoxSelection,
+  disposeBoxSelection,
+  type BoxSelectionState,
+} from '../../lib/babylon/setup/boxSelection';
 
 import './Renderer.css';
 
@@ -101,6 +105,13 @@ const Renderer: React.FC = () => {
         onEnd: state => setBoxSelectionState({ ...state }),
       });
     }
+
+    // Cleanup: remove event listeners when component unmounts or sdk changes
+    return () => {
+      if (sdk && sdk.scene) {
+        disposeBoxSelection(sdk.scene);
+      }
+    };
   }, [sdk]);
 
   useEffect(() => {
