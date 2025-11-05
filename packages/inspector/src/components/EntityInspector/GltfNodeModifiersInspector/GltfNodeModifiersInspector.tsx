@@ -175,7 +175,7 @@ function MaterialProxy({
     path: string,
     getter?: (event: React.ChangeEvent<HTMLInputElement>) => any,
   ) => any;
-  availableVideoPlayers: VideoTexture;
+  availableVideoPlayers?: VideoTexture;
 }) {
   // Minimal wrapper that renders the material UI sections by passing a prefixed getter
   // Importing MaterialInspector directly as a component expects sdk/entity; we cannot mount it standalone.
