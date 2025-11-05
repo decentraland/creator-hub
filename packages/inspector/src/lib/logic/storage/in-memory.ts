@@ -43,5 +43,12 @@ export function createInMemoryStorage(initialFs: Record<string, Buffer> = {}): S
 
       return files;
     },
+    async stat(path: string) {
+      const content = storage.get(path);
+      if (!content) {
+        throw new Error(`File ${path} doesn't exists`);
+      }
+      return { size: content.length };
+    },
   };
 }
