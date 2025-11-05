@@ -19,21 +19,18 @@ export enum Method {
   OPEN_FILE = 'open_file',
   OPEN_DIRECTORY = 'open_directory',
   PUSH_NOTIFICATION = 'push_notification',
-  REMOVE_NOTIFICATION = 'remove_notification',
 }
 
 export type Params = {
   [Method.OPEN_FILE]: { path: string };
   [Method.OPEN_DIRECTORY]: { path: string };
   [Method.PUSH_NOTIFICATION]: { notification: NotificationRequest };
-  [Method.REMOVE_NOTIFICATION]: { id: string };
 };
 
 export type Result = {
   [Method.OPEN_FILE]: void;
   [Method.OPEN_DIRECTORY]: void;
   [Method.PUSH_NOTIFICATION]: void;
-  [Method.REMOVE_NOTIFICATION]: void;
 };
 
 export class SceneRpcServer extends RPC<Method, Params, Result> {
