@@ -9,7 +9,7 @@ import { isModel, isValidTexture } from './utils';
 
 import { type Props, Texture, TEXTURE_TYPES, WRAP_MODES, FILTER_MODES } from './types';
 
-function TextureInspector({ label, texture, files, getInputProps }: Props) {
+function TextureInspector({ label, texture, files, getInputProps, availableVideoPlayers }: Props) {
   const getTextureProps = useCallback(
     (key: string) => {
       return getInputProps(`${texture}.${key}`);
@@ -75,6 +75,21 @@ function TextureInspector({ label, texture, files, getInputProps }: Props) {
           {...getTextureProps('filterMode')}
         />
       </Block>
+      {type.value === Texture.TT_VIDEO_TEXTURE &&
+      availableVideoPlayers &&
+      availableVideoPlayers.size > 0 ? (
+        <Dropdown
+          label="Video Source"
+          placeholder="Select a Video Player Entity"
+          options={Array.from(availableVideoPlayers.entries()).map(([key, value]) => ({
+            label: value.name,
+            value: key,
+          }))}
+          value={getTextureProps('videoPlayerEntity').value}
+          searchable
+          onChange={getTextureProps('videoPlayerEntity').onChange}
+        />
+      ) : null}
     </Container>
   );
 }
