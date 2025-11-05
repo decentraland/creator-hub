@@ -1,10 +1,190 @@
-import * as BABYLON from '@babylonjs/core';
-import type { PBVideoPlayer } from '@dcl/ecs';
-import { ComponentType } from '@dcl/ecs';
-
-import type { ComponentOperation } from '../component-operations';
+import type * as BABYLON from '@babylonjs/core';
+import { Mesh, VertexBuffer } from '@babylonjs/core';
+import { ComponentType, type PBVideoPlayer } from '@dcl/ecs';
 import { withAssetPacksDir } from '../../../data-layer/host/fs-utils';
-import { updateGltfForEntity } from './gltf-container';
+import type { ComponentOperation } from '../component-operations';
+import type { EcsEntity } from '../EcsEntity';
+import { loadAssetContainer } from './gltf-container';
+
+// UV region to focus on (top-left quadrant)
+// Adjust these values to focus on different parts of the texture
+// Format: [u_min, v_min, u_max, v_max] where 0,0 is bottom-left and 1,1 is top-right
+const UV_REGION = {
+  uMin: 0, // left edge
+  vMin: 0.65, // middle (to get top half)
+  uMax: 0.435, // middle (to get left half)
+  vMax: 1, // top edge
+};
+
+const adjustMeshUVs = (mesh: BABYLON.AbstractMesh) => {
+  if (!(mesh instanceof Mesh)) {
+    return;
+  }
+
+  const uvs = mesh.getVerticesData(VertexBuffer.UVKind);
+  if (!uvs) {
+    return;
+  }
+
+  const { uMin, vMin, uMax, vMax } = UV_REGION;
+  const uRange = uMax - uMin;
+  const vRange = vMax - vMin;
+
+  // Map UVs to focus on specific region
+  const adjustedUVs = uvs.map((value, index) => {
+    if (index % 2 === 0) {
+      // U coordinate
+      return uMin + value * uRange;
+    } else {
+      // V coordinate
+      return vMin + value * vRange;
+    }
+  });
+
+  mesh.setVerticesData(VertexBuffer.UVKind, adjustedUVs);
+};
+
+const loadVideoPlayerGLB = async (entity: EcsEntity): Promise<BABYLON.Material | null> => {
+  // Return cached material if already loaded
+  if (entity.videoPlayerMaterialAssetContainer) {
+    return entity.videoPlayerMaterialAssetContainer.materials[0] || null;
+  }
+
+  // Check if already loading
+  if (entity.isVideoPlayerMaterialLoading()) {
+    const assetContainer = await entity.onVideoPlayerMaterialLoaded();
+    return assetContainer.materials[0] || null;
+  }
+
+  const context = entity.context.deref();
+  if (!context) {
+    return null;
+  }
+
+  const videoPlayerPath = withAssetPacksDir('video_player/video_player.glb');
+  const videoScreenPath = withAssetPacksDir('video_screen/video_player.glb');
+
+  const [videoPlayerFile, videoScreenFile] = await Promise.all([
+    context.getFile(videoPlayerPath),
+    context.getFile(videoScreenPath),
+  ]);
+
+  let selectedFile: Uint8Array | null = null;
+  let selectedPath: string | null = null;
+
+  if (videoPlayerFile) {
+    selectedFile = videoPlayerFile;
+    selectedPath = videoPlayerPath;
+  } else if (videoScreenFile) {
+    selectedFile = videoScreenFile;
+    selectedPath = videoScreenPath;
+  }
+
+  if (!selectedFile || !selectedPath) {
+    return null;
+  }
+
+  return new Promise((resolve, reject) => {
+    const base = selectedPath.split('/').slice(0, -1).join('/');
+    const finalSrc = selectedPath + '?base=' + encodeURIComponent(base);
+    const file = new File([selectedFile as BlobPart], finalSrc);
+
+    loadAssetContainer(
+      file,
+      entity.getScene(),
+      assetContainer => {
+        // Cache the asset container in the entity
+        entity.setVideoPlayerMaterialAssetContainer(assetContainer);
+
+        // Extract the material from the loaded GLTF
+        if (assetContainer.materials.length > 0) {
+          const material = assetContainer.materials[0];
+          resolve(material);
+        } else {
+          resolve(null);
+        }
+      },
+      undefined,
+      (_scene, message) => {
+        console.error('Error loading video player GLB:', message);
+        reject(new Error(message));
+      },
+      '.glb',
+    );
+  });
+};
+
+/**
+ * Apply video player material to the entity's mesh renderer
+ * This should be called whenever the mesh renderer is created/updated
+ */
+export const applyVideoPlayerMaterial = async (entity: EcsEntity): Promise<void> => {
+  const context = entity.context.deref();
+  if (!context) {
+    return;
+  }
+
+  // Check if entity has VideoPlayer component
+  const hasVideoPlayer = context.VideoPlayer.has(entity.entityId);
+  if (!hasVideoPlayer || !entity.meshRenderer) {
+    return;
+  }
+
+  try {
+    // Load the video player GLB and extract its material (uses cache if available)
+    const glbMaterial = await loadVideoPlayerGLB(entity);
+
+    if (glbMaterial && entity.meshRenderer) {
+      // Adjust UVs to focus on specific region of the texture
+      adjustMeshUVs(entity.meshRenderer);
+
+      // Apply the material from the GLB to the existing meshRenderer
+      // This is runtime-only and doesn't modify the ECS component
+      entity.meshRenderer.material = glbMaterial;
+    }
+  } catch (error) {
+    console.error('Error applying video player material:', error);
+  }
+};
+
+/**
+ * Apply video player material to the entity's GLTF container meshes
+ * This should be called whenever the GLTF container is loaded
+ */
+export const applyVideoPlayerMaterialToGltf = async (entity: EcsEntity): Promise<void> => {
+  const context = entity.context.deref();
+  if (!context) {
+    return;
+  }
+
+  // Check if entity has VideoPlayer component
+  const hasVideoPlayer = context.VideoPlayer.has(entity.entityId);
+  if (!hasVideoPlayer || !entity.gltfContainer) {
+    return;
+  }
+
+  try {
+    // Load the video player GLB and extract its material (uses cache if available)
+    const glbMaterial = await loadVideoPlayerGLB(entity);
+
+    if (glbMaterial && entity.gltfContainer) {
+      // Get all child meshes from the GLTF container
+      const childMeshes = entity.gltfContainer.getChildMeshes(false);
+
+      // Apply material and adjust UVs for each mesh
+      for (const mesh of childMeshes) {
+        // Adjust UVs to focus on specific region of the texture
+        adjustMeshUVs(mesh);
+
+        // Apply the material from the GLB to the mesh
+        // This is runtime-only and doesn't modify the ECS component
+        mesh.material = glbMaterial;
+      }
+    }
+  } catch (error) {
+    console.error('Error applying video player material to GLTF:', error);
+  }
+};
 
 export const putVideoPlayerComponent: ComponentOperation = async (entity, component) => {
   if (component.componentType !== ComponentType.LastWriteWinElementSet) {
@@ -12,45 +192,18 @@ export const putVideoPlayerComponent: ComponentOperation = async (entity, compon
   }
 
   const newValue = component.getOrNull(entity.entityId) as PBVideoPlayer | null;
-  const context = entity.context.deref();
 
-  let path: string | null = null;
-
-  if (context) {
-    const videoPlayerPath = withAssetPacksDir('video_player/video_player.glb');
-    const videoScreenPath = withAssetPacksDir('video_screen/video_player.glb');
-
-    const [videoPlayerFile, videoScreenFile] = await Promise.all([
-      context.getFile(videoPlayerPath),
-      context.getFile(videoScreenPath),
-    ]);
-
-    if (videoPlayerFile) {
-      path = videoPlayerPath;
-    } else if (videoScreenFile) {
-      path = videoScreenPath;
-    }
+  if (!newValue) {
+    return;
   }
 
-  const gltfValue = newValue && path ? { src: path } : null;
-  updateGltfForEntity(entity, gltfValue);
+  // Apply to mesh renderer if it exists
+  if (entity.meshRenderer) {
+    await applyVideoPlayerMaterial(entity);
+  }
 
-  const scaleMult = 1.55;
-
-  try {
-    await entity.onGltfContainerLoaded();
-
-    if (entity.gltfAssetContainer) {
-      // need to re-scale the model to get in sync with scale in preview...
-      entity.gltfAssetContainer.meshes[0].scaling = new BABYLON.Vector3(
-        // why negative X coordinate? => https://forum.babylonjs.com/t/left-and-right-handed-shenanagins/17049/4
-        -0.2 * scaleMult,
-        0.4 * scaleMult,
-        0.1 * scaleMult,
-      );
-      entity.gltfAssetContainer.meshes[0].position = new BABYLON.Vector3(0, -0.5, 0);
-    }
-  } catch {
-    // Silently handle errors
+  // Apply to GLTF container if it exists
+  if (entity.gltfContainer) {
+    await applyVideoPlayerMaterialToGltf(entity);
   }
 };
