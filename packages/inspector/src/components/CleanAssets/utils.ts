@@ -14,7 +14,6 @@ function isValidAssetPath(path: string): boolean {
  * Recursively scans an object looking for strings that match asset paths
  * @param obj The object to scan
  * @param addAsset Callback to add found asset paths
- * @param visited Set to track visited objects and avoid circular references
  */
 function scanObjectForAssets(obj: any, addAsset: (path: string) => void): void {
   // Base case
@@ -95,10 +94,7 @@ export function collectUsedAssets(sdk: SdkContextValue): Set<string> {
  * @param allFiles The list of all asset files with their sizes
  * @returns Array of AssetFile objects with unused flag set
  */
-export async function scanForUnusedAssets(
-  sdk: SdkContextValue,
-  allFiles: FileSize[],
-): Promise<AssetFile[]> {
+export function scanForUnusedAssets(sdk: SdkContextValue, allFiles: FileSize[]): AssetFile[] {
   const usedAssets = collectUsedAssets(sdk); // Get all assets referenced in the scene
 
   const results: AssetFile[] = allFiles.map(file => ({

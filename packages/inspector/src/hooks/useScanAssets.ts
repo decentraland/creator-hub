@@ -100,7 +100,7 @@ export function useScanAssets(ignoredPatterns: string[] = []): UseCleanAssetsRes
       });
 
       if (files.length > 0) {
-        assets = await scanForUnusedAssets(sdk, files);
+        assets = scanForUnusedAssets(sdk, files);
       }
     } catch (err) {
       console.error('Error scanning assets:', err);

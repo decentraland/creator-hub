@@ -14,13 +14,13 @@ export type NotificationRequest = {
  * It relies on creator-hub snackbar system via RPC.
  */
 export const useSnackbar = () => {
-  const pushNotification = React.useCallback((type: NotificationType, message: string) => {
+  const pushNotification = React.useCallback(async (type: NotificationType, message: string) => {
     try {
       const sceneClient = getSceneClient();
       if (!sceneClient) return;
 
       const notification: NotificationRequest = { severity: type, message };
-      sceneClient.pushNotification(notification);
+      await sceneClient.pushNotification(notification);
     } catch (error) {
       console.error('Failed to push notification:', error);
     }
