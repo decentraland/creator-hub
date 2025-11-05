@@ -20,7 +20,6 @@
 }
 
 .single-tile-hint {
-  display: none;
   position: fixed;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -30,6 +29,7 @@
   padding: 4px 6px;
   font-size: 11px;
   line-height: 13px;
+  cursor: default;
 }
 
 .single-tile-hint b {
@@ -40,7 +40,6 @@
 }
 
 .single-tile-hint.is-visible {
-  display: block;
   opacity: 1;
   z-index: 100;
 }
