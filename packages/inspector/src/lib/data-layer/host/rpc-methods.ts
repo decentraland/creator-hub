@@ -177,7 +177,14 @@ export async function initRpcMethods(
     },
 
     async setInspectorPreferences(req) {
-      setInspectorPreferences(req);
+      // Convert proto message to InspectorPreferences
+      // Handle backward compatibility for proto messages without cameraMode
+      const preferences: InspectorPreferences = {
+        cameraMode: (req as any).cameraMode || 'orbit',
+        freeCameraInvertRotation: req.freeCameraInvertRotation ?? false,
+        autosaveEnabled: req.autosaveEnabled ?? true,
+      };
+      setInspectorPreferences(preferences);
       return {};
     },
 

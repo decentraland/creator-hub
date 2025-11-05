@@ -16,10 +16,13 @@ const AxisHelper = withSdk(({ sdk }) => {
     const getMainCamera = () => {
       if (sdk.editorCamera) {
         const mainCamera = sdk.editorCamera.getCamera();
-        return {
-          alpha: mainCamera.alpha,
-          beta: mainCamera.beta,
-        };
+        // Check if it's an ArcRotateCamera (has alpha/beta properties)
+        if ('alpha' in mainCamera && 'beta' in mainCamera) {
+          return {
+            alpha: mainCamera.alpha,
+            beta: mainCamera.beta,
+          };
+        }
       }
       return null;
     };

@@ -3,8 +3,10 @@ import type { Emitter } from 'mitt';
 import mitt from 'mitt';
 import { Vector3, Quaternion } from '@dcl/ecs-math';
 
+import type { CameraMode } from '../../logic/preferences/types';
 import type { EcsEntity } from './EcsEntity';
 import { ArcCameraManager } from './arcCamera';
+import { FreeCameraManager } from './freeCamera';
 
 type SpeedChangeEvent = { change: number };
 
@@ -27,11 +29,14 @@ export class CameraManager {
   private speedIndex: number;
   private minY: number;
   private zoomSensitivity: number;
-  private arcCameraManager: ArcCameraManager;
+  private arcCameraManager: ArcCameraManager | null = null;
+  private freeCameraManager: FreeCameraManager | null = null;
+  private currentMode: CameraMode;
   private speedChangeObservable: Emitter<SpeedChangeEvent>;
   private getAspectRatio: () => number;
   private animation: AnimationData | null;
   private scene: BABYLON.Scene;
+  private renderObserver: BABYLON.Nullable<BABYLON.Observer<BABYLON.Scene>> = null;
 
   constructor(
     scene: BABYLON.Scene,
@@ -40,26 +45,22 @@ export class CameraManager {
     initialSpeedIndex: number,
     minY: number,
     zoomSensitivity: number,
+    cameraMode: CameraMode = 'orbit',
   ) {
     this.scene = scene;
     this.speeds = speeds;
     this.speedIndex = initialSpeedIndex;
     this.minY = minY;
     this.zoomSensitivity = zoomSensitivity;
+    this.currentMode = cameraMode;
     this.speedChangeObservable = mitt<SpeedChangeEvent>();
     this.getAspectRatio = () => {
       return inputSource.width / inputSource.height;
     };
     this.animation = null;
 
-    // Create ArcCameraManager to handle ArcRotateCamera-specific logic
-    // Pass speed change callback so wheel + right-click can change camera speed
-    this.arcCameraManager = new ArcCameraManager(scene, inputSource, (faster: boolean) => {
-      this.changeSpeed(faster ? SpeedIncrement.FASTER : SpeedIncrement.SLOWER);
-    });
-
-    scene.activeCamera?.detachControl();
-    scene.activeCamera = this.arcCameraManager.getCamera();
+    // Initialize the appropriate camera based on mode
+    this.initializeCamera(cameraMode);
 
     // There is a bug when holding RMB and moving out of the window
     // that prevents Babylon to release the button event
@@ -68,24 +69,105 @@ export class CameraManager {
     inputSource.addEventListener('mouseout', () => this.reattachControl());
 
     // Register render observer for animation and minY enforcement
-    scene.registerBeforeRender(() => {
+    this.renderObserver = scene.onBeforeRenderObservable.add(() => {
       this.onRenderFrame(scene);
     });
   }
 
+  /**
+   * Initialize camera based on mode
+   */
+  private initializeCamera(mode: CameraMode): void {
+    if (mode === 'orbit') {
+      // Create ArcCameraManager to handle ArcRotateCamera-specific logic
+      this.arcCameraManager = new ArcCameraManager(
+        this.scene,
+        this.inputSource,
+        (faster: boolean) => {
+          this.changeSpeed(faster ? SpeedIncrement.FASTER : SpeedIncrement.SLOWER);
+        },
+      );
+      this.scene.activeCamera?.detachControl();
+      this.scene.activeCamera = this.arcCameraManager.getCamera();
+    } else {
+      // Create FreeCameraManager to handle FreeCamera-specific logic
+      this.freeCameraManager = new FreeCameraManager(
+        this.scene,
+        this.inputSource,
+        this.speeds,
+        this.speedIndex,
+        this.minY,
+        this.zoomSensitivity,
+        (speed: number) => {
+          this.speedChangeObservable.emit('change', speed);
+        },
+      );
+      this.scene.activeCamera?.detachControl();
+      this.scene.activeCamera = this.freeCameraManager.getCamera();
+    }
+  }
+
+  /**
+   * Hot-switch between camera modes
+   */
+  switchCameraMode(newMode: CameraMode): void {
+    if (this.currentMode === newMode) return;
+
+    // Dispose old camera
+    if (this.currentMode === 'orbit' && this.arcCameraManager) {
+      this.arcCameraManager.getCamera().detachControl();
+      this.arcCameraManager.getCamera().dispose();
+      this.arcCameraManager = null;
+    } else if (this.currentMode === 'free' && this.freeCameraManager) {
+      this.freeCameraManager.dispose();
+      this.freeCameraManager = null;
+    }
+
+    // Update mode
+    this.currentMode = newMode;
+
+    // Initialize new camera
+    this.initializeCamera(newMode);
+
+    // Reset to default position to avoid weird angles from conversion
+    // The default position gives a nice view of the scene from the same angle every time
+    this.resetCamera();
+
+    console.log(`[CameraManager] Switched to ${newMode} camera (reset to default position)`);
+  }
+
+  /**
+   * Get current camera mode
+   */
+  getCameraMode(): CameraMode {
+    return this.currentMode;
+  }
+
   reattachControl() {
-    this.arcCameraManager.reattachControl();
+    if (this.currentMode === 'orbit' && this.arcCameraManager) {
+      this.arcCameraManager.reattachControl();
+    } else if (this.currentMode === 'free' && this.freeCameraManager) {
+      this.freeCameraManager.reattachControl();
+    }
   }
 
   getCamera() {
-    return this.arcCameraManager.getCamera();
+    if (this.currentMode === 'orbit' && this.arcCameraManager) {
+      return this.arcCameraManager.getCamera();
+    } else if (this.currentMode === 'free' && this.freeCameraManager) {
+      return this.freeCameraManager.getCamera();
+    }
+    throw new Error('No active camera manager');
   }
 
   getGlobalPosition() {
-    return this.arcCameraManager.getCamera().globalPosition;
+    return this.getCamera().globalPosition;
   }
 
   getSpeed() {
+    if (this.currentMode === 'free' && this.freeCameraManager) {
+      return this.freeCameraManager.getSpeed();
+    }
     return this.speeds[this.speedIndex];
   }
 
@@ -94,7 +176,11 @@ export class CameraManager {
   }
 
   setFreeCameraInvertRotation(invert: boolean) {
-    this.arcCameraManager.setPanningInvert(invert);
+    if (this.currentMode === 'orbit' && this.arcCameraManager) {
+      this.arcCameraManager.setPanningInvert(invert);
+    } else if (this.currentMode === 'free' && this.freeCameraManager) {
+      this.freeCameraManager.setAngularInvert(invert);
+    }
   }
 
   centerViewOnEntity(entity: EcsEntity) {
@@ -116,11 +202,19 @@ export class CameraManager {
     const idealRadius = radius * 3; // Distance multiplier for framing
 
     // Animate camera to focus on entity
-    this.arcCameraManager.centerViewOnTarget(center, idealRadius);
+    if (this.currentMode === 'orbit' && this.arcCameraManager) {
+      this.arcCameraManager.centerViewOnTarget(center, idealRadius);
+    } else if (this.currentMode === 'free' && this.freeCameraManager) {
+      this.freeCameraManager.centerViewOnTarget(center, radius, this.getAspectRatio);
+    }
   }
 
   resetCamera() {
-    this.arcCameraManager.resetCamera();
+    if (this.currentMode === 'orbit' && this.arcCameraManager) {
+      this.arcCameraManager.resetCamera();
+    } else if (this.currentMode === 'free' && this.freeCameraManager) {
+      this.freeCameraManager.resetCamera();
+    }
   }
 
   private changeSpeed(increment: SpeedIncrement) {
@@ -133,29 +227,33 @@ export class CameraManager {
   }
 
   private onRenderFrame(scene: BABYLON.Scene) {
-    const camera = this.arcCameraManager.getCamera();
+    // Only handle ArcRotateCamera animations here
+    // FreeCamera handles its own animations and minY internally
+    if (this.currentMode === 'orbit' && this.arcCameraManager) {
+      const camera = this.arcCameraManager.getCamera();
 
-    if (this.animation !== null) {
-      const dt = scene.getEngine().getDeltaTime();
-      this.animation.timePassed += dt / 1000;
-      this.animation.timePassed = Math.min(this.animation.duration, this.animation.timePassed);
-      const t = this.animation.timePassed / this.animation.duration;
+      if (this.animation !== null) {
+        const dt = scene.getEngine().getDeltaTime();
+        this.animation.timePassed += dt / 1000;
+        this.animation.timePassed = Math.min(this.animation.duration, this.animation.timePassed);
+        const t = this.animation.timePassed / this.animation.duration;
 
-      const position = Vector3.lerp(this.animation.startPos, this.animation.endPos, t);
-      camera.position = new BABYLON.Vector3(position.x, position.y, position.z);
+        const position = Vector3.lerp(this.animation.startPos, this.animation.endPos, t);
+        camera.position = new BABYLON.Vector3(position.x, position.y, position.z);
 
-      const quat = Quaternion.slerp(this.animation.startQuat, this.animation.endQuat, t);
-      const direction = Vector3.rotate(Vector3.create(0, 0, 1), quat);
-      camera.target = camera.position.add(
-        new BABYLON.Vector3(direction.x, direction.y, direction.z),
-      );
+        const quat = Quaternion.slerp(this.animation.startQuat, this.animation.endQuat, t);
+        const direction = Vector3.rotate(Vector3.create(0, 0, 1), quat);
+        camera.target = camera.position.add(
+          new BABYLON.Vector3(direction.x, direction.y, direction.z),
+        );
 
-      if (this.animation.timePassed >= this.animation.duration) this.animation = null;
-    }
+        if (this.animation.timePassed >= this.animation.duration) this.animation = null;
+      }
 
-    // Ensure camera doesn't go below minimum Y
-    if (camera.position.y <= this.minY) {
-      camera.position.y = this.minY;
+      // Ensure camera doesn't go below minimum Y
+      if (camera.position.y <= this.minY) {
+        camera.position.y = this.minY;
+      }
     }
   }
 }

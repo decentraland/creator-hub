@@ -35,10 +35,18 @@ export const Preferences = withSdk(({ sdk }) => {
     dispatch(setInspectorPreferences({ autosaveEnabled: !preferences?.autosaveEnabled }));
   }, [preferences?.autosaveEnabled]);
 
+  const toggleCameraMode = useCallback(() => {
+    const newMode = preferences?.cameraMode === 'free' ? 'orbit' : 'free';
+    dispatch(setInspectorPreferences({ cameraMode: newMode }));
+    // Hot-switch the camera
+    sdk.editorCamera.switchCameraMode(newMode);
+  }, [preferences?.cameraMode, sdk]);
+
   const FreeCameraInvertRotationIcon = preferences?.freeCameraInvertRotation
     ? BiCheckboxChecked
     : BiCheckbox;
   const AutosaveEnabledIcon = preferences?.autosaveEnabled ? BiCheckboxChecked : BiCheckbox;
+  const FreeCameraModeIcon = preferences?.cameraMode === 'free' ? BiCheckboxChecked : BiCheckbox;
 
   return (
     <div
@@ -53,6 +61,13 @@ export const Preferences = withSdk(({ sdk }) => {
         <BiCog />
       </ToolbarButton>
       <div className={cx('panel', { visible: showPanel })}>
+        <div className="preference-row">
+          <label>Free Camera Mode (WASD)</label>
+          <FreeCameraModeIcon
+            className="icon"
+            onClick={toggleCameraMode}
+          />
+        </div>
         <div className="preference-row">
           <label>Invert camera rotation</label>
           <FreeCameraInvertRotationIcon
