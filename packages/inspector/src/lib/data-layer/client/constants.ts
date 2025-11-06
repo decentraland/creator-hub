@@ -9,7 +9,7 @@ export const SCENE_INFO_MARKDOWN = `# What's this panel?
 This panel provides detailed information about the current scene.
 This can be customized by the user in the Scene panel or in the corresponding file on the scene's repository.
 
-It supports **Markdown** formatting, allowing for rich text presentation, including headings, lists, links, images, videos and more. 
+It supports **Markdown** formatting, allowing for rich text presentation, including headings, lists, links, images, videos and more.
 
 # Usage examples:
 ## Title 2
@@ -32,3 +32,27 @@ Code blocks:
 console.log('Hello, world!');
 \`\`\`
 `;
+
+export function getDefaultScriptTemplate(scriptName: string): string {
+  return `
+import { engine, Entity } from '@dcl/sdk/ecs'
+
+/**
+ * Main function - called when the script is initialized
+ * @param entity - The entity this script is attached to
+ */
+export function main(entity: Entity) {
+  // Script initialization
+  console.log('${scriptName} initialized for entity:', entity)
+}
+
+/**
+ * Update function - called every frame
+ * @param entity - The entity this script is attached to
+ * @param dt - Delta time since last frame (in seconds)
+ */
+export function update(entity: Entity, dt: number) {
+  // Called every frame
+}
+`;
+}

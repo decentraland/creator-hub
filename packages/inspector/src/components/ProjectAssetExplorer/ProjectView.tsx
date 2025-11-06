@@ -3,6 +3,7 @@ import { AiOutlineSound as AudioIcon } from 'react-icons/ai';
 import { IoIosImage as ImageIcon } from 'react-icons/io';
 import { IoCubeOutline as ModelIcon, IoVideocamOutline as VideoIcon } from 'react-icons/io5';
 import { FaFile as OtherIcon } from 'react-icons/fa';
+import { SiTypescript as ScriptIcon } from 'react-icons/si';
 import type { Entity } from '@dcl/ecs';
 
 import { useSdk } from '../../hooks/sdk/useSdk';
@@ -264,6 +265,8 @@ function NodeIcon({ value }: { value?: TreeNode }) {
           return AudioIcon;
         case 'Video':
           return VideoIcon;
+        case 'Scripts':
+          return ScriptIcon;
         case 'Other':
           return OtherIcon;
       }

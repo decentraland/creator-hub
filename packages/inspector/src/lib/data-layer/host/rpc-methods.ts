@@ -17,7 +17,7 @@ import upsertAsset from './upsert-asset';
 import { installBin } from './utils/install-bin';
 import { StateManager } from './state-manager';
 import { SceneProvider } from './scene-provider';
-import { CompositeProvider } from './composite-provider';
+import { CompositeProvider, ENTITY_NAMES_PATH } from './composite-provider';
 import { UndoRedoProvider } from './undo-redo-provider';
 import { createStream } from './stream';
 
@@ -199,9 +199,8 @@ export async function initRpcMethods(
     },
 
     async getAssetCatalog() {
-      const ignore = ['.git', 'node_modules'];
+      const ignore = ['.git', 'node_modules', ENTITY_NAMES_PATH];
       const basePath = withAssetDir();
-
       const assets = (await getFilesInDirectory(fs, basePath, [], true, ignore)).filter(item => {
         const itemLower = item.toLowerCase();
         return EXTENSIONS.some(ext => itemLower.endsWith(ext));

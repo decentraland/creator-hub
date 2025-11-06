@@ -229,6 +229,10 @@ export default React.memo(
           description: 'VideoPlayer plays a video file in your scene',
           link: 'https://docs.decentraland.org/creator/development-guide/sdk7/video-playing/',
         }),
+        createOption(sdk.components.Script, 'Script', {
+          description: 'Attach custom scripts to entities with configurable parameters. Scripts can handle initialization and per-frame updates.',
+          // link: 'https://docs.decentraland.org/creator/development-guide/sdk7/scripts/',
+        }),
       ];
 
       const optionIds = options.reduce((set, option) => {
