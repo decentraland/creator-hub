@@ -35,10 +35,6 @@
   overflow: hidden;
 }
 
-.VideoScreenBasicViewInspector .PanelSection {
-  background-color: var(--background-dark);
-}
-
 .VideoScreenBasicViewInspector .PlayBack {
   margin-top: 10px;
   margin-bottom: 10px;
@@ -61,4 +57,8 @@
   margin-left: 8px;
   font-weight: 400;
   font-size: 11px;
+}
+
+.VideoScreenBasicViewInspector .PanelSection.droppeable .FileUploadInput .InputContainer {
+  border: 1px dashed var(--base-01);
 }
