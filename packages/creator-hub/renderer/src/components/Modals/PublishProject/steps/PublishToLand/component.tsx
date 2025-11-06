@@ -118,7 +118,7 @@ export function PublishToLand(props: Props) {
   const ownedLayer = useCallback(
     (x: number, y: number) => {
       const key = `${x},${y}`;
-      return landTiles[key] && landTiles[key].land.owner === tiles[key].owner
+      return landTiles[key] && landTiles[key].land.owner === tiles[key]?.owner
         ? { color: COLORS.freeParcel }
         : null;
     },

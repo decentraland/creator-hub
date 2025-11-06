@@ -119,6 +119,40 @@ export async function initRpcMethods(
       return { files };
     },
 
+    async getFilesSizes({ path, ignore = [] }) {
+      const ignoredFiles = ['.git', 'node_modules', ...ignore];
+      const filesInDir = await getFilesInDirectory(fs, path, [], true, ignoredFiles);
+      const files = await Promise.all(
+        filesInDir.map(async $ => {
+          const stats = await fs.stat($);
+          return { path: $, size: stats.size };
+        }),
+      );
+      return { files };
+    },
+
+    async removeFiles(req) {
+      return stateManager.executeTransaction('external', async () => {
+        const filePaths = req.filePaths;
+        const success: string[] = [];
+        const failed: string[] = [];
+        for (const path of filePaths) {
+          try {
+            if (await fs.existFile(path)) {
+              await fs.rm(path);
+              success.push(path);
+            } else {
+              failed.push(path);
+            }
+          } catch (e) {
+            console.error(`Failed to delete ${path}:`, e);
+            failed.push(path);
+          }
+        }
+        return { success, failed };
+      });
+    },
+
     async saveFile({ path, content }) {
       await fs.writeFile(path, Buffer.from(content));
       return {};

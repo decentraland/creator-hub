@@ -1,22 +1,39 @@
+import ignore from 'ignore';
 import type { FileSystemInterface } from '../types';
 
+/**
+ * Recursively collects files from a directory, applying ignore patterns similar to dclignore.
+ * This implementation uses the 'ignore' library to match the DCL ignore behavior exactly.
+ *
+ * @param fs - File system interface
+ * @param dirPath - Directory path to scan
+ * @param files - Array to accumulate file paths
+ * @param recursive - Whether to recurse into subdirectories
+ * @param ignorePatterns - Array of .gitignore-style patterns to ignore
+ * @returns Promise resolving to array of file paths
+ */
 export async function getFilesInDirectory(
   fs: FileSystemInterface,
   dirPath: string,
   files: string[],
   recursive: boolean = true,
-  ignore: string[] = [], // This functionality can be extended, now only 'absolute' path can be ignored
+  ignorePatterns: string[] = [],
 ): Promise<string[]> {
   try {
+    // Create an ignore instance with the patterns
+    const ig = ignore().add(ignorePatterns);
+
     const currentDirFiles = await fs.readdir(dirPath);
     for (const currentPath of currentDirFiles) {
-      if (ignore.includes(currentPath.name)) continue;
-
       const slashIfRequire = (dirPath.length && !dirPath.endsWith('/') && '/') || '';
       const fullPath = dirPath + slashIfRequire + currentPath.name;
 
+      // Check if this path should be ignored using the ignore library
+      // The ignore library expects paths relative to root, so use fullPath
+      if (ig.ignores(fullPath)) continue;
+
       if (currentPath.isDirectory && recursive) {
-        await getFilesInDirectory(fs, fullPath, files, recursive);
+        await getFilesInDirectory(fs, fullPath, files, recursive, ignorePatterns);
       } else {
         files.push(fullPath);
       }

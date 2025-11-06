@@ -5,20 +5,32 @@ import { fs, editor } from '#preload';
 
 import { type Project } from '/shared/types/projects';
 import { getPath } from '../';
+import type { Severity } from '../../store/snackbar/types';
+import { store } from '../../store';
+import { actions as snackbarActions } from '../../store/snackbar';
+import { createGenericNotification } from '../../store/snackbar/utils';
+
+type NotificationRequest = {
+  severity: Severity;
+  message: string;
+};
 
 export enum Method {
   OPEN_FILE = 'open_file',
   OPEN_DIRECTORY = 'open_directory',
+  PUSH_NOTIFICATION = 'push_notification',
 }
 
 export type Params = {
   [Method.OPEN_FILE]: { path: string };
   [Method.OPEN_DIRECTORY]: { path: string };
+  [Method.PUSH_NOTIFICATION]: { notification: NotificationRequest };
 };
 
 export type Result = {
   [Method.OPEN_FILE]: void;
   [Method.OPEN_DIRECTORY]: void;
+  [Method.PUSH_NOTIFICATION]: void;
 };
 
 export class SceneRpcServer extends RPC<Method, Params, Result> {
@@ -38,6 +50,14 @@ export class SceneRpcServer extends RPC<Method, Params, Result> {
       } else {
         console.error(`Path ${resolvedPath} is not a directory`);
       }
+    });
+
+    this.handle('push_notification', async ({ notification }) => {
+      store.dispatch(
+        snackbarActions.pushSnackbar(
+          createGenericNotification(notification.severity, notification.message),
+        ),
+      );
     });
   }
 }
