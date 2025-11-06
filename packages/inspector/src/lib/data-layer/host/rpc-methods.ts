@@ -5,6 +5,7 @@ import { readPreferencesFromFile, serializeInspectorPreferences } from '../../lo
 import type { AssetData } from '../../logic/catalog';
 import type { InspectorPreferences } from '../../logic/preferences/types';
 import { cameraModeToProto, cameraModeFromProto } from '../../logic/preferences/types';
+import type { InspectorPreferencesMessage } from '../proto/gen/data-layer.gen';
 import { EditorComponentNames } from '../../sdk/components/types';
 import {
   DIRECTORY,
@@ -207,7 +208,7 @@ export async function initRpcMethods(
       return {};
     },
 
-    async getInspectorPreferences() {
+    async getInspectorPreferences(): Promise<InspectorPreferencesMessage> {
       const prefs = getInspectorPreferences();
       // Convert internal preferences to proto message format
       return {
