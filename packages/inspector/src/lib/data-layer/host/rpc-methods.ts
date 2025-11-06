@@ -4,6 +4,7 @@ import type { DataLayerRpcServer, FileSystemInterface } from '../types';
 import { readPreferencesFromFile, serializeInspectorPreferences } from '../../logic/preferences/io';
 import type { AssetData } from '../../logic/catalog';
 import type { InspectorPreferences } from '../../logic/preferences/types';
+import { cameraModeToProto, cameraModeFromProto } from '../../logic/preferences/types';
 import { EditorComponentNames } from '../../sdk/components/types';
 import {
   DIRECTORY,
@@ -173,14 +174,19 @@ export async function initRpcMethods(
     },
 
     async getInspectorPreferences() {
-      return getInspectorPreferences();
+      const prefs = getInspectorPreferences();
+      // Convert internal preferences to proto message format
+      return {
+        cameraMode: cameraModeToProto(prefs.cameraMode),
+        freeCameraInvertRotation: prefs.freeCameraInvertRotation,
+        autosaveEnabled: prefs.autosaveEnabled,
+      };
     },
 
     async setInspectorPreferences(req) {
-      // Convert proto message to InspectorPreferences
-      // Handle backward compatibility for proto messages without cameraMode
+      // Convert proto message to internal InspectorPreferences
       const preferences: InspectorPreferences = {
-        cameraMode: (req as any).cameraMode || 'orbit',
+        cameraMode: cameraModeFromProto(req.cameraMode),
         freeCameraInvertRotation: req.freeCameraInvertRotation ?? false,
         autosaveEnabled: req.autosaveEnabled ?? true,
       };
