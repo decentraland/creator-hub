@@ -1,12 +1,13 @@
 import { useCallback } from 'react';
-import cx from 'classnames';
 import { AiOutlineSound as AudioIcon } from 'react-icons/ai';
 import { IoIosImage as ImageIcon } from 'react-icons/io';
 import { IoCubeOutline as ModelIcon, IoVideocamOutline as VideoIcon } from 'react-icons/io5';
 import { FaFile as AssetIcon } from 'react-icons/fa';
 import { GoClock as RecentIcon } from 'react-icons/go';
+import { SiTypescript as ScriptIcon } from 'react-icons/si';
+import cx from 'classnames';
 
-import { PropTypes, Filter } from './types';
+import { type PropTypes, Filter } from './types';
 
 import './Filters.css';
 
@@ -25,6 +26,8 @@ export function Filters({ filters, active, onClick }: PropTypes) {
         return { title: 'Audio', icon: AudioIcon };
       case Filter.Video:
         return { title: 'Video', icon: VideoIcon };
+      case Filter.Scripts:
+        return { title: 'Scripts', icon: ScriptIcon };
       default:
         return { title: 'Other', icon: AssetIcon };
     }

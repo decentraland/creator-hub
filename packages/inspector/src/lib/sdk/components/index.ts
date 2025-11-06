@@ -95,6 +95,16 @@ export type CustomAssetComponent = {
   assetId: string;
 };
 
+export type ScriptComponent = {
+  value: ScriptItem[];
+};
+
+export type ScriptItem = {
+  path: string;
+  priority: number;
+  layout?: string;
+};
+
 export type EditorComponentsTypes = {
   Selection: { gizmo: GizmoType };
   Scene: SceneComponent;
@@ -116,6 +126,7 @@ export type EditorComponentsTypes = {
   VideoScreen: VideoScreen;
   Rewards: Rewards;
   InspectorUIState: InspectorUIStateType;
+  Script: ScriptComponent;
 };
 
 export type EditorComponents = {
@@ -143,6 +154,7 @@ export type EditorComponents = {
   InspectorUIState: LastWriteWinElementSetComponentDefinition<
     EditorComponentsTypes['InspectorUIState']
   >;
+  Script: LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['Script']>;
 };
 
 export type SdkComponents = {
@@ -287,6 +299,16 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
     assetId: Schemas.String,
   });
 
+  const Script = engine.defineComponent(EditorComponentNames.Script, {
+    value: Schemas.Array(
+      Schemas.Map({
+        path: Schemas.String,
+        priority: Schemas.Number,
+        layout: Schemas.Optional(Schemas.String),
+      }),
+    ),
+  });
+
   return {
     Selection,
     Scene,
@@ -296,6 +318,7 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
     Lock,
     Config,
     InspectorUIState,
+    Script,
     ActionTypes: ActionTypes as unknown as LastWriteWinElementSetComponentDefinition<
       EditorComponentsTypes['ActionTypes']
     >,

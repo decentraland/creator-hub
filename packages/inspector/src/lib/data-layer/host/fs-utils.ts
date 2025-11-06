@@ -63,6 +63,7 @@ export const EXTENSIONS = [
   '.ogg',
   '.wav',
   '.mp4',
+  '.ts',
 ];
 
 export function withAssetDir(filePath: string = '') {
