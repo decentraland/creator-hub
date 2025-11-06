@@ -1,0 +1,46 @@
+.ScriptInspector > .content {
+  display: flex;
+  flex-direction: column;
+}
+
+.ScriptInspector > .content > .Block > .content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  border-radius: 4px;
+  border: 1px solid #303031;
+  background: var(--tree-bg-color);
+  gap: 12px;
+  align-items: normal;
+}
+
+.ScriptInspector .content .Block .content .MoreOptionsMenu {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+}
+
+.ScriptInspector .content .Block .content .MoreOptionsMenu .MoreOptionsContent {
+  min-width: 140px;
+}
+
+.ScriptInspector .params {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding-top: 12px;
+  border-top: 1px solid #303031;
+}
+
+.ScriptInspector .actions {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+}
+
+.ScriptInspector .actions .AddButton,
+.ScriptInspector .actions .RemoveButton {
+  margin-top: 0;
+}

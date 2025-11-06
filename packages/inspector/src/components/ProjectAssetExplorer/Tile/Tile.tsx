@@ -4,6 +4,7 @@ import { IoIosImage as ImageIcon } from 'react-icons/io';
 import { IoCubeOutline as ModelIcon, IoVideocamOutline as VideoIcon } from 'react-icons/io5';
 import { FaFile as OtherIcon } from 'react-icons/fa';
 import { Item as MenuItem } from 'react-contexify';
+import { SiTypescript as ScriptIcon } from 'react-icons/si';
 import { useDrag } from 'react-dnd';
 import { Loader } from 'decentraland-ui/dist/components/Loader/Loader';
 
@@ -80,6 +81,8 @@ export const Tile = withContextMenu<Props>(
           return <AudioIcon />;
         case 'Video':
           return <VideoIcon />;
+        case 'Scripts':
+          return <ScriptIcon />;
         case 'Other':
           return <OtherIcon />;
       }
