@@ -22,7 +22,6 @@ function PbrMaterial({
   emissiveIntensity,
   emissiveColor,
   getTextureProps,
-  availableVideoPlayers,
 }: PbrMaterialProps) {
   const files = useAppSelector(selectAssetCatalog);
 
@@ -68,7 +67,6 @@ function PbrMaterial({
         texture={TextureType.TT_TEXTURE}
         files={files}
         getInputProps={getTextureProps}
-        availableVideoPlayers={availableVideoPlayers}
       />
       <Container
         label="Intensity"

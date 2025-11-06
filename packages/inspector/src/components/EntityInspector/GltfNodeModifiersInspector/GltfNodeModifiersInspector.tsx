@@ -1,10 +1,9 @@
 import { useCallback, useMemo } from 'react';
-import type { Entity, PBGltfNodeModifiers } from '@dcl/ecs';
+import type { PBGltfNodeModifiers } from '@dcl/ecs';
 import { withSdk } from '../../../hoc/withSdk';
 import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
 import { useComponentInput } from '../../../hooks/sdk/useComponentInput';
 import { useComponentValue } from '../../../hooks/sdk/useComponentValue';
-import { useEntitiesWith } from '../../../hooks/sdk/useEntitiesWith';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { CheckboxField, TextField, InfoTooltip } from '../../ui';
@@ -19,7 +18,6 @@ import { selectAssetCatalog } from '../../../redux/app';
 import { type Props as TextureProps } from '../MaterialInspector/Texture';
 import { UnlitMaterial } from '../MaterialInspector/UnlitMaterial';
 import { PbrMaterial } from '../MaterialInspector/PbrMaterial';
-import type { VideoTexture } from '../MaterialInspector/PbrMaterial/types';
 import { Texture } from '../MaterialInspector/Texture/types';
 import type { Props } from './types';
 import { ensureTextureDefaults, fromComponent, isValidInput, toComponent } from './utils';
@@ -28,7 +26,7 @@ import './GltfNodeModifiersInspector.css';
 
 export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const files = useAppSelector(selectAssetCatalog);
-  const { GltfNodeModifiers, Material, Name } = sdk.components;
+  const { GltfNodeModifiers } = sdk.components;
 
   const hasComponent = useHasComponent(entity, GltfNodeModifiers);
   const { getInputProps } = useComponentInput(
@@ -40,7 +38,6 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   );
 
   const [componentValue] = useComponentValue<PBGltfNodeModifiers>(entity, GltfNodeModifiers);
-  const entitiesWithVideoPlayer: Entity[] = useEntitiesWith(components => components.VideoPlayer);
 
   const handleRemove = useCallback(async () => {
     sdk.operations.removeComponent(entity, GltfNodeModifiers);
@@ -100,18 +97,6 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     [swapsValue, getInputProps],
   );
 
-  const availableVideoPlayers: VideoTexture = useMemo(() => {
-    const videoPlayers = new Map() as VideoTexture;
-    for (const entityWithVideoPlayer of entitiesWithVideoPlayer) {
-      const name = Name.getOrNull(entityWithVideoPlayer);
-      const material = Material.getOrNull(entityWithVideoPlayer);
-      if (name && material) {
-        videoPlayers.set(entityWithVideoPlayer, { name: name.value, material });
-      }
-    }
-    return videoPlayers;
-  }, [entitiesWithVideoPlayer]);
-
   if (!hasComponent) return null;
 
   return (
@@ -157,7 +142,6 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
               path: string,
               getter?: (e: React.ChangeEvent<HTMLInputElement>) => any,
             ) => (getInputProps as any)(path, getter)}
-            availableVideoPlayers={availableVideoPlayers}
           />
         </Container>
       ))}
@@ -169,14 +153,12 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
 function MaterialProxy({
   getInputPropsPrefix,
   getInputProps,
-  availableVideoPlayers,
 }: {
   getInputPropsPrefix: string;
   getInputProps: (
     path: string,
     getter?: (event: React.ChangeEvent<HTMLInputElement>) => any,
   ) => any;
-  availableVideoPlayers?: VideoTexture;
 }) {
   // Minimal wrapper that renders the material UI sections by passing a prefixed getter
   // Importing MaterialInspector directly as a component expects sdk/entity; we cannot mount it standalone.
@@ -231,7 +213,6 @@ function MaterialProxy({
           emissiveIntensity={getInputProps(`${getInputPropsPrefix}.emissiveIntensity`)}
           emissiveColor={getInputProps(`${getInputPropsPrefix}.emissiveColor`)}
           getTextureProps={getTextureProps}
-          availableVideoPlayers={availableVideoPlayers}
         />
       )}
     </Container>

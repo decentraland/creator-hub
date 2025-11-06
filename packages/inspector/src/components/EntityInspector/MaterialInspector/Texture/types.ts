@@ -1,17 +1,17 @@
-import { TextureFilterMode, TextureWrapMode } from '@dcl/ecs';
+import { type PBMaterial, TextureFilterMode, TextureWrapMode } from '@dcl/ecs';
 
 import { mapSelectFieldOptions } from '../../../ui/Dropdown/utils';
 import type { useComponentInput } from '../../../../hooks/sdk/useComponentInput';
 import type { AssetCatalogResponse } from '../../../../lib/data-layer/remote-data-layer';
-import type { VideoTexture } from '../PbrMaterial/types';
 import type { TextureType } from '../types';
+
+export type VideoTexture = Map<number, { name: string; material: PBMaterial }>;
 
 export type Props = {
   label: string;
   texture: TextureType;
   files?: AssetCatalogResponse;
   getInputProps: ReturnType<typeof useComponentInput>['getInputProps'];
-  availableVideoPlayers?: VideoTexture;
 };
 
 export enum Texture {

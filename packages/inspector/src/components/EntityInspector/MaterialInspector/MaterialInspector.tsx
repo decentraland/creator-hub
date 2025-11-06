@@ -1,9 +1,7 @@
-import { useCallback, useMemo } from 'react';
-import type { Entity } from '@dcl/ecs';
+import { useCallback } from 'react';
 import { withSdk } from '../../../hoc/withSdk';
 import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
 import { useComponentInput } from '../../../hooks/sdk/useComponentInput';
-import { useEntitiesWith } from '../../../hooks/sdk/useEntitiesWith';
 import { useAppSelector } from '../../../redux/hooks';
 import { selectAssetCatalog } from '../../../redux/app';
 import { Block } from '../../Block';
@@ -12,15 +10,12 @@ import { Container } from '../../Container';
 import { fromMaterial, toMaterial, isValidMaterial, MATERIAL_TYPES } from './utils';
 import UnlitMaterial from './UnlitMaterial/UnlitMaterial';
 import { PbrMaterial } from './PbrMaterial';
-import type { VideoTexture } from './PbrMaterial/types';
-
 import { type Props as TextureProps } from './Texture';
 import { type Props, MaterialType } from './types';
 
 export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const files = useAppSelector(selectAssetCatalog);
-  const { Material, Name } = sdk.components;
-  const entitiesWithVideoPlayer: Entity[] = useEntitiesWith(components => components.VideoPlayer);
+  const { Material } = sdk.components;
 
   const hasMaterial = useHasComponent(entity, Material);
   const { getInputProps } = useComponentInput(
@@ -35,18 +30,6 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     sdk.operations.removeComponent(entity, Material);
     await sdk.operations.dispatch();
   }, []);
-
-  const availableVideoPlayers: VideoTexture = useMemo(() => {
-    const videoPlayers = new Map() as VideoTexture;
-    for (const entityWithVideoPlayer of entitiesWithVideoPlayer) {
-      const name = Name.getOrNull(entityWithVideoPlayer);
-      const material = Material.getOrNull(entityWithVideoPlayer);
-      if (name && material) {
-        videoPlayers.set(entityWithVideoPlayer, { name: name.value, material });
-      }
-    }
-    return videoPlayers;
-  }, [entitiesWithVideoPlayer]);
 
   if (!hasMaterial) return null;
 
@@ -92,7 +75,6 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
           emissiveIntensity={getInputProps('emissiveIntensity')}
           emissiveColor={getInputProps('emissiveColor')}
           getTextureProps={getTextureProps}
-          availableVideoPlayers={availableVideoPlayers}
         />
       )}
     </Container>
