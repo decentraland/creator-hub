@@ -41,6 +41,7 @@ const FileUploadField: React.FC<Props> = ({
   isValidFile,
   acceptURLs = false,
   accept = EXTENSIONS,
+  openFileExplorerOnMount = false,
 }) => {
   const [path, setPath] = useState<string | undefined>(value?.toString());
   const [errorMessage, setErrorMessage] = useState<string | undefined>('File not valid.');
@@ -53,7 +54,10 @@ const FileUploadField: React.FC<Props> = ({
 
   useEffect(() => {
     setPath(value?.toString());
-  }, [value]);
+    if (openFileExplorerOnMount) {
+      handleClick();
+    }
+  }, [value, openFileExplorerOnMount]);
 
   useEffect(() => {
     if (

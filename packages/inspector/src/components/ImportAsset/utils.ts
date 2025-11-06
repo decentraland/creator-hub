@@ -102,6 +102,7 @@ export const ACCEPTED_FILE_TYPES = {
   'audio/wav': ['.wav'],
   'audio/ogg': ['.ogg'],
   'video/mp4': ['.mp4'],
+  'text/plain': ['.ts'],
 };
 
 const FIFTY_MB_IN_BYTES = 50 * 1024 * 1024;
@@ -323,6 +324,8 @@ export function determineAssetType(extension: string): AssetType {
       return 'Audio';
     case 'mp4':
       return 'Video';
+    case 'ts':
+      return 'Scripts';
     default:
       return 'Other';
   }

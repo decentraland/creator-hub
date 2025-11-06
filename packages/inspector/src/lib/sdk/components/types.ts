@@ -45,6 +45,7 @@ export const EditorComponentNames = {
   Rewards: ComponentName.REWARDS,
   VideoScreen: ComponentName.VIDEO_SCREEN,
   InspectorUIState: 'inspector::UIState',
+  Script: 'inspector::Script',
 };
 
 export type AllComponentsType =
