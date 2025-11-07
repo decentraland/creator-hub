@@ -75,7 +75,7 @@
     "postinstall": "cross-env ELECTRON_RUN_AS_NODE=1 electron scripts/update-electron-vendors.js",
     "start": "npm run watch",
     "test": "npm run test:unit",
-    "test:e2e": "npm run build && vitest run -r e2e --passWithNoTests",
+    "test:e2e": "cross-env E2E='true' npm run build && playwright test",
     "test:main": "vitest run -r main --passWithNoTests",
     "test:preload": "vitest run -r preload --passWithNoTests",
     "test:renderer": "vitest run -r renderer --passWithNoTests",
