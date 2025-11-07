@@ -28,8 +28,6 @@ jobs:
         MODE: production
         E2E: true
         E2E_WALLET: ${{ secrets.E2E_WALLET }}
-        VITE_WORLDS_SERVER: https://worlds-content-server.decentraland.zone
-        VITE_ASSET_BUNDLE_REGISTRY: https://asset-bundle-registry.decentraland.zone
 
     - name: Run Playwright tests
       run: npx playwright test
