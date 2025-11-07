@@ -2,13 +2,13 @@ import React, { useCallback, useEffect, useRef, useState, type ReactNode } from 
 import { useNavigate } from 'react-router-dom';
 import { setUser } from '@sentry/electron/renderer';
 import { ChainId, type Avatar } from '@dcl/schemas';
-import type { AuthSignInProps } from '../types';
 import { useDispatch } from '#store';
 import { identify } from '/@/modules/store/analytics';
 import { fetchENSList } from '/@/modules/store/ens';
 import { fetchLandList, fetchTiles } from '/@/modules/store/land';
 import Profiles from '/@/lib/profile';
 import { AuthContext } from '/@/contexts/AuthContext';
+import type { AuthSignInProps } from '../types';
 
 // Mock methods for testing - now using a factory function to create isolated instances
 const createMockAuthServerProvider = () => {
@@ -160,8 +160,8 @@ export const MockAuthProvider: React.FC<{ children: ReactNode }> = ({ children }
     if (wallet && chainId) {
       dispatch(fetchENSList({ address: wallet, chainId }));
       dispatch(identify({ userId: wallet }));
-      dispatch(fetchTiles({ chainId }));
-      dispatch(fetchLandList({ address: wallet, chainId }));
+      dispatch(fetchTiles());
+      dispatch(fetchLandList({ address: wallet }));
       setUser({ id: wallet });
     }
   }, [wallet, chainId]);

@@ -24,8 +24,9 @@ if (import.meta.env.PROD) {
 }
 
 if (process.env.E2E) {
-  app.setPath('userData', path.resolve('./tests/temp/userData'));
-  app.setPath('home', path.resolve('./tests/temp/home'));
+  const packageRoot = path.join(app.getAppPath(), '../../');
+  app.setPath('userData', path.resolve(packageRoot, 'tests/temp/userData'));
+  app.setPath('home', path.resolve(packageRoot, 'tests/temp/home'));
 }
 
 /**

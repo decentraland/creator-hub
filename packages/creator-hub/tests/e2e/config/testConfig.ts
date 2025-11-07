@@ -5,8 +5,8 @@ import { config } from 'dotenv';
 config({ path: '.env.e2e' });
 
 // Helper function to get scene directory path (actually used)
-export const getTestScenesDir = (sceneName: string): string => {
-  return join(resolve(process.cwd()), 'tests', 'temp', 'scenes', sceneName);
+export const getTestScenesDir = (): string => {
+  return join(resolve(process.cwd()), 'tests', 'temp', 'scenes');
 };
 
 // Helper function to get environment variables for tests

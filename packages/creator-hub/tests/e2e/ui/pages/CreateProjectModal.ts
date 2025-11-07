@@ -1,4 +1,4 @@
-import type { Page } from 'playwright';
+import type { Locator, Page } from 'playwright';
 
 export class CreateProjectModal {
   private page: Page;
@@ -24,9 +24,14 @@ export class CreateProjectModal {
     await this.page.getByTestId('create-project-modal-name-input').getByRole('textbox').fill(name);
   }
 
-  async fillProjectPath(path: string): Promise<void> {
-    await this.page.getByTestId('create-project-modal-path-input').getByRole('textbox').fill(path);
+  getProjectPathComponent(): Locator {
+    return this.page.getByTestId('create-project-modal-path-input').getByRole('textbox');
   }
+
+  async fillProjectPath(path: string): Promise<void> {
+    await this.getProjectPathComponent().fill(path);
+  }
+
   async clickCreateButton(): Promise<void> {
     await this.page.getByTestId('create-project-modal-create-button').click();
   }
