@@ -29,7 +29,7 @@ export function createGizmoManager(context: SceneContext) {
   gizmoManager.usePointerToAttachGizmos = false;
 
   // Create transformers
-  const positionTransformer = new PositionGizmo(gizmoManager, snapPosition);
+  const positionTransformer = new PositionGizmo(gizmoManager, snapPosition, context.scene);
   const rotationTransformer = new RotationGizmo(gizmoManager, snapRotation);
   const scaleTransformer = new ScaleGizmo(gizmoManager, snapScale);
   const freeTransformer = new FreeGizmo(context.scene);
@@ -415,8 +415,8 @@ export function createGizmoManager(context: SceneContext) {
           currentTransformer.setEntities(selectedEntities);
 
           // Pass GizmoManager reference to FreeGizmo for centroid calculation
-          if ('setGizmoManager' in currentTransformer) {
-            (currentTransformer as any).setGizmoManager(calculateCentroid);
+          if (currentTransformer.setGizmoManager) {
+            currentTransformer.setGizmoManager({ calculateCentroid });
           }
 
           // Set up callbacks for ECS updates

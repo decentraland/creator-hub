@@ -4,7 +4,11 @@ import type { IDataLayer, setInspectorPreferences } from '..';
 import { ErrorType, error, getDataLayerInterface } from '..';
 import { updatePreferences, selectInspectorPreferences } from '../../app';
 import type { InspectorPreferences } from '../../../lib/logic/preferences/types';
-import { getDefaultInspectorPreferences } from '../../../lib/logic/preferences/types';
+import {
+  getDefaultInspectorPreferences,
+  cameraModeToProto,
+} from '../../../lib/logic/preferences/types';
+import type { InspectorPreferencesMessage } from '../../../lib/data-layer/proto/gen/data-layer.gen';
 
 export function* setInspectorPreferencesSaga(action: ReturnType<typeof setInspectorPreferences>) {
   const values = action.payload;
@@ -21,7 +25,13 @@ export function* setInspectorPreferencesSaga(action: ReturnType<typeof setInspec
   if (!dataLayer) return;
 
   try {
-    yield call(dataLayer.setInspectorPreferences, newPreferences);
+    // Convert internal preferences to proto message
+    const protoMessage: InspectorPreferencesMessage = {
+      cameraMode: cameraModeToProto(newPreferences.cameraMode),
+      freeCameraInvertRotation: newPreferences.freeCameraInvertRotation,
+      autosaveEnabled: newPreferences.autosaveEnabled,
+    };
+    yield call(dataLayer.setInspectorPreferences, protoMessage);
     yield put(updatePreferences({ preferences: newPreferences }));
   } catch (e) {
     yield put(error({ error: ErrorType.SetPreferences }));

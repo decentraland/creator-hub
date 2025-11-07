@@ -1,6 +1,7 @@
 import * as BABYLON from '@babylonjs/core';
 
 import type { EcsEntity } from '../decentraland/EcsEntity';
+import type { SceneContext } from '../decentraland/SceneContext';
 import { snapManager } from '../decentraland/snap-manager';
 import { keyState, Keys } from '../decentraland/keys';
 import { getAncestors, isAncestor, mapNodes } from '../../sdk/nodes';
@@ -9,6 +10,11 @@ let isSnapEnabled = snapManager.isEnabled();
 let isShiftKeyDown = false;
 let clickStartTimer: ReturnType<typeof setTimeout>;
 let isDragging = false;
+let sceneContext: SceneContext | null = null;
+
+export function setSceneContext(context: SceneContext) {
+  sceneContext = context;
+}
 
 export function initKeyboard(canvas: HTMLCanvasElement, scene: BABYLON.Scene) {
   canvas.addEventListener('keydown', e => {
@@ -116,6 +122,29 @@ export function interactWithScene(
       !!keyState[Keys.KEY_CTRL] || !!keyState[Keys.KEY_SHIFT],
     );
     void operations.dispatch();
+  } else if (
+    pointerEvent === 'pointerUp' &&
+    !isDragging &&
+    !keyState[Keys.KEY_CTRL] &&
+    !keyState[Keys.KEY_SHIFT]
+  ) {
+    // Check if we clicked on a non-selectable entity (ground, tile, locked, hidden)
+    const isGroundOrTile =
+      entity &&
+      sceneContext &&
+      (sceneContext.editorComponents.Ground.has(entity.entityId) ||
+        sceneContext.editorComponents.Tile.has(entity.entityId));
+    const isNonSelectable = entity && (entity.isLocked() || entity.isHidden() || isGroundOrTile);
+
+    // Clicked on empty space or non-selectable entity - select the scene (RootEntity)
+    if ((!entity || isNonSelectable) && sceneContext) {
+      const { operations, engine } = sceneContext;
+      // Clear existing selection first
+      operations.removeSelectedEntities();
+      // Then select the scene
+      operations.updateSelectedEntity(engine.RootEntity, false);
+      void operations.dispatch();
+    }
   }
 
   // Clear isDragging flag each pointerUp

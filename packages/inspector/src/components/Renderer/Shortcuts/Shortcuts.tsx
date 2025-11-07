@@ -12,6 +12,8 @@ import { useOutsideClick } from '../../../hooks/useOutsideClick';
 import { Button } from '../../Button';
 import { InfoTooltip } from '../../ui';
 import { Props } from './types';
+import { useAppSelector } from '../../../redux/hooks';
+import { selectInspectorPreferences } from '../../../redux/app';
 
 import './Shortcuts.css';
 
@@ -22,6 +24,8 @@ const prefixKey = isMac ? '⌘' : 'ctrl';
 const Shortcuts: React.FC<Props> = ({ canvas, onResetCamera, onZoomIn, onZoomOut }) => {
   const [showShortcuts, setShowShortcuts] = React.useState(false);
   const { height } = useContainerSize(canvas);
+  const preferences = useAppSelector(selectInspectorPreferences);
+  const isFreeCamera = preferences?.cameraMode === 'free';
 
   const maxOverlayHeight = useMemo(() => {
     return (height ?? 600) - 60;
@@ -76,30 +80,94 @@ const Shortcuts: React.FC<Props> = ({ canvas, onResetCamera, onZoomIn, onZoomOut
           <h2 className="Header">Shortcuts</h2>
           <div className="Items">
             <h5 className="SubHeader">General</h5>
-            <div className="Item">
-              <div className="Title">Pan Camera</div>
-              <div className="Description">
-                <span className="Key">W</span>
-                <span className="Key">A</span>
-                <span className="Key">S</span>
-                <span className="Key">D</span>
-                <span className="Key">Q</span>
-                <span className="Key">E</span>
-              </div>
-            </div>
-            <div className="Item">
-              <div className="Title">Rotate Camera</div>
-              <div className="Description Vertical">
-                <div>
-                  <span className="Key">Right Mouse Button</span>+<span className="Key">Drag</span>
+            {!isFreeCamera ? (
+              <>
+                <div className="Item">
+                  <div className="Title">Rotate Camera (Orbit)</div>
+                  <div className="Description Vertical">
+                    <div>
+                      <span className="Key">RMB</span>+<span className="Key">Drag</span>
+                    </div>
+                    <span className="Option">or</span>
+                    <div>
+                      <span className="Key">{isMac ? 'Option' : 'Alt'}</span>+
+                      <span className="Key">LMB</span>+<span className="Key">Drag</span>
+                    </div>
+                  </div>
                 </div>
-                <span className="Option">or</span>
-                <div>
-                  Hold <span className="Key">{isMac ? 'Option' : 'Alt'}</span>+
-                  <span className="Key">Click & Drag</span>
+                <div className="Item">
+                  <div className="Title">Pan Camera</div>
+                  <div className="Description">
+                    <span className="Key">{isMac ? 'Option' : 'Alt'}</span>+
+                    <span className="Key">MMB</span>+<span className="Key">Drag</span>
+                  </div>
                 </div>
-              </div>
-            </div>
+                <div className="Item">
+                  <div className="Title">Zoom Camera</div>
+                  <div className="Description Vertical">
+                    <div>
+                      <span className="Key">Scroll</span>
+                    </div>
+                    <span className="Option">or</span>
+                    <div>
+                      <span className="Key">{isMac ? 'Option' : 'Alt'}</span>+
+                      <span className="Key">RMB</span>+<span className="Key">Drag</span>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="Item">
+                  <div className="Title">Move Forward</div>
+                  <div className="Description">
+                    <span className="Key">W</span> or <span className="Key">↑</span>
+                  </div>
+                </div>
+                <div className="Item">
+                  <div className="Title">Move Backward</div>
+                  <div className="Description">
+                    <span className="Key">S</span> or <span className="Key">↓</span>
+                  </div>
+                </div>
+                <div className="Item">
+                  <div className="Title">Move Left</div>
+                  <div className="Description">
+                    <span className="Key">A</span> or <span className="Key">←</span>
+                  </div>
+                </div>
+                <div className="Item">
+                  <div className="Title">Move Right</div>
+                  <div className="Description">
+                    <span className="Key">D</span> or <span className="Key">→</span>
+                  </div>
+                </div>
+                <div className="Item">
+                  <div className="Title">Move Up</div>
+                  <div className="Description">
+                    <span className="Key">E</span>
+                  </div>
+                </div>
+                <div className="Item">
+                  <div className="Title">Move Down</div>
+                  <div className="Description">
+                    <span className="Key">Q</span>
+                  </div>
+                </div>
+                <div className="Item">
+                  <div className="Title">Look Around</div>
+                  <div className="Description">
+                    <span className="Key">RMB</span>+<span className="Key">Drag</span>
+                  </div>
+                </div>
+                <div className="Item">
+                  <div className="Title">Zoom Camera</div>
+                  <div className="Description">
+                    <span className="Key">Scroll</span>
+                  </div>
+                </div>
+              </>
+            )}
             <div className="Item">
               <div className="Title">Select Multiple Items</div>
               <div className="Description">
@@ -142,6 +210,12 @@ const Shortcuts: React.FC<Props> = ({ canvas, onResetCamera, onZoomIn, onZoomOut
                 <span className="Key">space</span>
               </div>
             </div>
+            <div className="Item">
+              <div className="Title">Focus on Selected</div>
+              <div className="Description">
+                <span className="Key">F</span>
+              </div>
+            </div>
           </div>
           <div className="Items">
             <h5 className="SubHeader">Item Selected</h5>
@@ -151,24 +225,61 @@ const Shortcuts: React.FC<Props> = ({ canvas, onResetCamera, onZoomIn, onZoomOut
                 Hold<span className="Key">shift</span>
               </div>
             </div>
-            <div className="Item">
-              <div className="Title">Toggle Positioning</div>
-              <div className="Description">
-                <span className="Key">M</span>
-              </div>
-            </div>
-            <div className="Item">
-              <div className="Title">Toggle Rotating</div>
-              <div className="Description">
-                <span className="Key">R</span>
-              </div>
-            </div>
-            <div className="Item">
-              <div className="Title">Toggle Scaling</div>
-              <div className="Description">
-                <span className="Key">X</span>
-              </div>
-            </div>
+            {!isFreeCamera ? (
+              <>
+                <div className="Item">
+                  <div className="Title">Move Tool</div>
+                  <div className="Description">
+                    <span className="Key">W</span>
+                  </div>
+                </div>
+                <div className="Item">
+                  <div className="Title">Rotate Tool</div>
+                  <div className="Description">
+                    <span className="Key">E</span>
+                  </div>
+                </div>
+                <div className="Item">
+                  <div className="Title">Scale Tool</div>
+                  <div className="Description">
+                    <span className="Key">R</span>
+                  </div>
+                </div>
+                <div className="Item">
+                  <div className="Title">Free Tool</div>
+                  <div className="Description">
+                    <span className="Key">Q</span>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="Item">
+                  <div className="Title">Move Tool</div>
+                  <div className="Description">
+                    <span className="Key">M</span>
+                  </div>
+                </div>
+                <div className="Item">
+                  <div className="Title">Rotate Tool</div>
+                  <div className="Description">
+                    <span className="Key">R</span>
+                  </div>
+                </div>
+                <div className="Item">
+                  <div className="Title">Scale Tool</div>
+                  <div className="Description">
+                    <span className="Key">X</span>
+                  </div>
+                </div>
+                <div className="Item">
+                  <div className="Title">Free Tool</div>
+                  <div className="Description">
+                    <span className="Key">F</span>
+                  </div>
+                </div>
+              </>
+            )}
             <div className="Item">
               <div className="Title">Duplicate</div>
               <div className="Description">
