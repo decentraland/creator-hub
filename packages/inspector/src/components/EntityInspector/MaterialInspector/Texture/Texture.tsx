@@ -18,7 +18,7 @@ import {
 } from './types';
 
 const TextureInspector = withSdk<Props>(({ sdk, label, texture, files, getInputProps }) => {
-  const { Material, Name } = sdk.components;
+  const { Name } = sdk.components;
   const entitiesWithVideoPlayer: Entity[] = useEntitiesWith(components => components.VideoPlayer);
 
   const getTextureProps = useCallback(
@@ -56,9 +56,8 @@ const TextureInspector = withSdk<Props>(({ sdk, label, texture, files, getInputP
     const videoPlayers = new Map() as VideoTexture;
     for (const entityWithVideoPlayer of entitiesWithVideoPlayer) {
       const name = Name.getOrNull(entityWithVideoPlayer);
-      const material = Material.getOrNull(entityWithVideoPlayer);
-      if (name && material) {
-        videoPlayers.set(entityWithVideoPlayer, { name: name.value, material });
+      if (name) {
+        videoPlayers.set(entityWithVideoPlayer, { name: name.value });
       }
     }
     return videoPlayers;
@@ -102,7 +101,7 @@ const TextureInspector = withSdk<Props>(({ sdk, label, texture, files, getInputP
       availableVideoPlayers &&
       availableVideoPlayers.size > 0 ? (
         <Dropdown
-          label="Video Source"
+          label="Video Source Entity"
           placeholder="Select a Video Player Entity"
           options={Array.from(availableVideoPlayers.entries()).map(([key, value]) => ({
             label: value.name,
