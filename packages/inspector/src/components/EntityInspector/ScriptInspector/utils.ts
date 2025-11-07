@@ -1,4 +1,5 @@
-import ts from 'typescript';
+import { parse } from '@babel/parser';
+import type { Identifier, TSTypeAnnotation, Expression } from '@babel/types';
 import { DIRECTORY, withAssetDir } from '../../../lib/data-layer/host/fs-utils';
 import type { ScriptItem } from '../../../lib/sdk/components';
 import type { DataLayerRpcClient } from '../../../lib/data-layer/types';
@@ -78,40 +79,106 @@ export async function readScript(
   }
 }
 
-export function discriminateScriptParamType(type: string): ScriptParamUnion['type'] {
-  const cleanType = type.replace(/\s*\|\s*undefined/g, '').trim();
+function getBabelType(
+  typeAnnotation: TSTypeAnnotation['typeAnnotation'],
+): ScriptParamUnion['type'] {
+  if (!typeAnnotation) return 'string';
 
-  if (cleanType === 'number') return 'number';
-  if (cleanType === 'boolean') return 'boolean';
+  if (typeAnnotation.type === 'TSNumberKeyword') {
+    return 'number';
+  }
+
+  if (typeAnnotation.type === 'TSBooleanKeyword') {
+    return 'boolean';
+  }
+
+  if (typeAnnotation.type === 'TSStringKeyword') {
+    return 'string';
+  }
+
+  // handle union types (e.g., string | undefined)
+  if (typeAnnotation.type === 'TSUnionType') {
+    // TODO: what do we do with union types? for now, we'll return the first non-undefined type
+    for (const subType of typeAnnotation.types) {
+      if (subType.type !== 'TSUndefinedKeyword') {
+        return getBabelType(subType);
+      }
+    }
+  }
 
   return 'string';
 }
 
+function inferTypeFromDefault(
+  defaultValue: Expression | null | undefined,
+): ScriptParamUnion['type'] {
+  if (!defaultValue) return 'string';
+  if (defaultValue.type === 'NumericLiteral') {
+    return 'number';
+  }
+  if (defaultValue.type === 'BooleanLiteral') {
+    return 'boolean';
+  }
+  return 'string';
+}
+
 export function getScriptParams(content: string): Record<string, Omit<ScriptParamUnion, 'value'>> {
-  const sourceFile = ts.createSourceFile(
-    'tmp.ts',
-    content,
-    ts.ScriptTarget.ES2020,
-    true,
-    ts.ScriptKind.TS,
-  );
   const params: Record<string, Omit<ScriptParamUnion, 'value'>> = {};
 
-  sourceFile.forEachChild(node => {
-    if (ts.isFunctionDeclaration(node) && node.name?.text === 'main') {
-      // skip first parameter (Entity) and only process configurable parameters
-      node.parameters.slice(1).forEach(param => {
-        if (!ts.isIdentifier(param.name)) return;
+  try {
+    const ast = parse(content, {
+      sourceType: 'module',
+      plugins: ['typescript'],
+    });
 
-        const name = param.name.text;
-        const typeText = param.type ? param.type.getText(sourceFile) : 'string';
-        const type = discriminateScriptParamType(typeText);
-        const isOptional = !!(param.questionToken || param.initializer);
+    for (const statement of ast.program.body) {
+      if (
+        statement.type === 'ExportNamedDeclaration' &&
+        statement.declaration?.type === 'FunctionDeclaration' &&
+        statement.declaration.id?.name === 'main'
+      ) {
+        const functionDeclaration = statement.declaration;
 
-        params[name] = { type, optional: isOptional };
-      });
+        // skip first parameter (Entity) and process the rest
+        functionDeclaration.params.slice(1).forEach(param => {
+          let identifier: Identifier | null = null;
+          let isOptional = false;
+          let defaultValue: Expression | null | undefined = undefined;
+
+          // extract identifier, optional status, and default value based on param type
+          if (param.type === 'AssignmentPattern' && param.left.type === 'Identifier') {
+            identifier = param.left as Identifier;
+            isOptional = true;
+            defaultValue = param.right;
+          } else if (param.type === 'Identifier') {
+            identifier = param as Identifier;
+            isOptional = !!identifier.optional;
+          }
+
+          if (!identifier) return;
+
+          const name = identifier.name;
+
+          let type: ScriptParamUnion['type'];
+          if (
+            identifier.typeAnnotation &&
+            identifier.typeAnnotation.type === 'TSTypeAnnotation' &&
+            identifier.typeAnnotation.typeAnnotation
+          ) {
+            type = getBabelType(identifier.typeAnnotation.typeAnnotation);
+          } else {
+            type = inferTypeFromDefault(defaultValue);
+          }
+
+          params[name] = { type, optional: isOptional };
+        });
+
+        break;
+      }
     }
-  });
+  } catch (error) {
+    console.warn('Failed to parse script params:', error);
+  }
 
   return params;
 }

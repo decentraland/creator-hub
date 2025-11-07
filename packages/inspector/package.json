@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "dependencies": {
     "@dcl/asset-packs": "file:../asset-packs",
+    "@babel/parser": "7.28.5",
     "ts-deepmerge": "^7.0.0"
   },
   "devDependencies": {
