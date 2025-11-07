@@ -59,7 +59,8 @@ export class SceneTestHelper {
     await setup.createProjectModal.fillProjectName(sceneName);
 
     // 11. Fill project path with the temp directory
-    await setup.createProjectModal.fillProjectPath(getTestScenesDir(sceneName));
+    await setup.createProjectModal.fillProjectPath(getTestScenesDir());
+    await setup.createProjectModal.getProjectPathComponent().blur();
 
     // 12. Click create button
     await setup.createProjectModal.clickCreateButton();
