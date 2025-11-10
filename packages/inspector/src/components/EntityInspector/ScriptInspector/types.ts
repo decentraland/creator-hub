@@ -1,6 +1,8 @@
 import type { Entity } from '@dcl/ecs';
 import type { ScriptItem } from '../../../lib/sdk/components';
 
+export type ChangeEvt = React.ChangeEvent<HTMLInputElement>;
+
 export interface Props {
   entity: Entity;
   initialOpen?: boolean;
@@ -11,9 +13,7 @@ export type ScriptInput = {
 };
 
 export type ScriptLayout = {
-  params: {
-    [key: string]: ScriptParamUnion;
-  };
+  params: Record<string, ScriptParamUnion>;
 };
 
 export type ScriptParamUnion = ScriptParamNumber | ScriptParamBoolean | ScriptParamString;
