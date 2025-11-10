@@ -23,6 +23,7 @@ import MoreOptionsMenu from '../MoreOptionsMenu';
 import { RemoveButton } from '../RemoveButton';
 import { TagsInspector } from '../TagsInspector';
 
+import { getComponentConfig } from './utils';
 import type { ComponentOption, ComponentRules, TooltipConfig } from './types';
 
 import './EntityHeader.css';
@@ -99,371 +100,131 @@ export default React.memo(
         availableComponents.filter(c => c.isOnEntity).map(c => c.id),
       );
 
-      const isDisabled = (componentId: number, rules: ComponentRules = {}): boolean => {
-        // If component is already on entity, disable it
-        if (attachedComponents.has(componentId)) {
-          return true;
-        }
-
-        // If requires is defined, evaluate the requirements
-        // Nested arrays use OR logic within, AND logic between groups
-        // Flat array uses AND logic for all
-        if (rules.requires) {
-          const allGroupsSatisfied = rules.requires.every((group: number | number[]) =>
-            Array.isArray(group)
-              ? group.some((id: number) => attachedComponents.has(id))
-              : attachedComponents.has(group),
-          );
-          if (!allGroupsSatisfied) return true;
-        }
-
-        // If conflictsWith is defined, check if ANY conflicting component is present
-        if (rules.conflictsWith) {
-          const hasConflict = rules.conflictsWith.some((id: number) => attachedComponents.has(id));
-          if (hasConflict) return true;
-        }
-
-        return false;
-      };
-
-      const getComponentName = (componentId: number): string => {
-        const component = availableComponents.find(c => c.id === componentId);
-        return component?.name || 'Unknown Component';
-      };
-
-      const getTooltip = (
-        componentId: number,
+      const createOption = (
+        component: { componentId: number; componentName: string },
+        label: string,
         config: TooltipConfig,
         rules: ComponentRules = {},
-      ): { text: string; link?: string } => {
-        // If already on entity
-        if (attachedComponents.has(componentId)) {
-          return {
-            text: 'This component is already added. An entity can only have one copy of each component.',
-          };
-        }
-
-        // If disabled due to missing requirements
-        if (rules.requires) {
-          const allGroupsSatisfied = rules.requires.every((group: number | number[]) =>
-            Array.isArray(group)
-              ? group.some((id: number) => attachedComponents.has(id))
-              : attachedComponents.has(group),
-          );
-          if (!allGroupsSatisfied) {
-            if (config.disabledMessage) {
-              return { text: config.disabledMessage };
-            }
-            // Generate default message showing required components
-            const requirementParts = rules.requires.map((group: number | number[]) => {
-              if (Array.isArray(group)) {
-                const names = group.map(id => getComponentName(id));
-                if (names.length === 1) return names[0];
-                if (names.length === 2) return `either ${names[0]} or ${names[1]}`;
-                return `either ${names.slice(0, -1).join(', ')}, or ${names[names.length - 1]}`;
-              }
-              return getComponentName(group);
-            });
-
-            let message = 'You must have ';
-            if (requirementParts.length === 1) {
-              message += requirementParts[0];
-            } else if (requirementParts.length === 2) {
-              message += `${requirementParts[0]} and ${requirementParts[1]}`;
-            } else {
-              message += `${requirementParts.slice(0, -1).join(', ')}, and ${requirementParts[requirementParts.length - 1]}`;
-            }
-            message += ' to use this component.';
-            return { text: message };
-          }
-        }
-
-        // If disabled due to conflicts
-        if (rules.conflictsWith) {
-          const hasConflict = rules.conflictsWith.some((id: number) => attachedComponents.has(id));
-          if (hasConflict) {
-            if (config.disabledMessage) {
-              return { text: config.disabledMessage };
-            }
-            // Generate default message showing conflicting components
-            const conflictingNames = rules.conflictsWith
-              .filter((id: number) => attachedComponents.has(id))
-              .map((id: number) => getComponentName(id));
-
-            let message = 'This component cannot be used with ';
-            if (conflictingNames.length === 1) {
-              message += `${conflictingNames[0]}.`;
-            } else if (conflictingNames.length === 2) {
-              message += `${conflictingNames[0]} or ${conflictingNames[1]}.`;
-            } else {
-              message += `${conflictingNames.slice(0, -1).join(', ')}, or ${conflictingNames[conflictingNames.length - 1]}.`;
-            }
-            return { text: message };
-          }
-        }
-
-        // Component is enabled, show normal description
-        return { text: config.description, ...(config.link && { link: config.link }) };
-      };
+      ): ComponentOption => ({
+        id: component.componentId,
+        value: label,
+        onClick: () => handleClickAddComponent(component.componentId, component.componentName),
+        ...getComponentConfig(
+          component.componentId,
+          config,
+          rules,
+          attachedComponents,
+          availableComponents,
+        ),
+      });
 
       const options: ComponentOption[] = [
         { header: '3D Content' },
-        {
-          id: sdk.components.GltfContainer.componentId,
-          value: 'GLTF',
-          onClick: () =>
-            handleClickAddComponent(
-              sdk.components.GltfContainer.componentId,
-              sdk.components.GltfContainer.componentName,
-            ),
-          disabled: isDisabled(sdk.components.GltfContainer.componentId, {
-            conflictsWith: [sdk.components.NftShape.componentId],
-          }),
-          tooltip: getTooltip(
-            sdk.components.GltfContainer.componentId,
-            {
-              description:
-                "The GLTF assigns a 3D model file for the item's visible shape. It also handles collisions, to make an item clickable or block the player from walking through it.",
-            },
-            {
-              conflictsWith: [sdk.components.NftShape.componentId],
-            },
-          ),
-        },
-        {
-          id: sdk.components.Material.componentId,
-          value: 'Material',
-          onClick: () =>
-            handleClickAddComponent(
-              sdk.components.Material.componentId,
-              sdk.components.Material.componentName,
-            ),
-          disabled: isDisabled(sdk.components.Material.componentId, {}),
-          tooltip: getTooltip(sdk.components.Material.componentId, {
+        createOption(
+          sdk.components.GltfContainer,
+          'GLTF',
+          {
             description:
-              'Material determines the visual appearance of an object. It defines properties such as color, texture, and transparency',
-            link: 'https://docs.decentraland.org/creator/development-guide/sdk7/materials/',
-          }),
-        },
-        {
-          id: sdk.components.VisibilityComponent.componentId,
-          value: 'Visibility',
-          onClick: () =>
-            handleClickAddComponent(
-              sdk.components.VisibilityComponent.componentId,
-              sdk.components.VisibilityComponent.componentName,
-            ),
-          disabled: isDisabled(sdk.components.VisibilityComponent.componentId, {
+              "The GLTF assigns a 3D model file for the item's visible shape. It also handles collisions, to make an item clickable or block the player from walking through it.",
+          },
+          {
+            conflictsWith: [sdk.components.NftShape.componentId],
+          },
+        ),
+        createOption(sdk.components.Material, 'Material', {
+          description:
+            'Material determines the visual appearance of an object. It defines properties such as color, texture, and transparency',
+          link: 'https://docs.decentraland.org/creator/development-guide/sdk7/materials/',
+        }),
+        createOption(
+          sdk.components.VisibilityComponent,
+          'Visibility',
+          {
+            description:
+              'Visibility controls whether an object is visible or not to the player. Items marked as invisible are shown on the editor, but not to players running the scene.',
+          },
+          {
             requires: [
               [sdk.components.GltfContainer.componentId, sdk.components.MeshCollider.componentId],
             ],
-          }),
-          tooltip: getTooltip(
-            sdk.components.VisibilityComponent.componentId,
-            {
-              description:
-                'Visibility controls whether an object is visible or not to the player. Items marked as invisible are shown on the editor, but not to players running the scene.',
-            },
-            {
-              requires: [
-                [sdk.components.GltfContainer.componentId, sdk.components.MeshCollider.componentId],
-              ],
-            },
-          ),
-        },
-        {
-          id: sdk.components.MeshRenderer.componentId,
-          value: 'Mesh Renderer',
-          onClick: () =>
-            handleClickAddComponent(
-              sdk.components.MeshRenderer.componentId,
-              sdk.components.MeshRenderer.componentName,
-            ),
-          disabled: isDisabled(sdk.components.MeshRenderer.componentId, {
-            conflictsWith: [sdk.components.NftShape.componentId],
-          }),
-          tooltip: getTooltip(
-            sdk.components.MeshRenderer.componentId,
-            {
-              description:
-                'Use MeshRenderer to assign a primitive 3D shape to the item. Instead of using a 3D file from GLTF, assign a simple cube, plane, sphere, or cylinder. These shapes can be used together with Materials',
-              link: 'https://docs.decentraland.org/creator/development-guide/sdk7/shape-components/',
-            },
-            {
-              conflictsWith: [sdk.components.NftShape.componentId],
-            },
-          ),
-        },
-        {
-          id: sdk.components.GltfNodeModifiers.componentId,
-          value: 'Swap material',
-          onClick: () =>
-            handleClickAddComponent(
-              sdk.components.GltfNodeModifiers.componentId,
-              sdk.components.GltfNodeModifiers.componentName,
-            ),
-          disabled: isDisabled(sdk.components.GltfNodeModifiers.componentId, {}),
-          tooltip: getTooltip(sdk.components.GltfNodeModifiers.componentId, {
-            description: 'Override GLTF/GLB materials',
-          }),
-        },
-        {
-          id: sdk.components.LightSource.componentId,
-          value: 'Light Source',
-          onClick: () =>
-            handleClickAddComponent(
-              sdk.components.LightSource.componentId,
-              sdk.components.LightSource.componentName,
-            ),
-          disabled: isDisabled(sdk.components.LightSource.componentId, {}),
-          tooltip: getTooltip(sdk.components.LightSource.componentId, {
-            description: 'Add a point or spot light',
-            link: 'https://docs.decentraland.org/creator/development-guide/sdk7/lights/',
-          }),
-        },
-        {
-          id: sdk.components.MeshCollider.componentId,
-          value: 'Mesh Collider',
-          onClick: () =>
-            handleClickAddComponent(
-              sdk.components.MeshCollider.componentId,
-              sdk.components.MeshCollider.componentName,
-            ),
-          disabled: isDisabled(sdk.components.MeshCollider.componentId, {}),
-          tooltip: getTooltip(sdk.components.MeshCollider.componentId, {
+          },
+        ),
+        createOption(
+          sdk.components.MeshRenderer,
+          'Mesh Renderer',
+          {
             description:
-              'MeshCollider defines the collision properties of an item, based on its invisible collision geometry. Collisions serve to make an item clickable or to block the player from walking through an item',
-            link: 'https://docs.decentraland.org/creator/development-guide/sdk7/colliders/',
-          }),
-        },
-        {
-          id: sdk.components.NftShape.componentId,
-          value: 'Nft Shape',
-          onClick: () =>
-            handleClickAddComponent(
-              sdk.components.NftShape.componentId,
-              sdk.components.NftShape.componentName,
-            ),
-          disabled: isDisabled(sdk.components.NftShape.componentId, {
+              'Use MeshRenderer to assign a primitive 3D shape to the item. Instead of using a 3D file from GLTF, assign a simple cube, plane, sphere, or cylinder. These shapes can be used together with Materials',
+            link: 'https://docs.decentraland.org/creator/development-guide/sdk7/shape-components/',
+          },
+          {
+            conflictsWith: [sdk.components.NftShape.componentId],
+          },
+        ),
+        createOption(sdk.components.GltfNodeModifiers, 'Swap material', {
+          description: 'Override GLTF/GLB materials',
+        }),
+        createOption(sdk.components.LightSource, 'Light Source', {
+          description: 'Add a point or spot light',
+          link: 'https://docs.decentraland.org/creator/development-guide/sdk7/lights/',
+        }),
+        createOption(sdk.components.MeshCollider, 'Mesh Collider', {
+          description:
+            'MeshCollider defines the collision properties of an item, based on its invisible collision geometry. Collisions serve to make an item clickable or to block the player from walking through an item',
+          link: 'https://docs.decentraland.org/creator/development-guide/sdk7/colliders/',
+        }),
+        createOption(
+          sdk.components.NftShape,
+          'Nft Shape',
+          {
+            description: 'NftShape defines the shape of an item, based on its NFT',
+            link: 'https://docs.decentraland.org/creator/development-guide/sdk7/display-a-certified-nft/',
+          },
+          {
             conflictsWith: [
               sdk.components.GltfContainer.componentId,
               sdk.components.MeshRenderer.componentId,
               sdk.components.TextShape.componentId,
             ],
-          }),
-          tooltip: getTooltip(
-            sdk.components.NftShape.componentId,
-            {
-              description: 'NftShape defines the shape of an item, based on its NFT',
-              link: 'https://docs.decentraland.org/creator/development-guide/sdk7/display-a-certified-nft/',
-            },
-            {
-              conflictsWith: [
-                sdk.components.GltfContainer.componentId,
-                sdk.components.MeshRenderer.componentId,
-                sdk.components.TextShape.componentId,
-              ],
-            },
-          ),
-        },
+          },
+        ),
         { header: 'Interaction' },
-        {
-          id: sdk.components.States.componentId,
-          value: 'States',
-          onClick: () =>
-            handleClickAddComponent(
-              sdk.components.States.componentId,
-              sdk.components.States.componentName,
-            ),
-          disabled: isDisabled(sdk.components.States.componentId, {}),
-          tooltip: getTooltip(sdk.components.States.componentId, {
-            description:
-              'States specify the status of entities. Use triggers to check or change states, and set actions accordingly.',
-            link: 'https://docs.decentraland.org/creator/smart-items/#states',
-          }),
-        },
-        {
-          id: sdk.components.Triggers.componentId,
-          value: 'Triggers',
-          onClick: () =>
-            handleClickAddComponent(
-              sdk.components.Triggers.componentId,
-              sdk.components.Triggers.componentName,
-            ),
-          disabled: isDisabled(sdk.components.Triggers.componentId, {}),
-          tooltip: getTooltip(sdk.components.Triggers.componentId, {
-            description:
-              'Triggers activate actions based on player interactions like clicks, entering/exiting areas, or global events like "on spawn".',
-            link: 'https://docs.decentraland.org/creator/smart-items/#triggers',
-          }),
-        },
-        {
-          id: sdk.components.Actions.componentId,
-          value: 'Actions',
-          onClick: () =>
-            handleClickAddComponent(
-              sdk.components.Actions.componentId,
-              sdk.components.Actions.componentName,
-            ),
-          disabled: isDisabled(sdk.components.Actions.componentId, {}),
-          tooltip: getTooltip(sdk.components.Actions.componentId, {
-            description:
-              'Actions list the capabilities of entities, from playing animations to changing visibility. Customize or add new actions, which are activated by triggers.',
-            link: 'https://docs.decentraland.org/creator/smart-items/#actions',
-          }),
-        },
-        {
-          id: sdk.components.AudioSource.componentId,
-          value: 'Audio Source',
-          onClick: () =>
-            handleClickAddComponent(
-              sdk.components.AudioSource.componentId,
-              sdk.components.AudioSource.componentName,
-            ),
-          disabled: isDisabled(sdk.components.AudioSource.componentId, {}),
-          tooltip: getTooltip(sdk.components.AudioSource.componentId, {
-            description:
-              'AudioSource enables the playback of sound in your scene. The item emits sound that originates from its location, from an .mp3 file in your scene project',
-            link: 'https://docs.decentraland.org/creator/development-guide/sdk7/sounds',
-          }),
-        },
-        {
-          id: sdk.components.TextShape.componentId,
-          value: 'Text Shape',
-          onClick: () =>
-            handleClickAddComponent(
-              sdk.components.TextShape.componentId,
-              sdk.components.TextShape.componentName,
-            ),
-          disabled: isDisabled(sdk.components.TextShape.componentId, {
+        createOption(sdk.components.States, 'States', {
+          description:
+            'States specify the status of entities. Use triggers to check or change states, and set actions accordingly.',
+          link: 'https://docs.decentraland.org/creator/smart-items/#states',
+        }),
+        createOption(sdk.components.Triggers, 'Triggers', {
+          description:
+            'Triggers activate actions based on player interactions like clicks, entering/exiting areas, or global events like "on spawn".',
+          link: 'https://docs.decentraland.org/creator/smart-items/#triggers',
+        }),
+        createOption(sdk.components.Actions, 'Actions', {
+          description:
+            'Actions list the capabilities of entities, from playing animations to changing visibility. Customize or add new actions, which are activated by triggers.',
+          link: 'https://docs.decentraland.org/creator/smart-items/#actions',
+        }),
+        createOption(sdk.components.AudioSource, 'Audio Source', {
+          description:
+            'AudioSource enables the playback of sound in your scene. The item emits sound that originates from its location, from an .mp3 file in your scene project',
+          link: 'https://docs.decentraland.org/creator/development-guide/sdk7/sounds',
+        }),
+        createOption(
+          sdk.components.TextShape,
+          'Text Shape',
+          {
+            description: 'Use TextShape to display text in the 3D space',
+            link: 'https://docs.decentraland.org/creator/development-guide/sdk7/text',
+          },
+          {
             conflictsWith: [sdk.components.NftShape.componentId],
-          }),
-          tooltip: getTooltip(
-            sdk.components.TextShape.componentId,
-            {
-              description: 'Use TextShape to display text in the 3D space',
-              link: 'https://docs.decentraland.org/creator/development-guide/sdk7/text',
-            },
-            {
-              conflictsWith: [sdk.components.NftShape.componentId],
-            },
-          ),
-        },
-        {
-          id: sdk.components.PointerEvents.componentId,
-          value: 'Pointer Events',
-          onClick: () =>
-            handleClickAddComponent(
-              sdk.components.PointerEvents.componentId,
-              sdk.components.PointerEvents.componentName,
-            ),
-          disabled: isDisabled(sdk.components.PointerEvents.componentId, {}),
-          tooltip: getTooltip(sdk.components.PointerEvents.componentId, {
-            description:
-              'Use PointerEvents to configure the hints shown to players when they hover the cursor over the item. Change the text, the button, the max distance, etc',
-            link: 'https://docs.decentraland.org/creator/development-guide/sdk7/click-events',
-          }),
-        },
+          },
+        ),
+        createOption(sdk.components.PointerEvents, 'Pointer Events', {
+          description:
+            'Use PointerEvents to configure the hints shown to players when they hover the cursor over the item. Change the text, the button, the max distance, etc',
+          link: 'https://docs.decentraland.org/creator/development-guide/sdk7/click-events',
+        }),
       ];
 
       const optionIds = options.reduce((set, option) => {
@@ -481,10 +242,13 @@ export default React.memo(
               id: component.id,
               value: component.name,
               onClick: () => handleClickAddComponent(component.id, component.name),
-              disabled: isDisabled(component.id, {}),
-              tooltip: getTooltip(component.id, {
-                description: `${component.name} component`,
-              }),
+              ...getComponentConfig(
+                component.id,
+                { description: `${component.name} component` },
+                {},
+                attachedComponents,
+                availableComponents,
+              ),
             });
           }
         }

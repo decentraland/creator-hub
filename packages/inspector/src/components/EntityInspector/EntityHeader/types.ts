@@ -17,3 +17,10 @@ export type TooltipConfig = {
   link?: string;
   disabledMessage?: string;
 };
+
+export type ComponentConfig = {
+  label: string;
+  description: string;
+  link?: string;
+  disabledMessage?: string;
+};
