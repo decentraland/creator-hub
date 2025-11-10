@@ -11,13 +11,14 @@ import { getDataLayerInterface, importAsset } from '../../../redux/data-layer';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { ACCEPTED_FILE_TYPES } from '../../ui/FileUploadField/types';
-import { TextField, CheckboxField, InfoTooltip, FileUploadField } from '../../ui';
+import { TextField, InfoTooltip, FileUploadField } from '../../ui';
 import { AddButton } from '../AddButton';
 import MoreOptionsMenu from '../MoreOptionsMenu';
 import type { ScriptComponent, ScriptItem } from '../../../lib/sdk/components';
 import { RemoveButton } from '../RemoveButton';
 import { getDefaultScriptTemplate } from '../../../lib/data-layer/client/constants';
 import { selectAssetCatalog } from '../../../redux/app';
+import { ScriptParamField } from './ScriptParamField';
 
 import {
   fromNumber,
@@ -29,13 +30,11 @@ import {
   isScriptNameAvailable,
   buildScriptPath,
   readScript,
-  getScriptParams,
 } from './utils';
-import type { Props } from './types';
+import { getScriptParams } from './parser';
+import type { Props, ScriptLayout, ScriptParamUnion, ChangeEvt } from './types';
 
 import './ScriptInspector.css';
-
-type ChangeEvt = React.ChangeEvent<HTMLInputElement>;
 
 export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) => {
   const { Script } = sdk.components;
@@ -59,14 +58,17 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
   }, [scripts, setComponentValue]);
 
   const createScript = useCallback(
-    (path: string, priority = 0, layout?: string) => {
+    (path: string, priority = 0, content: string) => {
+      const params = getScriptParams(content);
+      const layout: ScriptLayout = { params };
+
       const newScript: ScriptItem = {
         path,
         priority,
-        layout,
+        layout: JSON.stringify(layout),
       };
-      addScript(newScript);
 
+      addScript(newScript);
       setDialogMode(undefined);
       setNewScriptName('');
     },
@@ -87,18 +89,30 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
 
   const handleReloadScripts = useCallback(
     async (e: React.MouseEvent<SVGElement>) => {
-      console.log('Reload scripts:', scripts);
       e.stopPropagation();
-      if (scripts.length === 0) {
-        return;
-      }
+      if (scripts.length === 0) return;
 
-      // TODO: Implement script reload functionality
-      // This should trigger re-parsing of script files to update layout
-      // For now, just refresh the component
-      // In the future, this will call the parsing mechanism from issue #864
+      const dataLayer = getDataLayerInterface();
+      if (!dataLayer) return;
+
+      const updatedScripts = await Promise.all(
+        scripts.map(async script => {
+          const content = await readScript(dataLayer, script.path);
+          if (!content) return script; // keep existing if read fails
+
+          const params = getScriptParams(content);
+          const layout: ScriptLayout = { params };
+
+          return {
+            ...script,
+            layout: JSON.stringify(layout),
+          };
+        }),
+      );
+
+      setComponentValue({ value: updatedScripts });
     },
-    [scripts],
+    [scripts, setComponentValue],
   );
 
   const handleCreateScript = useCallback(() => {
@@ -108,101 +122,89 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
 
     const template = getDefaultScriptTemplate(newScriptName);
     const scriptPath = buildScriptPath(newScriptName);
-
     const buffer = new Uint8Array(Buffer.from(template, 'utf-8'));
     const content = new Map([[scriptPath, buffer]]);
     dispatch(importAsset({ content, basePath: '', assetPackageName: '', reload: true }));
 
-    createScript(scriptPath);
-  }, [newScriptName, createScript]);
+    createScript(scriptPath, 0, template);
+  }, [newScriptName, createScript, dispatch]);
 
   const handleImportScript = useCallback(
     async (path: string) => {
       const dataLayer = getDataLayerInterface();
       if (!dataLayer) return;
 
-      const content = await readScript(dataLayer, path);
-      if (!content) return;
+      // retry logic for newly imported files (asset catalog needs time to index)
+      let content: string | undefined;
+      let retries = 5;
 
-      const params = getScriptParams(content);
-      console.log('asd params:', params);
-      createScript(path, 0);
+      while (retries > 0) {
+        content = await readScript(dataLayer, path);
+
+        if (content) {
+          break;
+        }
+
+        if (retries > 1) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+        retries--;
+      }
+
+      if (!content) {
+        console.error(`Failed to read script after retries: ${path}`);
+        return;
+      }
+
+      createScript(path, 0, content);
     },
     [createScript],
   );
 
+  // memoize parsed layouts to avoid re-parsing on every render
+  const parsedLayouts = useMemo(() => {
+    return scripts.map(script => parseLayout(script.layout));
+  }, [scripts]);
+
   const handleUpdateDynamicField = useCallback(
-    (index: number, layout: Record<string, any>, paramName: string, paramValue: any) => {
+    (index: number, paramName: string, paramValue: ScriptParamUnion['value']) => {
       const script = scripts[index];
-      const paramConfig = layout.params[paramName];
-      layout.params[paramName] = { ...paramConfig, value: paramValue };
-      updateScript(index, { ...script, layout: JSON.stringify(layout) });
+      const layout = parsedLayouts[index];
+      if (!layout) return;
+
+      const updatedLayout: ScriptLayout = {
+        params: {
+          ...layout.params,
+          [paramName]: { ...layout.params[paramName], value: paramValue } as ScriptParamUnion,
+        },
+      };
+
+      updateScript(index, { ...script, layout: JSON.stringify(updatedLayout) });
     },
-    [updateScript],
+    [scripts, parsedLayouts, updateScript],
   );
 
   const renderScriptParams = useCallback(
-    (script: ScriptItem, index: number) => {
-      const layout = parseLayout(script.layout);
-      if (!layout || !layout.params) {
-        return null;
-      }
+    (layout: ScriptLayout | undefined, index: number) => {
+      if (!layout || !layout.params) return null;
 
       return (
         <Block label="Script Parameters:">
           <div className="params">
-            {Object.entries(layout.params).map(([paramName, { type, value }]) => {
-              switch (type) {
-                case 'number':
-                  return (
-                    <TextField
-                      type="number"
-                      key={paramName}
-                      label={paramName}
-                      value={fromNumber(value)}
-                      onChange={(e: ChangeEvt) => {
-                        handleUpdateDynamicField(
-                          index,
-                          layout,
-                          paramName,
-                          toNumber(e.target.value),
-                        );
-                      }}
-                      error={!isValidNumber(fromNumber(value))}
-                    />
-                  );
-
-                case 'boolean':
-                  return (
-                    <CheckboxField
-                      key={paramName}
-                      label={paramName}
-                      checked={value}
-                      onChange={(e: ChangeEvt) => {
-                        handleUpdateDynamicField(index, layout, paramName, e.target.checked);
-                      }}
-                    />
-                  );
-
-                case 'string':
-                default:
-                  return (
-                    <TextField
-                      key={paramName}
-                      label={paramName}
-                      value={value}
-                      onChange={(e: ChangeEvt) => {
-                        handleUpdateDynamicField(index, layout, paramName, e.target.value);
-                      }}
-                    />
-                  );
-              }
-            })}
+            {Object.entries(layout.params).map(([name, param]) => (
+              <ScriptParamField
+                key={name}
+                name={name}
+                param={param}
+                onUpdate={value => handleUpdateDynamicField(index, name, value)}
+              />
+            ))}
           </div>
         </Block>
       );
     },
-    [scripts, handleUpdateDynamicField],
+    [handleUpdateDynamicField],
   );
 
   const scriptNameError = useMemo(() => {
@@ -262,7 +264,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
                 }}
                 error={!isValidNumber(fromNumber(script.priority))}
               />
-              {renderScriptParams(script, index)}
+              {renderScriptParams(parsedLayouts[index], index)}
               <MoreOptionsMenu>
                 <RemoveButton onClick={() => handleRemoveScript(index)}>Remove script</RemoveButton>
               </MoreOptionsMenu>
