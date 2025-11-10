@@ -41,7 +41,14 @@ import { engine, Entity } from '@dcl/sdk/ecs'
  * Main function - called when the script is initialized
  * @param entity - The entity this script is attached to
  */
-export function main(entity: Entity) {
+export function main(
+  entity: Entity,
+  message: string,
+  speed: number = 5,      // ✅ Works
+  enabled = true,         // ✅ Infers boolean
+  count = 10,             // ✅ Infers number
+  name?: string           // ✅ Works
+) {
   // Script initialization
   console.log('${scriptName} initialized for entity:', entity)
 }

@@ -1,7 +1,6 @@
 import type React from 'react';
 
 export type Props = React.InputHTMLAttributes<HTMLInputElement> & {
-  drop?: boolean;
   type?: 'text' | 'password' | 'email' | 'number';
   label?: React.ReactNode;
   leftLabel?: React.ReactNode;
