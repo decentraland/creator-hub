@@ -1,7 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { HiOutlineRefresh as RefreshIcon } from 'react-icons/hi';
 import { VscFolderOpened as FileUploadIcon } from 'react-icons/vsc';
+import { MdOutlineDriveFileRenameOutline as EditIcon } from 'react-icons/md';
+import { VscTrash as RemoveIcon } from 'react-icons/vsc';
 
+import { getSceneClient } from '../../../lib/rpc/scene';
+import type { ScriptComponent, ScriptItem } from '../../../lib/sdk/components';
+import { getDefaultScriptTemplate } from '../../../lib/data-layer/client/constants';
 import { withSdk } from '../../../hoc/withSdk';
 import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
 import { useComponentValue } from '../../../hooks/sdk/useComponentValue';
@@ -12,11 +17,11 @@ import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { ACCEPTED_FILE_TYPES } from '../../ui/FileUploadField/types';
 import { TextField, InfoTooltip, FileUploadField } from '../../ui';
+import { Message, MessageType } from '../../ui/Message';
 import { AddButton } from '../AddButton';
 import MoreOptionsMenu from '../MoreOptionsMenu';
-import type { ScriptComponent, ScriptItem } from '../../../lib/sdk/components';
+import { Button } from '../../Button';
 import { RemoveButton } from '../RemoveButton';
-import { getDefaultScriptTemplate } from '../../../lib/data-layer/client/constants';
 import { selectAssetCatalog } from '../../../redux/app';
 import { ScriptParamField } from './ScriptParamField';
 
@@ -59,8 +64,8 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
 
   const createScript = useCallback(
     (path: string, priority = 0, content: string) => {
-      const params = getScriptParams(content);
-      const layout: ScriptLayout = { params };
+      const { params, error } = getScriptParams(content);
+      const layout: ScriptLayout = { params, error };
 
       const newScript: ScriptItem = {
         path,
@@ -87,6 +92,23 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     [removeScript],
   );
 
+  const handleEditScript = useCallback(
+    async (index: number) => {
+      try {
+        const script = scripts[index];
+        if (!script) return;
+
+        const sceneClient = getSceneClient();
+        if (!sceneClient) return;
+
+        await sceneClient.openFile(script.path);
+      } catch (error) {
+        console.error('Failed to open script:', error);
+      }
+    },
+    [scripts],
+  );
+
   const handleReloadScripts = useCallback(
     async (e: React.MouseEvent<SVGElement>) => {
       e.stopPropagation();
@@ -100,8 +122,8 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
           const content = await readScript(dataLayer, script.path);
           if (!content) return script; // keep existing if read fails
 
-          const params = getScriptParams(content);
-          const layout: ScriptLayout = { params };
+          const { params, error } = getScriptParams(content);
+          const layout: ScriptLayout = { params, error };
 
           return {
             ...script,
@@ -264,9 +286,23 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
                 }}
                 error={!isValidNumber(fromNumber(script.priority))}
               />
-              {renderScriptParams(parsedLayouts[index], index)}
+              {parsedLayouts[index]?.error ? (
+                <Message
+                  text={`Errors found while parsing script: ${parsedLayouts[index].error!}`}
+                  type={MessageType.ERROR}
+                />
+              ) : (
+                renderScriptParams(parsedLayouts[index], index)
+              )}
               <MoreOptionsMenu>
-                <RemoveButton onClick={() => handleRemoveScript(index)}>Remove script</RemoveButton>
+                <Button onClick={() => handleEditScript(index)}>
+                  <EditIcon />
+                  Edit
+                </Button>
+                <Button onClick={() => handleRemoveScript(index)}>
+                  <RemoveIcon />
+                  Remove
+                </Button>
               </MoreOptionsMenu>
             </Block>
           ))}
