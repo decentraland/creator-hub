@@ -111,7 +111,7 @@ const FileUploadField: React.FC<Props> = ({
     [accept],
   );
 
-  const [{ isHover, canDrop }, drop] = useDrop(
+  const [{ canDrop }, drop] = useDrop(
     () => ({
       accept: [DropTypesEnum.LocalAsset],
       drop: ({ value, context }: LocalAssetDrop, monitor) => {
@@ -215,7 +215,6 @@ const FileUploadField: React.FC<Props> = ({
           value={removeBase(path)}
           error={!!value && hasError}
           disabled={disabled}
-          drop={isHover}
           autoSelect
         />
         <input
