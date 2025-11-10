@@ -10,7 +10,7 @@ beforeAll(async () => {
     return;
   }
 
-  const serverUrl = process.env.E2E_URL || 'http://127.0.0.1:8000';
+  const serverUrl = process.env.E2E_URL || 'http://localhost:8000';
   console.log(`Checking server at: ${serverUrl}`);
 
   try {

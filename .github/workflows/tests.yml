@@ -65,6 +65,13 @@ jobs:
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
 
+      - name: start inspector server
+        shell: bash
+        run: |
+          cd packages/inspector
+          npx http-server public -p 8000 --cors -a localhost &
+          sleep 5
+
       - name: e2e
         run: make test-e2e
         env:
