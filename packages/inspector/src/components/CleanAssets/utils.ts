@@ -45,7 +45,8 @@ export function collectUsedAssets(sdk: SdkContextValue): Set<string> {
   const addAsset = (path: string) => {
     if (typeof path !== 'string' || !path) return;
 
-    const normalized = path.startsWith('/') ? path.slice(1) : path;
+    let normalized = path.startsWith('/') ? path.slice(1) : path;
+    normalized = normalized.toLowerCase();
     if (normalized && isValidAssetPath(normalized)) {
       usedAssets.add(normalized);
     }
@@ -100,7 +101,7 @@ export function scanForUnusedAssets(sdk: SdkContextValue, allFiles: FileSize[]):
   const results: AssetFile[] = allFiles.map(file => ({
     path: file.path,
     size: file.size,
-    unused: !usedAssets.has(file.path),
+    unused: !usedAssets.has(file.path.toLowerCase()),
   }));
 
   // Sort by type (unused files first) and size descending (largest files first)
