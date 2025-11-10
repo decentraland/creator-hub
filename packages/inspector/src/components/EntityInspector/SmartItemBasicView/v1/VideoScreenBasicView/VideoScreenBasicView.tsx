@@ -91,15 +91,16 @@ const VideoScreenBasicView = withSdk<Props>(({ sdk, entity }) => {
   }, [videoPlayerComponent.src]);
 
   const handleDrop = useCallback(async (src: string) => {
-    const { operations } = sdk;
-    operations.updateValue(VideoPlayer, entity, { src });
     if (videoScreenComponent.defaultMediaSource === MediaSource.VideoURL) {
       setVideoScreenComponent({
         ...videoScreenComponent,
         defaultURL: src,
       });
+      setVideoPlayerComponent({
+        ...videoPlayerComponent,
+        src,
+      });
     }
-    await operations.dispatch();
     setIsValidURL(true);
   }, []);
 
