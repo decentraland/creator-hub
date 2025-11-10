@@ -288,7 +288,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
               />
               {parsedLayouts[index]?.error ? (
                 <Message
-                  text={`Errors found while parsing script: ${parsedLayouts[index].error!}`}
+                  text={`Error found while parsing script: ${parsedLayouts[index].error!}`}
                   type={MessageType.ERROR}
                 />
               ) : (
