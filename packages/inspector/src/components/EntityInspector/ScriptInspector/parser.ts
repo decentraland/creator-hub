@@ -1,5 +1,5 @@
 import { parse } from '@babel/parser';
-import type { Identifier, TSTypeAnnotation, Expression } from '@babel/types';
+import type { Identifier, TSTypeAnnotation, Expression, FunctionParameter } from '@babel/types';
 
 import type { ScriptParamUnion } from './types';
 
@@ -36,6 +36,25 @@ function getValueAndTypeFromType(
   return { type: 'string', value: '' };
 }
 
+function assertFirstParamIsEntity(params: FunctionParameter[]): void {
+  const firstParam = params[0];
+  const errorMessage = 'First parameter of main function must be of type "Entity"';
+  if (!firstParam || firstParam.type !== 'Identifier') {
+    throw new Error(errorMessage);
+  }
+
+  const firstParamTypeAnnotation = firstParam.typeAnnotation;
+  if (
+    !firstParamTypeAnnotation ||
+    firstParamTypeAnnotation.type !== 'TSTypeAnnotation' ||
+    firstParamTypeAnnotation.typeAnnotation.type !== 'TSTypeReference' ||
+    firstParamTypeAnnotation.typeAnnotation.typeName.type !== 'Identifier' ||
+    firstParamTypeAnnotation.typeAnnotation.typeName.name !== 'Entity'
+  ) {
+    throw new Error(errorMessage);
+  }
+}
+
 export type ScriptParseResult = {
   params: Record<string, ScriptParamUnion>;
   error?: string;
@@ -57,6 +76,8 @@ export function getScriptParams(content: string): ScriptParseResult {
         statement.declaration.id?.name === 'main'
       ) {
         const functionDeclaration = statement.declaration;
+
+        assertFirstParamIsEntity(functionDeclaration.params);
 
         // skip first parameter (Entity) and process the rest
         functionDeclaration.params.slice(1).forEach(param => {
