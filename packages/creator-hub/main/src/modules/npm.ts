@@ -4,7 +4,6 @@ import log from 'electron-log/main';
 import { run, StreamError } from './bin';
 
 export async function install(path: string, packages: string[] = []) {
-  log.info(`[ALE] Installing dependencies in path: ${path}`);
   const installCommand = run('npm', 'npm', {
     args: ['install', '--loglevel', 'error', '--save-exact', ...packages],
     cwd: path,
