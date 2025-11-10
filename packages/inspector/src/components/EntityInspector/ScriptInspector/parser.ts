@@ -36,7 +36,12 @@ function getValueAndTypeFromType(
   return { type: 'string', value: '' };
 }
 
-export function getScriptParams(content: string): Record<string, ScriptParamUnion> {
+export type ScriptParseResult = {
+  params: Record<string, ScriptParamUnion>;
+  error?: string;
+};
+
+export function getScriptParams(content: string): ScriptParseResult {
   const params: Record<string, ScriptParamUnion> = {};
 
   try {
@@ -82,9 +87,11 @@ export function getScriptParams(content: string): Record<string, ScriptParamUnio
         break; // exit the for..of loop after finding the main function
       }
     }
-  } catch (error) {
-    console.warn('Failed to parse script params:', error);
-  }
 
-  return params;
+    return { params };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '';
+    console.warn('Failed to parse script params:', error);
+    return { params, error: errorMessage };
+  }
 }

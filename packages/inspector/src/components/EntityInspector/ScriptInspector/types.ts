@@ -14,6 +14,7 @@ export type ScriptInput = {
 
 export type ScriptLayout = {
   params: Record<string, ScriptParamUnion>;
+  error?: string;
 };
 
 export type ScriptParamUnion = ScriptParamNumber | ScriptParamBoolean | ScriptParamString;
