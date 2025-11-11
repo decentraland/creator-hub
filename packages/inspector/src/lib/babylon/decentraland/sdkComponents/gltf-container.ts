@@ -10,6 +10,7 @@ import type { ComponentOperation } from '../component-operations';
 import { EcsEntity } from '../EcsEntity';
 import type { SceneContext } from '../SceneContext';
 import { CAMERA, PLAYER } from '../../../sdk/tree';
+import { applyVideoPlayerMaterialToGltf } from './video-player';
 
 let sceneContext: WeakRef<SceneContext>;
 
@@ -51,7 +52,7 @@ BABYLON.SceneLoader.OnPluginActivatedObservable.add(function (plugin) {
             const resources = resourcesByPath.get(gltfFilename)!;
             resources.add(filePath);
             // TODO: this works with File, but it doesn't match the types (it requires string)
-            return new File([content], gltfFilename) as any;
+            return new File([content as BlobPart], gltfFilename) as any;
           }
         }
       }
@@ -156,7 +157,7 @@ async function tryLoadGltfAsync(sceneId: string, entity: EcsEntity, filePath: st
   const finalSrc =
     filePath + '?sceneId=' + encodeURIComponent(sceneId) + '&base=' + encodeURIComponent(base);
 
-  const file = new File([content], finalSrc);
+  const file = new File([content as BlobPart], finalSrc);
   const extension = filePath.toLowerCase().endsWith('.gltf') ? '.gltf' : '.glb';
 
   const loadAssetFuture = future<void>();
@@ -191,6 +192,10 @@ async function tryLoadGltfAsync(sceneId: string, entity: EcsEntity, filePath: st
       entity.resolveGltfPathLoading(filePath);
       entity.setGltfAssetContainer(assetContainer);
       entity.generateBoundingBox();
+
+      // Apply video player material if entity has VideoPlayer component
+      void applyVideoPlayerMaterialToGltf(entity);
+
       loadAssetFuture.resolve();
     },
     undefined,

@@ -1,15 +1,26 @@
-import { useCallback } from 'react';
-
+import { useCallback, useMemo } from 'react';
+import { type Entity } from '@dcl/ecs';
+import { withSdk } from '../../../../hoc/withSdk';
+import { useEntitiesWith } from '../../../../hooks/sdk/useEntitiesWith';
 import { removeBasePath } from '../../../../lib/logic/remove-base-path';
 import { Block } from '../../../Block';
 import { Container } from '../../../Container';
 import { Dropdown, FileUploadField, TextField } from '../../../ui';
 import { ACCEPTED_FILE_TYPES } from '../../../ui/FileUploadField/types';
 import { isModel, isValidTexture } from './utils';
+import {
+  type Props,
+  Texture,
+  TEXTURE_TYPES,
+  WRAP_MODES,
+  FILTER_MODES,
+  type VideoTexture,
+} from './types';
 
-import { type Props, Texture, TEXTURE_TYPES, WRAP_MODES, FILTER_MODES } from './types';
+const TextureInspector = withSdk<Props>(({ sdk, label, texture, files, getInputProps }) => {
+  const { Name } = sdk.components;
+  const entitiesWithVideoPlayer: Entity[] = useEntitiesWith(components => components.VideoPlayer);
 
-function TextureInspector({ label, texture, files, getInputProps }: Props) {
   const getTextureProps = useCallback(
     (key: string) => {
       return getInputProps(`${texture}.${key}`);
@@ -40,6 +51,17 @@ function TextureInspector({ label, texture, files, getInputProps }: Props) {
   );
 
   const type = getTextureProps('type');
+
+  const availableVideoPlayers: VideoTexture = useMemo(() => {
+    const videoPlayers = new Map() as VideoTexture;
+    for (const entityWithVideoPlayer of entitiesWithVideoPlayer) {
+      const name = Name.getOrNull(entityWithVideoPlayer);
+      if (name) {
+        videoPlayers.set(entityWithVideoPlayer, { name: name.value });
+      }
+    }
+    return videoPlayers;
+  }, [entitiesWithVideoPlayer]);
 
   return (
     <Container
@@ -75,9 +97,24 @@ function TextureInspector({ label, texture, files, getInputProps }: Props) {
           {...getTextureProps('filterMode')}
         />
       </Block>
+      {type.value === Texture.TT_VIDEO_TEXTURE &&
+      availableVideoPlayers &&
+      availableVideoPlayers.size > 0 ? (
+        <Dropdown
+          label="Video Source Entity"
+          placeholder="Select a Video Player Entity"
+          options={Array.from(availableVideoPlayers.entries()).map(([key, value]) => ({
+            label: value.name,
+            value: key,
+          }))}
+          value={getTextureProps('videoPlayerEntity').value}
+          searchable
+          onChange={getTextureProps('videoPlayerEntity').onChange}
+        />
+      ) : null}
     </Container>
   );
-}
+});
 
 function NormalTexture({
   getTextureProps,

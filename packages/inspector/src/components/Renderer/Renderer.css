@@ -29,6 +29,7 @@
   padding: 4px 6px;
   font-size: 11px;
   line-height: 13px;
+  cursor: default;
 }
 
 .single-tile-hint b {
