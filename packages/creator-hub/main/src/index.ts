@@ -81,7 +81,7 @@ export async function killAll() {
   if (deployServer) {
     promises.push(deployServer.stop());
   }
-  killInspectorServer();
+  promises.push(killInspectorServer());
   promises.push(killAllUtilityProcesses());
   await Promise.all(promises);
 }

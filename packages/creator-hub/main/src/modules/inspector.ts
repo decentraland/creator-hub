@@ -18,19 +18,18 @@ export function getDebugger(path: string) {
 
 let inspectorServer: ReturnType<typeof createServer> | null = null;
 
-export function killInspectorServer() {
-  if (!inspectorServer) {
-    return;
-  }
-
+export async function killInspectorServer() {
+  if (!inspectorServer) return;
   try {
-    // Close the server and handle any errors
-    inspectorServer.close(err => {
-      if (err) {
-        log.error('Error closing inspector server:', err);
-      } else {
-        log.info('Inspector server closed successfully');
-      }
+    await new Promise<void>(resolve => {
+      inspectorServer?.close(err => {
+        if (err) {
+          log.error('Error closing inspector server:', err);
+        } else {
+          log.info('Inspector server closed successfully');
+        }
+        resolve();
+      });
     });
 
     // Clear the reference
