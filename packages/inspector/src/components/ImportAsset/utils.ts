@@ -151,7 +151,7 @@ async function validateGltf(gltf: Gltf): Promise<void> {
 }
 
 export function normalizeFileName(fileName: string): string {
-  return fileName.trim().replace(/\s+/g, '_').toLowerCase();
+  return fileName.trim().replace(/\s+/g, '_');
 }
 
 export function extractFileExtension(fileName: string): [string, string] {
