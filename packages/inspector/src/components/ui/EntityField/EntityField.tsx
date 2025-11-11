@@ -1,8 +1,10 @@
 import React, { useMemo } from 'react';
-import cx from 'classnames';
 import { BiCube as EntityIcon } from 'react-icons/bi';
-import { Entity } from '@dcl/ecs';
-import { withSdk, WithSdkProps } from '../../../hoc/withSdk';
+import cx from 'classnames';
+import { engine } from '@dcl/ecs';
+import type { Entity } from '@dcl/ecs';
+
+import { withSdk, type WithSdkProps } from '../../../hoc/withSdk';
 import { useSelectedEntity } from '../../../hooks/sdk/useSelectedEntity';
 import { Dropdown } from '../Dropdown';
 import type { Props } from './types';
@@ -21,6 +23,8 @@ type EntityOption = {
   value: Entity;
   leftIcon: React.ReactNode;
 };
+
+const ENGINE_ENTITIES = new Set([engine.RootEntity, engine.PlayerEntity, engine.CameraEntity]);
 
 const EntityField: React.FC<WithSdkProps & Props> = ({ sdk, ...props }) => {
   const { engine } = sdk;
@@ -60,7 +64,11 @@ const EntityField: React.FC<WithSdkProps & Props> = ({ sdk, ...props }) => {
       for (const component of components) {
         const entities = engine.getEntitiesWith(component) || [];
         for (const [entity, _component] of entities) {
-          if (entity !== 0 && !uniqueEntities.has(entity) && componentHasValidValue(_component)) {
+          if (
+            !ENGINE_ENTITIES.has(entity) &&
+            !uniqueEntities.has(entity) &&
+            componentHasValidValue(_component)
+          ) {
             mapEntity(entity);
           }
         }
@@ -69,7 +77,7 @@ const EntityField: React.FC<WithSdkProps & Props> = ({ sdk, ...props }) => {
       // Get all entities
       const entities = Nodes.getOrNull(engine.RootEntity)?.value || [];
       for (const { entity } of entities) {
-        if (entity !== 0 && !uniqueEntities.has(entity)) {
+        if (!ENGINE_ENTITIES.has(entity) && !uniqueEntities.has(entity)) {
           mapEntity(entity);
         }
       }
