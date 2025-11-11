@@ -14,3 +14,13 @@ export async function setConfig(drafter: (c: WritableDraft<Config>) => void): Pr
   });
   await invoke('config.writeConfig', update);
 }
+
+/**
+ * Retrieves the configuration path for a given workspace path.
+ *
+ * @param {string} path - The path to the workspace.
+ * @returns {Promise<string>} A promise that resolves to the configuration path.
+ */
+export async function getWorkspaceConfigPath(path: string) {
+  return invoke('electron.getWorkspaceConfigPath', path);
+}

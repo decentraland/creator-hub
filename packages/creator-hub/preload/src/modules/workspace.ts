@@ -10,7 +10,6 @@ import {
 import { PACKAGES_LIST } from '/shared/types/pkg';
 import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import type { GetProjectsOpts, Template, Workspace } from '/shared/types/workspace';
-import { FileSystemStorage } from '/shared/types/storage';
 
 import type { Services } from '../services';
 
@@ -21,7 +20,7 @@ import { DEFAULT_THUMBNAIL, NEW_SCENE_NAME, EMPTY_SCENE_TEMPLATE_REPO } from './
 import { getProjectId } from './analytics';
 
 export function initializeWorkspace(services: Services) {
-  const { config, fs, ipc, path, pkg, npm } = services;
+  const { config, fs, ipc, path, pkg, npm, project } = services;
 
   // IMPORTANT: when './scene' get's moved to this same factory pattern, we should remove
   // the import for { getScene } and use it as "const scene = initializeScene(services)".
@@ -60,7 +59,7 @@ export function initializeWorkspace(services: Services) {
   }
 
   async function getOldProjectThumbnailPath(_path: string) {
-    const workspaceConfigPath = await getConfigPath(_path);
+    const workspaceConfigPath = await config.getWorkspaceConfigPath(_path);
     return path.join(workspaceConfigPath, 'images', 'project-thumbnail.png');
   }
 
@@ -110,7 +109,7 @@ export function initializeWorkspace(services: Services) {
         getScene(_path),
         fs.stat(_path),
         opts?.omitOutdatedPackages ? Promise.resolve({}) : getOutdatedPackages(_path),
-        getProjectInfoFs(_path),
+        project.getProjectInfoFs(_path),
       ]);
       const thumbnail = await getProjectThumbnailAsBase64(_path, scene);
       const layout = getRowsAndCols(scene.scene.parcels.map($ => parseCoords($)));
@@ -456,19 +455,8 @@ export function initializeWorkspace(services: Services) {
     if (error) throw new Error(error);
   }
 
-  async function getConfigPath(_path: string) {
-    return ipc.invoke('electron.getWorkspaceConfigPath', _path);
-  }
-
-  async function getProjectInfoFs(_path: string) {
-    const configPath = await getConfigPath(_path);
-    const projectInfoPath = path.join(configPath, 'project.json');
-    const projectInfo = await FileSystemStorage.getOrCreate<ProjectInfo>(projectInfoPath);
-    return projectInfo;
-  }
-
   async function updateProjectInfo({ path, info }: { path: string; info: Partial<ProjectInfo> }) {
-    const projectInfoFs = await getProjectInfoFs(path);
+    const projectInfoFs = await project.getProjectInfoFs(path);
     const projectInfo = await projectInfoFs.getAll();
     await projectInfoFs.setAll({ ...projectInfo, ...info });
   }
@@ -479,6 +467,8 @@ export function initializeWorkspace(services: Services) {
     hasNodeModules,
     getProjectThumbnailAsBase64,
     getOutdatedPackages,
+    getProjectThumbnailPath,
+    getOldProjectThumbnailPath,
     getProject,
     getPath,
     getProjects,
@@ -492,9 +482,7 @@ export function initializeWorkspace(services: Services) {
     reimportProject,
     saveThumbnail,
     openFolder,
-    getConfigPath,
     validateScenesPath,
-    getProjectInfoFs,
     updateProjectInfo,
     importProject,
     isProjectPathAvailable,
