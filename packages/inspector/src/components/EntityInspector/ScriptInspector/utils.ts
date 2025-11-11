@@ -33,12 +33,13 @@ export function parseLayout(layout?: string): ScriptLayout | undefined {
   }
 }
 
-export const isScriptFile = (value: string): boolean => value.endsWith('.ts');
+export const isScriptFile = (value: string): boolean =>
+  value.endsWith('.ts') || value.endsWith('.tsx');
 export const isScriptNode = (node: TreeNode): node is AssetNodeItem =>
   isAssetNode(node) && isScriptFile(node.name);
 
 export function buildScriptPath(name: string): string {
-  const scriptName = name.endsWith('.ts') ? name : `${name}.ts`;
+  const scriptName = isScriptFile(name) ? name : `${name}.ts`;
   const scriptsDir = withAssetDir(`${DIRECTORY.SCENE}/${determineAssetType('ts')}`);
   const scriptPath = `${scriptsDir}/${scriptName}`;
   return scriptPath;

@@ -10,7 +10,7 @@ const validModelExtensions = ['.gltf', '.glb'];
 const validAudioExtensions = ['.mp3', '.ogg', '.wav'];
 const validImageExtensions = ['.jpg', '.jpeg', '.png'];
 const validVideoExtensions = ['.mp4'];
-const validScriptExtensions = ['.ts'];
+const validScriptExtensions = ['.ts', '.tsx'];
 
 function determineAssetType(extension: string): IAsset['type'] {
   return validModelExtensions.some(ext => extension.endsWith(ext))

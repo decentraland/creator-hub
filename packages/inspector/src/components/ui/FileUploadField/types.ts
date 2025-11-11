@@ -17,5 +17,5 @@ export const ACCEPTED_FILE_TYPES = {
   image: ['.png', '.jpg', '.jpeg'],
   audio: ['.mp3', '.wav', '.ogg'],
   video: ['.mp4'],
-  script: ['.ts'],
+  script: ['.ts', '.tsx'],
 };
