@@ -64,6 +64,7 @@ export const EXTENSIONS = [
   '.wav',
   '.mp4',
   '.ts',
+  '.tsx',
 ];
 
 export function withAssetDir(filePath: string = '') {

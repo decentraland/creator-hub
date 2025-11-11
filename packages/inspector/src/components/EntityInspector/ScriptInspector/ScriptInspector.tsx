@@ -6,7 +6,6 @@ import { VscTrash as RemoveIcon } from 'react-icons/vsc';
 
 import { getSceneClient } from '../../../lib/rpc/scene';
 import type { ScriptComponent, ScriptItem } from '../../../lib/sdk/components';
-import { getDefaultScriptTemplate } from '../../../lib/data-layer/client/constants';
 import { withSdk } from '../../../hoc/withSdk';
 import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
 import { useComponentValue } from '../../../hooks/sdk/useComponentValue';
@@ -25,6 +24,7 @@ import { Button } from '../../Button';
 import { RemoveButton } from '../RemoveButton';
 import { ScriptParamField } from './ScriptParamField';
 
+import { getScriptTemplateClass } from './templates';
 import {
   fromNumber,
   toNumber,
@@ -165,7 +165,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
   const handleCreateScript = useCallback(() => {
     if (!newScriptName.trim()) return;
 
-    const template = getDefaultScriptTemplate(newScriptName);
+    const template = getScriptTemplateClass(newScriptName);
     const scriptPath = buildScriptPath(newScriptName);
     const buffer = new Uint8Array(Buffer.from(template, 'utf-8'));
     const content = new Map([[scriptPath, buffer]]);

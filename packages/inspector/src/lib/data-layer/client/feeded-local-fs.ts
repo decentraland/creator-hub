@@ -10,8 +10,9 @@ import { createEngineContext } from '../host/utils/engine';
 import { createInMemoryStorage } from '../../logic/storage/in-memory';
 import { SceneAgeRating } from '../../sdk/components';
 import { TransitionMode } from '../../sdk/components/SceneMetadata';
+import { getScriptTemplateClass } from '../../../components/EntityInspector/ScriptInspector/templates';
 import { downloadAssets } from './builder-utils';
-import { SCENE_INFO_MARKDOWN, THUMBNAIL, getDefaultScriptTemplate } from './constants';
+import { SCENE_INFO_MARKDOWN, THUMBNAIL } from './constants';
 
 export function createTempEngineContext() {
   const { engine, components } = createEngineContext();
@@ -207,7 +208,7 @@ export async function feededFileSystem(mappings: Record<string, string> = builde
   const { composite } = getFeededEngineAndComposite(scene);
 
   const assets = await downloadAssets(mappings);
-  const scriptTemplate = getDefaultScriptTemplate('feeded-script');
+  const scriptTemplate = getScriptTemplateClass('FeededScript');
 
   const storage = createInMemoryStorage({
     ...assets,
