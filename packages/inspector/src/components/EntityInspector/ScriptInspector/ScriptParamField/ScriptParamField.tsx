@@ -1,7 +1,7 @@
 import { TextField, CheckboxField } from '../../../ui';
+import EntityField from '../../../ui/EntityField/EntityField';
 import { fromNumber, toNumber, isValidNumber } from '../utils';
 
-import type { ChangeEvt } from '../types';
 import type { Props } from './types';
 
 export function ScriptParamField({ name, param, onUpdate }: Props) {
@@ -12,7 +12,7 @@ export function ScriptParamField({ name, param, onUpdate }: Props) {
           type="number"
           label={name}
           value={fromNumber(param.value)}
-          onChange={(e: ChangeEvt) => onUpdate(toNumber(e.target.value))}
+          onChange={e => onUpdate(toNumber(e.target.value))}
           debounceTime={300}
           error={!isValidNumber(fromNumber(param.value))}
         />
@@ -23,17 +23,25 @@ export function ScriptParamField({ name, param, onUpdate }: Props) {
         <CheckboxField
           label={name}
           checked={param.value}
-          onChange={(e: ChangeEvt) => onUpdate(e.target.checked)}
+          onChange={e => onUpdate(e.target.checked)}
         />
       );
 
+    case 'entity':
+      return (
+        <EntityField
+          label={name}
+          value={param.value}
+          onChange={e => onUpdate(e.target.value)}
+        />
+      );
     case 'string':
     default:
       return (
         <TextField
           label={name}
           value={param.value}
-          onChange={(e: ChangeEvt) => onUpdate(e.target.value)}
+          onChange={e => onUpdate(e.target.value)}
           debounceTime={300}
         />
       );

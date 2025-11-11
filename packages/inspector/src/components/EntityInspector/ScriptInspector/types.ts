@@ -17,7 +17,11 @@ export type ScriptLayout = {
   error?: string;
 };
 
-export type ScriptParamUnion = ScriptParamNumber | ScriptParamBoolean | ScriptParamString;
+export type ScriptParamUnion =
+  | ScriptParamNumber
+  | ScriptParamBoolean
+  | ScriptParamString
+  | ScriptParamEntity;
 
 export type ScriptParam = {
   optional?: boolean;
@@ -36,4 +40,9 @@ export type ScriptParamBoolean = ScriptParam & {
 export type ScriptParamString = ScriptParam & {
   type: 'string';
   value: string;
+};
+
+export type ScriptParamEntity = ScriptParam & {
+  type: 'entity';
+  value: Entity;
 };
