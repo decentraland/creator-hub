@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { produce } from 'immer';
+import { produce, type WritableDraft } from 'immer';
 import type { Config } from '../../../shared/types/config';
 
 import * as ipc from '../../src/services/ipc';
@@ -66,7 +66,7 @@ describe('config service', () => {
     });
 
     it('should write updated config via ipc', async () => {
-      const drafter = (draft: any) => {
+      const drafter = (draft: WritableDraft<Config>) => {
         draft.workspace.paths.push('/new/path');
       };
 
@@ -78,7 +78,7 @@ describe('config service', () => {
 
     it('should preserve immutability with immer', async () => {
       const originalPaths = [...mockConfig.workspace.paths];
-      const drafter = (draft: any) => {
+      const drafter = (draft: WritableDraft<Config>) => {
         draft.workspace.paths.push('/new/path');
       };
 
