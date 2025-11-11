@@ -25,7 +25,7 @@ export async function handle<T extends keyof Ipc>(
       const name = error.name || 'Error';
       log.error(`[IPC] channel=${channel} name=${name} error=${error.message}`);
 
-      const extra: Record<string, any> = { channel };
+      const extra: Record<string, string> = { channel };
       if (error instanceof StreamError) {
         extra.stderr = error.stderr.toString('utf8');
       }
