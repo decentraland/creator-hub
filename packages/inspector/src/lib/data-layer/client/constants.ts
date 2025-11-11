@@ -32,27 +32,3 @@ Code blocks:
 console.log('Hello, world!');
 \`\`\`
 `;
-
-export function getDefaultScriptTemplate(scriptName: string): string {
-  return `
-import { engine, Entity } from '@dcl/sdk/ecs'
-
-/**
- * Main function - called when the script is initialized
- * @param entity - The entity this script is attached to
- */
-export function main(entity: Entity) {
-  // Script initialization
-  console.log('${scriptName} initialized for entity:', entity)
-}
-
-/**
- * Update function - called every frame
- * @param entity - The entity this script is attached to
- * @param dt - Delta time since last frame (in seconds)
- */
-export function update(entity: Entity, dt: number) {
-  // Called every frame
-}
-`;
-}
