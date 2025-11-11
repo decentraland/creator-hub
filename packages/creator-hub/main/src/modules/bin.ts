@@ -139,16 +139,18 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
 
   const name = `${bin} ${args.join(' ')}`.trim();
   forked.on('spawn', () => {
-    const pid = forked.pid!;
-    processes.set(pid, forked);
-    log.info(`[UtilityProcess] Running "${name}" using bin=${binPath} with pid=${pid} in ${cwd}`);
+    if (forked.pid) {
+      processes.set(forked.pid, forked);
+    }
+    log.info(
+      `[UtilityProcess] Running "${name}" using bin=${binPath} with pid=${forked.pid} in ${cwd}`,
+    );
     ready.resolve();
   });
 
   forked.on('exit', code => {
     if (!alive) return;
     alive = false;
-    // Remove from process registry
     if (forked.pid) {
       processes.delete(forked.pid);
     }
