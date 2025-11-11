@@ -44,7 +44,7 @@ const FileUploadField: React.FC<Props> = ({
   openFileExplorerOnMount = false,
 }) => {
   const [path, setPath] = useState<string | undefined>(value?.toString());
-  const [errorMessage, setErrorMessage] = useState<string | undefined>('File not valid.');
+  const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
   const [dropError, setDropError] = useState<boolean>(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const files = useAppSelector(selectAssetCatalog);
@@ -197,8 +197,8 @@ const FileUploadField: React.FC<Props> = ({
   );
 
   const hasError = useMemo(() => {
-    return error || dropError;
-  }, [error, dropError]);
+    return error || errorMessage || dropError;
+  }, [error, errorMessage, dropError]);
 
   return (
     <div className={cx('FileUpload Field', className)}>
@@ -233,9 +233,9 @@ const FileUploadField: React.FC<Props> = ({
           </button>
         )}
       </div>
-      {!!value && hasError && (
+      {hasError && (
         <Message
-          text={errorMessage}
+          text={error || errorMessage}
           type={MessageType.ERROR}
         />
       )}
