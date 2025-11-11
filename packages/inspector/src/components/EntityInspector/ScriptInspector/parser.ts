@@ -1,5 +1,6 @@
 import { parse } from '@babel/parser';
 import type { Identifier, TSTypeAnnotation, Expression, FunctionParameter } from '@babel/types';
+import { engine } from '@dcl/ecs';
 
 import type { ScriptParamUnion } from './types';
 
@@ -24,6 +25,14 @@ function getValueAndTypeFromType(
       return { type: 'number', value: 0 };
     case 'TSBooleanKeyword':
       return { type: 'boolean', value: false };
+    case 'TSTypeReference':
+      if (
+        typeAnnotation.typeName.type === 'Identifier' &&
+        typeAnnotation.typeName.name === 'Entity'
+      ) {
+        return { type: 'entity', value: engine.RootEntity };
+      }
+      break;
     case 'TSUnionType': // (e.g: string | undefined)
       // TODO: what do we do with union types? for now, we'll return the first non-undefined type
       for (const subType of typeAnnotation.types) {
@@ -90,7 +99,19 @@ export function getScriptParams(content: string): ScriptParseResult {
           if (param.type === 'AssignmentPattern' && param.left.type === 'Identifier') {
             identifier = param.left;
             optional = true;
-            ({ type, value } = getValueAndTypeFromExpression(param.right));
+
+            // if type annotation exists, use it for type and expression for value
+            // e.g: target: Entity = 0 -> type from "Entity", value from "0"
+            const typeAnnotation = identifier.typeAnnotation;
+            if (typeAnnotation?.type === 'TSTypeAnnotation') {
+              const typeInfo = getValueAndTypeFromType(typeAnnotation.typeAnnotation);
+              const valueInfo = getValueAndTypeFromExpression(param.right);
+              type = typeInfo.type;
+              value = valueInfo.value;
+            } else {
+              // no type annotation, infer both type and value from expression
+              ({ type, value } = getValueAndTypeFromExpression(param.right));
+            }
           } else if (param.type === 'Identifier') {
             identifier = param;
             optional = !!identifier.optional;
