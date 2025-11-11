@@ -45,8 +45,7 @@ export function collectUsedAssets(sdk: SdkContextValue): Set<string> {
   const addAsset = (path: string) => {
     if (typeof path !== 'string' || !path) return;
 
-    let normalized = path.startsWith('/') ? path.slice(1) : path;
-    normalized = normalized.toLowerCase();
+    const normalized = (path.startsWith('/') ? path.slice(1) : path).toLowerCase();
     if (normalized && isValidAssetPath(normalized)) {
       usedAssets.add(normalized);
     }
