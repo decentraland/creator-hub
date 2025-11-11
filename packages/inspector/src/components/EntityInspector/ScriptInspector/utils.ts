@@ -53,13 +53,8 @@ export function isScriptNameAvailable({ assets }: AssetCatalogResponse, src: str
 export async function readScript(
   dataLayer: DataLayerRpcClient,
   scriptPath: string,
-): Promise<string | undefined> {
-  try {
-    const { data } = await dataLayer.getAssetData({ path: scriptPath });
-    const content = new TextDecoder().decode(data);
-    return content;
-  } catch (error) {
-    console.warn('Failed to read script:', scriptPath, error);
-    return undefined;
-  }
+): Promise<string> {
+  const { data } = await dataLayer.getAssetData({ path: scriptPath });
+  const content = new TextDecoder().decode(data);
+  return content;
 }
