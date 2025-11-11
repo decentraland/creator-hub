@@ -3,6 +3,7 @@ import log from 'electron-log';
 import * as Sentry from '@sentry/electron/main';
 
 import type { Ipc, IpcError, IpcResult } from '/shared/types/ipc';
+import { StreamError } from './bin';
 
 // wrapper for ipcMain.handle with types
 export async function handle<T extends keyof Ipc>(
@@ -23,9 +24,15 @@ export async function handle<T extends keyof Ipc>(
     } catch (error: any) {
       const name = error.name || 'Error';
       log.error(`[IPC] channel=${channel} name=${name} error=${error.message}`);
+
+      const extra: Record<string, any> = { channel };
+      if (error instanceof StreamError) {
+        extra.stderr = error.stderr.toString('utf8');
+      }
+
       Sentry.captureException(error, {
         tags: { source: 'ipc-handle' },
-        extra: { channel },
+        extra,
       });
       const result: IpcError = {
         success: false,
