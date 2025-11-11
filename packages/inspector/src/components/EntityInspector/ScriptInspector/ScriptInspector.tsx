@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { HiOutlineRefresh as RefreshIcon } from 'react-icons/hi';
 import { VscFolderOpened as FileUploadIcon } from 'react-icons/vsc';
 import { MdOutlineDriveFileRenameOutline as EditIcon } from 'react-icons/md';
@@ -10,9 +10,10 @@ import { getDefaultScriptTemplate } from '../../../lib/data-layer/client/constan
 import { withSdk } from '../../../hoc/withSdk';
 import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
 import { useComponentValue } from '../../../hooks/sdk/useComponentValue';
-import { useArrayState } from '../../../hooks/useArrayState';
 import { useAppDispatch, useAppSelector } from '../../../redux/hooks';
 import { getDataLayerInterface, importAsset } from '../../../redux/data-layer';
+import { selectAssetCatalog } from '../../../redux/app';
+import { retry } from '../../../lib/utils/retry';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { ACCEPTED_FILE_TYPES } from '../../ui/FileUploadField/types';
@@ -22,7 +23,6 @@ import { AddButton } from '../AddButton';
 import MoreOptionsMenu from '../MoreOptionsMenu';
 import { Button } from '../../Button';
 import { RemoveButton } from '../RemoveButton';
-import { selectAssetCatalog } from '../../../redux/app';
 import { ScriptParamField } from './ScriptParamField';
 
 import {
@@ -48,19 +48,35 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
 
   const hasScript = useHasComponent(entityId, Script);
   const [componentValue, setComponentValue] = useComponentValue<ScriptComponent>(entityId, Script);
+  const scripts = componentValue?.value ?? [];
 
-  const [scripts, addScript, updateScript, removeScript] = useArrayState<ScriptItem>(
-    componentValue === null ? [] : componentValue.value,
+  const addScript = useCallback(
+    (script: ScriptItem) => {
+      setComponentValue({ value: [...scripts, script] });
+    },
+    [scripts, setComponentValue],
+  );
+
+  const updateScript = useCallback(
+    (index: number, script: ScriptItem) => {
+      const newScripts = [...scripts];
+      newScripts[index] = script;
+      setComponentValue({ value: newScripts });
+    },
+    [scripts, setComponentValue],
+  );
+
+  const removeScript = useCallback(
+    (index: number) => {
+      const newScripts = scripts.filter((_, i) => i !== index);
+      setComponentValue({ value: newScripts });
+    },
+    [scripts, setComponentValue],
   );
 
   const [dialogMode, setDialogMode] = useState<'create' | 'import' | undefined>(undefined);
   const [newScriptName, setNewScriptName] = useState('');
-
-  // since this component only has 1 property, we can use a simple effect to update the component
-  // value when the scripts array changes
-  useEffect(() => {
-    setComponentValue({ value: scripts });
-  }, [scripts, setComponentValue]);
+  const [error, setError] = useState<string | undefined>(undefined);
 
   const createScript = useCallback(
     (path: string, priority = 0, content: string) => {
@@ -112,35 +128,42 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
   const handleReloadScripts = useCallback(
     async (e: React.MouseEvent<SVGElement>) => {
       e.stopPropagation();
+      setError(undefined);
       if (scripts.length === 0) return;
 
       const dataLayer = getDataLayerInterface();
       if (!dataLayer) return;
 
+      let firstError: string | undefined;
+
       const updatedScripts = await Promise.all(
         scripts.map(async script => {
-          const content = await readScript(dataLayer, script.path);
-          if (!content) return script; // keep existing if read fails
+          try {
+            const content = await readScript(dataLayer, script.path);
+            const { params, error } = getScriptParams(content);
+            const layout: ScriptLayout = { params, error };
 
-          const { params, error } = getScriptParams(content);
-          const layout: ScriptLayout = { params, error };
-
-          return {
-            ...script,
-            layout: JSON.stringify(layout),
-          };
+            return {
+              ...script,
+              layout: JSON.stringify(layout),
+            };
+          } catch (error) {
+            const msg = `Failed to reload script '${script.path}'`;
+            console.error(`${msg}:`, error);
+            if (!firstError) firstError = msg;
+            return script; // keep existing if read fails
+          }
         }),
       );
 
+      if (firstError) setError(firstError);
       setComponentValue({ value: updatedScripts });
     },
-    [scripts, setComponentValue],
+    [scripts, setComponentValue, setError],
   );
 
   const handleCreateScript = useCallback(() => {
-    if (!newScriptName.trim()) {
-      return;
-    }
+    if (!newScriptName.trim()) return;
 
     const template = getDefaultScriptTemplate(newScriptName);
     const scriptPath = buildScriptPath(newScriptName);
@@ -153,36 +176,38 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
 
   const handleImportScript = useCallback(
     async (path: string) => {
-      const dataLayer = getDataLayerInterface();
-      if (!dataLayer) return;
+      try {
+        const dataLayer = getDataLayerInterface();
+        if (!dataLayer) return;
 
-      // retry logic for newly imported files (asset catalog needs time to index)
-      let content: string | undefined;
-      let retries = 5;
+        const content = await retry(readScript, [dataLayer, path]);
 
-      while (retries > 0) {
-        content = await readScript(dataLayer, path);
-
-        if (content) {
-          break;
-        }
-
-        if (retries > 1) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
-
-        retries--;
+        createScript(path, 0, content);
+      } catch (error) {
+        const msg = 'Failed to import script';
+        console.error(`${msg}:`, error);
+        return setError(msg);
       }
-
-      if (!content) {
-        console.error(`Failed to read script after retries: ${path}`);
-        return;
-      }
-
-      createScript(path, 0, content);
     },
-    [createScript],
+    [createScript, setError],
   );
+
+  const handleChangeNewScriptName = useCallback(
+    (e: ChangeEvt) => {
+      setNewScriptName(e.target.value);
+      if (!files) return;
+      if (!isScriptNameAvailable(files, e.target.value)) {
+        return setError('Script name already exists');
+      }
+      setError(undefined);
+    },
+    [setNewScriptName, setError, files],
+  );
+
+  const handleCancel = useCallback(() => {
+    setDialogMode(undefined);
+    setError(undefined);
+  }, [setDialogMode, setError]);
 
   // memoize parsed layouts to avoid re-parsing on every render
   const parsedLayouts = useMemo(() => {
@@ -209,12 +234,14 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
 
   const renderScriptParams = useCallback(
     (layout: ScriptLayout | undefined, index: number) => {
-      if (!layout || !layout.params) return null;
+      if (!layout) return null;
+      const paramsEntries = Object.entries(layout.params);
+      if (paramsEntries.length === 0) return null;
 
       return (
         <Block label="Script Parameters:">
           <div className="params">
-            {Object.entries(layout.params).map(([name, param]) => (
+            {paramsEntries.map(([name, param]) => (
               <ScriptParamField
                 key={name}
                 name={name}
@@ -228,11 +255,6 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     },
     [handleUpdateDynamicField],
   );
-
-  const scriptNameError = useMemo(() => {
-    if (!files) return '';
-    if (!isScriptNameAvailable(files, newScriptName)) return 'Script name already exists';
-  }, [files, newScriptName, isScriptNameAvailable]);
 
   if (!hasScript) return null;
 
@@ -314,9 +336,9 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
             <TextField
               label="New script name"
               value={newScriptName}
-              onChange={(e: ChangeEvt) => setNewScriptName(e.target.value)}
+              onChange={handleChangeNewScriptName}
               placeholder="MyScript"
-              error={scriptNameError}
+              error={error}
             />
           )}
           {dialogMode === 'import' && (
@@ -325,20 +347,21 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
               accept={ACCEPTED_FILE_TYPES['script']}
               onDrop={handleImportScript}
               isValidFile={isScriptNode}
+              error={error}
             />
           )}
           <div className="actions">
             {dialogMode === 'create' && (
               <AddButton
                 onClick={handleCreateScript}
-                disabled={!newScriptName.trim() || !!scriptNameError}
+                disabled={!newScriptName.trim() || !!error}
               >
                 Create
               </AddButton>
             )}
             <RemoveButton
               variant="add"
-              onClick={() => setDialogMode(undefined)}
+              onClick={handleCancel}
             >
               Cancel
             </RemoveButton>
@@ -350,6 +373,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
           <AddButton
             onClick={() => setDialogMode('import')}
             icon={<FileUploadIcon />}
+            disabled={!!error}
           >
             Import script
           </AddButton>
