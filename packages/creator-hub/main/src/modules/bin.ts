@@ -12,6 +12,9 @@ import { CLIENT_NOT_INSTALLED_ERROR } from '/shared/utils';
 import { APP_UNPACKED_PATH, getBinPath } from './path';
 import { setupNodeBinary } from './setup-node';
 
+// Registry to track all forked utility processes
+const processes: Map<number, Electron.UtilityProcess> = new Map();
+
 // Get the current PATH value
 function getPath() {
   return process.env.PATH || '';
@@ -136,8 +139,10 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
 
   const name = `${bin} ${args.join(' ')}`.trim();
   forked.on('spawn', () => {
+    const pid = forked.pid!;
+    processes.set(pid, forked);
     log.info(
-      `[UtilityProcess] Running "${name}" using bin=${binPath} with pid=${forked.pid} in ${cwd}`,
+      `[UtilityProcess] Running "${name}" using bin=${binPath} with pid=${pid} in ${cwd}`,
     );
     ready.resolve();
   });
@@ -145,11 +150,17 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
   forked.on('exit', code => {
     if (!alive) return;
     alive = false;
+    // Remove from process registry
+    if (forked.pid) {
+      processes.delete(forked.pid);
+    }
     const stdoutBuf = Buffer.concat(stdout.getAll());
     log.info(
       `[UtilityProcess] Exiting "${name}" with pid=${forked.pid} and exit code=${code || 0}`,
     );
-    if (code !== 0 && code !== null) {
+
+    // Only treat as error if process has actually spawned and process is not being killed intentionally.
+    if (code !== 0 && code !== null && !ready.isPending && !isKilling) {
       const stderrBuf = Buffer.concat(stderr.getAll());
       promise.reject(
         new StreamError(
