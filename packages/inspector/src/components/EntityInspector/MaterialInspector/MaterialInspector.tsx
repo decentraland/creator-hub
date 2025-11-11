@@ -10,7 +10,6 @@ import { Container } from '../../Container';
 import { fromMaterial, toMaterial, isValidMaterial, MATERIAL_TYPES } from './utils';
 import UnlitMaterial from './UnlitMaterial/UnlitMaterial';
 import { PbrMaterial } from './PbrMaterial';
-
 import { type Props as TextureProps } from './Texture';
 import { type Props, MaterialType } from './types';
 

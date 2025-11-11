@@ -34,10 +34,12 @@ export class EcsEntity extends BABYLON.TransformNode {
   gltfContainer?: BABYLON.AbstractMesh;
   boundingInfoMesh?: BABYLON.AbstractMesh;
   gltfAssetContainer?: BABYLON.AssetContainer;
+  videoPlayerMaterialAssetContainer?: BABYLON.AssetContainer;
   textShape?: BABYLON.Mesh;
   material?: BABYLON.StandardMaterial | BABYLON.PBRMaterial;
   #gltfPathLoading?: IFuture<string>;
   #gltfAssetContainerLoading: IFuture<BABYLON.AssetContainer> = future();
+  #videoPlayerMaterialLoading?: IFuture<BABYLON.AssetContainer>;
   #isLocked?: boolean = false;
   #assetLoading: IFuture<BABYLON.AbstractMesh> = future();
 
@@ -156,6 +158,25 @@ export class EcsEntity extends BABYLON.TransformNode {
   setGltfAssetContainer(gltfAssetContainer: BABYLON.AssetContainer) {
     this.gltfAssetContainer = gltfAssetContainer;
     this.#gltfAssetContainerLoading.resolve(gltfAssetContainer);
+  }
+
+  isVideoPlayerMaterialLoading() {
+    return !!this.#videoPlayerMaterialLoading;
+  }
+
+  onVideoPlayerMaterialLoaded() {
+    if (!this.#videoPlayerMaterialLoading) {
+      this.#videoPlayerMaterialLoading = future();
+    }
+    return this.#videoPlayerMaterialLoading;
+  }
+
+  setVideoPlayerMaterialAssetContainer(assetContainer: BABYLON.AssetContainer) {
+    this.videoPlayerMaterialAssetContainer = assetContainer;
+    if (!this.#videoPlayerMaterialLoading) {
+      this.#videoPlayerMaterialLoading = future();
+    }
+    this.#videoPlayerMaterialLoading.resolve(assetContainer);
   }
 
   setGltfContainer(mesh: BABYLON.AbstractMesh) {
