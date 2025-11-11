@@ -27,10 +27,6 @@ describe('fs service', () => {
       vi.mocked(nodePath.resolve).mockReturnValue(mockResolvedPath);
     });
 
-    afterEach(() => {
-      vi.clearAllMocks();
-    });
-
     it('should call nodePath.resolve with provided paths', async () => {
       await fs.resolve(...mockPaths);
 
@@ -52,10 +48,6 @@ describe('fs service', () => {
       vi.mocked(fsPromises.readFile).mockResolvedValue(
         mockContent as Awaited<ReturnType<typeof fsPromises.readFile>>,
       );
-    });
-
-    afterEach(() => {
-      vi.clearAllMocks();
     });
 
     it('should call fs.readFile with the provided path', async () => {
@@ -82,10 +74,6 @@ describe('fs service', () => {
       vi.mocked(fsPromises.writeFile).mockResolvedValue(undefined);
     });
 
-    afterEach(() => {
-      vi.clearAllMocks();
-    });
-
     it('should create parent directory', async () => {
       await fs.writeFile(mockPath, mockContent);
 
@@ -108,10 +96,6 @@ describe('fs service', () => {
 
   describe('exists', () => {
     const mockPath = '/path/to/check';
-
-    afterEach(() => {
-      vi.clearAllMocks();
-    });
 
     describe('when path exists', () => {
       beforeEach(() => {
@@ -151,10 +135,6 @@ describe('fs service', () => {
       vi.mocked(fsPromises.rm).mockResolvedValue(undefined);
     });
 
-    afterEach(() => {
-      vi.clearAllMocks();
-    });
-
     it('should call fs.rm with the path', async () => {
       await fs.rm(mockPath);
 
@@ -176,10 +156,6 @@ describe('fs service', () => {
       vi.mocked(fsPromises.readdir).mockResolvedValue(mockFiles as any);
     });
 
-    afterEach(() => {
-      vi.clearAllMocks();
-    });
-
     it('should call fs.readdir with the path', async () => {
       await fs.readdir(mockPath);
 
@@ -195,10 +171,6 @@ describe('fs service', () => {
 
   describe('isDirectory', () => {
     const mockPath = '/path/to/check';
-
-    afterEach(() => {
-      vi.clearAllMocks();
-    });
 
     describe('when path is a directory', () => {
       beforeEach(() => {
@@ -248,10 +220,6 @@ describe('fs service', () => {
       vi.mocked(nodePath.join).mockImplementation((...args) => args.join('/'));
     });
 
-    afterEach(() => {
-      vi.clearAllMocks();
-    });
-
     describe('when directory is writable', () => {
       beforeEach(() => {
         vi.mocked(fsPromises.writeFile).mockResolvedValue(undefined);
@@ -295,10 +263,6 @@ describe('fs service', () => {
       vi.mocked(fsPromises.mkdir).mockResolvedValue(undefined);
     });
 
-    afterEach(() => {
-      vi.clearAllMocks();
-    });
-
     it('should call fs.mkdir with the path', async () => {
       await fs.mkdir(mockPath);
 
@@ -319,10 +283,6 @@ describe('fs service', () => {
       vi.mocked(fsPromises.rmdir).mockResolvedValue(undefined);
     });
 
-    afterEach(() => {
-      vi.clearAllMocks();
-    });
-
     it('should call fs.rmdir with the path', async () => {
       await fs.rmdir(mockPath);
 
@@ -340,10 +300,6 @@ describe('fs service', () => {
 
     beforeEach(() => {
       vi.mocked(fsPromises.stat).mockResolvedValue(mockStats);
-    });
-
-    afterEach(() => {
-      vi.clearAllMocks();
     });
 
     it('should call fs.stat with the path', async () => {
@@ -367,10 +323,6 @@ describe('fs service', () => {
       vi.mocked(fsPromises.cp).mockResolvedValue(undefined);
     });
 
-    afterEach(() => {
-      vi.clearAllMocks();
-    });
-
     it('should call fs.cp with source and destination', async () => {
       await fs.cp(mockSrc, mockDest);
 
@@ -389,10 +341,6 @@ describe('fs service', () => {
 
     beforeEach(() => {
       vi.mocked(shell.openPath).mockResolvedValue('');
-    });
-
-    afterEach(() => {
-      vi.clearAllMocks();
     });
 
     it('should call shell.openPath with the path', async () => {

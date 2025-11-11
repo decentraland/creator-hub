@@ -19,10 +19,6 @@ describe('ipc service', () => {
     const mockChannel = 'config.getConfig';
     const mockArgs = ['arg1', 'arg2'];
 
-    afterEach(() => {
-      vi.clearAllMocks();
-    });
-
     describe('when the IPC call succeeds', () => {
       let mockResult: IpcResult<string>;
 

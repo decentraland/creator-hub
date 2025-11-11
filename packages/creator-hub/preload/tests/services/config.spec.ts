@@ -24,10 +24,6 @@ describe('config service', () => {
       vi.mocked(ipc.invoke).mockResolvedValue(mockConfig);
     });
 
-    afterEach(() => {
-      vi.clearAllMocks();
-    });
-
     it('should call ipc.invoke with correct channel', async () => {
       await getConfig();
 
@@ -51,10 +47,6 @@ describe('config service', () => {
       } as Config;
 
       vi.mocked(ipc.invoke).mockResolvedValue(mockConfig);
-    });
-
-    afterEach(() => {
-      vi.clearAllMocks();
     });
 
     it('should retrieve current config', async () => {
@@ -102,10 +94,6 @@ describe('config service', () => {
 
     beforeEach(() => {
       vi.mocked(ipc.invoke).mockResolvedValue(mockConfigPath);
-    });
-
-    afterEach(() => {
-      vi.clearAllMocks();
     });
 
     it('should call ipc.invoke with correct channel and path', async () => {
