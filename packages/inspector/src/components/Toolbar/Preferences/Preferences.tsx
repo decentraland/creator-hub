@@ -5,6 +5,7 @@ import cx from 'classnames';
 import { withSdk } from '../../../hoc/withSdk';
 import { ToolbarButton } from '../ToolbarButton';
 import { useOutsideClick } from '../../../hooks/useOutsideClick';
+import { useXRayToggle, useSelectThroughToggle } from '../../../hooks/editor/useBoxSelection';
 
 import './Preferences.css';
 import { useAppSelector, useAppDispatch } from '../../../redux/hooks';
@@ -15,6 +16,10 @@ export const Preferences = withSdk(({ sdk }) => {
   const [showPanel, setShowPanel] = useState(false);
   const preferences = useAppSelector(selectInspectorPreferences);
   const dispatch = useAppDispatch();
+  const { isEnabled: isXRayEnabled, toggle: toggleXRay } = useXRayToggle();
+  const { isEnabled: isSelectThroughEnabled, toggle: toggleSelectThrough } =
+    useSelectThroughToggle();
+
   const togglePanel = useCallback(() => {
     setShowPanel(!showPanel);
   }, [showPanel]);
@@ -47,6 +52,8 @@ export const Preferences = withSdk(({ sdk }) => {
     : BiCheckbox;
   const AutosaveEnabledIcon = preferences?.autosaveEnabled ? BiCheckboxChecked : BiCheckbox;
   const FreeCameraModeIcon = preferences?.cameraMode === 'free' ? BiCheckboxChecked : BiCheckbox;
+  const XRayIcon = isXRayEnabled ? BiCheckboxChecked : BiCheckbox;
+  const SelectThroughIcon = isSelectThroughEnabled ? BiCheckboxChecked : BiCheckbox;
 
   return (
     <div
@@ -80,6 +87,22 @@ export const Preferences = withSdk(({ sdk }) => {
           <AutosaveEnabledIcon
             className="icon"
             onClick={toggleAutosaveEnabled}
+          />
+        </div>
+        <div className="preference-row">
+          <label>X-Ray</label>
+          <XRayIcon
+            className="icon"
+            onClick={toggleXRay}
+            title="Show selected objects through other geometry"
+          />
+        </div>
+        <div className="preference-row">
+          <label>Select Through</label>
+          <SelectThroughIcon
+            className="icon"
+            onClick={toggleSelectThrough}
+            title="Box selection includes objects behind other objects"
           />
         </div>
       </div>

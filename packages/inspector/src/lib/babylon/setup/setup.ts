@@ -59,8 +59,10 @@ export function setupEngine(
 
   scene.autoClear = false; // Color buffer
   scene.autoClearDepthAndStencil = false; // Depth and stencil
-  scene.setRenderingAutoClearDepthStencil(0, false);
-  scene.setRenderingAutoClearDepthStencil(1, true, true, false);
+
+  // Configure rendering groups
+  scene.setRenderingAutoClearDepthStencil(0, false); // Group 0: Normal rendering
+  scene.setRenderingAutoClearDepthStencil(1, false, false, false); // Group 1: X-ray wireframes (GEQUAL depth test)
 
   // scene.gravity = new BABYLON.Vector3(0, playerConfigurations.gravity, 0)
   // scene.enablePhysics(scene.gravity, new BABYLON.OimoJSPlugin(2))
