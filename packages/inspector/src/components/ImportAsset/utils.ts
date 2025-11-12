@@ -1,7 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 import type { BaseAsset, ModelAsset, ValidationError, Asset, Gltf, AssetType } from './types';
 import { isModelAsset } from './types';
-const validator = require('gltf-validator-ts');
+const validator = require('gltf-validator');
 
 const sampleIndex = (list: any[]) => Math.floor(Math.random() * list.length);
 
