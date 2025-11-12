@@ -1,28 +1,22 @@
 import { useCallback } from 'react';
-import { Backdrop, styled } from 'decentraland-ui2';
 import { Snackbar } from '@mui/material';
 
 import type { Notification } from '/@/modules/store/snackbar/types';
 import { useSnackbar } from '/@/hooks/useSnackbar';
-import { useSelector } from '#store';
-
+import { useEditor } from '/@/hooks/useEditor';
 import { MissingScenes } from './MissingScenes';
 import { Generic } from './Generic';
 import { NewDependencyVersion } from './DependencyVersion';
 import { Deploy } from './Deploy';
+import { StyledBackdrop } from './component.styled';
 
 import './styles.css';
 
 const DEFAULT_DURATION_IN_MS = 5_000;
 
-const StyledBackdrop = styled(Backdrop)(({ theme }) => ({
-  zIndex: theme.zIndex.snackbar - 1,
-  backgroundColor: 'rgba(0, 0, 0, 0.5)',
-}));
-
 export function SnackbarComponent() {
   const { notifications, close, dismiss } = useSnackbar();
-  const isInstallingDependencies = useSelector(state => state.editor.isInstallingProject);
+  const { isInstallingProject: isInstallingDependencies } = useEditor();
 
   const getComponent = useCallback((notification: Notification) => {
     switch (notification.type) {

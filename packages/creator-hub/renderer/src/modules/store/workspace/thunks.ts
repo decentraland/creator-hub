@@ -64,7 +64,7 @@ export const updatePackages = createAsyncThunk(
     const latestPackages = Object.entries(project.dependencyAvailableUpdates).map(
       ([pkg, { latest }]) => `${pkg}@${latest}`,
     );
-    await dispatch(installProject({ path: project.path, packages: latestPackages }));
+    await dispatch(installProject({ path: project.path, packages: latestPackages })).unwrap();
   },
 );
 export const updateAvailableDependencyUpdates = createAsyncThunk(
