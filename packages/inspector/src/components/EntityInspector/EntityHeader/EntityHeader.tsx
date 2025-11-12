@@ -230,7 +230,8 @@ export default React.memo(
           link: 'https://docs.decentraland.org/creator/development-guide/sdk7/video-playing/',
         }),
         createOption(sdk.components.Script, 'Script', {
-          description: 'Attach custom scripts to entities with configurable parameters. Scripts can handle initialization and per-frame updates.',
+          description:
+            'Attach custom scripts to entities with configurable parameters. Scripts can handle initialization and per-frame updates.',
           // link: 'https://docs.decentraland.org/creator/development-guide/sdk7/scripts/',
         }),
       ];
