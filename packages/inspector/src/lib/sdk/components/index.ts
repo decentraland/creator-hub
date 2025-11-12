@@ -42,7 +42,7 @@ export { CoreComponents, AllComponentsType } from './types';
 export const EditorComponentNames = {
   ...BaseEditorComponentNames,
   Scene: getLatestSceneComponentVersion().key,
-};
+} as const;
 
 export type Component<T = unknown> = ComponentDefinition<T>;
 export type Node = { entity: Entity; open?: boolean; children: Entity[] };
