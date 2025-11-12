@@ -119,7 +119,7 @@ const IGNORED_ERROR_CODES = [
   'VALUE_NOT_IN_RANGE',
 ];
 
-async function getGltf(
+export async function getGltf(
   file: File,
   getExternalResource: (uri: string) => Promise<Uint8Array>,
 ): Promise<Gltf> {
