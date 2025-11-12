@@ -21,6 +21,7 @@ import {
 } from '/@/lib/deploy';
 
 export const MAX_FILE_SIZE_BYTES = 50 * 1e6; // 50MB defined in sdk-commands...
+export const MAX_POINTER_SIZE_BYTES = 15 * 1e6; // 15MB validation in the content-server
 
 const ASSET_BUNDLE_REGISTRY = config.get('ASSET_BUNDLE_REGISTRY_URL');
 
@@ -318,7 +319,21 @@ export function translateError(error: SerializedError) {
       return t('modal.publish_project.deploy.deploying.errors.max_file_size_exceeded', {
         maxFileSizeInMb: MAX_FILE_SIZE_BYTES / 1e6,
       });
+    case 'MAX_POINTER_SIZE_EXCEEDED':
+      return t('modal.publish_project.deploy.deploying.errors.max_file_size_exceeded', {
+        maxFileSizeInMb: MAX_POINTER_SIZE_BYTES / 1e6,
+      });
     default:
       return t('modal.publish_project.deploy.deploying.errors.unknown');
   }
+}
+
+export function isMaxPointerSizeExceededError(error: any) {
+  if ('message' in error) {
+    return error.message.includes(
+      `The deployment is too big. The maximum allowed size per pointer is ${MAX_POINTER_SIZE_BYTES / 1e6} MB for scene.`,
+    );
+  }
+
+  return false;
 }
