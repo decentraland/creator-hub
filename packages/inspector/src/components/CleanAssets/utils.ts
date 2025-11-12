@@ -17,7 +17,13 @@ function isModelAsset(path: string): boolean {
   const assetExtension = path.split('.').pop()?.toLowerCase() || '';
   return determineAssetType(assetExtension) === 'Models';
 }
-function getFileNameAndDirectory(path: string): [string, string] {
+
+/**
+ * Gets the file name and directory from a file path.
+ * @param path The file path to extract information from.
+ * @returns A tuple containing the directory and file name.
+ */
+function getDirectoryAndFileName(path: string): [string, string] {
   const parts = path.split('/');
   const fileName = parts.pop() || ''; // Removes file name from parts
   const dir = parts.join('/');
@@ -108,18 +114,12 @@ export function collectUsedAssets(sdk: SdkContextValue): Set<string> {
  * @returns List of normalized asset paths referenced by the model
  */
 function extractModelReferencedAssets(gltf: Gltf): string[] {
-  const referencedAssets: string[] = [];
+  if (!Array.isArray(gltf.info?.resources)) return [];
 
-  // Extract external resources (buffers, images, etc.)
-  if (Array.isArray(gltf.info?.resources)) {
-    gltf.info.resources.forEach(resource => {
-      if (resource.storage === 'external' && resource.uri) {
-        referencedAssets.push(resource.uri.toLowerCase());
-      }
-    });
-  }
-
-  return referencedAssets;
+  // Extract external resources paths (buffers, images, etc.)
+  return gltf.info.resources
+    .filter(resource => resource.storage === 'external' && resource.uri)
+    .map(resource => resource.uri.toLowerCase());
 }
 
 /**
@@ -142,12 +142,12 @@ export async function scanForUnusedAssets(
         if (!dataLayer) continue;
 
         const fileResponse = await dataLayer.getFile({ path: filePath });
-        const [modelDir, fileName] = getFileNameAndDirectory(filePath);
+        const [baseDir, fileName] = getDirectoryAndFileName(filePath);
         const fileObject = new File([new Uint8Array(fileResponse.content)], fileName);
 
         const getExternalResource = async (uri: string): Promise<Uint8Array> => {
           try {
-            const resourcePath = `${modelDir}/${uri}`;
+            const resourcePath = `${baseDir}/${uri}`;
             const resourceResponse = await dataLayer.getFile({ path: resourcePath });
             return new Uint8Array(resourceResponse.content);
           } catch (error) {
@@ -161,7 +161,7 @@ export async function scanForUnusedAssets(
         const referencedPaths = extractModelReferencedAssets(gltf);
 
         referencedPaths.forEach(path => {
-          usedAssets.add(`${modelDir}/${path}`.toLowerCase());
+          usedAssets.add(`${baseDir}/${path}`.toLowerCase());
         });
       } catch (error) {
         console.error(`Error processing model asset: ${filePath}`, error);
