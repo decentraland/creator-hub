@@ -5,10 +5,10 @@ export function getScriptTemplateFunction(scriptName: string): string {
 import { engine, Entity } from '@dcl/sdk/ecs'
 
 /**
- * Main function - called when the script is initialized
+ * Start function - called when the script is initialized
  * @param entity - The entity this script is attached to
  */
-export function main(entity: Entity) {
+export function start(entity: Entity) {
   // Script initialization
   console.log('${scriptName} initialized for entity:', entity)
 }
@@ -33,9 +33,9 @@ export class ${className} {
   constructor(public entity: Entity) {}
 
   /**
-   * Main function - called when the script is initialized
+   * Start function - called when the script is initialized
    */
-  main() {
+  start() {
     // Script initialization
     console.log("${className} initialized for entity:", this.entity);
   }

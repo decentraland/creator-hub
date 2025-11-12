@@ -54,7 +54,7 @@ function getValueAndTypeFromType(
 
 function assertFirstParamIsEntity(params: FunctionParameter[]): void {
   const firstParam = params[0];
-  const errorMessage = 'First parameter of main function must be of type "Entity"';
+  const errorMessage = 'First parameter of start function must be of type "Entity"';
   if (!firstParam || firstParam.type !== 'Identifier') {
     throw new Error(errorMessage);
   }
@@ -193,11 +193,11 @@ export function getScriptParams(content: string): ScriptParseResult {
     });
 
     for (const statement of ast.program.body) {
-      // handle function-based scripts: export function main(entity: Entity, ...)
+      // handle function-based scripts: export function start(entity: Entity, ...)
       if (
         statement.type === 'ExportNamedDeclaration' &&
         statement.declaration?.type === 'FunctionDeclaration' &&
-        statement.declaration.id?.name === 'main'
+        statement.declaration.id?.name === 'start'
       ) {
         const functionDeclaration = statement.declaration;
         assertFirstParamIsEntity(functionDeclaration.params);
