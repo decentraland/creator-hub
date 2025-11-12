@@ -8,3 +8,7 @@
 .PlayVideoStreamActionContainer .Block {
   margin: 0;
 }
+
+.PlayVideoStreamActionContainer.droppeable .FileUploadInput .InputContainer {
+  border: 1px dashed var(--base-01);
+}

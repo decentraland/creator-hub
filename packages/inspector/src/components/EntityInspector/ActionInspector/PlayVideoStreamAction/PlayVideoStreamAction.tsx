@@ -1,7 +1,8 @@
 import React, { useCallback, useState } from 'react';
+import { useDrop } from 'react-dnd';
+import cx from 'classnames';
 import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
 import { recursiveCheck } from '../../../../lib/utils/deep-equal';
-
 import {
   isValidVolume,
   volumeFromMediaSource,
@@ -9,6 +10,12 @@ import {
 } from '../../../../lib/utils/media';
 import { Block } from '../../../Block';
 import { Dropdown, InfoTooltip, RangeField, TextField } from '../../../ui';
+import { getNode, type LocalAssetDrop } from '../../../../lib/sdk/drag-drop';
+import { isVideo } from '../../VideoPlayerInspector/utils';
+import { withAssetDir } from '../../../../lib/data-layer/host/fs-utils';
+import { useAppSelector } from '../../../../redux/hooks';
+import { selectAssetCatalog } from '../../../../redux/app';
+import { removeBasePath } from '../../../../lib/logic/remove-base-path';
 import { isValid } from './utils';
 import type { Props } from './types';
 
@@ -30,7 +37,10 @@ const playModeOptions = [
   },
 ];
 
+const DROP_TYPES = ['local-asset'];
+
 const PlayVideoStreamAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
+  const files = useAppSelector(selectAssetCatalog);
   const [payload, setPayload] = useState<Partial<ActionPayload<ActionType.PLAY_VIDEO_STREAM>>>({
     ...value,
   });
@@ -79,12 +89,42 @@ const PlayVideoStreamAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
     );
   }, []);
 
+  const handleDrop = useCallback(
+    async (src: string) => {
+      handleUpdate({ ...payload, src });
+    },
+    [payload, handleUpdate],
+  );
+
+  const [{ isHover, canDrop }, drop] = useDrop(
+    () => ({
+      accept: DROP_TYPES,
+      drop: ({ value, context }: LocalAssetDrop, monitor) => {
+        if (monitor.didDrop()) return;
+        const node = context.tree.get(value)!;
+        const model = getNode(node, context.tree, isVideo);
+        if (model) void handleDrop(withAssetDir(model.asset.src));
+      },
+      canDrop: ({ value, context }: LocalAssetDrop) => {
+        const node = context.tree.get(value)!;
+        return !!getNode(node, context.tree, isVideo);
+      },
+      collect: monitor => ({
+        isHover: monitor.canDrop() && monitor.isOver(),
+        canDrop: monitor.canDrop(),
+      }),
+    }),
+    [files],
+  );
+
   return (
-    <div className="PlayVideoStreamActionContainer">
-      <Block>
+    <div className={cx('PlayVideoStreamActionContainer', { hover: isHover, droppeable: canDrop })}>
+      <Block ref={drop}>
         <TextField
-          label={<>URL {renderUrlInfo()}</>}
-          value={payload.src}
+          type="text"
+          className="FileUploadInput"
+          label={<>Video {renderUrlInfo()}</>}
+          value={removeBasePath(files?.basePath ?? '', payload.src ?? '')}
           onChange={handleChangeSrc}
           autoSelect
         />
