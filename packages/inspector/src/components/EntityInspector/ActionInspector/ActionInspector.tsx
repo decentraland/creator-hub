@@ -126,6 +126,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
   const hasStates = useHasComponent(entityId, States);
   const hasCounter = useHasComponent(entityId, Counter);
   const hasRewards = useHasComponent(entityId, Rewards);
+  const hasGltf = useHasComponent(entityId, GltfContainer);
   const [gltfValue] = useComponentValue(entityId, GltfContainer);
 
   useChange(
@@ -143,7 +144,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
   );
 
   useEffect(() => {
-    if (entity && gltfValue && hasActions) {
+    if (entity && hasGltf && hasActions) {
       const currentGltfSrc = entity.ecsComponentValues.gltfContainer?.src;
       const isChangingGltf = currentGltfSrc !== gltfValue.src;
 
@@ -163,7 +164,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     } else {
       setAnimations([]);
     }
-  }, [entity, gltfValue, hasActions]);
+  }, [entity, gltfValue, hasActions, hasGltf]);
 
   const isValidAction = useCallback(
     (action: Action) => {
