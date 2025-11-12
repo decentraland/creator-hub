@@ -136,29 +136,31 @@ export async function scanForUnusedAssets(
   const usedAssets = collectUsedAssets(sdk); // Get all assets referenced in the scene
 
   // Analyze used model assets to find referenced external resources
-  const promises = Array.from(usedAssets.values()).map(async (filePath: string) => {
-    if (isModelAsset(filePath)) {
-      try {
-        if (!dataLayer) return;
-        const fileResponse = await dataLayer.getFile({ path: filePath });
-        const [baseDir, fileName] = getDirectoryAndFileName(filePath);
-        const fileObject = new File([new Uint8Array(fileResponse.content)], fileName);
+  if (dataLayer) {
+    const filePaths = Array.from(usedAssets.values()).filter(path => isModelAsset(path));
+    const { files } = await dataLayer.getFilesList({ paths: filePaths });
 
-        // Parse the glTF and extract referenced assets.
-        // We don't need to fetch the external files contents, just return a placeholder.
-        const gltf = await getGltf(fileObject, async () => new Uint8Array());
-        const referencedPaths = extractModelReferencedAssets(gltf);
+    await Promise.all(
+      files.map(async file => {
+        if (!file.success) return;
+        try {
+          const [baseDir, fileName] = getDirectoryAndFileName(file.path);
+          const fileObject = new File([new Uint8Array(file.content)], fileName);
 
-        referencedPaths.forEach(path => {
-          usedAssets.add(`${baseDir}/${path}`.toLowerCase());
-        });
-      } catch (error) {
-        console.error(`Error processing model asset: ${filePath}`, error);
-      }
-    }
-  });
+          // Parse the glTF and extract referenced assets.
+          // We don't need to fetch the external files contents, just return a placeholder.
+          const gltf = await getGltf(fileObject, async () => new Uint8Array());
+          const referencedPaths = extractModelReferencedAssets(gltf);
 
-  await Promise.all(promises);
+          referencedPaths.forEach(path => {
+            usedAssets.add(`${baseDir}/${path}`.toLowerCase());
+          });
+        } catch (error) {
+          console.error(`Error processing model asset: ${file.path}`, error);
+        }
+      }),
+    );
+  }
 
   const results: AssetFile[] = allFiles.map(file => ({
     path: file.path,
