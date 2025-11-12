@@ -48,6 +48,7 @@ export interface Deployment {
   status: Status;
   error?: { message: string; cause?: string };
   componentsStatus: DeploymentComponentsStatus;
+  createdAt: number;
   lastUpdated: number;
 }
 
@@ -65,6 +66,7 @@ interface InitializeDeploymentPayload {
 
 interface UpdateDeploymentStatusPayload {
   path: string;
+  deploymentId: string;
   componentsStatus: DeploymentComponentsStatus;
 }
 
@@ -185,7 +187,7 @@ export const executeDeployment = createAsyncThunk(
       );
     }
 
-    const { info, identity } = deployment;
+    const { info, identity, id: deploymentId } = deployment;
 
     try {
       await dispatch(deploy(deployment)).unwrap();
@@ -196,7 +198,7 @@ export const executeDeployment = createAsyncThunk(
 
       const onStatusChange = (componentsStatus: DeploymentComponentsStatus) => {
         isCancelled = deriveOverallStatus(componentsStatus) === 'failed';
-        dispatch(actions.updateDeploymentStatus({ path, componentsStatus }));
+        dispatch(actions.updateDeploymentStatus({ path, deploymentId, componentsStatus }));
       };
 
       const currentStatus = getInitialDeploymentStatus(info.isWorld);
@@ -219,6 +221,7 @@ export const executeDeployment = createAsyncThunk(
         dispatch(
           actions.updateDeploymentStatus({
             path,
+            deploymentId,
             componentsStatus: cleanPendingsFromDeploymentStatus(error.status),
           }),
         );
@@ -233,11 +236,23 @@ const deploymentSlice = createSlice({
   initialState,
   reducers: {
     updateDeploymentStatus: (state, action: PayloadAction<UpdateDeploymentStatusPayload>) => {
-      const { path, componentsStatus } = action.payload;
+      const { path, deploymentId, componentsStatus } = action.payload;
       const deployment = state.deployments[path];
-      if (deployment) {
+
+      // Only update if the deployment ID matches (prevents updating wrong deployment)
+      if (deployment && deployment.id === deploymentId) {
         deployment.componentsStatus = componentsStatus;
         deployment.lastUpdated = Date.now();
+      } else {
+        // If deployment was moved to history, update it there
+        const historyDeployments = state.history[path];
+        if (historyDeployments) {
+          const historyDeployment = historyDeployments.find(d => d.id === deploymentId);
+          if (historyDeployment) {
+            historyDeployment.componentsStatus = componentsStatus;
+            historyDeployment.lastUpdated = Date.now();
+          }
+        }
       }
     },
     removeDeployment: (state, action: PayloadAction<{ path: string }>) => {
@@ -263,6 +278,7 @@ const deploymentSlice = createSlice({
         }
 
         // Create new deployment
+        const timestamp = Date.now();
         state.deployments[path] = {
           id: crypto.randomUUID(),
           path,
@@ -273,7 +289,8 @@ const deploymentSlice = createSlice({
           chainId,
           status: 'idle',
           componentsStatus: getInitialDeploymentStatus(info.isWorld),
-          lastUpdated: Date.now(),
+          createdAt: timestamp,
+          lastUpdated: timestamp,
           identity,
         };
       })
@@ -290,6 +307,8 @@ const deploymentSlice = createSlice({
       })
       .addCase(initializeDeployment.rejected, (state, action) => {
         const { path, wallet, chainId } = action.meta.arg;
+        const existingDeployment = state.deployments[path];
+        const timestamp = Date.now();
         state.deployments[path] = {
           id: crypto.randomUUID(),
           path,
@@ -304,7 +323,8 @@ const deploymentSlice = createSlice({
             cause: getCauseMessage(action),
           },
           componentsStatus: getInitialDeploymentStatus(),
-          lastUpdated: Date.now(),
+          createdAt: existingDeployment?.createdAt ?? timestamp,
+          lastUpdated: timestamp,
           identity: {} as AuthIdentity,
         };
       })
