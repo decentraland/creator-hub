@@ -136,28 +136,17 @@ export async function scanForUnusedAssets(
   const usedAssets = collectUsedAssets(sdk); // Get all assets referenced in the scene
 
   // Analyze used model assets to find referenced external resources
-  for (const filePath of usedAssets) {
+  const promises = Array.from(usedAssets.values()).map(async (filePath: string) => {
     if (isModelAsset(filePath)) {
       try {
-        if (!dataLayer) continue;
-
+        if (!dataLayer) return;
         const fileResponse = await dataLayer.getFile({ path: filePath });
         const [baseDir, fileName] = getDirectoryAndFileName(filePath);
         const fileObject = new File([new Uint8Array(fileResponse.content)], fileName);
 
-        const getExternalResource = async (uri: string): Promise<Uint8Array> => {
-          try {
-            const resourcePath = `${baseDir}/${uri}`;
-            const resourceResponse = await dataLayer.getFile({ path: resourcePath });
-            return new Uint8Array(resourceResponse.content);
-          } catch (error) {
-            console.warn(`Failed to load external resource: ${uri}`, error);
-            throw error;
-          }
-        };
-
-        // Parse the glTF and extract referenced assets
-        const gltf = await getGltf(fileObject, getExternalResource);
+        // Parse the glTF and extract referenced assets.
+        // We don't need to fetch the external files contents, just return a placeholder.
+        const gltf = await getGltf(fileObject, async () => new Uint8Array());
         const referencedPaths = extractModelReferencedAssets(gltf);
 
         referencedPaths.forEach(path => {
@@ -167,7 +156,9 @@ export async function scanForUnusedAssets(
         console.error(`Error processing model asset: ${filePath}`, error);
       }
     }
-  }
+  });
+
+  await Promise.all(promises);
 
   const results: AssetFile[] = allFiles.map(file => ({
     path: file.path,
