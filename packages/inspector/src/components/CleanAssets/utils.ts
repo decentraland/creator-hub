@@ -3,7 +3,7 @@ import type { ActionType } from '@dcl/asset-packs';
 import type { SdkContextValue } from '../../lib/sdk/context';
 import { DIRECTORY, EXTENSIONS } from '../../lib/data-layer/host/fs-utils';
 import type { IDataLayer } from '../../redux/data-layer';
-import { determineAssetType, getGltf, normalizeFileName } from '../ImportAsset/utils';
+import { determineAssetType, getGltf } from '../ImportAsset/utils';
 import type { Gltf } from '../ImportAsset/types';
 import type { AssetFile, FileSize } from './types';
 
@@ -111,10 +111,10 @@ function extractModelReferencedAssets(gltf: Gltf): string[] {
   const referencedAssets: string[] = [];
 
   // Extract external resources (buffers, images, etc.)
-  if (gltf.info?.resources) {
+  if (Array.isArray(gltf.info?.resources)) {
     gltf.info.resources.forEach(resource => {
       if (resource.storage === 'external' && resource.uri) {
-        referencedAssets.push(normalizeFileName(resource.uri).toLowerCase());
+        referencedAssets.push(resource.uri.toLowerCase());
       }
     });
   }
@@ -135,21 +135,14 @@ export async function scanForUnusedAssets(
 ): Promise<AssetFile[]> {
   const usedAssets = collectUsedAssets(sdk); // Get all assets referenced in the scene
 
-  // Create initial results
-  const results: AssetFile[] = allFiles.map(file => ({
-    path: file.path,
-    size: file.size,
-    unused: !usedAssets.has(file.path.toLowerCase()),
-  }));
-
-  // Analyze used model assets to find referenced resources
-  for (const file of results) {
-    if (!file.unused && isModelAsset(file.path)) {
+  // Analyze used model assets to find referenced external resources
+  for (const filePath of usedAssets) {
+    if (isModelAsset(filePath)) {
       try {
         if (!dataLayer) continue;
 
-        const fileResponse = await dataLayer.getFile({ path: file.path });
-        const [modelDir, fileName] = getFileNameAndDirectory(file.path);
+        const fileResponse = await dataLayer.getFile({ path: filePath });
+        const [modelDir, fileName] = getFileNameAndDirectory(filePath);
         const fileObject = new File([new Uint8Array(fileResponse.content)], fileName);
 
         const getExternalResource = async (uri: string): Promise<Uint8Array> => {
@@ -171,17 +164,16 @@ export async function scanForUnusedAssets(
           usedAssets.add(`${modelDir}/${path}`.toLowerCase());
         });
       } catch (error) {
-        console.error(`Error processing model asset: ${file.path}`, error);
+        console.error(`Error processing model asset: ${filePath}`, error);
       }
     }
   }
 
-  // Re-evaluate unused status based on model references
-  for (const result of results) {
-    if (result.unused && usedAssets.has(result.path.toLowerCase())) {
-      result.unused = false;
-    }
-  }
+  const results: AssetFile[] = allFiles.map(file => ({
+    path: file.path,
+    size: file.size,
+    unused: !usedAssets.has(file.path.toLowerCase()),
+  }));
 
   // Sort by type (unused files first) and size descending (largest files first)
   results.sort((a, b) => (a.unused === b.unused ? b.size - a.size : a.unused ? -1 : 1));
