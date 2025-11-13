@@ -13,7 +13,7 @@ import {
   CircularProgress as Loader,
 } from 'decentraland-ui2';
 
-import { CLIENT_NOT_INSTALLED_ERROR } from '/shared/utils';
+import {  isClientNotInstalledError } from '/shared/types/client';
 import { isProjectError } from '/shared/types/projects';
 import { isWorkspaceError } from '/shared/types/workspace';
 
@@ -126,7 +126,7 @@ export function EditorPage() {
     try {
       await openPreview(settings.previewOptions);
     } catch (error: any) {
-      if (error.message.includes(CLIENT_NOT_INSTALLED_ERROR)) {
+      if (isClientNotInstalledError(error)) {
         setModalOpen('install-client');
       }
     }
