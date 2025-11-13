@@ -13,7 +13,7 @@ import {
   CircularProgress as Loader,
 } from 'decentraland-ui2';
 
-import {  isClientNotInstalledError } from '/shared/types/client';
+import { isClientNotInstalledError } from '/shared/types/client';
 import { isProjectError } from '/shared/types/projects';
 import { isWorkspaceError } from '/shared/types/workspace';
 

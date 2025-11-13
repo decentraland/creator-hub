@@ -5,7 +5,11 @@ import log from 'electron-log/main';
 import { app } from 'electron';
 
 import type { PreviewOptions } from '/shared/types/settings';
-import { ClientError, CLIENT_NOT_INSTALLED_ERROR, isClientNotInstalledError } from '/shared/types/client';
+import {
+  ClientError,
+  CLIENT_NOT_INSTALLED_ERROR,
+  isClientNotInstalledError,
+} from '/shared/types/client';
 import type { DeployOptions } from '/shared/types/deploy';
 import { dynamicImport } from '/shared/dynamic-import';
 
@@ -171,7 +175,7 @@ export async function start(
   }
 
   killPreview(path);
-  
+
   try {
     const process = run('@dcl/sdk-commands', 'sdk-commands', {
       args: ['start', '--explorer-alpha', '--hub', ...generatePreviewArguments(opts)],
@@ -193,7 +197,7 @@ export async function start(
     const preview = { child: process, url, opts };
     previewCache.set(path, preview);
     return path;
-  } catch (error) { 
+  } catch (error) {
     killPreview(path);
     if (retry && !isClientNotInstalledError(error)) {
       log.info('[CLI] Something went wrong trying to start preview:', (error as Error).message);
