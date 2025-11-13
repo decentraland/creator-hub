@@ -231,6 +231,47 @@ export function loadAssetContainer(
   );
 }
 
+/**
+ * Loads a bundled GLB asset from a data URL without RPC calls.
+ * Used for loading placeholder assets that are bundled with the inspector.
+ */
+export function loadBundledGltf(
+  entity: EcsEntity,
+  dataUrl: string,
+  name: string = 'bundled-asset.glb',
+): Promise<BABYLON.AssetContainer> {
+  return new Promise((resolve, reject) => {
+    // Convert data URL to Blob
+    const fetchPromise = fetch(dataUrl)
+      .then(response => response.blob())
+      .then(blob => {
+        const file = new File([blob], name);
+        const scene = entity.getScene();
+
+        loadAssetContainer(
+          file,
+          scene,
+          assetContainer => {
+            processGLTFAssetContainer(assetContainer);
+            resolve(assetContainer);
+          },
+          undefined,
+          (_scene, message, exception) => {
+            console.error('Error loading bundled GLB:', message, exception);
+            reject(new Error(message));
+          },
+          '.glb',
+        );
+      })
+      .catch(error => {
+        console.error('Error converting data URL to blob:', error);
+        reject(error);
+      });
+
+    return fetchPromise;
+  });
+}
+
 export function processGLTFAssetContainer(assetContainer: BABYLON.AssetContainer) {
   assetContainer.meshes.forEach(mesh => {
     if (mesh instanceof BABYLON.Mesh) {
