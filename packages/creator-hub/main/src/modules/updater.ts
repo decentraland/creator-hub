@@ -32,30 +32,33 @@ export function setupUpdaterEvents(event?: Electron.IpcMainInvokeEvent) {
 
   updater.autoUpdater.on('update-downloaded', async info => {
     log.info(`[AutoUpdater] Update downloaded (v${info.version})`);
-    event &&
+    if (event && !event.sender.isDestroyed()) {
       event.sender.send('updater.downloadProgress', {
         percent: 100,
         finished: true,
         version: info.version,
         isDownloading: false,
       });
+    }
   });
 
   updater.autoUpdater.on('download-progress', info => {
     log.info(`[AutoUpdater] Download progress ${info.percent.toFixed(2)}%`);
-    event &&
+    if (event && !event.sender.isDestroyed()) {
       event.sender.send('updater.downloadProgress', {
         percent: info.percent.toFixed(0),
         finished: false,
         isDownloading: true,
       });
+    }
   });
 
   updater.autoUpdater.on('error', err => {
-    event &&
+    if (event && !event.sender.isDestroyed()) {
       event.sender.send('updater.downloadProgress', {
         error: err.message,
       });
+    }
     Sentry.captureException(err, {
       tags: {
         source: 'auto-updater',
