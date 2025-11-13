@@ -1,6 +1,7 @@
 export type Option = {
   text: string;
   handler: () => unknown;
+  disabled?: boolean;
 };
 
 export type Props = {

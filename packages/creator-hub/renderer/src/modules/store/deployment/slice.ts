@@ -23,6 +23,7 @@ import {
   getAvailableCatalystServer,
   translateError,
   getCatalystServers,
+  isMaxPointerSizeExceededError,
 } from './utils';
 
 const getErrorForTranslation = (action: any) =>
@@ -36,6 +37,7 @@ const getCauseMessage = (action: any): string | undefined => {
 };
 
 export interface Deployment {
+  id: string;
   path: string;
   url: string;
   info: Info;
@@ -46,11 +48,13 @@ export interface Deployment {
   status: Status;
   error?: { message: string; cause?: string };
   componentsStatus: DeploymentComponentsStatus;
+  createdAt: number;
   lastUpdated: number;
 }
 
 export interface DeploymentState {
   deployments: Record<string, Deployment>;
+  history: Record<string, Deployment[]>;
 }
 
 interface InitializeDeploymentPayload {
@@ -62,11 +66,13 @@ interface InitializeDeploymentPayload {
 
 interface UpdateDeploymentStatusPayload {
   path: string;
+  deploymentId: string;
   componentsStatus: DeploymentComponentsStatus;
 }
 
 const initialState: DeploymentState = {
   deployments: {},
+  history: {},
 };
 
 export const initializeDeployment = createAsyncThunk(
@@ -97,10 +103,16 @@ const updateDeploymentTarget = createAsyncThunk(
     payload: { path: string; target: string; chainId: ChainId; wallet: string },
     { rejectWithValue, getState },
   ) => {
-    const { path, target } = payload;
+    const { path, target, chainId, wallet } = payload;
     const { translation } = getState();
 
-    const port = await editor.publishScene({ path, target, language: translation.locale });
+    const port = await editor.publishScene({
+      target,
+      path,
+      chainId,
+      wallet,
+      language: translation.locale,
+    });
     const url = getDeploymentUrl(port);
 
     if (!url) {
@@ -117,24 +129,32 @@ export const deploy = createAsyncThunk(
   'deployment/deploy',
   async (deployment: Deployment, { dispatch, getState, rejectWithValue }) => {
     const { path, info, identity, wallet, chainId } = deployment;
-    const authChain = Authenticator.signPayload(identity, info.rootCID);
     const triedServers = new Set<string>();
     let retries = getCatalystServers(chainId).length;
     const delayMs = 1000;
 
     let currentUrl = deployment.url;
-
+    let currentInfo = info;
     while (retries > 0) {
       try {
+        const authChain = Authenticator.signPayload(identity, currentInfo.rootCID);
         return await deployFn(currentUrl, { address: wallet, authChain, chainId });
       } catch (error: any) {
         retries--;
+
+        const currentDeployment = getState().deployment.deployments[path];
+        const componentsStatus: DeploymentComponentsStatus = {
+          ...currentDeployment.componentsStatus,
+          catalyst: 'failed',
+        };
+
+        if (isMaxPointerSizeExceededError(error)) {
+          return rejectWithValue(
+            new DeploymentError('MAX_POINTER_SIZE_EXCEEDED', componentsStatus, error),
+          );
+        }
+
         if (retries <= 0) {
-          const currentDeployment = getState().deployment.deployments[path];
-          const componentsStatus: DeploymentComponentsStatus = {
-            ...currentDeployment.componentsStatus,
-            catalyst: 'failed',
-          };
           return rejectWithValue(
             new DeploymentError('CATALYST_SERVERS_EXHAUSTED', componentsStatus, error),
           );
@@ -150,6 +170,7 @@ export const deploy = createAsyncThunk(
         ).unwrap();
 
         currentUrl = result.url;
+        currentInfo = result.info;
       }
     }
   },
@@ -166,7 +187,7 @@ export const executeDeployment = createAsyncThunk(
       );
     }
 
-    const { info, identity } = deployment;
+    const { info, identity, id: deploymentId } = deployment;
 
     try {
       await dispatch(deploy(deployment)).unwrap();
@@ -177,7 +198,7 @@ export const executeDeployment = createAsyncThunk(
 
       const onStatusChange = (componentsStatus: DeploymentComponentsStatus) => {
         isCancelled = deriveOverallStatus(componentsStatus) === 'failed';
-        dispatch(actions.updateDeploymentStatus({ path, componentsStatus }));
+        dispatch(actions.updateDeploymentStatus({ path, deploymentId, componentsStatus }));
       };
 
       const currentStatus = getInitialDeploymentStatus(info.isWorld);
@@ -200,6 +221,7 @@ export const executeDeployment = createAsyncThunk(
         dispatch(
           actions.updateDeploymentStatus({
             path,
+            deploymentId,
             componentsStatus: cleanPendingsFromDeploymentStatus(error.status),
           }),
         );
@@ -214,11 +236,23 @@ const deploymentSlice = createSlice({
   initialState,
   reducers: {
     updateDeploymentStatus: (state, action: PayloadAction<UpdateDeploymentStatusPayload>) => {
-      const { path, componentsStatus } = action.payload;
+      const { path, deploymentId, componentsStatus } = action.payload;
       const deployment = state.deployments[path];
-      if (deployment) {
+
+      // Only update if the deployment ID matches (prevents updating wrong deployment)
+      if (deployment && deployment.id === deploymentId) {
         deployment.componentsStatus = componentsStatus;
         deployment.lastUpdated = Date.now();
+      } else {
+        // If deployment was moved to history, update it there
+        const historyDeployments = state.history[path];
+        if (historyDeployments) {
+          const historyDeployment = historyDeployments.find(d => d.id === deploymentId);
+          if (historyDeployment) {
+            historyDeployment.componentsStatus = componentsStatus;
+            historyDeployment.lastUpdated = Date.now();
+          }
+        }
       }
     },
     removeDeployment: (state, action: PayloadAction<{ path: string }>) => {
@@ -235,24 +269,30 @@ const deploymentSlice = createSlice({
         const { path, url, info, wallet, chainId, files, identity } = action.payload;
         const existingDeployment = state.deployments[path];
 
-        if (
-          !existingDeployment ||
-          existingDeployment.status === 'idle' ||
-          existingDeployment.status === 'failed'
-        ) {
-          state.deployments[path] = {
-            path,
-            url,
-            info,
-            files,
-            wallet,
-            chainId,
-            status: 'idle',
-            componentsStatus: getInitialDeploymentStatus(info.isWorld),
-            lastUpdated: Date.now(),
-            identity,
-          };
+        // Always move existing deployment to history before creating new one
+        if (existingDeployment) {
+          if (!state.history[path]) {
+            state.history[path] = [];
+          }
+          state.history[path].push(existingDeployment);
         }
+
+        // Create new deployment
+        const timestamp = Date.now();
+        state.deployments[path] = {
+          id: crypto.randomUUID(),
+          path,
+          url,
+          info,
+          files,
+          wallet,
+          chainId,
+          status: 'idle',
+          componentsStatus: getInitialDeploymentStatus(info.isWorld),
+          createdAt: timestamp,
+          lastUpdated: timestamp,
+          identity,
+        };
       })
       .addCase(updateDeploymentTarget.fulfilled, (state, action) => {
         const { path, url, info, files } = action.payload;
@@ -267,7 +307,10 @@ const deploymentSlice = createSlice({
       })
       .addCase(initializeDeployment.rejected, (state, action) => {
         const { path, wallet, chainId } = action.meta.arg;
+        const existingDeployment = state.deployments[path];
+        const timestamp = Date.now();
         state.deployments[path] = {
+          id: crypto.randomUUID(),
           path,
           url: '',
           info: { isWorld: false } as Info,
@@ -280,7 +323,8 @@ const deploymentSlice = createSlice({
             cause: getCauseMessage(action),
           },
           componentsStatus: getInitialDeploymentStatus(),
-          lastUpdated: Date.now(),
+          createdAt: existingDeployment?.createdAt ?? timestamp,
+          lastUpdated: timestamp,
           identity: {} as AuthIdentity,
         };
       })

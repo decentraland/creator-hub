@@ -269,6 +269,8 @@ export async function deploy({
   target,
   targetContent,
   language,
+  chainId,
+  wallet,
 }: DeployOptions): Promise<number> {
   if (deployServer) {
     await deployServer.stop();
@@ -277,7 +279,7 @@ export async function deploy({
   const isLegacyDeploy = await shouldRunLegacyDeploy(path);
   if (isLegacyDeploy) {
     log.info('[CLI] Running legacy deploy');
-    return legacyDeploy({ path, target, targetContent });
+    return legacyDeploy({ path, target, targetContent, chainId, wallet });
   }
 
   const port = await getAvailablePort();

@@ -1,7 +1,9 @@
-import { type TypographyProps } from 'decentraland-ui2';
 import type { ReactNode } from 'react';
+import { type TypographyProps } from 'decentraland-ui2';
 
 import type { Status } from '/shared/types/async';
+
+import type { Option } from '../Dropdown/types';
 
 export type Props = {
   title: string;
@@ -12,7 +14,7 @@ export type Props = {
   width?: number;
   height?: number;
   publishedAt?: number;
-  dropdownOptions?: { text: string; handler: () => void }[];
+  dropdownOptions?: Option[];
   titleVariant?: TypographyProps['variant'];
   status?: Status;
   onClick: () => void;

@@ -63,7 +63,8 @@
     "project_actions": {
       "delete_project": "删除场景",
       "duplicate_project": "复制场景",
-      "open_folder": "打开文件夹"
+      "open_folder": "打开文件夹",
+      "view_deployments": "查看部署"
     },
     "no_scenes": {
       "title": "创建您的第一个场景",
@@ -231,6 +232,13 @@
     },
     "publish_history": {
       "title": "出版历史"
+    },
+    "deployment_history": {
+      "title": "部署历史",
+      "no_deployments": "此项目没有可用的部署历史记录。",
+      "world": "世界",
+      "land": "土地",
+      "current": "当前"
     },
     "app_settings": {
       "title": "應用程式設定",

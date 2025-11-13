@@ -16,8 +16,8 @@ import type { AuthSignInProps } from './types';
 AuthServerProvider.setAuthServerUrl(config.get('AUTH_SERVER_URL'));
 AuthServerProvider.setAuthDappUrl(config.get('AUTH_DAPP_URL'));
 
-const DEFAULT_CHAIN_ID: ChainId = (config.get('CHAIN_ID') ??
-  ChainId.ETHEREUM_MAINNET) as unknown as ChainId;
+const DEFAULT_CHAIN_ID: ChainId = (Number(config.get('CHAIN_ID')) ??
+  ChainId.ETHEREUM_MAINNET) as ChainId;
 
 export const provider = new AuthServerProvider();
 
