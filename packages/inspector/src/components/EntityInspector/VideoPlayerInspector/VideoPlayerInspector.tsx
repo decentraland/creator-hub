@@ -1,7 +1,7 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useDrop } from 'react-dnd';
 import cx from 'classnames';
-
+import { LIVEKIT_STREAM_SRC } from '@dcl/asset-packs';
 import { withSdk } from '../../../hoc/withSdk';
 import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
 import { useComponentInput } from '../../../hooks/sdk/useComponentInput';
@@ -16,8 +16,10 @@ import { selectAssetCatalog } from '../../../redux/app';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { TextField, CheckboxField, RangeField, InfoTooltip } from '../../ui';
-import { fromVideoPlayer, toVideoPlayer, isValidInput, isVideo, isValidVolume } from './utils';
+import { fromVideoPlayer, toVideoPlayer, isVideo, isValidVolume } from './utils';
 import type { Props } from './types';
+
+import './VideoPlayerInspector.css';
 
 const DROP_TYPES = ['local-asset'];
 
@@ -26,16 +28,13 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const { VideoPlayer, GltfContainer } = sdk.components;
 
   const hasVideoPlayer = useHasComponent(entity, VideoPlayer);
-  const handleInputValidation = useCallback(
-    ({ src }: { src: string }) => !!files && isValidInput(files, src),
-    [files],
-  );
+
   const { getInputProps, isValid } = useComponentInput(
     entity,
     VideoPlayer,
     fromVideoPlayer(files?.basePath ?? ''),
     toVideoPlayer(files?.basePath ?? ''),
-    handleInputValidation,
+    () => true,
     [files],
   );
 
@@ -50,13 +49,14 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       itemPath: gltfContainer.src,
     });
   }, []);
+
   const handleDrop = useCallback(async (src: string) => {
     const { operations } = sdk;
     operations.updateValue(VideoPlayer, entity, { src });
     await operations.dispatch();
   }, []);
 
-  const [{ isHover }, drop] = useDrop(
+  const [{ isHover, canDrop }, drop] = useDrop(
     () => ({
       accept: DROP_TYPES,
       drop: ({ value, context }: LocalAssetDrop, monitor) => {
@@ -71,21 +71,27 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       },
       collect: monitor => ({
         isHover: monitor.canDrop() && monitor.isOver(),
+        canDrop: monitor.canDrop(),
       }),
     }),
     [files],
   );
 
-  if (!hasVideoPlayer) return null;
-
   const playing = getInputProps('playing', e => e.target.checked);
   const loop = getInputProps('loop', e => e.target.checked);
   const volume = getInputProps('volume', e => e.target.value);
+  const src = getInputProps('src');
+
+  const isVideoURLDisabled = useMemo(() => {
+    return src?.value === LIVEKIT_STREAM_SRC;
+  }, [src.value]);
+
+  if (!hasVideoPlayer) return null;
 
   return (
     <Container
       label="VideoPlayer"
-      className={cx('VideoPlayer', { hover: isHover })}
+      className={cx('VideoPlayer', { hover: isHover, droppeable: canDrop })}
       initialOpen={initialOpen}
       rightContent={
         <InfoTooltip
@@ -103,9 +109,11 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
         <TextField
           autoSelect
           type="text"
-          {...getInputProps('src')}
+          className="FileUploadInput"
+          {...src}
           error={files && !isValid}
           drop={isHover}
+          disabled={isVideoURLDisabled}
         />
       </Block>
       <Block label="Playback">
