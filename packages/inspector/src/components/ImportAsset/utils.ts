@@ -119,7 +119,7 @@ const IGNORED_ERROR_CODES = [
   'VALUE_NOT_IN_RANGE',
 ];
 
-async function getGltf(
+export async function getGltf(
   file: File,
   getExternalResource: (uri: string) => Promise<Uint8Array>,
 ): Promise<Gltf> {
@@ -151,7 +151,7 @@ async function validateGltf(gltf: Gltf): Promise<void> {
 }
 
 export function normalizeFileName(fileName: string): string {
-  return fileName.trim().replace(/\s+/g, '_').toLowerCase();
+  return fileName.trim().replace(/\s+/g, '_');
 }
 
 export function extractFileExtension(fileName: string): [string, string] {
