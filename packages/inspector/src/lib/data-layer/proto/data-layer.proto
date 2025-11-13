@@ -118,6 +118,20 @@ message RemoveFilesResponse {
   repeated string failed = 2;
 }
 
+message GetFilesListRequest {
+  repeated string paths = 1;
+}
+
+message GetFilesListResponse {
+  message FileResult {
+    string path = 1;
+    bytes content = 2;
+    bool success = 3;
+    optional string error = 4;
+  }
+  repeated FileResult files = 1;
+}
+
 service DataService {
   rpc CrdtStream(stream CrdtStreamMessage) returns (stream CrdtStreamMessage) {}
   rpc Undo(Empty) returns (UndoRedoResponse) {}
@@ -137,6 +151,7 @@ service DataService {
   rpc SetInspectorPreferences(InspectorPreferencesMessage) returns (Empty) {}
   rpc CopyFile(CopyFileRequest) returns (Empty) {}
   rpc GetFile(GetFileRequest) returns (GetFileResponse) {}
+  rpc GetFilesList(GetFilesListRequest) returns (GetFilesListResponse) {}
   rpc CreateCustomAsset(CreateCustomAssetRequest) returns (CreateCustomAssetResponse) {}
   rpc GetCustomAssets(Empty) returns (GetCustomAssetsResponse) {}
   rpc DeleteCustomAsset(DeleteCustomAssetRequest) returns (Empty) {}

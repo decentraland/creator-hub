@@ -2,12 +2,32 @@ import { getPayload, type Action, type Actions } from '@dcl/asset-packs';
 import type { ActionType } from '@dcl/asset-packs';
 import type { SdkContextValue } from '../../lib/sdk/context';
 import { DIRECTORY, EXTENSIONS } from '../../lib/data-layer/host/fs-utils';
+import type { IDataLayer } from '../../redux/data-layer';
+import { determineAssetType, getGltf } from '../ImportAsset/utils';
+import type { Gltf } from '../ImportAsset/types';
 import type { AssetFile, FileSize } from './types';
 
 function isValidAssetPath(path: string): boolean {
   return (
     path.startsWith(DIRECTORY.ASSETS) && EXTENSIONS.some(ext => path.toLowerCase().endsWith(ext))
   );
+}
+
+function isModelAsset(path: string): boolean {
+  const assetExtension = path.split('.').pop()?.toLowerCase() || '';
+  return determineAssetType(assetExtension) === 'Models';
+}
+
+/**
+ * Gets the file name and directory from a file path.
+ * @param path The file path to extract information from.
+ * @returns A tuple containing the directory and file name.
+ */
+function getDirectoryAndFileName(path: string): [string, string] {
+  const parts = path.split('/');
+  const fileName = parts.pop() || ''; // Removes file name from parts
+  const dir = parts.join('/');
+  return [dir, fileName];
 }
 
 /**
@@ -89,13 +109,58 @@ export function collectUsedAssets(sdk: SdkContextValue): Set<string> {
 }
 
 /**
+ * Extracts all external resource paths referenced by a glTF model
+ * @param gltf The parsed glTF data
+ * @returns List of normalized asset paths referenced by the model
+ */
+function extractModelReferencedAssets(gltf: Gltf): string[] {
+  if (!Array.isArray(gltf.info?.resources)) return [];
+
+  // Extract external resources paths (buffers, images, etc.)
+  return gltf.info.resources
+    .filter(resource => resource.storage === 'external' && resource.uri)
+    .map(resource => resource.uri.toLowerCase());
+}
+
+/**
  * Scans the project and identifies unused assets
  * @param sdk The SDK context
  * @param allFiles The list of all asset files with their sizes
  * @returns Array of AssetFile objects with unused flag set
  */
-export function scanForUnusedAssets(sdk: SdkContextValue, allFiles: FileSize[]): AssetFile[] {
+export async function scanForUnusedAssets(
+  sdk: SdkContextValue,
+  allFiles: FileSize[],
+  dataLayer: IDataLayer,
+): Promise<AssetFile[]> {
   const usedAssets = collectUsedAssets(sdk); // Get all assets referenced in the scene
+
+  // Analyze used model assets to find referenced external resources
+  if (dataLayer) {
+    const filePaths = Array.from(usedAssets.values()).filter(path => isModelAsset(path));
+    const { files } = await dataLayer.getFilesList({ paths: filePaths });
+
+    await Promise.all(
+      files.map(async file => {
+        if (!file.success) return;
+        try {
+          const [baseDir, fileName] = getDirectoryAndFileName(file.path);
+          const fileObject = new File([new Uint8Array(file.content)], fileName);
+
+          // Parse the glTF and extract referenced assets.
+          // We don't need to fetch the external files contents, just return a placeholder.
+          const gltf = await getGltf(fileObject, async () => new Uint8Array());
+          const referencedPaths = extractModelReferencedAssets(gltf);
+
+          referencedPaths.forEach(path => {
+            usedAssets.add(`${baseDir}/${path}`.toLowerCase());
+          });
+        } catch (error) {
+          console.error(`Error processing model asset: ${file.path}`, error);
+        }
+      }),
+    );
+  }
 
   const results: AssetFile[] = allFiles.map(file => ({
     path: file.path,

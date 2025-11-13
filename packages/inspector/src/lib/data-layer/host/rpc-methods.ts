@@ -231,6 +231,41 @@ export async function initRpcMethods(
       return { content };
     },
 
+    async getFilesList(req) {
+      const files = await Promise.all(
+        req.paths.map(async path => {
+          try {
+            if (await fs.existFile(path)) {
+              const content = await fs.readFile(path);
+              return {
+                path,
+                content: Uint8Array.from(content),
+                success: true,
+                error: undefined,
+              };
+            } else {
+              return {
+                path,
+                content: new Uint8Array(0),
+                success: false,
+                error: 'File does not exist',
+              };
+            }
+          } catch (err) {
+            console.error(`Failed to read ${path}:`, err);
+            return {
+              path,
+              content: new Uint8Array(0),
+              success: false,
+              error: err instanceof Error ? err.message : 'Unknown error',
+            };
+          }
+        }),
+      );
+
+      return { files };
+    },
+
     async createCustomAsset(req) {
       return stateManager.executeTransaction('external', async () => {
         const { name, composite, resources, thumbnail } = req;
