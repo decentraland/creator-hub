@@ -1,10 +1,10 @@
 import type * as BABYLON from '@babylonjs/core';
 import { Mesh, VertexBuffer } from '@babylonjs/core';
 import { ComponentType, type PBVideoPlayer } from '@dcl/ecs';
-import { withAssetPacksDir } from '../../../data-layer/host/fs-utils';
+import videoPlayerGlbDataUrl from '../../assets/video_player.glb';
 import type { ComponentOperation } from '../component-operations';
 import type { EcsEntity } from '../EcsEntity';
-import { loadAssetContainer } from './gltf-container';
+import { loadBundledGltf } from './gltf-container';
 
 // UV region to focus on (top-left quadrant)
 // Adjust these values to focus on different parts of the texture
@@ -56,62 +56,23 @@ const loadVideoPlayerGLB = async (entity: EcsEntity): Promise<BABYLON.Material |
     return assetContainer.materials[0] || null;
   }
 
-  const context = entity.context.deref();
-  if (!context) {
-    return null;
+  // Load bundled video player GLB
+  const assetContainer = await loadBundledGltf(entity, videoPlayerGlbDataUrl, 'video_player.glb');
+
+  assetContainer.meshes
+    .filter(mesh => mesh.name === '__root__')
+    .forEach(mesh => {
+      mesh.parent = entity;
+      mesh.setEnabled(false);
+    });
+
+  // Extract the material from the loaded GLTF
+  if (assetContainer.materials.length > 0) {
+    entity.setVideoPlayerMaterialAssetContainer(assetContainer);
+    return assetContainer.materials[0];
   }
 
-  const videoPlayerPath = withAssetPacksDir('video_player/video_player.glb');
-  const videoScreenPath = withAssetPacksDir('video_screen/video_player.glb');
-
-  const [videoPlayerFile, videoScreenFile] = await Promise.all([
-    context.getFile(videoPlayerPath),
-    context.getFile(videoScreenPath),
-  ]);
-
-  let selectedFile: Uint8Array | null = null;
-  let selectedPath: string | null = null;
-
-  if (videoPlayerFile) {
-    selectedFile = videoPlayerFile;
-    selectedPath = videoPlayerPath;
-  } else if (videoScreenFile) {
-    selectedFile = videoScreenFile;
-    selectedPath = videoScreenPath;
-  }
-
-  if (!selectedFile || !selectedPath) {
-    return null;
-  }
-
-  return new Promise((resolve, reject) => {
-    const base = selectedPath.split('/').slice(0, -1).join('/');
-    const finalSrc = selectedPath + '?base=' + encodeURIComponent(base);
-    const file = new File([selectedFile as BlobPart], finalSrc);
-
-    loadAssetContainer(
-      file,
-      entity.getScene(),
-      assetContainer => {
-        // Cache the asset container in the entity
-        entity.setVideoPlayerMaterialAssetContainer(assetContainer);
-
-        // Extract the material from the loaded GLTF
-        if (assetContainer.materials.length > 0) {
-          const material = assetContainer.materials[0];
-          resolve(material);
-        } else {
-          resolve(null);
-        }
-      },
-      undefined,
-      (_scene, message) => {
-        console.error('Error loading video player GLB:', message);
-        reject(new Error(message));
-      },
-      '.glb',
-    );
-  });
+  return null;
 };
 
 /**
