@@ -30,6 +30,7 @@ async function main() {
       '.woff': 'dataurl',
       '.woff2': 'dataurl',
       '.ttf': 'dataurl',
+      '.glb': 'dataurl',
     },
     banner: {
       // prepend hot-reload script to the bundle when in development mode
@@ -66,6 +67,9 @@ async function buildCommonJsDistributable() {
     sourcemap: 'both',
     minify: PRODUCTION,
     external: externalModulesArray,
+    loader: {
+      '.glb': 'dataurl',
+    },
   });
 
   if (WATCH_MODE) {
