@@ -12,6 +12,9 @@ import { CLIENT_NOT_INSTALLED_ERROR } from '/shared/utils';
 import { APP_UNPACKED_PATH, getBinPath } from './path';
 import { setupNodeBinary } from './setup-node';
 
+// Registry to track all forked utility processes
+const processes: Map<number, Electron.UtilityProcess> = new Map();
+
 // Get the current PATH value
 function getPath() {
   return process.env.PATH || '';
@@ -136,6 +139,9 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
 
   const name = `${bin} ${args.join(' ')}`.trim();
   forked.on('spawn', () => {
+    if (forked.pid) {
+      processes.set(forked.pid, forked);
+    }
     log.info(
       `[UtilityProcess] Running "${name}" using bin=${binPath} with pid=${forked.pid} in ${cwd}`,
     );
@@ -145,11 +151,16 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
   forked.on('exit', code => {
     if (!alive) return;
     alive = false;
+    if (forked.pid) {
+      processes.delete(forked.pid);
+    }
     const stdoutBuf = Buffer.concat(stdout.getAll());
     log.info(
       `[UtilityProcess] Exiting "${name}" with pid=${forked.pid} and exit code=${code || 0}`,
     );
-    if (code !== 0 && code !== null) {
+
+    // Only treat as error if process has actually spawned and process is not being killed intentionally.
+    if (code !== 0 && code !== null && !ready.isPending && !isKilling) {
       const stderrBuf = Buffer.concat(stderr.getAll());
       promise.reject(
         new StreamError(
@@ -309,4 +320,41 @@ export async function dclDeepLink(deepLink: string) {
   } catch (e) {
     throw new Error(CLIENT_NOT_INSTALLED_ERROR);
   }
+}
+
+/**
+ * Kill all tracked utility processes.
+ * This should be called during app shutdown to ensure all forked processes are properly terminated.
+ */
+export async function killAllUtilityProcesses() {
+  log.info(`[UtilityProcess] Killing ${processes.size} utility processes...`);
+  const killPromises: Promise<void>[] = [];
+
+  for (const [pid, proc] of processes.entries()) {
+    const killPromise = new Promise<void>(resolve => {
+      // Set a timeout to force kill if graceful kill doesn't work
+      const timeout = setTimeout(() => {
+        if (isRunning(pid)) {
+          log.warn(`[UtilityProcess] Force killing process with pid=${pid}`);
+          treeKill(pid, 'SIGKILL');
+        }
+        resolve();
+      }, 3000);
+
+      proc.once('exit', () => {
+        clearTimeout(timeout);
+        resolve();
+      });
+
+      // Try graceful kill first
+      log.info(`[UtilityProcess] Gracefully killing process with pid=${pid}`);
+      treeKill(pid);
+    });
+
+    killPromises.push(killPromise);
+  }
+
+  await Promise.all(killPromises);
+  processes.clear();
+  log.info('[UtilityProcess] All utility processes killed');
 }

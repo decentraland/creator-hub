@@ -4,6 +4,7 @@ import * as Sentry from '@sentry/electron/main';
 import log from 'electron-log/main';
 
 import { restoreOrCreateMainWindow } from '/@/mainWindow';
+import { killAllUtilityProcesses } from '/@/modules/bin';
 import { initIpc } from '/@/modules/ipc';
 import { deployServer, killAllPreviews } from '/@/modules/cli';
 import { killInspectorServer } from '/@/modules/inspector';
@@ -80,7 +81,8 @@ export async function killAll() {
   if (deployServer) {
     promises.push(deployServer.stop());
   }
-  killInspectorServer();
+  promises.push(killInspectorServer());
+  promises.push(killAllUtilityProcesses());
   await Promise.all(promises);
 }
 
