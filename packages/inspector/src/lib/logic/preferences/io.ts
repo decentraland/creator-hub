@@ -30,6 +30,7 @@ const shellSchema = {
 };
 const v1Schema = {
   optionalProperties: {
+    cameraMode: { enum: ['orbit', 'free'] },
     freeCameraInvertRotation: { type: 'boolean' },
     autosaveEnabled: { type: 'boolean' },
   },

@@ -6,7 +6,7 @@ const getSnapManager = () => {
   let positionSnap = 0.25;
   let rotationSnap = 15 * (Math.PI / 180);
   let scaleSnap = 0.1;
-  let enabled = true;
+  let enabled = false; // Changed: snap disabled by default, enable with Shift
 
   // events
   const events = mitt<{ change: void }>();
