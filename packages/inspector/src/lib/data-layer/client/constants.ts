@@ -9,7 +9,7 @@ export const SCENE_INFO_MARKDOWN = `# What's this panel?
 This panel provides detailed information about the current scene.
 This can be customized by the user in the Scene panel or in the corresponding file on the scene's repository.
 
-It supports **Markdown** formatting, allowing for rich text presentation, including headings, lists, links, images, videos and more. 
+It supports **Markdown** formatting, allowing for rich text presentation, including headings, lists, links, images, videos and more.
 
 # Usage examples:
 ## Title 2
