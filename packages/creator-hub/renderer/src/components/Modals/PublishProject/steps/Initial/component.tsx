@@ -1,13 +1,13 @@
+import { Button } from 'decentraland-ui2';
+import { useAuth } from '/@/hooks/useAuth';
 import { OptionBox } from '/@/components/EditorPage/OptionBox';
 import { t } from '/@/modules/store/translation/utils';
 import LandPng from '/assets/images/land.png';
 import WorldsPng from '/assets/images/worlds.png';
 import type { Props } from '../../types';
+import { PublishModal } from '../../PublishModal';
 
 import './styles.css';
-import { useAuth } from '/@/hooks/useAuth';
-import { Button } from 'decentraland-ui2';
-import { PublishModal } from '../../PublishModal';
 
 export function Initial(props: Props) {
   const { isSignedIn, signIn } = useAuth();
@@ -20,11 +20,15 @@ export function Initial(props: Props) {
         size="tiny"
         {...rest}
       >
-        <div className="Initial">
+        <div
+          className="Initial"
+          data-testid="publish-modal-initial"
+        >
           <Button
             color="primary"
             variant="contained"
             onClick={signIn}
+            data-testid="publish-modal-initial-sign-in-button"
           >
             {t('home.cards.sign_in.action')}
           </Button>
@@ -38,8 +42,14 @@ export function Initial(props: Props) {
         subtitle={t('modal.publish_project.select')}
         {...rest}
       >
-        <div className="Initial">
-          <div className="options">
+        <div
+          className="Initial"
+          data-testid="publish-modal-initial"
+        >
+          <div
+            className="options"
+            data-testid="publish-modal-initial-options"
+          >
             <OptionBox
               thumbnailSrc={WorldsPng}
               title={t('modal.publish_project.worlds.title')}
@@ -47,6 +57,7 @@ export function Initial(props: Props) {
               buttonText={t('modal.publish_project.worlds.action')}
               onClickPublish={() => props.onStep('publish-to-world')}
               learnMoreUrl="https://docs.decentraland.org/creator/worlds/about/#publish-a-world"
+              data-testid="publish-modal-initial-option-box-worlds"
             />
             <OptionBox
               thumbnailSrc={LandPng}
@@ -55,6 +66,7 @@ export function Initial(props: Props) {
               buttonText={t('modal.publish_project.land.action')}
               onClickPublish={() => props.onStep('publish-to-land')}
               learnMoreUrl="https://docs.decentraland.org/creator/development-guide/sdk7/publishing-permissions/#land-permission-options"
+              data-testid="publish-modal-initial-option-box-land"
             />
           </div>
           <span

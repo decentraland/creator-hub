@@ -46,6 +46,7 @@ export function SignInPage() {
       direction="row"
       alignItems="center"
       height={'100hv'}
+      data-testid="sign-in-page"
     >
       <div className="background"></div>
       <Grid
@@ -68,7 +69,12 @@ export function SignInPage() {
         </Typography>
         <Typography variant="body1">{t('sign_in.content.body', { br: () => <br /> })}</Typography>
         <Box className="code">
-          <Typography className="verificationCode">{verificationCode}</Typography>
+          <Typography
+            className="verificationCode"
+            data-testid="sign-in-page-verification-code"
+          >
+            {verificationCode}
+          </Typography>
           <div className="tooltip">
             <Tooltip
               placement="right"

@@ -2,6 +2,7 @@ export type CardBannerProps = {
   image: string;
   title: string;
   onClick?: () => void;
+  'data-testid'?: string;
 };
 
 export type CardItemProps = {
