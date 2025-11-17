@@ -1,7 +1,7 @@
 import React, { useCallback, useState, type MouseEvent } from 'react';
-import { IconButton, MenuItem, Menu } from 'decentraland-ui2';
-import ThreeDots from '@mui/icons-material/MoreVert';
 import cx from 'classnames';
+import ThreeDots from '@mui/icons-material/MoreVert';
+import { IconButton, MenuItem, Menu } from 'decentraland-ui2';
 
 import type { Option, Props } from './types';
 
@@ -44,6 +44,7 @@ function Dropdown(props: Props) {
             key={option.text}
             selected={option.text === selected}
             onClick={e => handleSelect(e, option)}
+            disabled={option.disabled}
           >
             {option.text}
           </MenuItem>

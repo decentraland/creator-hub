@@ -3,17 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import { Typography } from 'decentraland-ui2';
 
 import type { Project } from '/shared/types/projects';
+import { misc } from '#preload';
 
 import { t } from '/@/modules/store/translation/utils';
 import { useDeploy } from '/@/hooks/useDeploy';
 import { useWorkspace } from '/@/hooks/useWorkspace';
 import { addBase64ImagePrefix } from '/@/modules/image';
+import type { Option } from '/@/components/Dropdown/types';
 
 import { DeleteProject } from '../../Modals/DeleteProject';
+import { DeploymentHistory } from '../../Modals/DeploymentHistory';
 import { ProjectCard } from '../../ProjectCard';
 
 import type { Props } from './types';
-import { misc } from '#preload';
 
 export function Projects({ projects }: Props) {
   const navigate = useNavigate();
@@ -37,11 +39,14 @@ export function Projects({ projects }: Props) {
 }
 
 function Project({ project }: { project: Project }) {
-  const { getDeployment } = useDeploy();
+  const { getDeployment, getDeploymentHistory } = useDeploy();
   const { runProject, duplicateProject, deleteProject, openFolder } = useWorkspace();
-  const [open, setOpen] = useState(false);
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
+  const [openHistoryModal, setOpenHistoryModal] = useState(false);
 
   const deployment = getDeployment(project.path);
+  const history = getDeploymentHistory(project.path);
+  const hasDeployments = !!deployment || history.length > 0;
   const parcels = project.layout.cols * project.layout.rows;
 
   const handleClick = useCallback(() => {
@@ -56,36 +61,61 @@ function Project({ project }: { project: Project }) {
     openFolder(project.path);
   }, [project, openFolder]);
 
-  const handleOpenModal = useCallback(() => {
-    setOpen(true);
+  const handleOpenDeleteModal = useCallback(() => {
+    setOpenDeleteModal(true);
   }, []);
 
-  const handleCloseModal = useCallback(() => {
-    setOpen(false);
+  const handleCloseDeleteModal = useCallback(() => {
+    setOpenDeleteModal(false);
+  }, []);
+
+  const handleOpenHistoryModal = useCallback(() => {
+    setOpenHistoryModal(true);
+  }, []);
+
+  const handleCloseHistoryModal = useCallback(() => {
+    setOpenHistoryModal(false);
   }, []);
 
   const handleDeleteProject = useCallback(
     (_p: Project, shouldDeleteFiles: boolean) => {
       deleteProject(project, shouldDeleteFiles);
-      handleCloseModal();
+      handleCloseDeleteModal();
     },
-    [project, deleteProject],
+    [project, deleteProject, handleCloseDeleteModal],
   );
 
-  const dropdownOptions = [
-    {
-      text: t('scene_list.project_actions.duplicate_project'),
-      handler: handleDuplicateProject,
-    },
-    {
-      text: t('scene_list.project_actions.open_folder'),
-      handler: handleOpenFolder,
-    },
-    {
+  const dropdownOptions = useMemo(() => {
+    const options: Option[] = [
+      {
+        text: t('scene_list.project_actions.duplicate_project'),
+        handler: handleDuplicateProject,
+      },
+      {
+        text: t('scene_list.project_actions.open_folder'),
+        handler: handleOpenFolder,
+      },
+    ];
+
+    options.push({
+      text: t('scene_list.project_actions.view_deployments'),
+      handler: handleOpenHistoryModal,
+      disabled: !hasDeployments,
+    });
+
+    options.push({
       text: t('scene_list.project_actions.delete_project'),
-      handler: handleOpenModal,
-    },
-  ];
+      handler: handleOpenDeleteModal,
+    });
+
+    return options;
+  }, [
+    hasDeployments,
+    handleDuplicateProject,
+    handleOpenFolder,
+    handleOpenHistoryModal,
+    handleOpenDeleteModal,
+  ]);
 
   const thumbnailUrl = project.thumbnail ? addBase64ImagePrefix(project.thumbnail) : undefined;
   const content = (
@@ -111,10 +141,15 @@ function Project({ project }: { project: Project }) {
         onClick={handleClick}
       />
       <DeleteProject
-        open={open}
+        open={openDeleteModal}
         project={project}
-        onClose={handleCloseModal}
+        onClose={handleCloseDeleteModal}
         onSubmit={handleDeleteProject}
+      />
+      <DeploymentHistory
+        open={openHistoryModal}
+        projectPath={project.path}
+        onClose={handleCloseHistoryModal}
       />
     </>
   );

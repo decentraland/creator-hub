@@ -66,7 +66,8 @@
     "project_actions": {
       "delete_project": "Delete from My Scenes",
       "duplicate_project": "Duplicate",
-      "open_folder": "Open Folder Location"
+      "open_folder": "Open Folder Location",
+      "view_deployments": "View Deployments"
     },
     "no_scenes": {
       "title": "Create your first scene",
@@ -234,6 +235,13 @@
     },
     "publish_history": {
       "title": "Publish History"
+    },
+    "deployment_history": {
+      "title": "Deployment History",
+      "no_deployments": "No deployment history available for this project.",
+      "world": "World",
+      "land": "Land",
+      "current": "Current"
     },
     "app_settings": {
       "title": "App Settings",

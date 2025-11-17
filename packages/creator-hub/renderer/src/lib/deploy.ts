@@ -49,7 +49,8 @@ export type ErrorName =
   | 'DEPLOYMENT_FAILED'
   | 'INVALID_URL'
   | 'INVALID_IDENTITY'
-  | 'MAX_FILE_SIZE_EXCEEDED';
+  | 'MAX_FILE_SIZE_EXCEEDED'
+  | 'MAX_POINTER_SIZE_EXCEEDED';
 
 export class DeploymentError extends ErrorBase<ErrorName> {
   constructor(

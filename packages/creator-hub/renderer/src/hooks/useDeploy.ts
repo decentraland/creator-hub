@@ -11,10 +11,16 @@ import { useDispatch, useSelector } from '#store';
 export const useDeploy = () => {
   const dispatch = useDispatch();
   const deployments = useSelector(state => state.deployment.deployments);
+  const history = useSelector(state => state.deployment.history);
 
   const getDeployment = useCallback(
     (id: string): Deployment | undefined => deployments[id],
     [deployments],
+  );
+
+  const getDeploymentHistory = useCallback(
+    (path: string): Deployment[] => history[path] || [],
+    [history],
   );
 
   const initializeDeployment = useCallback(
@@ -53,7 +59,9 @@ export const useDeploy = () => {
 
   return {
     deployments,
+    history,
     getDeployment,
+    getDeploymentHistory,
     initializeDeployment,
     executeDeployment,
     deriveOverallStatus,
