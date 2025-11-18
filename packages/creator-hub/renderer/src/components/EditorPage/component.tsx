@@ -23,7 +23,7 @@ import { useEditor } from '/@/hooks/useEditor';
 import { useSettings } from '/@/hooks/useSettings';
 
 import EditorPng from '/assets/images/editor.png';
-
+import { useSelector } from '#store';
 import { PublishProject } from '../Modals/PublishProject';
 import { PublishHistory } from '../Modals/PublishHistory';
 import { InstallClient } from '../Modals/InstallClient';
@@ -39,7 +39,6 @@ import type {
   PublishOptionsProps,
   ModalProps,
 } from './types';
-import { useSelector } from '#store';
 
 import './styles.css';
 
@@ -68,6 +67,10 @@ export function EditorPage() {
     (e: React.SyntheticEvent<HTMLIFrameElement, Event>) => {
       const iframe = e.currentTarget;
       if (project) {
+        if (iframeRef.current) {
+          iframeRef.current.dispose();
+          iframeRef.current = undefined;
+        }
         iframeRef.current = initRpc(iframe, project, { writeFile: updateScene });
       }
     },
