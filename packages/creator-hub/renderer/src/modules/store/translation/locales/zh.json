@@ -269,6 +269,10 @@
             "invalid_exe_file": "应用程序无效。请选择有效的 .exe 文件",
             "unknown": "设置默认编辑器失败"
           }
+        },
+        "app_warnings": {
+          "label": "应用警告",
+          "show_warnings": "每次预览或发布包含自定义代码的场景时显示警告消息"
         }
       },
       "actions": {
@@ -312,6 +316,12 @@
       "download_macos": "下载",
       "download_win": "下载",
       "cancel": "暂不安装"
+    },
+    "warning": {
+      "title": "警告",
+      "message": "此场景包含代码元素，这些元素可能仅在场景运行时才可见",
+      "dont_show_again": "不再显示此警告",
+      "continue": "继续"
     }
   },
   "snackbar": {

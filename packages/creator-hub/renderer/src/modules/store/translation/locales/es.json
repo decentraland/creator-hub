@@ -272,6 +272,10 @@
             "invalid_exe_file": "Aplicación inválida. Por favor selecciona un archivo .exe válido",
             "unknown": "Error al establecer el editor por defecto"
           }
+        },
+        "app_warnings": {
+          "label": "Advertencias de la Aplicación",
+          "show_warnings": "Mostrar un mensaje de advertencia cada vez que previsualizas o publicas una escena que contiene código personalizado"
         }
       },
       "actions": {
@@ -315,6 +319,12 @@
       "download_macos": "DESCARGAR PARA MACOS",
       "download_win": "DESCARGAR PARA WINDOWS",
       "cancel": "AHORA NO"
+    },
+    "warning": {
+      "title": "Advertencia",
+      "message": "Esta escena incluye elementos de código que solo pueden ser visibles una vez que la escena esté en ejecución",
+      "dont_show_again": "No mostrar esta advertencia nuevamente",
+      "continue": "Continuar"
     }
   },
   "snackbar": {

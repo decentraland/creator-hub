@@ -191,4 +191,64 @@ describe('initializeWorkspace', () => {
       );
     });
   });
+
+  describe('getSceneSourceFile', () => {
+    describe('and the file exists', () => {
+      let projectPath: string;
+      let fileContent: string;
+
+      beforeEach(() => {
+        projectPath = '/path/to/project';
+        fileContent = 'export function main() {}';
+        services.fs.readFile.mockResolvedValue(Buffer.from(fileContent));
+      });
+
+      it('should read the default scene file', async () => {
+        const workspace = initializeWorkspace(services);
+        const result = await workspace.getSceneSourceFile(projectPath);
+
+        expect(services.path.join).toHaveBeenCalledWith(projectPath, 'src/index.ts');
+        expect(services.fs.readFile).toHaveBeenCalled();
+        expect(result).toBe(fileContent);
+      });
+    });
+
+    describe('and a custom file path is provided', () => {
+      let projectPath: string;
+      let customFilePath: string;
+      let fileContent: string;
+
+      beforeEach(() => {
+        projectPath = '/path/to/project';
+        customFilePath = 'src/custom.ts';
+        fileContent = 'export function custom() {}';
+        services.fs.readFile.mockResolvedValue(Buffer.from(fileContent));
+      });
+
+      it('should read the specified file', async () => {
+        const workspace = initializeWorkspace(services);
+        const result = await workspace.getSceneSourceFile(projectPath, customFilePath);
+
+        expect(services.path.join).toHaveBeenCalledWith(projectPath, customFilePath);
+        expect(result).toBe(fileContent);
+      });
+    });
+
+    describe('and the file does not exist', () => {
+      let projectPath: string;
+
+      beforeEach(() => {
+        projectPath = '/path/to/project';
+        services.fs.readFile.mockRejectedValue(new Error('File not found'));
+      });
+
+      it('should throw an error with descriptive message', async () => {
+        const workspace = initializeWorkspace(services);
+
+        await expect(workspace.getSceneSourceFile(projectPath)).rejects.toThrow(
+          'Could not read scene source file',
+        );
+      });
+    });
+  });
 });

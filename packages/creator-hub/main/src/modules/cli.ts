@@ -70,7 +70,7 @@ export async function killAllPreviews() {
   previewCache.clear(); // just to be sure...
 }
 
-type PreviewArguments = Omit<PreviewOptions, 'debugger'>;
+type PreviewArguments = Omit<PreviewOptions, 'debugger' | 'showWarnings'>;
 
 const PREVIEW_OPTIONS_MAP: Record<keyof PreviewArguments, string> = {
   enableLandscapeTerrains: '--landscape-terrain-enabled',

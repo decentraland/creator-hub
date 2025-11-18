@@ -1,7 +1,7 @@
 import type { PreviewOptions } from '/shared/types/settings';
 import type { Project } from '/shared/types/projects';
 
-export type ModalType = 'publish' | 'publish-history' | 'install-client';
+export type ModalType = 'publish' | 'publish-history' | 'install-client' | 'warning';
 
 export type PreviewOptionsProps = {
   options: PreviewOptions;

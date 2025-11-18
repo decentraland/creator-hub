@@ -272,6 +272,10 @@
             "invalid_exe_file": "Invalid application selected. Please select a valid .exe file",
             "unknown": "Failed to set default editor"
           }
+        },
+        "app_warnings": {
+          "label": "App Warnings",
+          "show_warnings": "Show a warning message each time you preview or publish a scene that contains custom code"
         }
       },
       "actions": {
@@ -315,6 +319,12 @@
       "download_macos": "DOWNLOAD FOR MACOS",
       "download_win": "DOWNLOAD FOR WINDOWS",
       "cancel": "NOT NOW"
+    },
+    "warning": {
+      "title": "Warning",
+      "message": "This scene includes code elements that may only become visible once the scene is running",
+      "dont_show_again": "Don't show this warning again",
+      "continue": "Continue"
     }
   },
   "snackbar": {
