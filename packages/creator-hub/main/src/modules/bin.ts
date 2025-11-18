@@ -304,8 +304,14 @@ function processData(data: string, opts: EventOptions | undefined) {
   return text;
 }
 export async function dclDeepLink(deepLink: string) {
+  // On Windows, launching a protocol with `start` won't fail even if there is no handler.
+  // Check for a registered protocol handler in the registry. If none is registered, CLIENT_NOT_INSTALLED_ERROR is thrown.
   try {
-    const command = process.platform === 'win32' ? 'explorer.exe' : 'open';
+    if (process.platform === 'win32') {
+      await exec('reg query "HKEY_CLASSES_ROOT\\decentraland"');
+    }
+
+    const command = process.platform === 'win32' ? 'start' : 'open';
     await exec(`${command} decentraland://"${deepLink}"`);
   } catch (e) {
     throw new ClientError('CLIENT_NOT_INSTALLED', CLIENT_NOT_INSTALLED_ERROR);
