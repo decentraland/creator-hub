@@ -67,10 +67,6 @@ export function EditorPage() {
     (e: React.SyntheticEvent<HTMLIFrameElement, Event>) => {
       const iframe = e.currentTarget;
       if (project) {
-        if (iframeRef.current) {
-          iframeRef.current.dispose();
-          iframeRef.current = undefined;
-        }
         iframeRef.current = initRpc(iframe, project, { writeFile: updateScene });
       }
     },
