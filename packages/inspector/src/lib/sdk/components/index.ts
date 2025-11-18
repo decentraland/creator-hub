@@ -16,6 +16,7 @@ import type {
   AdminTools,
   Rewards,
   VideoScreen,
+  Script,
 } from '@dcl/asset-packs';
 import { createComponents as createAssetPacksComponents } from '@dcl/asset-packs';
 import type { Layout } from '../../utils/layout';
@@ -95,16 +96,6 @@ export type CustomAssetComponent = {
   assetId: string;
 };
 
-export type ScriptComponent = {
-  value: ScriptItem[];
-};
-
-export type ScriptItem = {
-  path: string;
-  priority: number;
-  layout?: string;
-};
-
 export type EditorComponentsTypes = {
   Selection: { gizmo: GizmoType };
   Scene: SceneComponent;
@@ -126,7 +117,7 @@ export type EditorComponentsTypes = {
   VideoScreen: VideoScreen;
   Rewards: Rewards;
   InspectorUIState: InspectorUIStateType;
-  Script: ScriptComponent;
+  Script: Script;
 };
 
 export type EditorComponents = {
@@ -272,6 +263,7 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
     AdminTools,
     Rewards,
     VideoScreen,
+    Script,
   } = createAssetPacksComponents(engine as any);
 
   const TransformConfig = engine.defineComponent(EditorComponentNames.TransformConfig, {
@@ -299,16 +291,6 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
     assetId: Schemas.String,
   });
 
-  const Script = engine.defineComponent(EditorComponentNames.Script, {
-    value: Schemas.Array(
-      Schemas.Map({
-        path: Schemas.String,
-        priority: Schemas.Number,
-        layout: Schemas.Optional(Schemas.String),
-      }),
-    ),
-  });
-
   return {
     Selection,
     Scene,
@@ -318,7 +300,6 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
     Lock,
     Config,
     InspectorUIState,
-    Script,
     ActionTypes: ActionTypes as unknown as LastWriteWinElementSetComponentDefinition<
       EditorComponentsTypes['ActionTypes']
     >,
@@ -354,6 +335,9 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
     >,
     Rewards: Rewards as unknown as LastWriteWinElementSetComponentDefinition<
       EditorComponentsTypes['Rewards']
+    >,
+    Script: Script as unknown as LastWriteWinElementSetComponentDefinition<
+      EditorComponentsTypes['Script']
     >,
   };
 }

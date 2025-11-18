@@ -5,7 +5,6 @@ import { MdOutlineDriveFileRenameOutline as EditIcon } from 'react-icons/md';
 import { VscTrash as RemoveIcon } from 'react-icons/vsc';
 
 import { getSceneClient } from '../../../lib/rpc/scene';
-import type { ScriptComponent, ScriptItem } from '../../../lib/sdk/components';
 import { withSdk } from '../../../hoc/withSdk';
 import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
 import { useComponentValue } from '../../../hooks/sdk/useComponentValue';
@@ -37,7 +36,7 @@ import {
   readScript,
 } from './utils';
 import { getScriptParams } from './parser';
-import type { Props, ScriptLayout, ScriptParamUnion, ChangeEvt } from './types';
+import type { Props, ScriptLayout, ScriptParamUnion, ChangeEvt, ScriptItem } from './types';
 
 import './ScriptInspector.css';
 
@@ -47,7 +46,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
   const files = useAppSelector(selectAssetCatalog);
 
   const hasScript = useHasComponent(entityId, Script);
-  const [componentValue, setComponentValue] = useComponentValue<ScriptComponent>(entityId, Script);
+  const [componentValue, setComponentValue] = useComponentValue(entityId, Script);
   const scripts = componentValue?.value ?? [];
 
   const addScript = useCallback(
