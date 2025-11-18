@@ -348,6 +348,15 @@ export function createCustomAsset(engine: IEngine) {
           }
         }
 
+        if (componentName === CoreComponents.MATERIAL) {
+          const VideoPlayer = engine.getComponent(
+            CoreComponents.VIDEO_PLAYER,
+          ) as LastWriteWinElementSetComponentDefinition<PBVideoPlayer>;
+          if (VideoPlayer.has(entity)) {
+            processedComponentValue = processMaterialTextures(processedComponentValue, entity);
+          }
+        }
+
         // Initialize component in map if it doesn't exist
         if (!componentsByName[componentName]) {
           componentsByName[componentName] = { data: {} };
