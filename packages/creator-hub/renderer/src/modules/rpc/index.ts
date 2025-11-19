@@ -50,6 +50,7 @@ export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partia
     dispose: () => {
       storage.dispose();
       sceneServer.dispose();
+      sceneClient.dispose();
     },
   };
 }
