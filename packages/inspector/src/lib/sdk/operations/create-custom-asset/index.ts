@@ -302,6 +302,37 @@ export function createCustomAsset(engine: IEngine) {
           }
         }
 
+        // Handle Script component resources
+        if (componentName === EditorComponentNames.Script) {
+          if (Array.isArray(processedComponentValue.value)) {
+            processedComponentValue.value = processedComponentValue.value.map((scriptItem: any) => {
+              const updatedScriptItem = { ...scriptItem };
+
+              // Process script path
+              if (scriptItem.path) {
+                const originalPath: string = scriptItem.path;
+                updatedScriptItem.path = originalPath.replace(/^.*[/]([^/]+)$/, '{assetPath}/$1');
+                resources.push(originalPath);
+              }
+
+              // Process layout to replace assetPath parameter value
+              if (scriptItem.layout) {
+                try {
+                  const layout = JSON.parse(scriptItem.layout);
+                  if (layout.params && layout.params.assetPath) {
+                    layout.params.assetPath.value = '{assetPath}';
+                  }
+                  updatedScriptItem.layout = JSON.stringify(layout);
+                } catch (error) {
+                  console.warn('Failed to parse script layout:', error);
+                }
+              }
+
+              return updatedScriptItem;
+            });
+          }
+        }
+
         // Replace id with {self}
         if (COMPONENTS_WITH_ID.includes(componentName)) {
           processedComponentValue.id = '{self}';

@@ -131,6 +131,7 @@ export function generateFeededComposite({ engine, components }: TempEngine, scen
   });
 
   // script
+  components.Transform.create(scriptEntity, { position: { x: 0, y: 1, z: 2 } });
   components.Script.create(scriptEntity, {
     value: [
       {
