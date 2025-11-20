@@ -32,7 +32,7 @@ export function ScriptParamField({ name, param, onUpdate }: Props) {
         <EntityField
           label={name}
           value={param.value}
-          onChange={e => onUpdate(e.target.value)}
+          onChange={e => onUpdate(Number(e.target.value))}
         />
       );
     case 'string':
