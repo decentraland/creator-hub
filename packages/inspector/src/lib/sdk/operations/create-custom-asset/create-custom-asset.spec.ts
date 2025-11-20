@@ -1,9 +1,9 @@
 import type { IEngine, Transform as TransformEngine } from '@dcl/ecs';
 import { Engine, Name as NameEngine } from '@dcl/ecs';
 import * as components from '@dcl/ecs/dist/components';
-import type { EditorComponents } from '../components';
-import { createEditorComponents } from '../components';
-import { createCustomAsset } from './create-custom-asset';
+import type { EditorComponents } from '../../components';
+import { createEditorComponents } from '../../components';
+import { createCustomAsset } from '.';
 
 describe('createCustomAsset', () => {
   let engine: IEngine;
