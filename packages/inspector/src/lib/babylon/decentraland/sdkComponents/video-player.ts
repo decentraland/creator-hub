@@ -1,5 +1,5 @@
 import type * as BABYLON from '@babylonjs/core';
-import { Mesh, VertexBuffer } from '@babylonjs/core';
+import { Mesh, Vector3, VertexBuffer } from '@babylonjs/core';
 import { ComponentType, type PBVideoPlayer } from '@dcl/ecs';
 import videoPlayerGlbDataUrl from '../../assets/video_player.glb';
 import type { ComponentOperation } from '../component-operations';
@@ -17,21 +17,130 @@ const UV_REGION = {
 };
 
 /**
- * Detects if a mesh has a flipped/inverted orientation based on its world matrix.
- * A negative determinant indicates the mesh is flipped (mirrored).
+ * Analyzes UV coordinate distribution across the entire mesh.
+ * Samples multiple triangles to determine the average winding order.
  */
-const isMeshFlipped = (mesh: BABYLON.AbstractMesh): boolean => {
+const analyzeUVDistribution = (
+  mesh: BABYLON.AbstractMesh,
+): {
+  averageSignedArea: number;
+  shouldFlip: boolean;
+  sampleCount: number;
+} => {
+  if (!(mesh instanceof Mesh)) {
+    return { averageSignedArea: 0, shouldFlip: false, sampleCount: 0 };
+  }
+
+  const uvs = mesh.getVerticesData(VertexBuffer.UVKind);
+  const indices = mesh.getIndices();
+
+  if (!uvs || !indices || indices.length < 3) {
+    return { averageSignedArea: 0, shouldFlip: false, sampleCount: 0 };
+  }
+
+  // Sample up to 10 triangles evenly distributed across the mesh
+  const maxSamples = Math.min(10, Math.floor(indices.length / 3));
+  const step = Math.floor(indices.length / 3 / maxSamples);
+  let totalSignedArea = 0;
+  let validSamples = 0;
+
+  for (let i = 0; i < maxSamples; i++) {
+    const triIndex = i * step * 3;
+    const idx0 = indices[triIndex] * 2;
+    const idx1 = indices[triIndex + 1] * 2;
+    const idx2 = indices[triIndex + 2] * 2;
+
+    const u0 = uvs[idx0];
+    const v0 = uvs[idx0 + 1];
+    const u1 = uvs[idx1];
+    const v1 = uvs[idx1 + 1];
+    const u2 = uvs[idx2];
+    const v2 = uvs[idx2 + 1];
+
+    // Calculate the signed area of the UV triangle
+    const signedArea = (u1 - u0) * (v2 - v0) - (u2 - u0) * (v1 - v0);
+
+    // Skip degenerate triangles (very small area)
+    if (Math.abs(signedArea) > 0.0001) {
+      totalSignedArea += signedArea;
+      validSamples++;
+    }
+  }
+
+  const averageSignedArea = validSamples > 0 ? totalSignedArea / validSamples : 0;
+
+  // If average signed area is significantly negative, UVs are reversed
+  // Use a threshold to avoid noise from near-zero values
+  const shouldFlip = averageSignedArea < -0.01;
+
+  return { averageSignedArea, shouldFlip, sampleCount: validSamples };
+};
+
+/**
+ * Analyzes mesh orientation to detect which axes are flipped.
+ * Returns information about UV flip requirements based on the mesh's world transformation.
+ */
+const analyzeMeshOrientation = (mesh: BABYLON.AbstractMesh): { flipU: boolean; flipV: boolean } => {
   // Get the world matrix to account for all parent transformations
   const worldMatrix = mesh.computeWorldMatrix(true);
 
-  // Calculate the determinant to detect if the mesh is flipped
-  // A negative determinant means the mesh has an odd number of negative scale axes
-  const determinant = worldMatrix.determinant();
+  // Extract the scale from the world matrix
+  const scaling = new Vector3();
+  worldMatrix.decompose(scaling);
 
-  return determinant < 0;
+  // Check which individual axes have negative scale
+  const negativeX = scaling.x < 0;
+  const negativeY = scaling.y < 0;
+  const negativeZ = scaling.z < 0;
+
+  // Count negative axes
+  const negativeCount = [negativeX, negativeY, negativeZ].filter(Boolean).length;
+
+  // Determine UV flips based on specific axis transformations
+  let flipU = false;
+  let flipV = false;
+
+  if (negativeCount === 1) {
+    // Single negative axis
+    if (negativeX) {
+      // Negative X scale affects U coordinate
+      flipU = true;
+    } else if (negativeY) {
+      // Negative Y scale: Analyze UV distribution across the mesh
+      // Different GLTF models author UVs differently with negative Y scale
+      const uvAnalysis = analyzeUVDistribution(mesh);
+
+      // Check if X and Z scaling are uniform (close to 1.0 or equal to each other)
+      const isUniformXZ = Math.abs(Math.abs(scaling.x) - Math.abs(scaling.z)) < 0.01;
+
+      // For non-uniform scaling (different X and Z), use direct shouldFlip logic
+      // For uniform scaling, use inverted logic
+      if (isUniformXZ) {
+        // Uniform XZ scale: inverted logic
+        flipU = !uvAnalysis.shouldFlip;
+      } else {
+        // Non-uniform XZ scale: direct logic
+        flipU = uvAnalysis.shouldFlip;
+      }
+      flipV = false;
+    } else if (negativeZ) {
+      // Negative Z scale (like mesh renderers): needs V flip
+      flipV = true;
+    }
+  } else if (negativeCount === 2) {
+    // Two negative axes often cause both flips
+    flipU = true;
+    flipV = true;
+  } else if (negativeCount === 3) {
+    // All axes negative: might need U flip
+    flipU = true;
+    flipV = true;
+  }
+
+  return { flipU, flipV };
 };
 
-const adjustMeshUVs = (mesh: BABYLON.AbstractMesh, isMeshRenderer: boolean = false) => {
+const adjustMeshUVs = (mesh: BABYLON.AbstractMesh, entity: EcsEntity) => {
   if (!(mesh instanceof Mesh)) {
     return;
   }
@@ -41,27 +150,45 @@ const adjustMeshUVs = (mesh: BABYLON.AbstractMesh, isMeshRenderer: boolean = fal
     return;
   }
 
+  const context = entity.context.deref();
+  if (!context) {
+    return;
+  }
+
   const { uMin, vMin, uMax, vMax } = UV_REGION;
   const uRange = uMax - uMin;
   const vRange = vMax - vMin;
 
-  // Detect if the mesh is flipped to adjust UVs accordingly
-  const isFlipped = isMeshFlipped(mesh);
+  // Detect mesh type using ECS components
+  const hasMeshRenderer = context.MeshRenderer.has(entity.entityId);
+  const hasGltfContainer = context.GltfContainer.has(entity.entityId);
+
+  // Analyze mesh orientation to determine UV flips
+  let shouldFlipU = false;
+  let shouldFlipV = false;
+
+  if (hasMeshRenderer) {
+    // MeshRenderer primitives have negative Z-scale applied
+    // They need V flip but not U flip
+    shouldFlipU = false;
+    shouldFlipV = true;
+  } else if (hasGltfContainer) {
+    // GLTF meshes: analyze their transformation to detect flips
+    const orientation = analyzeMeshOrientation(mesh);
+    shouldFlipU = orientation.flipU;
+    shouldFlipV = orientation.flipV;
+  }
 
   // Map UVs to focus on specific region
   const adjustedUVs = uvs.map((value, index) => {
     if (index % 2 === 0) {
       // U coordinate
       const mappedU = uMin + value * uRange;
-      // For mesh renderers with negative Z-scale, don't flip U
-      // For GLTF meshes that are flipped, flip U
-      return !isMeshRenderer && isFlipped ? uMin + uMax - mappedU : mappedU;
+      return shouldFlipU ? uMin + uMax - mappedU : mappedU;
     } else {
       // V coordinate
       const mappedV = vMin + value * vRange;
-      // For mesh renderers with negative Z-scale (sideOrientation: 2), flip V
-      // For GLTF meshes that are flipped, no V flip needed
-      return isMeshRenderer ? vMin + vMax - mappedV : mappedV;
+      return shouldFlipV ? vMin + vMax - mappedV : mappedV;
     }
   });
 
@@ -121,8 +248,8 @@ export const applyVideoPlayerMaterial = async (entity: EcsEntity): Promise<void>
 
     if (glbMaterial && entity.meshRenderer) {
       // Adjust UVs to focus on specific region of the texture
-      // Pass true to indicate this is a mesh renderer (which has negative Z-scale applied)
-      adjustMeshUVs(entity.meshRenderer, true);
+      // Uses ECS components to detect mesh type and orientation
+      adjustMeshUVs(entity.meshRenderer, entity);
 
       // Apply the material from the GLB to the existing meshRenderer
       // This is runtime-only and doesn't modify the ECS component
@@ -160,8 +287,8 @@ export const applyVideoPlayerMaterialToGltf = async (entity: EcsEntity): Promise
       // Apply material and adjust UVs for each mesh
       for (const mesh of childMeshes) {
         // Adjust UVs to focus on specific region of the texture
-        // Pass false to indicate this is a GLTF mesh (uses flip detection)
-        adjustMeshUVs(mesh, false);
+        // Uses ECS components to detect mesh type and orientation
+        adjustMeshUVs(mesh, entity);
 
         // Apply the material from the GLB to the mesh
         // This is runtime-only and doesn't modify the ECS component
