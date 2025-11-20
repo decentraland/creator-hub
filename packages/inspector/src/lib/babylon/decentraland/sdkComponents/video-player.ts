@@ -16,7 +16,22 @@ const UV_REGION = {
   vMax: 1, // top edge
 };
 
-const adjustMeshUVs = (mesh: BABYLON.AbstractMesh) => {
+/**
+ * Detects if a mesh has a flipped/inverted orientation based on its world matrix.
+ * A negative determinant indicates the mesh is flipped (mirrored).
+ */
+const isMeshFlipped = (mesh: BABYLON.AbstractMesh): boolean => {
+  // Get the world matrix to account for all parent transformations
+  const worldMatrix = mesh.computeWorldMatrix(true);
+
+  // Calculate the determinant to detect if the mesh is flipped
+  // A negative determinant means the mesh has an odd number of negative scale axes
+  const determinant = worldMatrix.determinant();
+
+  return determinant < 0;
+};
+
+const adjustMeshUVs = (mesh: BABYLON.AbstractMesh, isMeshRenderer: boolean = false) => {
   if (!(mesh instanceof Mesh)) {
     return;
   }
@@ -30,14 +45,23 @@ const adjustMeshUVs = (mesh: BABYLON.AbstractMesh) => {
   const uRange = uMax - uMin;
   const vRange = vMax - vMin;
 
+  // Detect if the mesh is flipped to adjust UVs accordingly
+  const isFlipped = isMeshFlipped(mesh);
+
   // Map UVs to focus on specific region
   const adjustedUVs = uvs.map((value, index) => {
     if (index % 2 === 0) {
       // U coordinate
-      return uMin + value * uRange;
+      const mappedU = uMin + value * uRange;
+      // For mesh renderers with negative Z-scale, don't flip U
+      // For GLTF meshes that are flipped, flip U
+      return !isMeshRenderer && isFlipped ? uMin + uMax - mappedU : mappedU;
     } else {
       // V coordinate
-      return vMin + value * vRange;
+      const mappedV = vMin + value * vRange;
+      // For mesh renderers with negative Z-scale (sideOrientation: 2), flip V
+      // For GLTF meshes that are flipped, no V flip needed
+      return isMeshRenderer ? vMin + vMax - mappedV : mappedV;
     }
   });
 
@@ -97,7 +121,8 @@ export const applyVideoPlayerMaterial = async (entity: EcsEntity): Promise<void>
 
     if (glbMaterial && entity.meshRenderer) {
       // Adjust UVs to focus on specific region of the texture
-      adjustMeshUVs(entity.meshRenderer);
+      // Pass true to indicate this is a mesh renderer (which has negative Z-scale applied)
+      adjustMeshUVs(entity.meshRenderer, true);
 
       // Apply the material from the GLB to the existing meshRenderer
       // This is runtime-only and doesn't modify the ECS component
@@ -135,7 +160,8 @@ export const applyVideoPlayerMaterialToGltf = async (entity: EcsEntity): Promise
       // Apply material and adjust UVs for each mesh
       for (const mesh of childMeshes) {
         // Adjust UVs to focus on specific region of the texture
-        adjustMeshUVs(mesh);
+        // Pass false to indicate this is a GLTF mesh (uses flip detection)
+        adjustMeshUVs(mesh, false);
 
         // Apply the material from the GLB to the mesh
         // This is runtime-only and doesn't modify the ECS component
