@@ -17,26 +17,74 @@ const UV_REGION = {
 };
 
 /**
- * Analyzes UV coordinate distribution across the entire mesh.
- * Samples multiple triangles to determine the average winding order.
+ * Analyzes mesh transformation to determine UV flip requirements.
+ * Uses a data-driven approach to handle different scale patterns.
  */
-const analyzeUVDistribution = (
-  mesh: BABYLON.AbstractMesh,
-): {
-  averageSignedArea: number;
-  shouldFlip: boolean;
-  sampleCount: number;
-} => {
-  if (!(mesh instanceof Mesh)) {
-    return { averageSignedArea: 0, shouldFlip: false, sampleCount: 0 };
+const analyzeMeshOrientation = (mesh: BABYLON.AbstractMesh): { flipU: boolean; flipV: boolean } => {
+  const worldMatrix = mesh.computeWorldMatrix(true);
+  const scaling = new Vector3();
+  worldMatrix.decompose(scaling);
+
+  // Identify which axes have negative scale
+  const axes = {
+    x: scaling.x < 0,
+    y: scaling.y < 0,
+    z: scaling.z < 0,
+  };
+
+  // Check if XZ scaling is uniform (for aspect ratio detection)
+  const isUniformXZ = Math.abs(Math.abs(scaling.x) - Math.abs(scaling.z)) < 0.01;
+
+  // Calculate average UV winding across multiple triangles
+  const hasReversedUVs = analyzeUVWinding(mesh);
+
+  // Apply flip rules based on transformation pattern
+  return determineUVFlips(axes, isUniformXZ, hasReversedUVs);
+};
+
+/**
+ * Determines UV flips based on axis negation pattern.
+ * Uses a declarative rule set for clarity and maintainability.
+ */
+const determineUVFlips = (
+  axes: { x: boolean; y: boolean; z: boolean },
+  isUniformXZ: boolean,
+  hasReversedUVs: boolean,
+): { flipU: boolean; flipV: boolean } => {
+  const negativeCount = Object.values(axes).filter(Boolean).length;
+
+  // Single axis negation
+  if (negativeCount === 1) {
+    if (axes.x) return { flipU: true, flipV: false };
+    if (axes.z) return { flipU: false, flipV: true };
+
+    // Negative Y: UV winding-based with scale uniformity consideration
+    if (axes.y) {
+      const flipU = isUniformXZ ? !hasReversedUVs : hasReversedUVs;
+      return { flipU, flipV: false };
+    }
   }
+
+  // Multiple axes negation: flip both coordinates
+  if (negativeCount >= 2) {
+    return { flipU: true, flipV: true };
+  }
+
+  // No negation: no flip
+  return { flipU: false, flipV: false };
+};
+
+/**
+ * Analyzes UV winding order by sampling triangles across the mesh.
+ * Returns true if UVs have clockwise winding (reversed).
+ */
+const analyzeUVWinding = (mesh: BABYLON.AbstractMesh): boolean => {
+  if (!(mesh instanceof Mesh)) return false;
 
   const uvs = mesh.getVerticesData(VertexBuffer.UVKind);
   const indices = mesh.getIndices();
 
-  if (!uvs || !indices || indices.length < 3) {
-    return { averageSignedArea: 0, shouldFlip: false, sampleCount: 0 };
-  }
+  if (!uvs || !indices || indices.length < 3) return false;
 
   // Sample up to 10 triangles evenly distributed across the mesh
   const maxSamples = Math.min(10, Math.floor(indices.length / 3));
@@ -46,21 +94,18 @@ const analyzeUVDistribution = (
 
   for (let i = 0; i < maxSamples; i++) {
     const triIndex = i * step * 3;
-    const idx0 = indices[triIndex] * 2;
-    const idx1 = indices[triIndex + 1] * 2;
-    const idx2 = indices[triIndex + 2] * 2;
+    const [idx0, idx1, idx2] = [
+      indices[triIndex] * 2,
+      indices[triIndex + 1] * 2,
+      indices[triIndex + 2] * 2,
+    ];
 
-    const u0 = uvs[idx0];
-    const v0 = uvs[idx0 + 1];
-    const u1 = uvs[idx1];
-    const v1 = uvs[idx1 + 1];
-    const u2 = uvs[idx2];
-    const v2 = uvs[idx2 + 1];
+    // Calculate signed area of UV triangle
+    const signedArea =
+      (uvs[idx1] - uvs[idx0]) * (uvs[idx2 + 1] - uvs[idx0 + 1]) -
+      (uvs[idx2] - uvs[idx0]) * (uvs[idx1 + 1] - uvs[idx0 + 1]);
 
-    // Calculate the signed area of the UV triangle
-    const signedArea = (u1 - u0) * (v2 - v0) - (u2 - u0) * (v1 - v0);
-
-    // Skip degenerate triangles (very small area)
+    // Skip degenerate triangles
     if (Math.abs(signedArea) > 0.0001) {
       totalSignedArea += signedArea;
       validSamples++;
@@ -69,75 +114,8 @@ const analyzeUVDistribution = (
 
   const averageSignedArea = validSamples > 0 ? totalSignedArea / validSamples : 0;
 
-  // If average signed area is significantly negative, UVs are reversed
-  // Use a threshold to avoid noise from near-zero values
-  const shouldFlip = averageSignedArea < -0.01;
-
-  return { averageSignedArea, shouldFlip, sampleCount: validSamples };
-};
-
-/**
- * Analyzes mesh orientation to detect which axes are flipped.
- * Returns information about UV flip requirements based on the mesh's world transformation.
- */
-const analyzeMeshOrientation = (mesh: BABYLON.AbstractMesh): { flipU: boolean; flipV: boolean } => {
-  // Get the world matrix to account for all parent transformations
-  const worldMatrix = mesh.computeWorldMatrix(true);
-
-  // Extract the scale from the world matrix
-  const scaling = new Vector3();
-  worldMatrix.decompose(scaling);
-
-  // Check which individual axes have negative scale
-  const negativeX = scaling.x < 0;
-  const negativeY = scaling.y < 0;
-  const negativeZ = scaling.z < 0;
-
-  // Count negative axes
-  const negativeCount = [negativeX, negativeY, negativeZ].filter(Boolean).length;
-
-  // Determine UV flips based on specific axis transformations
-  let flipU = false;
-  let flipV = false;
-
-  if (negativeCount === 1) {
-    // Single negative axis
-    if (negativeX) {
-      // Negative X scale affects U coordinate
-      flipU = true;
-    } else if (negativeY) {
-      // Negative Y scale: Analyze UV distribution across the mesh
-      // Different GLTF models author UVs differently with negative Y scale
-      const uvAnalysis = analyzeUVDistribution(mesh);
-
-      // Check if X and Z scaling are uniform (close to 1.0 or equal to each other)
-      const isUniformXZ = Math.abs(Math.abs(scaling.x) - Math.abs(scaling.z)) < 0.01;
-
-      // For non-uniform scaling (different X and Z), use direct shouldFlip logic
-      // For uniform scaling, use inverted logic
-      if (isUniformXZ) {
-        // Uniform XZ scale: inverted logic
-        flipU = !uvAnalysis.shouldFlip;
-      } else {
-        // Non-uniform XZ scale: direct logic
-        flipU = uvAnalysis.shouldFlip;
-      }
-      flipV = false;
-    } else if (negativeZ) {
-      // Negative Z scale (like mesh renderers): needs V flip
-      flipV = true;
-    }
-  } else if (negativeCount === 2) {
-    // Two negative axes often cause both flips
-    flipU = true;
-    flipV = true;
-  } else if (negativeCount === 3) {
-    // All axes negative: might need U flip
-    flipU = true;
-    flipV = true;
-  }
-
-  return { flipU, flipV };
+  // Threshold check: significantly negative area indicates reversed winding
+  return averageSignedArea < -0.01;
 };
 
 const adjustMeshUVs = (mesh: BABYLON.AbstractMesh, entity: EcsEntity) => {
