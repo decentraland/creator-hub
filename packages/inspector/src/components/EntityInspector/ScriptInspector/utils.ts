@@ -59,3 +59,17 @@ export async function readScript(
   const content = new TextDecoder().decode(data);
   return content;
 }
+
+export function mergeLayout(source: ScriptLayout, target: ScriptLayout): ScriptLayout {
+  const layout: ScriptLayout = { params: {} };
+  for (const [name, value] of Object.entries(source.params)) {
+    const targetParam = target.params[name];
+    if (!targetParam || value.type !== targetParam.type) {
+      layout.params[name] = value; // keep source if param not in target or if param types are different
+    } else {
+      layout.params[name] = { ...value, ...targetParam };
+    }
+  }
+  layout.error = source.error;
+  return layout;
+}
