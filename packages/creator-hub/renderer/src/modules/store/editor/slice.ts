@@ -1,4 +1,5 @@
 import { createSlice, isRejectedWithValue } from '@reduxjs/toolkit';
+import * as Sentry from '@sentry/electron/main';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
@@ -95,7 +96,12 @@ export const slice = createSlice({
       if (isRejectedWithValue(action) && isWorkspaceError(action.payload, 'PROJECT_NOT_FOUND')) {
         state.error = action.payload;
       } else {
-        state.error = action.error.message || 'Failed to run project';
+        state.error = new ProjectError('FAILED_TO_RUN_PROJECT');
+
+        Sentry.captureException(state.error, {
+          tags: { source: 'editor-page' },
+          extra: { context: 'Unknown error in runProject', action },
+        });
       }
       state.project = undefined;
     });
@@ -131,6 +137,10 @@ export const slice = createSlice({
       state.project = action.payload;
     });
     builder.addCase(workspaceActions.createProject.rejected, state => {
+      state.error = new ProjectError('PROJECT_NOT_CREATED');
+      state.project = undefined;
+    });
+    builder.addCase(workspaceActions.createProjectAndInstall.rejected, state => {
       state.error = new ProjectError('PROJECT_NOT_CREATED');
       state.project = undefined;
     });

@@ -74,10 +74,7 @@ export function EditorPage() {
   );
 
   useEffect(() => {
-    if (
-      isWorkspaceError(error, 'PROJECT_NOT_FOUND') ||
-      isProjectError(error, 'PROJECT_NOT_CREATED')
-    ) {
+    if (isWorkspaceError(error, 'PROJECT_NOT_FOUND') || isProjectError(error)) {
       navigate('/scenes');
     }
 
