@@ -14,7 +14,7 @@ import { getInputType, getStep, getMin, getMax } from './constraints';
 import { applyTransform } from './utils';
 import { getDataSourceOptions } from './dataSources';
 import { TriggerSection } from './TriggerSection';
-import { type WidgetProps } from './types';
+import { WidgetType, type WidgetProps } from './types';
 
 const DynamicField: React.FC<WidgetProps> = ({
   entity,
@@ -39,7 +39,7 @@ const DynamicField: React.FC<WidgetProps> = ({
     };
 
     switch (widget) {
-      case 'TriggerSection':
+      case WidgetType.TriggerSection:
         return (
           <TriggerSection
             entity={entity}
@@ -48,7 +48,7 @@ const DynamicField: React.FC<WidgetProps> = ({
           />
         );
 
-      case 'CheckboxField':
+      case WidgetType.CheckboxField:
         return (
           <CheckboxField
             {...commonProps}
@@ -56,7 +56,7 @@ const DynamicField: React.FC<WidgetProps> = ({
           />
         );
 
-      case 'RangeField': {
+      case WidgetType.RangeField: {
         // Transform constraints to work with stored values
         const transformedConstraints = constraints
           ? {
@@ -85,19 +85,19 @@ const DynamicField: React.FC<WidgetProps> = ({
           />
         );
       }
-      case 'ColorField':
+      case WidgetType.ColorField:
         return <ColorField {...commonProps} />;
 
-      case 'ColorPicker':
+      case WidgetType.ColorPicker:
         return <ColorPicker {...commonProps} />;
 
-      case 'FileUploadField':
+      case WidgetType.FileUploadField:
         return <FileUploadField {...commonProps} />;
 
-      case 'EntityField':
+      case WidgetType.EntityField:
         return <EntityField {...commonProps} />;
 
-      case 'Dropdown':
+      case WidgetType.Dropdown:
         return (
           <Dropdown
             {...commonProps}
@@ -105,7 +105,7 @@ const DynamicField: React.FC<WidgetProps> = ({
           />
         );
 
-      case 'TextArea':
+      case WidgetType.TextArea:
         return (
           <TextArea
             {...commonProps}
