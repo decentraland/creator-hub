@@ -34,6 +34,7 @@ import {
   isScriptNameAvailable,
   buildScriptPath,
   readScript,
+  mergeLayout,
 } from './utils';
 import { getScriptParams } from './parser';
 import type { Props, ScriptLayout, ScriptParamUnion, ChangeEvt, ScriptItem } from './types';
@@ -47,6 +48,9 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
 
   const hasScript = useHasComponent(entityId, Script);
   const [componentValue, setComponentValue] = useComponentValue(entityId, Script);
+  const [dialogMode, setDialogMode] = useState<'create' | 'import' | undefined>(undefined);
+  const [newScriptName, setNewScriptName] = useState('');
+  const [error, setError] = useState<string | undefined>(undefined);
   const scripts = componentValue?.value ?? [];
 
   const addScript = useCallback(
@@ -73,9 +77,10 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     [scripts, setComponentValue],
   );
 
-  const [dialogMode, setDialogMode] = useState<'create' | 'import' | undefined>(undefined);
-  const [newScriptName, setNewScriptName] = useState('');
-  const [error, setError] = useState<string | undefined>(undefined);
+  // memoize parsed layouts to avoid re-parsing on every render
+  const parsedLayouts = useMemo(() => {
+    return scripts.map(script => parseLayout(script.layout));
+  }, [scripts]);
 
   const createScript = useCallback(
     (path: string, priority = 0, content: string) => {
@@ -139,8 +144,9 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
         scripts.map(async script => {
           try {
             const content = await readScript(dataLayer, script.path);
-            const { params, error } = getScriptParams(content);
-            const layout: ScriptLayout = { params, error };
+            const newLayout = getScriptParams(content);
+            const currentLayout = parseLayout(script.layout) || { params: {} };
+            const layout: ScriptLayout = mergeLayout(newLayout, currentLayout);
 
             return {
               ...script,
@@ -207,11 +213,6 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     setDialogMode(undefined);
     setError(undefined);
   }, [setDialogMode, setError]);
-
-  // memoize parsed layouts to avoid re-parsing on every render
-  const parsedLayouts = useMemo(() => {
-    return scripts.map(script => parseLayout(script.layout));
-  }, [scripts]);
 
   const handleUpdateDynamicField = useCallback(
     (index: number, paramName: string, paramValue: ScriptParamUnion['value']) => {
