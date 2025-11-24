@@ -28,6 +28,8 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
 
   if (!hasTextShape) return null;
 
+  const fontAutoSize = getInputProps('fontAutoSize', e => e.target.checked);
+
   return (
     <Container
       label="TextShape"
@@ -55,7 +57,8 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
         />
         <CheckboxField
           label="Font Auto-Size"
-          {...getInputProps('fontAutoSize', e => e.target.checked)}
+          {...fontAutoSize}
+          checked={!!fontAutoSize.value}
         />
       </Block>
       <Block label="Text Align">
