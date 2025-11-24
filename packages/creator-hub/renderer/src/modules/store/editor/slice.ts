@@ -1,5 +1,5 @@
 import { createSlice, isRejectedWithValue } from '@reduxjs/toolkit';
-import * as Sentry from '@sentry/electron/main';
+import { captureException } from '@sentry/electron/renderer';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
@@ -98,7 +98,7 @@ export const slice = createSlice({
       } else {
         state.error = new ProjectError('FAILED_TO_RUN_PROJECT');
 
-        Sentry.captureException(state.error, {
+        captureException(state.error, {
           tags: { source: 'editor-page' },
           extra: { context: 'Unknown error in runProject', action },
         });
