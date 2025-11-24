@@ -1,5 +1,4 @@
 import { createSlice, isRejectedWithValue } from '@reduxjs/toolkit';
-import type { ChainId } from '@dcl/schemas';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
@@ -29,7 +28,7 @@ export const runScene = createAsyncThunk(
 );
 export const publishScene = createAsyncThunk(
   'editor/publishScene',
-  async (opts: DeployOptions & { chainId: ChainId; wallet: string }, { dispatch, getState }) => {
+  async (opts: DeployOptions, { dispatch, getState }) => {
     const { translation } = getState();
     const port = await editor.publishScene({ ...opts, language: translation.locale });
     const deployment = { path: opts.path, port, chainId: opts.chainId, wallet: opts.wallet };

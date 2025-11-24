@@ -2,6 +2,8 @@ import type {
   Entity,
   IEngine,
   LastWriteWinElementSetComponentDefinition,
+  PBGltfNodeModifiers_GltfNodeModifier,
+  PBVideoPlayer,
   TransformType,
 } from '@dcl/ecs';
 import { getComponentEntityTree, Transform as TransformEngine } from '@dcl/ecs';
@@ -11,8 +13,10 @@ import {
   ComponentName as AssetPackComponentNames,
   COMPONENTS_WITH_ID,
 } from '@dcl/asset-packs';
-import type { AssetData } from '../../logic/catalog';
-import { CoreComponents, EditorComponentNames } from '../components';
+import type { AssetData } from '../../../logic/catalog';
+import { isValidHttpsUrl } from '../../../utils/url';
+import { CoreComponents, EditorComponentNames } from '../../components';
+import { processMaterialTextures } from './utils';
 
 const BASE_ENTITY_ID = 512 as Entity;
 const SINGLE_ENTITY_ID = 0 as Entity;
@@ -273,7 +277,8 @@ export function createCustomAsset(engine: IEngine) {
           if (value && propertyKeys.length > 0) {
             const finalKey = propertyKeys[propertyKeys.length - 1];
             const originalValue: string = value[finalKey];
-            if (originalValue) {
+            // Only local asset resources are supported
+            if (originalValue && !isValidHttpsUrl(originalValue)) {
               value[finalKey] = originalValue.replace(/^.*[/]([^/]+)$/, '{assetPath}/$1');
               resources.push(originalValue);
             }
@@ -321,6 +326,35 @@ export function createCustomAsset(engine: IEngine) {
             }),
           }));
           processedComponentValue = { ...processedComponentValue, value: newValue };
+        }
+
+        if (componentName === CoreComponents.GLTF_NODE_MODIFIERS) {
+          const VideoPlayer = engine.getComponent(
+            CoreComponents.VIDEO_PLAYER,
+          ) as LastWriteWinElementSetComponentDefinition<PBVideoPlayer>;
+          if (VideoPlayer.has(entity)) {
+            const newValue = processedComponentValue.modifiers?.map(
+              (modifier: PBGltfNodeModifiers_GltfNodeModifier) => {
+                if (!modifier.material) return modifier;
+
+                return {
+                  ...modifier,
+                  material: processMaterialTextures(modifier.material, entity),
+                };
+              },
+            );
+
+            processedComponentValue = { ...processedComponentValue, modifiers: newValue };
+          }
+        }
+
+        if (componentName === CoreComponents.MATERIAL) {
+          const VideoPlayer = engine.getComponent(
+            CoreComponents.VIDEO_PLAYER,
+          ) as LastWriteWinElementSetComponentDefinition<PBVideoPlayer>;
+          if (VideoPlayer.has(entity)) {
+            processedComponentValue = processMaterialTextures(processedComponentValue, entity);
+          }
         }
 
         // Initialize component in map if it doesn't exist

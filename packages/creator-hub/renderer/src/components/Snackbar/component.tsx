@@ -3,11 +3,12 @@ import { Snackbar } from '@mui/material';
 
 import type { Notification } from '/@/modules/store/snackbar/types';
 import { useSnackbar } from '/@/hooks/useSnackbar';
-
+import { useEditor } from '/@/hooks/useEditor';
 import { MissingScenes } from './MissingScenes';
 import { Generic } from './Generic';
 import { NewDependencyVersion } from './DependencyVersion';
 import { Deploy } from './Deploy';
+import { StyledBackdrop } from './component.styled';
 
 import './styles.css';
 
@@ -15,6 +16,7 @@ const DEFAULT_DURATION_IN_MS = 5_000;
 
 export function SnackbarComponent() {
   const { notifications, close, dismiss } = useSnackbar();
+  const { isInstallingProject: isInstallingDependencies } = useEditor();
 
   const getComponent = useCallback((notification: Notification) => {
     switch (notification.type) {
@@ -42,26 +44,29 @@ export function SnackbarComponent() {
   }, []);
 
   return (
-    <div className="Snackbar">
-      {notifications.map((notification, idx) => {
-        const component = getComponent(notification);
+    <>
+      <StyledBackdrop open={isInstallingDependencies} />
+      <div className="Snackbar">
+        {notifications.map((notification, idx) => {
+          const component = getComponent(notification);
 
-        return (
-          <Snackbar
-            style={{ bottom: `${(notifications.length - idx) * 60}px` }}
-            key={notification.id}
-            open={true}
-            autoHideDuration={getDuration(notification)}
-            onClose={dismiss(notification.id, idx)}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-          >
-            <div>
-              {/* dont remove this wrapping div... */}
-              {component}
-            </div>
-          </Snackbar>
-        );
-      })}
-    </div>
+          return (
+            <Snackbar
+              style={{ bottom: `${(notifications.length - idx) * 60}px` }}
+              key={notification.id}
+              open={true}
+              autoHideDuration={getDuration(notification)}
+              onClose={dismiss(notification.id, idx)}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+              <div>
+                {/* dont remove this wrapping div... */}
+                {component}
+              </div>
+            </Snackbar>
+          );
+        })}
+      </div>
+    </>
   );
 }
