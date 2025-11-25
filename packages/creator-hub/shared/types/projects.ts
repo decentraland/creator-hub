@@ -42,7 +42,11 @@ export type Project = {
   info: ProjectInfo;
 };
 
-export type ErrorName = 'PROJECT_NOT_CREATED' | 'INVALID_PATH' | 'FAILED_TO_RUN_PROJECT';
+export type ErrorName =
+  | 'PROJECT_NOT_CREATED'
+  | 'INVALID_PATH'
+  | 'FAILED_TO_RUN_PROJECT'
+  | 'FAILED_TO_INSTALL_DEPENDENCIES';
 
 export class ProjectError extends ErrorBase<ErrorName> {}
 
