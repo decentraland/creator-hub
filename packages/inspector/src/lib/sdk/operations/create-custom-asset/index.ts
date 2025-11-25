@@ -315,19 +315,6 @@ export function createCustomAsset(engine: IEngine) {
                 resources.push(originalPath);
               }
 
-              // Process layout to replace assetPath parameter value
-              if (scriptItem.layout) {
-                try {
-                  const layout = JSON.parse(scriptItem.layout);
-                  if (layout.params && layout.params.assetPath) {
-                    layout.params.assetPath.value = '{assetPath}';
-                  }
-                  updatedScriptItem.layout = JSON.stringify(layout);
-                } catch (error) {
-                  console.warn('Failed to parse script layout:', error);
-                }
-              }
-
               return updatedScriptItem;
             });
           }

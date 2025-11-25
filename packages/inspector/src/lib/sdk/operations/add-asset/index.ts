@@ -361,7 +361,6 @@ export function addAsset(engine: IEngine) {
               const newValue = componentValue.value.map((scriptItem: any) => ({
                 ...scriptItem,
                 path: scriptItem.path.replace('{assetPath}', base),
-                layout: scriptItem.layout?.replace(/{assetPath}/g, base) || scriptItem.layout,
               }));
               componentValue = { ...componentValue, value: newValue };
               break;

@@ -6,7 +6,10 @@ export function getScriptTemplateClass(scriptName: string): string {
 import { engine, Entity } from '@dcl/sdk/ecs'
 
 export class ${className} {
-  constructor(public entity: Entity) {}
+  constructor(
+    public src: string,
+    public entity: Entity
+  ) {}
 
   /**
    * Start function - called when the script is initialized
