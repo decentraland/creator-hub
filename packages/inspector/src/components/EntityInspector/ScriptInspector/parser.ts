@@ -52,59 +52,38 @@ function getValueAndTypeFromType(
   return { type: 'string', value: '' };
 }
 
-function assertFirstParamIsEntity(params: FunctionParameter[]): void {
-  const firstParam = params[0];
-  const errorMessage = 'First parameter of start function must be of type "Entity"';
-  if (!firstParam || firstParam.type !== 'Identifier') {
-    throw new Error(errorMessage);
+function getIdentifier(param: FunctionParameter | TSParameterProperty): Identifier | undefined {
+  if (param.type === 'Identifier') {
+    return param;
+  } else if (param.type === 'TSParameterProperty' && param.parameter.type === 'Identifier') {
+    return param.parameter;
   }
-
-  const firstParamTypeAnnotation = firstParam.typeAnnotation;
-  if (
-    !firstParamTypeAnnotation ||
-    firstParamTypeAnnotation.type !== 'TSTypeAnnotation' ||
-    firstParamTypeAnnotation.typeAnnotation.type !== 'TSTypeReference' ||
-    firstParamTypeAnnotation.typeAnnotation.typeName.type !== 'Identifier' ||
-    firstParamTypeAnnotation.typeAnnotation.typeName.name !== 'Entity'
-  ) {
-    throw new Error(errorMessage);
-  }
+  return undefined;
 }
 
-function assertConstructorHasEntityParam(
-  params: (FunctionParameter | TSParameterProperty)[],
-): void {
-  const firstParam = params[0];
-  const errorMessage = 'Constructor must have an entity parameter of type "Entity"';
-
-  // support both "entity: Entity" and "public/private entity: Entity" syntax
-  if (!firstParam) {
-    throw new Error(errorMessage);
-  }
-
-  let identifier: Identifier | undefined;
-  if (firstParam.type === 'Identifier') {
-    identifier = firstParam;
-  } else if (
-    firstParam.type === 'TSParameterProperty' &&
-    firstParam.parameter.type === 'Identifier'
-  ) {
-    identifier = firstParam.parameter;
-  }
-
-  if (!identifier) {
-    throw new Error(errorMessage);
-  }
-
-  const typeAnnotation = identifier.typeAnnotation;
+function assertScriptSignature(params: (FunctionParameter | TSParameterProperty)[]): void {
+  // first param must be src: string
+  const firstIdentifier = getIdentifier(params[0]);
   if (
-    !typeAnnotation ||
-    typeAnnotation.type !== 'TSTypeAnnotation' ||
-    typeAnnotation.typeAnnotation.type !== 'TSTypeReference' ||
-    typeAnnotation.typeAnnotation.typeName.type !== 'Identifier' ||
-    typeAnnotation.typeAnnotation.typeName.name !== 'Entity'
+    !firstIdentifier ||
+    !firstIdentifier.typeAnnotation ||
+    firstIdentifier.typeAnnotation.type !== 'TSTypeAnnotation' ||
+    firstIdentifier.typeAnnotation.typeAnnotation.type !== 'TSStringKeyword'
   ) {
-    throw new Error(errorMessage);
+    throw new Error('First parameter must be "src: string"');
+  }
+
+  // second param must be entity: Entity
+  const secondIdentifier = getIdentifier(params[1]);
+  if (
+    !secondIdentifier ||
+    !secondIdentifier.typeAnnotation ||
+    secondIdentifier.typeAnnotation.type !== 'TSTypeAnnotation' ||
+    secondIdentifier.typeAnnotation.typeAnnotation.type !== 'TSTypeReference' ||
+    secondIdentifier.typeAnnotation.typeAnnotation.typeName.type !== 'Identifier' ||
+    secondIdentifier.typeAnnotation.typeAnnotation.typeName.name !== 'Entity'
+  ) {
+    throw new Error('Second parameter must be "entity: Entity"');
   }
 }
 
@@ -193,17 +172,17 @@ export function getScriptParams(content: string): ScriptParseResult {
     });
 
     for (const statement of ast.program.body) {
-      // handle function-based scripts: export function start(entity: Entity, ...)
+      // handle function-based scripts: export function start(src: string, entity: Entity, ...)
       if (
         statement.type === 'ExportNamedDeclaration' &&
         statement.declaration?.type === 'FunctionDeclaration' &&
         statement.declaration.id?.name === 'start'
       ) {
         const functionDeclaration = statement.declaration;
-        assertFirstParamIsEntity(functionDeclaration.params);
+        assertScriptSignature(functionDeclaration.params);
 
-        // skip first parameter (Entity) and process the rest
-        const restParams = functionDeclaration.params.slice(1);
+        // skip first two parameters (src and entity) and process the rest
+        const restParams = functionDeclaration.params.slice(2);
         params = extractParamsFromFunctionParams(restParams);
 
         break;
@@ -223,10 +202,10 @@ export function getScriptParams(content: string): ScriptParseResult {
         );
 
         if (constructor) {
-          assertConstructorHasEntityParam(constructor.params);
+          assertScriptSignature(constructor.params);
 
-          // skip first parameter (entity) and extract the rest
-          const restParams = constructor.params.slice(1);
+          // skip first two parameters (src and entity) and extract the rest
+          const restParams = constructor.params.slice(2);
           params = extractParamsFromFunctionParams(restParams);
         }
 
