@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "dependencies": {
     "@babel/parser": "7.28.5",
-    "@dcl/asset-packs": "https://sdk-team-cdn.decentraland.org/@dcl/asset-packs/branch/feature/scripts-component/dcl-asset-packs-2.7.2-19511326306.commit-e4a07d3.tgz",
+    "@dcl/asset-packs": "https://sdk-team-cdn.decentraland.org/@dcl/asset-packs/branch/feature/scripts-component/dcl-asset-packs-2.7.2-19678384553.commit-79f8f37.tgz",
     "ts-deepmerge": "^7.0.0"
   },
   "devDependencies": {
