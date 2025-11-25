@@ -2,16 +2,16 @@ import React, { useCallback } from 'react';
 import { useDrag } from 'react-dnd';
 
 import './CustomAssets.css';
-import type { CustomAsset } from '../../lib/logic/catalog';
+import { CustomAsset } from '../../lib/logic/catalog';
 import CustomAssetIcon from '../Icons/CustomAsset';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { selectCustomAssets } from '../../redux/app';
 import { DropTypesEnum } from '../../lib/sdk/drag-drop';
+import { CustomAssetContextMenu } from './ContextMenu/CustomAssetContextMenu';
+import { openCustomAssetContextMenu } from './ContextMenu/ContextMenu';
 import { deleteCustomAsset, setAssetToRename } from '../../redux/data-layer';
 import { AssetsTab } from '../../redux/ui/types';
 import { selectAssetsTab } from '../../redux/ui';
-import { openCustomAssetContextMenu } from './ContextMenu/ContextMenu';
-import { CustomAssetContextMenu } from './ContextMenu/CustomAssetContextMenu';
 
 interface CustomAssetItemProps {
   value: CustomAsset;
@@ -62,29 +62,6 @@ const CustomAssetItem: React.FC<CustomAssetItemProps> = ({ value, onDelete, onRe
   );
 };
 
-const EmptyCustomAssets = () => {
-  return (
-    <div className="custom-assets-empty">
-      <div className="custom-assets-empty-card">
-        <div className="custom-assets-empty-content">
-          <i className="icon-custom-assets" />
-          <p>
-            Create custom items by selecting one or more entities, then choosing “
-            <strong>Create Custom Item</strong>” from the right-click menu.
-          </p>
-        </div>
-        <a
-          href="https://www.youtube.com/watch?v=7cGLu8P7dso"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          WATCH TUTORIAL
-        </a>
-      </div>
-    </div>
-  );
-};
-
 export function CustomAssets() {
   const customAssets = useAppSelector(selectCustomAssets);
   const dispatch = useAppDispatch();
@@ -102,8 +79,6 @@ export function CustomAssets() {
     },
     [customAssets, dispatch],
   );
-
-  if (customAssets.length === 0) return <EmptyCustomAssets />;
 
   return (
     <div className="custom-assets">
