@@ -129,42 +129,54 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     [scripts],
   );
 
+  // this will reload ALL scripts, not only the current entity ones...
   const handleReloadScripts = useCallback(
     async (e: React.MouseEvent<SVGElement>) => {
       e.stopPropagation();
       setError(undefined);
-      if (scripts.length === 0) return;
 
       const dataLayer = getDataLayerInterface();
       if (!dataLayer) return;
 
       let firstError: string | undefined;
+      const allEntitiesWithScripts = Array.from(sdk.engine.getEntitiesWith(Script));
 
-      const updatedScripts = await Promise.all(
-        scripts.map(async script => {
-          try {
-            const content = await readScript(dataLayer, script.path);
-            const newLayout = getScriptParams(content);
-            const currentLayout = parseLayout(script.layout) || { params: {} };
-            const layout: ScriptLayout = mergeLayout(newLayout, currentLayout);
+      if (allEntitiesWithScripts.length === 0) return;
 
-            return {
-              ...script,
-              layout: JSON.stringify(layout),
-            };
-          } catch (error) {
-            const msg = `Failed to reload script '${script.path}'`;
-            console.error(`${msg}:`, error);
-            if (!firstError) firstError = msg;
-            return script; // keep existing if read fails
-          }
+      await Promise.all(
+        allEntitiesWithScripts.map(async ([entity, scriptComponent]) => {
+          const entityScripts = scriptComponent.value || [];
+          if (entityScripts.length === 0) return;
+
+          const updatedScripts = await Promise.all(
+            entityScripts.map(async script => {
+              try {
+                const content = await readScript(dataLayer, script.path);
+                const newLayout = getScriptParams(content);
+                const currentLayout = parseLayout(script.layout) || { params: {} };
+                const layout = mergeLayout(newLayout, currentLayout);
+
+                return {
+                  ...script,
+                  layout: JSON.stringify(layout),
+                };
+              } catch (error) {
+                const msg = `Failed to reload script '${script.path}'`;
+                console.error(`${msg}:`, error);
+                if (!firstError) firstError = msg;
+                return script; // keep existing if read fails
+              }
+            }),
+          );
+
+          Script.createOrReplace(entity, { value: updatedScripts });
         }),
       );
 
       if (firstError) setError(firstError);
-      setComponentValue({ value: updatedScripts });
+      await sdk.operations.dispatch();
     },
-    [scripts, setComponentValue, setError],
+    [sdk, Script, setError],
   );
 
   const handleCreateScript = useCallback(() => {
