@@ -284,6 +284,7 @@ export function Tree<T>() {
       const handleDuplicate = () => {
         if (isEntity && sdk) {
           const selectedEntities = sdk.operations.getSelectedEntities();
+          sdk.operations.removeSelectedEntities();
           if (selectedEntities.length > 1) {
             selectedEntities.forEach(entity => {
               if (typeof entity === typeof value) {
