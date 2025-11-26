@@ -68,10 +68,6 @@
   "repository": "https://github.com/decentraland/creator-hub.git",
   "scripts": {
     "build": "electron-vite build",
-    "build:dev": "cross-env MODE=development && electron-vite build --mode development",
-    "build:main": "cd ./main && vite build",
-    "build:preload": "cd ./preload && vite build",
-    "build:renderer": "cd ./renderer && vite build",
     "compile": "cross-env MODE=production npm run build && electron-builder build --config electron-builder.cjs --dir",
     "compile:installer": "cross-env MODE=production npm run build && electron-builder build --config electron-builder.cjs --publish never",
     "postinstall": "cross-env ELECTRON_RUN_AS_NODE=1 electron scripts/update-electron-vendors.js",
@@ -85,12 +81,8 @@
     "test:unit": "npm run test:main && npm run test:preload && npm run test:renderer && npm run test:shared",
     "typecheck": "npm run typecheck:main && npm run typecheck:preload && npm run typecheck:renderer",
     "typecheck:main": "tsc --noEmit -p main/tsconfig.json",
-    "typecheck:main:watch": "tsc --noEmit --watch --preserveWatchOutput -p main/tsconfig.json",
     "typecheck:preload": "tsc --noEmit -p preload/tsconfig.json",
-    "typecheck:preload:watch": "tsc --noEmit --watch --preserveWatchOutput -p preload/tsconfig.json",
     "typecheck:renderer": "tsc --noEmit -p renderer/tsconfig.json",
-    "typecheck:renderer:watch": "tsc --noEmit --watch --preserveWatchOutput -p renderer/tsconfig.json",
-    "typecheck:watch": "npm run typecheck:main:watch & npm run typecheck:preload:watch & npm run typecheck:renderer:watch",
     "watch": "electron-vite dev --watch --mode development"
   },
   "type": "module"
