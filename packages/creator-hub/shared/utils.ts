@@ -45,8 +45,6 @@ export const throttle = <T, K extends any[]>(
 
 export const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-export const CLIENT_NOT_INSTALLED_ERROR = 'Decentraland Desktop Client failed with';
-
 export function debounce<F extends (...args: any[]) => void>(func: F, delay: number) {
   let timer: ReturnType<typeof setTimeout>;
   return function (...args: Parameters<F>) {

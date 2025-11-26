@@ -42,12 +42,13 @@ export type Project = {
   info: ProjectInfo;
 };
 
-export type CreateError = 'PROJECT_NOT_CREATED';
-export type PathError = 'INVALID_PATH';
+export type ErrorName =
+  | 'PROJECT_NOT_CREATED'
+  | 'INVALID_PATH'
+  | 'FAILED_TO_RUN_PROJECT'
+  | 'FAILED_TO_INSTALL_DEPENDENCIES';
 
-export type Error = CreateError | PathError;
+export class ProjectError extends ErrorBase<ErrorName> {}
 
-export class ProjectError extends ErrorBase<Error> {}
-
-export const isProjectError = (error: unknown, type: Error): error is ProjectError =>
-  error instanceof ProjectError && (error.name === type || error.message === type);
+export const isProjectError = (error: unknown, type?: ErrorName): error is ProjectError =>
+  error instanceof ProjectError && (!type || error.name === type || error.message === type);

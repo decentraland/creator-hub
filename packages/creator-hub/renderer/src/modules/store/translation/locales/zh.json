@@ -326,7 +326,8 @@
       "installing_dependencies": "安装依赖项",
       "installing_dependencies_failed": "安装依赖项失败",
       "invalid_scenes_folder": "无效的场景文件夹。请在创建场景之前在设置中配置有效的场景文件夹。",
-      "create_scene_failed": "尝试创建场景时发生错误。请重试。"
+      "create_scene_failed": "尝试创建场景时发生错误。请重试。",
+      "run_scene_failed": "加载项目失败。请重试。"
     },
     "missing_projects": {
       "title": "{scenes} 丢失的 {scenes, plural, one {场景} other {场景}} 成立",

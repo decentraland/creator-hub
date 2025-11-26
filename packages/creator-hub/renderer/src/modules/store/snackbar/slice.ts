@@ -96,6 +96,15 @@ export const slice = createSlice({
           }),
         );
       })
+      .addCase(workspaceActions.runProject.rejected, (state, payload) => {
+        const { requestId } = payload.meta;
+        state.notifications = state.notifications.filter($ => $.id !== requestId);
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.run_scene_failed'), {
+            requestId,
+          }),
+        );
+      })
       .addCase(workspaceActions.importProject.fulfilled, (state, payload) => {
         const { requestId } = payload.meta;
         state.notifications = state.notifications.filter($ => $.id !== requestId);
