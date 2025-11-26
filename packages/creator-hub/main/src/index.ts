@@ -1,7 +1,7 @@
 import { platform } from 'node:process';
 import { app } from 'electron';
 import * as Sentry from '@sentry/electron/main';
-import log from 'electron-log/main';
+import log from 'electron-log/main.js';
 
 import { restoreOrCreateMainWindow } from '/@/mainWindow';
 import { initIpc } from '/@/modules/ipc';

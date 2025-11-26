@@ -53,6 +53,7 @@
     "decentraland-ui2": "0.23.1",
     "electron": "37.3.1",
     "electron-builder": "26.0.12",
+    "electron-vite": "^4.0.1",
     "flat": "6.0.1",
     "react": "18.3.1",
     "react-dom": "18.3.1",
@@ -66,7 +67,8 @@
   "private": true,
   "repository": "https://github.com/decentraland/creator-hub.git",
   "scripts": {
-    "build": "npm run build:main && npm run build:preload && npm run build:renderer",
+    "build": "electron-vite build",
+    "build:dev": "cross-env MODE=development && electron-vite build --mode development",
     "build:main": "cd ./main && vite build",
     "build:preload": "cd ./preload && vite build",
     "build:renderer": "cd ./renderer && vite build",
@@ -83,9 +85,13 @@
     "test:unit": "npm run test:main && npm run test:preload && npm run test:renderer && npm run test:shared",
     "typecheck": "npm run typecheck:main && npm run typecheck:preload && npm run typecheck:renderer",
     "typecheck:main": "tsc --noEmit -p main/tsconfig.json",
+    "typecheck:main:watch": "tsc --noEmit --watch --preserveWatchOutput -p main/tsconfig.json",
     "typecheck:preload": "tsc --noEmit -p preload/tsconfig.json",
+    "typecheck:preload:watch": "tsc --noEmit --watch --preserveWatchOutput -p preload/tsconfig.json",
     "typecheck:renderer": "tsc --noEmit -p renderer/tsconfig.json",
-    "watch": "node scripts/watch.js"
+    "typecheck:renderer:watch": "tsc --noEmit --watch --preserveWatchOutput -p renderer/tsconfig.json",
+    "typecheck:watch": "npm run typecheck:main:watch & npm run typecheck:preload:watch & npm run typecheck:renderer:watch",
+    "watch": "electron-vite dev --watch --mode development"
   },
   "type": "module"
 }

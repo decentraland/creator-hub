@@ -1,5 +1,5 @@
 import path from 'node:path';
-import log from 'electron-log/main';
+import log from 'electron-log/main.js';
 
 import { FileSystemStorage, type IFileSystemStorage } from '/shared/types/storage';
 import deepmerge from 'deepmerge';

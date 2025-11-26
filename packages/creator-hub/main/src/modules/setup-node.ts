@@ -3,7 +3,7 @@ import fs from 'fs';
 import { platform } from 'os';
 import { app } from 'electron';
 import cmdShim from 'cmd-shim';
-import log from 'electron-log/main';
+import log from 'electron-log/main.js';
 import { getBinPath } from './path';
 
 const APP_UNPACKED_PATH = path.join(
