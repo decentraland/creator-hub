@@ -268,6 +268,13 @@ export function addAsset(engine: IEngine) {
               componentValue.src = componentValue.src.replace('{assetPath}', base);
               break;
             }
+            case CoreComponents.GLTF_NODE_MODIFIERS: {
+              componentValue.modifiers = componentValue.modifiers?.map((modifier: any) => ({
+                ...modifier,
+                material: parseMaterial(base, modifier.material, targetEntity),
+              }));
+              break;
+            }
             case EditorComponentNames.Config: {
               if (assetId) {
                 componentValue = { ...componentValue, assetId };
@@ -283,7 +290,7 @@ export function addAsset(engine: IEngine) {
               break;
             }
             case CoreComponents.MATERIAL: {
-              componentValue = parseMaterial(base, componentValue);
+              componentValue = parseMaterial(base, componentValue, targetEntity);
               break;
             }
             case ComponentName.ACTIONS: {

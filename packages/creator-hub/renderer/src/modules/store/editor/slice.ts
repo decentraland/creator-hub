@@ -1,10 +1,10 @@
 import { createSlice, isRejectedWithValue } from '@reduxjs/toolkit';
-import type { ChainId } from '@dcl/schemas';
+import { captureException } from '@sentry/electron/renderer';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
 import type { DeployOptions } from '/shared/types/deploy';
-import { ProjectError, type Project } from '/shared/types/projects';
+import { isProjectError, ProjectError, type Project } from '/shared/types/projects';
 import type { PreviewOptions } from '/shared/types/settings';
 import { isWorkspaceError } from '/shared/types/workspace';
 
@@ -29,7 +29,7 @@ export const runScene = createAsyncThunk(
 );
 export const publishScene = createAsyncThunk(
   'editor/publishScene',
-  async (opts: DeployOptions & { chainId: ChainId; wallet: string }, { dispatch, getState }) => {
+  async (opts: DeployOptions, { dispatch, getState }) => {
     const { translation } = getState();
     const port = await editor.publishScene({ ...opts, language: translation.locale });
     const deployment = { path: opts.path, port, chainId: opts.chainId, wallet: opts.wallet };
@@ -96,7 +96,12 @@ export const slice = createSlice({
       if (isRejectedWithValue(action) && isWorkspaceError(action.payload, 'PROJECT_NOT_FOUND')) {
         state.error = action.payload;
       } else {
-        state.error = action.error.message || 'Failed to run project';
+        state.error = new ProjectError('FAILED_TO_RUN_PROJECT');
+
+        captureException(state.error, {
+          tags: { source: 'editor-page' },
+          extra: { context: 'Unknown error in runProject', action },
+        });
       }
       state.project = undefined;
     });
@@ -133,6 +138,10 @@ export const slice = createSlice({
     });
     builder.addCase(workspaceActions.createProject.rejected, state => {
       state.error = new ProjectError('PROJECT_NOT_CREATED');
+      state.project = undefined;
+    });
+    builder.addCase(workspaceActions.createProjectAndInstall.rejected, state => {
+      if (isProjectError(state.error)) state.error = new ProjectError('PROJECT_NOT_CREATED');
       state.project = undefined;
     });
     builder.addCase(workspaceActions.updateProject, (state, action) => {
@@ -180,6 +189,7 @@ export const slice = createSlice({
       state.isInstallingProject = false;
     });
     builder.addCase(workspaceActions.installProject.rejected, state => {
+      state.error = new ProjectError('FAILED_TO_INSTALL_DEPENDENCIES');
       state.isInstallingProject = false;
     });
     builder.addCase(workspaceActions.saveAndGetThumbnail.fulfilled, (state, action) => {

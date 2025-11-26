@@ -66,7 +66,8 @@
     "project_actions": {
       "delete_project": "Borrar de Mis Escenas",
       "duplicate_project": "Duplicar",
-      "open_folder": "Abrir Carpeta"
+      "open_folder": "Abrir Carpeta",
+      "view_deployments": "Ver Despliegues"
     },
     "no_scenes": {
       "title": "Crea tu primera escena",
@@ -235,6 +236,13 @@
     "publish_history": {
       "title": "Historial de Publicaciones"
     },
+    "deployment_history": {
+      "title": "Historial de Despliegues",
+      "no_deployments": "No hay historial de despliegues disponible para este proyecto.",
+      "world": "Mundo",
+      "land": "Tierra",
+      "current": "Actual"
+    },
     "app_settings": {
       "title": "Configuración de la aplicación",
       "fields": {
@@ -321,7 +329,8 @@
       "installing_dependencies": "Instalando dependencias...",
       "installing_dependencies_failed": "Error al instalar dependencias",
       "invalid_scenes_folder": "Carpeta de escenas inválida. Por favor, ingresa una carpeta de escenas válida en la configuración de la aplicación antes de crear una escena.",
-      "create_scene_failed": "Ocurrió un error al crear la escena. Por favor, inténtalo nuevamente."
+      "create_scene_failed": "Ocurrió un error al crear la escena. Por favor, inténtalo nuevamente.",
+      "run_scene_failed": "Error al cargar el proyecto. Por favor, inténtalo de nuevo."
     },
     "missing_projects": {
       "title": "{scenes} {scenes, plural, one {escena} other {escenas}} {scenes, plural, one {faltante} other {faltantes}}",
