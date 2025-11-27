@@ -215,7 +215,7 @@ export const slice = createSlice({
       handleInstallationStart(state);
     });
     builder.addCase(workspaceActions.updatePackages.fulfilled, handleInstallationSuccess);
-    builder.addCase(workspaceActions.updatePackages.rejected, (state, action) => {
+    builder.addCase(workspaceActions.updatePackages.rejected, state => {
       state.error = new ProjectError('FAILED_TO_INSTALL_DEPENDENCIES');
       state.isInstallingProject = false;
     });
