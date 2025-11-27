@@ -348,7 +348,8 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
                 accept={ACCEPTED_FILE_TYPES['script']}
                 error={!isValidPath(script.path) ? 'Invalid script path' : undefined}
               />
-              <TextField
+              {/* removed Priority field. Leaving it here just in case we need to restore it... */}
+              {/* <TextField
                 label="Priority"
                 type="number"
                 value={fromNumber(script.priority)}
@@ -359,7 +360,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
                   });
                 }}
                 error={!isValidNumber(fromNumber(script.priority))}
-              />
+              /> */}
               {parsedLayouts[index]?.error ? (
                 <Message
                   text={`Error found while parsing script: ${parsedLayouts[index].error!}`}
