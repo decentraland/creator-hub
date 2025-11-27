@@ -6,5 +6,7 @@ export type Props = {
   indicator?: boolean | string | JSX.Element;
   border?: boolean;
   gap?: boolean;
+  variant?: 'minimal';
+  style?: React.CSSProperties;
   onRemoveContainer?: () => void;
 };
