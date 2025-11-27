@@ -1,4 +1,4 @@
-import type { GizmoManager } from '@babylonjs/core';
+import type { GizmoManager, Scene } from '@babylonjs/core';
 import { Vector3, TransformNode, Quaternion } from '@babylonjs/core';
 import type { Entity } from '@dcl/ecs';
 import type { EcsEntity } from '../EcsEntity';
@@ -23,6 +23,9 @@ export class PositionGizmo implements IGizmoTransformer {
   private updateEntityPosition: ((entity: EcsEntity) => void) | null = null;
   private dispatchOperations: (() => void) | null = null;
   private isWorldAligned = true;
+  private repositionAttempts = 0;
+  private maxRepositionAttempts = 60; // Try for about 1 second (60 frames)
+  private renderObserver: any = null;
 
   private dragStartObserver: any = null;
   private dragObserver: any = null;
@@ -31,6 +34,7 @@ export class PositionGizmo implements IGizmoTransformer {
   constructor(
     private gizmoManager: GizmoManager,
     private snapPosition: (position: Vector3) => Vector3,
+    private scene: Scene,
   ) {}
 
   setup(): void {
@@ -38,6 +42,133 @@ export class PositionGizmo implements IGizmoTransformer {
     if (!positionGizmo) return;
 
     positionGizmo.updateGizmoRotationToMatchAttachedMesh = !this.isWorldAligned;
+
+    // Make the entire gizmo 20% bigger
+    positionGizmo.scaleRatio = 1.2;
+
+    // Enable planar gizmos (the panels between axes for 2D movement)
+    positionGizmo.planarGizmoEnabled = true;
+
+    // Configure plane gizmos for better visibility and positioning
+    const planeScale = 0.375; // 25% bigger (0.3 * 1.25)
+
+    if (positionGizmo.xPlaneGizmo) {
+      positionGizmo.xPlaneGizmo.isEnabled = true;
+      positionGizmo.xPlaneGizmo.snapDistance = 0; // Will be set by setSnapDistance
+      positionGizmo.xPlaneGizmo.scaleRatio = planeScale;
+    }
+    if (positionGizmo.yPlaneGizmo) {
+      positionGizmo.yPlaneGizmo.isEnabled = true;
+      positionGizmo.yPlaneGizmo.snapDistance = 0;
+      positionGizmo.yPlaneGizmo.scaleRatio = planeScale;
+    }
+    if (positionGizmo.zPlaneGizmo) {
+      positionGizmo.zPlaneGizmo.isEnabled = true;
+      positionGizmo.zPlaneGizmo.snapDistance = 0;
+      positionGizmo.zPlaneGizmo.scaleRatio = planeScale;
+    }
+  }
+
+  private repositionPlanarGizmos(): void {
+    const positionGizmo = this.getPositionGizmo();
+    if (!positionGizmo) return;
+
+    const offset = 0.25;
+    const tolerance = 0.001; // Small tolerance for floating point comparison
+    let allMeshesFound = true;
+    let allPositionsCorrect = true;
+
+    // Reposition each planar gizmo (scaleRatio is already set in setup())
+    if (positionGizmo.xPlaneGizmo) {
+      const gizmo = positionGizmo.xPlaneGizmo as any;
+      const mesh = gizmo._gizmoMesh || gizmo._rootMesh;
+      if (mesh && mesh.position) {
+        // Only update positions if they're not already at the correct offset
+        if (
+          Math.abs(mesh.position.y - offset) > tolerance ||
+          Math.abs(mesh.position.z - offset) > tolerance
+        ) {
+          mesh.position.y = offset;
+          mesh.position.z = offset;
+          allPositionsCorrect = false;
+        }
+      } else {
+        allMeshesFound = false;
+        allPositionsCorrect = false;
+      }
+    }
+
+    if (positionGizmo.yPlaneGizmo) {
+      const gizmo = positionGizmo.yPlaneGizmo as any;
+      const mesh = gizmo._gizmoMesh || gizmo._rootMesh;
+      if (mesh && mesh.position) {
+        // Only update positions if they're not already at the correct offset
+        if (
+          Math.abs(mesh.position.x - offset) > tolerance ||
+          Math.abs(mesh.position.z - offset) > tolerance
+        ) {
+          mesh.position.x = offset;
+          mesh.position.z = offset;
+          allPositionsCorrect = false;
+        }
+      } else {
+        allMeshesFound = false;
+        allPositionsCorrect = false;
+      }
+    }
+
+    if (positionGizmo.zPlaneGizmo) {
+      const gizmo = positionGizmo.zPlaneGizmo as any;
+      const mesh = gizmo._gizmoMesh || gizmo._rootMesh;
+      if (mesh && mesh.position) {
+        // Only update positions if they're not already at the correct offset
+        if (
+          Math.abs(mesh.position.x - offset) > tolerance ||
+          Math.abs(mesh.position.y - offset) > tolerance
+        ) {
+          mesh.position.x = offset;
+          mesh.position.y = offset;
+          allPositionsCorrect = false;
+        }
+      } else {
+        allMeshesFound = false;
+        allPositionsCorrect = false;
+      }
+    }
+
+    // Stop observer when all meshes are found and positions are correct
+    if (allMeshesFound && allPositionsCorrect && this.renderObserver) {
+      this.stopRepositionObserver();
+    }
+  }
+
+  private startRepositionObserver(): void {
+    // Clean up any existing observer
+    this.stopRepositionObserver();
+
+    // Reset attempt counter
+    this.repositionAttempts = 0;
+
+    // Set up a render observer that tries to reposition every frame
+    this.renderObserver = this.scene.onBeforeRenderObservable.add(() => {
+      this.repositionAttempts++;
+
+      // Try to reposition
+      this.repositionPlanarGizmos();
+
+      // Stop after max attempts to avoid infinite loop
+      if (this.repositionAttempts >= this.maxRepositionAttempts) {
+        this.stopRepositionObserver();
+      }
+    });
+  }
+
+  private stopRepositionObserver(): void {
+    if (this.renderObserver) {
+      this.scene.onBeforeRenderObservable.remove(this.renderObserver);
+      this.renderObserver = null;
+      this.repositionAttempts = 0;
+    }
   }
 
   enable(): void {
@@ -46,6 +177,14 @@ export class PositionGizmo implements IGizmoTransformer {
 
     this.setupDragObservables();
     configureGizmoButtons(positionGizmo, [LEFT_BUTTON]);
+
+    // Force show planar gizmos immediately
+    if (positionGizmo.xPlaneGizmo) positionGizmo.xPlaneGizmo.isEnabled = true;
+    if (positionGizmo.yPlaneGizmo) positionGizmo.yPlaneGizmo.isEnabled = true;
+    if (positionGizmo.zPlaneGizmo) positionGizmo.zPlaneGizmo.isEnabled = true;
+
+    // Start the render observer to continuously try repositioning until meshes are found
+    this.startRepositionObserver();
   }
 
   cleanup(): void {
@@ -54,11 +193,13 @@ export class PositionGizmo implements IGizmoTransformer {
 
     this.gizmoManager.positionGizmoEnabled = false;
     this.cleanupDragObservables();
+    this.stopRepositionObserver();
     this.resetState();
   }
 
   setEntities(entities: EcsEntity[]): void {
     this.currentEntities = entities;
+    this.startRepositionObserver();
   }
 
   setUpdateCallbacks(
@@ -79,6 +220,17 @@ export class PositionGizmo implements IGizmoTransformer {
     if (!positionGizmo) return;
 
     positionGizmo.snapDistance = distance;
+
+    // Also set snap distance for planar gizmos
+    if (positionGizmo.xPlaneGizmo) {
+      positionGizmo.xPlaneGizmo.snapDistance = distance;
+    }
+    if (positionGizmo.yPlaneGizmo) {
+      positionGizmo.yPlaneGizmo.snapDistance = distance;
+    }
+    if (positionGizmo.zPlaneGizmo) {
+      positionGizmo.zPlaneGizmo.snapDistance = distance;
+    }
   }
 
   private getPositionGizmo() {

@@ -62,9 +62,15 @@ message ImportAssetRequest {
   map<string, bytes> content = 3;
 }
 
+enum CameraMode {
+  ORBIT = 0;
+  FREE = 1;
+}
+
 message InspectorPreferencesMessage {
-  bool free_camera_invert_rotation = 1;
-  bool autosave_enabled = 2;
+  CameraMode camera_mode = 1;
+  bool free_camera_invert_rotation = 2;
+  bool autosave_enabled = 3;
 }
 
 message CopyFileRequest {

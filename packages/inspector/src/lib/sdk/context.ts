@@ -5,6 +5,7 @@ import type { ComponentDefinition, CrdtMessageType, Entity, IEngine } from '@dcl
 
 import { SceneContext } from '../babylon/decentraland/SceneContext';
 import { initRenderer } from '../babylon/setup/init';
+import { setSceneContext } from '../babylon/setup/input';
 import type { Gizmos } from '../babylon/decentraland/GizmoManager';
 import type { CameraManager } from '../babylon/decentraland/camera';
 import type { InspectorPreferences } from '../logic/preferences/types';
@@ -63,6 +64,9 @@ export async function createSdkContext(
     ),
   );
   ctx.rootNode.position.set(0, 0, 0);
+
+  // Set the scene context for input handling (click on empty space to select scene)
+  setSceneContext(ctx);
 
   // create inspector engine context and components
   const { engine, components, events, dispose } = createInspectorEngine();
