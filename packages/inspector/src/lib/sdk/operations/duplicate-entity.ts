@@ -59,7 +59,7 @@ export function duplicateEntity(engine: IEngine) {
       }
     }
 
-    updateSelectedEntity(engine)(cloned);
+    updateSelectedEntity(engine)(cloned, true);
     return cloned;
   };
 }
