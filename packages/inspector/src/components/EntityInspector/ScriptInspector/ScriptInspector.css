@@ -1,6 +1,81 @@
 .ScriptInspector > .content {
   display: flex;
   flex-direction: column;
+  gap: 12px;
+}
+
+.ScriptInspector .Container.border > .content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ScriptInspector .CodeButton {
+  display: flex;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 13px;
+  background: var(--background-gray);
+  border: 1px solid #303031;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-color);
+}
+
+.ScriptInspector .CodeButton:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.ScriptInspector .params {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.ScriptInspector .actions {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+}
+
+.ScriptInspector .actions .AddButton,
+.ScriptInspector .actions .RemoveButton {
+  margin-top: 0;
+}
+
+.ScriptInspector .actions .MoreOptionsMenu {
+  width: 30px;
+  border: 1px solid var(--base-14);
+  cursor: pointer;
+}
+
+.ScriptInspector .actions .MoreOptionsMenu:hover:not(:disabled) {
+  background-color: var(--base-15);
+}
+
+.ScriptInspector .actions .MoreOptionsMenu .MoreOptionsButton {
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  transform: none;
+  align-items: center;
+  justify-content: center;
+  display: flex;
+}
+
+.ScriptInspector .actions .MoreOptionsMenu .MoreOptionsButton .AddButton {
+  width: 100%;
+}
+
+.ScriptInspector .actions .MoreOptionsMenu .MoreOptionsContent {
+  z-index: 1000;
+  bottom: 100%;
+  top: auto;
+  margin-bottom: 4px;
+  min-width: auto;
+  width: max-content;
 }
 
 .ScriptInspector > .content > .Block > .content {
@@ -13,34 +88,4 @@
   background: var(--tree-bg-color);
   gap: 12px;
   align-items: normal;
-}
-
-.ScriptInspector .content .Block .content .MoreOptionsMenu {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-}
-
-.ScriptInspector .content .Block .content .MoreOptionsMenu .MoreOptionsContent {
-  min-width: 140px;
-}
-
-.ScriptInspector .params {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: 100%;
-  padding-top: 12px;
-  border-top: 1px solid #303031;
-}
-
-.ScriptInspector .actions {
-  display: flex;
-  flex-direction: row;
-  gap: 12px;
-}
-
-.ScriptInspector .actions .AddButton,
-.ScriptInspector .actions .RemoveButton {
-  margin-top: 0;
 }
