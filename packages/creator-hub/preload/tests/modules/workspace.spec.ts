@@ -192,7 +192,7 @@ describe('initializeWorkspace', () => {
     });
   });
 
-  describe('getSceneSourceFile', () => {
+  describe('when getting the scene source file', () => {
     describe('and the file exists', () => {
       let projectPath: string;
       let fileContent: string;

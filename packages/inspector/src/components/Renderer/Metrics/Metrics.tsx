@@ -11,7 +11,6 @@ import { withSdk } from '../../../hoc/withSdk';
 import { useChange } from '../../../hooks/sdk/useChange';
 import { useOutsideClick } from '../../../hooks/useOutsideClick';
 import { getLayoutManager } from '../../../lib/babylon/decentraland/layout-manager';
-import { getSceneClient } from '../../../lib/rpc/scene';
 import type { Layout } from '../../../lib/utils/layout';
 import { GROUND_MESH_PREFIX, PARCEL_SIZE } from '../../../lib/utils/scene';
 import { useAppDispatch, useAppSelector } from '../../../redux/hooks';
@@ -19,6 +18,7 @@ import {
   getMetrics,
   getLimits,
   getEntitiesOutOfBoundaries,
+  getHasCustomCode,
   setEntitiesOutOfBoundaries,
   setMetrics,
   setLimits,
@@ -68,8 +68,8 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
   const metrics = useAppSelector(getMetrics);
   const limits = useAppSelector(getLimits);
   const entitiesOutOfBoundaries = useAppSelector(getEntitiesOutOfBoundaries);
+  const hasCustomCode = useAppSelector(getHasCustomCode);
   const [showMetrics, setShowMetrics] = React.useState(false);
-  const [hasCustomCode, setHasCustomCode] = React.useState(false);
   const [sceneLayout, setSceneLayout] = React.useState<Layout>({
     base: { x: 0, y: 0 },
     parcels: [],
@@ -163,24 +163,6 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
       sdk.scene.onNewMultiMaterialAddedObservable.remove(addOutsideMaterialObservable);
       sdk.scene.onMaterialRemovedObservable.remove(removeOutsideMaterialObservable);
     };
-  }, []);
-
-  useEffect(() => {
-    const testCustomCodeDetection = async () => {
-      const sceneClient = getSceneClient();
-      if (sceneClient) {
-        try {
-          const hasCustom = await sceneClient.getSceneCustomCode();
-          setHasCustomCode(hasCustom);
-        } catch (error) {
-          console.error('Failed to detect custom code:', error);
-        }
-      } else {
-        console.warn('Scene client not available');
-      }
-    };
-
-    void testCustomCodeDetection();
   }, []);
 
   useChange(

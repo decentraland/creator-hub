@@ -37,6 +37,7 @@ import { ButtonGroup } from '../Button';
 
 import type {
   ModalType,
+  ModalState,
   PreviewOptionsProps,
   PublishOption,
   PublishOptionsProps,
@@ -65,9 +66,7 @@ export function EditorPage() {
   const userId = useSelector(state => state.analytics.userId);
   const { detectCustomCode, isLoading: isDetectingCustomCode } = useSceneCustomCode(project);
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
-  const [modalOpen, setModalOpen] = useState<ModalType | undefined>();
-  const [pendingPreview, setPendingPreview] = useState(false);
-  const [pendingPublish, setPendingPublish] = useState(false);
+  const [modalState, setModalState] = useState<ModalState>({ type: undefined });
 
   const handleIframeRef = useCallback(
     (e: React.SyntheticEvent<HTMLIFrameElement, Event>) => {
@@ -96,7 +95,7 @@ export function EditorPage() {
   const isReady = !!project && inspectorPort > 0;
 
   const openModal = useCallback((type: ModalType) => {
-    setModalOpen(type);
+    setModalState({ type });
   }, []);
 
   const handleOpenPreviewWithErrorHandling = useCallback(async () => {
@@ -104,23 +103,25 @@ export function EditorPage() {
       await openPreview(settings.previewOptions);
     } catch (error: any) {
       if (isClientNotInstalledError(error)) {
-        setModalOpen('install-client');
+        setModalState({ type: 'install-client' });
       }
     }
   }, [openPreview, settings.previewOptions]);
 
   const handleActionWithWarningCheck = useCallback(
-    async (action: () => void | Promise<void>, setPending: (value: boolean) => void) => {
+    async (action: () => void | Promise<void>) => {
       if (!settings.previewOptions.showWarnings) {
         await action();
         return;
       }
 
-      const hasCustom = await detectCustomCode();
+      const hasCustomCode = await detectCustomCode();
 
-      if (hasCustom) {
-        setPending(true);
-        setModalOpen('warning');
+      if (hasCustomCode) {
+        setModalState({
+          type: 'warning',
+          onContinue: action,
+        });
         return;
       }
 
@@ -141,23 +142,18 @@ export function EditorPage() {
     if (!rpc) return;
     saveAndGetThumbnail(rpc);
 
-    await handleActionWithWarningCheck(() => openModal('publish'), setPendingPublish);
+    await handleActionWithWarningCheck(() => openModal('publish'));
   }, [iframeRef.current, saveAndGetThumbnail, handleActionWithWarningCheck, openModal]);
 
-  const handleCloseModal = useCallback(async () => {
-    const wasWarningModal = modalOpen === 'warning';
-    setModalOpen(undefined);
-
-    if (wasWarningModal && pendingPreview) {
-      setPendingPreview(false);
-      await handleOpenPreviewWithErrorHandling();
-    }
-
-    if (wasWarningModal && pendingPublish) {
-      setPendingPublish(false);
-      openModal('publish');
-    }
-  }, [modalOpen, pendingPreview, pendingPublish, handleOpenPreviewWithErrorHandling, openModal]);
+  const handleCloseModal = useCallback(
+    async (continued: boolean = false) => {
+      if (continued && modalState.onContinue) {
+        await modalState.onContinue();
+      }
+      setModalState({ type: undefined });
+    },
+    [modalState],
+  );
 
   const handleChangePreviewOptions = useCallback(
     (options: PreviewOptionsProps['options']) => {
@@ -167,7 +163,7 @@ export function EditorPage() {
   );
 
   const handleOpenPreview = useCallback(async () => {
-    await handleActionWithWarningCheck(handleOpenPreviewWithErrorHandling, setPendingPreview);
+    await handleActionWithWarningCheck(handleOpenPreviewWithErrorHandling);
   }, [handleActionWithWarningCheck, handleOpenPreviewWithErrorHandling]);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -290,7 +286,7 @@ export function EditorPage() {
             onLoad={handleIframeRef}
           ></iframe>
           <Modal
-            type={modalOpen}
+            type={modalState.type}
             project={project}
             onClose={handleCloseModal}
           />
@@ -385,7 +381,7 @@ function Modal({ type, ...props }: ModalProps) {
       return (
         <InstallClient
           open={type === 'install-client'}
-          onClose={props.onClose}
+          onClose={() => props.onClose(false)}
         />
       );
     case 'warning':

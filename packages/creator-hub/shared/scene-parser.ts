@@ -1,16 +1,12 @@
 import { parse } from '@babel/parser';
 
-export type ScriptParseResult = {
+type ScriptParseResult = {
   error?: string;
   hasCustomImports?: boolean;
   hasMainBody?: boolean;
 };
 
-function getScriptParams(content: string | null): ScriptParseResult {
-  if (!content) {
-    return { error: 'No content provided' };
-  }
-
+function getScriptCustomCode(content: string): ScriptParseResult {
   let hasCustomImports = false;
   let hasMainBody = false;
 
@@ -48,9 +44,7 @@ function getScriptParams(content: string | null): ScriptParseResult {
     }
     return { hasCustomImports, hasMainBody };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : '';
-    console.warn('Failed to parse scene file:', error);
-    return { error: errorMessage };
+    throw new Error(`Failed to parse scene file: ${error}`);
   }
 }
 
@@ -63,13 +57,11 @@ function getScriptParams(content: string | null): ScriptParseResult {
 export function hasCustomCode(content: string | null): boolean {
   if (!content) return false;
 
-  const result = getScriptParams(content);
-
-  // If there's a parse error, assume no custom code (safer default)
-  if (result.error) {
-    console.warn('Error parsing scene for custom code detection:', result.error);
-    return false;
+  try {
+    const result = getScriptCustomCode(content);
+    return !!result.hasCustomImports || !!result.hasMainBody;
+  } catch (error) {
+    console.warn('Error parsing scene:', error);
+    return false; // safe default
   }
-
-  return result.hasCustomImports === true || result.hasMainBody === true;
 }

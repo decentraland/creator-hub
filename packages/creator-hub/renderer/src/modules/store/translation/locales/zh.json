@@ -321,7 +321,8 @@
       "title": "警告",
       "message": "此场景包含代码元素，这些元素可能仅在场景运行时才可见",
       "dont_show_again": "不再显示此警告",
-      "continue": "继续"
+      "continue": "继续",
+      "cancel": "取消"
     }
   },
   "snackbar": {

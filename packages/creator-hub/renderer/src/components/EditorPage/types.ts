@@ -3,6 +3,11 @@ import type { Project } from '/shared/types/projects';
 
 export type ModalType = 'publish' | 'publish-history' | 'install-client' | 'warning';
 
+export type ModalState = {
+  type?: ModalType;
+  onContinue?: () => void | Promise<void>;
+};
+
 export type PreviewOptionsProps = {
   options: PreviewOptions;
   onChange: (options: PreviewOptions) => void;
@@ -17,5 +22,5 @@ export type PublishOptionsProps = {
 export type ModalProps = {
   type?: ModalType;
   project: Project;
-  onClose: () => void;
+  onClose: (continued?: boolean) => void;
 };

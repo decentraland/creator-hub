@@ -3,44 +3,35 @@ import { workspace } from '#preload';
 import { hasCustomCode } from '/shared/scene-parser';
 import type { Project } from '/shared/types/projects';
 
-interface UseSceneCustomCodeResult {
-  isCustomCode: boolean;
-  isLoading: boolean;
-  error: Error | null;
-  detectCustomCode: () => Promise<boolean>;
-}
-
 export function useSceneCustomCode(
   project: Project | undefined,
   filePath: string = 'src/index.ts',
-): UseSceneCustomCodeResult {
-  const [isCustomCode, setIsCustomCode] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+) {
+  const [state, setState] = useState<{
+    isCustomCode: boolean;
+    isLoading: boolean;
+    error: Error | null;
+  }>({
+    isCustomCode: false,
+    isLoading: false,
+    error: null,
+  });
 
   const detectCustomCode = useCallback(async (): Promise<boolean> => {
-    if (!project) {
-      setIsCustomCode(false);
-      return false;
-    }
+    if (!project) return false;
 
-    setIsLoading(true);
-    setError(null);
-
+    setState(prev => ({ ...prev, isLoading: true, error: null }));
     try {
       const content = await workspace.getSceneSourceFile(project.path, filePath);
       const hasCustom = hasCustomCode(content);
-      setIsCustomCode(hasCustom);
+      setState({ isCustomCode: hasCustom, isLoading: false, error: null });
       return hasCustom;
     } catch (err) {
-      console.error('Failed to detect custom code:', err);
-      setError(err instanceof Error ? err : new Error('Unknown error'));
-      setIsCustomCode(false);
-      return false; // Default to false on error (safer)
-    } finally {
-      setIsLoading(false);
+      const error = err instanceof Error ? err : new Error('Unknown error');
+      setState(prev => ({ ...prev, isLoading: false, error }));
+      return false;
     }
   }, [project?.path, filePath]);
 
-  return { isCustomCode, isLoading, error, detectCustomCode };
+  return { ...state, detectCustomCode };
 }

@@ -62,5 +62,4 @@ export interface Ipc {
   'npm.install': (path: string, packages?: string[]) => Promise<void>;
   'npm.getOutdatedDeps': (path: string, packages?: string[]) => Promise<Outdated>;
   'npm.getContextFiles': (path: string) => Promise<void>;
-  'workspace.getSceneSourceFile': (projectPath: string, filePath?: string) => Promise<string>;
 }

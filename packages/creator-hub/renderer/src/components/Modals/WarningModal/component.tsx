@@ -9,7 +9,7 @@ import './styles.css';
 
 interface Props {
   open: boolean;
-  onClose: () => void;
+  onClose: (continued?: boolean) => void;
 }
 
 export function WarningModal({ open, onClose }: Props) {
@@ -30,7 +30,7 @@ export function WarningModal({ open, onClose }: Props) {
         },
       });
     }
-    onClose();
+    onClose(true);
   }, [dontShowAgain, settings, updateAppSettings, onClose]);
 
   return (
@@ -58,6 +58,13 @@ export function WarningModal({ open, onClose }: Props) {
           />
         </Box>
         <Box className="ButtonContainer">
+          <Button
+            variant="outlined"
+            className="actionButton"
+            onClick={() => onClose()}
+          >
+            {t('modal.warning.cancel')}
+          </Button>
           <Button
             variant="contained"
             className="actionButton"
