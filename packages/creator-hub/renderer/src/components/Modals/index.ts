@@ -30,3 +30,5 @@ export const Modal = styled(BaseModal)(props => ({
           cursor: 'default',
         },
 }));
+
+export { WarningModal } from './WarningModal';

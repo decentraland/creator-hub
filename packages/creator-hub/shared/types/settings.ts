@@ -11,6 +11,7 @@ export type PreviewOptions = {
   skipAuthScreen: boolean;
   enableLandscapeTerrains: boolean;
   openNewInstance: boolean;
+  showWarnings: boolean;
 };
 
 export type AppSettings = {

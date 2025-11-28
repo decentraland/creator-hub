@@ -5,6 +5,7 @@ import { RPC } from '@dcl/mini-rpc';
 import { type Store } from '../../../redux/store';
 import { type initRenderer } from '../../babylon/setup/init';
 import type { AssetsTab, PanelName, SceneInspectorTab } from '../../../redux/ui/types';
+import { setHasCustomCode } from '../../../redux/scene-metrics';
 
 enum Method {
   TOGGLE_COMPONENT = 'toggle_component',
@@ -17,6 +18,7 @@ enum Method {
   SET_CAMERA_POSITION = 'set_camera_position',
   SET_CAMERA_TARGET = 'set_camera_target',
   TAKE_SCREENSHOT = 'take_screenshot',
+  SET_SCENE_CUSTOM_CODE = 'set_scene_custom_code',
 }
 
 type Params = {
@@ -30,6 +32,7 @@ type Params = {
   [Method.SET_CAMERA_POSITION]: { x: number; y: number; z: number };
   [Method.SET_CAMERA_TARGET]: { x: number; y: number; z: number };
   [Method.TAKE_SCREENSHOT]: { width: number; height: number; precision?: number };
+  [Method.SET_SCENE_CUSTOM_CODE]: { hasCustomCode: boolean };
 };
 
 type Result = {
@@ -43,6 +46,7 @@ type Result = {
   [Method.SET_CAMERA_POSITION]: void;
   [Method.SET_CAMERA_TARGET]: void;
   [Method.TAKE_SCREENSHOT]: string;
+  [Method.SET_SCENE_CUSTOM_CODE]: void;
 };
 
 export class SceneServer extends RPC<Method, Params, Result> {
@@ -92,6 +96,10 @@ export class SceneServer extends RPC<Method, Params, Result> {
         height,
         precision,
       });
+    });
+
+    this.handle('set_scene_custom_code', async ({ hasCustomCode }) => {
+      store.dispatch(setHasCustomCode(hasCustomCode));
     });
   }
 }

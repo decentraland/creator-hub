@@ -27,6 +27,7 @@
   padding: 5px;
   border-radius: 4px;
   background-color: transparent;
+  position: relative;
 }
 
 .Metrics .Buttons .Button.Active svg {
@@ -35,6 +36,16 @@
 
 .Metrics .Buttons .Button svg {
   color: var(--base-02);
+}
+
+.Metrics .Buttons .Button .WarningDot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: var(--warning-main);
 }
 
 .Metrics > div.LimitExceeded {

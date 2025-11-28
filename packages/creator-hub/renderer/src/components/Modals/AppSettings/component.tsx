@@ -6,6 +6,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import equal from 'fast-deep-equal';
 import {
   Box,
+  Checkbox,
   IconButton,
   FormControlLabel,
   Radio,
@@ -33,10 +34,10 @@ import { debounce } from '/shared/utils';
 import { t } from '/@/modules/store/translation/utils';
 import { useSettings } from '/@/hooks/useSettings';
 import { useWorkspace } from '/@/hooks/useWorkspace';
-import { Modal } from '..';
-import { UpdateSettings } from './UpdateSettings';
 import { useDispatch, useSelector } from '#store';
 import { settings as settingsPreload } from '#preload';
+import { Modal } from '..';
+import { UpdateSettings } from './UpdateSettings';
 import './styles.css';
 
 export function AppSettings({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -229,6 +230,30 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
                 label={t('modal.app_settings.fields.scene_editor_dependencies.options.do_nothing')}
               />
             </RadioGroup>
+          </FormGroup>
+          <FormGroup sx={{ gap: '16px' }}>
+            <Typography variant="body1">
+              {t('modal.app_settings.fields.app_warnings.label')}
+            </Typography>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={!!settings.previewOptions.showWarnings}
+                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                    const newSettings = {
+                      ...settings,
+                      previewOptions: {
+                        ...settings.previewOptions,
+                        showWarnings: event.target.checked,
+                      },
+                    };
+                    setSettings(newSettings);
+                    updateAppSettings(newSettings);
+                  }}
+                />
+              }
+              label={t('modal.app_settings.fields.app_warnings.show_warnings')}
+            />
           </FormGroup>
         </Box>
       </Box>

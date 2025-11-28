@@ -1,7 +1,12 @@
 import type { PreviewOptions } from '/shared/types/settings';
 import type { Project } from '/shared/types/projects';
 
-export type ModalType = 'publish' | 'publish-history' | 'install-client';
+export type ModalType = 'publish' | 'publish-history' | 'install-client' | 'warning';
+
+export type ModalState = {
+  type?: ModalType;
+  onContinue?: () => void | Promise<void>;
+};
 
 export type PreviewOptionsProps = {
   options: PreviewOptions;
@@ -17,5 +22,5 @@ export type PublishOptionsProps = {
 export type ModalProps = {
   type?: ModalType;
   project: Project;
-  onClose: () => void;
+  onClose: (continued?: boolean) => void;
 };

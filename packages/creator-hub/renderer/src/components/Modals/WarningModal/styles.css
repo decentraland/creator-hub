@@ -1,0 +1,28 @@
+.WarningModal {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px;
+}
+
+.WarningModal .message {
+  text-align: center;
+  color: var(--dcl-silver);
+}
+
+.WarningModal .CheckboxContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.WarningModal .ButtonContainer {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 16px;
+}
+
+.WarningModal .actionButton {
+  min-width: 150px;
+}

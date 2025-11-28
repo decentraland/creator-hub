@@ -137,6 +137,19 @@ export function initializeWorkspace(services: Services) {
     }
   }
 
+  async function getSceneSourceFile(
+    projectPath: string,
+    filePath: string = 'src/index.ts',
+  ): Promise<string> {
+    try {
+      const fullPath = path.join(projectPath, filePath);
+      const content = await fs.readFile(fullPath);
+      return content.toString('utf8');
+    } catch (error: any) {
+      throw new Error(`Could not read scene source file "${filePath}": ${error.message}`);
+    }
+  }
+
   async function getPath() {
     const appHome = await getScenesPath();
     try {
@@ -480,6 +493,7 @@ export function initializeWorkspace(services: Services) {
     getProjectThumbnailAsBase64,
     getOutdatedPackages,
     getProject,
+    getSceneSourceFile,
     getPath,
     getProjects,
     getTemplates,
