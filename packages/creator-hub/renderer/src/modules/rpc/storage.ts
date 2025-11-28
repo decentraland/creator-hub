@@ -10,6 +10,7 @@ export enum Method {
   WRITE_FILE = 'write_file',
   EXISTS = 'exists',
   DELETE = 'delete',
+  RMDIR = 'rmdir',
   LIST = 'list',
   STAT = 'stat',
 }
@@ -23,6 +24,9 @@ export type Params = {
     content: Buffer;
   };
   [Method.DELETE]: {
+    path: string;
+  };
+  [Method.RMDIR]: {
     path: string;
   };
   [Method.EXISTS]: {
@@ -40,6 +44,7 @@ export type Result = {
   [Method.READ_FILE]: Buffer;
   [Method.WRITE_FILE]: void;
   [Method.DELETE]: void;
+  [Method.RMDIR]: void;
   [Method.EXISTS]: boolean;
   [Method.LIST]: {
     name: string;
@@ -86,6 +91,10 @@ export class StorageRPC extends RPC<Method, Params, Result> {
 
     this.handle('delete', async ({ path }) => {
       await fs.rm(await getPath(path, params.project));
+    });
+
+    this.handle('rmdir', async ({ path }) => {
+      await fs.rmdir(await getPath(path, params.project));
     });
 
     this.handle('list', async ({ path }) => {

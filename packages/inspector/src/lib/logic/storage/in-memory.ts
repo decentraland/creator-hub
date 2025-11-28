@@ -24,6 +24,16 @@ export function createInMemoryStorage(initialFs: Record<string, Buffer> = {}): S
     async delete(path: string) {
       storage.delete(path);
     },
+    async rmdir(dirPath: string) {
+      // In in-memory storage, directories are virtual (just path prefixes)
+      // To remove a directory, we need to delete all files that start with this path
+      const normalizedDirPath = dirPath.endsWith('/') ? dirPath : dirPath + '/';
+      for (const key of Array.from(storage.keys())) {
+        if (key.startsWith(normalizedDirPath) || key === dirPath) {
+          storage.delete(key);
+        }
+      }
+    },
     async list(path: string) {
       const files: { name: string; isDirectory: boolean }[] = [];
       for (const _path of Array.from(storage.keys())) {
