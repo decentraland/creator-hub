@@ -1,6 +1,6 @@
 import path from 'path';
 import updater from 'electron-updater';
-import log from 'electron-log/main';
+import log from 'electron-log/main.js';
 import semver from 'semver';
 import * as Sentry from '@sentry/electron/main';
 import { FileSystemStorage } from '/shared/types/storage';

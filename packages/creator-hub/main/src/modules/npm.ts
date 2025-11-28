@@ -1,5 +1,5 @@
 import type { Outdated } from '/shared/types/npm';
-import log from 'electron-log/main';
+import log from 'electron-log/main.js';
 
 import { run, StreamError } from './bin';
 

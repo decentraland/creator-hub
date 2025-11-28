@@ -1,6 +1,6 @@
 import { promisify } from 'util';
 import { exec as execSync } from 'child_process';
-import log from 'electron-log/main';
+import log from 'electron-log/main.js';
 import { utilityProcess } from 'electron';
 import treeKill from 'tree-kill';
 import { future } from 'fp-future';

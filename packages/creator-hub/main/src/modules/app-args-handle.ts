@@ -1,5 +1,5 @@
 import * as path from 'path';
-import log from 'electron-log/main';
+import log from 'electron-log/main.js';
 import { BrowserWindow } from 'electron';
 
 // Inlined approach proposed by Nico: https://github.com/decentraland/creator-hub/pull/766#discussion_r2359198135

@@ -22,6 +22,36 @@ vi.mock('@dcl/single-sign-on-client', () => ({
   })),
 }));
 
+vi.mock('#preload', () => ({
+  editor: {
+    publishScene: vi.fn().mockResolvedValue({ port: 3000 }),
+  },
+  workspace: {
+    getWorkspace: vi.fn(),
+    getProject: vi.fn(),
+  },
+  fs: {
+    readFile: vi.fn(),
+    writeFile: vi.fn(),
+  },
+  npm: {
+    install: vi.fn(),
+    run: vi.fn(),
+  },
+  scene: {
+    getSceneData: vi.fn(),
+  },
+  settings: {
+    get: vi.fn(),
+    set: vi.fn(),
+  },
+  analytics: {
+    track: vi.fn(),
+  },
+  misc: {},
+  custom: {},
+}));
+
 vi.mock('@dcl/crypto', () => ({
   Authenticator: {
     signPayload: vi.fn().mockResolvedValue({}),

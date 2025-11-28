@@ -36,17 +36,20 @@ creator-hub/
 ### Initial Setup
 
 1. **Clone the repository:**
+
    ```bash
    git clone https://github.com/decentraland/creator-hub.git
    cd creator-hub
    ```
 
 2. **Install dependencies and initialize the project:**
+
    ```bash
    make init
    ```
 
    This command will:
+
    - Install all dependencies for the monorepo and sub-packages
    - Download and install Protocol Buffers compiler
    - Generate TypeScript definitions from `.proto` files
@@ -58,44 +61,44 @@ The project uses a Makefile to manage common development tasks:
 
 ### Setup Commands
 
-| Command | Description |
-|---------|-------------|
-| `make install` | Install dependencies for all packages |
-| `make install-protoc` | Download and install Protocol Buffers compiler |
-| `make protoc` | Generate TypeScript definitions from `.proto` files |
-| `make init` | Complete project initialization (clean + install + protoc + build) |
+| Command               | Description                                                        |
+| --------------------- | ------------------------------------------------------------------ |
+| `make install`        | Install dependencies for all packages                              |
+| `make install-protoc` | Download and install Protocol Buffers compiler                     |
+| `make protoc`         | Generate TypeScript definitions from `.proto` files                |
+| `make init`           | Complete project initialization (clean + install + protoc + build) |
 
 ### Build Commands
 
-| Command | Description |
-|---------|-------------|
-| `make build` | Build both inspector and creator-hub packages |
-| `make build-inspector` | Build only the inspector package |
-| `make build-creator-hub` | Build only the creator-hub package |
+| Command                  | Description                                   |
+| ------------------------ | --------------------------------------------- |
+| `make build`             | Build both inspector and creator-hub packages |
+| `make build-inspector`   | Build only the inspector package              |
+| `make build-creator-hub` | Build only the creator-hub package            |
 
 ### Development Commands
 
-| Command | Description |
-|---------|-------------|
-| `make lint` | Run ESLint across all packages |
-| `make lint-fix` | Fix ESLint issues automatically |
-| `make format` | Format code with Prettier |
-| `make typecheck` | Run TypeScript type checking |
-| `make test` | Run unit tests for all packages |
-| `make test-e2e` | Run end-to-end tests for all packages |
+| Command          | Description                           |
+| ---------------- | ------------------------------------- |
+| `make lint`      | Run ESLint across all packages        |
+| `make lint-fix`  | Fix ESLint issues automatically       |
+| `make format`    | Format code with Prettier             |
+| `make typecheck` | Run TypeScript type checking          |
+| `make test`      | Run unit tests for all packages       |
+| `make test-e2e`  | Run end-to-end tests for all packages |
 
 ### Dependency Management
 
-| Command | Description |
-|---------|-------------|
-| `make sync-deps` | Synchronize dependencies across packages using syncpack |
-| `make lint-packages` | Check for dependency mismatches |
+| Command              | Description                                             |
+| -------------------- | ------------------------------------------------------- |
+| `make sync-deps`     | Synchronize dependencies across packages using syncpack |
+| `make lint-packages` | Check for dependency mismatches                         |
 
 ### Cleanup Commands
 
-| Command | Description |
-|---------|-------------|
-| `make clean` | Remove build artifacts and dist folders |
+| Command           | Description                                 |
+| ----------------- | ------------------------------------------- |
+| `make clean`      | Remove build artifacts and dist folders     |
 | `make deep-clean` | Remove all node_modules and generated files |
 
 ## 🔧 Package Scripts
@@ -110,9 +113,6 @@ npm run start          # Start in watch mode
 
 # Building
 npm run build          # Build all parts (main, preload, renderer)
-npm run build:main     # Build main process
-npm run build:preload  # Build preload scripts
-npm run build:renderer # Build renderer (React app)
 
 # Testing
 npm run test           # Run all tests
@@ -149,10 +149,12 @@ The project uses GitHub Actions with a sophisticated CI/CD pipeline:
 ### Main CI Workflow (`ci.yml`)
 
 The main workflow orchestrates all CI processes and runs on:
+
 - Push to `main` branch
 - Pull requests
 
 **Workflow Steps:**
+
 1. **Lint** - Code formatting and linting
 2. **Typechecking** - TypeScript type checking
 3. **Tests** - Unit and end-to-end tests
@@ -163,6 +165,7 @@ The main workflow orchestrates all CI processes and runs on:
 ### Test Workflow (`tests.yml`)
 
 Runs comprehensive testing:
+
 - **Unit Tests** - Runs on Ubuntu with Node.js 22
 - **E2E Tests** - Runs on macOS and Windows with Playwright
 - **Cross-platform Testing** - Tests both packages
@@ -170,6 +173,7 @@ Runs comprehensive testing:
 ### Inspector Workflow (`inspector.yml`)
 
 Handles inspector package deployment:
+
 - Builds the inspector package
 - Publishes to S3 for branch previews
 - Deploys to GitHub Pages
@@ -179,6 +183,7 @@ Handles inspector package deployment:
 ### Creator Hub Workflow (`creator-hub.yml`)
 
 Handles desktop application builds:
+
 - **Multi-platform Builds** - macOS and Windows
 - **Code Signing** - Automatic code signing for both platforms
 - **Notarization** - macOS notarization
@@ -207,6 +212,7 @@ The project uses npm workspaces to manage the monorepo:
 ### Protocol Buffers
 
 The Inspector package uses Protocol Buffers for data layer communication:
+
 - `.proto` files are in `packages/inspector/src/lib/data-layer/proto/`
 - Generated TypeScript files are in `packages/inspector/src/lib/data-layer/proto/gen/`
 - Use `make protoc` to regenerate after `.proto` changes
@@ -214,17 +220,20 @@ The Inspector package uses Protocol Buffers for data layer communication:
 ## 🧪 Testing
 
 ### Unit Tests
+
 - **Creator Hub**: Uses Vitest for main, preload, renderer, and shared tests
 - **Inspector**: Uses Vitest for unit tests
 - Run with `make test` or `npm run test` in individual packages
 
 ### End-to-End Tests
+
 - **Creator Hub**: Uses Playwright for Electron app testing
 - **Inspector**: Uses Playwright for web app testing
 - Run with `make test-e2e`
 - Tests automatically build the applications before running
 
 ### Test Structure
+
 ```
 packages/creator-hub/e2e/          # Creator Hub E2E tests
 packages/inspector/test/e2e/       # Inspector E2E tests
@@ -235,6 +244,7 @@ packages/inspector/test/e2e/       # Inspector E2E tests
 ### Typical Development Flow
 
 1. **Start Development:**
+
    ```bash
    make init                    # Initial setup
    cd packages/creator-hub
@@ -242,13 +252,14 @@ packages/inspector/test/e2e/       # Inspector E2E tests
    ```
 
 2. **In another terminal:**
+
    ```bash
    cd packages/inspector
    npm run start               # Start inspector in watch mode
    ```
 
 3. **Before Committing:**
-    - Lint, format & typecheck will be run automatically
+   - Lint, format & typecheck will be run automatically
 
 #### Launch Build Locally
 
@@ -268,12 +279,14 @@ xattr -c /Applications/Decentraland\ Creator\ Hub.app/
 ## 📦 Publishing
 
 ### Inspector Package
+
 - Automatically published to npm on main branch
 - PR builds available for testing
 - GitHub Pages deployment for web previews
 - **GitHub Releases**: Always marked as pre-releases to avoid confusion with electron-updater
 
 ### Creator Hub App
+
 - Multi-platform builds (macOS, Windows)
 - Code signed and notarized
 - Distributed via GitHub releases and S3
@@ -296,6 +309,7 @@ The project uses a specific release strategy to ensure electron-updater works co
 4. Submit a pull request
 
 The CI pipeline will automatically:
+
 - Lint, format & typecheck
 - Run all tests
 - Build both packages

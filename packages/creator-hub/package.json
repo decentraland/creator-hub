@@ -53,6 +53,7 @@
     "decentraland-ui2": "0.23.1",
     "electron": "37.3.1",
     "electron-builder": "26.0.12",
+    "electron-vite": "^4.0.1",
     "flat": "6.0.1",
     "react": "18.3.1",
     "react-dom": "18.3.1",
@@ -66,10 +67,7 @@
   "private": true,
   "repository": "https://github.com/decentraland/creator-hub.git",
   "scripts": {
-    "build": "npm run build:main && npm run build:preload && npm run build:renderer",
-    "build:main": "cd ./main && vite build",
-    "build:preload": "cd ./preload && vite build",
-    "build:renderer": "cd ./renderer && vite build",
+    "build": "electron-vite build",
     "compile": "cross-env MODE=production npm run build && electron-builder build --config electron-builder.cjs --dir",
     "compile:installer": "cross-env MODE=production npm run build && electron-builder build --config electron-builder.cjs --publish never",
     "postinstall": "cross-env ELECTRON_RUN_AS_NODE=1 electron scripts/update-electron-vendors.js",
@@ -85,7 +83,7 @@
     "typecheck:main": "tsc --noEmit -p main/tsconfig.json",
     "typecheck:preload": "tsc --noEmit -p preload/tsconfig.json",
     "typecheck:renderer": "tsc --noEmit -p renderer/tsconfig.json",
-    "watch": "node scripts/watch.js"
+    "watch": "electron-vite dev --watch --mode development"
   },
   "type": "module"
 }

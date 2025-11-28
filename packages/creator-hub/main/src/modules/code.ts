@@ -2,7 +2,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { promisify } from 'util';
 import { exec as execCallback } from 'child_process';
-import log from 'electron-log/main';
+import log from 'electron-log/main.js';
 import { shell } from 'electron';
 
 import { type EditorConfig } from '/shared/types/config';
