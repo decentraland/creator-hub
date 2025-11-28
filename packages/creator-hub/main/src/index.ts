@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { platform } from 'node:process';
 import { app } from 'electron';
 import * as Sentry from '@sentry/electron/main';
@@ -20,6 +21,12 @@ if (import.meta.env.PROD) {
   Sentry.init({
     dsn: import.meta.env.VITE_SENTRY_DSN,
   });
+}
+
+if (process.env.E2E) {
+  const packageRoot = path.join(app.getAppPath(), '../../');
+  app.setPath('userData', path.resolve(packageRoot, 'tests/temp/userData'));
+  app.setPath('home', path.resolve(packageRoot, 'tests/temp/home'));
 }
 
 /**

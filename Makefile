@@ -82,10 +82,6 @@ typecheck:
 test:
 	npm run test
 
-test-e2e:
-	make test-inspector-e2e
-	make test-creator-hub-e2e
-
 test-inspector-e2e:
 	cd $(INSPECTOR_PATH)/; npm run test:e2e
 

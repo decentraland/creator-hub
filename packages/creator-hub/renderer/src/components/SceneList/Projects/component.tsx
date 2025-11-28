@@ -27,6 +27,7 @@ export function Projects({ projects }: Props) {
       <div
         className="new-scene"
         onClick={() => navigate('/templates')}
+        data-testid="scene-list-new-scene-button"
       ></div>
       {projects.map(project => (
         <Project
@@ -139,12 +140,14 @@ function Project({ project }: { project: Project }) {
         publishedAt={publishedAt}
         status={project.status}
         onClick={handleClick}
+        data-testid="scene-list-project-card"
       />
       <DeleteProject
         open={openDeleteModal}
         project={project}
         onClose={handleCloseDeleteModal}
         onSubmit={handleDeleteProject}
+        data-testid="scene-list-delete-project-modal"
       />
       <DeploymentHistory
         open={openHistoryModal}
@@ -193,6 +196,7 @@ function NoScenes() {
         <div
           className="no-scenes-card-button"
           onClick={() => navigate('/templates')}
+          data-testid="scene-list-new-scene-button"
         ></div>
       </div>
     </div>

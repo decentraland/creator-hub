@@ -140,5 +140,5 @@ a {
 
 /* Temp: make disabled buttons look disabled */
 .Button.MuiButton-root.Mui-disabled {
-  opacity: 0.5;
+  opacity: 0.5 !important;
 }
