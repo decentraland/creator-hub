@@ -197,7 +197,6 @@ const VideoScreenBasicView = withSdk<Props>(({ sdk, entity }) => {
             value={removeBasePath(files?.basePath ?? '', videoScreenComponent.defaultURL)}
             onChange={handleVideoURLChange}
             error={!isValidURL}
-            drop={isHover}
             disabled={isVideoURLDisabled}
           />
         </Block>

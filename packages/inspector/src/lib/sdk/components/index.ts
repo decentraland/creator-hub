@@ -16,6 +16,7 @@ import type {
   AdminTools,
   Rewards,
   VideoScreen,
+  Script,
 } from '@dcl/asset-packs';
 import { createComponents as createAssetPacksComponents } from '@dcl/asset-packs';
 import type { Layout } from '../../utils/layout';
@@ -42,7 +43,7 @@ export { CoreComponents, AllComponentsType } from './types';
 export const EditorComponentNames = {
   ...BaseEditorComponentNames,
   Scene: getLatestSceneComponentVersion().key,
-};
+} as const;
 
 export type Component<T = unknown> = ComponentDefinition<T>;
 export type Node = { entity: Entity; open?: boolean; children: Entity[] };
@@ -116,6 +117,7 @@ export type EditorComponentsTypes = {
   VideoScreen: VideoScreen;
   Rewards: Rewards;
   InspectorUIState: InspectorUIStateType;
+  Script: Script;
 };
 
 export type EditorComponents = {
@@ -143,6 +145,7 @@ export type EditorComponents = {
   InspectorUIState: LastWriteWinElementSetComponentDefinition<
     EditorComponentsTypes['InspectorUIState']
   >;
+  Script: LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['Script']>;
 };
 
 export type SdkComponents = {
@@ -260,6 +263,7 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
     AdminTools,
     Rewards,
     VideoScreen,
+    Script,
   } = createAssetPacksComponents(engine as any);
 
   const TransformConfig = engine.defineComponent(EditorComponentNames.TransformConfig, {
@@ -331,6 +335,9 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
     >,
     Rewards: Rewards as unknown as LastWriteWinElementSetComponentDefinition<
       EditorComponentsTypes['Rewards']
+    >,
+    Script: Script as unknown as LastWriteWinElementSetComponentDefinition<
+      EditorComponentsTypes['Script']
     >,
   };
 }

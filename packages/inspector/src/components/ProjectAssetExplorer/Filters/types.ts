@@ -5,6 +5,7 @@ export enum Filter {
   Images = 'images',
   Video = 'video',
   Audio = 'audio',
+  Scripts = 'scripts',
   Other = 'other',
 }
 

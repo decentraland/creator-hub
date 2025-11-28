@@ -103,7 +103,7 @@ const Container: React.FC<React.PropsWithChildren<Props>> = props => {
 
   return (
     <div
-      className={cx('Container', props.className, {
+      className={cx('Container', props.className, props.variant, {
         open,
         border: props.border,
         'with-gap': props.gap,

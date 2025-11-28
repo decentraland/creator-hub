@@ -302,6 +302,24 @@ export function createCustomAsset(engine: IEngine) {
           }
         }
 
+        // Handle Script component resources
+        if (componentName === EditorComponentNames.Script) {
+          if (Array.isArray(processedComponentValue.value)) {
+            processedComponentValue.value = processedComponentValue.value.map((scriptItem: any) => {
+              const updatedScriptItem = { ...scriptItem };
+
+              // Process script path
+              if (scriptItem.path) {
+                const originalPath: string = scriptItem.path;
+                updatedScriptItem.path = originalPath.replace(/^.*[/]([^/]+)$/, '{assetPath}/$1');
+                resources.push(originalPath);
+              }
+
+              return updatedScriptItem;
+            });
+          }
+        }
+
         // Replace id with {self}
         if (COMPONENTS_WITH_ID.includes(componentName)) {
           processedComponentValue.id = '{self}';

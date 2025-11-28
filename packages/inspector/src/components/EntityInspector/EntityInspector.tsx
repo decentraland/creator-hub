@@ -36,6 +36,7 @@ import { AdminToolkitView } from './AdminToolkitView';
 import { RewardInspector } from './RewardInspector';
 import { LightSourceInspector } from './LightSourceInspector';
 import { GltfNodeModifiersInspector } from './GltfNodeModifiersInspector';
+import { ScriptInspector } from './ScriptInspector';
 
 import './EntityInspector.css';
 
@@ -164,6 +165,7 @@ const SingleEntityInspector = withSdk<{ entity: Entity | null }>(({ sdk, entity 
         name: sdk.components.GltfNodeModifiers.componentName,
         component: GltfNodeModifiersInspector,
       },
+      { name: sdk.components.Script.componentName, component: ScriptInspector },
     ],
     [sdk],
   );
