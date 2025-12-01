@@ -1,4 +1,4 @@
-import type { IAxisDragGizmo, TransformNode } from '@babylonjs/core';
+import type { IAxisDragGizmo, TransformNode, Vector3 } from '@babylonjs/core';
 import type { EcsEntity } from '../EcsEntity';
 
 export interface IGizmoTransformer {
@@ -14,6 +14,7 @@ export interface IGizmoTransformer {
   setWorldAligned(value: boolean): void;
   setSnapDistance(distance: number): void;
   setOnDragEndCallback?(callback: () => void): void;
+  setGizmoManager?(gizmoManager: { calculateCentroid: () => Vector3 }): void;
 }
 
 export const enum GizmoType {

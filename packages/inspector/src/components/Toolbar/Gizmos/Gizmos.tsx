@@ -14,12 +14,15 @@ import { ROOT } from '../../../lib/sdk/tree';
 import { GizmoType } from '../../../lib/utils/gizmo';
 import { ToolbarButton } from '../ToolbarButton';
 import { Snap } from './Snap';
+import { useAppSelector } from '../../../redux/hooks';
+import { selectInspectorPreferences } from '../../../redux/app';
 
 import './Gizmos.css';
 
 export const Gizmos = withSdk(({ sdk }) => {
   const [showPanel, setShowPanel] = useState(false);
   const { isEnabled, toggle } = useSnapToggle();
+  const preferences = useAppSelector(selectInspectorPreferences);
 
   const handleClosePanel = useCallback(() => setShowPanel(false), []);
   const handleTogglePanel = useCallback(() => setShowPanel(!showPanel), [showPanel]);
@@ -55,10 +58,23 @@ export const Gizmos = withSdk(({ sdk }) => {
     [selection, setSelection],
   );
 
-  useHotkey(['M'], handlePositionGizmo);
-  useHotkey(['R'], handleRotationGizmo);
-  useHotkey(['X'], handleScaleGizmo);
-  useHotkey(['F'], handleFreeGizmo);
+  // Camera mode determines which hotkeys to use for gizmos
+  // Orbit mode: W/E/R/Q (no conflict with camera)
+  // Free Camera mode: M/R/X/F (legacy keys - no conflict with WASD movement)
+  const isOrbitMode = preferences?.cameraMode !== 'free';
+
+  // Orbit Camera hotkeys: W/E/R/Q
+  useHotkey(['W'], isOrbitMode ? handlePositionGizmo : () => {});
+  useHotkey(['E'], isOrbitMode ? handleRotationGizmo : () => {});
+  useHotkey(['Q'], isOrbitMode ? handleFreeGizmo : () => {});
+
+  // R key works in both modes (Scale in Orbit, Rotate in Free Camera)
+  useHotkey(['R'], isOrbitMode ? handleScaleGizmo : handleRotationGizmo);
+
+  // Free Camera hotkeys: M/X/F (legacy - no conflict with WASD)
+  useHotkey(['M'], !isOrbitMode ? handlePositionGizmo : () => {});
+  useHotkey(['X'], !isOrbitMode ? handleScaleGizmo : () => {});
+  useHotkey(['F'], !isOrbitMode ? handleFreeGizmo : () => {});
 
   const { isGizmoWorldAligned, setGizmoWorldAligned } = useGizmoAlignment();
 
