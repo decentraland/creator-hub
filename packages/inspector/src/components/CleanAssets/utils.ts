@@ -123,7 +123,10 @@ function extractModelReferencedAssets(gltf: Gltf): string[] {
 
   // Extract external resources paths (buffers, images, etc.)
   return gltf.info.resources
-    .filter(resource => resource.storage === 'external' && resource.uri)
+    .filter(
+      (resource): resource is typeof resource & { uri: string } =>
+        resource.storage === 'external' && !!resource.uri,
+    )
     .map(resource => resource.uri.toLowerCase());
 }
 
