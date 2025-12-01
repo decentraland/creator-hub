@@ -1,27 +1,29 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
-import cx from 'classnames';
-import { IoGridOutline as SquaresGridIcon } from 'react-icons/io5';
 import { FiAlertTriangle as WarningIcon } from 'react-icons/fi';
+import { IoGridOutline as SquaresGridIcon } from 'react-icons/io5';
+import cx from 'classnames';
 
-import { Material } from '@babylonjs/core';
+import type { Material } from '@babylonjs/core';
 import { CrdtMessageType } from '@dcl/ecs';
 
-import { withSdk, WithSdkProps } from '../../../hoc/withSdk';
+import type { WithSdkProps } from '../../../hoc/withSdk';
+import { withSdk } from '../../../hoc/withSdk';
 import { useChange } from '../../../hooks/sdk/useChange';
 import { useOutsideClick } from '../../../hooks/useOutsideClick';
+import { getLayoutManager } from '../../../lib/babylon/decentraland/layout-manager';
+import type { Layout } from '../../../lib/utils/layout';
+import { GROUND_MESH_PREFIX, PARCEL_SIZE } from '../../../lib/utils/scene';
 import { useAppDispatch, useAppSelector } from '../../../redux/hooks';
 import {
   getMetrics,
   getLimits,
   getEntitiesOutOfBoundaries,
+  getHasCustomCode,
   setEntitiesOutOfBoundaries,
   setMetrics,
   setLimits,
 } from '../../../redux/scene-metrics';
-import { SceneMetrics } from '../../../redux/scene-metrics/types';
-import type { Layout } from '../../../lib/utils/layout';
-import { GROUND_MESH_PREFIX, PARCEL_SIZE } from '../../../lib/utils/scene';
-import { getLayoutManager } from '../../../lib/babylon/decentraland/layout-manager';
+import type { SceneMetrics } from '../../../redux/scene-metrics/types';
 import { Button } from '../../Button';
 import { getSceneLimits } from './utils';
 
@@ -66,6 +68,7 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
   const metrics = useAppSelector(getMetrics);
   const limits = useAppSelector(getLimits);
   const entitiesOutOfBoundaries = useAppSelector(getEntitiesOutOfBoundaries);
+  const hasCustomCode = useAppSelector(getHasCustomCode);
   const [showMetrics, setShowMetrics] = React.useState(false);
   const [sceneLayout, setSceneLayout] = React.useState<Layout>({
     base: { x: 0, y: 0 },
@@ -183,7 +186,11 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
   }, [metrics, limits]);
 
   const isAnyLimitExceeded = (limitsExceeded: Record<string, any>): boolean => {
-    return Object.values(limitsExceeded).length > 0 || entitiesOutOfBoundaries.length > 0;
+    return (
+      Object.values(limitsExceeded).length > 0 ||
+      entitiesOutOfBoundaries.length > 0 ||
+      hasCustomCode
+    );
   };
 
   const handleToggleMetricsOverlay = useCallback(
@@ -215,6 +222,12 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
       );
     }
 
+    if (hasCustomCode) {
+      warnings.push(
+        'This scene includes code elements that may only become visible once the scene is running.',
+      );
+    }
+
     return warnings;
   };
 
@@ -228,6 +241,7 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
           onClick={handleToggleMetricsOverlay}
         >
           <SquaresGridIcon size={ICON_SIZE} />
+          {isAnyLimitExceeded(limitsExceeded) && <span className="WarningDot" />}
         </Button>
       </div>
       {showMetrics && (
