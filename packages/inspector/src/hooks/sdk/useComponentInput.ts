@@ -136,10 +136,12 @@ export const useComponentInput = <ComponentValueType extends object, InputType e
       path: NestedKey<InputType>,
       getter?: (event: React.ChangeEvent<HTMLInputElement>) => any,
     ): Pick<InputHTMLAttributes<HTMLElement>, 'value' | 'onChange' | 'onFocus' | 'onBlur'> => {
-      const value = getValue(input, path) || '';
+      const rawValue = getValue(input, path) || '';
+      // Don't stringify arrays - return them as-is for multi-select components
+      const displayValue = Array.isArray(rawValue) ? rawValue : rawValue.toString();
 
       return {
-        value: value.toString(),
+        value: displayValue,
         onChange: handleUpdate(path, getter),
         onFocus: handleFocus(path),
         onBlur: handleBlur,
@@ -153,6 +155,14 @@ export const useComponentInput = <ComponentValueType extends object, InputType e
 
 // Helper function to recursively merge values
 const mergeValues = (values: any[]): any => {
+  // Special case: if all values are arrays, find intersection
+  if (values.every(val => Array.isArray(val))) {
+    // Find common elements across all arrays (intersection)
+    if (values.length === 0) return [];
+    const firstArray = values[0];
+    return firstArray.filter(item => values.every(arr => arr.includes(item)));
+  }
+
   // Base case - if any value is not an object, compare directly
   if (!values.every(val => val && typeof val === 'object')) {
     return values.every(val => val === values[0]) ? values[0] : '--';
@@ -326,12 +336,18 @@ export const useMultiComponentInput = <ComponentValueType extends object, InputT
     (
       path: NestedKey<InputType>,
       getter?: (event: React.ChangeEvent<HTMLInputElement>) => any,
-    ): Pick<InputHTMLAttributes<HTMLElement>, 'value' | 'onChange' | 'onFocus' | 'onBlur'> => ({
-      value: (getValue(value, path) || '').toString(),
-      onChange: handleUpdate(path, getter),
-      onFocus: () => setIsFocused(true),
-      onBlur: () => setIsFocused(false),
-    }),
+    ): Pick<InputHTMLAttributes<HTMLElement>, 'value' | 'onChange' | 'onFocus' | 'onBlur'> => {
+      const rawValue = getValue(value, path) || '';
+      // Don't stringify arrays - return them as-is for multi-select components
+      const displayValue = Array.isArray(rawValue) ? rawValue : rawValue.toString();
+
+      return {
+        value: displayValue,
+        onChange: handleUpdate(path, getter),
+        onFocus: () => setIsFocused(true),
+        onBlur: () => setIsFocused(false),
+      };
+    },
     [value, handleUpdate],
   );
 
