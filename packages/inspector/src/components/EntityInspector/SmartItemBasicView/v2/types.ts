@@ -19,3 +19,16 @@ export type WidgetProps = {
   dataSource?: any;
   basicViewId?: string;
 };
+
+export enum WidgetType {
+  CheckboxField = 'CheckboxField',
+  RangeField = 'RangeField',
+  ColorField = 'ColorField',
+  ColorPicker = 'ColorPicker',
+  FileUploadField = 'FileUploadField',
+  EntityField = 'EntityField',
+  Dropdown = 'Dropdown',
+  TextArea = 'TextArea',
+  TextField = 'TextField',
+  TriggerSection = 'TriggerSection',
+}

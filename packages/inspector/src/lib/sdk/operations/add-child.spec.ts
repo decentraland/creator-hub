@@ -3,7 +3,8 @@ import { Engine } from '@dcl/ecs';
 
 import type { SdkComponents } from '../components';
 import { createComponents, createEditorComponents } from '../components';
-import addChild, { generateUniqueName, getSuffixDigits } from './add-child';
+import { pushChild } from '../nodes';
+import { generateUniqueName, getSuffixDigits } from './add-child';
 
 describe('generateUniqueName', () => {
   let engine: IEngine;
@@ -13,9 +14,19 @@ describe('generateUniqueName', () => {
   beforeEach(() => {
     engine = Engine();
     const coreComponents = createComponents(engine);
-    createEditorComponents(engine);
+    const editorComponents = createEditorComponents(engine);
+    const Transform = coreComponents.Transform;
+    const Nodes = editorComponents.Nodes;
     Name = coreComponents.Name;
-    _addChild = addChild(engine);
+
+    // Helper function to create an entity with a specific name (bypassing generateUniqueName)
+    _addChild = (parent: Entity, name: string): Entity => {
+      const entity = engine.addEntity();
+      Name.create(entity, { value: name });
+      Transform.create(entity, { parent });
+      Nodes.createOrReplace(parent, { value: pushChild(engine, parent, entity) });
+      return entity;
+    };
   });
 
   it('should return the base name when there are no existing nodes', () => {

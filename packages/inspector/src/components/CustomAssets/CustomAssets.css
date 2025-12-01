@@ -48,3 +48,53 @@
   word-break: break-word;
   max-width: 100px;
 }
+
+.custom-assets-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 24px;
+}
+
+.custom-assets-empty-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 4px;
+  background: var(--background-gray);
+  max-width: 300px;
+}
+
+.custom-assets-empty-content {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.custom-assets-empty-content .icon-custom-assets {
+  background-image: url("../Assets/custom-asset-icon.svg");
+  background-size: 68px 68px;
+  background-repeat: no-repeat;
+  background-position: center;
+  width: 68px;
+  height: 64px;
+  flex-shrink: 0;
+}
+
+.custom-assets-empty-content p {
+  margin: 0;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.custom-assets-empty-card a {
+  width: max-content;
+  align-self: flex-end;
+  font-weight: 600;
+  padding: 0 8px;
+}

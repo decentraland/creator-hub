@@ -102,6 +102,7 @@ const Renderer: React.FC = () => {
     const camera = sdk.scene.activeCamera!;
     camera.detachControl();
     const selectedEntitites = sdk.operations.getSelectedEntities();
+    sdk.operations.removeSelectedEntities();
     selectedEntitites.forEach(entity => sdk.operations.duplicateEntity(entity));
     void sdk.operations.dispatch();
     setTimeout(() => {
