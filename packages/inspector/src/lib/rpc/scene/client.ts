@@ -10,7 +10,7 @@ enum Method {
 
 type Params = {
   [Method.OPEN_FILE]: { path: string };
-  [Method.OPEN_DIRECTORY]: { path: string };
+  [Method.OPEN_DIRECTORY]: { path: string; createIfNotExists?: boolean };
   [Method.PUSH_NOTIFICATION]: { notification: NotificationRequest };
 };
 
@@ -29,8 +29,8 @@ export class SceneClient extends RPC<Method, Params, Result> {
     return this.request('open_file', { path });
   };
 
-  openDirectory = (path: string) => {
-    return this.request('open_directory', { path });
+  openDirectory = (path: string, createIfNotExists = false) => {
+    return this.request('open_directory', { path, createIfNotExists });
   };
 
   pushNotification = (notification: NotificationRequest) => {

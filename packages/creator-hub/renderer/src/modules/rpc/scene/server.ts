@@ -23,7 +23,7 @@ export enum Method {
 
 export type Params = {
   [Method.OPEN_FILE]: { path: string };
-  [Method.OPEN_DIRECTORY]: { path: string };
+  [Method.OPEN_DIRECTORY]: { path: string; createIfNotExists?: boolean };
   [Method.PUSH_NOTIFICATION]: { notification: NotificationRequest };
 };
 
@@ -42,14 +42,21 @@ export class SceneRpcServer extends RPC<Method, Params, Result> {
       await editor.openCode(resolvedPath);
     });
 
-    this.handle('open_directory', async ({ path }) => {
+    this.handle('open_directory', async ({ path, createIfNotExists }) => {
       const resolvedPath = await getPath(path, project);
       const isDir = await fs.isDirectory(resolvedPath);
-      if (isDir) {
-        await fs.openPath(resolvedPath);
-      } else {
-        console.error(`Path ${resolvedPath} is not a directory`);
+
+      if (!isDir) {
+        if (createIfNotExists) {
+          console.info(`Path "${resolvedPath}" does not exist, creating...`);
+          await fs.mkdir(resolvedPath);
+        } else {
+          console.error(`Path "${resolvedPath}" is not a directory`);
+          return;
+        }
       }
+
+      await fs.openPath(resolvedPath);
     });
 
     this.handle('push_notification', async ({ notification }) => {
