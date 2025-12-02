@@ -161,7 +161,11 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
     );
 
     // Only treat as error if process has actually spawned and process is not being killed intentionally.
-    console.log('[UtilityProcess] Exit event received', { code, isKilling, ready: ready.isPending });
+    console.log('[UtilityProcess] Exit event received', {
+      code,
+      isKilling,
+      ready: ready.isPending,
+    });
     // Print stdoutbuf
     console.log('Stderr buffer:', Buffer.concat(stderr.getAll()).toString('utf8'));
     if (code !== 0 && code !== null && !ready.isPending && !isKilling) {
