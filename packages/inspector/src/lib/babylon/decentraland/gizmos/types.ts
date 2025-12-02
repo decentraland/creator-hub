@@ -1,4 +1,4 @@
-import type { IAxisDragGizmo, TransformNode } from '@babylonjs/core';
+import type { IAxisDragGizmo, IPlaneDragGizmo, TransformNode } from '@babylonjs/core';
 import type { EcsEntity } from '../EcsEntity';
 
 export interface IGizmoTransformer {
@@ -30,3 +30,13 @@ export interface GizmoAxis {
   yGizmo: IAxisDragGizmo;
   zGizmo: IAxisDragGizmo;
 }
+
+export interface IPlaneDragGizmoWithMesh extends IPlaneDragGizmo {
+  /**
+   * Internal gizmo mesh - exposed for positioning.
+   * Note: This is a protected property in Babylon.js
+   */
+  _gizmoMesh?: TransformNode;
+}
+
+export type Vector3Axis = 'x' | 'y' | 'z';
