@@ -1,0 +1,21 @@
+{
+  "id": "8fe483f3-7baf-4909-88db-7076fc32b6a5",
+  "name": "Food Box - Empty",
+  "category": "decorations",
+  "tags": [
+    "box",
+    "container",
+    "drum",
+    "food",
+    "fuel",
+    "hazardous",
+    "packaging",
+    "storage",
+    "tank",
+    "toxic",
+    "vessel",
+    "waste"
+  ],
+  "caption": "Empty food box with a red line.",
+  "author": "Decentraland Foundation"
+}

@@ -1,0 +1,8 @@
+{
+  "id": "cde85839-1d6a-4b6f-b407-eb97a8b3e0b9",
+  "name": "Arrow Green",
+  "category": "utils",
+  "tags": ["arrow", "direction", "navigation", "pointer"],
+  "description": "A directional arrow that bobs up and down that can be used to point to a location.",
+  "author": "Decentraland Foundation"
+}

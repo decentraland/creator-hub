@@ -1,0 +1,242 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/door_pirates.glb"
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Actions",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "name": "Open",
+                "type": "set_state",
+                "jsonPayload": "{ \"state\": \"Open\" }",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Close",
+                "type": "set_state",
+                "jsonPayload": "{ \"state\": \"Closed\" }",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Open or Close",
+                "type": "set_state",
+                "jsonPayload": "{ \"state\": \"Toggle\" }",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Play Sound",
+                "type": "play_sound",
+                "jsonPayload": "{ \"src\": \"{assetPath}/sound.mp3\" }"
+              },
+              {
+                "name": "Play Open Animation",
+                "type": "play_animation",
+                "jsonPayload": "{ \"animation\": \"Open\" }"
+              },
+              {
+                "name": "Play Close Animation",
+                "type": "play_animation",
+                "jsonPayload": "{ \"animation\": \"Close\" }"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Triggers",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "type": "on_input_action",
+                "conditions": [],
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Open or Close"
+                  }
+                ],
+                "basicViewId": "trigger-when-clicked"
+              },
+              {
+                "type": "on_state_change",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::States}",
+                    "type": "when_state_is",
+                    "value": "Open"
+                  }
+                ],
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Play Open Animation"
+                  },
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Play Sound"
+                  }
+                ],
+                "basicViewId": "trigger-when-opened"
+              },
+              {
+                "type": "on_state_change",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::States}",
+                    "type": "when_state_is",
+                    "value": "Closed"
+                  }
+                ],
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Play Close Animation"
+                  },
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Play Sound"
+                  }
+                ],
+                "basicViewId": "trigger-when-closed"
+              },
+              {
+                "type": "on_state_change",
+                "operation": "and",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::States}",
+                    "type": "when_state_is",
+                    "value": "Toggle"
+                  },
+                  {
+                    "id": "{self:asset-packs::States}",
+                    "type": "when_previous_state_is",
+                    "value": "Open"
+                  }
+                ],
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Close"
+                  }
+                ]
+              },
+              {
+                "type": "on_state_change",
+                "operation": "and",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::States}",
+                    "type": "when_state_is",
+                    "value": "Toggle"
+                  },
+                  {
+                    "id": "{self:asset-packs::States}",
+                    "type": "when_previous_state_is",
+                    "value": "Closed"
+                  }
+                ],
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Open"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::States",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": ["Open", "Closed", "Toggle"],
+            "defaultValue": "Closed"
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Sync-Components",
+      "data": {
+        "0": {
+          "json": {
+            "value": ["core::Animator", "core::AudioSource", "asset-packs::States"]
+          }
+        }
+      }
+    },
+    {
+      "name": "core::PointerEvents",
+      "data": {
+        "0": {
+          "json": {
+            "pointerEvents": [
+              {
+                "eventType": 1,
+                "eventInfo": {
+                  "button": 1,
+                  "hoverText": "Open / Close",
+                  "maxDistance": 10,
+                  "showFeedback": true
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "inspector::Config",
+      "data": {
+        "0": {
+          "json": {
+            "isBasicViewEnabled": true,
+            "componentName": "Door",
+            "fields": [
+              {
+                "name": "Hover Text",
+                "type": "core::PointerEvents"
+              },
+              {
+                "name": "When Clicked",
+                "type": "asset-packs::Triggers",
+                "basicViewId": "trigger-when-clicked"
+              },
+              {
+                "name": "When Opened",
+                "type": "asset-packs::Triggers",
+                "basicViewId": "trigger-when-opened"
+              },
+              {
+                "name": "When Closed",
+                "type": "asset-packs::Triggers",
+                "basicViewId": "trigger-when-closed"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

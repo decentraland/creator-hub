@@ -1,0 +1,8 @@
+{
+  "id": "b853061a-bf5a-4d76-b7f1-92ed9ea4a8bf",
+  "name": "Invisible Cylinder",
+  "category": "primitives",
+  "tags": ["invisible", "wall", "cylinder", "column", "pillar", "collider"],
+  "description": "A cylinder that is invisible. It can be used to create a wall or a column that the player can't walk through.",
+  "author": "Decentraland Foundation"
+}

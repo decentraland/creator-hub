@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Pillar_Fire_02/Pillar_Fire_02.glb"
+          }
+        }
+      }
+    }
+  ]
+}

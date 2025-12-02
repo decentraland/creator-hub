@@ -9,6 +9,7 @@ export type Props = Omit<TextFieldProps, 'accept' | 'type' | 'onDrop'> & {
   isValidFile?: (node: TreeNode) => boolean;
   showPreview?: boolean;
   acceptURLs?: boolean;
+  openFileExplorerOnMount?: boolean;
 };
 
 export const ACCEPTED_FILE_TYPES = {
@@ -16,4 +17,5 @@ export const ACCEPTED_FILE_TYPES = {
   image: ['.png', '.jpg', '.jpeg'],
   audio: ['.mp3', '.wav', '.ogg'],
   video: ['.mp4'],
+  script: ['.ts', '.tsx'],
 };

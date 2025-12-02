@@ -21,6 +21,7 @@ endif
 PROTOC = node_modules/.bin/protobuf/bin/protoc
 INSPECTOR_PATH = packages/inspector
 CH_PATH = packages/creator-hub
+ASSET_PACKS_PATH = packages/asset-packs
 SYNC_PACK = node_modules/.bin/syncpack
 
 install:
@@ -28,6 +29,7 @@ install:
 	make install-protoc
 	cd $(INSPECTOR_PATH); npm i --silent;
 	cd $(CH_PATH); npm i --silent;
+	cd $(ASSET_PACKS_PATH); npm i --silent;
 
 install-protoc:
 	mkdir -p node_modules/.bin/protobuf
@@ -46,8 +48,12 @@ protoc:
 		$(INSPECTOR_PATH)/src/lib/data-layer/proto/*.proto
 
 build:
+	make build-asset-packs
 	make build-inspector
 	make build-creator-hub
+
+build-asset-packs:
+	cd $(ASSET_PACKS_PATH); npm run build;
 
 build-inspector:
 	cd $(INSPECTOR_PATH); npm run build;
@@ -82,6 +88,12 @@ typecheck:
 test:
 	npm run test
 
+validate-asset-packs:
+	cd $(ASSET_PACKS_PATH); npm run validate
+
+upload-asset-packs:
+	cd $(ASSET_PACKS_PATH); npm run upload
+
 test-e2e:
 	make test-inspector-e2e
 	make test-creator-hub-e2e
@@ -102,7 +114,8 @@ deep-clean:
 	rm -rf node_modules/ \
 		$(INSPECTOR_PATH)/node_modules/ \
 		$(CH_PATH)/node_modules/ \
-    $(INSPECTOR_PATH)/src/lib/data-layer/proto/gen/ \
+		$(ASSET_PACKS_PATH)/node_modules/ \
+		$(INSPECTOR_PATH)/src/lib/data-layer/proto/gen/ \
 	make clean
 
 clean:
@@ -112,3 +125,5 @@ clean:
 	@rm -rf $(CH_PATH)/main/dist/
 	@rm -rf $(CH_PATH)/preload/dist/
 	@rm -rf $(CH_PATH)/renderer/dist/
+	@rm -rf $(ASSET_PACKS_PATH)/dist/
+	@rm -rf $(ASSET_PACKS_PATH)/bin/

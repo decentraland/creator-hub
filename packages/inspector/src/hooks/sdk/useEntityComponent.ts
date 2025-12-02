@@ -4,7 +4,7 @@ import type { Entity, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs
 import { CrdtMessageType } from '@dcl/ecs';
 
 import type { SdkContextValue } from '../../lib/sdk/context';
-import { CoreComponents } from '../../lib/sdk/components';
+import { CoreComponents, EditorComponentNames } from '../../lib/sdk/components';
 import { getConfig } from '../../lib/logic/config';
 import { CAMERA, EDITOR_ENTITIES, PLAYER, ROOT } from '../../lib/sdk/tree';
 import { useSdk } from './useSdk';
@@ -28,6 +28,8 @@ export const SMART_ITEM_COMPONENTS: string[] = [
   ComponentName.COUNTER_BAR,
 ];
 
+export const INSPECTOR_COMPONENTS: string[] = [EditorComponentNames.Script];
+
 export const ROOT_COMPONENTS: Record<Entity, string[]> = {
   [ROOT]: [],
   [PLAYER]: [],
@@ -46,6 +48,10 @@ export function getEnabledComponents(disabledComponents = DISABLED_COMPONENTS) {
     for (const component of SMART_ITEM_COMPONENTS) {
       components.add(component);
     }
+  }
+
+  for (const component of INSPECTOR_COMPONENTS) {
+    components.add(component);
   }
 
   for (const component of disabledComponents) {
@@ -128,20 +134,7 @@ export const useEntityComponent = () => {
   );
 
   const enabledComponents = useMemo(() => {
-    const components: Set<string> = new Set(Object.values(CoreComponents));
-    const config = getConfig();
-
-    if (!config.disableSmartItems) {
-      for (const component of SMART_ITEM_COMPONENTS) {
-        components.add(component);
-      }
-    }
-
-    for (const component of DISABLED_COMPONENTS) {
-      components.delete(component);
-    }
-
-    return components;
+    return getEnabledComponents();
   }, []);
 
   const getAvailableComponents = useCallback(

@@ -1,0 +1,20 @@
+{
+  "id": "87c829b3-8e8d-4fcb-9f43-85d3aa9084f6",
+  "name": "Spotlight",
+  "category": "lights",
+  "tags": [
+    "light",
+    "spotlight",
+    "beam",
+    "brightness",
+    "glare",
+    "glow",
+    "illumination",
+    "intensity",
+    "luminance",
+    "radiance",
+    "shine"
+  ],
+  "description": "A spotlight that can be used to illuminate a scene.",
+  "author": "Decentraland Foundation"
+}

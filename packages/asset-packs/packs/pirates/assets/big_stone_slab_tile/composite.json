@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/StoneSlabSmall_02/StoneSlabSmall_02.glb"
+          }
+        }
+      }
+    }
+  ]
+}

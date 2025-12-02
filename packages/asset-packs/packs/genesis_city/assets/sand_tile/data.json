@@ -1,0 +1,24 @@
+{
+  "id": "1874152b-dd3d-4890-960a-4e7719346326",
+  "name": "Sand Tile",
+  "category": "tiles",
+  "tags": [
+    "genesis",
+    "city",
+    "town",
+    "floors",
+    "sand",
+    "path",
+    "sidewalk",
+    "beach",
+    "tile",
+    "desert",
+    "dune",
+    "earth",
+    "grain",
+    "smooth",
+    "terrain"
+  ],
+  "caption": "Light-colored sand tile with smooth surface.",
+  "author": "Decentraland Foundation"
+}

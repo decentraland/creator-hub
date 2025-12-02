@@ -1,0 +1,90 @@
+name: Asset Packs - Upload PR Assets
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  upload-pr-assets:
+    # only run on PR comments that contain /upload-assets
+    if: |
+      github.event.issue.pull_request &&
+      contains(github.event.comment.body, '/upload-assets') &&
+      (github.event.comment.author_association == 'MEMBER' || github.event.comment.author_association == 'OWNER')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: verify PR is from trusted source
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+
+            const isFork = pr.head.repo.full_name !== pr.base.repo.full_name;
+            if (isFork) {
+              core.setFailed('🚫 Cannot run on PRs from forks for security reasons');
+              return;
+            }
+
+            const author = pr.user.login;
+            const authorAssociation = pr.author_association;
+
+            core.info(`PR author: @${author}, association: ${authorAssociation}`);
+
+            const allowedAssociations = ['MEMBER', 'OWNER'];
+            if (!allowedAssociations.includes(authorAssociation)) {
+              core.setFailed(`🚫 PR author @${author} must be an organization member to use this workflow (current association: ${authorAssociation})`);
+              return;
+            }
+
+      - name: checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.issue.number }}/head
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: install
+        run: make install
+
+      - name: build
+        run: make build-asset-packs
+
+      - name: upload assets to S3 dev (PR-specific path)
+        run: make upload-asset-packs
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.BUILDER_ITEMS_AWS_ID_DEV }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.BUILDER_ITEMS_AWS_SECRET_DEV }}
+          S3_BUCKET_NAME: ${{ secrets.BUILDER_ITEMS_S3_BUCKET_DEV }}
+          S3_REGION: us-east-1
+          S3_UPLOAD_CONCURRENCY: 20
+          # Note: The upload script uses content hashing, so assets are uploaded to /contents/:hash
+          # This means all PRs share the same dev CDN pool, but that's okay since content is
+          # immutable and identified by hash. Changed assets will have different hashes.
+
+      - name: comment on PR
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            ## ✅ Asset Packs uploaded to dev CDN
+
+            Assets from this PR have been uploaded to the development CDN:
+            - **Dev CDN**: `https://builder-items.decentraland.zone/contents/:hash`
+
+            The assets are content-addressed (identified by hash), so they're ready for testing in the Creator Hub by configuring:
+            ```bash
+            VITE_ASSET_PACKS_CONTENT_URL=https://builder-items.decentraland.zone
+            ```
+
+            _Triggered by @${{ github.event.comment.user.login }} with `/upload-assets`_

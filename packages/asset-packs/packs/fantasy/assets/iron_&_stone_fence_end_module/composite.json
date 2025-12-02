@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Fence_Iron_End/Fence_Iron_End.glb"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,222 @@
+import { parse } from '@babel/parser';
+import type {
+  Identifier,
+  TSTypeAnnotation,
+  Expression,
+  FunctionParameter,
+  ClassMethod,
+  TSParameterProperty,
+} from '@babel/types';
+import { engine } from '@dcl/ecs';
+
+import type { ScriptParamUnion } from './types';
+
+function getValueAndTypeFromExpression(expression: Expression): ScriptParamUnion {
+  switch (expression.type) {
+    case 'NumericLiteral':
+      return { type: 'number', value: expression.value };
+    case 'BooleanLiteral':
+      return { type: 'boolean', value: expression.value };
+    case 'StringLiteral':
+      return { type: 'string', value: expression.value };
+  }
+
+  return { type: 'string', value: '' };
+}
+
+function getValueAndTypeFromType(
+  typeAnnotation: TSTypeAnnotation['typeAnnotation'],
+): ScriptParamUnion {
+  switch (typeAnnotation.type) {
+    case 'TSNumberKeyword':
+      return { type: 'number', value: 0 };
+    case 'TSBooleanKeyword':
+      return { type: 'boolean', value: false };
+    case 'TSTypeReference':
+      if (
+        typeAnnotation.typeName.type === 'Identifier' &&
+        typeAnnotation.typeName.name === 'Entity'
+      ) {
+        return { type: 'entity', value: engine.RootEntity };
+      }
+      break;
+    case 'TSUnionType': // (e.g: string | undefined)
+      // TODO: what do we do with union types? for now, we'll return the first non-undefined type
+      for (const subType of typeAnnotation.types) {
+        if (subType.type !== 'TSUndefinedKeyword') {
+          return getValueAndTypeFromType(subType);
+        }
+      }
+  }
+
+  return { type: 'string', value: '' };
+}
+
+function getIdentifier(param: FunctionParameter | TSParameterProperty): Identifier | undefined {
+  if (param.type === 'Identifier') {
+    return param;
+  } else if (param.type === 'TSParameterProperty' && param.parameter.type === 'Identifier') {
+    return param.parameter;
+  }
+  return undefined;
+}
+
+function assertScriptSignature(params: (FunctionParameter | TSParameterProperty)[]): void {
+  // first param must be src: string
+  const firstIdentifier = getIdentifier(params[0]);
+  if (
+    !firstIdentifier ||
+    !firstIdentifier.typeAnnotation ||
+    firstIdentifier.typeAnnotation.type !== 'TSTypeAnnotation' ||
+    firstIdentifier.typeAnnotation.typeAnnotation.type !== 'TSStringKeyword'
+  ) {
+    throw new Error('First parameter must be "src: string"');
+  }
+
+  // second param must be entity: Entity
+  const secondIdentifier = getIdentifier(params[1]);
+  if (
+    !secondIdentifier ||
+    !secondIdentifier.typeAnnotation ||
+    secondIdentifier.typeAnnotation.type !== 'TSTypeAnnotation' ||
+    secondIdentifier.typeAnnotation.typeAnnotation.type !== 'TSTypeReference' ||
+    secondIdentifier.typeAnnotation.typeAnnotation.typeName.type !== 'Identifier' ||
+    secondIdentifier.typeAnnotation.typeAnnotation.typeName.name !== 'Entity'
+  ) {
+    throw new Error('Second parameter must be "entity: Entity"');
+  }
+}
+
+function extractParamsFromFunctionParams(
+  params: (FunctionParameter | TSParameterProperty)[],
+): Record<string, ScriptParamUnion> {
+  const result: Record<string, ScriptParamUnion> = {};
+
+  params.forEach(param => {
+    let identifier: Identifier | undefined = undefined;
+    let optional = false;
+    let type: ScriptParamUnion['type'] = 'string';
+    let value: ScriptParamUnion['value'] = '';
+
+    // handle TSParameterProperty (e.g., "public param: Type")
+    if (param.type === 'TSParameterProperty') {
+      const parameter = param.parameter;
+      if (parameter.type === 'Identifier') {
+        identifier = parameter;
+        optional = !!identifier.optional;
+        if (identifier.typeAnnotation?.type === 'TSTypeAnnotation') {
+          ({ type, value } = getValueAndTypeFromType(identifier.typeAnnotation.typeAnnotation));
+        }
+      } else if (parameter.type === 'AssignmentPattern' && parameter.left.type === 'Identifier') {
+        identifier = parameter.left;
+        optional = true;
+
+        // if type annotation exists (eg: "entity: Entity = 512"), use it to get type and value
+        const typeAnnotation = identifier.typeAnnotation;
+        if (typeAnnotation?.type === 'TSTypeAnnotation') {
+          const typeInfo = getValueAndTypeFromType(typeAnnotation.typeAnnotation);
+          const valueInfo = getValueAndTypeFromExpression(parameter.right);
+          type = typeInfo.type;
+          value = valueInfo.value;
+        } else {
+          ({ type, value } = getValueAndTypeFromExpression(parameter.right));
+        }
+      }
+    }
+    // handle regular function parameters
+    else if (param.type === 'AssignmentPattern' && param.left.type === 'Identifier') {
+      identifier = param.left;
+      optional = true;
+
+      // if type annotation exists, use it for type and expression for value
+      // e.g: target: Entity = 0 -> type from "Entity", value from "0"
+      const typeAnnotation = identifier.typeAnnotation;
+      if (typeAnnotation?.type === 'TSTypeAnnotation') {
+        const typeInfo = getValueAndTypeFromType(typeAnnotation.typeAnnotation);
+        const valueInfo = getValueAndTypeFromExpression(param.right);
+        type = typeInfo.type;
+        value = valueInfo.value;
+      } else {
+        // no type annotation, infer both type and value from expression
+        ({ type, value } = getValueAndTypeFromExpression(param.right));
+      }
+    } else if (param.type === 'Identifier') {
+      identifier = param;
+      optional = !!identifier.optional;
+      if (identifier.typeAnnotation?.type === 'TSTypeAnnotation') {
+        ({ type, value } = getValueAndTypeFromType(identifier.typeAnnotation.typeAnnotation));
+      }
+    }
+
+    if (!identifier) return;
+
+    const name = identifier.name;
+    result[name] = { type, optional, value } as ScriptParamUnion;
+  });
+
+  return result;
+}
+
+export type ScriptParseResult = {
+  params: Record<string, ScriptParamUnion>;
+  error?: string;
+};
+
+export function getScriptParams(content: string): ScriptParseResult {
+  let params: Record<string, ScriptParamUnion> = {};
+
+  try {
+    const ast = parse(content, {
+      sourceType: 'module',
+      plugins: ['typescript'],
+    });
+
+    for (const statement of ast.program.body) {
+      // handle function-based scripts: export function start(src: string, entity: Entity, ...)
+      if (
+        statement.type === 'ExportNamedDeclaration' &&
+        statement.declaration?.type === 'FunctionDeclaration' &&
+        statement.declaration.id?.name === 'start'
+      ) {
+        const functionDeclaration = statement.declaration;
+        assertScriptSignature(functionDeclaration.params);
+
+        // skip first two parameters (src and entity) and process the rest
+        const restParams = functionDeclaration.params.slice(2);
+        params = extractParamsFromFunctionParams(restParams);
+
+        break;
+      }
+
+      // handle class-based scripts: export class MyScript { ... }
+      if (
+        statement.type === 'ExportNamedDeclaration' &&
+        statement.declaration?.type === 'ClassDeclaration'
+      ) {
+        const classDeclaration = statement.declaration;
+
+        // find constructor and extract parameters from it
+        const constructor = classDeclaration.body.body.find(
+          (member): member is ClassMethod =>
+            member.type === 'ClassMethod' && member.kind === 'constructor',
+        );
+
+        if (constructor) {
+          assertScriptSignature(constructor.params);
+
+          // skip first two parameters (src and entity) and extract the rest
+          const restParams = constructor.params.slice(2);
+          params = extractParamsFromFunctionParams(restParams);
+        }
+
+        break;
+      }
+    }
+
+    return { params };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '';
+    console.warn('Failed to parse script params:', error);
+    return { params, error: errorMessage };
+  }
+}

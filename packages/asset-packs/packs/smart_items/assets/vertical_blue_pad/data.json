@@ -1,0 +1,8 @@
+{
+  "id": "c72c3d45-0309-4834-84df-7b5f517694fa",
+  "name": "Vertical Blue Pad",
+  "category": "platforms",
+  "tags": ["platform", "vertical", "interactive", "blue", "pad", "elevator", "lift"],
+  "description": "A vertical platform that moves up and down. Players can jump on it to reach higher places.",
+  "author": "Decentraland Foundation"
+}

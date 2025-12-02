@@ -7,7 +7,7 @@ import type {
   TransformType,
 } from '@dcl/ecs';
 import { getComponentEntityTree, Transform as TransformEngine } from '@dcl/ecs';
-import type { Action } from '@dcl/asset-packs';
+import type { Action, Script } from '@dcl/asset-packs';
 import {
   ActionType,
   ComponentName as AssetPackComponentNames,
@@ -299,6 +299,26 @@ export function createCustomAsset(engine: IEngine) {
               }
               return action;
             });
+          }
+        }
+
+        // Handle Script component resources
+        if (componentName === EditorComponentNames.Script) {
+          if (Array.isArray(processedComponentValue.value)) {
+            processedComponentValue.value = (processedComponentValue as Script).value.map(
+              scriptItem => {
+                const updatedScriptItem = { ...scriptItem };
+
+                // Process script path
+                if (scriptItem.path) {
+                  const originalPath: string = scriptItem.path;
+                  updatedScriptItem.path = originalPath.replace(/^.*[/]([^/]+)$/, '{assetPath}/$1');
+                  resources.push(originalPath);
+                }
+
+                return updatedScriptItem;
+              },
+            );
           }
         }
 

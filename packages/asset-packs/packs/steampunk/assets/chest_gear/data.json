@@ -1,0 +1,23 @@
+{
+  "id": "70cf980b-7bbb-48b5-8dba-96131df1deb7",
+  "name": "Chest Gear",
+  "category": "decorations",
+  "tags": [
+    "armor",
+    "container",
+    "defense",
+    "drum",
+    "gear",
+    "guard",
+    "knight",
+    "loot",
+    "protection",
+    "shield",
+    "storage",
+    "tank",
+    "vessel",
+    "warrior"
+  ],
+  "caption": "Glowing metal chest with gear on top.",
+  "author": "Decentraland Foundation"
+}

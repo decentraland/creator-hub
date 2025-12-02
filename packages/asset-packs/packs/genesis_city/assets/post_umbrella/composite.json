@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Umbrella_02/Umbrella_02.glb"
+          }
+        }
+      }
+    }
+  ]
+}

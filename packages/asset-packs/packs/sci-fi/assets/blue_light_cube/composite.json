@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/LightCube_02/LightCube_02.glb"
+          }
+        }
+      }
+    }
+  ]
+}

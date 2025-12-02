@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/FireHydrant_01/FireHydrant_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

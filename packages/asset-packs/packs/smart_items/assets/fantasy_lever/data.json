@@ -1,0 +1,8 @@
+{
+  "id": "649d5d96-18be-4f89-b592-f2dfce64b7fe",
+  "name": "Fantasy Lever",
+  "category": "levers",
+  "tags": ["lever", "handle", "pull", "push"],
+  "description": "A lever that can be pulled or pushed to trigger actions on other smart items.",
+  "author": "Decentraland Foundation"
+}

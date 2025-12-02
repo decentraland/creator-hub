@@ -55,6 +55,27 @@
   min-width: 175px;
 }
 
+/* Minimal style */
+.Container.minimal {
+  padding: 6px;
+}
+
+.Container.open.minimal > .title {
+  border: none;
+  padding: 0;
+  font-size: 12px;
+  color: var(--base-06);
+}
+
+.Container.minimal .title span {
+  color: var(--base-06);
+  font-size: 12px;
+}
+
+.Container.minimal .title+.content {
+  margin-top: 8px;
+}
+
 .Container .content:has(.Block > .content > .Field),
 .Container.with-gap > .content {
   display: flex;

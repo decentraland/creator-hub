@@ -1,0 +1,17 @@
+{
+  "id": "9845778b-d877-4c06-a32a-75131a4ca6c4",
+  "name": "Horizontal Platform Pirates",
+  "category": "platforms",
+  "tags": [
+    "platform",
+    "horizontal",
+    "interactive",
+    "ship",
+    "floating",
+    "elevator",
+    "lift",
+    "island"
+  ],
+  "description": "A horizontal platform that moves back and forth. Players can jump on it to reach places.",
+  "author": "Decentraland Foundation"
+}

@@ -1,0 +1,8 @@
+{
+  "id": "76d3a347-02b1-4c74-bbf3-7787ede6a3b1",
+  "name": "Green Button",
+  "category": "buttons",
+  "tags": ["button", "switch", "toggle", "activate"],
+  "description": "A green button that can be clicked to trigger actions on other smart items.",
+  "author": "Decentraland Foundation"
+}

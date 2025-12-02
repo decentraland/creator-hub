@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/PetHouse_01/PetHouse_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

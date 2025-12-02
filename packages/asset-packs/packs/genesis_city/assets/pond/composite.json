@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Pond_01/Pond_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

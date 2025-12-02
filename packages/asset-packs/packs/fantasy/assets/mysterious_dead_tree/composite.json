@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Tree_Dead_04/Tree_Dead_04.glb"
+          }
+        }
+      }
+    }
+  ]
+}

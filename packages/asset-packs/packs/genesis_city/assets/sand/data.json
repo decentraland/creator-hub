@@ -1,0 +1,21 @@
+{
+  "id": "d727a55b-158d-4506-b102-e1c963953f9c",
+  "name": "Sand",
+  "category": "ground",
+  "tags": [
+    "genesis",
+    "city",
+    "town",
+    "desert",
+    "dots",
+    "dust",
+    "grain",
+    "sand",
+    "sandy",
+    "scatter",
+    "speckle",
+    "terrain"
+  ],
+  "caption": "Yellow sandy terrain with scattered dots.",
+  "author": "Decentraland Foundation"
+}

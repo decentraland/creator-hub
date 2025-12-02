@@ -1,0 +1,8 @@
+{
+  "id": "dc5ec17b-aa1a-4bd0-bace-7d615d9bdc70",
+  "name": "Video Player",
+  "category": "deprecated",
+  "tags": ["video", "screen"],
+  "description": "DEPRECATED: A video player that can be used to play videos.",
+  "author": "Decentraland Foundation"
+}

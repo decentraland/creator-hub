@@ -1,0 +1,8 @@
+{
+  "id": "2e796393-0ba5-4b27-bfa0-d5abf673fbb3",
+  "name": "Cylinder",
+  "category": "primitives",
+  "tags": ["cylinder", "primitive", "shape"],
+  "description": "A primitive cylinder. You can apply any color or texture to it.",
+  "author": "Decentraland Foundation"
+}

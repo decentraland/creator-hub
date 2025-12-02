@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/CrateYellowBig_01/CrateYellowBig_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,10 +1,12 @@
 import React, { useCallback, useState } from 'react';
-import cx from 'classnames';
 import { VscQuestion as QuestionIcon } from 'react-icons/vsc';
 import { AiOutlineInfoCircle as InfoIcon } from 'react-icons/ai';
 import { FiAlertTriangle as WarningIcon } from 'react-icons/fi';
+import cx from 'classnames';
 import { Popup } from 'decentraland-ui/dist/components/Popup/Popup';
-import { Props } from './types';
+
+import type { Props } from './types';
+
 import './InfoTooltip.css';
 
 // TODO: Fix tooltip re-opening each scroll with hideOnScroll={true}

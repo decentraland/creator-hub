@@ -1,0 +1,8 @@
+{
+  "id": "ef61190a-a48c-4a5f-a183-21ca7587e0b6",
+  "name": "YouTube Button",
+  "category": "social",
+  "tags": ["social", "links", "youtube"],
+  "description": "A clickable item that can open your YouTube page in a browser window. Paste a YouTube page URL in the 'URL' field.",
+  "author": "Decentraland Foundation"
+}

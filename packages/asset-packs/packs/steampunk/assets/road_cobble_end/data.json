@@ -1,0 +1,20 @@
+{
+  "id": "1ef4b5ec-c278-422e-b072-48c04dddce08",
+  "name": "Road Cobble End",
+  "category": "tiles",
+  "tags": [
+    "cobble",
+    "cobblestone",
+    "curb",
+    "infrastructure",
+    "path",
+    "pavement",
+    "roadblock",
+    "sidewalk",
+    "street",
+    "terrain",
+    "urban"
+  ],
+  "caption": "Cobblestone road end.",
+  "author": "Decentraland Foundation"
+}

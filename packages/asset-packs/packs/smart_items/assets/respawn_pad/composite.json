@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/respawn_pad.glb"
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Actions",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "name": "Respawn Player",
+                "type": "batch",
+                "jsonPayload": "{ \"actions\": [\"Move Player\", \"Play Spawn Sound\"] }",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Move Player",
+                "type": "move_player_here",
+                "jsonPayload": "{ }"
+              },
+              {
+                "name": "Play Spawn Sound",
+                "type": "play_sound",
+                "jsonPayload": "{ \"src\": \"{assetPath}/spawn.mp3\" }"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Triggers",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "type": "on_player_spawn",
+                "actions": [],
+                "basicViewId": "trigger-when-player-spawn"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "inspector::Config",
+      "data": {
+        "0": {
+          "json": {
+            "isBasicViewEnabled": true,
+            "componentName": "Respawn Pad",
+            "fields": [
+              {
+                "name": "When Player Spawns Here",
+                "type": "asset-packs::Triggers",
+                "basicViewId": "trigger-when-player-spawn"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

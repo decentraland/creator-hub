@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Window 4x4 V3 Open.glb"
+          }
+        }
+      }
+    }
+  ]
+}

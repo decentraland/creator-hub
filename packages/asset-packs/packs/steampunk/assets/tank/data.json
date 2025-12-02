@@ -1,0 +1,21 @@
+{
+  "id": "0a6efb95-9f85-4c70-859f-f1158ab7d3e5",
+  "name": "Tank",
+  "category": "decorations",
+  "tags": [
+    "chemical",
+    "container",
+    "fuel",
+    "glass",
+    "handle",
+    "hazardous",
+    "jar",
+    "lantern",
+    "storage",
+    "tank",
+    "toxic",
+    "vessel"
+  ],
+  "caption": "Lantern with glass jar and metal handle.",
+  "author": "Decentraland Foundation"
+}

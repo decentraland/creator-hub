@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/FencePicketWhiteDoor_01/FencePicketWhiteDoor_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}
