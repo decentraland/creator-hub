@@ -183,6 +183,7 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
         ),
       );
     } else {
+      log.info(`[UtilityProcess] Resolving pid=${spawnedPid} promise successfully`);
       promise.resolve(stdoutBuf);
     }
     cleanup();
@@ -245,11 +246,13 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
     kill: async () => {
       await ready;
       const pid = forked.pid!;
+      isKilling = true;
 
       // if child is being killed or already killed then return
+      log.info(
+        `[UtilityProcess] Killingg process "${name}" with pid=${pid}... isKilling=${isKilling} alive=${alive}`,
+      );
       if (isKilling || !alive) return;
-      isKilling = true;
-      log.info(`[UtilityProcess] Killing process "${name}" with pid=${pid}...`);
 
       // create promise to kill child
       const killPromise = future<void>();
