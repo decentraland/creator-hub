@@ -14,7 +14,7 @@ import { APP_UNPACKED_PATH, getBinPath } from './path';
 import { setupNodeBinary } from './setup-node';
 
 // Registry to track all forked utility processes
-const processes: Map<number, Electron.UtilityProcess> = new Map();
+const processes: Map<number, Child> = new Map();
 
 // Get the current PATH value
 function getPath() {
@@ -143,9 +143,6 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
 
   forked.on('spawn', () => {
     spawnedPid = forked.pid;
-    if (spawnedPid) {
-      processes.set(spawnedPid, forked);
-    }
     log.info(
       `[UtilityProcess] Running "${name}" using bin=${binPath} with pid=${spawnedPid} in ${cwd}`,
     );
@@ -294,6 +291,13 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
     alive: () => alive,
   };
 
+  // Register child in processes map after spawn (when pid is available)
+  ready.then(() => {
+    if (spawnedPid) {
+      processes.set(spawnedPid, child);
+    }
+  });
+
   return child;
 }
 
@@ -347,33 +351,10 @@ export async function dclDeepLink(deepLink: string) {
  */
 export async function killAllUtilityProcesses() {
   log.info(`[UtilityProcess] Killing ${processes.size} utility processes...`);
-  const killPromises: Promise<void>[] = [];
 
-  for (const [pid, proc] of processes.entries()) {
-    const killPromise = new Promise<void>(resolve => {
-      // Set a timeout to force kill if graceful kill doesn't work
-      const timeout = setTimeout(() => {
-        if (isRunning(pid)) {
-          log.warn(`[UtilityProcess] Force killing process with pid=${pid}`);
-          treeKill(pid, 'SIGKILL');
-        }
-        resolve();
-      }, 3000);
-
-      proc.once('exit', () => {
-        clearTimeout(timeout);
-        resolve();
-      });
-
-      // Try graceful kill first
-      log.info(`[UtilityProcess] Gracefully killing process with pid=${pid}`);
-      treeKill(pid);
-    });
-
-    killPromises.push(killPromise);
-  }
-
+  const killPromises = Array.from(processes.values()).map(child => child.kill());
   await Promise.all(killPromises);
+
   processes.clear();
   log.info('[UtilityProcess] All utility processes killed');
 }
