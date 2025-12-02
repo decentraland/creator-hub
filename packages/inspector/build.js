@@ -144,6 +144,7 @@ function getNotBundledModules() {
     '@dcl/mini-rpc',
     '@dcl/asset-packs',
     '@dcl-sdk/utils',
+    '@dcl/gltf-validator-ts',
   ];
   return Array.from(externalModules)
     .concat(builtinModules)
