@@ -136,11 +136,70 @@ export const SceneMetadataV1 = {
   ),
 };
 
+export const SceneMetadataV2 = {
+  version: Schemas.Optional(Schemas.Int),
+  name: Schemas.Optional(Schemas.String),
+  description: Schemas.Optional(Schemas.String),
+  thumbnail: Schemas.Optional(Schemas.String),
+  ageRating: Schemas.Optional(Schemas.EnumString(SceneAgeRating, SceneAgeRating.Teen)),
+  categories: Schemas.Optional(
+    Schemas.Array(Schemas.EnumString(SceneCategory, SceneCategory.GAME)),
+  ),
+  author: Schemas.Optional(Schemas.String),
+  email: Schemas.Optional(Schemas.String),
+  creator: Schemas.Optional(Schemas.String),
+  tags: Schemas.Optional(Schemas.Array(Schemas.String)),
+  layout: Schemas.Map({
+    base: Coords,
+    parcels: Schemas.Array(Coords),
+  }),
+  silenceVoiceChat: Schemas.Optional(Schemas.Boolean),
+  disablePortableExperiences: Schemas.Optional(Schemas.Boolean),
+  skyboxConfig: Schemas.Optional(
+    Schemas.Map({
+      fixedTime: Schemas.Optional(Schemas.Int),
+      transitionMode: Schemas.Optional(
+        Schemas.EnumNumber(TransitionMode, TransitionMode.TM_FORWARD),
+      ),
+    }),
+  ),
+  spawnPoints: Schemas.Optional(
+    Schemas.Array(
+      Schemas.Map({
+        name: Schemas.String,
+        default: Schemas.Optional(Schemas.Boolean),
+        position: Schemas.Map({
+          x: Schemas.OneOf({
+            single: Schemas.Int,
+            range: Schemas.Array(Schemas.Int),
+          }),
+          y: Schemas.OneOf({
+            single: Schemas.Int,
+            range: Schemas.Array(Schemas.Int),
+          }),
+          z: Schemas.OneOf({
+            single: Schemas.Int,
+            range: Schemas.Array(Schemas.Int),
+          }),
+        }),
+        cameraTarget: Schemas.Optional(
+          Schemas.Map({
+            x: Schemas.Int,
+            y: Schemas.Int,
+            z: Schemas.Int,
+          }),
+        ),
+      }),
+    ),
+  ),
+};
+
 const SceneMetadata = 'inspector::SceneMetadata';
 
 export const VERSIONS = [
   { key: SceneMetadata, value: SceneMetadataV0 },
   { key: `${SceneMetadata}-v1`, value: SceneMetadataV1 },
+  { key: `${SceneMetadata}-v2`, value: SceneMetadataV2 },
 ];
 
 export function getLatestSceneComponentVersion() {

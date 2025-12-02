@@ -21,6 +21,7 @@ export type SpawnPointInput = {
 };
 
 export type SceneInput = {
+  creator: string;
   name: string;
   description: string;
   skyboxConfig: {
