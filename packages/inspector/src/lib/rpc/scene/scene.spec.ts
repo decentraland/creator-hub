@@ -53,7 +53,7 @@ describe('SceneClient RPC', () => {
 
     it('should send the open_directory request with the correct path', async () => {
       await client.openDirectory(path);
-      expect(spy).toHaveBeenCalledWith('open_directory', { path });
+      expect(spy).toHaveBeenCalledWith('open_directory', { path, createIfNotExists: false });
     });
   });
 });

@@ -12,6 +12,7 @@ export type FileSystemInterface = {
   writeFile: (filePath: string, content: Buffer) => Promise<void>;
   readdir: (dirPath: string) => Promise<{ name: string; isDirectory: boolean }[]>;
   rm: (filePath: string) => Promise<void>;
+  rmdir: (dirPath: string) => Promise<void>;
   stat: (filePath: string) => Promise<{ size: number }>;
   cwd: () => string;
 };

@@ -7,6 +7,7 @@ export enum Method {
   WRITE_FILE = 'write_file',
   EXISTS = 'exists',
   DELETE = 'delete',
+  RMDIR = 'rmdir',
   LIST = 'list',
   STAT = 'stat',
 }
@@ -15,6 +16,7 @@ export type Params = {
   [Method.READ_FILE]: { path: string };
   [Method.WRITE_FILE]: { path: string; content: Buffer };
   [Method.DELETE]: { path: string };
+  [Method.RMDIR]: { path: string };
   [Method.EXISTS]: { path: string };
   [Method.LIST]: { path: string };
   [Method.STAT]: { path: string };
@@ -24,6 +26,7 @@ export type Result = {
   [Method.READ_FILE]: Buffer;
   [Method.WRITE_FILE]: void;
   [Method.DELETE]: void;
+  [Method.RMDIR]: void;
   [Method.EXISTS]: boolean;
   [Method.LIST]: { name: string; isDirectory: boolean }[];
   [Method.STAT]: { size: number };
@@ -50,6 +53,10 @@ export class Client extends RPC<Method, Params, Result> {
 
   delete(path: string) {
     return this.request('delete', { path });
+  }
+
+  rmdir(path: string) {
+    return this.request('rmdir', { path });
   }
 
   list(path: string) {

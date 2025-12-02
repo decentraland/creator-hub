@@ -34,6 +34,7 @@ export const DEFAULT_CONFIG: Config = {
       skipAuthScreen: true,
       enableLandscapeTerrains: true,
       openNewInstance: false,
+      showWarnings: true,
     },
   },
   editors: [],
