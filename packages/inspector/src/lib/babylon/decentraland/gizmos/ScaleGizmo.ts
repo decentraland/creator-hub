@@ -170,7 +170,12 @@ export class ScaleGizmo implements IGizmoTransformer {
     };
 
     const onPointerMove = (pointerInfo: PointerInfo) => {
-      if (!isDragging || !initialMousePos || pointerInfo.type !== PointerEventTypes.POINTERMOVE)
+      if (
+        !isDragging ||
+        !initialMousePos ||
+        pointerInfo.type !== PointerEventTypes.POINTERMOVE ||
+        !this.pivotPosition
+      )
         return;
 
       const currentMousePos = { x: pointerInfo.event.clientX, y: pointerInfo.event.clientY };
@@ -181,35 +186,26 @@ export class ScaleGizmo implements IGizmoTransformer {
       const dragDirection = deltaX + deltaY;
       const scaleFactor = 1.0 + (dragDirection / 100.0) * this.scaleSensitivity;
 
-      // Apply scaling based on plane type (Blender behavior)
+      // Apply scaling based on plane type
       for (const entity of this.currentEntities) {
         const initialScale = initialEntityScales.get(entity.entityId);
-        if (!initialScale) continue;
+        const offset = this.initialOffsets.get(entity.entityId);
+        const initialRotation = this.initialRotations.get(entity.entityId);
+        const initialPosition = this.initialPositions.get(entity.entityId);
 
-        let newScale: Vector3;
+        if (!initialScale || !offset || !initialRotation || !initialPosition) continue;
+
+        // Calculate scale change based on plane type
+        let scaleChange: Vector3;
 
         if (planeType === 'XY') {
-          newScale = new Vector3(
-            initialScale.x * scaleFactor,
-            initialScale.y * scaleFactor,
-            initialScale.z,
-          );
+          scaleChange = new Vector3(scaleFactor, scaleFactor, 1);
         } else if (planeType === 'XZ') {
-          newScale = new Vector3(
-            initialScale.x * scaleFactor,
-            initialScale.y,
-            initialScale.z * scaleFactor,
-          );
+          scaleChange = new Vector3(scaleFactor, 1, scaleFactor);
         } else {
-          newScale = new Vector3(
-            initialScale.x,
-            initialScale.y * scaleFactor,
-            initialScale.z * scaleFactor,
-          );
+          scaleChange = new Vector3(1, scaleFactor, scaleFactor); // YZ
         }
-
-        entity.scaling.copyFrom(newScale);
-        entity.computeWorldMatrix(true);
+        this.applyScaleTransform(entity, scaleChange, offset, initialScale, initialRotation);
 
         if (this.updateEntityScale) {
           this.updateEntityScale(entity);
@@ -485,71 +481,87 @@ export class ScaleGizmo implements IGizmoTransformer {
 
       if (!offset || !initialScale || !initialRotation || !initialPosition) continue;
 
-      // Scale the offset proportionally (like Blender's proportional scaling)
-      const scaledOffset = new Vector3(
-        offset.x * scaleChange.x,
-        offset.y * scaleChange.y,
-        offset.z * scaleChange.z,
-      );
-      const newWorldPosition = this.pivotPosition.add(scaledOffset);
+      this.applyScaleTransform(entity, scaleChange, offset, initialScale, initialRotation);
+    }
+  }
 
-      // Scale the entity's scale
-      const newWorldScale = new Vector3(
+  /**
+   * Apply scale transformation to an entity based on scale change from pivot.
+   * Handles both entities with and without parents.
+   */
+  private applyScaleTransform(
+    entity: EcsEntity,
+    scaleChange: Vector3,
+    offset: Vector3,
+    initialScale: Vector3,
+    initialRotation: Quaternion,
+  ): void {
+    if (!this.pivotPosition) return;
+
+    // Scale the offset proportionally (like Blender's proportional scaling)
+    const scaledOffset = new Vector3(
+      offset.x * scaleChange.x,
+      offset.y * scaleChange.y,
+      offset.z * scaleChange.z,
+    );
+    const newWorldPosition = this.pivotPosition.add(scaledOffset);
+
+    // Scale the entity's scale
+    const newWorldScale = new Vector3(
+      initialScale.x * scaleChange.x,
+      initialScale.y * scaleChange.y,
+      initialScale.z * scaleChange.z,
+    );
+
+    const parent = entity.parent instanceof TransformNode ? entity.parent : null;
+
+    if (parent) {
+      // For child entities, convert world transforms to local space
+      const parentWorldMatrix = parent.getWorldMatrix();
+      const parentWorldMatrixInverse = parentWorldMatrix.clone().invert();
+      const parentWorldRotation =
+        parent.rotationQuaternion || Quaternion.FromRotationMatrix(parentWorldMatrix);
+
+      // Convert world position to local space
+      const localPosition = Vector3.TransformCoordinates(
+        newWorldPosition,
+        parentWorldMatrixInverse,
+      );
+
+      // Convert world rotation to local space
+      const localRotation = parentWorldRotation.invert().multiply(initialRotation);
+
+      // Apply scale directly to the child without considering parent's scale
+      // This maintains the local scale as intended by the user
+      const localScale = new Vector3(
         initialScale.x * scaleChange.x,
         initialScale.y * scaleChange.y,
         initialScale.z * scaleChange.z,
       );
+      const snappedLocalScale = this.snapScale(localScale);
 
-      const parent = entity.parent instanceof TransformNode ? entity.parent : null;
-
-      if (parent) {
-        // For child entities, convert world transforms to local space
-        const parentWorldMatrix = parent.getWorldMatrix();
-        const parentWorldMatrixInverse = parentWorldMatrix.clone().invert();
-        const parentWorldRotation =
-          parent.rotationQuaternion || Quaternion.FromRotationMatrix(parentWorldMatrix);
-
-        // Convert world position to local space
-        const localPosition = Vector3.TransformCoordinates(
-          newWorldPosition,
-          parentWorldMatrixInverse,
-        );
-
-        // Convert world rotation to local space
-        const localRotation = parentWorldRotation.invert().multiply(initialRotation);
-
-        // Apply scale directly to the child without considering parent's scale
-        // This maintains the local scale as intended by the user
-        const localScale = new Vector3(
-          initialScale.x * scaleChange.x,
-          initialScale.y * scaleChange.y,
-          initialScale.z * scaleChange.z,
-        );
-        const snappedLocalScale = this.snapScale(localScale);
-
-        // Apply transforms
-        entity.position.copyFrom(localPosition);
-        entity.scaling.copyFrom(snappedLocalScale);
-        if (!entity.rotationQuaternion) {
-          entity.rotationQuaternion = new Quaternion();
-        }
-        entity.rotationQuaternion.copyFrom(localRotation);
-        entity.rotationQuaternion.normalize();
-      } else {
-        // For entities without parent, apply world transforms directly
-        entity.position.copyFrom(newWorldPosition);
-        const snappedWorldScale = this.snapScale(newWorldScale);
-        entity.scaling.copyFrom(snappedWorldScale);
-        if (!entity.rotationQuaternion) {
-          entity.rotationQuaternion = new Quaternion();
-        }
-        entity.rotationQuaternion.copyFrom(initialRotation);
-        entity.rotationQuaternion.normalize();
+      // Apply transforms
+      entity.position.copyFrom(localPosition);
+      entity.scaling.copyFrom(snappedLocalScale);
+      if (!entity.rotationQuaternion) {
+        entity.rotationQuaternion = new Quaternion();
       }
-
-      // Force update world matrix
-      entity.computeWorldMatrix(true);
+      entity.rotationQuaternion.copyFrom(localRotation);
+      entity.rotationQuaternion.normalize();
+    } else {
+      // For entities without parent, apply world transforms directly
+      entity.position.copyFrom(newWorldPosition);
+      const snappedWorldScale = this.snapScale(newWorldScale);
+      entity.scaling.copyFrom(snappedWorldScale);
+      if (!entity.rotationQuaternion) {
+        entity.rotationQuaternion = new Quaternion();
+      }
+      entity.rotationQuaternion.copyFrom(initialRotation);
+      entity.rotationQuaternion.normalize();
     }
+
+    // Force update world matrix
+    entity.computeWorldMatrix(true);
   }
 
   onDragEnd(): void {
