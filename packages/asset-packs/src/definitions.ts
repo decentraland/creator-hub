@@ -272,6 +272,7 @@ export function getComponents(engine: IEngine) {
     Rewards: getComponent<Rewards>(ComponentName.REWARDS, engine),
     TextAnnouncements: getComponent<TextAnnouncements>(ComponentName.TEXT_ANNOUNCEMENTS, engine),
     VideoControlState: getComponent<VideoControlState>(ComponentName.VIDEO_CONTROL_STATE, engine),
+    Script: getComponent<Script>(ComponentName.SCRIPT, engine),
   };
 }
 
@@ -440,6 +441,16 @@ export function createComponents(engine: IEngine) {
     streamKey: Schemas.Optional(Schemas.String),
   });
 
+  const Script = engine.defineComponent(ComponentName.SCRIPT, {
+    value: Schemas.Array(
+      Schemas.Map({
+        path: Schemas.String,
+        priority: Schemas.Number,
+        layout: Schemas.Optional(Schemas.String),
+      }),
+    ),
+  });
+
   return {
     ActionTypes,
     Actions,
@@ -452,6 +463,7 @@ export function createComponents(engine: IEngine) {
     TextAnnouncements,
     VideoControlState,
     VideoScreen,
+    Script,
   };
 }
 
@@ -612,3 +624,6 @@ export type TextAnnouncements = ReturnType<TextAnnouncementsComponent['schema'][
 
 export type VideoControlStateComponent = Components['VideoControlState'];
 export type VideoControlState = ReturnType<VideoControlStateComponent['schema']['deserialize']>;
+
+export type ScriptComponent = Components['Script'];
+export type Script = ReturnType<ScriptComponent['schema']['deserialize']>;
