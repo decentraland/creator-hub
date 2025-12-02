@@ -1,10 +1,4 @@
 import {
-  getEntityParent,
-  getPlayerPosition,
-  getWorldPosition,
-  getWorldRotation,
-} from '@dcl-sdk/utils';
-import {
   Material,
   AudioStream,
   YGUnit,
@@ -27,6 +21,7 @@ import type {
   PointerEventsSystem,
 } from '@dcl/ecs';
 import { Quaternion, Vector3 } from '@dcl/sdk/math';
+import { getEntityParent, getPlayerPosition, getWorldPosition, getWorldRotation } from './helpers';
 import type { ActionPayload, ISDKHelpers, IPlayersHelper, ScreenAlignMode } from './definitions';
 import {
   ActionType,
