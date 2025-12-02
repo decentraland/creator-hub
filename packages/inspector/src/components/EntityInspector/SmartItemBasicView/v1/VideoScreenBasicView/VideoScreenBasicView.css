@@ -39,6 +39,14 @@
   background-color: var(--background-dark);
 }
 
+.VideoScreenBasicViewInspector .PanelSection.hover {
+  background-color: var(--list-item-hover-bg-color);
+}
+
+.VideoScreenBasicViewInspector .PanelSection.droppeable .FileUploadInput .InputContainer {
+  border: 1px dashed var(--base-01);
+}
+
 .VideoScreenBasicViewInspector .PlayBack {
   margin-top: 10px;
   margin-bottom: 10px;

@@ -23,7 +23,8 @@ export function addChild(engine: IEngine) {
 }
 
 export function generateUniqueName(engine: IEngine, Name: NameComponent, value: string): string {
-  const pattern = new RegExp(`^${value.toLowerCase()}(_\\d+)?$`, 'i');
+  const baseName = getSuffixDigits(value) !== -1 ? value.slice(0, value.lastIndexOf('_')) : value;
+  const pattern = new RegExp(`^${baseName.toLowerCase()}(_\\d+)?$`, 'i');
   const nodes = getNodes(engine);
 
   let isFirst = true;
@@ -41,7 +42,7 @@ export function generateUniqueName(engine: IEngine, Name: NameComponent, value: 
 
   const suffix = isFirst ? '' : `_${max + 1}`;
 
-  return `${value}${suffix}`;
+  return `${baseName}${suffix}`;
 }
 
 export function getSuffixDigits(name: string): number {

@@ -15,7 +15,7 @@ import { getComponentByType, isBooleanValue, useEntityOrChildrenHasComponents } 
 import DynamicField from './DynamicField';
 import { validateConstraints } from './constraints';
 import { applyTransform } from './utils';
-import { type Props, type Section, type SectionItem } from './types';
+import { WidgetType, type Props, type Section, type SectionItem } from './types';
 
 import './SmartItemBasicView.css';
 
@@ -65,7 +65,11 @@ const RegularComponentItemInner = withSdk<{ item: SectionItem; entity: Entity }>
       },
     );
 
-    const inputProps = item.path ? getInputProps(item.path) : {};
+    let getter = undefined;
+    if (item.path && item.widget === WidgetType.CheckboxField) {
+      getter = (e: React.ChangeEvent<HTMLInputElement>) => e.target.checked;
+    }
+    const inputProps = item.path ? getInputProps(item.path, getter) : {};
 
     return (
       <DynamicField

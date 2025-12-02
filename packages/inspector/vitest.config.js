@@ -2,6 +2,7 @@ import { resolve } from 'path';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  assetsInclude: ['**/*.glb', '**/*.gltf'],
   test: {
     globals: true,
     environment: 'happy-dom',

@@ -197,18 +197,16 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
             <span>LOCAL ASSETS</span>
           </div>
         </div>
-        {customAssets.length > 0 ? (
-          <div
-            className="tab"
-            onClick={handleTabClick(AssetsTab.CustomAssets)}
-            data-test-id={AssetsTab.CustomAssets}
-          >
-            <div className={cx({ underlined: tab === AssetsTab.CustomAssets })}>
-              <i className="icon-custom-assets" />
-              <span>CUSTOM ITEMS</span>
-            </div>
+        <div
+          className="tab"
+          onClick={handleTabClick(AssetsTab.CustomAssets)}
+          data-test-id={AssetsTab.CustomAssets}
+        >
+          <div className={cx({ underlined: tab === AssetsTab.CustomAssets })}>
+            <i className="icon-custom-assets" />
+            <span>CUSTOM ITEMS</span>
           </div>
-        ) : null}
+        </div>
         <div
           className="tab"
           onClick={handleTabClick(AssetsTab.AssetsPack)}

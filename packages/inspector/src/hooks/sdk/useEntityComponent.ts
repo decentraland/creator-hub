@@ -13,7 +13,6 @@ import { useChange } from './useChange';
 export const DISABLED_COMPONENTS: string[] = [
   CoreComponents.ANIMATOR,
   CoreComponents.AUDIO_STREAM,
-  CoreComponents.VIDEO_PLAYER,
   CoreComponents.NETWORK_ENTITY,
   CoreComponents.TWEEN_SEQUENCE,
   ComponentName.ADMIN_TOOLS,

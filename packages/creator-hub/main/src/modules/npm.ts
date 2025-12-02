@@ -14,21 +14,25 @@ export async function install(path: string, packages: string[] = []) {
 export async function getContextFiles(path: string) {
   log.info(`[Get-context-files] Running get-context-files in path: ${path}`);
 
-  const contextCommand = run('@dcl/sdk-commands', 'sdk-commands', {
-    args: ['get-context-files'],
-    cwd: path,
-    workspace: path,
-  });
+  try {
+    const contextCommand = run('@dcl/sdk-commands', 'sdk-commands', {
+      args: ['get-context-files'],
+      cwd: path,
+      workspace: path,
+    });
 
-  contextCommand.on(
-    /.*/,
-    data => {
-      log.info(`[Get-context-files] ${data}`);
-    },
-    { type: 'stdout' },
-  );
+    contextCommand.on(
+      /.*/,
+      data => {
+        log.info(`[Get-context-files] ${data}`);
+      },
+      { type: 'stdout' },
+    );
 
-  await contextCommand.wait();
+    await contextCommand.wait();
+  } catch (e) {
+    log.error(`[Get-context-files] Error running get-context-files: ${e}`);
+  }
 }
 
 /**

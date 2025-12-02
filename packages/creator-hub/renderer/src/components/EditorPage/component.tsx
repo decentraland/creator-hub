@@ -13,7 +13,7 @@ import {
   CircularProgress as Loader,
 } from 'decentraland-ui2';
 
-import { CLIENT_NOT_INSTALLED_ERROR } from '/shared/utils';
+import { isClientNotInstalledError } from '/shared/types/client';
 import { isProjectError } from '/shared/types/projects';
 import { isWorkspaceError } from '/shared/types/workspace';
 
@@ -23,7 +23,7 @@ import { useEditor } from '/@/hooks/useEditor';
 import { useSettings } from '/@/hooks/useSettings';
 
 import EditorPng from '/assets/images/editor.png';
-
+import { useSelector } from '#store';
 import { PublishProject } from '../Modals/PublishProject';
 import { PublishHistory } from '../Modals/PublishHistory';
 import { InstallClient } from '../Modals/InstallClient';
@@ -39,7 +39,6 @@ import type {
   PublishOptionsProps,
   ModalProps,
 } from './types';
-import { useSelector } from '#store';
 
 import './styles.css';
 
@@ -75,10 +74,7 @@ export function EditorPage() {
   );
 
   useEffect(() => {
-    if (
-      isWorkspaceError(error, 'PROJECT_NOT_FOUND') ||
-      isProjectError(error, 'PROJECT_NOT_CREATED')
-    ) {
+    if (isWorkspaceError(error, 'PROJECT_NOT_FOUND') || isProjectError(error)) {
       navigate('/scenes');
     }
 
@@ -126,7 +122,7 @@ export function EditorPage() {
     try {
       await openPreview(settings.previewOptions);
     } catch (error: any) {
-      if (error.message.includes(CLIENT_NOT_INSTALLED_ERROR)) {
+      if (isClientNotInstalledError(error)) {
         setModalOpen('install-client');
       }
     }
