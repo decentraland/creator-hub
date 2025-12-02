@@ -12,13 +12,13 @@ export enum ComponentName {
   REWARDS = 'asset-packs::Rewards',
   TEXT_ANNOUNCEMENTS = 'asset-packs::TextAnnouncements',
   VIDEO_CONTROL_STATE = 'asset-packs::VideoControlState',
-  SCRIPT = 'asset-packs::Script',
 }
 
 export enum TweenType {
   MOVE_ITEM = 'move_item',
   ROTATE_ITEM = 'rotate_item',
   SCALE_ITEM = 'scale_item',
+  KEEP_ROTATING_ITEM = 'keep_rotating_item',
 }
 
 export enum InterpolationType {
@@ -87,6 +87,13 @@ export enum ActionType {
   BATCH = 'batch',
   HEAL_PLAYER = 'heal_player',
   CLAIM_AIRDROP = 'claim_airdrop',
+  LIGHTS_ON = 'lights_on',
+  LIGHTS_OFF = 'lights_off',
+  LIGHTS_MODIFY = 'lights_modify',
+  CHANGE_CAMERA = 'change_camera',
+  CHANGE_TEXT = 'change_text',
+  STOP_TWEEN = 'stop_tween',
+  SLIDE_TEXTURE = 'slide_texture',
 }
 
 export enum TriggerType {
@@ -176,6 +183,13 @@ export enum Colliders {
   CL_CUSTOM6 = 8192,
   CL_CUSTOM7 = 16384,
   CL_CUSTOM8 = 32768,
+}
+
+// Defined values instead of using from @dcl/ecs because Schemas doesn't support const enums
+export enum TextureMovementType {
+  /** default = TextureMovementType.TMT_OFFSET */
+  TMT_OFFSET = 0,
+  TMT_TILING = 1,
 }
 
 export enum ProximityLayer {

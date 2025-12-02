@@ -5,6 +5,8 @@ import type {
   MaterialComponentDefinitionExtended,
   PBMaterial,
   PBVideoPlayer,
+  PBMainCamera,
+  PBVirtualCamera,
   VideoTexture,
   AnimatorComponentDefinitionExtended,
   TransformComponentExtended,
@@ -14,6 +16,7 @@ import type {
   PBGltfContainer,
   PBUiTransform,
   PBUiText,
+  PBTextShape,
   PBUiBackground,
   MeshRendererComponentDefinitionExtended,
   PBBillboard,
@@ -21,6 +24,7 @@ import type {
   PBTween,
   PBTweenSequence,
   PBPointerEvents,
+  PBLightSource,
   NetworkEntity,
   SyncComponents,
   AudioSourceComponentDefinitionExtended,
@@ -44,6 +48,7 @@ import {
   ProximityLayer,
   AdminPermissions,
   MediaSource,
+  TextureMovementType,
 } from './enums';
 import { getExplorerComponents } from './components';
 
@@ -71,6 +76,9 @@ export const ActionSchemas = {
     interpolationType: Schemas.EnumString(InterpolationType, InterpolationType.LINEAR),
     duration: Schemas.Float,
     relative: Schemas.Boolean,
+    // For KEEP_ROTATING_ITEM
+    direction: Schemas.Optional(Schemas.Vector3),
+    speed: Schemas.Optional(Schemas.Float),
   }),
   [ActionType.SET_COUNTER]: Schemas.Map({ counter: Schemas.Int }),
   [ActionType.INCREMENT_COUNTER]: Schemas.Map({
@@ -210,6 +218,31 @@ export const ActionSchemas = {
     multiplier: Schemas.Int,
   }),
   [ActionType.CLAIM_AIRDROP]: Schemas.Map({}),
+  [ActionType.LIGHTS_ON]: Schemas.Map({}),
+  [ActionType.LIGHTS_OFF]: Schemas.Map({}),
+  [ActionType.LIGHTS_MODIFY]: Schemas.Map({
+    active: Schemas.Optional(Schemas.Boolean),
+    color: Schemas.Optional(Schemas.Color3),
+    intensity: Schemas.Optional(Schemas.Float),
+  }),
+  [ActionType.CHANGE_CAMERA]: Schemas.Map({
+    /** If undefined or 0, treated as NONE */
+    virtualCameraEntity: Schemas.Optional(Schemas.Entity),
+  }),
+  [ActionType.CHANGE_TEXT]: Schemas.Map({
+    text: Schemas.String,
+    fontSize: Schemas.Optional(Schemas.Float),
+    color: Schemas.Optional(Schemas.Color4),
+  }),
+  [ActionType.STOP_TWEEN]: Schemas.Map({}),
+  [ActionType.SLIDE_TEXTURE]: Schemas.Map({
+    direction: Schemas.Map({ x: Schemas.Float, y: Schemas.Float }),
+    speed: Schemas.Float,
+    movementType: Schemas.Optional(
+      Schemas.EnumNumber(TextureMovementType, TextureMovementType.TMT_OFFSET),
+    ),
+    duration: Schemas.Optional(Schemas.Float),
+  }),
 };
 
 export type ActionPayload<T extends ActionType = any> = T extends keyof typeof ActionSchemas
@@ -239,7 +272,6 @@ export function getComponents(engine: IEngine) {
     Rewards: getComponent<Rewards>(ComponentName.REWARDS, engine),
     TextAnnouncements: getComponent<TextAnnouncements>(ComponentName.TEXT_ANNOUNCEMENTS, engine),
     VideoControlState: getComponent<VideoControlState>(ComponentName.VIDEO_CONTROL_STATE, engine),
-    Script: getComponent<Script>(ComponentName.SCRIPT, engine),
   };
 }
 
@@ -408,16 +440,6 @@ export function createComponents(engine: IEngine) {
     streamKey: Schemas.Optional(Schemas.String),
   });
 
-  const Script = engine.defineComponent(ComponentName.SCRIPT, {
-    value: Schemas.Array(
-      Schemas.Map({
-        path: Schemas.String,
-        priority: Schemas.Number,
-        layout: Schemas.Optional(Schemas.String),
-      }),
-    ),
-  });
-
   return {
     ActionTypes,
     Actions,
@@ -430,7 +452,6 @@ export function createComponents(engine: IEngine) {
     TextAnnouncements,
     VideoControlState,
     VideoScreen,
-    Script,
   };
 }
 
@@ -444,6 +465,10 @@ export type EngineComponents = {
   Material: MaterialComponentDefinitionExtended;
   MeshRenderer: MeshRendererComponentDefinitionExtended;
   VideoPlayer: LastWriteWinElementSetComponentDefinition<PBVideoPlayer>;
+  LightSource: LastWriteWinElementSetComponentDefinition<PBLightSource>;
+  VirtualCamera: LastWriteWinElementSetComponentDefinition<PBVirtualCamera>;
+  MainCamera: LastWriteWinElementSetComponentDefinition<PBMainCamera>;
+  TextShape: LastWriteWinElementSetComponentDefinition<PBTextShape>;
   UiTransform: LastWriteWinElementSetComponentDefinition<PBUiTransform>;
   UiText: LastWriteWinElementSetComponentDefinition<PBUiText>;
   UiBackground: LastWriteWinElementSetComponentDefinition<PBUiBackground>;
@@ -587,6 +612,3 @@ export type TextAnnouncements = ReturnType<TextAnnouncementsComponent['schema'][
 
 export type VideoControlStateComponent = Components['VideoControlState'];
 export type VideoControlState = ReturnType<VideoControlStateComponent['schema']['deserialize']>;
-
-export type ScriptComponent = Components['Script'];
-export type Script = ReturnType<ScriptComponent['schema']['deserialize']>;
