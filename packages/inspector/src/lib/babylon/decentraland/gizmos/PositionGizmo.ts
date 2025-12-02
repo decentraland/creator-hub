@@ -3,7 +3,7 @@ import { Vector3, TransformNode, Quaternion } from '@babylonjs/core';
 import type { Entity } from '@dcl/ecs';
 import type { EcsEntity } from '../EcsEntity';
 import { LEFT_BUTTON } from '../mouse-utils';
-import type { IGizmoTransformer } from './types';
+import type { IGizmoTransformer, IPlaneDragGizmoWithMesh, Vector3Axis } from './types';
 import { GizmoType } from './types';
 import { configureGizmoButtons } from './utils';
 
@@ -38,6 +38,49 @@ export class PositionGizmo implements IGizmoTransformer {
     if (!positionGizmo) return;
 
     positionGizmo.updateGizmoRotationToMatchAttachedMesh = !this.isWorldAligned;
+
+    positionGizmo.planarGizmoEnabled = true;
+  }
+
+  private applyPlanarGizmoOffsets(): boolean {
+    const positionGizmo = this.getPositionGizmo();
+    if (!positionGizmo) return false;
+
+    const offset = 0.083;
+    const tolerance = 0.01;
+    let allReady = true;
+
+    const configs: Array<{
+      gizmo: IPlaneDragGizmoWithMesh;
+      axes: Partial<Record<Vector3Axis, number>>;
+    }> = [
+      { gizmo: positionGizmo.xPlaneGizmo, axes: { y: offset, z: offset } },
+      { gizmo: positionGizmo.yPlaneGizmo, axes: { x: offset, z: offset } },
+      { gizmo: positionGizmo.zPlaneGizmo, axes: { x: offset, y: offset } },
+    ];
+
+    for (const { gizmo, axes } of configs) {
+      const mesh = gizmo?._gizmoMesh;
+
+      if (!mesh?.position) {
+        allReady = false;
+        continue;
+      }
+
+      // Apply offsets
+      for (const [axis, value] of Object.entries(axes) as [Vector3Axis, number][]) {
+        mesh.position[axis] = value;
+      }
+
+      // Check if they stuck
+      for (const [axis, value] of Object.entries(axes) as [Vector3Axis, number][]) {
+        if (Math.abs(mesh.position[axis] - value) > tolerance) {
+          allReady = false;
+        }
+      }
+    }
+
+    return allReady;
   }
 
   enable(): void {
@@ -45,6 +88,7 @@ export class PositionGizmo implements IGizmoTransformer {
     if (!positionGizmo) return;
 
     this.setupDragObservables();
+    this.applyPlanarGizmoOffsets();
     configureGizmoButtons(positionGizmo, [LEFT_BUTTON]);
   }
 
@@ -59,6 +103,7 @@ export class PositionGizmo implements IGizmoTransformer {
 
   setEntities(entities: EcsEntity[]): void {
     this.currentEntities = entities;
+    this.applyPlanarGizmoOffsets();
   }
 
   setUpdateCallbacks(
@@ -79,6 +124,17 @@ export class PositionGizmo implements IGizmoTransformer {
     if (!positionGizmo) return;
 
     positionGizmo.snapDistance = distance;
+    positionGizmo.planarGizmoEnabled = true;
+
+    if (positionGizmo.xPlaneGizmo) {
+      positionGizmo.xPlaneGizmo.scaleRatio = 0.5;
+    }
+    if (positionGizmo.yPlaneGizmo) {
+      positionGizmo.yPlaneGizmo.scaleRatio = 0.5;
+    }
+    if (positionGizmo.zPlaneGizmo) {
+      positionGizmo.zPlaneGizmo.scaleRatio = 0.5;
+    }
   }
 
   private getPositionGizmo() {

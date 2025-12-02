@@ -34,11 +34,18 @@ jobs:
 
             const author = pr.user.login;
             const authorAssociation = pr.author_association;
+            const triggeredBy = context.payload.comment.user.login;
 
-            if (authorAssociation !== 'MEMBER' && authorAssociation !== 'OWNER') {
-              core.setFailed(`🚫 PR author @${author} must be an organization member to use this workflow`);
+            core.info(`PR author: @${author} (${authorAssociation}), triggered by: @${triggeredBy}`);
+
+            // Only allow MEMBER or OWNER
+            const allowedAssociations = ['MEMBER', 'OWNER'];
+            if (!allowedAssociations.includes(authorAssociation)) {
+              core.setFailed(`🚫 PR author @${author} must be an organization member to use this workflow (current association: ${authorAssociation})`);
               return;
             }
+
+            core.info(`✅ Workflow authorized for @${author}'s PR by @${triggeredBy}`);
 
       - name: checkout PR branch
         uses: actions/checkout@v4
