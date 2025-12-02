@@ -139,12 +139,15 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
   const ready = future<void>();
 
   const name = `${bin} ${args.join(' ')}`.trim();
+  let spawnedPid: number | undefined;
+
   forked.on('spawn', () => {
-    if (forked.pid) {
-      processes.set(forked.pid, forked);
+    spawnedPid = forked.pid;
+    if (spawnedPid) {
+      processes.set(spawnedPid, forked);
     }
     log.info(
-      `[UtilityProcess] Running "${name}" using bin=${binPath} with pid=${forked.pid} in ${cwd}`,
+      `[UtilityProcess] Running "${name}" using bin=${binPath} with pid=${spawnedPid} in ${cwd}`,
     );
     ready.resolve();
   });
@@ -152,12 +155,12 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
   forked.on('exit', code => {
     if (!alive) return;
     alive = false;
-    if (forked.pid) {
-      processes.delete(forked.pid);
+    if (spawnedPid) {
+      processes.delete(spawnedPid);
     }
     const stdoutBuf = Buffer.concat(stdout.getAll());
     log.info(
-      `[UtilityProcess] Exiting "${name}" with pid=${forked.pid} and exit code=${code || 0}`,
+      `[UtilityProcess] Exiting "${name}" with pid=${spawnedPid} and exit code=${code || 0}`,
     );
 
     // Only treat as error if process has actually spawned and process is not being killed intentionally.
@@ -174,13 +177,12 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
       promise.reject(
         new StreamError(
           'COMMAND_FAILED',
-          `Error: process "${name}" with pid=${forked.pid} exited with code=${code}`,
+          `Error: process "${name}" with pid=${spawnedPid} exited with code=${code}`,
           stdoutBuf,
           stderrBuf,
         ),
       );
     } else {
-      log.info('Resolving utility process promise successfully');
       promise.resolve(stdoutBuf);
     }
     cleanup();
@@ -257,17 +259,16 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
 
       // child successfully killed
       const die = (force: boolean = false) => {
-        isKilling = false;
         alive = false;
         cleanup();
+        clearInterval(interval);
+        clearTimeout(timeout);
         if (force) {
           log.info(`[UtilityProcess] Process "${name}" with pid=${pid} forcefully killed`);
-          treeKill(pid!, 'SIGKILL');
+          treeKill(pid, 'SIGKILL');
         } else {
           log.info(`[UtilityProcess] Process "${name}" with pid=${pid} gracefully killed`);
         }
-        clearInterval(interval);
-        clearTimeout(timeout);
         killPromise.resolve();
       };
 
