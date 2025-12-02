@@ -22,9 +22,10 @@ export function killInspectorServer() {
   if (!inspectorServer) {
     return;
   }
+
   try {
     // Close the server and handle any errors
-    inspectorServer?.close(err => {
+    inspectorServer.close(err => {
       if (err) {
         log.error('Error closing inspector server:', err);
       } else {
