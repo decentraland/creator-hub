@@ -519,17 +519,12 @@ export class ScaleGizmo implements IGizmoTransformer {
       // For child entities, convert world transforms to local space
       const parentWorldMatrix = parent.getWorldMatrix();
       const parentWorldMatrixInverse = parentWorldMatrix.clone().invert();
-      const parentWorldRotation =
-        parent.rotationQuaternion || Quaternion.FromRotationMatrix(parentWorldMatrix);
 
       // Convert world position to local space
       const localPosition = Vector3.TransformCoordinates(
         newWorldPosition,
         parentWorldMatrixInverse,
       );
-
-      // Convert world rotation to local space
-      const localRotation = parentWorldRotation.invert().multiply(initialRotation);
 
       // Apply scale directly to the child without considering parent's scale
       // This maintains the local scale as intended by the user
@@ -543,10 +538,13 @@ export class ScaleGizmo implements IGizmoTransformer {
       // Apply transforms
       entity.position.copyFrom(localPosition);
       entity.scaling.copyFrom(snappedLocalScale);
+
+      // Keep the initial local rotation unchanged during scaling
+      // initialRotation is already in local space, so we just restore it
       if (!entity.rotationQuaternion) {
         entity.rotationQuaternion = new Quaternion();
       }
-      entity.rotationQuaternion.copyFrom(localRotation);
+      entity.rotationQuaternion.copyFrom(initialRotation);
       entity.rotationQuaternion.normalize();
     } else {
       // For entities without parent, apply world transforms directly
