@@ -116,6 +116,22 @@ export function interactWithScene(
       !!keyState[Keys.KEY_CTRL] || !!keyState[Keys.KEY_SHIFT],
     );
     void operations.dispatch();
+  } else if (
+    pointerEvent === 'pointerUp' &&
+    !isDragging &&
+    !keyState[Keys.KEY_CTRL] &&
+    !keyState[Keys.KEY_SHIFT] &&
+    (!entity || entity.isLocked())
+  ) {
+    // Clicked on sky, ground or a locked element while not pressing ctrl/shift.
+    // Un-select all previous entities by selecting the root entity.
+    const ecsEntity = entity ? entity : scene.transformNodes.find(n => isEcsEntity(n));
+    if (ecsEntity) {
+      const context = ecsEntity.context.deref()!;
+      const { operations, engine } = context;
+      operations.updateSelectedEntity(engine.RootEntity);
+      void operations.dispatch();
+    }
   }
 
   // Clear isDragging flag each pointerUp
