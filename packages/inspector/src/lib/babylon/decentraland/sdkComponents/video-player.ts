@@ -1,10 +1,10 @@
 import type * as BABYLON from '@babylonjs/core';
-import { Mesh, VertexBuffer } from '@babylonjs/core';
+import { Mesh, Vector3, VertexBuffer } from '@babylonjs/core';
 import { ComponentType, type PBVideoPlayer } from '@dcl/ecs';
-import { withAssetPacksDir } from '../../../data-layer/host/fs-utils';
+import videoPlayerGlbDataUrl from '../../assets/video_player.glb';
 import type { ComponentOperation } from '../component-operations';
 import type { EcsEntity } from '../EcsEntity';
-import { loadAssetContainer } from './gltf-container';
+import { loadBundledGltf } from './gltf-container';
 
 // UV region to focus on (top-left quadrant)
 // Adjust these values to focus on different parts of the texture
@@ -16,7 +16,109 @@ const UV_REGION = {
   vMax: 1, // top edge
 };
 
-const adjustMeshUVs = (mesh: BABYLON.AbstractMesh) => {
+/**
+ * Analyzes mesh transformation to determine UV flip requirements.
+ * Uses a data-driven approach to handle different scale patterns.
+ */
+const analyzeMeshOrientation = (mesh: BABYLON.AbstractMesh): { flipU: boolean; flipV: boolean } => {
+  const worldMatrix = mesh.computeWorldMatrix(true);
+  const scaling = new Vector3();
+  worldMatrix.decompose(scaling);
+
+  // Identify which axes have negative scale
+  const axes = {
+    x: scaling.x < 0,
+    y: scaling.y < 0,
+    z: scaling.z < 0,
+  };
+
+  // Check if XZ scaling is uniform (for aspect ratio detection)
+  const isUniformXZ = Math.abs(Math.abs(scaling.x) - Math.abs(scaling.z)) < 0.01;
+
+  // Calculate average UV winding across multiple triangles
+  const hasReversedUVs = analyzeUVWinding(mesh);
+
+  // Apply flip rules based on transformation pattern
+  return determineUVFlips(axes, isUniformXZ, hasReversedUVs);
+};
+
+/**
+ * Determines UV flips based on axis negation pattern.
+ * Uses a declarative rule set for clarity and maintainability.
+ */
+const determineUVFlips = (
+  axes: { x: boolean; y: boolean; z: boolean },
+  isUniformXZ: boolean,
+  hasReversedUVs: boolean,
+): { flipU: boolean; flipV: boolean } => {
+  const negativeCount = Object.values(axes).filter(Boolean).length;
+
+  // Single axis negation
+  if (negativeCount === 1) {
+    if (axes.x) return { flipU: true, flipV: false };
+    if (axes.z) return { flipU: false, flipV: true };
+
+    // Negative Y: UV winding-based with scale uniformity consideration
+    if (axes.y) {
+      const flipU = isUniformXZ ? !hasReversedUVs : hasReversedUVs;
+      return { flipU, flipV: false };
+    }
+  }
+
+  // Multiple axes negation: flip both coordinates
+  if (negativeCount >= 2) {
+    return { flipU: true, flipV: true };
+  }
+
+  // No negation: no flip
+  return { flipU: false, flipV: false };
+};
+
+/**
+ * Analyzes UV winding order by sampling triangles across the mesh.
+ * Returns true if UVs have clockwise winding (reversed).
+ */
+const analyzeUVWinding = (mesh: BABYLON.AbstractMesh): boolean => {
+  if (!(mesh instanceof Mesh)) return false;
+
+  const uvs = mesh.getVerticesData(VertexBuffer.UVKind);
+  const indices = mesh.getIndices();
+
+  if (!uvs || !indices || indices.length < 3) return false;
+
+  // Sample up to 10 triangles evenly distributed across the mesh
+  const maxSamples = Math.min(10, Math.floor(indices.length / 3));
+  const step = Math.floor(indices.length / 3 / maxSamples);
+  let totalSignedArea = 0;
+  let validSamples = 0;
+
+  for (let i = 0; i < maxSamples; i++) {
+    const triIndex = i * step * 3;
+    const [idx0, idx1, idx2] = [
+      indices[triIndex] * 2,
+      indices[triIndex + 1] * 2,
+      indices[triIndex + 2] * 2,
+    ];
+
+    // Calculate signed area of UV triangle
+    const signedArea =
+      (uvs[idx1] - uvs[idx0]) * (uvs[idx2 + 1] - uvs[idx0 + 1]) -
+      (uvs[idx2] - uvs[idx0]) * (uvs[idx1 + 1] - uvs[idx0 + 1]);
+
+    // Skip degenerate triangles
+    if (Math.abs(signedArea) > 0.0001) {
+      totalSignedArea += signedArea;
+      validSamples++;
+    }
+  }
+
+  const averageSignedArea = validSamples > 0 ? totalSignedArea / validSamples : 0;
+
+  // Threshold check: significantly negative area indicates reversed winding
+  return averageSignedArea < -0.01;
+};
+
+const adjustMeshUVs = (mesh: BABYLON.AbstractMesh, entity: EcsEntity) => {
   if (!(mesh instanceof Mesh)) {
     return;
   }
@@ -26,18 +128,45 @@ const adjustMeshUVs = (mesh: BABYLON.AbstractMesh) => {
     return;
   }
 
+  const context = entity.context.deref();
+  if (!context) {
+    return;
+  }
+
   const { uMin, vMin, uMax, vMax } = UV_REGION;
   const uRange = uMax - uMin;
   const vRange = vMax - vMin;
+
+  // Detect mesh type using ECS components
+  const hasMeshRenderer = context.MeshRenderer.has(entity.entityId);
+  const hasGltfContainer = context.GltfContainer.has(entity.entityId);
+
+  // Analyze mesh orientation to determine UV flips
+  let shouldFlipU = false;
+  let shouldFlipV = false;
+
+  if (hasMeshRenderer) {
+    // MeshRenderer primitives have negative Z-scale applied
+    // They need V flip but not U flip
+    shouldFlipU = false;
+    shouldFlipV = true;
+  } else if (hasGltfContainer) {
+    // GLTF meshes: analyze their transformation to detect flips
+    const orientation = analyzeMeshOrientation(mesh);
+    shouldFlipU = orientation.flipU;
+    shouldFlipV = orientation.flipV;
+  }
 
   // Map UVs to focus on specific region
   const adjustedUVs = uvs.map((value, index) => {
     if (index % 2 === 0) {
       // U coordinate
-      return uMin + value * uRange;
+      const mappedU = uMin + value * uRange;
+      return shouldFlipU ? uMin + uMax - mappedU : mappedU;
     } else {
       // V coordinate
-      return vMin + value * vRange;
+      const mappedV = vMin + value * vRange;
+      return shouldFlipV ? vMin + vMax - mappedV : mappedV;
     }
   });
 
@@ -56,62 +185,23 @@ const loadVideoPlayerGLB = async (entity: EcsEntity): Promise<BABYLON.Material |
     return assetContainer.materials[0] || null;
   }
 
-  const context = entity.context.deref();
-  if (!context) {
-    return null;
+  // Load bundled video player GLB
+  const assetContainer = await loadBundledGltf(entity, videoPlayerGlbDataUrl, 'video_player.glb');
+
+  assetContainer.meshes
+    .filter(mesh => mesh.name === '__root__')
+    .forEach(mesh => {
+      mesh.parent = entity;
+      mesh.setEnabled(false);
+    });
+
+  // Extract the material from the loaded GLTF
+  if (assetContainer.materials.length > 0) {
+    entity.setVideoPlayerMaterialAssetContainer(assetContainer);
+    return assetContainer.materials[0];
   }
 
-  const videoPlayerPath = withAssetPacksDir('video_player/video_player.glb');
-  const videoScreenPath = withAssetPacksDir('video_screen/video_player.glb');
-
-  const [videoPlayerFile, videoScreenFile] = await Promise.all([
-    context.getFile(videoPlayerPath),
-    context.getFile(videoScreenPath),
-  ]);
-
-  let selectedFile: Uint8Array | null = null;
-  let selectedPath: string | null = null;
-
-  if (videoPlayerFile) {
-    selectedFile = videoPlayerFile;
-    selectedPath = videoPlayerPath;
-  } else if (videoScreenFile) {
-    selectedFile = videoScreenFile;
-    selectedPath = videoScreenPath;
-  }
-
-  if (!selectedFile || !selectedPath) {
-    return null;
-  }
-
-  return new Promise((resolve, reject) => {
-    const base = selectedPath.split('/').slice(0, -1).join('/');
-    const finalSrc = selectedPath + '?base=' + encodeURIComponent(base);
-    const file = new File([selectedFile as BlobPart], finalSrc);
-
-    loadAssetContainer(
-      file,
-      entity.getScene(),
-      assetContainer => {
-        // Cache the asset container in the entity
-        entity.setVideoPlayerMaterialAssetContainer(assetContainer);
-
-        // Extract the material from the loaded GLTF
-        if (assetContainer.materials.length > 0) {
-          const material = assetContainer.materials[0];
-          resolve(material);
-        } else {
-          resolve(null);
-        }
-      },
-      undefined,
-      (_scene, message) => {
-        console.error('Error loading video player GLB:', message);
-        reject(new Error(message));
-      },
-      '.glb',
-    );
-  });
+  return null;
 };
 
 /**
@@ -136,7 +226,8 @@ export const applyVideoPlayerMaterial = async (entity: EcsEntity): Promise<void>
 
     if (glbMaterial && entity.meshRenderer) {
       // Adjust UVs to focus on specific region of the texture
-      adjustMeshUVs(entity.meshRenderer);
+      // Uses ECS components to detect mesh type and orientation
+      adjustMeshUVs(entity.meshRenderer, entity);
 
       // Apply the material from the GLB to the existing meshRenderer
       // This is runtime-only and doesn't modify the ECS component
@@ -174,7 +265,8 @@ export const applyVideoPlayerMaterialToGltf = async (entity: EcsEntity): Promise
       // Apply material and adjust UVs for each mesh
       for (const mesh of childMeshes) {
         // Adjust UVs to focus on specific region of the texture
-        adjustMeshUVs(mesh);
+        // Uses ECS components to detect mesh type and orientation
+        adjustMeshUVs(mesh, entity);
 
         // Apply the material from the GLB to the mesh
         // This is runtime-only and doesn't modify the ECS component

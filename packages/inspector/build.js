@@ -30,6 +30,7 @@ async function main() {
       '.woff': 'dataurl',
       '.woff2': 'dataurl',
       '.ttf': 'dataurl',
+      '.glb': 'dataurl',
     },
     banner: {
       // prepend hot-reload script to the bundle when in development mode
@@ -66,6 +67,9 @@ async function buildCommonJsDistributable() {
     sourcemap: 'both',
     minify: PRODUCTION,
     external: externalModulesArray,
+    loader: {
+      '.glb': 'dataurl',
+    },
   });
 
   if (WATCH_MODE) {
@@ -140,6 +144,7 @@ function getNotBundledModules() {
     '@dcl/mini-rpc',
     '@dcl/asset-packs',
     '@dcl-sdk/utils',
+    '@dcl/gltf-validator-ts',
   ];
   return Array.from(externalModules)
     .concat(builtinModules)

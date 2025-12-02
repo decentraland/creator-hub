@@ -2,6 +2,7 @@ import { resolve } from 'path';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  assetsInclude: ['**/*.glb', '**/*.gltf'],
   test: {
     globals: true,
     environment: 'happy-dom',
@@ -23,5 +24,8 @@ export default defineConfig({
       '@babylonjs/loaders',
       '@babylonjs/materials',
     ],
+  },
+  ssr: {
+    noExternal: ['@dcl/gltf-validator-ts'],
   },
 });

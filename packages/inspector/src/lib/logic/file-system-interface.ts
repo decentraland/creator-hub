@@ -32,6 +32,9 @@ export function createFileSystemInterface(storage: Storage): FileSystemInterface
     async rm(filePath: string): Promise<void> {
       return storage.delete(normalizePath(filePath));
     },
+    async rmdir(dirPath: string): Promise<void> {
+      return storage.rmdir(normalizePath(dirPath));
+    },
     async readdir(dirPath: string): Promise<{ name: string; isDirectory: boolean }[]> {
       const resolvedDirPath = normalizePath(dirPath).replace(/^\.\/|^\.+/g, '');
       return storage.list(resolvedDirPath);

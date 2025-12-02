@@ -1,5 +1,5 @@
-import { CircularProgress as Loader, Typography, Badge } from 'decentraland-ui2';
 import { type MouseEvent, useCallback } from 'react';
+import { CircularProgress as Loader, Typography, Badge } from 'decentraland-ui2';
 
 import { t } from '/@/modules/store/translation/utils';
 import { isTimeAgo, minutes } from '/shared/time';

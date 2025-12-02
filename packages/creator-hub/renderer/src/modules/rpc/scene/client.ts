@@ -32,6 +32,7 @@ export enum Method {
   TAKE_SCREENSHOT = 'take_screenshot',
   SET_CAMERA_TARGET = 'set_camera_target',
   SET_CAMERA_POSITION = 'set_camera_position',
+  SET_SCENE_CUSTOM_CODE = 'set_scene_custom_code',
 }
 
 export type Params = {
@@ -45,6 +46,7 @@ export type Params = {
   [Method.TAKE_SCREENSHOT]: { width: number; height: number; precision?: number };
   [Method.SET_CAMERA_TARGET]: { x: number; y: number; z: number };
   [Method.SET_CAMERA_POSITION]: { x: number; y: number; z: number };
+  [Method.SET_SCENE_CUSTOM_CODE]: { hasCustomCode: boolean };
 };
 
 export type Result = {
@@ -58,6 +60,7 @@ export type Result = {
   [Method.TAKE_SCREENSHOT]: string;
   [Method.SET_CAMERA_TARGET]: void;
   [Method.SET_CAMERA_POSITION]: void;
+  [Method.SET_SCENE_CUSTOM_CODE]: void;
 };
 
 export class SceneRpcClient extends RPC<Method, Params, Result> {
@@ -103,5 +106,9 @@ export class SceneRpcClient extends RPC<Method, Params, Result> {
 
   setPosition = (x: number, y: number, z: number) => {
     return this.request('set_camera_position', { x, y, z });
+  };
+
+  setSceneCustomCode = (hasCustomCode: boolean) => {
+    return this.request('set_scene_custom_code', { hasCustomCode });
   };
 }

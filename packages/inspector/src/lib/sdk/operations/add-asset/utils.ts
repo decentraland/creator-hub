@@ -4,7 +4,7 @@ export function isSelf(value: any) {
   return `${value}` === '{self}';
 }
 
-export function parseMaterial(base: string, material: PBMaterial): PBMaterial {
+export function parseMaterial(base: string, material: PBMaterial, entityId?: number): PBMaterial {
   switch (material.material?.$case) {
     case 'unlit':
       return {
@@ -12,7 +12,7 @@ export function parseMaterial(base: string, material: PBMaterial): PBMaterial {
           $case: 'unlit',
           unlit: {
             ...material.material.unlit,
-            texture: parseTexture(base, material.material.unlit.texture),
+            texture: parseTexture(base, material.material.unlit.texture, entityId),
           },
         },
       };
@@ -22,10 +22,10 @@ export function parseMaterial(base: string, material: PBMaterial): PBMaterial {
           $case: 'pbr',
           pbr: {
             ...material.material.pbr,
-            texture: parseTexture(base, material.material.pbr.texture),
-            alphaTexture: parseTexture(base, material.material.pbr.alphaTexture),
-            bumpTexture: parseTexture(base, material.material.pbr.bumpTexture),
-            emissiveTexture: parseTexture(base, material.material.pbr.emissiveTexture),
+            texture: parseTexture(base, material.material.pbr.texture, entityId),
+            alphaTexture: parseTexture(base, material.material.pbr.alphaTexture, entityId),
+            bumpTexture: parseTexture(base, material.material.pbr.bumpTexture, entityId),
+            emissiveTexture: parseTexture(base, material.material.pbr.emissiveTexture, entityId),
           },
         },
       };
@@ -34,7 +34,11 @@ export function parseMaterial(base: string, material: PBMaterial): PBMaterial {
   return material;
 }
 
-export function parseTexture(base: string, texture?: TextureUnion): TextureUnion | undefined {
+export function parseTexture(
+  base: string,
+  texture?: TextureUnion,
+  entityId?: number,
+): TextureUnion | undefined {
   if (texture?.tex?.$case === 'texture') {
     return {
       tex: {
@@ -45,6 +49,21 @@ export function parseTexture(base: string, texture?: TextureUnion): TextureUnion
         },
       },
     };
+  }
+
+  if (texture?.tex?.$case === 'videoTexture' && entityId !== undefined) {
+    const videoPlayerEntity = texture.tex.videoTexture.videoPlayerEntity;
+    if (isSelf(videoPlayerEntity)) {
+      return {
+        tex: {
+          $case: 'videoTexture',
+          videoTexture: {
+            ...texture.tex.videoTexture,
+            videoPlayerEntity: entityId,
+          },
+        },
+      };
+    }
   }
 
   return texture;

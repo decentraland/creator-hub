@@ -6,8 +6,8 @@ import { useComponentInput } from '../../../hooks/sdk/useComponentInput';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { TextField, CheckboxField, ColorField, Dropdown, TextArea } from '../../ui';
-import { Props } from './types';
 import { fromTextShape, toTextShape, isValidInput, TEXT_ALIGN_MODES } from './utils';
+import type { Props } from './types';
 
 export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const { TextShape } = sdk.components;
@@ -27,6 +27,8 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   }, []);
 
   if (!hasTextShape) return null;
+
+  const fontAutoSize = getInputProps('fontAutoSize', e => e.target.checked);
 
   return (
     <Container
@@ -55,7 +57,8 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
         />
         <CheckboxField
           label="Font Auto-Size"
-          {...getInputProps('fontAutoSize', e => e.target.checked)}
+          {...fontAutoSize}
+          checked={!!fontAutoSize.value}
         />
       </Block>
       <Block label="Text Align">

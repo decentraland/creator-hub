@@ -4,6 +4,8 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { ChainId } from '@dcl/schemas';
 import { Typography, Checkbox } from 'decentraland-ui2';
 
+import { misc } from '#preload';
+
 import type { File, Info, Status } from '/@/lib/deploy';
 
 import { useAuth } from '/@/hooks/useAuth';
@@ -27,13 +29,11 @@ import { ExpandMore } from '/@/components/ExpandMore';
 import type { Step } from '/@/components/Step/types';
 import type { Props } from '/@/components/Modals/PublishProject/types';
 
-import { misc } from '#preload';
-
 import './styles.css';
 
 const MAX_FILE_PATH_LENGTH = 50;
 
-const DCL_ENV = import.meta.env.MODE.toLowerCase() === 'development' ? 'zone' : 'org';
+const DCL_ENV = import.meta.env.DEV ? 'zone' : 'org';
 
 function getPath(filename: string) {
   return filename.length > MAX_FILE_PATH_LENGTH

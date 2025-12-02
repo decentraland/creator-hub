@@ -1,8 +1,9 @@
 import { MessageTransport } from '@dcl/mini-rpc';
 
 import { type Project } from '/shared/types/projects';
+import { hasCustomCode } from '/shared/scene-parser';
 
-import { fs, custom } from '#preload';
+import { fs, custom, workspace } from '#preload';
 
 import { SceneRpcClient } from './scene/client';
 import { SceneRpcServer } from './scene/server';
@@ -36,7 +37,7 @@ export const getPath = async (filePath: string, project: Project) => {
 export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partial<Callbacks> = {}) {
   const transport = new MessageTransport(window, iframe.contentWindow!);
   const sceneClient = new SceneRpcClient(transport);
-  const _sceneServer = new SceneRpcServer(transport, project);
+  const sceneServer = new SceneRpcServer(transport, project);
   const params = { iframe, project, scene: sceneClient };
   const storage = new StorageRPC(transport, cbs, params);
 
@@ -45,10 +46,22 @@ export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partia
     sceneClient.selectSceneInspectorTab('details'),
   ]).catch(console.error);
 
+  void (async () => {
+    try {
+      const content = await workspace.getSceneSourceFile(project.path);
+      const hasCustom = hasCustomCode(content);
+      await sceneClient.setSceneCustomCode(hasCustom);
+    } catch (error) {
+      console.error('Failed to detect custom code:', error);
+    }
+  })();
+
   return {
     ...params,
     dispose: () => {
       storage.dispose();
+      sceneServer.dispose();
+      sceneClient.dispose();
     },
   };
 }
