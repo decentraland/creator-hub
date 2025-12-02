@@ -33,13 +33,20 @@ jobs:
             }
 
             const author = pr.user.login;
-            const authorAssociation = pr.author_association;
+            core.info(`PR author: @${author}`);
 
-            core.info(`PR author: @${author}, association: ${authorAssociation}`);
-
-            const allowedAssociations = ['MEMBER', 'OWNER'];
-            if (!allowedAssociations.includes(authorAssociation)) {
-              core.setFailed(`🚫 PR author @${author} must be an organization member to use this workflow (current association: ${authorAssociation})`);
+            try {
+              await github.rest.orgs.checkMembershipForUser({
+                org: context.repo.owner,
+                username: author
+              });
+              core.info(`✅ @${author} is an organization member`);
+            } catch (error) {
+              if (error.status === 404) {
+                core.setFailed(`🚫 PR author @${author} must be an organization member to use this workflow`);
+              } else {
+                core.setFailed(`❌ Failed to verify organization membership for @${author}: ${error.message}`);
+              }
               return;
             }
 
