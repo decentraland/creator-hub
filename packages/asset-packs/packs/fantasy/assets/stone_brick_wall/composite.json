@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Module_Stone_Straight_01/Module_Stone_Straight_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

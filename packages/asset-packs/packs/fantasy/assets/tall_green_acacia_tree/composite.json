@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Tree_Forest_Green_04/Tree_Forest_Green_04.glb"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "d93e1fad-b131-4fe2-9843-14eae6f2b08e",
+  "name": "Mud",
+  "category": "ground",
+  "tags": [
+    "genesis",
+    "city",
+    "town",
+    "appearance",
+    "dots",
+    "earthy",
+    "mud",
+    "muddy",
+    "scatter",
+    "terrain",
+    "visual"
+  ],
+  "caption": "Red, textured surface with white dots.",
+  "author": "Decentraland Foundation"
+}

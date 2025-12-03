@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::NftShape",
+      "data": {
+        "0": {
+          "json": {
+            "urn": ""
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Sync-Components",
+      "data": {
+        "0": {
+          "json": {
+            "value": ["core::NftShape", "core::VisibilityComponent"]
+          }
+        }
+      }
+    },
+    {
+      "name": "inspector::Config",
+      "data": {
+        "0": {
+          "json": {
+            "isBasicViewEnabled": true,
+            "componentName": "NFT Portrait",
+            "fields": [
+              {
+                "name": "NFT Portrait",
+                "type": "core::NftShape"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

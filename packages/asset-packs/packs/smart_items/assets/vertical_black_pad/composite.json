@@ -1,0 +1,182 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/vertical_black_pad.glb",
+            "visibleMeshesCollisionMask": 2,
+            "invisibleMeshesCollisionMask": 2
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Actions",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "name": "Go to Start",
+                "type": "batch",
+                "jsonPayload": "{ \"actions\": [\"Going to Start\", \"Tween to Start\"] }",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Go to End",
+                "type": "batch",
+                "jsonPayload": "{ \"actions\": [\"Going to End\", \"Tween to End\"] }",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Going to Start",
+                "type": "set_state",
+                "jsonPayload": "{ \"state\": \"GoingToStart\" }"
+              },
+              {
+                "name": "Going to End",
+                "type": "set_state",
+                "jsonPayload": "{ \"state\": \"GoingToEnd\" }"
+              },
+              {
+                "name": "Tween to Start",
+                "type": "start_tween",
+                "jsonPayload": "{ \"type\": \"move_item\", \"end\": { \"x\": 0, \"y\": 0, \"z\": 0 }, \"relative\": true, \"interpolationType\": \"linear\", \"duration\": 5 }"
+              },
+              {
+                "name": "Tween to End",
+                "type": "start_tween",
+                "jsonPayload": "{ \"type\": \"move_item\", \"end\": { \"x\": 0, \"y\": 0, \"z\": 0 }, \"relative\": true, \"interpolationType\": \"linear\", \"duration\": 5 }"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Triggers",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "type": "on_tween_end",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::States}",
+                    "type": "when_state_is",
+                    "value": "GoingToEnd"
+                  }
+                ],
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Going to Start"
+                  }
+                ],
+                "basicViewId": "trigger-when-end-reached"
+              },
+              {
+                "type": "on_tween_end",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::States}",
+                    "type": "when_state_is",
+                    "value": "GoingToStart"
+                  }
+                ],
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Going to End"
+                  }
+                ],
+                "basicViewId": "trigger-when-start-reached"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::States",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": ["GoingToEnd", "GoingToStart"],
+            "defaultValue": "GoingToEnd"
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Sync-Components",
+      "data": {
+        "0": {
+          "json": {
+            "value": ["core::Tween", "asset-packs::States"]
+          }
+        }
+      }
+    },
+    {
+      "name": "core::Tween",
+      "data": {
+        "0": {
+          "json": {
+            "duration": 5000,
+            "easingFunction": 0,
+            "mode": {
+              "$case": "move",
+              "move": {}
+            },
+            "playing": true
+          }
+        }
+      }
+    },
+    {
+      "name": "core::TweenSequence",
+      "data": {
+        "0": {
+          "json": {
+            "sequence": [],
+            "loop": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "inspector::Config",
+      "data": {
+        "0": {
+          "json": {
+            "isBasicViewEnabled": true,
+            "componentName": "Vertical Platform",
+            "fields": [
+              {
+                "name": "Tween",
+                "type": "core::Tween"
+              },
+              {
+                "name": "When End Reached",
+                "type": "asset-packs::Triggers",
+                "basicViewId": "trigger-when-end-reached"
+              },
+              {
+                "name": "When Start Reached",
+                "type": "asset-packs::Triggers",
+                "basicViewId": "trigger-when-start-reached"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

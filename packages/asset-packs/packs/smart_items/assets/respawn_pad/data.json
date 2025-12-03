@@ -1,0 +1,8 @@
+{
+  "id": "ed91cbc9-8a33-4664-a8a6-c54169db51bd",
+  "name": "Respawn Pad",
+  "category": "health",
+  "tags": ["health", "respawn", "spawn", "pad"],
+  "description": "A respawn pad that can be used to respawn the player when they die. It can work together with the health bar smart item.",
+  "author": "Decentraland Foundation"
+}

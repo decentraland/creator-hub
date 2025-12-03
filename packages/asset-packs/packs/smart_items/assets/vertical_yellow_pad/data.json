@@ -1,0 +1,8 @@
+{
+  "id": "fa423878-fbbe-4333-80a8-3d3f2dbe5889",
+  "name": "Vertical Yellow Pad",
+  "category": "platforms",
+  "tags": ["platform", "vertical", "interactive", "yellow", "pad", "elevator", "lift"],
+  "description": "A vertical platform that moves up and down. Players can jump on it to reach higher places.",
+  "author": "Decentraland Foundation"
+}

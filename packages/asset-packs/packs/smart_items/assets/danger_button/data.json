@@ -1,0 +1,8 @@
+{
+  "id": "3a93eb8e-b89a-449e-b44e-98e754d9e3cd",
+  "name": "Danger Button",
+  "category": "buttons",
+  "tags": ["button", "switch", "toggle", "activate"],
+  "description": "A red button that can be clicked to trigger actions on other smart items.",
+  "author": "Decentraland Foundation"
+}

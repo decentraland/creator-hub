@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::Material",
+      "data": {
+        "0": {
+          "json": {}
+        }
+      }
+    },
+    {
+      "name": "core::MeshCollider",
+      "data": {
+        "0": {
+          "json": {
+            "collisionMask": 3,
+            "mesh": {
+              "$case": "sphere",
+              "sphere": {}
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "core::MeshRenderer",
+      "data": {
+        "0": {
+          "json": {
+            "mesh": {
+              "$case": "sphere",
+              "sphere": {}
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "0": {
+          "json": {
+            "value": "Sphere"
+          }
+        }
+      }
+    }
+  ]
+}

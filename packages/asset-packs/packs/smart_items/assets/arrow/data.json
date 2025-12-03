@@ -1,0 +1,8 @@
+{
+  "id": "8a172b9e-b57d-4920-a804-55cb77f46816",
+  "name": "Arrow",
+  "category": "utils",
+  "tags": ["arrow", "direction", "navigation", "pointer"],
+  "description": "A directional arrow that bobs up and down that can be used to point to a location.",
+  "author": "Decentraland Foundation"
+}

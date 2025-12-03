@@ -1,0 +1,8 @@
+{
+  "id": "6f380825-70bb-42f9-8dce-57563c7ac582",
+  "name": "Red Light Button",
+  "category": "buttons",
+  "tags": ["button", "switch", "toggle", "activate"],
+  "description": "A red button that can be clicked to trigger actions on other smart items.",
+  "author": "Decentraland Foundation"
+}

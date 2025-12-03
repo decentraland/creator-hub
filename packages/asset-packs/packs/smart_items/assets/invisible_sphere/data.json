@@ -1,0 +1,8 @@
+{
+  "id": "e64d56c0-9d68-4292-abae-1df6b239dd9f",
+  "name": "Invisible Sphere",
+  "category": "primitives",
+  "tags": ["invisible", "wall", "sphere", "ball", "globe", "round", "collider"],
+  "description": "A sphere that is invisible. It can be used to create a round area that the player can't walk through.",
+  "author": "Decentraland Foundation"
+}

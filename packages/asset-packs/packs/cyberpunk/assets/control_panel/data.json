@@ -1,0 +1,18 @@
+{
+  "id": "6820c506-a201-4448-bf5b-2b46ba50868e",
+  "name": "Control Panel",
+  "category": "decorations",
+  "tags": [
+    "control",
+    "display",
+    "input",
+    "interface",
+    "panel",
+    "slider",
+    "terminal",
+    "touch",
+    "user"
+  ],
+  "caption": "Control panel featuring multiple buttons and sliders.",
+  "author": "Decentraland Foundation"
+}

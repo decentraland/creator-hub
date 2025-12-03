@@ -1,0 +1,147 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/wooden_wall.glb"
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Actions",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "name": "Play Hit Animation",
+                "type": "play_animation",
+                "jsonPayload": "{ \"animation\": \"Hit\" }"
+              },
+              {
+                "name": "Play Fall Animation",
+                "type": "play_animation",
+                "jsonPayload": "{ \"animation\": \"Fall\" }"
+              },
+              {
+                "name": "Play Fall Sound",
+                "type": "play_sound",
+                "jsonPayload": "{ \"src\": \"{assetPath}/fall.mp3\" }"
+              },
+              {
+                "name": "Damage",
+                "type": "decrease_counter",
+                "jsonPayload": "{ \"amount\": 1 }",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Destroy",
+                "type": "set_counter",
+                "jsonPayload": "{ \"counter\": 0 }",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Destroy Batch",
+                "type": "batch",
+                "jsonPayload": "{ \"actions\": [\"Play Fall Animation\", \"Play Fall Sound\"] }"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Triggers",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "type": "on_damage",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::Counter}",
+                    "type": "when_counter_is_greater_than",
+                    "value": "0"
+                  }
+                ],
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Damage"
+                  }
+                ],
+                "basicViewId": "trigger-when-damaged"
+              },
+              {
+                "type": "on_counter_change",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::Counter}",
+                    "type": "when_counter_is_greater_than",
+                    "value": "0"
+                  }
+                ],
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Play Hit Animation"
+                  }
+                ]
+              },
+              {
+                "type": "on_counter_change",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::Counter}",
+                    "type": "when_counter_is_less_than",
+                    "value": "1"
+                  }
+                ],
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Destroy Batch"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Counter",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": 30
+          }
+        }
+      }
+    },
+    {
+      "name": "inspector::Config",
+      "data": {
+        "0": {
+          "json": {
+            "isBasicViewEnabled": true,
+            "componentName": "Wooden Wall",
+            "fields": [
+              {
+                "name": "Item Health Points",
+                "type": "asset-packs::Counter"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "id": "a72de884-e275-490d-b1bb-7f7eaca4777f",
+  "name": "Invisible Ramp",
+  "category": "primitives",
+  "tags": ["invisible", "wall", "ramp", "collider"],
+  "description": "A ramp that is invisible. It can be used to create a ramp for players to easily reach higher places.",
+  "author": "Decentraland Foundation"
+}

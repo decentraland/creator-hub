@@ -1,0 +1,18 @@
+{
+  "id": "ccbc0171-22f2-49a7-927e-2fcc03a4e5bc",
+  "name": "Stone Bricks- Cracks",
+  "category": "decorations",
+  "tags": [
+    "age",
+    "block",
+    "brick",
+    "crack",
+    "damage",
+    "erosion",
+    "structure",
+    "wear",
+    "weathering"
+  ],
+  "caption": "Stone brick block with visible cracks.",
+  "author": "Decentraland Foundation"
+}

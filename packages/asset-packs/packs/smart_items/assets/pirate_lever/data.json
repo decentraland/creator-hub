@@ -1,0 +1,8 @@
+{
+  "id": "37e449e5-9298-41b6-8c9a-a6d12b45bdd2",
+  "name": "Pirate Lever",
+  "category": "levers",
+  "tags": ["lever", "handle", "pull", "push", "open", "close", "wooden"],
+  "description": "A wooden lever that can be pulled or pushed to trigger actions on other smart items.",
+  "author": "Decentraland Foundation"
+}

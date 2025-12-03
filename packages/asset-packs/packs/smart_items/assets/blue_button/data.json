@@ -1,0 +1,8 @@
+{
+  "id": "504cd7ac-2873-40d8-9172-13c9c24304b0",
+  "name": "Blue Button",
+  "category": "buttons",
+  "tags": ["button", "switch", "toggle", "activate"],
+  "description": "A blue button that can be clicked to trigger actions on other smart items.",
+  "author": "Decentraland Foundation"
+}

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/SpaceShipBase_01/SpaceShipBase_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

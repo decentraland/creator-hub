@@ -1,0 +1,23 @@
+{
+  "id": "b58c029b-afbc-42d1-a64f-c38e873492b7",
+  "name": "Emergency Panel",
+  "category": "structures",
+  "tags": [
+    "scifi",
+    "tile",
+    "alarm",
+    "alert",
+    "caution",
+    "display",
+    "emergency",
+    "flashing",
+    "indicator",
+    "notice",
+    "panel",
+    "signal",
+    "stripe",
+    "warning"
+  ],
+  "caption": "Emergency panel with glowing yellow stripe.",
+  "author": "Decentraland Foundation"
+}

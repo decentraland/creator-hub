@@ -1,0 +1,8 @@
+{
+  "id": "e11d2848-b79d-4ddc-bfea-5033cbdd8f9f",
+  "name": "Discord Link",
+  "category": "social",
+  "tags": ["social", "links", "discord"],
+  "description": "A clickable item that can open your Discord server in a browser window. Paste a Discord server URL in the 'URL' field.",
+  "author": "Decentraland Foundation"
+}

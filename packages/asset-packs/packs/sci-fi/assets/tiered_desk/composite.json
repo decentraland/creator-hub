@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Desk_01/Desk_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

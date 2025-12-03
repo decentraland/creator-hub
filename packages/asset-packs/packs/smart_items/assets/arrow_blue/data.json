@@ -1,0 +1,8 @@
+{
+  "id": "d673f2a7-5f82-4db2-813d-ece721414aa8",
+  "name": "Arrow Blue",
+  "category": "utils",
+  "tags": ["arrow", "direction", "navigation", "pointer"],
+  "description": "A directional arrow that bobs up and down that can be used to point to a location.",
+  "author": "Decentraland Foundation"
+}

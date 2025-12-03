@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/LightFloor_01/LightFloor_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

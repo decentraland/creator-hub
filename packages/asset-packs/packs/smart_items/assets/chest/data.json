@@ -1,0 +1,8 @@
+{
+  "id": "dd9fb5a1-7530-4e07-ac3f-3e50572c239f",
+  "name": "Chest",
+  "category": "chests",
+  "tags": ["chest", "treasure", "loot", "open"],
+  "description": "A chest that can be opened to reveal its contents. It can be used to store items.",
+  "author": "Decentraland Foundation"
+}

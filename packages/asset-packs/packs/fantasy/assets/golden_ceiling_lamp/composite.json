@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Ceiling_Lamp_01/Ceiling_Lamp_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "id": "134af1d4-e0f1-451b-8a3b-9d2eb42fbe2d",
+  "name": "Exploding Barrel",
+  "category": "health",
+  "tags": ["health", "enemy", "damage"],
+  "description": "Barrel that, when triggered to explode, can damage a player’s health if they are nearby. Can be used with the Health Bar smart item.",
+  "author": "Decentraland Foundation"
+}

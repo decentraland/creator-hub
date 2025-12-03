@@ -2,7 +2,7 @@
   "name": "@dcl/inspector",
   "version": "0.1.0",
   "dependencies": {
-    "@dcl/asset-packs": "2.7.1",
+    "@dcl/asset-packs": "0.0.0-dev",
     "ts-deepmerge": "^7.0.0"
   },
   "devDependencies": {
@@ -11,7 +11,6 @@
     "@babylonjs/inspector": "8.7.0",
     "@babylonjs/loaders": "8.7.0",
     "@babylonjs/materials": "8.7.0",
-    "@dcl/ecs": "7.10.4",
     "@dcl/ecs-math": "2.1.0",
     "@dcl/gltf-validator-ts": "1.0.14",
     "@dcl/mini-rpc": "^1.0.7",
