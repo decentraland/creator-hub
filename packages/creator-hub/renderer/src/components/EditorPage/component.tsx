@@ -147,10 +147,10 @@ export function EditorPage() {
 
   const handleCloseModal = useCallback(
     async (continued: boolean = false) => {
+      setModalState({ type: undefined });
       if (continued && modalState.onContinue) {
         await modalState.onContinue();
       }
-      setModalState({ type: undefined });
     },
     [modalState],
   );
