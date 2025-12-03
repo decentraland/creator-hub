@@ -15,6 +15,7 @@ import type { EditorComponentsTypes, SceneSpawnPoint } from '../../../lib/sdk/co
 import { SceneAgeRating, SceneCategory } from '../../../lib/sdk/components';
 import { Dropdown } from '../../ui/Dropdown';
 import { Label, TextArea } from '../../ui';
+import { WalletField } from '../../ui/WalletField';
 import { Tabs } from '../Tabs';
 import { CheckboxField } from '../../ui/CheckboxField';
 import RangeHourField from '../../ui/RangeHourField/RangeHourField';
@@ -117,7 +118,6 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const categoriesProps = getInputProps('categories');
   const authorProps = getInputProps('author');
   const emailProps = getInputProps('email');
-  const creatorWalletAddressProps = getInputProps('creator');
   const transitionModeProps = getInputProps('skyboxConfig.transitionMode');
   const silenceVoiceChatProps = getInputProps('silenceVoiceChat', e => e.target.checked);
   const disablePortableExperiencesProps = getInputProps(
@@ -159,6 +159,17 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       setComponentValue(newValue);
     },
     [sdk, Scene, entity, componentValue, setComponentValue],
+  );
+
+  const handleCreatorChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const { value } = e.target;
+      setComponentValue({
+        ...componentValue,
+        creator: value,
+      });
+    },
+    [componentValue, setComponentValue],
   );
 
   const [spawnPoints, addSpawnPoint, modifySpawnPoint, removeSpawnPoint] =
@@ -488,18 +499,15 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
             label="Creator contact email (optional)"
             {...emailProps}
           />
-          <Block
-            className="CreatorAddrressContainer"
-            label="Creator wallet address (optional)"
-          >
+          <Block className="CreatorAddrressContainer">
+            <Label text="Creator wallet address (optional)" />
             <Label
               className="CreatorAddrressLabel"
               text="Enter the wallet address that will act as the beneficiary for transactions."
             />
-            <TextField
-              autoSelect
-              label="Creator wallet address (optional)"
-              {...creatorWalletAddressProps}
+            <WalletField
+              value={componentValue?.creator ?? ''}
+              onChange={handleCreatorChange}
             />
           </Block>
           <SceneInfoInput />
