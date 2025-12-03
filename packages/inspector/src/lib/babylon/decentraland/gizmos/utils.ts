@@ -1,4 +1,13 @@
-import { Vector3, TransformNode, Quaternion } from '@babylonjs/core';
+import {
+  Vector3,
+  TransformNode,
+  Quaternion,
+  StandardMaterial,
+  MeshBuilder,
+  type Scene,
+  type Mesh,
+  type Color3,
+} from '@babylonjs/core';
 import type { EcsEntity } from '../EcsEntity';
 import type { GizmoAxis } from './types';
 
@@ -35,6 +44,33 @@ export const TransformUtils = {
     parent.getWorldMatrix().decompose(scale, rotation, position);
     return scale;
   },
+
+  alignGizmo(gizmoNode: TransformNode, currentEntities: EcsEntity[]): void {
+    if (currentEntities.length === 1) {
+      const entity = currentEntities[0];
+      if (entity.rotationQuaternion && gizmoNode.rotationQuaternion) {
+        // If the entity has a parent, convert to world rotation
+        if (entity.parent && entity.parent instanceof TransformNode) {
+          const parent = entity.parent as TransformNode;
+          const parentWorldRotation =
+            parent.rotationQuaternion || Quaternion.FromRotationMatrix(parent.getWorldMatrix());
+          const worldRotation = parentWorldRotation.multiply(entity.rotationQuaternion);
+          gizmoNode.rotationQuaternion.copyFrom(worldRotation);
+        } else {
+          // If no parent, apply directly
+          gizmoNode.rotationQuaternion.copyFrom(entity.rotationQuaternion);
+        }
+      }
+    } else {
+      // For multiple entities, always reset to identity rotation
+      // This provides a consistent reference point for scaling operations
+      if (gizmoNode.rotationQuaternion) {
+        gizmoNode.rotationQuaternion.set(0, 0, 0, 1); // Quaternion.Identity()
+      }
+    }
+
+    gizmoNode.computeWorldMatrix(true);
+  },
 };
 
 // Helper function to configure gizmo buttons for left-click only
@@ -44,4 +80,43 @@ export function configureGizmoButtons(gizmo: GizmoAxis, buttons: number[]) {
     gizmo.yGizmo.dragBehavior.dragButtons = buttons;
     gizmo.zGizmo.dragBehavior.dragButtons = buttons;
   }
+}
+
+/**
+ * Creates a thin plane cube for scale gizmo planar scaling
+ * @returns Tuple of [mesh, material] for the created plane
+ */
+export function createPlane(
+  scene: Scene,
+  rootMesh: Mesh,
+  name: string,
+  width: number,
+  height: number,
+  depth: number,
+  position: Vector3,
+  diffuseColor: Color3,
+  emissiveColor: Color3,
+  alpha: number,
+  isPickable: boolean = true,
+): [Mesh, StandardMaterial] {
+  const plane = MeshBuilder.CreateBox(
+    `${name}Mesh`,
+    {
+      width: width,
+      height: height,
+      depth: depth,
+    },
+    scene,
+  );
+  plane.position = position;
+  const material = new StandardMaterial(`${name}Mat`, scene);
+  material.diffuseColor = diffuseColor;
+  material.emissiveColor = emissiveColor;
+  material.alpha = alpha;
+  material.disableLighting = true;
+  plane.material = material;
+  plane.parent = rootMesh;
+  plane.isPickable = isPickable;
+
+  return [plane, material];
 }

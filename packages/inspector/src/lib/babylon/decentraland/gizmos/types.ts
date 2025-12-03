@@ -1,4 +1,10 @@
-import type { IAxisDragGizmo, IPlaneDragGizmo, TransformNode } from '@babylonjs/core';
+import type {
+  Color3,
+  IAxisDragGizmo,
+  IPlaneDragGizmo,
+  TransformNode,
+  Vector3,
+} from '@babylonjs/core';
 import type { EcsEntity } from '../EcsEntity';
 
 export interface IGizmoTransformer {
@@ -40,3 +46,13 @@ export interface IPlaneDragGizmoWithMesh extends IPlaneDragGizmo {
 }
 
 export type Vector3Axis = 'x' | 'y' | 'z';
+
+export type PlaneType = 'XY' | 'XZ' | 'YZ';
+
+export interface PlaneConfig {
+  type: PlaneType;
+  dimensions: [number, number, number];
+  position: Vector3;
+  diffuse: Color3;
+  emissive: Color3;
+}

@@ -1,11 +1,30 @@
-import type { GizmoManager } from '@babylonjs/core';
-import { Vector3, TransformNode, Quaternion } from '@babylonjs/core';
+import type {
+  GizmoManager,
+  IScaleGizmo,
+  Mesh,
+  Observer,
+  PointerInfo,
+  StandardMaterial,
+} from '@babylonjs/core';
+import { Vector3, TransformNode, Quaternion, Color3, PointerEventTypes } from '@babylonjs/core';
 import type { Entity } from '@dcl/ecs';
 import type { EcsEntity } from '../EcsEntity';
 import { LEFT_BUTTON } from '../mouse-utils';
-import type { IGizmoTransformer } from './types';
+import type { IGizmoTransformer, PlaneType } from './types';
 import { GizmoType } from './types';
-import { configureGizmoButtons } from './utils';
+import { configureGizmoButtons, createPlane, TransformUtils } from './utils';
+import {
+  AXIS_BLUE,
+  AXIS_GREEN,
+  AXIS_RED,
+  FADE_ALPHA,
+  FULL_ALPHA,
+  GREY_INACTIVE_COLOR,
+  PLANE_ALPHA,
+  PLANE_CONFIGS,
+  YELLOW_HOVER_COLOR,
+  YELLOW_HOVER_EMISSIVE,
+} from './constants';
 
 export class ScaleGizmo implements IGizmoTransformer {
   type = GizmoType.SCALE;
@@ -24,6 +43,17 @@ export class ScaleGizmo implements IGizmoTransformer {
   private dispatchOperations: (() => void) | null = null;
   private isWorldAligned = true;
 
+  // Sensitivity multiplier: higher = model scales more relative to gizmo visual movement
+  private readonly scaleSensitivity = 2.0;
+  private planeCubesCreated = false;
+  private planeCubeMeshes: Mesh[] = []; // Store references to dispose them
+  private planeMaterials: Map<
+    Mesh,
+    { material: StandardMaterial; originalDiffuse: Color3; originalEmissive: Color3 }
+  > = new Map(); // Store material refs
+  private activelyDraggingPlane: Mesh | null = null;
+  private planePointerObservers: Observer<PointerInfo>[] = [];
+
   constructor(
     private gizmoManager: GizmoManager,
     private snapScale: (scale: Vector3) => Vector3,
@@ -34,6 +64,228 @@ export class ScaleGizmo implements IGizmoTransformer {
     const scaleGizmo = this.gizmoManager.gizmos.scaleGizmo;
     // Scale gizmo should always be locally aligned to the entity
     scaleGizmo.updateGizmoRotationToMatchAttachedMesh = true;
+
+    // Note: ScaleGizmo doesn't support planar gizmos (those colored panels)
+    // So we'll create custom thin cubes that look like planes!
+    this.configureUniformScaleGizmo();
+  }
+
+  private createPlaneCubes(): void {
+    if (!this.gizmoManager.gizmos.scaleGizmo || this.planeCubesCreated) return;
+
+    const scene = this.gizmoManager.gizmos.scaleGizmo?._rootMesh?.getScene();
+    if (!scene) return;
+
+    const rootMesh = this.gizmoManager.gizmos.scaleGizmo._rootMesh;
+    if (!rootMesh) return;
+
+    for (const config of PLANE_CONFIGS) {
+      const [plane, material] = createPlane(
+        scene,
+        rootMesh,
+        `scalePlane${config.type}`,
+        config.dimensions[0],
+        config.dimensions[1],
+        config.dimensions[2],
+        config.position,
+        config.diffuse,
+        config.emissive,
+        PLANE_ALPHA,
+        true,
+      );
+
+      this.planeCubeMeshes.push(plane);
+      this.planeMaterials.set(plane, {
+        material,
+        originalDiffuse: config.diffuse,
+        originalEmissive: config.emissive,
+      });
+
+      this.addPlaneHoverBehavior(plane);
+      this.addPlaneDragBehavior(plane, config.type);
+    }
+
+    this.planeCubesCreated = true;
+  }
+
+  private addPlaneHoverBehavior(planeMesh: Mesh): void {
+    const scene = planeMesh.getScene();
+    const matInfo = this.planeMaterials.get(planeMesh);
+    if (!matInfo) return;
+
+    const onPointerMove = (pointerInfo: PointerInfo) => {
+      if (pointerInfo.type !== PointerEventTypes.POINTERMOVE) return;
+      const pickInfo = pointerInfo.pickInfo;
+      const isHovering = pickInfo?.hit && pickInfo.pickedMesh === planeMesh;
+
+      // Skip if dragging a different plane
+      if (this.activelyDraggingPlane && this.activelyDraggingPlane !== planeMesh) return;
+
+      if (isHovering && !this.activelyDraggingPlane) {
+        matInfo.material.diffuseColor = YELLOW_HOVER_COLOR;
+        matInfo.material.emissiveColor = YELLOW_HOVER_EMISSIVE;
+      } else if (!isHovering && this.activelyDraggingPlane !== planeMesh) {
+        matInfo.material.diffuseColor = matInfo.originalDiffuse;
+        matInfo.material.emissiveColor = matInfo.originalEmissive;
+      }
+    };
+
+    const hoverObserver = scene.onPointerObservable.add(onPointerMove);
+    this.planePointerObservers.push(hoverObserver);
+  }
+
+  private addPlaneDragBehavior(planeMesh: Mesh, planeType: PlaneType): void {
+    const scene = planeMesh.getScene();
+    let isDragging = false;
+    let initialMousePos: { x: number; y: number } | null = null;
+    const initialEntityScales = new Map<Entity, Vector3>();
+
+    const onPointerDown = (pointerInfo: PointerInfo) => {
+      if (pointerInfo.type !== PointerEventTypes.POINTERDOWN) return;
+
+      const pickInfo = pointerInfo.pickInfo;
+      if (!pickInfo || !pickInfo.hit || pickInfo.pickedMesh !== planeMesh) return;
+
+      if (pointerInfo.event.button !== LEFT_BUTTON) return;
+
+      isDragging = true;
+      initialMousePos = { x: pointerInfo.event.clientX, y: pointerInfo.event.clientY };
+
+      this.activelyDraggingPlane = planeMesh;
+
+      // Keep this plane yellow during drag
+      const matInfo = this.planeMaterials.get(planeMesh);
+      if (matInfo) {
+        matInfo.material.diffuseColor = YELLOW_HOVER_COLOR;
+        matInfo.material.emissiveColor = YELLOW_HOVER_EMISSIVE;
+      }
+
+      this.setOtherGizmosInactive(planeMesh);
+
+      // Store initial scales for all entities
+      initialEntityScales.clear();
+      for (const entity of this.currentEntities) {
+        initialEntityScales.set(entity.entityId, entity.scaling.clone());
+      }
+
+      this.onDragStart(this.currentEntities, this.gizmoManager.attachedNode as TransformNode);
+    };
+
+    const onPointerMove = (pointerInfo: PointerInfo) => {
+      if (!isDragging || !initialMousePos || pointerInfo.type !== PointerEventTypes.POINTERMOVE)
+        return;
+
+      const currentMousePos = { x: pointerInfo.event.clientX, y: pointerInfo.event.clientY };
+      const deltaX = currentMousePos.x - initialMousePos.x;
+      const deltaY = currentMousePos.y - initialMousePos.y;
+
+      // Use the drag direction for scaling
+      const dragDirection = deltaX + deltaY;
+      const scaleFactor = 1.0 + (dragDirection / 100.0) * this.scaleSensitivity;
+
+      // Apply scaling based on plane type (Blender behavior)
+      for (const entity of this.currentEntities) {
+        const initialScale = initialEntityScales.get(entity.entityId);
+        if (!initialScale) continue;
+
+        let newScale: Vector3;
+
+        if (planeType === 'XY') {
+          newScale = new Vector3(
+            initialScale.x * scaleFactor,
+            initialScale.y * scaleFactor,
+            initialScale.z,
+          );
+        } else if (planeType === 'XZ') {
+          newScale = new Vector3(
+            initialScale.x * scaleFactor,
+            initialScale.y,
+            initialScale.z * scaleFactor,
+          );
+        } else {
+          newScale = new Vector3(
+            initialScale.x,
+            initialScale.y * scaleFactor,
+            initialScale.z * scaleFactor,
+          );
+        }
+
+        entity.scaling.copyFrom(newScale);
+        entity.computeWorldMatrix(true);
+
+        if (this.updateEntityScale) {
+          this.updateEntityScale(entity);
+        }
+      }
+    };
+
+    const onPointerUp = (pointerInfo: PointerInfo) => {
+      if (!isDragging || pointerInfo.type !== PointerEventTypes.POINTERUP) return;
+
+      isDragging = false;
+      initialMousePos = null;
+      initialEntityScales.clear();
+      this.activelyDraggingPlane = null;
+      this.onDragEnd();
+
+      if (this.dispatchOperations) {
+        this.dispatchOperations();
+      }
+    };
+
+    const downObserver = scene.onPointerObservable.add(onPointerDown);
+    const moveObserver = scene.onPointerObservable.add(onPointerMove);
+    const upObserver = scene.onPointerObservable.add(onPointerUp);
+    this.planePointerObservers.push(downObserver, moveObserver, upObserver);
+  }
+
+  private setOtherGizmosInactive(activePlane: Mesh): void {
+    for (const [mesh, matInfo] of this.planeMaterials.entries()) {
+      if (mesh !== activePlane) {
+        matInfo.material.diffuseColor = GREY_INACTIVE_COLOR;
+        matInfo.material.emissiveColor = Color3.Black();
+        matInfo.material.alpha = FADE_ALPHA;
+      }
+    }
+
+    this.setBuiltInGizmoAppearance('inactive');
+  }
+
+  private setBuiltInGizmoAppearance(mode: 'inactive' | 'restore'): void {
+    if (!this.gizmoManager.gizmos.scaleGizmo) return;
+    const scaleGizmo = this.gizmoManager.gizmos.scaleGizmo as IScaleGizmo;
+
+    const isInactive = mode === 'inactive';
+
+    const axisConfig = [
+      { gizmo: scaleGizmo.xGizmo, restoreColor: AXIS_RED },
+      { gizmo: scaleGizmo.yGizmo, restoreColor: AXIS_GREEN },
+      { gizmo: scaleGizmo.zGizmo, restoreColor: AXIS_BLUE },
+    ];
+
+    for (const { gizmo, restoreColor } of axisConfig) {
+      if (gizmo?.coloredMaterial) {
+        gizmo.coloredMaterial.diffuseColor = isInactive ? GREY_INACTIVE_COLOR : restoreColor;
+        gizmo.coloredMaterial.alpha = isInactive ? FADE_ALPHA : FULL_ALPHA;
+      }
+    }
+  }
+
+  private configureUniformScaleGizmo(): void {
+    if (!this.gizmoManager.gizmos.scaleGizmo) return;
+    const scaleGizmo = this.gizmoManager.gizmos.scaleGizmo;
+
+    const uniformGizmo = scaleGizmo.uniformScaleGizmo;
+    if (!uniformGizmo) return;
+    // Make the uniform scale cube 2x bigger for easier selection
+    uniformGizmo.scaleRatio = 2;
+
+    // Get the scene to create a new cube mesh
+    const scene = this.gizmoManager.gizmos.scaleGizmo?._rootMesh?.getScene();
+    if (!scene) return;
+
+    // Create plane cubes (also on first activation)
+    this.createPlaneCubes();
   }
 
   enable(): void {
@@ -44,6 +296,12 @@ export class ScaleGizmo implements IGizmoTransformer {
 
     // Configure gizmo to only work with left click
     configureGizmoButtons(this.gizmoManager.gizmos.scaleGizmo, [LEFT_BUTTON]);
+
+    // Defer configuration to next render frame — gizmo meshes aren't fully initialized until then
+    const scene = this.gizmoManager.gizmos.scaleGizmo?._rootMesh?.getScene();
+    if (scene) {
+      scene.onBeforeRenderObservable.addOnce(() => this.configureUniformScaleGizmo());
+    }
   }
 
   cleanup(): void {
@@ -53,14 +311,25 @@ export class ScaleGizmo implements IGizmoTransformer {
     // Clean up drag observables
     this.cleanupDragObservables();
 
-    this.initialOffsets.clear();
-    this.initialScales.clear();
-    this.initialRotations.clear();
-    this.initialPositions.clear();
-    this.initialGizmoScale = null;
-    this.pivotPosition = null;
-    this.isDragging = false;
+    // Clean up plane pointer observers
+    const scene = this.gizmoManager.gizmos.scaleGizmo?._rootMesh?.getScene();
+    if (scene) {
+      for (const observer of this.planePointerObservers) {
+        scene.onPointerObservable.remove(observer);
+      }
+    }
+
+    // Dispose plane cube meshes
+    for (const mesh of this.planeCubeMeshes) {
+      if (mesh && mesh.dispose) {
+        mesh.dispose();
+      }
+    }
+    this.planeCubeMeshes = [];
+    this.planeCubesCreated = false;
+    this.planePointerObservers = [];
     this.currentEntities = [];
+    this.clearInitialState();
   }
 
   setEntities(entities: EcsEntity[]): void {
@@ -99,30 +368,7 @@ export class ScaleGizmo implements IGizmoTransformer {
     const gizmoNode = this.gizmoManager.attachedNode as TransformNode;
 
     // Scale gizmo should always be locally aligned
-    if (this.currentEntities.length === 1) {
-      const entity = this.currentEntities[0];
-      if (entity.rotationQuaternion && gizmoNode.rotationQuaternion) {
-        // If the entity has a parent, convert to world rotation
-        if (entity.parent && entity.parent instanceof TransformNode) {
-          const parent = entity.parent as TransformNode;
-          const parentWorldRotation =
-            parent.rotationQuaternion || Quaternion.FromRotationMatrix(parent.getWorldMatrix());
-          const worldRotation = parentWorldRotation.multiply(entity.rotationQuaternion);
-          gizmoNode.rotationQuaternion.copyFrom(worldRotation);
-        } else {
-          // If no parent, apply directly
-          gizmoNode.rotationQuaternion.copyFrom(entity.rotationQuaternion);
-        }
-      }
-    } else {
-      // For multiple entities, always reset to identity rotation
-      // This provides a consistent reference point for scaling operations
-      if (gizmoNode.rotationQuaternion) {
-        gizmoNode.rotationQuaternion.set(0, 0, 0, 1); // Quaternion.Identity()
-      }
-    }
-
-    gizmoNode.computeWorldMatrix(true);
+    TransformUtils.alignGizmo(gizmoNode, this.currentEntities);
   }
 
   private setupDragObservables(): void {
@@ -132,7 +378,6 @@ export class ScaleGizmo implements IGizmoTransformer {
 
     // Setup drag start
     this.dragStartObserver = scaleGizmo.onDragStartObservable.add(() => {
-      console.log('[ScaleGizmo] Scale drag start');
       if (this.gizmoManager.attachedNode) {
         this.onDragStart(this.currentEntities, this.gizmoManager.attachedNode as TransformNode);
       }
@@ -152,7 +397,6 @@ export class ScaleGizmo implements IGizmoTransformer {
 
     // Setup drag end
     this.dragEndObserver = scaleGizmo.onDragEndObservable.add(() => {
-      console.log('[ScaleGizmo] Scale drag end');
       this.onDragEnd();
 
       // Only dispatch operations at the end to avoid excessive ECS operations
@@ -308,6 +552,7 @@ export class ScaleGizmo implements IGizmoTransformer {
   }
 
   onDragEnd(): void {
+    this.setBuiltInGizmoAppearance('restore');
     // Sync gizmo scale with the final snapped scales of entities
     if (this.gizmoManager.attachedNode) {
       const gizmoNode = this.gizmoManager.attachedNode as TransformNode;
@@ -317,38 +562,19 @@ export class ScaleGizmo implements IGizmoTransformer {
       gizmoNode.scaling.set(1, 1, 1);
 
       // Scale gizmo should always be locally aligned
-      if (this.currentEntities.length === 1) {
-        const entity = this.currentEntities[0];
-        if (entity.rotationQuaternion && gizmoNode.rotationQuaternion) {
-          // If the entity has a parent, convert to world rotation
-          if (entity.parent && entity.parent instanceof TransformNode) {
-            const parent = entity.parent as TransformNode;
-            const parentWorldRotation =
-              parent.rotationQuaternion || Quaternion.FromRotationMatrix(parent.getWorldMatrix());
-            const worldRotation = parentWorldRotation.multiply(entity.rotationQuaternion);
-            gizmoNode.rotationQuaternion.copyFrom(worldRotation);
-          } else {
-            // If no parent, apply directly
-            gizmoNode.rotationQuaternion.copyFrom(entity.rotationQuaternion);
-          }
-        }
-      } else {
-        // For multiple entities, always reset to identity rotation
-        // This provides a consistent reference point for scaling operations
-        if (gizmoNode.rotationQuaternion) {
-          gizmoNode.rotationQuaternion.set(0, 0, 0, 1); // Quaternion.Identity()
-        }
-      }
-
-      gizmoNode.computeWorldMatrix(true);
+      TransformUtils.alignGizmo(gizmoNode, this.currentEntities);
     }
 
-    this.isDragging = false;
-    this.initialGizmoScale = null;
-    this.pivotPosition = null;
+    this.clearInitialState();
+  }
+
+  private clearInitialState(): void {
     this.initialOffsets.clear();
     this.initialScales.clear();
     this.initialRotations.clear();
     this.initialPositions.clear();
+    this.initialGizmoScale = null;
+    this.pivotPosition = null;
+    this.isDragging = false;
   }
 }
