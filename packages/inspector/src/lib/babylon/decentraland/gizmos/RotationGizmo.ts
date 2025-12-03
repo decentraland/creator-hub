@@ -371,18 +371,17 @@ export class RotationGizmo implements IGizmoTransformer {
 
   private initializeDragState(entities: EcsEntity[], _gizmoNode: TransformNode): void {
     const transformData = new Map<Entity, EntityTransformData>();
+    this.dragState = {
+      startRotation: Quaternion.Identity(),
+      entities,
+      transformData,
+    };
 
     if (entities.length === 1) {
       this.initializeSingleEntityDragState(entities[0], transformData);
     } else {
       this.initializeMultipleEntitiesDragState(entities, transformData);
     }
-
-    this.dragState = {
-      startRotation: Quaternion.Identity(),
-      entities,
-      transformData,
-    };
   }
 
   private initializeSingleEntityDragState(
