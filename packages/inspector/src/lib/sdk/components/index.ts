@@ -67,6 +67,7 @@ export type SceneSpawnPoint = {
 };
 
 export type SceneComponent = {
+  creator?: string;
   name?: string;
   description?: string;
   skyboxConfig?: {
