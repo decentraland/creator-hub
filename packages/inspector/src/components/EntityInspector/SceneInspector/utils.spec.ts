@@ -17,6 +17,7 @@ function getInput(base: string, parcels: string): SceneInput {
     silenceVoiceChat: false,
     disablePortableExperiences: false,
     spawnPoints: [],
+    creator: '0x0000000000000000000000000000000000000000',
     author: 'John Doe',
     email: 'johndoe@gmail.com',
     skyboxConfig: {

@@ -492,11 +492,13 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
           <TextField
             autoSelect
             label="Creator name (optional)"
+            placeholder="Decentraland user"
             {...authorProps}
           />
           <TextField
             autoSelect
             label="Creator contact email (optional)"
+            placeholder="your@email.com"
             {...emailProps}
           />
           <Block className="CreatorAddrressContainer">
