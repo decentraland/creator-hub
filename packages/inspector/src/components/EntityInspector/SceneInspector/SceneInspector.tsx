@@ -14,7 +14,7 @@ import './SceneInspector.css';
 import type { EditorComponentsTypes, SceneSpawnPoint } from '../../../lib/sdk/components';
 import { SceneAgeRating, SceneCategory } from '../../../lib/sdk/components';
 import { Dropdown } from '../../ui/Dropdown';
-import { TextArea } from '../../ui';
+import { Label, TextArea } from '../../ui';
 import { Tabs } from '../Tabs';
 import { CheckboxField } from '../../ui/CheckboxField';
 import RangeHourField from '../../ui/RangeHourField/RangeHourField';
@@ -117,6 +117,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const categoriesProps = getInputProps('categories');
   const authorProps = getInputProps('author');
   const emailProps = getInputProps('email');
+  const creatorWalletAddressProps = getInputProps('creator');
   const transitionModeProps = getInputProps('skyboxConfig.transitionMode');
   const silenceVoiceChatProps = getInputProps('silenceVoiceChat', e => e.target.checked);
   const disablePortableExperiencesProps = getInputProps(
@@ -479,14 +480,28 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
           />
           <TextField
             autoSelect
-            label="Author (optional)"
+            label="Creator name (optional)"
             {...authorProps}
           />
           <TextField
             autoSelect
-            label="Email (optional)"
+            label="Creator contact email (optional)"
             {...emailProps}
           />
+          <Block
+            className="CreatorAddrressContainer"
+            label="Creator wallet address (optional)"
+          >
+            <Label
+              className="CreatorAddrressLabel"
+              text="Enter the wallet address that will act as the beneficiary for transactions."
+            />
+            <TextField
+              autoSelect
+              label="Creator wallet address (optional)"
+              {...creatorWalletAddressProps}
+            />
+          </Block>
           <SceneInfoInput />
         </>
       ) : null}

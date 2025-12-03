@@ -80,23 +80,7 @@ export const SceneMetadataV0 = {
 };
 
 export const SceneMetadataV1 = {
-  version: Schemas.Optional(Schemas.Int),
-  name: Schemas.Optional(Schemas.String),
-  description: Schemas.Optional(Schemas.String),
-  thumbnail: Schemas.Optional(Schemas.String),
-  ageRating: Schemas.Optional(Schemas.EnumString(SceneAgeRating, SceneAgeRating.Teen)),
-  categories: Schemas.Optional(
-    Schemas.Array(Schemas.EnumString(SceneCategory, SceneCategory.GAME)),
-  ),
-  author: Schemas.Optional(Schemas.String),
-  email: Schemas.Optional(Schemas.String),
-  tags: Schemas.Optional(Schemas.Array(Schemas.String)),
-  layout: Schemas.Map({
-    base: Coords,
-    parcels: Schemas.Array(Coords),
-  }),
-  silenceVoiceChat: Schemas.Optional(Schemas.Boolean),
-  disablePortableExperiences: Schemas.Optional(Schemas.Boolean),
+  ...SceneMetadataV0,
   skyboxConfig: Schemas.Optional(
     Schemas.Map({
       fixedTime: Schemas.Optional(Schemas.Int),
@@ -104,94 +88,12 @@ export const SceneMetadataV1 = {
         Schemas.EnumNumber(TransitionMode, TransitionMode.TM_FORWARD),
       ),
     }),
-  ),
-  spawnPoints: Schemas.Optional(
-    Schemas.Array(
-      Schemas.Map({
-        name: Schemas.String,
-        default: Schemas.Optional(Schemas.Boolean),
-        position: Schemas.Map({
-          x: Schemas.OneOf({
-            single: Schemas.Int,
-            range: Schemas.Array(Schemas.Int),
-          }),
-          y: Schemas.OneOf({
-            single: Schemas.Int,
-            range: Schemas.Array(Schemas.Int),
-          }),
-          z: Schemas.OneOf({
-            single: Schemas.Int,
-            range: Schemas.Array(Schemas.Int),
-          }),
-        }),
-        cameraTarget: Schemas.Optional(
-          Schemas.Map({
-            x: Schemas.Int,
-            y: Schemas.Int,
-            z: Schemas.Int,
-          }),
-        ),
-      }),
-    ),
   ),
 };
 
-export const SceneMetadataV2 = {
-  version: Schemas.Optional(Schemas.Int),
-  name: Schemas.Optional(Schemas.String),
-  description: Schemas.Optional(Schemas.String),
-  thumbnail: Schemas.Optional(Schemas.String),
-  ageRating: Schemas.Optional(Schemas.EnumString(SceneAgeRating, SceneAgeRating.Teen)),
-  categories: Schemas.Optional(
-    Schemas.Array(Schemas.EnumString(SceneCategory, SceneCategory.GAME)),
-  ),
-  author: Schemas.Optional(Schemas.String),
-  email: Schemas.Optional(Schemas.String),
+const SceneMetadataV2 = {
+  ...SceneMetadataV1,
   creator: Schemas.Optional(Schemas.String),
-  tags: Schemas.Optional(Schemas.Array(Schemas.String)),
-  layout: Schemas.Map({
-    base: Coords,
-    parcels: Schemas.Array(Coords),
-  }),
-  silenceVoiceChat: Schemas.Optional(Schemas.Boolean),
-  disablePortableExperiences: Schemas.Optional(Schemas.Boolean),
-  skyboxConfig: Schemas.Optional(
-    Schemas.Map({
-      fixedTime: Schemas.Optional(Schemas.Int),
-      transitionMode: Schemas.Optional(
-        Schemas.EnumNumber(TransitionMode, TransitionMode.TM_FORWARD),
-      ),
-    }),
-  ),
-  spawnPoints: Schemas.Optional(
-    Schemas.Array(
-      Schemas.Map({
-        name: Schemas.String,
-        default: Schemas.Optional(Schemas.Boolean),
-        position: Schemas.Map({
-          x: Schemas.OneOf({
-            single: Schemas.Int,
-            range: Schemas.Array(Schemas.Int),
-          }),
-          y: Schemas.OneOf({
-            single: Schemas.Int,
-            range: Schemas.Array(Schemas.Int),
-          }),
-          z: Schemas.OneOf({
-            single: Schemas.Int,
-            range: Schemas.Array(Schemas.Int),
-          }),
-        }),
-        cameraTarget: Schemas.Optional(
-          Schemas.Map({
-            x: Schemas.Int,
-            y: Schemas.Int,
-            z: Schemas.Int,
-          }),
-        ),
-      }),
-    ),
-  ),
 };
 
 const SceneMetadata = 'inspector::SceneMetadata';
