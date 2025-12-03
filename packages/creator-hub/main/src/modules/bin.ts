@@ -161,15 +161,7 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
     );
 
     // Only treat as error if process has actually spawned and process is not being killed intentionally.
-    log.info('[UtilityProcess] Exit event received', {
-      code,
-      isKilling,
-      ready: ready.isPending,
-    });
-    // Print stdoutbuf
-    log.info('Stderr buffer:', Buffer.concat(stderr.getAll()).toString('utf8'));
     if (code !== 0 && code !== null && !ready.isPending && !isKilling) {
-      log.info('COMMAND_FAILED detected in utility process, SENTRY ERROR THROWN');
       const stderrBuf = Buffer.concat(stderr.getAll());
       promise.reject(
         new StreamError(
@@ -180,7 +172,6 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
         ),
       );
     } else {
-      log.info(`[UtilityProcess] Resolving pid=${spawnedPid} promise successfully`);
       promise.resolve(stdoutBuf);
     }
     cleanup();
@@ -350,11 +341,11 @@ export async function dclDeepLink(deepLink: string) {
  * This should be called during app shutdown to ensure all forked processes are properly terminated.
  */
 export async function killAllUtilityProcesses() {
-  log.info(`[UtilityProcess] Killing ${processes.size} utility processes...`);
+  if (processes.size === 0) return;
 
+  log.info(`[UtilityProcess] Killing ${processes.size} utility processes...`);
   const killPromises = Array.from(processes.values()).map(child => child.kill());
   await Promise.all(killPromises);
-
   processes.clear();
   log.info('[UtilityProcess] All utility processes killed');
 }
