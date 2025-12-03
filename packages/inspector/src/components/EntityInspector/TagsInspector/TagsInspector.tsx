@@ -1,21 +1,24 @@
 import React, { useCallback, useState } from 'react';
-import './TagsInspector.css';
 import { FaTag as TagIcon, FaPlus, FaPencilAlt as EditIcon } from 'react-icons/fa';
 import { VscTrash as RemoveIcon } from 'react-icons/vsc';
-import { type Entity } from '@dcl/ecs';
-import type { Props as OptionProp } from '../../ui/Dropdown/Option/types';
 
 import { withSdk } from '../../../hoc/withSdk';
-import { Dropdown, type DropdownChangeEvent } from '../../ui/Dropdown';
-
 import { getComponentValue, useComponentValue } from '../../../hooks/sdk/useComponentValue';
+import { useMultiComponentInput } from '../../../hooks/sdk/useComponentInput';
+import { Dropdown, type DropdownChangeEvent } from '../../ui/Dropdown';
+import type { Props as OptionProp } from '../../ui/Dropdown/Option/types';
 import { analytics, Event } from '../../../lib/logic/analytics';
 import { getAssetByModel } from '../../../lib/logic/catalog';
+
 import { CreateEditTagModal } from './CreateEditTagModal';
 import { DeleteConfirmationModal } from './DeleteConfirmationModal';
+import { fromTags, toTags } from './utils';
+import type { Props } from './types';
+import './TagsInspector.css';
 
-const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
+const TagsInspector = withSdk<Props>(({ entities, sdk }) => {
   const { Tags } = sdk.components;
+  const entity = entities[0];
 
   const [createEditModal, setCreateEditModal] = useState<{ isOpen: boolean; tag: string | null }>({
     isOpen: false,
@@ -23,10 +26,15 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
   });
   const [tagToDelete, setTagToDelete] = useState<string | null>(null);
   const [sceneTagsComponent] = useComponentValue(sdk.engine.RootEntity, Tags);
-  const [entityTagsComponent] = useComponentValue(entity, Tags);
 
   const sceneTags = sceneTagsComponent?.tags || [];
-  const entityTags = entityTagsComponent?.tags || [];
+  const { getInputProps } = useMultiComponentInput(entities, Tags, fromTags, toTags);
+
+  // Get the tags input props - now properly handles arrays!
+  const tagsInputProps = getInputProps('tags');
+
+  // The hook now returns the correct array value (intersection of all entity tags)
+  const commonTags = Array.isArray(tagsInputProps.value) ? tagsInputProps.value : [];
 
   const handleCreateNewTag = (e: React.ChangeEvent<HTMLSelectElement>) => {
     e.preventDefault();
@@ -83,21 +91,39 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
   const handleTagChange = useCallback(
     ({ target: { value } }: DropdownChangeEvent) => {
       const selectedTags = sceneTags.filter(tag => value.includes(tag));
+
+      // Ensure all entities have the Tags component before updating
+      entities.forEach(entity => {
+        if (!Tags.has(entity)) {
+          sdk.operations.addComponent(entity, Tags.componentId, { tags: [] });
+        }
+      });
+
+      // Call the hook's onChange - it handles dispatch automatically
+      tagsInputProps.onChange?.({ target: { value: selectedTags } } as any);
+
+      // Track analytics for the first entity
       const gltfContainer = getComponentValue(entity, sdk.components.GltfContainer);
       const asset = getAssetByModel(gltfContainer.src);
-      if (Tags.getOrNull(entity)) {
-        sdk.operations.updateValue(Tags, entity, { tags: selectedTags });
-      } else {
-        sdk.operations.addComponent(entity, Tags.componentId, { tags: selectedTags });
-      }
+
       analytics.track(Event.ASSIGN_TAGS, {
         tagsName: selectedTags.join(','),
         itemId: asset?.id || '',
         itemPath: gltfContainer.src,
       });
-      sdk.operations.dispatch();
     },
-    [entity, sdk, sceneTags],
+    [tagsInputProps, entity, sdk, sceneTags, entities, Tags],
+  );
+
+  const handleTagCreated = useCallback(
+    (tagName: string) => {
+      const updatedTags = [...commonTags, tagName];
+
+      handleTagChange({
+        target: { value: updatedTags },
+      } as DropdownChangeEvent);
+    },
+    [commonTags, handleTagChange],
   );
 
   return (
@@ -110,7 +136,7 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
           placeholder="Add or create tags"
           multiple
           onChange={handleTagChange}
-          value={entityTags}
+          value={commonTags}
           options={getTagOptions()}
         />
       </div>
@@ -119,6 +145,7 @@ const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
         onClose={() => setCreateEditModal({ isOpen: false, tag: null })}
         editingTag={createEditModal.tag}
         entity={entity}
+        onTagCreated={handleTagCreated}
       />
       {tagToDelete && (
         <DeleteConfirmationModal
