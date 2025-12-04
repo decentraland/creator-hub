@@ -182,6 +182,12 @@ const Shortcuts: React.FC<Props> = ({ canvas, onResetCamera, onZoomIn, onZoomOut
                 <span className="Key">backspace</span>
               </div>
             </div>
+            <div className="Item">
+              <div className="Title">Focus on Selected</div>
+              <div className="Description">
+                <span className="Key">F</span>
+              </div>
+            </div>
           </div>
         </div>
       )}
