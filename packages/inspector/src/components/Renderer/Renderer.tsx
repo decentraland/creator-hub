@@ -44,6 +44,7 @@ import {
   RESET_CAMERA,
   DUPLICATE,
   DUPLICATE_ALT,
+  FOCUS_SELECTED,
 } from '../../hooks/useHotkey';
 import { analytics, Event } from '../../lib/logic/analytics';
 import { Warnings } from '../Warnings';
@@ -142,6 +143,18 @@ const Renderer: React.FC = () => {
     sdk.editorCamera.resetCamera();
   }, [sdk]);
 
+  const focusOnSelected = useCallback(() => {
+    if (!sdk) return;
+    const selectedEntities = sdk.operations.getSelectedEntities();
+    if (selectedEntities.length > 0) {
+      const entityId = selectedEntities[0];
+      const node = sdk.sceneContext.getEntityOrNull(entityId);
+      if (node) {
+        sdk.editorCamera.centerViewOnEntity(node);
+      }
+    }
+  }, [sdk]);
+
   useHotkey([DELETE, BACKSPACE], deleteSelectedEntities, document.body);
   useHotkey([COPY, COPY_ALT], copySelectedEntities, document.body);
   useHotkey([PASTE, PASTE_ALT], pasteSelectedEntities, document.body);
@@ -149,6 +162,7 @@ const Renderer: React.FC = () => {
   useHotkey([ZOOM_OUT, ZOOM_OUT_ALT], zoomOut, document.body);
   useHotkey([RESET_CAMERA], resetCamera, document.body);
   useHotkey([DUPLICATE, DUPLICATE_ALT], duplicateSelectedEntities, document.body);
+  useHotkey([FOCUS_SELECTED], focusOnSelected, document.body);
 
   // listen to ctrl key to place single tile
   useEffect(() => {
