@@ -3,24 +3,23 @@ import type { PlaneConfig } from './types';
 
 // Color constants
 export const GREY_INACTIVE_COLOR = new Color3(0.8, 0.8, 0.8);
-export const YELLOW_HOVER_COLOR = new Color3(1.0, 1.0, 0.0);
-export const YELLOW_HOVER_EMISSIVE = new Color3(0.8, 0.8, 0.0);
+export const YELLOW_HOVER_COLOR = new Color3(1, 1, 0);
+export const YELLOW_HOVER_EMISSIVE = new Color3(0.8, 0.8, 0);
 export const AXIS_RED = new Color3(1, 0, 0);
 export const AXIS_GREEN = new Color3(0, 1, 0);
 export const AXIS_BLUE = new Color3(0, 0, 1);
 
 // Plane colors (Blender style)
-const PLANE_XY_DIFFUSE = new Color3(0.5, 0.7, 1.0);
-const PLANE_XY_EMISSIVE = new Color3(0.3, 0.4, 0.6);
-const PLANE_XZ_DIFFUSE = new Color3(0.5, 1.0, 0.5);
-const PLANE_XZ_EMISSIVE = new Color3(0.3, 0.6, 0.3);
-const PLANE_YZ_DIFFUSE = new Color3(1.0, 0.5, 0.5);
-const PLANE_YZ_EMISSIVE = new Color3(0.6, 0.3, 0.3);
+const PLANE_XY_DIFFUSE = new Color3(0, 0, 1);
+const PLANE_XY_EMISSIVE = new Color3(0, 0, 0.8);
+const PLANE_XZ_DIFFUSE = new Color3(0, 1, 0);
+const PLANE_XZ_EMISSIVE = new Color3(0, 0.8, 0);
+const PLANE_YZ_DIFFUSE = new Color3(1, 0, 0);
+const PLANE_YZ_EMISSIVE = new Color3(0.8, 0, 0);
 
 // Alpha constants
 export const FADE_ALPHA = 0.5;
 export const FULL_ALPHA = 1.0;
-export const PLANE_ALPHA = 0.7;
 
 // Plane geometry constants
 const PLANE_SIZE = 0.03;
