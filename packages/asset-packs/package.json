@@ -1,7 +1,7 @@
 {
   "name": "@dcl/asset-packs",
   "description": "Decentraland Asset Packs - curated collections of 3D assets for Decentraland scenes",
-  "version": "0.0.0-dev",
+  "version": "0.1.0",
   "author": {
     "email": "hello@decentraland.org",
     "name": "Decentraland Foundation",
