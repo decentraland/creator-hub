@@ -20,7 +20,6 @@ import {
   FADE_ALPHA,
   FULL_ALPHA,
   GREY_INACTIVE_COLOR,
-  PLANE_ALPHA,
   PLANE_CONFIGS,
   YELLOW_HOVER_COLOR,
   YELLOW_HOVER_EMISSIVE,
@@ -90,8 +89,6 @@ export class ScaleGizmo implements IGizmoTransformer {
         config.position,
         config.diffuse,
         config.emissive,
-        PLANE_ALPHA,
-        true,
       );
 
       this.planeCubeMeshes.push(plane);
@@ -124,7 +121,7 @@ export class ScaleGizmo implements IGizmoTransformer {
       if (isHovering && !this.activelyDraggingPlane) {
         matInfo.material.diffuseColor = YELLOW_HOVER_COLOR;
         matInfo.material.emissiveColor = YELLOW_HOVER_EMISSIVE;
-      } else if (!isHovering && this.activelyDraggingPlane !== planeMesh) {
+      } else if (!isHovering && this.activelyDraggingPlane !== planeMesh && !this.isDragging) {
         matInfo.material.diffuseColor = matInfo.originalDiffuse;
         matInfo.material.emissiveColor = matInfo.originalEmissive;
       }
@@ -160,7 +157,8 @@ export class ScaleGizmo implements IGizmoTransformer {
         matInfo.material.emissiveColor = YELLOW_HOVER_EMISSIVE;
       }
 
-      this.setOtherGizmosInactive(planeMesh);
+      this.setPlaneMaterialsAppearance('inactive', planeMesh);
+      this.setBuiltInGizmoAppearance('inactive');
 
       // Store initial scales for all entities
       initialEntityScales.clear();
@@ -239,16 +237,18 @@ export class ScaleGizmo implements IGizmoTransformer {
     this.planePointerObservers.push(downObserver, moveObserver, upObserver);
   }
 
-  private setOtherGizmosInactive(activePlane: Mesh): void {
+  private setPlaneMaterialsAppearance(mode: 'inactive' | 'restore', activePlane?: Mesh): void {
     for (const [mesh, matInfo] of this.planeMaterials.entries()) {
-      if (mesh !== activePlane) {
+      if (mode === 'inactive' && mesh !== activePlane) {
         matInfo.material.diffuseColor = GREY_INACTIVE_COLOR;
         matInfo.material.emissiveColor = Color3.Black();
         matInfo.material.alpha = FADE_ALPHA;
+      } else if (mode === 'restore') {
+        matInfo.material.diffuseColor = matInfo.originalDiffuse;
+        matInfo.material.emissiveColor = matInfo.originalEmissive;
+        matInfo.material.alpha = FULL_ALPHA;
       }
     }
-
-    this.setBuiltInGizmoAppearance('inactive');
   }
 
   private setBuiltInGizmoAppearance(mode: 'inactive' | 'restore'): void {
@@ -431,6 +431,7 @@ export class ScaleGizmo implements IGizmoTransformer {
     if (this.isDragging) return;
 
     this.isDragging = true;
+    this.setPlaneMaterialsAppearance('inactive');
 
     // Calculate pivot position (centroid of all selected entities)
     this.pivotPosition = new Vector3();
@@ -552,6 +553,7 @@ export class ScaleGizmo implements IGizmoTransformer {
   }
 
   onDragEnd(): void {
+    this.setPlaneMaterialsAppearance('restore');
     this.setBuiltInGizmoAppearance('restore');
     // Sync gizmo scale with the final snapped scales of entities
     if (this.gizmoManager.attachedNode) {

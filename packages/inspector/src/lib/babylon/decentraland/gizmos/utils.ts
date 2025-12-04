@@ -10,6 +10,7 @@ import {
 } from '@babylonjs/core';
 import type { EcsEntity } from '../EcsEntity';
 import type { GizmoAxis } from './types';
+import { FULL_ALPHA } from './constants';
 
 export const TransformUtils = {
   convertToLocalPosition(worldPosition: Vector3, parent: TransformNode | null): Vector3 {
@@ -96,8 +97,6 @@ export function createPlane(
   position: Vector3,
   diffuseColor: Color3,
   emissiveColor: Color3,
-  alpha: number,
-  isPickable: boolean = true,
 ): [Mesh, StandardMaterial] {
   const plane = MeshBuilder.CreateBox(
     `${name}Mesh`,
@@ -112,11 +111,11 @@ export function createPlane(
   const material = new StandardMaterial(`${name}Mat`, scene);
   material.diffuseColor = diffuseColor;
   material.emissiveColor = emissiveColor;
-  material.alpha = alpha;
+  material.alpha = FULL_ALPHA;
   material.disableLighting = true;
   plane.material = material;
   plane.parent = rootMesh;
-  plane.isPickable = isPickable;
+  plane.isPickable = true; // always pickable
 
   return [plane, material];
 }
