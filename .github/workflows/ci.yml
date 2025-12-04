@@ -49,6 +49,10 @@ jobs:
     needs: [ asset-packs ]
     uses: ./.github/workflows/inspector.yml
     secrets: inherit
+    with:
+      asset_packs_s3_bucket_key: ${{ needs.asset-packs.outputs.s3_bucket_key }}
+      asset_packs_version: ${{ needs.asset-packs.outputs.version }}
+      asset_packs_changed: ${{ needs.asset-packs.outputs.changed == 'true' }}
   creator-hub:
     needs: [ inspector ]
     uses: ./.github/workflows/creator-hub.yml
