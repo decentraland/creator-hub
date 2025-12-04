@@ -22,3 +22,27 @@ export const useHasComponent = (entity: Entity, component: Component) => {
 
   return hasComponent;
 };
+
+export const useAllEntitiesHaveComponent = (entities: Entity[], component: Component) => {
+  const [allHaveComponent, setAllHaveComponent] = useState<boolean>(() =>
+    entities.every(entity => component.has(entity)),
+  );
+
+  useChange(
+    event => {
+      if (
+        entities.includes(event.entity) &&
+        event.component?.componentId === component.componentId
+      ) {
+        setAllHaveComponent(entities.every(entity => component.has(entity)));
+      }
+    },
+    [entities, component],
+  );
+
+  useEffect(() => {
+    setAllHaveComponent(entities.every(entity => component.has(entity)));
+  }, [entities, component]);
+
+  return allHaveComponent;
+};
