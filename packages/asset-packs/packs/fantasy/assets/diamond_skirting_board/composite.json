@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/SkirtingBoard_01/SkirtingBoard_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "id": "b3158511-bda8-4459-a213-d90df94f1e5b",
+  "name": "First Aid",
+  "category": "health",
+  "tags": ["health", "enemy", "damage"],
+  "description": "A one-time use first aid kit that can restore a player’s health when triggered. After being used, it disappears. Can be used with the Health Bar smart item.",
+  "author": "Decentraland Foundation"
+}

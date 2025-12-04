@@ -1,0 +1,8 @@
+{
+  "id": "cca81b2b-24d6-4ef3-aa46-dad27a03d55b",
+  "name": "Spaceship Blue Horizontal Platform",
+  "category": "platforms",
+  "tags": ["platform", "horizontal", "interactive", "spaceship", "vehicle"],
+  "description": "A horizontal platform that looks like a spaceship. Players can stand on it to move back and forth.",
+  "author": "Decentraland Foundation"
+}

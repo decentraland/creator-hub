@@ -1,0 +1,8 @@
+{
+  "id": "1889bcdc-5608-48fa-9158-b0a56f0afa8b",
+  "name": "Yellow Button",
+  "category": "buttons",
+  "tags": ["button", "yellow", "activate", "switch", "toggle"],
+  "description": "A button that can be clicked to trigger actions on other smart items.",
+  "author": "Decentraland Foundation"
+}

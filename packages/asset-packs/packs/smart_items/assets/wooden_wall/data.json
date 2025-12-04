@@ -1,0 +1,8 @@
+{
+  "id": "ee6647dc-1d90-4ff4-ae00-8cc0794927df",
+  "name": "Wooden Fence",
+  "category": "health",
+  "tags": ["health", "damage", "breakable", "wood", "wooden", "wall", "blockade"],
+  "description": "A pallet-like structure that can be used to reveal a passageway when broken with another smart item, such as the Sword. It can also be used as a wall to block players.",
+  "author": "Decentraland Foundation"
+}

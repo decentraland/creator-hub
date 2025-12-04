@@ -1,0 +1,8 @@
+{
+  "id": "79ee0689-3ae1-4f39-b8fd-b742b4509255",
+  "name": "Github Link",
+  "category": "social",
+  "tags": ["social", "links", "github"],
+  "description": "A clickable item that can open your Github page in a browser window. Paste a Github page URL in the 'URL' field.",
+  "author": "Decentraland Foundation"
+}

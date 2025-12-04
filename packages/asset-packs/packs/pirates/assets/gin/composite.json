@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Bottle_08/Bottle_08.glb"
+          }
+        }
+      }
+    }
+  ]
+}

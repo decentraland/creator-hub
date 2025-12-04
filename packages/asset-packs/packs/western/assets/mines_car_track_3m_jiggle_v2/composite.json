@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Mines Car Track 3M Jiggle v2.glb"
+          }
+        }
+      }
+    }
+  ]
+}

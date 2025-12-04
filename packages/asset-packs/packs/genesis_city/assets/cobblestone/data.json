@@ -1,0 +1,19 @@
+{
+  "id": "2c66317c-4923-4094-ad90-8ad72db010b1",
+  "name": "Cobblestone",
+  "category": "ground",
+  "tags": [
+    "genesis",
+    "city",
+    "town",
+    "architecture",
+    "building",
+    "cobblestone",
+    "path",
+    "pavement",
+    "structure",
+    "terrain"
+  ],
+  "caption": "Cobblestone texture on stone floor.",
+  "author": "Decentraland Foundation"
+}

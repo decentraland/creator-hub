@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Floor_Wood_Curve_01_4M/Floor_Wood_Curve_01_4M.glb"
+          }
+        }
+      }
+    }
+  ]
+}

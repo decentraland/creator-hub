@@ -1,0 +1,8 @@
+{
+  "id": "7abe1ec8-bd5c-4ffe-b318-f17a330296bf",
+  "name": "Vertical Black Pad",
+  "category": "platforms",
+  "tags": ["platform", "vertical", "interactive", "black", "pad", "elevator", "lift"],
+  "description": "A vertical platform that moves up and down. Players can jump on it to reach higher places.",
+  "author": "Decentraland Foundation"
+}

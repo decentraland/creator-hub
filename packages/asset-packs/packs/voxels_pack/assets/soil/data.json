@@ -1,0 +1,19 @@
+{
+  "id": "824d4e6a-82c0-4a5d-940c-ff2a8ac32a29",
+  "name": "Soil",
+  "category": "decorations",
+  "tags": [
+    "block",
+    "dirt",
+    "earth",
+    "gravel",
+    "jagged",
+    "landscape",
+    "mineral",
+    "rugged",
+    "soil",
+    "terrain"
+  ],
+  "caption": "Brown cube with jagged edges.",
+  "author": "Decentraland Foundation"
+}

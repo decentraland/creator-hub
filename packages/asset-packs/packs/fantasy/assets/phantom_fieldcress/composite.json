@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Bush_Fantasy_03/Bush_Fantasy_03.glb"
+          }
+        }
+      }
+    }
+  ]
+}

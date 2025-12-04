@@ -1,0 +1,99 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::Transform",
+      "data": {
+        "513": {
+          "json": {
+            "position": {
+              "x": 0,
+              "y": 0.55,
+              "z": 0.029970645904541016
+            },
+            "rotation": {
+              "x": 0,
+              "y": 1,
+              "z": 0,
+              "w": 6.123234924670329e-17
+            },
+            "scale": {
+              "x": 0.32755258679389954,
+              "y": 0.32755258679389954,
+              "z": 0.32755258679389954
+            },
+            "parent": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "0": {
+          "json": {
+            "value": "Sign Neon Rect"
+          }
+        },
+        "513": {
+          "json": {
+            "value": "Text"
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Sync-Components",
+      "data": {
+        "513": {
+          "json": {
+            "componentIds": ["core::TextShape"]
+          }
+        }
+      }
+    },
+    {
+      "name": "core::TextShape",
+      "data": {
+        "513": {
+          "json": {
+            "text": "Your Text here",
+            "font": 2,
+            "fontSize": 5,
+            "fontAutoSize": false,
+            "textAlign": 4,
+            "paddingTop": 0,
+            "paddingRight": 0,
+            "paddingBottom": 0,
+            "paddingLeft": 0,
+            "lineSpacing": 0,
+            "outlineWidth": 0,
+            "outlineColor": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            },
+            "textColor": {
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "a": 1
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/sign_square.glb",
+            "visibleMeshesCollisionMask": 1,
+            "invisibleMeshesCollisionMask": 2
+          }
+        }
+      }
+    }
+  ]
+}

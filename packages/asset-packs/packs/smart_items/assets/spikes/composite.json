@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/spikes.glb"
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Actions",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "name": "Play Damage Sound",
+                "type": "play_sound",
+                "jsonPayload": "{ \"src\": \"{assetPath}/spikes.mp3\" }"
+              },
+              {
+                "name": "Damage",
+                "type": "damage",
+                "jsonPayload": "{ \"radius\": 5, \"hits\": 15, \"layer\": \"player\" }",
+                "basicViewId": "action-damage"
+              },
+              {
+                "name": "Start Damage",
+                "type": "start_loop",
+                "jsonPayload": "{ \"actions\": [\"Damage Batch\"], \"interval\": 2 }",
+                "basicViewId": "action-damage-interval",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Stop Damage",
+                "type": "stop_loop",
+                "jsonPayload": "{ \"action\": \"Damage Batch\" }",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Damage Batch",
+                "type": "batch",
+                "jsonPayload": "{ \"actions\": [\"Damage\", \"Play Damage Sound\"]}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Triggers",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "type": "on_player_enters_area",
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Start Damage"
+                  }
+                ]
+              },
+              {
+                "type": "on_player_leaves_area",
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Stop Damage"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "inspector::Config",
+      "data": {
+        "0": {
+          "json": {
+            "isBasicViewEnabled": true,
+            "componentName": "Spikes",
+            "fields": [
+              {
+                "name": "Damage",
+                "type": "asset-packs::Actions",
+                "basicViewId": "action-damage",
+                "layout": "{ \"layer\": { \"field\": \"Dropdown\", \"label\": \"Damage Target\" }, \"hits\": { \"field\": \"TextField\", \"type\": \"number\", \"label\": \"Damage Points\" } }"
+              },
+              {
+                "name": "Interval Damage",
+                "type": "asset-packs::Actions",
+                "basicViewId": "action-damage-interval",
+                "layout": "{\"interval\": { \"field\": \"RangeField\", \"label\": \"Damage Interval\", \"step\": \"0.1\" } }"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

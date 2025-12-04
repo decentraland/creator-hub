@@ -1,0 +1,8 @@
+{
+  "id": "be5dca1f-b16d-4625-8792-d0280db9ae23",
+  "name": "Generic Link",
+  "category": "social",
+  "tags": ["social", "links", "web", "website", "internet", "link", "contact"],
+  "description": "A clickable item that can open your Website in a browser window. Paste a Website URL in the 'URL' field.",
+  "author": "Decentraland Foundation"
+}

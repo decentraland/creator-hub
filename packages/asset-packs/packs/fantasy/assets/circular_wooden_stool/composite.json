@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Bench_Circular_01/Bench_Circular_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

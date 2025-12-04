@@ -1,0 +1,31 @@
+{
+  "id": "07f282ca-c7cf-457b-a4c1-b6ccd857568c",
+  "name": "Ancient Stone Path",
+  "category": "tiles",
+  "tags": [
+    "fantasy",
+    "nature",
+    "tile",
+    "rock",
+    "rocks",
+    "forest",
+    "path",
+    "arch",
+    "barrier",
+    "bridge",
+    "castle",
+    "column",
+    "construction",
+    "crossing",
+    "dirt",
+    "entrance",
+    "fortress",
+    "fountain",
+    "gate",
+    "gateway",
+    "gravel",
+    "keep"
+  ],
+  "caption": "Stone path from an ancient era.",
+  "author": "Decentraland Foundation"
+}

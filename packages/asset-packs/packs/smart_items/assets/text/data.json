@@ -1,0 +1,8 @@
+{
+  "id": "dd0d51c1-f16f-41c2-9bf1-735fe5b17dc4",
+  "name": "Text",
+  "category": "Text",
+  "tags": ["text", "message", "sign", "description", "label"],
+  "description": "2D text that can be placed at any position and orientation, not limited to surfaces.",
+  "author": "Decentraland Foundation"
+}

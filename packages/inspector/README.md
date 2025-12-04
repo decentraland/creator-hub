@@ -7,7 +7,7 @@ A React-based scene editor interface for Decentraland, providing a modular archi
 - **Entity Hierarchy**: Tree-based scene management with component operations
 - **Component Inspector**: Specialized editors for all component types
 - **Level Editor**: 3D scene visualization with Babylon.js
-- **Asset Management**: Local assets, custom items, and asset packs support
+- **Asset Management**: Local assets, custom items, and asset packs support (via `@dcl/asset-packs`)
 
 ## Quick Start
 
@@ -20,9 +20,11 @@ npx @dcl/sdk-commands start --data-layer --port 8001
 2. Serve the inspector (choose one method):
 
 ```bash
-# Method 1: Development server
-git clone https://github.com/decentraland/js-sdk-toolchain.git
-cd packages/@dcl/inspector
+# Method 1: Development server (from monorepo)
+git clone https://github.com/decentraland/creator-hub.git
+cd creator-hub
+make init
+cd packages/inspector
 npm start
 
 # Method 2: From node_modules
@@ -33,10 +35,50 @@ npx http-server node_modules/@dcl/inspector/public
 3. Access the Inspector:
 
 ```
-http://localhost:3000/?dataLayerRpcWsUrl=ws://127.0.0.1:8001/data-layer
+http://localhost:8000/?dataLayerRpcWsUrl=ws://127.0.0.1:8001/data-layer
 ```
 
-Where `http://localhost:3000` is the URL of the Inspector and `ws://127.0.0.1:8001/data-layer` is the WebSocket URL of the CLI server.
+Where `http://localhost:8000` is the URL of the Inspector and `ws://127.0.0.1:8001/data-layer` is the WebSocket URL of the CLI server.
+
+## Local Development with Asset Packs
+
+To develop the Inspector with local asset-packs integration:
+
+1. **Start the asset-packs dev environment:**
+   ```bash
+   cd packages/asset-packs
+   npm run start  # Starts SDK7 server on port 8001
+   ```
+
+2. **In another terminal, start the docker content server:**
+   ```bash
+   cd packages/asset-packs
+   docker-compose up  # Starts content server on port 9000
+   ```
+
+3. **In another terminal, upload assets to local content server:**
+   ```bash
+   cd packages/asset-packs
+   npm run upload  # Uploads to http://localhost:9000
+   ```
+
+4. **Start the Inspector dev server:**
+   ```bash
+   cd packages/inspector
+   npm start  # Starts on port 8000
+   ```
+
+5. **Configure the Inspector to use local asset-packs:**
+
+   Access the Inspector with these parameters:
+   ```
+   http://localhost:8000/?contentUrl=http://localhost:9000/asset-packs&binIndexJsUrl=http://localhost:8001/bin/index.js
+   ```
+
+   - `contentUrl`: Points to local content server for asset loading
+   - `binIndexJsUrl`: Points to local SDK7 dev server for Smart Items runtime
+
+See the [main README](../../README.md) for complete local development setup instructions.
 
 ## Integration
 
@@ -187,6 +229,14 @@ make test-inspector FILES="--watch packages/@dcl/inspector/src/path/to/some-test
    - Use in-memory implementation for unit tests
    - Mock RPC calls for integration testing
    - Test both WebSocket and IFrame transport
+
+## Dependencies
+
+The Inspector is part of the [Creator Hub monorepo](../..) and depends on:
+
+- **`@dcl/asset-packs`** - Asset packs and Smart Items runtime (located at `packages/asset-packs`)
+
+For local development with asset-packs integration, see the [main README](../../README.md) for setup instructions.
 
 ## Related Architecture Decisions
 

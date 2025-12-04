@@ -1,0 +1,22 @@
+{
+  "id": "8941e0cc-cbc2-4675-a795-fdcebec00538",
+  "name": "Mines Tunel Curve Half",
+  "category": "structures",
+  "tags": [
+    "arch",
+    "bend",
+    "curve",
+    "excavation",
+    "mine",
+    "mines",
+    "pipe",
+    "searchable",
+    "shape",
+    "slope",
+    "tunel",
+    "tunnel",
+    "tunneling"
+  ],
+  "caption": "Half-pipe tunnel with curved top.",
+  "author": "Decentraland Foundation"
+}

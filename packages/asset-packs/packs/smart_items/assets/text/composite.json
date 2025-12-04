@@ -1,0 +1,105 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::TextShape",
+      "data": {
+        "0": {
+          "json": {
+            "text": "Text",
+            "font": 2,
+            "fontSize": 6,
+            "fontAutoSize": true,
+            "textAlign": 4
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Sync-Components",
+      "data": {
+        "0": {
+          "json": {
+            "value": ["core::TextShape", "core::VisibilityComponent"]
+          }
+        }
+      }
+    },
+    {
+      "name": "inspector::Config",
+      "data": {
+        "0": {
+          "json": {
+            "isBasicViewEnabled": true,
+            "label": "Text Settings",
+            "sections": [
+              {
+                "id": "text-settings",
+                "items": [
+                  {
+                    "component": "core::TextShape",
+                    "widget": "TextArea",
+                    "label": "Text",
+                    "type": "text",
+                    "path": "text"
+                  }
+                ]
+              },
+              {
+                "id": "font-size-settings",
+                "items": [
+                  {
+                    "component": "core::TextShape",
+                    "widget": "TextField",
+                    "label": "Font Size",
+                    "type": "number",
+                    "path": "fontSize"
+                  },
+                  {
+                    "component": "core::TextShape",
+                    "widget": "CheckboxField",
+                    "label": "Auto-Size",
+                    "type": "boolean",
+                    "path": "fontAutoSize"
+                  }
+                ],
+                "columns": 2
+              },
+              {
+                "id": "color-align-settings",
+                "items": [
+                  {
+                    "component": "core::TextShape",
+                    "widget": "ColorField",
+                    "label": "Color",
+                    "type": "Color4",
+                    "path": "textColor",
+                    "props": {
+                      "basic": true
+                    },
+                    "transform": {
+                      "in": { "steps": [{ "op": "toHex" }] },
+                      "out": { "steps": [{ "op": "toColor4" }] }
+                    }
+                  },
+                  {
+                    "component": "core::TextShape",
+                    "widget": "Dropdown",
+                    "label": "Text align",
+                    "type": "text",
+                    "path": "textAlign",
+                    "dataSource": {
+                      "kind": "textAlign"
+                    }
+                  }
+                ],
+                "columns": 2
+              }
+            ],
+            "version": 2
+          }
+        }
+      }
+    }
+  ]
+}

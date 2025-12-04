@@ -1,0 +1,22 @@
+{
+  "id": "272274f1-0840-4c59-964e-0d56e3dae5f7",
+  "name": "Helipad",
+  "category": "structures",
+  "tags": [
+    "aquatic",
+    "fluid",
+    "helipad",
+    "indoor",
+    "lake",
+    "landing",
+    "liquid",
+    "ocean",
+    "pool",
+    "river",
+    "steps",
+    "swimming",
+    "water"
+  ],
+  "caption": "Indoor swimming pool with steps.",
+  "author": "Decentraland Foundation"
+}

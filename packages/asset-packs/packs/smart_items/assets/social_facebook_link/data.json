@@ -1,0 +1,8 @@
+{
+  "id": "b8f365c6-0a30-4c59-b25b-f9bc006df712",
+  "name": "Facebook Link",
+  "category": "social",
+  "tags": ["social", "links", "facebook"],
+  "description": "A clickable item that can open your Facebook page in a browser window. Paste a Facebook page URL in the 'URL' field.",
+  "author": "Decentraland Foundation"
+}

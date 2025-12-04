@@ -1,0 +1,8 @@
+{
+  "id": "9a391273-b30b-4f35-a1a3-83d17728c0ed",
+  "name": "Sword",
+  "category": "health",
+  "tags": ["health", "sword", "weapon"],
+  "description": "A sword that can be picked up by the player and used to deal damage to enemies when used together with the Health Bar smart item. Can also be used to break through the Wooden Fence smart item.",
+  "author": "Decentraland Foundation"
+}

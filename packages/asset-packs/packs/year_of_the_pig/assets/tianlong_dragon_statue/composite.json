@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/ChineseStatueDragon_01/ChineseStatueDragon_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

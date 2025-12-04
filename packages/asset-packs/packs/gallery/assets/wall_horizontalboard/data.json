@@ -1,0 +1,17 @@
+{
+  "id": "3e7afb1d-3108-475c-a343-57c7f33554a8",
+  "name": "Wall - HorizontalBoard",
+  "category": "decorations",
+  "tags": [
+    "appearance",
+    "board",
+    "composition",
+    "format",
+    "function",
+    "layout",
+    "structure",
+    "visual"
+  ],
+  "caption": "Horizontal game board with a grid.",
+  "author": "Decentraland Foundation"
+}

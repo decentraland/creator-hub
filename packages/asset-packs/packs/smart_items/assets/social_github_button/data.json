@@ -1,0 +1,8 @@
+{
+  "id": "2ac407f2-c23a-4cdc-9aa6-74aa55ca2baa",
+  "name": "Github Button",
+  "category": "social",
+  "tags": ["social", "links", "github"],
+  "description": "A clickable item that can open your Github page in a browser window. Paste a Github page URL in the 'URL' field.",
+  "author": "Decentraland Foundation"
+}

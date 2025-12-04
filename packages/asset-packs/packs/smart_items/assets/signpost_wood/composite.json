@@ -1,0 +1,99 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::Transform",
+      "data": {
+        "513": {
+          "json": {
+            "position": {
+              "x": -0.17984485626220703,
+              "y": 1.599052906036377,
+              "z": -0.1589517593383789
+            },
+            "rotation": {
+              "x": 0.027343448251485825,
+              "y": 0.7065778970718384,
+              "z": 0.027343440800905228,
+              "w": 0.7065778970718384
+            },
+            "scale": {
+              "x": 0.29281085729599,
+              "y": 0.29281085729599,
+              "z": 0.29281085729599
+            },
+            "parent": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "0": {
+          "json": {
+            "value": "Signpost Wood"
+          }
+        },
+        "513": {
+          "json": {
+            "value": "Text"
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Sync-Components",
+      "data": {
+        "513": {
+          "json": {
+            "componentIds": ["core::TextShape"]
+          }
+        }
+      }
+    },
+    {
+      "name": "core::TextShape",
+      "data": {
+        "513": {
+          "json": {
+            "text": "Your Text here",
+            "font": 2,
+            "fontSize": 4,
+            "fontAutoSize": false,
+            "textAlign": 4,
+            "paddingTop": 0,
+            "paddingRight": 0,
+            "paddingBottom": 0,
+            "paddingLeft": 0,
+            "lineSpacing": 0,
+            "outlineWidth": 0,
+            "outlineColor": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            },
+            "textColor": {
+              "r": 1,
+              "g": 0.8313725490196079,
+              "b": 0.8,
+              "a": 1
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/signpost.glb",
+            "visibleMeshesCollisionMask": 1,
+            "invisibleMeshesCollisionMask": 2
+          }
+        }
+      }
+    }
+  ]
+}

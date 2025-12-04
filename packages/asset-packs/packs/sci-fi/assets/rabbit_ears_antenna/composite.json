@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Antenna_03/Antenna_03.glb"
+          }
+        }
+      }
+    }
+  ]
+}

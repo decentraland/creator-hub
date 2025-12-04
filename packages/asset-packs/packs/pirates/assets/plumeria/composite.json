@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/JunglePlant_08/JunglePlant_08.glb"
+          }
+        }
+      }
+    }
+  ]
+}

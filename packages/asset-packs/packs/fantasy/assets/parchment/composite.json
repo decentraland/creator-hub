@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Parchement_01/Parchement_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

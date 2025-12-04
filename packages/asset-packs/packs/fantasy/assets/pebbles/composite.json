@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Rock_Patch_01/Rock_Patch_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

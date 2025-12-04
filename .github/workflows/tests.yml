@@ -25,6 +25,9 @@ jobs:
       - name: protoc
         run: make protoc
 
+      - name: build asset-packs
+        run: make build-asset-packs
+
       - name: test
         run: make test
 
@@ -59,6 +62,9 @@ jobs:
         with:
           name: protoc
           path: packages/inspector/src/lib/data-layer/proto/gen
+
+      - name: build asset-packs
+        run: make build-asset-packs
 
       - name: build inspector
         run: make build-inspector

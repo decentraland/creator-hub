@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Flower_02/Flower_02.glb"
+          }
+        }
+      }
+    }
+  ]
+}

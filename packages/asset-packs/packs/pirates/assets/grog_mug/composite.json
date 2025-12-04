@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/BeerMug_01/BeerMug_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

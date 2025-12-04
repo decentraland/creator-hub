@@ -1,0 +1,8 @@
+{
+  "id": "73f9d47b-bf93-4e1d-b60c-760ef3e977cb",
+  "name": "Robot Enemy",
+  "category": "health",
+  "tags": ["health", "enemy", "robot"],
+  "description": "A robot that can chase the player and cause damage. It can also be destroyed by the player. Use it together with the health bar smart item.",
+  "author": "Decentraland Foundation"
+}

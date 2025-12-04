@@ -6,6 +6,7 @@ Decentraland Creator Hub is an Electron-based application designed for creating,
 
 - **Create Scenes**: create new SDK7 scenes, they will be saved the user's file system.
 - **Edit Scenes**: the integrated `@dcl/inspector` allows visual editing and the scene is ran under the hood using `@dcl/sdk-commands` to allow previewing while editing.
+- **Asset Packs**: access curated collections of 3D assets and Smart Items via `@dcl/asset-packs`.
 - **Publish Scenes**: deploy scenes to Genesis City, Worlds, test or custom servers.
 - **Import Scenes**: import existing SDK7 scenes into the workspace.
 
@@ -130,6 +131,15 @@ The CI pipeline is configured to automate the release process for the Decentrala
    - The auto updater, as mentioned in the Update Process, will pick up this new release and update the production app.
 
 This streamlined process ensures that updates are consistently and accurately deployed to users.
+
+## Dependencies
+
+The Creator Hub is part of the [Creator Hub monorepo](../..) and integrates:
+
+- **`@dcl/inspector`** - Web-based 3D scene inspector (located at `packages/inspector`)
+- **`@dcl/asset-packs`** - Asset packs and Smart Items (located at `packages/asset-packs`)
+
+For local development setup, see the [main README](../../README.md) for instructions.
 
 ## Related Architecture Decisions
 

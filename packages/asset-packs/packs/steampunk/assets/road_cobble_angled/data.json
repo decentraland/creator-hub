@@ -1,0 +1,18 @@
+{
+  "id": "c3fe212d-f3c1-47e2-aa8b-707492866281",
+  "name": "Road Cobble Angled",
+  "category": "tiles",
+  "tags": [
+    "angled",
+    "block",
+    "cobble",
+    "cobblestone",
+    "pavement",
+    "paving",
+    "pavingblock",
+    "perspective",
+    "roadsurface"
+  ],
+  "caption": "Cobblestone paving blocks.",
+  "author": "Decentraland Foundation"
+}

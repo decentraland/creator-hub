@@ -1,0 +1,8 @@
+{
+  "id": "518b3900-2a0e-4570-b41e-72ea7019e80c",
+  "name": "Teleport",
+  "category": "utils",
+  "tags": ["teleport", "coordinates", "portal", "map", "travel", "location"],
+  "description": "A clickable item that can be used to teleport players to different locations in Decentraland.",
+  "author": "Decentraland Foundation"
+}

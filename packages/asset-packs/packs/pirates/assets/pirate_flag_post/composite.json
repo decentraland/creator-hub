@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Flag_01/Flag_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

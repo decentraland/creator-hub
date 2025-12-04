@@ -1,0 +1,138 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/barrel.glb"
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Actions",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "name": "Explode",
+                "type": "batch",
+                "jsonPayload": "{ \"actions\": [\"Play Explosion Animation\", \"Explosion Damage\", \"Delay Remove\"] }",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Play Explosion Animation",
+                "type": "play_animation",
+                "jsonPayload": "{ \"animation\": \"Animation\" }"
+              },
+              {
+                "name": "Explosion Damage",
+                "type": "damage",
+                "jsonPayload": "{ \"radius\": 10, \"hits\": 30, \"layer\": \"all\" }",
+                "basicViewId": "action-explosion-damage"
+              },
+              {
+                "name": "Damage",
+                "type": "decrease_counter",
+                "jsonPayload": "{ \"amount\": 1 }",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Remove",
+                "type": "remove_entity",
+                "jsonPayload": "{ }",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Delay Remove",
+                "type": "start_delay",
+                "jsonPayload": "{ \"actions\": [\"Remove\"], \"timeout\": 1 }"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Triggers",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "type": "on_damage",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::Counter}",
+                    "type": "when_counter_is_greater_than",
+                    "value": "0"
+                  }
+                ],
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Damage"
+                  }
+                ]
+              },
+              {
+                "type": "on_counter_change",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::Counter}",
+                    "type": "when_counter_is_less_than",
+                    "value": "1"
+                  }
+                ],
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Explode"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Counter",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": 30
+          }
+        }
+      }
+    },
+    {
+      "name": "inspector::Config",
+      "data": {
+        "0": {
+          "json": {
+            "isBasicViewEnabled": true,
+            "componentName": "Barrel",
+            "fields": [
+              {
+                "name": "Item Health Points",
+                "type": "asset-packs::Counter"
+              },
+              {
+                "name": "Explosion Damage",
+                "type": "asset-packs::Actions",
+                "basicViewId": "action-explosion-damage",
+                "layout": "{\"radius\": { \"field\": \"TextField\", \"type\": \"number\", \"label\": \"Explosion Radius\" }, \"hits\": { \"field\": \"TextField\", \"type\": \"number\", \"label\": \"Explosion Damage\" }, \"layer\": { \"field\": \"Dropdown\", \"label\": \"Damage Target\" }}"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

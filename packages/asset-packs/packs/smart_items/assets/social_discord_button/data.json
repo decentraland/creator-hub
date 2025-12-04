@@ -1,0 +1,8 @@
+{
+  "id": "ba1cc208-fd8a-4b5d-849c-8c5f02430af3",
+  "name": "Discord Button",
+  "category": "social",
+  "tags": ["social", "links", "discord"],
+  "description": "A clickable item that can open your Discord server in a browser window. Paste a Discord server URL in the 'URL' field.",
+  "author": "Decentraland Foundation"
+}

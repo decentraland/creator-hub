@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Cable_1M_Curve_02/Cable_1M_Curve_02.glb"
+          }
+        }
+      }
+    }
+  ]
+}

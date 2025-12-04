@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/healing_pad.glb"
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Actions",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "name": "Play Heal Sound",
+                "type": "play_sound",
+                "jsonPayload": "{ \"src\": \"{assetPath}/heal.mp3\" }"
+              },
+              {
+                "name": "Heal Player",
+                "type": "heal_player",
+                "jsonPayload": "{ \"multiplier\": 5 }",
+                "basicViewId": "action-heal-player"
+              },
+              {
+                "name": "Start Healing",
+                "type": "start_loop",
+                "jsonPayload": "{ \"actions\": [\"Heal Player\"], \"interval\": 0.5 }",
+                "basicViewId": "action-healing-interval",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Stop Healing",
+                "type": "stop_loop",
+                "jsonPayload": "{ \"action\": \"Heal Player\" }",
+                "allowedInBasicView": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Triggers",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "type": "on_player_enters_area",
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Start Healing"
+                  },
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Play Heal Sound"
+                  }
+                ],
+                "basicViewId": "trigger-when-start-healing"
+              },
+              {
+                "type": "on_player_leaves_area",
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Stop Healing"
+                  }
+                ],
+                "basicViewId": "trigger-when-stop-healing"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "inspector::Config",
+      "data": {
+        "0": {
+          "json": {
+            "isBasicViewEnabled": true,
+            "componentName": "Healing Pad",
+            "fields": [
+              {
+                "name": "Healing Points",
+                "type": "asset-packs::Actions",
+                "basicViewId": "action-heal-player",
+                "layout": "{\"multiplier\": { \"field\": \"TextField\", \"type\": \"number\", \"label\": \"Healing Points Amount\" } }"
+              },
+              {
+                "name": "Interval Healing",
+                "type": "asset-packs::Actions",
+                "basicViewId": "action-healing-interval",
+                "layout": "{\"interval\": { \"field\": \"RangeField\", \"label\": \"Healing Interval\", \"step\": \"0.1\" } }"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/LampForest_01/LampForest_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Ornament_Stone_Small_01/Ornament_Stone_Small_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

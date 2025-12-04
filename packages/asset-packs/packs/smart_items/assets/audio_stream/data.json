@@ -1,0 +1,8 @@
+{
+  "id": "1b0ea1b1-9672-4853-8aa1-5405473747d9",
+  "name": "Audio Stream",
+  "category": "media",
+  "tags": ["audio", "stream", "live", "music", "radio", "sound", "soundscape"],
+  "description": "A smart item that can be used to play audio from a live stream.",
+  "author": "Decentraland Foundation"
+}

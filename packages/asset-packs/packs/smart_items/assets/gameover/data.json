@@ -1,0 +1,8 @@
+{
+  "id": "305e4602-6d02-4b60-b029-5356d1ab684c",
+  "name": "Game Over",
+  "category": "text",
+  "tags": ["game mechanics", "defeat", "loss"],
+  "description": "3D text that can be displayed when a player loses or finishes a game. Invisible until triggered.",
+  "author": "Decentraland Foundation"
+}

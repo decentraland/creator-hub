@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/AirVent_Curve_02/AirVent_Curve_02.glb"
+          }
+        }
+      }
+    }
+  ]
+}

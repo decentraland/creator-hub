@@ -1,0 +1,8 @@
+{
+  "id": "6f5c4b28-f27c-4d30-836e-c6fd0b687727",
+  "name": "Teal Button",
+  "category": "buttons",
+  "tags": ["button", "teal", "activate", "switch", "toggle"],
+  "description": "A button that can be clicked to trigger actions on other smart items.",
+  "author": "Decentraland Foundation"
+}

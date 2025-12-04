@@ -1,0 +1,131 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/screen_splat.glb",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 3
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "0": {
+          "json": {
+            "value": "Video Screen Splatt"
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Sync-Components",
+      "data": {
+        "0": {
+          "json": {
+            "componentIds": ["core::GltfNodeModifiers", "core::VideoPlayer"]
+          }
+        }
+      }
+    },
+    {
+      "name": "core::VideoPlayer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "https://player.vimeo.com/external/552481870.m3u8?s=c312c8533f97e808fccc92b0510b085c8122a875",
+            "playing": true,
+            "volume": 1,
+            "loop": true
+          }
+        }
+      }
+    },
+    {
+      "name": "core::GltfNodeModifiers",
+      "data": {
+        "0": {
+          "json": {
+            "modifiers": [
+              {
+                "path": "",
+                "castShadows": true,
+                "material": {
+                  "material": {
+                    "$case": "unlit",
+                    "unlit": {
+                      "texture": {
+                        "tex": {
+                          "$case": "videoTexture",
+                          "videoTexture": {
+                            "videoPlayerEntity": 594,
+                            "wrapMode": 0,
+                            "filterMode": 0
+                          }
+                        }
+                      },
+                      "alphaTest": 0.5,
+                      "castShadows": true,
+                      "alphaTexture": {
+                        "tex": {
+                          "$case": "texture",
+                          "texture": {
+                            "src": "",
+                            "wrapMode": 0,
+                            "filterMode": 0,
+                            "offset": {
+                              "x": 0,
+                              "y": 0
+                            },
+                            "tiling": {
+                              "x": 1,
+                              "y": 1
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::VideoScreen",
+      "data": {
+        "0": {
+          "json": {
+            "thumbnail": "https://boedo.casla",
+            "defaultMediaSource": 0,
+            "defaultURL": "https://player.vimeo.com/external/552481870.m3u8?s=c312c8533f97e808fccc92b0510b085c8122a875"
+          }
+        }
+      }
+    },
+    {
+      "name": "inspector::Config",
+      "data": {
+        "0": {
+          "json": {
+            "isBasicViewEnabled": true,
+            "componentName": "Video Screen",
+            "fields": [
+              {
+                "name": "Config",
+                "type": "asset-packs::VideoScreen"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

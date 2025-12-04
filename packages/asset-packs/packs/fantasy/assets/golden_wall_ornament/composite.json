@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Ornament_01/Ornament_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

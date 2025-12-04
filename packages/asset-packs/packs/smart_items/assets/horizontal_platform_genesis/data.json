@@ -1,0 +1,8 @@
+{
+  "id": "17ac4bbb-6fd5-4c55-a586-b08644a1a059",
+  "name": "Horizontal Platform Genesis",
+  "category": "platforms",
+  "tags": ["platform", "horizontal", "interactive", "floating", "elevator", "lift"],
+  "description": "A horizontal platform that moves back and forth. Players can jump on it to reach places.",
+  "author": "Decentraland Foundation"
+}

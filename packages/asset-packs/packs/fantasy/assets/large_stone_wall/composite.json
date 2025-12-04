@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Wall_Stone_Large/Wall_Stone_Large.glb"
+          }
+        }
+      }
+    }
+  ]
+}

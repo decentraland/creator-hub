@@ -1,0 +1,8 @@
+{
+  "id": "01755507-25f6-48c6-92da-5cdf9bd2b183",
+  "name": "Cone",
+  "category": "primitives",
+  "tags": ["cone", "primitive", "shape"],
+  "description": "A primitive cone. You can apply any color or texture to it.",
+  "author": "Decentraland Foundation"
+}

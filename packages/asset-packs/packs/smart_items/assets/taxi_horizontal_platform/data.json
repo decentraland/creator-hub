@@ -1,0 +1,8 @@
+{
+  "id": "8d0cc5fb-6ed7-4452-9524-91f0e88ba77a",
+  "name": "Taxi Horizontal Platform",
+  "category": "platforms",
+  "tags": ["platform", "horizontal", "interactive", "taxi", "vehicle"],
+  "description": "A horizontal platform that looks like a taxi. Players can stand on it to move back and forth.",
+  "author": "Decentraland Foundation"
+}

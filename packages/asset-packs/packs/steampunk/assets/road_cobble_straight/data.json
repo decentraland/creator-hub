@@ -1,0 +1,19 @@
+{
+  "id": "36c28c69-e943-416a-9f73-c1ab82944c23",
+  "name": "Road Cobble Straight",
+  "category": "tiles",
+  "tags": [
+    "asphalt",
+    "cobble",
+    "cobblestone",
+    "highway",
+    "landscape",
+    "path",
+    "pavement",
+    "roadblock",
+    "straight",
+    "terrain"
+  ],
+  "caption": "Cobblestone road with straight sections.",
+  "author": "Decentraland Foundation"
+}

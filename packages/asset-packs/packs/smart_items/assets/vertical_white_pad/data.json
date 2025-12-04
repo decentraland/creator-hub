@@ -1,0 +1,8 @@
+{
+  "id": "ef85eb18-f69c-431c-bcfd-dd51d70a604f",
+  "name": "Vertical White Pad",
+  "category": "platforms",
+  "tags": ["platform", "vertical", "interactive", "white", "pad", "elevator", "lift"],
+  "description": "A vertical platform that moves up and down. Players can jump on it to reach higher places.",
+  "author": "Decentraland Foundation"
+}

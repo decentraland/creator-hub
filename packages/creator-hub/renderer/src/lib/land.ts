@@ -1,4 +1,4 @@
-import { fromUnixTime } from 'date-fns/fromUnixTime';
+import fromUnixTime from 'date-fns/fromUnixTime';
 import { config } from '/@/config';
 
 // TheGraph has a limit of a maximum of 1000 results per entity per query

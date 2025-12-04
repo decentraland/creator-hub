@@ -1,0 +1,8 @@
+{
+  "id": "aef92255-eaa4-4f36-9f08-8b1784ae2725",
+  "name": "YouTube Link",
+  "category": "social",
+  "tags": ["social", "links", "youtube"],
+  "description": "A clickable item that can open your YouTube page in a browser window. Paste a YouTube page URL in the 'URL' field.",
+  "author": "Decentraland Foundation"
+}

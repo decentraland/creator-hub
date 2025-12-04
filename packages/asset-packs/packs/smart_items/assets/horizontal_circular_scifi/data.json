@@ -1,0 +1,18 @@
+{
+  "id": "03099c99-49ff-4880-9e80-095273bb08f6",
+  "name": "Horizontal Circular SciFi Platform",
+  "category": "platforms",
+  "tags": [
+    "platform",
+    "horizontal",
+    "interactive",
+    "floating",
+    "elevator",
+    "lift",
+    "smart",
+    "sci-fi",
+    "circular"
+  ],
+  "description": "A circular platform that moves up and down. Players can jump on it to reach higher places.",
+  "author": "Decentraland Foundation"
+}

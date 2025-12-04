@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/TreasureCoins_01/TreasureCoins_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "id": "2a936e8c-3a69-4a5d-afea-a7e852068b66",
+  "name": "Cube",
+  "category": "primitives",
+  "tags": ["cube", "primitive", "shape"],
+  "description": "A primitive cube. You can apply any color or texture to it.",
+  "author": "Decentraland Foundation"
+}

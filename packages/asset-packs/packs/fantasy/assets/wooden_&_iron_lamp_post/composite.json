@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Lamp_Street_01/Lamp_Street_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

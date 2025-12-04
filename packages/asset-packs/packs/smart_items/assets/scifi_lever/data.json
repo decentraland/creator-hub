@@ -1,0 +1,8 @@
+{
+  "id": "0764e129-9fff-4158-98f0-6db8665dcf7b",
+  "name": "SciFi Lever",
+  "category": "levers",
+  "tags": ["lever", "handle", "pull", "push", "open", "close", "sci-fi"],
+  "description": "A lever that can be pulled or pushed to trigger actions on other smart items.",
+  "author": "Decentraland Foundation"
+}

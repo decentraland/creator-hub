@@ -1,0 +1,18 @@
+{
+  "id": "df06cace-c363-4a08-acdb-72abd2138696",
+  "name": "You Win",
+  "category": "text",
+  "tags": [
+    "game mechanics",
+    "victory",
+    "celebration",
+    "announcement",
+    "announce",
+    "notification",
+    "win",
+    "you win",
+    "win screen"
+  ],
+  "description": "3D text that can be displayed when a player wins a game. Invisible until triggered.",
+  "author": "Decentraland Foundation"
+}

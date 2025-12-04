@@ -1,0 +1,8 @@
+{
+  "id": "5278b211-26e0-4060-982a-1983abb3bf04",
+  "name": "X Link",
+  "category": "social",
+  "tags": ["social", "links", "twitter", "x"],
+  "description": "A clickable item that opens your X page in a browser window. Paste an X URL in the ‘URL’ field.",
+  "author": "Decentraland Foundation"
+}

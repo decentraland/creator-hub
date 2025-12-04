@@ -1,0 +1,8 @@
+{
+  "id": "534ba1b7-7e5b-4aeb-905a-f155de4b7c6a",
+  "name": "Vertical Red Pad",
+  "category": "platforms",
+  "tags": ["platform", "vertical", "interactive", "red", "pad", "elevator", "lift"],
+  "description": "A vertical platform that moves up and down. Players can jump on it to reach higher places.",
+  "author": "Decentraland Foundation"
+}

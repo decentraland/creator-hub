@@ -1,0 +1,20 @@
+{
+  "id": "4432e823-05c8-4a95-aaae-0fe2742765ef",
+  "name": "Road Cobble T",
+  "category": "tiles",
+  "tags": [
+    "asphalt",
+    "cobble",
+    "cobblestone",
+    "dirt",
+    "earth",
+    "gravel",
+    "highway",
+    "landscape",
+    "path",
+    "pavement",
+    "terrain"
+  ],
+  "caption": "Old cobblestone road.",
+  "author": "Decentraland Foundation"
+}

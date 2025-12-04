@@ -1,0 +1,23 @@
+{
+  "id": "1c766509-b044-4486-9b66-f046b32a0300",
+  "name": "Bus Stop",
+  "category": "structures",
+  "tags": [
+    "bench",
+    "bus",
+    "facility",
+    "infrastructure",
+    "outdoor",
+    "passenger",
+    "public",
+    "shelter",
+    "station",
+    "stop",
+    "transportation",
+    "trash",
+    "urban",
+    "vehicle"
+  ],
+  "caption": "Bus stop with bench and trash can.",
+  "author": "Decentraland Foundation"
+}

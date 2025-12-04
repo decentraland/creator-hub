@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/first_aid.glb"
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Actions",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "name": "Heal Player",
+                "type": "heal_player",
+                "jsonPayload": "{ \"multiplier\": 100 }",
+                "basicViewId": "action-heal-player"
+              },
+              {
+                "name": "Remove",
+                "type": "remove_entity",
+                "jsonPayload": "{ }",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Heal",
+                "type": "batch",
+                "jsonPayload": "{ \"actions\": [\"Heal Player\", \"Remove\"] }",
+                "allowedInBasicView": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Triggers",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "type": "on_input_action",
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Heal"
+                  }
+                ],
+                "basicViewId": "trigger-when-clicked"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "inspector::Config",
+      "data": {
+        "0": {
+          "json": {
+            "isBasicViewEnabled": true,
+            "componentName": "First Aid",
+            "fields": [
+              {
+                "name": "Healing Points",
+                "type": "asset-packs::Actions",
+                "basicViewId": "action-heal-player",
+                "layout": "{\"multiplier\": { \"field\": \"TextField\", \"type\": \"number\", \"label\": \"Healing Points Amount\" } }"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

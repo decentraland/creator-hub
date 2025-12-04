@@ -1,0 +1,8 @@
+{
+  "id": "03bdce84-a242-49d2-9d10-fadb9b07d15e",
+  "name": "Reddit Link",
+  "category": "social",
+  "tags": ["social", "links", "reddit"],
+  "description": "A clickable item that can open your Reddit page in a browser window. Paste a Reddit page URL in the 'URL' field.",
+  "author": "Decentraland Foundation"
+}

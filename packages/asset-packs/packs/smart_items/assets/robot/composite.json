@@ -1,0 +1,201 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/robot.glb"
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Actions",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "name": "Die",
+                "type": "batch",
+                "jsonPayload": "{ \"actions\": [\"Play Explosion Animation\", \"Stop Attack Loop\", \"Delay Remove\"] }",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Follow",
+                "type": "follow_player",
+                "jsonPayload": "{ \"speed\": 1, \"minDistance\": 2, \"x\": true, \"y\": false, \"z\": true }",
+                "basicViewId": "action-follow-player",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Stop Following Player",
+                "type": "stop_following_player",
+                "jsonPayload": "{ }",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Play Attack Animation",
+                "type": "play_animation",
+                "jsonPayload": "{ \"animation\": \"Attack\" }"
+              },
+              {
+                "name": "Attack",
+                "type": "damage",
+                "jsonPayload": "{ \"radius\": 3, \"hits\": 10, \"layer\": \"player\" }",
+                "basicViewId": "action-attack",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Attack Loop",
+                "type": "start_loop",
+                "jsonPayload": "{ \"actions\": [\"Attack\"], \"interval\": 1 }"
+              },
+              {
+                "name": "Damage",
+                "type": "decrease_counter",
+                "jsonPayload": "{ \"amount\": 1 }",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Remove",
+                "type": "remove_entity",
+                "jsonPayload": "{ }"
+              },
+              {
+                "name": "Delay Remove",
+                "type": "start_delay",
+                "jsonPayload": "{ \"actions\": [\"Remove\"], \"timeout\": 0.5 }"
+              },
+              {
+                "name": "Play Explosion Animation",
+                "type": "play_animation",
+                "jsonPayload": "{ \"animation\": \"explode\" }"
+              },
+              {
+                "name": "Stop Attack Loop",
+                "type": "stop_loop",
+                "jsonPayload": "{ \"action\": \"Damage\" }"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Triggers",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "type": "on_spawn",
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Follow"
+                  },
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Attack Loop"
+                  }
+                ]
+              },
+              {
+                "type": "on_loop",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "type": "when_distance_to_player_less_than",
+                    "value": "3"
+                  }
+                ],
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Play Attack Animation"
+                  }
+                ]
+              },
+              {
+                "type": "on_damage",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::Counter}",
+                    "type": "when_counter_is_greater_than",
+                    "value": "0"
+                  }
+                ],
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Damage"
+                  }
+                ]
+              },
+              {
+                "type": "on_counter_change",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::Counter}",
+                    "type": "when_counter_is_less_than",
+                    "value": "1"
+                  }
+                ],
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Die"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Counter",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": 30
+          }
+        }
+      }
+    },
+    {
+      "name": "inspector::Config",
+      "data": {
+        "0": {
+          "json": {
+            "isBasicViewEnabled": true,
+            "componentName": "Robot Enemy",
+            "fields": [
+              {
+                "name": "Item Health Points",
+                "type": "asset-packs::Counter"
+              },
+              {
+                "name": "Attack Damage",
+                "type": "asset-packs::Actions",
+                "basicViewId": "action-attack",
+                "layout": "{\"radius\": { \"field\": \"TextField\", \"type\": \"number\", \"label\": \"Attack Radius\" }, \"hits\": { \"field\": \"TextField\", \"type\": \"number\", \"label\": \"Attack Damage Points\" }, \"layer\": { \"field\": \"Dropdown\", \"label\": \"Damage Target\" } }"
+              },
+              {
+                "name": "Speed",
+                "type": "asset-packs::Actions",
+                "basicViewId": "action-follow-player",
+                "layout": "{\"speed\": { \"field\": \"TextField\", \"type\": \"number\" } }"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

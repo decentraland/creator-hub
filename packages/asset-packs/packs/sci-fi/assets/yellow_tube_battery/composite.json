@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Battery_01/Battery_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

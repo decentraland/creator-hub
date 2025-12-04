@@ -1,0 +1,8 @@
+{
+  "id": "ea5b9544-2ddd-4eba-ba91-41f6cf0b34df",
+  "name": "Stone Trapdoor",
+  "category": "doors",
+  "tags": ["door", "trap", "interactive"],
+  "description": "A trapdoor that can only be opened or closed by another smart item (e.g. a trigger area or button), not by direct player clicks.",
+  "author": "Decentraland Foundation"
+}

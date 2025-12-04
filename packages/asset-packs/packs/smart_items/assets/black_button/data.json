@@ -1,0 +1,8 @@
+{
+  "id": "2e1c4446-c99a-4698-9e13-819d232ca849",
+  "name": "Black Button",
+  "category": "buttons",
+  "tags": ["button", "switch", "toggle", "activate"],
+  "description": "A black button that can be clicked to trigger actions on other smart items.",
+  "author": "Decentraland Foundation"
+}

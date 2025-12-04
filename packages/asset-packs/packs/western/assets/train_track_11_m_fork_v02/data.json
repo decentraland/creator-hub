@@ -1,0 +1,21 @@
+{
+  "id": "481601e6-2c48-4cba-b30f-b5d0409bcc60",
+  "name": "Train Track 11 M Fork V02",
+  "category": "tiles",
+  "tags": [
+    "angle",
+    "crossing",
+    "fork",
+    "highway",
+    "intersection",
+    "junction",
+    "rail",
+    "railroad",
+    "railway",
+    "track",
+    "tracks",
+    "train"
+  ],
+  "caption": "Railroad crossing with intersecting tracks.",
+  "author": "Decentraland Foundation"
+}

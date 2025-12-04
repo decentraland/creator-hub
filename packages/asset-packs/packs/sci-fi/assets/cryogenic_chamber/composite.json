@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/CrygenicChamberTop_01/CrygenicChamberTop_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,223 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::Animator",
+      "data": {
+        "0": {
+          "json": {
+            "states": []
+          }
+        }
+      }
+    },
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Parrot.glb",
+            "visibleMeshesCollisionMask": 1,
+            "invisibleMeshesCollisionMask": 2
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "0": {
+          "json": {
+            "value": "Parrot_3"
+          }
+        }
+      }
+    },
+    {
+      "name": "core::PointerEvents",
+      "data": {
+        "0": {
+          "json": {
+            "pointerEvents": [
+              {
+                "eventType": 1,
+                "eventInfo": {
+                  "button": 1,
+                  "hoverText": "Poke",
+                  "maxDistance": 10,
+                  "showFeedback": true
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Sync-Components",
+      "data": {
+        "0": {
+          "json": {
+            "componentIds": ["core::Animator", "core::AudioSource", "asset-packs::States"]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Actions",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "name": "Play Activate Animation",
+                "type": "play_animation",
+                "jsonPayload": "{\"animation\":\"activate\"}"
+              },
+              {
+                "name": "Play Sound",
+                "type": "play_sound",
+                "jsonPayload": "{\"src\":\"{assetPath}/siren.mp3\"}"
+              },
+              {
+                "type": "play_sound",
+                "name": "Loop Sound",
+                "jsonPayload": "{\"src\":\"{assetPath}/siren.mp3\",\"loop\":true}"
+              },
+              {
+                "type": "play_animation",
+                "name": "Loop Animation",
+                "jsonPayload": "{\"animation\":\"activate\",\"loop\":true}"
+              },
+              {
+                "type": "stop_animation",
+                "name": "Stop Animation",
+                "jsonPayload": "{}"
+              },
+              {
+                "type": "stop_sound",
+                "name": "Stop Sound",
+                "jsonPayload": "{}"
+              },
+              {
+                "type": "set_state",
+                "name": "Trigger",
+                "jsonPayload": "{\"state\":\"Triggered\"}",
+                "allowedInBasicView": true
+              },
+              {
+                "type": "set_state",
+                "name": "Disarm",
+                "jsonPayload": "{\"state\":\"Silent\"}",
+                "allowedInBasicView": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Triggers",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "type": "on_input_action",
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Play Activate Animation"
+                  },
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Play Sound"
+                  }
+                ],
+                "basicViewId": "trigger-when-clicked",
+                "conditions": []
+              },
+              {
+                "type": "on_state_change",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::States}",
+                    "type": "when_state_is",
+                    "value": "Silent"
+                  }
+                ],
+                "operation": "and",
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Stop Sound"
+                  },
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Stop Animation"
+                  }
+                ]
+              },
+              {
+                "type": "on_state_change",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::States}",
+                    "type": "when_state_is",
+                    "value": "Triggered"
+                  }
+                ],
+                "operation": "and",
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Loop Sound"
+                  },
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Loop Animation"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::States",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": ["Silent", "Triggered"],
+            "defaultValue": "Silent"
+          }
+        }
+      }
+    },
+    {
+      "name": "inspector::Config",
+      "data": {
+        "0": {
+          "json": {
+            "isBasicViewEnabled": true,
+            "componentName": "Parrot",
+            "fields": [
+              {
+                "name": "Hover Text",
+                "type": "core::PointerEvents"
+              },
+              {
+                "name": "When Clicked",
+                "type": "asset-packs::Triggers",
+                "basicViewId": "trigger-when-clicked"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

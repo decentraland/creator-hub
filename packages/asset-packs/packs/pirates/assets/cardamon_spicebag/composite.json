@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Spicesbag_01/Spicesbag_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

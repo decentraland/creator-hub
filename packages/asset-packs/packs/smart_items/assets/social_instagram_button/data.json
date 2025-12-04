@@ -1,0 +1,8 @@
+{
+  "id": "723848029-b2b3-47fd-8ae1-1424903dd7bb",
+  "name": "Instagram Button",
+  "category": "social",
+  "tags": ["social", "links", "instagram"],
+  "description": "A clickable item that can open your Instagram page in a browser window. Paste a Instagram page URL in the 'URL' field.",
+  "author": "Decentraland Foundation"
+}

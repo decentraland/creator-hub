@@ -1,0 +1,8 @@
+{
+  "id": "6a1e54df-27cb-4099-99b9-26a2188246ab",
+  "name": "Vertical SciFi Door",
+  "category": "doors",
+  "tags": ["door", "scifi", "hallway", "sliding", "interactive", "space ship", "spaceship"],
+  "description": "A massive sci-fi door that opens and closes vertically when clicked by a player.",
+  "author": "Decentraland Foundation"
+}

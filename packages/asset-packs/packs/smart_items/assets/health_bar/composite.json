@@ -1,0 +1,150 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/health-bar.glb",
+            "invisibleMeshesCollisionMask": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "core::VisibilityComponent",
+      "data": {
+        "0": {
+          "json": {
+            "visible": false
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Actions",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "name": "Heal",
+                "type": "increment_counter",
+                "jsonPayload": "{ \"amount\": 1 }",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Damage",
+                "type": "decrease_counter",
+                "jsonPayload": "{ \"amount\": 1 }",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Reset",
+                "type": "set_counter",
+                "jsonPayload": "{ \"counter\": 100 }",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Remove",
+                "type": "remove_entity",
+                "jsonPayload": "{}",
+                "allowedInBasicView": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Triggers",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "type": "on_damage",
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Damage"
+                  }
+                ],
+                "basicViewId": "trigger-when-damaged"
+              },
+              {
+                "type": "on_heal_player",
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Heal"
+                  }
+                ],
+                "basicViewId": "trigger-when-healed"
+              },
+              {
+                "type": "on_counter_change",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::Counter}",
+                    "type": "when_counter_is_less_than",
+                    "value": "1"
+                  }
+                ],
+                "actions": [],
+                "basicViewId": "trigger-when-health-reaches-zero"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Counter",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": 100
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::CounterBar",
+      "data": {
+        "0": {
+          "json": {
+            "maxValue": 100,
+            "primaryColor": "#00FF00",
+            "secondaryColor:": "#FF0000"
+          }
+        }
+      }
+    },
+    {
+      "name": "inspector::Config",
+      "data": {
+        "0": {
+          "json": {
+            "isBasicViewEnabled": true,
+            "componentName": "Health Bar",
+            "fields": [
+              {
+                "name": "Health Points",
+                "type": "asset-packs::Counter"
+              },
+              {
+                "name": "When Health Reaches Zero",
+                "type": "asset-packs::Triggers",
+                "basicViewId": "trigger-when-health-reaches-zero"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

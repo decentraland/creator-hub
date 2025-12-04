@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Chest_Top_01/Chest_Top_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

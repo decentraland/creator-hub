@@ -1,0 +1,20 @@
+{
+  "id": "16f2ad21-56ab-4d28-bcce-f818cd390fcf",
+  "name": "Road Angle",
+  "category": "tiles",
+  "tags": [
+    "angle",
+    "bend",
+    "curve",
+    "gradient",
+    "incline",
+    "landscape",
+    "scene",
+    "setting",
+    "slope",
+    "terrain",
+    "turn"
+  ],
+  "caption": "Road segment with sharp turn.",
+  "author": "Decentraland Foundation"
+}

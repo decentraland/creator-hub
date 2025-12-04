@@ -1,0 +1,131 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::Animator",
+      "data": {
+        "0": {
+          "json": {
+            "states": [
+              {
+                "clip": "Play",
+                "playing": false,
+                "weight": 1,
+                "speed": 1,
+                "loop": false,
+                "shouldReset": false
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/firework_02.glb",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "0": {
+          "json": {
+            "value": "firework"
+          }
+        }
+      }
+    },
+    {
+      "name": "core::VisibilityComponent",
+      "data": {
+        "0": {
+          "json": {
+            "visible": false
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Actions",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "name": "Shoot",
+                "type": "batch",
+                "jsonPayload": "{\"actions\":[\"Launch Sound\",\"Play Animation\",\"Delayed Explode sound\",\"Visible\",\"Delay Invisible\"]}",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Launch Sound",
+                "type": "play_sound",
+                "jsonPayload": "{\"src\":\"{assetPath}/fireworklaunch.mp3\"}"
+              },
+              {
+                "name": "Play Animation",
+                "type": "play_animation",
+                "jsonPayload": "{\"animation\":\"Play\"}"
+              },
+              {
+                "name": "Explode sound",
+                "type": "play_sound",
+                "jsonPayload": "{\"src\":\"{assetPath}/fireworkexplode.mp3\"}"
+              },
+              {
+                "name": "Delayed Explode sound",
+                "type": "start_delay",
+                "jsonPayload": "{\"actions\":[\"Explode sound\"],\"timeout\":1.3}"
+              },
+              {
+                "type": "set_visibility",
+                "name": "Visible",
+                "jsonPayload": "{\"visible\":true,\"collider\":0}"
+              },
+              {
+                "type": "set_visibility",
+                "name": "Invisible",
+                "jsonPayload": "{\"visible\":false,\"collider\":0}"
+              },
+              {
+                "type": "start_delay",
+                "name": "Delay Invisible",
+                "jsonPayload": "{\"actions\":[\"Invisible\"],\"timeout\":5}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "inspector::Config",
+      "data": {
+        "0": {
+          "json": {
+            "isBasicViewEnabled": true,
+            "componentName": "Firework",
+            "fields": []
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Sync-Components",
+      "data": {
+        "0": {
+          "json": {
+            "componentIds": ["core::Animator", "core::VisibilityComponent", "core::AudioSource"]
+          }
+        }
+      }
+    }
+  ]
+}

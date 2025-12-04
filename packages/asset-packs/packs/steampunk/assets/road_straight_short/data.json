@@ -1,0 +1,21 @@
+{
+  "id": "b30392a6-02dc-473e-9eb5-a1f67f972bfe",
+  "name": "Road Straight Short",
+  "category": "tiles",
+  "tags": [
+    "asphalt",
+    "highway",
+    "infrastructure",
+    "lane",
+    "path",
+    "pavement",
+    "roadblock",
+    "roadsign",
+    "roadway",
+    "route",
+    "straight",
+    "traffic"
+  ],
+  "caption": "Short straight road.",
+  "author": "Decentraland Foundation"
+}

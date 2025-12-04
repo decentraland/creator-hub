@@ -1,0 +1,8 @@
+{
+  "id": "96962ba6-c1b9-44d7-b025-dce3418ecf09",
+  "name": "Sphere",
+  "category": "primitives",
+  "tags": ["sphere", "shape", "3d"],
+  "description": "A sphere that can be used to create a 3D shape. You can apply any color or texture to it.",
+  "author": "Decentraland Foundation"
+}

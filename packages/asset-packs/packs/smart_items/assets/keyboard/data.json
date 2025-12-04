@@ -1,0 +1,8 @@
+{
+  "id": "c59f669b-47a3-491c-9abf-c5bdc05f3b2b",
+  "name": "Keyboard",
+  "category": "buttons",
+  "tags": ["keyboard", "button", "switch", "toggle", "activate"],
+  "description": "A keyboard that can be clicked to trigger actions on other smart items.",
+  "author": "Decentraland Foundation"
+}

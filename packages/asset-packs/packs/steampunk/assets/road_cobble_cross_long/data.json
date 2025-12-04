@@ -1,0 +1,21 @@
+{
+  "id": "bfff3e0c-3958-46ac-99d4-0724429a90d9",
+  "name": "Road Cobble Cross Long",
+  "category": "tiles",
+  "tags": [
+    "cobble",
+    "cobblestone",
+    "crossing",
+    "crosswalk",
+    "intersection",
+    "path",
+    "pavement",
+    "pedestrian",
+    "sidewalk",
+    "traffic",
+    "urban",
+    "walkway"
+  ],
+  "caption": "Cobblestone street crossing.",
+  "author": "Decentraland Foundation"
+}

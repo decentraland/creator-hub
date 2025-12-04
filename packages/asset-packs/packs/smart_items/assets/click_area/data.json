@@ -1,0 +1,8 @@
+{
+  "id": "846479b0-75d3-450d-bbd6-7e6b3355a7a2",
+  "name": "Click Area",
+  "category": "utils",
+  "tags": ["click", "area", "interaction", "trigger", "invisible", "clickable"],
+  "description": "An invisible area that, when clicked by a player, can trigger actions in other smart items",
+  "author": "Decentraland Foundation"
+}

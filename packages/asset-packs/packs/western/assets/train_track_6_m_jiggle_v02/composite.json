@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Train Track 6 M Jiggle V02.glb"
+          }
+        }
+      }
+    }
+  ]
+}

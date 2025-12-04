@@ -1,0 +1,8 @@
+{
+  "id": "ecbf56cc-bab9-43bc-a0bf-509dd92f857e",
+  "name": "WeChat Button",
+  "category": "social",
+  "tags": ["social", "links", "wechat"],
+  "description": "A clickable item that can open your WeChat page in a browser window. Paste a WeChat page URL in the 'URL' field.",
+  "author": "Decentraland Foundation"
+}

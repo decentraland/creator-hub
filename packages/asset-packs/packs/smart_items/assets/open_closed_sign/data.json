@@ -1,0 +1,8 @@
+{
+  "id": "d2dbef38-375f-485d-b5a1-51f46f5b3df8",
+  "name": "Open/Closed Sign",
+  "category": "Text",
+  "tags": ["sign", "open", "closed"],
+  "description": "A sign that can swap between displaying 'Open' or 'Closed' when clicked.",
+  "author": "Decentraland Foundation"
+}
