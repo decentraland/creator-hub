@@ -36,6 +36,7 @@ import { AdminToolkitView } from './AdminToolkitView';
 import { RewardInspector } from './RewardInspector';
 import { LightSourceInspector } from './LightSourceInspector';
 import { GltfNodeModifiersInspector } from './GltfNodeModifiersInspector';
+import { TagsInspector } from './TagsInspector';
 
 import './EntityInspector.css';
 
@@ -60,7 +61,10 @@ export function EntityInspector() {
 const MultiEntityInspector = withSdk<{ entities: Entity[] }>(({ sdk, entities }) => {
   const hiddenComponents = useAppSelector(getHiddenComponents);
   const inspectors = useMemo(
-    () => [{ name: sdk.components.Transform.componentName, component: TransformInspector }],
+    () => [
+      { name: sdk.components.Tags.componentName, component: TagsInspector },
+      { name: sdk.components.Transform.componentName, component: TransformInspector },
+    ],
     [sdk],
   );
 

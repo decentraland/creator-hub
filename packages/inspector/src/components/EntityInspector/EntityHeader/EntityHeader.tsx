@@ -329,7 +329,7 @@ export default React.memo(
                 </span>
               </div>
             )}
-            <TagsInspector entity={entity} />
+            <TagsInspector entities={[entity]} />
           </Container>
         )}
       </div>
