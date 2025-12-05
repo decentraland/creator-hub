@@ -43,6 +43,7 @@ const AxisHelper = withSdk(({ sdk }) => {
     <div className="AxisHelper">
       <canvas
         ref={canvasRef}
+        id="axis-helper-canvas"
         className="AxisHelperCanvas"
       />
     </div>
