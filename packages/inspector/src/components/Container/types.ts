@@ -7,6 +7,5 @@ export type Props = {
   border?: boolean;
   gap?: boolean;
   variant?: 'minimal';
-  style?: React.CSSProperties;
   onRemoveContainer?: () => void;
 };
