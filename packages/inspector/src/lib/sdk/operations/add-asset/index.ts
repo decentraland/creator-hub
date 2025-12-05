@@ -357,6 +357,14 @@ export function addAsset(engine: IEngine) {
               });
               break;
             }
+            case EditorComponentNames.Script: {
+              const newValue = componentValue.value.map((scriptItem: any) => ({
+                ...scriptItem,
+                path: scriptItem.path.replace('{assetPath}', base),
+              }));
+              componentValue = { ...componentValue, value: newValue };
+              break;
+            }
           }
 
           if (componentName === CoreComponents.TRANSFORM || componentName === Name.componentName) {

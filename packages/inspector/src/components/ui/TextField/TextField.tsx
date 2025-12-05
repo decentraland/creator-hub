@@ -4,7 +4,7 @@ import cx from 'classnames';
 import { debounce } from '../../../lib/utils/debounce';
 import { Message, MessageType } from '../Message';
 import { Label } from '../Label';
-import { Props } from './types';
+import type { Props } from './types';
 
 import './TextField.css';
 
@@ -20,7 +20,6 @@ function buildBlurEvent(event: React.MouseEvent<HTMLInputElement>) {
 
 const TextField = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
   const {
-    drop,
     className,
     error,
     label,

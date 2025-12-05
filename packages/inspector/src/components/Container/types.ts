@@ -6,5 +6,6 @@ export type Props = {
   indicator?: boolean | string | JSX.Element;
   border?: boolean;
   gap?: boolean;
+  variant?: 'minimal';
   onRemoveContainer?: () => void;
 };

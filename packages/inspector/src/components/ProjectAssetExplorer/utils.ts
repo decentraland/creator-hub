@@ -10,6 +10,7 @@ const validModelExtensions = ['.gltf', '.glb'];
 const validAudioExtensions = ['.mp3', '.ogg', '.wav'];
 const validImageExtensions = ['.jpg', '.jpeg', '.png'];
 const validVideoExtensions = ['.mp4'];
+const validScriptExtensions = ['.ts', '.tsx'];
 
 function determineAssetType(extension: string): IAsset['type'] {
   return validModelExtensions.some(ext => extension.endsWith(ext))
@@ -20,7 +21,9 @@ function determineAssetType(extension: string): IAsset['type'] {
         ? 'image'
         : validVideoExtensions.some(ext => extension.endsWith(ext))
           ? 'video'
-          : 'unknown';
+          : validScriptExtensions.some(ext => extension.endsWith(ext))
+            ? 'script'
+            : 'unknown';
 }
 
 export function buildAssetTree(paths: string[]): AssetNodeFolder {
@@ -83,6 +86,7 @@ export const FILTERS_IN_ORDER: Filter[] = [
   Filter.Images,
   Filter.Audio,
   Filter.Video,
+  Filter.Scripts,
   Filter.Other,
 ];
 
@@ -96,6 +100,8 @@ export function mapAssetTypeToFilter(type: IAsset['type']): Filter | undefined {
       return Filter.Images;
     case 'video':
       return Filter.Video;
+    case 'script':
+      return Filter.Scripts;
     default:
       return Filter.Other;
   }
