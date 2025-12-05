@@ -47,8 +47,8 @@ export function buildScriptPath(name: string): string {
 
 export function isScriptNameAvailable({ assets }: AssetCatalogResponse, src: string): boolean {
   if (!src) return true;
-  const newScriptPath = buildScriptPath(src);
-  return !assets.find($ => newScriptPath === $.path);
+  const newScriptPath = buildScriptPath(src).toLowerCase();
+  return !assets.find($ => newScriptPath === $.path.toLowerCase());
 }
 
 export async function readScript(

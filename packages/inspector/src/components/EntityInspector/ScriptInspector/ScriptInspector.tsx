@@ -15,7 +15,7 @@ import { selectAssetCatalog } from '../../../redux/app';
 import { retry } from '../../../lib/utils/retry';
 import { Container } from '../../Container';
 import { ACCEPTED_FILE_TYPES } from '../../ui/FileUploadField/types';
-import { TextField, InfoTooltip, FileUploadField } from '../../ui';
+import { InfoTooltip, FileUploadField } from '../../ui';
 import { Message, MessageType } from '../../ui/Message';
 import { AddButton } from '../AddButton';
 import MoreOptionsMenu from '../MoreOptionsMenu';
@@ -25,9 +25,6 @@ import { CreateScriptModal } from './CreateScriptModal';
 
 import { getScriptTemplateClass } from './templates';
 import {
-  fromNumber,
-  toNumber,
-  isValidNumber,
   isValidPath,
   parseLayout,
   isScriptNode,
