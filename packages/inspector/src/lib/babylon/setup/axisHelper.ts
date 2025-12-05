@@ -32,6 +32,12 @@ const AXIS_CONFIG = {
     beta: Math.PI / 3,
     radius: 3,
   },
+  viewport: {
+    x: 0.85,
+    y: 0.85,
+    width: 0.15,
+    height: 0.15,
+  },
   lights: [
     { name: 'helperLight1', direction: new BABYLON.Vector3(1, 1, 0), intensity: 0.7 },
     { name: 'helperLight2', direction: new BABYLON.Vector3(-1, -1, 0), intensity: 0.5 },
@@ -74,38 +80,45 @@ function createAxisMaterial(
   emissiveColor: BABYLON.Color3,
   scene: BABYLON.Scene,
 ): BABYLON.StandardMaterial {
-  const material = new BABYLON.StandardMaterial(`${name}Mat`, scene);
+  const material = new BABYLON.StandardMaterial(`axisHelper_${name}Mat`, scene);
   material.diffuseColor = diffuseColor;
   material.emissiveColor = emissiveColor;
   material.specularColor = new BABYLON.Color3(0.3, 0.3, 0.3);
   return material;
 }
 
-function createAxis(definition: AxisDefinition, scene: BABYLON.Scene): void {
+function createAxis(definition: AxisDefinition, scene: BABYLON.Scene): BABYLON.Mesh[] {
   const { name, diffuseColor, emissiveColor, rotation, positionOffset } = definition;
   const { length, thickness, arrow } = AXIS_CONFIG;
+  const meshes: BABYLON.Mesh[] = [];
 
   const material = createAxisMaterial(name, diffuseColor, emissiveColor, scene);
 
   // Create axis cylinder
   const axis = BABYLON.MeshBuilder.CreateCylinder(
-    `${name}Axis`,
+    `axisHelper_${name}Axis`,
     { height: length, diameter: thickness },
     scene,
   );
   axis.rotation = rotation;
   axis.position = positionOffset.scale(length / 2);
   axis.material = material;
+  axis.isPickable = false;
+  meshes.push(axis);
 
   // Create arrow cone
   const cone = BABYLON.MeshBuilder.CreateCylinder(
-    `${name}Cone`,
+    `axisHelper_${name}Cone`,
     { height: arrow.height, diameterTop: 0, diameterBottom: arrow.width },
     scene,
   );
   cone.rotation = rotation;
   cone.position = positionOffset.scale(length + arrow.height / 2);
   cone.material = material;
+  cone.isPickable = false;
+  meshes.push(cone);
+
+  return meshes;
 }
 
 function createTextLabel(
@@ -113,11 +126,11 @@ function createTextLabel(
   color: BABYLON.Color3,
   position: BABYLON.Vector3,
   scene: BABYLON.Scene,
-): void {
+): BABYLON.Mesh {
   const { textureSize, fontSize, size } = AXIS_CONFIG.label;
 
   const texture = new BABYLON.DynamicTexture(
-    `${text}Texture`,
+    `axisHelper_${text}Texture`,
     { width: textureSize, height: textureSize },
     scene,
     false,
@@ -133,88 +146,111 @@ function createTextLabel(
   ctx.fillText(text, textureSize / 2, textureSize / 2);
   texture.update();
 
-  const plane = BABYLON.MeshBuilder.CreatePlane(`${text}Label`, { size }, scene);
+  const plane = BABYLON.MeshBuilder.CreatePlane(`axisHelper_${text}Label`, { size }, scene);
   plane.position = position;
   plane.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
+  plane.isPickable = false;
 
-  const material = new BABYLON.StandardMaterial(`${text}LabelMat`, scene);
+  const material = new BABYLON.StandardMaterial(`axisHelper_${text}LabelMat`, scene);
   material.diffuseTexture = texture;
   material.emissiveColor = color;
   material.opacityTexture = texture;
   material.backFaceCulling = false;
   plane.material = material;
+
+  return plane;
 }
 
-function createLights(scene: BABYLON.Scene): void {
+function createLights(scene: BABYLON.Scene): BABYLON.Light[] {
+  const lights: BABYLON.Light[] = [];
   for (const config of AXIS_CONFIG.lights) {
     const light = new BABYLON.HemisphericLight(config.name, config.direction, scene);
     light.intensity = config.intensity;
+    lights.push(light);
   }
+  return lights;
 }
 
 /**
- * Sets up a Babylon.js scene for rendering an axis helper widget.
- * Creates a separate engine and scene with X, Y, Z axes, labels, and lights.
+ * Sets up an axis helper widget rendered in the top-right corner of the main canvas.
+ * Uses a separate scene on the same engine, rendered manually after the main scene.
  *
- * @param canvas - The HTML canvas element to render on
- * @param getMainCamera - Function to get the main camera for synchronization
- * @returns Setup object with engine, scene, camera, sync function, and dispose function
+ * @param scene - The main Babylon.js scene
+ * @param getMainCamera - Function to get the main camera orientation for synchronization
+ * @returns Setup object with dispose function
  */
 export function setupAxisHelper(
-  canvas: HTMLCanvasElement,
+  scene: BABYLON.Scene,
   getMainCamera: () => { alpha: number; beta: number } | null,
 ): AxisHelperSetup {
-  const engine = new BABYLON.Engine(canvas, true, {
-    preserveDrawingBuffer: true,
-    stencil: true,
-    antialias: true,
-  });
+  const engine = scene.getEngine();
 
-  const helperScene = new BABYLON.Scene(engine);
-  helperScene.clearColor = new BABYLON.Color4(0, 0, 0, 0);
+  const axisScene = new BABYLON.Scene(engine);
+  axisScene.autoClear = false;
+  axisScene.autoClearDepthAndStencil = false;
+  axisScene.blockMaterialDirtyMechanism = true;
 
-  const camera = new BABYLON.ArcRotateCamera(
+  // Create axis helper camera with viewport in top-right corner
+  const axisCamera = new BABYLON.ArcRotateCamera(
     'axisHelperCamera',
     AXIS_CONFIG.camera.alpha,
     AXIS_CONFIG.camera.beta,
     AXIS_CONFIG.camera.radius,
     BABYLON.Vector3.Zero(),
-    helperScene,
+    axisScene,
   );
-  camera.attachControl(canvas, false);
+  axisCamera.viewport = new BABYLON.Viewport(
+    AXIS_CONFIG.viewport.x,
+    AXIS_CONFIG.viewport.y,
+    AXIS_CONFIG.viewport.width,
+    AXIS_CONFIG.viewport.height,
+  );
+  axisScene.activeCamera = axisCamera;
 
-  // Create all axes and labels
+  // Create all axes and labels in the axis scene
+  const meshes: BABYLON.Mesh[] = [];
   for (const axis of AXES) {
-    createAxis(axis, helperScene);
-    createTextLabel(axis.name.toUpperCase(), axis.labelColor, axis.labelPosition, helperScene);
+    const axisMeshes = createAxis(axis, axisScene);
+    meshes.push(...axisMeshes);
+
+    const label = createTextLabel(
+      axis.name.toUpperCase(),
+      axis.labelColor,
+      axis.labelPosition,
+      axisScene,
+    );
+    meshes.push(label);
   }
 
-  createLights(helperScene);
+  const lights = createLights(axisScene);
 
-  const syncCamera = () => {
-    const mainCamera = getMainCamera();
-    if (mainCamera) {
-      camera.alpha = mainCamera.alpha;
-      camera.beta = mainCamera.beta;
+  // Render the axis scene after the main scene renders
+  const renderObserver = scene.onAfterRenderObservable.add(() => {
+    const cameraAngles = getMainCamera();
+    if (cameraAngles) {
+      axisCamera.alpha = cameraAngles.alpha;
+      axisCamera.beta = cameraAngles.beta;
     }
-  };
 
-  engine.runRenderLoop(() => {
-    syncCamera();
-    helperScene.render();
+    axisScene.render();
   });
 
-  const handleResize = () => {
-    engine.resize();
-  };
-
-  window.addEventListener('resize', handleResize);
-  engine.resize();
-
   const dispose = () => {
-    window.removeEventListener('resize', handleResize);
-    helperScene.dispose();
-    engine.dispose();
+    scene.onAfterRenderObservable.remove(renderObserver);
+
+    for (const mesh of meshes) {
+      if (mesh.material) {
+        mesh.material.dispose();
+      }
+      mesh.dispose();
+    }
+
+    for (const light of lights) {
+      light.dispose();
+    }
+
+    axisCamera.dispose();
+    axisScene.dispose();
   };
 
   return { dispose };

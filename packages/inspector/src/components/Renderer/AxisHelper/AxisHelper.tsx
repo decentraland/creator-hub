@@ -1,17 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { withSdk } from '../../../hoc/withSdk';
 import { setupAxisHelper } from '../../../lib/babylon/setup/axisHelper';
 
-import './AxisHelper.css';
-
 const AxisHelper = withSdk(({ sdk }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
   useEffect(() => {
-    if (!canvasRef.current) return;
-
-    const canvas = canvasRef.current;
-
     const getMainCamera = () => {
       if (sdk.editorCamera) {
         const mainCamera = sdk.editorCamera.getCamera();
@@ -32,22 +24,14 @@ const AxisHelper = withSdk(({ sdk }) => {
       return null;
     };
 
-    const axisHelper = setupAxisHelper(canvas, getMainCamera);
+    const axisHelper = setupAxisHelper(sdk.scene, getMainCamera);
 
     return () => {
       axisHelper.dispose();
     };
   }, [sdk]);
 
-  return (
-    <div className="AxisHelper">
-      <canvas
-        ref={canvasRef}
-        id="axis-helper-canvas"
-        className="AxisHelperCanvas"
-      />
-    </div>
-  );
+  return null;
 });
 
-export default React.memo(AxisHelper);
+export default AxisHelper;
