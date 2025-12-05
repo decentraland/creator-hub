@@ -449,7 +449,7 @@ const Renderer: React.FC = () => {
       )}
       <canvas
         ref={canvasRef}
-        id="main-canvas"
+        id="canvas"
         touch-action="none"
       />
       <div

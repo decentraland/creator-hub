@@ -22,7 +22,7 @@ class AssetsPageObject {
 
   private async waitForRenderer() {
     // simulate a mouse move to trigger the onPointerObservable from getPointerCoords in mouse-utils.ts
-    const renderer = await page.$('#main-canvas');
+    const renderer = await page.$('.Renderer canvas');
     const box = await renderer!.boundingBox();
     await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
     // wait for renderer to load
@@ -34,7 +34,10 @@ class AssetsPageObject {
   }
 
   async addBuilderAsset(asset: string) {
-    await dragAndDrop(`.Assets .assets-catalog-asset[data-test-label="${asset}"]`, '#main-canvas');
+    await dragAndDrop(
+      `.Assets .assets-catalog-asset[data-test-label="${asset}"]`,
+      '.Renderer canvas',
+    );
     await this.waitForRenderer();
   }
 
@@ -46,7 +49,7 @@ class AssetsPageObject {
   }
 
   async addFileSystemAsset(path: string) {
-    await dragAndDrop(`.FolderView .Tile[data-test-id="${path}"]`, '#main-canvas');
+    await dragAndDrop(`.FolderView .Tile[data-test-id="${path}"]`, '.Renderer canvas');
     await this.waitForRenderer();
   }
 }
