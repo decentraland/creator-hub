@@ -6,5 +6,4 @@ node_modules
 catalog.json
 dist
 bin
-package-lock.json
 dclcontext/
