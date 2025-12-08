@@ -141,7 +141,7 @@ export function generateFeededComposite({ engine, components }: TempEngine, scen
           params: {
             message: {
               type: 'string',
-              value: "That's what she said...",
+              value: 'Hello World!',
             },
           },
         }),

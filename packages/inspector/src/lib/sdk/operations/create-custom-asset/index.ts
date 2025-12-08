@@ -7,7 +7,7 @@ import type {
   TransformType,
 } from '@dcl/ecs';
 import { getComponentEntityTree, Transform as TransformEngine } from '@dcl/ecs';
-import type { Action } from '@dcl/asset-packs';
+import type { Action, Script } from '@dcl/asset-packs';
 import {
   ActionType,
   ComponentName as AssetPackComponentNames,
@@ -305,7 +305,7 @@ export function createCustomAsset(engine: IEngine) {
         // Handle Script component resources
         if (componentName === EditorComponentNames.Script) {
           if (Array.isArray(processedComponentValue.value)) {
-            processedComponentValue.value = processedComponentValue.value.map((scriptItem: any) => {
+            processedComponentValue.value = (processedComponentValue as Script).value.map((scriptItem) => {
               const updatedScriptItem = { ...scriptItem };
 
               // Process script path

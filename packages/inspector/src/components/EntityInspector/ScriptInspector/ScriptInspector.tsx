@@ -111,8 +111,9 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
   );
 
   const handleEditScript = useCallback(
-    async (index: number) => {
+    async (e: React.MouseEvent<HTMLButtonElement>, index: number) => {
       try {
+        e.stopPropagation();
         const script = scripts[index];
         if (!script) return;
 
@@ -318,7 +319,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
                 <>
                   <Button
                     className="CodeButton"
-                    onClick={() => handleEditScript(index)}
+                    onClick={(e) => handleEditScript(e, index)}
                   >
                     <CodeIcon />
                     Code
