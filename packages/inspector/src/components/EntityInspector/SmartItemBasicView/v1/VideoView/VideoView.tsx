@@ -1,11 +1,11 @@
 import React, { useCallback } from 'react';
 import { useDrop } from 'react-dnd';
 import cx from 'classnames';
-import { Entity } from '@dcl/ecs';
-import { withSdk, WithSdkProps } from '../../../../../hoc/withSdk';
+import type { Entity } from '@dcl/ecs';
+import { withSdk, type WithSdkProps } from '../../../../../hoc/withSdk';
 import { useHasComponent } from '../../../../../hooks/sdk/useHasComponent';
 import { useComponentInput } from '../../../../../hooks/sdk/useComponentInput';
-import { LocalAssetDrop, getNode } from '../../../../../lib/sdk/drag-drop';
+import { type LocalAssetDrop, getNode } from '../../../../../lib/sdk/drag-drop';
 import { withAssetDir } from '../../../../../lib/data-layer/host/fs-utils';
 import { useAppSelector } from '../../../../../redux/hooks';
 import { selectAssetCatalog } from '../../../../../redux/app';
@@ -94,7 +94,6 @@ export default React.memo(
             type="text"
             {...getInputProps('src')}
             error={files && !isValid}
-            drop={isHover}
           />
         </Block>
         <Block label="Playback">

@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::Transform",
+      "data": {
+        "512": {
+          "json": {
+            "position": { "x": 0, "y": 0, "z": 0 },
+            "rotation": { "x": 0, "y": 0, "z": 0, "w": 1 },
+            "scale": { "x": 1, "y": 1, "z": 1 }
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "512": {
+          "json": {
+            "value": "Padlock"
+          }
+        }
+      }
+    },
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "512": {
+          "json": {
+            "src": "{assetPath}/models/padlock/Padlock.glb",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 3
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Script",
+      "data": {
+        "512": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/PadlockScript.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"combination\":{\"type\":\"number\",\"optional\":false,\"value\":1234}}}"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

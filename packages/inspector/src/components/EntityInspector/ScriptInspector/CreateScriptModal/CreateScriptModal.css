@@ -1,0 +1,111 @@
+.CreateScriptModal {
+  min-width: 500px;
+  min-height: 400px;
+  padding: 40px;
+}
+
+.CreateScriptModalContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  height: 100%;
+}
+
+.CreateScriptModalContent .title {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text);
+  text-align: center;
+}
+
+.CreateScriptModalContent .subtitle {
+  font-size: 14px;
+  margin: 0;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.CreateScriptModalContent .script-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  justify-content: center;
+}
+
+.CreateScriptModalContent .script-preview .label {
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.CreateScriptModalContent .script-preview .icon-container {
+  width: 160px;
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--base-17);
+  border-radius: 8px;
+}
+
+.CreateScriptModalContent .script-preview .icon-container svg {
+  color: var(--text);
+  opacity: 0.8;
+}
+
+.CreateScriptModalContent .script-preview .Field {
+  width: 160px;
+}
+
+.CreateScriptModalContent .script-preview .error-message {
+  color: var(--error-main);
+  font-size: 12px;
+  line-height: 0px;
+}
+
+.CreateScriptModalContent .actions {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  justify-content: space-between;
+  margin-top: auto;
+}
+
+.CreateScriptModalContent .actions .cancel-button {
+  padding: 10px 24px;
+  background: transparent;
+  border: 1px solid var(--base-14);
+  color: var(--text);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.CreateScriptModalContent .actions .cancel-button:hover {
+  background: var(--base-15);
+}
+
+.CreateScriptModalContent .actions .create-button {
+  padding: 10px 24px;
+  background: var(--primary-main);
+  border: none;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.CreateScriptModalContent .actions .create-button:hover:not(:disabled) {
+  background: var(--primary-dark);
+}
+
+.CreateScriptModalContent .actions .create-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

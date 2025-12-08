@@ -9,10 +9,10 @@ import { withSdk } from '../../../hoc/withSdk';
 import { Dropdown, type DropdownChangeEvent } from '../../ui/Dropdown';
 
 import { getComponentValue, useComponentValue } from '../../../hooks/sdk/useComponentValue';
-import { CreateEditTagModal } from './CreateEditTagModal';
-import { DeleteConfirmationModal } from './DeleteConfirmationModal';
 import { analytics, Event } from '../../../lib/logic/analytics';
 import { getAssetByModel } from '../../../lib/logic/catalog';
+import { CreateEditTagModal } from './CreateEditTagModal';
+import { DeleteConfirmationModal } from './DeleteConfirmationModal';
 
 const TagsInspector = withSdk<{ entity: Entity }>(({ entity, sdk }) => {
   const { Tags } = sdk.components;

@@ -3,6 +3,7 @@ import { AiOutlineSound as AudioIcon } from 'react-icons/ai';
 import { IoIosImage as ImageIcon } from 'react-icons/io';
 import { IoCubeOutline as ModelIcon, IoVideocamOutline as VideoIcon } from 'react-icons/io5';
 import { FaFile as OtherIcon } from 'react-icons/fa';
+import { SiTypescript as ScriptIcon } from 'react-icons/si';
 import type { Entity } from '@dcl/ecs';
 
 import { useSdk } from '../../hooks/sdk/useSdk';
@@ -84,16 +85,44 @@ function ProjectView({ folders, thumbnails }: Props) {
   );
 
   const getEntitiesWithAsset = useCallback(
-    (value: string): Entity[] => {
+    (assetPath: string): Entity[] => {
       if (!sdk || modal?.isOpen) return [];
-      const entitiesWithAsset: Entity[] = [];
-      const { GltfContainer } = sdk.components;
-      for (const [entity, _value] of sdk.engine.getEntitiesWith(GltfContainer)) {
-        if (_value.src === value) {
-          entitiesWithAsset.push(entity);
+      const entitiesWithAsset = new Set<Entity>();
+
+      const checks = [
+        { component: sdk.components.GltfContainer, matcher: (v: any) => v.src === assetPath },
+        {
+          component: sdk.components.Script,
+          matcher: (v: any) => v.value?.some((s: any) => s.path === assetPath),
+        },
+        {
+          component: sdk.components.AudioSource,
+          matcher: (v: any) => v.audioClipUrl === assetPath,
+        },
+        { component: sdk.components.VideoPlayer, matcher: (v: any) => v.src === assetPath },
+        {
+          component: sdk.components.Material,
+          matcher: (v: any) => {
+            const material = v.material?.$case === 'pbr' ? v.material.pbr : null;
+            return !!(
+              material?.texture?.tex?.src === assetPath ||
+              material?.alphaTexture?.tex?.src === assetPath ||
+              material?.emissiveTexture?.tex?.src === assetPath ||
+              material?.bumpTexture?.tex?.src === assetPath
+            );
+          },
+        },
+      ];
+
+      checks.forEach(({ component, matcher }) => {
+        for (const [entity, value] of sdk.engine.getEntitiesWith(component)) {
+          if (matcher(value)) {
+            entitiesWithAsset.add(entity);
+          }
         }
-      }
-      return entitiesWithAsset;
+      });
+
+      return Array.from(entitiesWithAsset);
     },
     [sdk, modal],
   );
@@ -264,6 +293,8 @@ function NodeIcon({ value }: { value?: TreeNode }) {
           return AudioIcon;
         case 'Video':
           return VideoIcon;
+        case 'Scripts':
+          return ScriptIcon;
         case 'Other':
           return OtherIcon;
       }

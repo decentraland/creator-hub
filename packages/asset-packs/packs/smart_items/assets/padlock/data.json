@@ -1,0 +1,8 @@
+{
+  "id": "4519a0b9-98ef-4034-ab93-88134d1458e8",
+  "name": "Padlock",
+  "category": "decorations",
+  "tags": ["padlock", "lock", "puzzle", "interactive", "genesis"],
+  "description": "An interactive 4-digit combination lock that can be solved by clicking the wheels",
+  "author": "Decentraland Foundation"
+}

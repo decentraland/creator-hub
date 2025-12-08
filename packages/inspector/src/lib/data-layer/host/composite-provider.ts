@@ -36,6 +36,8 @@ enum DirtyState {
   DirtyAndNeedsDump = 'dirty_needs_dump',
 }
 
+export const ENTITY_NAMES_PATH = 'entity-names.ts';
+
 export class CompositeProvider implements StateProvider {
   readonly name = 'composite';
 
@@ -227,7 +229,7 @@ export class CompositeProvider implements StateProvider {
 
       await generateEntityNamesType(
         this.engine,
-        withAssetDir(DIRECTORY.SCENE + '/entity-names.ts'),
+        withAssetDir(DIRECTORY.SCENE + '/' + ENTITY_NAMES_PATH),
         'EntityNames',
         this.fs,
       );

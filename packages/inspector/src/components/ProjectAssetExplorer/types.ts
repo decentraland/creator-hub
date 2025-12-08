@@ -2,7 +2,7 @@ import type { AssetData } from '../../lib/logic/catalog';
 
 export interface IAsset {
   src: string;
-  type: 'unknown' | 'gltf' | 'composite' | 'audio' | 'video' | 'image';
+  type: 'unknown' | 'gltf' | 'composite' | 'audio' | 'video' | 'image' | 'script';
   id?: string;
 }
 

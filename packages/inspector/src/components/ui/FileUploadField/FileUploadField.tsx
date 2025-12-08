@@ -41,9 +41,10 @@ const FileUploadField: React.FC<Props> = ({
   isValidFile,
   acceptURLs = false,
   accept = EXTENSIONS,
+  openFileExplorerOnMount = false,
 }) => {
   const [path, setPath] = useState<string | undefined>(value?.toString());
-  const [errorMessage, setErrorMessage] = useState<string | undefined>('File not valid.');
+  const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
   const [dropError, setDropError] = useState<boolean>(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const files = useAppSelector(selectAssetCatalog);
@@ -53,7 +54,10 @@ const FileUploadField: React.FC<Props> = ({
 
   useEffect(() => {
     setPath(value?.toString());
-  }, [value]);
+    if (openFileExplorerOnMount) {
+      handleClick();
+    }
+  }, [value, openFileExplorerOnMount]);
 
   useEffect(() => {
     if (
@@ -107,7 +111,7 @@ const FileUploadField: React.FC<Props> = ({
     [accept],
   );
 
-  const [{ isHover, canDrop }, drop] = useDrop(
+  const [{ canDrop }, drop] = useDrop(
     () => ({
       accept: [DropTypesEnum.LocalAsset],
       drop: ({ value, context }: LocalAssetDrop, monitor) => {
@@ -193,8 +197,8 @@ const FileUploadField: React.FC<Props> = ({
   );
 
   const hasError = useMemo(() => {
-    return error || dropError;
-  }, [error, dropError]);
+    return error || errorMessage || dropError;
+  }, [error, errorMessage, dropError]);
 
   return (
     <div className={cx('FileUpload Field', className)}>
@@ -211,7 +215,6 @@ const FileUploadField: React.FC<Props> = ({
           value={removeBase(path)}
           error={!!value && hasError}
           disabled={disabled}
-          drop={isHover}
           autoSelect
         />
         <input
@@ -230,9 +233,9 @@ const FileUploadField: React.FC<Props> = ({
           </button>
         )}
       </div>
-      {!!value && hasError && (
+      {hasError && (
         <Message
-          text={errorMessage}
+          text={error || errorMessage}
           type={MessageType.ERROR}
         />
       )}

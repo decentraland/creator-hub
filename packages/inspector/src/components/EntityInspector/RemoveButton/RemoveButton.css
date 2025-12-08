@@ -1,0 +1,29 @@
+/* "add" button variant. matches AddButton styles */
+.RemoveButton--add {
+  margin-top: 12px;
+  border: 1px solid var(--base-15);
+  border-radius: 4px;
+  background: var(--base-20);
+  display: flex;
+  padding: 4px;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  align-self: stretch;
+  color: #ccc;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: normal;
+  width: 100%;
+  cursor: pointer;
+}
+
+.RemoveButton--add:hover:not(:disabled) {
+  background-color: var(--base-15);
+}
+
+.RemoveButton--add:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
