@@ -1,0 +1,8 @@
+{
+  "id": "accdfb9c-30e5-483b-8754-1809e1f1e743",
+  "name": "Pink Button",
+  "category": "buttons",
+  "tags": ["button", "switch", "toggle", "activate"],
+  "description": "A pink button that can be clicked to trigger actions on other smart items.",
+  "author": "Decentraland Foundation"
+}

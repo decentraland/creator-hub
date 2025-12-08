@@ -7,10 +7,10 @@ import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { FileUploadField, Dropdown, Label } from '../../ui';
 import { ACCEPTED_FILE_TYPES } from '../../ui/FileUploadField/types';
-import { Props } from './types';
-import { fromGltf, toGltf, isValidInput, COLLISION_LAYERS, isModel } from './utils';
 import { useAppSelector } from '../../../redux/hooks';
 import { selectAssetCatalog } from '../../../redux/app';
+import { fromGltf, toGltf, isValidInput, COLLISION_LAYERS, isModel } from './utils';
+import type { Props } from './types';
 
 import './GltfInspector.css';
 

@@ -1,6 +1,19 @@
 name: Inspector
 on:
   workflow_call:
+    inputs:
+      asset_packs_s3_bucket_key:
+        description: 'S3 bucket key for the asset-packs package'
+        required: true
+        type: string
+      asset_packs_version:
+        description: 'Version of the asset-packs package'
+        required: true
+        type: string
+      asset_packs_changed:
+        description: 'Whether the version of the asset-packs package has changed'
+        required: true
+        type: boolean
     outputs:
       s3_bucket_key:
         description: "S3 bucket key for the published Inspector package"
@@ -64,6 +77,20 @@ jobs:
 
       - name: install
         run: make install
+
+      - name: install asset-packs
+        working-directory: packages/inspector
+        run: |
+          # If the asset-packs version hasn't changed or we are on main branch, we need to install the latest version
+          # Otherwise, we need to install the version from the S3 bucket
+
+          if [[ "${{ github.ref }}" == "refs/heads/main" || ${{ inputs.asset_packs_changed }} == "false" ]]; then
+            echo "Installing latest asset-packs version: ${{ inputs.asset_packs_version }}"
+            npm install @dcl/asset-packs@${{ inputs.asset_packs_version }}
+          else
+            echo "Installing asset-packs version from S3 bucket: ${{ inputs.asset_packs_s3_bucket_key }}"
+            npm install ${{ secrets.SDK_TEAM_S3_BASE_URL }}/${{ inputs.asset_packs_s3_bucket_key }}
+          fi
 
       - name: protoc
         run: make protoc

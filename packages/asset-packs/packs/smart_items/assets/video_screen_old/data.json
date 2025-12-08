@@ -1,0 +1,8 @@
+{
+  "id": "dc5ec17b-aa1a-4bd0-bace-7d615d9bdc71",
+  "name": "Video Screen",
+  "category": "deprecated",
+  "tags": ["video", "screen", "video screen", "video player", "video player screen"],
+  "description": "A video screen that can play videos or live streams. It can be used together with the Admin Tools smart item to manage content live.",
+  "author": "Decentraland Foundation"
+}

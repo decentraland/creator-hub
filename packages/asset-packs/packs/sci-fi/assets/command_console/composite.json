@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/CommandControl_01/CommandControl_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

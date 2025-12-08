@@ -1,0 +1,8 @@
+{
+  "id": "166ddfe1-cc87-4b79-8bc4-b76fa8b7a1b4",
+  "name": "Plane",
+  "category": "primitives",
+  "tags": ["primitive", "plane", "shape", "3d"],
+  "description": "A plane that can be used to create a 3D shape. It can be used to create a plane, a wall, or a floor. You can apply any color or texture to it.",
+  "author": "Decentraland Foundation"
+}

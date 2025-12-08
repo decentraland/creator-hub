@@ -17,7 +17,7 @@
     "sourceType": "module"
   },
   "plugins": ["@typescript-eslint", "import"],
-  "ignorePatterns": ["node_modules/**", "**/dist/**"],
+  "ignorePatterns": ["node_modules/**", "**/dist/**", "**/bin/**", "**/catalog.json"],
 
   "rules": {
     "no-inner-declarations": "off",

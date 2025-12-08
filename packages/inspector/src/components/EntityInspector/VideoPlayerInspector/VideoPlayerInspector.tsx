@@ -112,7 +112,6 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
           className="FileUploadInput"
           {...src}
           error={files && !isValid}
-          drop={isHover}
           disabled={isVideoURLDisabled}
         />
       </Block>

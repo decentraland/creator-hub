@@ -1,0 +1,431 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::Transform",
+      "data": {
+        "513": {
+          "json": {
+            "position": {
+              "x": 0.4673,
+              "y": 0,
+              "z": 0.2757
+            },
+            "rotation": {
+              "x": 0,
+              "y": 0.07845906913280487,
+              "z": 0,
+              "w": 0.9969173669815063
+            },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
+            "parent": 0
+          }
+        },
+        "514": {
+          "json": {
+            "position": {
+              "x": -0.4,
+              "y": 0,
+              "z": 0.28
+            },
+            "rotation": {
+              "x": 0,
+              "y": 0.07845909893512726,
+              "z": 0,
+              "w": 0.9969173073768616
+            },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
+            "parent": 0
+          }
+        }
+      }
+    },
+
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "0": {
+          "json": {
+            "value": "Classic Bench Armrests"
+          }
+        },
+        "513": {
+          "json": {
+            "value": "Sit Spot 1"
+          }
+        },
+        "514": {
+          "json": {
+            "value": "Sit Spot 2"
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Sync-Components",
+      "data": {
+        "513": {
+          "json": {
+            "componentIds": ["asset-packs::States"]
+          }
+        },
+        "514": {
+          "json": {
+            "componentIds": ["asset-packs::States"]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Actions",
+      "data": {
+        "513": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "name": "Move here",
+                "type": "move_player_here",
+                "jsonPayload": "{}"
+              },
+              {
+                "name": "Sit anim1",
+                "type": "play_default_emote",
+                "jsonPayload": "{\"emote\":\"sittingChair1\"}"
+              },
+              {
+                "name": "Mark as taken",
+                "type": "set_state",
+                "jsonPayload": "{\"state\":\"Taken\"}"
+              },
+              {
+                "name": "Mark as free",
+                "type": "set_state",
+                "jsonPayload": "{\"state\":\"Free\"}",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Sit Here",
+                "type": "batch",
+                "jsonPayload": "{\"actions\":[\"Move here\",\"Mark as taken\",\"Random sit anim\"]}",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Sit anim2",
+                "type": "play_default_emote",
+                "jsonPayload": "{\"emote\":\"sittingChair2\"}"
+              },
+              {
+                "name": "Random sit anim",
+                "type": "random",
+                "jsonPayload": "{\"actions\":[\"Sit anim1\",\"Sit anim2\"]}"
+              },
+              {
+                "name": "Print text",
+                "type": "show_text",
+                "jsonPayload": "{\"text\":\"Seat is taken\",\"hideAfterSeconds\":2,\"font\":0,\"fontSize\":40,\"textAlign\":7}"
+              },
+              {
+                "name": "Hide text",
+                "type": "hide_text",
+                "jsonPayload": "{}"
+              },
+              {
+                "name": "Show text",
+                "type": "batch",
+                "jsonPayload": "{\"actions\":[\"Hide text\",\"Print text\"]}"
+              }
+            ]
+          }
+        },
+        "514": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "name": "Move here",
+                "type": "move_player_here",
+                "jsonPayload": "{}"
+              },
+              {
+                "name": "Sit anim1",
+                "type": "play_default_emote",
+                "jsonPayload": "{\"emote\":\"sittingChair1\"}"
+              },
+              {
+                "name": "Mark as taken",
+                "type": "set_state",
+                "jsonPayload": "{\"state\":\"Taken\"}"
+              },
+              {
+                "name": "Mark as free",
+                "type": "set_state",
+                "jsonPayload": "{\"state\":\"Free\"}",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Sit Here",
+                "type": "batch",
+                "jsonPayload": "{\"actions\":[\"Move here\",\"Mark as taken\",\"Random sit anim\"]}",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Sit anim2",
+                "type": "play_default_emote",
+                "jsonPayload": "{\"emote\":\"sittingChair2\"}"
+              },
+              {
+                "name": "Random sit anim",
+                "type": "random",
+                "jsonPayload": "{\"actions\":[\"Sit anim1\",\"Sit anim2\"]}"
+              },
+              {
+                "name": "Print text",
+                "type": "show_text",
+                "jsonPayload": "{\"text\":\"Seat is taken\",\"hideAfterSeconds\":2,\"font\":0,\"fontSize\":40,\"textAlign\":7}"
+              },
+              {
+                "name": "Hide text",
+                "type": "hide_text",
+                "jsonPayload": "{}"
+              },
+              {
+                "name": "Show text",
+                "type": "batch",
+                "jsonPayload": "{\"actions\":[\"Hide text\",\"Print text\"]}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Triggers",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "type": "on_input_action",
+                "conditions": [
+                  {
+                    "id": "{513:asset-packs::States}",
+                    "type": "when_state_is",
+                    "value": "Free"
+                  }
+                ],
+                "operation": "and",
+                "actions": [
+                  {
+                    "id": "{513:asset-packs::Actions}",
+                    "name": "Sit Here"
+                  }
+                ]
+              },
+              {
+                "type": "on_input_action",
+                "conditions": [
+                  {
+                    "id": "{513:asset-packs::States}",
+                    "type": "when_state_is",
+                    "value": "Taken"
+                  },
+                  {
+                    "id": "{514:asset-packs::States}",
+                    "type": "when_state_is",
+                    "value": "Free"
+                  }
+                ],
+                "operation": "and",
+                "actions": [
+                  {
+                    "id": "{514:asset-packs::Actions}",
+                    "name": "Sit Here"
+                  }
+                ]
+              },
+              {
+                "type": "on_input_action",
+                "conditions": [
+                  {
+                    "id": "{513:asset-packs::States}",
+                    "type": "when_state_is",
+                    "value": "Taken"
+                  },
+                  {
+                    "id": "{514:asset-packs::States}",
+                    "type": "when_state_is",
+                    "value": "Taken"
+                  }
+                ],
+                "operation": "and",
+                "actions": [
+                  {
+                    "id": "{513:asset-packs::Actions}",
+                    "name": "Show text"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "513": {
+          "json": {
+            "value": [
+              {
+                "type": "on_player_leaves_area",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::States}",
+                    "type": "when_state_is",
+                    "value": "Taken"
+                  }
+                ],
+                "operation": "and",
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Mark as free"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "514": {
+          "json": {
+            "value": [
+              {
+                "type": "on_player_leaves_area",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::States}",
+                    "type": "when_state_is",
+                    "value": "Taken"
+                  }
+                ],
+                "operation": "and",
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Mark as free"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::States",
+      "data": {
+        "513": {
+          "json": {
+            "id": "{self}",
+            "value": ["Free", "Taken"],
+            "defaultValue": "Free"
+          }
+        },
+        "514": {
+          "json": {
+            "id": "{self}",
+            "value": ["Free", "Taken"],
+            "defaultValue": "Free"
+          }
+        }
+      }
+    },
+    {
+      "name": "inspector::Config",
+      "data": {
+        "513": {
+          "json": {
+            "componentName": "Sit Spot",
+            "fields": [
+              {
+                "name": "Hover Text",
+                "type": "core::PointerEvents"
+              },
+              {
+                "name": "When Clicked",
+                "type": "asset-packs::Triggers",
+                "basicViewId": "trigger-when-clicked"
+              }
+            ],
+            "assetId": "b3bc0885-d2cc-4cbe-ba62-a50c8e8cf211"
+          }
+        },
+        "514": {
+          "json": {
+            "componentName": "Sit Spot",
+            "fields": [
+              {
+                "name": "Hover Text",
+                "type": "core::PointerEvents"
+              },
+              {
+                "name": "When Clicked",
+                "type": "asset-packs::Triggers",
+                "basicViewId": "trigger-when-clicked"
+              }
+            ],
+            "assetId": "b3bc0885-d2cc-4cbe-ba62-a50c8e8cf211"
+          }
+        }
+      }
+    },
+    {
+      "name": "inspector::Config",
+      "data": {
+        "0": {
+          "json": {
+            "componentName": "Classic Bench Armrests",
+            "fields": []
+          }
+        }
+      }
+    },
+    {
+      "name": "core::PointerEvents",
+      "data": {
+        "0": {
+          "json": {
+            "pointerEvents": [
+              {
+                "eventType": 1,
+                "eventInfo": {
+                  "button": 1,
+                  "hoverText": "Sit Here",
+                  "maxDistance": 10,
+                  "showFeedback": true,
+                  "showHighlight": true
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Bench 1.glb",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 3
+          }
+        }
+      }
+    }
+  ]
+}

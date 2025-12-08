@@ -1,0 +1,8 @@
+{
+  "id": "ff9257ec-9d62-404f-97c7-cf19c4035761",
+  "name": "Fantasy Chest",
+  "category": "chests",
+  "tags": ["chest", "treasure", "loot", "open"],
+  "description": "A chest that can be opened to reveal its contents. It can be used to store items.",
+  "author": "Decentraland Foundation"
+}

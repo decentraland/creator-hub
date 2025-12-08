@@ -41,10 +41,18 @@ jobs:
     with:
       # dry-run == false only if we are on main branch and the event is a push or workflow_dispatch
       dry-run: ${{ !((github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'main') }}
-  inspector:
+  asset-packs:
     needs: [ drop_pre_release ]
+    uses: ./.github/workflows/asset-packs.yml
+    secrets: inherit
+  inspector:
+    needs: [ asset-packs ]
     uses: ./.github/workflows/inspector.yml
     secrets: inherit
+    with:
+      asset_packs_s3_bucket_key: ${{ needs.asset-packs.outputs.s3_bucket_key }}
+      asset_packs_version: ${{ needs.asset-packs.outputs.version }}
+      asset_packs_changed: ${{ needs.asset-packs.outputs.changed == 'true' }}
   creator-hub:
     needs: [ inspector ]
     uses: ./.github/workflows/creator-hub.yml

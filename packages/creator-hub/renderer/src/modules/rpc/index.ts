@@ -1,8 +1,9 @@
 import { MessageTransport } from '@dcl/mini-rpc';
 
 import { type Project } from '/shared/types/projects';
+import { hasCustomCode } from '/shared/scene-parser';
 
-import { fs, custom } from '#preload';
+import { fs, custom, workspace } from '#preload';
 
 import { SceneRpcClient } from './scene/client';
 import { SceneRpcServer } from './scene/server';
@@ -44,6 +45,16 @@ export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partia
     sceneClient.selectAssetsTab('AssetsPack'),
     sceneClient.selectSceneInspectorTab('details'),
   ]).catch(console.error);
+
+  void (async () => {
+    try {
+      const content = await workspace.getSceneSourceFile(project.path);
+      const hasCustom = hasCustomCode(content);
+      await sceneClient.setSceneCustomCode(hasCustom);
+    } catch (error) {
+      console.error('Failed to detect custom code:', error);
+    }
+  })();
 
   return {
     ...params,

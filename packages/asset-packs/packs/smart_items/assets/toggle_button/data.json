@@ -1,0 +1,8 @@
+{
+  "id": "a186416e-81f1-4d0a-b0cd-a4b0077d264d",
+  "name": "Toggle Button",
+  "category": "buttons",
+  "tags": ["button", "toggle", "activate", "switch", "on", "off"],
+  "description": "A button that can be clicked to toggle on or off and change the state of other smart items.",
+  "author": "Decentraland Foundation"
+}

@@ -1,0 +1,217 @@
+name: Asset Packs
+on:
+  workflow_call:
+    outputs:
+      s3_bucket_key:
+        description: "S3 bucket key for the published Asset Packs package"
+        value: ${{ jobs.publish.outputs.s3_bucket_key }}
+      version:
+        description: "Version of the Asset Packs package"
+        value: ${{ jobs.version.outputs.version }}
+      changed:
+        description: "Whether the version of the Asset Packs package has changed"
+        value: ${{ jobs.version.outputs.changed }}
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      changed: ${{ steps.version.outputs.changed }}
+      version: ${{ steps.version.outputs.version }}
+      previous_version: ${{ steps.version.outputs.previous_version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Bump release version
+        id: version
+        uses: paulhatch/semantic-version@v5.4.0
+        with:
+          tag_prefix: "@dcl/asset-packs@"
+          version_format: ${major}.${minor}.${patch}
+          major_pattern: "/^(major|breaking).+/"
+          minor_pattern: "/^(minor|feat).+/"
+          bump_each_commit: false
+          bump_each_commit_patch_pattern: "/^(patch|fix).+/"
+          search_commit_body: true
+          user_format_type: "json"
+          change_path: "packages/asset-packs"
+
+  validate:
+    runs-on: ubuntu-latest
+    needs: [version]
+    if: ${{ needs.version.outputs.changed == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: install
+        run: make install
+
+      - name: validate
+        run: make validate-asset-packs
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: [version, validate]
+    if: ${{ needs.version.outputs.changed == 'true' }}
+    permissions:
+      contents: write
+      id-token: write
+    outputs:
+      s3_bucket_key: ${{ steps.s3-upload.outputs.s3-key }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: install
+        run: make install
+
+      - name: build
+        run: make build-asset-packs
+
+      - name: copy bin to dist
+        working-directory: ./packages/asset-packs
+        run: cp -r bin dist
+
+      - name: npm version
+        working-directory: ./packages/asset-packs
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            VERSION="${{ needs.version.outputs.version }}"
+          else
+            VERSION="${{ needs.version.outputs.version }}-commit-${{ github.sha }}"
+          fi
+          npm version "$VERSION" --force --no-git-tag-version --allow-same-version
+
+      - name: npm pack
+        working-directory: ./packages/asset-packs
+        id: npm-pack
+        run: |
+          PACK_OUTPUT=$(npm pack --json)
+          PACK_FILENAME=$(echo "$PACK_OUTPUT" | jq -r '.[0].filename')
+          echo "pack-filename=$PACK_FILENAME" >> $GITHUB_OUTPUT
+
+      - name: upload package to S3
+        uses: ./.github/actions/s3-upload
+        id: s3-upload
+        with:
+          file-path: ./packages/asset-packs/${{ steps.npm-pack.outputs.pack-filename }}
+          bucket: ${{ secrets.SDK_TEAM_S3_BUCKET }}
+          region: ${{ secrets.SDK_TEAM_AWS_REGION }}
+          prefix: 'creator-hub/branch/${{ github.head_ref || github.ref }}/@dcl/asset-packs'
+          aws-access-key-id: ${{ secrets.SDK_TEAM_AWS_ID }}
+          aws-secret-access-key: ${{ secrets.SDK_TEAM_AWS_SECRET }}
+          content-type: 'application/gzip'
+          acl: 'public-read'
+          cache-control: 'max-age=0,private'
+
+      - name: publish to npm registry
+        if: ${{ github.ref == 'refs/heads/main' }}
+        uses: ./.github/actions/npm-publish
+        id: npm-publish
+        with:
+          working-directory: ./packages/asset-packs
+          npm-token: ${{ secrets.NPM_TOKEN }}
+          initial-tag: 'latest'
+          access: 'public'
+
+  upload:
+    runs-on: ubuntu-latest
+    needs: [version, publish]
+    if: ${{ needs.version.outputs.changed == 'true' && github.ref == 'refs/heads/main' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: install
+        run: make install
+
+      - name: build
+        run: make build-asset-packs
+
+      - name: upload assets to S3 prod
+        run: make upload-asset-packs
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.BUILDER_ITEMS_AWS_ID_PRD }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.BUILDER_ITEMS_AWS_SECRET_PRD }}
+          S3_BUCKET_NAME: ${{ secrets.BUILDER_ITEMS_S3_BUCKET_PRD }}
+          S3_REGION: us-east-1
+          S3_UPLOAD_CONCURRENCY: 20
+
+  notify:
+    needs: [version, publish]
+    if: ${{ github.event.pull_request.number && needs.version.outputs.changed == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: find Comment
+        uses: peter-evans/find-comment@v1
+        id: fc
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: Test @dcl/asset-packs package
+
+      - name: create or update comment
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            # Test @dcl/asset-packs package
+
+            - Install via NPM:
+              ```bash
+              npm install "${{ secrets.SDK_TEAM_S3_BASE_URL }}/${{ needs.publish.outputs.s3_bucket_key }}"
+              ```
+
+            > **Note:** If new assets are added in this PR, they won't be available on the CDN until the PR is merged. This package can be used to test changes to the library code or `catalog.json`, but won't work for testing newly added items.
+          edit-mode: replace
+
+  release:
+    needs: [version, publish]
+    if: ${{ needs.version.outputs.changed == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: generate release notes
+        if: ${{ github.ref == 'refs/heads/main' }}
+        id: release_notes
+        uses: ./.github/actions/generate-release-notes
+        with:
+          previous_version: ${{ needs.version.outputs.previous_version }}
+          current_version: ${{ needs.version.outputs.version }}
+          paths: 'packages/asset-packs'
+          section_names: 'Asset Packs Changes'
+          release_title: '@dcl/asset-packs'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tag_prefix: '@dcl/asset-packs@'
+
+      - name: update release description
+        if: ${{ github.ref == 'refs/heads/main' }}
+        uses: ./.github/actions/update-release-description
+        with:
+          tag_name: "@dcl/asset-packs@${{ needs.version.outputs.version }}"
+          release_notes: ${{ steps.release_notes.outputs.release_notes }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          create_if_not_exists: true
+          prerelease: true

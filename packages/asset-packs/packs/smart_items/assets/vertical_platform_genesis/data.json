@@ -1,0 +1,8 @@
+{
+  "id": "6ab20acc-eff6-4272-8243-c183e70a9fa1",
+  "name": "Vertical Platform Genesis",
+  "category": "platforms",
+  "tags": ["platform", "vertical", "interactive", "floating", "elevator", "lift"],
+  "description": "A vertical platform that moves up and down. Players can jump on it to reach higher places.",
+  "author": "Decentraland Foundation"
+}

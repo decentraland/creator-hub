@@ -13,6 +13,9 @@ import { ClientError } from '/shared/types/client';
 import { APP_UNPACKED_PATH, getBinPath } from './path';
 import { setupNodeBinary } from './setup-node';
 
+// Registry to track all forked utility processes
+const processes: Map<number, Child> = new Map();
+
 // Get the current PATH value
 function getPath() {
   return process.env.PATH || '';
@@ -136,9 +139,12 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
   const ready = future<void>();
 
   const name = `${bin} ${args.join(' ')}`.trim();
+  let spawnedPid: number | undefined;
+
   forked.on('spawn', () => {
+    spawnedPid = forked.pid;
     log.info(
-      `[UtilityProcess] Running "${name}" using bin=${binPath} with pid=${forked.pid} in ${cwd}`,
+      `[UtilityProcess] Running "${name}" using bin=${binPath} with pid=${spawnedPid} in ${cwd}`,
     );
     ready.resolve();
   });
@@ -146,16 +152,21 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
   forked.on('exit', code => {
     if (!alive) return;
     alive = false;
+    if (spawnedPid) {
+      processes.delete(spawnedPid);
+    }
     const stdoutBuf = Buffer.concat(stdout.getAll());
     log.info(
-      `[UtilityProcess] Exiting "${name}" with pid=${forked.pid} and exit code=${code || 0}`,
+      `[UtilityProcess] Exiting "${name}" with pid=${spawnedPid} and exit code=${code || 0}`,
     );
-    if (code !== 0 && code !== null) {
+
+    // Only treat as error if process has actually spawned and process is not being killed intentionally.
+    if (code !== 0 && code !== null && !ready.isPending && !isKilling) {
       const stderrBuf = Buffer.concat(stderr.getAll());
       promise.reject(
         new StreamError(
           'COMMAND_FAILED',
-          `Error: process "${name}" with pid=${forked.pid} exited with code=${code}`,
+          `Error: process "${name}" with pid=${spawnedPid} exited with code=${code}`,
           stdoutBuf,
           stderrBuf,
         ),
@@ -226,6 +237,7 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
 
       // if child is being killed or already killed then return
       if (isKilling || !alive) return;
+
       isKilling = true;
       log.info(`[UtilityProcess] Killing process "${name}" with pid=${pid}...`);
 
@@ -237,17 +249,16 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
 
       // child successfully killed
       const die = (force: boolean = false) => {
-        isKilling = false;
         alive = false;
         cleanup();
+        clearInterval(interval);
+        clearTimeout(timeout);
         if (force) {
           log.info(`[UtilityProcess] Process "${name}" with pid=${pid} forcefully killed`);
-          treeKill(pid!, 'SIGKILL');
+          treeKill(pid, 'SIGKILL');
         } else {
           log.info(`[UtilityProcess] Process "${name}" with pid=${pid} gracefully killed`);
         }
-        clearInterval(interval);
-        clearTimeout(timeout);
         killPromise.resolve();
       };
 
@@ -270,6 +281,13 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
     },
     alive: () => alive,
   };
+
+  // Register child in processes map after spawn (when pid is available)
+  ready.then(() => {
+    if (spawnedPid) {
+      processes.set(spawnedPid, child);
+    }
+  });
 
   return child;
 }
@@ -316,4 +334,18 @@ export async function dclDeepLink(deepLink: string) {
   } catch (e) {
     throw new ClientError('CLIENT_NOT_INSTALLED', CLIENT_NOT_INSTALLED_ERROR);
   }
+}
+
+/**
+ * Kill all tracked utility processes.
+ * This should be called during app shutdown to ensure all forked processes are properly terminated.
+ */
+export async function killAllUtilityProcesses() {
+  if (processes.size === 0) return;
+
+  log.info(`[UtilityProcess] Killing ${processes.size} utility processes...`);
+  const killPromises = Array.from(processes.values()).map(child => child.kill());
+  await Promise.all(killPromises);
+  processes.clear();
+  log.info('[UtilityProcess] All utility processes killed');
 }

@@ -1,0 +1,135 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::Animator",
+      "data": {
+        "0": {
+          "json": {
+            "states": [
+              {
+                "clip": "armature_psAction",
+                "playing": false,
+                "weight": 0.9399999976158142,
+                "speed": 1,
+                "loop": true,
+                "shouldReset": false
+              },
+              {
+                "clip": "RaysAnim",
+                "playing": false,
+                "weight": -1,
+                "speed": 1,
+                "loop": false,
+                "shouldReset": false
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/spinner.glb",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "0": {
+          "json": {
+            "value": "Sunny Spinner"
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Sync-Components",
+      "data": {
+        "0": {
+          "json": {
+            "componentIds": ["core::Animator", "core::VisibilityComponent", "core::AudioSource"]
+          }
+        }
+      }
+    },
+    {
+      "name": "core::VisibilityComponent",
+      "data": {
+        "0": {
+          "json": {
+            "visible": false
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Actions",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "name": "Play anim",
+                "type": "play_animation",
+                "jsonPayload": "{\"animation\":\"RaysAnim\",\"loop\":true}"
+              },
+              {
+                "name": "Reset",
+                "type": "stop_animation",
+                "jsonPayload": "{}"
+              },
+              {
+                "name": "Show",
+                "type": "set_visibility",
+                "jsonPayload": "{\"visible\":true,\"collider\":0}"
+              },
+              {
+                "name": "Hide",
+                "type": "set_visibility",
+                "jsonPayload": "{\"visible\":false,\"collider\":0}",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Delay hide",
+                "type": "start_delay",
+                "jsonPayload": "{\"actions\":[\"Hide\"],\"timeout\":1.1}"
+              },
+              {
+                "name": "Pop Up",
+                "type": "batch",
+                "jsonPayload": "{\"actions\":[\"Play anim\",\"Show\",\"Sound\"]}",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Sound",
+                "type": "play_sound",
+                "jsonPayload": "{\"src\":\"{assetPath}/explosion.mp3\"}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "inspector::Config",
+      "data": {
+        "0": {
+          "json": {
+            "isBasicViewEnabled": true,
+            "componentName": "Sunny Spinner",
+            "fields": []
+          }
+        }
+      }
+    }
+  ]
+}

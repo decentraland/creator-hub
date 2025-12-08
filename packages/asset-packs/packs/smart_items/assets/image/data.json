@@ -1,0 +1,8 @@
+{
+  "id": "37460a1e-affc-4f87-b725-118cc11d86fc",
+  "name": "Image",
+  "category": "media",
+  "tags": ["image", "picture", "photo", "graphic", "art", "visual"],
+  "description": "Display an image. It can be from a .png or .jpg file, or from a URL.",
+  "author": "Decentraland Foundation"
+}

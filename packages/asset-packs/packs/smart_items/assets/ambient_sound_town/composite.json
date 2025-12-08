@@ -1,0 +1,145 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/ambient_sound.glb",
+            "visibleMeshesCollisionMask": 1,
+            "invisibleMeshesCollisionMask": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "0": {
+          "json": {
+            "value": "Ambient_Town"
+          }
+        }
+      }
+    },
+    {
+      "name": "core::VisibilityComponent",
+      "data": {
+        "0": {
+          "json": {
+            "visible": false
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Actions",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "name": "Play once",
+                "type": "play_sound",
+                "jsonPayload": "{\"src\":\"{assetPath}/Town.mp3\",\"global\":true}",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Loop",
+                "type": "play_sound",
+                "jsonPayload": "{\"loop\":true,\"src\":\"{assetPath}/Town.mp3\",\"global\":true}",
+                "allowedInBasicView": true,
+                "basicViewId": "loop-sound"
+              },
+              {
+                "name": "Stop",
+                "type": "stop_sound",
+                "jsonPayload": "{}",
+                "allowedInBasicView": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Triggers",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "type": "on_spawn",
+                "conditions": [],
+                "operation": "and",
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Loop"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "inspector::Config",
+      "data": {
+        "0": {
+          "json": {
+            "isBasicViewEnabled": true,
+            "label": "Ambient Sound",
+            "sections": [
+              {
+                "id": "sound",
+                "items": [
+                  {
+                    "component": "asset-packs::Actions",
+                    "widget": "FileUploadField",
+                    "label": "Sound Path",
+                    "path": "src",
+                    "basicViewId": "loop-sound"
+                  },
+                  {
+                    "component": "asset-packs::Actions",
+                    "widget": "RangeField",
+                    "label": "Volume",
+                    "path": "volume",
+                    "basicViewId": "loop-sound",
+                    "constraints": {
+                      "min": 0,
+                      "max": 1,
+                      "step": 0.01,
+                      "default": "1"
+                    },
+                    "transform": {
+                      "in": {
+                        "steps": [
+                          {
+                            "op": "toPercentage"
+                          }
+                        ]
+                      },
+                      "out": {
+                        "steps": [
+                          {
+                            "op": "fromPercentage"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "version": 2
+          }
+        }
+      }
+    }
+  ]
+}

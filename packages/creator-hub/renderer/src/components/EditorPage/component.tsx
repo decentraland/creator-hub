@@ -21,12 +21,15 @@ import { t } from '/@/modules/store/translation/utils';
 import { initRpc } from '/@/modules/rpc';
 import { useEditor } from '/@/hooks/useEditor';
 import { useSettings } from '/@/hooks/useSettings';
+import { useSceneCustomCode } from '/@/hooks/useSceneCustomCode';
 
 import EditorPng from '/assets/images/editor.png';
+
 import { useSelector } from '#store';
 import { PublishProject } from '../Modals/PublishProject';
 import { PublishHistory } from '../Modals/PublishHistory';
 import { InstallClient } from '../Modals/InstallClient';
+import { WarningModal } from '../Modals/WarningModal';
 import { Button } from '../Button';
 import { Header } from '../Header';
 import { Row } from '../Row';
@@ -34,6 +37,7 @@ import { ButtonGroup } from '../Button';
 
 import type {
   ModalType,
+  ModalState,
   PreviewOptionsProps,
   PublishOption,
   PublishOptionsProps,
@@ -60,8 +64,9 @@ export function EditorPage() {
   } = useEditor();
   const { settings, updateAppSettings } = useSettings();
   const userId = useSelector(state => state.analytics.userId);
+  const { detectCustomCode, isLoading: isDetectingCustomCode } = useSceneCustomCode(project);
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
-  const [modalOpen, setModalOpen] = useState<ModalType | undefined>();
+  const [modalState, setModalState] = useState<ModalState>({ type: undefined });
 
   const handleIframeRef = useCallback(
     (e: React.SyntheticEvent<HTMLIFrameElement, Event>) => {
@@ -90,8 +95,40 @@ export function EditorPage() {
   const isReady = !!project && inspectorPort > 0;
 
   const openModal = useCallback((type: ModalType) => {
-    setModalOpen(type);
+    setModalState({ type });
   }, []);
+
+  const handleOpenPreviewWithErrorHandling = useCallback(async () => {
+    try {
+      await openPreview(settings.previewOptions);
+    } catch (error: any) {
+      if (isClientNotInstalledError(error)) {
+        setModalState({ type: 'install-client' });
+      }
+    }
+  }, [openPreview, settings.previewOptions]);
+
+  const handleActionWithWarningCheck = useCallback(
+    async (action: () => void | Promise<void>) => {
+      if (!settings.previewOptions.showWarnings) {
+        await action();
+        return;
+      }
+
+      const hasCustomCode = await detectCustomCode();
+
+      if (hasCustomCode) {
+        setModalState({
+          type: 'warning',
+          onContinue: action,
+        });
+        return;
+      }
+
+      await action();
+    },
+    [settings.previewOptions.showWarnings, detectCustomCode],
+  );
 
   const handleBack = useCallback(async () => {
     const rpc = iframeRef.current;
@@ -100,16 +137,23 @@ export function EditorPage() {
     navigate('/scenes');
   }, [navigate, iframeRef.current]);
 
-  const handleOpenPublishModal = useCallback(() => {
+  const handleOpenPublishModal = useCallback(async () => {
     const rpc = iframeRef.current;
     if (!rpc) return;
     saveAndGetThumbnail(rpc);
-    openModal('publish');
-  }, [iframeRef.current]);
 
-  const handleCloseModal = useCallback(() => {
-    setModalOpen(undefined);
-  }, []);
+    await handleActionWithWarningCheck(() => openModal('publish'));
+  }, [iframeRef.current, saveAndGetThumbnail, handleActionWithWarningCheck, openModal]);
+
+  const handleCloseModal = useCallback(
+    async (continued: boolean = false) => {
+      setModalState({ type: undefined });
+      if (continued && modalState.onContinue) {
+        await modalState.onContinue();
+      }
+    },
+    [modalState],
+  );
 
   const handleChangePreviewOptions = useCallback(
     (options: PreviewOptionsProps['options']) => {
@@ -119,14 +163,8 @@ export function EditorPage() {
   );
 
   const handleOpenPreview = useCallback(async () => {
-    try {
-      await openPreview(settings.previewOptions);
-    } catch (error: any) {
-      if (isClientNotInstalledError(error)) {
-        setModalOpen('install-client');
-      }
-    }
-  }, [openPreview, settings.previewOptions]);
+    await handleActionWithWarningCheck(handleOpenPreviewWithErrorHandling);
+  }, [handleActionWithWarningCheck, handleOpenPreviewWithErrorHandling]);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleClickPublishOptions = useCallback(
@@ -219,7 +257,7 @@ export function EditorPage() {
               </Button>
               <ButtonGroup
                 color="secondary"
-                disabled={loadingPreview || isInstallingProject}
+                disabled={loadingPreview || isInstallingProject || isDetectingCustomCode}
                 onClick={handleOpenPreview}
                 startIcon={loadingPreview ? <Loader size={20} /> : <PlayCircleIcon />}
                 extra={
@@ -233,7 +271,7 @@ export function EditorPage() {
               </ButtonGroup>
               <Button
                 color="primary"
-                disabled={loadingPublish || isInstallingProject}
+                disabled={loadingPublish || isInstallingProject || isDetectingCustomCode}
                 onClick={handleOpenPublishModal}
                 startIcon={loadingPublish ? <Loader size={20} /> : <PublicIcon />}
                 // extra={<PublishOptions onClick={handleClickPublishOptions} />}
@@ -248,7 +286,7 @@ export function EditorPage() {
             onLoad={handleIframeRef}
           ></iframe>
           <Modal
-            type={modalOpen}
+            type={modalState.type}
             project={project}
             onClose={handleCloseModal}
           />
@@ -343,6 +381,13 @@ function Modal({ type, ...props }: ModalProps) {
       return (
         <InstallClient
           open={type === 'install-client'}
+          onClose={() => props.onClose(false)}
+        />
+      );
+    case 'warning':
+      return (
+        <WarningModal
+          open={type === 'warning'}
           onClose={props.onClose}
         />
       );

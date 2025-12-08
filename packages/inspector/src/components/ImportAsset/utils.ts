@@ -1,7 +1,6 @@
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-import type { BaseAsset, ModelAsset, ValidationError, Asset, Gltf, AssetType } from './types';
+import { validateBytes } from '@dcl/gltf-validator-ts';
+import type { Gltf, BaseAsset, ModelAsset, ValidationError, Asset, AssetType } from './types';
 import { isModelAsset } from './types';
-const validator = require('gltf-validator');
 
 const sampleIndex = (list: any[]) => Math.floor(Math.random() * list.length);
 
@@ -103,6 +102,7 @@ export const ACCEPTED_FILE_TYPES = {
   'audio/wav': ['.wav'],
   'audio/ogg': ['.ogg'],
   'video/mp4': ['.mp4'],
+  'text/plain': ['.ts', '.tsx'],
 };
 
 const FIFTY_MB_IN_BYTES = 50 * 1024 * 1024;
@@ -117,6 +117,11 @@ const IGNORED_ERROR_CODES = [
   'MESH_PRIMITIVE_TOO_FEW_TEXCOORDS',
   'ACCESSOR_VECTOR3_NON_UNIT',
   'VALUE_NOT_IN_RANGE',
+  'ACCESSOR_INDEX_OOB',
+  'ROTATION_NON_UNIT',
+  'ANIMATION_DUPLICATE_TARGETS',
+  'ACCESSOR_INDEX_OOB',
+  'BUFFER_BYTE_LENGTH_MISMATCH',
 ];
 
 export async function getGltf(
@@ -125,7 +130,7 @@ export async function getGltf(
 ): Promise<Gltf> {
   try {
     const buffer = await file.arrayBuffer();
-    const result: Gltf = await validator.validateBytes(new Uint8Array(buffer), {
+    const result: Gltf = await validateBytes(new Uint8Array(buffer), {
       ignoredIssues: IGNORED_ERROR_CODES,
       externalResourceFunction: getExternalResource,
     });
@@ -215,7 +220,7 @@ async function getModel(asset: BaseAsset, fileMap: Map<string, BaseAsset>): Prom
 
   for (const resource of gltf.info.resources || []) {
     if (resource.storage === 'external') {
-      const normalizedName = normalizeFileName(resource.uri);
+      const normalizedName = normalizeFileName(resource.uri || '');
       const uri = fileMap.get(normalizedName);
       if (uri) {
         if (resource.pointer.includes('buffer')) buffers.push(uri);
@@ -319,6 +324,8 @@ export function determineAssetType(extension: string): AssetType {
       return 'Audio';
     case 'mp4':
       return 'Video';
+    case 'ts':
+      return 'Scripts';
     default:
       return 'Other';
   }

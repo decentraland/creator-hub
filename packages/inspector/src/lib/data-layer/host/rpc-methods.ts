@@ -17,7 +17,7 @@ import upsertAsset from './upsert-asset';
 import { installBin } from './utils/install-bin';
 import { StateManager } from './state-manager';
 import { SceneProvider } from './scene-provider';
-import { CompositeProvider } from './composite-provider';
+import { CompositeProvider, ENTITY_NAMES_PATH } from './composite-provider';
 import { UndoRedoProvider } from './undo-redo-provider';
 import { createStream } from './stream';
 
@@ -25,6 +25,40 @@ const INSPECTOR_PREFERENCES_PATH = 'inspector-preferences.json';
 
 function getIgnoredUndoRedoComponents() {
   return [EditorComponentNames.Selection, EditorComponentNames.TransformConfig];
+}
+
+/**
+ * Checks if a directory is empty and removes it if so.
+ * Recursively checks and removes parent directories up to the assets folder.
+ */
+async function removeEmptyDirectoryRecursive(
+  fs: FileSystemInterface,
+  dirPath: string,
+  assetsBasePath: string = DIRECTORY.ASSETS,
+): Promise<void> {
+  // Don't remove the assets base directory itself or any directory outside assets
+  if (!dirPath || !dirPath.startsWith(assetsBasePath) || dirPath === assetsBasePath) {
+    return;
+  }
+
+  try {
+    const entries = await fs.readdir(dirPath);
+    // If directory is empty, remove it and check parent
+    if (entries.length === 0) {
+      await fs.rmdir(dirPath);
+      const parentDir = fs.dirname(dirPath);
+      if (
+        parentDir &&
+        parentDir !== dirPath &&
+        parentDir.startsWith(assetsBasePath) &&
+        parentDir.length >= assetsBasePath.length
+      ) {
+        await removeEmptyDirectoryRecursive(fs, parentDir, assetsBasePath);
+      }
+    }
+  } catch (e) {
+    // Removing the directory or its parent failed, just ignore it
+  }
 }
 
 export async function initRpcMethods(
@@ -140,6 +174,13 @@ export async function initRpcMethods(
             if (await fs.existFile(path)) {
               await fs.rm(path);
               success.push(path);
+              // After successfully removing a file, check if parent directory should be removed
+              if (path.startsWith(DIRECTORY.ASSETS)) {
+                const parentDir = fs.dirname(path);
+                if (parentDir && parentDir !== path) {
+                  await removeEmptyDirectoryRecursive(fs, parentDir, DIRECTORY.ASSETS);
+                }
+              }
             } else {
               failed.push(path);
             }
@@ -158,9 +199,8 @@ export async function initRpcMethods(
     },
 
     async getAssetCatalog() {
-      const ignore = ['.git', 'node_modules'];
+      const ignore = ['.git', 'node_modules', ENTITY_NAMES_PATH];
       const basePath = withAssetDir();
-
       const assets = (await getFilesInDirectory(fs, basePath, [], true, ignore)).filter(item => {
         const itemLower = item.toLowerCase();
         return EXTENSIONS.some(ext => itemLower.endsWith(ext));

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/LampPostSciFi_01/LampPostSciFi_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

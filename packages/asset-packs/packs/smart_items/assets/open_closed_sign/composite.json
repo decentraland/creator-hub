@@ -1,0 +1,277 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::Transform",
+      "data": {
+        "513": {
+          "json": {
+            "position": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
+            "rotation": {
+              "x": 0,
+              "y": 0,
+              "z": 0,
+              "w": 1
+            },
+            "parent": 0
+          }
+        },
+        "514": {
+          "json": {
+            "position": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
+            "rotation": {
+              "x": 0,
+              "y": 0,
+              "z": 0,
+              "w": 1
+            },
+            "parent": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "513": {
+          "json": {
+            "src": "{assetPath}/Closed_Sign.glb",
+            "visibleMeshesCollisionMask": 1,
+            "invisibleMeshesCollisionMask": 2
+          }
+        },
+        "514": {
+          "json": {
+            "src": "{assetPath}/Open_Sign.glb",
+            "visibleMeshesCollisionMask": 1,
+            "invisibleMeshesCollisionMask": 2
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "0": {
+          "json": {
+            "value": "Open-Closed"
+          }
+        },
+        "513": {
+          "json": {
+            "value": "Closed"
+          }
+        },
+        "514": {
+          "json": {
+            "value": "Open"
+          }
+        }
+      }
+    },
+    {
+      "name": "core::VisibilityComponent",
+      "data": {
+        "513": {
+          "json": {
+            "visible": false
+          }
+        },
+        "514": {
+          "json": {
+            "visible": true
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Actions",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "type": "play_sound",
+                "name": "Play sound",
+                "jsonPayload": "{\"src\":\"{assetPath}/NeonTube.mp3\"}"
+              },
+              {
+                "type": "set_state",
+                "name": "Open",
+                "jsonPayload": "{\"state\":\"Open\"}",
+                "allowedInBasicView": true
+              },
+              {
+                "type": "set_state",
+                "name": "Close",
+                "jsonPayload": "{\"state\":\"Closed\"}",
+                "allowedInBasicView": true
+              }
+            ]
+          }
+        },
+        "513": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "type": "set_visibility",
+                "name": "Show",
+                "jsonPayload": "{\"visible\":true}"
+              },
+              {
+                "type": "set_visibility",
+                "name": "Hide",
+                "jsonPayload": "{\"visible\":false,\"collider\":0}"
+              }
+            ]
+          }
+        },
+        "514": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "type": "set_visibility",
+                "name": "Show",
+                "jsonPayload": "{\"visible\":true}"
+              },
+              {
+                "type": "set_visibility",
+                "name": "Hide",
+                "jsonPayload": "{\"visible\":false,\"collider\":0}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Triggers",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "type": "on_state_change",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::States}",
+                    "type": "when_state_is",
+                    "value": "Open"
+                  }
+                ],
+                "operation": "and",
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Play sound"
+                  },
+                  {
+                    "id": "{514:asset-packs::Actions}",
+                    "name": "Show"
+                  },
+                  {
+                    "id": "{513:asset-packs::Actions}",
+                    "name": "Hide"
+                  }
+                ],
+                "basicViewId": "trigger-when-activated"
+              },
+              {
+                "type": "on_state_change",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::States}",
+                    "type": "when_state_is",
+                    "value": "Closed"
+                  }
+                ],
+                "operation": "and",
+                "actions": [
+                  {
+                    "id": "{514:asset-packs::Actions}",
+                    "name": "Hide"
+                  },
+                  {
+                    "id": "{513:asset-packs::Actions}",
+                    "name": "Show"
+                  },
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Play sound"
+                  }
+                ],
+                "basicViewId": "trigger-when-deactivated"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::States",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": ["Open", "Closed"],
+            "defaultValue": "Open"
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Sync-Components",
+      "data": {
+        "0": {
+          "json": {
+            "value": ["core::VisibilityComponent", "core::AudioSource", "asset-packs::States"]
+          }
+        }
+      }
+    },
+    {
+      "name": "inspector::Config",
+      "data": {
+        "0": {
+          "json": {
+            "isBasicViewEnabled": true,
+            "componentName": "Open Close Sign",
+            "fields": [
+              {
+                "name": "When Open",
+                "type": "asset-packs::Triggers",
+                "basicViewId": "trigger-when-activated"
+              },
+              {
+                "name": "When Closed",
+                "type": "asset-packs::Triggers",
+                "basicViewId": "trigger-when-deactivated"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

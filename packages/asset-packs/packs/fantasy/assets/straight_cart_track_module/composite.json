@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/TrainTrack_Straight_01/TrainTrack_Straight_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

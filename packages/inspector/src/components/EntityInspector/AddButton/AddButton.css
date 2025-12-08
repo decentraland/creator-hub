@@ -18,3 +18,12 @@
   width: 100%;
   cursor: pointer;
 }
+
+.AddButton:hover:not(:disabled) {
+  background-color: var(--base-15);
+}
+
+.AddButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

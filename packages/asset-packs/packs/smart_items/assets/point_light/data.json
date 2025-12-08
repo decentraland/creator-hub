@@ -1,0 +1,8 @@
+{
+  "id": "c461e2b4-c549-4fc9-aec3-f6531f97cc54",
+  "name": "Point light",
+  "category": "lights",
+  "tags": ["light", "light source", "light emitter", "point light", "illumination", "brightness"],
+  "description": "A point light that can be used to illuminate a scene.",
+  "author": "Decentraland Foundation"
+}

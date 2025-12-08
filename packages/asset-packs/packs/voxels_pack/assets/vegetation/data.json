@@ -1,0 +1,22 @@
+{
+  "id": "8d5f255f-3105-411d-bf10-4aa71ce0000d",
+  "name": "Vegetation",
+  "category": "decorations",
+  "tags": [
+    "block",
+    "field",
+    "foliage",
+    "grass",
+    "landscape",
+    "lawn",
+    "leaf",
+    "meadow",
+    "nature",
+    "outdoor",
+    "plant",
+    "terrain",
+    "vegetation"
+  ],
+  "caption": "Green textured cube block.",
+  "author": "Decentraland Foundation"
+}
