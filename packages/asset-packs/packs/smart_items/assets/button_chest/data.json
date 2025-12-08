@@ -1,0 +1,8 @@
+{
+  "id": "0b8f3b57-a7f3-48aa-a88a-41098f264566",
+  "name": "Button Chest",
+  "category": "chests",
+  "tags": ["chest", "metal", "button", "switch"],
+  "description": "A small metal case, with a lid that slides open when clicked. It can be used to hold a button inside.",
+  "author": "Decentraland Foundation"
+}

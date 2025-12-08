@@ -1,0 +1,255 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::Transform",
+      "data": {
+        "513": {
+          "json": {
+            "position": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotation": {
+              "x": 0,
+              "y": 0,
+              "z": 0,
+              "w": 1
+            },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
+            "parent": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/RisingPillarGenesisBase.glb",
+            "visibleMeshesCollisionMask": 1,
+            "invisibleMeshesCollisionMask": 2
+          }
+        },
+        "513": {
+          "json": {
+            "src": "{assetPath}/Rising_Pillar_Column.glb",
+            "visibleMeshesCollisionMask": 1,
+            "invisibleMeshesCollisionMask": 2
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "0": {
+          "json": {
+            "value": "Base"
+          }
+        },
+        "513": {
+          "json": {
+            "value": "Pillar"
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Sync-Components",
+      "data": {
+        "513": {
+          "json": {
+            "componentIds": ["core::Tween", "asset-packs::States", "core::AudioSource"]
+          }
+        }
+      }
+    },
+    {
+      "name": "core::Tween",
+      "data": {
+        "0": {
+          "json": {
+            "duration": 5000,
+            "easingFunction": 0,
+            "mode": {
+              "$case": "move",
+              "move": {
+                "start": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                },
+                "end": {
+                  "x": 0,
+                  "y": 6,
+                  "z": 0
+                }
+              }
+            },
+            "playing": false
+          }
+        }
+      }
+    },
+    {
+      "name": "core::TweenSequence",
+      "data": {
+        "0": {
+          "json": {
+            "sequence": []
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Actions",
+      "data": {
+        "513": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "name": "Sink",
+                "type": "batch",
+                "jsonPayload": "{ \"actions\": [\"Going to Start\", \"Tween to Start\"] }",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Rise",
+                "type": "batch",
+                "jsonPayload": "{ \"actions\": [\"Going to End\", \"Tween to End\"] }",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Going to Start",
+                "type": "set_state",
+                "jsonPayload": "{ \"state\": \"GoingToStart\" }"
+              },
+              {
+                "name": "Going to End",
+                "type": "set_state",
+                "jsonPayload": "{ \"state\": \"GoingToEnd\" }"
+              },
+              {
+                "name": "Tween to Start",
+                "type": "start_tween",
+                "jsonPayload": "{\"type\":\"move_item\",\"end\":{\"x\":0,\"y\":-5,\"z\":0},\"relative\":true,\"interpolationType\":\"linear\",\"duration\":5}"
+              },
+              {
+                "name": "Tween to End",
+                "type": "start_tween",
+                "jsonPayload": "{\"type\":\"move_item\",\"end\":{\"x\":0,\"y\":5,\"z\":0},\"relative\":true,\"interpolationType\":\"linear\",\"duration\":5}"
+              },
+              {
+                "name": "Play Sound",
+                "type": "play_sound",
+                "jsonPayload": "{\"src\":\"{assetPath}/RisingPillar.mp3\"}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Triggers",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "type": "on_tween_end",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::States}",
+                    "type": "when_state_is",
+                    "value": "GoingToEnd"
+                  }
+                ],
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Going to Start"
+                  }
+                ],
+                "basicViewId": "trigger-when-end-reached"
+              },
+              {
+                "type": "on_tween_end",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::States}",
+                    "type": "when_state_is",
+                    "value": "GoingToStart"
+                  }
+                ],
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Going to End"
+                  }
+                ],
+                "basicViewId": "trigger-when-start-reached"
+              },
+              {
+                "type": "on_state_change",
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Play Sound"
+                  }
+                ],
+                "conditions": []
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::States",
+      "data": {
+        "513": {
+          "json": {
+            "id": "{self}",
+            "value": ["GoingToEnd", "GoingToStart"],
+            "defaultValue": "GoingToEnd"
+          }
+        }
+      }
+    },
+    {
+      "name": "inspector::Config",
+      "data": {
+        "513": {
+          "json": {
+            "isBasicViewEnabled": true,
+            "componentName": "Rising Pillar",
+            "fields": [
+              {
+                "name": "Tween",
+                "type": "core::Tween"
+              },
+              {
+                "name": "When End Reached",
+                "type": "asset-packs::Triggers",
+                "basicViewId": "trigger-when-end-reached"
+              },
+              {
+                "name": "When Start Reached",
+                "type": "asset-packs::Triggers",
+                "basicViewId": "trigger-when-start-reached"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

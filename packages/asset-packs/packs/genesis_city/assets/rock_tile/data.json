@@ -1,0 +1,23 @@
+{
+  "id": "5df296c5-f070-44dc-9ba2-8cafe7852037",
+  "name": "Rock Tile",
+  "category": "tiles",
+  "tags": [
+    "genesis",
+    "city",
+    "town",
+    "floors",
+    "rock",
+    "path",
+    "cobblestones",
+    "garden",
+    "backyard",
+    "yard",
+    "tile",
+    "city",
+    "road",
+    "scheme"
+  ],
+  "caption": "White tile flooring pattern.",
+  "author": "Decentraland Foundation"
+}

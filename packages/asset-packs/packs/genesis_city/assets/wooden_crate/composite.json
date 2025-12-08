@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/VegetablesBox_01/VegetablesBox_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

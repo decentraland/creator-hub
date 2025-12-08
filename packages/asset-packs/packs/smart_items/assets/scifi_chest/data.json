@@ -1,0 +1,8 @@
+{
+  "id": "6d694c78-6dd5-4a4d-acee-21dbf67dd464",
+  "name": "SciFi Chest",
+  "category": "chests",
+  "tags": ["chest", "sci-fi", "open", "close"],
+  "description": "A chest that can be opened and closed when clicked. It can be used to store items.",
+  "author": "Decentraland Foundation"
+}

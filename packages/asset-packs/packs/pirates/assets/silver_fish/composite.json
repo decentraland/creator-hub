@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Fish_01/Fish_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

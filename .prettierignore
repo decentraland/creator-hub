@@ -1,9 +1,11 @@
 **/node_modules
 **/dist
+**/bin
 **/*.svg
 
 package.json
 package-lock.json
+catalog.json
 .electron-vendors.cache.json
 
 .github

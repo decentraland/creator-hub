@@ -1,0 +1,32 @@
+{
+  "id": "7f2dbcb5-40f5-4e2f-9409-1886d26ce068",
+  "name": "Grass Tile",
+  "category": "tiles",
+  "tags": [
+    "genesis",
+    "city",
+    "town",
+    "floors",
+    "grass",
+    "path",
+    "garden",
+    "backyard",
+    "yard",
+    "tile",
+    "park",
+    "garden",
+    "earthy",
+    "field",
+    "foliage",
+    "landscape",
+    "lawn",
+    "meadow",
+    "natural",
+    "nature",
+    "outdoor",
+    "plant",
+    "terrain"
+  ],
+  "caption": "Green grass tile.",
+  "author": "Decentraland Foundation"
+}

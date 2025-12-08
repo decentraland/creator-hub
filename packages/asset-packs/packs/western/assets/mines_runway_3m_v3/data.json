@@ -1,0 +1,21 @@
+{
+  "id": "3ea8d532-a627-4f65-b08b-c9359ea0b0b0",
+  "name": "Mines Runway 3M V3",
+  "category": "tiles",
+  "tags": [
+    "asphalt",
+    "colored",
+    "concrete",
+    "mines",
+    "path",
+    "pavement",
+    "runway",
+    "searchable",
+    "strip",
+    "terrain",
+    "tile",
+    "tiles"
+  ],
+  "caption": "Colored tiles on a runway.",
+  "author": "Decentraland Foundation"
+}

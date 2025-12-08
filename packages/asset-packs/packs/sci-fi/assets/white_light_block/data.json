@@ -1,0 +1,19 @@
+{
+  "id": "00eaa2f0-38d0-4d76-bdd2-303215b48fc5",
+  "name": "White Light Block",
+  "category": "structures",
+  "tags": [
+    "scifi",
+    "power",
+    "spark",
+    "spaceship",
+    "block",
+    "curved",
+    "flat",
+    "opaque",
+    "prism",
+    "rectangular"
+  ],
+  "caption": "Light-colored block with flat top and bottom.",
+  "author": "Decentraland Foundation"
+}

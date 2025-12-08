@@ -1,0 +1,21 @@
+{
+  "id": "fa16ec5f-10c2-4452-bb83-096184ea1f5f",
+  "name": "Door 3",
+  "category": "structures",
+  "tags": [
+    "access",
+    "barrier",
+    "doorframe",
+    "doorhandle",
+    "entrance",
+    "entry",
+    "gate",
+    "handle",
+    "lock",
+    "locking",
+    "mechanism",
+    "secure"
+  ],
+  "caption": "Wooden door with a lock.",
+  "author": "Decentraland Foundation"
+}

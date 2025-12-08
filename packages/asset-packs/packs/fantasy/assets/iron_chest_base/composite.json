@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Chest_Base_Iron_01/Chest_Base_Iron_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

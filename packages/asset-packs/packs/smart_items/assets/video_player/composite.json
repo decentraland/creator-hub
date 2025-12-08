@@ -1,0 +1,289 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::VideoPlayer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "https://player.vimeo.com/external/552481870.m3u8?s=c312c8533f97e808fccc92b0510b085c8122a875",
+            "playing": true
+          }
+        }
+      }
+    },
+    {
+      "name": "core::MeshRenderer",
+      "data": {
+        "0": {
+          "json": {
+            "mesh": {
+              "$case": "plane",
+              "plane": {
+                "uvs": []
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "core::MeshCollider",
+      "data": {
+        "0": {
+          "json": {
+            "collisionMask": 1,
+            "mesh": {
+              "$case": "plane",
+              "plane": {
+                "uvs": []
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "core::Material",
+      "data": {
+        "0": {
+          "json": {
+            "material": {
+              "$case": "unlit",
+              "unlit": {
+                "texture": {
+                  "tex": {
+                    "$case": "videoTexture",
+                    "videoTexture": {
+                      "videoPlayerEntity": "{self}",
+                      "wrapMode": 0,
+                      "filterMode": 0
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Actions",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "name": "Play",
+                "type": "set_state",
+                "jsonPayload": "{ \"state\": \"Playing\" }",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Stop",
+                "type": "set_state",
+                "jsonPayload": "{ \"state\": \"Stopped\" }",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Play Video Stream",
+                "type": "play_video_stream",
+                "jsonPayload": "{ \"src\": \"https://player.vimeo.com/external/552481870.m3u8?s=c312c8533f97e808fccc92b0510b085c8122a875\", \"loop\": \"false\", \"volume\": 1, \"dclCast\": false }"
+              },
+              {
+                "name": "Stop Video Stream",
+                "type": "stop_video_stream",
+                "jsonPayload": "{}"
+              },
+              {
+                "name": "Plays or Stop",
+                "type": "set_state",
+                "jsonPayload": "{ \"state\": \"Toggle\" }",
+                "allowedInBasicView": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Triggers",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "type": "on_input_action",
+                "conditions": [],
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Plays or Stop"
+                  }
+                ],
+                "basicViewId": "trigger-when-clicked"
+              },
+              {
+                "type": "on_state_change",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::States}",
+                    "type": "when_state_is",
+                    "value": "Playing"
+                  }
+                ],
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Play Video Stream"
+                  }
+                ],
+                "basicViewId": "trigger-when-turned-on"
+              },
+              {
+                "type": "on_state_change",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::States}",
+                    "type": "when_state_is",
+                    "value": "Stopped"
+                  }
+                ],
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Stop Video Stream"
+                  }
+                ],
+                "basicViewId": "trigger-when-turned-off"
+              },
+              {
+                "type": "on_state_change",
+                "operation": "and",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::States}",
+                    "type": "when_state_is",
+                    "value": "Toggle"
+                  },
+                  {
+                    "id": "{self:asset-packs::States}",
+                    "type": "when_previous_state_is",
+                    "value": "Playing"
+                  }
+                ],
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Stop"
+                  }
+                ]
+              },
+              {
+                "type": "on_state_change",
+                "operation": "and",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::States}",
+                    "type": "when_state_is",
+                    "value": "Toggle"
+                  },
+                  {
+                    "id": "{self:asset-packs::States}",
+                    "type": "when_previous_state_is",
+                    "value": "Stopped"
+                  }
+                ],
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Play"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::States",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": ["Playing", "Stopped", "Toggle"],
+            "defaultValue": "Stopped"
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Sync-Components",
+      "data": {
+        "0": {
+          "json": {
+            "value": ["core::VideoPlayer"]
+          }
+        }
+      }
+    },
+    {
+      "name": "core::PointerEvents",
+      "data": {
+        "0": {
+          "json": {
+            "pointerEvents": [
+              {
+                "eventType": 1,
+                "eventInfo": {
+                  "button": 1,
+                  "hoverText": "Play Video",
+                  "maxDistance": 10,
+                  "showFeedback": true
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "inspector::Config",
+      "data": {
+        "0": {
+          "json": {
+            "isBasicViewEnabled": true,
+            "componentName": "Video Player",
+            "fields": [
+              {
+                "name": "Hover Text",
+                "type": "core::PointerEvents"
+              },
+              {
+                "name": "Video Player",
+                "type": "core::VideoPlayer"
+              },
+              {
+                "name": "When Clicked",
+                "type": "asset-packs::Triggers",
+                "basicViewId": "trigger-when-clicked"
+              },
+              {
+                "name": "When Turned On",
+                "type": "asset-packs::Triggers",
+                "basicViewId": "trigger-when-turned-on"
+              },
+              {
+                "name": "When Turned Off",
+                "type": "asset-packs::Triggers",
+                "basicViewId": "trigger-when-turned-off"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "id": "a0df422d-2e38-4afc-82c5-4e7da6efa3a2",
+  "name": "Barrel",
+  "category": "decorations",
+  "tags": [
+    "container",
+    "fuel",
+    "hazardous",
+    "industrial",
+    "machinery",
+    "pipe",
+    "storage",
+    "tank",
+    "valve",
+    "vessel"
+  ],
+  "caption": "Industrial metal barrel with pipes and valves.",
+  "author": "Decentraland Foundation"
+}

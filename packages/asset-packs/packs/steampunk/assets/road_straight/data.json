@@ -1,0 +1,20 @@
+{
+  "id": "1a60f177-c822-4d6a-b65a-983c90e05ad6",
+  "name": "Road Straight",
+  "category": "tiles",
+  "tags": [
+    "asphalt",
+    "concrete",
+    "highway",
+    "infrastructure",
+    "lane",
+    "pavement",
+    "roadblock",
+    "roadsign",
+    "roadway",
+    "straight",
+    "traffic"
+  ],
+  "caption": "Straight road with varied textures.",
+  "author": "Decentraland Foundation"
+}

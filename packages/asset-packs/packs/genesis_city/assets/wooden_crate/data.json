@@ -1,0 +1,24 @@
+{
+  "id": "afba36c6-9d83-4197-b600-1272eb016f2b",
+  "name": "Wooden Crate",
+  "category": "decorations",
+  "tags": [
+    "genesis",
+    "city",
+    "town",
+    "decoration",
+    "wood",
+    "crate",
+    "box",
+    "building",
+    "container",
+    "furniture",
+    "interior",
+    "room",
+    "storage",
+    "structure",
+    "vessel"
+  ],
+  "caption": "Brown wooden crate with lid.",
+  "author": "Decentraland Foundation"
+}

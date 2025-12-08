@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Tree_Leafs_02/Tree_Leafs_02.glb"
+          }
+        }
+      }
+    }
+  ]
+}

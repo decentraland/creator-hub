@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/RockLarge_03/RockLarge_03.glb"
+          }
+        }
+      }
+    }
+  ]
+}

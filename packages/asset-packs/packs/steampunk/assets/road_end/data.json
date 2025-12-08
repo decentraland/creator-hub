@@ -1,0 +1,20 @@
+{
+  "id": "70ff87e0-e483-4fc5-b169-ff46d1dc710b",
+  "name": "Road End",
+  "category": "tiles",
+  "tags": [
+    "highway",
+    "infrastructure",
+    "intersection",
+    "landscape",
+    "signage",
+    "stop",
+    "traffic",
+    "transportation",
+    "urban",
+    "vehicle",
+    "warning"
+  ],
+  "caption": "Red stop sign at road end.",
+  "author": "Decentraland Foundation"
+}

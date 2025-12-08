@@ -1,0 +1,8 @@
+{
+  "id": "6678fa53-038e-4722-b10a-b50cb175436b",
+  "name": "Vertical Green Pad",
+  "category": "platforms",
+  "tags": ["platform", "vertical", "interactive", "green", "pad", "elevator", "lift"],
+  "description": "A vertical platform that moves up and down. Players can jump on it to reach higher places.",
+  "author": "Decentraland Foundation"
+}

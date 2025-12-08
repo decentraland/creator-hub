@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Pillar_Quad_Full_01/Pillar_Quad_Full_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Module_Stair_Straight_1M/Module_Stair_Straight_1M.glb"
+          }
+        }
+      }
+    }
+  ]
+}

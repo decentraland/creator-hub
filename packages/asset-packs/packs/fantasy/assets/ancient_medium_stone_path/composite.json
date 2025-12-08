@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/RockFloor_Module_2M/RockFloor_Module_2M.glb"
+          }
+        }
+      }
+    }
+  ]
+}

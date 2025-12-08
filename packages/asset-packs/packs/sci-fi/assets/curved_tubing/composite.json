@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/TubePiece_03/TubePiece_03.glb"
+          }
+        }
+      }
+    }
+  ]
+}

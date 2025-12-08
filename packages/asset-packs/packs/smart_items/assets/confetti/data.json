@@ -1,0 +1,8 @@
+{
+  "id": "39a19351-c101-4401-8a82-bbd809bc1299",
+  "name": "Confetti",
+  "category": "pyrotechnics",
+  "tags": ["confetti", "explosion", "party", "fireworks", "celebration"],
+  "description": "A confetti explosion that can be used to celebrate. The item is invisible until it explodes. Trigger it from another smart item.",
+  "author": "Decentraland Foundation"
+}

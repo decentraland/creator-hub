@@ -1,0 +1,17 @@
+{
+  "id": "f584b0d1-317d-4781-8610-527408be21bf",
+  "name": "Horizontal Magic Roc Alt",
+  "category": "platforms",
+  "tags": [
+    "platform",
+    "horizontal",
+    "interactive",
+    "magic",
+    "rock",
+    "floating",
+    "elevator",
+    "lift"
+  ],
+  "description": "A horizontal platform that moves back and forth. Players can jump on it to reach places.",
+  "author": "Decentraland Foundation"
+}

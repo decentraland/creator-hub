@@ -1,0 +1,8 @@
+{
+  "id": "ed36149f-76c5-45c4-a678-d4b31c4ed9ca",
+  "name": "Wooden Door",
+  "category": "doors",
+  "tags": ["door", "wood", "wooden", "door", "doorway", "entrance", "exit"],
+  "description": "A wooden door that can be opened or closed when clicked by a player.",
+  "author": "Decentraland Foundation"
+}

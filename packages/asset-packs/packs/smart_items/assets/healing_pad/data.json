@@ -1,0 +1,8 @@
+{
+  "id": "001538c8-af64-43fe-bf81-74464d9bdf07",
+  "name": "Healing Pad",
+  "category": "health",
+  "tags": ["health", "healing", "pad"],
+  "description": "A healing pad that heals damage when the player stands on it. It works together with the health bar smart item.",
+  "author": "Decentraland Foundation"
+}

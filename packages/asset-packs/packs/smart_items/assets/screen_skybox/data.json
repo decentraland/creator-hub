@@ -1,0 +1,18 @@
+{
+  "id": "77e0eb10-486e-400f-abe9-5d02928bc1dd",
+  "name": "Screen Skybox",
+  "category": "media",
+  "tags": [
+    "video",
+    "screen",
+    "video screen",
+    "video player",
+    "video player screen",
+    "skybox",
+    "sky",
+    "sphere",
+    "spherical"
+  ],
+  "description": "A spherical video screen that can play videos or live streams. It can be used together with the Admin Tools smart item to manage content live.",
+  "author": "Decentraland Foundation"
+}

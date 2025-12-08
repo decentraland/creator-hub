@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/CrateLong_01/CrateLong_01.glb"
+          }
+        }
+      }
+    }
+  ]
+}

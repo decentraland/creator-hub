@@ -1,0 +1,151 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::Animator",
+      "data": {
+        "0": {
+          "json": {
+            "states": []
+          }
+        }
+      }
+    },
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Bell.glb",
+            "visibleMeshesCollisionMask": 1,
+            "invisibleMeshesCollisionMask": 2
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "0": {
+          "json": {
+            "value": "Bell"
+          }
+        }
+      }
+    },
+    {
+      "name": "core::PointerEvents",
+      "data": {
+        "0": {
+          "json": {
+            "pointerEvents": [
+              {
+                "eventType": 1,
+                "eventInfo": {
+                  "button": 1,
+                  "hoverText": "Ring",
+                  "maxDistance": 10,
+                  "showFeedback": true
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Sync-Components",
+      "data": {
+        "0": {
+          "json": {
+            "componentIds": ["core::Animator", "core::AudioSource"]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Actions",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "name": "Play Animation",
+                "type": "play_animation",
+                "jsonPayload": "{\"animation\":\"trigger\"}"
+              },
+              {
+                "name": "Play Sound",
+                "type": "play_sound",
+                "jsonPayload": "{\"src\":\"{assetPath}/bell.mp3\"}"
+              },
+              {
+                "name": "Stop Animation",
+                "type": "stop_animation",
+                "jsonPayload": "{}"
+              },
+              {
+                "name": "Stop Sound",
+                "type": "stop_sound",
+                "jsonPayload": "{}",
+                "allowedInBasicView": true
+              },
+              {
+                "type": "batch",
+                "name": "Ring",
+                "jsonPayload": "{\"actions\":[\"Play Sound\",\"Play Animation\"]}",
+                "allowedInBasicView": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Triggers",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "type": "on_input_action",
+                "conditions": [],
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Ring"
+                  }
+                ],
+                "basicViewId": "trigger-when-clicked"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "inspector::Config",
+      "data": {
+        "0": {
+          "json": {
+            "isBasicViewEnabled": true,
+            "componentName": "Bell",
+            "fields": [
+              {
+                "name": "Hover Text",
+                "type": "core::PointerEvents"
+              },
+              {
+                "name": "When Clicked",
+                "type": "asset-packs::Triggers",
+                "basicViewId": "trigger-when-clicked"
+              }
+            ],
+            "assetId": "44beb08d-443f-4290-bcc1-a5032ce77249"
+          }
+        }
+      }
+    }
+  ]
+}

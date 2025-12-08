@@ -1,0 +1,19 @@
+{
+  "id": "d55d7e33-67ec-4f58-8335-6fc00a6282f3",
+  "name": "Window 4x4 Open",
+  "category": "structures",
+  "tags": [
+    "aperture",
+    "glass",
+    "glazing",
+    "pane",
+    "panes",
+    "rectangle",
+    "shape",
+    "window",
+    "windowframe",
+    "windowpane"
+  ],
+  "caption": "Open window with four panes.",
+  "author": "Decentraland Foundation"
+}
