@@ -404,7 +404,7 @@ export function createActionsSystem(
   // CHANGE_CAMERA
   function handleChangeCamera(_entity: Entity, payload: ActionPayload<ActionType.CHANGE_CAMERA>) {
     const target = payload.virtualCameraEntity;
-    if (!target || target === 0) {
+    if (!target) {
       if (MainCamera.has(engine.CameraEntity)) {
         MainCamera.deleteFrom(engine.CameraEntity);
       }
