@@ -12,6 +12,7 @@ export enum ComponentName {
   REWARDS = 'asset-packs::Rewards',
   TEXT_ANNOUNCEMENTS = 'asset-packs::TextAnnouncements',
   VIDEO_CONTROL_STATE = 'asset-packs::VideoControlState',
+  SCRIPT = 'asset-packs::Script',
 }
 
 export enum TweenType {

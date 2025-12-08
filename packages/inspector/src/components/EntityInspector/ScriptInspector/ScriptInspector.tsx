@@ -319,7 +319,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
                 <>
                   <Button
                     className="CodeButton"
-                    onClick={(e) => handleEditScript(e, index)}
+                    onClick={e => handleEditScript(e, index)}
                   >
                     <CodeIcon />
                     Code

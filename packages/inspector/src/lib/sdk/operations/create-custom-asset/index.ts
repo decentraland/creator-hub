@@ -305,18 +305,20 @@ export function createCustomAsset(engine: IEngine) {
         // Handle Script component resources
         if (componentName === EditorComponentNames.Script) {
           if (Array.isArray(processedComponentValue.value)) {
-            processedComponentValue.value = (processedComponentValue as Script).value.map((scriptItem) => {
-              const updatedScriptItem = { ...scriptItem };
+            processedComponentValue.value = (processedComponentValue as Script).value.map(
+              scriptItem => {
+                const updatedScriptItem = { ...scriptItem };
 
-              // Process script path
-              if (scriptItem.path) {
-                const originalPath: string = scriptItem.path;
-                updatedScriptItem.path = originalPath.replace(/^.*[/]([^/]+)$/, '{assetPath}/$1');
-                resources.push(originalPath);
-              }
+                // Process script path
+                if (scriptItem.path) {
+                  const originalPath: string = scriptItem.path;
+                  updatedScriptItem.path = originalPath.replace(/^.*[/]([^/]+)$/, '{assetPath}/$1');
+                  resources.push(originalPath);
+                }
 
-              return updatedScriptItem;
-            });
+                return updatedScriptItem;
+              },
+            );
           }
         }
 
