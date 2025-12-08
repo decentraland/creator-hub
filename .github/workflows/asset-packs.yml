@@ -149,9 +149,9 @@ jobs:
       - name: upload assets to S3 prod
         run: make upload-asset-packs
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_PRD }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_PRD }}
-          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME_PRD }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.BUILDER_ITEMS_AWS_ID_PRD }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.BUILDER_ITEMS_AWS_SECRET_PRD }}
+          S3_BUCKET_NAME: ${{ secrets.BUILDER_ITEMS_S3_BUCKET_PRD }}
           S3_REGION: us-east-1
           S3_UPLOAD_CONCURRENCY: 20
 
