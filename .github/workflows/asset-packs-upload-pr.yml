@@ -15,8 +15,6 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-      members: read
-      organization-administration: read
     steps:
       - name: verify PR is from trusted source
         uses: actions/github-script@v7
@@ -35,22 +33,29 @@ jobs:
             }
 
             const author = pr.user.login;
-            core.info(`PR author: @${author}`);
+            const triggeredBy = context.payload.comment.user.login;
 
+            core.info(`PR author: @${author}, triggered by: @${triggeredBy}`);
+
+            // check if PR author is a member of the core-developers team
+            const teamSlug = 'core-developers';
             try {
-              await github.rest.orgs.checkMembershipForUser({
+              await github.rest.teams.getMembershipForUserInOrg({
                 org: context.repo.owner,
+                team_slug: teamSlug,
                 username: author
               });
-              core.info(`✅ @${author} is an organization member`);
+              core.info(`✅ @${author} is a member of ${teamSlug} team`);
             } catch (error) {
               if (error.status === 404) {
-                core.setFailed(`🚫 PR author @${author} must be an organization member to use this workflow`);
+                core.setFailed(`🚫 PR author @${author} must be a member of the ${teamSlug} team to use this workflow`);
               } else {
-                core.setFailed(`❌ Failed to verify organization membership for @${author}: ${error.message}`);
+                core.setFailed(`❌ Failed to verify team membership for @${author}: ${error.message}`);
               }
               return;
             }
+
+            core.info(`✅ Workflow authorized for @${author}'s PR by @${triggeredBy}`);
 
       - name: checkout PR branch
         uses: actions/checkout@v4
