@@ -122,6 +122,7 @@ export function setupEngine(
     CAMERA_DEFAULT_SPEED_INDEX,
     CAMERA_MIN_Y,
     CAMERA_ZOOM_SENSITIVITY,
+    preferences.cameraMode || 'orbit',
   );
   cameraManager.setFreeCameraInvertRotation(preferences.freeCameraInvertRotation);
 
