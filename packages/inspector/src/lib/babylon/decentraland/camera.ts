@@ -27,7 +27,7 @@ type AnimationData = {
 
 export class CameraManager {
   private static ANGULAR_SENSIBILITY = 500;
-  private static PANNING_SENSIBILITY = 0.01;
+  private static PANNING_SENSIBILITY = 0.005;
   private speeds: Array<number>;
   private speedIndex: number;
   private minY: number;
@@ -219,10 +219,13 @@ export class CameraManager {
           camera.getDirection(BABYLON.Axis.Z),
           BABYLON.Axis.Y,
         ).normalize();
-        const cameraUp = BABYLON.Axis.Y;
+        const cameraUp = BABYLON.Vector3.Cross(
+          cameraRight,
+          camera.getDirection(BABYLON.Axis.Z),
+        ).normalize();
 
         const panOffsetX = cameraRight.scale(
-          -deltaX * CameraManager.PANNING_SENSIBILITY * camera.speed,
+          deltaX * CameraManager.PANNING_SENSIBILITY * camera.speed,
         );
         const panOffsetY = cameraUp.scale(
           deltaY * CameraManager.PANNING_SENSIBILITY * camera.speed,
