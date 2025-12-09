@@ -14,6 +14,9 @@ interface AxisDefinition {
   labelPosition: BABYLON.Vector3;
 }
 
+const HELPER_NAME_PREFIX = 'axisHelper';
+const getHelperName = (suffix: string) => `${HELPER_NAME_PREFIX}_${suffix}`;
+
 const AXIS_CONFIG = {
   length: 0.8,
   thickness: 0.04,
@@ -80,7 +83,7 @@ function createAxisMaterial(
   emissiveColor: BABYLON.Color3,
   scene: BABYLON.Scene,
 ): BABYLON.StandardMaterial {
-  const material = new BABYLON.StandardMaterial(`axisHelper_${name}Mat`, scene);
+  const material = new BABYLON.StandardMaterial(getHelperName(`${name}Mat`), scene);
   material.diffuseColor = diffuseColor;
   material.emissiveColor = emissiveColor;
   material.specularColor = new BABYLON.Color3(0.3, 0.3, 0.3);
@@ -96,7 +99,7 @@ function createAxis(definition: AxisDefinition, scene: BABYLON.Scene): BABYLON.M
 
   // Create axis cylinder
   const axis = BABYLON.MeshBuilder.CreateCylinder(
-    `axisHelper_${name}Axis`,
+    getHelperName(`${name}Axis`),
     { height: length, diameter: thickness },
     scene,
   );
@@ -108,7 +111,7 @@ function createAxis(definition: AxisDefinition, scene: BABYLON.Scene): BABYLON.M
 
   // Create arrow cone
   const cone = BABYLON.MeshBuilder.CreateCylinder(
-    `axisHelper_${name}Cone`,
+    getHelperName(`${name}Cone`),
     { height: arrow.height, diameterTop: 0, diameterBottom: arrow.width },
     scene,
   );
@@ -130,7 +133,7 @@ function createTextLabel(
   const { textureSize, fontSize, size } = AXIS_CONFIG.label;
 
   const texture = new BABYLON.DynamicTexture(
-    `axisHelper_${text}Texture`,
+    getHelperName(`${text}Texture`),
     { width: textureSize, height: textureSize },
     scene,
     false,
@@ -146,12 +149,12 @@ function createTextLabel(
   ctx.fillText(text, textureSize / 2, textureSize / 2);
   texture.update();
 
-  const plane = BABYLON.MeshBuilder.CreatePlane(`axisHelper_${text}Label`, { size }, scene);
+  const plane = BABYLON.MeshBuilder.CreatePlane(getHelperName(`${text}Label`), { size }, scene);
   plane.position = position;
   plane.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
   plane.isPickable = false;
 
-  const material = new BABYLON.StandardMaterial(`axisHelper_${text}LabelMat`, scene);
+  const material = new BABYLON.StandardMaterial(getHelperName(`${text}LabelMat`), scene);
   material.diffuseTexture = texture;
   material.emissiveColor = color;
   material.opacityTexture = texture;
@@ -192,7 +195,7 @@ export function setupAxisHelper(
 
   // Create axis helper camera with viewport in top-right corner
   const axisCamera = new BABYLON.ArcRotateCamera(
-    'axisHelperCamera',
+    getHelperName('Camera'),
     AXIS_CONFIG.camera.alpha,
     AXIS_CONFIG.camera.beta,
     AXIS_CONFIG.camera.radius,
