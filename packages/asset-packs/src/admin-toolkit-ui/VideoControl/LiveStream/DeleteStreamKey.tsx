@@ -5,7 +5,7 @@ import ReactEcs, { UiEntity, Label } from '@dcl/react-ecs';
 import { Button } from '../../Button';
 import { LoadingDots } from '../../Loading';
 import { Error } from '../../Error';
-import { resetStreamKey, revokeStreamKey } from '../api';
+import { resetStreamKey } from '../api';
 import { getComponents } from '../../../definitions';
 import { state } from '../..';
 
@@ -101,6 +101,7 @@ export function DeleteStreamKeyConfirmation({
                 const videoControl = VideoControlState.getMutable(state.adminToolkitUiEntity);
                 videoControl.endsAt = data?.endsAt;
                 onReset();
+                setIsLoading(false);
               }
             }}
           />

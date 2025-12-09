@@ -1,5 +1,5 @@
 import { DeepReadonlyObject, Entity, IEngine, PBVideoPlayer } from '@dcl/ecs';
-import { getComponents } from '../../definitions';
+import { getComponents, LIVEKIT_STREAM_SRC, VIDEO_URL_TYPE } from '../../definitions';
 import { getExplorerComponents } from '../../components';
 import { nextTickFunctions, state } from '../index';
 import { DEFAULT_VOLUME } from '.';
@@ -112,4 +112,16 @@ export function useSelectedVideoPlayer(
   const entity = videoPlayers[state.videoControl.selectedVideoPlayer ?? 0].entity as Entity;
   const videoPlayer = VideoPlayer.getOrNull(entity);
   return [entity, videoPlayer!];
+}
+
+export function isDclCast(url: string) {
+  return url.startsWith(LIVEKIT_STREAM_SRC) && state.videoControl.selectedStream === 'dcl-cast';
+}
+
+export function isLiveStream(url: string) {
+  return url.startsWith(LIVEKIT_STREAM_SRC) && state.videoControl.selectedStream === 'live';
+}
+
+export function isVideoUrl(url: string) {
+  return url.startsWith(VIDEO_URL_TYPE);
 }

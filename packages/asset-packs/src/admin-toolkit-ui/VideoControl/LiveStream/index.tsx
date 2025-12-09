@@ -69,7 +69,7 @@ export function LiveStream({
       <UiEntity uiTransform={{ width: '100%', justifyContent: 'space-between' }}>
         <Header
           iconSrc={ICONS.LIVE_SOURCE}
-          title="Live Stream"
+          title="Stream"
           scaleFactor={scaleFactor}
         />
         <UiEntity

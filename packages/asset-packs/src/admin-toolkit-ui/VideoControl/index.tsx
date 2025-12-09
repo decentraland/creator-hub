@@ -6,12 +6,13 @@ import { Button } from '../Button';
 import { CONTENT_URL } from '../constants';
 import { State } from '../types';
 import { Header } from '../Header';
-import { getVideoPlayers, useSelectedVideoPlayer } from './utils';
+import { getVideoPlayers, isDclCast, isVideoUrl, useSelectedVideoPlayer } from './utils';
 import { Card } from '../Card';
 import { VideoControlURL } from './VideoUrl';
 import { LiveStream } from './LiveStream';
 import { Active } from '../Active';
 import { LIVEKIT_STREAM_SRC } from '../../definitions';
+import DclCast from './DclCast';
 
 // Constants
 export const ICONS = {
@@ -23,8 +24,13 @@ export const ICONS = {
   LOOP: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-loop.png`,
   VOLUME_MINUS_BUTTON: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-volume-minus-button.png`,
   VOLUME_PLUS_BUTTON: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-volume-plus-button.png`,
-  VIDEO_SOURCE: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-video.png`,
+  // VIDEO_SOURCE: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-video-icon.png`,
+  VIDEO_SOURCE:
+    'https://builder-items.decentraland.zone/admin_toolkit/assets/icons/video-control-video-icon.png',
   LIVE_SOURCE: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-live.png`,
+  // DCL_CAST_SOURCE: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-dcl-cast.png`,
+  DCL_CAST_SOURCE:
+    'https://builder-items.decentraland.zone/admin_toolkit/assets/icons/video-control-dcl-cast.png',
   INFO: `${CONTENT_URL}/admin_toolkit/assets/icons/info.png`,
 } as const;
 
@@ -42,10 +48,18 @@ export function VideoControl({ engine, state }: { engine: IEngine; state: State 
   const [selectedEntity, selectedVideo] = useSelectedVideoPlayer(engine) ?? [];
   const scaleFactor = getScaleUIFactor(engine);
   const videoPlayers = getVideoPlayers(engine);
-  const [selected, setSelected] = ReactEcs.useState<'video-url' | 'live' | undefined>(undefined);
+  const [selected, setSelected] = ReactEcs.useState<'video-url' | 'live' | 'dcl-cast' | undefined>(
+    undefined,
+  );
 
   ReactEcs.useEffect(() => {
-    setSelected(selectedVideo && selectedVideo.src.startsWith('https://') ? 'video-url' : 'live');
+    setSelected(
+      selectedVideo && isDclCast(selectedVideo.src)
+        ? 'dcl-cast'
+        : selectedVideo && isVideoUrl(selectedVideo.src)
+          ? 'video-url'
+          : 'live',
+    );
   }, [state.videoControl.selectedVideoPlayer]);
 
   return (
@@ -109,16 +123,23 @@ export function VideoControl({ engine, state }: { engine: IEngine; state: State 
               fontSize={16 * scaleFactor}
               value="<b>Media Source</b>"
               color={Color4.White()}
-              uiTransform={{ margin: { bottom: 2 * scaleFactor, top: 16 * scaleFactor } }}
+              uiTransform={{
+                margin: { bottom: 2 * scaleFactor, top: 16 * scaleFactor },
+              }}
             />
             <UiEntity
               uiTransform={{
                 margin: { top: 10 * scaleFactor },
                 flexDirection: 'row',
                 width: '100%',
+                justifyContent: 'space-between',
               }}
             >
-              <UiEntity uiTransform={{ width: '50%', padding: { right: 8 * scaleFactor } }}>
+              <UiEntity
+                uiTransform={{
+                  width: '30%',
+                }}
+              >
                 <CustomButton
                   engine={engine}
                   id="video_control_url"
@@ -127,17 +148,45 @@ export function VideoControl({ engine, state }: { engine: IEngine; state: State 
                   onClick={() => setSelected('video-url')}
                   scaleFactor={scaleFactor}
                   selected={selected === 'video-url'}
-                  active={selectedVideo && selectedVideo.src.startsWith('https://')}
+                  active={selectedVideo && isVideoUrl(selectedVideo.src)}
                 />
               </UiEntity>
-              <UiEntity uiTransform={{ width: '50%', padding: { left: 8 * scaleFactor } }}>
+              <UiEntity
+                uiTransform={{
+                  width: '30%',
+                }}
+              >
+                <CustomButton
+                  engine={engine}
+                  id="video_control_dcl_cast"
+                  value="<b>DCL CAST</b>"
+                  icon={ICONS.DCL_CAST_SOURCE}
+                  onClick={() => setSelected('dcl-cast')}
+                  scaleFactor={scaleFactor}
+                  selected={selected === 'dcl-cast'}
+                  active={
+                    selectedVideo &&
+                    selectedVideo.src.startsWith(LIVEKIT_STREAM_SRC) &&
+                    state.videoControl.selectedStream === 'dcl-cast'
+                  }
+                />
+              </UiEntity>
+              <UiEntity
+                uiTransform={{
+                  width: '30%',
+                }}
+              >
                 <CustomButton
                   engine={engine}
                   id="video_control_live"
-                  value="<b>LIVE STREAM</b>"
+                  value="<b>STREAM</b>"
                   icon={ICONS.LIVE_SOURCE}
                   onClick={() => setSelected('live')}
-                  active={selectedVideo && selectedVideo.src.startsWith(LIVEKIT_STREAM_SRC)}
+                  active={
+                    selectedVideo &&
+                    selectedVideo.src.startsWith(LIVEKIT_STREAM_SRC) &&
+                    state.videoControl.selectedStream === 'live'
+                  }
                   scaleFactor={scaleFactor}
                   selected={selected === 'live'}
                 />
@@ -160,6 +209,14 @@ export function VideoControl({ engine, state }: { engine: IEngine; state: State 
             <LiveStream
               engine={engine}
               scaleFactor={scaleFactor}
+              entity={selectedEntity}
+              video={selectedVideo}
+            />
+          )}
+          {selected === 'dcl-cast' && (
+            <DclCast
+              engine={engine}
+              state={state}
               entity={selectedEntity}
               video={selectedVideo}
             />
