@@ -66,6 +66,8 @@ const MultiEntityInspector = withSdk<{ entities: Entity[] }>(({ sdk, entities })
       { name: sdk.components.Tags.componentName, component: TagsInspector },
       { name: sdk.components.Transform.componentName, component: TransformInspector },
       { name: sdk.components.Material.componentName, component: MaterialInspector },
+      { name: sdk.components.AudioSource.componentName, component: AudioSourceInspector },
+      { name: sdk.components.AudioStream.componentName, component: AudioStreamInspector },
     ],
     [sdk],
   );
