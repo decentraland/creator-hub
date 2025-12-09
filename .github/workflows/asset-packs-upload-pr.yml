@@ -35,8 +35,11 @@ jobs:
             const author = pr.user.login;
             const authorAssociation = pr.author_association;
 
-            if (authorAssociation !== 'MEMBER' && authorAssociation !== 'OWNER') {
-              core.setFailed(`🚫 PR author @${author} must be an organization member to use this workflow`);
+            core.info(`PR author: @${author}, association: ${authorAssociation}`);
+
+            const allowedAssociations = ['MEMBER', 'OWNER'];
+            if (!allowedAssociations.includes(authorAssociation)) {
+              core.setFailed(`🚫 PR author @${author} must be an organization member to use this workflow (current association: ${authorAssociation})`);
               return;
             }
 
