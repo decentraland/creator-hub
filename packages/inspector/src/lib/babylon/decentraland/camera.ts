@@ -7,7 +7,7 @@ import { fitSphereIntoCameraFrustum } from '../../logic/math';
 import { PARCEL_SIZE } from '../../utils/scene';
 import { Keys, keyState } from './keys';
 import type { EcsEntity } from './EcsEntity';
-import { LEFT_BUTTON, RIGHT_BUTTON } from './mouse-utils';
+import { LEFT_BUTTON, MIDDLE_BUTTON, RIGHT_BUTTON } from './mouse-utils';
 
 type SpeedChangeEvent = { change: number };
 
@@ -27,6 +27,7 @@ type AnimationData = {
 
 export class CameraManager {
   private static ANGULAR_SENSIBILITY = 500;
+  private static PANNING_SENSIBILITY = 0.005;
   private speeds: Array<number>;
   private speedIndex: number;
   private minY: number;
@@ -135,6 +136,12 @@ export class CameraManager {
   }
 
   private createCamera(scene: BABYLON.Scene) {
+    let isAltKeyDown = false;
+    let holdingRightMouseButton = false;
+    let isMiddleMouseButtonDown = false;
+    let lastPointerX = 0;
+    let lastPointerY = 0;
+
     const center = new BABYLON.Vector3(PARCEL_SIZE / 2, 0, PARCEL_SIZE / 2);
     const size = center.length();
     const camera = new BABYLON.FreeCamera(
@@ -168,7 +175,6 @@ export class CameraManager {
       return false;
     }
 
-    let isAltKeyDown = false;
     scene.onPreKeyboardObservable.add(ev => {
       const oldAltKeyState = isAltKeyDown;
       if (ev.type === BABYLON.KeyboardEventTypes.KEYDOWN && ev.event.inputIndex === Keys.KEY_ALT) {
@@ -190,13 +196,48 @@ export class CameraManager {
       }
     });
 
-    let holdingRightMouseButton = false;
     scene.onPointerObservable.add(ev => {
       if (ev.type === BABYLON.PointerEventTypes.POINTERDOWN && ev.event.button === RIGHT_BUTTON) {
         holdingRightMouseButton = true;
       }
       if (ev.type === BABYLON.PointerEventTypes.POINTERUP && ev.event.button === RIGHT_BUTTON) {
         holdingRightMouseButton = false;
+      }
+      if (ev.type === BABYLON.PointerEventTypes.POINTERDOWN && ev.event.button === MIDDLE_BUTTON) {
+        isMiddleMouseButtonDown = true;
+        lastPointerX = ev.event.clientX;
+        lastPointerY = ev.event.clientY;
+      }
+      if (ev.type === BABYLON.PointerEventTypes.POINTERUP && ev.event.button === MIDDLE_BUTTON) {
+        isMiddleMouseButtonDown = false;
+      }
+      if (ev.type === BABYLON.PointerEventTypes.POINTERMOVE && isMiddleMouseButtonDown) {
+        const deltaX = ev.event.clientX - lastPointerX;
+        const deltaY = ev.event.clientY - lastPointerY;
+
+        const cameraRight = BABYLON.Vector3.Cross(
+          camera.getDirection(BABYLON.Axis.Z),
+          BABYLON.Axis.Y,
+        ).normalize();
+        const cameraUp = BABYLON.Vector3.Cross(
+          cameraRight,
+          camera.getDirection(BABYLON.Axis.Z),
+        ).normalize();
+
+        const panOffsetX = cameraRight.scale(
+          deltaX * CameraManager.PANNING_SENSIBILITY * camera.speed,
+        );
+        const panOffsetY = cameraUp.scale(
+          deltaY * CameraManager.PANNING_SENSIBILITY * camera.speed,
+        );
+
+        camera.position.addInPlace(panOffsetX);
+        camera.position.addInPlace(panOffsetY);
+        camera.target.addInPlace(panOffsetX);
+        camera.target.addInPlace(panOffsetY);
+
+        lastPointerX = ev.event.clientX;
+        lastPointerY = ev.event.clientY;
       }
       if (ev.type === BABYLON.PointerEventTypes.POINTERWHEEL) {
         const browserEvent = ev.event as BABYLON.IWheelEvent;
