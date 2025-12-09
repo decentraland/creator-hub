@@ -22,9 +22,9 @@ export const FADE_ALPHA = 0.5;
 export const FULL_ALPHA = 1.0;
 
 // Plane geometry constants
-const PLANE_SIZE = 0.03;
+const PLANE_SIZE = 0.022;
 const PLANE_THICKNESS = 0.001;
-const PLANE_OFFSET = 0.09;
+const PLANE_OFFSET = 0.04;
 
 export const PLANE_CONFIGS: PlaneConfig[] = [
   {

@@ -46,7 +46,7 @@ export class PositionGizmo implements IGizmoTransformer {
     const positionGizmo = this.getPositionGizmo();
     if (!positionGizmo) return false;
 
-    const offset = 0.25;
+    const offset = 0.083;
     const tolerance = 0.01;
     let allReady = true;
 
