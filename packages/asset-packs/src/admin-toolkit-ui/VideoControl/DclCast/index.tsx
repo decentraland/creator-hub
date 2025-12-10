@@ -55,11 +55,6 @@ const DclCast = ({
     setIsLoading(true);
     setError(false);
 
-    // if (state.videoControl.dclCast && !force) {
-    //   setIsLoading(false)
-    //   return
-    // }
-
     const result = await handleGetDclCastInfo(state);
 
     if (!result) {

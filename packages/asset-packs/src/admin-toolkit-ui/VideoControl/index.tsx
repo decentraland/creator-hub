@@ -160,11 +160,7 @@ export function VideoControl({ engine, state }: { engine: IEngine; state: State 
                   onClick={() => setSelected('dcl-cast')}
                   scaleFactor={scaleFactor}
                   selected={selected === 'dcl-cast'}
-                  active={
-                    selectedVideo &&
-                    selectedVideo.src.startsWith(LIVEKIT_STREAM_SRC) &&
-                    state.videoControl.selectedStream === 'dcl-cast'
-                  }
+                  active={isDclCast(selectedVideo?.src)}
                 />
               </UiEntity>
               <UiEntity
@@ -178,11 +174,7 @@ export function VideoControl({ engine, state }: { engine: IEngine; state: State 
                   value="<b>STREAM</b>"
                   icon={ICONS.LIVE_SOURCE}
                   onClick={() => setSelected('live')}
-                  active={
-                    selectedVideo &&
-                    selectedVideo.src.startsWith(LIVEKIT_STREAM_SRC) &&
-                    state.videoControl.selectedStream === 'live'
-                  }
+                  active={isLiveStream(selectedVideo?.src)}
                   scaleFactor={scaleFactor}
                   selected={selected === 'live'}
                 />
