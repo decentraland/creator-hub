@@ -70,6 +70,10 @@ const MultiEntityInspector = withSdk<{ entities: Entity[] }>(({ sdk, entities })
       { name: sdk.components.AudioSource.componentName, component: AudioSourceInspector },
       { name: sdk.components.AudioStream.componentName, component: AudioStreamInspector },
       { name: sdk.components.TextShape.componentName, component: TextShapeInspector },
+      {
+        name: sdk.components.VisibilityComponent.componentName,
+        component: VisibilityComponentInspector,
+      },
     ],
     [sdk],
   );
