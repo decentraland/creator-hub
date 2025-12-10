@@ -42,9 +42,9 @@ export const handleUnbanUser = async (address: string): Promise<boolean> => {
   if (!address) return false;
   const [error, _] = await deleteSceneBan(address);
   if (error) {
-    await fetchSceneBans();
     return false;
   } else {
+    await fetchSceneBans();
     return true;
   }
 };
