@@ -1,7 +1,10 @@
 import { useCallback } from 'react';
 import { withSdk } from '../../../hoc/withSdk';
-import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
-import { useComponentInput } from '../../../hooks/sdk/useComponentInput';
+import { useAllEntitiesHaveComponent } from '../../../hooks/sdk/useHasComponent';
+import { useMultiComponentInput } from '../../../hooks/sdk/useComponentInput';
+import { analytics, Event } from '../../../lib/logic/analytics';
+import { getAssetByModel } from '../../../lib/logic/catalog';
+import { CoreComponents } from '../../../lib/sdk/components';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { CheckboxField, Dropdown, RangeField, InfoTooltip } from '../../ui';
@@ -12,12 +15,12 @@ import type { Props } from './types';
 import { LightKind, LIGHT_TYPE_OPTIONS } from './types';
 import { fromComponent, toComponent, isValidInput } from './utils';
 
-export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
-  const { LightSource } = sdk.components;
+export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
+  const { LightSource, GltfContainer } = sdk.components;
 
-  const hasComponent = useHasComponent(entity, LightSource);
-  const { getInputProps } = useComponentInput(
-    entity,
+  const allEntitiesHaveLightSource = useAllEntitiesHaveComponent(entities, LightSource);
+  const { getInputProps } = useMultiComponentInput(
+    entities,
     LightSource,
     fromComponent,
     toComponent,
@@ -25,11 +28,22 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   );
 
   const handleRemove = useCallback(async () => {
-    sdk.operations.removeComponent(entity, LightSource);
+    for (const entity of entities) {
+      sdk.operations.removeComponent(entity, LightSource);
+    }
     await sdk.operations.dispatch();
-  }, []);
 
-  if (!hasComponent) return null;
+    // GltfContainer may not exist on all entities with LightSource
+    const gltfContainer = GltfContainer.getOrNull(entities[0]);
+    const asset = gltfContainer ? getAssetByModel(gltfContainer.src) : undefined;
+    analytics.track(Event.REMOVE_COMPONENT, {
+      componentName: CoreComponents.LIGHT_SOURCE,
+      itemId: asset?.id,
+      itemPath: gltfContainer?.src,
+    });
+  }, [sdk, entities, LightSource, GltfContainer]);
+
+  if (!allEntitiesHaveLightSource) return null;
 
   const type = getInputProps('type');
   const active = getInputProps('active', e => e.target.checked);

@@ -74,6 +74,7 @@ const MultiEntityInspector = withSdk<{ entities: Entity[] }>(({ sdk, entities })
         name: sdk.components.VisibilityComponent.componentName,
         component: VisibilityComponentInspector,
       },
+      { name: sdk.components.LightSource.componentName, component: LightSourceInspector },
     ],
     [sdk],
   );
