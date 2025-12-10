@@ -118,10 +118,10 @@ export function isDclCast(url: string) {
   return url.startsWith(LIVEKIT_STREAM_SRC) && state.videoControl.selectedStream === 'dcl-cast';
 }
 
-export function isLiveStream(url?: string): boolean {
-  return !!url?.startsWith(LIVEKIT_STREAM_SRC) && state.videoControl.selectedStream === 'live';
+export function isLiveStream(url: string): boolean {
+  return url.startsWith(LIVEKIT_STREAM_SRC) && state.videoControl.selectedStream === 'live';
 }
 
-export function isVideoUrl(url?: string): boolean {
-  return !!url?.startsWith(VIDEO_URL_TYPE);
+export function isVideoUrl(url: string): boolean {
+  return url.startsWith(VIDEO_URL_TYPE);
 }

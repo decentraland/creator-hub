@@ -6,12 +6,17 @@ import { Button } from '../Button';
 import { CONTENT_URL } from '../constants';
 import { State } from '../types';
 import { Header } from '../Header';
-import { getVideoPlayers, isDclCast, isVideoUrl, useSelectedVideoPlayer } from './utils';
+import {
+  getVideoPlayers,
+  isDclCast,
+  isLiveStream,
+  isVideoUrl,
+  useSelectedVideoPlayer,
+} from './utils';
 import { Card } from '../Card';
 import { VideoControlURL } from './VideoUrl';
 import { LiveStream } from './LiveStream';
 import { Active } from '../Active';
-import { LIVEKIT_STREAM_SRC } from '../../definitions';
 import DclCast from './DclCast';
 
 // Constants
@@ -160,7 +165,7 @@ export function VideoControl({ engine, state }: { engine: IEngine; state: State 
                   onClick={() => setSelected('dcl-cast')}
                   scaleFactor={scaleFactor}
                   selected={selected === 'dcl-cast'}
-                  active={isDclCast(selectedVideo?.src)}
+                  active={selectedVideo && isDclCast(selectedVideo.src)}
                 />
               </UiEntity>
               <UiEntity
@@ -174,7 +179,7 @@ export function VideoControl({ engine, state }: { engine: IEngine; state: State 
                   value="<b>STREAM</b>"
                   icon={ICONS.LIVE_SOURCE}
                   onClick={() => setSelected('live')}
-                  active={isLiveStream(selectedVideo?.src)}
+                  active={selectedVideo && isLiveStream(selectedVideo.src)}
                   scaleFactor={scaleFactor}
                   selected={selected === 'live'}
                 />
