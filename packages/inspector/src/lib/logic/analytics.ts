@@ -34,7 +34,7 @@ export type Events = {
   [Event.REMOVE_COMPONENT]: {
     componentName: string;
     itemId?: string;
-    itemPath: string;
+    itemPath?: string;
   };
   [Event.SEARCH_ITEM]: {
     keyword: string;
