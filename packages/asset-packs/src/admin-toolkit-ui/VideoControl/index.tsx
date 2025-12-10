@@ -24,13 +24,9 @@ export const ICONS = {
   LOOP: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-loop.png`,
   VOLUME_MINUS_BUTTON: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-volume-minus-button.png`,
   VOLUME_PLUS_BUTTON: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-volume-plus-button.png`,
-  // VIDEO_SOURCE: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-video-icon.png`,
-  VIDEO_SOURCE:
-    'https://builder-items.decentraland.zone/admin_toolkit/assets/icons/video-control-video-icon.png',
+  VIDEO_SOURCE: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-video-icon.png`,
   LIVE_SOURCE: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-live.png`,
-  // DCL_CAST_SOURCE: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-dcl-cast.png`,
-  DCL_CAST_SOURCE:
-    'https://builder-items.decentraland.zone/admin_toolkit/assets/icons/video-control-dcl-cast.png',
+  DCL_CAST_SOURCE: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-dcl-cast.png`,
   INFO: `${CONTENT_URL}/admin_toolkit/assets/icons/info.png`,
 } as const;
 
