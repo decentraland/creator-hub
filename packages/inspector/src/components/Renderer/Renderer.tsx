@@ -51,6 +51,7 @@ import { Warnings } from '../Warnings';
 import { CameraSpeed } from './CameraSpeed';
 import { Shortcuts } from './Shortcuts';
 import { Metrics } from './Metrics';
+import { AxisHelper } from './AxisHelper';
 
 import './Renderer.css';
 
@@ -436,6 +437,7 @@ const Renderer: React.FC = () => {
       {isLoading && <Loading />}
       <Warnings />
       <CameraSpeed />
+      <AxisHelper />
       {!hiddenPanels[PanelName.METRICS] && <Metrics />}
       {!hiddenPanels[PanelName.SHORTCUTS] && (
         <Shortcuts

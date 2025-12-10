@@ -48,6 +48,7 @@ import {
 import { getExplorerComponents } from './components';
 
 export const LIVEKIT_STREAM_SRC = 'livekit-video://current-stream';
+export const VIDEO_URL_TYPE = 'https://';
 
 export * from './enums';
 export * from './action-types';

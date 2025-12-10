@@ -55,6 +55,7 @@ export function ShowStreamKey({
         STREAM_KEY_TIMEOUT_ACTION,
         AUTO_HIDE_DURATION_SECONDS,
         () => {
+          setStreamKey(undefined);
           setShowStreamkey(false);
           setTimeRemaining(0);
         },
@@ -297,7 +298,7 @@ export function ShowStreamKey({
             />
           </UiEntity>
         )}
-        {video?.src === LIVEKIT_STREAM_SRC ? (
+        {video?.src === LIVEKIT_STREAM_SRC && state.videoControl.selectedStream === 'live' ? (
           <Button
             id="video_control_share_screen_clear"
             value="<b>Deactivate</b>"
@@ -311,6 +312,7 @@ export function ShowStreamKey({
             }}
             onMouseDown={() => {
               controls.setSource('');
+              state.videoControl.selectedStream = undefined;
             }}
           />
         ) : (
@@ -328,6 +330,7 @@ export function ShowStreamKey({
             color={Color4.Black()}
             onMouseDown={() => {
               controls.setSource(LIVEKIT_STREAM_SRC);
+              state.videoControl.selectedStream = 'live';
             }}
           />
         )}
