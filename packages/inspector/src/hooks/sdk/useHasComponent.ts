@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Entity } from '@dcl/ecs';
 
 import type { Component } from '../../lib/sdk/components';
@@ -9,11 +9,11 @@ export const useHasComponent = (entity: Entity, component: Component) => {
 
   useChange(
     event => {
-      if (event.component?.componentId === component.componentId && event.entity === entity) {
+      if (event.entity === entity && event.component?.componentId === component.componentId) {
         setHasComponent(component.has(entity));
       }
     },
-    [entity],
+    [entity, component],
   );
 
   useEffect(() => {
@@ -28,16 +28,15 @@ export const useAllEntitiesHaveComponent = (entities: Entity[], component: Compo
     entities.every(entity => component.has(entity)),
   );
 
+  const entitiesSet = useMemo(() => new Set(entities), [entities]);
+
   useChange(
     event => {
-      if (
-        entities.includes(event.entity) &&
-        event.component?.componentId === component.componentId
-      ) {
+      if (event.component?.componentId === component.componentId && entitiesSet.has(event.entity)) {
         setAllHaveComponent(entities.every(entity => component.has(entity)));
       }
     },
-    [entities, component],
+    [entitiesSet, component],
   );
 
   useEffect(() => {
