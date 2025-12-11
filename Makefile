@@ -33,7 +33,14 @@ install:
 
 install-protoc:
 	mkdir -p node_modules/.bin/protobuf
-	curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v$(PROTOBUF_VERSION)/$(PROTOBUF_ZIP)
+	@echo "Downloading protoc $(PROTOBUF_VERSION) for $(UNAME_S) $(UNAME_M)..."
+	@echo "Target file: $(PROTOBUF_ZIP)"
+	rm -f $(PROTOBUF_ZIP)
+	curl -fsSL --retry 3 --retry-delay 2 -o $(PROTOBUF_ZIP) \
+		https://github.com/protocolbuffers/protobuf/releases/download/v$(PROTOBUF_VERSION)/$(PROTOBUF_ZIP) || \
+		(echo "Failed to download protoc. File size: $$(stat -c%s $(PROTOBUF_ZIP) 2>/dev/null || stat -f%z $(PROTOBUF_ZIP) 2>/dev/null || echo 'N/A')"; exit 1)
+	@echo "Downloaded file size: $$(stat -c%s $(PROTOBUF_ZIP) 2>/dev/null || stat -f%z $(PROTOBUF_ZIP) 2>/dev/null || echo 'N/A') bytes"
+	@file $(PROTOBUF_ZIP) || true
 	unzip -o $(PROTOBUF_ZIP) -d node_modules/.bin/protobuf
 	rm $(PROTOBUF_ZIP)
 	chmod +x $(PROTOC)

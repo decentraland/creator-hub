@@ -32,7 +32,7 @@ jobs:
       contents: read
       id-token: write
     outputs:
-      changed: ${{ steps.version.outputs.changed }}
+      changed: ${{ steps.check-changed.outputs.changed }}
       version: ${{ steps.version.outputs.version }}
       previous_version: ${{ steps.version.outputs.previous_version }}
     steps:
@@ -53,6 +53,16 @@ jobs:
           search_commit_body: true
           user_format_type: "json"
           change_path: "packages/inspector"
+
+      # build inspector if either inspector or asset-packs changed
+      - name: Check if build is needed
+        id: check-changed
+        run: |
+          if [[ "${{ steps.version.outputs.changed }}" == "true" || "${{ inputs.asset_packs_changed }}" == "true" ]]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
 
   publish:
     runs-on: ubuntu-latest
