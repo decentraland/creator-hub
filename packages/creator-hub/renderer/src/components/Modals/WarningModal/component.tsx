@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Box, Button, Typography, Checkbox, FormControlLabel } from 'decentraland-ui2';
 
 import { t } from '/@/modules/store/translation/utils';
@@ -15,12 +15,23 @@ interface Props {
 export function WarningModal({ open, onClose }: Props) {
   const { settings, updateAppSettings } = useSettings();
   const [dontShowAgain, setDontShowAgain] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setIsLoading(false);
+      setDontShowAgain(false);
+    }
+  }, [open]);
 
   const handleCheckboxChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     setDontShowAgain(event.target.checked);
   }, []);
 
   const handleContinue = useCallback(() => {
+    if (isLoading) return;
+    setIsLoading(true);
+
     if (dontShowAgain) {
       updateAppSettings({
         ...settings,
@@ -31,7 +42,7 @@ export function WarningModal({ open, onClose }: Props) {
       });
     }
     onClose(true);
-  }, [dontShowAgain, settings, updateAppSettings, onClose]);
+  }, [isLoading, dontShowAgain, settings, updateAppSettings, onClose]);
 
   return (
     <Modal
@@ -69,6 +80,7 @@ export function WarningModal({ open, onClose }: Props) {
             variant="contained"
             className="actionButton"
             onClick={handleContinue}
+            disabled={isLoading}
           >
             {t('modal.warning.continue')}
           </Button>
