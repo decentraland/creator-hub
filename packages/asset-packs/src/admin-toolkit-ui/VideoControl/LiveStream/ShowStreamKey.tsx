@@ -1,11 +1,11 @@
 import { Color4 } from '@dcl/sdk/math';
-import { DeepReadonlyObject, Entity, IEngine, PBVideoPlayer } from '@dcl/ecs';
+import type { DeepReadonlyObject, Entity, IEngine, PBVideoPlayer } from '@dcl/ecs';
 import ReactEcs, { UiEntity, Label } from '@dcl/react-ecs';
-import { copyToClipboard } from '~system/RestrictedActions';
 import { COLORS } from '..';
 import { createVideoPlayerControls } from '../utils';
 import { VideoControlVolume } from '../VolumeControl';
 import { Button } from '../../Button';
+import { FeedbackButton } from '../../FeedbackButton';
 import { LIVEKIT_STREAM_SRC } from '../../../definitions';
 import { ERROR_ICON } from '../../Error';
 import { CONTENT_URL } from '../../constants';
@@ -13,6 +13,7 @@ import { getStreamKey } from '../api';
 import { LoadingDots } from '../../Loading';
 import { startTimeout, stopTimeout, startInterval, stopInterval } from '../../../timer';
 import { state } from '../..';
+import { copyToClipboard } from '~system/RestrictedActions';
 
 const STREAM_ICONS = {
   eyeShow: `${CONTENT_URL}/admin_toolkit/assets/icons/eye.png`,
@@ -102,7 +103,7 @@ export function ShowStreamKey({
           value={`<b>${RTMP_SERVER_URL}</b>`}
           color={Color4.fromHexString('#A09BA8')}
         />
-        <Button
+        <FeedbackButton
           id="video_control_copy_rtmp_server"
           value="<b>Copy</b>"
           variant="primary"
@@ -117,7 +118,7 @@ export function ShowStreamKey({
         />
       </UiEntity>
       <Label
-        value="<b>Stream Key<b>"
+        value="<b>Stream Key</b>"
         color={Color4.White()}
         fontSize={16 * scaleFactor}
         uiTransform={{
@@ -201,7 +202,7 @@ export function ShowStreamKey({
               }
             }}
           />
-          <Button
+          <FeedbackButton
             id="video_control_copy_stream_key"
             value="<b>Copy</b>"
             variant="primary"
