@@ -44,7 +44,7 @@ export const BTN_BORDER_COLOR = {
   },
 };
 
-type ButtonVariant = 'primary' | 'secondary' | 'text';
+export type ButtonVariant = 'primary' | 'secondary' | 'text';
 
 interface ButtonStateProps {
   getColor: (variant: ButtonVariant) => Color4;
@@ -70,7 +70,7 @@ const HOVER_STATE: ButtonStateProps = {
   borderColor: variant => BTN_BORDER_COLOR[variant].hover,
 };
 
-interface CompositeButtonProps extends Omit<UiButtonProps, 'value' | 'variant'> {
+export interface CompositeButtonProps extends Omit<UiButtonProps, 'value' | 'variant'> {
   id: string;
   value?: string;
   icon?: string;
@@ -105,11 +105,18 @@ export const Button = (props: CompositeButtonProps) => {
     variant = 'primary',
   } = props;
 
+  const buttonId = `button_${id}`;
+
   ReactEcs.useEffect(() => {
     buttonStates.set(buttonId, disabled ? DISABLED_STATE : ACTIVE_STATE);
   }, [disabled]);
 
-  const buttonId = `button_${id}`;
+  // Cleanup on unmount
+  ReactEcs.useEffect(() => {
+    return () => {
+      buttonStates.delete(buttonId);
+    };
+  }, []);
 
   // Get or set initial state
   if (!buttonStates.has(buttonId)) {
