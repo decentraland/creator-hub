@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import cx from 'classnames';
 import { VscChevronDown as DownArrowIcon } from 'react-icons/vsc';
+import cx from 'classnames';
+import { isMixedValue } from '../utils';
 import { useOutsideClick } from '../../../hooks/useOutsideClick';
 import { useContainerSize } from '../../../hooks/useContainerSize';
 import { Label } from '../Label';
@@ -16,6 +17,7 @@ import {
   ICON_SIZE,
   isMultipleOptionSelected,
   isOptionSelected,
+  MIXED_VALUE_LABEL,
 } from './utils';
 import type { Props } from './types';
 import './Dropdown.css';
@@ -81,13 +83,18 @@ const Dropdown: React.FC<Props> = props => {
     [multiple, value, onChange],
   );
 
+  const isMixed = useMemo(() => isMixedValue(value), [value]);
+
   const selectedValue = useMemo(() => {
+    if (isMixed) {
+      return undefined;
+    }
     if (multiple) {
       return options.filter(option => isMultipleOptionSelected(value as any[], option.value));
     } else {
       return options.find(option => isOptionSelected(value, option.value));
     }
-  }, [options, value, multiple]);
+  }, [options, value, multiple, isMixed]);
 
   const minWidth = useMemo(() => {
     if (options.length > 0) {
@@ -139,6 +146,15 @@ const Dropdown: React.FC<Props> = props => {
   }, [error, info]);
 
   const renderPlaceholder = useCallback(() => {
+    if (isMixed) {
+      return (
+        <Option
+          className="DropdownPlaceholder mixed"
+          value={MIXED_VALUE_LABEL}
+          minWidth={minWidth}
+        />
+      );
+    }
     return selectedValue ? (
       <SelectedOption
         selectedValue={selectedValue}
@@ -153,7 +169,7 @@ const Dropdown: React.FC<Props> = props => {
         minWidth={minWidth}
       />
     );
-  }, [selectedValue, placeholder, minWidth, multiple, handleRemoveOption]);
+  }, [selectedValue, placeholder, minWidth, multiple, handleRemoveOption, isMixed]);
 
   return (
     <div

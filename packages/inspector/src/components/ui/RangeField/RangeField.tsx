@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import cx from 'classnames';
 
+import { MIXED_VALUE, isMixedValue } from '../utils';
 import { TextField } from '../TextField';
 import { Message, MessageType } from '../Message';
 import { Label } from '../Label';
@@ -29,15 +30,20 @@ const RangeField = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
     onBlur,
     ...rest
   } = props;
-  const [inputValue, setInputValue] = useState(value);
+  const isMixed = isMixedValue(value);
+  const [inputValue, setInputValue] = useState(isMixed ? MIXED_VALUE : value);
 
   useEffect(() => {
     if (value !== inputValue) {
-      setInputValue(value);
+      setInputValue(isMixedValue(value) ? MIXED_VALUE : value);
     }
   }, [value]);
 
   const completionPercentage = useMemo(() => {
+    if (isMixedValue(inputValue)) {
+      // Show slider at 50% for mixed values
+      return 50;
+    }
     const parsedValue = parseFloat(inputValue.toString()) || 0;
     const parsedMin = parseFloat(min.toString()) || 0;
     const parsedMax = parseFloat(max.toString()) || 100;
@@ -54,6 +60,11 @@ const RangeField = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
 
   const isValid = useCallback(
     (value: Props['value']) => {
+      // Mixed value is always valid (it's a placeholder state)
+      if (isMixedValue(value)) {
+        return true;
+      }
+
       if (isValidValue) {
         return isValidValue(value);
       }
@@ -150,16 +161,26 @@ const RangeField = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
     return null;
   }, [errorMessage, info]);
 
+  // Calculate a middle value for mixed state slider
+  const sliderValue = useMemo(() => {
+    if (isMixedValue(inputValue)) {
+      const parsedMin = parseFloat(min.toString()) || 0;
+      const parsedMax = parseFloat(max.toString()) || 100;
+      return (parsedMin + parsedMax) / 2;
+    }
+    return inputValue;
+  }, [inputValue, min, max]);
+
   return (
     <div className="Range Field">
       <Label text={label} />
-      <div className={cx('RangeContainer', { error, disabled })}>
+      <div className={cx('RangeContainer', { error, disabled, mixed: isMixedValue(inputValue) })}>
         <div className="InputContainer">
           <input
             ref={ref}
             type="range"
             className="RangeInput"
-            value={inputValue}
+            value={sliderValue}
             min={min}
             max={max}
             step={step}
@@ -171,7 +192,7 @@ const RangeField = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
         </div>
         <TextField
           className="RangeTextInput"
-          type="number"
+          type={isMixedValue(inputValue) ? 'text' : 'number'}
           value={inputValue}
           error={!!errorMessage}
           rightLabel={rightLabel}

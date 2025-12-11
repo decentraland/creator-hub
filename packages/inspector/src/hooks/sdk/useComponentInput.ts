@@ -6,6 +6,7 @@ import { recursiveCheck as hasDiff } from '../../lib/utils/deep-equal';
 import type { NestedKey } from '../../lib/logic/get-set-value';
 import { getValue, setValue } from '../../lib/logic/get-set-value';
 import type { Component } from '../../lib/sdk/components';
+import { MIXED_VALUE } from '../../components/ui/utils';
 import { getComponentValue, isLastWriteWinComponent, useComponentValue } from './useComponentValue';
 import { useSdk } from './useSdk';
 import { useChange } from './useChange';
@@ -165,7 +166,7 @@ const mergeValues = (values: any[]): any => {
 
   // Base case - if any value is not an object, compare directly
   if (!values.every(val => val && typeof val === 'object')) {
-    return values.every(val => val === values[0]) ? values[0] : '--';
+    return values.every(val => val === values[0]) ? values[0] : MIXED_VALUE;
   }
 
   // Get all keys from all objects
@@ -221,6 +222,7 @@ export const useMultiComponentInput = <ComponentValueType extends object, InputT
   fromComponentValueToInput: (componentValue: ComponentValueType) => InputType,
   fromInputToComponentValue: (input: InputType) => ComponentValueType,
   validateInput: (input: InputType) => boolean = () => true,
+  deps: unknown[] = [],
 ) => {
   // If there's only one entity, use the single entity version just to be safe for now
   if (entities.length === 1) {
@@ -230,6 +232,7 @@ export const useMultiComponentInput = <ComponentValueType extends object, InputT
       fromComponentValueToInput,
       fromInputToComponentValue,
       validateInput,
+      deps,
     );
   }
   const sdk = useSdk();
@@ -242,7 +245,7 @@ export const useMultiComponentInput = <ComponentValueType extends object, InputT
         initialEntityValues.map(([_, component]) => component),
         fromComponentValueToInput,
       ),
-    [], // only compute on mount
+    [...deps], // recompute when deps change
   );
 
   const [value, setMergeValue] = useState(initialMergedValue);
@@ -328,7 +331,7 @@ export const useMultiComponentInput = <ComponentValueType extends object, InputT
 
       setMergeValue(newMergedValue);
     },
-    [entities, component, fromComponentValueToInput, value, isFocused],
+    [entities, component, fromComponentValueToInput, value, isFocused, ...deps],
   );
 
   // Input props getter

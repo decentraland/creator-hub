@@ -2,8 +2,8 @@ import { useCallback } from 'react';
 import cx from 'classnames';
 
 import { withSdk } from '../../../hoc/withSdk';
-import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
-import { useComponentInput } from '../../../hooks/sdk/useComponentInput';
+import { useAllEntitiesHaveComponent } from '../../../hooks/sdk/useHasComponent';
+import { useMultiComponentInput } from '../../../hooks/sdk/useComponentInput';
 import { getComponentValue } from '../../../hooks/sdk/useComponentValue';
 import { analytics, Event } from '../../../lib/logic/analytics';
 import { getAssetByModel } from '../../../lib/logic/catalog';
@@ -14,13 +14,13 @@ import { TextField, CheckboxField, RangeField, InfoTooltip } from '../../ui';
 import { fromAudioStream, toAudioStream, isValidInput, isValidVolume } from './utils';
 import type { Props } from './types';
 
-export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
+export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
   const { AudioStream, GltfContainer } = sdk.components;
 
-  const hasAudioStream = useHasComponent(entity, AudioStream);
+  const allEntitiesHaveAudioStream = useAllEntitiesHaveComponent(entities, AudioStream);
   const handleInputValidation = useCallback(({ url }: { url: string }) => isValidInput(url), []);
-  const { getInputProps, isValid } = useComponentInput(
-    entity,
+  const { getInputProps, isValid } = useMultiComponentInput(
+    entities,
     AudioStream,
     fromAudioStream,
     toAudioStream,
@@ -28,18 +28,20 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   );
 
   const handleRemove = useCallback(async () => {
-    sdk.operations.removeComponent(entity, AudioStream);
+    for (const entity of entities) {
+      sdk.operations.removeComponent(entity, AudioStream);
+    }
     await sdk.operations.dispatch();
-    const gltfContainer = getComponentValue(entity, GltfContainer);
+    const gltfContainer = getComponentValue(entities[0], GltfContainer);
     const asset = getAssetByModel(gltfContainer.src);
     analytics.track(Event.REMOVE_COMPONENT, {
       componentName: CoreComponents.AUDIO_STREAM,
       itemId: asset?.id,
       itemPath: gltfContainer.src,
     });
-  }, []);
+  }, [sdk, entities, AudioStream, GltfContainer]);
 
-  if (!hasAudioStream) return null;
+  if (!allEntitiesHaveAudioStream) return null;
 
   const url = getInputProps('url');
   const playing = getInputProps('playing', e => e.target.checked);
