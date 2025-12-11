@@ -151,6 +151,15 @@ const Hierarchy: React.FC = () => {
     [lastSelectedItem],
   );
 
+  /** Deselect entities when clicking on the background of the hierarchy. */
+  const handleBackgroundDeselect = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (e.target !== e.currentTarget) return; // Ignore clicks on children elements
+      void select(ROOT, false);
+    },
+    [select],
+  );
+
   const props = {
     getExtraContextMenu: ContextMenu,
     onAddChild: addChild,
@@ -179,7 +188,10 @@ const Hierarchy: React.FC = () => {
   };
 
   return (
-    <div className="Hierarchy">
+    <div
+      className="Hierarchy"
+      onClick={handleBackgroundDeselect}
+    >
       <EntityTree
         value={PLAYER}
         {...props}
