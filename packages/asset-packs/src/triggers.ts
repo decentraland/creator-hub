@@ -1,4 +1,3 @@
-import { triggers, LAYER_1, NO_LAYERS, getPlayerPosition, getWorldPosition } from '@dcl-sdk/utils';
 import type {
   IEngine,
   Entity,
@@ -7,8 +6,15 @@ import type {
   PointerEventsSystem,
   TweenSystem,
 } from '@dcl/ecs';
-import { InputAction, TweenState, TweenStateStatus } from '@dcl/ecs';
+import {
+  InputAction,
+  TweenState,
+  TweenStateStatus,
+  TriggerArea,
+  triggerAreaEventsSystem,
+} from '@dcl/ecs';
 import { Vector3 } from '@dcl/sdk/math';
+import { getPlayerPosition, getWorldPosition } from './helpers';
 import type {
   Action,
   Trigger,
@@ -51,7 +57,7 @@ export function createTriggersSystem(
   pointerEventsSystem: PointerEventsSystem,
   tweenSystem: TweenSystem,
 ) {
-  const { Transform, Tween: TweenComponent, PointerEvents } = components;
+  const { Tween: TweenComponent, PointerEvents } = components;
   const { Actions, States, Counter, Triggers } = getComponents(engine);
 
   // save reference to the init function
@@ -65,7 +71,7 @@ export function createTriggersSystem(
       actionEvents.emit(action.name, getPayload(action));
     }
 
-    const entitiesWithTriggers = engine.getEntitiesWith(Triggers);
+    const entitiesWithTriggers = Array.from(engine.getEntitiesWith(Triggers));
     for (const [entity] of entitiesWithTriggers) {
       initEntityTriggers(entity);
       handleOnTweenEnd(entity);
@@ -377,26 +383,17 @@ export function createTriggersSystem(
 
   // ON_PLAYER_ENTERS_AREA / ON_PLAYER_LEAVES_AREA
   function initOnPlayerTriggerArea(entity: Entity) {
-    const transform = Transform.getOrNull(entity);
-    triggers.addTrigger(
-      entity,
-      NO_LAYERS,
-      LAYER_1,
-      [
-        {
-          type: 'box',
-          scale: transform ? transform.scale : { x: 1, y: 1, z: 1 },
-        },
-      ],
-      () => {
-        const triggerEvents = getTriggerEvents(entity);
-        triggerEvents.emit(TriggerType.ON_PLAYER_ENTERS_AREA);
-      },
-      () => {
-        const triggerEvents = getTriggerEvents(entity);
-        triggerEvents.emit(TriggerType.ON_PLAYER_LEAVES_AREA);
-      },
-    );
+    TriggerArea.setBox(entity);
+
+    triggerAreaEventsSystem.onTriggerEnter(entity, function (_result) {
+      const triggerEvents = getTriggerEvents(entity);
+      triggerEvents.emit(TriggerType.ON_PLAYER_ENTERS_AREA);
+    });
+
+    triggerAreaEventsSystem.onTriggerExit(entity, function (_result) {
+      const triggerEvents = getTriggerEvents(entity);
+      triggerEvents.emit(TriggerType.ON_PLAYER_LEAVES_AREA);
+    });
   }
 
   function initOnDamage(entity: Entity) {
