@@ -1,15 +1,15 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Entity } from '@dcl/ecs';
+import type { Entity } from '@dcl/ecs';
 
 import { CAMERA, PLAYER, ROOT } from '../../lib/sdk/tree';
 import { useEntitiesWith } from '../../hooks/sdk/useEntitiesWith';
 import { useTree } from '../../hooks/sdk/useTree';
 import { Tree } from '../Tree';
-import { ContextMenu } from './ContextMenu';
 import { withSdk } from '../../hoc/withSdk';
 import './Hierarchy.css';
 import { useAppSelector } from '../../redux/hooks';
 import { selectCustomAssets } from '../../redux/app';
+import { ContextMenu } from './ContextMenu';
 
 const HierarchyIcon = withSdk<{ value: Entity }>(({ sdk, value }) => {
   const customAssets = useAppSelector(selectCustomAssets);
