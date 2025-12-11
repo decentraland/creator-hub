@@ -1,9 +1,3 @@
-import {
-  getEntityParent,
-  getPlayerPosition,
-  getWorldPosition,
-  getWorldRotation,
-} from '@dcl-sdk/utils';
 import type {
   IEngine,
   Entity,
@@ -28,6 +22,7 @@ import {
 } from '@dcl/ecs';
 import { Quaternion, Vector3 } from '@dcl/sdk/math';
 import type { TextureMovementType as SdkTextureMovementType } from '@dcl/ecs/dist/components/generated/pb/decentraland/sdk/components/tween.gen';
+import { getEntityParent, getPlayerPosition, getWorldPosition, getWorldRotation } from './helpers';
 import type { ActionPayload, ISDKHelpers, IPlayersHelper, ScreenAlignMode } from './definitions';
 import {
   ActionType,
