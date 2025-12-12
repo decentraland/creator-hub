@@ -159,8 +159,14 @@ const mergeValues = (values: any[]): any => {
   if (values.every(val => Array.isArray(val))) {
     // Find common elements across all arrays (intersection)
     if (values.length === 0) return [];
-    const firstArray = values[0];
-    return firstArray.filter(item => values.every(arr => arr.includes(item)));
+    if (values.length === 1) return values[0];
+
+    const sortedByLength = [...values].sort((a, b) => a.length - b.length);
+    const smallest = sortedByLength[0];
+
+    const otherSets = sortedByLength.slice(1).map(arr => new Set(arr));
+
+    return smallest.filter(item => otherSets.every(set => set.has(item)));
   }
 
   // Base case - if any value is not an object, compare directly
