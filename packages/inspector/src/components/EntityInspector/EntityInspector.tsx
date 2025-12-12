@@ -65,6 +65,7 @@ const MultiEntityInspector = withSdk<{ entities: Entity[] }>(({ sdk, entities })
     () => [
       { name: sdk.components.Tags.componentName, component: TagsInspector },
       { name: sdk.components.Transform.componentName, component: TransformInspector },
+      { name: sdk.components.Material.componentName, component: MaterialInspector },
     ],
     [sdk],
   );
@@ -200,6 +201,7 @@ const SingleEntityInspector = withSdk<{ entity: Entity | null }>(({ sdk, entity 
                 <Inspector
                   key={`${index}-${entity}`}
                   entity={entity}
+                  entities={[entity]}
                   initialOpen={!isBasicViewEnabled}
                 />
               ),
