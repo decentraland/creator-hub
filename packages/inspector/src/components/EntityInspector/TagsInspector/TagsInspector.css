@@ -57,3 +57,13 @@
   height: 100%;
   width: 100%;
 }
+
+/* Partial tags (present in some but not all selected entities) - shown in gray */
+.TagsInspector .Pill.partial {
+  opacity: 0.6;
+  background: var(--base-05);
+}
+
+.TagsInspector .Pill.partial > .Content {
+  color: var(--base-16);
+}

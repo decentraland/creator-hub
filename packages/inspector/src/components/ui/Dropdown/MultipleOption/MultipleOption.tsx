@@ -23,6 +23,7 @@ const MultipleOption: React.FC<Props> = ({ className, minWidth, value, onRemove 
       {value?.map((option, idx) => (
         <Pill
           key={`action-${value}-${idx}`}
+          className={option.className}
           content={option.label ?? option.value}
           onRemove={e => handleRemoveOption(e, option)}
         />
