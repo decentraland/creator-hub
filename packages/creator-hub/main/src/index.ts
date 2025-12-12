@@ -12,6 +12,7 @@ import { runMigrations } from '/@/modules/migrations';
 import { getAnalytics, track } from './modules/analytics';
 import { tryOpenDevToolsOnPort } from './modules/app-args-handle';
 import { addEditorsPathsToConfig } from './modules/code';
+import { initDevHotReload } from './modules/dev-hot-reload';
 
 import '/@/security-restrictions';
 
@@ -62,6 +63,10 @@ app
     log.info(`[App] Ready v${app.getVersion()}`);
     initIpc();
     log.info('[IPC] Ready');
+
+    if (import.meta.env.DEV) {
+      initDevHotReload();
+    }
     await restoreOrCreateMainWindow();
     log.info('[BrowserWindow] Ready');
     await addEditorsPathsToConfig();

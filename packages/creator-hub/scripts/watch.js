@@ -1,11 +1,15 @@
 #!/usr/bin/env node
 
 import { spawn } from 'child_process';
-import { build, createServer } from 'vite';
+import { build, createServer, loadEnv } from 'vite';
 import electronPath from 'electron';
+import { startReloadServer, sendReloadSignal, stopReloadServer } from './reload-server.js';
 
 /** @type 'production' | 'development'' */
 const mode = (process.env.MODE = process.env.MODE || 'development');
+
+const env = loadEnv(mode, process.cwd(), '');
+const RELOAD_PORT = parseInt(env.VITE_DEV_RELOAD_PORT || '9999', 10);
 
 /** @type {import('vite').LogLevel} */
 const logLevel = 'warn';
@@ -40,8 +44,27 @@ function setupTypeChecker() {
 }
 
 /**
+ * Spawns a new Electron process with debugging enabled.
+ * Sets up an exit listener to stop the reload server and exit the watch script.
+ * @returns {import('child_process').ChildProcess} The spawned Electron process
+ */
+function spawnElectron() {
+  const app = spawn(String(electronPath), ['--inspect', '.'], {
+    stdio: 'inherit',
+  });
+
+  app.addListener('exit', exitCode => {
+    stopReloadServer();
+    process.exit(exitCode);
+  });
+
+  return app;
+}
+
+/**
  * Setup watcher for `main` package
- * On file changed it totally re-launch electron app.
+ * On file changed it sends a reload signal to the running Electron app
+ * instead of completely restarting it, preserving application state.
  * @param {import('vite').ViteDevServer} watchServer Renderer watch server instance.
  * Needs to set up `VITE_DEV_SERVER_URL` environment variable from {@link import('vite').ViteDevServer.resolvedUrls}
  */
@@ -50,6 +73,9 @@ function setupMainPackageWatcher({ resolvedUrls }) {
 
   /** @type {ChildProcess | null} */
   let electronApp = null;
+
+  /** Track if this is the first build (need to spawn Electron) */
+  let isFirstBuild = true;
 
   return build({
     mode,
@@ -66,20 +92,23 @@ function setupMainPackageWatcher({ resolvedUrls }) {
       {
         name: 'reload-app-on-main-package-change',
         writeBundle() {
-          /** Kill electron if process already exist */
-          if (electronApp !== null) {
-            electronApp.removeListener('exit', process.exit);
-            electronApp.kill('SIGINT');
-            electronApp = null;
+          if (isFirstBuild) {
+            // First build: spawn Electron
+            isFirstBuild = false;
+            electronApp = spawnElectron();
+            console.log('[watch] Electron app started');
+          } else {
+            // Subsequent builds: send reload signal instead of restarting
+            const signalSent = sendReloadSignal();
+
+            if (!signalSent && electronApp !== null) {
+              // Fallback: if no clients connected, do a full restart
+              console.log('[watch] No hot reload clients, falling back to full restart...');
+              electronApp.removeListener('exit', process.exit);
+              electronApp.kill('SIGINT');
+              electronApp = spawnElectron();
+            }
           }
-
-          /** Spawn new electron process */
-          electronApp = spawn(String(electronPath), ['--inspect', '.'], {
-            stdio: 'inherit',
-          });
-
-          /** Stops the watch script when the application has been quit */
-          electronApp.addListener('exit', process.exit);
         },
       },
     ],
@@ -128,6 +157,9 @@ const rendererWatchServer = await createServer({
   logLevel,
   configFile: 'renderer/vite.config.js',
 }).then(s => s.listen());
+
+// Start the hot reload signal server before Electron
+await startReloadServer(RELOAD_PORT);
 
 // Start TypeScript type checking in watch mode
 setupTypeChecker();
