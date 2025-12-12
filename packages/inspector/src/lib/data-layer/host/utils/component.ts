@@ -50,6 +50,7 @@ const parseCoords = (coords: string) => {
 };
 
 type SceneWithRating = Scene & {
+  creator?: string;
   rating: SceneAgeRating;
   skyboxConfig?: { fixedTime?: number; transitionMode?: TransitionMode };
 };
@@ -76,6 +77,7 @@ export function fromSceneComponent(
       parcels: value.layout.parcels.map($ => `${$.x},${$.y}`),
       base: `${value.layout.base.x},${value.layout.base.y}`,
     },
+    creator: value.creator || '',
     contact: {
       name: value.author || '',
       email: value.email || '',
@@ -131,6 +133,7 @@ export function toSceneComponent(value: Scene): EditorComponentsTypes['Scene'] {
     name: value.display?.title || '',
     description: value.display?.description || '',
     thumbnail: value.display?.navmapThumbnail || '',
+    creator: (value as SceneWithRating).creator || '',
     layout: {
       parcels: value.scene.parcels.map($ => parseCoords($)),
       base: parseCoords(value.scene.base),
