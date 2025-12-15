@@ -2,6 +2,7 @@ import type { InputHTMLAttributes } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Entity } from '@dcl/ecs';
 import { CrdtMessageType } from '@dcl/ecs';
+import { intersection } from '../../lib/utils/array';
 import { recursiveCheck as hasDiff } from '../../lib/utils/deep-equal';
 import type { NestedKey } from '../../lib/logic/get-set-value';
 import { getValue, setValue } from '../../lib/logic/get-set-value';
@@ -157,16 +158,7 @@ export const useComponentInput = <ComponentValueType extends object, InputType e
 const mergeValues = (values: any[]): any => {
   // Special case: if all values are arrays, find intersection
   if (values.every(val => Array.isArray(val))) {
-    // Find common elements across all arrays (intersection)
-    if (values.length === 0) return [];
-    if (values.length === 1) return values[0];
-
-    const sortedByLength = [...values].sort((a, b) => a.length - b.length);
-    const smallest = sortedByLength[0];
-
-    const otherSets = sortedByLength.slice(1).map(arr => new Set(arr));
-
-    return smallest.filter(item => otherSets.every(set => set.has(item)));
+    return intersection(values);
   }
 
   // Base case - if any value is not an object, compare directly
