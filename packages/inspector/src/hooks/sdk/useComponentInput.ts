@@ -332,6 +332,12 @@ export const useMultiComponentInput = <ComponentValueType extends object, InputT
     [entities, component, fromComponentValueToInput, value, isFocused, ...deps],
   );
 
+  useEffect(() => {
+    if (value) {
+      setIsValid(validateInput(value));
+    }
+  }, [value, validateInput, ...deps]);
+
   // Input props getter
   const getInputProps = useCallback(
     (
