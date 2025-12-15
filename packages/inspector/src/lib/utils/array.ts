@@ -48,26 +48,26 @@ export function union<T>(arrays: T[][]): T[] {
  * Partitions elements by their frequency across arrays
  * Returns common (in ALL arrays) and partial (in SOME but not all)
  * @param arrays array of arrays to partition
- * @param totalCount total number of arrays (used to determine if element is in all)
+ * @param frequency total number of arrays (used to determine if element is in all)
  * @returns object with common and partial arrays
  */
 export function partitionByFrequency<T>(
   arrays: T[][],
-  totalCount: number,
+  frequency: number,
 ): { common: T[]; partial: T[] } {
-  const frequency = new Map<T, number>();
+  const frequencyMap = new Map<T, number>();
 
   arrays.forEach(arr => {
     arr.forEach(item => {
-      frequency.set(item, (frequency.get(item) ?? 0) + 1);
+      frequencyMap.set(item, (frequencyMap.get(item) ?? 0) + 1);
     });
   });
 
   const common: T[] = [];
   const partial: T[] = [];
 
-  frequency.forEach((count, item) => {
-    if (count === totalCount) {
+  frequencyMap.forEach((count, item) => {
+    if (count === frequency) {
       common.push(item);
     } else {
       partial.push(item);
