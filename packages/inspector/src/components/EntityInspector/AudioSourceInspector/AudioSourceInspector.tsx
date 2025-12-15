@@ -22,6 +22,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
   const { AudioSource, GltfContainer } = sdk.components;
 
   const allEntitiesHaveAudioSource = useAllEntitiesHaveComponent(entities, AudioSource);
+
   const handleInputValidation = useCallback(
     ({ audioClipUrl }: { audioClipUrl: string }) => !!files && isValidInput(files, audioClipUrl),
     [files],
@@ -30,8 +31,8 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
   const { getInputProps, isValid } = useMultiComponentInput(
     entities,
     AudioSource,
-    fromAudioSource(files?.basePath ?? ''),
-    toAudioSource(files?.basePath ?? ''),
+    fromAudioSource,
+    toAudioSource,
     handleInputValidation,
     [files],
   );
@@ -50,19 +51,9 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
     });
   }, [sdk, entities, AudioSource, GltfContainer]);
 
-  const handleDrop = useCallback(
-    async (audioClipUrl: string) => {
-      const { operations } = sdk;
-      for (const entity of entities) {
-        operations.updateValue(AudioSource, entity, { audioClipUrl });
-      }
-      await operations.dispatch();
-    },
-    [sdk, entities, AudioSource],
-  );
-
   if (!allEntitiesHaveAudioSource) return null;
 
+  const audioClipUrl = getInputProps('audioClipUrl', e => e.target.value);
   const playing = getInputProps('playing', e => e.target.checked);
   const loop = getInputProps('loop', e => e.target.checked);
   const global = getInputProps('global', e => e.target.checked);
@@ -77,10 +68,9 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
     >
       <Block>
         <FileUploadField
-          {...getInputProps('audioClipUrl')}
+          {...audioClipUrl}
           label="Path"
           accept={ACCEPTED_FILE_TYPES['audio']}
-          onDrop={handleDrop}
           error={files && !isValid}
           isValidFile={isAudio}
         />
