@@ -4,6 +4,19 @@
       "packages": ["**"],
       "dependencies": ["@dcl/inspector"],
       "isIgnored": true
+    },
+    {
+      "label": "SDK dependencies should be in sync",
+      "packages": ["**"],
+      "dependencies": [
+        "@dcl/ecs",
+        "@dcl/sdk",
+        "@dcl/js-runtime",
+        "@dcl/react-ecs",
+        "@dcl/sdk-commands"
+      ],
+      "dependencyTypes": ["dev", "peer", "prod"],
+      "policy": "sameRange"
     }
   ]
 }

@@ -17,9 +17,9 @@
     "@aws-sdk/client-s3": "^3.405.0",
     "@aws-sdk/lib-storage": "^3.405.0",
     "@dcl/hashing": "^3.0.4",
-    "@dcl/js-runtime": "7.14.0",
-    "@dcl/react-ecs": "7.12.0",
-    "@dcl/sdk-commands": "7.12.0",
+    "@dcl/js-runtime": "7.15.2",
+    "@dcl/react-ecs": "7.15.2",
+    "@dcl/sdk-commands": "7.15.2",
     "@types/mime-types": "^2.1.1",
     "@types/node-fetch": "^2.6.4",
     "concurrently": "^8.2.1",
@@ -52,7 +52,7 @@
   "license": "ISC",
   "main": "dist/definitions.js",
   "peerDependencies": {
-    "@dcl/ecs": "7.12.0"
+    "@dcl/ecs": "7.15.2"
   },
   "repository": {
     "type": "git",
