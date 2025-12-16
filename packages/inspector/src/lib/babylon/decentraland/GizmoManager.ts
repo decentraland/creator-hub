@@ -92,6 +92,7 @@ export function createGizmoManager(context: SceneContext) {
 
     isUpdatingFromGizmo = true;
     context.operations.updateValue(context.Transform, entity.entityId, {
+      ...currentTransform,
       position: DclVector3.create(entity.position.x, entity.position.y, entity.position.z),
     });
   }
@@ -113,6 +114,7 @@ export function createGizmoManager(context: SceneContext) {
       : currentTransform.rotation;
 
     context.operations.updateValue(context.Transform, entity.entityId, {
+      ...currentTransform,
       rotation,
     });
   }
@@ -123,6 +125,7 @@ export function createGizmoManager(context: SceneContext) {
 
     isUpdatingFromGizmo = true;
     context.operations.updateValue(context.Transform, entity.entityId, {
+      ...currentTransform,
       scale: DclVector3.create(entity.scaling.x, entity.scaling.y, entity.scaling.z),
       position: DclVector3.create(entity.position.x, entity.position.y, entity.position.z),
     });
