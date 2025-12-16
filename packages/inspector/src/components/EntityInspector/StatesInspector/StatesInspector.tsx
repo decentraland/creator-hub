@@ -7,6 +7,7 @@ import { useAllEntitiesHaveComponent } from '../../../hooks/sdk/useHasComponent'
 import { useComponentListInput } from '../../../hooks/sdk/useComponentInput';
 import { analytics, Event } from '../../../lib/logic/analytics';
 import { getAssetByModel } from '../../../lib/logic/catalog';
+import { allEqualTo } from '../../../lib/utils/array';
 import { Block } from '../../Block';
 import { Button } from '../../Button';
 import { Container } from '../../Container';
@@ -55,10 +56,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
   // Check if a state is the default in all entities
   const isDefaultInAllEntities = useCallback(
     (state: string): boolean => {
-      return entities.every(ent => {
-        const entityState = entityValuesMap.get(ent);
-        return entityState?.defaultValue === state;
-      });
+      return allEqualTo(entities, ent => entityValuesMap.get(ent)?.defaultValue, state);
     },
     [entities, entityValuesMap],
   );
