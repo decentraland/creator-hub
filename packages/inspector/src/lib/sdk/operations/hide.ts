@@ -5,8 +5,8 @@ import { EditorComponentNames } from '../components';
 import { addComponent as createAddComponent } from './add-component';
 import { removeComponent as createRemoveComponent } from './remove-component';
 
-export function lock(engine: IEngine) {
-  return function lock(entity: Entity, value: boolean): void {
+export function hide(engine: IEngine) {
+  return function hide(entity: Entity, value: boolean): void {
     const addComponent = createAddComponent(engine);
     const removeComponent = createRemoveComponent(engine);
     const Transform = engine.getComponent(TransformEngine.componentId) as typeof TransformEngine;
@@ -24,4 +24,4 @@ export function lock(engine: IEngine) {
   };
 }
 
-export default lock;
+export default hide;
