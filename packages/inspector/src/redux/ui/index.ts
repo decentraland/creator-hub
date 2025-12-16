@@ -19,7 +19,7 @@ export const initialState: UiState = {
   hiddenPanels: {},
   disableGizmos: false,
   disableGroundGrid: false,
-  selectedAssetsTab: AssetsTab.FileSystem,
+  selectedAssetsTab: AssetsTab.AssetsPack,
   selectedSceneInspectorTab: SceneInspectorTab.DETAILS,
   hiddenSceneInspectorTabs: {},
 };
