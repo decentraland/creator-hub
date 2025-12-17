@@ -1,4 +1,4 @@
-import type { GizmoManager } from '@babylonjs/core';
+import type { GizmoManager, Matrix } from '@babylonjs/core';
 import { Vector3, TransformNode, Quaternion } from '@babylonjs/core';
 import type { Entity } from '@dcl/ecs';
 import type { EcsEntity } from '../EcsEntity';
@@ -23,6 +23,7 @@ export class PositionGizmo implements IGizmoTransformer {
   private updateEntityPosition: ((entity: EcsEntity) => void) | null = null;
   private dispatchOperations: (() => void) | null = null;
   private isWorldAligned = true;
+  private parentMatrixCache = new Map<TransformNode, Matrix>();
 
   private dragStartObserver: any = null;
   private dragObserver: any = null;
@@ -209,11 +210,11 @@ export class PositionGizmo implements IGizmoTransformer {
       const gizmoNode = this.gizmoManager.attachedNode as TransformNode;
       if (gizmoNode) {
         this.update(this.currentEntities, gizmoNode);
-        this.updateEntitiesInRealTime();
       }
     });
 
     this.dragEndObserver = positionGizmo.onDragEndObservable.add(() => {
+      this.updateEntitiesInRealTime();
       this.onDragEnd();
       this.dispatchOperations?.();
     });
@@ -284,12 +285,11 @@ export class PositionGizmo implements IGizmoTransformer {
     if (!this.isDragging || !this.pivotPosition) return;
 
     const movementDelta = gizmoNode.position.subtract(this.pivotPosition);
+    this.parentMatrixCache.clear();
 
     for (const entity of entities) {
       this.updateEntityTransform(entity, movementDelta);
     }
-
-    this.updateGizmoPosition(entities);
   }
 
   private updateEntityTransform(entity: EcsEntity, movementDelta: Vector3): void {
@@ -304,8 +304,6 @@ export class PositionGizmo implements IGizmoTransformer {
     } else {
       this.applyWorldPosition(entity, newWorldPosition, state);
     }
-
-    entity.computeWorldMatrix(true);
   }
 
   private applyLocalPosition(
@@ -314,8 +312,16 @@ export class PositionGizmo implements IGizmoTransformer {
     parent: TransformNode,
     state: EntityState,
   ): void {
-    const parentWorldMatrix = parent.getWorldMatrix();
-    const parentWorldMatrixInverse = parentWorldMatrix.clone().invert();
+    // Check if we already computed the inverse matrix for this parent
+    let parentWorldMatrixInverse = this.parentMatrixCache.get(parent);
+
+    if (!parentWorldMatrixInverse) {
+      // Cache miss - compute and store the inverse matrix
+      const parentWorldMatrix = parent.getWorldMatrix();
+      parentWorldMatrixInverse = parentWorldMatrix.clone().invert();
+      this.parentMatrixCache.set(parent, parentWorldMatrixInverse);
+    }
+
     const localPosition = Vector3.TransformCoordinates(worldPosition, parentWorldMatrixInverse);
 
     this.applyTransforms(entity, localPosition, state);
@@ -326,25 +332,8 @@ export class PositionGizmo implements IGizmoTransformer {
     this.applyTransforms(entity, snappedWorldPosition, state);
   }
 
-  private applyTransforms(entity: EcsEntity, position: Vector3, state: EntityState): void {
+  private applyTransforms(entity: EcsEntity, position: Vector3, _state: EntityState): void {
     entity.position.copyFrom(position);
-    entity.scaling.copyFrom(state.scale);
-
-    if (!entity.rotationQuaternion) {
-      entity.rotationQuaternion = new Quaternion();
-    }
-
-    entity.rotationQuaternion.copyFrom(state.rotation);
-    entity.rotationQuaternion.normalize();
-  }
-
-  private updateGizmoPosition(entities: EcsEntity[]): void {
-    const gizmoNode = this.gizmoManager.attachedNode as TransformNode;
-    if (!gizmoNode) return;
-
-    const centroid = this.calculateCentroid(entities);
-    gizmoNode.position.copyFrom(centroid);
-    gizmoNode.computeWorldMatrix(true);
   }
 
   private calculateCentroid(entities: EcsEntity[]): Vector3 {
@@ -360,6 +349,10 @@ export class PositionGizmo implements IGizmoTransformer {
   }
 
   onDragEnd(): void {
+    for (const entity of this.currentEntities) {
+      entity.computeWorldMatrix(true);
+    }
+
     this.syncGizmoWithFinalPositions();
     this.resetDragState();
   }
