@@ -3,7 +3,8 @@ import type { ComponentOperation } from '../component-operations';
 import { setGizmoManager, unsetGizmoManager } from './selection';
 
 export const putHideComponent: ComponentOperation = (entity, component) => {
-  const applyHideState = () => {
+  // Ensure asset is loaded before applying hide.
+  entity.onAssetLoaded().then(() => {
     const container = entity.gltfContainer ?? entity.meshRenderer;
     if (!container) return;
 
@@ -19,13 +20,5 @@ export const putHideComponent: ComponentOperation = (entity, component) => {
         if (selectionValue) setGizmoManager(entity, selectionValue);
       }
     }
-  };
-
-  const container = entity.gltfContainer ?? entity.meshRenderer;
-  if (container) {
-    applyHideState();
-  } else {
-    // If no container yet, wait for asset to load.
-    entity.onAssetLoaded().then(applyHideState);
-  }
+  });
 };
