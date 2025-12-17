@@ -9,7 +9,7 @@ import { withSdk } from '../../../../hoc/withSdk';
 import type { Props } from './types';
 import './styles.css';
 
-const CreateEditTagModal = withSdk<Props>(({ open, onClose, sdk, editingTag }) => {
+const CreateEditTagModal = withSdk<Props>(({ open, onClose, sdk, editingTag, onTagCreated }) => {
   const [newTagName, setTagName] = useState(editingTag || '');
   const { Tags } = sdk.components;
   const sceneTags = Tags.getOrNull(sdk.engine.RootEntity);
@@ -48,10 +48,13 @@ const CreateEditTagModal = withSdk<Props>(({ open, onClose, sdk, editingTag }) =
     if (newTagName) {
       Tags.add(sdk.engine.RootEntity, newTagName);
       sdk.operations.dispatch();
+
+      onTagCreated?.(newTagName);
+
       setTagName('');
       onClose();
     }
-  }, [newTagName, sdk.engine.RootEntity, sdk.operations, Tags, onClose]);
+  }, [newTagName, sdk.engine.RootEntity, sdk.operations, Tags, onClose, onTagCreated]);
 
   return (
     <Modal

@@ -5,4 +5,5 @@ export type Props = {
   onClose: () => void;
   editingTag: string | null;
   entity: Entity;
+  onTagCreated?: (tagName: string) => void;
 };

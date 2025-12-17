@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { withSdk } from '../../../hoc/withSdk';
-import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
-import { useComponentInput } from '../../../hooks/sdk/useComponentInput';
+import { useAllEntitiesHaveComponent } from '../../../hooks/sdk/useHasComponent';
+import { useMultiComponentInput } from '../../../hooks/sdk/useComponentInput';
 import { useAppSelector } from '../../../redux/hooks';
 import { selectAssetCatalog } from '../../../redux/app';
 import { Block } from '../../Block';
@@ -13,13 +13,14 @@ import { PbrMaterial } from './PbrMaterial';
 import { type Props as TextureProps } from './Texture';
 import { type Props, MaterialType } from './types';
 
-export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
+export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
   const files = useAppSelector(selectAssetCatalog);
   const { Material } = sdk.components;
 
-  const hasMaterial = useHasComponent(entity, Material);
-  const { getInputProps } = useComponentInput(
-    entity,
+  const allEntitiesHaveMaterial = useAllEntitiesHaveComponent(entities, Material);
+
+  const { getInputProps } = useMultiComponentInput(
+    entities,
     Material,
     fromMaterial(files?.basePath ?? ''),
     toMaterial(files?.basePath ?? ''),
@@ -27,11 +28,13 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   );
 
   const handleRemove = useCallback(async () => {
-    sdk.operations.removeComponent(entity, Material);
+    for (const entity of entities) {
+      sdk.operations.removeComponent(entity, Material);
+    }
     await sdk.operations.dispatch();
-  }, []);
+  }, [sdk, entities, Material]);
 
-  if (!hasMaterial) return null;
+  if (!allEntitiesHaveMaterial) return null;
 
   const materialType = getInputProps('type');
   const castShadows = getInputProps('castShadows', e => e.target.checked);

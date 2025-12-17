@@ -17,3 +17,62 @@ export function move<T>(list: T[], from: number, to: number) {
 export function cleanPush<T extends number | string>(list: T[], value: T): T[] {
   return Array.from(new Set(list).add(value));
 }
+
+/**
+ * Computes the intersection of multiple arrays (elements present in ALL arrays)
+ * Uses Set for O(1) lookups - optimized by starting with smallest array
+ * @param arrays array of arrays to find intersection
+ * @returns array of elements present in all arrays
+ */
+export function intersection<T>(arrays: T[][]): T[] {
+  if (arrays.length === 0) return [];
+  if (arrays.length === 1) return [...arrays[0]];
+
+  const sortedByLength = [...arrays].sort((a, b) => a.length - b.length);
+  const smallest = sortedByLength[0];
+  const otherSets = sortedByLength.slice(1).map(arr => new Set(arr));
+
+  return smallest.filter(item => otherSets.every(set => set.has(item)));
+}
+
+/**
+ * Computes the union of multiple arrays (all unique elements across arrays)
+ * @param arrays array of arrays to find union
+ * @returns array of all unique elements
+ */
+export function union<T>(arrays: T[][]): T[] {
+  return [...new Set(arrays.flat())];
+}
+
+/**
+ * Partitions elements by their frequency across arrays
+ * Returns common (in ALL arrays) and partial (in SOME but not all)
+ * @param arrays array of arrays to partition
+ * @param frequency total number of arrays (used to determine if element is in all)
+ * @returns object with common and partial arrays
+ */
+export function partitionByFrequency<T>(
+  arrays: T[][],
+  frequency: number,
+): { common: T[]; partial: T[] } {
+  const frequencyMap = new Map<T, number>();
+
+  arrays.forEach(arr => {
+    arr.forEach(item => {
+      frequencyMap.set(item, (frequencyMap.get(item) ?? 0) + 1);
+    });
+  });
+
+  const common: T[] = [];
+  const partial: T[] = [];
+
+  frequencyMap.forEach((count, item) => {
+    if (count === frequency) {
+      common.push(item);
+    } else {
+      partial.push(item);
+    }
+  });
+
+  return { common, partial };
+}

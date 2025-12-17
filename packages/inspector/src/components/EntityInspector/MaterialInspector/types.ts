@@ -2,7 +2,7 @@ import type { Entity } from '@dcl/ecs';
 import type { TextureInput } from './Texture/types';
 
 export interface Props {
-  entity: Entity;
+  entities: Entity[];
   initialOpen?: boolean;
 }
 

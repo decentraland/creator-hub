@@ -2,10 +2,12 @@ import type { InputHTMLAttributes } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Entity } from '@dcl/ecs';
 import { CrdtMessageType } from '@dcl/ecs';
+import { intersection } from '../../lib/utils/array';
 import { recursiveCheck as hasDiff } from '../../lib/utils/deep-equal';
 import type { NestedKey } from '../../lib/logic/get-set-value';
 import { getValue, setValue } from '../../lib/logic/get-set-value';
 import type { Component } from '../../lib/sdk/components';
+import { MIXED_VALUE } from '../../components/ui/utils';
 import { getComponentValue, isLastWriteWinComponent, useComponentValue } from './useComponentValue';
 import { useSdk } from './useSdk';
 import { useChange } from './useChange';
@@ -136,10 +138,12 @@ export const useComponentInput = <ComponentValueType extends object, InputType e
       path: NestedKey<InputType>,
       getter?: (event: React.ChangeEvent<HTMLInputElement>) => any,
     ): Pick<InputHTMLAttributes<HTMLElement>, 'value' | 'onChange' | 'onFocus' | 'onBlur'> => {
-      const value = getValue(input, path) || '';
+      const rawValue = getValue(input, path) || '';
+      // Don't stringify arrays - return them as-is for multi-select components
+      const displayValue = Array.isArray(rawValue) ? rawValue : rawValue.toString();
 
       return {
-        value: value.toString(),
+        value: displayValue,
         onChange: handleUpdate(path, getter),
         onFocus: handleFocus(path),
         onBlur: handleBlur,
@@ -153,9 +157,14 @@ export const useComponentInput = <ComponentValueType extends object, InputType e
 
 // Helper function to recursively merge values
 const mergeValues = (values: any[]): any => {
+  // Special case: if all values are arrays, find intersection
+  if (values.every(val => Array.isArray(val))) {
+    return intersection(values);
+  }
+
   // Base case - if any value is not an object, compare directly
   if (!values.every(val => val && typeof val === 'object')) {
-    return values.every(val => val === values[0]) ? values[0] : '--';
+    return values.every(val => val === values[0]) ? values[0] : MIXED_VALUE;
   }
 
   // Get all keys from all objects
@@ -211,6 +220,7 @@ export const useMultiComponentInput = <ComponentValueType extends object, InputT
   fromComponentValueToInput: (componentValue: ComponentValueType) => InputType,
   fromInputToComponentValue: (input: InputType) => ComponentValueType,
   validateInput: (input: InputType) => boolean = () => true,
+  deps: unknown[] = [],
 ) => {
   // If there's only one entity, use the single entity version just to be safe for now
   if (entities.length === 1) {
@@ -220,6 +230,7 @@ export const useMultiComponentInput = <ComponentValueType extends object, InputT
       fromComponentValueToInput,
       fromInputToComponentValue,
       validateInput,
+      deps,
     );
   }
   const sdk = useSdk();
@@ -232,7 +243,7 @@ export const useMultiComponentInput = <ComponentValueType extends object, InputT
         initialEntityValues.map(([_, component]) => component),
         fromComponentValueToInput,
       ),
-    [], // only compute on mount
+    [...deps], // recompute when deps change
   );
 
   const [value, setMergeValue] = useState(initialMergedValue);
@@ -318,20 +329,32 @@ export const useMultiComponentInput = <ComponentValueType extends object, InputT
 
       setMergeValue(newMergedValue);
     },
-    [entities, component, fromComponentValueToInput, value, isFocused],
+    [entities, component, fromComponentValueToInput, value, isFocused, ...deps],
   );
+
+  useEffect(() => {
+    if (value) {
+      setIsValid(validateInput(value));
+    }
+  }, [value, validateInput, ...deps]);
 
   // Input props getter
   const getInputProps = useCallback(
     (
       path: NestedKey<InputType>,
       getter?: (event: React.ChangeEvent<HTMLInputElement>) => any,
-    ): Pick<InputHTMLAttributes<HTMLElement>, 'value' | 'onChange' | 'onFocus' | 'onBlur'> => ({
-      value: (getValue(value, path) || '').toString(),
-      onChange: handleUpdate(path, getter),
-      onFocus: () => setIsFocused(true),
-      onBlur: () => setIsFocused(false),
-    }),
+    ): Pick<InputHTMLAttributes<HTMLElement>, 'value' | 'onChange' | 'onFocus' | 'onBlur'> => {
+      const rawValue = getValue(value, path) || '';
+      // Don't stringify arrays - return them as-is for multi-select components
+      const displayValue = Array.isArray(rawValue) ? rawValue : rawValue.toString();
+
+      return {
+        value: displayValue,
+        onChange: handleUpdate(path, getter),
+        onFocus: () => setIsFocused(true),
+        onBlur: () => setIsFocused(false),
+      };
+    },
     [value, handleUpdate],
   );
 
