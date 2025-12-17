@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
 
 import { withSdk } from '../../../hoc/withSdk';
-import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
-import { useComponentInput } from '../../../hooks/sdk/useComponentInput';
+import { useAllEntitiesHaveComponent } from '../../../hooks/sdk/useHasComponent';
+import { useMultiComponentInput } from '../../../hooks/sdk/useComponentInput';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { TextField, Dropdown } from '../../ui';
@@ -10,14 +10,14 @@ import { SHAPES } from '../MeshRendererInspector/utils';
 import { MeshType } from '../MeshRendererInspector/types';
 import { COLLISION_LAYERS } from '../GltfInspector/utils';
 import { fromMeshCollider, toMeshCollider, isValidInput } from './utils';
-import { Props } from './types';
+import { type Props } from './types';
 
-export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
+export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
   const { MeshCollider } = sdk.components;
 
-  const hasMeshCollider = useHasComponent(entity, MeshCollider);
-  const { getInputProps } = useComponentInput(
-    entity,
+  const allEntitiesHaveMeshCollider = useAllEntitiesHaveComponent(entities, MeshCollider);
+  const { getInputProps } = useMultiComponentInput(
+    entities,
     MeshCollider,
     fromMeshCollider,
     toMeshCollider,
@@ -26,19 +26,22 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
 
   const handleRemove = useCallback(async () => {
     const { VisibilityComponent, GltfContainer } = sdk.components;
-    const hasGltfContainer = GltfContainer.has(entity);
-    const hasVisibility = VisibilityComponent.has(entity);
 
-    sdk.operations.removeComponent(entity, MeshCollider);
+    for (const entity of entities) {
+      const hasGltfContainer = GltfContainer.has(entity);
+      const hasVisibility = VisibilityComponent.has(entity);
 
-    if (hasVisibility && !hasGltfContainer) {
-      sdk.operations.removeComponent(entity, VisibilityComponent);
+      sdk.operations.removeComponent(entity, MeshCollider);
+
+      if (hasVisibility && !hasGltfContainer) {
+        sdk.operations.removeComponent(entity, VisibilityComponent);
+      }
     }
 
     await sdk.operations.dispatch();
-  }, [sdk, entity]);
+  }, [sdk, entities, MeshCollider]);
 
-  if (!hasMeshCollider) return null;
+  if (!allEntitiesHaveMeshCollider) return null;
 
   const mesh = getInputProps('mesh');
 

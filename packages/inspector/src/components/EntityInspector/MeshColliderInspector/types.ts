@@ -3,7 +3,7 @@ import type { Entity } from '@dcl/ecs';
 import type { MeshType } from '../MeshRendererInspector/types';
 
 export interface Props {
-  entity: Entity;
+  entities: Entity[];
   initialOpen?: boolean;
 }
 
