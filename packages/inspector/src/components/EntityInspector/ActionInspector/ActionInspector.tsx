@@ -15,7 +15,7 @@ import { ReadWriteByteBuffer } from '@dcl/ecs/dist/serialization/ByteBuffer';
 
 import { withSdk } from '../../../hoc/withSdk';
 import { useAllEntitiesHaveComponent, useHasComponent } from '../../../hooks/sdk/useHasComponent';
-import { useChange } from '../../../hooks/sdk/useChange';
+import { useComponentValue } from '../../../hooks/sdk/useComponentValue';
 import { analytics, Event } from '../../../lib/logic/analytics';
 import { getAssetByModel } from '../../../lib/logic/catalog';
 import { updateGltfForEntity } from '../../../lib/babylon/decentraland/sdkComponents/gltf-container';
@@ -56,7 +56,6 @@ import { BatchAction } from './BatchAction';
 import {
   getDefaultPayload,
   getPartialPayload,
-  isStates,
   getEntityValuesMap,
   computeActionItems,
 } from './utils';
@@ -167,7 +166,8 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
 
   const [_isFocused, setIsFocused] = useState(false);
   const [animations, setAnimations] = useState<AnimationGroup[]>([]);
-  const [states, setStates] = useState<string[]>(States.getOrNull(entityId)?.value || []);
+  const [statesComponent] = useComponentValue(entityId, States);
+  const states = statesComponent?.value ?? [];
 
   const hasActions = useAllEntitiesHaveComponent(stableEntities, Actions);
   const hasStates = useHasComponent(entityId, States);
@@ -180,21 +180,6 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
   const refreshEntityValuesMap = useCallback(() => {
     setEntityValuesMap(getEntityValuesMap(stableEntities, Actions));
   }, [stableEntities, Actions]);
-
-  // Listen for States changes
-  useChange(
-    (event, sdk) => {
-      if (
-        event.entity === entityId &&
-        event.component?.componentId === sdk.components.States.componentId &&
-        isStates(event.value)
-      ) {
-        const states = event.value;
-        setStates(states.value);
-      }
-    },
-    [entityId],
-  );
 
   // Load animations - use stable dependencies to prevent infinite loops
   useEffect(() => {
