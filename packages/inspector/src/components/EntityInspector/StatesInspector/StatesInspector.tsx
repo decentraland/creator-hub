@@ -16,8 +16,7 @@ import { InfoTooltip } from '../../ui/InfoTooltip';
 import { AddButton } from '../AddButton';
 import MoreOptionsMenu from '../MoreOptionsMenu';
 import { getUniqueState, isRepeated, fromStates, toStates, isValidInput } from './utils';
-import type { StatesInput } from './types';
-import type { Props } from './types';
+import type { Props, StatesInput } from './types';
 
 import './StatesInspector.css';
 
