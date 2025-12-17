@@ -125,6 +125,18 @@ export const getDclCastStyles = (scaleFactor: number): Record<string, UiTransfor
     height: 42 * scaleFactor,
   },
 
+  copyLinkButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 8 * scaleFactor,
+    padding: {
+      top: 4 * scaleFactor,
+      bottom: 4 * scaleFactor,
+      left: 8 * scaleFactor,
+      right: 8 * scaleFactor,
+    },
+  },
+
   iconSmall: {
     width: 20 * scaleFactor,
     height: 20 * scaleFactor,

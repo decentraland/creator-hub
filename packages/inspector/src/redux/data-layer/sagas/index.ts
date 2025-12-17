@@ -1,4 +1,4 @@
-import { takeEvery, takeLatest } from 'redux-saga/effects';
+import { takeEvery, takeLatest, fork } from 'redux-saga/effects';
 
 import {
   connect,
@@ -44,9 +44,9 @@ export function* dataLayerSaga() {
   yield takeEvery(save.type, saveSaga);
   yield takeEvery(getInspectorPreferences.type, getInspectorPreferencesSaga);
   yield takeEvery(setInspectorPreferences.type, setInspectorPreferencesSaga);
-  yield takeEvery(getAssetCatalog.type, getAssetCatalogSaga);
+  yield takeLatest(getAssetCatalog.type, getAssetCatalogSaga);
   yield undoRedoSaga();
-  yield takeEvery(importAsset.type, importAssetSaga);
+  yield fork(importAssetSaga, importAsset.type);
   yield takeEvery(removeAsset.type, removeAssetSaga);
   yield takeEvery(getThumbnails.type, getThumbnailsSaga);
   yield takeEvery(saveThumbnail.type, saveThumbnailSaga);

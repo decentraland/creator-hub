@@ -4,6 +4,7 @@ import ReactEcs, { Label, UiEntity } from '@dcl/react-ecs';
 import { copyToClipboard } from '~system/RestrictedActions';
 import { Color4 } from '@dcl/sdk/math';
 import { Button } from '../../Button';
+import { FeedbackButton } from '../../FeedbackButton';
 import { State } from '../../types';
 import { VideoControlVolume } from '../VolumeControl';
 import { createVideoPlayerControls, isDclCast } from '../utils';
@@ -102,33 +103,23 @@ const DclCastInfo = ({
                 }}
               />
             </UiEntity>
-            <UiEntity
-              uiTransform={styles.rowCenter}
+            <FeedbackButton
+              id="dcl_cast_copy_stream_link"
+              value="<b>Copy Link</b>"
+              variant="text"
+              fontSize={18 * scaleFactor}
+              color={colors.white}
+              iconRight={ICONS.COPY_TO_CLIPBOARD_ICON}
+              iconRightTransform={styles.iconSmall}
+              labelTransform={styles.marginRightSmall}
+              uiTransform={styles.copyLinkButton}
               onMouseDown={() => {
                 state.videoControl.dclCast?.streamLink &&
                   copyToClipboard({
                     text: state.videoControl.dclCast.streamLink,
                   });
               }}
-            >
-              <Label
-                value={'<b>Copy Link</b>'}
-                fontSize={18 * scaleFactor}
-                color={colors.white}
-                uiTransform={styles.marginRightSmall}
-              />
-              <UiEntity
-                uiTransform={{
-                  ...styles.iconSmall,
-                }}
-                uiBackground={{
-                  texture: {
-                    src: ICONS.COPY_TO_CLIPBOARD_ICON,
-                  },
-                  ...backgrounds.iconStretch,
-                }}
-              />
-            </UiEntity>
+            />
           </UiEntity>
           <UiEntity uiTransform={styles.separatorLine} />
           <UiEntity uiTransform={styles.rowCenterSpaceBetween}>
@@ -147,37 +138,23 @@ const DclCastInfo = ({
                 }}
               />
             </UiEntity>
-            <UiEntity
-              uiTransform={{
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-              }}
+            <FeedbackButton
+              id="dcl_cast_copy_watcher_link"
+              value="<b>Copy Link</b>"
+              variant="text"
+              fontSize={18 * scaleFactor}
+              color={colors.white}
+              iconRight={ICONS.COPY_TO_CLIPBOARD_ICON}
+              iconRightTransform={styles.iconSmall}
+              labelTransform={styles.marginRightSmall}
+              uiTransform={styles.copyLinkButton}
               onMouseDown={() => {
                 state.videoControl.dclCast?.watcherLink &&
                   copyToClipboard({
                     text: state.videoControl.dclCast.watcherLink,
                   });
               }}
-            >
-              <Label
-                value={'<b>Copy Link</b>'}
-                fontSize={18 * scaleFactor}
-                color={colors.white}
-                uiTransform={styles.marginRightSmall}
-              />
-              <UiEntity
-                uiTransform={{
-                  ...styles.iconSmall,
-                }}
-                uiBackground={{
-                  texture: {
-                    src: ICONS.COPY_TO_CLIPBOARD_ICON,
-                  },
-                  ...backgrounds.iconStretch,
-                }}
-              />
-            </UiEntity>
+            />
           </UiEntity>
         </UiEntity>
       </UiEntity>
