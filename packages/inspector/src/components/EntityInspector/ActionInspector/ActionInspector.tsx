@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { VscTrash as RemoveIcon } from 'react-icons/vsc';
+import cx from 'classnames';
 import type { AnimationGroup } from '@babylonjs/core';
 import { AvatarAnchorPointType } from '@dcl/ecs';
 import type { Action, ActionPayload } from '@dcl/asset-packs';
@@ -7,21 +8,18 @@ import {
   ActionType,
   getActionTypes,
   getJson,
-  getPayload,
   getActionSchema,
   ComponentName,
 } from '@dcl/asset-packs';
 import { ReadWriteByteBuffer } from '@dcl/ecs/dist/serialization/ByteBuffer';
 
 import { withSdk } from '../../../hoc/withSdk';
-import { getComponentValue, useComponentValue } from '../../../hooks/sdk/useComponentValue';
-import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
+import { useAllEntitiesHaveComponent, useHasComponent } from '../../../hooks/sdk/useHasComponent';
 import { useChange } from '../../../hooks/sdk/useChange';
-import { useArrayState } from '../../../hooks/useArrayState';
 import { analytics, Event } from '../../../lib/logic/analytics';
-import type { EditorComponentsTypes } from '../../../lib/sdk/components';
 import { getAssetByModel } from '../../../lib/logic/catalog';
 import { updateGltfForEntity } from '../../../lib/babylon/decentraland/sdkComponents/gltf-container';
+import { MIXED_VALUE } from '../../ui/utils';
 
 import { Block } from '../../Block';
 import { Container } from '../../Container';
@@ -55,7 +53,13 @@ import { SetRotationAction } from './SetRotationAction';
 import { SetScaleAction } from './SetScaleAction';
 import { RandomAction } from './RandomAction';
 import { BatchAction } from './BatchAction';
-import { getDefaultPayload, getPartialPayload, isStates } from './utils';
+import {
+  getDefaultPayload,
+  getPartialPayload,
+  isStates,
+  getEntityValuesMap,
+  computeActionItems,
+} from './utils';
 import type { Props } from './types';
 
 import './ActionInspector.css';
@@ -109,26 +113,75 @@ const ActionMapOption: Record<string, string> = {
   [ActionType.CLAIM_AIRDROP]: 'Claim Airdrop',
 };
 
-export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) => {
+const AVATAR_ANCHOR_POINT_OPTIONS = [
+  { value: AvatarAnchorPointType.AAPT_POSITION, label: 'Avatar Position' },
+  { value: AvatarAnchorPointType.AAPT_NAME_TAG, label: 'Name Tag' },
+  { value: AvatarAnchorPointType.AAPT_NECK, label: 'Neck' },
+  { value: AvatarAnchorPointType.AAPT_SPINE, label: 'Spine' },
+  { value: AvatarAnchorPointType.AAPT_SPINE1, label: 'Spine 1' },
+  { value: AvatarAnchorPointType.AAPT_SPINE2, label: 'Spine 2' },
+  { value: AvatarAnchorPointType.AAPT_HIP, label: 'Hip' },
+  { value: AvatarAnchorPointType.AAPT_LEFT_SHOULDER, label: 'Left Shoulder' },
+  { value: AvatarAnchorPointType.AAPT_LEFT_ARM, label: 'Left Arm' },
+  { value: AvatarAnchorPointType.AAPT_LEFT_FOREARM, label: 'Left Forearm' },
+  { value: AvatarAnchorPointType.AAPT_LEFT_HAND, label: 'Left Hand' },
+  { value: AvatarAnchorPointType.AAPT_LEFT_HAND_INDEX, label: 'Left Hand Index' },
+  { value: AvatarAnchorPointType.AAPT_RIGHT_SHOULDER, label: 'Right Shoulder' },
+  { value: AvatarAnchorPointType.AAPT_RIGHT_ARM, label: 'Right Arm' },
+  { value: AvatarAnchorPointType.AAPT_RIGHT_FOREARM, label: 'Right Forearm' },
+  { value: AvatarAnchorPointType.AAPT_RIGHT_HAND, label: 'Right Hand' },
+  { value: AvatarAnchorPointType.AAPT_LEFT_UP_LEG, label: 'Left Up Leg' },
+  { value: AvatarAnchorPointType.AAPT_LEFT_LEG, label: 'Left Leg' },
+  { value: AvatarAnchorPointType.AAPT_LEFT_FOOT, label: 'Left Foot' },
+  { value: AvatarAnchorPointType.AAPT_LEFT_TOE_BASE, label: 'Left Toe Base' },
+  { value: AvatarAnchorPointType.AAPT_RIGHT_UP_LEG, label: 'Right Up Leg' },
+  { value: AvatarAnchorPointType.AAPT_RIGHT_LEG, label: 'Right Leg' },
+  { value: AvatarAnchorPointType.AAPT_RIGHT_FOOT, label: 'Right Foot' },
+  { value: AvatarAnchorPointType.AAPT_RIGHT_TOE_BASE, label: 'Right Toe Base' },
+];
+
+export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
   const { Actions, States, Counter, GltfContainer, Rewards } = sdk.components;
-  const [componentValue, setComponentValue, isComponentEqual] = useComponentValue<
-    EditorComponentsTypes['Actions']
-  >(entityId, Actions);
-  const entity = sdk.sceneContext.getEntityOrNull(entityId);
-  const [actions, addAction, modifyAction, removeAction] = useArrayState<Action>(
-    componentValue === null ? [] : componentValue.value,
+
+  // Memoize entities by content to prevent unnecessary re-renders
+  const entitiesKey = entities.join(',');
+  const stableEntities = useMemo(() => entities, [entitiesKey]);
+
+  const entityId = stableEntities[0];
+
+  // Get entity values map
+  const [entityValuesMap, setEntityValuesMap] = useState(() =>
+    getEntityValuesMap(stableEntities, Actions),
   );
-  const [isFocused, setIsFocused] = useState(false);
+
+  // Sync entity values map when entities change
+  useEffect(() => {
+    setEntityValuesMap(getEntityValuesMap(stableEntities, Actions));
+  }, [stableEntities, Actions]);
+
+  // Compute action items (common and partial)
+  const actionItems = useMemo(
+    () => computeActionItems(entityValuesMap, stableEntities.length),
+    [entityValuesMap, stableEntities.length],
+  );
+
+  const [_isFocused, setIsFocused] = useState(false);
   const [animations, setAnimations] = useState<AnimationGroup[]>([]);
   const [states, setStates] = useState<string[]>(States.getOrNull(entityId)?.value || []);
 
-  const hasActions = useHasComponent(entityId, Actions);
+  const hasActions = useAllEntitiesHaveComponent(stableEntities, Actions);
   const hasStates = useHasComponent(entityId, States);
   const hasCounter = useHasComponent(entityId, Counter);
   const hasRewards = useHasComponent(entityId, Rewards);
   const hasGltf = useHasComponent(entityId, GltfContainer);
-  const [gltfValue] = useComponentValue(entityId, GltfContainer);
+  const gltfSrc = GltfContainer.getOrNull(entityId)?.src;
 
+  // Refresh entity values map
+  const refreshEntityValuesMap = useCallback(() => {
+    setEntityValuesMap(getEntityValuesMap(stableEntities, Actions));
+  }, [stableEntities, Actions]);
+
+  // Listen for States changes
   useChange(
     (event, sdk) => {
       if (
@@ -143,28 +196,48 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     [entityId],
   );
 
+  // Load animations - use stable dependencies to prevent infinite loops
   useEffect(() => {
-    if (entity && hasGltf && hasActions) {
-      const currentGltfSrc = entity.ecsComponentValues.gltfContainer?.src;
-      const isChangingGltf = currentGltfSrc !== gltfValue.src;
+    if (!hasGltf || !hasActions || !gltfSrc) {
+      setAnimations([]);
+      return;
+    }
 
-      if (isChangingGltf) {
+    let isMounted = true;
+    const entity = sdk.sceneContext.getEntityOrNull(entityId);
+    if (!entity) {
+      setAnimations([]);
+      return;
+    }
+
+    const currentGltfSrc = entity.ecsComponentValues.gltfContainer?.src;
+    const isChangingGltf = currentGltfSrc !== gltfSrc;
+
+    if (isChangingGltf) {
+      const gltfValue = GltfContainer.getOrNull(entityId);
+      if (gltfValue) {
         entity.resetGltfAssetContainerLoading();
         updateGltfForEntity(entity, gltfValue);
       }
-
-      entity
-        .onGltfContainerLoaded()
-        .then(gltfAssetContainer => {
-          setAnimations([...gltfAssetContainer.animationGroups]);
-        })
-        .catch(() => {
-          setAnimations([]);
-        });
-    } else {
-      setAnimations([]);
     }
-  }, [entity, gltfValue, hasActions, hasGltf]);
+
+    entity
+      .onGltfContainerLoaded()
+      .then(gltfAssetContainer => {
+        if (isMounted) {
+          setAnimations([...gltfAssetContainer.animationGroups]);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setAnimations([]);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [entityId, gltfSrc, hasActions, hasGltf, sdk, GltfContainer]);
 
   const isValidAction = useCallback(
     (action: Action) => {
@@ -259,39 +332,11 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     [sdk],
   );
 
-  const areValidActions = useCallback(
-    (updatedActions: Action[]) => updatedActions.every(isValidAction),
-    [],
-  );
-
-  const handleUpdateActions = useCallback(
-    (updatedActions: Action[]) => {
-      if (hasActions && areValidActions(updatedActions)) {
-        const current = sdk.components.Actions.get(entityId);
-        if (isComponentEqual({ ...current, value: updatedActions }) || isFocused) {
-          return;
-        }
-
-        setComponentValue({ ...current, value: [...updatedActions] });
-      }
-    },
-    [isFocused, isComponentEqual, hasActions, entityId, sdk],
-  );
-
-  const handleModifyAction = useCallback(
-    (idx: number, action: Action) => {
-      modifyAction(idx, action, updatedActions => {
-        handleUpdateActions(updatedActions);
-      });
-    },
-    [modifyAction, handleUpdateActions],
-  );
-
   const hasAnimations = useMemo(() => {
     return animations.length > 0;
   }, [animations]);
 
-  // actions that may only be available under certain circumstances
+  // Actions that may only be available under certain circumstances
   const conditionalActions: Partial<Record<string, () => boolean>> = useMemo(
     () => ({
       [ActionType.PLAY_ANIMATION]: () => hasAnimations,
@@ -302,11 +347,11 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       [ActionType.SET_COUNTER]: () => hasCounter,
       [ActionType.CLAIM_AIRDROP]: () => hasRewards,
     }),
-    [hasAnimations, hasStates],
+    [hasAnimations, hasStates, hasCounter, hasRewards],
   );
 
   const allActions = useMemo(() => {
-    const actions = getActionTypes(sdk.engine as any);
+    const actions = getActionTypes(sdk.engine);
     return actions;
   }, [sdk]);
 
@@ -320,298 +365,114 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     });
   }, [conditionalActions, allActions]);
 
+  // Update action across all entities that have it
+  const handleModifyActionByName = useCallback(
+    (actionName: string, updater: (action: Action) => Action) => {
+      for (const ent of stableEntities) {
+        const component = entityValuesMap.get(ent);
+        if (!component) continue;
+
+        const actionIndex = component.value.findIndex(a => a.name === actionName);
+        if (actionIndex === -1) continue;
+
+        const currentAction = component.value[actionIndex];
+        const updatedAction = updater(currentAction);
+
+        if (!isValidAction(updatedAction)) continue;
+
+        const newActions = [...component.value];
+        newActions[actionIndex] = updatedAction;
+        sdk.operations.updateValue(Actions, ent, { ...component, value: newActions });
+      }
+      void sdk.operations.dispatch();
+      refreshEntityValuesMap();
+    },
+    [stableEntities, entityValuesMap, sdk, Actions, isValidAction, refreshEntityValuesMap],
+  );
+
+  // Remove container from all entities
   const handleRemove = useCallback(async () => {
-    sdk.operations.removeComponent(entityId, Actions);
+    for (const ent of stableEntities) {
+      sdk.operations.removeComponent(ent, Actions);
+    }
     await sdk.operations.dispatch();
-    const gltfContainer = getComponentValue(entityId, sdk.components.GltfContainer);
-    const asset = getAssetByModel(gltfContainer.src);
+    refreshEntityValuesMap();
+
+    // Safe analytics - GltfContainer might not exist
+    const gltfContainer = GltfContainer.getOrNull(entityId);
+    const asset = gltfContainer?.src ? getAssetByModel(gltfContainer.src) : undefined;
     analytics.track(Event.REMOVE_COMPONENT, {
       componentName: ComponentName.ACTIONS,
       itemId: asset?.id,
-      itemPath: gltfContainer.src,
+      itemPath: gltfContainer?.src,
     });
-  }, []);
+  }, [sdk, stableEntities, entityId, Actions, GltfContainer, refreshEntityValuesMap]);
 
+  // Add new action to all entities
   const handleAddNewAction = useCallback(() => {
-    addAction({ type: '', name: '', jsonPayload: '{}' });
-  }, [addAction]);
+    const newAction: Action = { type: '', name: '', jsonPayload: '{}' };
+    for (const ent of stableEntities) {
+      const component = entityValuesMap.get(ent);
+      if (!component) continue;
 
-  const handleChangeAnimation = useCallback(
-    (value: ActionPayload<ActionType.PLAY_ANIMATION>, idx: number) => {
-      handleModifyAction(idx, {
-        ...actions[idx],
-        jsonPayload: getJson<ActionType.PLAY_ANIMATION>(value),
-      });
+      const newActions = [...component.value, newAction];
+      sdk.operations.updateValue(Actions, ent, { ...component, value: newActions });
+    }
+    void sdk.operations.dispatch();
+    refreshEntityValuesMap();
+  }, [stableEntities, entityValuesMap, sdk, Actions, refreshEntityValuesMap]);
+
+  // Remove action by name from all entities
+  const handleRemoveAction = useCallback(
+    (actionName: string) => {
+      for (const ent of stableEntities) {
+        const component = entityValuesMap.get(ent);
+        if (!component) continue;
+
+        const newActions = component.value.filter(a => a.name !== actionName);
+        sdk.operations.updateValue(Actions, ent, { ...component, value: newActions });
+      }
+      void sdk.operations.dispatch();
+      refreshEntityValuesMap();
     },
-    [actions, handleModifyAction],
+    [stableEntities, entityValuesMap, sdk, Actions, refreshEntityValuesMap],
   );
 
-  const handleChangeState = useCallback(
-    ({ target: { value } }: React.ChangeEvent<HTMLSelectElement>, idx: number) => {
-      handleModifyAction(idx, {
-        ...actions[idx],
-        jsonPayload: getJson<ActionType.SET_STATE>({
-          state: value,
-        }),
-      });
+  // Handler for changing action name
+  const handleChangeName = useCallback(
+    (e: React.ChangeEvent<HTMLElement>, oldName: string) => {
+      const { value: newName } = e.target as HTMLInputElement;
+      handleModifyActionByName(oldName, action => ({
+        ...action,
+        name: newName,
+      }));
     },
-    [actions, handleModifyAction],
+    [handleModifyActionByName],
   );
 
-  const handleChangeTween = useCallback(
-    (tween: ActionPayload<ActionType.START_TWEEN>, idx: number) => {
-      handleModifyAction(idx, {
-        ...actions[idx],
-        jsonPayload: getJson<ActionType.START_TWEEN>(tween),
-      });
-    },
-    [actions, handleModifyAction],
-  );
-
-  const handleChangeSound = useCallback(
-    (value: ActionPayload<ActionType.PLAY_SOUND>, idx: number) => {
-      handleModifyAction(idx, {
-        ...actions[idx],
-        jsonPayload: getJson<ActionType.PLAY_SOUND>(value),
-      });
-    },
-    [actions, handleModifyAction],
-  );
-
-  const handleChangeCounter = useCallback(
-    ({ target: { value } }: React.ChangeEvent<HTMLInputElement>, idx: number) => {
-      handleModifyAction(idx, {
-        ...actions[idx],
-        jsonPayload: getJson<ActionType.SET_COUNTER>({
-          counter: parseInt(value),
-        }),
-      });
-    },
-    [actions, handleModifyAction],
-  );
-
-  const handleChangeAmount = useCallback(
-    ({ target: { value } }: React.ChangeEvent<HTMLInputElement>, idx: number) => {
-      handleModifyAction(idx, {
-        ...actions[idx],
-        jsonPayload: getJson<ActionType.INCREMENT_COUNTER | ActionType.DECREASE_COUNTER>({
-          amount: parseInt(value),
-        }),
-      });
-    },
-    [actions, handleModifyAction],
-  );
-
-  const handleChangeAnchorPoint = useCallback(
-    ({ target: { value } }: React.ChangeEvent<HTMLSelectElement>, idx: number) => {
-      handleModifyAction(idx, {
-        ...actions[idx],
-        jsonPayload: getJson<ActionType.ATTACH_TO_PLAYER>({
-          anchorPointId: parseInt(value),
-        }),
-      });
-    },
-    [actions, handleModifyAction],
-  );
-
-  const handleChangeTeleportPlayer = useCallback(
-    (value: ActionPayload<ActionType.TELEPORT_PLAYER>, idx: number) => {
-      handleModifyAction(idx, {
-        ...actions[idx],
-        jsonPayload: getJson<ActionType.TELEPORT_PLAYER>(value),
-      });
-    },
-    [actions, handleModifyAction],
-  );
-
-  const handleChangeMovePlayer = useCallback(
-    (value: ActionPayload<ActionType.MOVE_PLAYER>, idx: number) => {
-      handleModifyAction(idx, {
-        ...actions[idx],
-        jsonPayload: getJson<ActionType.MOVE_PLAYER>(value),
-      });
-    },
-    [actions, handleModifyAction],
-  );
-
-  const handleChangePlayDefaultEmote = useCallback(
-    (value: ActionPayload<ActionType.PLAY_DEFAULT_EMOTE>, idx: number) => {
-      handleModifyAction(idx, {
-        ...actions[idx],
-        jsonPayload: getJson<ActionType.PLAY_DEFAULT_EMOTE>(value),
-      });
-    },
-    [actions, handleModifyAction],
-  );
-
-  const handleChangePlayCustomEmote = useCallback(
-    (value: ActionPayload<ActionType.PLAY_CUSTOM_EMOTE>, idx: number) => {
-      handleModifyAction(idx, {
-        ...actions[idx],
-        jsonPayload: getJson<ActionType.PLAY_CUSTOM_EMOTE>(value),
-      });
-    },
-    [actions, handleModifyAction],
-  );
-
-  const handleChangeOpenLink = useCallback(
-    (value: ActionPayload<ActionType.OPEN_LINK>, idx: number) => {
-      handleModifyAction(idx, {
-        ...actions[idx],
-        jsonPayload: getJson<ActionType.OPEN_LINK>(value),
-      });
-    },
-    [actions, handleModifyAction],
-  );
-
-  const handleChangeText = useCallback(
-    (value: ActionPayload<ActionType.SHOW_TEXT>, idx: number) => {
-      handleModifyAction(idx, {
-        ...actions[idx],
-        jsonPayload: getJson<ActionType.SHOW_TEXT>(value),
-      });
-    },
-    [actions, handleModifyAction],
-  );
-
-  const handleChangeDelayAction = useCallback(
-    (value: ActionPayload<ActionType.START_DELAY | ActionType.STOP_DELAY>, idx: number) => {
-      const payload =
-        'actions' in value
-          ? getJson<ActionType.START_DELAY>(value)
-          : getJson<ActionType.STOP_DELAY>(value);
-      handleModifyAction(idx, {
-        ...actions[idx],
-        jsonPayload: payload,
-      });
-    },
-    [actions, handleModifyAction],
-  );
-
-  const handleChangeLoopAction = useCallback(
-    (value: ActionPayload<ActionType.START_LOOP | ActionType.STOP_LOOP>, idx: number) => {
-      const payload =
-        'actions' in value
-          ? getJson<ActionType.START_LOOP>(value)
-          : getJson<ActionType.STOP_LOOP>(value);
-      handleModifyAction(idx, {
-        ...actions[idx],
-        jsonPayload: payload,
-      });
-    },
-    [actions, handleModifyAction],
-  );
-
-  const handleChangeCloneEntity = useCallback(
-    (value: ActionPayload<ActionType.CLONE_ENTITY>, idx: number) => {
-      handleModifyAction(idx, {
-        ...actions[idx],
-        jsonPayload: getJson<ActionType.CLONE_ENTITY>(value),
-      });
-    },
-    [actions, handleModifyAction],
-  );
-
+  // Handler for changing action type
   const handleChangeType = useCallback(
-    ({ target: { value } }: React.ChangeEvent<HTMLSelectElement>, idx: number) => {
-      handleModifyAction(idx, {
-        ...actions[idx],
+    ({ target: { value } }: React.ChangeEvent<HTMLSelectElement>, actionName: string) => {
+      handleModifyActionByName(actionName, action => ({
+        ...action,
         type: value,
         jsonPayload: getDefaultPayload(value),
-      });
+      }));
     },
-    [actions, handleModifyAction],
+    [handleModifyActionByName],
   );
 
-  const handleChangeName = useCallback(
-    (e: React.ChangeEvent<HTMLElement>, idx: number) => {
-      const { value } = e.target as HTMLInputElement;
-      handleModifyAction(idx, {
-        ...actions[idx],
-        name: value,
-      });
-    },
-    [actions, handleModifyAction],
-  );
-
-  const handleChangeVisibility = useCallback(
-    (value: ActionPayload<ActionType.SET_VISIBILITY>, idx: number) => {
-      handleModifyAction(idx, {
-        ...actions[idx],
-        jsonPayload: getJson<ActionType.SET_VISIBILITY>(value),
-      });
-    },
-    [actions, handleModifyAction],
-  );
-
-  const handleChangeImage = useCallback(
-    (value: ActionPayload<ActionType.SHOW_IMAGE>, idx: number) => {
-      handleModifyAction(idx, {
-        ...actions[idx],
-        jsonPayload: getJson<ActionType.SHOW_IMAGE>(value),
-      });
-    },
-    [actions, handleModifyAction],
-  );
-
-  const handleChangeFollowPlayer = useCallback(
-    (value: ActionPayload<ActionType.FOLLOW_PLAYER>, idx: number) => {
-      handleModifyAction(idx, {
-        ...actions[idx],
-        jsonPayload: getJson<ActionType.FOLLOW_PLAYER>(value),
-      });
-    },
-    [actions, handleModifyAction],
-  );
-
-  const handleChangeTriggerProximity = useCallback(
-    (value: ActionPayload<ActionType.DAMAGE>, idx: number) => {
-      handleModifyAction(idx, {
-        ...actions[idx],
-        jsonPayload: getJson<ActionType.DAMAGE>(value),
-      });
-    },
-    [actions, handleModifyAction],
-  );
-
-  const handleSetPosition = useCallback(
-    (value: ActionPayload<ActionType.SET_POSITION>, idx: number) => {
-      handleModifyAction(idx, {
-        ...actions[idx],
-        jsonPayload: getJson<ActionType.SET_POSITION>(value),
-      });
-    },
-    [actions, handleModifyAction],
-  );
-
-  const handleSetRotation = useCallback(
-    (value: ActionPayload<ActionType.SET_ROTATION>, idx: number) => {
-      handleModifyAction(idx, {
-        ...actions[idx],
-        jsonPayload: getJson<ActionType.SET_ROTATION>(value),
-      });
-    },
-    [actions, handleModifyAction],
-  );
-
-  const handleSetScale = useCallback(
-    (value: ActionPayload<ActionType.SET_SCALE>, idx: number) => {
-      handleModifyAction(idx, {
-        ...actions[idx],
-        jsonPayload: getJson<ActionType.SET_SCALE>(value),
-      });
-    },
-    [actions, handleModifyAction],
-  );
-
-  const handleChangeActions = useCallback(
-    (value: ActionPayload<ActionType.RANDOM | ActionType.BATCH>, idx: number) => {
-      handleModifyAction(idx, {
-        ...actions[idx],
-        jsonPayload: getJson<ActionType.RANDOM | ActionType.BATCH>(value),
-      });
-    },
-    [actions, handleModifyAction],
+  // Generic handler factory for updating action payloads
+  // This eliminates the need for individual handlers per action type
+  const createPayloadHandler = useCallback(
+    <T extends ActionType>(actionName: string) =>
+      (value: ActionPayload<T>) => {
+        handleModifyActionByName(actionName, action => ({
+          ...action,
+          jsonPayload: getJson<T>(value),
+        }));
+      },
+    [handleModifyActionByName],
   );
 
   const handleFocusInput = useCallback(
@@ -625,66 +486,34 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     [setIsFocused],
   );
 
-  const handleChangeVideo = useCallback(
-    (value: ActionPayload<ActionType.PLAY_VIDEO_STREAM>, idx: number) => {
-      handleModifyAction(idx, {
-        ...actions[idx],
-        jsonPayload: getJson<ActionType.PLAY_VIDEO_STREAM>(value),
-      });
-    },
-    [actions, handleModifyAction],
-  );
-
-  const handleChangeAudio = useCallback(
-    (value: ActionPayload<ActionType.PLAY_AUDIO_STREAM>, idx: number) => {
-      handleModifyAction(idx, {
-        ...actions[idx],
-        jsonPayload: getJson<ActionType.PLAY_AUDIO_STREAM>(value),
-      });
-    },
-    [actions, handleModifyAction],
-  );
-
-  const createHandler = <T extends ActionType>(
-    getPayload: (value: string) => ActionPayload<T>,
-    idx: number,
-  ) => {
-    const handler = ({ target: { value } }: React.ChangeEvent<HTMLInputElement>) => {
-      handleModifyAction(idx, {
-        ...actions[idx],
-        jsonPayload: getJson<T>(getPayload(value)),
-      });
-    };
-    return handler;
-  };
-
-  const handleRemoveAction = useCallback(
-    (_e: React.MouseEvent, idx: number) => {
-      removeAction(idx, updatedActions => {
-        handleUpdateActions(updatedActions);
-      });
-    },
-    [removeAction, handleUpdateActions],
-  );
-
   if (!hasActions) {
     return null;
   }
 
-  const renderAction = (action: Action, idx: number) => {
+  // Get all local actions for reference (for Delay/Loop/Random/Batch actions)
+  const allLocalActions = actionItems.map(item => item.action);
+
+  const renderAction = (
+    action: Action,
+    actionName: string,
+    mergedPayload: Record<string, unknown>,
+  ) => {
+    // Create handler for this action - sub-components call this with the full payload
+    const onUpdate = createPayloadHandler(actionName);
+
     switch (action.type) {
       case ActionType.PLAY_ANIMATION: {
+        const payload = mergedPayload as ActionPayload<ActionType.PLAY_ANIMATION>;
         return hasAnimations ? (
           <PlayAnimationAction
-            value={getPartialPayload<ActionType.PLAY_ANIMATION>(action)}
+            value={payload}
             animations={animations}
-            onUpdate={(value: ActionPayload<ActionType.PLAY_ANIMATION>) =>
-              handleChangeAnimation(value, idx)
-            }
+            onUpdate={onUpdate}
           />
         ) : null;
       }
       case ActionType.SET_STATE: {
+        const payload = mergedPayload as ActionPayload<ActionType.SET_STATE>;
         return hasStates ? (
           <div className="row">
             <div className="field">
@@ -692,62 +521,49 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
                 label="Select State"
                 placeholder="Select a State"
                 options={[...states.map(state => ({ label: state, value: state }))]}
-                value={getPartialPayload<ActionType.SET_STATE>(action)?.state}
-                onChange={e => handleChangeState(e, idx)}
+                value={payload?.state}
+                onChange={e => onUpdate({ state: e.target.value })}
               />
             </div>
           </div>
         ) : null;
       }
       case ActionType.START_TWEEN: {
+        const payload = mergedPayload as ActionPayload<ActionType.START_TWEEN>;
         return (
           <TweenAction
-            tween={getPartialPayload<ActionType.START_TWEEN>(action)}
-            onUpdateTween={(tween: ActionPayload<ActionType.START_TWEEN>) =>
-              handleChangeTween(tween, idx)
-            }
+            tween={payload}
+            onUpdateTween={onUpdate}
           />
         );
       }
       case ActionType.SET_COUNTER: {
+        const payload = mergedPayload as ActionPayload<ActionType.SET_COUNTER>;
         return hasCounter ? (
           <div className="row">
             <div className="field">
               <TextField
                 label="Counter Value"
                 type="number"
-                value={getPartialPayload<ActionType.SET_COUNTER>(action)?.counter}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangeCounter(e, idx)}
+                value={payload?.counter}
+                onChange={e => onUpdate({ counter: parseInt(e.target.value) })}
                 autoSelect
               />
             </div>
           </div>
         ) : null;
       }
-      case ActionType.INCREMENT_COUNTER: {
-        return hasCounter ? (
-          <div className="row">
-            <div className="field">
-              <TextField
-                label="Amount"
-                type="number"
-                value={getPartialPayload<ActionType.INCREMENT_COUNTER>(action)?.amount}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangeAmount(e, idx)}
-                autoSelect
-              />
-            </div>
-          </div>
-        ) : null;
-      }
+      case ActionType.INCREMENT_COUNTER:
       case ActionType.DECREASE_COUNTER: {
+        const payload = mergedPayload as ActionPayload<ActionType.INCREMENT_COUNTER>;
         return hasCounter ? (
           <div className="row">
             <div className="field">
               <TextField
                 label="Amount"
                 type="number"
-                value={getPartialPayload<ActionType.DECREASE_COUNTER>(action)?.amount}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangeAmount(e, idx)}
+                value={payload?.amount}
+                onChange={e => onUpdate({ amount: parseInt(e.target.value) })}
                 autoSelect
               />
             </div>
@@ -755,237 +571,232 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
         ) : null;
       }
       case ActionType.PLAY_SOUND: {
+        const payload = mergedPayload as ActionPayload<ActionType.PLAY_SOUND>;
         return (
           <PlaySoundAction
-            value={getPartialPayload<ActionType.PLAY_SOUND>(action)}
-            onUpdate={(value: ActionPayload<ActionType.PLAY_SOUND>) =>
-              handleChangeSound(value, idx)
-            }
+            value={payload}
+            onUpdate={onUpdate}
           />
         );
       }
       case ActionType.SET_VISIBILITY: {
+        const payload = mergedPayload as ActionPayload<ActionType.SET_VISIBILITY>;
         return (
           <SetVisibilityAction
-            value={getPartialPayload<ActionType.SET_VISIBILITY>(action)}
-            onUpdate={e => handleChangeVisibility(e, idx)}
+            value={payload}
+            onUpdate={onUpdate}
           />
         );
       }
       case ActionType.ATTACH_TO_PLAYER: {
+        const payload = mergedPayload as ActionPayload<ActionType.ATTACH_TO_PLAYER>;
         return (
           <div className="row">
             <div className="field">
               <Dropdown
                 label="Select an Anchor Point"
                 placeholder="Select an Anchor Point"
-                options={[
-                  { value: AvatarAnchorPointType.AAPT_POSITION, label: 'Avatar Position' },
-                  { value: AvatarAnchorPointType.AAPT_NAME_TAG, label: 'Name Tag' },
-                  { value: AvatarAnchorPointType.AAPT_NECK, label: 'Neck' },
-                  { value: AvatarAnchorPointType.AAPT_SPINE, label: 'Spine' },
-                  { value: AvatarAnchorPointType.AAPT_SPINE1, label: 'Spine 1' },
-                  { value: AvatarAnchorPointType.AAPT_SPINE2, label: 'Spine 2' },
-                  { value: AvatarAnchorPointType.AAPT_HIP, label: 'Hip' },
-                  { value: AvatarAnchorPointType.AAPT_LEFT_SHOULDER, label: 'Left Shoulder' },
-                  { value: AvatarAnchorPointType.AAPT_LEFT_ARM, label: 'Left Arm' },
-                  { value: AvatarAnchorPointType.AAPT_LEFT_FOREARM, label: 'Left Forearm' },
-                  { value: AvatarAnchorPointType.AAPT_LEFT_HAND, label: 'Left Hand' },
-                  { value: AvatarAnchorPointType.AAPT_LEFT_HAND_INDEX, label: 'Left Hand Index' },
-                  { value: AvatarAnchorPointType.AAPT_RIGHT_SHOULDER, label: 'Right Shoulder' },
-                  { value: AvatarAnchorPointType.AAPT_RIGHT_ARM, label: 'Right Arm' },
-                  { value: AvatarAnchorPointType.AAPT_RIGHT_FOREARM, label: 'Right Forearm' },
-                  { value: AvatarAnchorPointType.AAPT_RIGHT_HAND, label: 'Right Hand' },
-                  { value: AvatarAnchorPointType.AAPT_LEFT_UP_LEG, label: 'Left Up Leg' },
-                  { value: AvatarAnchorPointType.AAPT_LEFT_LEG, label: 'Left Leg' },
-                  { value: AvatarAnchorPointType.AAPT_LEFT_FOOT, label: 'Left Foot' },
-                  { value: AvatarAnchorPointType.AAPT_LEFT_TOE_BASE, label: 'Left Toe Base' },
-                  { value: AvatarAnchorPointType.AAPT_RIGHT_UP_LEG, label: 'Right Up Leg' },
-                  { value: AvatarAnchorPointType.AAPT_RIGHT_LEG, label: 'Right Leg' },
-                  { value: AvatarAnchorPointType.AAPT_RIGHT_FOOT, label: 'Right Foot' },
-                  { value: AvatarAnchorPointType.AAPT_RIGHT_TOE_BASE, label: 'Right Toe Base' },
-                ]}
-                value={getPartialPayload<ActionType.ATTACH_TO_PLAYER>(action)?.anchorPointId}
-                onChange={e => handleChangeAnchorPoint(e, idx)}
+                options={AVATAR_ANCHOR_POINT_OPTIONS}
+                value={payload?.anchorPointId}
+                onChange={e => onUpdate({ anchorPointId: parseInt(e.target.value) })}
               />
             </div>
           </div>
         );
       }
       case ActionType.TELEPORT_PLAYER: {
+        const payload = mergedPayload as ActionPayload<ActionType.TELEPORT_PLAYER>;
         return (
           <TeleportPlayerAction
-            value={getPartialPayload<ActionType.TELEPORT_PLAYER>(action)}
-            onUpdate={e => handleChangeTeleportPlayer(e, idx)}
+            value={payload}
+            onUpdate={onUpdate}
           />
         );
       }
       case ActionType.MOVE_PLAYER: {
+        const payload = mergedPayload as ActionPayload<ActionType.MOVE_PLAYER>;
         return (
           <MovePlayerAction
-            value={getPartialPayload<ActionType.MOVE_PLAYER>(action)}
-            onUpdate={e => handleChangeMovePlayer(e, idx)}
+            value={payload}
+            onUpdate={onUpdate}
           />
         );
       }
       case ActionType.PLAY_DEFAULT_EMOTE: {
+        const payload = mergedPayload as ActionPayload<ActionType.PLAY_DEFAULT_EMOTE>;
         return (
           <PlayDefaultEmoteAction
-            value={getPartialPayload<ActionType.PLAY_DEFAULT_EMOTE>(action)}
-            onUpdate={e => handleChangePlayDefaultEmote(e, idx)}
+            value={payload}
+            onUpdate={onUpdate}
           />
         );
       }
       case ActionType.PLAY_CUSTOM_EMOTE: {
+        const payload = mergedPayload as ActionPayload<ActionType.PLAY_CUSTOM_EMOTE>;
         return (
           <PlayCustomEmoteAction
-            value={getPartialPayload<ActionType.PLAY_CUSTOM_EMOTE>(action)}
-            onUpdate={e => handleChangePlayCustomEmote(e, idx)}
+            value={payload}
+            onUpdate={onUpdate}
           />
         );
       }
       case ActionType.OPEN_LINK: {
+        const payload = mergedPayload as ActionPayload<ActionType.OPEN_LINK>;
         return (
           <OpenLinkAction
-            value={getPartialPayload<ActionType.OPEN_LINK>(action)}
-            onUpdate={e => handleChangeOpenLink(e, idx)}
+            value={payload}
+            onUpdate={onUpdate}
           />
         );
       }
       case ActionType.PLAY_VIDEO_STREAM: {
+        const payload = mergedPayload as ActionPayload<ActionType.PLAY_VIDEO_STREAM>;
         return (
           <PlayVideoStreamAction
-            value={getPartialPayload<ActionType.PLAY_VIDEO_STREAM>(action)}
-            onUpdate={(value: ActionPayload<ActionType.PLAY_VIDEO_STREAM>) =>
-              handleChangeVideo(value, idx)
-            }
+            value={payload}
+            onUpdate={onUpdate}
           />
         );
       }
       case ActionType.PLAY_AUDIO_STREAM: {
+        const payload = mergedPayload as ActionPayload<ActionType.PLAY_AUDIO_STREAM>;
         return (
           <PlayAudioStreamAction
-            value={getPartialPayload<ActionType.PLAY_AUDIO_STREAM>(action)}
-            onUpdate={(value: ActionPayload<ActionType.PLAY_AUDIO_STREAM>) =>
-              handleChangeAudio(value, idx)
-            }
+            value={payload}
+            onUpdate={onUpdate}
           />
         );
       }
       case ActionType.SHOW_TEXT: {
+        const payload = mergedPayload as ActionPayload<ActionType.SHOW_TEXT>;
         return (
           <ShowTextAction
-            value={getPartialPayload<ActionType.SHOW_TEXT>(action)}
-            onUpdate={e => handleChangeText(e, idx)}
+            value={payload}
+            onUpdate={onUpdate}
           />
         );
       }
       case ActionType.START_DELAY:
       case ActionType.STOP_DELAY: {
+        const payload = mergedPayload as ActionPayload<typeof action.type>;
         return (
           <DelayAction<ActionPayload<typeof action.type>>
-            availableActions={actions}
-            value={getPayload<typeof action.type>(action)}
-            onUpdate={e => handleChangeDelayAction(e, idx)}
+            availableActions={allLocalActions}
+            value={payload}
+            onUpdate={onUpdate}
           />
         );
       }
       case ActionType.START_LOOP:
       case ActionType.STOP_LOOP: {
+        const payload = mergedPayload as ActionPayload<typeof action.type>;
         return (
           <LoopAction<ActionPayload<typeof action.type>>
-            availableActions={actions}
-            value={getPayload<typeof action.type>(action)}
-            onUpdate={e => handleChangeLoopAction(e, idx)}
+            availableActions={allLocalActions}
+            value={payload}
+            onUpdate={onUpdate}
           />
         );
       }
       case ActionType.CLONE_ENTITY: {
+        const payload = mergedPayload as ActionPayload<ActionType.CLONE_ENTITY>;
         return (
           <CloneEntityAction
-            value={getPartialPayload<ActionType.CLONE_ENTITY>(action)}
-            onUpdate={e => handleChangeCloneEntity(e, idx)}
+            value={payload}
+            onUpdate={onUpdate}
           />
         );
       }
       case ActionType.SHOW_IMAGE: {
+        const payload = mergedPayload as ActionPayload<ActionType.SHOW_IMAGE>;
         return (
           <ShowImageAction
-            value={getPartialPayload<ActionType.SHOW_IMAGE>(action)}
-            onUpdate={e => handleChangeImage(e, idx)}
+            value={payload}
+            onUpdate={onUpdate}
           />
         );
       }
-      case ActionType.FOLLOW_PLAYER:
+      case ActionType.FOLLOW_PLAYER: {
+        const payload = mergedPayload as ActionPayload<ActionType.FOLLOW_PLAYER>;
         return (
           <FollowPlayerAction
-            value={getPartialPayload<ActionType.FOLLOW_PLAYER>(action)}
-            onUpdate={e => handleChangeFollowPlayer(e, idx)}
+            value={payload}
+            onUpdate={onUpdate}
           />
         );
-      case ActionType.DAMAGE:
+      }
+      case ActionType.DAMAGE: {
+        const payload = mergedPayload as ActionPayload<ActionType.DAMAGE>;
         return (
           <TriggerProximityAction
-            value={getPartialPayload<ActionType.DAMAGE>(action)}
-            onUpdate={e => handleChangeTriggerProximity(e, idx)}
+            value={payload}
+            onUpdate={onUpdate}
           />
         );
-      case ActionType.SET_POSITION:
+      }
+      case ActionType.SET_POSITION: {
+        const payload = mergedPayload as ActionPayload<ActionType.SET_POSITION>;
         return (
           <SetPositionAction
-            value={getPartialPayload<ActionType.SET_POSITION>(action)}
-            onUpdate={e => handleSetPosition(e, idx)}
+            value={payload}
+            onUpdate={onUpdate}
           />
         );
-      case ActionType.SET_ROTATION:
+      }
+      case ActionType.SET_ROTATION: {
+        const payload = mergedPayload as ActionPayload<ActionType.SET_ROTATION>;
         return (
           <SetRotationAction
-            value={getPartialPayload<ActionType.SET_ROTATION>(action)}
-            onUpdate={e => handleSetRotation(e, idx)}
+            value={payload}
+            onUpdate={onUpdate}
           />
         );
-      case ActionType.SET_SCALE:
+      }
+      case ActionType.SET_SCALE: {
+        const payload = mergedPayload as ActionPayload<ActionType.SET_SCALE>;
         return (
           <SetScaleAction
-            value={getPartialPayload<ActionType.SET_SCALE>(action)}
-            onUpdate={e => handleSetScale(e, idx)}
+            value={payload}
+            onUpdate={onUpdate}
           />
         );
-      case ActionType.RANDOM:
+      }
+      case ActionType.RANDOM: {
+        const payload = mergedPayload as ActionPayload<ActionType.RANDOM>;
         return (
           <RandomAction
-            value={getPartialPayload<ActionType.RANDOM>(action)}
-            availableActions={actions}
-            onUpdate={e => handleChangeActions(e, idx)}
+            value={payload}
+            availableActions={allLocalActions}
+            onUpdate={onUpdate}
           />
         );
-      case ActionType.BATCH:
+      }
+      case ActionType.BATCH: {
+        const payload = mergedPayload as ActionPayload<ActionType.BATCH>;
         return (
           <BatchAction
-            value={getPartialPayload<ActionType.BATCH>(action)}
-            availableActions={actions}
-            onUpdate={e => handleChangeActions(e, idx)}
+            value={payload}
+            availableActions={allLocalActions}
+            onUpdate={onUpdate}
           />
         );
+      }
       case ActionType.HEAL_PLAYER: {
+        const payload = mergedPayload as ActionPayload<ActionType.HEAL_PLAYER>;
         return (
           <div className="row">
             <div className="field">
               <TextField
                 label="Multiplier"
                 type="number"
-                value={getPartialPayload<ActionType.HEAL_PLAYER>(action)?.multiplier || 1}
-                onChange={createHandler<ActionType.HEAL_PLAYER>(
-                  value => ({ multiplier: parseInt(value) }),
-                  idx,
-                )}
+                value={payload?.multiplier || 1}
+                onChange={e => onUpdate({ multiplier: parseInt(e.target.value) })}
               />
             </div>
           </div>
         );
       }
       default: {
-        // TODO: handle generic schemas with something like <JsonSchemaField/>
         return null;
       }
     }
@@ -1005,39 +816,46 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       }
       onRemoveContainer={handleRemove}
     >
-      {actions.map((action: Action, idx: number) => {
+      {actionItems.map(({ action, isPartial, hasTypeMismatch, mergedPayload }, idx) => {
+        const actionName = action.name;
+        const displayType = hasTypeMismatch ? MIXED_VALUE : action.type;
+
         return (
-          <Block key={`action-${idx}`}>
+          <Block
+            key={`action-${actionName}-${idx}`}
+            className={cx({ partial: isPartial })}
+          >
             <div className="row">
               <TextField
                 type="text"
                 label="Name"
-                value={action.name}
-                onChange={e => handleChangeName(e, idx)}
+                value={actionName}
+                onChange={e => handleChangeName(e, actionName)}
                 onFocus={handleFocusInput}
                 onBlur={handleFocusInput}
-                autoSelect
+                autoSelect={!isPartial}
+                disabled={isPartial}
               />
               <Dropdown
                 label="Select an Action"
                 placeholder="Select an Action"
-                disabled={availableActions.length === 0}
+                disabled={isPartial || availableActions.length === 0}
                 options={[
                   ...availableActions.map(availableAction => ({
                     label: ActionMapOption[availableAction],
                     value: availableAction,
                   })),
                 ]}
-                value={action.type}
+                value={hasTypeMismatch ? MIXED_VALUE : displayType}
                 searchable
-                onChange={e => handleChangeType(e, idx)}
+                onChange={e => handleChangeType(e, actionName)}
               />
             </div>
-            {renderAction(action, idx)}
+            {!hasTypeMismatch && renderAction(action, actionName, mergedPayload)}
             <MoreOptionsMenu>
               <Button
                 className="RemoveButton"
-                onClick={e => handleRemoveAction(e, idx)}
+                onClick={() => handleRemoveAction(actionName)}
               >
                 <RemoveIcon /> Remove Action
               </Button>

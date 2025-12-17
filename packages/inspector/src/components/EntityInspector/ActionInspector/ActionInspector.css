@@ -67,10 +67,16 @@
   align-items: center;
 }
 
-.ActionInspector > .content > .Block > .content .row .field.inline input[type='checkbox'] {
+.ActionInspector > .content > .Block > .content .row .field.inline input[type="checkbox"] {
   margin-right: 9px;
 }
 
 .ActionInspector > .content > .Block > .content .row .field.inline label {
   margin-bottom: 0;
+}
+
+/* Partial action styles (action not in all selected entities) */
+.ActionInspector > .content > .Block.partial > .content {
+  opacity: 0.6;
+  pointer-events: none;
 }

@@ -79,6 +79,7 @@ const MultiEntityInspector = withSdk<{ entities: Entity[] }>(({ sdk, entities })
         component: VisibilityComponentInspector,
       },
       { name: sdk.components.LightSource.componentName, component: LightSourceInspector },
+      { name: sdk.components.Actions.componentName, component: ActionInspector },
     ],
     [sdk],
   );
@@ -144,11 +145,8 @@ const SingleEntityInspector = withSdk<{ entity: Entity | null }>(({ sdk, entity 
         multiEntity: true,
       },
       { name: sdk.components.Tween.componentName, component: TweenInspector },
-      { name: sdk.components.Actions.componentName, component: ActionInspector },
-      {
-        name: sdk.components.Triggers.componentName,
-        component: TriggerInspector,
-      },
+      { name: sdk.components.Actions.componentName, component: ActionInspector, multiEntity: true },
+      { name: sdk.components.Triggers.componentName, component: TriggerInspector },
       { name: sdk.components.States.componentName, component: StatesInspector, multiEntity: true },
       { name: sdk.components.Counter.componentName, component: CounterInspector },
       {
