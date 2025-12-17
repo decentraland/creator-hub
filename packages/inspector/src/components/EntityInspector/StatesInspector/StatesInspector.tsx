@@ -15,42 +15,24 @@ import { TextField } from '../../ui/TextField';
 import { InfoTooltip } from '../../ui/InfoTooltip';
 import { AddButton } from '../AddButton';
 import MoreOptionsMenu from '../MoreOptionsMenu';
-import { getUniqueState, isRepeated, isValidInput } from './utils';
-import type { Props, StatesInput } from './types';
+import { getUniqueState, isRepeated, fromStates, toStates, isValidInput } from './utils';
+import type { StatesInput } from './types';
+import type { Props } from './types';
 
 import './StatesInspector.css';
 
 const NEW_STATE = 'New State';
-
-// Transform functions for the hook
-function getStatesItems(componentValue: StatesInput): string[] {
-  return componentValue.value ?? [];
-}
-
-function setStatesItems(items: string[], currentValue: StatesInput): StatesInput {
-  // Preserve defaultValue if it still exists in the new items, otherwise use first item
-  const defaultValue =
-    currentValue.defaultValue && items.includes(currentValue.defaultValue)
-      ? currentValue.defaultValue
-      : items[0];
-  return { value: items, defaultValue };
-}
-
-function validateStatesItems(items: string[]): boolean {
-  return isValidInput({ value: items, defaultValue: items[0] });
-}
 
 export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
   const { States, GltfContainer } = sdk.components;
 
   const allEntitiesHaveStates = useAllEntitiesHaveComponent(entities, States);
 
-  const { items, commonItems, entityValuesMap, addItem, removeItem } = useComponentListInput(
-    entities,
-    States,
-    getStatesItems,
-    setStatesItems,
-    validateStatesItems,
+  const { items, commonItems, entityValuesMap, addItem, removeItem } = useComponentListInput<
+    StatesInput,
+    string
+  >(entities, States, fromStates, toStates, (items: string[]) =>
+    isValidInput({ value: items, defaultValue: items[0] }),
   );
 
   // Check if a state is the default in all entities
