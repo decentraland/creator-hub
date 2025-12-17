@@ -8,6 +8,14 @@ import type { EcsEntity } from '../EcsEntity';
 import { memoize } from '../../../logic/once';
 import { isValidHttpsUrl } from '../../../utils/url';
 
+function setTransparencyMode(
+  transparencyMode: MaterialTransparencyMode | undefined,
+): MaterialTransparencyMode | null {
+  if (transparencyMode === undefined || transparencyMode === MaterialTransparencyMode.MTM_AUTO)
+    return null;
+  return transparencyMode;
+}
+
 export const putMaterialComponent: ComponentOperation = (entity, component) => {
   if (component.componentType === ComponentType.LastWriteWinElementSet) {
     const newValue = component.getOrNull(entity.entityId) as PBMaterial | null;
@@ -58,18 +66,7 @@ export const putMaterialComponent: ComponentOperation = (entity, component) => {
             pbr.reflectivityColor.b,
           );
 
-        if (pbr.transparencyMode === MaterialTransparencyMode.MTM_ALPHA_BLEND) {
-          m.transparencyMode = 2;
-        } else if (pbr.transparencyMode === MaterialTransparencyMode.MTM_AUTO) {
-          m.transparencyMode = 1;
-        } else if (pbr.transparencyMode === MaterialTransparencyMode.MTM_OPAQUE) {
-          m.transparencyMode = 0;
-        } else if (
-          pbr.transparencyMode === MaterialTransparencyMode.MTM_ALPHA_TEST_AND_ALPHA_BLEND
-        ) {
-          m.transparencyMode = 3;
-        }
-
+        m.transparencyMode = setTransparencyMode(pbr.transparencyMode);
         m.metallic = pbr.metallic ?? 0.5;
         m.roughness = pbr.roughness ?? 0.5;
 
@@ -78,7 +75,18 @@ export const putMaterialComponent: ComponentOperation = (entity, component) => {
         m.directIntensity = pbr.directIntensity ?? 1;
         m.alphaCutOff = pbr.alphaTest ?? 0.5;
 
-        void loadTexture(entity, pbr.texture?.tex).then(texture => (m.albedoTexture = texture));
+        void loadTexture(entity, pbr.texture?.tex).then(texture => {
+          m.albedoTexture = texture;
+          if (texture) {
+            if (pbr.transparencyMode === MaterialTransparencyMode.MTM_OPAQUE) {
+              texture.hasAlpha = false;
+              m.useAlphaFromAlbedoTexture = false;
+            } else {
+              texture.hasAlpha = true;
+              m.useAlphaFromAlbedoTexture = true;
+            }
+          }
+        });
         void loadTexture(entity, pbr.bumpTexture?.tex).then(texture => (m.bumpTexture = texture));
         void loadTexture(entity, pbr.emissiveTexture?.tex).then(
           texture => (m.emissiveTexture = texture),
