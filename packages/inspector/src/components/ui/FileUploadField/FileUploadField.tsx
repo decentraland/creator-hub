@@ -4,7 +4,7 @@ import { VscFolderOpened as FolderIcon } from 'react-icons/vsc';
 import cx from 'classnames';
 import { v4 as uuidv4 } from 'uuid';
 
-import { selectAssetCatalog, selectUploadFile, updateUploadFile } from '../../../redux/app';
+import { selectAssetCatalog } from '../../../redux/app';
 import { useAppDispatch, useAppSelector } from '../../../redux/hooks';
 import { importAsset } from '../../../redux/data-layer';
 import { getNode, DropTypesEnum, type LocalAssetDrop } from '../../../lib/sdk/drag-drop';
@@ -46,9 +46,11 @@ const FileUploadField: React.FC<Props> = ({
   const [path, setPath] = useState<string | undefined>(value?.toString());
   const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
   const [dropError, setDropError] = useState<boolean>(false);
+  const [pendingUpload, setPendingUpload] = useState<{ path: string; isOnDrop: boolean } | null>(
+    null,
+  );
   const inputRef = useRef<HTMLInputElement>(null);
   const files = useAppSelector(selectAssetCatalog);
-  const uploadFile = useAppSelector(selectUploadFile);
   const dispatch = useAppDispatch();
   const id = useRef(uuidv4());
 
@@ -59,20 +61,26 @@ const FileUploadField: React.FC<Props> = ({
     }
   }, [value, openFileExplorerOnMount]);
 
+  // Watch for asset catalog changes and trigger callback when pending upload file appears
   useEffect(() => {
-    if (
-      uploadFile[id.current] &&
-      typeof uploadFile[id.current] === 'string' &&
-      path !== uploadFile[id.current]
-    ) {
-      const uploadFilePath = uploadFile[id.current] as string;
-      setPath(uploadFilePath);
-      const cleanUpdateUploadFile = { ...uploadFile };
-      delete cleanUpdateUploadFile[id.current];
-      dispatch(updateUploadFile(cleanUpdateUploadFile));
-      onDrop && onDrop(uploadFilePath);
+    if (!pendingUpload || !files?.assets) return;
+
+    // Check if the pending file now exists in the catalog (filtered by accept extensions)
+    const fileExists = files.assets.some(
+      asset => asset.path === pendingUpload.path && accept.some(ext => asset.path.endsWith(ext)),
+    );
+
+    if (fileExists) {
+      if (pendingUpload.isOnDrop) {
+        onDrop?.(pendingUpload.path);
+      } else {
+        onChange?.({
+          target: { value: pendingUpload.path },
+        } as React.ChangeEvent<HTMLInputElement>);
+      }
+      setPendingUpload(null);
     }
-  }, [uploadFile, onDrop]);
+  }, [files, pendingUpload, accept, onDrop, onChange]);
 
   const removeBase = useCallback(
     (path?: string) => {
@@ -173,8 +181,6 @@ const FileUploadField: React.FC<Props> = ({
         const basePath = withAssetDir(DIRECTORY.SCENE);
         const assetPackageName = buildAssetPath(newAsset);
         const content = await convertAssetToBinary(newAsset);
-        const newUploadFile = { ...uploadFile };
-        newUploadFile[id.current] = file;
         const assetPath = `${basePath}/${assetPackageName}/${newAsset.name}.${newAsset.extension}`;
         dispatch(
           importAsset({
@@ -184,16 +190,14 @@ const FileUploadField: React.FC<Props> = ({
             reload: true,
           }),
         );
-        dispatch(updateUploadFile(newUploadFile));
         setPath(assetPath);
-        onDrop && onDrop(assetPath);
-        onChange && onChange({ ...event, target: { ...event.target, value: assetPath } });
+        setPendingUpload({ path: assetPath, isOnDrop: false });
       } else {
         setDropError(true);
       }
       if (inputRef.current) inputRef.current.value = '';
     },
-    [inputRef, setPath, setDropError, uploadFile, onDrop, onChange],
+    [inputRef, setPath, setDropError],
   );
 
   const hasError = useMemo(() => {
@@ -215,6 +219,7 @@ const FileUploadField: React.FC<Props> = ({
           value={removeBase(path)}
           error={!!value && hasError}
           disabled={disabled}
+          debounceTime={200}
           autoSelect
         />
         <input

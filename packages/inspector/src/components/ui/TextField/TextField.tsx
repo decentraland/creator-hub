@@ -34,8 +34,9 @@ const TextField = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
     onChange,
     onFocus,
     onBlur,
-    type = 'text',
     autoSelect,
+    placeholder,
+    type = 'text',
     ...rest
   } = props;
   const [inputValue, setInputValue] = useState(value);
@@ -154,7 +155,8 @@ const TextField = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
           className="input"
           ref={ref}
           type={inputValue === '--' ? 'text' : type}
-          value={inputValue}
+          value={inputValue !== '--' ? inputValue : ''}
+          placeholder={inputValue === '--' ? '--' : placeholder}
           onChange={handleInputChange}
           onFocus={handleInputFocus}
           onBlur={handleInputBlur}
