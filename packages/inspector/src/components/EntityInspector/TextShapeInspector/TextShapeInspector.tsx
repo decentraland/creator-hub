@@ -1,20 +1,22 @@
 import { useCallback } from 'react';
 
 import { withSdk } from '../../../hoc/withSdk';
-import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
-import { useComponentInput } from '../../../hooks/sdk/useComponentInput';
+import { useAllEntitiesHaveComponent } from '../../../hooks/sdk/useHasComponent';
+import { useMultiComponentInput } from '../../../hooks/sdk/useComponentInput';
+import { analytics, Event } from '../../../lib/logic/analytics';
+import { CoreComponents } from '../../../lib/sdk/components';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { TextField, CheckboxField, ColorField, Dropdown, TextArea } from '../../ui';
 import { fromTextShape, toTextShape, isValidInput, TEXT_ALIGN_MODES } from './utils';
 import type { Props } from './types';
 
-export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
+export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
   const { TextShape } = sdk.components;
 
-  const hasTextShape = useHasComponent(entity, TextShape);
-  const { getInputProps } = useComponentInput(
-    entity,
+  const allEntitiesHaveTextShape = useAllEntitiesHaveComponent(entities, TextShape);
+  const { getInputProps } = useMultiComponentInput(
+    entities,
     TextShape,
     fromTextShape,
     toTextShape,
@@ -22,11 +24,16 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   );
 
   const handleRemove = useCallback(async () => {
-    sdk.operations.removeComponent(entity, TextShape);
+    for (const entity of entities) {
+      sdk.operations.removeComponent(entity, TextShape);
+    }
     await sdk.operations.dispatch();
-  }, []);
+    analytics.track(Event.REMOVE_COMPONENT, {
+      componentName: CoreComponents.TEXT_SHAPE,
+    });
+  }, [sdk, entities, TextShape]);
 
-  if (!hasTextShape) return null;
+  if (!allEntitiesHaveTextShape) return null;
 
   const fontAutoSize = getInputProps('fontAutoSize', e => e.target.checked);
 

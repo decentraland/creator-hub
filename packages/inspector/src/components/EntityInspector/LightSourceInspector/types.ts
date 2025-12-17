@@ -24,4 +24,4 @@ export type LightInput = {
   };
 };
 
-export type Props = { entity: Entity; initialOpen?: boolean };
+export type Props = { entities: Entity[]; initialOpen?: boolean };
