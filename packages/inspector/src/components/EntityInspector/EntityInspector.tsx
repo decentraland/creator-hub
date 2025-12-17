@@ -2,6 +2,9 @@ import { useMemo } from 'react';
 import { type Entity } from '@dcl/ecs';
 
 import { withSdk } from '../../hoc/withSdk';
+
+type WithEntity = { entity: Entity; initialOpen: boolean };
+type WithEntities = { entities: Entity[]; initialOpen: boolean };
 import { useEntitiesWith } from '../../hooks/sdk/useEntitiesWith';
 import { useAppSelector } from '../../redux/hooks';
 import { getHiddenComponents } from '../../redux/ui';
@@ -70,6 +73,11 @@ const MultiEntityInspector = withSdk<{ entities: Entity[] }>(({ sdk, entities })
       { name: sdk.components.AudioSource.componentName, component: AudioSourceInspector },
       { name: sdk.components.AudioStream.componentName, component: AudioStreamInspector },
       { name: sdk.components.TextShape.componentName, component: TextShapeInspector },
+      {
+        name: sdk.components.VisibilityComponent.componentName,
+        component: VisibilityComponentInspector,
+      },
+      { name: sdk.components.LightSource.componentName, component: LightSourceInspector },
     ],
     [sdk],
   );
@@ -112,14 +120,17 @@ const SingleEntityInspector = withSdk<{ entity: Entity | null }>(({ sdk, entity 
       {
         name: sdk.components.VisibilityComponent.componentName,
         component: VisibilityComponentInspector,
+        multiEntity: true,
       },
       {
         name: sdk.components.Material.componentName,
         component: MaterialInspector,
+        multiEntity: true,
       },
       {
         name: sdk.components.MeshCollider.componentName,
         component: MeshColliderInspector,
+        multiEntity: true,
       },
       {
         name: sdk.components.MeshRenderer.componentName,
@@ -129,6 +140,7 @@ const SingleEntityInspector = withSdk<{ entity: Entity | null }>(({ sdk, entity 
       {
         name: sdk.components.TextShape.componentName,
         component: TextShapeInspector,
+        multiEntity: true,
       },
       { name: sdk.components.Tween.componentName, component: TweenInspector },
       { name: sdk.components.Actions.componentName, component: ActionInspector },
@@ -141,6 +153,7 @@ const SingleEntityInspector = withSdk<{ entity: Entity | null }>(({ sdk, entity 
       {
         name: sdk.components.AudioSource.componentName,
         component: AudioSourceInspector,
+        multiEntity: true,
       },
       {
         name: sdk.components.VideoPlayer.componentName,
@@ -149,6 +162,7 @@ const SingleEntityInspector = withSdk<{ entity: Entity | null }>(({ sdk, entity 
       {
         name: sdk.components.AudioStream.componentName,
         component: AudioStreamInspector,
+        multiEntity: true,
       },
       {
         name: sdk.components.NftShape.componentName,
@@ -169,7 +183,11 @@ const SingleEntityInspector = withSdk<{ entity: Entity | null }>(({ sdk, entity 
       { name: sdk.components.CounterBar.componentName, component: CounterBarInspector },
       { name: sdk.components.AdminTools.componentName, component: AdminToolkitView },
       { name: sdk.components.Rewards.componentName, component: RewardInspector },
-      { name: sdk.components.LightSource.componentName, component: LightSourceInspector },
+      {
+        name: sdk.components.LightSource.componentName,
+        component: LightSourceInspector,
+        multiEntity: true,
+      },
       {
         name: sdk.components.GltfNodeModifiers.componentName,
         component: GltfNodeModifiersInspector,
@@ -200,13 +218,14 @@ const SingleEntityInspector = withSdk<{ entity: Entity | null }>(({ sdk, entity 
             </>
           ) : null}
           {advancedInspectorComponents.map(
-            ({ name, component: Inspector }, index) =>
+            ({ name, component: Inspector, multiEntity }, index) =>
               !hiddenComponents[name] && (
                 <Inspector
                   key={`${index}-${entity}`}
-                  entity={entity}
-                  entities={[entity]}
-                  initialOpen={!isBasicViewEnabled}
+                  {...((multiEntity
+                    ? { entities: [entity], initialOpen: !isBasicViewEnabled }
+                    : { entity, initialOpen: !isBasicViewEnabled }) as unknown as WithEntity &
+                    WithEntities)}
                 />
               ),
           )}
