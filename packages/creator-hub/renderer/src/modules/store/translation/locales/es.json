@@ -216,7 +216,8 @@
             "invalid_url": "Algo salió mal.\nPor favor, inténtalo de nuevo.",
             "invalid_identity": "Algo salió mal.\nPor favor, inténtalo de nuevo.",
             "max_file_size_exceeded": "Uno o más activos exceden el límite permitido ({maxFileSizeInMb}MB).\nOptimiza o elimina archivos grandes y vuelve a intentarlo.",
-            "unknown": "Algo salió mal.\nPor favor, inténtalo de nuevo."
+            "unknown": "Algo salió mal.\nPor favor, inténtalo de nuevo.",
+            "invalid_creator_wallet": "El creador debe ser una dirección de billetera Ethereum válida."
           },
           "actions": {
             "report_issue": "Informar un problema",

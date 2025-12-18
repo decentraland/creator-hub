@@ -319,6 +319,8 @@ export function translateError(error: SerializedError) {
       return t('modal.publish_project.deploy.deploying.errors.max_file_size_exceeded', {
         maxFileSizeInMb: MAX_FILE_SIZE_BYTES / 1e6,
       });
+    case 'INVALID_CREATOR_WALLET':
+      return t('modal.publish_project.deploy.deploying.errors.invalid_creator_wallet');
     case 'MAX_POINTER_SIZE_EXCEEDED':
       return t('modal.publish_project.deploy.deploying.errors.max_file_size_exceeded', {
         maxFileSizeInMb: MAX_POINTER_SIZE_BYTES / 1e6,
@@ -328,11 +330,19 @@ export function translateError(error: SerializedError) {
   }
 }
 
-export function isMaxPointerSizeExceededError(error: any) {
+export function isMaxPointerSizeExceededError(error: any): boolean {
   if ('message' in error) {
     return error.message.includes(
       `The deployment is too big. The maximum allowed size per pointer is ${MAX_POINTER_SIZE_BYTES / 1e6} MB for scene.`,
     );
+  }
+
+  return false;
+}
+
+export function isInvalidCreatorWalletError(error: any): boolean {
+  if ('message' in error) {
+    return error.message.includes('Creator must be a valid wallet address');
   }
 
   return false;

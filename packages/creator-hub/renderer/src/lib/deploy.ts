@@ -50,7 +50,8 @@ export type ErrorName =
   | 'INVALID_URL'
   | 'INVALID_IDENTITY'
   | 'MAX_FILE_SIZE_EXCEEDED'
-  | 'MAX_POINTER_SIZE_EXCEEDED';
+  | 'MAX_POINTER_SIZE_EXCEEDED'
+  | 'INVALID_CREATOR_WALLET';
 
 export class DeploymentError extends ErrorBase<ErrorName> {
   constructor(
