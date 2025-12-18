@@ -1,18 +1,10 @@
-import type {
-  AbstractMesh,
-  ArcRotateCamera,
-  IAxisDragGizmo,
-  Mesh,
-  Scene,
-  StandardMaterial,
-} from '@babylonjs/core';
+import type { AbstractMesh, ArcRotateCamera, Mesh, Scene } from '@babylonjs/core';
 import {
   Axis,
   BoundingBox,
   BoundingInfo,
   Color3,
   MeshBuilder,
-  PositionGizmo,
   Space,
   TransformNode,
   Vector3,
@@ -21,20 +13,7 @@ import { GridMaterial } from '@babylonjs/materials';
 import { memoize } from '../../logic/once';
 import type { Layout } from '../../utils/layout';
 import { PARCEL_SIZE, GROUND_MESH_PREFIX } from '../../utils/scene';
-
-function disableGizmo(gizmo: IAxisDragGizmo) {
-  gizmo.dragBehavior.detach();
-  copyColors(gizmo.disableMaterial, gizmo.hoverMaterial);
-  copyColors(gizmo.disableMaterial, gizmo.coloredMaterial);
-}
-
-function copyColors(source: StandardMaterial, target: StandardMaterial) {
-  target.diffuseColor = source.diffuseColor;
-  target.ambientColor = source.ambientColor;
-  target.emissiveColor = source.emissiveColor;
-  target.specularColor = source.specularColor;
-  target.alpha = source.alpha;
-}
+import { createAxisIndicator } from './axis-indicator';
 
 function center(scene: Scene, layout: Layout) {
   if (!scene.activeCamera) return;
@@ -56,12 +35,9 @@ export const getLayoutManager = memoize((scene: Scene) => {
   let layout: Layout | null = null;
 
   const layoutNode = new TransformNode('layout', scene);
-  const positionGizmo = new PositionGizmo(undefined, 0.5);
-  positionGizmo.attachedNode = layoutNode;
 
-  disableGizmo(positionGizmo.xGizmo);
-  disableGizmo(positionGizmo.yGizmo);
-  disableGizmo(positionGizmo.zGizmo);
+  // Create custom axis indicator with North arrow
+  createAxisIndicator(scene, layoutNode);
 
   const grid = new GridMaterial('layout_grid', scene);
   grid.gridRatio = 1;
