@@ -30,13 +30,7 @@ export const useCountdown = (initialValue: number = 0, options: Opts = {}) => {
   );
 
   useEffect(() => {
-    if (!isActive) return;
-
-    if (countdown <= 0) {
-      setIsActive(false);
-      onComplete?.();
-      return;
-    }
+    if (!isActive || countdown <= 0) return;
 
     const intervalId = setInterval(() => {
       setCountdown(value => {
@@ -52,7 +46,7 @@ export const useCountdown = (initialValue: number = 0, options: Opts = {}) => {
     return () => {
       clearInterval(intervalId);
     };
-  }, [isActive, countdown, interval, onComplete]);
+  }, [isActive, interval, onComplete]);
 
   return {
     countdown,
