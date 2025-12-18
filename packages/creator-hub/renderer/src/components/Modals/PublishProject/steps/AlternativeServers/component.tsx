@@ -1,6 +1,8 @@
 import { type ChangeEvent, useCallback, useState } from 'react';
 import { Button, MenuItem, Select, type SelectChangeEvent } from 'decentraland-ui2';
 
+import { misc } from '#preload';
+
 import { isUrl } from '/shared/utils';
 
 import { t } from '/@/modules/store/translation/utils';
@@ -10,8 +12,6 @@ import GenesisPlazaPng from '/assets/images/genesis_plaza.png';
 
 import { PublishModal } from '../../PublishModal';
 import type { AlternativeTarget, Props } from '../../types';
-
-import { misc } from '#preload';
 
 import './styles.css';
 

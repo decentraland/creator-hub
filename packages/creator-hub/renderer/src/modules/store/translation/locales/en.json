@@ -214,7 +214,7 @@
             "not_found": "Something went wrong.\nPlease, try again.",
             "failed": "Something went wrong.\nPlease, try again.",
             "invalid_url": "Something went wrong.\nPlease, try again.",
-            "invalid_identity": "Something went wrong.\nPlease, try again.",
+            "invalid_identity": "Failed to validate your identity.",
             "max_file_size_exceeded": "One or more assets exceed the allowed limit ({maxFileSizeInMb}MB).\nOptimize or remove large files and try again.",
             "unknown": "Something went wrong.\nPlease, try again."
           },

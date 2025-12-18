@@ -211,7 +211,7 @@
             "not_found": "出了问题。\n请重试。",
             "failed": "出了问题。\n请重试。",
             "invalid_url": "出了问题。\n请重试。",
-            "invalid_identity": "出了问题。\n请重试。",
+            "invalid_identity": "身份验证失败。",
             "max_file_size_exceeded": "一个或多个资产超过了允许的限制（{maxFileSizeInMb}MB）。\n优化或移除大文件并重试。",
             "unknown": "出了问题。\n请重试。"
           },

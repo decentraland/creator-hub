@@ -8,7 +8,7 @@ export type Props = {
   previousStep?: Step;
   onClose: () => void;
   onBack?: () => void;
-  onStep: (step: Step) => void;
+  onStep: (step: Step, opts?: { resetHistory?: boolean }) => void;
 };
 
 export type Step =

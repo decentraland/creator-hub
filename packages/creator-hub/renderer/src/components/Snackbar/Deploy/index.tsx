@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, Button, IconButton, CircularProgress as Loader } from 'decentraland-ui2';
 import CloseIcon from '@mui/icons-material/Close';
+import { Alert, Button, IconButton, CircularProgress as Loader } from 'decentraland-ui2';
 
 import { t } from '/@/modules/store/translation/utils';
 import { useDeploy } from '/@/hooks/useDeploy';
@@ -163,7 +163,7 @@ function Error({ path, title, onClose }: { path: string; title: string; onClose:
           severity="error"
           action={renderActions()}
         >
-          {t('snackbar.deploy.error.title', { title })}
+          {t('snackbar.deploy.error.title', { title: `"${title}"` })}
         </Alert>
       )}
       <PublishProject

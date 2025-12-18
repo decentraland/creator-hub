@@ -1,13 +1,13 @@
+import { Button } from 'decentraland-ui2';
 import { OptionBox } from '/@/components/EditorPage/OptionBox';
 import { t } from '/@/modules/store/translation/utils';
 import LandPng from '/assets/images/land.png';
 import WorldsPng from '/assets/images/worlds.png';
-import type { Props } from '../../types';
 
-import './styles.css';
 import { useAuth } from '/@/hooks/useAuth';
-import { Button } from 'decentraland-ui2';
 import { PublishModal } from '../../PublishModal';
+import type { Props } from '../../types';
+import './styles.css';
 
 export function Initial(props: Props) {
   const { isSignedIn, signIn } = useAuth();

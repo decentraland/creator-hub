@@ -214,7 +214,7 @@
             "not_found": "Algo salió mal.\nPor favor, inténtalo de nuevo.",
             "failed": "Algo salió mal.\nPor favor, inténtalo de nuevo.",
             "invalid_url": "Algo salió mal.\nPor favor, inténtalo de nuevo.",
-            "invalid_identity": "Algo salió mal.\nPor favor, inténtalo de nuevo.",
+            "invalid_identity": "No se pudo validar su identidad.",
             "max_file_size_exceeded": "Uno o más activos exceden el límite permitido ({maxFileSizeInMb}MB).\nOptimiza o elimina archivos grandes y vuelve a intentarlo.",
             "unknown": "Algo salió mal.\nPor favor, inténtalo de nuevo."
           },

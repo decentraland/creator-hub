@@ -30,8 +30,8 @@ export function PublishProject({
   }, [history, setHistory]);
 
   const handleStep = useCallback(
-    (newStep: Step) => {
-      setHistory(history => [...history, newStep]);
+    (newStep: Step, { resetHistory = false } = {}) => {
+      setHistory(history => (resetHistory ? [newStep] : [...history, newStep]));
     },
     [setHistory],
   );

@@ -61,7 +61,7 @@ function getSize(size: number) {
 }
 
 export function Deploy(props: Props) {
-  const { project, previousStep } = props;
+  const { project, previousStep, onStep } = props;
   const { chainId, wallet, avatar } = useAuth();
   const { updateProjectInfo } = useWorkspace();
   const { loadingPublish, publishError } = useEditor();
@@ -97,6 +97,10 @@ export function Deploy(props: Props) {
 
   const handleDeployRetry = useCallback(() => {
     props.onBack && props.onBack();
+  }, []);
+
+  const handleGoToSignIn = useCallback(() => {
+    onStep('initial', { resetHistory: true });
   }, []);
 
   const handleClose = useCallback(() => {
@@ -235,6 +239,7 @@ export function Deploy(props: Props) {
                   url={jumpInUrl}
                   onClick={handleJumpIn}
                   onRetry={handleDeployRetry}
+                  onSignIn={handleGoToSignIn}
                 />
               )}
               {deployment.status === 'complete' && (
@@ -320,6 +325,7 @@ type DeployingProps = {
   url: string;
   onClick: () => void;
   onRetry: () => void;
+  onSignIn: () => void;
 };
 
 function Deploying({ deployment, url, onClick, onRetry }: DeployingProps) {
