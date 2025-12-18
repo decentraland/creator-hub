@@ -25,6 +25,7 @@ import {
   translateError,
   getCatalystServers,
   isMaxPointerSizeExceededError,
+  isInvalidCreatorWalletError,
 } from './utils';
 
 function buildError(action: any): Deployment['error'] {
@@ -126,7 +127,7 @@ export const deploy = createAsyncThunk(
   ) => {
     const { path, info, wallet, chainId } = deployment;
     const triedServers = new Set<string>();
-    let retries = getCatalystServers(chainId).length;
+    let retries = info.isWorld ? 1 : getCatalystServers(chainId).length;
     const delayMs = 1000;
 
     let currentUrl = deployment.url;
@@ -143,6 +144,12 @@ export const deploy = createAsyncThunk(
           ...currentDeployment.componentsStatus,
           catalyst: 'failed',
         };
+
+        if (isInvalidCreatorWalletError(error)) {
+          return rejectWithValue(
+            new DeploymentError('INVALID_CREATOR_WALLET', componentsStatus, error),
+          );
+        }
 
         if (isMaxPointerSizeExceededError(error)) {
           return rejectWithValue(

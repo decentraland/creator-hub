@@ -17,6 +17,7 @@ function getInput(base: string, parcels: string): SceneInput {
     silenceVoiceChat: false,
     disablePortableExperiences: false,
     spawnPoints: [],
+    creator: '0x0000000000000000000000000000000000000000',
     author: 'John Doe',
     email: 'johndoe@gmail.com',
     skyboxConfig: {
@@ -35,6 +36,7 @@ function getScene(layout: Layout): EditorComponentsTypes['Scene'] {
   const scene: EditorComponentsTypes['Scene'] = {
     name: 'name',
     description: 'description',
+    creator: '0x0000000000000000000000000000000000000000',
     thumbnail: 'assets/scene/thumbnail.png',
     ageRating: SceneAgeRating.Teen,
     categories: [SceneCategory.GAME],

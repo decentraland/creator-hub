@@ -10,7 +10,7 @@
   font-size: 14px;
 }
 
-.Container.Scene .SpawnPointContainer>.content {
+.Container.Scene .SpawnPointContainer > .content {
   padding: 12px;
   border-radius: 4px;
   border: 1px solid #303031;
@@ -77,4 +77,26 @@
   position: absolute;
   right: 8px;
   top: 4px;
+}
+
+.Container.Scene .CreatorAddrressContainer > .content {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  gap: 8px;
+  border-radius: 4px;
+  border: 1px solid #303031;
+  background: var(--tree-bg-color);
+}
+
+.Container.Scene .CreatorAddrressContainer > .content > * {
+  width: 100%;
+}
+
+.Container.Scene .CreatorAddrressContainer .CreatorAddrressLabel {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--base-10);
+  text-wrap: wrap;
+  width: 100%;
 }

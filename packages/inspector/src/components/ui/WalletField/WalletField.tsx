@@ -4,34 +4,51 @@ import { isAddress } from '../../../lib/logic/ethereum';
 import { TextField } from '../TextField';
 import type { Props } from './types';
 
-export const WalletField: React.FC<Props> = ({ className, value, onChange, ...props }) => {
+export const WalletField: React.FC<Props> = ({
+  className,
+  value,
+  onChange,
+  onBlur: externalOnBlur,
+  onFocus: externalOnFocus,
+  ...props
+}) => {
   const [wallet, setWallet] = useState<string>(value?.toString() ?? '');
   const [isFocused, setIsFocused] = useState<boolean>(false);
+  const [error, setError] = useState<string | undefined>(undefined);
 
-  const handleChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const { value } = event.target;
-      setWallet(value);
-    },
-    [onChange],
-  );
+  const handleChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = event.target;
+    setWallet(value);
+    setError(undefined);
+  }, []);
 
   const handleFocus = useCallback(
-    (_event: React.FocusEvent<HTMLInputElement>) => {
+    (event: React.FocusEvent<HTMLInputElement>) => {
       setIsFocused(true);
+      externalOnFocus?.(event);
     },
-    [onChange],
+    [externalOnFocus],
   );
 
   const handleBlur = useCallback(
     (event: React.FocusEvent<HTMLInputElement>) => {
       const { value } = event.target;
-      if (isAddress(value)) {
-        onChange && onChange(event);
-      }
       setIsFocused(false);
+
+      if (!value || isAddress(value)) {
+        setError(undefined);
+
+        const syntheticChangeEvent = {
+          ...event,
+          type: 'change',
+        } as unknown as React.ChangeEvent<HTMLInputElement>;
+        onChange?.(syntheticChangeEvent);
+      } else {
+        setError('Not a valid Ethereum address.');
+      }
+      externalOnBlur?.(event);
     },
-    [setWallet],
+    [onChange, externalOnBlur],
   );
 
   const formattedWallet = useMemo(() => {
@@ -42,19 +59,11 @@ export const WalletField: React.FC<Props> = ({ className, value, onChange, ...pr
         : wallet;
   }, [wallet, isFocused]);
 
-  const error = useMemo(() => {
-    if (!!wallet && !isAddress(wallet.toString())) {
-      return 'Not a valid Ethereum address.';
-    }
-
-    return undefined;
-  }, [wallet]);
-
   return (
     <TextField
       className={cx('WalletField', className)}
       type="text"
-      placeholder="Eth wallet address"
+      placeholder="0x..."
       value={formattedWallet}
       onChange={handleChange}
       onBlur={handleBlur}

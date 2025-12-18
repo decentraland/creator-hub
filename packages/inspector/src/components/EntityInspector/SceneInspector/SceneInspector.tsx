@@ -14,7 +14,8 @@ import './SceneInspector.css';
 import type { EditorComponentsTypes, SceneSpawnPoint } from '../../../lib/sdk/components';
 import { SceneAgeRating, SceneCategory } from '../../../lib/sdk/components';
 import { Dropdown } from '../../ui/Dropdown';
-import { TextArea } from '../../ui';
+import { Label, TextArea } from '../../ui';
+import { WalletField } from '../../ui/WalletField';
 import { Tabs } from '../Tabs';
 import { CheckboxField } from '../../ui/CheckboxField';
 import RangeHourField from '../../ui/RangeHourField/RangeHourField';
@@ -158,6 +159,17 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       setComponentValue(newValue);
     },
     [sdk, Scene, entity, componentValue, setComponentValue],
+  );
+
+  const handleCreatorChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const { value } = e.target;
+      setComponentValue({
+        ...componentValue,
+        creator: value,
+      });
+    },
+    [componentValue, setComponentValue],
   );
 
   const [spawnPoints, addSpawnPoint, modifySpawnPoint, removeSpawnPoint] =
@@ -479,14 +491,27 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
           />
           <TextField
             autoSelect
-            label="Author (optional)"
+            label="Creator name (optional)"
+            placeholder="Decentraland user"
             {...authorProps}
           />
           <TextField
             autoSelect
-            label="Email (optional)"
+            label="Creator contact email (optional)"
+            placeholder="your@email.com"
             {...emailProps}
           />
+          <Block className="CreatorAddrressContainer">
+            <Label text="Creator wallet address (optional)" />
+            <Label
+              className="CreatorAddrressLabel"
+              text="Enter the wallet address that will act as the beneficiary for transactions."
+            />
+            <WalletField
+              value={componentValue?.creator ?? ''}
+              onChange={handleCreatorChange}
+            />
+          </Block>
           <SceneInfoInput />
         </>
       ) : null}
