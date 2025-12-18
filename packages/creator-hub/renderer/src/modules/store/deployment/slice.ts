@@ -131,8 +131,7 @@ export const deploy = createAsyncThunk(
   async (deployment: Deployment, { dispatch, getState, rejectWithValue }) => {
     const { path, info, identity, wallet, chainId } = deployment;
     const triedServers = new Set<string>();
-    const isWorldDeployment = info.isWorld;
-    let retries = isWorldDeployment ? 1 : getCatalystServers(chainId).length;
+    let retries = info.isWorld ? 1 : getCatalystServers(chainId).length;
     const delayMs = 1000;
 
     let currentUrl = deployment.url;
