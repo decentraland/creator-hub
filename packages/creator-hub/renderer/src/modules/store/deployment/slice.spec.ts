@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChainId } from '@dcl/schemas';
+import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
+import { AuthServerProvider } from 'decentraland-connect';
 import { createTestStore } from '../../../../tests/utils/testStore';
 import { executeDeployment, initializeDeployment } from './slice';
 
@@ -20,6 +22,13 @@ vi.mock('@dcl/single-sign-on-client', () => ({
     expiration: 9999999999999,
     authChain: [],
   })),
+}));
+
+vi.mock('decentraland-connect', () => ({
+  AuthServerProvider: {
+    hasValidIdentity: vi.fn(() => true),
+    deactivate: vi.fn(),
+  },
 }));
 
 vi.mock('@dcl/crypto', () => ({
@@ -442,6 +451,42 @@ describe('deployment slice', () => {
         const result = await store.dispatch(executeDeployment(TEST_PATH));
         expect(result.type).toBe('deployment/execute/rejected');
         expect(result.payload.name).toBe('DEPLOYMENT_NOT_FOUND');
+      });
+    });
+
+    describe('when identity is invalid', () => {
+      beforeEach(async () => {
+        store = await initDeploymentStore();
+      });
+
+      it('should reject with INVALID_IDENTITY when hasValidIdentity returns false', async () => {
+        vi.mocked(AuthServerProvider.hasValidIdentity).mockReturnValueOnce(false);
+
+        const result = await store.dispatch(executeDeployment(TEST_PATH));
+
+        expect(result.type).toBe('deployment/execute/rejected');
+        expect(result.payload.name).toBe('INVALID_IDENTITY');
+        expect(AuthServerProvider.deactivate).toHaveBeenCalled();
+      });
+
+      it('should reject with INVALID_IDENTITY when identity is not found', async () => {
+        vi.mocked(localStorageGetIdentity).mockReturnValueOnce(null);
+
+        const result = await store.dispatch(executeDeployment(TEST_PATH));
+
+        expect(result.type).toBe('deployment/execute/rejected');
+        expect(result.payload.name).toBe('INVALID_IDENTITY');
+        expect(AuthServerProvider.deactivate).toHaveBeenCalled();
+      });
+
+      it('should update deployment status to failed when identity is invalid', async () => {
+        vi.mocked(AuthServerProvider.hasValidIdentity).mockReturnValueOnce(false);
+
+        await store.dispatch(executeDeployment(TEST_PATH));
+
+        const deployment = store.getState().deployment.deployments[TEST_PATH];
+        expect(deployment?.status).toBe('failed');
+        expect(deployment?.error?.name).toBe('INVALID_IDENTITY');
       });
     });
   });

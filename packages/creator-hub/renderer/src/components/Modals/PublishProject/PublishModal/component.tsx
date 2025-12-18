@@ -1,8 +1,6 @@
 import { type ModalProps } from 'decentraland-ui2/dist/components/Modal/Modal.types';
 
-import { Modal } from '../..';
-
-export function onBackNoop() {}
+import { Modal, onBackNoop } from '../..';
 
 export function PublishModal(props: React.PropsWithChildren<ModalProps>) {
   const { onBack, ...rest } = props;

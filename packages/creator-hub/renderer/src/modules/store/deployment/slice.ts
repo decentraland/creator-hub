@@ -2,10 +2,11 @@ import { createSlice, type PayloadAction, isRejectedWithValue } from '@reduxjs/t
 import { Authenticator, type AuthIdentity } from '@dcl/crypto';
 import type { ChainId } from '@dcl/schemas';
 import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
+import { AuthServerProvider } from 'decentraland-connect';
 
 import { editor } from '#preload';
 import { delay } from '/shared/utils';
-import type { DeploymentComponentsStatus, Info, Status, File } from '/@/lib/deploy';
+import type { DeploymentComponentsStatus, Info, Status, File, ErrorName } from '/@/lib/deploy';
 import { DeploymentError, isDeploymentError } from '/@/lib/deploy';
 import { createAsyncThunk } from '/@/modules/store/thunk';
 import {
@@ -26,15 +27,14 @@ import {
   isMaxPointerSizeExceededError,
 } from './utils';
 
-const getErrorForTranslation = (action: any) =>
-  isRejectedWithValue(action) ? action.payload : action.error;
-
-const getCauseMessage = (action: any): string | undefined => {
-  if (isRejectedWithValue(action)) {
-    return action.payload?.message;
-  }
-  return action.error?.message;
-};
+function buildError(action: any): Deployment['error'] {
+  const error = isRejectedWithValue(action) ? action.payload : action.error;
+  return {
+    name: error?.name || 'UNKNOWN_ERROR',
+    message: translateError(error),
+    cause: error?.message,
+  };
+}
 
 export interface Deployment {
   id: string;
@@ -44,9 +44,8 @@ export interface Deployment {
   files: File[];
   wallet: string;
   chainId: ChainId;
-  identity: AuthIdentity;
   status: Status;
-  error?: { message: string; cause?: string };
+  error?: { name: ErrorName; message: string; cause?: string };
   componentsStatus: DeploymentComponentsStatus;
   createdAt: number;
   lastUpdated: number;
@@ -78,22 +77,16 @@ const initialState: DeploymentState = {
 export const initializeDeployment = createAsyncThunk(
   'deployment/initialize',
   async (payload: InitializeDeploymentPayload, { rejectWithValue }) => {
-    const { port, wallet } = payload;
+    const { port } = payload;
     const url = getDeploymentUrl(port);
 
     if (!url) {
       return rejectWithValue(new DeploymentError('INVALID_URL', getInitialDeploymentStatus()));
     }
 
-    const identity = localStorageGetIdentity(wallet);
-
-    if (!identity) {
-      return rejectWithValue(new DeploymentError('INVALID_IDENTITY', getInitialDeploymentStatus()));
-    }
-
     const [info, files] = await Promise.all([fetchInfo(url), fetchFiles(url)]);
 
-    return { ...payload, url, info, files, identity };
+    return { ...payload, url, info, files };
   },
 );
 
@@ -127,8 +120,11 @@ const updateDeploymentTarget = createAsyncThunk(
 
 export const deploy = createAsyncThunk(
   'deployment/deploy',
-  async (deployment: Deployment, { dispatch, getState, rejectWithValue }) => {
-    const { path, info, identity, wallet, chainId } = deployment;
+  async (
+    { identity, deployment }: { identity: AuthIdentity; deployment: Deployment },
+    { dispatch, getState, rejectWithValue },
+  ) => {
+    const { path, info, wallet, chainId } = deployment;
     const triedServers = new Set<string>();
     let retries = getCatalystServers(chainId).length;
     const delayMs = 1000;
@@ -187,10 +183,20 @@ export const executeDeployment = createAsyncThunk(
       );
     }
 
-    const { info, identity, id: deploymentId } = deployment;
+    const { info, id: deploymentId, wallet } = deployment;
+
+    // we have to use both packages (decentraland-connect & @dcl/single-sign-on-client)
+    // since there is no way to fetch the full identity from decentraland-connect
+    const hasValidIdentity = AuthServerProvider.hasValidIdentity();
+    const identity = localStorageGetIdentity(wallet);
+
+    if (!hasValidIdentity || !identity) {
+      AuthServerProvider.deactivate();
+      return rejectWithValue(new DeploymentError('INVALID_IDENTITY', getInitialDeploymentStatus()));
+    }
 
     try {
-      await dispatch(deploy(deployment)).unwrap();
+      await dispatch(deploy({ identity, deployment })).unwrap();
 
       const fetchStatus = () => fetchDeploymentStatus(info, identity);
       let isCancelled = false;
@@ -266,7 +272,7 @@ const deploymentSlice = createSlice({
   extraReducers: builder => {
     builder
       .addCase(initializeDeployment.fulfilled, (state, action) => {
-        const { path, url, info, wallet, chainId, files, identity } = action.payload;
+        const { path, url, info, wallet, chainId, files } = action.payload;
         const existingDeployment = state.deployments[path];
 
         // Always move existing deployment to history before creating new one
@@ -291,7 +297,6 @@ const deploymentSlice = createSlice({
           componentsStatus: getInitialDeploymentStatus(info.isWorld),
           createdAt: timestamp,
           lastUpdated: timestamp,
-          identity,
         };
       })
       .addCase(updateDeploymentTarget.fulfilled, (state, action) => {
@@ -318,14 +323,10 @@ const deploymentSlice = createSlice({
           wallet,
           chainId,
           status: 'failed',
-          error: {
-            message: translateError(getErrorForTranslation(action)),
-            cause: getCauseMessage(action),
-          },
+          error: buildError(action),
           componentsStatus: getInitialDeploymentStatus(),
           createdAt: existingDeployment?.createdAt ?? timestamp,
           lastUpdated: timestamp,
-          identity: {} as AuthIdentity,
         };
       })
       .addCase(executeDeployment.pending, (state, action) => {
@@ -352,10 +353,7 @@ const deploymentSlice = createSlice({
         const deployment = state.deployments[path];
         if (deployment) {
           deployment.status = 'failed';
-          deployment.error = {
-            message: translateError(getErrorForTranslation(action)),
-            cause: getCauseMessage(action),
-          };
+          deployment.error = buildError(action);
           deployment.lastUpdated = Date.now();
         }
       });

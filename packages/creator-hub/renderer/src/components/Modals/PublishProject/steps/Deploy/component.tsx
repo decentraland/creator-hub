@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import cx from 'classnames';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { ChainId } from '@dcl/schemas';
@@ -13,6 +13,7 @@ import { useWorkspace } from '/@/hooks/useWorkspace';
 import { useEditor } from '/@/hooks/useEditor';
 import { useSnackbar } from '/@/hooks/useSnackbar';
 import { useDeploy } from '/@/hooks/useDeploy';
+import { useCounter } from '/@/hooks/useCounter';
 
 import { type Deployment } from '/@/modules/store/deployment/slice';
 import { getInvalidFiles, MAX_FILE_SIZE_BYTES } from '/@/modules/store/deployment/utils';
@@ -61,8 +62,8 @@ function getSize(size: number) {
 }
 
 export function Deploy(props: Props) {
-  const { project, previousStep } = props;
-  const { chainId, wallet, avatar } = useAuth();
+  const { project, previousStep, onStep } = props;
+  const { chainId, wallet, avatar, signOut } = useAuth();
   const { updateProjectInfo } = useWorkspace();
   const { loadingPublish, publishError } = useEditor();
   const { getDeployment, executeDeployment } = useDeploy();
@@ -97,6 +98,11 @@ export function Deploy(props: Props) {
 
   const handleDeployRetry = useCallback(() => {
     props.onBack && props.onBack();
+  }, []);
+
+  const handleGoToSignIn = useCallback(() => {
+    signOut();
+    onStep('initial', { resetHistory: true });
   }, []);
 
   const handleClose = useCallback(() => {
@@ -235,6 +241,7 @@ export function Deploy(props: Props) {
                   url={jumpInUrl}
                   onClick={handleJumpIn}
                   onRetry={handleDeployRetry}
+                  goToSignIn={handleGoToSignIn}
                 />
               )}
               {deployment.status === 'complete' && (
@@ -320,13 +327,15 @@ type DeployingProps = {
   url: string;
   onClick: () => void;
   onRetry: () => void;
+  goToSignIn: () => void;
 };
 
-function Deploying({ deployment, url, onClick, onRetry }: DeployingProps) {
+function Deploying({ deployment, url, onClick, onRetry, goToSignIn }: DeployingProps) {
   const { isDeployFinishing, deriveOverallStatus } = useDeploy();
   const { info, componentsStatus, error } = deployment;
   const isFinishing = isDeployFinishing(deployment);
   const overallStatus = deriveOverallStatus(deployment);
+  const { count, start } = useCounter(5, { onComplete: goToSignIn });
 
   const onReportIssue = useCallback(() => {
     void misc.openExternal(REPORT_ISSUES_URL);
@@ -379,6 +388,29 @@ function Deploying({ deployment, url, onClick, onRetry }: DeployingProps) {
     return t('modal.publish_project.deploy.deploying.publish');
   }, [overallStatus, isFinishing]);
 
+  useEffect(() => {
+    if (error?.name === 'INVALID_IDENTITY') {
+      start(5);
+    }
+  }, [error?.name, start]);
+
+  const renderErrorMessage = useCallback(
+    (error: NonNullable<Deployment['error']>) => {
+      if (!error) return null;
+
+      if (error.name === 'INVALID_IDENTITY') {
+        return (
+          <>
+            {`${error.message} ${t('modal.publish_project.deploy.deploying.redirect.sign_in', { seconds: count })}`}
+          </>
+        );
+      }
+
+      return error.message;
+    },
+    [count],
+  );
+
   return (
     <div className="Deploying">
       <div className="header">
@@ -391,7 +423,7 @@ function Deploying({ deployment, url, onClick, onRetry }: DeployingProps) {
         )}
         {error && (
           <span className="error">
-            {error.message}
+            {renderErrorMessage(error)}
             {error.cause && (
               <ExpandMore
                 title={t('modal.publish_project.deploy.deploying.errors.details')}
