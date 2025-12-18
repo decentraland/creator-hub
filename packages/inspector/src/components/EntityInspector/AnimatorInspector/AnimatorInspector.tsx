@@ -5,6 +5,7 @@ import type { PBAnimationState, PBAnimator } from '@dcl/ecs';
 import { withSdk } from '../../../hoc/withSdk';
 import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
 import { getComponentValue, useComponentValue } from '../../../hooks/sdk/useComponentValue';
+import { useGltfAnimations } from '../../../hooks/sdk/useGltfAnimations';
 import { analytics, Event } from '../../../lib/logic/analytics';
 import { getAssetByModel } from '../../../lib/logic/catalog';
 import { CoreComponents } from '../../../lib/sdk/components';
@@ -27,59 +28,34 @@ type ChangeEvt = React.ChangeEvent<HTMLInputElement>;
 export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) => {
   const { Animator, GltfContainer } = sdk.components;
 
-  const entity = sdk.sceneContext.getEntityOrNull(entityId);
   const hasAnimator = useHasComponent(entityId, Animator);
   const [componentValue, setComponentValue, isComponentEqual] = useComponentValue<PBAnimator>(
     entityId,
     Animator,
   );
-  const [gltfValue] = useComponentValue(entityId, GltfContainer);
+  const animations = useGltfAnimations(entityId);
 
   const [states, _, updateStates, _2, setStates] = useArrayState<PBAnimationState>(
     componentValue === null ? [] : componentValue.states,
   );
 
+  // Initialize Animator component if GLTF has animations but no Animator yet
   useEffect(() => {
-    if (!entity || !gltfValue || hasAnimator) return;
+    if (hasAnimator || animations.length === 0) return;
 
-    const checkAndInitializeAnimator = async () => {
-      try {
-        const { animationGroups } = await entity.onGltfContainerLoaded();
+    void initializeAnimatorComponent(sdk, entityId, animations);
+  }, [animations, hasAnimator, sdk, entityId]);
 
-        // only add Animator component if there are actual animations
-        if (animationGroups.length > 0) {
-          await initializeAnimatorComponent(sdk, entityId, animationGroups);
-        }
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.warn('Failed to check animations or initialize animator component:', error);
-      }
-    };
-
-    void checkAndInitializeAnimator();
-  }, [entity, gltfValue, hasAnimator]);
-
+  // Sync animation states when animations change
   useEffect(() => {
-    if (!entity || !gltfValue || !hasAnimator) return;
+    if (!hasAnimator || animations.length === 0) return;
 
-    const loadAnimations = async () => {
-      try {
-        const { animationGroups } = await entity.onGltfContainerLoaded();
-        if (
-          animationGroups.length &&
-          (!states.length || states[0].clip !== animationGroups[0].name)
-        ) {
-          const newStates = mapAnimationGroupsToStates(animationGroups);
-          setStates(newStates);
-        }
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.warn('Failed to load animations:', error);
-      }
-    };
-
-    void loadAnimations();
-  }, [entity, gltfValue, hasAnimator, states]);
+    // Update states if they don't match the animations
+    if (!states.length || states[0].clip !== animations[0].name) {
+      const newStates = mapAnimationGroupsToStates(animations);
+      setStates(newStates);
+    }
+  }, [animations, hasAnimator, states, setStates]);
 
   useEffect(() => {
     if (isComponentEqual({ states })) {

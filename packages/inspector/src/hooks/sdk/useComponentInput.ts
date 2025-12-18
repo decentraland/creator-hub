@@ -377,8 +377,9 @@ export type ListItem<T> = {
 
 /**
  * Return type for list input hooks
+ * Supports both string items and object items (when keyExtractor is provided)
  */
-export type ListInputResult<ComponentValueType extends object, ItemType extends string> = {
+export type ListInputResult<ComponentValueType extends object, ItemType> = {
   items: ListItem<ItemType>[];
   commonItems: ItemType[];
   partialItems: ItemType[];
@@ -406,14 +407,49 @@ const getEntityAndListComponentValue = <ComponentValueType extends object>(
 
 /**
  * Merges list values from multiple entities into common and partial items
+ * Supports both string items and object items (when keyExtractor is provided)
  */
-const mergeListValues = <ComponentValueType extends object, ItemType extends string>(
+const mergeListValues = <ComponentValueType extends object, ItemType>(
   entityValuesMap: Map<Entity, ComponentValueType>,
   getItems: (componentValue: ComponentValueType) => ItemType[],
   entityCount: number,
+  keyExtractor?: (item: ItemType) => string,
 ): { commonItems: ItemType[]; partialItems: ItemType[] } => {
   const itemArrays = Array.from(entityValuesMap.values()).map(v => getItems(v));
-  const { common, partial } = partitionByFrequency(itemArrays, entityCount);
+
+  // For object items, partition by extracted keys
+  if (keyExtractor) {
+    const keyArrays = itemArrays.map(items => items.map(keyExtractor));
+    const { common: commonKeys, partial: partialKeys } = partitionByFrequency(
+      keyArrays,
+      entityCount,
+    );
+    const commonKeysSet = new Set(commonKeys);
+    const partialKeysSet = new Set(partialKeys);
+
+    // Get first array's items as reference for common items (all entities have them)
+    const firstItems = itemArrays[0] || [];
+    const commonItems = firstItems.filter(item => commonKeysSet.has(keyExtractor(item)));
+
+    // For partial items, collect unique items by key from all arrays
+    const partialItemsMap = new Map<string, ItemType>();
+    itemArrays.forEach(items => {
+      items.forEach(item => {
+        const key = keyExtractor(item);
+        if (partialKeysSet.has(key) && !partialItemsMap.has(key)) {
+          partialItemsMap.set(key, item);
+        }
+      });
+    });
+
+    return {
+      commonItems,
+      partialItems: Array.from(partialItemsMap.values()),
+    };
+  }
+
+  // For string items, use direct partitioning
+  const { common, partial } = partitionByFrequency(itemArrays as string[][], entityCount);
   return {
     commonItems: common as ItemType[],
     partialItems: partial as ItemType[],
@@ -427,36 +463,46 @@ const mergeListValues = <ComponentValueType extends object, ItemType extends str
  *
  * For single entity: all items are editable (delegates to simplified logic)
  * For multiple entities: common items (in ALL) are editable, partial items (in SOME) are disabled
+ *
+ * @param keyExtractor - Optional function to extract a string key from object items.
+ *                       When provided, items are compared by their extracted keys instead of direct equality.
+ *                       This enables support for object items (like Actions) in addition to string items.
  */
-export const useComponentListInput = <ComponentValueType extends object, ItemType extends string>(
+export const useComponentListInput = <ComponentValueType extends object, ItemType>(
   entities: Entity[],
   component: Component<ComponentValueType>,
   getItems: (componentValue: ComponentValueType) => ItemType[],
   setItems: (items: ItemType[], currentValue: ComponentValueType) => ComponentValueType,
   validateItems: (items: ItemType[]) => boolean = () => true,
   deps: unknown[] = [],
+  keyExtractor?: (item: ItemType) => string,
 ): ListInputResult<ComponentValueType, ItemType> => {
   const sdk = useSdk();
   const isSingleEntity = entities.length === 1;
 
+  // Memoize entities array by content (not reference) to prevent unnecessary re-renders
+  // when parent passes a new array with same entities (e.g., [entity] on each render)
+  const entitiesKey = entities.join(',');
+  const stableEntities = useMemo(() => entities, [entitiesKey]);
+
   // Memoize entities set for O(1) lookup instead of O(n) includes
-  const entitiesSet = useMemo(() => new Set(entities), [entities]);
+  const entitiesSet = useMemo(() => new Set(stableEntities), [stableEntities]);
 
   // Get initial entity values
-  const initialEntityValuesMap = getEntityAndListComponentValue(entities, component);
+  const initialEntityValuesMap = getEntityAndListComponentValue(stableEntities, component);
 
   // Get initial merged values
   const initialMergedValues = useMemo(() => {
     // For single entity, all items are "common" (editable)
     if (isSingleEntity) {
-      const singleValue = initialEntityValuesMap.get(entities[0]);
+      const singleValue = initialEntityValuesMap.get(stableEntities[0]);
       return {
         commonItems: singleValue ? getItems(singleValue) : ([] as ItemType[]),
         partialItems: [] as ItemType[],
       };
     }
     // For multiple entities, partition into common and partial
-    return mergeListValues(initialEntityValuesMap, getItems, entities.length);
+    return mergeListValues(initialEntityValuesMap, getItems, stableEntities.length, keyExtractor);
   }, [...deps]);
 
   const [value, setValue] = useState(initialMergedValues);
@@ -469,17 +515,21 @@ export const useComponentListInput = <ComponentValueType extends object, ItemTyp
   const [localItems, setLocalItems] = useState<ItemType[]>(value.commonItems);
 
   // Pre-compute index map for O(1) lookup instead of O(n) indexOf
+  // For object items with keyExtractor, map by key; for strings, map by value
   const commonItemsIndexMap = useMemo(() => {
-    const map = new Map<ItemType, number>();
+    const map = new Map<string, number>();
     value.commonItems.forEach((item, index) => {
-      map.set(item, index);
+      const key = keyExtractor ? keyExtractor(item) : (item as string);
+      map.set(key, index);
     });
     return map;
-  }, [value.commonItems]);
+  }, [value.commonItems, keyExtractor]);
 
   // Use refs for values used in handlers (to create stable handler references)
   const localItemsRef = useRef(localItems);
   const commonItemsIndexMapRef = useRef(commonItemsIndexMap);
+  const valueRef = useRef(value);
+  const isFocusedRef = useRef(isFocused);
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -490,14 +540,46 @@ export const useComponentListInput = <ComponentValueType extends object, ItemTyp
     commonItemsIndexMapRef.current = commonItemsIndexMap;
   }, [commonItemsIndexMap]);
 
+  useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
+
+  useEffect(() => {
+    isFocusedRef.current = isFocused;
+  }, [isFocused]);
+
   // Stable handler using refs - prevents items array recalculation on every keystroke
+  // For string items: updates the string value directly
+  // For object items: updates the key property (via keyExtractor) of the object
   const handleItemChange = useCallback(
     (index: number) => (event: React.ChangeEvent<HTMLInputElement>) => {
       const currentLocalItems = localItemsRef.current;
-      const newItemValue = event.target.value as ItemType;
+      const newValue = event.target.value;
 
-      // Check if there's actually a diff
-      if (currentLocalItems[index] === newItemValue) return;
+      // For object items, we need to update the key property
+      // For string items, we replace the value directly
+      let newItemValue: ItemType;
+      if (keyExtractor) {
+        // For objects, create a new object with updated key
+        // The keyExtractor tells us which property is the key (e.g., 'name' for Actions)
+        const currentItem = currentLocalItems[index];
+        const currentKey = keyExtractor(currentItem);
+        if (currentKey === newValue) return; // No change
+        // Create shallow copy with updated key property
+        // We assume the key property name can be derived from the item structure
+        newItemValue = { ...currentItem } as ItemType;
+        // Find and update the key property by checking which property matches the current key
+        for (const prop in newItemValue) {
+          if ((newItemValue as any)[prop] === currentKey) {
+            (newItemValue as any)[prop] = newValue;
+            break;
+          }
+        }
+      } else {
+        newItemValue = newValue as ItemType;
+        // Check if there's actually a diff for string items
+        if (currentLocalItems[index] === newItemValue) return;
+      }
 
       // Create new items array with the change
       const newLocalItems = [...currentLocalItems];
@@ -513,10 +595,10 @@ export const useComponentListInput = <ComponentValueType extends object, ItemTyp
       const allUpdatesValid = validateItems(newLocalItems);
 
       if (allUpdatesValid) {
-        const currentEntityValues = getEntityAndListComponentValue(entities, component);
+        const currentEntityValues = getEntityAndListComponentValue(stableEntities, component);
         const currentIndexMap = commonItemsIndexMapRef.current;
 
-        entities.forEach(entity => {
+        stableEntities.forEach(entity => {
           const currentValue = currentEntityValues.get(entity) as ComponentValueType | undefined;
           if (!currentValue) return;
 
@@ -527,7 +609,8 @@ export const useComponentListInput = <ComponentValueType extends object, ItemTyp
           const newItems = isSingleEntity
             ? newLocalItems
             : currentItems.map(oldItem => {
-                const commonIndex = currentIndexMap.get(oldItem);
+                const oldKey = keyExtractor ? keyExtractor(oldItem) : (oldItem as string);
+                const commonIndex = currentIndexMap.get(oldKey);
                 if (commonIndex !== undefined && newLocalItems[commonIndex] !== undefined) {
                   return newLocalItems[commonIndex];
                 }
@@ -546,7 +629,16 @@ export const useComponentListInput = <ComponentValueType extends object, ItemTyp
       setLocalItems(newLocalItems);
       setIsValid(allUpdatesValid);
     },
-    [component, sdk, entities, isSingleEntity, getItems, setItems, validateItems],
+    [
+      component,
+      sdk,
+      stableEntities,
+      isSingleEntity,
+      getItems,
+      setItems,
+      validateItems,
+      keyExtractor,
+    ],
   );
 
   // Handle blur - just unfocus (validation and SDK sync already happen in handleItemChange)
@@ -560,6 +652,7 @@ export const useComponentListInput = <ComponentValueType extends object, ItemTyp
   }, []);
 
   // Sync with engine changes (similar to useMultiComponentInput)
+  // Using refs for value and isFocused to avoid re-subscribing on every state change
   useChange(
     event => {
       // O(1) lookup instead of O(n) includes
@@ -571,37 +664,36 @@ export const useComponentListInput = <ComponentValueType extends object, ItemTyp
 
       if (!isRelevantUpdate) return;
 
-      const updatedEntityValuesMap = getEntityAndListComponentValue(entities, component);
+      const updatedEntityValuesMap = getEntityAndListComponentValue(stableEntities, component);
 
       // Get new merged values
       const newMergedValues = isSingleEntity
         ? {
-            commonItems: updatedEntityValuesMap.get(entities[0])
-              ? getItems(updatedEntityValuesMap.get(entities[0])!)
+            commonItems: updatedEntityValuesMap.get(stableEntities[0])
+              ? getItems(updatedEntityValuesMap.get(stableEntities[0])!)
               : ([] as ItemType[]),
             partialItems: [] as ItemType[],
           }
-        : mergeListValues(updatedEntityValuesMap, getItems, entities.length);
+        : mergeListValues(updatedEntityValuesMap, getItems, stableEntities.length, keyExtractor);
 
-      // Always update entityValuesMap (other properties like defaultValue might have changed)
-      setEntityValuesMap(updatedEntityValuesMap);
-
-      // Check if items actually changed
+      // Check if items actually changed (use ref to avoid stale closure)
+      const currentValue = valueRef.current;
       const hasItemsChanged =
-        hasDiff(newMergedValues.commonItems, value.commonItems, 2) ||
-        hasDiff(newMergedValues.partialItems, value.partialItems, 2);
+        hasDiff(newMergedValues.commonItems, currentValue.commonItems, 2) ||
+        hasDiff(newMergedValues.partialItems, currentValue.partialItems, 2);
 
       if (!hasItemsChanged) return;
 
-      // Update value state (reflects SDK truth for items)
+      // Update entityValuesMap and value state together (only when items changed)
+      setEntityValuesMap(updatedEntityValuesMap);
       setValue(newMergedValues);
 
       // Only update local items if not focused (to prevent losing edits while typing)
-      if (!isFocused) {
+      if (!isFocusedRef.current) {
         setLocalItems(newMergedValues.commonItems);
       }
     },
-    [entities, entitiesSet, component, isSingleEntity, getItems, value, isFocused, ...deps],
+    [stableEntities, entitiesSet, component, isSingleEntity, getItems, keyExtractor, ...deps],
   );
 
   // Validate items
@@ -614,9 +706,9 @@ export const useComponentListInput = <ComponentValueType extends object, ItemTyp
     (newItem: ItemType) => {
       if (!sdk) return;
 
-      const currentEntityValues = getEntityAndListComponentValue(entities, component);
+      const currentEntityValues = getEntityAndListComponentValue(stableEntities, component);
 
-      entities.forEach(entity => {
+      stableEntities.forEach(entity => {
         const currentValue = currentEntityValues.get(entity);
         if (!currentValue) return;
 
@@ -627,22 +719,27 @@ export const useComponentListInput = <ComponentValueType extends object, ItemTyp
       });
       void sdk.operations.dispatch();
     },
-    [entities, getItems, setItems, component, sdk],
+    [stableEntities, getItems, setItems, component, sdk],
   );
 
   // Remove item from all entities that have it
+  // For object items with keyExtractor, compare by key; for strings, compare by value
   const removeItem = useCallback(
     (itemToRemove: ItemType) => {
       if (!sdk) return;
 
-      const currentEntityValues = getEntityAndListComponentValue(entities, component);
+      const keyToRemove = keyExtractor ? keyExtractor(itemToRemove) : (itemToRemove as string);
+      const currentEntityValues = getEntityAndListComponentValue(stableEntities, component);
 
-      entities.forEach(entity => {
+      stableEntities.forEach(entity => {
         const currentValue = currentEntityValues.get(entity);
         if (!currentValue) return;
 
         const currentItems = getItems(currentValue);
-        const newItems = currentItems.filter(item => item !== itemToRemove);
+        const newItems = currentItems.filter(item => {
+          const itemKey = keyExtractor ? keyExtractor(item) : (item as string);
+          return itemKey !== keyToRemove;
+        });
 
         if (newItems.length !== currentItems.length) {
           const newValue = setItems(newItems, currentValue);
@@ -651,20 +748,22 @@ export const useComponentListInput = <ComponentValueType extends object, ItemTyp
       });
       void sdk.operations.dispatch();
     },
-    [entities, getItems, setItems, component, sdk],
+    [stableEntities, getItems, setItems, component, sdk, keyExtractor],
   );
 
   // Build items array with input props - stable handlers prevent recalculation on every keystroke
+  // For object items with keyExtractor, inputProps.value is the extracted key (for text input display)
   const items: ListItem<ItemType>[] = useMemo(() => {
     const result: ListItem<ItemType>[] = [];
 
     // Common items (editable)
     localItems.forEach((item, index) => {
+      const displayValue = keyExtractor ? keyExtractor(item) : (item as string);
       result.push({
         value: item,
         isPartial: false,
         inputProps: {
-          value: item,
+          value: displayValue,
           onChange: handleItemChange(index),
           onFocus: handleFocus,
           onBlur: handleBlur,
@@ -675,11 +774,12 @@ export const useComponentListInput = <ComponentValueType extends object, ItemTyp
 
     // Partial items (disabled) - only for multiple entities
     value.partialItems.forEach(item => {
+      const displayValue = keyExtractor ? keyExtractor(item) : (item as string);
       result.push({
         value: item,
         isPartial: true,
         inputProps: {
-          value: item,
+          value: displayValue,
           onChange: undefined,
           onFocus: undefined,
           onBlur: undefined,
@@ -689,7 +789,7 @@ export const useComponentListInput = <ComponentValueType extends object, ItemTyp
     });
 
     return result;
-  }, [localItems, value.partialItems, handleItemChange, handleFocus, handleBlur]);
+  }, [localItems, value.partialItems, handleItemChange, handleFocus, handleBlur, keyExtractor]);
 
   return {
     items,
