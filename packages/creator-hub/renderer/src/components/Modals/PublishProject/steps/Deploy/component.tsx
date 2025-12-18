@@ -13,7 +13,7 @@ import { useWorkspace } from '/@/hooks/useWorkspace';
 import { useEditor } from '/@/hooks/useEditor';
 import { useSnackbar } from '/@/hooks/useSnackbar';
 import { useDeploy } from '/@/hooks/useDeploy';
-import { useCountdown } from '/@/hooks/useCountdown';
+import { useCounter } from '/@/hooks/useCounter';
 
 import { type Deployment } from '/@/modules/store/deployment/slice';
 import { getInvalidFiles, MAX_FILE_SIZE_BYTES } from '/@/modules/store/deployment/utils';
@@ -335,7 +335,7 @@ function Deploying({ deployment, url, onClick, onRetry, goToSignIn }: DeployingP
   const { info, componentsStatus, error } = deployment;
   const isFinishing = isDeployFinishing(deployment);
   const overallStatus = deriveOverallStatus(deployment);
-  const { countdown, start } = useCountdown(5, { onComplete: goToSignIn });
+  const { count, start } = useCounter(5, { onComplete: goToSignIn });
 
   const onReportIssue = useCallback(() => {
     void misc.openExternal(REPORT_ISSUES_URL);
@@ -401,14 +401,14 @@ function Deploying({ deployment, url, onClick, onRetry, goToSignIn }: DeployingP
       if (error.name === 'INVALID_IDENTITY') {
         return (
           <>
-            {`${error.message} ${t('modal.publish_project.deploy.deploying.redirect.sign_in', { seconds: countdown })}`}
+            {`${error.message} ${t('modal.publish_project.deploy.deploying.redirect.sign_in', { seconds: count })}`}
           </>
         );
       }
 
       return error.message;
     },
-    [countdown],
+    [count],
   );
 
   return (
