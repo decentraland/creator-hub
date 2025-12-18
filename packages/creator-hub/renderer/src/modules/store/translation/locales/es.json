@@ -221,6 +221,9 @@
           "actions": {
             "report_issue": "Informar un problema",
             "retry": "Reintentar"
+          },
+          "redirect": {
+            "sign_in": "Serás redirigido al inicio de sesión en {seconds} segundos..."
           }
         },
         "success": {

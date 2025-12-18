@@ -6,7 +6,7 @@ import { AuthServerProvider } from 'decentraland-connect';
 
 import { editor } from '#preload';
 import { delay } from '/shared/utils';
-import type { DeploymentComponentsStatus, Info, Status, File } from '/@/lib/deploy';
+import type { DeploymentComponentsStatus, Info, Status, File, ErrorName } from '/@/lib/deploy';
 import { DeploymentError, isDeploymentError } from '/@/lib/deploy';
 import { createAsyncThunk } from '/@/modules/store/thunk';
 import {
@@ -45,7 +45,7 @@ export interface Deployment {
   wallet: string;
   chainId: ChainId;
   status: Status;
-  error?: { name: string; message: string; cause?: string };
+  error?: { name: ErrorName; message: string; cause?: string };
   componentsStatus: DeploymentComponentsStatus;
   createdAt: number;
   lastUpdated: number;
