@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { VscTrash as RemoveIcon } from 'react-icons/vsc';
 import cx from 'classnames';
-import type { AnimationGroup } from '@babylonjs/core';
 import { AvatarAnchorPointType } from '@dcl/ecs';
 import type { Action, ActionPayload } from '@dcl/asset-packs';
 import {
@@ -16,9 +15,9 @@ import { ReadWriteByteBuffer } from '@dcl/ecs/dist/serialization/ByteBuffer';
 import { withSdk } from '../../../hoc/withSdk';
 import { useAllEntitiesHaveComponent, useHasComponent } from '../../../hooks/sdk/useHasComponent';
 import { useComponentValue } from '../../../hooks/sdk/useComponentValue';
+import { useGltfAnimations } from '../../../hooks/sdk/useGltfAnimations';
 import { analytics, Event } from '../../../lib/logic/analytics';
 import { getAssetByModel } from '../../../lib/logic/catalog';
-import { updateGltfForEntity } from '../../../lib/babylon/decentraland/sdkComponents/gltf-container';
 import { MIXED_VALUE } from '../../ui/utils';
 
 import { Block } from '../../Block';
@@ -165,70 +164,27 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
   );
 
   const [_isFocused, setIsFocused] = useState(false);
-  const [animations, setAnimations] = useState<AnimationGroup[]>([]);
   const [statesComponent] = useComponentValue(entityId, States);
   const states = statesComponent?.value ?? [];
+  const animations = useGltfAnimations(entityId);
 
   const hasActions = useAllEntitiesHaveComponent(stableEntities, Actions);
   const hasStates = useHasComponent(entityId, States);
   const hasCounter = useHasComponent(entityId, Counter);
   const hasRewards = useHasComponent(entityId, Rewards);
-  const hasGltf = useHasComponent(entityId, GltfContainer);
-  const gltfSrc = GltfContainer.getOrNull(entityId)?.src;
 
   // Refresh entity values map
   const refreshEntityValuesMap = useCallback(() => {
     setEntityValuesMap(getEntityValuesMap(stableEntities, Actions));
   }, [stableEntities, Actions]);
 
-  // Load animations - use stable dependencies to prevent infinite loops
-  useEffect(() => {
-    if (!hasGltf || !hasActions || !gltfSrc) {
-      setAnimations([]);
-      return;
-    }
-
-    let isMounted = true;
-    const entity = sdk.sceneContext.getEntityOrNull(entityId);
-    if (!entity) {
-      setAnimations([]);
-      return;
-    }
-
-    const currentGltfSrc = entity.ecsComponentValues.gltfContainer?.src;
-    const isChangingGltf = currentGltfSrc !== gltfSrc;
-
-    if (isChangingGltf) {
-      const gltfValue = GltfContainer.getOrNull(entityId);
-      if (gltfValue) {
-        entity.resetGltfAssetContainerLoading();
-        updateGltfForEntity(entity, gltfValue);
-      }
-    }
-
-    entity
-      .onGltfContainerLoaded()
-      .then(gltfAssetContainer => {
-        if (isMounted) {
-          setAnimations([...gltfAssetContainer.animationGroups]);
-        }
-      })
-      .catch(() => {
-        if (isMounted) {
-          setAnimations([]);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [entityId, gltfSrc, hasActions, hasGltf, sdk, GltfContainer]);
-
+  // Validate action has valid payload data
+  // Used when updating payload fields to ensure data integrity before saving
   const isValidAction = useCallback(
     (action: Action) => {
-      if (!action.type || !action.name) {
-        return false;
-      }
+      // Allow empty type during type selection phase
+      if (!action.type) return true;
+
       switch (action.type) {
         case ActionType.PLAY_ANIMATION: {
           const payload = getPartialPayload<ActionType.PLAY_ANIMATION>(action);
@@ -303,12 +259,12 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
         default: {
           try {
             const payload = getPartialPayload(action);
-            const schema = getActionSchema(sdk.engine as any, action.type);
+            const schema = getActionSchema(sdk.engine, action.type);
             const buffer = new ReadWriteByteBuffer();
             schema.serialize(payload, buffer);
             schema.deserialize(buffer);
             return true;
-          } catch (error) {
+          } catch {
             return false;
           }
         }
@@ -363,8 +319,6 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
         const currentAction = component.value[actionIndex];
         const updatedAction = updater(currentAction);
 
-        if (!isValidAction(updatedAction)) continue;
-
         const newActions = [...component.value];
         newActions[actionIndex] = updatedAction;
         sdk.operations.updateValue(Actions, ent, { ...component, value: newActions });
@@ -372,7 +326,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
       void sdk.operations.dispatch();
       refreshEntityValuesMap();
     },
-    [stableEntities, entityValuesMap, sdk, Actions, isValidAction, refreshEntityValuesMap],
+    [stableEntities, entityValuesMap, sdk, Actions, refreshEntityValuesMap],
   );
 
   // Remove container from all entities
@@ -449,15 +403,25 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
 
   // Generic handler factory for updating action payloads
   // This eliminates the need for individual handlers per action type
+  // Validates payload before saving to ensure data integrity
   const createPayloadHandler = useCallback(
     <T extends ActionType>(actionName: string) =>
       (value: ActionPayload<T>) => {
-        handleModifyActionByName(actionName, action => ({
-          ...action,
-          jsonPayload: getJson<T>(value),
-        }));
+        handleModifyActionByName(actionName, action => {
+          const updatedAction = {
+            ...action,
+            jsonPayload: getJson<T>(value),
+          };
+
+          // Only update if payload is valid
+          if (!isValidAction(updatedAction)) {
+            return action; // Return unchanged if invalid
+          }
+
+          return updatedAction;
+        });
       },
-    [handleModifyActionByName],
+    [handleModifyActionByName, isValidAction],
   );
 
   const handleFocusInput = useCallback(
@@ -818,6 +782,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
                 onChange={e => handleChangeName(e, actionName)}
                 onFocus={handleFocusInput}
                 onBlur={handleFocusInput}
+                debounceTime={500}
                 autoSelect={!isPartial}
                 disabled={isPartial}
               />
