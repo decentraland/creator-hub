@@ -401,8 +401,7 @@ function Deploying({ deployment, url, onClick, onRetry, goToSignIn }: DeployingP
       if (error.name === 'INVALID_IDENTITY') {
         return (
           <>
-            {error.message}{' '}
-            {t('modal.publish_project.deploy.deploying.redirect.sign_in', { seconds: countdown })}
+            {`${error.message} ${t('modal.publish_project.deploy.deploying.redirect.sign_in', { seconds: countdown })}`}
           </>
         );
       }

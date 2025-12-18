@@ -187,8 +187,7 @@ export const executeDeployment = createAsyncThunk(
 
     // we have to use both packages (decentraland-connect & @dcl/single-sign-on-client)
     // since there is no way to fetch the full identity from decentraland-connect
-    // const hasValidIdentity = AuthServerProvider.hasValidIdentity();
-    const hasValidIdentity = false;
+    const hasValidIdentity = AuthServerProvider.hasValidIdentity();
     const identity = localStorageGetIdentity(wallet);
 
     if (!hasValidIdentity || !identity) {
