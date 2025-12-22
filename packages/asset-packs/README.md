@@ -1,5 +1,23 @@
 # Asset Packs
 
+[![npm version](https://img.shields.io/npm/v/@dcl/asset-packs.svg)](https://www.npmjs.com/package/@dcl/asset-packs)
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
+[![CI Status](https://github.com/decentraland/creator-hub/workflows/Asset%20Packs/badge.svg)](https://github.com/decentraland/creator-hub/actions/workflows/asset-packs.yml)
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Quick Start](#quick-start)
+  - [Using Asset Packs in Your Scene](#using-asset-packs-in-your-scene)
+  - [Prerequisites for Development](#prerequisites-for-development)
+- [Distribution](#distribution)
+  - [Production](#production)
+  - [Development](#development)
+  - [Deployment](#deployment)
+  - [Local Development](#local-development)
+  - [Troubleshooting](#troubleshooting)
+- [Related Architecture Decisions](#related-architecture-decisions)
+
 ## Overview
 
 The asset-packs repository is a fundamental component of the Decentraland ecosystem that serves as the central storage and distribution system for default items and assets. It manages and distributes:
@@ -15,6 +33,39 @@ When deployed, all assets are hashed and uploaded to an S3 bucket under `content
 
 The assets are accessible through `builder-items.decentraland.*` via Cloudflare.
 
+## Quick Start
+
+### Using Asset Packs in Your Scene
+
+Install the package in your Decentraland SDK7 scene:
+
+```bash
+npm install @dcl/asset-packs
+```
+
+Import and use asset packs in your scene:
+
+```typescript
+import { readGltfLocator } from '@dcl/asset-packs'
+
+// Use an asset from the catalog
+const assetId = 'some-asset-id'
+const gltfSrc = readGltfLocator(assetId)
+
+// Use in your scene
+engine.addEntity({
+  transform: Transform.create(),
+  gltfContainer: GltfContainer.create({ src: gltfSrc })
+})
+```
+
+### Prerequisites for Development
+
+- **Node.js** 22.x or higher
+- **npm** (comes with Node.js)
+- **Docker** (for running local content server)
+- **@dcl/sdk-commands** installed globally or locally
+
 ## Distribution
 
 ### Production
@@ -29,9 +80,17 @@ The assets are accessible through `builder-items.decentraland.*` via Cloudflare.
 
 ### Deployment
 
-Every push to the `main` branch will be deployed to the development environment.
+**Production Deployment:**
+- Triggered by: Every merge to the `main` branch
+- npm: Publishes `@dcl/asset-packs@latest`
+- CDN: Uploads assets to `https://builder-items.decentraland.org`
 
-Every [release](https://github.com/decentraland/asset-packs/releases) will be deployed to the production environment.
+**Development Deployment:**
+- Triggered by: Manual comment `/upload-assets` on pull requests (org members only)
+- npm: Test packages available via S3 for PR testing
+- CDN: Uploads assets to `https://builder-items.decentraland.zone`
+
+**Note**: All assets are content-addressed (hashed), ensuring immutability and correct caching.
 
 ### Local Development
 

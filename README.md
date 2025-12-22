@@ -1,5 +1,58 @@
 # Decentraland Creator Hub Monorepo
 
+[![CI Status](https://github.com/decentraland/creator-hub/workflows/CI/badge.svg)](https://github.com/decentraland/creator-hub/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Node Version](https://img.shields.io/badge/node-%3E%3D22.x-brightgreen.svg)](https://nodejs.org/)
+[![Made for Decentraland](https://img.shields.io/badge/Made%20for-Decentraland-ff0099.svg)](https://decentraland.org/)
+
+## Table of Contents
+
+- [🏗️ Project Structure](#️-project-structure)
+- [🚀 Quick Start](#-quick-start)
+  - [Prerequisites](#prerequisites)
+  - [Initial Setup](#initial-setup)
+- [📋 Makefile Commands](#-makefile-commands)
+  - [Setup Commands](#setup-commands)
+  - [Build Commands](#build-commands)
+  - [Development Commands](#development-commands)
+  - [Dependency Management](#dependency-management)
+  - [Cleanup Commands](#cleanup-commands)
+- [🔧 Package Scripts](#-package-scripts)
+  - [Asset Packs Scripts](#asset-packs-scripts)
+  - [Inspector Scripts](#inspector-scripts)
+  - [Creator Hub Scripts](#creator-hub-scripts)
+- [🔄 CI/CD Workflow](#-cicd-workflow)
+  - [Main CI Workflow (ci.yml)](#main-ci-workflow-ciyml)
+  - [Test Workflow (tests.yml)](#test-workflow-testsyml)
+  - [Asset Packs Workflow (asset-packs.yml)](#asset-packs-workflow-asset-packsyml)
+  - [Inspector Workflow (inspector.yml)](#inspector-workflow-inspectoryml)
+  - [Creator Hub Workflow (creator-hub.yml)](#creator-hub-workflow-creator-hubyml)
+- [🏗️ Architecture](#️-architecture)
+  - [Monorepo Structure](#monorepo-structure)
+  - [Dependency Management](#dependency-management-1)
+  - [Protocol Buffers](#protocol-buffers)
+- [🧪 Testing](#-testing)
+  - [Unit Tests](#unit-tests)
+  - [End-to-End Tests](#end-to-end-tests)
+  - [Test Structure](#test-structure)
+- [🚀 Development Workflow](#-development-workflow)
+  - [Typical Development Flow](#typical-development-flow)
+  - [Local Development with Asset Packs](#local-development-with-asset-packs)
+  - [Launch Build Locally](#launch-build-locally)
+  - [Code Quality](#code-quality)
+- [📦 Publishing](#-publishing)
+  - [Asset Packs Package](#asset-packs-package)
+  - [Inspector Package](#inspector-package)
+  - [Creator Hub App](#creator-hub-app)
+  - [Release Strategy](#release-strategy)
+  - [Asset Distribution](#asset-distribution)
+- [🔧 Troubleshooting](#-troubleshooting)
+  - [Common Issues](#common-issues)
+  - [Getting Help](#getting-help)
+- [🤝 Contributing](#-contributing)
+- [📚 Additional Resources](#-additional-resources)
+- [📄 License](#-license)
+
 This monorepo contains the Decentraland Creator Hub ecosystem, consisting of three main packages:
 
 - **`@dcl/asset-packs`** - Curated collections of 3D assets and Smart Items for Decentraland scenes
@@ -35,9 +88,12 @@ creator-hub/
 
 ### Prerequisites
 
-- **Node.js** 22.x or higher
-- **npm** (preferred over yarn)
-- **Git**
+Before starting, ensure you have the following installed:
+
+- **Node.js** 22.x or higher ([Download](https://nodejs.org/))
+- **npm** (comes with Node.js, preferred over yarn)
+- **Git** ([Download](https://git-scm.com/downloads))
+- **Docker** (optional, required for local asset-packs content server development)
 
 ### Initial Setup
 
@@ -348,13 +404,15 @@ Now Creator Hub will use:
 
 For inspector-only development with local asset-packs, see [Inspector README](packages/inspector/README.md#local-development-with-asset-packs).
 
-#### Launch Build Locally
+### Launch Build Locally
 
-To launch build locally on MacOS first run the command:
+To launch build locally on macOS, you may need to remove quarantine attributes:
 
-```
+```bash
 xattr -c /Applications/Decentraland\ Creator\ Hub.app/
 ```
+
+**Note**: This command is necessary on macOS to bypass Gatekeeper when running locally built versions. This issue doesn't occur with officially signed releases.
 
 ### Code Quality
 
@@ -409,6 +467,119 @@ Asset Packs follows a controlled deployment model:
 - This prevents conflicts between multiple PRs and reduces unnecessary CI runs
 - Assets are content-addressed (hashed), ensuring immutability and cache correctness
 
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### Port Conflicts
+
+If you encounter errors about ports already in use:
+
+```bash
+# Check what's using a port (macOS/Linux)
+lsof -i :8000  # Inspector default port
+lsof -i :8001  # Asset packs dev server
+lsof -i :9000  # Content server
+
+# On Windows (PowerShell)
+netstat -ano | findstr :8000
+```
+
+**Solution**: Either stop the conflicting process or configure different ports via environment variables.
+
+#### Permission Errors
+
+**macOS Gatekeeper Issues**:
+```bash
+xattr -c /Applications/Decentraland\ Creator\ Hub.app/
+```
+
+**npm Permission Errors**:
+```bash
+# Don't use sudo! Instead, fix npm permissions:
+mkdir ~/.npm-global
+npm config set prefix '~/.npm-global'
+# Add to PATH: export PATH=~/.npm-global/bin:$PATH
+```
+
+#### Build Failures
+
+**Clean and Rebuild**:
+```bash
+make deep-clean  # Remove all node_modules and build artifacts
+make init        # Fresh install and build
+```
+
+**Protocol Buffer Issues**:
+```bash
+make install-protoc  # Reinstall protoc
+make protoc          # Regenerate proto files
+```
+
+**Node Version Mismatch**:
+```bash
+node --version  # Should be 22.x or higher
+```
+
+Use [nvm](https://github.com/nvm-sh/nvm) to manage Node.js versions:
+```bash
+nvm install 22
+nvm use 22
+```
+
+#### Docker Issues (Asset Packs)
+
+**Docker Not Running**:
+```bash
+# Ensure Docker Desktop is running
+docker ps  # Should list containers without error
+```
+
+**Port 9000 Already in Use**:
+```bash
+# Change the port in docker-compose.yml or stop the conflicting service
+docker-compose down
+```
+
+#### Development Server Issues
+
+**Inspector Not Loading**:
+- Verify WebSocket URL is correct
+- Check browser console for errors
+- Ensure CLI server is running with `--data-layer` flag
+
+**Asset Packs Not Showing**:
+- Verify `VITE_ASSET_PACKS_CONTENT_URL` is set correctly
+- Check that assets were uploaded to the content server
+- Clear browser cache
+
+**Hot Reload Not Working**:
+```bash
+# Restart the development server
+# If using multiple terminals, restart all dev servers
+```
+
+#### TypeScript Errors
+
+**Type Errors After Update**:
+```bash
+make typecheck  # Check all packages
+npm run typecheck --workspace=packages/inspector  # Specific package
+```
+
+**Missing Types**:
+```bash
+npm install --save-dev @types/package-name
+```
+
+### Getting Help
+
+If you're still experiencing issues:
+
+1. **Search Existing Issues**: [GitHub Issues](https://github.com/decentraland/creator-hub/issues)
+2. **Ask the Community**: [Decentraland Discord](https://dcl.gg/discord)
+3. **Create a New Issue**: Use our [bug report template](https://github.com/decentraland/creator-hub/issues/new)
+
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -416,10 +587,12 @@ Asset Packs follows a controlled deployment model:
 3. Make your changes
 4. Submit a pull request
 
+For detailed contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
 The CI pipeline will automatically:
 - Lint, format & typecheck
 - Run all tests
-- Build both packages
+- Build all packages
 - Provide testing artifacts for review
 - Deploy preview versions
 
@@ -430,3 +603,17 @@ The CI pipeline will automatically:
 - [Creator Hub Documentation](packages/creator-hub/README.md)
 - [Contributing Guidelines](CONTRIBUTING.md)
 - [Decentraland Documentation](https://docs.decentraland.org/)
+
+## 📄 License
+
+This monorepo contains multiple packages with different licenses:
+
+- **Root & Creator Hub**: [MIT License](LICENSE)
+- **@dcl/inspector**: Apache License 2.0
+- **@dcl/asset-packs**: ISC License
+
+See individual package directories for specific license details.
+
+---
+
+Made with ❤️ by the Decentraland community
