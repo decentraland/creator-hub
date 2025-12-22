@@ -1,6 +1,27 @@
 # @dcl/inspector
 
+[![npm version](https://img.shields.io/npm/v/@dcl/inspector.svg)](https://www.npmjs.com/package/@dcl/inspector)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![CI Status](https://github.com/decentraland/creator-hub/workflows/Inspector/badge.svg)](https://github.com/decentraland/creator-hub/actions/workflows/inspector.yml)
+
 A React-based scene editor interface for Decentraland, providing a modular architecture for scene editing and manipulation.
+
+## Table of Contents
+
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Local Development with Asset Packs](#local-development-with-asset-packs)
+- [Integration](#integration)
+  - [WebSocket Integration](#websocket-integration)
+  - [IFrame Integration](#iframe-integration)
+- [Configuration](#configuration)
+- [Testing](#testing)
+- [Troubleshooting](#troubleshooting)
+  - [Common Issues](#common-issues)
+- [Development Tips](#development-tips)
+- [Dependencies](#dependencies)
+- [Related Architecture Decisions](#related-architecture-decisions)
+- [License](#license)
 
 ## Features
 
@@ -10,6 +31,14 @@ A React-based scene editor interface for Decentraland, providing a modular archi
 - **Asset Management**: Local assets, custom items, and asset packs support (via `@dcl/asset-packs`)
 
 ## Quick Start
+
+### Prerequisites
+
+- **Node.js** 22.x or higher
+- **A Decentraland SDK7 scene** (or create one with `npx @dcl/sdk-commands init`)
+- **Basic understanding** of WebSockets or IFrame communication
+
+### Getting Started
 
 1. Start the CLI server:
 

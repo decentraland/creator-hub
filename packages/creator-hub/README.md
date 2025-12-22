@@ -1,6 +1,27 @@
 # Decentraland Creator Hub
 
+[![Release](https://img.shields.io/github/v/release/decentraland/creator-hub?include_prereleases)](https://github.com/decentraland/creator-hub/releases)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey.svg)]()
+[![Downloads](https://img.shields.io/github/downloads/decentraland/creator-hub/total.svg)](https://github.com/decentraland/creator-hub/releases)
+[![CI Status](https://github.com/decentraland/creator-hub/workflows/Creator%20Hub/badge.svg)](https://github.com/decentraland/creator-hub/actions/workflows/creator-hub.yml)
+
 Decentraland Creator Hub is an Electron-based application designed for creating, editing, and deploying Decentraland scenes. This application is distributed for both Windows and MacOS, supporting both x64 and ARM architectures.
+
+## Table of Contents
+
+- [Features](#features)
+- [Scripts](#scripts)
+- [Code Architecture](#code-architecture)
+- [Debugging](#debugging)
+- [Installation Process](#installation-process)
+  - [Steps](#steps)
+  - [Dependency Management](#dependency-management)
+- [Update Process](#update-process)
+  - [Steps](#steps-1)
+- [Release Process](#release-process)
+  - [Steps](#steps-2)
+- [Dependencies](#dependencies)
+- [Related Architecture Decisions](#related-architecture-decisions)
 
 ### Features
 
@@ -10,11 +31,33 @@ Decentraland Creator Hub is an Electron-based application designed for creating,
 - **Publish Scenes**: deploy scenes to Genesis City, Worlds, test or custom servers.
 - **Import Scenes**: import existing SDK7 scenes into the workspace.
 
+## Installation
+
+### For End Users
+
+Download the latest version for your platform:
+
+- **macOS**: [Download installer](https://github.com/decentraland/creator-hub/releases/latest)
+  - Supports both Intel (x64) and Apple Silicon (ARM64)
+  - Download the `.dmg` file matching your architecture
+- **Windows**: [Download installer](https://github.com/decentraland/creator-hub/releases/latest)
+  - Download the `.exe` file for 64-bit Windows
+
+After downloading, follow the platform-specific installation instructions.
+
+### For Developers
+
+See the [Scripts](#scripts) section below for building from source.
+
 ### Scripts
 
-- **Install dependencies**
+**Install dependencies**
 
-- **Start development**
+```bash
+npm install
+```
+
+**Start development**
 
 ```bash
 npm start
