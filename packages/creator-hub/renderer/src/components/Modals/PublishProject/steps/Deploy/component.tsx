@@ -278,13 +278,15 @@ export function Deploy(props: Props) {
                 </div>
               ) : publishError || !deployment || deployment.status === 'failed' ? (
                 <Error
-                  errorMessage={
-                    publishError
-                      ? t('modal.publish_project.deploy.deploying.errors.code_error')
-                      : deployment?.error?.message
-                  }
+                  errorMessage={deployment?.error?.message}
                   errorCause={publishError || deployment?.error?.cause}
-                  isIdentityError={deployment?.error?.name === 'INVALID_IDENTITY'}
+                  errorType={
+                    publishError
+                      ? 'code_error'
+                      : deployment?.error?.name === 'INVALID_IDENTITY'
+                        ? 'identity_error'
+                        : 'deployment_error'
+                  }
                   steps={steps}
                   onRetry={handleDeployRetry}
                   onReportIssue={handleReportIssue}
@@ -444,8 +446,8 @@ function Deploying({ deployment, steps, url, onClick }: DeployingProps) {
 type ErrorProps = {
   errorMessage?: string;
   errorCause?: string;
-  isIdentityError?: boolean;
-  steps?: Step[];
+  errorType: 'code_error' | 'identity_error' | 'deployment_error';
+  steps: Step[];
   onRetry: () => void;
   onReportIssue: () => void;
   goToSignIn: () => void;
@@ -454,7 +456,7 @@ type ErrorProps = {
 function Error({
   errorMessage,
   errorCause,
-  isIdentityError,
+  errorType,
   steps,
   onRetry,
   onReportIssue,
@@ -463,22 +465,23 @@ function Error({
   const { count, start } = useCounter(5, { onComplete: goToSignIn });
 
   useEffect(() => {
-    if (isIdentityError) {
+    if (errorType === 'identity_error') {
       start(5);
     }
-  }, [isIdentityError, start]);
+  }, [errorType, start]);
 
   const renderErrorMessage = useCallback(
     (errorMessage: string | undefined) => {
-      if (!errorMessage) return t('modal.publish_project.deploy.deploying.errors.failed');
-
-      if (isIdentityError) {
-        return `${errorMessage} ${t('modal.publish_project.deploy.deploying.redirect.sign_in', { seconds: count })}`;
+      switch (errorType) {
+        case 'code_error':
+          return t('modal.publish_project.deploy.deploying.errors.code_error');
+        case 'identity_error':
+          return `${errorMessage} ${t('modal.publish_project.deploy.deploying.redirect.sign_in', { seconds: count })}`;
+        default:
+          return errorMessage || t('modal.publish_project.deploy.deploying.errors.failed');
       }
-
-      return errorMessage;
     },
-    [count],
+    [count, errorType],
   );
 
   return (
@@ -494,7 +497,7 @@ function Error({
           text={errorCause}
         />
       )}
-      {!!steps?.length && <ConnectedSteps steps={steps} />}
+      {errorType !== 'code_error' && <ConnectedSteps steps={steps} />}
       <div className="actions">
         <Button
           size="large"
