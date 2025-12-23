@@ -217,7 +217,8 @@
             "invalid_identity": "No se pudo validar su identidad.",
             "max_file_size_exceeded": "Uno o más activos exceden el límite permitido ({maxFileSizeInMb}MB).\nOptimiza o elimina archivos grandes y vuelve a intentarlo.",
             "unknown": "Algo salió mal.\nPor favor, inténtalo de nuevo.",
-            "invalid_creator_wallet": "El creador debe ser una dirección de billetera Ethereum válida."
+            "invalid_creator_wallet": "El creador debe ser una dirección de billetera Ethereum válida.",
+            "code_error": "El código de tu escena contiene uno o más errores.\nPor favor corrígelos e inténtalo de nuevo."
           },
           "actions": {
             "report_issue": "Informar un problema",

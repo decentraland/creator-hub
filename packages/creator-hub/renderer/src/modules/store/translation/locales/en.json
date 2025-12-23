@@ -208,6 +208,7 @@
           },
           "errors": {
             "details": "Details",
+            "code_error": "Your scene code contains one or more errors.\nPlease fix them and try again.",
             "fetch_status": "Failed to fetch deployment information.\nPlease, try again.",
             "catalyst": "Deployment to the Catalyst nodes failed.\nPlease retry or check your internet connection.",
             "max_retries": "Retry limit exceeded.\nPlease, try again later.",

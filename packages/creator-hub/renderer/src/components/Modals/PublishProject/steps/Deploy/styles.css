@@ -1,16 +1,10 @@
 .Deploy {
   position: relative;
-  min-height: 300px;
+  min-height: 375px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: stretch;
   gap: 24px;
-}
-
-.Deploy > .Loader {
-  top: -40px;
-  position: relative;
 }
 
 .Deploy .ethereum {
@@ -51,8 +45,9 @@
 }
 
 .Deploy .scene {
+  flex: 1;
   display: flex;
-  gap: 20px;
+  gap: 24px;
 }
 
 .Deploy .scene .info {
@@ -61,6 +56,8 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  padding-right: 24px;
+  border-right: 1px solid var(--dark-gray);
 }
 
 .Deploy .scene .info .thumbnail {
@@ -226,57 +223,77 @@
   margin-top: 5px;
 }
 
-.Deploy .scene .Deploying {
+.Deploy .scene .Deploying,
+.Deploy .scene .Error {
   display: flex;
   flex-direction: column;
   width: 100%;
-  padding: 10px;
+}
+.Deploy .scene .Error .header,
+.Deploy .scene .Error .actions {
+  margin-top: auto;
 }
 
-.Deploy .scene .Deploying .header {
+.Deploy .scene .Error .ExpandMore p {
+  background-color: var(--background);
+  color: var(--dcl-silver);
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: "Courier New", Courier, monospace;
+  white-space: pre-wrap;
+  max-height: 250px;
+  overflow: auto;
+}
+
+.Deploy .scene .header {
   color: var(--dcl-silver);
   display: flex;
   justify-content: flex-start;
-  margin-bottom: 20px;
-  flex-direction: column;
-}
-
-.Deploy .scene .Deploying .header .title {
-  display: flex;
   align-items: center;
+  gap: 16px;
   text-transform: uppercase;
+  font-weight: 500;
 }
 
-.Deploy .scene .Deploying .header .Loader {
-  width: inherit;
-  margin-right: 12px;
-}
-
-.Deploy .scene .Deploying .header .Warning {
+.Deploy .scene .header .Warning {
   background-size: contain;
-  width: 40px;
-  margin-right: 12px;
+  width: 30px;
+  height: 30px;
 }
 
-.Deploy .scene .Deploying .header .error {
+.Deploy .scene .header .Loader {
+  width: max-content;
+}
+
+.Deploy .scene .Error {
   color: var(--error);
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.Deploy .scene .Deploying .header .error .ExpandMore {
+.Deploy .scene .Error .description {
+  color: var(--dcl-silver);
+  font-weight: 500;
+  font-size: 14px;
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.Deploy .scene .Error .ExpandMore {
   margin-left: -4px;
 }
 
-.Deploy .scene .Deploying .ConnectedSteps {
-  margin-bottom: 30px;
+.Deploy .scene .ConnectedSteps {
+  margin: 32px 0;
 }
 
 .Deploy .scene .Deploying .info {
   display: flex;
   flex-direction: row;
-  background-color: #1764C03D;
+  background-color: #1764c03d;
   border-radius: 8px;
   padding: 20px;
   width: 450px;
@@ -320,7 +337,6 @@
 }
 
 .Deploy .publish-warning {
-  position: absolute;
   width: 600px;
   background-color: var(--black);
   padding: 32px 32px;
@@ -330,8 +346,7 @@
   justify-content: center;
   flex-direction: column;
   gap: 16px;
-  top: 40px;
-  left: calc(50% - 300px);
+  margin: 0 auto;
 }
 
 .Deploy .publish-warning .content {
@@ -346,6 +361,7 @@
 .Deploy .publish-warning .actions {
   display: flex;
   justify-content: space-between;
+  align-items: center;
 }
 
 .Deploy .publish-warning .dont-show-again {
