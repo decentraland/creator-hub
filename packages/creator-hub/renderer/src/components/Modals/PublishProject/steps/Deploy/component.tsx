@@ -62,7 +62,7 @@ function getSize(size: number) {
 }
 
 export function Deploy(props: Props) {
-  const { project, previousStep, onStep } = props;
+  const { project, previousStep, onStep, onBack } = props;
   const { chainId, wallet, avatar, signOut } = useAuth();
   const { updateProjectInfo } = useWorkspace();
   const { loadingPublish, publishError } = useEditor();
@@ -71,6 +71,7 @@ export function Deploy(props: Props) {
   const [showWarning, setShowWarning] = useState(false);
   const [skipWarning, setSkipWarning] = useState(project.info.skipPublishWarning ?? false);
   const deployment = getDeployment(project.path);
+  const isWorld = previousStep === 'publish-to-world' || !!deployment?.info.isWorld;
 
   const handlePublish = useCallback(() => {
     setShowWarning(false);
@@ -96,9 +97,13 @@ export function Deploy(props: Props) {
     void misc.openExternal(jumpInUrl);
   }, [jumpInUrl]);
 
-  const handleDeployRetry = useCallback(() => {
-    props.onBack && props.onBack();
+  const handleReportIssue = useCallback(() => {
+    void misc.openExternal(REPORT_ISSUES_URL);
   }, []);
+
+  const handleDeployRetry = useCallback(() => {
+    onBack && onBack();
+  }, [onBack]);
 
   const handleGoToSignIn = useCallback(() => {
     signOut();
@@ -111,13 +116,11 @@ export function Deploy(props: Props) {
       pushCustom({ type: 'deploy', path: project.path }, { duration: 0, requestId: project.path });
     }
     props.onClose();
-  }, [deployment, pushCustom]);
+  }, [deployment, pushCustom, project.path]);
 
   const title = useMemo(() => {
-    if (!deployment) {
-      return loadingPublish
-        ? t('modal.publish_project.deploy.loading')
-        : t('modal.publish_project.deploy.error');
+    if (!deployment && loadingPublish) {
+      return t('modal.publish_project.deploy.loading');
     }
 
     switch (previousStep) {
@@ -128,11 +131,54 @@ export function Deploy(props: Props) {
       case 'alternative-servers':
         return t('modal.publish_project.deploy.server');
       default:
-        return deployment.info.isWorld
+        return isWorld
           ? t('modal.publish_project.deploy.world')
           : t('modal.publish_project.deploy.land');
     }
-  }, [deployment, loadingPublish, previousStep]);
+  }, [deployment, loadingPublish, previousStep, isWorld]);
+
+  const getStepDescription = useCallback((status: Status) => {
+    switch (status) {
+      case 'pending':
+        return t('modal.publish_project.deploy.deploying.step.loading');
+      case 'failed':
+        return t('modal.publish_project.deploy.deploying.step.failed');
+      default:
+        return undefined;
+    }
+  }, []);
+
+  const steps: Step[] = useMemo(() => {
+    if (!deployment) return [];
+
+    const { catalyst, assetBundle, lods } = deployment.componentsStatus;
+    const baseSteps = [
+      {
+        bulletText: '1',
+        name: t('modal.publish_project.deploy.deploying.step.uploading'),
+        description: getStepDescription(catalyst),
+        state: catalyst,
+      },
+      {
+        bulletText: '2',
+        name: t('modal.publish_project.deploy.deploying.step.converting'),
+        description: getStepDescription(assetBundle),
+        state: assetBundle,
+      },
+    ];
+
+    // Only add LODs step for non-world deployments
+    if (!deployment.info.isWorld) {
+      baseSteps.push({
+        bulletText: '3',
+        name: t('modal.publish_project.deploy.deploying.step.optimizing'),
+        description: getStepDescription(lods),
+        state: lods,
+      });
+    }
+
+    return baseSteps;
+  }, [deployment?.componentsStatus, getStepDescription, deployment?.info.isWorld]);
 
   return (
     <PublishModal
@@ -140,7 +186,7 @@ export function Deploy(props: Props) {
       size="large"
       {...props}
       onClose={handleClose}
-      onBack={props.disableGoBack || deployment?.status === 'complete' ? undefined : props.onBack}
+      onBack={props.disableGoBack || deployment?.status === 'complete' ? undefined : onBack}
     >
       <div className="Deploy">
         {showWarning ? (
@@ -180,12 +226,7 @@ export function Deploy(props: Props) {
               </span>
             </div>
           </div>
-        ) : null}
-        {loadingPublish ? (
-          <Loader />
-        ) : publishError ? (
-          <div className="error">{publishError}</div>
-        ) : !deployment ? null : (
+        ) : (
           <>
             <div className="ethereum">
               <div className="chip network">
@@ -198,7 +239,7 @@ export function Deploy(props: Props) {
                   {wallet.slice(0, 6)}...{wallet.slice(-4)}
                 </div>
               ) : null}
-              {deployment.info.isWorld ? (
+              {isWorld ? (
                 avatar ? (
                   <div className="chip username">
                     {avatar.name}
@@ -208,7 +249,7 @@ export function Deploy(props: Props) {
               ) : (
                 <div className="chip parcel">
                   <i className="pin"></i>
-                  {deployment.info.baseParcel}
+                  {project.scene.base}
                 </div>
               )}
             </div>
@@ -219,37 +260,62 @@ export function Deploy(props: Props) {
                   style={{ backgroundImage: `url(${addBase64ImagePrefix(project.thumbnail)})` }}
                 />
                 <div className="text">
-                  <Typography variant="body1">{deployment.info.title}</Typography>
+                  <Typography variant="body1">{project.title}</Typography>
                   <Typography
                     variant="body2"
                     color="#A09BA8"
                   >
-                    {deployment.info.description}
+                    {project.description}
                   </Typography>
                 </div>
               </div>
-              {deployment.status === 'idle' && (
-                <Idle
-                  files={deployment.files}
-                  error={deployment.error}
-                  onClick={() => (skipWarning ? handlePublish() : setShowWarning(true))}
-                />
-              )}
-              {(deployment.status === 'pending' || deployment.status === 'failed') && (
-                <Deploying
-                  deployment={deployment}
-                  url={jumpInUrl}
-                  onClick={handleJumpIn}
+              {loadingPublish ? (
+                <div className="header">
+                  <Loader />
+                  <Typography variant="h5">
+                    {t('modal.publish_project.deploy.deploying.publish')}
+                  </Typography>
+                </div>
+              ) : publishError || !deployment || deployment.status === 'failed' ? (
+                <Error
+                  errorMessage={
+                    publishError
+                      ? t('modal.publish_project.deploy.deploying.errors.code_error')
+                      : deployment?.error?.message
+                  }
+                  errorCause={publishError || deployment?.error?.cause}
+                  isIdentityError={deployment?.error?.name === 'INVALID_IDENTITY'}
+                  steps={steps}
                   onRetry={handleDeployRetry}
+                  onReportIssue={handleReportIssue}
                   goToSignIn={handleGoToSignIn}
                 />
-              )}
-              {deployment.status === 'complete' && (
-                <Success
-                  info={deployment.info}
-                  url={jumpInUrl}
-                  onClick={handleJumpIn}
-                />
+              ) : (
+                <>
+                  {deployment.status === 'idle' && (
+                    <Idle
+                      files={deployment.files}
+                      error={deployment.error}
+                      onClick={() => (skipWarning ? handlePublish() : setShowWarning(true))}
+                    />
+                  )}
+                  {deployment.status === 'pending' && (
+                    <Deploying
+                      deployment={deployment}
+                      url={jumpInUrl}
+                      steps={steps}
+                      onClick={handleJumpIn}
+                      onRetry={handleDeployRetry}
+                    />
+                  )}
+                  {deployment.status === 'complete' && (
+                    <Success
+                      info={deployment.info}
+                      url={jumpInUrl}
+                      onClick={handleJumpIn}
+                    />
+                  )}
+                </>
               )}
             </div>
           </>
@@ -325,138 +391,33 @@ function Idle({ files, error, onClick }: IdleProps) {
 type DeployingProps = {
   deployment: Deployment;
   url: string;
+  steps: Step[];
   onClick: () => void;
   onRetry: () => void;
-  goToSignIn: () => void;
 };
 
-function Deploying({ deployment, url, onClick, onRetry, goToSignIn }: DeployingProps) {
-  const { isDeployFinishing, deriveOverallStatus } = useDeploy();
-  const { info, componentsStatus, error } = deployment;
+function Deploying({ deployment, steps, url, onClick }: DeployingProps) {
+  const { isDeployFinishing } = useDeploy();
   const isFinishing = isDeployFinishing(deployment);
-  const overallStatus = deriveOverallStatus(deployment);
-  const { count, start } = useCounter(5, { onComplete: goToSignIn });
-
-  const onReportIssue = useCallback(() => {
-    void misc.openExternal(REPORT_ISSUES_URL);
-  }, []);
-
-  const getStepDescription = useCallback((status: Status) => {
-    switch (status) {
-      case 'pending':
-        return t('modal.publish_project.deploy.deploying.step.loading');
-      case 'failed':
-        return t('modal.publish_project.deploy.deploying.step.failed');
-      default:
-        return undefined;
-    }
-  }, []);
-
-  const steps: Step[] = useMemo(() => {
-    const { catalyst, assetBundle, lods } = componentsStatus;
-    const baseSteps = [
-      {
-        bulletText: '1',
-        name: t('modal.publish_project.deploy.deploying.step.uploading'),
-        description: getStepDescription(catalyst),
-        state: catalyst,
-      },
-      {
-        bulletText: '2',
-        name: t('modal.publish_project.deploy.deploying.step.converting'),
-        description: getStepDescription(assetBundle),
-        state: assetBundle,
-      },
-    ];
-
-    // Only add LODs step for non-world deployments
-    if (!info.isWorld) {
-      baseSteps.push({
-        bulletText: '3',
-        name: t('modal.publish_project.deploy.deploying.step.optimizing'),
-        description: getStepDescription(lods),
-        state: lods,
-      });
-    }
-
-    return baseSteps;
-  }, [componentsStatus, getStepDescription, info.isWorld]);
 
   const title = useMemo(() => {
-    if (overallStatus === 'failed') return t('modal.publish_project.deploy.deploying.failed');
     if (isFinishing) return t('modal.publish_project.deploy.deploying.finishing');
     return t('modal.publish_project.deploy.deploying.publish');
-  }, [overallStatus, isFinishing]);
-
-  useEffect(() => {
-    if (error?.name === 'INVALID_IDENTITY') {
-      start(5);
-    }
-  }, [error?.name, start]);
-
-  const renderErrorMessage = useCallback(
-    (error: NonNullable<Deployment['error']>) => {
-      if (!error) return null;
-
-      if (error.name === 'INVALID_IDENTITY') {
-        return (
-          <>
-            {`${error.message} ${t('modal.publish_project.deploy.deploying.redirect.sign_in', { seconds: count })}`}
-          </>
-        );
-      }
-
-      return error.message;
-    },
-    [count],
-  );
+  }, [isFinishing]);
 
   return (
     <div className="Deploying">
       <div className="header">
-        <div className="title">
-          {overallStatus === 'failed' ? <div className="Warning" /> : <Loader />}
-          <Typography variant="h5">{title}</Typography>
-        </div>
-        {overallStatus === 'failed' && !error && (
-          <span>{t('modal.publish_project.deploy.deploying.try_again')}</span>
-        )}
-        {error && (
-          <span className="error">
-            {renderErrorMessage(error)}
-            {error.cause && (
-              <ExpandMore
-                title={t('modal.publish_project.deploy.deploying.errors.details')}
-                text={error.cause}
-              />
-            )}
-          </span>
-        )}
+        <Loader />
+        <Typography variant="h5">{title}</Typography>
       </div>
       <ConnectedSteps steps={steps} />
-      {overallStatus === 'failed' ? (
-        <div className="actions">
-          <Button
-            size="large"
-            variant="outlined"
-            color="secondary"
-            onClick={onReportIssue}
-          >
-            {t('modal.publish_project.deploy.deploying.actions.report_issue')}
-          </Button>
-          <Button
-            size="large"
-            onClick={onRetry}
-          >
-            {t('modal.publish_project.deploy.deploying.actions.retry')}
-          </Button>
-        </div>
-      ) : isFinishing ? (
+      {isFinishing ? (
         <>
           <div className="jump">
             <JumpUrl
               inProgress
-              info={info}
+              info={deployment.info}
               url={url}
             />
           </div>
@@ -476,6 +437,80 @@ function Deploying({ deployment, url, onClick, onRetry, goToSignIn }: DeployingP
           {t('modal.publish_project.deploy.deploying.info')}
         </div>
       )}
+    </div>
+  );
+}
+
+type ErrorProps = {
+  errorMessage?: string;
+  errorCause?: string;
+  isIdentityError?: boolean;
+  steps?: Step[];
+  onRetry: () => void;
+  onReportIssue: () => void;
+  goToSignIn: () => void;
+};
+
+function Error({
+  errorMessage,
+  errorCause,
+  isIdentityError,
+  steps,
+  onRetry,
+  onReportIssue,
+  goToSignIn,
+}: ErrorProps) {
+  const { count, start } = useCounter(5, { onComplete: goToSignIn });
+
+  useEffect(() => {
+    if (isIdentityError) {
+      start(5);
+    }
+  }, [isIdentityError, start]);
+
+  const renderErrorMessage = useCallback(
+    (errorMessage: string | undefined) => {
+      if (!errorMessage) return t('modal.publish_project.deploy.deploying.errors.failed');
+
+      if (isIdentityError) {
+        return `${errorMessage} ${t('modal.publish_project.deploy.deploying.redirect.sign_in', { seconds: count })}`;
+      }
+
+      return errorMessage;
+    },
+    [count],
+  );
+
+  return (
+    <div className="Error">
+      <div className="header">
+        <div className="Warning" />
+        <Typography variant="h5">{t('modal.publish_project.deploy.deploying.failed')}</Typography>
+      </div>
+      <p className="description">{renderErrorMessage(errorMessage)}</p>
+      {errorCause && (
+        <ExpandMore
+          title={t('modal.publish_project.deploy.deploying.errors.details')}
+          text={errorCause}
+        />
+      )}
+      {!!steps?.length && <ConnectedSteps steps={steps} />}
+      <div className="actions">
+        <Button
+          size="large"
+          variant="outlined"
+          color="secondary"
+          onClick={onReportIssue}
+        >
+          {t('modal.publish_project.deploy.deploying.actions.report_issue')}
+        </Button>
+        <Button
+          size="large"
+          onClick={onRetry}
+        >
+          {t('modal.publish_project.deploy.deploying.actions.retry')}
+        </Button>
+      </div>
     </div>
   );
 }
