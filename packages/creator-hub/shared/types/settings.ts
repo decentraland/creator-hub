@@ -19,3 +19,9 @@ export type AppSettings = {
   dependencyUpdateStrategy: DEPENDENCY_UPDATE_STRATEGY;
   previewOptions: PreviewOptions;
 };
+
+export interface ReleaseNotes {
+  version: string;
+  whatsNew: string[];
+  bugFixes: string[];
+}

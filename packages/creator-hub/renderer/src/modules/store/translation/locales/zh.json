@@ -247,16 +247,35 @@
     },
     "app_settings": {
       "title": "應用程式設定",
+      "tabs": {
+        "scenes": {
+          "label": "場景",
+          "title": "場景設定"
+        },
+        "editor": {
+          "label": "編輯器",
+          "title": "編輯器設定"
+        },
+        "about": {
+          "label": "關於",
+          "title": "關於"
+        }
+      },
+      "about": {
+        "title": "Decentraland Creator Hub",
+        "view_changelog": "查看更新日誌"
+      },
       "fields": {
         "scenes_folder": {
           "label": "場景資料夾",
           "change_button": "更改資料夾",
+          "reset_button": "重置",
           "errors": {
             "invalid_path": "文件夹不存在或无法在其中保存文件。请选择其他文件夹。"
           }
         },
         "scene_editor_dependencies": {
-          "label": "場景編輯器依賴項",
+          "label": "場景依賴",
           "options": {
             "auto_update": "自動更新我的所有場景",
             "notify": "有新版本更新時通知我",
@@ -299,7 +318,9 @@
         "check": "檢查更新",
         "checking": "正在檢查更新...",
         "error": "我們無法檢查更新。請稍後再試。",
-        "update_available": "更新可用"
+        "update_available": "更新可用",
+        "whats_new": "新功能",
+        "bug_fixes": "錯誤修復"
       }
     },
     "create_project": {

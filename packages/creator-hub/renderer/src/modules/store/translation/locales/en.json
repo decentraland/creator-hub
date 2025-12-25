@@ -249,17 +249,36 @@
       "current": "Current"
     },
     "app_settings": {
-      "title": "App Settings",
+      "title": "App Preferences",
+      "tabs": {
+        "scenes": {
+          "label": "SCENES",
+          "title": "Scenes Settings"
+        },
+        "editor": {
+          "label": "EDITOR",
+          "title": "Editor Settings"
+        },
+        "about": {
+          "label": "ABOUT",
+          "title": "About"
+        }
+      },
+      "about": {
+        "title": "Decentraland Creator Hub",
+        "view_changelog": "View changelog"
+      },
       "fields": {
         "scenes_folder": {
           "label": "Scenes Folder",
           "change_button": "Change Folder",
+          "reset_button": "Reset",
           "errors": {
             "invalid_path": "Folder doesn't exist or can't save files there. Please choose a different folder."
           }
         },
         "scene_editor_dependencies": {
-          "label": "Scene Editor Dependencies",
+          "label": "Scene Dependencies",
           "options": {
             "auto_update": "Auto-update all my scenes",
             "notify": "Notify me of new version updates",
@@ -302,7 +321,9 @@
         "check": "Check for updates",
         "checking": "Checking for updates...",
         "error": "We couldn't check for updates.\nPlease try again later.",
-        "update_available": "Update Available"
+        "update_available": "Update Available",
+        "whats_new": "What's New",
+        "bug_fixes": "Bug Fixes"
       }
     },
     "create_project": {
