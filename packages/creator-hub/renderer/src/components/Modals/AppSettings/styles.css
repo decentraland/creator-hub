@@ -1,23 +1,100 @@
+.MuiPaper-root:has(.AppSettingsModal) > .MuiBox-root:first-child {
+  padding: 0 !important;
+}
+
+.AppSettingsModal.MuiBox-root {
+  padding: 0 !important;
+}
+
 .AppSettingsModal .MuiPaper-root {
-  background-color: #242129;
   background-image: none;
 }
 
-.AppSettingsModal .CloseButtonContainer {
+.AppSettingsModal .SettingsHeader {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.AppSettingsModal .SettingsHeaderTitle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--light-gray);
+}
+
+.AppSettingsModal .SettingsHeaderTitle svg {
+  color: var(--dark-gray);
+}
+
+.AppSettingsModal .SettingsLayout {
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+  min-height: 400px;
+  max-height: 70vh;
+  overflow: hidden;
+}
+
+.AppSettingsModal .SettingsSidebar {
+  display: flex;
+  flex-direction: column;
+  min-width: 120px;
+  padding-top: 8px;
+}
+
+.AppSettingsModal .SettingsTab {
+  padding: 12px 16px;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  border-right: 3px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.AppSettingsModal .SettingsTab:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.AppSettingsModal .SettingsTab.active {
+  color: #ff2d55;
+  border-right-color: #ff2d55;
+  background-color: #242129;
+}
+
+.AppSettingsModal .SettingsContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 24px;
+  background-color: #242129;
+  overflow: hidden;
+  min-height: 0;
 }
 
 .AppSettingsModal .FormContainer {
   display: flex;
   flex-direction: column;
-  margin-top: 32px;
-  gap: 32px;
+  gap: 16px;
   width: 100%;
 }
 
 .AppSettingsModal .ScenesFolderFormControl {
   gap: 16px;
+}
+
+.AppSettingsModal .ScenesFolderInputContainer {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.AppSettingsModal .ResetScenesFolderButton {
+  flex-shrink: 0;
 }
 
 .AppSettingsModal .error {
@@ -83,4 +160,95 @@
 
 .MuiList-root .menu-only {
   display: flex;
+}
+
+/* About Tab Styles */
+.AppSettingsModal .AboutTabContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.AppSettingsModal .AboutHeader {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+}
+
+.AppSettingsModal .AboutLogo {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+}
+
+.AppSettingsModal .AboutInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.AppSettingsModal .AboutTitle {
+  color: var(--white);
+  font-weight: 500;
+}
+
+.AppSettingsModal .AboutVersionRow {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.AppSettingsModal .AboutVersion {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.AppSettingsModal .AboutChangelogLink {
+  color: #ff2d55;
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.AppSettingsModal .AboutChangelogLink:hover {
+  text-decoration: underline;
+}
+
+.AppSettingsModal .AboutUpdateSection {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.AppSettingsModal .AboutUpdateSettings {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.AppSettingsModal .AboutUpdateSettings .update-settings__status-area {
+  margin-top: 8px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.AppSettingsModal .AboutUpdateSettings .update-settings__button-area {
+  margin-top: auto;
+}
+
+.AppSettingsModal .AboutUpdateSettings .update-settings__button-area button {
+  width: 100%;
+}
+
+.AppSettingsModal .AboutUpdateSettings .update-settings__message-container {
+  margin-top: 8px;
 }

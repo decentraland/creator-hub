@@ -1,18 +1,22 @@
 .update-settings {
   gap: 8px;
   margin-top: 24px;
+  overflow: hidden;
+  min-height: 0;
 }
 
-.update-settings__button-container {
-  gap: 16px;
-  align-items: center;
-  justify-content: start;
-  min-height: 40px;
+.update-settings__status-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
 }
 
-.update-settings__button-container button {
-  min-width: 210px;
-  flex-shrink: 0;
+.update-settings__button-area {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .update-settings__message-container {
@@ -28,4 +32,62 @@
   max-width: 300px;
   align-items: center;
   gap: 4px;
+}
+
+/* Release Notes Styles */
+.update-settings__release-notes {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  margin-top: 8px;
+  min-height: 0;
+}
+
+.update-settings__release-notes-header {
+  color: var(--white);
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+.update-settings__release-notes-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.update-settings__release-notes-section {
+  margin-bottom: 16px;
+}
+
+.update-settings__section-title {
+  color: var(--text-secondary, #888);
+  font-weight: 500;
+  margin-bottom: 8px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.update-settings__section-title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background-color: var(--divider, #333);
+}
+
+.update-settings__notes-list {
+  margin: 0;
+  padding-left: 20px;
+  list-style-type: disc;
+}
+
+.update-settings__notes-list li {
+  color: var(--text-secondary, #aaa);
+  margin-bottom: 4px;
+}
+
+.update-settings__notes-list li p {
+  margin: 0;
 }

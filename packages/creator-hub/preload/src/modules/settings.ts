@@ -4,11 +4,12 @@ import {
   DEPENDENCY_UPDATE_STRATEGY,
   DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
 } from '/shared/types/settings';
-import type { AppSettings } from '/shared/types/settings';
+import type { AppSettings, ReleaseNotes } from '/shared/types/settings';
 import { SCENES_DIRECTORY } from '/shared/paths';
 
 import { invoke } from '../services/ipc';
 import { getConfig, setConfig } from '../services/config';
+import { GITHUB_RELEASES_API } from './constants';
 
 export async function getDefaultScenesPath() {
   const userDataPath = await invoke('electron.getUserDataPath');
@@ -18,6 +19,11 @@ export async function getDefaultScenesPath() {
 export async function getScenesPath() {
   const config = await getConfig();
   return config.settings?.scenesPath || (await getDefaultScenesPath());
+}
+
+export async function isCustomScenesPath(currentPath: string): Promise<boolean> {
+  const defaultPath = await getDefaultScenesPath();
+  return currentPath !== defaultPath;
 }
 
 export function isValidUpdateStrategy(value?: string): value is DEPENDENCY_UPDATE_STRATEGY {
@@ -116,4 +122,65 @@ export async function setDefaultEditor(editorPath: string) {
 
 export async function removeEditor(editorPath: string) {
   return await invoke('code.removeEditor', editorPath);
+}
+
+/**
+ * Parses the GitHub release markdown body to extract features and bug fixes.
+ * Features are lines starting with "* feat:" and fixes are lines starting with "* fix:"
+ */
+function parseReleaseBody(body: string): { whatsNew: string[]; bugFixes: string[] } {
+  const whatsNew: string[] = [];
+  const bugFixes: string[] = [];
+
+  const lines = body.split('\n');
+
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+
+    // Match lines like "* feat: description by @user in #123"
+    const featMatch = trimmedLine.match(
+      /^\*\s*feat:\s*(.+?)(?:\s+by\s+@[\w-]+)?(?:\s+in\s+#\d+)?$/i,
+    );
+    if (featMatch) {
+      whatsNew.push(featMatch[1].trim());
+      continue;
+    }
+
+    // Match lines like "* fix: description by @user in #123"
+    const fixMatch = trimmedLine.match(/^\*\s*fix:\s*(.+?)(?:\s+by\s+@[\w-]+)?(?:\s+in\s+#\d+)?$/i);
+    if (fixMatch) {
+      bugFixes.push(fixMatch[1].trim());
+      continue;
+    }
+  }
+
+  return { whatsNew, bugFixes };
+}
+
+/**
+ * Fetches release notes from GitHub API for a specific version.
+ * @param version - The version tag to fetch (e.g., "0.31.0")
+ * @returns ReleaseNotes object with parsed features and bug fixes
+ */
+export async function getReleaseNotes(version: string): Promise<ReleaseNotes> {
+  try {
+    const response = await fetch(`${GITHUB_RELEASES_API}/${version}`);
+
+    if (!response.ok) {
+      console.warn(
+        `[Preload] Failed to fetch release notes for version ${version}:`,
+        response.status,
+      );
+      return { version, whatsNew: [], bugFixes: [] };
+    }
+
+    const release = await response.json();
+    const body = release.body || '';
+    const { whatsNew, bugFixes } = parseReleaseBody(body);
+
+    return { version, whatsNew, bugFixes };
+  } catch (error) {
+    console.warn('[Preload] Could not fetch release notes:', error);
+    return { version, whatsNew: [], bugFixes: [] };
+  }
 }
