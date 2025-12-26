@@ -9,6 +9,8 @@ import { getAssetByModel } from '../../../lib/logic/catalog';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { Dropdown, TextField } from '../../ui';
+import { InfoTooltip } from '../../ui/InfoTooltip';
+import { engine as CoreEngine } from '@dcl/ecs';
 import type { Entity } from '@dcl/ecs';
 
 type Props = {
@@ -51,6 +53,29 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     }
     return typeof dt?.time === 'number' ? dt.time : 1;
   }, [currentValue, mode]);
+
+  const allEntityOptions = useMemo(() => {
+    const { Name, Nodes } = sdk.components;
+    const result: { label: string; value: string }[] = [
+      { label: 'None', value: '' },
+      { label: 'Player', value: String(CoreEngine.PlayerEntity) },
+    ];
+    const nodes = Nodes.getOrNull(sdk.engine.RootEntity)?.value || [];
+    const seen = new Set<Entity>();
+    for (const { entity: ent } of nodes) {
+      if (ent === CoreEngine.RootEntity || ent === CoreEngine.CameraEntity) continue;
+      if (seen.has(ent)) continue;
+      seen.add(ent);
+      const label = Name.getOrNull(ent)?.value ?? ent.toString();
+      result.push({ label, value: String(ent) });
+    }
+    return result;
+  }, [sdk]);
+
+  const lookAtValue: string = useMemo(() => {
+    const v = (currentValue as any)?.lookAtEntity as Entity | undefined;
+    return v !== undefined ? String(v) : '';
+  }, [currentValue]);
 
   const handleRemove = useCallback(async () => {
     sdk.operations.removeComponent(entity, VirtualCamera);
@@ -98,6 +123,21 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     [sdk, entity, VirtualCamera, mode],
   );
 
+  const handleChangeLookAt = useCallback(
+    async (e: any) => {
+      const raw = e.target.value as string;
+      const nextEntity: Entity | undefined =
+        raw === '' ? undefined : (parseInt(raw, 10) as unknown as Entity);
+      const prev = VirtualCamera.getOrNull(entity) ?? {};
+      sdk.operations.updateValue(VirtualCamera, entity, {
+        ...(prev as any),
+        lookAtEntity: nextEntity,
+      });
+      await sdk.operations.dispatch();
+    },
+    [sdk, entity, VirtualCamera],
+  );
+
   if (!hasVirtualCamera) return null;
 
   return (
@@ -105,6 +145,13 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       label="Virtual Camera"
       className={cx('VirtualCamera')}
       initialOpen={initialOpen}
+      rightContent={
+        <InfoTooltip
+          text="You can switch to this camera via code or via the Change Camera Action. See docs for details."
+          link="https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/camera"
+          type="help"
+        />
+      }
       onRemoveContainer={handleRemove}
     >
       <Block label="Default Transition Mode">
@@ -121,6 +168,14 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
           value={numericValue}
           onChange={handleChangeNumber}
           autoSelect
+        />
+      </Block>
+      <Block label="Look At Entity">
+        <Dropdown
+          options={allEntityOptions}
+          value={lookAtValue}
+          onChange={handleChangeLookAt as any}
+          searchable
         />
       </Block>
     </Container>
