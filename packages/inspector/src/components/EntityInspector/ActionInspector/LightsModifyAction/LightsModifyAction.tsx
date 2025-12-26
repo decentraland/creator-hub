@@ -37,7 +37,7 @@ const LightsModifyAction: React.FC<Props> = ({ value, onUpdate }) => {
       <div className="row">
         <CheckboxField
           label="Active"
-          checked={!!value.active}
+          checked={value.active ?? true}
           onChange={handleChangeActive}
         />
       </div>
