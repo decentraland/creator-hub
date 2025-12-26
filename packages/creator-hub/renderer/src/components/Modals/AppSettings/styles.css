@@ -1,3 +1,4 @@
+/* Modal Container Styles */
 .MuiPaper-root:has(.AppSettingsModal) > .MuiBox-root:first-child {
   padding: 0 !important;
 }
@@ -10,6 +11,7 @@
   background-image: none;
 }
 
+/* Header Styles */
 .AppSettingsModal .SettingsHeader {
   display: flex;
   justify-content: space-between;
@@ -29,15 +31,16 @@
   color: var(--dark-gray);
 }
 
+/* Layout Styles */
 .AppSettingsModal .SettingsLayout {
   display: flex;
   flex-direction: row;
   gap: 0;
-  min-height: 400px;
-  max-height: 70vh;
+  height: 500px;
   overflow: hidden;
 }
 
+/* Sidebar Styles */
 .AppSettingsModal .SettingsSidebar {
   display: flex;
   flex-direction: column;
@@ -61,194 +64,30 @@
 }
 
 .AppSettingsModal .SettingsTab.active {
-  color: #ff2d55;
-  border-right-color: #ff2d55;
-  background-color: #242129;
+  color: var(--dcl);
+  border-right-color: var(--dcl);
+  background-color: var(--darker-gray);
 }
 
+/* Content Area Styles */
 .AppSettingsModal .SettingsContent {
   flex: 1;
   display: flex;
   flex-direction: column;
   padding: 16px 24px;
-  background-color: #242129;
+  background-color: var(--darker-gray);
   overflow: hidden;
   min-height: 0;
 }
 
-.AppSettingsModal .FormContainer {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  width: 100%;
-}
-
-.AppSettingsModal .ScenesFolderFormControl {
-  gap: 16px;
-}
-
-.AppSettingsModal .ScenesFolderInputContainer {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.AppSettingsModal .ResetScenesFolderButton {
-  flex-shrink: 0;
-}
-
-.AppSettingsModal .error {
-  color: var(--error);
-}
-
+/* Input Styles */
 .AppSettingsModal .MuiInputBase-root .MuiOutlinedInput-notchedOutline {
   /* TODO: Fix styles in the ui2 library */
   border-color: #ffffff3b;
-}
-
-.AppSettingsModal .ChangeSceneFolderButton {
-  width: 184px;
-  font-weight: 600;
 }
 
 .AppSettingsModal .ApplyButton.Mui-disabled {
   /* TODO: Fix styles in the ui2 library */
   background-color: #f8919d;
   color: #fee9ec;
-}
-
-.AppSettingsModal .UpdateContainer {
-  gap: 8px;
-  margin-top: 24px;
-}
-
-.AppSettingsModal .UpdateButtonContainer {
-  gap: 16px;
-  align-items: center;
-  justify-content: start;
-  min-height: 40px;
-
-  button {
-    min-width: 210px;
-    flex-shrink: 0;
-  }
-}
-
-.AppSettingsModal .MessageContainer {
-  gap: 10px;
-  align-items: center;
-  svg {
-    width: 16px;
-  }
-}
-
-.AppSettingsModal .DownloadProgressContainer {
-  max-width: 300px;
-  align-items: center;
-  gap: 4px;
-}
-
-.editor-select {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.MuiSelect-select .menu-only {
-  display: none;
-}
-
-.MuiList-root .menu-only {
-  display: flex;
-}
-
-/* About Tab Styles */
-.AppSettingsModal .AboutTabContainer {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  flex: 1;
-  overflow: hidden;
-  min-height: 0;
-}
-
-.AppSettingsModal .AboutHeader {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 16px;
-}
-
-.AppSettingsModal .AboutLogo {
-  width: 64px;
-  height: 64px;
-  flex-shrink: 0;
-}
-
-.AppSettingsModal .AboutInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.AppSettingsModal .AboutTitle {
-  color: var(--white);
-  font-weight: 500;
-}
-
-.AppSettingsModal .AboutVersionRow {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 12px;
-}
-
-.AppSettingsModal .AboutVersion {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.AppSettingsModal .AboutChangelogLink {
-  color: #ff2d55;
-  cursor: pointer;
-  font-size: 14px;
-  text-decoration: none;
-}
-
-.AppSettingsModal .AboutChangelogLink:hover {
-  text-decoration: underline;
-}
-
-.AppSettingsModal .AboutUpdateSection {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  min-height: 0;
-}
-
-.AppSettingsModal .AboutUpdateSettings {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  min-height: 0;
-}
-
-.AppSettingsModal .AboutUpdateSettings .update-settings__status-area {
-  margin-top: 8px;
-  overflow: hidden;
-  min-height: 0;
-}
-
-.AppSettingsModal .AboutUpdateSettings .update-settings__button-area {
-  margin-top: auto;
-}
-
-.AppSettingsModal .AboutUpdateSettings .update-settings__button-area button {
-  width: 100%;
-}
-
-.AppSettingsModal .AboutUpdateSettings .update-settings__message-container {
-  margin-top: 8px;
 }

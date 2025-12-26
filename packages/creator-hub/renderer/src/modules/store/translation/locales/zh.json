@@ -305,7 +305,7 @@
       "version": {
         "current": "當前版本：{version}",
         "new": "新版本：{version}",
-        "up_to_date": "Creator Hub 已是最新版本",
+        "up_to_date": "Creator Hub 已是最新版本。",
         "label": "版本：{version}"
       },
       "update": {

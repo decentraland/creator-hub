@@ -308,7 +308,7 @@
       "version": {
         "current": "Current Version: {version}",
         "new": "New version: {version}",
-        "up_to_date": "Creator Hub is up to date",
+        "up_to_date": "Creator Hub is up to date.",
         "label": "Version: {version}"
       },
       "update": {

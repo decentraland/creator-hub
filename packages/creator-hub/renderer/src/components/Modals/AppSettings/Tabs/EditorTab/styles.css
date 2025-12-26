@@ -1,0 +1,31 @@
+.editor-select {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.MuiSelect-select .menu-only {
+  display: none;
+}
+
+.MuiList-root .menu-only {
+  display: flex;
+}
+
+.CodeEditorFormGroup {
+  gap: 16px;
+}
+
+.PreviewOptionsFormGroup {
+  gap: 4px;
+}
+
+.AppWarningsFormGroup {
+  gap: 16px;
+}
+
+.EditorActionsBox {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
