@@ -15,6 +15,7 @@ const TweenMapOption: Record<string, string> = {
   [TweenType.MOVE_ITEM]: 'Move Item',
   [TweenType.ROTATE_ITEM]: 'Rotate Item',
   [TweenType.SCALE_ITEM]: 'Scale Item',
+  [TweenType.KEEP_ROTATING_ITEM]: 'Keep Rotating Item',
 };
 
 const InterpolationMapOption: Record<string, string> = {
@@ -73,6 +74,32 @@ const TweenAction: React.FC<Props> = ({ tween: tweenProp, onUpdateTween }: Props
       const { value } = e.target as HTMLInputElement;
       const validValue = isNaN(parseFloat(value)) ? parseFloat('0') : parseFloat(value);
       handleUpdate({ ...tween, end: { ...tween.end, [axis]: validValue } });
+    },
+    [tween, handleUpdate],
+  );
+
+  const handleChangeDirection = useCallback(
+    (e: React.ChangeEvent<HTMLElement>, axis: string) => {
+      const { value } = e.target as HTMLInputElement;
+      handleUpdate({ ...tween, direction: { ...tween.direction, [axis]: value } });
+    },
+    [tween, handleUpdate],
+  );
+
+  const handleBlurDirection = useCallback(
+    (e: React.ChangeEvent<HTMLElement>, axis: string) => {
+      const { value } = e.target as HTMLInputElement;
+      const validValue = isNaN(parseFloat(value)) ? parseFloat('0') : parseFloat(value);
+      handleUpdate({ ...tween, direction: { ...tween.direction, [axis]: validValue } });
+    },
+    [tween, handleUpdate],
+  );
+
+  const handleChangeSpeed = useCallback(
+    (e: React.ChangeEvent<HTMLElement>) => {
+      const { value } = e.target as HTMLInputElement;
+      const validValue = isNaN(parseFloat(value)) ? parseFloat('0') : parseFloat(value);
+      handleUpdate({ ...tween, speed: validValue });
     },
     [tween, handleUpdate],
   );
@@ -142,10 +169,14 @@ const TweenAction: React.FC<Props> = ({ tween: tweenProp, onUpdateTween }: Props
         return 'End Rotation';
       case TweenType.SCALE_ITEM:
         return 'End Scale';
+      case TweenType.KEEP_ROTATING_ITEM:
+        return 'Direction';
       default:
         return 'End Position';
     }
   }, [tween.type]);
+
+  const isKeepRotating = tween.type === TweenType.KEEP_ROTATING_ITEM;
 
   return (
     <div className="TweenActionContainer">
@@ -163,65 +194,111 @@ const TweenAction: React.FC<Props> = ({ tween: tweenProp, onUpdateTween }: Props
           onChange={handleChangeType}
         />
       </div>
-      <Block label={getLabel()}>
-        <TextField
-          leftLabel="X"
-          type="number"
-          value={tween.end.x}
-          error={isNaN(parseFloat(tween.end.x))}
-          onChange={e => handleChangeEndPosition(e, 'x')}
-          onBlur={e => handleBlurEndPosition(e, 'x')}
-          autoSelect
-        />
-        <TextField
-          leftLabel="Y"
-          type="number"
-          value={tween.end.y}
-          error={isNaN(parseFloat(tween.end.y))}
-          onChange={e => handleChangeEndPosition(e, 'y')}
-          onBlur={e => handleBlurEndPosition(e, 'y')}
-          autoSelect
-        />
-        <TextField
-          leftLabel="Z"
-          type="number"
-          value={tween.end.z}
-          error={isNaN(parseFloat(tween.end.z))}
-          onChange={e => handleChangeEndPosition(e, 'z')}
-          onBlur={e => handleBlurEndPosition(e, 'z')}
-          autoSelect
-        />
-      </Block>
-      <div className="row">
-        <CheckboxField
-          checked={tween.relative}
-          label={<>Relative {renderRelativeInfo()}</>}
-          onChange={handleChangeRelative}
-        />
-      </div>
-      <div className="row">
-        <Dropdown
-          label={<>Curve Type {rendeCurveTypeInfo()}</>}
-          placeholder="Select a Curve Type"
-          options={[
-            ...Object.values(InterpolationType).map(interpolationType => ({
-              label: InterpolationMapOption[interpolationType],
-              value: interpolationType,
-            })),
-          ]}
-          value={tween.interpolationType}
-          onChange={handleChangeInterpolationType}
-        />
-      </div>
-      <div className="row">
-        <RangeField
-          label={<>Duration {renderDurationInfo()}</>}
-          value={tween.duration}
-          onChange={handleChangeDurationRange}
-          isValidValue={isValidDuration}
-          step={0.25}
-        />
-      </div>
+      {isKeepRotating ? (
+        <>
+          <Block label={getLabel()}>
+            <TextField
+              leftLabel="X"
+              type="number"
+              value={tween.direction?.x ?? 0}
+              error={isNaN(parseFloat(tween.direction?.x?.toString() ?? '0'))}
+              onChange={e => handleChangeDirection(e, 'x')}
+              onBlur={e => handleBlurDirection(e, 'x')}
+              autoSelect
+            />
+            <TextField
+              leftLabel="Y"
+              type="number"
+              value={tween.direction?.y ?? 0}
+              error={isNaN(parseFloat(tween.direction?.y?.toString() ?? '0'))}
+              onChange={e => handleChangeDirection(e, 'y')}
+              onBlur={e => handleBlurDirection(e, 'y')}
+              autoSelect
+            />
+            <TextField
+              leftLabel="Z"
+              type="number"
+              value={tween.direction?.z ?? 0}
+              error={isNaN(parseFloat(tween.direction?.z?.toString() ?? '0'))}
+              onChange={e => handleChangeDirection(e, 'z')}
+              onBlur={e => handleBlurDirection(e, 'z')}
+              autoSelect
+            />
+          </Block>
+          <div className="row">
+            <TextField
+              label="Speed"
+              type="number"
+              value={tween.speed ?? 1}
+              onChange={handleChangeSpeed}
+              onBlur={handleChangeSpeed}
+              autoSelect
+            />
+          </div>
+        </>
+      ) : (
+        <>
+          <Block label={getLabel()}>
+            <TextField
+              leftLabel="X"
+              type="number"
+              value={tween.end.x}
+              error={isNaN(parseFloat(tween.end.x))}
+              onChange={e => handleChangeEndPosition(e, 'x')}
+              onBlur={e => handleBlurEndPosition(e, 'x')}
+              autoSelect
+            />
+            <TextField
+              leftLabel="Y"
+              type="number"
+              value={tween.end.y}
+              error={isNaN(parseFloat(tween.end.y))}
+              onChange={e => handleChangeEndPosition(e, 'y')}
+              onBlur={e => handleBlurEndPosition(e, 'y')}
+              autoSelect
+            />
+            <TextField
+              leftLabel="Z"
+              type="number"
+              value={tween.end.z}
+              error={isNaN(parseFloat(tween.end.z))}
+              onChange={e => handleChangeEndPosition(e, 'z')}
+              onBlur={e => handleBlurEndPosition(e, 'z')}
+              autoSelect
+            />
+          </Block>
+          <div className="row">
+            <CheckboxField
+              checked={tween.relative}
+              label={<>Relative {renderRelativeInfo()}</>}
+              onChange={handleChangeRelative}
+            />
+          </div>
+          <div className="row">
+            <Dropdown
+              label={<>Curve Type {rendeCurveTypeInfo()}</>}
+              placeholder="Select a Curve Type"
+              options={[
+                ...Object.values(InterpolationType).map(interpolationType => ({
+                  label: InterpolationMapOption[interpolationType],
+                  value: interpolationType,
+                })),
+              ]}
+              value={tween.interpolationType}
+              onChange={handleChangeInterpolationType}
+            />
+          </div>
+          <div className="row">
+            <RangeField
+              label={<>Duration {renderDurationInfo()}</>}
+              value={tween.duration}
+              onChange={handleChangeDurationRange}
+              isValidValue={isValidDuration}
+              step={0.25}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 };

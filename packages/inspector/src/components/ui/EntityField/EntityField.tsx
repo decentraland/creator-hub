@@ -10,12 +10,16 @@ import { Dropdown } from '../Dropdown';
 import type { Props } from './types';
 
 function componentHasValidValue(component: any) {
-  if (typeof component.value === 'number') {
-    return component.value !== undefined;
-  } else if (typeof component.value === 'object') {
-    return component.value.length > 0;
+  if (component === null || component === undefined) return false;
+  // Treat object-shaped component values as valid (most ECS LWW components)
+  if (typeof component === 'object') return true;
+  // Legacy shapes with { value: ... }
+  if (typeof component.value === 'number') return component.value !== undefined;
+  if (typeof component.value === 'object') {
+    if (Array.isArray(component.value)) return component.value.length > 0;
+    return true;
   }
-  return false;
+  return true;
 }
 
 type EntityOption = {
@@ -59,10 +63,14 @@ const EntityField: React.FC<WithSdkProps & Props> = ({ sdk, ...props }) => {
       return orderedMap;
     };
 
-    if (components && components.length > 0) {
-      // Get entities that contains a component
-      for (const component of components) {
-        const entities = engine.getEntitiesWith(component) || [];
+    const providedComponents = components ?? [];
+    const validComponents = providedComponents.filter(Boolean);
+
+    if (providedComponents.length > 0) {
+      // Get entities that contain any of the valid components.
+      for (const component of validComponents) {
+        const entities = engine.getEntitiesWith(component);
+        if (!entities) continue;
         for (const [entity, _component] of entities) {
           if (
             !ENGINE_ENTITIES.has(entity) &&
@@ -73,6 +81,7 @@ const EntityField: React.FC<WithSdkProps & Props> = ({ sdk, ...props }) => {
           }
         }
       }
+      // If there were provided components but none are valid, leave options empty.
     } else {
       // Get all entities
       const entities = Nodes.getOrNull(engine.RootEntity)?.value || [];
@@ -86,8 +95,9 @@ const EntityField: React.FC<WithSdkProps & Props> = ({ sdk, ...props }) => {
   }, [components]);
 
   const emptyMessage = useMemo(() => {
-    if (components && components.length > 0) {
-      const componentsName = components.map(component => component.componentName.split('::')[1]);
+    const filtered = (components ?? []).filter(Boolean) as Array<{ componentName: string }>;
+    if (filtered.length > 0) {
+      const componentsName = filtered.map(component => component.componentName.split('::')[1]);
       return `No entities available with ${componentsName.join(', ')}.`;
     } else {
       return 'No entities found.';

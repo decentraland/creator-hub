@@ -56,6 +56,10 @@ import { SetScaleAction } from './SetScaleAction';
 import { RandomAction } from './RandomAction';
 import { BatchAction } from './BatchAction';
 import { getDefaultPayload, getPartialPayload, isStates } from './utils';
+import { LightsModifyAction } from './LightsModifyAction';
+import { ChangeCameraAction } from './ChangeCameraAction';
+import { ChangeTextAction } from './ChangeTextAction';
+import { SlideTextureAction } from './SlideTextureAction';
 import type { Props } from './types';
 
 import './ActionInspector.css';
@@ -107,6 +111,13 @@ const ActionMapOption: Record<string, string> = {
   [ActionType.BATCH]: 'Batch Actions',
   [ActionType.HEAL_PLAYER]: 'Heal Player',
   [ActionType.CLAIM_AIRDROP]: 'Claim Airdrop',
+  [ActionType.LIGHTS_ON]: 'Lights On',
+  [ActionType.LIGHTS_OFF]: 'Lights Off',
+  [ActionType.LIGHTS_MODIFY]: 'Lights Modify',
+  [ActionType.CHANGE_CAMERA]: 'Change Camera',
+  [ActionType.CHANGE_TEXT]: 'Change Text',
+  [ActionType.STOP_TWEEN]: 'Stop Tween',
+  [ActionType.SLIDE_TEXTURE]: 'Slide Texture',
 };
 
 export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) => {
@@ -241,6 +252,26 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
             typeof payload.position?.z === 'number' &&
             !isNaN(payload.position?.z)
           );
+        }
+        case ActionType.LIGHTS_ON:
+        case ActionType.LIGHTS_OFF:
+        case ActionType.STOP_TWEEN:
+          return true;
+        case ActionType.LIGHTS_MODIFY: {
+          const payload = getPartialPayload<ActionType.LIGHTS_MODIFY>(action);
+          return !!payload;
+        }
+        case ActionType.CHANGE_CAMERA: {
+          const payload = getPartialPayload<ActionType.CHANGE_CAMERA>(action);
+          return !!payload;
+        }
+        case ActionType.CHANGE_TEXT: {
+          const payload = getPartialPayload<ActionType.CHANGE_TEXT>(action);
+          return !!payload && typeof payload.text === 'string';
+        }
+        case ActionType.SLIDE_TEXTURE: {
+          const payload = getPartialPayload<ActionType.SLIDE_TEXTURE>(action);
+          return !!payload && typeof payload.speed === 'number';
         }
         default: {
           try {
@@ -614,6 +645,46 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     [actions, handleModifyAction],
   );
 
+  const handleLightsModify = useCallback(
+    (value: ActionPayload<ActionType.LIGHTS_MODIFY>, idx: number) => {
+      handleModifyAction(idx, {
+        ...actions[idx],
+        jsonPayload: getJson<ActionType.LIGHTS_MODIFY>(value),
+      });
+    },
+    [actions, handleModifyAction],
+  );
+
+  const handleChangeCamera = useCallback(
+    (value: ActionPayload<ActionType.CHANGE_CAMERA>, idx: number) => {
+      handleModifyAction(idx, {
+        ...actions[idx],
+        jsonPayload: getJson<ActionType.CHANGE_CAMERA>(value),
+      });
+    },
+    [actions, handleModifyAction],
+  );
+
+  const handleChangeTextAction = useCallback(
+    (value: ActionPayload<ActionType.CHANGE_TEXT>, idx: number) => {
+      handleModifyAction(idx, {
+        ...actions[idx],
+        jsonPayload: getJson<ActionType.CHANGE_TEXT>(value),
+      });
+    },
+    [actions, handleModifyAction],
+  );
+
+  const handleSlideTexture = useCallback(
+    (value: ActionPayload<ActionType.SLIDE_TEXTURE>, idx: number) => {
+      handleModifyAction(idx, {
+        ...actions[idx],
+        jsonPayload: getJson<ActionType.SLIDE_TEXTURE>(value),
+      });
+    },
+    [actions, handleModifyAction],
+  );
+
   const handleFocusInput = useCallback(
     ({ type }: React.FocusEvent<HTMLInputElement>) => {
       if (type === 'focus') {
@@ -982,6 +1053,42 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
               />
             </div>
           </div>
+        );
+      }
+      case ActionType.LIGHTS_ON:
+      case ActionType.LIGHTS_OFF:
+      case ActionType.STOP_TWEEN:
+        return null;
+      case ActionType.LIGHTS_MODIFY: {
+        return (
+          <LightsModifyAction
+            value={getPartialPayload<ActionType.LIGHTS_MODIFY>(action)}
+            onUpdate={value => handleLightsModify(value, idx)}
+          />
+        );
+      }
+      case ActionType.CHANGE_CAMERA: {
+        return (
+          <ChangeCameraAction
+            value={getPartialPayload<ActionType.CHANGE_CAMERA>(action)}
+            onUpdate={value => handleChangeCamera(value, idx)}
+          />
+        );
+      }
+      case ActionType.CHANGE_TEXT: {
+        return (
+          <ChangeTextAction
+            value={getPartialPayload<ActionType.CHANGE_TEXT>(action)}
+            onUpdate={value => handleChangeTextAction(value, idx)}
+          />
+        );
+      }
+      case ActionType.SLIDE_TEXTURE: {
+        return (
+          <SlideTextureAction
+            value={getPartialPayload<ActionType.SLIDE_TEXTURE>(action)}
+            onUpdate={value => handleSlideTexture(value, idx)}
+          />
         );
       }
       default: {
