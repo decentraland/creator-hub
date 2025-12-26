@@ -4,7 +4,6 @@ import cx from 'classnames';
 import { withSdk } from '../../../hoc/withSdk';
 import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
 import { getComponentValue } from '../../../hooks/sdk/useComponentValue';
-import { CoreComponents } from '../../../lib/sdk/components';
 import { analytics, Event } from '../../../lib/logic/analytics';
 import { getAssetByModel } from '../../../lib/logic/catalog';
 import { Block } from '../../Block';
@@ -60,7 +59,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     const gltfContainer = getComponentValue(entity, GltfContainer);
     const asset = getAssetByModel(gltfContainer?.src);
     analytics.track(Event.REMOVE_COMPONENT, {
-      componentName: CoreComponents.VIRTUAL_CAMERA,
+      componentName: 'core::VirtualCamera',
       itemId: asset?.id,
       itemPath: gltfContainer?.src,
     });

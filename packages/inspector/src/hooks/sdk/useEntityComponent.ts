@@ -15,7 +15,6 @@ export const DISABLED_COMPONENTS: string[] = [
   CoreComponents.AUDIO_STREAM,
   CoreComponents.NETWORK_ENTITY,
   CoreComponents.TWEEN_SEQUENCE,
-  CoreComponents.MAIN_CAMERA,
   ComponentName.ADMIN_TOOLS,
   ComponentName.REWARDS,
   CoreComponents.AVATAR_ATTACH,
