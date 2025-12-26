@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Box, Typography, Button } from 'decentraland-ui2';
+import { Box, Typography, Button, type ButtonProps } from 'decentraland-ui2';
 import { InfoOutlined } from '@mui/icons-material';
 import { t } from '/@/modules/store/translation/utils';
 import { useDispatch, useSelector } from '#store';
 import { checkForUpdates, downloadUpdate, installUpdate } from '/@/modules/store/settings/slice';
+import { settings as settingsPreload } from '#preload';
 import { Row } from '../../../Row';
 import { Column } from '../../../Column';
-import { settings as settingsPreload } from '#preload';
 import type { ReleaseNotes } from '/shared/types/settings';
+import { MarkdownRenderer } from '../MarkdownRenderer';
 
 import './styles.css';
 
@@ -15,6 +16,7 @@ interface UpdateButtonProps {
   action: () => void;
   text: string;
   disabled?: boolean;
+  color: ButtonProps['color'];
 }
 
 export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '' }) => {
@@ -43,7 +45,7 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
         updateInfo.version
       ) {
         const notes = await settingsPreload.getReleaseNotes(updateInfo.version);
-        setReleaseNotes(notes);
+        setReleaseNotes(notes ?? null);
       }
     };
 
@@ -69,6 +71,7 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
         action: () => {},
         text: t('editor.loading.title'),
         disabled: true,
+        color: 'secondary',
       };
     }
 
@@ -77,6 +80,7 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
         action: () => {},
         text: t('modal.app_settings.update.downloading', { progress }),
         disabled: true,
+        color: 'inherit',
       };
     }
 
@@ -84,6 +88,7 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
       return {
         action: handleCheckForUpdates,
         text: t('modal.app_settings.update.check'),
+        color: 'secondary',
       };
     }
 
@@ -95,12 +100,14 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
       return {
         action: updateInfo.isDownloaded ? handleInstallUpdate : handleDownloadUpdate,
         text: buttonText,
+        color: 'primary',
       };
     }
 
     return {
       action: handleCheckForUpdates,
       text: t('modal.app_settings.update.check'),
+      color: 'secondary',
     };
   }, [
     checkForUpdatesStatus,
@@ -122,10 +129,13 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
   const buttonProps = getButtonProps();
 
   const renderStatusMessage = () => {
-    if (shouldShowUpdateAvailable()) {
+    if (shouldShowUpdateAvailable() && releaseNotes) {
       return (
-        <Typography variant="subtitle1">
-          {t('modal.app_settings.version.new', { version: updateInfo.version })}
+        <Typography
+          variant="h6"
+          className="update-settings__release-notes-header"
+        >
+          {t('modal.app_settings.update.update_available')}: v{releaseNotes.version}
         </Typography>
       );
     }
@@ -145,7 +155,12 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
       checkForUpdatesStatus === 'succeeded'
     ) {
       return (
-        <Typography variant="subtitle1">{t('modal.app_settings.version.up_to_date')}</Typography>
+        <Typography
+          variant="subtitle1"
+          className="update-settings__up-to-date-message"
+        >
+          {t('modal.app_settings.version.up_to_date')}
+        </Typography>
       );
     }
 
@@ -153,55 +168,16 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
   };
 
   const renderReleaseNotes = () => {
-    if (
-      !shouldShowUpdateAvailable() ||
-      !releaseNotes ||
-      (!releaseNotes.whatsNew.length && !releaseNotes.bugFixes.length)
-    ) {
+    if (!shouldShowUpdateAvailable() || !releaseNotes || !releaseNotes.content.length) {
       return null;
     }
 
     return (
       <Box className="update-settings__release-notes">
-        <Typography
-          variant="h6"
-          className="update-settings__release-notes-header"
-        >
-          {t('modal.app_settings.update.update_available')}: v{releaseNotes.version}
-        </Typography>
         <Box className="update-settings__release-notes-content">
-          {releaseNotes.whatsNew.length > 0 && (
+          {releaseNotes.content.length > 0 && (
             <Box className="update-settings__release-notes-section">
-              <Typography
-                variant="subtitle1"
-                className="update-settings__section-title"
-              >
-                {t('modal.app_settings.update.whats_new')}
-              </Typography>
-              <ul className="update-settings__notes-list">
-                {releaseNotes.whatsNew.map((item, index) => (
-                  <li key={index}>
-                    <Typography variant="body2">{item}</Typography>
-                  </li>
-                ))}
-              </ul>
-            </Box>
-          )}
-          {releaseNotes.bugFixes.length > 0 && (
-            <Box className="update-settings__release-notes-section">
-              <Typography
-                variant="subtitle1"
-                className="update-settings__section-title"
-              >
-                {t('modal.app_settings.update.bug_fixes')}
-              </Typography>
-              <ul className="update-settings__notes-list">
-                {releaseNotes.bugFixes.map((item, index) => (
-                  <li key={index}>
-                    <Typography variant="body2">{item}</Typography>
-                  </li>
-                ))}
-              </ul>
+              <MarkdownRenderer content={releaseNotes.content} />
             </Box>
           )}
         </Box>
@@ -218,7 +194,7 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
       <Box className="update-settings__button-area">
         <Button
           variant="contained"
-          color="secondary"
+          color={buttonProps.color}
           onClick={buttonProps.action}
           disabled={buttonProps.disabled}
           fullWidth

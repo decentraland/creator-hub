@@ -5,6 +5,8 @@ import semver from 'semver';
 import * as Sentry from '@sentry/electron/main';
 import { FileSystemStorage } from '/shared/types/storage';
 import { INSTALLED_VERSION_FILE_NAME } from '/shared/paths';
+import type { ReleaseNotes } from '/shared/types/settings';
+import { GITHUB_RELEASES_API_URL } from '/shared/urls';
 import { getUserDataPath } from './electron';
 
 export interface UpdaterConfig {
@@ -168,5 +170,32 @@ export async function deleteVersionFile(): Promise<void> {
     log.info('Deleted version file:', VERSION_FILE_PATH);
   } catch (error) {
     log.error('Error deleting version file:', error);
+  }
+}
+
+/**
+ * Fetches release notes from GitHub API for a specific version.
+ * @param version - The version tag to fetch (e.g., "0.31.0")
+ * @returns ReleaseNotes object with version and content
+ */
+export async function getReleaseNotes(version: string): Promise<ReleaseNotes | undefined> {
+  try {
+    const response = await fetch(`${GITHUB_RELEASES_API_URL}/${version}`);
+
+    if (!response.ok) {
+      log.warn(
+        `[AutoUpdater] Failed to fetch release notes for version ${version}:`,
+        response.status,
+      );
+      return undefined;
+    }
+
+    const release = await response.json();
+    const body = release.body || '';
+
+    return { version, content: body };
+  } catch (error) {
+    log.error('[AutoUpdater] Could not fetch release notes:', error);
+    return undefined;
   }
 }

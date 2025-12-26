@@ -27,6 +27,7 @@ export function initIpc() {
   handle('updater.setupUpdaterEvents', event => updater.setupUpdaterEvents(event));
   handle('updater.getInstalledVersion', () => updater.getInstalledVersion());
   handle('updater.deleteVersionFile', () => updater.deleteVersionFile());
+  handle('updater.getReleaseNotes', (_event, version) => updater.getReleaseNotes(version));
 
   // inspector
   handle('inspector.start', () => inspector.start());

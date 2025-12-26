@@ -22,6 +22,5 @@ export type AppSettings = {
 
 export interface ReleaseNotes {
   version: string;
-  whatsNew: string[];
-  bugFixes: string[];
+  content: string;
 }
