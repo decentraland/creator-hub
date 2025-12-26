@@ -1,0 +1,84 @@
+.AppSettingsModal .AboutTabContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.AppSettingsModal .AboutHeader {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+}
+
+.AppSettingsModal .AboutLogo {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+}
+
+.AppSettingsModal .AboutInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.AppSettingsModal .AboutTitle {
+  color: var(--white);
+  font-weight: 500;
+}
+
+.AppSettingsModal .AboutVersionRow {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.AppSettingsModal .AboutChangelogLink {
+  color: var(--dcl);
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.AppSettingsModal .AboutChangelogLink:hover {
+  text-decoration: underline;
+}
+
+.AppSettingsModal .AboutUpdateSection {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.AppSettingsModal .AboutUpdateSettings {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.AppSettingsModal .AboutUpdateSettings .update-settings__status-area {
+  margin-top: 8px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.AppSettingsModal .AboutUpdateSettings .update-settings__button-area {
+  margin-top: auto;
+}
+
+.AppSettingsModal .AboutUpdateSettings .update-settings__button-area button {
+  width: 100%;
+}
+
+.AppSettingsModal .AboutUpdateSettings .update-settings__message-container {
+  margin-top: 8px;
+}
