@@ -21,7 +21,7 @@ const ChangeCameraAction: React.FC<Props & { sdk: any }> = ({ value, onUpdate, s
           label="Camera"
           value={value.virtualCameraEntity}
           onChange={handleChangeEntity}
-          components={[sdk.components.VirtualCamera]}
+          components={sdk.components.VirtualCamera ? [sdk.components.VirtualCamera] : []}
         />
       </div>
     </div>
