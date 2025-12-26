@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { ActionPayload, ActionType } from '@dcl/asset-packs';
 import { Color4 } from '@dcl/ecs-math';
+import { Block } from '../../../Block';
 import { ColorField, TextField } from '../../../ui';
 import { toHex, toColor4 } from '../../../ui/ColorField/utils';
 import { Props } from './types';
@@ -40,7 +41,7 @@ const ChangeTextAction: React.FC<Props> = ({ value, onUpdate }) => {
   );
 
   return (
-    <div className="ChangeTextActionContainer">
+    <Block className="ChangeTextActionContainer">
       <div className="row">
         <TextField
           label="Text"
@@ -63,7 +64,7 @@ const ChangeTextAction: React.FC<Props> = ({ value, onUpdate }) => {
           onChange={handleChangeColor}
         />
       </div>
-    </div>
+    </Block>
   );
 };
 

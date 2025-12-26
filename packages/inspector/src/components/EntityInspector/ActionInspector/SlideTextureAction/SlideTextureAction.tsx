@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import { ActionPayload, ActionType, TextureMovementType } from '@dcl/asset-packs';
 import { Dropdown, TextField } from '../../../ui';
 import { Props } from './types';
+import { Block } from '../../../Block';
 
 const MOVEMENT_TYPE_OPTIONS = [
   { value: TextureMovementType.TMT_OFFSET, label: 'Offset' },
@@ -79,7 +80,7 @@ const SlideTextureAction: React.FC<Props> = ({ value, onUpdate }) => {
   );
 
   return (
-    <div className="SlideTextureActionContainer">
+    <Block className="SlideTextureActionContainer">
       <div className="row">
         <TextField
           label="Direction X"
@@ -118,7 +119,7 @@ const SlideTextureAction: React.FC<Props> = ({ value, onUpdate }) => {
           onChange={handleChangeDuration}
         />
       </div>
-    </div>
+    </Block>
   );
 };
 

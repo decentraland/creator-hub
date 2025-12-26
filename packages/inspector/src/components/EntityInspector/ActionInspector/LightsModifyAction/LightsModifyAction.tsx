@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { ActionPayload, ActionType } from '@dcl/asset-packs';
 import { Color3 } from '@dcl/ecs-math';
+import { Block } from '../../../Block';
 import { CheckboxField, ColorField, TextField } from '../../../ui';
 import { toHex, toColor3 } from '../../../ui/ColorField/utils';
 import { Props } from './types';
@@ -32,7 +33,7 @@ const LightsModifyAction: React.FC<Props> = ({ value, onUpdate }) => {
   );
 
   return (
-    <div className="LightsModifyActionContainer">
+    <Block className="LightsModifyActionContainer">
       <div className="row">
         <CheckboxField
           label="Active"
@@ -51,11 +52,11 @@ const LightsModifyAction: React.FC<Props> = ({ value, onUpdate }) => {
         <TextField
           label="Intensity"
           type="number"
-          value={value.intensity ?? 1}
+          value={value.intensity ?? 16000}
           onChange={handleChangeIntensity}
         />
       </div>
-    </div>
+    </Block>
   );
 };
 
