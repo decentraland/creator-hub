@@ -35,26 +35,32 @@ const LightsModifyAction: React.FC<Props> = ({ value, onUpdate }) => {
   return (
     <Block className="LightsModifyActionContainer">
       <div className="row">
-        <CheckboxField
-          label="Active"
-          checked={value.active ?? true}
-          onChange={handleChangeActive}
-        />
+        <div className="field inline">
+          <CheckboxField
+            label="Active"
+            checked={value.active ?? true}
+            onChange={handleChangeActive}
+          />
+        </div>
       </div>
       <div className="row">
-        <ColorField
-          label="Color"
-          value={toHex(value.color as Color3)}
-          onChange={handleChangeColor}
-        />
+        <div className="field">
+          <ColorField
+            label="Color"
+            value={toHex(value.color as Color3)}
+            onChange={handleChangeColor}
+          />
+        </div>
       </div>
       <div className="row">
-        <TextField
-          label="Intensity"
-          type="number"
-          value={value.intensity ?? 16000}
-          onChange={handleChangeIntensity}
-        />
+        <div className="field">
+          <TextField
+            label="Intensity"
+            type="number"
+            value={value.intensity ?? 16000}
+            onChange={handleChangeIntensity}
+          />
+        </div>
       </div>
     </Block>
   );

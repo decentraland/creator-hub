@@ -43,26 +43,32 @@ const ChangeTextAction: React.FC<Props> = ({ value, onUpdate }) => {
   return (
     <Block className="ChangeTextActionContainer">
       <div className="row">
-        <TextField
-          label="Text"
-          value={value.text ?? ''}
-          onChange={handleChangeText}
-        />
+        <div className="field">
+          <TextField
+            label="Text"
+            value={value.text ?? ''}
+            onChange={handleChangeText}
+          />
+        </div>
       </div>
       <div className="row">
-        <TextField
-          label="Font Size"
-          type="number"
-          value={value.fontSize ?? 10}
-          onChange={handleChangeFontSize}
-        />
+        <div className="field">
+          <TextField
+            label="Font Size"
+            type="number"
+            value={value.fontSize ?? 10}
+            onChange={handleChangeFontSize}
+          />
+        </div>
       </div>
       <div className="row">
-        <ColorField
-          label="Color"
-          value={toHex(value.color as Color4)}
-          onChange={handleChangeColor}
-        />
+        <div className="field">
+          <ColorField
+            label="Color"
+            value={toHex(value.color as Color4)}
+            onChange={handleChangeColor}
+          />
+        </div>
       </div>
     </Block>
   );
