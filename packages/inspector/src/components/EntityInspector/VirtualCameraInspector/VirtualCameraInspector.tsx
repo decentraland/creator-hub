@@ -3,7 +3,7 @@ import cx from 'classnames';
 
 import { withSdk } from '../../../hoc/withSdk';
 import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
-import { getComponentValue } from '../../../hooks/sdk/useComponentValue';
+import { getComponentValue, useComponentValue } from '../../../hooks/sdk/useComponentValue';
 import { analytics, Event } from '../../../lib/logic/analytics';
 import { getAssetByModel } from '../../../lib/logic/catalog';
 import { Block } from '../../Block';
@@ -32,9 +32,8 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     [],
   );
 
-  const currentValue = useMemo(() => {
-    return VirtualCamera.getOrNull(entity) ?? null;
-  }, [VirtualCamera, entity, hasVirtualCamera]);
+  const [vcValue] = useComponentValue(entity, VirtualCamera);
+  const currentValue = vcValue ?? null;
 
   const mode: ModeOptionValue = useMemo(() => {
     const dt = (currentValue as any)?.defaultTransition;

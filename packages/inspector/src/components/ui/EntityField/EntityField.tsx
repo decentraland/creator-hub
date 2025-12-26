@@ -10,12 +10,16 @@ import { Dropdown } from '../Dropdown';
 import type { Props } from './types';
 
 function componentHasValidValue(component: any) {
-  if (typeof component.value === 'number') {
-    return component.value !== undefined;
-  } else if (typeof component.value === 'object') {
-    return component.value.length > 0;
+  if (component === null || component === undefined) return false;
+  // Treat object-shaped component values as valid (most ECS LWW components)
+  if (typeof component === 'object') return true;
+  // Legacy shapes with { value: ... }
+  if (typeof component.value === 'number') return component.value !== undefined;
+  if (typeof component.value === 'object') {
+    if (Array.isArray(component.value)) return component.value.length > 0;
+    return true;
   }
-  return false;
+  return true;
 }
 
 type EntityOption = {
