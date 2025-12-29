@@ -64,18 +64,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const signIn = useCallback(async () => {
     if (!isNavigatorOnline()) {
-      pushGeneric(
-        'error',
-        t('connection.offline.message'),
-      );
+      pushGeneric('error', t('connection.offline.message'));
       return;
     }
 
     if (signInAttemptCountRef.current >= MAX_SIGNIN_ATTEMPTS) {
-      pushGeneric(
-        'error',
-        t('sign_in.errors.max_attempts'),
-      );
+      pushGeneric('error', t('sign_in.errors.max_attempts'));
       return;
     }
 
@@ -100,10 +94,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         .then(finishSignIn)
         .catch(error => {
           console.error('Signin error:', error);
-          pushGeneric(
-            'error',
-            error?.message || t('sign_in.errors.failed'),
-          );
+          pushGeneric('error', error?.message || t('sign_in.errors.failed'));
         })
         .finally(() => {
           initSignInResultRef.current = undefined;
