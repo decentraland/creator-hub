@@ -9,6 +9,7 @@ import { REPORT_ISSUES_URL } from '/@/modules/utils';
 import { t } from '/@/modules/store/translation/utils';
 import { actions } from '/@/modules/store/settings';
 import { Header } from '../Header';
+import { ConnectionStatusIndicator } from '../ConnectionStatusIndicator';
 
 import './styles.css';
 import { AppSettings } from '../Modals/AppSettings';
@@ -93,6 +94,7 @@ export function Navbar(props: { active: NavbarItem }) {
       </>
       <>
         <Box className="actions">
+          <ConnectionStatusIndicator />
           <Button
             variant="outlined"
             color="secondary"

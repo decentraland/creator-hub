@@ -4,6 +4,7 @@ import { misc } from '#preload';
 
 import { Container } from '../Container';
 import { Navbar, NavbarItem } from '../Navbar';
+import { Image } from '../Image';
 import './styles.css';
 import { Title } from '../Title';
 import { Typography } from 'decentraland-ui2';
@@ -42,9 +43,10 @@ function Video(props: { id: string; list: string; title: string }) {
       onClick={() => misc.openExternal(url)}
       title={props.title}
     >
-      <img
+      <Image
         className="thumbnail"
         src={`https://img.youtube.com/vi/${props.id}/0.jpg`}
+        alt={props.title}
       />
       <span className="title">{props.title}</span>
     </div>
