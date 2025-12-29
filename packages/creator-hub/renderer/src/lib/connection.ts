@@ -13,9 +13,8 @@ export interface ConnectionInfo {
   rtt?: number;
 }
 
-// thresholds for determining slow connection
+// threshold for determining slow connection
 const SLOW_CONNECTION_RTT_THRESHOLD_IN_MS = 500;
-const SLOW_CONNECTION_DOWNLINK_THRESHOLD_IN_MBPS = 1;
 
 export function isNavigatorOnline(): boolean {
   return typeof navigator !== 'undefined' ? navigator.onLine : true;
@@ -42,8 +41,7 @@ export function getNetworkInfo(): ConnectionInfo {
   const isSlow =
     effectiveType === 'slow-2g' ||
     effectiveType === '2g' ||
-    (rtt && rtt > SLOW_CONNECTION_RTT_THRESHOLD_IN_MS) ||
-    (downlink && downlink < SLOW_CONNECTION_DOWNLINK_THRESHOLD_IN_MBPS);
+    (rtt && rtt > SLOW_CONNECTION_RTT_THRESHOLD_IN_MS);
 
   return {
     status: isSlow ? ConnectionStatus.SLOW : ConnectionStatus.ONLINE,

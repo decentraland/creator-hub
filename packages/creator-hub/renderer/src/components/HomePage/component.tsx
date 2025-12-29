@@ -25,7 +25,6 @@ import InfluencePng from '/assets/images/influence.png';
 import { useEditor } from '/@/hooks/useEditor';
 import { useAuth } from '/@/hooks/useAuth';
 import { useWorkspace } from '/@/hooks/useWorkspace';
-import { useConnectionStatus } from '/@/hooks/useConnectionStatus';
 import { t } from '/@/modules/store/translation/utils';
 import { FEEDBACK_URL } from '/@/modules/utils';
 import { actions } from '/@/modules/store/settings';
@@ -33,7 +32,6 @@ import type { AppState } from '../../modules/store';
 import { UpdateAvailableModal } from '../Modals/UpdateAvailableModal';
 import { Navbar, NavbarItem } from '../Navbar';
 import { Footer } from '../Footer';
-import { NoConnectionPage } from '../NoConnectionPage';
 import { type CardBannerProps, type CardItemProps, type SignInCardProps } from './types';
 
 import './styles.css';
@@ -260,14 +258,9 @@ const FeedbackCard: React.FC = React.memo(() => {
 export function HomePage() {
   const auth = useAuth();
   const { version } = useEditor();
-  const { isOnline } = useConnectionStatus();
   const updateInfo = useSelector((state: AppState) => state.settings.updateInfo);
   const openNewUpdateModal = useSelector((state: AppState) => state.settings.openNewUpdateModal);
   const dispatch = useDispatch();
-
-  if (!isOnline) {
-    return <NoConnectionPage />;
-  }
 
   return (
     <>
