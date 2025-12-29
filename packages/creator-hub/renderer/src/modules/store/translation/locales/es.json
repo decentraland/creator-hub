@@ -331,7 +331,8 @@
         "error": "No pudimos buscar actualizaciones.\nPor favor, inténtalo de nuevo más tarde.",
         "update_available": "Actualización Disponible",
         "whats_new": "Novedades",
-        "bug_fixes": "Correcciones"
+        "bug_fixes": "Correcciones",
+        "timeout": "La búsqueda de actualizaciones expiró.\nPor favor, verifica tu conexión e inténtalo de nuevo."
       }
     },
     "create_project": {
@@ -424,6 +425,12 @@
       "body": "Recuerda el número de verificación a continuación.<br></br>Se te pedirá que lo confirmes en tu navegador web para vincular de forma segura tu inicio de sesión.",
       "verification_code_info": "Mantén este número en privado. Asegurará que tu inicio de sesión sea seguro y único para ti.",
       "expiration": "El número de verificación expirará en {minutes}:{seconds} minutos"
+    },
+    "errors": {
+      "max_attempts": "Se alcanzó el máximo de intentos de inicio de sesión. Por favor, inténtalo de nuevo más tarde.",
+      "failed": "Error al iniciar sesión. Por favor, inténtalo de nuevo.",
+      "timeout": "La solicitud de inicio de sesión expiró. Por favor, verifica tu conexión e inténtalo de nuevo.",
+      "init_failed": "No se pudo inicializar el inicio de sesión. Por favor, verifica tu conexión."
     }
   },
   "more": {
@@ -501,6 +508,22 @@
       },
       "docs": {
         "title": "Documentación para Creadores"
+      }
+    },
+    "connection": {
+      "offline": {
+        "tooltip": "Sin conexión a internet",
+        "title": "Sin Conexión",
+        "message": "Actualmente estás sin conexión. Algunas funciones pueden no estar disponibles hasta que te reconectes a internet.",
+        "retry": "Reintentar Conexión"
+      },
+      "slow": {
+        "tooltip": "Conexión lenta detectada",
+        "message": "Tu conexión a internet parece ser lenta. Algunas funciones pueden tardar más en cargar."
+      },
+      "errors": {
+        "NO_INTERNET_CONNECTION": "No hay conexión a internet disponible",
+        "REQUEST_TIMEOUT": "La solicitud expiró. Por favor verifica tu conexión e intenta nuevamente."
       }
     }
   }

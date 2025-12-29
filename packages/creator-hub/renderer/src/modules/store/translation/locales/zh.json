@@ -328,7 +328,8 @@
         "error": "我們無法檢查更新。請稍後再試。",
         "update_available": "更新可用",
         "whats_new": "新功能",
-        "bug_fixes": "錯誤修復"
+        "bug_fixes": "錯誤修復",
+        "timeout": "檢查更新超時。\n請檢查您的連接並重試。"
       }
     },
     "create_project": {
@@ -421,6 +422,12 @@
       "body": "請記住下面的驗證碼。<br></br>系統會提示您在網頁瀏覽器中進行確認，以安全地連結您的登入。",
       "verification_code_info": "請將此號碼保密。它確保您的登入是安全的且對您來說是唯一的。",
       "expiration": "驗證碼將在{minutes}:{seconds}分鐘後過期"
+    },
+    "errors": {
+      "max_attempts": "已達到最大登入嘗試次數。請稍後再試。",
+      "failed": "登入失敗。請重試。",
+      "timeout": "登入請求超時。請檢查您的連接並重試。",
+      "init_failed": "無法初始化登入。請檢查您的連接。"
     }
   },
   "more": {
@@ -498,6 +505,22 @@
       },
       "docs": {
         "title": "创作者文档"
+      }
+    },
+    "connection": {
+      "offline": {
+        "tooltip": "无网络连接",
+        "title": "无连接",
+        "message": "您当前处于离线状态。在您重新连接到互联网之前，某些功能可能无法使用。",
+        "retry": "重试连接"
+      },
+      "slow": {
+        "tooltip": "检测到慢速连接",
+        "message": "您的互联网连接似乎很慢。某些功能可能需要更长时间才能加载。"
+      },
+      "errors": {
+        "NO_INTERNET_CONNECTION": "无可用的互联网连接",
+        "REQUEST_TIMEOUT": "请求超时。请检查您的连接并重试。"
       }
     }
   }
