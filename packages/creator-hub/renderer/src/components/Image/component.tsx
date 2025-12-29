@@ -7,13 +7,7 @@ import './styles.css';
 /**
  * Image component that shows a fallback when the primary source fails to load
  */
-export function Image({
-  src,
-  fallbackSrc,
-  alt,
-  className,
-  ...props
-}: Props) {
+export function Image({ src, fallbackSrc, alt, className, ...props }: Props) {
   const [imgSrc, setImgSrc] = useState(src);
   const [hasError, setHasError] = useState(false);
 
