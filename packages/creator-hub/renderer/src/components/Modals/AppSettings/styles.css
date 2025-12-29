@@ -3,6 +3,10 @@
   padding: 0 !important;
 }
 
+.MuiPaper-root:has(.AppSettingsModal) {
+  max-width: 600px;
+}
+
 .AppSettingsModal.MuiBox-root {
   padding: 0 !important;
 }
