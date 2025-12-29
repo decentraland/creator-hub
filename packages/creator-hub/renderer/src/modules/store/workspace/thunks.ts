@@ -105,7 +105,6 @@ export const runProject = createAsyncThunk(
             return workspace.getOutdatedPackages(project.path);
           })();
     } catch (error) {
-      // If checking for outdated packages fails (e.g., timeout), continue with empty updates
       console.warn(
         'Failed to check for outdated packages, continuing without update check:',
         error,

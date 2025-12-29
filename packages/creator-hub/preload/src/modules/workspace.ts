@@ -95,10 +95,9 @@ export function initializeWorkspace(services: Services) {
 
   async function getOutdatedPackages(
     _path: string,
-    timeoutMs: number = 30000,
+    timeoutMs: number = 5_000,
   ): Promise<DependencyState> {
     try {
-      // Add timeout to prevent hanging when offline
       const outdatedPromise = npm.getOutdatedDeps(_path, PACKAGES_LIST);
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => reject(new Error('getOutdatedPackages timeout')), timeoutMs);
@@ -107,7 +106,6 @@ export function initializeWorkspace(services: Services) {
       const outdated = await Promise.race([outdatedPromise, timeoutPromise]);
       return outdated as DependencyState;
     } catch (error: any) {
-      // If timeout or error, return empty dependency state instead of failing
       console.warn('Failed to get outdated packages:', error?.message);
       return {} as DependencyState;
     }
@@ -226,7 +224,7 @@ export function initializeWorkspace(services: Services) {
    */
   async function getTemplates(): Promise<Template[]> {
     try {
-      const response = await fetch('https://studios.decentraland.org/api/get/resources');
+      const response = await fetch('https://studios.decentraland.org/api/get/resources', {}, 5000);
       const templates: Template[] = (await response.json()) as Template[];
       return templates.filter($ => $.scene_type?.includes('Scene template'));
     } catch (e) {

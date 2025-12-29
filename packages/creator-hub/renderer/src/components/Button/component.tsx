@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import cx from 'classnames';
-import { Button as DclButton, ButtonGroup as DclButtonGroup } from 'decentraland-ui2';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import { Button as DclButton, ButtonGroup as DclButtonGroup } from 'decentraland-ui2';
 
 import { Popper } from '../Popper';
 
@@ -42,6 +42,7 @@ export function ButtonGroup({ extra, ...props }: GroupProps) {
           className="extra-button"
           color={props.color}
           size="small"
+          disabled={props.disabled}
           onClick={handleToggle}
         >
           <ArrowDropDownIcon />

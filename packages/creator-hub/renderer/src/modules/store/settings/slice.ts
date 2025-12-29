@@ -136,7 +136,14 @@ export const checkForUpdates = createAsyncThunk(
         setTimeout(() => reject(new UpdateError('CHECK_TIMEOUT')), 5000); // 5 second timeout
       });
 
-      const { updateAvailable, version } = await Promise.race([checkPromise, timeoutPromise]);
+      const result = await Promise.race([checkPromise, timeoutPromise]);
+
+      // if result is null/undefined or version couldn't be determined, treat as failed check
+      if (!result || result.version === null) {
+        throw new UpdateError('CHECK_FAILED');
+      }
+
+      const { updateAvailable, version } = result;
       const lastDownloadedVersion = getState().settings.downloadingUpdate.version;
       dispatch(
         actions.setUpdateInfo({
