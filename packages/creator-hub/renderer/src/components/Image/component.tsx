@@ -10,16 +10,19 @@ import './styles.css';
 export function Image({ src, fallbackSrc, alt, className, ...props }: Props) {
   const [imgSrc, setImgSrc] = useState(src);
   const [hasError, setHasError] = useState(false);
+  const [showPlaceholder, setShowPlaceholder] = useState(false);
 
   const handleError = useCallback(() => {
     if (!hasError && fallbackSrc) {
       setHasError(true);
       setImgSrc(fallbackSrc);
+    } else {
+      setShowPlaceholder(true);
     }
   }, [hasError, fallbackSrc]);
 
-  // show placeholder if sources failed & no fallback...
-  if (hasError && imgSrc === fallbackSrc) {
+  // show placeholder if both sources failed
+  if (showPlaceholder) {
     return (
       <div className={`image-fallback-placeholder ${className || ''}`}>
         <div className="placeholder-content">

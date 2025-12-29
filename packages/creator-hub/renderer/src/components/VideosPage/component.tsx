@@ -1,13 +1,15 @@
 import { useNavigate } from 'react-router-dom';
+import { Typography } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
+
 import { misc } from '#preload';
 
 import { Container } from '../Container';
 import { Navbar, NavbarItem } from '../Navbar';
 import { Image } from '../Image';
-import './styles.css';
 import { Title } from '../Title';
-import { Typography } from 'decentraland-ui2';
+
+import './styles.css';
 
 function Playlist(props: { list: string; videos: { id: string; title: string }[]; title: string }) {
   return (
