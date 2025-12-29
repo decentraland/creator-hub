@@ -6,6 +6,25 @@ import { t } from '../translation/utils';
 import { createAsyncThunk } from '../thunk';
 import type { Status } from '/shared/types/async';
 import type { ReleaseNotes } from '/shared/types/settings';
+import { ErrorBase } from '/shared/types/error';
+
+export type UpdateErrorName = 'CHECK_TIMEOUT' | 'CHECK_FAILED';
+
+export class UpdateError extends ErrorBase<UpdateErrorName> {
+  constructor(
+    public name: UpdateErrorName,
+    public error?: Error,
+  ) {
+    super(name, error?.message || `Update error: ${name}`);
+  }
+}
+
+export const isUpdateError = (
+  error: unknown,
+  type: UpdateErrorName | UpdateErrorName[] | '*',
+): error is UpdateError =>
+  error instanceof UpdateError &&
+  (Array.isArray(type) ? type.includes(error.name) : type === '*' || error.name === type);
 
 export type UpdateStatus = {
   lastDownloadedVersion: string | null;
@@ -118,9 +137,20 @@ export const checkForUpdates = createAsyncThunk(
   'settings/checkForUpdates',
   async ({ autoDownload = false }: { autoDownload?: boolean }, { dispatch, getState }) => {
     try {
-      const { updateAvailable, version } = await settingsPreload.checkForUpdates({
-        autoDownload,
+      // add timeout to prevent hanging
+      const checkPromise = settingsPreload.checkForUpdates({ autoDownload });
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new UpdateError('CHECK_TIMEOUT')), 5000); // 5 second timeout
       });
+
+      const result = await Promise.race([checkPromise, timeoutPromise]);
+
+      // if result is null/undefined or version couldn't be determined, treat as failed check
+      if (!result || result.version === null) {
+        throw new UpdateError('CHECK_FAILED');
+      }
+
+      const { updateAvailable, version } = result;
       const lastDownloadedVersion = getState().settings.downloadingUpdate.version;
       dispatch(
         actions.setUpdateInfo({
@@ -130,17 +160,32 @@ export const checkForUpdates = createAsyncThunk(
         }),
       );
 
-      if (updateAvailable && version) {
-        const releaseNotes = await settingsPreload.getReleaseNotes(version);
-        if (releaseNotes) {
-          dispatch(actions.setReleaseNotes(releaseNotes));
+      if (updateAvailable) {
+        if (version) {
+          const releaseNotes = await settingsPreload.getReleaseNotes(version);
+          if (releaseNotes) {
+            dispatch(actions.setReleaseNotes(releaseNotes));
+          }
         }
+      } else {
+        dispatch(
+          snackbarActions.pushSnackbar({
+            id: 'check-updates-success',
+            message: t('modal.app_settings.version.up_to_date'),
+            severity: 'success',
+            type: 'generic',
+          }),
+        );
       }
-    } catch (error) {
+    } catch (error: any) {
+      const errorMessage = isUpdateError(error, 'CHECK_TIMEOUT')
+        ? t('modal.app_settings.update.timeout')
+        : t('modal.app_settings.update.error');
+
       dispatch(
         snackbarActions.pushSnackbar({
           id: 'check-updates-error',
-          message: t('modal.app_settings.update.error'),
+          message: errorMessage,
           severity: 'error',
           type: 'generic',
         }),
