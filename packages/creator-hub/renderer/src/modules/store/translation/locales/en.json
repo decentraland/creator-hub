@@ -516,7 +516,8 @@
       "tooltip": "No internet connection",
       "title": "No Connection",
       "message": "You are currently offline. Some features may not be available until you reconnect to the internet.",
-      "retry": "Retry Connection"
+      "retry": "Retry Connection",
+      "checking": "Checking..."
     },
     "slow": {
       "tooltip": "Slow connection detected",

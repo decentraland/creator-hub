@@ -515,7 +515,8 @@
         "tooltip": "Sin conexión a internet",
         "title": "Sin Conexión",
         "message": "Actualmente estás sin conexión. Algunas funciones pueden no estar disponibles hasta que te reconectes a internet.",
-        "retry": "Reintentar Conexión"
+        "retry": "Reintentar Conexión",
+        "checking": "Verificando..."
       },
       "slow": {
         "tooltip": "Conexión lenta detectada",
