@@ -23,16 +23,18 @@ const AboutTab: React.FC<AboutTabProps> = ({ version, onViewChangelog }) => {
           >
             {t('modal.app_settings.about.title')}
           </Typography>
-          <Box className="AboutVersionRow">
-            <Typography variant="body2">{version ? `v${version}` : ''}</Typography>
-            <Link
-              component="button"
-              onClick={onViewChangelog}
-              className="AboutChangelogLink"
-            >
-              {t('modal.app_settings.about.view_changelog')}
-            </Link>
-          </Box>
+          {version && (
+            <Box className="AboutVersionRow">
+              <Typography variant="body2">{`v${version}`}</Typography>
+              <Link
+                component="button"
+                onClick={onViewChangelog}
+                className="AboutChangelogLink"
+              >
+                {t('modal.app_settings.about.view_changelog')}
+              </Link>
+            </Box>
+          )}
         </Box>
       </Box>
       <Box className="AboutUpdateSection">

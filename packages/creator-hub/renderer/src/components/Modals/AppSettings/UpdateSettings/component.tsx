@@ -45,7 +45,9 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
         updateInfo.version
       ) {
         const notes = await settingsPreload.getReleaseNotes(updateInfo.version);
-        setReleaseNotes(notes ?? null);
+        if (notes) {
+          setReleaseNotes(notes);
+        }
       }
     };
 

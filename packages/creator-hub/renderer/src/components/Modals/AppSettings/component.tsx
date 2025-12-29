@@ -92,8 +92,8 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
   }, [settings, handleUpdateSettings, validateScenesPathField]);
 
   const handleViewChangelog = useCallback(() => {
-    const releaseUrl = version ? `${GITHUB_RELEASES_URL}/tag/${version}` : GITHUB_RELEASES_URL;
-    misc.openExternal(releaseUrl);
+    if (!version) return;
+    misc.openExternal(`${GITHUB_RELEASES_URL}/${version}`);
   }, [version]);
 
   const handleSetDefaultEditor = useCallback(

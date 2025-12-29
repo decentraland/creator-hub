@@ -249,7 +249,7 @@
       "current": "Actual"
     },
     "app_settings": {
-      "title": "Configuración de la aplicación",
+      "title": "Preferencias de la aplicación",
       "tabs": {
         "scenes": {
           "label": "ESCENAS",
