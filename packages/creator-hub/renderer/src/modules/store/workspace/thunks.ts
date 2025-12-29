@@ -95,12 +95,20 @@ export const runProject = createAsyncThunk(
     // or because the user deleted it while the app was running.
     // In any case, we have to "npm install" & "npm outdated"
     const hasNodeModules = await workspace.hasNodeModules(project.path);
-    const dependencyAvailableUpdates = hasNodeModules
-      ? await workspace.getOutdatedPackages(project.path)
-      : await (async () => {
-          await dispatch(installProject({ path: project.path })).unwrap();
-          return workspace.getOutdatedPackages(project.path);
-        })();
+    let dependencyAvailableUpdates: DependencyState = {};
+
+    try {
+      dependencyAvailableUpdates = hasNodeModules
+        ? await workspace.getOutdatedPackages(project.path)
+        : await (async () => {
+            await dispatch(installProject({ path: project.path })).unwrap();
+            return workspace.getOutdatedPackages(project.path);
+          })();
+    } catch (error) {
+      // If checking for outdated packages fails (e.g., timeout), continue with empty updates
+      console.warn('Failed to check for outdated packages, continuing without update check:', error);
+      dependencyAvailableUpdates = {};
+    }
 
     if (shouldUpdateDependencies(strategy, dependencyAvailableUpdates)) {
       await dispatch(updatePackages({ ...project, dependencyAvailableUpdates })).unwrap();

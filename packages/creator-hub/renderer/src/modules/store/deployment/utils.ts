@@ -7,6 +7,7 @@ import type { AuthIdentity } from 'decentraland-crypto-fetch';
 
 import { minutes, seconds } from '/shared/time';
 import { delay } from '/shared/utils';
+import { fetch } from '/shared/fetch';
 
 import { config } from '/@/config';
 import { t } from '/@/modules/store/translation/utils';

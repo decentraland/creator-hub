@@ -11,6 +11,7 @@ import { PACKAGES_LIST } from '/shared/types/pkg';
 import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import type { GetProjectsOpts, Template, Workspace } from '/shared/types/workspace';
 import { FileSystemStorage } from '/shared/types/storage';
+import { fetch } from '/shared/fetch';
 
 import type { Services } from '../services';
 
@@ -92,9 +93,24 @@ export function initializeWorkspace(services: Services) {
     }
   }
 
-  async function getOutdatedPackages(_path: string): Promise<DependencyState> {
-    const outdated = await npm.getOutdatedDeps(_path, PACKAGES_LIST);
-    return outdated as DependencyState;
+  async function getOutdatedPackages(
+    _path: string,
+    timeoutMs: number = 30000,
+  ): Promise<DependencyState> {
+    try {
+      // Add timeout to prevent hanging when offline
+      const outdatedPromise = npm.getOutdatedDeps(_path, PACKAGES_LIST);
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('getOutdatedPackages timeout')), timeoutMs);
+      });
+
+      const outdated = await Promise.race([outdatedPromise, timeoutPromise]);
+      return outdated as DependencyState;
+    } catch (error: any) {
+      // If timeout or error, return empty dependency state instead of failing
+      console.warn('Failed to get outdated packages:', error?.message);
+      return {} as DependencyState;
+    }
   }
 
   async function getProject({

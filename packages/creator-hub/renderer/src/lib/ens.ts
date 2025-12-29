@@ -1,4 +1,5 @@
 import { config } from '/@/config';
+import { fetch } from '/shared/fetch';
 
 const BATCH_SIZE = 1000;
 

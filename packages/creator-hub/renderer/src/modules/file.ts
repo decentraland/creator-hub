@@ -1,3 +1,5 @@
+import { fetch } from '/shared/fetch';
+
 const MAX_NAME_LENGTH = 30;
 
 export function truncateFileName(name: string) {
