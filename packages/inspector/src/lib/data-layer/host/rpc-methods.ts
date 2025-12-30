@@ -24,7 +24,11 @@ import { createStream } from './stream';
 const INSPECTOR_PREFERENCES_PATH = 'inspector-preferences.json';
 
 function getIgnoredUndoRedoComponents() {
-  return [EditorComponentNames.Selection, EditorComponentNames.TransformConfig];
+  return [
+    EditorComponentNames.Selection,
+    EditorComponentNames.TransformConfig,
+    EditorComponentNames.InspectorUIState,
+  ];
 }
 
 /**
