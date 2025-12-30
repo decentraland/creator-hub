@@ -781,6 +781,9 @@ export function createActionsSystem(
     if (collider !== undefined) {
       if (gltf) {
         gltf.invisibleMeshesCollisionMask = collider;
+        if (collider === 0) {
+          gltf.visibleMeshesCollisionMask = 0;
+        }
       } else if (meshCollider) {
         meshCollider.collisionMask = collider;
       }
