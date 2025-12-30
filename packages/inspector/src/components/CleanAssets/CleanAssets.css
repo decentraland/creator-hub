@@ -204,12 +204,20 @@
 }
 
 .CleanAssets .RightPanel .FileList .FileItem .checkbox input {
-  border: 2px solid var(--base-11);
+  border: 1px solid var(--base-11);
   background-color: transparent;
 }
 
 .CleanAssets .RightPanel .FileList .FileItem .checkbox input:checked {
   border-color: var(--text);
+}
+
+.CleanAssets .RightPanel .FileList .FileItem.SelectAll {
+  background-color: var(--base-17);
+  border-bottom: 1px solid var(--base-14);
+  position: sticky;
+  top: -1px;
+  z-index: 1;
 }
 
 /* Footer */
