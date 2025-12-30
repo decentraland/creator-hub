@@ -60,6 +60,7 @@ import { LightsModifyAction } from './LightsModifyAction';
 import { ChangeCameraAction } from './ChangeCameraAction';
 import { ChangeTextAction } from './ChangeTextAction';
 import { ChangeCollisionsAction } from './ChangeCollisionsAction';
+import { ChangeSkyboxAction } from './ChangeSkyboxAction';
 import { SlideTextureAction } from './SlideTextureAction';
 import type { Props } from './types';
 
@@ -123,6 +124,8 @@ const ActionMapOption: Record<string, string> = {
   [ActionType.FREEZE_PLAYER]: 'Freeze Player',
   [ActionType.UNFREEZE_PLAYER]: 'Unfreeze Player',
   [ActionType.CHANGE_COLLISIONS]: 'Change Collisions',
+  [ActionType.CHANGE_SKYBOX]: 'Change Skybox',
+  [ActionType.RESET_SKYBOX]: 'Reset Skybox',
 };
 
 export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) => {
@@ -1075,6 +1078,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       case ActionType.UNFREEZE_PLAYER:
       case ActionType.MOVE_PLAYER_HERE:
       case ActionType.PLAYER_FACE_ITEM:
+      case ActionType.RESET_SKYBOX:
         return null;
       case ActionType.LIGHTS_MODIFY: {
         return (
@@ -1116,6 +1120,19 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
               handleModifyAction(idx, {
                 ...actions[idx],
                 jsonPayload: getJson<ActionType.CHANGE_COLLISIONS>(value),
+              })
+            }
+          />
+        );
+      }
+      case ActionType.CHANGE_SKYBOX: {
+        return (
+          <ChangeSkyboxAction
+            value={getPartialPayload<ActionType.CHANGE_SKYBOX>(action)}
+            onUpdate={value =>
+              handleModifyAction(idx, {
+                ...actions[idx],
+                jsonPayload: getJson<ActionType.CHANGE_SKYBOX>(value),
               })
             }
           />

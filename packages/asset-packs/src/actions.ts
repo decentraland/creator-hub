@@ -107,6 +107,7 @@ export function createActionsSystem(
     VirtualCamera,
     TextShape,
     InputModifier,
+    SkyboxTime,
   } = getExplorerComponents(engine);
   const { Actions, States, Counter, Triggers, Rewards } = getComponents(engine);
 
@@ -379,6 +380,14 @@ export function createActionsSystem(
             handleChangeCollisions(entity, getPayload<ActionType.CHANGE_COLLISIONS>(action));
             break;
           }
+          case ActionType.CHANGE_SKYBOX: {
+            handleChangeSkybox(getPayload<ActionType.CHANGE_SKYBOX>(action));
+            break;
+          }
+          case ActionType.RESET_SKYBOX: {
+            handleResetSkybox();
+            break;
+          }
           default:
             break;
         }
@@ -486,6 +495,22 @@ export function createActionsSystem(
       } else if (invisibleCollisions !== undefined) {
         meshCollider.collisionMask = invisibleCollisions;
       }
+    }
+  }
+
+  // CHANGE_SKYBOX
+  function handleChangeSkybox(payload: ActionPayload<ActionType.CHANGE_SKYBOX>) {
+    const { time, direction } = payload;
+    SkyboxTime.createOrReplace(engine.RootEntity, {
+      fixedTime: time,
+      transitionMode: direction,
+    });
+  }
+
+  // RESET_SKYBOX
+  function handleResetSkybox() {
+    if (SkyboxTime.has(engine.RootEntity)) {
+      SkyboxTime.deleteFrom(engine.RootEntity);
     }
   }
 

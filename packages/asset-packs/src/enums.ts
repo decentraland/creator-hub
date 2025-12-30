@@ -99,6 +99,8 @@ export enum ActionType {
   FREEZE_PLAYER = 'freeze_player',
   UNFREEZE_PLAYER = 'unfreeze_player',
   CHANGE_COLLISIONS = 'change_collisions',
+  CHANGE_SKYBOX = 'change_skybox',
+  RESET_SKYBOX = 'reset_skybox',
 }
 
 export enum TriggerType {

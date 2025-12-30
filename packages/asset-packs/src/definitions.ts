@@ -32,6 +32,7 @@ import type {
   PBUiInputResult,
   PBUiCanvasInformation,
   InputModifierComponentDefinitionExtended,
+  PBSkyboxTime,
 } from '@dcl/ecs';
 import { Schemas } from '@dcl/ecs';
 import { addActionType } from './action-types';
@@ -253,6 +254,11 @@ export const ActionSchemas = {
     visibleCollisions: Schemas.Optional(Schemas.Int),
     invisibleCollisions: Schemas.Optional(Schemas.Int),
   }),
+  [ActionType.CHANGE_SKYBOX]: Schemas.Map({
+    time: Schemas.Int,
+    direction: Schemas.Optional(Schemas.Int),
+  }),
+  [ActionType.RESET_SKYBOX]: Schemas.Map({}),
 };
 
 export type ActionPayload<T extends ActionType = any> = T extends keyof typeof ActionSchemas
@@ -505,6 +511,7 @@ export type EngineComponents = {
   NetworkEntity: typeof NetworkEntity;
   SyncComponents: typeof SyncComponents;
   InputModifier: InputModifierComponentDefinitionExtended;
+  SkyboxTime: LastWriteWinElementSetComponentDefinition<PBSkyboxTime>;
 };
 
 export function initComponents(engine: IEngine) {
