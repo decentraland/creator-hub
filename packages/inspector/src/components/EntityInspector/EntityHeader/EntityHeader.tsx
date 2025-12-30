@@ -168,6 +168,10 @@ export default React.memo(
           description: 'Add a point or spot light',
           link: 'https://docs.decentraland.org/creator/development-guide/sdk7/lights/',
         }),
+        createOption(sdk.components.VirtualCamera, 'Virtual Camera', {
+          description:
+            'Add camera behavior settings to this entity. Configure default transition by time or speed.',
+        }),
         createOption(sdk.components.MeshCollider, 'Mesh Collider', {
           description:
             'MeshCollider defines the collision properties of an item, based on its invisible collision geometry. Collisions serve to make an item clickable or to block the player from walking through an item',

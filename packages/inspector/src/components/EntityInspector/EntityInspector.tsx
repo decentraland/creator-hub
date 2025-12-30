@@ -41,6 +41,7 @@ import { LightSourceInspector } from './LightSourceInspector';
 import { GltfNodeModifiersInspector } from './GltfNodeModifiersInspector';
 import { ScriptInspector } from './ScriptInspector';
 import { TagsInspector } from './TagsInspector';
+import { VirtualCameraInspector } from './VirtualCameraInspector';
 
 import './EntityInspector.css';
 
@@ -187,6 +188,10 @@ const SingleEntityInspector = withSdk<{ entity: Entity | null }>(({ sdk, entity 
         name: sdk.components.LightSource.componentName,
         component: LightSourceInspector,
         multiEntity: true,
+      },
+      {
+        name: sdk.components.VirtualCamera.componentName,
+        component: VirtualCameraInspector,
       },
       {
         name: sdk.components.GltfNodeModifiers.componentName,
