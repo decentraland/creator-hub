@@ -99,6 +99,7 @@ const ActionMapOption: Record<string, string> = {
   [ActionType.FOLLOW_PLAYER]: 'Follow Player',
   [ActionType.STOP_FOLLOWING_PLAYER]: 'Stop Following Player',
   [ActionType.MOVE_PLAYER_HERE]: 'Move Player Here',
+  [ActionType.PLAYER_FACE_ITEM]: 'Player Face Item',
   [ActionType.DAMAGE]: 'Damage',
   [ActionType.PLACE_ON_PLAYER]: 'Place On Player',
   [ActionType.ROTATE_AS_PLAYER]: 'Rotate As Player',
@@ -118,6 +119,8 @@ const ActionMapOption: Record<string, string> = {
   [ActionType.CHANGE_TEXT]: 'Change Text',
   [ActionType.STOP_TWEEN]: 'Stop Tween',
   [ActionType.SLIDE_TEXTURE]: 'Slide Texture',
+  [ActionType.FREEZE_PLAYER]: 'Freeze Player',
+  [ActionType.UNFREEZE_PLAYER]: 'Unfreeze Player',
 };
 
 export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) => {
@@ -256,6 +259,10 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
         case ActionType.LIGHTS_ON:
         case ActionType.LIGHTS_OFF:
         case ActionType.STOP_TWEEN:
+        case ActionType.FREEZE_PLAYER:
+        case ActionType.UNFREEZE_PLAYER:
+        case ActionType.MOVE_PLAYER_HERE:
+        case ActionType.PLAYER_FACE_ITEM:
           return true;
         case ActionType.LIGHTS_MODIFY: {
           const payload = getPartialPayload<ActionType.LIGHTS_MODIFY>(action);
@@ -1058,6 +1065,10 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       case ActionType.LIGHTS_ON:
       case ActionType.LIGHTS_OFF:
       case ActionType.STOP_TWEEN:
+      case ActionType.FREEZE_PLAYER:
+      case ActionType.UNFREEZE_PLAYER:
+      case ActionType.MOVE_PLAYER_HERE:
+      case ActionType.PLAYER_FACE_ITEM:
         return null;
       case ActionType.LIGHTS_MODIFY: {
         return (

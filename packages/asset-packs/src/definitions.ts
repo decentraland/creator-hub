@@ -31,6 +31,7 @@ import type {
   PBUiInput,
   PBUiInputResult,
   PBUiCanvasInformation,
+  InputModifierComponentDefinitionExtended,
 } from '@dcl/ecs';
 import { Schemas } from '@dcl/ecs';
 import { addActionType } from './action-types';
@@ -179,6 +180,7 @@ export const ActionSchemas = {
     hits: Schemas.Optional(Schemas.Int),
   }),
   [ActionType.MOVE_PLAYER_HERE]: Schemas.Map({}),
+  [ActionType.PLAYER_FACE_ITEM]: Schemas.Map({}),
   [ActionType.PLACE_ON_PLAYER]: Schemas.Map({}),
   [ActionType.ROTATE_AS_PLAYER]: Schemas.Map({}),
   [ActionType.PLACE_ON_CAMERA]: Schemas.Map({}),
@@ -244,6 +246,8 @@ export const ActionSchemas = {
     ),
     duration: Schemas.Optional(Schemas.Float),
   }),
+  [ActionType.FREEZE_PLAYER]: Schemas.Map({}),
+  [ActionType.UNFREEZE_PLAYER]: Schemas.Map({}),
 };
 
 export type ActionPayload<T extends ActionType = any> = T extends keyof typeof ActionSchemas
@@ -495,6 +499,7 @@ export type EngineComponents = {
   PointerEvents: LastWriteWinElementSetComponentDefinition<PBPointerEvents>;
   NetworkEntity: typeof NetworkEntity;
   SyncComponents: typeof SyncComponents;
+  InputModifier: InputModifierComponentDefinitionExtended;
 };
 
 export function initComponents(engine: IEngine) {

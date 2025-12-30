@@ -106,6 +106,7 @@ export function createActionsSystem(
     MainCamera,
     VirtualCamera,
     TextShape,
+    InputModifier,
   } = getExplorerComponents(engine);
   const { Actions, States, Counter, Triggers, Rewards } = getComponents(engine);
 
@@ -290,6 +291,10 @@ export function createActionsSystem(
             handleMovePlayerHere(entity, getPayload<ActionType.MOVE_PLAYER_HERE>(action));
             break;
           }
+          case ActionType.PLAYER_FACE_ITEM: {
+            handlePlayerFaceItem(entity, getPayload<ActionType.PLAYER_FACE_ITEM>(action));
+            break;
+          }
           case ActionType.FOLLOW_PLAYER: {
             handleFollowPlayer(entity, getPayload<ActionType.FOLLOW_PLAYER>(action));
             break;
@@ -362,6 +367,14 @@ export function createActionsSystem(
             handleChangeText(entity, getPayload<ActionType.CHANGE_TEXT>(action));
             break;
           }
+          case ActionType.FREEZE_PLAYER: {
+            handleFreezePlayer();
+            break;
+          }
+          case ActionType.UNFREEZE_PLAYER: {
+            handleUnfreezePlayer();
+            break;
+          }
           default:
             break;
         }
@@ -424,6 +437,24 @@ export function createActionsSystem(
     text.text = payload.text;
     if (payload.fontSize !== undefined) text.fontSize = payload.fontSize;
     if (payload.color) text.textColor = payload.color;
+  }
+
+  // FREEZE_PLAYER
+  function handleFreezePlayer() {
+    InputModifier.createOrReplace(engine.PlayerEntity, {
+      mode: InputModifier.Mode.Standard({
+        disableAll: true,
+      }),
+    });
+  }
+
+  // UNFREEZE_PLAYER
+  function handleUnfreezePlayer() {
+    InputModifier.createOrReplace(engine.PlayerEntity, {
+      mode: InputModifier.Mode.Standard({
+        disableAll: false,
+      }),
+    });
   }
 
   // PLAY_ANIMATION
@@ -1141,6 +1172,19 @@ export function createActionsSystem(
 
     const triggerEvents = getTriggerEvents(entity);
     triggerEvents.emit(TriggerType.ON_PLAYER_SPAWN);
+  }
+
+  // PLAYER_FACE_ITEM
+  function handlePlayerFaceItem(
+    entity: Entity,
+    _payload: ActionPayload<ActionType.PLAYER_FACE_ITEM>,
+  ) {
+    const itemPosition = getWorldPosition(entity);
+    const currentPlayerPosition = getPlayerPosition();
+    void movePlayerTo({
+      newRelativePosition: currentPlayerPosition,
+      avatarTarget: itemPosition,
+    });
   }
 
   // PLACE_ON_PLAYER
