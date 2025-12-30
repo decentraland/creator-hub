@@ -249,6 +249,10 @@ export const ActionSchemas = {
   }),
   [ActionType.FREEZE_PLAYER]: Schemas.Map({}),
   [ActionType.UNFREEZE_PLAYER]: Schemas.Map({}),
+  [ActionType.CHANGE_COLLISIONS]: Schemas.Map({
+    visibleCollisions: Schemas.Optional(Schemas.Int),
+    invisibleCollisions: Schemas.Optional(Schemas.Int),
+  }),
 };
 
 export type ActionPayload<T extends ActionType = any> = T extends keyof typeof ActionSchemas

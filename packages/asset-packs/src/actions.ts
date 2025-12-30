@@ -375,6 +375,10 @@ export function createActionsSystem(
             handleUnfreezePlayer();
             break;
           }
+          case ActionType.CHANGE_COLLISIONS: {
+            handleChangeCollisions(entity, getPayload<ActionType.CHANGE_COLLISIONS>(action));
+            break;
+          }
           default:
             break;
         }
@@ -455,6 +459,34 @@ export function createActionsSystem(
         disableAll: false,
       }),
     });
+  }
+
+  // CHANGE_COLLISIONS
+  function handleChangeCollisions(
+    entity: Entity,
+    payload: ActionPayload<ActionType.CHANGE_COLLISIONS>,
+  ) {
+    const { visibleCollisions, invisibleCollisions } = payload;
+    const gltf = GltfContainer.getMutableOrNull(entity);
+    const meshCollider = MeshCollider.getMutableOrNull(entity);
+
+    if (gltf) {
+      if (visibleCollisions !== undefined) {
+        gltf.visibleMeshesCollisionMask = visibleCollisions;
+      }
+      if (invisibleCollisions !== undefined) {
+        gltf.invisibleMeshesCollisionMask = invisibleCollisions;
+      }
+    }
+
+    if (meshCollider) {
+      // For MeshCollider, use visibleCollisions if provided, otherwise invisibleCollisions
+      if (visibleCollisions !== undefined) {
+        meshCollider.collisionMask = visibleCollisions;
+      } else if (invisibleCollisions !== undefined) {
+        meshCollider.collisionMask = invisibleCollisions;
+      }
+    }
   }
 
   // PLAY_ANIMATION

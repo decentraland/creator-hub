@@ -98,6 +98,7 @@ export enum ActionType {
   SLIDE_TEXTURE = 'slide_texture',
   FREEZE_PLAYER = 'freeze_player',
   UNFREEZE_PLAYER = 'unfreeze_player',
+  CHANGE_COLLISIONS = 'change_collisions',
 }
 
 export enum TriggerType {

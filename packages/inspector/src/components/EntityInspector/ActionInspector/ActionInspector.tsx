@@ -59,6 +59,7 @@ import { getDefaultPayload, getPartialPayload, isStates } from './utils';
 import { LightsModifyAction } from './LightsModifyAction';
 import { ChangeCameraAction } from './ChangeCameraAction';
 import { ChangeTextAction } from './ChangeTextAction';
+import { ChangeCollisionsAction } from './ChangeCollisionsAction';
 import { SlideTextureAction } from './SlideTextureAction';
 import type { Props } from './types';
 
@@ -121,6 +122,7 @@ const ActionMapOption: Record<string, string> = {
   [ActionType.SLIDE_TEXTURE]: 'Slide Texture',
   [ActionType.FREEZE_PLAYER]: 'Freeze Player',
   [ActionType.UNFREEZE_PLAYER]: 'Unfreeze Player',
+  [ActionType.CHANGE_COLLISIONS]: 'Change Collisions',
 };
 
 export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) => {
@@ -279,6 +281,10 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
         case ActionType.SLIDE_TEXTURE: {
           const payload = getPartialPayload<ActionType.SLIDE_TEXTURE>(action);
           return !!payload && typeof payload.speed === 'number';
+        }
+        case ActionType.CHANGE_COLLISIONS: {
+          const payload = getPartialPayload<ActionType.CHANGE_COLLISIONS>(action);
+          return !!payload;
         }
         default: {
           try {
@@ -1099,6 +1105,19 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
           <SlideTextureAction
             value={getPartialPayload<ActionType.SLIDE_TEXTURE>(action)}
             onUpdate={value => handleSlideTexture(value, idx)}
+          />
+        );
+      }
+      case ActionType.CHANGE_COLLISIONS: {
+        return (
+          <ChangeCollisionsAction
+            value={getPartialPayload<ActionType.CHANGE_COLLISIONS>(action)}
+            onUpdate={value =>
+              handleModifyAction(idx, {
+                ...actions[idx],
+                jsonPayload: getJson<ActionType.CHANGE_COLLISIONS>(value),
+              })
+            }
           />
         );
       }
