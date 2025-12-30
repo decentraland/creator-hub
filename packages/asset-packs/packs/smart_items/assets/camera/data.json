@@ -1,0 +1,17 @@
+{
+  "id": "ad646149-6103-4c86-aa08-38f8b94cb41f",
+  "name": "Virrual Camera",
+  "category": "Media",
+  "tags": [
+    "camera",
+    "virtual camera",
+    "view",
+    "perspective",
+    "cinematic",
+    "viewpoint",
+    "angle",
+    "shot"
+  ],
+  "description": "A virtual camera that can be used to change the player's view. Use the Change Camera action to switch to this camera.",
+  "author": "Decentraland Foundation"
+}

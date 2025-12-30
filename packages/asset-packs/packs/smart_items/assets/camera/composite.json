@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/camera.glb",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "0": {
+          "json": {
+            "value": "Camera"
+          }
+        }
+      }
+    },
+    {
+      "name": "core::VisibilityComponent",
+      "data": {
+        "0": {
+          "json": {
+            "visible": false
+          }
+        }
+      }
+    },
+    {
+      "name": "core::VirtualCamera",
+      "data": {
+        "0": {
+          "json": {}
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Actions",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "name": "Change Camera",
+                "type": "change_camera",
+                "jsonPayload": "{ \"virtualCameraEntity\": 0 }"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}
