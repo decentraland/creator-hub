@@ -178,6 +178,13 @@ const CleanAssets: React.FC<Props> = ({
           ) : (
             <>
               <div className="stats">
+                <CheckboxField
+                  ref={selectAllRef}
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={handleSelectAll}
+                  className="checkbox"
+                />
                 <p className="FilesCounter">{assets.length} FILES</p>
                 <p className="TotalSize">Total size: {normalizeBytes(totalSize)}</p>
                 <p className="ReducedSize">Reduced size: {normalizeBytes(reducedSize)}</p>
@@ -190,15 +197,6 @@ const CleanAssets: React.FC<Props> = ({
                   </p>
                 ) : (
                   <>
-                    <div className="FileItem SelectAll">
-                      <CheckboxField
-                        ref={selectAllRef}
-                        type="checkbox"
-                        checked={allSelected}
-                        onChange={handleSelectAll}
-                        className="checkbox"
-                      />
-                    </div>
                     {assets.map(asset => (
                       <label
                         key={asset.path}

@@ -112,10 +112,13 @@
 .CleanAssets .RightPanel .stats {
   display: flex;
   align-items: center;
-  gap: 24px;
-  padding: 10px 24px;
+  padding: 10px 16px;
   border-radius: 100px;
   background: var(--base-17);
+}
+
+.CleanAssets .RightPanel .stats .checkbox {
+  flex-grow: 0;
 }
 
 .CleanAssets .RightPanel .stats p {
@@ -123,9 +126,11 @@
   font-size: 14px;
   font-weight: 400;
   margin: 0;
+  margin-left: 24px;
 }
 
 .CleanAssets .RightPanel .stats .FilesCounter {
+  margin-left: 8px;
   text-transform: uppercase;
   font-size: 20px;
   font-weight: 500;
@@ -175,6 +180,9 @@
 .CleanAssets .RightPanel .FileList .FileItem span {
   color: var(--base-11);
   margin: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-wrap: break-word;
 }
 
 .CleanAssets .RightPanel .FileList .FileItem.selected span {
@@ -210,14 +218,6 @@
 
 .CleanAssets .RightPanel .FileList .FileItem .checkbox input:checked {
   border-color: var(--text);
-}
-
-.CleanAssets .RightPanel .FileList .FileItem.SelectAll {
-  background-color: var(--base-17);
-  border-bottom: 1px solid var(--base-14);
-  position: sticky;
-  top: -1px;
-  z-index: 1;
 }
 
 /* Footer */
