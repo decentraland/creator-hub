@@ -1,27 +1,60 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import type { Entity } from '@dcl/ecs';
 import { ActionPayload, ActionType } from '@dcl/asset-packs';
-import { EntityField } from '../../../ui';
+import { Dropdown } from '../../../ui';
 import { withSdk } from '../../../../hoc/withSdk';
 import { Props } from './types';
 
 const ChangeCameraAction: React.FC<Props & { sdk: any }> = ({ value, onUpdate, sdk }) => {
+  const { engine } = sdk;
+  const { Name, Nodes } = sdk.components;
+  const VirtualCamera = sdk.components.VirtualCamera;
+
+  const options = useMemo(() => {
+    const cameraOptions: Array<{ label: string; value: string }> = [{ label: 'None', value: '' }];
+
+    if (VirtualCamera) {
+      const entities = engine.getEntitiesWith(VirtualCamera);
+      if (entities) {
+        for (const [entity, _component] of entities) {
+          if (
+            entity !== engine.RootEntity &&
+            entity !== engine.PlayerEntity &&
+            entity !== engine.CameraEntity
+          ) {
+            const entityName = Name.getOrNull(entity)?.value ?? entity.toString();
+            cameraOptions.push({
+              label: entityName,
+              value: entity.toString(),
+            });
+          }
+        }
+      }
+    }
+
+    return cameraOptions;
+  }, [engine, VirtualCamera, Name]);
+
   const handleChangeEntity = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const entityId = parseInt(e.target.value) as Entity;
-      onUpdate({ ...value, virtualCameraEntity: entityId || undefined });
+      const selectedValue = e.target.value;
+      const entityId = selectedValue === '' ? undefined : (parseInt(selectedValue, 10) as Entity);
+      onUpdate({ ...value, virtualCameraEntity: entityId });
     },
     [value, onUpdate],
   );
 
+  const currentValue = value.virtualCameraEntity?.toString() ?? '';
+
   return (
     <div className="ChangeCameraActionContainer">
       <div className="row">
-        <EntityField
+        <Dropdown
           label="Camera"
-          value={value.virtualCameraEntity}
+          options={options}
+          value={currentValue}
           onChange={handleChangeEntity}
-          components={sdk.components.VirtualCamera ? [sdk.components.VirtualCamera] : []}
+          placeholder="Select Camera"
         />
       </div>
     </div>
