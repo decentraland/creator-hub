@@ -49,9 +49,14 @@
             "id": "{self}",
             "value": [
               {
-                "name": "Change Camera",
+                "name": "Activate Camera",
                 "type": "change_camera",
                 "jsonPayload": "{ \"virtualCameraEntity\": 0 }"
+              },
+              {
+                "name": "Reset View",
+                "type": "change_camera",
+                "jsonPayload": "{}"
               }
             ]
           }
