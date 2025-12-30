@@ -69,6 +69,7 @@ export const ActionSchemas = {
   [ActionType.PLAY_ANIMATION]: Schemas.Map({
     animation: Schemas.String,
     loop: Schemas.Optional(Schemas.Boolean),
+    shouldReset: Schemas.Optional(Schemas.Boolean),
   }),
   [ActionType.STOP_ANIMATION]: Schemas.Map({}),
   [ActionType.SET_STATE]: Schemas.Map({ state: Schemas.String }),

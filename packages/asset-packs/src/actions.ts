@@ -473,7 +473,7 @@ export function createActionsSystem(
   }
 
   function handlePlayAnimation(entity: Entity, payload: ActionPayload<ActionType.PLAY_ANIMATION>) {
-    const { animation, loop } = payload;
+    const { animation, loop, shouldReset } = payload;
 
     const animator = Animator.getMutable(entity);
     if (!animator.states.some($ => $.clip === animation)) {
@@ -492,6 +492,9 @@ export function createActionsSystem(
       clip.playing = true;
       clip.loop = loop ?? false;
       clip.weight = normalizeAnimationWeight(clip.weight ?? 1);
+      if (shouldReset !== undefined) {
+        clip.shouldReset = shouldReset;
+      }
     } catch (e) {
       console.error('Error playing animation', e);
     }
