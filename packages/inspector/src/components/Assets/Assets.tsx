@@ -2,16 +2,23 @@ import React, { useCallback, useState, useMemo, useRef } from 'react';
 import { MdImageSearch } from 'react-icons/md';
 import { HiOutlinePlus } from 'react-icons/hi';
 import { HiOutlineRefresh as RefreshIcon } from 'react-icons/hi';
-import { IoIosFolderOpen } from 'react-icons/io';
+import { IoIosFolderOpen, IoIosUndo } from 'react-icons/io';
 import cx from 'classnames';
 import { type AssetPack, catalog, isSmart } from '../../lib/logic/catalog';
 import { getConfig } from '../../lib/logic/config';
 import { getSceneClient } from '../../lib/rpc/scene';
+import { useSnackbar } from '../../hooks/useSnackbar';
+import {
+  clearRemovedFiles,
+  selectRemovedFiles,
+  selectHasRecoverableFiles,
+} from '../../redux/clean-assets';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import {
   selectAssetToRename,
   selectStagedCustomAsset,
   getAssetCatalog,
+  getDataLayerInterface,
 } from '../../redux/data-layer';
 import { getSelectedAssetsTab, selectAssetsTab } from '../../redux/ui';
 import { AssetsTab } from '../../redux/ui/types';
@@ -41,8 +48,11 @@ function removeSmartItems(assetPack: AssetPack) {
 function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean }) {
   const dispatch = useAppDispatch();
   const tab = useAppSelector(getSelectedAssetsTab);
+  const removedAssets = useAppSelector(selectRemovedFiles);
+  const hasRecoverableFiles = useAppSelector(selectHasRecoverableFiles);
   const [showCleanAssetsModal, setShowCleanAssetsModal] = useState(false);
   const [selectedCleanAssets, setSelectedCleanAssets] = useState<Set<string>>(new Set());
+  const { pushNotification } = useSnackbar();
 
   const inputRef = useRef<InputRef>(null);
 
@@ -107,6 +117,17 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
     });
   }, []);
 
+  const handleSelectAllCleanAssets = useCallback(
+    (selectAll: boolean) => {
+      if (selectAll) {
+        setSelectedCleanAssets(new Set(cleanAssets.map(asset => asset.path)));
+      } else {
+        setSelectedCleanAssets(new Set());
+      }
+    },
+    [cleanAssets],
+  );
+
   const handleOpenInExplorer = useCallback(async () => {
     try {
       const sceneClient = getSceneClient();
@@ -119,7 +140,38 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
     }
   }, [tab]);
 
+  const handleRecoverAssets = useCallback(async () => {
+    if (removedAssets.length === 0) return;
+
+    const dataLayer = getDataLayerInterface();
+    if (!dataLayer) return;
+
+    let successCount = 0;
+    for (const file of removedAssets) {
+      try {
+        await dataLayer.saveFile({ path: file.path, content: file.content });
+        successCount++;
+      } catch (error) {
+        console.error(`Failed to recover ${file.path}:`, error);
+      }
+    }
+
+    if (successCount > 0) {
+      pushNotification(
+        'success',
+        `${successCount} ${successCount === 1 ? 'file has' : 'files have'} been successfully recovered.`,
+      );
+      dispatch(getAssetCatalog());
+    }
+
+    dispatch(clearRemovedFiles());
+  }, [removedAssets, dispatch, pushNotification]);
+
   const showCleanAssetsButton = useMemo(() => tab === AssetsTab.FileSystem, [tab]);
+  const showRecoverAssetsButton = useMemo(
+    () => tab === AssetsTab.FileSystem && hasRecoverableFiles,
+    [tab, hasRecoverableFiles],
+  );
   const showOpenInExplorerButton = useMemo(() => {
     return (
       config.dataLayerRpcParentUrl &&
@@ -184,6 +236,20 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
               position="top center"
             />
           )}
+          {showRecoverAssetsButton && (
+            <InfoTooltip
+              text="Recover assets removed"
+              trigger={
+                <IoIosUndo
+                  className="icon-item"
+                  onClick={handleRecoverAssets}
+                />
+              }
+              openOnTriggerMouseEnter={true}
+              closeOnTriggerClick={true}
+              position="top center"
+            />
+          )}
         </div>
         <div
           className="tab"
@@ -241,6 +307,7 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
         onClose={handleCloseCleanAssetsModal}
         onScan={handleScanAssets}
         onSelect={handleSelectCleanAsset}
+        onSelectAll={handleSelectAllCleanAssets}
       />
     </div>
   );
