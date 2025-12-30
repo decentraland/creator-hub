@@ -10,11 +10,7 @@ import type { InspectorPreferences } from '../../logic/preferences/types';
 import { buildNodesHierarchyIfNotExists } from './utils/migrations/build-nodes-hierarchy';
 import { removeLegacyEntityNodeComponents } from './utils/migrations/legacy-entity-node';
 import { DIRECTORY, withAssetDir } from './fs-utils';
-import {
-  dumpEngineToComposite,
-  dumpEngineToCrdtCommands,
-  generateEntityNamesType,
-} from './utils/engine-to-composite';
+import { dumpEngineToComposite, generateEntityNamesType } from './utils/engine-to-composite';
 import type { CompositeManager } from './utils/fs-composite-provider';
 import { createFsCompositeProvider } from './utils/fs-composite-provider';
 import { toSceneComponent } from './utils/component';
@@ -220,8 +216,6 @@ export class CompositeProvider implements StateProvider {
         throw new Error('Composite manager not initialized');
       }
 
-      const mainCrdt = dumpEngineToCrdtCommands(this.engine);
-      await this.fs.writeFile('main.crdt', Buffer.from(mainCrdt));
       await this.compositeManager.save(
         { src: this.compositePath, composite: this.composite! },
         'json',

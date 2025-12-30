@@ -2,7 +2,7 @@
   "versionGroups": [
     {
       "packages": ["**"],
-      "dependencies": ["@dcl/inspector"],
+      "dependencies": ["@dcl/inspector", "@dcl/asset-packs"],
       "isIgnored": true
     },
     {
