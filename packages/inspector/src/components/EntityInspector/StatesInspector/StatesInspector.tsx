@@ -1,98 +1,104 @@
-import { useCallback, useEffect, useState } from 'react';
-import { ComponentName, States } from '@dcl/asset-packs';
-import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
-import { getComponentValue, useComponentValue } from '../../../hooks/sdk/useComponentValue';
+import { useCallback } from 'react';
+import cx from 'classnames';
+import { ComponentName } from '@dcl/asset-packs';
+
 import { withSdk } from '../../../hoc/withSdk';
+import { useAllEntitiesHaveComponent } from '../../../hooks/sdk/useHasComponent';
+import { useComponentListInput } from '../../../hooks/sdk/useComponentInput';
 import { analytics, Event } from '../../../lib/logic/analytics';
 import { getAssetByModel } from '../../../lib/logic/catalog';
+import { allEqualTo } from '../../../lib/utils/array';
 import { Block } from '../../Block';
 import { Button } from '../../Button';
 import { Container } from '../../Container';
 import { TextField } from '../../ui/TextField';
+import { InfoTooltip } from '../../ui/InfoTooltip';
 import { AddButton } from '../AddButton';
 import MoreOptionsMenu from '../MoreOptionsMenu';
-import { InfoTooltip } from '../../ui/InfoTooltip';
-import { Props } from './types';
-import { getUniqueState, isRepeated, isValidInput } from './utils';
+import { getUniqueState, isRepeated, fromStates, toStates, isValidInput } from './utils';
+import type { Props, StatesInput } from './types';
 
 import './StatesInspector.css';
 
-export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
+const NEW_STATE = 'New State';
+
+export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
   const { States, GltfContainer } = sdk.components;
 
-  const hasStates = useHasComponent(entity, States);
-  const [states, setStates, isComponentEqual] = useComponentValue(entity, States);
-  const [input, setInput] = useState<States>(states);
+  const allEntitiesHaveStates = useAllEntitiesHaveComponent(entities, States);
 
-  useEffect(() => {
-    setInput({ ...states });
-  }, [states]);
+  const { items, commonItems, entityValuesMap, addItem, removeItem } = useComponentListInput<
+    StatesInput,
+    string
+  >(entities, States, fromStates, toStates, (items: string[]) =>
+    isValidInput({ value: items, defaultValue: items[0] }),
+  );
 
-  useEffect(() => {
-    if (isValidInput(input) && !isComponentEqual(input)) {
-      setStates(input);
-    }
-  }, [input]);
+  // Check if a state is the default in all entities
+  const isDefaultInAllEntities = useCallback(
+    (state: string): boolean => {
+      return allEqualTo(entities, ent => entityValuesMap.get(ent)?.defaultValue, state);
+    },
+    [entities, entityValuesMap],
+  );
 
+  // Handle adding a new state to all entities
   const handleNewState = useCallback(() => {
-    const newState = getUniqueState('New State', input.value);
-    setInput({
-      ...input,
-      value: [...input.value, newState],
-      defaultValue: input.defaultValue || newState,
-    });
-  }, [input, setInput]);
+    const allExistingStates = Array.from(entityValuesMap.values()).flatMap(s => s.value);
+    const newState = getUniqueState(NEW_STATE, allExistingStates);
+    addItem(newState);
+  }, [entityValuesMap, addItem]);
 
-  const handleChange = (index: number) => (event: React.ChangeEvent<HTMLInputElement>) => {
-    const state = event.target.value;
-    const isDefault = states.value[index] === states.defaultValue;
-    const newValue = [...input.value];
-    newValue[index] = state;
-    const defaultValue =
-      isDefault || !states.defaultValue || !newValue.includes(states.defaultValue)
-        ? state
-        : states.defaultValue;
-    setInput({
-      ...input,
-      value: newValue,
-      defaultValue,
-    });
-  };
+  // Handle removing a state from all entities
+  const handleRemove = useCallback(
+    (state: string) => () => {
+      removeItem(state);
+    },
+    [removeItem],
+  );
 
+  // Handle setting a state as default for all entities
+  const handleDefault = useCallback(
+    (state: string) => () => {
+      entities.forEach(entity => {
+        const currentStates = entityValuesMap.get(entity);
+        if (!currentStates) return;
+
+        sdk.operations.updateValue(States as any, entity, {
+          value: currentStates.value,
+          defaultValue: state,
+        });
+      });
+      void sdk.operations.dispatch();
+    },
+    [entities, entityValuesMap, States, sdk.operations],
+  );
+
+  // Handle removing the States component from all entities
   const handleDelete = useCallback(async () => {
-    sdk.operations.removeComponent(entity, States);
+    for (const entity of entities) {
+      sdk.operations.removeComponent(entity, States);
+    }
+
     await sdk.operations.dispatch();
-    const gltfContainer = getComponentValue(entity, GltfContainer);
-    const asset = getAssetByModel(gltfContainer.src);
+
+    // Analytics - handle case where GltfContainer might not exist
+    const gltfContainer = GltfContainer.getOrNull(entities[0]);
+    const asset = gltfContainer?.src ? getAssetByModel(gltfContainer?.src) : undefined;
     analytics.track(Event.REMOVE_COMPONENT, {
       componentName: ComponentName.STATES,
       itemId: asset?.id,
-      itemPath: gltfContainer.src,
+      itemPath: gltfContainer?.src,
     });
-  }, [sdk]);
+  }, [sdk, entities, States, GltfContainer]);
 
-  if (!hasStates) {
+  if (!allEntitiesHaveStates) {
     return null;
   }
 
-  const handleRemove = (state: string) => () => {
-    const newValue = input.value.filter($ => $ !== state);
-    const defaultValue =
-      input.defaultValue && newValue.includes(input.defaultValue)
-        ? input.defaultValue
-        : newValue[0];
-    setInput({
-      ...input,
-      value: newValue,
-      defaultValue,
-    });
-  };
-
-  const handleDefault = (state: string) => () => {
-    setInput({
-      ...input,
-      defaultValue: state,
-    });
+  // Check if a state is repeated (for validation)
+  const isStateRepeated = (state: string): boolean => {
+    return isRepeated(state, commonItems);
   };
 
   return (
@@ -109,28 +115,35 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       }
       onRemoveContainer={handleDelete}
     >
-      {states.value.length > 0 ? (
+      {items.length > 0 ? (
         <Block
           label="State Name"
           className="states-list"
         >
-          {input.value.map((state, index) => (
+          {items.map(({ value, isPartial, inputProps }, index) => (
             <div
-              className="row"
-              key={index}
+              className={cx('row', { partial: isPartial })}
+              key={`${isPartial ? 'partial' : 'common'}-${index}`}
             >
               <TextField
                 rightLabel={
-                  states.defaultValue === state && !isRepeated(state, input.value) ? 'Default' : ' '
+                  !isPartial && isDefaultInAllEntities(value) && !isStateRepeated(value)
+                    ? 'Default'
+                    : ' '
                 }
-                value={state}
-                error={isRepeated(state, input.value) || !state.trim()}
-                onChange={handleChange(index)}
-                autoSelect
+                error={!isPartial && (isStateRepeated(value) || !value.trim())}
+                autoSelect={!isPartial}
+                debounceTime={500}
+                {...inputProps}
               />
               <MoreOptionsMenu>
-                <Button onClick={handleRemove(state)}>Remove State</Button>
-                <Button onClick={handleDefault(state)}>Set as Default</Button>
+                <Button onClick={handleRemove(value)}>Remove State</Button>
+                <Button
+                  onClick={handleDefault(value)}
+                  disabled={isPartial}
+                >
+                  Set as Default
+                </Button>
               </MoreOptionsMenu>
             </div>
           ))}

@@ -74,6 +74,7 @@ const MultiEntityInspector = withSdk<{ entities: Entity[] }>(({ sdk, entities })
       { name: sdk.components.AudioSource.componentName, component: AudioSourceInspector },
       { name: sdk.components.AudioStream.componentName, component: AudioStreamInspector },
       { name: sdk.components.TextShape.componentName, component: TextShapeInspector },
+      { name: sdk.components.States.componentName, component: StatesInspector },
       {
         name: sdk.components.VisibilityComponent.componentName,
         component: VisibilityComponentInspector,
@@ -149,7 +150,7 @@ const SingleEntityInspector = withSdk<{ entity: Entity | null }>(({ sdk, entity 
         name: sdk.components.Triggers.componentName,
         component: TriggerInspector,
       },
-      { name: sdk.components.States.componentName, component: StatesInspector },
+      { name: sdk.components.States.componentName, component: StatesInspector, multiEntity: true },
       { name: sdk.components.Counter.componentName, component: CounterInspector },
       {
         name: sdk.components.AudioSource.componentName,

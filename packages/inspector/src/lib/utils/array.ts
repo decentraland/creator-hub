@@ -76,3 +76,28 @@ export function partitionByFrequency<T>(
 
   return { common, partial };
 }
+
+/**
+ * Checks if all elements in an array are equal to each other.
+ * Uses a selector function to extract the value to compare from each element.
+ * @param array array to check
+ * @param selector function to extract the value to compare from each element
+ * @returns true if all elements are equal (or array has 0-1 elements)
+ */
+export function allEqual<T, V>(array: T[], selector: (item: T) => V): boolean {
+  if (array.length <= 1) return true;
+  const firstValue = selector(array[0]);
+  return array.every(item => selector(item) === firstValue);
+}
+
+/**
+ * Checks if all elements in an array match a specific value.
+ * Uses a selector function to extract the value to compare from each element.
+ * @param array array to check
+ * @param selector function to extract the value to compare from each element
+ * @param value the value to compare against
+ * @returns true if all elements match the value (or array is empty)
+ */
+export function allEqualTo<T, V>(array: T[], selector: (item: T) => V, value: V): boolean {
+  return array.every(item => selector(item) === value);
+}

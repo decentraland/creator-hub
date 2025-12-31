@@ -27,3 +27,15 @@ export function getUniqueState(newState: string, states: string[], attempt = 1) 
 export function isRepeated(state: string, states: string[]) {
   return sanitize(states).filter($ => $ === state.trim()).length > 1;
 }
+
+export const fromStates = (value: StatesInput): string[] => {
+  return value.value ?? [];
+};
+
+export const toStates = (items: string[], currentValue: StatesInput): StatesInput => {
+  const defaultValue =
+    currentValue.defaultValue && items.includes(currentValue.defaultValue)
+      ? currentValue.defaultValue
+      : items[0];
+  return { value: items, defaultValue };
+};
