@@ -214,7 +214,8 @@
             "invalid_identity": "身份验证失败。",
             "max_file_size_exceeded": "一个或多个资产超过了允许的限制（{maxFileSizeInMb}MB）。\n优化或移除大文件并重试。",
             "unknown": "出了问题。\n请重试。",
-            "invalid_creator_wallet": "创建者必须是有效的以太坊钱包地址。"
+            "invalid_creator_wallet": "创建者必须是有效的以太坊钱包地址。",
+            "code_error": "你的场景代码包含一个或多个错误。\n请修复它们并重试。"
           },
           "actions": {
             "report_issue": "报告问题",
