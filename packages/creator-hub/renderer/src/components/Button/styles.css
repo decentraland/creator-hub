@@ -29,6 +29,12 @@
   background-color: var(--dcl-dark) !important;
 }
 
+.Button.MuiButton-colorPrimary:disabled,
+.Button.MuiButton-colorPrimary.MuiButtonGroup-grouped:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+}
+
 /* Color secondary */
 .Button.MuiButton-colorSecondary,
 .Button.MuiButton-colorSecondary.MuiButtonGroup-grouped {
@@ -39,6 +45,12 @@
 .Button.MuiButton-colorSecondary:hover,
 .Button.MuiButton-colorSecondary.MuiButtonGroup-grouped:hover {
   background-color: var(--darker-gray) !important;
+}
+
+.Button.MuiButton-colorSecondary:disabled,
+.Button.MuiButton-colorSecondary.MuiButtonGroup-grouped:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
 }
 
 /* Color info */

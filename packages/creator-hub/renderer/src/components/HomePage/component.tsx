@@ -15,16 +15,18 @@ import {
   Button,
   Grid,
 } from 'decentraland-ui2';
-import { useEditor } from '/@/hooks/useEditor';
+
+import { misc } from '#preload';
+
 import { type Project } from '/shared/types/projects';
 import EditorPng from '/assets/images/editor.png';
 import BookPng from '/assets/images/book.png';
 import InfluencePng from '/assets/images/influence.png';
+import { useEditor } from '/@/hooks/useEditor';
 import { useAuth } from '/@/hooks/useAuth';
 import { useWorkspace } from '/@/hooks/useWorkspace';
 import { t } from '/@/modules/store/translation/utils';
 import { FEEDBACK_URL } from '/@/modules/utils';
-import './styles.css';
 import { actions } from '/@/modules/store/settings';
 import type { AppState } from '../../modules/store';
 import { UpdateAvailableModal } from '../Modals/UpdateAvailableModal';
@@ -32,7 +34,7 @@ import { Navbar, NavbarItem } from '../Navbar';
 import { Footer } from '../Footer';
 import { type CardBannerProps, type CardItemProps, type SignInCardProps } from './types';
 
-import { misc } from '#preload';
+import './styles.css';
 
 const learn_resources = [
   {

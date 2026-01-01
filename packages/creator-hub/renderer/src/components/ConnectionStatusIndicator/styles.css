@@ -1,0 +1,26 @@
+.ConnectionStatusIndicator {
+  display: flex;
+  align-items: center;
+}
+
+.ConnectionStatusIndicator .connection-status-offline .offline-icon {
+  color: var(--error);
+}
+
+.ConnectionStatusIndicator .connection-status-slow .slow-icon {
+  color: var(--danger);
+}
+
+.ConnectionStatusIndicator .MuiIconButton-root {
+  padding: 8px;
+  cursor: pointer;
+}
+
+.ConnectionStatusIndicator .MuiIconButton-root:hover {
+  opacity: 0.8;
+}
+
+.ConnectionStatusIndicator .offline-icon,
+.ConnectionStatusIndicator .slow-icon {
+  font-size: 20px;
+}

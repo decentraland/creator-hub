@@ -3,6 +3,7 @@ import { createAsyncThunk, createSlice, createSelector } from '@reduxjs/toolkit'
 import type { AtlasTileProps } from 'decentraland-ui2/dist/components/Atlas/Atlas.types';
 import type { Async } from '/shared/types/async';
 import { config } from '/@/config';
+import { fetch } from '/shared/fetch';
 import {
   colorByRole,
   coordsToId,

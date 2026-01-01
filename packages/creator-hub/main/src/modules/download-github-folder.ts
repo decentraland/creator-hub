@@ -3,6 +3,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import extract from 'extract-zip';
+import { fetch } from '/shared/fetch';
 
 // Function to parse GitHub URL for root or subfolder
 function parseGitHubUrl(githubUrl: string) {

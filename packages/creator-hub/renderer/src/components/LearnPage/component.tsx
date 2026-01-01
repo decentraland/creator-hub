@@ -5,6 +5,7 @@ import { misc } from '#preload';
 
 import { Container } from '../Container';
 import { Navbar, NavbarItem } from '../Navbar';
+import { Image } from '../Image';
 import './styles.css';
 
 function Video(props: { id: string; list: string; title: string }) {
@@ -15,7 +16,10 @@ function Video(props: { id: string; list: string; title: string }) {
       onClick={() => misc.openExternal(url)}
     >
       <div className="thumbnail-wrapper">
-        <img src={`https://img.youtube.com/vi/${props.id}/0.jpg`} />
+        <Image
+          src={`https://img.youtube.com/vi/${props.id}/0.jpg`}
+          alt={props.title}
+        />
       </div>
       <span className="title">{props.title}</span>
     </div>
