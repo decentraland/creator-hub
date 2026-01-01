@@ -423,23 +423,41 @@ export function createActionsSystem(
   }
 
   // CHANGE_CAMERA
-  function handleChangeCamera(_entity: Entity, payload: ActionPayload<ActionType.CHANGE_CAMERA>) {
+  function handleChangeCamera(entity: Entity, payload: ActionPayload<ActionType.CHANGE_CAMERA>) {
     const target = payload.virtualCameraEntity;
-    // If target is undefined or null, remove MainCamera to revert to normal behavior
-    if (target === undefined || target === null) {
+
+    // If target is explicitly null, remove MainCamera to revert to normal behavior
+    if (target === null) {
       if (MainCamera.has(engine.CameraEntity)) {
         MainCamera.deleteFrom(engine.CameraEntity);
       }
       return;
     }
 
+    // If target is undefined, use the entity that owns the Actions component
+    // If that entity has VirtualCamera, use it; otherwise revert to normal behavior
+    let cameraEntity: Entity | undefined = target;
+
+    if (cameraEntity === undefined) {
+      // Use the entity that owns the Actions component if it has VirtualCamera
+      if (VirtualCamera.has(entity)) {
+        cameraEntity = entity;
+      } else {
+        // No camera specified and entity doesn't have VirtualCamera, revert to normal
+        if (MainCamera.has(engine.CameraEntity)) {
+          MainCamera.deleteFrom(engine.CameraEntity);
+        }
+        return;
+      }
+    }
+
     // Ensure the selected entity has VirtualCamera before applying
-    if (!VirtualCamera.has(target)) {
+    if (!VirtualCamera.has(cameraEntity)) {
       return;
     }
 
     MainCamera.createOrReplace(engine.CameraEntity, {
-      virtualCameraEntity: target,
+      virtualCameraEntity: cameraEntity,
     });
   }
 

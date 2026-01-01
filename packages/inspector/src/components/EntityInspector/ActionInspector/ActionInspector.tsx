@@ -117,7 +117,7 @@ const ActionMapOption: Record<string, string> = {
   [ActionType.LIGHTS_ON]: 'Lights On',
   [ActionType.LIGHTS_OFF]: 'Lights Off',
   [ActionType.LIGHTS_MODIFY]: 'Lights Modify',
-  [ActionType.CHANGE_CAMERA]: 'Change Camera',
+  [ActionType.CHANGE_CAMERA]: 'Select This Camera',
   [ActionType.CHANGE_TEXT]: 'Change Text',
   [ActionType.STOP_TWEEN]: 'Stop Tween',
   [ActionType.SLIDE_TEXTURE]: 'Slide Texture',
@@ -274,8 +274,8 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
           return !!payload;
         }
         case ActionType.CHANGE_CAMERA: {
-          const payload = getPartialPayload<ActionType.CHANGE_CAMERA>(action);
-          return !!payload;
+          // CHANGE_CAMERA is always valid - it will use the entity's camera if no payload
+          return true;
         }
         case ActionType.CHANGE_TEXT: {
           const payload = getPartialPayload<ActionType.CHANGE_TEXT>(action);
@@ -1091,6 +1091,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       case ActionType.CHANGE_CAMERA: {
         return (
           <ChangeCameraAction
+            entity={entityId}
             value={getPartialPayload<ActionType.CHANGE_CAMERA>(action)}
             onUpdate={value => handleChangeCamera(value, idx)}
           />
