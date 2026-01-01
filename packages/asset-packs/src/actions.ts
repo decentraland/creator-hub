@@ -502,6 +502,13 @@ export function createActionsSystem(
   // CHANGE_SKYBOX
   function handleChangeSkybox(payload: ActionPayload<ActionType.CHANGE_SKYBOX>) {
     const { time, direction } = payload;
+
+    // Ensure time is a valid number (seconds since midnight)
+    if (typeof time !== 'number' || isNaN(time) || time < 0 || time > 86400) {
+      console.error('Invalid skybox time value:', time);
+      return;
+    }
+
     SkyboxTime.createOrReplace(engine.RootEntity, {
       fixedTime: time,
       transitionMode: direction,

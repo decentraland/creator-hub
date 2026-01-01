@@ -32,8 +32,13 @@ const ChangeSkyboxAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
 
   const handleChangeTime = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const time = parseInt(e.target.value, 10);
-      handleUpdate({ ...payload, time });
+      const timeValue = e.target.value;
+      // Parse the string value to number (RangeHourField sends seconds as string)
+      const time = typeof timeValue === 'string' ? parseInt(timeValue, 10) : timeValue;
+      // Ensure we have a valid number
+      if (!isNaN(time) && time >= 0) {
+        handleUpdate({ ...payload, time });
+      }
     },
     [payload, handleUpdate],
   );
