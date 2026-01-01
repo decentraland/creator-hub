@@ -51,7 +51,7 @@
               {
                 "name": "Activate Camera",
                 "type": "change_camera",
-                "jsonPayload": "{ \"virtualCameraEntity\": 0 }"
+                "jsonPayload": "{ \"virtualCameraEntity\": {self} }"
               },
               {
                 "name": "Reset View",
