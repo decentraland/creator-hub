@@ -51,6 +51,7 @@ import {
   AdminPermissions,
   MediaSource,
   TextureMovementType,
+  TeleportMode,
 } from './enums';
 import { getExplorerComponents } from './components';
 
@@ -121,8 +122,10 @@ export const ActionSchemas = {
   }),
   [ActionType.STOP_AUDIO_STREAM]: Schemas.Map({}),
   [ActionType.TELEPORT_PLAYER]: Schemas.Map({
-    x: Schemas.Int,
-    y: Schemas.Int,
+    mode: Schemas.EnumString<TeleportMode>(TeleportMode, TeleportMode.TO_COORDINATES),
+    x: Schemas.Optional(Schemas.Int),
+    y: Schemas.Optional(Schemas.Int),
+    realm: Schemas.Optional(Schemas.String),
   }),
   [ActionType.MOVE_PLAYER]: Schemas.Map({
     position: Schemas.Vector3,

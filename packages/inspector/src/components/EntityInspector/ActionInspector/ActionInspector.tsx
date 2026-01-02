@@ -217,13 +217,18 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
         }
         case ActionType.TELEPORT_PLAYER: {
           const payload = getPartialPayload<ActionType.TELEPORT_PLAYER>(action);
-          return (
-            !!payload &&
-            typeof payload.x === 'number' &&
-            !isNaN(payload.x) &&
-            typeof payload.y === 'number' &&
-            !isNaN(payload.y)
-          );
+          if (!payload) return false;
+          if (payload.mode === 'to_world') {
+            return !!payload.realm && payload.realm.trim().length > 0;
+          } else {
+            // to_coordinates mode
+            return (
+              typeof payload.x === 'number' &&
+              typeof payload.y === 'number' &&
+              !isNaN(payload.x) &&
+              !isNaN(payload.y)
+            );
+          }
         }
         case ActionType.MOVE_PLAYER: {
           const payload = getPartialPayload<ActionType.MOVE_PLAYER>(action);

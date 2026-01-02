@@ -22,6 +22,11 @@ export enum TweenType {
   KEEP_ROTATING_ITEM = 'keep_rotating_item',
 }
 
+export enum TeleportMode {
+  TO_COORDINATES = 'to_coordinates',
+  TO_WORLD = 'to_world',
+}
+
 export enum InterpolationType {
   LINEAR = 'linear',
   EASEINQUAD = 'easeinquad',

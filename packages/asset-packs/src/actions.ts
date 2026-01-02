@@ -29,6 +29,7 @@ import {
   ProximityLayer,
   TriggerType,
   TweenType,
+  TeleportMode,
   clone,
   getComponents,
   initVideoPlayerComponentMaterial,
@@ -56,12 +57,13 @@ import { initTriggers, damageTargets, healTargets } from './triggers';
 import { followMap } from './transform';
 import { getEasingFunctionFromInterpolation } from './tweens';
 import { REWARDS_SERVER_URL } from './admin-toolkit-ui/constants';
-import { requestTeleport } from '~system/UserActionModule';
 import {
   movePlayerTo,
   triggerEmote,
   triggerSceneEmote,
   openExternalUrl,
+  teleportTo,
+  changeRealm,
 } from '~system/RestrictedActions';
 import type { FlatFetchInit } from '~system/SignedFetch';
 import { getRealm } from '~system/Runtime';
@@ -901,10 +903,20 @@ export function createActionsSystem(
     _entity: Entity,
     payload: ActionPayload<ActionType.TELEPORT_PLAYER>,
   ) {
-    const { x, y } = payload;
-    requestTeleport({
-      destination: `${x},${y}`,
-    });
+    const { mode, x, y, realm } = payload;
+
+    if (mode === TeleportMode.TO_WORLD) {
+      if (realm) {
+        void changeRealm({ realm });
+      }
+    } else {
+      // TO_COORDINATES mode
+      if (x !== undefined && y !== undefined) {
+        void teleportTo({
+          worldCoordinates: { x, y },
+        });
+      }
+    }
   }
 
   // MOVE PLAYER
