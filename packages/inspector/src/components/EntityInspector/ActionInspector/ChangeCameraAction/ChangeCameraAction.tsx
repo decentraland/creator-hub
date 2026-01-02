@@ -17,6 +17,7 @@ const ChangeCameraAction: React.FC<Props & { sdk: any }> = ({ value, onUpdate, s
 
   const options = useMemo(() => {
     const cameraOptions: Array<{ label: string; value: string }> = [
+      { label: 'None', value: '0' },
       { label: 'This Entity', value: '' },
     ];
 
@@ -46,13 +47,28 @@ const ChangeCameraAction: React.FC<Props & { sdk: any }> = ({ value, onUpdate, s
   const handleChangeEntity = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       const selectedValue = e.target.value;
-      const entityId = selectedValue === '' ? undefined : (parseInt(selectedValue, 10) as Entity);
+      let entityId: Entity | undefined;
+      if (selectedValue === '0') {
+        entityId = engine.RootEntity; // Use 0 (RootEntity) as sentinel for "None"
+      } else if (selectedValue === '') {
+        entityId = undefined; // Use entity's camera
+      } else {
+        entityId = parseInt(selectedValue, 10) as Entity;
+      }
       onUpdate({ ...value, virtualCameraEntity: entityId });
     },
-    [value, onUpdate],
+    [value, onUpdate, engine],
   );
 
-  const currentValue = value.virtualCameraEntity?.toString() ?? '';
+  const currentValue = useMemo(() => {
+    if (value.virtualCameraEntity === undefined) {
+      return '0'; // Default to "None"
+    } else if (value.virtualCameraEntity === engine.RootEntity) {
+      return '0'; // "None" option
+    } else {
+      return value.virtualCameraEntity.toString();
+    }
+  }, [value.virtualCameraEntity, engine]);
 
   return (
     <div className="ChangeCameraActionContainer">

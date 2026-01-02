@@ -117,7 +117,7 @@ const ActionMapOption: Record<string, string> = {
   [ActionType.LIGHTS_ON]: 'Lights On',
   [ActionType.LIGHTS_OFF]: 'Lights Off',
   [ActionType.LIGHTS_MODIFY]: 'Lights Modify',
-  [ActionType.CHANGE_CAMERA]: 'Select This Camera',
+  [ActionType.CHANGE_CAMERA]: 'Select Camera',
   [ActionType.CHANGE_TEXT]: 'Change Text',
   [ActionType.STOP_TWEEN]: 'Stop Tween',
   [ActionType.SLIDE_TEXTURE]: 'Slide Texture',

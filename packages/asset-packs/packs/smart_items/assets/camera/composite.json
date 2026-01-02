@@ -49,7 +49,7 @@
             "id": "{self}",
             "value": [
               {
-                "name": "Select This Camera",
+                "name": "Select Camera",
                 "type": "change_camera",
                 "jsonPayload": "{ \"virtualCameraEntity\": \"{self}\" }"
               },
