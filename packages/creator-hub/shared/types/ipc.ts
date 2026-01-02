@@ -4,7 +4,7 @@ import type { Outdated } from '/shared/types/npm';
 import type { Events } from '/shared/types/analytics';
 import type { DeployOptions } from '/shared/types/deploy';
 
-import type { PreviewOptions } from './settings';
+import type { PreviewOptions, ReleaseNotes } from './settings';
 import type { Config, EditorConfig } from './config';
 
 export type IpcResult<T> = {
@@ -34,6 +34,7 @@ export interface Ipc {
   'updater.getInstalledVersion': () => Promise<string | undefined>;
   'updater.deleteVersionFile': () => Promise<void>;
   'updater.downloadUpdate': () => Promise<any>;
+  'updater.getReleaseNotes': (version: string) => Promise<ReleaseNotes | undefined>;
   'electron.getWorkspaceConfigPath': (path: string) => Promise<string>;
   'electron.showOpenDialog': (opts: Partial<OpenDialogOptions>) => Promise<string[]>;
   'electron.openExternal': (url: string) => Promise<void>;

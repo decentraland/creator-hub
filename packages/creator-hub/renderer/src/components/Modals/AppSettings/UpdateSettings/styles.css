@@ -1,23 +1,28 @@
 .update-settings {
   gap: 8px;
-  margin-top: 24px;
+  margin-top: 8px;
+  overflow: hidden;
+  min-height: 0;
 }
 
-.update-settings__button-container {
-  gap: 16px;
-  align-items: center;
-  justify-content: start;
-  min-height: 40px;
+.update-settings__status-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
 }
 
-.update-settings__button-container button {
-  min-width: 210px;
-  flex-shrink: 0;
+.update-settings__button-area {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .update-settings__message-container {
-  gap: 10px;
+  gap: 8px;
   align-items: center;
+  justify-content: center;
 }
 
 .update-settings__message-container svg {
@@ -28,4 +33,34 @@
   max-width: 300px;
   align-items: center;
   gap: 4px;
+}
+
+.update-settings__up-to-date-message {
+  color: var(--dcl-silver);
+}
+
+/* Release Notes Styles */
+.update-settings__release-notes {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  margin-top: 8px;
+  min-height: 0;
+}
+
+.update-settings__release-notes-header {
+  color: var(--white);
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+.update-settings__release-notes-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.update-settings__release-notes-section {
+  margin-bottom: 16px;
 }

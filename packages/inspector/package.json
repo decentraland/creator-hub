@@ -36,7 +36,6 @@
     "fp-future": "^1.0.1",
     "hotkeys-js": "^3.13.5",
     "ignore": "^7.0.5",
-    "markdown-to-jsx": "^7.5.0",
     "mitt": "^3.0.1",
     "node-fetch": "^2.7.0",
     "react": "18.3.1",

@@ -249,17 +249,36 @@
       "current": "Actual"
     },
     "app_settings": {
-      "title": "Configuración de la aplicación",
+      "title": "Preferencias de la aplicación",
+      "tabs": {
+        "scenes": {
+          "label": "ESCENAS",
+          "title": "Configuración de las escenas"
+        },
+        "editor": {
+          "label": "EDITOR",
+          "title": "Configuración del editor"
+        },
+        "about": {
+          "label": "ACERCA DE",
+          "title": "Acerca de"
+        }
+      },
+      "about": {
+        "title": "Decentraland Creator Hub",
+        "view_changelog": "Ver historial de cambios"
+      },
       "fields": {
         "scenes_folder": {
           "label": "Carpeta de escenas",
           "change_button": "Cambiar carpeta",
+          "reset_button": "Restablecer",
           "errors": {
             "invalid_path": "La carpeta no existe o no tienes permiso para crear archivos allí. Por favor, elige otra carpeta."
           }
         },
         "scene_editor_dependencies": {
-          "label": "Dependencias del editor de escenas",
+          "label": "Dependencias de las escenas",
           "options": {
             "auto_update": "Actualizar automáticamente las dependencias",
             "notify": "Notificarme cuando exista una nueva version",
@@ -289,7 +308,7 @@
       "version": {
         "current": "Versión actual: {version}",
         "new": "Nueva versión: {version}",
-        "up_to_date": "Creator Hub está actualizado",
+        "up_to_date": "Creator Hub está actualizado.",
         "label": "Versión: {version}"
       },
       "update": {
@@ -302,7 +321,9 @@
         "check": "Buscar actualizaciones",
         "checking": "Buscando actualizaciones...",
         "error": "No pudimos buscar actualizaciones.\nPor favor, inténtalo de nuevo más tarde.",
-        "update_available": "Actualización Disponible"
+        "update_available": "Actualización Disponible",
+        "whats_new": "Novedades",
+        "bug_fixes": "Correcciones"
       }
     },
     "create_project": {

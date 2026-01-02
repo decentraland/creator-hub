@@ -72,6 +72,21 @@
   /* --mui-palette-primary-main: #ff2d55; */
   --mui-palette-action-disabled: #231113;
   --mui-palette-secondary-contrast: #ffffff;
+
+  /* Global Scrollbar Styles */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--black);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--dcl-silver);
+    border-radius: 4px;
+  }
 }
 
 html {
