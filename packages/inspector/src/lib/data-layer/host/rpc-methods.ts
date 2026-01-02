@@ -112,15 +112,19 @@ export async function initRpcMethods(
   return {
     engine,
     async redo() {
-      return stateManager.executeTransaction('redo', async () => {
+      const transaction = await stateManager.executeTransaction('redo', async () => {
         return undoRedoProvider.redo();
       });
+      await compositeProvider.saveComposite(true);
+      return transaction;
     },
 
     async undo() {
-      return stateManager.executeTransaction('undo', async () => {
+      const transaction = await stateManager.executeTransaction('undo', async () => {
         return undoRedoProvider.undo();
       });
+      await compositeProvider.saveComposite(true);
+      return transaction;
     },
 
     async getUndoRedoState() {
