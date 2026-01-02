@@ -51,7 +51,7 @@
               {
                 "name": "Select This Camera",
                 "type": "change_camera",
-                "jsonPayload": "{}"
+                "jsonPayload": "{ \"virtualCameraEntity\": \"{self}\" }"
               },
               {
                 "name": "Reset View",

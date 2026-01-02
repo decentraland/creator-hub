@@ -30,7 +30,7 @@ import type { EnumEntity } from '../../enum-entity';
 import type { AssetData } from '../../../logic/catalog';
 import { pushChild, removeChild } from '../../nodes';
 import { ROOT } from '../../tree';
-import { isSelf, parseMaterial, parseSyncComponents } from './utils';
+import { isSelf, parseMaterial, parseSyncComponents, resolveSelfReferences } from './utils';
 
 export function addAsset(engine: IEngine) {
   return function addAsset(
@@ -317,6 +317,20 @@ export function addAsset(engine: IEngine) {
                         src: payload.src.replace('{assetPath}', base),
                       }),
                     });
+                    break;
+                  }
+                  case ActionType.CHANGE_CAMERA: {
+                    try {
+                      const payload = getPayload<ActionType.CHANGE_CAMERA>(action);
+                      const resolvedPayload = resolveSelfReferences(payload, targetEntity);
+                      newValue.push({
+                        ...action,
+                        jsonPayload: getJson<ActionType.CHANGE_CAMERA>(resolvedPayload),
+                      });
+                    } catch (error) {
+                      console.error('Failed to parse CHANGE_CAMERA payload:', error);
+                      newValue.push(action);
+                    }
                     break;
                   }
                   default:
