@@ -72,7 +72,7 @@
 
 /* Code blocks and inline code */
 .MarkdownRenderer code {
-  font-family: "Courier New", Courier, monospace;
+  font-family: var(--font-monospace);
   background-color: var(--background-gray);
   padding: 2px 4px;
   border-radius: 4px;
@@ -111,14 +111,14 @@
   margin: 12px 0;
   padding: 8px 12px;
   border-radius: 4px;
-  background-color: #FF2D5533;
+  background-color: #ff2d5533;
 }
 
-.MarkdownRenderer blockquote> :first-child {
+.MarkdownRenderer blockquote > :first-child {
   margin-top: 0;
 }
 
-.MarkdownRenderer blockquote> :last-child {
+.MarkdownRenderer blockquote > :last-child {
   margin-bottom: 0;
 }
 
@@ -157,7 +157,7 @@
 }
 
 .MarkdownRenderer table tr:nth-child(2n) {
-  background-color: var(--base-18)
+  background-color: var(--base-18);
 }
 
 /* Images & Video */
