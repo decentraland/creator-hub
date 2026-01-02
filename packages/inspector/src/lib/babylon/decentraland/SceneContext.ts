@@ -25,6 +25,7 @@ import { createGizmoManager } from './GizmoManager';
 import { putMaterialComponent } from './sdkComponents/material';
 import { putNftShapeComponent } from './sdkComponents/nft';
 import { putVideoPlayerComponent } from './sdkComponents/video-player';
+import { putAvatarAttachComponent } from './sdkComponents/avatar-attach';
 import { putHideComponent } from './editorComponents/hide';
 import { putLockComponent } from './editorComponents/lock';
 
@@ -64,6 +65,7 @@ export class SceneContext {
   Animator = components.Animator(this.engine);
   NftShape = components.NftShape(this.engine);
   VideoPlayer = components.VideoPlayer(this.engine);
+  AvatarAttach = components.AvatarAttach(this.engine);
 
   readonly editorComponents = createEditorComponents(this.engine);
 
@@ -76,6 +78,7 @@ export class SceneContext {
     [this.TextShape.componentId]: putTextShapeComponent,
     [this.NftShape.componentId]: putNftShapeComponent,
     [this.VideoPlayer.componentId]: putVideoPlayerComponent,
+    [this.AvatarAttach.componentId]: putAvatarAttachComponent,
     [this.editorComponents.Selection.componentId]: putEntitySelectedComponent,
     [this.editorComponents.Scene.componentId]: putSceneComponent,
     [this.editorComponents.Hide.componentId]: putHideComponent,
@@ -91,6 +94,7 @@ export class SceneContext {
     [this.TextShape.componentId]: putTextShapeComponent,
     [this.NftShape.componentId]: putNftShapeComponent,
     [this.VideoPlayer.componentId]: putVideoPlayerComponent,
+    [this.AvatarAttach.componentId]: putAvatarAttachComponent,
     [this.editorComponents.Selection.componentId]: deleteEntitySelectedComponent,
     [this.editorComponents.Scene.componentId]: putSceneComponent,
     [this.editorComponents.Hide.componentId]: putHideComponent,

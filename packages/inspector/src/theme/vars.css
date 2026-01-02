@@ -116,4 +116,10 @@
   /* Margins */
   --sidebar: 314px;
   --label-margin-bottom: 4.5px;
+
+  /* Fonts */
+  --font-family:
+    "Inter", system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-monospace:
+    "Inconsolata", "Consolas", "Droid Sans Mono", "Monaco", "Courier New", monospace;
 }

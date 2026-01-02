@@ -1153,7 +1153,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
 
   return (
     <Container
-      label="Action"
+      label="Actions"
       className="ActionInspector"
       initialOpen={initialOpen}
       rightContent={
