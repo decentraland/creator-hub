@@ -27,6 +27,7 @@ import { AudioSourceInspector } from './AudioSourceInspector';
 import { VisibilityComponentInspector } from './VisibilityComponentInspector';
 import { VideoPlayerInspector } from './VideoPlayerInspector';
 import { AudioStreamInspector } from './AudioStreamInspector';
+import AvatarAttachInspector from './AvatarAttachInspector';
 import { NftShapeInspector } from './NftShapeInspector';
 import { AnimatorInspector } from './AnimatorInspector';
 import { PointerEventsInspector } from './PointerEventsInspector';
@@ -121,6 +122,11 @@ const SingleEntityInspector = withSdk<{ entity: Entity | null }>(({ sdk, entity 
       {
         name: sdk.components.VisibilityComponent.componentName,
         component: VisibilityComponentInspector,
+        multiEntity: true,
+      },
+      {
+        name: sdk.components.AvatarAttach.componentName,
+        component: AvatarAttachInspector,
         multiEntity: true,
       },
       {
