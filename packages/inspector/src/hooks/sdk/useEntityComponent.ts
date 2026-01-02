@@ -16,7 +16,6 @@ export const DISABLED_COMPONENTS: string[] = [
   CoreComponents.TWEEN_SEQUENCE,
   ComponentName.ADMIN_TOOLS,
   ComponentName.REWARDS,
-  CoreComponents.AVATAR_ATTACH,
 ];
 
 export const SMART_ITEM_COMPONENTS: string[] = [
