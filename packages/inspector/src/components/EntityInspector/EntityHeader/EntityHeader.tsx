@@ -145,7 +145,7 @@ export default React.memo(
           },
           {
             requires: [
-              [sdk.components.GltfContainer.componentId, sdk.components.MeshCollider.componentId],
+              [sdk.components.GltfContainer.componentId, sdk.components.MeshRenderer.componentId],
             ],
           },
         ),
