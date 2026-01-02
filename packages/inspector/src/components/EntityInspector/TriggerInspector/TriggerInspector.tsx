@@ -330,7 +330,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
 
   return (
     <Container
-      label="Trigger"
+      label="Triggers"
       className="TriggerInspector"
       initialOpen={initialOpen}
       rightContent={
