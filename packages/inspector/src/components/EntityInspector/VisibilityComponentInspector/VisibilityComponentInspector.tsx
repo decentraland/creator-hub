@@ -45,11 +45,11 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
     await sdk.operations.dispatch();
 
     const gltfContainer = getComponentValue(entities[0], GltfContainer);
-    const asset = getAssetByModel(gltfContainer?.src);
+    const asset = getAssetByModel(gltfContainer.src);
     analytics.track(Event.REMOVE_COMPONENT, {
       componentName: CoreComponents.VISIBILITY_COMPONENT,
       itemId: asset?.id,
-      itemPath: gltfContainer?.src,
+      itemPath: gltfContainer.src,
     });
   }, [sdk, entities, VisibilityComponent, GltfContainer]);
 
