@@ -69,7 +69,7 @@ export class StateManager {
   private pendingTransaction: Transaction | null = null;
   private transactionQueue: Transaction[] = [];
   private processing = false;
-  private readonly maxBatchSize = 50; // prevent oversized batches
+  private readonly maxBatchSize = 200; // prevent oversized batches
   private readonly fs: FileSystemInterface;
   private readonly engine: IEngine;
   private readonly getInspectorPreferences: () => InspectorPreferences;
