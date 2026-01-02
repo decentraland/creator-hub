@@ -371,10 +371,18 @@ export function addAsset(engine: IEngine) {
             continue;
           }
 
-          const Component = engine.getComponent(
-            componentName,
-          ) as LastWriteWinElementSetComponentDefinition<unknown>;
-          Component.createOrReplace(targetEntity, componentValue);
+          try {
+            const Component = engine.getComponent(
+              componentName,
+            ) as LastWriteWinElementSetComponentDefinition<unknown>;
+            Component.createOrReplace(targetEntity, componentValue);
+          } catch (error) {
+            console.error(
+              `Failed to create component ${componentName} for entity ${targetEntity}:`,
+              error,
+            );
+            // Skip components that don't exist in the engine
+          }
         }
       }
 
