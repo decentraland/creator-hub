@@ -192,6 +192,11 @@ export default React.memo(
             ],
           },
         ),
+        createOption(sdk.components.Billboard, 'Billboard', {
+          description:
+            'The Billboard component makes an Entity automatically reorient its rotation to always face the camera, as in retro 3D games that used 2D sprites.',
+          link: 'https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/entity-positioning#face-the-player',
+        }),
         { header: 'Interaction' },
         createOption(sdk.components.States, 'States', {
           description:
