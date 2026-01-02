@@ -31,6 +31,21 @@ enum SettingsTab {
   ABOUT = 'about',
 }
 
+const SETTINGS_TABS: Array<{ label: string; value: SettingsTab }> = [
+  {
+    label: t('modal.app_settings.tabs.scenes.label'),
+    value: SettingsTab.SCENES,
+  },
+  {
+    label: t('modal.app_settings.tabs.editor.label'),
+    value: SettingsTab.EDITOR,
+  },
+  {
+    label: t('modal.app_settings.tabs.about.label'),
+    value: SettingsTab.ABOUT,
+  },
+];
+
 export function AppSettings({ open, onClose }: { open: boolean; onClose: () => void }) {
   const dispatch = useDispatch();
   const { settings: _settings, updateAppSettings } = useSettings();
@@ -181,24 +196,15 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
         </Box>
         <Box className="SettingsLayout">
           <Box className="SettingsSidebar">
-            <Box
-              className={`SettingsTab ${activeTab === SettingsTab.SCENES ? 'active' : ''}`}
-              onClick={() => setActiveTab(SettingsTab.SCENES)}
-            >
-              {t('modal.app_settings.tabs.scenes.label')}
-            </Box>
-            <Box
-              className={`SettingsTab ${activeTab === SettingsTab.EDITOR ? 'active' : ''}`}
-              onClick={() => setActiveTab(SettingsTab.EDITOR)}
-            >
-              {t('modal.app_settings.tabs.editor.label')}
-            </Box>
-            <Box
-              className={`SettingsTab ${activeTab === SettingsTab.ABOUT ? 'active' : ''}`}
-              onClick={() => setActiveTab(SettingsTab.ABOUT)}
-            >
-              {t('modal.app_settings.tabs.about.label')}
-            </Box>
+            {SETTINGS_TABS.map(tab => (
+              <Box
+                key={`settings-tab-${tab.value}`}
+                className={`SettingsTab ${activeTab === tab.value ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab.value)}
+              >
+                {tab.label}
+              </Box>
+            ))}
           </Box>
           <Box className="SettingsContent">{renderTabContent()}</Box>
         </Box>

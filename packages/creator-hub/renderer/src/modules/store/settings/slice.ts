@@ -5,6 +5,7 @@ import { actions as snackbarActions } from '../snackbar/slice';
 import { t } from '../translation/utils';
 import { createAsyncThunk } from '../thunk';
 import type { Status } from '/shared/types/async';
+import type { ReleaseNotes } from '/shared/types/settings';
 
 export type UpdateStatus = {
   lastDownloadedVersion: string | null;
@@ -25,6 +26,7 @@ export type UpdateStatus = {
   checkForUpdates: {
     status: Status;
   };
+  releaseNotes: ReleaseNotes | null;
 };
 
 const initialState: UpdateStatus = {
@@ -46,6 +48,7 @@ const initialState: UpdateStatus = {
   checkForUpdates: {
     status: 'idle',
   },
+  releaseNotes: null,
 };
 
 const slice = createSlice({
@@ -67,12 +70,16 @@ const slice = createSlice({
     setOpenAppSettingsModal: (state, action: PayloadAction<boolean>) => {
       state.openAppSettingsModal = action.payload;
     },
+    setReleaseNotes: (state, action: PayloadAction<ReleaseNotes | null>) => {
+      state.releaseNotes = action.payload;
+    },
   },
   extraReducers: builder => {
     builder
       .addCase(checkForUpdates.pending, state => {
         state.checkForUpdates.status = 'loading';
         state.updateInfo = initialState.updateInfo;
+        state.releaseNotes = initialState.releaseNotes;
       })
       .addCase(checkForUpdates.fulfilled, (state, _action) => {
         state.checkForUpdates.status = 'succeeded';
@@ -122,6 +129,13 @@ export const checkForUpdates = createAsyncThunk(
           isDownloaded: !!lastDownloadedVersion && lastDownloadedVersion === version,
         }),
       );
+
+      if (updateAvailable && version) {
+        const releaseNotes = await settingsPreload.getReleaseNotes(version);
+        if (releaseNotes) {
+          dispatch(actions.setReleaseNotes(releaseNotes));
+        }
+      }
     } catch (error) {
       dispatch(
         snackbarActions.pushSnackbar({

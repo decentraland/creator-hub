@@ -1,13 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Box, Typography, Button, type ButtonProps } from 'decentraland-ui2';
 import { InfoOutlined } from '@mui/icons-material';
 import { t } from '/@/modules/store/translation/utils';
 import { useDispatch, useSelector } from '#store';
 import { checkForUpdates, downloadUpdate, installUpdate } from '/@/modules/store/settings/slice';
-import { settings as settingsPreload } from '#preload';
 import { Row } from '../../../Row';
 import { Column } from '../../../Column';
-import type { ReleaseNotes } from '/shared/types/settings';
 import { MarkdownRenderer } from '../MarkdownRenderer';
 
 import './styles.css';
@@ -24,37 +22,30 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
   const {
     downloadingUpdate: { progress, finished, isDownloading },
     updateInfo,
+    releaseNotes,
   } = useSelector(state => state.settings);
 
   const checkForUpdatesStatus = useSelector(state => state.settings.checkForUpdates.status);
 
   const [hasCheckedForUpdates, setHasCheckedForUpdates] = useState(false);
-  const [releaseNotes, setReleaseNotes] = useState<ReleaseNotes | null>(null);
 
-  const shouldShowUpdateAvailable = useCallback(() => {
-    return hasCheckedForUpdates && updateInfo.available && updateInfo.version && !isDownloading;
-  }, [hasCheckedForUpdates, updateInfo, isDownloading]);
+  const shouldShowUpdateAvailable = useMemo(() => {
+    return (
+      hasCheckedForUpdates &&
+      checkForUpdatesStatus === 'succeeded' &&
+      updateInfo.available &&
+      updateInfo.version &&
+      !isDownloading
+    );
+  }, [
+    hasCheckedForUpdates,
+    checkForUpdatesStatus,
+    updateInfo.available,
+    updateInfo.version,
+    isDownloading,
+  ]);
 
-  // Fetch release notes when update check succeeds and update is available
-  useEffect(() => {
-    const fetchReleaseNotes = async () => {
-      if (
-        hasCheckedForUpdates &&
-        checkForUpdatesStatus === 'succeeded' &&
-        updateInfo.available &&
-        updateInfo.version
-      ) {
-        const notes = await settingsPreload.getReleaseNotes(updateInfo.version);
-        if (notes) {
-          setReleaseNotes(notes);
-        }
-      }
-    };
-
-    fetchReleaseNotes();
-  }, [hasCheckedForUpdates, checkForUpdatesStatus, updateInfo.available, updateInfo.version]);
-
-  const handleCheckForUpdates = useCallback(async () => {
+  const handleCheckForUpdates = useCallback(() => {
     setHasCheckedForUpdates(true);
     dispatch(checkForUpdates({ autoDownload: false }));
   }, [dispatch]);
@@ -131,7 +122,7 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
   const buttonProps = getButtonProps();
 
   const renderStatusMessage = () => {
-    if (shouldShowUpdateAvailable() && releaseNotes) {
+    if (shouldShowUpdateAvailable && releaseNotes) {
       return (
         <Typography
           variant="h6"
@@ -170,7 +161,7 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
   };
 
   const renderReleaseNotes = () => {
-    if (!shouldShowUpdateAvailable() || !releaseNotes || !releaseNotes.content.length) {
+    if (!shouldShowUpdateAvailable || !releaseNotes || !releaseNotes.content.length) {
       return null;
     }
 
