@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import cx from 'classnames';
 import { Message, MessageType } from '../Message';
 import { Label } from '../Label';
@@ -23,8 +23,6 @@ const CheckboxField = React.forwardRef<HTMLInputElement, Props>((props, forwarde
   // Detect indeterminate state from mixed value
   const isIndeterminate = useMemo(() => isMixedValue(value), [value]);
 
-  const [inputValue, setInputValue] = useState(checked);
-
   // Set ref and indeterminate property in a single callback
   const setRef = useCallback(
     (node: HTMLInputElement | null) => {
@@ -40,18 +38,6 @@ const CheckboxField = React.forwardRef<HTMLInputElement, Props>((props, forwarde
     [forwardedRef, isIndeterminate],
   );
 
-  useEffect(() => {
-    setInputValue(checked);
-  }, [checked]);
-
-  const handleInputChange: React.ChangeEventHandler<HTMLInputElement> = useCallback(
-    event => {
-      setInputValue(event.target.checked);
-      onChange && onChange(event);
-    },
-    [setInputValue, onChange],
-  );
-
   return (
     <div className={cx('Checkbox Field', className, { disabled: disabled })}>
       <div
@@ -64,8 +50,8 @@ const CheckboxField = React.forwardRef<HTMLInputElement, Props>((props, forwarde
         <input
           type={type}
           ref={setRef}
-          checked={isIndeterminate ? false : !!inputValue}
-          onChange={handleInputChange}
+          checked={isIndeterminate ? false : !!checked}
+          onChange={onChange}
           disabled={disabled}
           {...rest}
         />
