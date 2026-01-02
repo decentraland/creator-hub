@@ -426,14 +426,6 @@ export function createActionsSystem(
   function handleChangeCamera(entity: Entity, payload: ActionPayload<ActionType.CHANGE_CAMERA>) {
     const target = payload.virtualCameraEntity;
 
-    // If target is explicitly null, remove MainCamera to revert to normal behavior
-    if (target === null) {
-      if (MainCamera.has(engine.CameraEntity)) {
-        MainCamera.deleteFrom(engine.CameraEntity);
-      }
-      return;
-    }
-
     // If target is undefined, use the entity that owns the Actions component
     // If that entity has VirtualCamera, use it; otherwise revert to normal behavior
     let cameraEntity: Entity | undefined = target;
@@ -449,6 +441,15 @@ export function createActionsSystem(
         }
         return;
       }
+    }
+
+    // Special case: if target is 0 (RootEntity), treat it as "remove camera"
+    // This allows using 0 as a sentinel value in composite.json
+    if (cameraEntity === engine.RootEntity) {
+      if (MainCamera.has(engine.CameraEntity)) {
+        MainCamera.deleteFrom(engine.CameraEntity);
+      }
+      return;
     }
 
     // Ensure the selected entity has VirtualCamera before applying

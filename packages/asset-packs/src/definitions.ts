@@ -231,7 +231,7 @@ export const ActionSchemas = {
     intensity: Schemas.Optional(Schemas.Float),
   }),
   [ActionType.CHANGE_CAMERA]: Schemas.Map({
-    /** If undefined or 0, treated as NONE */
+    /** If undefined, uses the entity that owns the Actions component. If 0 (RootEntity), removes camera. */
     virtualCameraEntity: Schemas.Optional(Schemas.Entity),
   }),
   [ActionType.CHANGE_TEXT]: Schemas.Map({
