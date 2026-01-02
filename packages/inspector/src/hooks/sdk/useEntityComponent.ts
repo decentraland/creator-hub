@@ -67,6 +67,8 @@ const transformComponentName = (value: string): string => {
       return 'Multiplayer';
     case CoreComponents.GLTF_CONTAINER:
       return 'GLTF';
+    case CoreComponents.VISIBILITY_COMPONENT:
+      return 'Visibility';
     default:
       return value;
   }
