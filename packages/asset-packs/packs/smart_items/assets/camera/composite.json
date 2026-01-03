@@ -42,6 +42,44 @@
       }
     },
     {
+      "name": "inspector::Config",
+      "data": {
+        "0": {
+          "json": {
+            "isBasicViewEnabled": true,
+            "componentName": "Camera",
+            "sections": [
+              {
+                "id": "camera-settings",
+                "items": [
+                  {
+                    "component": "core::VirtualCamera",
+                    "widget": "RangeField",
+                    "label": "Transition Time",
+                    "path": "defaultTransition.time",
+                    "constraints": {
+                      "min": 0,
+                      "max": 10,
+                      "step": 0.1,
+                      "default": "1"
+                    }
+                  },
+                  {
+                    "component": "core::VirtualCamera",
+                    "widget": "EntityField",
+                    "label": "Look At Entity",
+                    "path": "lookAtEntity"
+                  }
+                ],
+                "columns": 1
+              }
+            ],
+            "version": 2
+          }
+        }
+      }
+    },
+    {
       "name": "asset-packs::Actions",
       "data": {
         "0": {
