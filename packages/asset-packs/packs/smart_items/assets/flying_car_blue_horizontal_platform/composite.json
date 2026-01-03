@@ -133,7 +133,10 @@
             "easingFunction": 0,
             "mode": {
               "$case": "move",
-              "move": {}
+              "move": {
+                "start": { "x": 0, "y": 0, "z": 0 },
+                "end": { "x": 0, "y": 0, "z": 10 }
+              }
             },
             "playing": true
           }

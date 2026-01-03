@@ -1,4 +1,4 @@
-import type { IEngine, PBMaterial, TextureUnion } from '@dcl/ecs';
+import type { Entity, IEngine, PBMaterial, TextureUnion } from '@dcl/ecs';
 
 export function isSelf(value: any) {
   return `${value}` === '{self}';
@@ -80,4 +80,31 @@ export function parseSyncComponents(engine: IEngine, componentNames: string[]): 
       return acc;
     }
   }, []);
+}
+
+/**
+ * Recursively resolves {self} string references in an object to the provided entity ID
+ */
+export function resolveSelfReferences(obj: any, entityId: Entity): any {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+
+  if (typeof obj === 'string' && isSelf(obj)) {
+    return entityId;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => resolveSelfReferences(item, entityId));
+  }
+
+  if (typeof obj === 'object') {
+    const resolved: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      resolved[key] = resolveSelfReferences(value, entityId);
+    }
+    return resolved;
+  }
+
+  return obj;
 }

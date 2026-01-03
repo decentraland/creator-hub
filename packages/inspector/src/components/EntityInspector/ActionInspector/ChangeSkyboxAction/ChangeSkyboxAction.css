@@ -1,0 +1,5 @@
+.ChangeSkyboxActionContainer {
+  display: flex;
+  flex-direction: column;
+}
+

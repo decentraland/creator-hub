@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
 import { recursiveCheck } from '../../../../lib/utils/deep-equal';
 import { Dropdown } from '../../../ui/Dropdown';
+import { CheckboxField } from '../../../ui';
 import { isValid } from './utils';
 import { PLAY_MODE, PLAY_MODE_OPTIONS, type Props } from './types';
 
@@ -35,6 +36,13 @@ const PlayAnimationAction: React.FC<Props> = ({ value, animations, onUpdate }: P
     [payload, handleUpdate],
   );
 
+  const handleChangeShouldReset = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      handleUpdate({ ...payload, shouldReset: e.target.checked });
+    },
+    [payload, handleUpdate],
+  );
+
   return (
     <div className="PlayAnimationActionContainer">
       <div className="row">
@@ -55,6 +63,15 @@ const PlayAnimationAction: React.FC<Props> = ({ value, animations, onUpdate }: P
             value={payload.loop ? PLAY_MODE.LOOP : PLAY_MODE.PLAY_ONCE}
             options={PLAY_MODE_OPTIONS}
             onChange={handleChangePlayMode}
+          />
+        </div>
+      </div>
+      <div className="row">
+        <div className="field inline">
+          <CheckboxField
+            label="Reset to first frame"
+            checked={payload.shouldReset ?? false}
+            onChange={handleChangeShouldReset}
           />
         </div>
       </div>

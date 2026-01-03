@@ -29,6 +29,7 @@ import {
   ProximityLayer,
   TriggerType,
   TweenType,
+  TeleportMode,
   clone,
   getComponents,
   initVideoPlayerComponentMaterial,
@@ -56,12 +57,13 @@ import { initTriggers, damageTargets, healTargets } from './triggers';
 import { followMap } from './transform';
 import { getEasingFunctionFromInterpolation } from './tweens';
 import { REWARDS_SERVER_URL } from './admin-toolkit-ui/constants';
-import { requestTeleport } from '~system/UserActionModule';
 import {
   movePlayerTo,
   triggerEmote,
   triggerSceneEmote,
   openExternalUrl,
+  teleportTo,
+  changeRealm,
 } from '~system/RestrictedActions';
 import type { FlatFetchInit } from '~system/SignedFetch';
 import { getRealm } from '~system/Runtime';
@@ -106,6 +108,8 @@ export function createActionsSystem(
     MainCamera,
     VirtualCamera,
     TextShape,
+    InputModifier,
+    SkyboxTime,
   } = getExplorerComponents(engine);
   const { Actions, States, Counter, Triggers, Rewards } = getComponents(engine);
 
@@ -290,6 +294,10 @@ export function createActionsSystem(
             handleMovePlayerHere(entity, getPayload<ActionType.MOVE_PLAYER_HERE>(action));
             break;
           }
+          case ActionType.PLAYER_FACE_ITEM: {
+            handlePlayerFaceItem(entity, getPayload<ActionType.PLAYER_FACE_ITEM>(action));
+            break;
+          }
           case ActionType.FOLLOW_PLAYER: {
             handleFollowPlayer(entity, getPayload<ActionType.FOLLOW_PLAYER>(action));
             break;
@@ -362,6 +370,26 @@ export function createActionsSystem(
             handleChangeText(entity, getPayload<ActionType.CHANGE_TEXT>(action));
             break;
           }
+          case ActionType.FREEZE_PLAYER: {
+            handleFreezePlayer();
+            break;
+          }
+          case ActionType.UNFREEZE_PLAYER: {
+            handleUnfreezePlayer();
+            break;
+          }
+          case ActionType.CHANGE_COLLISIONS: {
+            handleChangeCollisions(entity, getPayload<ActionType.CHANGE_COLLISIONS>(action));
+            break;
+          }
+          case ActionType.CHANGE_SKYBOX: {
+            handleChangeSkybox(getPayload<ActionType.CHANGE_SKYBOX>(action));
+            break;
+          }
+          case ActionType.RESET_SKYBOX: {
+            handleResetSkybox();
+            break;
+          }
           default:
             break;
         }
@@ -397,9 +425,29 @@ export function createActionsSystem(
   }
 
   // CHANGE_CAMERA
-  function handleChangeCamera(_entity: Entity, payload: ActionPayload<ActionType.CHANGE_CAMERA>) {
+  function handleChangeCamera(entity: Entity, payload: ActionPayload<ActionType.CHANGE_CAMERA>) {
     const target = payload.virtualCameraEntity;
-    if (!target) {
+
+    // If target is undefined, use the entity that owns the Actions component
+    // If that entity has VirtualCamera, use it; otherwise revert to normal behavior
+    let cameraEntity: Entity | undefined = target;
+
+    if (cameraEntity === undefined) {
+      // Use the entity that owns the Actions component if it has VirtualCamera
+      if (VirtualCamera.has(entity)) {
+        cameraEntity = entity;
+      } else {
+        // No camera specified and entity doesn't have VirtualCamera, revert to normal
+        if (MainCamera.has(engine.CameraEntity)) {
+          MainCamera.deleteFrom(engine.CameraEntity);
+        }
+        return;
+      }
+    }
+
+    // Special case: if target is 0 (RootEntity), treat it as "remove camera"
+    // This allows using 0 as a sentinel value in composite.json
+    if (cameraEntity === engine.RootEntity) {
       if (MainCamera.has(engine.CameraEntity)) {
         MainCamera.deleteFrom(engine.CameraEntity);
       }
@@ -407,12 +455,12 @@ export function createActionsSystem(
     }
 
     // Ensure the selected entity has VirtualCamera before applying
-    if (!VirtualCamera.has(target)) {
+    if (!VirtualCamera.has(cameraEntity)) {
       return;
     }
 
     MainCamera.createOrReplace(engine.CameraEntity, {
-      virtualCameraEntity: target,
+      virtualCameraEntity: cameraEntity,
     });
   }
 
@@ -424,6 +472,75 @@ export function createActionsSystem(
     text.text = payload.text;
     if (payload.fontSize !== undefined) text.fontSize = payload.fontSize;
     if (payload.color) text.textColor = payload.color;
+  }
+
+  // FREEZE_PLAYER
+  function handleFreezePlayer() {
+    InputModifier.createOrReplace(engine.PlayerEntity, {
+      mode: InputModifier.Mode.Standard({
+        disableAll: true,
+      }),
+    });
+  }
+
+  // UNFREEZE_PLAYER
+  function handleUnfreezePlayer() {
+    InputModifier.createOrReplace(engine.PlayerEntity, {
+      mode: InputModifier.Mode.Standard({
+        disableAll: false,
+      }),
+    });
+  }
+
+  // CHANGE_COLLISIONS
+  function handleChangeCollisions(
+    entity: Entity,
+    payload: ActionPayload<ActionType.CHANGE_COLLISIONS>,
+  ) {
+    const { visibleCollisions, invisibleCollisions } = payload;
+    const gltf = GltfContainer.getMutableOrNull(entity);
+    const meshCollider = MeshCollider.getMutableOrNull(entity);
+
+    if (gltf) {
+      if (visibleCollisions !== undefined) {
+        gltf.visibleMeshesCollisionMask = visibleCollisions;
+      }
+      if (invisibleCollisions !== undefined) {
+        gltf.invisibleMeshesCollisionMask = invisibleCollisions;
+      }
+    }
+
+    if (meshCollider) {
+      // For MeshCollider, use visibleCollisions if provided, otherwise invisibleCollisions
+      if (visibleCollisions !== undefined) {
+        meshCollider.collisionMask = visibleCollisions;
+      } else if (invisibleCollisions !== undefined) {
+        meshCollider.collisionMask = invisibleCollisions;
+      }
+    }
+  }
+
+  // CHANGE_SKYBOX
+  function handleChangeSkybox(payload: ActionPayload<ActionType.CHANGE_SKYBOX>) {
+    const { time, direction } = payload;
+
+    // Ensure time is a valid number (seconds since midnight)
+    if (typeof time !== 'number' || isNaN(time) || time < 0 || time > 86400) {
+      console.error('Invalid skybox time value:', time);
+      return;
+    }
+
+    SkyboxTime.createOrReplace(engine.RootEntity, {
+      fixedTime: time,
+      transitionMode: direction,
+    });
+  }
+
+  // RESET_SKYBOX
+  function handleResetSkybox() {
+    if (SkyboxTime.has(engine.RootEntity)) {
+      SkyboxTime.deleteFrom(engine.RootEntity);
+    }
   }
 
   // PLAY_ANIMATION
@@ -442,7 +559,7 @@ export function createActionsSystem(
   }
 
   function handlePlayAnimation(entity: Entity, payload: ActionPayload<ActionType.PLAY_ANIMATION>) {
-    const { animation, loop } = payload;
+    const { animation, loop, shouldReset } = payload;
 
     const animator = Animator.getMutable(entity);
     if (!animator.states.some($ => $.clip === animation)) {
@@ -461,6 +578,9 @@ export function createActionsSystem(
       clip.playing = true;
       clip.loop = loop ?? false;
       clip.weight = normalizeAnimationWeight(clip.weight ?? 1);
+      if (shouldReset !== undefined) {
+        clip.shouldReset = shouldReset;
+      }
     } catch (e) {
       console.error('Error playing animation', e);
     }
@@ -747,6 +867,9 @@ export function createActionsSystem(
     if (collider !== undefined) {
       if (gltf) {
         gltf.invisibleMeshesCollisionMask = collider;
+        if (collider === 0) {
+          gltf.visibleMeshesCollisionMask = 0;
+        }
       } else if (meshCollider) {
         meshCollider.collisionMask = collider;
       }
@@ -780,10 +903,20 @@ export function createActionsSystem(
     _entity: Entity,
     payload: ActionPayload<ActionType.TELEPORT_PLAYER>,
   ) {
-    const { x, y } = payload;
-    requestTeleport({
-      destination: `${x},${y}`,
-    });
+    const { mode, x, y, realm } = payload;
+
+    if (mode === TeleportMode.TO_WORLD) {
+      if (realm) {
+        void changeRealm({ realm });
+      }
+    } else {
+      // TO_COORDINATES mode
+      if (x !== undefined && y !== undefined) {
+        void teleportTo({
+          worldCoordinates: { x, y },
+        });
+      }
+    }
   }
 
   // MOVE PLAYER
@@ -1141,6 +1274,19 @@ export function createActionsSystem(
 
     const triggerEvents = getTriggerEvents(entity);
     triggerEvents.emit(TriggerType.ON_PLAYER_SPAWN);
+  }
+
+  // PLAYER_FACE_ITEM
+  function handlePlayerFaceItem(
+    entity: Entity,
+    _payload: ActionPayload<ActionType.PLAYER_FACE_ITEM>,
+  ) {
+    const itemPosition = getWorldPosition(entity);
+    const currentPlayerPosition = getPlayerPosition();
+    void movePlayerTo({
+      newRelativePosition: currentPlayerPosition,
+      avatarTarget: itemPosition,
+    });
   }
 
   // PLACE_ON_PLAYER
