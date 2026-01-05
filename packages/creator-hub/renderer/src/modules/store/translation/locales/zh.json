@@ -53,6 +53,12 @@
           "publish_scene": "发布场景",
           "republish_to_world": "重新发布到 {name}",
           "republish_to_land": "重新发布到 {coords}"
+        },
+        "publish_status": {
+          "preparing": "准备中...",
+          "publishing": "发布中...",
+          "published": "已发布",
+          "failed": "失败"
         }
       }
     }

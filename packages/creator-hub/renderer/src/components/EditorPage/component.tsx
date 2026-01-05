@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
@@ -66,7 +66,32 @@ export function EditorPage() {
     publishScene,
   } = useEditor();
   const { settings, updateAppSettings } = useSettings();
-  const { executeDeployment } = useDeploy();
+  const { executeDeployment, getDeployment } = useDeploy();
+  const deployment = project ? getDeployment(project.path) : undefined;
+
+  const publishButtonText = useMemo(() => {
+    if (loadingPublish) {
+      return t('modal.publish_project.deploy.deploying.step.loading');
+    }
+
+    if (deployment?.status === 'pending') {
+      const { catalyst, assetBundle, lods } = deployment.componentsStatus;
+
+      if (catalyst === 'pending') {
+        return t('modal.publish_project.deploy.deploying.step.uploading');
+      }
+      if (assetBundle === 'pending') {
+        return t('modal.publish_project.deploy.deploying.step.converting');
+      }
+      if (lods === 'pending') {
+        return t('modal.publish_project.deploy.deploying.step.optimizing');
+      }
+
+      return t('modal.publish_project.deploy.deploying.step.loading');
+    }
+
+    return t('editor.header.actions.publish');
+  }, [loadingPublish, deployment?.status, deployment?.componentsStatus]);
   const userId = useSelector(state => state.analytics.userId);
   const { detectCustomCode, isLoading: isDetectingCustomCode } = useSceneCustomCode(project);
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
@@ -169,6 +194,13 @@ export function EditorPage() {
   const handleClickPublishOptions = useCallback(
     async (option: PublishOption) => {
       if (!project) return;
+
+      // If there's a deployment in progress, open modal to show status
+      if (deployment?.status === 'pending') {
+        openModal('publish');
+        return;
+      }
+
       const rpc = iframeRef.current;
       if (rpc) saveAndGetThumbnail(rpc);
 
@@ -186,7 +218,15 @@ export function EditorPage() {
           break;
       }
     },
-    [handleOpenPublishModal, project, publishScene, saveAndGetThumbnail, executeDeployment],
+    [
+      handleOpenPublishModal,
+      project,
+      publishScene,
+      saveAndGetThumbnail,
+      executeDeployment,
+      deployment?.status,
+      openModal,
+    ],
   );
 
   // inspector url
@@ -283,7 +323,13 @@ export function EditorPage() {
                 color="primary"
                 disabled={loadingPublish || isInstallingProject || isDetectingCustomCode}
                 onClick={() => handleClickPublishOptions({ id: 'publish-scene' })}
-                startIcon={loadingPublish ? <Loader size={20} /> : <PublicIcon />}
+                startIcon={
+                  loadingPublish || deployment?.status === 'pending' ? (
+                    <Loader size={20} />
+                  ) : (
+                    <PublicIcon />
+                  )
+                }
                 extra={
                   <PublishOptions
                     project={project}
@@ -291,7 +337,7 @@ export function EditorPage() {
                   />
                 }
               >
-                {t('editor.header.actions.publish')}
+                {publishButtonText}
               </ButtonGroup>
             </div>
           </Header>
