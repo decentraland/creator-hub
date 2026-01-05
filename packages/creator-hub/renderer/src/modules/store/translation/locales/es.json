@@ -53,7 +53,9 @@
           "landscape_terrain_enabled": "Habilitar terrenos de vista panorámica"
         },
         "publish_options": {
-          "publish_scene": "Publicar Escena"
+          "publish_scene": "Publicar Escena",
+          "republish_to_world": "Republicar en {name}",
+          "republish_to_land": "Republicar en {coords}"
         }
       }
     }

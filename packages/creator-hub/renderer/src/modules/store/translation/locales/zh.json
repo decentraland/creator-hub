@@ -50,7 +50,9 @@
           "landscape_terrain_enabled": "启用景观地形"
         },
         "publish_options": {
-          "publish_scene": "发布场景"
+          "publish_scene": "发布场景",
+          "republish_to_world": "重新发布到 {name}",
+          "republish_to_land": "重新发布到 {coords}"
         }
       }
     }

@@ -33,7 +33,7 @@ export const publishScene = createAsyncThunk(
     const { translation } = getState();
     const port = await editor.publishScene({ ...opts, language: translation.locale });
     const deployment = { path: opts.path, port, chainId: opts.chainId, wallet: opts.wallet };
-    dispatch(deploymentActions.initializeDeployment(deployment));
+    await dispatch(deploymentActions.initializeDeployment(deployment)).unwrap();
     return port;
   },
 );

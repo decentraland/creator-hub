@@ -19,9 +19,11 @@ import { isWorkspaceError } from '/shared/types/workspace';
 
 import { t } from '/@/modules/store/translation/utils';
 import { initRpc } from '/@/modules/rpc';
+import { config } from '/@/config';
 import { useEditor } from '/@/hooks/useEditor';
 import { useSettings } from '/@/hooks/useSettings';
 import { useSceneCustomCode } from '/@/hooks/useSceneCustomCode';
+import { useDeploy } from '/@/hooks/useDeploy';
 
 import EditorPng from '/assets/images/editor.png';
 
@@ -61,8 +63,10 @@ export function EditorPage() {
     loadingPublish,
     isInstallingProject,
     killPreview,
+    publishScene,
   } = useEditor();
   const { settings, updateAppSettings } = useSettings();
+  const { executeDeployment } = useDeploy();
   const userId = useSelector(state => state.analytics.userId);
   const { detectCustomCode, isLoading: isDetectingCustomCode } = useSceneCustomCode(project);
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
@@ -138,12 +142,8 @@ export function EditorPage() {
   }, [navigate, iframeRef.current]);
 
   const handleOpenPublishModal = useCallback(async () => {
-    const rpc = iframeRef.current;
-    if (!rpc) return;
-    saveAndGetThumbnail(rpc);
-
     await handleActionWithWarningCheck(() => openModal('publish'));
-  }, [iframeRef.current, saveAndGetThumbnail, handleActionWithWarningCheck, openModal]);
+  }, [handleActionWithWarningCheck, openModal]);
 
   const handleCloseModal = useCallback(
     async (continued: boolean = false) => {
@@ -168,19 +168,25 @@ export function EditorPage() {
 
   const handleClickPublishOptions = useCallback(
     async (option: PublishOption) => {
+      if (!project) return;
+      const rpc = iframeRef.current;
+      if (rpc) saveAndGetThumbnail(rpc);
+
       switch (option.id) {
         case 'publish-scene':
           await handleOpenPublishModal();
           break;
         case 'deploy-world':
-          // TODO: implement direct deploy to world
+          await publishScene({ targetContent: config.get('WORLDS_CONTENT_SERVER_URL') });
+          executeDeployment(project.path);
           break;
         case 'deploy-land':
-          // TODO: implement direct deploy to land
+          await publishScene({ target: config.get('PEER_URL') });
+          executeDeployment(project.path);
           break;
       }
     },
-    [handleOpenPublishModal],
+    [handleOpenPublishModal, project, publishScene, saveAndGetThumbnail, executeDeployment],
   );
 
   // inspector url
@@ -276,7 +282,7 @@ export function EditorPage() {
               <ButtonGroup
                 color="primary"
                 disabled={loadingPublish || isInstallingProject || isDetectingCustomCode}
-                onClick={handleOpenPublishModal}
+                onClick={() => handleClickPublishOptions({ id: 'publish-scene' })}
                 startIcon={loadingPublish ? <Loader size={20} /> : <PublicIcon />}
                 extra={
                   <PublishOptions
@@ -367,12 +373,20 @@ function PublishOptions({ project, onClick }: PublishOptionsProps) {
       </ListItemButton>
       {worldName && (
         <ListItemButton onClick={handleClick('deploy-world')}>
-          <ListItemText primary={`Deploy to ${worldName}`} />
+          <ListItemText
+            primary={t('editor.header.actions.publish_options.republish_to_world', {
+              name: worldName,
+            })}
+          />
         </ListItemButton>
       )}
-      {landBase && project?.scene?.base !== '0,0' && (
+      {!worldName && landBase && project?.scene?.base !== '0,0' && (
         <ListItemButton onClick={handleClick('deploy-land')}>
-          <ListItemText primary={`Deploy to ${landBase}`} />
+          <ListItemText
+            primary={t('editor.header.actions.publish_options.republish_to_land', {
+              coords: landBase,
+            })}
+          />
         </ListItemButton>
       )}
     </div>
