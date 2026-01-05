@@ -17,4 +17,5 @@ export type Props = {
   onClose: () => void;
   onScan: () => void;
   onSelect: (asset: string) => void;
+  onSelectAll: (selectAll: boolean) => void;
 };
