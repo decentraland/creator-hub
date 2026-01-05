@@ -20,6 +20,11 @@ export async function getScenesPath() {
   return config.settings?.scenesPath || (await getDefaultScenesPath());
 }
 
+export async function isCustomScenesPath(currentPath: string): Promise<boolean> {
+  const defaultPath = await getDefaultScenesPath();
+  return currentPath !== defaultPath;
+}
+
 export function isValidUpdateStrategy(value?: string): value is DEPENDENCY_UPDATE_STRATEGY {
   return Object.values(DEPENDENCY_UPDATE_STRATEGY).includes(value as DEPENDENCY_UPDATE_STRATEGY);
 }
@@ -116,4 +121,8 @@ export async function setDefaultEditor(editorPath: string) {
 
 export async function removeEditor(editorPath: string) {
   return await invoke('code.removeEditor', editorPath);
+}
+
+export async function getReleaseNotes(version: string) {
+  return await invoke('updater.getReleaseNotes', version);
 }

@@ -1,3 +1,11 @@
+@font-face {
+  font-family: "Inter";
+  src: url("./fonts/Inter-Regular.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   /* Colors */
   --bg: #16141a;
@@ -24,7 +32,7 @@
 
   /* fonts */
   --font-family:
-    system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    "Inter", system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-monospace:
     "Inconsolata", "Consolas", "Droid Sans Mono", "Monaco", "Courier New", monospace;
 
@@ -64,6 +72,21 @@
   /* --mui-palette-primary-main: #ff2d55; */
   --mui-palette-action-disabled: #231113;
   --mui-palette-secondary-contrast: #ffffff;
+
+  /* Global Scrollbar Styles */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--black);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--dcl-silver);
+    border-radius: 4px;
+  }
 }
 
 html {

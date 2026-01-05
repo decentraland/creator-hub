@@ -214,7 +214,8 @@
             "invalid_identity": "身份验证失败。",
             "max_file_size_exceeded": "一个或多个资产超过了允许的限制（{maxFileSizeInMb}MB）。\n优化或移除大文件并重试。",
             "unknown": "出了问题。\n请重试。",
-            "invalid_creator_wallet": "创建者必须是有效的以太坊钱包地址。"
+            "invalid_creator_wallet": "创建者必须是有效的以太坊钱包地址。",
+            "code_error": "你的场景代码包含一个或多个错误。\n请修复它们并重试。"
           },
           "actions": {
             "report_issue": "报告问题",
@@ -245,17 +246,36 @@
       "current": "当前"
     },
     "app_settings": {
-      "title": "應用程式設定",
+      "title": "應用程式首選項",
+      "tabs": {
+        "scenes": {
+          "label": "場景",
+          "title": "場景設定"
+        },
+        "editor": {
+          "label": "編輯器",
+          "title": "編輯器設定"
+        },
+        "about": {
+          "label": "關於",
+          "title": "關於"
+        }
+      },
+      "about": {
+        "title": "Decentraland Creator Hub",
+        "view_changelog": "查看更新日誌"
+      },
       "fields": {
         "scenes_folder": {
           "label": "場景資料夾",
           "change_button": "更改資料夾",
+          "reset_button": "重置",
           "errors": {
             "invalid_path": "文件夹不存在或无法在其中保存文件。请选择其他文件夹。"
           }
         },
         "scene_editor_dependencies": {
-          "label": "場景編輯器依賴項",
+          "label": "場景依賴",
           "options": {
             "auto_update": "自動更新我的所有場景",
             "notify": "有新版本更新時通知我",
@@ -285,7 +305,7 @@
       "version": {
         "current": "當前版本：{version}",
         "new": "新版本：{version}",
-        "up_to_date": "Creator Hub 已是最新版本",
+        "up_to_date": "Creator Hub 已是最新版本。",
         "label": "版本：{version}"
       },
       "update": {
@@ -298,7 +318,9 @@
         "check": "檢查更新",
         "checking": "正在檢查更新...",
         "error": "我們無法檢查更新。請稍後再試。",
-        "update_available": "更新可用"
+        "update_available": "更新可用",
+        "whats_new": "新功能",
+        "bug_fixes": "錯誤修復"
       }
     },
     "create_project": {

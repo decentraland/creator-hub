@@ -6,6 +6,7 @@ export enum CoreComponents {
   AUDIO_SOURCE = 'core::AudioSource',
   AUDIO_STREAM = 'core::AudioStream',
   AVATAR_ATTACH = 'core::AvatarAttach',
+  BILLBOARD = 'core::Billboard',
   GLTF_CONTAINER = 'core::GltfContainer',
   NETWORK_ENTITY = 'core-schema::Network-Entity',
   MATERIAL = 'core::Material',

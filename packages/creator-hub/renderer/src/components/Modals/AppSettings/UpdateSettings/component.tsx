@@ -1,37 +1,51 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Box, Typography, Button } from 'decentraland-ui2';
+import { Box, Typography, Button, type ButtonProps } from 'decentraland-ui2';
 import { InfoOutlined } from '@mui/icons-material';
-import { Row } from '../../../Row';
-import { Column } from '../../../Column';
 import { t } from '/@/modules/store/translation/utils';
-import { useEditor } from '/@/hooks/useEditor';
 import { useDispatch, useSelector } from '#store';
 import { checkForUpdates, downloadUpdate, installUpdate } from '/@/modules/store/settings/slice';
+import { Row } from '../../../Row';
+import { Column } from '../../../Column';
+import { MarkdownRenderer } from '../MarkdownRenderer';
+
 import './styles.css';
 
 interface UpdateButtonProps {
   action: () => void;
   text: string;
   disabled?: boolean;
+  color: ButtonProps['color'];
 }
 
 export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '' }) => {
   const dispatch = useDispatch();
-  const { version: currentVersion } = useEditor();
   const {
     downloadingUpdate: { progress, finished, isDownloading },
     updateInfo,
+    releaseNotes,
   } = useSelector(state => state.settings);
 
   const checkForUpdatesStatus = useSelector(state => state.settings.checkForUpdates.status);
 
   const [hasCheckedForUpdates, setHasCheckedForUpdates] = useState(false);
 
-  const shouldShowUpdateAvailable = useCallback(() => {
-    return hasCheckedForUpdates && updateInfo.available && updateInfo.version && !isDownloading;
-  }, [hasCheckedForUpdates, updateInfo, isDownloading]);
+  const shouldShowUpdateAvailable = useMemo(() => {
+    return (
+      hasCheckedForUpdates &&
+      checkForUpdatesStatus === 'succeeded' &&
+      updateInfo.available &&
+      updateInfo.version &&
+      !isDownloading
+    );
+  }, [
+    hasCheckedForUpdates,
+    checkForUpdatesStatus,
+    updateInfo.available,
+    updateInfo.version,
+    isDownloading,
+  ]);
 
-  const handleCheckForUpdates = useCallback(async () => {
+  const handleCheckForUpdates = useCallback(() => {
     setHasCheckedForUpdates(true);
     dispatch(checkForUpdates({ autoDownload: false }));
   }, [dispatch]);
@@ -42,7 +56,7 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
 
   const handleDownloadUpdate = useCallback(async () => {
     dispatch(downloadUpdate());
-  }, [handleCheckForUpdates]);
+  }, []);
 
   const getButtonProps = useCallback((): UpdateButtonProps => {
     if (checkForUpdatesStatus === 'loading') {
@@ -50,6 +64,7 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
         action: () => {},
         text: t('editor.loading.title'),
         disabled: true,
+        color: 'secondary',
       };
     }
 
@@ -58,6 +73,7 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
         action: () => {},
         text: t('modal.app_settings.update.downloading', { progress }),
         disabled: true,
+        color: 'inherit',
       };
     }
 
@@ -65,6 +81,7 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
       return {
         action: handleCheckForUpdates,
         text: t('modal.app_settings.update.check'),
+        color: 'secondary',
       };
     }
 
@@ -76,12 +93,14 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
       return {
         action: updateInfo.isDownloaded ? handleInstallUpdate : handleDownloadUpdate,
         text: buttonText,
+        color: 'primary',
       };
     }
 
     return {
       action: handleCheckForUpdates,
       text: t('modal.app_settings.update.check'),
+      color: 'secondary',
     };
   }, [
     checkForUpdatesStatus,
@@ -102,46 +121,86 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
 
   const buttonProps = getButtonProps();
 
+  const renderStatusMessage = () => {
+    if (shouldShowUpdateAvailable && releaseNotes) {
+      return (
+        <Typography
+          variant="h6"
+          className="update-settings__release-notes-header"
+        >
+          {t('modal.app_settings.update.update_available')}: v{releaseNotes.version}
+        </Typography>
+      );
+    }
+
+    if (progress > 0 && !finished) {
+      return (
+        <Box className="update-settings__progress-container">
+          <Typography variant="body2">{t('modal.app_settings.update.applying')}</Typography>
+          <Typography variant="body2">{t('modal.app_settings.update.dont_close')}</Typography>
+        </Box>
+      );
+    }
+
+    if (
+      hasCheckedForUpdates &&
+      updateInfo.available === false &&
+      checkForUpdatesStatus === 'succeeded'
+    ) {
+      return (
+        <Typography
+          variant="subtitle1"
+          className="update-settings__up-to-date-message"
+        >
+          {t('modal.app_settings.version.up_to_date')}
+        </Typography>
+      );
+    }
+
+    return null;
+  };
+
+  const renderReleaseNotes = () => {
+    if (!shouldShowUpdateAvailable || !releaseNotes || !releaseNotes.content.length) {
+      return null;
+    }
+
+    return (
+      <Box className="update-settings__release-notes">
+        <Box className="update-settings__release-notes-content">
+          {releaseNotes.content.length > 0 && (
+            <Box className="update-settings__release-notes-section">
+              <MarkdownRenderer content={releaseNotes.content} />
+            </Box>
+          )}
+        </Box>
+      </Box>
+    );
+  };
+
   return (
     <Column className={`update-settings ${className}`}>
-      {currentVersion && (
-        <Typography variant="body1">
-          {t('modal.app_settings.version.current', { version: currentVersion })}
-        </Typography>
-      )}
-      <Row className="update-settings__button-container">
+      <Box className="update-settings__status-area">
+        {renderStatusMessage()}
+        {renderReleaseNotes()}
+      </Box>
+      <Box className="update-settings__button-area">
         <Button
           variant="contained"
+          color={buttonProps.color}
           onClick={buttonProps.action}
           disabled={buttonProps.disabled}
+          fullWidth
         >
           {buttonProps.text}
         </Button>
-        {shouldShowUpdateAvailable() && (
-          <Typography variant="subtitle1">
-            {t('modal.app_settings.version.new', { version: updateInfo.version })}
-          </Typography>
+        {canInstallNewVersion && (
+          <Row className="update-settings__message-container">
+            <InfoOutlined />
+            <Typography variant="body2">{t('modal.app_settings.update.auto_restart')}</Typography>
+          </Row>
         )}
-        {progress > 0 && !finished && (
-          <Box className="update-settings__progress-container">
-            <Typography variant="body2">{t('modal.app_settings.update.applying')}</Typography>
-            <Typography variant="body2">{t('modal.app_settings.update.dont_close')}</Typography>
-          </Box>
-        )}
-        {hasCheckedForUpdates &&
-          updateInfo.available === false &&
-          checkForUpdatesStatus === 'succeeded' && (
-            <Typography variant="subtitle1">
-              {t('modal.app_settings.version.up_to_date')}
-            </Typography>
-          )}
-      </Row>
-      {canInstallNewVersion && (
-        <Row className="update-settings__message-container">
-          <InfoOutlined />
-          <Typography variant="body2">{t('modal.app_settings.update.auto_restart')}</Typography>
-        </Row>
-      )}
+      </Box>
     </Column>
   );
 };

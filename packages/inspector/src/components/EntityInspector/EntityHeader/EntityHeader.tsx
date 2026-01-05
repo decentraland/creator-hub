@@ -145,7 +145,7 @@ export default React.memo(
           },
           {
             requires: [
-              [sdk.components.GltfContainer.componentId, sdk.components.MeshCollider.componentId],
+              [sdk.components.GltfContainer.componentId, sdk.components.MeshRenderer.componentId],
             ],
           },
         ),
@@ -177,6 +177,11 @@ export default React.memo(
             'MeshCollider defines the collision properties of an item, based on its invisible collision geometry. Collisions serve to make an item clickable or to block the player from walking through an item',
           link: 'https://docs.decentraland.org/creator/development-guide/sdk7/colliders/',
         }),
+        createOption(sdk.components.Animator, 'Animator', {
+          description:
+            'Animator controls the playback of animations for 3D models. Use it to play, stop, or loop animations on entities with GLTF models that contain animation data.',
+          link: 'https://docs.decentraland.org/creator/development-guide/sdk7/animations/',
+        }),
         createOption(
           sdk.components.NftShape,
           'Nft Shape',
@@ -192,6 +197,11 @@ export default React.memo(
             ],
           },
         ),
+        createOption(sdk.components.Billboard, 'Billboard', {
+          description:
+            'The Billboard component makes an Entity automatically reorient its rotation to always face the camera, as in retro 3D games that used 2D sprites.',
+          link: 'https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/entity-positioning#face-the-player',
+        }),
         { header: 'Interaction' },
         createOption(sdk.components.States, 'States', {
           description:

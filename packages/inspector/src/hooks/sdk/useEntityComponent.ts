@@ -11,13 +11,11 @@ import { useSdk } from './useSdk';
 import { useChange } from './useChange';
 
 export const DISABLED_COMPONENTS: string[] = [
-  CoreComponents.ANIMATOR,
   CoreComponents.AUDIO_STREAM,
   CoreComponents.NETWORK_ENTITY,
   CoreComponents.TWEEN_SEQUENCE,
   ComponentName.ADMIN_TOOLS,
   ComponentName.REWARDS,
-  CoreComponents.AVATAR_ATTACH,
 ];
 
 export const SMART_ITEM_COMPONENTS: string[] = [
@@ -67,6 +65,8 @@ const transformComponentName = (value: string): string => {
       return 'Multiplayer';
     case CoreComponents.GLTF_CONTAINER:
       return 'GLTF';
+    case CoreComponents.VISIBILITY_COMPONENT:
+      return 'Visibility';
     default:
       return value;
   }

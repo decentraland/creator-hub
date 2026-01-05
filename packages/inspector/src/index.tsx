@@ -11,8 +11,8 @@ import { SdkProvider } from './components/SdkProvider';
 import 'decentraland-ui/lib/styles.css';
 import 'decentraland-ui/lib/dark-theme.css';
 import 'react-contexify/ReactContexify.css';
-import './vars.css';
-import './index.css';
+import './theme/vars.css';
+import './theme/index.css';
 
 globalThis.Buffer = MaybeBuffer;
 
