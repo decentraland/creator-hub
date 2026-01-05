@@ -1,0 +1,351 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/camera.glb",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "0": {
+          "json": {
+            "value": "Pan Camera"
+          }
+        }
+      }
+    },
+    {
+      "name": "core::VisibilityComponent",
+      "data": {
+        "0": {
+          "json": {
+            "visible": false
+          }
+        }
+      }
+    },
+    {
+      "name": "core::VirtualCamera",
+      "data": {
+        "0": {
+          "json": {}
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Actions",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "name": "Start Pan",
+                "type": "batch",
+                "jsonPayload": "{ \"actions\": [\"_Set Panning State\", \"_Select Camera\", \"_Tween Pan\"] }",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "Start Pan Back and Forth",
+                "type": "batch",
+                "jsonPayload": "{ \"actions\": [\"_Select Camera\", \"_Set Going to End State\", \"_Tween to End\"] }",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "_Select Camera",
+                "type": "change_camera",
+                "jsonPayload": "{ \"virtualCameraEntity\": \"{self}\" }"
+              },
+              {
+                "name": "_Disable Camera",
+                "type": "change_camera",
+                "jsonPayload": "{ \"virtualCameraEntity\": 0 }"
+              },
+              {
+                "name": "Freeze Player",
+                "type": "freeze_player",
+                "jsonPayload": "{}"
+              },
+              {
+                "name": "Unfreeze Player",
+                "type": "unfreeze_player",
+                "jsonPayload": "{}"
+              },
+              {
+                "name": "_Set Going to End State",
+                "type": "set_state",
+                "jsonPayload": "{ \"state\": \"GoingToEnd\" }"
+              },
+              {
+                "name": "_Set Panning State",
+                "type": "set_state",
+                "jsonPayload": "{ \"state\": \"Panning\" }"
+              },
+              {
+                "name": "_Set Going to Start State",
+                "type": "set_state",
+                "jsonPayload": "{ \"state\": \"GoingToStart\" }"
+              },
+              {
+                "name": "_Tween Pan",
+                "type": "start_tween",
+                "jsonPayload": "{ \"type\": \"move_item\", \"end\": { \"x\": 0, \"y\": 0, \"z\": 0 }, \"relative\": true, \"interpolationType\": \"linear\", \"duration\": 5 }"
+              },
+              {
+                "name": "_Tween to End",
+                "type": "start_tween",
+                "jsonPayload": "{ \"type\": \"move_item\", \"end\": { \"x\": 0, \"y\": 0, \"z\": 0 }, \"relative\": true, \"interpolationType\": \"linear\", \"duration\": 5 }"
+              },
+              {
+                "name": "_Tween to Start",
+                "type": "start_tween",
+                "jsonPayload": "{ \"type\": \"move_item\", \"end\": { \"x\": 0, \"y\": 0, \"z\": 0 }, \"relative\": true, \"interpolationType\": \"linear\", \"duration\": 5 }"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Triggers",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "type": "on_tween_end",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::States}",
+                    "type": "when_state_is",
+                    "value": "Panning"
+                  }
+                ],
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "_Disable Camera",
+                    "jsonPayload": "{}"
+                  }
+                ],
+                "basicViewId": "trigger-when-pan-ends"
+              },
+              {
+                "type": "on_tween_end",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::States}",
+                    "type": "when_state_is",
+                    "value": "GoingToEnd"
+                  }
+                ],
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "_Set Going to Start State",
+                    "jsonPayload": "{}"
+                  },
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "_Tween to Start",
+                    "jsonPayload": "{}"
+                  }
+                ],
+                "basicViewId": "trigger-when-end-reached"
+              },
+              {
+                "type": "on_tween_end",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::States}",
+                    "type": "when_state_is",
+                    "value": "GoingToStart"
+                  }
+                ],
+                "actions": [
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "_Set Going to End State",
+                    "jsonPayload": "{}"
+                  },
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "_Tween to End",
+                    "jsonPayload": "{}"
+                  }
+                ],
+                "basicViewId": "trigger-when-start-reached"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::States",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": ["Panning", "GoingToEnd", "GoingToStart"],
+            "defaultValue": "Panning"
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Sync-Components",
+      "data": {
+        "0": {
+          "json": {
+            "value": ["core::Tween", "asset-packs::States"]
+          }
+        }
+      }
+    },
+    {
+      "name": "core::Tween",
+      "data": {
+        "0": {
+          "json": {
+            "duration": 5000,
+            "easingFunction": 0,
+            "mode": {
+              "$case": "move",
+              "move": {
+                "start": { "x": 0, "y": 0, "z": 0 },
+                "end": { "x": 10, "y": 0, "z": 0 }
+              }
+            },
+            "playing": false
+          }
+        }
+      }
+    },
+    {
+      "name": "core::TweenSequence",
+      "data": {
+        "0": {
+          "json": {
+            "sequence": [],
+            "loop": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "inspector::Config",
+      "data": {
+        "0": {
+          "json": {
+            "isBasicViewEnabled": true,
+            "componentName": "Pan Camera",
+            "sections": [
+              {
+                "id": "camera-settings",
+                "items": [
+                  {
+                    "component": "core::VirtualCamera",
+                    "widget": "RangeField",
+                    "label": "Transition Time",
+                    "path": "defaultTransition.time",
+                    "constraints": {
+                      "min": 0,
+                      "max": 10,
+                      "step": 0.1,
+                      "default": "1"
+                    }
+                  },
+                  {
+                    "component": "core::VirtualCamera",
+                    "widget": "EntityField",
+                    "label": "Look At Entity",
+                    "path": "lookAtEntity"
+                  }
+                ],
+                "columns": 1
+              },
+              {
+                "id": "tween-settings",
+                "label": "Pan Settings",
+                "helpTooltip": {
+                  "text": "Pan destination is relative to the camera's initial position. Positive X moves right, positive Y moves up, positive Z moves forward."
+                },
+                "items": [
+                  {
+                    "component": "core::Tween",
+                    "widget": "TextField",
+                    "label": "Relative X",
+                    "path": "mode.move.end.x",
+                    "type": "number"
+                  },
+                  {
+                    "component": "core::Tween",
+                    "widget": "TextField",
+                    "label": "Relative Y",
+                    "path": "mode.move.end.y",
+                    "type": "number"
+                  },
+                  {
+                    "component": "core::Tween",
+                    "widget": "TextField",
+                    "label": "Relative Z",
+                    "path": "mode.move.end.z",
+                    "type": "number"
+                  },
+                  {
+                    "component": "core::Tween",
+                    "widget": "RangeField",
+                    "label": "Duration",
+                    "path": "duration",
+                    "constraints": {
+                      "min": 0,
+                      "max": 60000,
+                      "step": 100,
+                      "default": "5000"
+                    }
+                  }
+                ],
+                "columns": 1
+              },
+              {
+                "id": "triggers",
+                "items": [
+                  {
+                    "component": "asset-packs::Triggers",
+                    "widget": "TriggerSection",
+                    "label": "When Pan Ends",
+                    "basicViewId": "trigger-when-pan-ends"
+                  },
+                  {
+                    "component": "asset-packs::Triggers",
+                    "widget": "TriggerSection",
+                    "label": "When End Reached",
+                    "basicViewId": "trigger-when-end-reached"
+                  },
+                  {
+                    "component": "asset-packs::Triggers",
+                    "widget": "TriggerSection",
+                    "label": "When Start Reached",
+                    "basicViewId": "trigger-when-start-reached"
+                  }
+                ],
+                "columns": 1
+              }
+            ],
+            "version": 2
+          }
+        }
+      }
+    }
+  ]
+}

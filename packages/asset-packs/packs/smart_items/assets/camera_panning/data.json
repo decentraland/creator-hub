@@ -1,0 +1,8 @@
+{
+  "id": "pan-camera-001",
+  "name": "Pan Camera",
+  "category": "media",
+  "tags": ["camera", "virtual camera", "pan", "panning", "cinematic", "view", "tween", "animation"],
+  "description": "A virtual camera that pans sideways. Use the Pan Camera action to start a single pan, or Pan Back and Forth for continuous movement. The camera automatically disables when the pan completes.",
+  "author": "Decentraland Foundation"
+}
