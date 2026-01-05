@@ -50,7 +50,7 @@
           "landscape_terrain_enabled": "启用景观地形"
         },
         "publish_options": {
-          "history": "发布历史"
+          "publish_scene": "发布场景"
         }
       }
     }

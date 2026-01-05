@@ -13,9 +13,10 @@ export type PreviewOptionsProps = {
   onChange: (options: PreviewOptions) => void;
 };
 
-export type PublishOption = { id: 'history' };
+export type PublishOption = { id: 'publish-scene' | 'deploy-world' | 'deploy-land' };
 
 export type PublishOptionsProps = {
+  project?: Project;
   onClick: (option: PublishOption) => void;
 };
 

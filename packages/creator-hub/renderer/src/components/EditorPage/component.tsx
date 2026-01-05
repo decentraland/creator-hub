@@ -166,17 +166,21 @@ export function EditorPage() {
     await handleActionWithWarningCheck(handleOpenPreviewWithErrorHandling);
   }, [handleActionWithWarningCheck, handleOpenPreviewWithErrorHandling]);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleClickPublishOptions = useCallback(
-    (option: PublishOption) => {
+    async (option: PublishOption) => {
       switch (option.id) {
-        case 'history':
-          return openModal('publish-history');
-        default:
-          return;
+        case 'publish-scene':
+          await handleOpenPublishModal();
+          break;
+        case 'deploy-world':
+          // TODO: implement direct deploy to world
+          break;
+        case 'deploy-land':
+          // TODO: implement direct deploy to land
+          break;
       }
     },
-    [openModal],
+    [handleOpenPublishModal],
   );
 
   // inspector url
@@ -269,15 +273,20 @@ export function EditorPage() {
               >
                 {t('editor.header.actions.preview')}
               </ButtonGroup>
-              <Button
+              <ButtonGroup
                 color="primary"
                 disabled={loadingPublish || isInstallingProject || isDetectingCustomCode}
                 onClick={handleOpenPublishModal}
                 startIcon={loadingPublish ? <Loader size={20} /> : <PublicIcon />}
-                // extra={<PublishOptions onClick={handleClickPublishOptions} />}
+                extra={
+                  <PublishOptions
+                    project={project}
+                    onClick={handleClickPublishOptions}
+                  />
+                }
               >
                 {t('editor.header.actions.publish')}
-              </Button>
+              </ButtonGroup>
             </div>
           </Header>
           <iframe
@@ -340,23 +349,32 @@ function PreviewOptions({ onChange, options }: PreviewOptionsProps) {
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function PublishOptions({ onClick }: PublishOptionsProps) {
+function PublishOptions({ project, onClick }: PublishOptionsProps) {
   const handleClick = useCallback(
-    (id: 'history') => () => {
+    (id: 'publish-scene' | 'deploy-world' | 'deploy-land') => () => {
       onClick({ id });
     },
     [onClick],
   );
 
+  const worldName = project?.worldConfiguration?.name;
+  const landBase = project?.scene?.base;
+
   return (
     <div className="PublishOptions">
-      <ListItemButton>
-        <ListItemText
-          onClick={handleClick('history')}
-          primary={t('editor.header.actions.publish_options.history')}
-        />
+      <ListItemButton onClick={handleClick('publish-scene')}>
+        <ListItemText primary={t('editor.header.actions.publish_options.publish_scene')} />
       </ListItemButton>
+      {worldName && (
+        <ListItemButton onClick={handleClick('deploy-world')}>
+          <ListItemText primary={`Deploy to ${worldName}`} />
+        </ListItemButton>
+      )}
+      {landBase && project?.scene?.base !== '0,0' && (
+        <ListItemButton onClick={handleClick('deploy-land')}>
+          <ListItemText primary={`Deploy to ${landBase}`} />
+        </ListItemButton>
+      )}
     </div>
   );
 }
