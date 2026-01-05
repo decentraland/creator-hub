@@ -196,24 +196,22 @@ const CleanAssets: React.FC<Props> = ({
                     No unused assets <br /> were found
                   </p>
                 ) : (
-                  <>
-                    {assets.map(asset => (
-                      <label
-                        key={asset.path}
-                        className={cx('FileItem', { selected: selectedAssets.has(asset.path) })}
-                      >
-                        <CheckboxField
-                          type="checkbox"
-                          checked={selectedAssets.has(asset.path)}
-                          onChange={() => onSelect(asset.path)}
-                          className="checkbox"
-                        />
-                        <span>{asset.path}</span>
-                        {asset.unused && <CleanupIcon />}
-                        <span className="size">{normalizeBytes(asset.size)}</span>
-                      </label>
-                    ))}
-                  </>
+                  assets.map(asset => (
+                    <label
+                      key={asset.path}
+                      className={cx('FileItem', { selected: selectedAssets.has(asset.path) })}
+                    >
+                      <CheckboxField
+                        type="checkbox"
+                        checked={selectedAssets.has(asset.path)}
+                        onChange={() => onSelect(asset.path)}
+                        className="checkbox"
+                      />
+                      <span>{asset.path}</span>
+                      {asset.unused && <CleanupIcon />}
+                      <span className="size">{normalizeBytes(asset.size)}</span>
+                    </label>
+                  ))
                 )}
               </div>
 
