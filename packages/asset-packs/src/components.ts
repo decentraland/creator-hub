@@ -25,6 +25,8 @@ import {
   PointerEvents as definePointerEvents,
   NetworkEntity as defineNetworkEntity,
   SyncComponents as defineSyncComponents,
+  InputModifier as defineInputModifier,
+  SkyboxTime as defineSkyboxTime,
 } from '@dcl/ecs/dist/components';
 import type { IEngine } from '@dcl/ecs';
 import type { EngineComponents } from './definitions';
@@ -57,5 +59,7 @@ export function getExplorerComponents(engine: IEngine): EngineComponents {
     PointerEvents: definePointerEvents(engine),
     NetworkEntity: defineNetworkEntity(engine),
     SyncComponents: defineSyncComponents(engine),
+    InputModifier: defineInputModifier(engine),
+    SkyboxTime: defineSkyboxTime(engine),
   };
 }

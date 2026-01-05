@@ -1,0 +1,8 @@
+{
+  "id": "518b3900-2a0e-4570-b41e-72ea7019e80c",
+  "name": "World Teleport",
+  "category": "utils",
+  "tags": ["teleport", "world", "portal", "map", "travel", "location"],
+  "description": "A clickable item that can be used to teleport players to different worlds in Decentraland.",
+  "author": "Decentraland Foundation"
+}

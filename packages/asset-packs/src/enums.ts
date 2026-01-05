@@ -22,6 +22,11 @@ export enum TweenType {
   KEEP_ROTATING_ITEM = 'keep_rotating_item',
 }
 
+export enum TeleportMode {
+  TO_COORDINATES = 'to_coordinates',
+  TO_WORLD = 'to_world',
+}
+
 export enum InterpolationType {
   LINEAR = 'linear',
   EASEINQUAD = 'easeinquad',
@@ -75,6 +80,7 @@ export enum ActionType {
   HIDE_IMAGE = 'hide_image',
   DAMAGE = 'damage',
   MOVE_PLAYER_HERE = 'move_player_here',
+  PLAYER_FACE_ITEM = 'player_face_item',
   PLACE_ON_PLAYER = 'place_on_player',
   ROTATE_AS_PLAYER = 'rotate_as_player',
   PLACE_ON_CAMERA = 'place_on_camera',
@@ -95,6 +101,11 @@ export enum ActionType {
   CHANGE_TEXT = 'change_text',
   STOP_TWEEN = 'stop_tween',
   SLIDE_TEXTURE = 'slide_texture',
+  FREEZE_PLAYER = 'freeze_player',
+  UNFREEZE_PLAYER = 'unfreeze_player',
+  CHANGE_COLLISIONS = 'change_collisions',
+  CHANGE_SKYBOX = 'change_skybox',
+  RESET_SKYBOX = 'reset_skybox',
 }
 
 export enum TriggerType {
