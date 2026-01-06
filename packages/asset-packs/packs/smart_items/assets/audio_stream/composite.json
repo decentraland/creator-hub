@@ -13,16 +13,6 @@
       }
     },
     {
-      "name": "core::VisibilityComponent",
-      "data": {
-        "0": {
-          "json": {
-            "visible": false
-          }
-        }
-      }
-    },
-    {
       "name": "core::MeshCollider",
       "data": {
         "0": {
