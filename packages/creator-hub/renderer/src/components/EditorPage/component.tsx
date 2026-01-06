@@ -27,9 +27,10 @@ import { Row } from '../Row';
 import { ButtonGroup } from '../Button';
 import { DeployModal } from './DeployModal';
 import { PreviewOptions, PublishOptions } from './MenuOptions';
+import { getPublishButtonText, getPublishOptions } from './utils';
 
 import type { ModalType, ModalState } from './DeployModal';
-import type { PublishOption, PreviewOptionsProps } from './MenuOptions';
+import type { PreviewOptionsProps } from './MenuOptions';
 
 import './styles.css';
 
@@ -54,29 +55,12 @@ export function EditorPage() {
   const { executeDeployment, getDeployment } = useDeploy();
   const deployment = project ? getDeployment(project.path) : undefined;
 
-  const publishButtonText = useMemo(() => {
-    if (loadingPublish) {
-      return t('modal.publish_project.deploy.deploying.step.loading');
-    }
+  const isDeploying = loadingPublish || deployment?.status === 'pending';
 
-    if (deployment?.status === 'pending') {
-      const { catalyst, assetBundle, lods } = deployment.componentsStatus;
-
-      if (catalyst === 'pending') {
-        return t('modal.publish_project.deploy.deploying.step.uploading');
-      }
-      if (assetBundle === 'pending') {
-        return t('modal.publish_project.deploy.deploying.step.converting');
-      }
-      if (lods === 'pending') {
-        return t('modal.publish_project.deploy.deploying.step.optimizing');
-      }
-
-      return t('modal.publish_project.deploy.deploying.step.loading');
-    }
-
-    return t('editor.header.actions.publish');
-  }, [loadingPublish, deployment?.status, deployment?.componentsStatus]);
+  const publishButtonText = useMemo(
+    () => getPublishButtonText({ loadingPublish, deployment }),
+    [loadingPublish, deployment],
+  );
 
   const userId = useSelector(state => state.analytics.userId);
   const { detectCustomCode, isLoading: isDetectingCustomCode } = useSceneCustomCode(project);
@@ -177,36 +161,40 @@ export function EditorPage() {
     await handleActionWithWarningCheck(handleOpenPreviewWithErrorHandling);
   }, [handleActionWithWarningCheck, handleOpenPreviewWithErrorHandling]);
 
-  const handleClickPublishOptions = useCallback(
-    async (option: PublishOption) => {
-      if (!project) return;
+  const handlePublishScene = useCallback(async () => {
+    const rpc = iframeRef.current;
+    if (rpc) saveAndGetThumbnail(rpc);
+    await handleOpenPublishModal();
+  }, [saveAndGetThumbnail, handleOpenPublishModal]);
 
-      const rpc = iframeRef.current;
-      if (rpc) saveAndGetThumbnail(rpc);
+  const handleDeployWorld = useCallback(async () => {
+    if (!project) return;
+    const rpc = iframeRef.current;
+    if (rpc) saveAndGetThumbnail(rpc);
+    await publishScene({ targetContent: config.get('WORLDS_CONTENT_SERVER_URL') });
+    executeDeployment(project.path);
+  }, [project, saveAndGetThumbnail, publishScene, executeDeployment]);
 
-      switch (option.id) {
-        case 'publish-scene':
-          await handleOpenPublishModal();
-          break;
-        case 'deploy-world':
-          await publishScene({ targetContent: config.get('WORLDS_CONTENT_SERVER_URL') });
-          executeDeployment(project.path);
-          break;
-        case 'deploy-land':
-          await publishScene({ target: config.get('PEER_URL') });
-          executeDeployment(project.path);
-          break;
-      }
-    },
-    [
-      handleOpenPublishModal,
-      project,
-      publishScene,
-      saveAndGetThumbnail,
-      executeDeployment,
-      deployment?.status,
-      openModal,
-    ],
+  const handleDeployLand = useCallback(async () => {
+    if (!project) return;
+    const rpc = iframeRef.current;
+    if (rpc) saveAndGetThumbnail(rpc);
+    await publishScene({ target: config.get('PEER_URL') });
+    executeDeployment(project.path);
+  }, [project, saveAndGetThumbnail, publishScene, executeDeployment]);
+
+  const publishOptions = useMemo(
+    () =>
+      getPublishOptions({
+        project,
+        isDeploying,
+        actions: {
+          onPublishScene: handlePublishScene,
+          onDeployWorld: handleDeployWorld,
+          onDeployLand: handleDeployLand,
+        },
+      }),
+    [project, isDeploying, handlePublishScene, handleDeployWorld, handleDeployLand],
   );
 
   // inspector url
@@ -299,33 +287,32 @@ export function EditorPage() {
               >
                 {t('editor.header.actions.preview')}
               </ButtonGroup>
-              <ButtonGroup
-                color="primary"
-                disabled={loadingPublish || isInstallingProject || isDetectingCustomCode}
-                onClick={() => {
-                  if (deployment?.status === 'pending') {
-                    openModal('publish', 'deploy');
-                  } else {
-                    handleClickPublishOptions({ id: 'publish-scene' });
-                  }
-                }}
-                startIcon={
-                  loadingPublish || deployment?.status === 'pending' ? (
-                    <Loader size={20} />
-                  ) : (
-                    <PublicIcon />
-                  )
-                }
-                extra={
-                  <PublishOptions
-                    project={project}
-                    isDeploying={loadingPublish || deployment?.status === 'pending'}
-                    onClick={handleClickPublishOptions}
-                  />
-                }
-              >
-                {publishButtonText}
-              </ButtonGroup>
+              {publishOptions.length > 0 ? (
+                <ButtonGroup
+                  color="primary"
+                  disabled={loadingPublish || isInstallingProject || isDetectingCustomCode}
+                  onClick={() => {
+                    if (deployment?.status === 'pending') {
+                      openModal('publish', 'deploy');
+                    } else {
+                      handlePublishScene();
+                    }
+                  }}
+                  startIcon={isDeploying ? <Loader size={20} /> : <PublicIcon />}
+                  extra={<PublishOptions options={publishOptions} />}
+                >
+                  {publishButtonText}
+                </ButtonGroup>
+              ) : (
+                <Button
+                  color="primary"
+                  disabled={loadingPublish || isInstallingProject || isDetectingCustomCode}
+                  onClick={handlePublishScene}
+                  startIcon={<PublicIcon />}
+                >
+                  {publishButtonText}
+                </Button>
+              )}
             </div>
           </Header>
           <iframe
