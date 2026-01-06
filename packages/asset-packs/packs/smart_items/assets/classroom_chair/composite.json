@@ -226,7 +226,8 @@
             "assetId": "b3bc0885-d2cc-4cbe-ba62-a50c8e8cf211",
             "helpTooltip": {
               "text": "Configure the sit spot's hover text and actions. Players can click to sit here. The spot tracks whether it's free or taken and shows a message when occupied."
-            }
+            },
+            "version": 1
           }
         }
       }
@@ -240,7 +241,8 @@
             "fields": [],
             "helpTooltip": {
               "text": "A classroom chair that players can sit on. Click to sit down at this location."
-            }
+            },
+            "version": 1
           }
         }
       }

@@ -107,7 +107,8 @@
                 "name": "Hover Text",
                 "type": "core::PointerEvents"
               }
-            ]
+            ],
+            "version": 1
           }
         }
       }

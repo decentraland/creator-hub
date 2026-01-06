@@ -187,7 +187,8 @@
             ],
             "helpTooltip": {
               "text": "A horizontal moving platform that looks like a raft. Players can stand on it to move back and forth."
-            }
+            },
+            "version": 1
           }
         }
       }

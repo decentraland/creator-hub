@@ -36,7 +36,8 @@
             ],
             "helpTooltip": {
               "text": "Displays an image or gif NFT by using the item\u2019s collection contract address and token ID. You can also optionally add a frame."
-            }
+            },
+            "version": 1
           }
         }
       }

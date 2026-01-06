@@ -108,7 +108,8 @@
                 "type": "asset-packs::Triggers",
                 "basicViewId": "trigger-when-clicked"
               }
-            ]
+            ],
+            "version": 1
           }
         }
       }

@@ -79,7 +79,8 @@
                 "basicViewId": "action-heal-player",
                 "layout": "{\"multiplier\": { \"field\": \"TextField\", \"type\": \"number\", \"label\": \"Healing Points Amount\" } }"
               }
-            ]
+            ],
+            "version": 1
           }
         }
       }

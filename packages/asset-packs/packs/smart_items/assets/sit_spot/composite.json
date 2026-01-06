@@ -223,7 +223,8 @@
                 "basicViewId": "trigger-when-clicked"
               }
             ],
-            "assetId": "9efbab77-de76-41dd-9a9f-22dd0f139cf9"
+            "assetId": "9efbab77-de76-41dd-9a9f-22dd0f139cf9",
+            "version": 1
           }
         }
       }

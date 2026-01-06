@@ -283,7 +283,8 @@
                 "type": "asset-packs::Triggers",
                 "basicViewId": "trigger-when-turned-off"
               }
-            ]
+            ],
+            "version": 1
           }
         }
       }

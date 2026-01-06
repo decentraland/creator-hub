@@ -176,7 +176,8 @@
             ],
             "helpTooltip": {
               "text": "A vertical platform that moves up and down. Players can jump on it to reach higher places."
-            }
+            },
+            "version": 1
           }
         }
       }

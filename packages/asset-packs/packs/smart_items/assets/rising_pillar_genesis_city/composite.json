@@ -249,7 +249,8 @@
             ],
             "helpTooltip": {
               "text": "A pillar that rises up out of the ground. Players can use it to reach high places."
-            }
+            },
+            "version": 1
           }
         }
       }

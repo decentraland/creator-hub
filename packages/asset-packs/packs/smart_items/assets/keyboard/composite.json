@@ -109,7 +109,8 @@
             ],
             "helpTooltip": {
               "text": "Configure the button's hover text and actions. Set what happens when the button is clicked by configuring triggers and actions."
-            }
+            },
+            "version": 1
           }
         }
       }

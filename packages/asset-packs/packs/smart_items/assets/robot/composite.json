@@ -195,7 +195,8 @@
             ],
             "helpTooltip": {
               "text": "A robot that can chase the player and cause damage. It can also be destroyed by the player. Use it together with the health bar smart item."
-            }
+            },
+            "version": 1
           }
         }
       }

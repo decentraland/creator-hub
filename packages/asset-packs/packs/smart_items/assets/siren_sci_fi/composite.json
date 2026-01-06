@@ -215,7 +215,8 @@
             ],
             "helpTooltip": {
               "text": "A sci-fi siren that can be used to scare away intruders. It can be activated by other smart items, for example a trigger area or a button."
-            }
+            },
+            "version": 1
           }
         }
       }

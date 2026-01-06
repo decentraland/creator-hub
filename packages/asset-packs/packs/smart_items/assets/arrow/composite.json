@@ -86,7 +86,8 @@
             "fields": [],
             "helpTooltip": {
               "text": "A directional arrow that bobs up and down that can be used to point to a location."
-            }
+            },
+            "version": 1
           }
         }
       }

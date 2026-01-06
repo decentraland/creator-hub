@@ -217,7 +217,8 @@
             ],
             "helpTooltip": {
               "text": "A parrot that starts making noise when activated. It can be used as an alarm system."
-            }
+            },
+            "version": 1
           }
         }
       }

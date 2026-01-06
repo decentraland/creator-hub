@@ -27,7 +27,6 @@
         }
       }
     },
-
     {
       "name": "core-schema::Name",
       "data": {
@@ -159,7 +158,8 @@
                 "basicViewId": "trigger-when-clicked"
               }
             ],
-            "assetId": "f209e8f5-6c37-4354-8de9-c4ad0b2bb4a0"
+            "assetId": "f209e8f5-6c37-4354-8de9-c4ad0b2bb4a0",
+            "version": 1
           }
         }
       }
@@ -185,7 +185,8 @@
             "helpTooltip": {
               "text": "A wooden chair that players can sit on. Click to sit down at this location."
             },
-            "fields": []
+            "fields": [],
+            "version": 1
           }
         }
       }

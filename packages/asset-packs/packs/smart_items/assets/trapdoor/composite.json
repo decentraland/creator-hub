@@ -250,7 +250,8 @@
                 "type": "asset-packs::Triggers",
                 "basicViewId": "trigger-when-closed"
               }
-            ]
+            ],
+            "version": 1
           }
         }
       }

@@ -243,7 +243,8 @@
             ],
             "helpTooltip": {
               "text": "Configure the treasure chest's hover text and actions. Set what happens when the chest is clicked, opened, or closed. The chest can be toggled open and closed."
-            }
+            },
+            "version": 1
           }
         }
       }

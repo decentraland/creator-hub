@@ -344,7 +344,8 @@
             "assetId": "f7573b6c-f5d3-403c-ad74-2657adbe4a54",
             "helpTooltip": {
               "text": "Configure the door's hover text and actions. Set what happens when the door is clicked, opened, or closed. The door can be toggled open and closed."
-            }
+            },
+            "version": 1
           }
         }
       }

@@ -129,7 +129,8 @@
             "fields": [],
             "helpTooltip": {
               "text": "3D text that can be displayed when a player wins a game. Invisible until triggered."
-            }
+            },
+            "version": 1
           }
         }
       }

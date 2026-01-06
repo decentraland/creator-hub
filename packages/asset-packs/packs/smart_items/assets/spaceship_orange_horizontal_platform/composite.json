@@ -187,7 +187,8 @@
             ],
             "helpTooltip": {
               "text": "A horizontal platform that looks like a spaceship. Players can stand on it to move back and forth."
-            }
+            },
+            "version": 1
           }
         }
       }

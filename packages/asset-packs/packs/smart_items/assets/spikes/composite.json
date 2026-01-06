@@ -104,7 +104,8 @@
             ],
             "helpTooltip": {
               "text": "A tile of spikes that can be used to damage players. It can be used together with the Health Bar smart item."
-            }
+            },
+            "version": 1
           }
         }
       }

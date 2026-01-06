@@ -202,7 +202,8 @@
                 "type": "asset-packs::Triggers",
                 "basicViewId": "trigger-when-deactivated"
               }
-            ]
+            ],
+            "version": 1
           }
         }
       }

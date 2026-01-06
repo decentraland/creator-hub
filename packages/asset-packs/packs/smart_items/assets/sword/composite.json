@@ -179,7 +179,8 @@
                 "basicViewId": "action-cool-down-delay",
                 "layout": "{\"timeout\": { \"field\": \"RangeField\", \"label\": \"Attack Cooldown\", \"step\": \"0.1\" } }"
               }
-            ]
+            ],
+            "version": 1
           }
         }
       }
