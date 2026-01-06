@@ -195,12 +195,6 @@ export function EditorPage() {
     async (option: PublishOption) => {
       if (!project) return;
 
-      // If there's a deployment in progress, open modal to show status
-      if (deployment?.status === 'pending') {
-        openModal('publish', 'deploy');
-        return;
-      }
-
       const rpc = iframeRef.current;
       if (rpc) saveAndGetThumbnail(rpc);
 
@@ -322,7 +316,13 @@ export function EditorPage() {
               <ButtonGroup
                 color="primary"
                 disabled={loadingPublish || isInstallingProject || isDetectingCustomCode}
-                onClick={() => handleClickPublishOptions({ id: 'publish-scene' })}
+                onClick={() => {
+                  if (deployment?.status === 'pending') {
+                    openModal('publish', 'deploy');
+                  } else {
+                    handleClickPublishOptions({ id: 'publish-scene' });
+                  }
+                }}
                 startIcon={
                   loadingPublish || deployment?.status === 'pending' ? (
                     <Loader size={20} />
