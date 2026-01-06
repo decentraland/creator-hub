@@ -186,6 +186,11 @@ export default React.memo(
             'Animator controls the playback of animations for 3D models. Use it to play, stop, or loop animations on entities with GLTF models that contain animation data.',
           link: 'https://docs.decentraland.org/creator/development-guide/sdk7/animations/',
         }),
+        createOption(sdk.components.Tween, 'Tween', {
+          description:
+            'Animates entities by smoothly transitioning their position, rotation, or scale over time. Configure start and end positions, duration, easing functions, and looping behavior.',
+          link: 'https://docs.decentraland.org/creator/development-guide/sdk7/move-entities',
+        }),
         createOption(
           sdk.components.NftShape,
           'Nft Shape',
@@ -205,6 +210,11 @@ export default React.memo(
           description:
             'Make an entity automatically reorient its rotation to always face the camera, as in retro 3D games that used 2D sprites.',
           link: 'https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/entity-positioning#face-the-player',
+        }),
+        createOption(sdk.components.AvatarAttach, 'Avatar Attach', {
+          description:
+            'Repositions an Entity to maintain the same position and rotation relative to an avatar anchor point. Entities with this component are not rendered in the canvas. Note: The Transform component is ignored - nest the item under a parent to offset from the anchor point.',
+          link: 'https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/entity-positioning#attach-an-entity-to-an-avatar',
         }),
         { header: 'Interaction' },
         createOption(sdk.components.States, 'States', {
@@ -252,6 +262,28 @@ export default React.memo(
             'Write code that is linked to the entity. Scripts can handle initialization and per-frame updates.',
           // link: 'https://docs.decentraland.org/creator/development-guide/sdk7/scripts/',
         }),
+        createOption(sdk.components.SyncComponents, 'Multiplayer', {
+          description:
+            "Decentraland runs scenes locally. Players can see each other, but each player interacts with the environment independently. Changes in the environment aren't shared between players by default. Add a Multiplayer component to make the changes in an entity shared between players.",
+          link: 'https://docs.decentraland.org/creator/scenes-sdk7/networking/serverless-multiplayer',
+        }),
+        createOption(sdk.components.Counter, 'Counter', {
+          description:
+            'Counter tracks numerical values that change based on player actions. Use it for conditional logic and to trigger actions when reaching certain values.',
+          link: 'https://docs.decentraland.org/creator/scene-editor/interactivity/states-and-conditions#counter',
+        }),
+        createOption(
+          sdk.components.CounterBar,
+          'Counter Bar',
+          {
+            description:
+              'CounterBar creates a visual bar representation of a Counter component. Display the counter value as a colored bar that fills or empties based on the counter value relative to a maximum value.',
+            link: 'https://docs.decentraland.org/creator/smart-items/#counter',
+          },
+          {
+            requires: [sdk.components.Counter.componentId],
+          },
+        ),
       ];
 
       const optionIds = options.reduce((set, option) => {
