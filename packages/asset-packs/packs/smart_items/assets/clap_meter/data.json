@@ -1,0 +1,7 @@
+{
+  "id": "6dcca8b8-0cb2-4cc4-b369-c95ca5afa199",
+  "name": "Clap Meter",
+  "category": "party",
+  "tags": ["clap", "meter", "party", "interactive", "display"],
+  "description": "A clap meter that displays the number of claps emotes from players in the scene."
+}

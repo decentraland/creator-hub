@@ -1,0 +1,87 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::Animator",
+      "data": {
+        "0": {
+          "json": {
+            "states": [
+              {
+                "clip": "Attacking",
+                "playing": false,
+                "weight": 1,
+                "speed": 1,
+                "loop": false,
+                "shouldReset": false
+              },
+              {
+                "clip": "Walking",
+                "playing": false,
+                "weight": 1,
+                "speed": 1,
+                "loop": false,
+                "shouldReset": false
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/fixed-zombie.glb",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 3
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "0": {
+          "json": {
+            "value": "zombie"
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Actions",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "type": "damage",
+                "name": "Attach",
+                "jsonPayload": "{\"radius\":3,\"layer\":\"all\"}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/Zombie.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"CHASE_RANGE_METERS\":{\"type\":\"number\",\"optional\":true,\"value\":20},\"WANDER_RADIUS_METERS\":{\"type\":\"number\",\"optional\":true,\"value\":6},\"WANDER_SPEED\":{\"type\":\"number\",\"optional\":true,\"value\":0.8},\"CHASE_SPEED\":{\"type\":\"number\",\"optional\":true,\"value\":1.6},\"OBSTACLE_CHECK_DISTANCE\":{\"type\":\"number\",\"optional\":true,\"value\":1}}}"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

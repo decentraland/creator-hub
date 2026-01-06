@@ -1,0 +1,8 @@
+{
+  "id": "b70f285f-804a-40fb-bad2-80e7c34aa4ed",
+  "name": "Wearable Scanner",
+  "category": "doors",
+  "tags": ["wearable", "scanner", "door", "interactive", "security"],
+  "description": "A wearable scanner that checks the wearables a player is wearing. It calls the Open action on the unlocked entity when the required wearable is detected.",
+  "author": "Decentraland Foundation"
+}

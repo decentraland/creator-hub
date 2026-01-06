@@ -1,7 +1,7 @@
 {
   "id": "5965c294-3fa3-454e-b974-b40ecb5d529a",
   "name": "Fireworks",
-  "category": "pyrotechnics",
+  "category": "party",
   "tags": ["explosion", "party", "celebration"],
   "description": "A firework that shoots up into the air and explodes. It is invisible until activated. Trigger it from another smart item.",
   "author": "Decentraland Foundation"

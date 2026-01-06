@@ -1,0 +1,447 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::Transform",
+      "data": {
+        "513": {
+          "json": {
+            "position": {
+              "x": 0,
+              "y": 0.08,
+              "z": 0
+            },
+            "rotation": {
+              "x": 0.7041,
+              "y": 0,
+              "z": 0,
+              "w": -0.7101
+            },
+            "scale": {
+              "x": 0.15,
+              "y": 0.15,
+              "z": 0.15
+            },
+            "parent": 514
+          }
+        },
+        "514": {
+          "json": {
+            "position": {
+              "x": 0,
+              "y": 0.05,
+              "z": 0
+            },
+            "rotation": {
+              "x": 1,
+              "y": 0,
+              "z": 0,
+              "w": 0
+            },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
+            "parent": 515
+          }
+        },
+        "515": {
+          "json": {
+            "position": {
+              "x": -1.75,
+              "y": 1.25,
+              "z": -0.331
+            },
+            "rotation": {
+              "x": 0.707,
+              "y": 0,
+              "z": 0,
+              "w": 0.707
+            },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
+            "parent": 0
+          }
+        },
+        "516": {
+          "json": {
+            "position": {
+              "x": 0,
+              "y": 0.08,
+              "z": 0
+            },
+            "rotation": {
+              "x": 0.7041,
+              "y": 0,
+              "z": 0,
+              "w": -0.7101
+            },
+            "scale": {
+              "x": 0.15,
+              "y": 0.15,
+              "z": 0.15
+            },
+            "parent": 517
+          }
+        },
+        "517": {
+          "json": {
+            "position": {
+              "x": 0,
+              "y": 0.052,
+              "z": 0
+            },
+            "rotation": {
+              "x": 1,
+              "y": 0,
+              "z": 0,
+              "w": 0
+            },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
+            "parent": 518
+          }
+        },
+        "518": {
+          "json": {
+            "position": {
+              "x": 1.75,
+              "y": 1.25,
+              "z": -0.33
+            },
+            "rotation": {
+              "x": 0.7071,
+              "y": 0,
+              "z": 0,
+              "w": 0.7071
+            },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
+            "parent": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "0": {
+          "json": {
+            "value": "billboard.glb"
+          }
+        },
+        "513": {
+          "json": {
+            "value": "Text"
+          }
+        },
+        "514": {
+          "json": {
+            "value": "previous_red"
+          }
+        },
+        "515": {
+          "json": {
+            "value": "previous_button"
+          }
+        },
+        "516": {
+          "json": {
+            "value": "Text_2"
+          }
+        },
+        "517": {
+          "json": {
+            "value": "next_red"
+          }
+        },
+        "518": {
+          "json": {
+            "value": "next_button_2"
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Sync-Components",
+      "data": {
+        "513": {
+          "json": {
+            "componentIds": ["core::TextShape", "asset-packs::Counter"]
+          }
+        },
+        "516": {
+          "json": {
+            "componentIds": ["core::TextShape", "asset-packs::Counter"]
+          }
+        }
+      }
+    },
+    {
+      "name": "core::TextShape",
+      "data": {
+        "513": {
+          "json": {
+            "text": "<",
+            "font": 2,
+            "fontSize": 4,
+            "fontAutoSize": true,
+            "textAlign": 4
+          }
+        },
+        "516": {
+          "json": {
+            "text": ">",
+            "font": 2,
+            "fontSize": 4,
+            "fontAutoSize": true,
+            "textAlign": 4
+          }
+        }
+      }
+    },
+    {
+      "name": "inspector::Config",
+      "data": {
+        "513": {
+          "json": {
+            "isBasicViewEnabled": true,
+            "componentName": "",
+            "fields": [],
+            "assetId": "dd0d51c1-f16f-41c2-9bf1-735fe5b17dc4",
+            "label": "Text Settings",
+            "sections": [
+              {
+                "id": "text-settings",
+                "items": [
+                  {
+                    "component": "core::TextShape",
+                    "widget": "TextArea",
+                    "label": "Text",
+                    "type": "text",
+                    "path": "text"
+                  }
+                ]
+              },
+              {
+                "id": "font-size-settings",
+                "items": [
+                  {
+                    "component": "core::TextShape",
+                    "widget": "TextField",
+                    "label": "Font Size",
+                    "type": "number",
+                    "path": "fontSize"
+                  },
+                  {
+                    "component": "core::TextShape",
+                    "widget": "CheckboxField",
+                    "label": "Auto-Size",
+                    "type": "boolean",
+                    "path": "fontAutoSize"
+                  }
+                ],
+                "columns": 2
+              },
+              {
+                "id": "color-align-settings",
+                "items": [
+                  {
+                    "component": "core::TextShape",
+                    "widget": "ColorField",
+                    "label": "Color",
+                    "type": "Color4",
+                    "path": "textColor",
+                    "props": {
+                      "basic": true
+                    },
+                    "transform": {
+                      "in": {
+                        "steps": [
+                          {
+                            "op": "toHex"
+                          }
+                        ]
+                      },
+                      "out": {
+                        "steps": [
+                          {
+                            "op": "toColor4"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "component": "core::TextShape",
+                    "widget": "Dropdown",
+                    "label": "Text align",
+                    "type": "text",
+                    "path": "textAlign",
+                    "dataSource": {
+                      "kind": "textAlign"
+                    }
+                  }
+                ],
+                "columns": 2
+              }
+            ],
+            "version": 2
+          }
+        },
+        "516": {
+          "json": {
+            "isBasicViewEnabled": true,
+            "componentName": "",
+            "fields": [],
+            "assetId": "dd0d51c1-f16f-41c2-9bf1-735fe5b17dc4",
+            "label": "Text Settings",
+            "sections": [
+              {
+                "id": "text-settings",
+                "items": [
+                  {
+                    "component": "core::TextShape",
+                    "widget": "TextArea",
+                    "label": "Text",
+                    "type": "text",
+                    "path": "text"
+                  }
+                ]
+              },
+              {
+                "id": "font-size-settings",
+                "items": [
+                  {
+                    "component": "core::TextShape",
+                    "widget": "TextField",
+                    "label": "Font Size",
+                    "type": "number",
+                    "path": "fontSize"
+                  },
+                  {
+                    "component": "core::TextShape",
+                    "widget": "CheckboxField",
+                    "label": "Auto-Size",
+                    "type": "boolean",
+                    "path": "fontAutoSize"
+                  }
+                ],
+                "columns": 2
+              },
+              {
+                "id": "color-align-settings",
+                "items": [
+                  {
+                    "component": "core::TextShape",
+                    "widget": "ColorField",
+                    "label": "Color",
+                    "type": "Color4",
+                    "path": "textColor",
+                    "props": {
+                      "basic": true
+                    },
+                    "transform": {
+                      "in": {
+                        "steps": [
+                          {
+                            "op": "toHex"
+                          }
+                        ]
+                      },
+                      "out": {
+                        "steps": [
+                          {
+                            "op": "toColor4"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "component": "core::TextShape",
+                    "widget": "Dropdown",
+                    "label": "Text align",
+                    "type": "text",
+                    "path": "textAlign",
+                    "dataSource": {
+                      "kind": "textAlign"
+                    }
+                  }
+                ],
+                "columns": 2
+              }
+            ],
+            "version": 2
+          }
+        }
+      }
+    },
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/billboard.glb",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 3
+          }
+        },
+        "514": {
+          "json": {
+            "src": "{assetPath}/button_square_red.glb",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 3
+          }
+        },
+        "515": {
+          "json": {
+            "src": "{assetPath}/button_base_square.glb",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 3
+          }
+        },
+        "517": {
+          "json": {
+            "src": "{assetPath}/button_square_red.glb",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 3
+          }
+        },
+        "518": {
+          "json": {
+            "src": "{assetPath}/button_base_square.glb",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 3
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/photoMural.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"button_prev\":{\"type\":\"entity\",\"optional\":false,\"value\":518},\"button_next\":{\"type\":\"entity\",\"optional\":false,\"value\":522},\"coordinates\":{\"type\":\"string\",\"optional\":false,\"value\":\"0,0\"}}}"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}
