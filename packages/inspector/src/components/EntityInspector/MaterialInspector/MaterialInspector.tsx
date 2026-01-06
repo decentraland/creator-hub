@@ -5,7 +5,7 @@ import { useMultiComponentInput } from '../../../hooks/sdk/useComponentInput';
 import { useAppSelector } from '../../../redux/hooks';
 import { selectAssetCatalog } from '../../../redux/app';
 import { Block } from '../../Block';
-import { Dropdown } from '../../ui';
+import { Dropdown, InfoTooltip } from '../../ui';
 import { Container } from '../../Container';
 import { fromMaterial, toMaterial, isValidMaterial, MATERIAL_TYPES } from './utils';
 import UnlitMaterial from './UnlitMaterial/UnlitMaterial';
@@ -45,6 +45,13 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
       label="Material"
       className="Material"
       initialOpen={initialOpen}
+      rightContent={
+        <InfoTooltip
+          text="Material determines the visual appearance of an object. It defines properties such as color, texture, and transparency"
+          link="https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/materials"
+          type="help"
+        />
+      }
       onRemoveContainer={handleRemove}
     >
       <Block>

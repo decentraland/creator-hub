@@ -12,7 +12,7 @@ import { useAppSelector } from '../../../redux/hooks';
 import { selectAssetCatalog } from '../../../redux/app';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
-import { CheckboxField, RangeField, FileUploadField } from '../../ui';
+import { CheckboxField, RangeField, FileUploadField, InfoTooltip } from '../../ui';
 import { ACCEPTED_FILE_TYPES } from '../../ui/FileUploadField/types';
 import { fromAudioSource, toAudioSource, isValidInput, isAudio, isValidVolume } from './utils';
 import type { Props } from './types';
@@ -64,6 +64,13 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
       label="AudioSource"
       className={cx('AudioSource')}
       initialOpen={initialOpen}
+      rightContent={
+        <InfoTooltip
+          text="Enables the playback of sound in your scene. The item emits sound that originates from its location, from an .mp3 file in your scene project"
+          link="https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/sounds"
+          type="help"
+        />
+      }
       onRemoveContainer={handleRemove}
     >
       <Block>

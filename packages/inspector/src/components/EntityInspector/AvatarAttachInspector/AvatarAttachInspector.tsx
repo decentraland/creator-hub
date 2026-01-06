@@ -80,19 +80,18 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
       label="AvatarAttach"
       className="AvatarAttachContainer"
       initialOpen={initialOpen}
+      rightContent={
+        <InfoTooltip
+          text="Repositions an Entity to maintain the same position and rotation relative to an avatar anchor point. Entities with this component are not rendered in the canvas. Note: The Transform component is ignored - nest the item under a parent to offset from the anchor point."
+          link="https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/entity-positioning#attach-an-entity-to-an-avatar"
+          type="help"
+        />
+      }
       onRemoveContainer={handleRemove}
     >
       <Block>
         <Dropdown
-          label={
-            <>
-              Anchor Point{' '}
-              <InfoTooltip
-                text="Repositions an Entity to maintain the same position and rotation relative to an avatar anchor point. Entities with this component are not rendered in the canvas. Note: The Transform component is ignored - nest the item under a parent to offset from the anchor point."
-                link="https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/entity-positioning#attach-an-entity-to-an-avatar"
-              />
-            </>
-          }
+          label="Anchor Point"
           options={ANCHOR_POINT_OPTIONS}
           {...anchorPointId}
         />
