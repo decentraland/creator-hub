@@ -162,15 +162,19 @@ export default React.memo(
           },
         ),
         createOption(sdk.components.GltfNodeModifiers, 'Swap material', {
-          description: 'Override GLTF/GLB materials',
+          description:
+            'Override materials from a GLTF 3D model. Dissable shadows, replace the texture or color or other properties. Apply to all the model or specific nodes.',
+          link: 'https://docs.decentraland.org/creator/3d-modeling-and-animations/materials#override-gltf-materials',
         }),
         createOption(sdk.components.LightSource, 'Light Source', {
-          description: 'Add a point or spot light',
+          description:
+            'Add a light source. Can be point (in all directions) or spot light (in a specific direction).',
           link: 'https://docs.decentraland.org/creator/development-guide/sdk7/lights/',
         }),
         createOption(sdk.components.VirtualCamera, 'Virtual Camera', {
           description:
-            'Add camera behavior settings to this entity. Configure default transition by time or speed.',
+            'Momentarily replace the default camera with a virtual camera on the position of this entity.',
+          link: 'https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/camera#using-virtual-cameras',
         }),
         createOption(sdk.components.MeshCollider, 'Mesh Collider', {
           description:
@@ -186,7 +190,7 @@ export default React.memo(
           sdk.components.NftShape,
           'Nft Shape',
           {
-            description: 'NftShape defines the shape of an item, based on its NFT',
+            description: 'NftShape displays an image, gif, or video NFT as a framed picture',
             link: 'https://docs.decentraland.org/creator/development-guide/sdk7/display-a-certified-nft/',
           },
           {
@@ -199,7 +203,7 @@ export default React.memo(
         ),
         createOption(sdk.components.Billboard, 'Billboard', {
           description:
-            'The Billboard component makes an Entity automatically reorient its rotation to always face the camera, as in retro 3D games that used 2D sprites.',
+            'Make an entity automatically reorient its rotation to always face the camera, as in retro 3D games that used 2D sprites.',
           link: 'https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/entity-positioning#face-the-player',
         }),
         { header: 'Interaction' },
@@ -245,7 +249,7 @@ export default React.memo(
         }),
         createOption(sdk.components.Script, 'Script', {
           description:
-            'Attach custom scripts to entities with configurable parameters. Scripts can handle initialization and per-frame updates.',
+            'Write code that is linked to the entity. Scripts can handle initialization and per-frame updates.',
           // link: 'https://docs.decentraland.org/creator/development-guide/sdk7/scripts/',
         }),
       ];
