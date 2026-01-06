@@ -141,7 +141,10 @@
                 "type": "asset-packs::Triggers",
                 "basicViewId": "trigger-when-health-reaches-zero"
               }
-            ]
+            ],
+            "helpTooltip": {
+              "text": "Configure the health bar settings."
+            }
           }
         }
       }

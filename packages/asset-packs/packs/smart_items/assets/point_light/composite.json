@@ -62,6 +62,9 @@
           "json": {
             "isBasicViewEnabled": true,
             "label": "Light Settings",
+            "helpTooltip": {
+              "text": "Configure the point light settings. Set the light color, intensity, and optionally upload a shadow mask texture. Point lights emit light in all directions."
+            },
             "sections": [
               {
                 "id": "light-settings",

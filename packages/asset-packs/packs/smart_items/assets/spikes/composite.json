@@ -101,7 +101,10 @@
                 "basicViewId": "action-damage-interval",
                 "layout": "{\"interval\": { \"field\": \"RangeField\", \"label\": \"Damage Interval\", \"step\": \"0.1\" } }"
               }
-            ]
+            ],
+            "helpTooltip": {
+              "text": "Configure the spikes settings. Set the damage amount and behavior. Spikes can damage players when they come in contact."
+            }
           }
         }
       }

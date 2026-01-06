@@ -134,8 +134,16 @@
             "mode": {
               "$case": "move",
               "move": {
-                "start": { "x": 0, "y": 0, "z": 0 },
-                "end": { "x": 0, "y": 0, "z": 10 }
+                "start": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                },
+                "end": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 10
+                }
               }
             },
             "playing": true
@@ -176,7 +184,10 @@
                 "type": "asset-packs::Triggers",
                 "basicViewId": "trigger-when-start-reached"
               }
-            ]
+            ],
+            "helpTooltip": {
+              "text": "Configure the platform settings. Set the movement path, speed, and behavior. Players can ride on this platform."
+            }
           }
         }
       }

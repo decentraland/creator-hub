@@ -65,6 +65,9 @@
           "json": {
             "isBasicViewEnabled": true,
             "label": "Light Settings",
+            "helpTooltip": {
+              "text": "Configure the spotlight settings. Set the light color, intensity, inner angle, outer angle, and optionally upload a shadow mask texture. Spotlights emit light in a cone shape."
+            },
             "sections": [
               {
                 "id": "light-settings",

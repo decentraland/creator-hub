@@ -138,7 +138,10 @@
                 "name": "Item Health Points",
                 "type": "asset-packs::Counter"
               }
-            ]
+            ],
+            "helpTooltip": {
+              "text": "Configure the wall settings. Set collision and visibility properties."
+            }
           }
         }
       }

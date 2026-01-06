@@ -126,7 +126,10 @@
           "json": {
             "isBasicViewEnabled": true,
             "componentName": "Game Over",
-            "fields": []
+            "fields": [],
+            "helpTooltip": {
+              "text": "Configure the game over settings."
+            }
           }
         }
       }

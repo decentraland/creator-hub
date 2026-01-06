@@ -166,7 +166,10 @@
           "json": {
             "isBasicViewEnabled": true,
             "componentName": "Confetti",
-            "fields": []
+            "fields": [],
+            "helpTooltip": {
+              "text": "Configure the effect settings. Set when the effect should trigger and its properties."
+            }
           }
         }
       }
@@ -178,7 +181,10 @@
           "json": {
             "isBasicViewEnabled": true,
             "componentName": "Confetti",
-            "fields": []
+            "fields": [],
+            "helpTooltip": {
+              "text": "Configure the effect settings. Set when the effect should trigger and its properties."
+            }
           }
         }
       }

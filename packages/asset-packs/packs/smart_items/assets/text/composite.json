@@ -32,6 +32,9 @@
           "json": {
             "isBasicViewEnabled": true,
             "label": "Text Settings",
+            "helpTooltip": {
+              "text": "Configure the text display settings. Set the text content, font size, color, and alignment. Enable auto-size to automatically adjust the font size."
+            },
             "sections": [
               {
                 "id": "text-settings",

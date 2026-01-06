@@ -93,6 +93,9 @@
           "json": {
             "isBasicViewEnabled": true,
             "componentName": "World Teleport",
+            "helpTooltip": {
+              "text": "Configure the world address where players will be teleported when they click this item. Enter the world address (e.g., dcl://world-name)."
+            },
             "fields": [
               {
                 "name": "World Address",

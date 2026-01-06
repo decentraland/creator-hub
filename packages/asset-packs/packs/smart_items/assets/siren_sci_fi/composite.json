@@ -212,7 +212,10 @@
                 "type": "asset-packs::Triggers",
                 "basicViewId": "trigger-when-clicked"
               }
-            ]
+            ],
+            "helpTooltip": {
+              "text": "Configure the siren settings."
+            }
           }
         }
       }

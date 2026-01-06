@@ -146,7 +146,6 @@
                   }
                 ]
               },
-
               {
                 "type": "on_input_action",
                 "actions": [
@@ -216,7 +215,10 @@
                 "basicViewId": "trigger-when-clicked"
               }
             ],
-            "assetId": "8c88c79a-b407-4c9d-9a5f-0cb2de2ed9bf"
+            "assetId": "8c88c79a-b407-4c9d-9a5f-0cb2de2ed9bf",
+            "helpTooltip": {
+              "text": "Configure the siren settings."
+            }
           }
         }
       }

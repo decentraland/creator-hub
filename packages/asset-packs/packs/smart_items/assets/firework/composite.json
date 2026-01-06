@@ -112,7 +112,10 @@
           "json": {
             "isBasicViewEnabled": true,
             "componentName": "Firework",
-            "fields": []
+            "fields": [],
+            "helpTooltip": {
+              "text": "Configure the effect settings. Set when the effect should trigger and its properties."
+            }
           }
         }
       }

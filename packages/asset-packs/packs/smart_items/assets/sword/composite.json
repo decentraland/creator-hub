@@ -163,6 +163,9 @@
           "json": {
             "isBasicViewEnabled": true,
             "componentName": "Sword",
+            "helpTooltip": {
+              "text": "Configure the sword's damage and attack cooldown. Players can pick up the sword and use it to attack. Set the damage radius, damage points, and cooldown time between attacks."
+            },
             "fields": [
               {
                 "name": "Damage",

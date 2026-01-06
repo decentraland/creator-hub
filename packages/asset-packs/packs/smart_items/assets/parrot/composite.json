@@ -214,7 +214,10 @@
                 "type": "asset-packs::Triggers",
                 "basicViewId": "trigger-when-clicked"
               }
-            ]
+            ],
+            "helpTooltip": {
+              "text": "Configure the parrot settings. Set the behavior and interaction options."
+            }
           }
         }
       }

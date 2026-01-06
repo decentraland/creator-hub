@@ -33,7 +33,10 @@
                 "name": "NFT Portrait",
                 "type": "core::NftShape"
               }
-            ]
+            ],
+            "helpTooltip": {
+              "text": "Configure the NFT display settings. Set the NFT URN (contract address and token ID) to display an NFT image, gif, or video."
+            }
           }
         }
       }

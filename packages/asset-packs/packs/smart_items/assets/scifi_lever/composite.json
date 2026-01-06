@@ -199,7 +199,10 @@
                 "type": "asset-packs::Triggers",
                 "basicViewId": "trigger-when-deactivated"
               }
-            ]
+            ],
+            "helpTooltip": {
+              "text": "Configure the lever's hover text and actions. Set what happens when the lever is activated or deactivated. The lever switches between activated and deactivated states when clicked."
+            }
           }
         }
       }

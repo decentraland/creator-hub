@@ -208,7 +208,10 @@
                 "type": "asset-packs::Triggers",
                 "basicViewId": "trigger-when-start-reached"
               }
-            ]
+            ],
+            "helpTooltip": {
+              "text": "Configure the rising pillar settings."
+            }
           }
         }
       }

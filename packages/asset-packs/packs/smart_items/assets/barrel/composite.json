@@ -129,7 +129,10 @@
                 "basicViewId": "action-explosion-damage",
                 "layout": "{\"radius\": { \"field\": \"TextField\", \"type\": \"number\", \"label\": \"Explosion Radius\" }, \"hits\": { \"field\": \"TextField\", \"type\": \"number\", \"label\": \"Explosion Damage\" }, \"layer\": { \"field\": \"Dropdown\", \"label\": \"Damage Target\" }}"
               }
-            ]
+            ],
+            "helpTooltip": {
+              "text": "Configure the barrel settings."
+            }
           }
         }
       }

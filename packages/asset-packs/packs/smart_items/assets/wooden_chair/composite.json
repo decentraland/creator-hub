@@ -145,6 +145,9 @@
         "513": {
           "json": {
             "componentName": "Sit Spot",
+            "helpTooltip": {
+              "text": "Configure the sit spot's hover text and actions. Players can click to sit here. The spot tracks whether it's free or taken and shows a message when occupied."
+            },
             "fields": [
               {
                 "name": "Hover Text",
@@ -179,6 +182,9 @@
         "0": {
           "json": {
             "componentName": "Wooden Chair",
+            "helpTooltip": {
+              "text": "A wooden chair that players can sit on. Click to sit down at this location."
+            },
             "fields": []
           }
         }

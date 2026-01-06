@@ -113,7 +113,10 @@
           "json": {
             "isBasicViewEnabled": true,
             "componentName": "Square Spiral",
-            "fields": []
+            "fields": [],
+            "helpTooltip": {
+              "text": "Configure the rotating item settings. Set the rotation speed and direction."
+            }
           }
         }
       }

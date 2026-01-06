@@ -256,6 +256,9 @@
           "json": {
             "isBasicViewEnabled": true,
             "componentName": "Video Player",
+            "helpTooltip": {
+              "text": "Configure the video player settings. Set the video source URL, hover text, and when the video should play or stop. The video source must be an https URL with CORS enabled."
+            },
             "fields": [
               {
                 "name": "Hover Text",

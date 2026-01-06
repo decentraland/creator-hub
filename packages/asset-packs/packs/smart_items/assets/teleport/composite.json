@@ -93,6 +93,9 @@
           "json": {
             "isBasicViewEnabled": true,
             "componentName": "Scene Teleport",
+            "helpTooltip": {
+              "text": "Configure the coordinates where players will be teleported when they click this item. Set the X and Y coordinates in the scene."
+            },
             "fields": [
               {
                 "name": "Coordinates",

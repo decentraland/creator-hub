@@ -69,6 +69,9 @@
           "json": {
             "isBasicViewEnabled": true,
             "componentName": "First Aid",
+            "helpTooltip": {
+              "text": "Configure the healing points that players receive when they interact with this first aid item. Set the amount of health points to restore."
+            },
             "fields": [
               {
                 "name": "Healing Points",

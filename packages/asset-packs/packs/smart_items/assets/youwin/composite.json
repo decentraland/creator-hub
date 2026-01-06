@@ -126,7 +126,10 @@
           "json": {
             "isBasicViewEnabled": true,
             "componentName": "You Win",
-            "fields": []
+            "fields": [],
+            "helpTooltip": {
+              "text": "Configure the you win settings."
+            }
           }
         }
       }

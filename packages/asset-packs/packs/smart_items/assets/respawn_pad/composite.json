@@ -68,7 +68,10 @@
                 "type": "asset-packs::Triggers",
                 "basicViewId": "trigger-when-player-spawn"
               }
-            ]
+            ],
+            "helpTooltip": {
+              "text": "Configure the respawn pad settings. Players will respawn at this location when they die or click on it."
+            }
           }
         }
       }

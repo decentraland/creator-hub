@@ -268,7 +268,10 @@
                 "type": "asset-packs::Triggers",
                 "basicViewId": "trigger-when-deactivated"
               }
-            ]
+            ],
+            "helpTooltip": {
+              "text": "Configure the sign settings. Set the text content and display options."
+            }
           }
         }
       }

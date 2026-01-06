@@ -261,7 +261,10 @@
                 "basicViewId": "trigger-when-closed"
               }
             ],
-            "assetId": "535daee0-c547-4b94-ba69-33e3d3635ff3"
+            "assetId": "535daee0-c547-4b94-ba69-33e3d3635ff3",
+            "helpTooltip": {
+              "text": "Configure the treasure chest's hover text and actions. Set what happens when the chest is clicked, opened, or closed. The chest can be toggled open and closed."
+            }
           }
         }
       }

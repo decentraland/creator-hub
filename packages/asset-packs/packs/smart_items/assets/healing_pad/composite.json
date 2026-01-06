@@ -102,7 +102,10 @@
                 "basicViewId": "action-healing-interval",
                 "layout": "{\"interval\": { \"field\": \"RangeField\", \"label\": \"Healing Interval\", \"step\": \"0.1\" } }"
               }
-            ]
+            ],
+            "helpTooltip": {
+              "text": "Configure the respawn pad settings. Players will respawn at this location when they die or click on it."
+            }
           }
         }
       }

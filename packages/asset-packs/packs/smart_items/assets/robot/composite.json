@@ -192,7 +192,10 @@
                 "basicViewId": "action-follow-player",
                 "layout": "{\"speed\": { \"field\": \"TextField\", \"type\": \"number\" } }"
               }
-            ]
+            ],
+            "helpTooltip": {
+              "text": "Configure the robot enemy settings. Set the behavior and interaction options."
+            }
           }
         }
       }
