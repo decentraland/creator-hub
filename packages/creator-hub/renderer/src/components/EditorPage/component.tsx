@@ -123,8 +123,8 @@ export function EditorPage() {
 
   const isReady = !!project && inspectorPort > 0;
 
-  const openModal = useCallback((type: ModalType) => {
-    setModalState({ type });
+  const openModal = useCallback((type: ModalType, initialStep?: ModalState['initialStep']) => {
+    setModalState({ type, initialStep });
   }, []);
 
   const handleOpenPreviewWithErrorHandling = useCallback(async () => {
@@ -197,7 +197,7 @@ export function EditorPage() {
 
       // If there's a deployment in progress, open modal to show status
       if (deployment?.status === 'pending') {
-        openModal('publish');
+        openModal('publish', 'deploy');
         return;
       }
 
@@ -333,6 +333,7 @@ export function EditorPage() {
                 extra={
                   <PublishOptions
                     project={project}
+                    isDeploying={loadingPublish || deployment?.status === 'pending'}
                     onClick={handleClickPublishOptions}
                   />
                 }
@@ -350,6 +351,7 @@ export function EditorPage() {
             type={modalState.type}
             project={project}
             onClose={handleCloseModal}
+            initialStep={modalState.initialStep}
           />
         </>
       )}
@@ -378,15 +380,6 @@ function PreviewOptions({ onChange, options }: PreviewOptionsProps) {
           }
           label={t('editor.header.actions.preview_options.debugger')}
         />
-        {/* <FormControlLabel
-          control={
-            <Checkbox
-              checked={!!options.openNewInstance}
-              onChange={handleChange({ openNewInstance: !options.openNewInstance })}
-            />
-          }
-          label={t('editor.header.actions.preview_options.open_new_instance')}
-        /> */}
         <FormControlLabel
           control={
             <Checkbox
@@ -401,7 +394,7 @@ function PreviewOptions({ onChange, options }: PreviewOptionsProps) {
   );
 }
 
-function PublishOptions({ project, onClick }: PublishOptionsProps) {
+function PublishOptions({ project, isDeploying, onClick }: PublishOptionsProps) {
   const handleClick = useCallback(
     (id: 'publish-scene' | 'deploy-world' | 'deploy-land') => () => {
       onClick({ id });
@@ -414,9 +407,11 @@ function PublishOptions({ project, onClick }: PublishOptionsProps) {
 
   return (
     <div className="PublishOptions">
-      <ListItemButton onClick={handleClick('publish-scene')}>
-        <ListItemText primary={t('editor.header.actions.publish_options.publish_scene')} />
-      </ListItemButton>
+      {isDeploying && (
+        <ListItemButton onClick={handleClick('publish-scene')}>
+          <ListItemText primary={t('editor.header.actions.publish_options.publish_scene')} />
+        </ListItemButton>
+      )}
       {worldName && (
         <ListItemButton onClick={handleClick('deploy-world')}>
           <ListItemText
@@ -439,12 +434,13 @@ function PublishOptions({ project, onClick }: PublishOptionsProps) {
   );
 }
 
-function Modal({ type, ...props }: ModalProps) {
+function Modal({ type, initialStep, ...props }: ModalProps) {
   switch (type) {
     case 'publish':
       return (
         <PublishProject
           open={type === 'publish'}
+          initialStep={initialStep}
           {...props}
         />
       );
