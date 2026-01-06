@@ -1,4 +1,3 @@
-import type { PreviewOptions } from '/shared/types/settings';
 import type { Project } from '/shared/types/projects';
 import type { Step as PublishStep } from '/@/components/Modals/PublishProject/types';
 
@@ -10,20 +9,7 @@ export type ModalState = {
   initialStep?: PublishStep;
 };
 
-export type PreviewOptionsProps = {
-  options: PreviewOptions;
-  onChange: (options: PreviewOptions) => void;
-};
-
-export type PublishOption = { id: 'publish-scene' | 'deploy-world' | 'deploy-land' };
-
-export type PublishOptionsProps = {
-  project?: Project;
-  isDeploying?: boolean;
-  onClick: (option: PublishOption) => void;
-};
-
-export type ModalProps = {
+export type Props = {
   type?: ModalType;
   project: Project;
   onClose: (continued?: boolean) => void;

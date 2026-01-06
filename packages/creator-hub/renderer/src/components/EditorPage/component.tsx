@@ -4,14 +4,7 @@ import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import CodeIcon from '@mui/icons-material/Code';
 import PublicIcon from '@mui/icons-material/Public';
-import {
-  Checkbox,
-  FormControlLabel,
-  FormGroup,
-  ListItemButton,
-  ListItemText,
-  CircularProgress as Loader,
-} from 'decentraland-ui2';
+import { CircularProgress as Loader } from 'decentraland-ui2';
 
 import { isClientNotInstalledError } from '/shared/types/client';
 import { isProjectError } from '/shared/types/projects';
@@ -28,23 +21,15 @@ import { useDeploy } from '/@/hooks/useDeploy';
 import EditorPng from '/assets/images/editor.png';
 
 import { useSelector } from '#store';
-import { PublishProject } from '../Modals/PublishProject';
-import { PublishHistory } from '../Modals/PublishHistory';
-import { InstallClient } from '../Modals/InstallClient';
-import { WarningModal } from '../Modals/WarningModal';
 import { Button } from '../Button';
 import { Header } from '../Header';
 import { Row } from '../Row';
 import { ButtonGroup } from '../Button';
+import { DeployModal } from './DeployModal';
+import { PreviewOptions, PublishOptions } from './MenuOptions';
 
-import type {
-  ModalType,
-  ModalState,
-  PreviewOptionsProps,
-  PublishOption,
-  PublishOptionsProps,
-  ModalProps,
-} from './types';
+import type { ModalType, ModalState } from './DeployModal';
+import type { PublishOption, PreviewOptionsProps } from './MenuOptions';
 
 import './styles.css';
 
@@ -92,6 +77,7 @@ export function EditorPage() {
 
     return t('editor.header.actions.publish');
   }, [loadingPublish, deployment?.status, deployment?.componentsStatus]);
+
   const userId = useSelector(state => state.analytics.userId);
   const { detectCustomCode, isLoading: isDetectingCustomCode } = useSceneCustomCode(project);
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
@@ -347,7 +333,7 @@ export function EditorPage() {
             src={iframeUrl}
             onLoad={handleIframeRef}
           ></iframe>
-          <Modal
+          <DeployModal
             type={modalState.type}
             project={project}
             onClose={handleCloseModal}
@@ -357,115 +343,4 @@ export function EditorPage() {
       )}
     </main>
   );
-}
-
-function PreviewOptions({ onChange, options }: PreviewOptionsProps) {
-  const handleChange = useCallback(
-    (newOptions: Partial<PreviewOptionsProps['options']>) => () => {
-      onChange({ ...options, ...newOptions });
-    },
-    [onChange, options],
-  );
-
-  return (
-    <div className="PreviewOptions">
-      <span className="title">{t('editor.header.actions.preview_options.title')}</span>
-      <FormGroup>
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={!!options.debugger}
-              onChange={handleChange({ debugger: !options.debugger })}
-            />
-          }
-          label={t('editor.header.actions.preview_options.debugger')}
-        />
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={!!options.enableLandscapeTerrains}
-              onChange={handleChange({ enableLandscapeTerrains: !options.enableLandscapeTerrains })}
-            />
-          }
-          label={t('editor.header.actions.preview_options.landscape_terrain_enabled')}
-        />
-      </FormGroup>
-    </div>
-  );
-}
-
-function PublishOptions({ project, isDeploying, onClick }: PublishOptionsProps) {
-  const handleClick = useCallback(
-    (id: 'publish-scene' | 'deploy-world' | 'deploy-land') => () => {
-      onClick({ id });
-    },
-    [onClick],
-  );
-
-  const worldName = project?.worldConfiguration?.name;
-  const landBase = project?.scene?.base;
-
-  return (
-    <div className="PublishOptions">
-      {isDeploying && (
-        <ListItemButton onClick={handleClick('publish-scene')}>
-          <ListItemText primary={t('editor.header.actions.publish_options.publish_scene')} />
-        </ListItemButton>
-      )}
-      {worldName && (
-        <ListItemButton onClick={handleClick('deploy-world')}>
-          <ListItemText
-            primary={t('editor.header.actions.publish_options.republish_to_world', {
-              name: worldName,
-            })}
-          />
-        </ListItemButton>
-      )}
-      {!worldName && landBase && project?.scene?.base !== '0,0' && (
-        <ListItemButton onClick={handleClick('deploy-land')}>
-          <ListItemText
-            primary={t('editor.header.actions.publish_options.republish_to_land', {
-              coords: landBase,
-            })}
-          />
-        </ListItemButton>
-      )}
-    </div>
-  );
-}
-
-function Modal({ type, initialStep, ...props }: ModalProps) {
-  switch (type) {
-    case 'publish':
-      return (
-        <PublishProject
-          open={type === 'publish'}
-          initialStep={initialStep}
-          {...props}
-        />
-      );
-    case 'publish-history':
-      return (
-        <PublishHistory
-          open={type === 'publish-history'}
-          {...props}
-        />
-      );
-    case 'install-client':
-      return (
-        <InstallClient
-          open={type === 'install-client'}
-          onClose={() => props.onClose(false)}
-        />
-      );
-    case 'warning':
-      return (
-        <WarningModal
-          open={type === 'warning'}
-          onClose={props.onClose}
-        />
-      );
-    default:
-      return null;
-  }
 }
