@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
 import { recursiveCheck } from '../../../../lib/utils/deep-equal';
-import { CheckboxField, TextField } from '../../../ui';
+import { CheckboxField, TextField, InfoTooltip } from '../../../ui';
 import { Block } from '../../../Block';
 import type { Props } from './types';
 
@@ -70,25 +70,52 @@ const FollowPlayerAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
     [payload, handleUpdate],
   );
 
+  const renderSpeedInfo = () => {
+    return (
+      <InfoTooltip
+        text="The speed at which the entity moves towards the player, in meters per second."
+        position="top center"
+      />
+    );
+  };
+
+  const renderMinDistanceInfo = () => {
+    return (
+      <InfoTooltip
+        text="The minimum distance the entity will maintain from the player. Once this distance is reached, the entity stops moving closer."
+        position="top center"
+      />
+    );
+  };
+
+  const renderAxesInfo = () => {
+    return (
+      <InfoTooltip
+        text="Select which axes the entity should follow the player on. X: horizontal, Y: vertical, Z: depth."
+        position="top center"
+      />
+    );
+  };
+
   return (
     <div className="FollowPlayerActionContainer">
       <Block>
         <TextField
-          label="Speed"
+          label={<>Speed {renderSpeedInfo()}</>}
           type="text"
           value={payload.speed}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangeSpeed(e)}
           autoSelect
         />
         <TextField
-          label="Min. Distance"
+          label={<>Min. Distance {renderMinDistanceInfo()}</>}
           type="text"
           value={payload.minDistance}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangeMinDistance(e)}
           autoSelect
         />
       </Block>
-      <Block label="Axes">
+      <Block label={<>Axes {renderAxesInfo()}</>}>
         <CheckboxField
           label="X"
           checked={payload.x}

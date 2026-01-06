@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
 import { recursiveCheck } from '../../../../lib/utils/deep-equal';
 import { Block } from '../../../Block';
-import { Dropdown, RangeField } from '../../../ui';
+import { Dropdown, RangeField, InfoTooltip } from '../../../ui';
 import type { DropdownChangeEvent } from '../../../ui';
 import type { Props } from './types';
 
@@ -72,13 +72,22 @@ const DelayAction = <T extends ActionPayload<ActionType.START_DELAY | ActionType
     [payload, handleUpdate],
   );
 
+  const renderActionsInfo = () => {
+    return (
+      <InfoTooltip
+        text="Lists all the actions that will be triggered after the delay. You may select as many actions as you want."
+        position="top center"
+      />
+    );
+  };
+
   return (
     <div className="DelayActionContainer">
       {isStartDelayAction(payload) ? (
         <>
           <Block>
             <Dropdown
-              label="Action(s)"
+              label={<>Action(s) {renderActionsInfo()}</>}
               options={actions}
               value={payload.actions}
               multiple

@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
 import { type Vector3 } from '@dcl/ecs-math';
 import { recursiveCheck } from '../../../../lib/utils/deep-equal';
-import { TextField } from '../../../ui';
+import { TextField, InfoTooltip } from '../../../ui';
 import type { Props } from './types';
 
 import './MovePlayerAction.css';
@@ -80,30 +80,44 @@ const MovePlayerAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
     [payload, handleUpdate],
   );
 
+  const renderPositionInfo = () => {
+    return (
+      <InfoTooltip
+        text="Position coordinates in 3D space relative to the scene origin. X: left/right, Y: up/down, Z: forward/backward."
+        position="top center"
+      />
+    );
+  };
+
   return (
     <div className="MovePlayerActionContainer">
       <div className="row">
-        <TextField
-          label="X"
-          type="number"
-          value={payload.position?.x}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangePositionX(e)}
-          autoSelect
-        />
-        <TextField
-          label="Y"
-          type="number"
-          value={payload.position?.y}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangePositionY(e)}
-          autoSelect
-        />
-        <TextField
-          label="Z"
-          type="number"
-          value={payload.position?.z}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangePositionZ(e)}
-          autoSelect
-        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+          <div style={{ flex: 1, display: 'flex', gap: '8px' }}>
+            <TextField
+              label="X"
+              type="number"
+              value={payload.position?.x}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangePositionX(e)}
+              autoSelect
+            />
+            <TextField
+              label="Y"
+              type="number"
+              value={payload.position?.y}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangePositionY(e)}
+              autoSelect
+            />
+            <TextField
+              label="Z"
+              type="number"
+              value={payload.position?.z}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangePositionZ(e)}
+              autoSelect
+            />
+          </div>
+          {renderPositionInfo()}
+        </div>
       </div>
     </div>
   );

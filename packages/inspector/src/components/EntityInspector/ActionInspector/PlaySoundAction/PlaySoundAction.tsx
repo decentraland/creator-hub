@@ -92,6 +92,12 @@ const PlaySoundAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
     );
   };
 
+  const renderGlobalInfo = () => {
+    return (
+      <InfoTooltip text="When enabled, the sound plays globally and is not affected by the player's position. When disabled, the sound is positional and its volume decreases with distance." />
+    );
+  };
+
   return (
     <div className="PlaySoundActionContainer">
       <div className="row">
@@ -126,7 +132,7 @@ const PlaySoundAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
         </div>
         <div className="row">
           <CheckboxField
-            label="Global"
+            label={<>Global {renderGlobalInfo()}</>}
             checked={!!payload.global}
             onChange={handleChangeGlobal}
           />

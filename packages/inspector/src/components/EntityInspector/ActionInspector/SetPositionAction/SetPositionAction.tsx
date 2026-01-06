@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
 import { recursiveCheck } from '../../../../lib/utils/deep-equal';
-import { CheckboxField, TextField } from '../../../ui';
+import { CheckboxField, TextField, InfoTooltip } from '../../../ui';
 import { Block } from '../../../Block';
 import type { Props } from './types';
 
@@ -96,7 +96,17 @@ const SetPositionAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
         </Block>
       </div>
       <div className="row">
-        <Block label="Relative">
+        <Block
+          label={
+            <>
+              Relative{' '}
+              <InfoTooltip
+                text="When enabled, the position is relative to the entity's current position. When disabled, the position is absolute (relative to the scene origin)."
+                position="top center"
+              />
+            </>
+          }
+        >
           <CheckboxField
             checked={payload.relative}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangeRelative(e)}

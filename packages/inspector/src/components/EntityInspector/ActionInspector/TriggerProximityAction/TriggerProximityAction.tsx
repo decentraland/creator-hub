@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { type ActionPayload, type ActionType, ProximityLayer } from '@dcl/asset-packs';
 import { recursiveCheck } from '../../../../lib/utils/deep-equal';
-import { Dropdown, TextField } from '../../../ui';
+import { Dropdown, TextField, InfoTooltip } from '../../../ui';
 import { type Props, LayerOptions } from './types';
 
 import './TriggerProximityAction.css';
@@ -47,25 +47,52 @@ const TriggerProximityAction: React.FC<Props> = ({ value, onUpdate }: Props) => 
     [payload, handleUpdate],
   );
 
+  const renderRadiusInfo = () => {
+    return (
+      <InfoTooltip
+        text="The radius in meters around the entity where players will trigger the damage effect."
+        position="top center"
+      />
+    );
+  };
+
+  const renderHitsInfo = () => {
+    return (
+      <InfoTooltip
+        text="The number of times the damage effect will be applied. Each hit reduces the player's health."
+        position="top center"
+      />
+    );
+  };
+
+  const renderLayerInfo = () => {
+    return (
+      <InfoTooltip
+        text="Select which layers are affected by the damage. 'All' affects the player and all items with health, 'Player' affects only players, 'Non Player' affects only items with health."
+        position="top center"
+      />
+    );
+  };
+
   return (
     <div className="TriggerProximityActionContainer">
       <div className="row">
         <TextField
-          label="Radius"
+          label={<>Radius {renderRadiusInfo()}</>}
           type="number"
           value={payload.radius}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangeRadius(e)}
           autoSelect
         />
         <TextField
-          label="Hits"
+          label={<>Hits {renderHitsInfo()}</>}
           type="number"
           value={payload.hits || 1}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangeHits(e)}
           autoSelect
         />
         <Dropdown
-          label="Layer"
+          label={<>Layer {renderLayerInfo()}</>}
           options={LayerOptions}
           value={payload.layer || ProximityLayer.ALL}
           onChange={handleChangeLayer}

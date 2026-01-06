@@ -138,7 +138,7 @@ const TweenAction: React.FC<Props> = ({ tween: tweenProp, onUpdateTween }: Props
     return (
       <InfoTooltip
         text={
-          "Use the next tween type to change the item's position, scale, or rotation over a period of time."
+          "Use the tween type to change the item's position, scale, or rotation over a period of time."
         }
         link="https://docs.decentraland.org/creator/smart-items/#moving-rotating-or-scaling"
       />
