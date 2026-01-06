@@ -217,7 +217,7 @@
             ],
             "assetId": "8c88c79a-b407-4c9d-9a5f-0cb2de2ed9bf",
             "helpTooltip": {
-              "text": "Configure the siren settings."
+              "text": "A siren that can be used to scare away intruders. It can be activated by other smart items, for example a trigger area or a button."
             }
           }
         }

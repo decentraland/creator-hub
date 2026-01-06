@@ -127,7 +127,7 @@
             "componentName": "Explosion",
             "fields": [],
             "helpTooltip": {
-              "text": "Configure the effect settings. Set when the effect should trigger and its properties."
+              "text": "Invisible until triggered by another smart item, it creates a visual effect of a cloud of smoke exploding outwards."
             }
           }
         }

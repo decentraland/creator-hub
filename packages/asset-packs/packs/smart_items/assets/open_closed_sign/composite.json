@@ -270,7 +270,7 @@
               }
             ],
             "helpTooltip": {
-              "text": "Configure the sign settings. Set the text content and display options."
+              "text": "A sign that can swap between displaying 'Open' or 'Closed' when clicked."
             }
           }
         }

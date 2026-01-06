@@ -131,7 +131,7 @@
               }
             ],
             "helpTooltip": {
-              "text": "Configure the barrel settings."
+              "text": "Barrel that, when triggered to explode, can damage a player\u2019s health if they are nearby. Can be used with the Health Bar smart item."
             }
           }
         }

@@ -124,7 +124,7 @@
               }
             ],
             "helpTooltip": {
-              "text": "Configure the video player settings. Set the video source URL, hover text, and when the video should play or stop. The video source must be an https URL with CORS enabled."
+              "text": "A rounded video screen that can play videos or live streams. It can be used together with the Admin Tools smart item to manage content live."
             }
           }
         }

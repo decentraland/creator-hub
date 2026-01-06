@@ -63,7 +63,7 @@
             "isBasicViewEnabled": true,
             "label": "Light Settings",
             "helpTooltip": {
-              "text": "Configure the point light settings. Set the light color, intensity, and optionally upload a shadow mask texture. Point lights emit light in all directions."
+              "text": "A point light that can be used to illuminate a scene."
             },
             "sections": [
               {
@@ -79,8 +79,20 @@
                       "basic": true
                     },
                     "transform": {
-                      "in": { "steps": [{ "op": "toHex" }] },
-                      "out": { "steps": [{ "op": "toColor3" }] }
+                      "in": {
+                        "steps": [
+                          {
+                            "op": "toHex"
+                          }
+                        ]
+                      },
+                      "out": {
+                        "steps": [
+                          {
+                            "op": "toColor3"
+                          }
+                        ]
+                      }
                     }
                   },
                   {

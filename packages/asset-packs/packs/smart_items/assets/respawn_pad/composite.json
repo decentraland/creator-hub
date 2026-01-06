@@ -70,7 +70,7 @@
               }
             ],
             "helpTooltip": {
-              "text": "Configure the respawn pad settings. Players will respawn at this location when they die or click on it."
+              "text": "A respawn pad that can be used to respawn the player when they die. It can work together with the health bar smart item."
             }
           }
         }

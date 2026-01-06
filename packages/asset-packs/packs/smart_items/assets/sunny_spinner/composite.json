@@ -128,7 +128,7 @@
             "componentName": "Sunny Spinner",
             "fields": [],
             "helpTooltip": {
-              "text": "Configure the rotating item settings. Set the rotation speed and direction."
+              "text": "A spinning set of sun rays that can look very cool. It is invisible until it is activated by other smart items, for example a trigger area or a button."
             }
           }
         }

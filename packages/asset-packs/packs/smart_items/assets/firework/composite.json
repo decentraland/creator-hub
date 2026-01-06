@@ -114,7 +114,7 @@
             "componentName": "Firework",
             "fields": [],
             "helpTooltip": {
-              "text": "Configure the effect settings. Set when the effect should trigger and its properties."
+              "text": "A firework that shoots up into the air and explodes. It is invisible until activated. Trigger it from another smart item."
             }
           }
         }

@@ -175,7 +175,7 @@
               }
             ],
             "helpTooltip": {
-              "text": "Configure the platform settings. Set the movement path, speed, and behavior. Players can ride on this platform."
+              "text": "A horizontal platform that moves back and forth. Players can jump on it to reach places."
             }
           }
         }

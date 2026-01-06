@@ -248,7 +248,7 @@
               }
             ],
             "helpTooltip": {
-              "text": "Configure the rising pillar settings."
+              "text": "A pillar that rises up out of the ground. Players can use it to reach high places."
             }
           }
         }

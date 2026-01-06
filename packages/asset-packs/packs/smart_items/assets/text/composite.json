@@ -33,7 +33,7 @@
             "isBasicViewEnabled": true,
             "label": "Text Settings",
             "helpTooltip": {
-              "text": "Configure the text display settings. Set the text content, font size, color, and alignment. Enable auto-size to automatically adjust the font size."
+              "text": "2D text that can be placed at any position and orientation, not limited to surfaces."
             },
             "sections": [
               {
@@ -81,8 +81,20 @@
                       "basic": true
                     },
                     "transform": {
-                      "in": { "steps": [{ "op": "toHex" }] },
-                      "out": { "steps": [{ "op": "toColor4" }] }
+                      "in": {
+                        "steps": [
+                          {
+                            "op": "toHex"
+                          }
+                        ]
+                      },
+                      "out": {
+                        "steps": [
+                          {
+                            "op": "toColor4"
+                          }
+                        ]
+                      }
                     }
                   },
                   {

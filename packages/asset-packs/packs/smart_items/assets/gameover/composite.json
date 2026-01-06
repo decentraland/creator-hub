@@ -128,7 +128,7 @@
             "componentName": "Game Over",
             "fields": [],
             "helpTooltip": {
-              "text": "Configure the game over settings."
+              "text": "3D text that can be displayed when a player loses or finishes a game. Invisible until triggered."
             }
           }
         }

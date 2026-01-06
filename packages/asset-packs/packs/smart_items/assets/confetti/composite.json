@@ -168,7 +168,7 @@
             "componentName": "Confetti",
             "fields": [],
             "helpTooltip": {
-              "text": "Configure the effect settings. Set when the effect should trigger and its properties."
+              "text": "A confetti explosion that can be used to celebrate. The item is invisible until it explodes. Trigger it from another smart item."
             }
           }
         }
@@ -183,7 +183,7 @@
             "componentName": "Confetti",
             "fields": [],
             "helpTooltip": {
-              "text": "Configure the effect settings. Set when the effect should trigger and its properties."
+              "text": "A confetti explosion that can be used to celebrate. The item is invisible until it explodes. Trigger it from another smart item."
             }
           }
         }

@@ -66,7 +66,7 @@
             "isBasicViewEnabled": true,
             "label": "Light Settings",
             "helpTooltip": {
-              "text": "Configure the spotlight settings. Set the light color, intensity, inner angle, outer angle, and optionally upload a shadow mask texture. Spotlights emit light in a cone shape."
+              "text": "A spotlight that can be used to illuminate a scene."
             },
             "sections": [
               {
@@ -78,10 +78,24 @@
                     "label": "Color",
                     "type": "Color3",
                     "path": "color",
-                    "props": { "basic": true },
+                    "props": {
+                      "basic": true
+                    },
                     "transform": {
-                      "in": { "steps": [{ "op": "toHex" }] },
-                      "out": { "steps": [{ "op": "toColor3" }] }
+                      "in": {
+                        "steps": [
+                          {
+                            "op": "toHex"
+                          }
+                        ]
+                      },
+                      "out": {
+                        "steps": [
+                          {
+                            "op": "toColor3"
+                          }
+                        ]
+                      }
                     }
                   },
                   {

@@ -115,7 +115,7 @@
             "componentName": "Square Spiral",
             "fields": [],
             "helpTooltip": {
-              "text": "Configure the rotating item settings. Set the rotation speed and direction."
+              "text": "A spinning square spiral that can be used to create a hypnotic effect. It is invisible until it is activated by other smart items, for example a trigger area or a button."
             }
           }
         }

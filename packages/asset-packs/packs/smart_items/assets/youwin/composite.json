@@ -128,7 +128,7 @@
             "componentName": "You Win",
             "fields": [],
             "helpTooltip": {
-              "text": "Configure the you win settings."
+              "text": "3D text that can be displayed when a player wins a game. Invisible until triggered."
             }
           }
         }

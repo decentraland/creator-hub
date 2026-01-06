@@ -104,7 +104,7 @@
               }
             ],
             "helpTooltip": {
-              "text": "Configure the respawn pad settings. Players will respawn at this location when they die or click on it."
+              "text": "A healing pad that heals damage when the player stands on it. It works together with the health bar smart item."
             }
           }
         }

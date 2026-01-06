@@ -186,7 +186,7 @@
               }
             ],
             "helpTooltip": {
-              "text": "Configure the platform settings. Set the movement path, speed, and behavior. Players can ride on this platform."
+              "text": "A black horizontal platform that looks like a flying car. Players can stand on it to move back and forth."
             }
           }
         }

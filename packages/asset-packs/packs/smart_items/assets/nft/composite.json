@@ -35,7 +35,7 @@
               }
             ],
             "helpTooltip": {
-              "text": "Configure the NFT display settings. Set the NFT URN (contract address and token ID) to display an NFT image, gif, or video."
+              "text": "Displays an image or gif NFT by using the item\u2019s collection contract address and token ID. You can also optionally add a frame."
             }
           }
         }

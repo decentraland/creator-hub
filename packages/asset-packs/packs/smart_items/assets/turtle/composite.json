@@ -175,7 +175,7 @@
               }
             ],
             "helpTooltip": {
-              "text": "Configure the platform settings. Set the movement path, speed, and behavior. Players can ride on this platform."
+              "text": "A horizontal platform that looks like a turtle shell. Players can stand on it to move back and forth."
             }
           }
         }

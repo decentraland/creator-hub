@@ -216,7 +216,7 @@
               }
             ],
             "helpTooltip": {
-              "text": "Configure the parrot settings. Set the behavior and interaction options."
+              "text": "A parrot that starts making noise when activated. It can be used as an alarm system."
             }
           }
         }
