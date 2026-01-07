@@ -91,7 +91,7 @@
               {
                 "name": "Pop Up",
                 "type": "batch",
-                "jsonPayload": "{\"actions\":[\"__Play_anim\",\"__Show\",\"__Sound\"]}",
+                "jsonPayload": "{\"actions\":[\"_Play_anim\",\"_Show\",\"_Sound\"]}",
                 "allowedInBasicView": true
               },
               {

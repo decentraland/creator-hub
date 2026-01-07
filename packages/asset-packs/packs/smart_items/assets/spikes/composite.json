@@ -40,7 +40,7 @@
               {
                 "name": "Damage Batch",
                 "type": "batch",
-                "jsonPayload": "{ \"actions\": [\"Damage\", \"__Play_Damage_Sound\"]}"
+                "jsonPayload": "{ \"actions\": [\"Damage\", \"_Play_Damage_Sound\"]}"
               },
               {
                 "name": "_Play_Damage_Sound",

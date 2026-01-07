@@ -80,13 +80,13 @@
               {
                 "name": "Sit Here",
                 "type": "batch",
-                "jsonPayload": "{\"actions\":[\"__Move_here\",\"__Mark_as_taken\",\"Delay sit anim\",\"__Random_sit_anim\"]}",
+                "jsonPayload": "{\"actions\":[\"_Move_here\",\"_Mark_as_taken\",\"Delay sit anim\",\"_Random_sit_anim\"]}",
                 "allowedInBasicView": true
               },
               {
                 "type": "batch",
                 "name": "Show text",
-                "jsonPayload": "{\"actions\":[\"__Hide_text\",\"__Print_text\"]}"
+                "jsonPayload": "{\"actions\":[\"_Hide_text\",\"_Print_text\"]}"
               },
               {
                 "name": "_Move_here",

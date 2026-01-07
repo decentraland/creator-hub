@@ -50,7 +50,7 @@
               {
                 "name": "Attack",
                 "type": "batch",
-                "jsonPayload": "{ \"actions\": [\"__Play_Attack_Emote\", \"Damage\", \"__Cool_Down\"] }"
+                "jsonPayload": "{ \"actions\": [\"_Play_Attack_Emote\", \"Damage\", \"_Cool_Down\"] }"
               },
               {
                 "name": "_Play_Attack_Emote",

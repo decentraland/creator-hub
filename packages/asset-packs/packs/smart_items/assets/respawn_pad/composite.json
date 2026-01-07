@@ -21,7 +21,7 @@
               {
                 "name": "Respawn Player",
                 "type": "batch",
-                "jsonPayload": "{ \"actions\": [\"__Move_Player\", \"__Play_Spawn_Sound\"] }",
+                "jsonPayload": "{ \"actions\": [\"_Move_Player\", \"_Play_Spawn_Sound\"] }",
                 "allowedInBasicView": true
               },
               {

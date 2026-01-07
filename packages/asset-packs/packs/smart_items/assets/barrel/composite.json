@@ -21,7 +21,7 @@
               {
                 "name": "Explode",
                 "type": "batch",
-                "jsonPayload": "{ \"actions\": [\"__Play_Explosion_Animation\", \"Explosion Damage\", \"__Delay_Remove\"] }",
+                "jsonPayload": "{ \"actions\": [\"_Play_Explosion_Animation\", \"Explosion Damage\", \"_Delay_Remove\"] }",
                 "allowedInBasicView": true
               },
               {
