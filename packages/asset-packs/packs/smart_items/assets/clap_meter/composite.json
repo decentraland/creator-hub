@@ -116,8 +116,7 @@
               "asset-packs::Counter",
               "asset-packs::Actions",
               "asset-packs::States",
-              "core::Transform",
-              "asset-packs::Script"
+              "core::Transform"
             ]
           }
         },

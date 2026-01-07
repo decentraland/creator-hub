@@ -186,7 +186,6 @@ export class WearableScanner {
       }
     }
 
-    console.log('HAS WEARABLE? ', result);
     return result;
   }
 }

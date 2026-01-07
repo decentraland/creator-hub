@@ -90,9 +90,6 @@ export class ClapMeter {
     ClapScore.create(this.entity);
     syncEntity(this.entity, [ClapScore.componentId]);
 
-    // Set up action event listeners
-    //setupActionListeners(clapMeterNeedle, clapMeterBoard, score, clapMeterText)
-
     // Set up emote listener
     this.setupEmoteListener();
   }
@@ -129,8 +126,6 @@ export class ClapMeter {
       console.error('Clap meter needle not found');
       return;
     }
-
-    //sendClapData(ClapScore.getMutable(this.clapMeterCommsEntity).player, "test", ClapScore.getMutable(this.clapMeterCommsEntity).score)
 
     // Reset score and needle rotation
     ClapScore.getMutable(this.entity).score = 0;
@@ -172,8 +167,6 @@ export class ClapMeter {
       return;
     }
 
-    //this.isClapping = true
-
     // Update score
     const currentScore = (ClapScore.getMutable(this.entity!).score += 1);
 
@@ -182,8 +175,6 @@ export class ClapMeter {
 
     // Calculate new needle rotation
     this.currentNeedleRotation = this.START_ANGLE - currentScore * angleIncrement;
-
-    //console.log('Clap detected, current score:', currentScore, 'angle increment:', angleIncrement, 'current needle rotation:', currentNeedleRotation)
 
     // Ensure needle doesn't go beyond end angle
     if (this.currentNeedleRotation < this.END_ANGLE) {
