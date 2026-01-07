@@ -60,21 +60,6 @@
             "id": "{self}",
             "value": [
               {
-                "name": "Play anim",
-                "type": "play_animation",
-                "jsonPayload": "{\"animation\":\"spiral_squareAction\",\"loop\":true}"
-              },
-              {
-                "name": "Reset",
-                "type": "stop_animation",
-                "jsonPayload": "{}"
-              },
-              {
-                "name": "Show",
-                "type": "set_visibility",
-                "jsonPayload": "{\"visible\":true,\"collider\":0}"
-              },
-              {
                 "name": "Hide",
                 "type": "set_visibility",
                 "jsonPayload": "{\"visible\":false,\"collider\":0}",
@@ -88,8 +73,23 @@
               {
                 "name": "Pop Up",
                 "type": "batch",
-                "jsonPayload": "{\"actions\":[\"Play anim\",\"Show\",\"Sound\"]}",
+                "jsonPayload": "{\"actions\":[\"__Play_anim\",\"__Show\",\"Sound\"]}",
                 "allowedInBasicView": true
+              },
+              {
+                "name": "_Play_anim",
+                "type": "play_animation",
+                "jsonPayload": "{\"animation\":\"spiral_squareAction\",\"loop\":true}"
+              },
+              {
+                "name": "_Reset",
+                "type": "stop_animation",
+                "jsonPayload": "{}"
+              },
+              {
+                "name": "_Show",
+                "type": "set_visibility",
+                "jsonPayload": "{\"visible\":true,\"collider\":0}"
               }
             ]
           }

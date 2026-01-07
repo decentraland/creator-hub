@@ -51,21 +51,6 @@
             "id": "{self}",
             "value": [
               {
-                "name": "Loop Sound",
-                "type": "play_sound",
-                "jsonPayload": "{\"src\":\"{assetPath}/siren.mp3\",\"loop\":true}"
-              },
-              {
-                "name": "Loop Animation",
-                "type": "play_animation",
-                "jsonPayload": "{\"animation\":\"activate\",\"loop\":true}"
-              },
-              {
-                "name": "Stop Sound",
-                "type": "stop_sound",
-                "jsonPayload": "{}"
-              },
-              {
                 "name": "Trigger",
                 "type": "set_state",
                 "jsonPayload": "{\"state\":\"Triggered\"}",
@@ -78,8 +63,23 @@
                 "allowedInBasicView": true
               },
               {
+                "name": "_Loop_Sound",
+                "type": "play_sound",
+                "jsonPayload": "{\"src\":\"{assetPath}/siren.mp3\",\"loop\":true}"
+              },
+              {
+                "name": "_Loop_Animation",
                 "type": "play_animation",
-                "name": "Idle",
+                "jsonPayload": "{\"animation\":\"activate\",\"loop\":true}"
+              },
+              {
+                "name": "_Stop_Sound",
+                "type": "stop_sound",
+                "jsonPayload": "{}"
+              },
+              {
+                "type": "play_animation",
+                "name": "_Idle",
                 "jsonPayload": "{\"animation\":\"deactivate\"}"
               }
             ]
@@ -106,11 +106,11 @@
                 "actions": [
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Stop Sound"
+                    "name": "_Stop_Sound"
                   },
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Idle"
+                    "name": "_Idle"
                   }
                 ]
               },
@@ -127,11 +127,11 @@
                 "actions": [
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Loop Sound"
+                    "name": "_Loop_Sound"
                   },
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Loop Animation"
+                    "name": "_Loop_Animation"
                   }
                 ]
               },
@@ -142,21 +142,20 @@
                 "actions": [
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Idle"
+                    "name": "_Idle"
                   }
                 ]
               },
-
               {
                 "type": "on_input_action",
                 "actions": [
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Loop Animation"
+                    "name": "_Loop_Animation"
                   },
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Loop Sound"
+                    "name": "_Loop_Sound"
                   }
                 ],
                 "basicViewId": "trigger-when-clicked"

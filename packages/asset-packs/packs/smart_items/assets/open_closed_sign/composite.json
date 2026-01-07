@@ -110,11 +110,6 @@
             "id": "{self}",
             "value": [
               {
-                "type": "play_sound",
-                "name": "Play sound",
-                "jsonPayload": "{\"src\":\"{assetPath}/NeonTube.mp3\"}"
-              },
-              {
                 "type": "set_state",
                 "name": "Open",
                 "jsonPayload": "{\"state\":\"Open\"}",
@@ -125,6 +120,11 @@
                 "name": "Close",
                 "jsonPayload": "{\"state\":\"Closed\"}",
                 "allowedInBasicView": true
+              },
+              {
+                "type": "play_sound",
+                "name": "_Play_sound",
+                "jsonPayload": "{\"src\":\"{assetPath}/NeonTube.mp3\"}"
               }
             ]
           }
@@ -184,7 +184,7 @@
                 "actions": [
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Play sound"
+                    "name": "_Play_sound"
                   },
                   {
                     "id": "{514:asset-packs::Actions}",
@@ -218,7 +218,7 @@
                   },
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Play sound"
+                    "name": "_Play_sound"
                   }
                 ],
                 "basicViewId": "trigger-when-deactivated"

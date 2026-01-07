@@ -35,20 +35,10 @@
                 "jsonPayload": "{ \"anchorPointId\": 3 }"
               },
               {
-                "name": "Play Attack Emote",
-                "type": "play_custom_emote",
-                "jsonPayload": "{ \"src\": \"{assetPath}/sword_attack_emote.glb\", \"loop\": false }"
-              },
-              {
                 "name": "Damage",
                 "type": "damage",
                 "jsonPayload": "{ \"radius\": 3, \"hits\": 10, \"layer\": \"non_player\" }",
                 "basicViewId": "action-damage"
-              },
-              {
-                "name": "Set Cooling Down",
-                "type": "set_state",
-                "jsonPayload": "{ \"state\": \"Cooling Down\" }"
               },
               {
                 "name": "Start Cool Down Delay",
@@ -58,14 +48,24 @@
                 "allowedInBasicView": true
               },
               {
-                "name": "Cool Down",
-                "type": "batch",
-                "jsonPayload": "{ \"actions\": [\"Set Cooling Down\", \"Start Cool Down Delay\"] }"
-              },
-              {
                 "name": "Attack",
                 "type": "batch",
-                "jsonPayload": "{ \"actions\": [\"Play Attack Emote\", \"Damage\", \"Cool Down\"] }"
+                "jsonPayload": "{ \"actions\": [\"__Play_Attack_Emote\", \"Damage\", \"__Cool_Down\"] }"
+              },
+              {
+                "name": "_Play_Attack_Emote",
+                "type": "play_custom_emote",
+                "jsonPayload": "{ \"src\": \"{assetPath}/sword_attack_emote.glb\", \"loop\": false }"
+              },
+              {
+                "name": "_Set_Cooling_Down",
+                "type": "set_state",
+                "jsonPayload": "{ \"state\": \"Cooling Down\" }"
+              },
+              {
+                "name": "_Cool_Down",
+                "type": "batch",
+                "jsonPayload": "{ \"actions\": [\"_Set_Cooling_Down\", \"Start Cool Down Delay\"] }"
               }
             ]
           }

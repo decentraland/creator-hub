@@ -23,32 +23,32 @@
               {
                 "name": "Go to Start",
                 "type": "batch",
-                "jsonPayload": "{ \"actions\": [\"Going to Start\", \"Tween to Start\"] }",
+                "jsonPayload": "{ \"actions\": [\"_Going_to_Start\", \"_Tween_to_Start\"] }",
                 "allowedInBasicView": true
               },
               {
                 "name": "Go to End",
                 "type": "batch",
-                "jsonPayload": "{ \"actions\": [\"Going to End\", \"Tween to End\"] }",
+                "jsonPayload": "{ \"actions\": [\"_Going_to_End\", \"_Tween_to_End\"] }",
                 "allowedInBasicView": true
               },
               {
-                "name": "Going to Start",
+                "name": "_Going_to_Start",
                 "type": "set_state",
                 "jsonPayload": "{ \"state\": \"GoingToStart\" }"
               },
               {
-                "name": "Going to End",
+                "name": "_Going_to_End",
                 "type": "set_state",
                 "jsonPayload": "{ \"state\": \"GoingToEnd\" }"
               },
               {
-                "name": "Tween to Start",
+                "name": "_Tween_to_Start",
                 "type": "start_tween",
                 "jsonPayload": "{ \"type\": \"move_item\", \"end\": { \"x\": 0, \"y\": 0, \"z\": 0 }, \"relative\": true, \"interpolationType\": \"linear\", \"duration\": 5 }"
               },
               {
-                "name": "Tween to End",
+                "name": "_Tween_to_End",
                 "type": "start_tween",
                 "jsonPayload": "{ \"type\": \"move_item\", \"end\": { \"x\": 0, \"y\": 0, \"z\": 0 }, \"relative\": true, \"interpolationType\": \"linear\", \"duration\": 5 }"
               }
@@ -75,7 +75,7 @@
                 "actions": [
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Going to Start"
+                    "name": "_Going_to_Start"
                   }
                 ],
                 "basicViewId": "trigger-when-end-reached"
@@ -92,7 +92,7 @@
                 "actions": [
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Going to End"
+                    "name": "_Going_to_End"
                   }
                 ],
                 "basicViewId": "trigger-when-start-reached"
@@ -134,8 +134,16 @@
             "mode": {
               "$case": "move",
               "move": {
-                "start": { "x": 0, "y": 0, "z": 0 },
-                "end": { "x": 0, "y": 0, "z": 10 }
+                "start": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                },
+                "end": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 10
+                }
               }
             },
             "playing": true

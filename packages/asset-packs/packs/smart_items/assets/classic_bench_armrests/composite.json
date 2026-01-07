@@ -48,7 +48,6 @@
         }
       }
     },
-
     {
       "name": "core-schema::Name",
       "data": {
@@ -92,21 +91,6 @@
             "id": "{self}",
             "value": [
               {
-                "name": "Move here",
-                "type": "move_player_here",
-                "jsonPayload": "{}"
-              },
-              {
-                "name": "Sit anim1",
-                "type": "play_default_emote",
-                "jsonPayload": "{\"emote\":\"sittingChair1\"}"
-              },
-              {
-                "name": "Mark as taken",
-                "type": "set_state",
-                "jsonPayload": "{\"state\":\"Taken\"}"
-              },
-              {
                 "name": "Mark as free",
                 "type": "set_state",
                 "jsonPayload": "{\"state\":\"Free\"}",
@@ -115,33 +99,48 @@
               {
                 "name": "Sit Here",
                 "type": "batch",
-                "jsonPayload": "{\"actions\":[\"Move here\",\"Mark as taken\",\"Random sit anim\"]}",
+                "jsonPayload": "{\"actions\":[\"_Move_here\",\"_Mark_as_taken\",\"_Random_sit_anim\"]}",
                 "allowedInBasicView": true
               },
               {
-                "name": "Sit anim2",
+                "name": "_Move_here",
+                "type": "move_player_here",
+                "jsonPayload": "{}"
+              },
+              {
+                "name": "_Sit_anim1",
+                "type": "play_default_emote",
+                "jsonPayload": "{\"emote\":\"sittingChair1\"}"
+              },
+              {
+                "name": "_Mark_as_taken",
+                "type": "set_state",
+                "jsonPayload": "{\"state\":\"Taken\"}"
+              },
+              {
+                "name": "_Sit_anim2",
                 "type": "play_default_emote",
                 "jsonPayload": "{\"emote\":\"sittingChair2\"}"
               },
               {
-                "name": "Random sit anim",
+                "name": "_Random_sit_anim",
                 "type": "random",
-                "jsonPayload": "{\"actions\":[\"Sit anim1\",\"Sit anim2\"]}"
+                "jsonPayload": "{\"actions\":[\"_Sit_anim1\",\"_Sit_anim2\"]}"
               },
               {
-                "name": "Print text",
+                "name": "_Print_text",
                 "type": "show_text",
                 "jsonPayload": "{\"text\":\"Seat is taken\",\"hideAfterSeconds\":2,\"font\":0,\"fontSize\":40,\"textAlign\":7}"
               },
               {
-                "name": "Hide text",
+                "name": "_Hide_text",
                 "type": "hide_text",
                 "jsonPayload": "{}"
               },
               {
-                "name": "Show text",
+                "name": "_Show_text",
                 "type": "batch",
-                "jsonPayload": "{\"actions\":[\"Hide text\",\"Print text\"]}"
+                "jsonPayload": "{\"actions\":[\"_Hide_text\",\"_Print_text\"]}"
               }
             ]
           }
@@ -151,21 +150,6 @@
             "id": "{self}",
             "value": [
               {
-                "name": "Move here",
-                "type": "move_player_here",
-                "jsonPayload": "{}"
-              },
-              {
-                "name": "Sit anim1",
-                "type": "play_default_emote",
-                "jsonPayload": "{\"emote\":\"sittingChair1\"}"
-              },
-              {
-                "name": "Mark as taken",
-                "type": "set_state",
-                "jsonPayload": "{\"state\":\"Taken\"}"
-              },
-              {
                 "name": "Mark as free",
                 "type": "set_state",
                 "jsonPayload": "{\"state\":\"Free\"}",
@@ -174,33 +158,48 @@
               {
                 "name": "Sit Here",
                 "type": "batch",
-                "jsonPayload": "{\"actions\":[\"Move here\",\"Mark as taken\",\"Random sit anim\"]}",
+                "jsonPayload": "{\"actions\":[\"_Move_here\",\"_Mark_as_taken\",\"_Random_sit_anim\"]}",
                 "allowedInBasicView": true
               },
               {
-                "name": "Sit anim2",
+                "name": "_Move_here",
+                "type": "move_player_here",
+                "jsonPayload": "{}"
+              },
+              {
+                "name": "_Sit_anim1",
+                "type": "play_default_emote",
+                "jsonPayload": "{\"emote\":\"sittingChair1\"}"
+              },
+              {
+                "name": "_Mark_as_taken",
+                "type": "set_state",
+                "jsonPayload": "{\"state\":\"Taken\"}"
+              },
+              {
+                "name": "_Sit_anim2",
                 "type": "play_default_emote",
                 "jsonPayload": "{\"emote\":\"sittingChair2\"}"
               },
               {
-                "name": "Random sit anim",
+                "name": "_Random_sit_anim",
                 "type": "random",
-                "jsonPayload": "{\"actions\":[\"Sit anim1\",\"Sit anim2\"]}"
+                "jsonPayload": "{\"actions\":[\"_Sit_anim1\",\"_Sit_anim2\"]}"
               },
               {
-                "name": "Print text",
+                "name": "_Print_text",
                 "type": "show_text",
                 "jsonPayload": "{\"text\":\"Seat is taken\",\"hideAfterSeconds\":2,\"font\":0,\"fontSize\":40,\"textAlign\":7}"
               },
               {
-                "name": "Hide text",
+                "name": "_Hide_text",
                 "type": "hide_text",
                 "jsonPayload": "{}"
               },
               {
-                "name": "Show text",
+                "name": "_Show_text",
                 "type": "batch",
-                "jsonPayload": "{\"actions\":[\"Hide text\",\"Print text\"]}"
+                "jsonPayload": "{\"actions\":[\"_Hide_text\",\"_Print_text\"]}"
               }
             ]
           }
@@ -270,7 +269,7 @@
                 "actions": [
                   {
                     "id": "{513:asset-packs::Actions}",
-                    "name": "Show text"
+                    "name": "_Show_text"
                   }
                 ]
               }

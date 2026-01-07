@@ -118,41 +118,40 @@
             "id": "{self}",
             "value": [
               {
-                "name": "Play animation",
+                "name": "Explode",
+                "type": "batch",
+                "jsonPayload": "{\"actions\":[\"_Play_animation\",\"_Play_sound\",\"_Show\",\"_Delay_Hide\"]}",
+                "allowedInBasicView": true
+              },
+              {
+                "name": "_Play_animation",
                 "type": "play_animation",
                 "jsonPayload": "{\"animation\":\"Animation\"}"
               },
               {
-                "name": "Reset",
+                "name": "_Reset",
                 "type": "stop_animation",
                 "jsonPayload": "{}"
               },
               {
-                "name": "Play sound",
+                "name": "_Play_sound",
                 "type": "play_sound",
                 "jsonPayload": "{\"src\":\"{assetPath}/fireworkexplode.mp3\"}"
               },
               {
-                "name": "Show",
+                "name": "_Show",
                 "type": "set_visibility",
                 "jsonPayload": "{\"visible\":true,\"collider\":0}"
               },
               {
-                "name": "Hide",
+                "name": "_Hide",
                 "type": "set_visibility",
-                "jsonPayload": "{\"visible\":false,\"collider\":0}",
-                "allowedInBasicView": true
+                "jsonPayload": "{\"visible\":false,\"collider\":0}"
               },
               {
-                "name": "Explode",
-                "type": "batch",
-                "jsonPayload": "{\"actions\":[\"Play animation\",\"Play sound\",\"Show\",\"Delay Hide\"]}",
-                "allowedInBasicView": true
-              },
-              {
-                "name": "Delay Hide",
+                "name": "_Delay_Hide",
                 "type": "start_delay",
-                "jsonPayload": "{\"actions\":[\"Hide\"],\"timeout\":10}"
+                "jsonPayload": "{\"actions\":[\"_Hide\"],\"timeout\":10}"
               }
             ]
           }
