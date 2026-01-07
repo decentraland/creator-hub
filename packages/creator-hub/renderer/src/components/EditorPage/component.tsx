@@ -1,17 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import CodeIcon from '@mui/icons-material/Code';
 import PublicIcon from '@mui/icons-material/Public';
-import {
-  Checkbox,
-  FormControlLabel,
-  FormGroup,
-  ListItemButton,
-  ListItemText,
-  CircularProgress as Loader,
-} from 'decentraland-ui2';
+import { CircularProgress as Loader } from 'decentraland-ui2';
 
 import { isClientNotInstalledError } from '/shared/types/client';
 import { isProjectError } from '/shared/types/projects';
@@ -19,30 +12,25 @@ import { isWorkspaceError } from '/shared/types/workspace';
 
 import { t } from '/@/modules/store/translation/utils';
 import { initRpc } from '/@/modules/rpc';
+import { config } from '/@/config';
 import { useEditor } from '/@/hooks/useEditor';
 import { useSettings } from '/@/hooks/useSettings';
 import { useSceneCustomCode } from '/@/hooks/useSceneCustomCode';
+import { useDeploy } from '/@/hooks/useDeploy';
 
 import EditorPng from '/assets/images/editor.png';
 
 import { useSelector } from '#store';
-import { PublishProject } from '../Modals/PublishProject';
-import { PublishHistory } from '../Modals/PublishHistory';
-import { InstallClient } from '../Modals/InstallClient';
-import { WarningModal } from '../Modals/WarningModal';
 import { Button } from '../Button';
 import { Header } from '../Header';
 import { Row } from '../Row';
 import { ButtonGroup } from '../Button';
+import { DeployModal } from './DeployModal';
+import { PreviewOptions, PublishOptions } from './MenuOptions';
+import { getPublishButtonText, getPublishOptions } from './utils';
 
-import type {
-  ModalType,
-  ModalState,
-  PreviewOptionsProps,
-  PublishOption,
-  PublishOptionsProps,
-  ModalProps,
-} from './types';
+import type { ModalType, ModalState } from './DeployModal';
+import type { PreviewOptionsProps } from './MenuOptions';
 
 import './styles.css';
 
@@ -61,8 +49,19 @@ export function EditorPage() {
     loadingPublish,
     isInstallingProject,
     killPreview,
+    publishScene,
   } = useEditor();
   const { settings, updateAppSettings } = useSettings();
+  const { executeDeployment, getDeployment } = useDeploy();
+  const deployment = project ? getDeployment(project.path) : undefined;
+
+  const isDeploying = loadingPublish || deployment?.status === 'pending';
+
+  const publishButtonText = useMemo(
+    () => getPublishButtonText({ loadingPublish, deployment }),
+    [loadingPublish, deployment],
+  );
+
   const userId = useSelector(state => state.analytics.userId);
   const { detectCustomCode, isLoading: isDetectingCustomCode } = useSceneCustomCode(project);
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
@@ -94,8 +93,8 @@ export function EditorPage() {
 
   const isReady = !!project && inspectorPort > 0;
 
-  const openModal = useCallback((type: ModalType) => {
-    setModalState({ type });
+  const openModal = useCallback((type: ModalType, initialStep?: ModalState['initialStep']) => {
+    setModalState({ type, initialStep });
   }, []);
 
   const handleOpenPreviewWithErrorHandling = useCallback(async () => {
@@ -138,12 +137,8 @@ export function EditorPage() {
   }, [navigate, iframeRef.current]);
 
   const handleOpenPublishModal = useCallback(async () => {
-    const rpc = iframeRef.current;
-    if (!rpc) return;
-    saveAndGetThumbnail(rpc);
-
     await handleActionWithWarningCheck(() => openModal('publish'));
-  }, [iframeRef.current, saveAndGetThumbnail, handleActionWithWarningCheck, openModal]);
+  }, [handleActionWithWarningCheck, openModal]);
 
   const handleCloseModal = useCallback(
     async (continued: boolean = false) => {
@@ -166,17 +161,40 @@ export function EditorPage() {
     await handleActionWithWarningCheck(handleOpenPreviewWithErrorHandling);
   }, [handleActionWithWarningCheck, handleOpenPreviewWithErrorHandling]);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleClickPublishOptions = useCallback(
-    (option: PublishOption) => {
-      switch (option.id) {
-        case 'history':
-          return openModal('publish-history');
-        default:
-          return;
-      }
-    },
-    [openModal],
+  const handlePublishScene = useCallback(async () => {
+    const rpc = iframeRef.current;
+    if (rpc) saveAndGetThumbnail(rpc);
+    await handleOpenPublishModal();
+  }, [saveAndGetThumbnail, handleOpenPublishModal]);
+
+  const handleDeployWorld = useCallback(async () => {
+    if (!project) return;
+    const rpc = iframeRef.current;
+    if (rpc) saveAndGetThumbnail(rpc);
+    await publishScene({ targetContent: config.get('WORLDS_CONTENT_SERVER_URL') });
+    executeDeployment(project.path);
+  }, [project, saveAndGetThumbnail, publishScene, executeDeployment]);
+
+  const handleDeployLand = useCallback(async () => {
+    if (!project) return;
+    const rpc = iframeRef.current;
+    if (rpc) saveAndGetThumbnail(rpc);
+    await publishScene({ target: config.get('PEER_URL') });
+    executeDeployment(project.path);
+  }, [project, saveAndGetThumbnail, publishScene, executeDeployment]);
+
+  const publishOptions = useMemo(
+    () =>
+      getPublishOptions({
+        project,
+        isDeploying,
+        actions: {
+          onPublishScene: handlePublishScene,
+          onDeployWorld: handleDeployWorld,
+          onDeployLand: handleDeployLand,
+        },
+      }),
+    [project, isDeploying, handlePublishScene, handleDeployWorld, handleDeployLand],
   );
 
   // inspector url
@@ -269,15 +287,32 @@ export function EditorPage() {
               >
                 {t('editor.header.actions.preview')}
               </ButtonGroup>
-              <Button
-                color="primary"
-                disabled={loadingPublish || isInstallingProject || isDetectingCustomCode}
-                onClick={handleOpenPublishModal}
-                startIcon={loadingPublish ? <Loader size={20} /> : <PublicIcon />}
-                // extra={<PublishOptions onClick={handleClickPublishOptions} />}
-              >
-                {t('editor.header.actions.publish')}
-              </Button>
+              {publishOptions.length > 0 ? (
+                <ButtonGroup
+                  color="primary"
+                  disabled={loadingPublish || isInstallingProject || isDetectingCustomCode}
+                  onClick={() => {
+                    if (deployment?.status === 'pending') {
+                      openModal('publish', 'deploy');
+                    } else {
+                      handlePublishScene();
+                    }
+                  }}
+                  startIcon={isDeploying ? <Loader size={20} /> : <PublicIcon />}
+                  extra={<PublishOptions options={publishOptions} />}
+                >
+                  {publishButtonText}
+                </ButtonGroup>
+              ) : (
+                <Button
+                  color="primary"
+                  disabled={loadingPublish || isInstallingProject || isDetectingCustomCode}
+                  onClick={handlePublishScene}
+                  startIcon={<PublicIcon />}
+                >
+                  {publishButtonText}
+                </Button>
+              )}
             </div>
           </Header>
           <iframe
@@ -285,113 +320,14 @@ export function EditorPage() {
             src={iframeUrl}
             onLoad={handleIframeRef}
           ></iframe>
-          <Modal
+          <DeployModal
             type={modalState.type}
             project={project}
             onClose={handleCloseModal}
+            initialStep={modalState.initialStep}
           />
         </>
       )}
     </main>
   );
-}
-
-function PreviewOptions({ onChange, options }: PreviewOptionsProps) {
-  const handleChange = useCallback(
-    (newOptions: Partial<PreviewOptionsProps['options']>) => () => {
-      onChange({ ...options, ...newOptions });
-    },
-    [onChange, options],
-  );
-
-  return (
-    <div className="PreviewOptions">
-      <span className="title">{t('editor.header.actions.preview_options.title')}</span>
-      <FormGroup>
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={!!options.debugger}
-              onChange={handleChange({ debugger: !options.debugger })}
-            />
-          }
-          label={t('editor.header.actions.preview_options.debugger')}
-        />
-        {/* <FormControlLabel
-          control={
-            <Checkbox
-              checked={!!options.openNewInstance}
-              onChange={handleChange({ openNewInstance: !options.openNewInstance })}
-            />
-          }
-          label={t('editor.header.actions.preview_options.open_new_instance')}
-        /> */}
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={!!options.enableLandscapeTerrains}
-              onChange={handleChange({ enableLandscapeTerrains: !options.enableLandscapeTerrains })}
-            />
-          }
-          label={t('editor.header.actions.preview_options.landscape_terrain_enabled')}
-        />
-      </FormGroup>
-    </div>
-  );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function PublishOptions({ onClick }: PublishOptionsProps) {
-  const handleClick = useCallback(
-    (id: 'history') => () => {
-      onClick({ id });
-    },
-    [onClick],
-  );
-
-  return (
-    <div className="PublishOptions">
-      <ListItemButton>
-        <ListItemText
-          onClick={handleClick('history')}
-          primary={t('editor.header.actions.publish_options.history')}
-        />
-      </ListItemButton>
-    </div>
-  );
-}
-
-function Modal({ type, ...props }: ModalProps) {
-  switch (type) {
-    case 'publish':
-      return (
-        <PublishProject
-          open={type === 'publish'}
-          {...props}
-        />
-      );
-    case 'publish-history':
-      return (
-        <PublishHistory
-          open={type === 'publish-history'}
-          {...props}
-        />
-      );
-    case 'install-client':
-      return (
-        <InstallClient
-          open={type === 'install-client'}
-          onClose={() => props.onClose(false)}
-        />
-      );
-    case 'warning':
-      return (
-        <WarningModal
-          open={type === 'warning'}
-          onClose={props.onClose}
-        />
-      );
-    default:
-      return null;
-  }
 }
