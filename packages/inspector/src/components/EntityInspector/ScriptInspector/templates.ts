@@ -4,7 +4,6 @@ export function getScriptTemplateClass(scriptName: string): string {
   const className = toPascalCase(scriptName, 'Script') || 'Script';
   return `
 import { engine, Entity } from '@dcl/sdk/ecs'
-// Add any additional import statements above
 
 export class ${className} {
   /**
