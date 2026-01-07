@@ -53,7 +53,15 @@
           "landscape_terrain_enabled": "Enable Landscape Terrains"
         },
         "publish_options": {
-          "history": "Publishing History"
+          "publish_scene": "Publish Scene",
+          "republish_to_world": "Republish to {name}",
+          "republish_to_land": "Republish to {coords}"
+        },
+        "publish_status": {
+          "preparing": "Preparing...",
+          "publishing": "Publishing...",
+          "published": "Published",
+          "failed": "Failed"
         }
       }
     }

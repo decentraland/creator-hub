@@ -196,6 +196,13 @@ export const slice = createSlice({
           }
         },
       )
+      .addCase(deploymentActions.executeDeployment.pending, (state, action) => {
+        const path = action.meta.arg;
+        state.notifications = state.notifications.filter($ => $.requestId !== path);
+        state.notifications.push(
+          createCustomNotification({ type: 'deploy', path }, { duration: 0, requestId: path }),
+        );
+      })
       .addCase(deploymentActions.executeDeployment.fulfilled, (state, action) => {
         const path = action.meta.arg;
         state.notifications = state.notifications.filter($ => $.requestId !== path);
