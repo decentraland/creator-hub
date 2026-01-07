@@ -54,7 +54,7 @@ export function Initial(props: Props) {
               description={t('modal.publish_project.land.description')}
               buttonText={t('modal.publish_project.land.action')}
               onClickPublish={() => props.onStep('publish-to-land')}
-              learnMoreUrl="https://docs.decentraland.org/creator/development-guide/sdk7/publishing-permissions/#land-permission-options"
+              learnMoreUrl="https://docs.decentraland.org/creator/scenes-sdk7/publishing/publishing-options#land-permission-options"
             />
           </div>
           <span

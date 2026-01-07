@@ -48,7 +48,7 @@ const learn_resources = [
   {
     title: 'Development Workflow',
     icon: <BookmarkBorderIcon />,
-    href: 'https://docs.decentraland.org/creator/development-guide/sdk7/dev-workflow/',
+    href: 'https://docs.decentraland.org/creator/scenes-sdk7/getting-started/dev-workflow',
   },
   {
     title: 'Product Updates',

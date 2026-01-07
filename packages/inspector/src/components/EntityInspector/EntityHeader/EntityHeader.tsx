@@ -134,7 +134,7 @@ export default React.memo(
         createOption(sdk.components.Material, 'Material', {
           description:
             'Material determines the visual appearance of an object. It defines properties such as color, texture, and transparency',
-          link: 'https://docs.decentraland.org/creator/development-guide/sdk7/materials/',
+          link: 'https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/materials',
         }),
         createOption(
           sdk.components.VisibilityComponent,
@@ -155,7 +155,7 @@ export default React.memo(
           {
             description:
               'Use MeshRenderer to assign a primitive 3D shape to the item. Instead of using a 3D file from GLTF, assign a simple cube, plane, sphere, or cylinder. These shapes can be used together with Materials',
-            link: 'https://docs.decentraland.org/creator/development-guide/sdk7/shape-components/',
+            link: 'https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/shape-components',
           },
           {
             conflictsWith: [sdk.components.NftShape.componentId],
@@ -169,7 +169,7 @@ export default React.memo(
         createOption(sdk.components.LightSource, 'Light Source', {
           description:
             'Add a light source. Can be point (in all directions) or spot light (in a specific direction).',
-          link: 'https://docs.decentraland.org/creator/development-guide/sdk7/lights/',
+          link: 'https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/lights',
         }),
         createOption(sdk.components.VirtualCamera, 'Virtual Camera', {
           description:
@@ -179,24 +179,24 @@ export default React.memo(
         createOption(sdk.components.MeshCollider, 'Mesh Collider', {
           description:
             'MeshCollider defines the collision properties of an item, based on its invisible collision geometry. Collisions serve to make an item clickable or to block the player from walking through an item',
-          link: 'https://docs.decentraland.org/creator/development-guide/sdk7/colliders/',
+          link: 'https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/colliders',
         }),
         createOption(sdk.components.Animator, 'Animator', {
           description:
             'Animator controls the playback of animations for 3D models. Use it to play, stop, or loop animations on entities with GLTF models that contain animation data.',
-          link: 'https://docs.decentraland.org/creator/development-guide/sdk7/animations/',
+          link: 'https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/3d-model-animations',
         }),
         createOption(sdk.components.Tween, 'Tween', {
           description:
             'Animates entities by smoothly transitioning their position, rotation, or scale over time. Configure start and end positions, duration, easing functions, and looping behavior.',
-          link: 'https://docs.decentraland.org/creator/development-guide/sdk7/move-entities',
+          link: 'https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/move-entities',
         }),
         createOption(
           sdk.components.NftShape,
           'Nft Shape',
           {
             description: 'NftShape displays an image, gif, or video NFT as a framed picture',
-            link: 'https://docs.decentraland.org/creator/development-guide/sdk7/display-a-certified-nft/',
+            link: 'https://docs.decentraland.org/creator/scenes-sdk7/media/display-a-certified-nft',
           },
           {
             conflictsWith: [
@@ -235,14 +235,14 @@ export default React.memo(
         createOption(sdk.components.AudioSource, 'Audio Source', {
           description:
             'AudioSource enables the playback of sound in your scene. The item emits sound that originates from its location, from an .mp3 file in your scene project',
-          link: 'https://docs.decentraland.org/creator/development-guide/sdk7/sounds',
+          link: 'https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/sounds',
         }),
         createOption(
           sdk.components.TextShape,
           'Text Shape',
           {
             description: 'Use TextShape to display text in the 3D space',
-            link: 'https://docs.decentraland.org/creator/development-guide/sdk7/text',
+            link: 'https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/text',
           },
           {
             conflictsWith: [sdk.components.NftShape.componentId],
@@ -251,11 +251,11 @@ export default React.memo(
         createOption(sdk.components.PointerEvents, 'Pointer Events', {
           description:
             'Use PointerEvents to configure the hints shown to players when they hover the cursor over the item. Change the text, the button, the max distance, etc',
-          link: 'https://docs.decentraland.org/creator/development-guide/sdk7/click-events',
+          link: 'https://docs.decentraland.org/creator/scenes-sdk7/interactivity/button-events/click-events',
         }),
         createOption(sdk.components.VideoPlayer, 'Video Player', {
           description: 'VideoPlayer plays a video file in your scene',
-          link: 'https://docs.decentraland.org/creator/development-guide/sdk7/video-playing/',
+          link: 'https://docs.decentraland.org/creator/scenes-sdk7/media/video-playing',
         }),
         createOption(sdk.components.Script, 'Script', {
           description:

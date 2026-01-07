@@ -145,7 +145,7 @@ const ActionArea: React.FC<WithSdkProps & Props> = ({ sdk, ...props }) => {
       {isRoot &&
         infoTooltip(
           'The root entity. All items in the scene are children of this entity. Open it to adjust the scene settings.',
-          'https://docs.decentraland.org/creator/development-guide/sdk7/scene-metadata/#metadata',
+          'https://docs.decentraland.org/creator/scenes-sdk7/kinds-of-projects/scene-metadata',
         )}
     </div>
   );

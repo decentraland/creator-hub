@@ -168,7 +168,7 @@ function Layout({ value, onChange }: Props) {
           <Block className="limitations">
             <span>About Scene Limitations</span>
             <a
-              href="https://docs.decentraland.org/creator/development-guide/sdk7/scene-limitations/"
+              href="https://docs.decentraland.org/creator/scenes-sdk7/optimizing/scene-limitations"
               target="_blank"
             >
               <InfoIcon size={16} />

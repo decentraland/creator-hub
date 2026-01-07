@@ -58,7 +58,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
       rightContent={
         <InfoTooltip
           text="Use lights to illuminate your scene beyond the default environmental light. See SDK7 Lights docs."
-          link="https://docs.decentraland.org/creator/development-guide/sdk7/lights/"
+          link="https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/lights"
           type="help"
         />
       }

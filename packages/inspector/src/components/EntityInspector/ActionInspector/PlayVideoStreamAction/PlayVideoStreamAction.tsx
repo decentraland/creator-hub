@@ -84,7 +84,7 @@ const PlayVideoStreamAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
       <InfoTooltip
         text="Video URL to display in the Player."
         position="right center"
-        link="https://docs.decentraland.org/creator/development-guide/sdk7/video-playing/#about-external-streaming"
+        link="https://docs.decentraland.org/creator/scenes-sdk7/media/video-playing#about-external-streaming"
       />
     );
   }, []);
