@@ -19,3 +19,11 @@
 .StatesInspector .states-list .content .row + .row {
   margin-top: 4px;
 }
+
+.StatesInspector .states-list .content .row.partial .Text.Field {
+  opacity: 0.6;
+}
+
+.StatesInspector .states-list .content .row.partial .Text.Field input {
+  cursor: not-allowed;
+}

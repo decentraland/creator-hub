@@ -59,6 +59,8 @@ import { getDefaultPayload, getPartialPayload, isStates } from './utils';
 import { LightsModifyAction } from './LightsModifyAction';
 import { ChangeCameraAction } from './ChangeCameraAction';
 import { ChangeTextAction } from './ChangeTextAction';
+import { ChangeCollisionsAction } from './ChangeCollisionsAction';
+import { ChangeSkyboxAction } from './ChangeSkyboxAction';
 import { SlideTextureAction } from './SlideTextureAction';
 import type { Props } from './types';
 
@@ -99,6 +101,7 @@ const ActionMapOption: Record<string, string> = {
   [ActionType.FOLLOW_PLAYER]: 'Follow Player',
   [ActionType.STOP_FOLLOWING_PLAYER]: 'Stop Following Player',
   [ActionType.MOVE_PLAYER_HERE]: 'Move Player Here',
+  [ActionType.PLAYER_FACE_ITEM]: 'Player Face Item',
   [ActionType.DAMAGE]: 'Damage',
   [ActionType.PLACE_ON_PLAYER]: 'Place On Player',
   [ActionType.ROTATE_AS_PLAYER]: 'Rotate As Player',
@@ -114,10 +117,15 @@ const ActionMapOption: Record<string, string> = {
   [ActionType.LIGHTS_ON]: 'Lights On',
   [ActionType.LIGHTS_OFF]: 'Lights Off',
   [ActionType.LIGHTS_MODIFY]: 'Lights Modify',
-  [ActionType.CHANGE_CAMERA]: 'Change Camera',
+  [ActionType.CHANGE_CAMERA]: 'Select Camera',
   [ActionType.CHANGE_TEXT]: 'Change Text',
   [ActionType.STOP_TWEEN]: 'Stop Tween',
   [ActionType.SLIDE_TEXTURE]: 'Slide Texture',
+  [ActionType.FREEZE_PLAYER]: 'Freeze Player',
+  [ActionType.UNFREEZE_PLAYER]: 'Unfreeze Player',
+  [ActionType.CHANGE_COLLISIONS]: 'Change Collisions',
+  [ActionType.CHANGE_SKYBOX]: 'Change Skybox',
+  [ActionType.RESET_SKYBOX]: 'Reset Skybox',
 };
 
 export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) => {
@@ -209,13 +217,18 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
         }
         case ActionType.TELEPORT_PLAYER: {
           const payload = getPartialPayload<ActionType.TELEPORT_PLAYER>(action);
-          return (
-            !!payload &&
-            typeof payload.x === 'number' &&
-            !isNaN(payload.x) &&
-            typeof payload.y === 'number' &&
-            !isNaN(payload.y)
-          );
+          if (!payload) return false;
+          if (payload.mode === 'to_world') {
+            return !!payload.realm && payload.realm.trim().length > 0;
+          } else {
+            // to_coordinates mode
+            return (
+              typeof payload.x === 'number' &&
+              typeof payload.y === 'number' &&
+              !isNaN(payload.x) &&
+              !isNaN(payload.y)
+            );
+          }
         }
         case ActionType.MOVE_PLAYER: {
           const payload = getPartialPayload<ActionType.MOVE_PLAYER>(action);
@@ -256,14 +269,18 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
         case ActionType.LIGHTS_ON:
         case ActionType.LIGHTS_OFF:
         case ActionType.STOP_TWEEN:
+        case ActionType.FREEZE_PLAYER:
+        case ActionType.UNFREEZE_PLAYER:
+        case ActionType.MOVE_PLAYER_HERE:
+        case ActionType.PLAYER_FACE_ITEM:
           return true;
         case ActionType.LIGHTS_MODIFY: {
           const payload = getPartialPayload<ActionType.LIGHTS_MODIFY>(action);
           return !!payload;
         }
         case ActionType.CHANGE_CAMERA: {
-          const payload = getPartialPayload<ActionType.CHANGE_CAMERA>(action);
-          return !!payload;
+          // CHANGE_CAMERA is always valid - it will use the entity's camera if no payload
+          return true;
         }
         case ActionType.CHANGE_TEXT: {
           const payload = getPartialPayload<ActionType.CHANGE_TEXT>(action);
@@ -272,6 +289,10 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
         case ActionType.SLIDE_TEXTURE: {
           const payload = getPartialPayload<ActionType.SLIDE_TEXTURE>(action);
           return !!payload && typeof payload.speed === 'number';
+        }
+        case ActionType.CHANGE_COLLISIONS: {
+          const payload = getPartialPayload<ActionType.CHANGE_COLLISIONS>(action);
+          return !!payload;
         }
         default: {
           try {
@@ -1058,6 +1079,11 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       case ActionType.LIGHTS_ON:
       case ActionType.LIGHTS_OFF:
       case ActionType.STOP_TWEEN:
+      case ActionType.FREEZE_PLAYER:
+      case ActionType.UNFREEZE_PLAYER:
+      case ActionType.MOVE_PLAYER_HERE:
+      case ActionType.PLAYER_FACE_ITEM:
+      case ActionType.RESET_SKYBOX:
         return null;
       case ActionType.LIGHTS_MODIFY: {
         return (
@@ -1070,6 +1096,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       case ActionType.CHANGE_CAMERA: {
         return (
           <ChangeCameraAction
+            entity={entityId}
             value={getPartialPayload<ActionType.CHANGE_CAMERA>(action)}
             onUpdate={value => handleChangeCamera(value, idx)}
           />
@@ -1088,6 +1115,32 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
           <SlideTextureAction
             value={getPartialPayload<ActionType.SLIDE_TEXTURE>(action)}
             onUpdate={value => handleSlideTexture(value, idx)}
+          />
+        );
+      }
+      case ActionType.CHANGE_COLLISIONS: {
+        return (
+          <ChangeCollisionsAction
+            value={getPartialPayload<ActionType.CHANGE_COLLISIONS>(action)}
+            onUpdate={value =>
+              handleModifyAction(idx, {
+                ...actions[idx],
+                jsonPayload: getJson<ActionType.CHANGE_COLLISIONS>(value),
+              })
+            }
+          />
+        );
+      }
+      case ActionType.CHANGE_SKYBOX: {
+        return (
+          <ChangeSkyboxAction
+            value={getPartialPayload<ActionType.CHANGE_SKYBOX>(action)}
+            onUpdate={value =>
+              handleModifyAction(idx, {
+                ...actions[idx],
+                jsonPayload: getJson<ActionType.CHANGE_SKYBOX>(value),
+              })
+            }
           />
         );
       }

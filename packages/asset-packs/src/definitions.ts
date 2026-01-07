@@ -31,6 +31,8 @@ import type {
   PBUiInput,
   PBUiInputResult,
   PBUiCanvasInformation,
+  InputModifierComponentDefinitionExtended,
+  PBSkyboxTime,
 } from '@dcl/ecs';
 import { Schemas } from '@dcl/ecs';
 import { addActionType } from './action-types';
@@ -49,6 +51,7 @@ import {
   AdminPermissions,
   MediaSource,
   TextureMovementType,
+  TeleportMode,
 } from './enums';
 import { getExplorerComponents } from './components';
 
@@ -68,6 +71,7 @@ export const ActionSchemas = {
   [ActionType.PLAY_ANIMATION]: Schemas.Map({
     animation: Schemas.String,
     loop: Schemas.Optional(Schemas.Boolean),
+    shouldReset: Schemas.Optional(Schemas.Boolean),
   }),
   [ActionType.STOP_ANIMATION]: Schemas.Map({}),
   [ActionType.SET_STATE]: Schemas.Map({ state: Schemas.String }),
@@ -118,8 +122,10 @@ export const ActionSchemas = {
   }),
   [ActionType.STOP_AUDIO_STREAM]: Schemas.Map({}),
   [ActionType.TELEPORT_PLAYER]: Schemas.Map({
-    x: Schemas.Int,
-    y: Schemas.Int,
+    mode: Schemas.EnumString<TeleportMode>(TeleportMode, TeleportMode.TO_COORDINATES),
+    x: Schemas.Optional(Schemas.Int),
+    y: Schemas.Optional(Schemas.Int),
+    realm: Schemas.Optional(Schemas.String),
   }),
   [ActionType.MOVE_PLAYER]: Schemas.Map({
     position: Schemas.Vector3,
@@ -179,6 +185,7 @@ export const ActionSchemas = {
     hits: Schemas.Optional(Schemas.Int),
   }),
   [ActionType.MOVE_PLAYER_HERE]: Schemas.Map({}),
+  [ActionType.PLAYER_FACE_ITEM]: Schemas.Map({}),
   [ActionType.PLACE_ON_PLAYER]: Schemas.Map({}),
   [ActionType.ROTATE_AS_PLAYER]: Schemas.Map({}),
   [ActionType.PLACE_ON_CAMERA]: Schemas.Map({}),
@@ -227,7 +234,7 @@ export const ActionSchemas = {
     intensity: Schemas.Optional(Schemas.Float),
   }),
   [ActionType.CHANGE_CAMERA]: Schemas.Map({
-    /** If undefined or 0, treated as NONE */
+    /** If undefined, uses the entity that owns the Actions component. If 0 (RootEntity), removes camera. */
     virtualCameraEntity: Schemas.Optional(Schemas.Entity),
   }),
   [ActionType.CHANGE_TEXT]: Schemas.Map({
@@ -244,6 +251,17 @@ export const ActionSchemas = {
     ),
     duration: Schemas.Optional(Schemas.Float),
   }),
+  [ActionType.FREEZE_PLAYER]: Schemas.Map({}),
+  [ActionType.UNFREEZE_PLAYER]: Schemas.Map({}),
+  [ActionType.CHANGE_COLLISIONS]: Schemas.Map({
+    visibleCollisions: Schemas.Optional(Schemas.Int),
+    invisibleCollisions: Schemas.Optional(Schemas.Int),
+  }),
+  [ActionType.CHANGE_SKYBOX]: Schemas.Map({
+    time: Schemas.Int,
+    direction: Schemas.Optional(Schemas.Int),
+  }),
+  [ActionType.RESET_SKYBOX]: Schemas.Map({}),
 };
 
 export type ActionPayload<T extends ActionType = any> = T extends keyof typeof ActionSchemas
@@ -495,6 +513,8 @@ export type EngineComponents = {
   PointerEvents: LastWriteWinElementSetComponentDefinition<PBPointerEvents>;
   NetworkEntity: typeof NetworkEntity;
   SyncComponents: typeof SyncComponents;
+  InputModifier: InputModifierComponentDefinitionExtended;
+  SkyboxTime: LastWriteWinElementSetComponentDefinition<PBSkyboxTime>;
 };
 
 export function initComponents(engine: IEngine) {

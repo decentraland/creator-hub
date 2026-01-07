@@ -5,10 +5,10 @@ import {
   Name as NameEngine,
 } from '@dcl/ecs';
 import { clone } from '@dcl/asset-packs';
-import type { EditorComponents } from '../components';
+import type { EditorComponents, Node } from '../components';
 import { EditorComponentNames } from '../components';
-import { pushChild } from '../nodes';
 import { createEnumEntityId } from '../enum-entity';
+import { getNodes, pushChildToNodes } from '../nodes';
 import updateSelectedEntity from './update-selected-entity';
 import { generateUniqueName } from './add-child';
 
@@ -35,6 +35,9 @@ export function duplicateEntity(engine: IEngine) {
       cloned: Entity;
     };
 
+    // Update nodes locally instead of calling Nodes.createOrReplace for each entity.
+    let newNodes = getNodes(engine);
+
     for (const [original, duplicate] of Array.from(entities.entries()).reverse()) {
       if (NetworkEntity.has(original)) {
         NetworkEntity.createOrReplace(duplicate, {
@@ -50,14 +53,16 @@ export function duplicateEntity(engine: IEngine) {
 
       const transform = Transform.getMutableOrNull(duplicate);
       if (transform === null || !transform.parent) {
-        Nodes.createOrReplace(engine.RootEntity, {
-          value: pushChild(engine, engine.RootEntity, duplicate),
-        });
+        newNodes = pushChildToNodes(newNodes, engine.RootEntity, duplicate);
       } else {
         const parent = entities.get(transform.parent) || transform.parent;
-        Nodes.createOrReplace(engine.RootEntity, { value: pushChild(engine, parent, duplicate) });
+        newNodes = pushChildToNodes(newNodes, parent, duplicate);
       }
     }
+
+    // Single atomic update to the Nodes component after all entities are processed
+    // This creates only ONE undo operation for all node changes, instead of one per entity.
+    Nodes.createOrReplace(engine.RootEntity, { value: newNodes as Node[] });
 
     updateSelectedEntity(engine)(cloned, true);
     return cloned;

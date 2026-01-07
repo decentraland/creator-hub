@@ -23,3 +23,9 @@ input[type="number"] {
 .ui.inverted.popup {
   height: auto;
 }
+
+/* Make context menu submenus scrollable when they have many items */
+.contexify_submenu {
+  max-height: calc(30vh);
+  overflow-y: auto;
+}

@@ -53,7 +53,10 @@ export function addNode(engine: IEngine, entity: Entity): Node[] {
 }
 
 export function pushChild(engine: IEngine, parent: Entity, child: Entity): Node[] {
-  const nodes = getNodes(engine);
+  return pushChildToNodes(getNodes(engine), parent, child);
+}
+
+export function pushChildToNodes(nodes: readonly Node[], parent: Entity, child: Entity): Node[] {
   const newValue: Node[] = [];
   let alreadyInNodes = false;
 

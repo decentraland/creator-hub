@@ -1,0 +1,7 @@
+{
+  "id": "14b8fec1-5d65-490e-83da-f5da1ada4c7a",
+  "name": "Photo Mural",
+  "category": "party",
+  "tags": ["photo", "mural", "gallery", "display"],
+  "description": "A photo mural that displays photos taken by players in the provided coordinates."
+}

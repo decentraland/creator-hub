@@ -3,6 +3,7 @@ import {
   ActionType,
   InterpolationType,
   TweenType,
+  TeleportMode,
   getJson,
   getPayload,
   Font,
@@ -40,6 +41,7 @@ export function getDefaultPayload(type: string) {
     }
     case ActionType.TELEPORT_PLAYER: {
       return getJson<ActionType.TELEPORT_PLAYER>({
+        mode: TeleportMode.TO_COORDINATES,
         x: 0,
         y: 0,
       });

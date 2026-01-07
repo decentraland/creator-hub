@@ -1,0 +1,8 @@
+{
+  "id": "c3a5a19b-04bb-419b-ae4b-866f1849be4f",
+  "name": "zombie",
+  "category": "health",
+  "tags": ["enemy", "zombie"],
+  "description": "A zombie that can chase the player and cause damage.",
+  "author": "Decentraland Foundation"
+}
