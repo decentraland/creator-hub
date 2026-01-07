@@ -62,21 +62,22 @@ const PlayCustomEmoteAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
     return !files.assets.some($ => $.path === payload.src);
   }, [files, payload]);
 
-  const renderPathInfo = () => {
-    return (
+  const renderPathInfo = useMemo(
+    () => (
       <InfoTooltip
         text="Drag and drop a custom emote model file from the Local Assets, or click the foler icon to search for files. The file should be a .glb or .gltf 3D model with animation."
         link="https://docs.decentraland.org/creator/scenes-sdk7/interactivity/player-avatar#custom-animations"
         position="right center"
       />
-    );
-  };
+    ),
+    [],
+  );
 
   return (
     <div className="PlayCustomEmoteActionContainer">
       <div className="row">
         <FileUploadField
-          label={<>File Path {renderPathInfo()}</>}
+          label={<>File Path {renderPathInfo}</>}
           value={payload.src}
           accept={ACCEPTED_FILE_TYPES['model']}
           onDrop={handleDrop}

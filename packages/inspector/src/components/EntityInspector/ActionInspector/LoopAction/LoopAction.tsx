@@ -72,14 +72,15 @@ const LoopAction = <T extends ActionPayload<ActionType.START_LOOP | ActionType.S
     [payload, handleUpdate],
   );
 
-  const renderActionsInfo = () => {
-    return (
+  const renderActionsInfo = useMemo(
+    () => (
       <InfoTooltip
         text="Lists all the actions that will be triggered repeatedly in a loop. You may select as many actions as you want."
         position="top center"
       />
-    );
-  };
+    ),
+    [],
+  );
 
   return (
     <div className="LoopActionContainer">
@@ -87,7 +88,7 @@ const LoopAction = <T extends ActionPayload<ActionType.START_LOOP | ActionType.S
         <>
           <Block>
             <Dropdown
-              label={<>Action(s) {renderActionsInfo()}</>}
+              label={<>Action(s) {renderActionsInfo}</>}
               options={actions}
               value={payload.actions}
               multiple

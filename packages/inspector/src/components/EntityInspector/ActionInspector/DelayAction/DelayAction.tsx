@@ -72,14 +72,15 @@ const DelayAction = <T extends ActionPayload<ActionType.START_DELAY | ActionType
     [payload, handleUpdate],
   );
 
-  const renderActionsInfo = () => {
-    return (
+  const renderActionsInfo = useMemo(
+    () => (
       <InfoTooltip
         text="Lists all the actions that will be triggered after the delay. You may select as many actions as you want."
         position="top center"
       />
-    );
-  };
+    ),
+    [],
+  );
 
   return (
     <div className="DelayActionContainer">
@@ -87,7 +88,7 @@ const DelayAction = <T extends ActionPayload<ActionType.START_DELAY | ActionType
         <>
           <Block>
             <Dropdown
-              label={<>Action(s) {renderActionsInfo()}</>}
+              label={<>Action(s) {renderActionsInfo}</>}
               options={actions}
               value={payload.actions}
               multiple

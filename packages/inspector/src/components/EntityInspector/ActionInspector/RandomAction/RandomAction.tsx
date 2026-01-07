@@ -39,20 +39,21 @@ const RandomAction: React.FC<Props> = ({ availableActions, value, onUpdate }: Pr
     [payload, handleUpdate],
   );
 
-  const renderActionsInfo = () => {
-    return (
+  const renderActionsInfo = useMemo(
+    () => (
       <InfoTooltip
         text="Lists all the actions that can be randomly selected. A single one of the provided actions will be played each time, each has equal probability."
         position="top center"
       />
-    );
-  };
+    ),
+    [],
+  );
 
   return (
     <div className="RandomActionContainer">
       <Block>
         <Dropdown
-          label={<>Action(s) {renderActionsInfo()}</>}
+          label={<>Action(s) {renderActionsInfo}</>}
           options={actions}
           value={payload.actions}
           multiple

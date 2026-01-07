@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useDrop } from 'react-dnd';
 import cx from 'classnames';
 import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
@@ -79,15 +79,16 @@ const PlayVideoStreamAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
     [payload, handleUpdate],
   );
 
-  const renderUrlInfo = useCallback(() => {
-    return (
+  const renderUrlInfo = useMemo(
+    () => (
       <InfoTooltip
         text="Video URL to display in the Player."
         position="right center"
         link="https://docs.decentraland.org/creator/scenes-sdk7/media/video-playing#about-external-streaming"
       />
-    );
-  }, []);
+    ),
+    [],
+  );
 
   const handleDrop = useCallback(
     async (src: string) => {
@@ -123,7 +124,7 @@ const PlayVideoStreamAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
         <TextField
           type="text"
           className="FileUploadInput"
-          label={<>Video {renderUrlInfo()}</>}
+          label={<>Video {renderUrlInfo}</>}
           value={removeBasePath(files?.basePath ?? '', payload.src ?? '')}
           onChange={handleChangeSrc}
           autoSelect

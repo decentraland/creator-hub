@@ -80,14 +80,15 @@ const MovePlayerAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
     [payload, handleUpdate],
   );
 
-  const renderPositionInfo = () => {
-    return (
+  const renderPositionInfo = useMemo(
+    () => (
       <InfoTooltip
         text="Position coordinates in 3D space relative to the scene origin. X: left/right, Y: up/down, Z: forward/backward."
         position="top center"
       />
-    );
-  };
+    ),
+    [],
+  );
 
   return (
     <div className="MovePlayerActionContainer">
@@ -116,7 +117,7 @@ const MovePlayerAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
               autoSelect
             />
           </div>
-          {renderPositionInfo()}
+          {renderPositionInfo}
         </div>
       </div>
     </div>

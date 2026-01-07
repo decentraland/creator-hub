@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
 import { recursiveCheck } from '../../../../lib/utils/deep-equal';
 import { Dropdown, InfoTooltip } from '../../../ui';
@@ -33,21 +33,22 @@ const PlayDefaultEmoteAction: React.FC<Props> = ({ value, onUpdate }: Props) => 
     [payload, handleUpdate],
   );
 
-  const renderEmoteInfo = () => {
-    return (
+  const renderEmoteInfo = useMemo(
+    () => (
       <InfoTooltip
         text="You must provide the name of the emote. See the documentation for the full list of valid emote names."
         link="https://docs.decentraland.org/creator/scenes-sdk7/interactivity/player-avatar#default-animations"
         position="top center"
       />
-    );
-  };
+    ),
+    [],
+  );
 
   return (
     <div className="PlayDefaultEmoteActionContainer">
       <div className="row">
         <Dropdown
-          label={<>Emote {renderEmoteInfo()}</>}
+          label={<>Emote {renderEmoteInfo}</>}
           placeholder="Select an Emote"
           options={EMOTE_OPTIONS}
           value={payload.emote}

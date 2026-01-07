@@ -80,14 +80,15 @@ const CloneEntityAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
     [payload, handleUpdate],
   );
 
-  const renderPositionInfo = () => {
-    return (
+  const renderPositionInfo = useMemo(
+    () => (
       <InfoTooltip
         text="Position where the cloned entity will be placed, relative to the scene origin. X: left/right, Y: up/down, Z: forward/backward."
         position="top center"
       />
-    );
-  };
+    ),
+    [],
+  );
 
   return (
     <div className="CloneEntityActionContainer">
@@ -116,7 +117,7 @@ const CloneEntityAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
               autoSelect
             />
           </div>
-          {renderPositionInfo()}
+          {renderPositionInfo}
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
 import { recursiveCheck } from '../../../../lib/utils/deep-equal';
 import { TextField, InfoTooltip } from '../../../ui';
@@ -33,20 +33,21 @@ const OpenLinkAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
     [payload, handleUpdate],
   );
 
-  const renderUrlInfo = () => {
-    return (
+  const renderUrlInfo = useMemo(
+    () => (
       <InfoTooltip
         text="URL to open in a new browser tab when the action is triggered. Must be a valid HTTP or HTTPS URL."
         position="top center"
       />
-    );
-  };
+    ),
+    [],
+  );
 
   return (
     <div className="OpenLinkActionContainer">
       <div className="row">
         <TextField
-          label={<>URL {renderUrlInfo()}</>}
+          label={<>URL {renderUrlInfo}</>}
           value={payload.url}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangeEmote(e)}
           autoSelect
