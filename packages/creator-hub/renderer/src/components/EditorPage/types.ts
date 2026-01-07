@@ -1,7 +1,7 @@
 import type { PreviewOptions } from '/shared/types/settings';
 import type { Project } from '/shared/types/projects';
 
-export type ModalType = 'publish' | 'publish-history' | 'install-client' | 'warning';
+export type ModalType = 'publish' | 'publish-history' | 'install-client' | 'warning' | 'blender-workflow';
 
 export type ModalState = {
   type?: ModalType;
@@ -23,4 +23,5 @@ export type ModalProps = {
   type?: ModalType;
   project: Project;
   onClose: (continued?: boolean) => void;
+  rpc?: any;
 };

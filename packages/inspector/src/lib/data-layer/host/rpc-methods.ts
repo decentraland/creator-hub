@@ -133,9 +133,11 @@ export async function initRpcMethods(
 
     async getAssetData(req) {
       if (!req.path) throw new Error('Invalid path');
-      if (await fs.existFile(req.path)) {
+      // Strip query parameters (like ?t=timestamp) from the path
+      const pathWithoutQuery = req.path.split('?')[0];
+      if (await fs.existFile(pathWithoutQuery)) {
         return {
-          data: await fs.readFile(req.path),
+          data: await fs.readFile(pathWithoutQuery),
         };
       }
       throw new Error(`Couldn't find the asset ${req.path}`);

@@ -4,6 +4,8 @@ import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import CodeIcon from '@mui/icons-material/Code';
 import PublicIcon from '@mui/icons-material/Public';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import SyncIcon from '@mui/icons-material/Sync';
 import {
   Checkbox,
   FormControlLabel,
@@ -30,6 +32,7 @@ import { PublishProject } from '../Modals/PublishProject';
 import { PublishHistory } from '../Modals/PublishHistory';
 import { InstallClient } from '../Modals/InstallClient';
 import { WarningModal } from '../Modals/WarningModal';
+import { BlenderWorkflow } from '../Modals/BlenderWorkflow';
 import { Button } from '../Button';
 import { Header } from '../Header';
 import { Row } from '../Row';
@@ -179,6 +182,37 @@ export function EditorPage() {
     [openModal],
   );
 
+  const handleExportScene = useCallback(async () => {
+    const rpc = iframeRef.current;
+    if (!rpc || !rpc.scene) return;
+
+    try {
+      // Request the inspector to trigger the export
+      // The inspector will collect entities and send them via RPC
+      await rpc.scene.exportSceneTrigger();
+    } catch (error) {
+      console.error('Failed to trigger export:', error);
+    }
+  }, [iframeRef.current]);
+
+  const handleOpenBlenderWorkflow = useCallback(() => {
+    openModal('blender-workflow');
+  }, [openModal]);
+
+  const handleQuickSync = useCallback(async () => {
+    // Check if we have a last used .blend file
+    const lastBlendFile = localStorage.getItem('lastBlenderFile');
+    
+    if (!lastBlendFile) {
+      // No file linked, open full modal
+      openModal('blender-workflow');
+      return;
+    }
+
+    // Quick sync without modal - just show preview
+    openModal('blender-workflow');
+  }, [openModal]);
+
   // inspector url
   const htmlUrl = `http://localhost:${import.meta.env.VITE_INSPECTOR_PORT || inspectorPort}`;
   let binIndexJsUrl = `${htmlUrl}/bin/index.js`;
@@ -255,6 +289,20 @@ export function EditorPage() {
               >
                 {t('editor.header.actions.code')}
               </Button>
+              <Button
+                color="secondary"
+                onClick={handleExportScene}
+                startIcon={<FileDownloadIcon />}
+              >
+                Export
+              </Button>
+              <Button
+                color="secondary"
+                onClick={handleOpenBlenderWorkflow}
+                startIcon={<SyncIcon />}
+              >
+                Sync from Blender
+              </Button>
               <ButtonGroup
                 color="secondary"
                 disabled={loadingPreview || isInstallingProject || isDetectingCustomCode}
@@ -289,6 +337,7 @@ export function EditorPage() {
             type={modalState.type}
             project={project}
             onClose={handleCloseModal}
+            rpc={iframeRef.current}
           />
         </>
       )}
@@ -361,7 +410,7 @@ function PublishOptions({ onClick }: PublishOptionsProps) {
   );
 }
 
-function Modal({ type, ...props }: ModalProps) {
+function Modal({ type, rpc, ...props }: ModalProps) {
   switch (type) {
     case 'publish':
       return (
@@ -389,6 +438,15 @@ function Modal({ type, ...props }: ModalProps) {
         <WarningModal
           open={type === 'warning'}
           onClose={props.onClose}
+        />
+      );
+    case 'blender-workflow':
+      return (
+        <BlenderWorkflow
+          open={type === 'blender-workflow'}
+          onClose={() => props.onClose(false)}
+          projectPath={props.project.path}
+          rpc={rpc}
         />
       );
     default:

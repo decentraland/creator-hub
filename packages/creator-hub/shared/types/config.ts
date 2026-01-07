@@ -19,6 +19,7 @@ export type Config = {
   settings: AppSettings;
   userId?: string;
   editors?: EditorConfig[];
+  blenderPath?: string;
 };
 
 export const DEFAULT_CONFIG: Config = {

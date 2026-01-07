@@ -63,4 +63,110 @@ export interface Ipc {
   'npm.install': (path: string, packages?: string[]) => Promise<void>;
   'npm.getOutdatedDeps': (path: string, packages?: string[]) => Promise<Outdated>;
   'npm.getContextFiles': (path: string) => Promise<void>;
+  'scene.exportAsGltf': (data: SceneExportData) => Promise<ExportResult>;
+  
+  // Blender sync
+  'blender.detect': () => Promise<BlenderInfo | null>;
+  'blender.validatePath': (path: string) => Promise<BlenderInfo | null>;
+  'blender.setCustomPath': (path: string) => Promise<boolean>;
+  'blender.clearCustomPath': () => Promise<void>;
+  'blender.exportFromBlend': (options: BlenderExportOptions) => Promise<BlenderExportResult>;
+  'blender.detectChanges': (data: BlenderSyncCompareData) => Promise<BlenderSyncResult>;
+}
+
+export interface EntityData {
+  entityId: number;
+  gltfSrc?: string;
+  transform?: {
+    position?: { x: number; y: number; z: number };
+    rotation?: { x: number; y: number; z: number; w: number };
+    scale?: { x: number; y: number; z: number };
+  };
+  name?: string;
+}
+
+export interface SceneExportData {
+  projectPath: string;
+  entities: EntityData[];
+}
+
+export interface ExportResult {
+  success: boolean;
+  filePath?: string;
+  error?: string;
+}
+
+// Blender Types
+export interface BlenderInfo {
+  path: string;
+  version: string;
+  isValid: boolean;
+}
+
+export interface BlenderExportOptions {
+  blendFilePath: string;
+  blenderPath?: string;
+  outputDir?: string;
+}
+
+export interface BlenderObjectData {
+  name: string;
+  type: string;
+  location: { x: number; y: number; z: number };
+  rotation: { x: number; y: number; z: number; w: number };
+  scale: { x: number; y: number; z: number };
+  dimensions: { x: number; y: number; z: number };
+  parent: string | null;
+  collection: string | null;
+  visible: boolean;
+}
+
+export interface BlenderExportMetadata {
+  objects: { [name: string]: BlenderObjectData };
+  collections: { [name: string]: { name: string; objects: string[] } };
+  coordinate_system: string;
+  blender_version: string;
+}
+
+export interface BlenderExportResult {
+  success: boolean;
+  gltfPath?: string;
+  metadata?: BlenderExportMetadata;
+  error?: string;
+  outputDir?: string;
+}
+
+export interface TransformChange {
+  objectName: string;
+  gltfFile?: string;
+  entityId?: number;
+  entityName?: string;
+  currentTransform?: {
+    position?: { x: number; y: number; z: number };
+    rotation?: { x: number; y: number; z: number; w: number };
+    scale?: { x: number; y: number; z: number };
+  };
+  newTransform?: {
+    position: { x: number; y: number; z: number };
+    rotation: { x: number; y: number; z: number; w: number };
+    scale: { x: number; y: number; z: number };
+  };
+  isNewObject: boolean;
+  isDeleted: boolean;
+}
+
+export interface BlenderSyncCompareData {
+  blendFilePath: string;
+  entities: EntityData[];
+  blenderPath?: string;
+  projectPath?: string;
+}
+
+export interface BlenderSyncResult {
+  success: boolean;
+  changes?: TransformChange[];
+  gltfPath?: string;
+  metadata?: BlenderExportMetadata;
+  outputDir?: string;
+  error?: string;
 }
