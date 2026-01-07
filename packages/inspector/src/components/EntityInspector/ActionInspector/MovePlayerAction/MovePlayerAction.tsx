@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
 import { type Vector3 } from '@dcl/ecs-math';
 import { recursiveCheck } from '../../../../lib/utils/deep-equal';
