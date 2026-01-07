@@ -1,0 +1,112 @@
+/* Modal Container Styles */
+.MuiBackdrop-root:has(.TabsModal) {
+  transition: none !important;
+}
+
+.MuiPaper-root:has(.TabsModal) {
+  background-image: none;
+  padding: 0;
+  width: max-content;
+}
+
+.MuiPaper-root .MuiBox-root:has(.TabsModal) {
+  padding: 0;
+}
+
+.TabsModal {
+  width: max-content;
+  height: max-content;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: hidden;
+}
+
+/* Header Styles */
+.TabsModal .TabsModalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-bottom: 1px solid var(--light-gray);
+}
+
+.TabsModal .TabsModalHeader .TabsModalTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 8px;
+  color: var(--light-gray);
+}
+
+.TabsModal .MuiBox-root.TabsModalHeader .MuiBox-root.TabsModalTitle {
+  padding: 0;
+}
+
+.TabsModal .TabsModalTitle h6 {
+  font-size: 16px;
+  font-weight: 400;
+}
+
+/* Layout Styles */
+.TabsModal .TabsModalLayout {
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+  overflow: hidden;
+}
+
+/* Sidebar Styles */
+.TabsModal .TabsModalSidebar {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  height: 100%;
+  min-width: 160px;
+  padding-top: 16px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.TabsModal .TabsModalTab:last-of-type {
+  margin-bottom: 16px;
+}
+
+.TabsModal .TabsModalTab {
+  padding: 9px 16px;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-size: 14px;
+  line-height: 24px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  border-right: 2px solid transparent;
+  transition: all 0.2s linear;
+}
+
+.TabsModal .TabsModalTab:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.TabsModal .TabsModalTab.active {
+  color: var(--dcl);
+  border-right-color: var(--dcl);
+  background-color: var(--darker-gray);
+}
+
+/* Content Area Styles */
+.TabsModal .TabsModalContent {
+  flex: 1;
+  padding: 24px 32px 0px;
+  background-color: var(--darker-gray);
+  overflow: auto;
+}
+
+.TabsModalContent {
+  width: 470px;
+  height: 500px;
+}
+
+.TabsModal .TabsModalContent > div:first-of-type {
+  padding-bottom: 24px;
+}
