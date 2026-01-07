@@ -140,7 +140,7 @@ const TweenAction: React.FC<Props> = ({ tween: tweenProp, onUpdateTween }: Props
         text={
           "Use the tween type to change the item's position, scale, or rotation over a period of time."
         }
-        link="https://docs.decentraland.org/creator/smart-items/#moving-rotating-or-scaling"
+        link="https://docs.decentraland.org/creator/scene-editor/interactivity/smart-items-advanced#moving-rotating-or-scaling"
       />
     ),
     [],

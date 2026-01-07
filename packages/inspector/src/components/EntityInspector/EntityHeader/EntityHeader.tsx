@@ -220,17 +220,17 @@ export default React.memo(
         createOption(sdk.components.States, 'States', {
           description:
             'States specify the status of entities. Use triggers to check or change states, and set actions accordingly.',
-          link: 'https://docs.decentraland.org/creator/smart-items/#states',
+          link: 'https://docs.decentraland.org/creator/scene-editor/interactivity/states-and-conditions#states',
         }),
         createOption(sdk.components.Triggers, 'Triggers', {
           description:
             'Triggers activate actions based on player interactions like clicks, entering/exiting areas, or global events like "on spawn".',
-          link: 'https://docs.decentraland.org/creator/smart-items/#triggers',
+          link: 'https://docs.decentraland.org/creator/scene-editor/interactivity/smart-items-advanced#interactions-between-items',
         }),
         createOption(sdk.components.Actions, 'Actions', {
           description:
             'Actions list the capabilities of entities, from playing animations to changing visibility. Customize or add new actions, which are activated by triggers.',
-          link: 'https://docs.decentraland.org/creator/smart-items/#actions',
+          link: 'https://docs.decentraland.org/creator/scene-editor/interactivity/smart-items-advanced#actions',
         }),
         createOption(sdk.components.AudioSource, 'Audio Source', {
           description:
@@ -260,7 +260,7 @@ export default React.memo(
         createOption(sdk.components.Script, 'Script', {
           description:
             'Write code that is linked to the entity. Scripts can handle initialization and per-frame updates.',
-          // link: 'https://docs.decentraland.org/creator/development-guide/sdk7/scripts/',
+          // link: 'https://docs.decentraland.org/creator/scene-editor/extend-with-code/scripts/',
         }),
         createOption(sdk.components.SyncComponents, 'Multiplayer', {
           description:
@@ -278,7 +278,7 @@ export default React.memo(
           {
             description:
               'CounterBar creates a visual bar representation of a Counter component. Display the counter value as a colored bar that fills or empties based on the counter value relative to a maximum value.',
-            link: 'https://docs.decentraland.org/creator/smart-items/#counter',
+            link: 'https://docs.decentraland.org/creator/scene-editor/interactivity/states-and-conditions#counter',
           },
           {
             requires: [sdk.components.Counter.componentId],

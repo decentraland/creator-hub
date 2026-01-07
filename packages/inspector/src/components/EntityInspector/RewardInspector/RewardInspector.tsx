@@ -28,7 +28,7 @@ export const RewardInspector = withSdk<Props>(({ sdk, entity, initialOpen = true
       rightContent={
         <InfoTooltip
           text="Rewards enables the campaign configuration for giveaways."
-          link="https://docs.decentraland.org/creator/smart-items/#rewards"
+          link="https://docs.decentraland.org/creator/scene-editor/interactivity/smart-items-advanced"
           type="help"
         />
       }

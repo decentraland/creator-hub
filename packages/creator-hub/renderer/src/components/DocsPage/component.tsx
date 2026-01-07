@@ -109,7 +109,7 @@ export function DocsPage() {
                   <div className="links vertical">
                     <Link
                       title="Example Scenes"
-                      url="https://docs.decentraland.org/creator/sdk7/examples/7/"
+                      url="https://docs.decentraland.org/creator/tutorials-and-examples/examples"
                     />
                     <Link
                       title="SDK & Editor Videos"
