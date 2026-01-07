@@ -1,7 +1,7 @@
 {
   "id": "01f19c0b-2a1c-4a56-ae7a-dc989861e19f",
   "name": "explosion",
-  "category": "pyrotechnics",
+  "category": "party",
   "tags": ["explosion", "detonation", "boom", "blast"],
   "description": "Invisible until triggered by another smart item, it creates a visual effect of a cloud of smoke exploding outwards.",
   "author": "Decentraland Foundation"

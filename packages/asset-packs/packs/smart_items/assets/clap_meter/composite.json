@@ -1,0 +1,318 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::Transform",
+      "data": {
+        "513": {
+          "json": {
+            "position": {
+              "x": 0,
+              "y": 0.05,
+              "z": 0
+            },
+            "rotation": {
+              "x": -5.929230630780102e-21,
+              "y": 2.341712956877018e-8,
+              "z": 3.028142786434124e-20,
+              "w": 1
+            },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
+            "parent": 0
+          }
+        },
+        "514": {
+          "json": {
+            "position": {
+              "x": 0,
+              "y": 3.799999952316284,
+              "z": 0
+            },
+            "rotation": {
+              "x": 0,
+              "y": 0,
+              "z": 0,
+              "w": 1
+            },
+            "scale": {
+              "x": 1.5,
+              "y": 1.5,
+              "z": 1.5
+            },
+            "parent": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "core::Animator",
+      "data": {
+        "0": {
+          "json": {
+            "states": []
+          }
+        },
+        "513": {
+          "json": {
+            "states": []
+          }
+        },
+        "514": {
+          "json": {
+            "states": []
+          }
+        }
+      }
+    },
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/clapMeterBoard.glb",
+            "visibleMeshesCollisionMask": 1,
+            "invisibleMeshesCollisionMask": 3
+          }
+        },
+        "513": {
+          "json": {
+            "src": "{assetPath}/clapMeterNeedle.glb",
+            "visibleMeshesCollisionMask": 1,
+            "invisibleMeshesCollisionMask": 3
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "0": {
+          "json": {
+            "value": "clapMeter"
+          }
+        },
+        "513": {
+          "json": {
+            "value": "Needle"
+          }
+        },
+        "514": {
+          "json": {
+            "value": "clapMeterText"
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Sync-Components",
+      "data": {
+        "0": {
+          "json": {
+            "componentIds": [
+              "asset-packs::Counter",
+              "asset-packs::Actions",
+              "asset-packs::States",
+              "core::Transform"
+            ]
+          }
+        },
+        "513": {
+          "json": {
+            "componentIds": ["core::Transform", "asset-packs::Counter", "core::VisibilityComponent"]
+          }
+        },
+        "514": {
+          "json": {
+            "componentIds": ["core::TextShape", "asset-packs::Counter", "asset-packs::States"]
+          }
+        }
+      }
+    },
+    {
+      "name": "core::VisibilityComponent",
+      "data": {
+        "0": {
+          "json": {
+            "visible": true
+          }
+        },
+        "513": {
+          "json": {
+            "visible": true
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Actions",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "name": "Activate",
+                "type": "set_state",
+                "jsonPayload": "{\"state\":\"On\"}"
+              },
+              {
+                "name": "Deactivate",
+                "type": "set_state",
+                "jsonPayload": "{\"state\":\"Off\"}"
+              },
+              {
+                "name": "Reset",
+                "type": "set_state",
+                "jsonPayload": "{\"state\":\"On\"}"
+              }
+            ]
+          }
+        },
+        "513": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "name": "Show",
+                "type": "set_visibility",
+                "jsonPayload": "{\"visible\":true,\"collider\":0}"
+              },
+              {
+                "name": "Hide",
+                "type": "set_visibility",
+                "jsonPayload": "{\"visible\":false,\"collider\":0}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Counter",
+      "data": {
+        "513": {
+          "json": {
+            "id": "{self}",
+            "value": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "core::TextShape",
+      "data": {
+        "514": {
+          "json": {
+            "text": "",
+            "font": 2,
+            "fontSize": 5,
+            "fontAutoSize": false,
+            "textAlign": 4,
+            "paddingTop": 0,
+            "paddingRight": 0,
+            "paddingBottom": 0,
+            "paddingLeft": 0,
+            "lineSpacing": 0,
+            "outlineWidth": 0,
+            "outlineColor": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            },
+            "textColor": {
+              "r": 0.7568627595901489,
+              "g": 0.10196078568696976,
+              "b": 0.10196078568696976,
+              "a": 1
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Triggers",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "type": "on_state_change",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::States}",
+                    "type": "when_state_is",
+                    "value": "On"
+                  }
+                ],
+                "operation": "and",
+                "actions": [
+                  {
+                    "id": "{513:asset-packs::Actions}",
+                    "name": "Show"
+                  },
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Activate"
+                  }
+                ]
+              },
+              {
+                "type": "on_state_change",
+                "conditions": [
+                  {
+                    "id": "{self:asset-packs::States}",
+                    "type": "when_state_is",
+                    "value": "Off"
+                  }
+                ],
+                "operation": "and",
+                "actions": [
+                  {
+                    "id": "{513:asset-packs::Actions}",
+                    "name": "Hide"
+                  },
+                  {
+                    "id": "{self:asset-packs::Actions}",
+                    "name": "Deactivate"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::States",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": ["Off", "On"],
+            "defaultValue": "On"
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/ClapMeter.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"emoteDetected\":{\"type\":\"string\",\"optional\":true,\"value\":\"clap\"},\"max_increment\":{\"type\":\"number\",\"optional\":true,\"value\":2},\"min_increment\":{\"type\":\"number\",\"optional\":true,\"value\":1},\"diminishing_threshold\":{\"type\":\"number\",\"optional\":true,\"value\":25}}}"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}
