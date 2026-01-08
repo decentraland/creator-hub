@@ -1,4 +1,4 @@
-import CloseIcon from '@mui/icons-material/Close';
+import CloseIcon from '@mui/icons-material/CloseRounded';
 import { Modal } from 'decentraland-ui2/dist/components/Modal/Modal';
 import { Box, IconButton, Typography } from 'decentraland-ui2';
 import './styles.css';
@@ -7,7 +7,7 @@ type Props<T> = {
   open: boolean;
   onClose: () => void;
   title: string;
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   tabs: { value: T; label: string }[];
   activeTab: T;
   onTabClick: (tab: T) => void;
