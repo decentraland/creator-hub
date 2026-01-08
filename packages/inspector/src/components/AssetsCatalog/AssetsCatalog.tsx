@@ -51,7 +51,9 @@ const AssetsCatalog: React.FC<Props> = ({ catalog }) => {
 
         if (nameStarts || tagStarts) {
           results.starts.push(asset);
-        } else if (nameMatches || descriptionMatches || tagsMatch) {
+        } 
+        
+        if (nameMatches || descriptionMatches || tagsMatch) {
           results.includes.push(asset);
         }
 
