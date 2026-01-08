@@ -24,6 +24,11 @@
   gap: 16px;
 }
 
+.AppWarningsFormGroup .MuiCheckbox-root {
+  padding-top: 0;
+  align-self: flex-start;
+}
+
 .EditorActionsBox {
   display: flex;
   gap: 8px;
