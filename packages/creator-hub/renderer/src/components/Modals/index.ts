@@ -32,3 +32,5 @@ export const Modal = styled(BaseModal)(props => ({
 }));
 
 export { WarningModal } from './WarningModal';
+
+export { TabsModal } from './TabsModal';

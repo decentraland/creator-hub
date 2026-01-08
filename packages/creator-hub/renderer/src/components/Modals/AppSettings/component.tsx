@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import CloseIcon from '@mui/icons-material/Close';
 import SettingsIcon from '@mui/icons-material/Settings';
 import equal from 'fast-deep-equal';
-import { Box, IconButton, Typography } from 'decentraland-ui2';
 import {
   loadEditors,
   setDefaultEditor,
@@ -20,7 +18,7 @@ import { useWorkspace } from '/@/hooks/useWorkspace';
 import { useEditor } from '/@/hooks/useEditor';
 import { useDispatch, useSelector } from '#store';
 import { settings as settingsPreload, misc } from '#preload';
-import { Modal } from '..';
+import { TabsModal } from '../TabsModal';
 import { ScenesTab, EditorTab, AboutTab } from './Tabs';
 
 import './styles.css';
@@ -177,38 +175,17 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
   };
 
   return (
-    <Modal
+    <TabsModal
       open={open}
-      size="small"
+      className="AppSettingsModal"
+      icon={<SettingsIcon />}
+      title={t('modal.app_settings.title')}
+      tabs={SETTINGS_TABS}
+      activeTab={activeTab}
+      onTabClick={setActiveTab}
+      onClose={onClose}
     >
-      <Box className="AppSettingsModal">
-        <Box className="SettingsHeader">
-          <Box className="SettingsHeaderTitle">
-            <SettingsIcon />
-            <Typography variant="h6">{t('modal.app_settings.title')}</Typography>
-          </Box>
-          <IconButton onClick={onClose}>
-            <CloseIcon
-              fontSize="medium"
-              style={{ color: 'var(--white)' }}
-            />
-          </IconButton>
-        </Box>
-        <Box className="SettingsLayout">
-          <Box className="SettingsSidebar">
-            {SETTINGS_TABS.map(tab => (
-              <Box
-                key={`settings-tab-${tab.value}`}
-                className={`SettingsTab ${activeTab === tab.value ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab.value)}
-              >
-                {tab.label}
-              </Box>
-            ))}
-          </Box>
-          <Box className="SettingsContent">{renderTabContent()}</Box>
-        </Box>
-      </Box>
-    </Modal>
+      {renderTabContent()}
+    </TabsModal>
   );
 }
