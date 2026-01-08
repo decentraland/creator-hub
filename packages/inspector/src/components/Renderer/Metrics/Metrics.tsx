@@ -74,6 +74,37 @@ const IGNORE_MESHES = [
   'z_cone_axis',
 ];
 
+/**
+ * Extracts textures from a material and adds them to the textures set.
+ * Materials can have multiple texture properties (albedoTexture, normalTexture, etc.)
+ */
+function collectTexturesFromMaterial(material: Material, texturesSet: Set<string>): void {
+  for (const key in material) {
+    const value = (material as any)[key];
+    if (value && typeof value === 'object' && 'getInternalTexture' in value) {
+      // This is a texture
+      const texture = value;
+      if (IGNORE_TEXTURES.includes(texture.name)) continue;
+
+      const isTexture = texture instanceof Texture;
+      const url = isTexture ? (texture as Texture).url : texture.name || '';
+
+      // Filter out editor-generated data URIs
+      if (url && url.startsWith('data:') && url.includes('EnvironmentBRDFTexture')) continue;
+
+      // Use URL as primary key for deduplication
+      if (url) {
+        texturesSet.add(url);
+      } else {
+        const internalTexture = texture.getInternalTexture();
+        if (internalTexture?.uniqueId != null) {
+          texturesSet.add(`__uniqueId_${internalTexture.uniqueId}`);
+        }
+      }
+    }
+  }
+}
+
 const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
   const ROOT = sdk.engine.RootEntity;
   const PLAYER_ROOT = sdk.engine.PlayerEntity;
@@ -132,30 +163,7 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
             const materialId = subMaterial.id;
             if (!IGNORE_MATERIALS.includes(materialId)) {
               materialsFromMeshes.add(materialId);
-
-              // Collect textures from this sub-material
-              for (const key in subMaterial) {
-                const value = (subMaterial as any)[key];
-                if (value && typeof value === 'object' && 'getInternalTexture' in value) {
-                  const texture = value;
-                  if (IGNORE_TEXTURES.includes(texture.name)) continue;
-
-                  const isTexture = texture instanceof Texture;
-                  const url = isTexture ? (texture as Texture).url : texture.name || '';
-
-                  if (url && url.startsWith('data:') && url.includes('EnvironmentBRDFTexture'))
-                    continue;
-
-                  if (url) {
-                    texturesFromMaterials.add(url);
-                  } else {
-                    const internalTexture = texture.getInternalTexture();
-                    if (internalTexture?.uniqueId != null) {
-                      texturesFromMaterials.add(`__uniqueId_${internalTexture.uniqueId}`);
-                    }
-                  }
-                }
-              }
+              collectTexturesFromMaterial(subMaterial, texturesFromMaterials);
             }
           }
         });
@@ -164,35 +172,7 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
         const materialId = mesh.material.id;
         if (!IGNORE_MATERIALS.includes(materialId)) {
           materialsFromMeshes.add(materialId);
-
-          // Collect textures from this material
-          // Materials can have multiple texture properties (albedoTexture, normalTexture, etc.)
-          const material = mesh.material;
-          for (const key in material) {
-            const value = (material as any)[key];
-            if (value && typeof value === 'object' && 'getInternalTexture' in value) {
-              // This is a texture
-              const texture = value;
-              if (IGNORE_TEXTURES.includes(texture.name)) continue;
-
-              const isTexture = texture instanceof Texture;
-              const url = isTexture ? (texture as Texture).url : texture.name || '';
-
-              // Filter out editor-generated data URIs
-              if (url && url.startsWith('data:') && url.includes('EnvironmentBRDFTexture'))
-                continue;
-
-              // Use URL as primary key for deduplication
-              if (url) {
-                texturesFromMaterials.add(url);
-              } else {
-                const internalTexture = texture.getInternalTexture();
-                if (internalTexture?.uniqueId != null) {
-                  texturesFromMaterials.add(`__uniqueId_${internalTexture.uniqueId}`);
-                }
-              }
-            }
-          }
+          collectTexturesFromMaterial(mesh.material, texturesFromMaterials);
         }
       }
     });
