@@ -3,7 +3,8 @@ import { FiAlertTriangle as WarningIcon } from 'react-icons/fi';
 import { IoGridOutline as SquaresGridIcon } from 'react-icons/io5';
 import cx from 'classnames';
 
-import type { Material, Texture } from '@babylonjs/core';
+import type { Material } from '@babylonjs/core';
+import { Texture, MultiMaterial } from '@babylonjs/core';
 import { CrdtMessageType } from '@dcl/ecs';
 
 import type { WithSdkProps } from '../../../hoc/withSdk';
@@ -66,6 +67,11 @@ const IGNORE_MESHES = [
   'ground',
   'skybox',
   '__root__',
+  // Axis indicator meshes from layout manager
+  'axis_x_line',
+  'axis_y_line',
+  'axis_z_line',
+  'z_cone_axis',
 ];
 
 const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
@@ -96,7 +102,9 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
       mesh =>
         !IGNORE_MESHES.includes(mesh.id) &&
         !mesh.id.startsWith(GROUND_MESH_PREFIX) &&
-        !mesh.id.startsWith('BoundingMesh'),
+        !mesh.id.startsWith('BoundingMesh') &&
+        !mesh.id.startsWith('axis_') && // Exclude all axis indicator meshes
+        !mesh.id.startsWith('axisHelper'), // Exclude axis helper meshes
     );
     // Calculate triangle count correctly: getTotalIndices() / 3
     // If a mesh doesn't have indices, it might be using vertices directly, so we fall back to vertices / 3
@@ -110,40 +118,89 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
       return acc + Math.floor(vertices / 3);
     }, 0);
 
-    // Deduplicate textures by URL/name to handle cases where
-    // the same texture is loaded from different .glb files but should be counted once
-    // We use URL as the primary key since the same texture file should only be counted once
-    const textureKeys = new Set<string>();
-    sdk.scene.textures
-      .filter(texture => {
-        // Filter out ignored textures by name
-        if (IGNORE_TEXTURES.includes(texture.name)) return false;
-        // Filter out data URIs that are editor-generated (like EnvironmentBRDFTexture)
-        const url = texture.url || texture.name || '';
-        if (url.startsWith('data:') && url.includes('EnvironmentBRDFTexture')) return false;
-        return true;
-      })
-      .forEach(texture => {
-        // Use URL as primary key for deduplication (same URL = same texture)
-        // This ensures that if the same texture is used in multiple .glb files,
-        // it's only counted once in the metrics
-        const url = texture.url || texture.name || '';
-        const internalTexture = texture.getInternalTexture();
+    // Collect materials and textures only from user-created meshes (not editor meshes)
+    // This ensures we don't count editor-only materials/textures
+    const materialsFromMeshes = new Set<string>();
+    const texturesFromMaterials = new Set<string>();
 
-        // Prefer URL for deduplication, but fallback to uniqueId if URL is not available
-        // This handles both cases: textures with URLs (from files) and textures without URLs
-        if (url) {
-          textureKeys.add(url);
-        } else if (internalTexture?.uniqueId != null) {
-          // Fallback to uniqueId for textures without URLs (should be rare)
-          textureKeys.add(`__uniqueId_${internalTexture.uniqueId}`);
+    meshes.forEach(mesh => {
+      // Collect materials from this mesh
+      if (mesh.material) {
+        const materialId = mesh.material.id;
+        if (!IGNORE_MATERIALS.includes(materialId)) {
+          materialsFromMeshes.add(materialId);
+
+          // Collect textures from this material
+          // Materials can have multiple texture properties (albedoTexture, normalTexture, etc.)
+          const material = mesh.material;
+          for (const key in material) {
+            const value = (material as any)[key];
+            if (value && typeof value === 'object' && 'getInternalTexture' in value) {
+              // This is a texture
+              const texture = value;
+              if (IGNORE_TEXTURES.includes(texture.name)) continue;
+
+              const isTexture = texture instanceof Texture;
+              const url = isTexture ? (texture as Texture).url : texture.name || '';
+
+              // Filter out editor-generated data URIs
+              if (url && url.startsWith('data:') && url.includes('EnvironmentBRDFTexture'))
+                continue;
+
+              // Use URL as primary key for deduplication
+              if (url) {
+                texturesFromMaterials.add(url);
+              } else {
+                const internalTexture = texture.getInternalTexture();
+                if (internalTexture?.uniqueId != null) {
+                  texturesFromMaterials.add(`__uniqueId_${internalTexture.uniqueId}`);
+                }
+              }
+            }
+          }
         }
-      });
+      }
 
-    const uniqueTextures = textureKeys;
-    const uniqueMaterials = new Set(
-      sdk.scene.materials.map(material => material.id).filter(id => !IGNORE_MATERIALS.includes(id)),
-    );
+      // Handle multi-material meshes
+      if (mesh.material instanceof MultiMaterial) {
+        const multiMaterial = mesh.material;
+        multiMaterial.subMaterials.forEach((subMaterial: Material | null) => {
+          if (subMaterial) {
+            const materialId = subMaterial.id;
+            if (!IGNORE_MATERIALS.includes(materialId)) {
+              materialsFromMeshes.add(materialId);
+
+              // Collect textures from this sub-material
+              for (const key in subMaterial) {
+                const value = (subMaterial as any)[key];
+                if (value && typeof value === 'object' && 'getInternalTexture' in value) {
+                  const texture = value;
+                  if (IGNORE_TEXTURES.includes(texture.name)) continue;
+
+                  const isTexture = texture instanceof Texture;
+                  const url = isTexture ? (texture as Texture).url : texture.name || '';
+
+                  if (url && url.startsWith('data:') && url.includes('EnvironmentBRDFTexture'))
+                    continue;
+
+                  if (url) {
+                    texturesFromMaterials.add(url);
+                  } else {
+                    const internalTexture = texture.getInternalTexture();
+                    if (internalTexture?.uniqueId != null) {
+                      texturesFromMaterials.add(`__uniqueId_${internalTexture.uniqueId}`);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
+    });
+
+    const uniqueMaterials = materialsFromMeshes;
+    const uniqueTextures = texturesFromMaterials;
 
     dispatch(
       setMetrics({
