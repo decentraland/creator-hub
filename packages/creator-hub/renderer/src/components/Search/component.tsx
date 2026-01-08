@@ -5,18 +5,18 @@ import type { OutlinedInputProps } from 'decentraland-ui2';
 import { debounce } from '/shared/utils';
 import './styles.css';
 
-type Props = Omit<OutlinedInputProps, 'onChange'> & {
+type Props = OutlinedInputProps & {
   onChange?: (value: string) => void;
 };
 
-const Search: React.FC<Props> = React.memo(({ onChange, ...props }) => {
+const Search: React.FC<Props> = React.memo(props => {
   const onChangeDebounced = useCallback(
     debounce((event: React.ChangeEvent<HTMLInputElement>) => {
-      if (onChange) {
-        onChange(event.target.value);
+      if (props.onChange) {
+        props.onChange(event.target.value);
       }
     }, 500),
-    [onChange],
+    [props.onChange],
   );
 
   return (
