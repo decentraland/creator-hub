@@ -1,3 +1,4 @@
+import classNames from 'classnames';
 import CloseIcon from '@mui/icons-material/CloseRounded';
 import { Modal } from 'decentraland-ui2/dist/components/Modal/Modal';
 import { Box, IconButton, Typography } from 'decentraland-ui2';
@@ -49,7 +50,7 @@ function TabsModal<T>({
             {tabs.map(tab => (
               <Box
                 key={`tab-${tab.value}`}
-                className={`TabsModalTab ${activeTab === tab.value ? 'active' : ''}`}
+                className={classNames('TabsModalTab', { active: activeTab === tab.value })}
                 onClick={() => onTabClick(tab.value)}
               >
                 {tab.label}
