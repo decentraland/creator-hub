@@ -3,7 +3,7 @@ import { FiAlertTriangle as WarningIcon } from 'react-icons/fi';
 import { IoGridOutline as SquaresGridIcon } from 'react-icons/io5';
 import cx from 'classnames';
 
-import type { Material } from '@babylonjs/core';
+import type { Material, Texture } from '@babylonjs/core';
 import { CrdtMessageType } from '@dcl/ecs';
 
 import type { WithSdkProps } from '../../../hoc/withSdk';
@@ -58,7 +58,15 @@ const IGNORE_TEXTURES = [
   'GlowLayerBlurRTT',
   'GlowLayerBlurRTT2',
 ];
-const IGNORE_MESHES = ['BackgroundHelper', 'BackgroundPlane', 'BackgroundSkybox'];
+const IGNORE_MESHES = [
+  'BackgroundHelper',
+  'BackgroundPlane',
+  'BackgroundSkybox',
+  // Editor environment meshes from createDefaultEnvironment
+  'ground',
+  'skybox',
+  '__root__',
+];
 
 const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
   const ROOT = sdk.engine.RootEntity;
@@ -90,12 +98,49 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
         !mesh.id.startsWith(GROUND_MESH_PREFIX) &&
         !mesh.id.startsWith('BoundingMesh'),
     );
-    const triangles = meshes.reduce((acc, mesh) => acc + mesh.getTotalVertices(), 0);
-    const uniqueTextures = new Set(
-      sdk.scene.textures
-        .filter(texture => !IGNORE_TEXTURES.includes(texture.name))
-        .map(texture => texture.getInternalTexture()!.uniqueId),
-    );
+    // Calculate triangle count correctly: getTotalIndices() / 3
+    // If a mesh doesn't have indices, it might be using vertices directly, so we fall back to vertices / 3
+    const triangles = meshes.reduce((acc, mesh) => {
+      const indices = mesh.getTotalIndices();
+      if (indices > 0) {
+        return acc + indices / 3;
+      }
+      // Fallback for meshes without indices (shouldn't happen for proper meshes, but safe fallback)
+      const vertices = mesh.getTotalVertices();
+      return acc + Math.floor(vertices / 3);
+    }, 0);
+
+    // Deduplicate textures by URL/name to handle cases where
+    // the same texture is loaded from different .glb files but should be counted once
+    // We use URL as the primary key since the same texture file should only be counted once
+    const textureKeys = new Set<string>();
+    sdk.scene.textures
+      .filter(texture => {
+        // Filter out ignored textures by name
+        if (IGNORE_TEXTURES.includes(texture.name)) return false;
+        // Filter out data URIs that are editor-generated (like EnvironmentBRDFTexture)
+        const url = texture.url || texture.name || '';
+        if (url.startsWith('data:') && url.includes('EnvironmentBRDFTexture')) return false;
+        return true;
+      })
+      .forEach(texture => {
+        // Use URL as primary key for deduplication (same URL = same texture)
+        // This ensures that if the same texture is used in multiple .glb files,
+        // it's only counted once in the metrics
+        const url = texture.url || texture.name || '';
+        const internalTexture = texture.getInternalTexture();
+
+        // Prefer URL for deduplication, but fallback to uniqueId if URL is not available
+        // This handles both cases: textures with URLs (from files) and textures without URLs
+        if (url) {
+          textureKeys.add(url);
+        } else if (internalTexture?.uniqueId != null) {
+          // Fallback to uniqueId for textures without URLs (should be rare)
+          textureKeys.add(`__uniqueId_${internalTexture.uniqueId}`);
+        }
+      });
+
+    const uniqueTextures = textureKeys;
     const uniqueMaterials = new Set(
       sdk.scene.materials.map(material => material.id).filter(id => !IGNORE_MATERIALS.includes(id)),
     );
