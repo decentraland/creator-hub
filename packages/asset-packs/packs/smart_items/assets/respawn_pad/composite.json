@@ -21,16 +21,16 @@
               {
                 "name": "Respawn Player",
                 "type": "batch",
-                "jsonPayload": "{ \"actions\": [\"Move Player\", \"Play Spawn Sound\"] }",
+                "jsonPayload": "{ \"actions\": [\"_Move_Player\", \"_Play_Spawn_Sound\"] }",
                 "allowedInBasicView": true
               },
               {
-                "name": "Move Player",
+                "name": "_Move_Player",
                 "type": "move_player_here",
                 "jsonPayload": "{ }"
               },
               {
-                "name": "Play Spawn Sound",
+                "name": "_Play_Spawn_Sound",
                 "type": "play_sound",
                 "jsonPayload": "{ \"src\": \"{assetPath}/spawn.mp3\" }"
               }

@@ -71,21 +71,6 @@
             "id": "{self}",
             "value": [
               {
-                "name": "Play Animation",
-                "type": "play_animation",
-                "jsonPayload": "{\"animation\":\"trigger\"}"
-              },
-              {
-                "name": "Play Sound",
-                "type": "play_sound",
-                "jsonPayload": "{\"src\":\"{assetPath}/bell.mp3\"}"
-              },
-              {
-                "name": "Stop Animation",
-                "type": "stop_animation",
-                "jsonPayload": "{}"
-              },
-              {
                 "name": "Stop Sound",
                 "type": "stop_sound",
                 "jsonPayload": "{}",
@@ -94,8 +79,23 @@
               {
                 "type": "batch",
                 "name": "Ring",
-                "jsonPayload": "{\"actions\":[\"Play Sound\",\"Play Animation\"]}",
+                "jsonPayload": "{\"actions\":[\"_Play_Sound\",\"_Play_Animation\"]}",
                 "allowedInBasicView": true
+              },
+              {
+                "name": "_Play_Animation",
+                "type": "play_animation",
+                "jsonPayload": "{\"animation\":\"trigger\"}"
+              },
+              {
+                "name": "_Play_Sound",
+                "type": "play_sound",
+                "jsonPayload": "{\"src\":\"{assetPath}/bell.mp3\"}"
+              },
+              {
+                "name": "_Stop_Animation",
+                "type": "stop_animation",
+                "jsonPayload": "{}"
               }
             ]
           }

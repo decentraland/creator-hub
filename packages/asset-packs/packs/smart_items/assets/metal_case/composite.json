@@ -89,22 +89,22 @@
                 "allowedInBasicView": true
               },
               {
-                "name": "Play Open Sound",
+                "name": "_Play_Open_Sound",
                 "type": "play_sound",
                 "jsonPayload": "{\"src\":\"{assetPath}/open.mp3\"}"
               },
               {
-                "name": "Play Close Sound",
+                "name": "_Play_Close_Sound",
                 "type": "play_sound",
                 "jsonPayload": "{\"src\":\"{assetPath}/close.mp3\"}"
               },
               {
-                "name": "Play Open Animation",
+                "name": "_Play_Open_Animation",
                 "type": "play_animation",
                 "jsonPayload": "{ \"animation\": \"open\" }"
               },
               {
-                "name": "Play Close Animation",
+                "name": "_Play_Close_Animation",
                 "type": "play_animation",
                 "jsonPayload": "{ \"animation\": \"close\" }"
               }
@@ -142,11 +142,11 @@
                 "actions": [
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Play Open Animation"
+                    "name": "_Play_Open_Animation"
                   },
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Play Open Sound"
+                    "name": "_Play_Open_Sound"
                   }
                 ],
                 "basicViewId": "trigger-when-opened"
@@ -163,11 +163,11 @@
                 "actions": [
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Play Close Animation"
+                    "name": "_Play_Close_Animation"
                   },
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Play Close Sound"
+                    "name": "_Play_Close_Sound"
                   }
                 ],
                 "basicViewId": "trigger-when-closed"

@@ -19,21 +19,6 @@
             "id": "{self}",
             "value": [
               {
-                "name": "Play Hit Animation",
-                "type": "play_animation",
-                "jsonPayload": "{ \"animation\": \"Hit\" }"
-              },
-              {
-                "name": "Play Fall Animation",
-                "type": "play_animation",
-                "jsonPayload": "{ \"animation\": \"Fall\" }"
-              },
-              {
-                "name": "Play Fall Sound",
-                "type": "play_sound",
-                "jsonPayload": "{ \"src\": \"{assetPath}/fall.mp3\" }"
-              },
-              {
                 "name": "Damage",
                 "type": "decrease_counter",
                 "jsonPayload": "{ \"amount\": 1 }",
@@ -48,7 +33,22 @@
               {
                 "name": "Destroy Batch",
                 "type": "batch",
-                "jsonPayload": "{ \"actions\": [\"Play Fall Animation\", \"Play Fall Sound\"] }"
+                "jsonPayload": "{ \"actions\": [\"_Play_Fall_Animation\", \"_Play_Fall_Sound\"] }"
+              },
+              {
+                "name": "_Play_Hit_Animation",
+                "type": "play_animation",
+                "jsonPayload": "{ \"animation\": \"Hit\" }"
+              },
+              {
+                "name": "_Play_Fall_Animation",
+                "type": "play_animation",
+                "jsonPayload": "{ \"animation\": \"Fall\" }"
+              },
+              {
+                "name": "_Play_Fall_Sound",
+                "type": "play_sound",
+                "jsonPayload": "{ \"src\": \"{assetPath}/fall.mp3\" }"
               }
             ]
           }
@@ -90,7 +90,7 @@
                 "actions": [
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Play Hit Animation"
+                    "name": "_Play_Hit_Animation"
                   }
                 ]
               },

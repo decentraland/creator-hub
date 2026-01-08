@@ -71,36 +71,6 @@
             "id": "{self}",
             "value": [
               {
-                "name": "Play Activate Animation",
-                "type": "play_animation",
-                "jsonPayload": "{\"animation\":\"activate\"}"
-              },
-              {
-                "name": "Play Sound",
-                "type": "play_sound",
-                "jsonPayload": "{\"src\":\"{assetPath}/siren.mp3\"}"
-              },
-              {
-                "type": "play_sound",
-                "name": "Loop Sound",
-                "jsonPayload": "{\"src\":\"{assetPath}/siren.mp3\",\"loop\":true}"
-              },
-              {
-                "type": "play_animation",
-                "name": "Loop Animation",
-                "jsonPayload": "{\"animation\":\"activate\",\"loop\":true}"
-              },
-              {
-                "type": "stop_animation",
-                "name": "Stop Animation",
-                "jsonPayload": "{}"
-              },
-              {
-                "type": "stop_sound",
-                "name": "Stop Sound",
-                "jsonPayload": "{}"
-              },
-              {
                 "type": "set_state",
                 "name": "Trigger",
                 "jsonPayload": "{\"state\":\"Triggered\"}",
@@ -111,6 +81,36 @@
                 "name": "Disarm",
                 "jsonPayload": "{\"state\":\"Silent\"}",
                 "allowedInBasicView": true
+              },
+              {
+                "name": "_Play_Activate_Animation",
+                "type": "play_animation",
+                "jsonPayload": "{\"animation\":\"activate\"}"
+              },
+              {
+                "name": "_Play_Sound",
+                "type": "play_sound",
+                "jsonPayload": "{\"src\":\"{assetPath}/siren.mp3\"}"
+              },
+              {
+                "type": "play_sound",
+                "name": "_Loop_Sound",
+                "jsonPayload": "{\"src\":\"{assetPath}/siren.mp3\",\"loop\":true}"
+              },
+              {
+                "type": "play_animation",
+                "name": "_Loop_Animation",
+                "jsonPayload": "{\"animation\":\"activate\",\"loop\":true}"
+              },
+              {
+                "type": "stop_animation",
+                "name": "_Stop_Animation",
+                "jsonPayload": "{}"
+              },
+              {
+                "type": "stop_sound",
+                "name": "_Stop_Sound",
+                "jsonPayload": "{}"
               }
             ]
           }
@@ -128,11 +128,11 @@
                 "actions": [
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Play Activate Animation"
+                    "name": "_Play_Activate_Animation"
                   },
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Play Sound"
+                    "name": "_Play_Sound"
                   }
                 ],
                 "basicViewId": "trigger-when-clicked",
@@ -151,11 +151,11 @@
                 "actions": [
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Stop Sound"
+                    "name": "_Stop_Sound"
                   },
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Stop Animation"
+                    "name": "_Stop_Animation"
                   }
                 ]
               },
@@ -172,11 +172,11 @@
                 "actions": [
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Loop Sound"
+                    "name": "_Loop_Sound"
                   },
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Loop Animation"
+                    "name": "_Loop_Animation"
                   }
                 ]
               }
