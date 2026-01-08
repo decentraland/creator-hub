@@ -50,7 +50,8 @@
           "debugger": "Open Debug Console",
           "skip_auth_screen": "Skip Auth Screen",
           "open_new_instance": "Open multiple instances",
-          "landscape_terrain_enabled": "Enable Landscape Terrains"
+          "landscape_terrain_enabled": "Enable Landscape Terrains",
+          "mobile_preview": "Show QR Code for Mobile"
         },
         "publish_options": {
           "history": "Publishing History"
@@ -326,6 +327,13 @@
       "dont_show_again": "Don't show this warning again",
       "continue": "Continue",
       "cancel": "Cancel"
+    },
+    "mobile_qr": {
+      "title": "Mobile Preview",
+      "scan_message": "Scan to preview on your mobile device",
+      "copy": "Copy URL",
+      "copied": "URL copied to clipboard",
+      "close": "Close"
     }
   },
   "snackbar": {

@@ -56,6 +56,10 @@ export async function killPreviewScene(path: string) {
   return port;
 }
 
+export async function getMobilePreview(path: string) {
+  return invoke('cli.getMobilePreview', path);
+}
+
 export async function publishScene(opts: DeployOptions) {
   const port = await invoke('cli.deploy', opts);
   return port;

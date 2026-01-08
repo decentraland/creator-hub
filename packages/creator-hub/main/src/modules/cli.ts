@@ -94,6 +94,51 @@ function isPreviewRunning(preview?: Preview): preview is Preview {
   return !!(preview?.child.alive() && preview.url);
 }
 
+function getPreviewServerUrl(deepLinkUrl: string): string | null {
+  try {
+    const params = new URLSearchParams(deepLinkUrl);
+    const realm = params.get('realm');
+    if (realm) {
+      const url = new URL(realm);
+      return `${url.protocol}//${url.host}`;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export async function getMobilePreview(
+  path: string,
+): Promise<{ url: string; qr: string } | null> {
+  const preview = previewCache.get(path);
+  if (!isPreviewRunning(preview)) {
+    return null;
+  }
+
+  const serverUrl = getPreviewServerUrl(preview.url);
+  if (!serverUrl) {
+    log.warn('[CLI] Could not extract server URL from deep-link:', preview.url);
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${serverUrl}/mobile-preview`);
+    if (!response.ok) {
+      log.warn('[CLI] Mobile preview endpoint returned error:', response.status);
+      return null;
+    }
+    const json = await response.json();
+    if (json.ok && json.data) {
+      return { url: json.data.url, qr: json.data.qr };
+    }
+    return null;
+  } catch (error) {
+    log.error('[CLI] Error fetching mobile preview:', error);
+    return null;
+  }
+}
+
 // This fn is for already created deep-link. Just to add or remove values to a generated deep-link
 // decentraland://position=80,80&skip-auth-screen=true etc
 function updateDeepLinkWithOpts(params: string, newOpts: PreviewOptions): string {

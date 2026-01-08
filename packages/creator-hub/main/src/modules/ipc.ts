@@ -40,6 +40,7 @@ export function initIpc() {
   handle('cli.start', (_event, path, opts) => cli.start(path, opts));
   handle('cli.deploy', (_event, opts) => cli.deploy(opts));
   handle('cli.killPreview', (_event, path) => cli.killPreview(path));
+  handle('cli.getMobilePreview', (_event, path) => cli.getMobilePreview(path));
 
   // config
   handle('config.getConfig', () => config.getConfig());

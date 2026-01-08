@@ -50,7 +50,8 @@
           "debugger": "Abrir la ventana de la Consola durante la previsualización",
           "skip_auth_screen": "Omitir la pantalla de autenticación",
           "open_new_instance": "Abrir multiples clientes",
-          "landscape_terrain_enabled": "Habilitar terrenos de vista panorámica"
+          "landscape_terrain_enabled": "Habilitar terrenos de vista panorámica",
+          "mobile_preview": "Mostrar código QR para móvil"
         },
         "publish_options": {
           "history": "Historial de Publicaciones"
@@ -326,6 +327,13 @@
       "dont_show_again": "No mostrar esta advertencia nuevamente",
       "continue": "Continuar",
       "cancel": "Cancelar"
+    },
+    "mobile_qr": {
+      "title": "Previsualización Móvil",
+      "scan_message": "Escanea para previsualizar en tu dispositivo móvil",
+      "copy": "Copiar URL",
+      "copied": "URL copiada al portapapeles",
+      "close": "Cerrar"
     }
   },
   "snackbar": {

@@ -25,11 +25,13 @@ import { useSceneCustomCode } from '/@/hooks/useSceneCustomCode';
 
 import EditorPng from '/assets/images/editor.png';
 
+import { editor } from '#preload';
 import { useSelector } from '#store';
 import { PublishProject } from '../Modals/PublishProject';
 import { PublishHistory } from '../Modals/PublishHistory';
 import { InstallClient } from '../Modals/InstallClient';
 import { WarningModal } from '../Modals/WarningModal';
+import { MobileQRCodeModal } from '../Modals/MobileQRCode';
 import { Button } from '../Button';
 import { Header } from '../Header';
 import { Row } from '../Row';
@@ -42,6 +44,7 @@ import type {
   PublishOption,
   PublishOptionsProps,
   ModalProps,
+  MobileQRData,
 } from './types';
 
 import './styles.css';
@@ -67,6 +70,7 @@ export function EditorPage() {
   const { detectCustomCode, isLoading: isDetectingCustomCode } = useSceneCustomCode(project);
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
   const [modalState, setModalState] = useState<ModalState>({ type: undefined });
+  const [mobileQRData, setMobileQRData] = useState<MobileQRData | null>(null);
 
   const handleIframeRef = useCallback(
     (e: React.SyntheticEvent<HTMLIFrameElement, Event>) => {
@@ -166,6 +170,15 @@ export function EditorPage() {
     await handleActionWithWarningCheck(handleOpenPreviewWithErrorHandling);
   }, [handleActionWithWarningCheck, handleOpenPreviewWithErrorHandling]);
 
+  const handleShowMobileQR = useCallback(async () => {
+    if (!project) return;
+    const data = await editor.getMobilePreview(project.path);
+    if (data) {
+      setMobileQRData(data);
+      setModalState({ type: 'mobile-qr' });
+    }
+  }, [project]);
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleClickPublishOptions = useCallback(
     (option: PublishOption) => {
@@ -264,6 +277,7 @@ export function EditorPage() {
                   <PreviewOptions
                     options={settings.previewOptions}
                     onChange={handleChangePreviewOptions}
+                    onShowMobileQR={handleShowMobileQR}
                   />
                 }
               >
@@ -289,6 +303,7 @@ export function EditorPage() {
             type={modalState.type}
             project={project}
             onClose={handleCloseModal}
+            mobileQRData={mobileQRData}
           />
         </>
       )}
@@ -296,7 +311,7 @@ export function EditorPage() {
   );
 }
 
-function PreviewOptions({ onChange, options }: PreviewOptionsProps) {
+function PreviewOptions({ onChange, options, onShowMobileQR }: PreviewOptionsProps) {
   const handleChange = useCallback(
     (newOptions: Partial<PreviewOptionsProps['options']>) => () => {
       onChange({ ...options, ...newOptions });
@@ -336,6 +351,9 @@ function PreviewOptions({ onChange, options }: PreviewOptionsProps) {
           label={t('editor.header.actions.preview_options.landscape_terrain_enabled')}
         />
       </FormGroup>
+      <ListItemButton onClick={onShowMobileQR}>
+        <ListItemText primary={t('editor.header.actions.preview_options.mobile_preview')} />
+      </ListItemButton>
     </div>
   );
 }
@@ -361,7 +379,7 @@ function PublishOptions({ onClick }: PublishOptionsProps) {
   );
 }
 
-function Modal({ type, ...props }: ModalProps) {
+function Modal({ type, mobileQRData, ...props }: ModalProps) {
   switch (type) {
     case 'publish':
       return (
@@ -391,6 +409,14 @@ function Modal({ type, ...props }: ModalProps) {
           onClose={props.onClose}
         />
       );
+    case 'mobile-qr':
+      return mobileQRData ? (
+        <MobileQRCodeModal
+          open={type === 'mobile-qr'}
+          data={mobileQRData}
+          onClose={() => props.onClose(false)}
+        />
+      ) : null;
     default:
       return null;
   }
