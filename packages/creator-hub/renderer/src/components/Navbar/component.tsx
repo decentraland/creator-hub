@@ -8,13 +8,13 @@ import logo from '/assets/images/logo-editor.png';
 import { REPORT_ISSUES_URL } from '/@/modules/utils';
 import { t } from '/@/modules/store/translation/utils';
 import { actions } from '/@/modules/store/settings';
-import { Header } from '../Header';
 
 import './styles.css';
-import { AppSettings } from '../Modals/AppSettings';
 import type { AppState } from '#store';
 import { useDispatch, useSelector } from '#store';
 import { misc } from '#preload';
+import { AppSettings } from '../Modals/AppSettings';
+import { Header } from '../Header';
 
 export enum NavbarItem {
   HOME = 'home',
@@ -76,15 +76,14 @@ export function Navbar(props: { active: NavbarItem }) {
             disable={true}
           />
           <MenuItem
+            item={NavbarItem.MANAGE}
+            active={props.active}
+          />
+          <MenuItem
             item={NavbarItem.LEARN}
             active={props.active}
           />
-          {/* This page will be added in a future shape */}
-          <MenuItem
-            item={NavbarItem.MANAGE}
-            active={props.active}
-            disable={true}
-          />
+
           <MenuItem
             item={NavbarItem.MORE}
             active={props.active}
