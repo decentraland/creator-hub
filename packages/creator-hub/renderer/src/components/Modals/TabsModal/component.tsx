@@ -1,5 +1,6 @@
-import classNames from 'classnames';
 import CloseIcon from '@mui/icons-material/CloseRounded';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
 import { Modal } from 'decentraland-ui2/dist/components/Modal/Modal';
 import { Box, IconButton, Typography } from 'decentraland-ui2';
 import './styles.css';
@@ -46,17 +47,22 @@ function TabsModal<T>({
           </IconButton>
         </Box>
         <Box className="TabsModalLayout">
-          <Box className="TabsModalSidebar">
+          <Tabs
+            className="TabsModalSidebar"
+            orientation="vertical"
+            variant="scrollable"
+            value={activeTab}
+            onChange={(_event, newValue) => onTabClick(newValue)}
+          >
             {tabs.map(tab => (
-              <Box
+              <Tab
                 key={`tab-${tab.value}`}
-                className={classNames('TabsModalTab', { active: activeTab === tab.value })}
-                onClick={() => onTabClick(tab.value)}
-              >
-                {tab.label}
-              </Box>
+                className="TabsModalTab"
+                value={tab.value}
+                label={tab.label}
+              />
             ))}
-          </Box>
+          </Tabs>
           <Box className="TabsModalContent">{children}</Box>
         </Box>
       </Box>

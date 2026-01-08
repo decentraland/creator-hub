@@ -14,11 +14,13 @@
 }
 
 .TabsModal {
-  width: max-content;
-  height: max-content;
+  width: 625px;
+  height: 680px;
   max-width: 90vw;
   max-height: 90vh;
   overflow: hidden;
+  display: flex;
+  flex-flow: column nowrap;
 }
 
 /* Header Styles */
@@ -50,47 +52,36 @@
 
 /* Layout Styles */
 .TabsModal .TabsModalLayout {
+  width: 100%;
+  flex: 1;
   display: flex;
   flex-direction: row;
-  gap: 0;
   overflow: hidden;
 }
 
 /* Sidebar Styles */
 .TabsModal .TabsModalSidebar {
-  display: flex;
-  flex-direction: column;
   flex-shrink: 0;
   height: 100%;
   min-width: 160px;
-  padding-top: 16px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-}
-
-.TabsModal .TabsModalTab:last-of-type {
-  margin-bottom: 16px;
+  padding: 16px 0;
 }
 
 .TabsModal .TabsModalTab {
-  padding: 9px 16px;
-  cursor: pointer;
   text-transform: uppercase;
-  font-size: 14px;
-  line-height: 24px;
+  align-items: flex-start;
+  min-height: 42px;
+  font-family: var(--font-family);
   font-weight: 600;
   color: rgba(255, 255, 255, 0.7);
-  border-right: 2px solid transparent;
-  transition: all 0.2s linear;
 }
 
 .TabsModal .TabsModalTab:hover {
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.8);
 }
 
-.TabsModal .TabsModalTab.active {
+.TabsModal .TabsModalTab.Mui-selected {
   color: var(--dcl);
-  border-right-color: var(--dcl);
   background-color: var(--darker-gray);
 }
 
@@ -100,11 +91,8 @@
   padding: 24px 32px 0px;
   background-color: var(--darker-gray);
   overflow: auto;
-}
-
-.TabsModalContent {
-  width: 470px;
-  height: 620px;
+  width: 100%;
+  height: 100%;
 }
 
 .TabsModal .TabsModalContent > div:first-of-type {
