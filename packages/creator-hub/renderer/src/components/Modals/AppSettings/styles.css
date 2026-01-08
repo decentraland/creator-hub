@@ -1,87 +1,11 @@
-/* Modal Container Styles */
-.MuiPaper-root:has(.AppSettingsModal) > .MuiBox-root:first-child {
-  padding: 0 !important;
-}
-
-.MuiPaper-root:has(.AppSettingsModal) {
-  max-width: 600px;
-}
-
-.AppSettingsModal.MuiBox-root {
-  padding: 0 !important;
-}
-
-.AppSettingsModal .MuiPaper-root {
-  background-image: none;
-}
-
-/* Header Styles */
-.AppSettingsModal .SettingsHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.AppSettingsModal .SettingsHeaderTitle {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--light-gray);
-}
-
-.AppSettingsModal .SettingsHeaderTitle svg {
-  color: var(--dark-gray);
-}
-
-/* Layout Styles */
-.AppSettingsModal .SettingsLayout {
-  display: flex;
-  flex-direction: row;
-  gap: 0;
-  height: 500px;
-  overflow: hidden;
-}
-
-/* Sidebar Styles */
-.AppSettingsModal .SettingsSidebar {
+/* Form Container Styles */
+.AppSettingsModal .FormContainer {
   display: flex;
   flex-direction: column;
-  min-width: 120px;
-  padding-top: 8px;
-}
-
-.AppSettingsModal .SettingsTab {
-  padding: 12px 16px;
-  cursor: pointer;
-  text-transform: uppercase;
-  font-size: 14px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.6);
-  border-right: 3px solid transparent;
-  transition: all 0.2s ease;
-}
-
-.AppSettingsModal .SettingsTab:hover {
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.AppSettingsModal .SettingsTab.active {
-  color: var(--dcl);
-  border-right-color: var(--dcl);
-  background-color: var(--darker-gray);
-}
-
-/* Content Area Styles */
-.AppSettingsModal .SettingsContent {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 16px 24px;
-  background-color: var(--darker-gray);
-  overflow: hidden;
-  min-height: 0;
+  gap: 32px;
+  width: 100%;
+  height: max-content;
+  overflow-y: auto;
 }
 
 /* Input Styles */
