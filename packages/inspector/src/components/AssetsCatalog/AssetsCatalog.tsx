@@ -51,8 +51,8 @@ const AssetsCatalog: React.FC<Props> = ({ catalog }) => {
 
         if (nameStarts || tagStarts) {
           results.starts.push(asset);
-        } 
-        
+        }
+
         if (nameMatches || descriptionMatches || tagsMatch) {
           results.includes.push(asset);
         }
@@ -62,7 +62,7 @@ const AssetsCatalog: React.FC<Props> = ({ catalog }) => {
       { starts: [], includes: [] },
     );
 
-    return starts.length ? starts : includes;
+    return [...starts, ...includes];
   }, [catalog, selectedTheme, search]);
 
   useEffect(() => {
