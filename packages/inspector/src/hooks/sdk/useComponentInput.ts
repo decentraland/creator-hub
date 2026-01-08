@@ -268,27 +268,41 @@ export const useMultiComponentInput = <ComponentValueType extends object, InputT
           return;
         }
 
-        // Validate and update all entities
-        const entityUpdates = getEntityAndComponentValue(entities, component).map(
-          ([entity, componentValue]) => {
-            const updatedInput = setValue(
-              fromComponentValueToInput(componentValue as any),
-              path,
-              getter(event),
-            );
+        // When editing, only update entities that currently have the same value for this path
+        // as what's displayed in the UI. This prevents accidentally updating unrelated entities
+        // when the entities array incorrectly contains all entities with the component.
+        const currentPathValue = getValue(value, path);
+        const newPathValue = getValue(newValue, path);
+        const isMixed = currentPathValue === MIXED_VALUE;
+
+        // If the value is mixed, update all entities (multi-edit mode)
+        // Otherwise, only update entities that match the current UI value
+        const entityUpdates = getEntityAndComponentValue(entities, component)
+          .map(([entity, componentValue]) => {
+            const currentInput = fromComponentValueToInput(componentValue as any);
+            const entityPathValue = getValue(currentInput, path);
+
+            // Skip entities that don't match the current UI value (unless it's mixed)
+            if (!isMixed && entityPathValue !== currentPathValue) {
+              return null;
+            }
+
+            const updatedInput = setValue(currentInput, path, newPathValue);
             const newComponentValue = fromInputToComponentValue(updatedInput);
             return {
               entity,
               value: newComponentValue,
               isValid: validateInput(updatedInput),
             };
-          },
-        );
+          })
+          .filter((update): update is NonNullable<typeof update> => update !== null);
 
-        const allUpdatesValid = entityUpdates.every(({ isValid }) => isValid);
+        const updatesToApply = entityUpdates;
+
+        const allUpdatesValid = updatesToApply.every(({ isValid }) => isValid);
 
         if (allUpdatesValid) {
-          entityUpdates.forEach(({ entity, value }) => {
+          updatesToApply.forEach(({ entity, value }) => {
             sdk.operations.updateValue(component, entity, value);
           });
           void sdk.operations.dispatch();
