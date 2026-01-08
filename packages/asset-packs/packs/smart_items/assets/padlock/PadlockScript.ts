@@ -10,6 +10,7 @@ import {
   Name,
 } from '@dcl/sdk/ecs';
 import { Quaternion, Vector3 } from '@dcl/sdk/math';
+import { getActionEvents } from '@dcl/asset-packs/dist/events';
 
 export class PadlockScript {
   private wheels: Entity[] = [];
@@ -23,6 +24,7 @@ export class PadlockScript {
     public src: string,
     public entity: Entity,
     public combination: number = 1234,
+    public unlockedEntity: Entity,
   ) {
     this.name = Name.get(entity).value || this.name;
 
@@ -137,6 +139,9 @@ export class PadlockScript {
 
     if (currentCombination === this.combination && !this.isSolved) {
       this.onSolve();
+      if (this.unlockedEntity) {
+        getActionEvents(this.unlockedEntity).emit('Open', {});
+      }
     }
   }
 
