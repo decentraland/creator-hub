@@ -37,8 +37,24 @@ const AssetsCatalog: React.FC<Props> = ({ catalog }) => {
     const { starts, includes } = assets.reduce(
       (results: { starts: AssetPack['assets']; includes: AssetPack['assets'] }, asset) => {
         const name = asset.name.toLowerCase();
-        if (name.split(' ').some(word => word.startsWith(searchLower))) results.starts.push(asset);
-        if (name.includes(searchLower)) results.includes.push(asset);
+        const description = asset.description?.toLowerCase() || '';
+        const tags = asset.tags.map(tag => tag.toLowerCase());
+
+        // Check if search matches name, description, or tags
+        const nameMatches = name.includes(searchLower);
+        const descriptionMatches = description.includes(searchLower);
+        const tagsMatch = tags.some(tag => tag.includes(searchLower));
+
+        // Priority: starts with (for name words or tags)
+        const nameStarts = name.split(' ').some(word => word.startsWith(searchLower));
+        const tagStarts = tags.some(tag => tag.startsWith(searchLower));
+
+        if (nameStarts || tagStarts) {
+          results.starts.push(asset);
+        } else if (nameMatches || descriptionMatches || tagsMatch) {
+          results.includes.push(asset);
+        }
+
         return results;
       },
       { starts: [], includes: [] },
