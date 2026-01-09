@@ -8,6 +8,9 @@ import * as code from './code';
 import * as analytics from './analytics';
 import * as npm from './npm';
 import * as config from './config';
+import * as gltfExporter from './gltf-exporter';
+import * as blenderDetector from './blender-detector';
+import * as blenderSync from './blender-sync';
 
 export function initIpc() {
   // electron
@@ -66,4 +69,54 @@ export function initIpc() {
   handle('npm.install', (_event, path, packages) => npm.install(path, packages));
   handle('npm.getOutdatedDeps', (_event, path, packages) => npm.getOutdatedDeps(path, packages));
   handle('npm.getContextFiles', (_event, path) => npm.getContextFiles(path));
+
+  // scene export
+  handle('scene.exportAsGltf', (_event, data) => gltfExporter.exportSceneAsGltf(data));
+
+  // blender sync
+  handle('blender.detect', () => blenderDetector.detectBlender());
+  handle('blender.validatePath', (_event, path) => blenderDetector.validateBlenderPath(path));
+  handle('blender.setCustomPath', (_event, path) => blenderDetector.setCustomBlenderPath(path));
+  handle('blender.clearCustomPath', () => blenderDetector.clearCustomBlenderPath());
+  handle('blender.exportFromBlend', (_event, options) => blenderSync.exportFromBlender(options));
+  handle('blender.detectChanges', async (_event, data) => {
+    // Export from Blender
+    const exportResult = await blenderSync.exportFromBlender({
+      blendFilePath: data.blendFilePath,
+      blenderPath: data.blenderPath,
+    });
+
+    if (!exportResult.success || !exportResult.metadata) {
+      return {
+        success: false,
+        error: exportResult.error,
+      };
+    }
+
+    // Copy all GLTF files to project if project path is provided
+    if (data.projectPath && exportResult.outputDir) {
+      try {
+        await blenderSync.copyGltfsToProject(
+          exportResult.outputDir,
+          data.projectPath
+        );
+      } catch (error: any) {
+        return {
+          success: false,
+          error: `Failed to copy GLTFs to project: ${error.message}`,
+        };
+      }
+    }
+
+    // Detect changes
+    const changes = blenderSync.detectChanges(exportResult.metadata.objects, data.entities);
+
+    return {
+      success: true,
+      changes,
+      gltfPath: exportResult.gltfPath,
+      metadata: exportResult.metadata,
+      outputDir: exportResult.outputDir,
+    };
+  });
 }
