@@ -48,7 +48,6 @@
         }
       }
     },
-
     {
       "name": "core-schema::Name",
       "data": {
@@ -361,7 +360,11 @@
                 "basicViewId": "trigger-when-clicked"
               }
             ],
-            "assetId": "b3bc0885-d2cc-4cbe-ba62-a50c8e8cf211"
+            "assetId": "b3bc0885-d2cc-4cbe-ba62-a50c8e8cf211",
+            "helpTooltip": {
+              "text": "Configure the sit spot's hover text and actions. Players can click to sit here. The spot tracks whether it's free or taken and shows a message when occupied."
+            },
+            "version": 1
           }
         },
         "514": {
@@ -378,7 +381,11 @@
                 "basicViewId": "trigger-when-clicked"
               }
             ],
-            "assetId": "b3bc0885-d2cc-4cbe-ba62-a50c8e8cf211"
+            "assetId": "b3bc0885-d2cc-4cbe-ba62-a50c8e8cf211",
+            "helpTooltip": {
+              "text": "Configure the sit spot's hover text and actions. Players can click to sit here. The spot tracks whether it's free or taken and shows a message when occupied."
+            },
+            "version": 1
           }
         }
       }
@@ -389,7 +396,11 @@
         "0": {
           "json": {
             "componentName": "Large Couch",
-            "fields": []
+            "fields": [],
+            "helpTooltip": {
+              "text": "A large couch that players can sit on. Click to sit down at this location."
+            },
+            "version": 1
           }
         }
       }

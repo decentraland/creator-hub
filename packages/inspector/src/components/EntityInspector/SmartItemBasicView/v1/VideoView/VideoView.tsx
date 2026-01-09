@@ -72,7 +72,7 @@ export default React.memo(
         <InfoTooltip
           text="Video URL or Video file to display in the Player."
           position="right center"
-          link="https://docs.decentraland.org/creator/development-guide/sdk7/video-playing/"
+          link="https://docs.decentraland.org/creator/scenes-sdk7/media/video-playing"
         />
       );
     }, []);

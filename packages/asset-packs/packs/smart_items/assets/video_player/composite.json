@@ -256,6 +256,9 @@
           "json": {
             "isBasicViewEnabled": true,
             "componentName": "Video Player",
+            "helpTooltip": {
+              "text": "DEPRECATED: A video player that can be used to play videos."
+            },
             "fields": [
               {
                 "name": "Hover Text",
@@ -280,7 +283,8 @@
                 "type": "asset-packs::Triggers",
                 "basicViewId": "trigger-when-turned-off"
               }
-            ]
+            ],
+            "version": 1
           }
         }
       }

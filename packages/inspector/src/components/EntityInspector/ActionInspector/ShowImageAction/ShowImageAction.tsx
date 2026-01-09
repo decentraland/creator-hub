@@ -110,11 +110,31 @@ const ShowImageAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
     return !files.assets.some($ => $.path === payload.src);
   }, [files, payload]);
 
+  const renderPathInfo = useMemo(
+    () => (
+      <InfoTooltip
+        text="The image set in Path will be displayed in the UI."
+        position="right center"
+      />
+    ),
+    [],
+  );
+
+  const renderTextInfo = useMemo(
+    () => (
+      <InfoTooltip
+        text="The image can be accompanied by some text."
+        position="top center"
+      />
+    ),
+    [],
+  );
+
   return (
     <div className="ShowImageActionContainer">
       <Block>
         <FileUploadField
-          label="Path"
+          label={<>Path {renderPathInfo}</>}
           value={payload.src}
           accept={ACCEPTED_FILE_TYPES['image']}
           onDrop={handleDrop}
@@ -165,7 +185,7 @@ const ShowImageAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
       </Block>
       <Block>
         <TextArea
-          label="Text"
+          label={<>Text {renderTextInfo}</>}
           value={payload.text}
           onChange={handleChangeText}
         />

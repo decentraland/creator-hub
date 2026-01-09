@@ -90,8 +90,8 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       initialOpen={initialOpen}
       rightContent={
         <InfoTooltip
-          text="URN structure: urn:decentraland:<CHAIN>:<CONTRACT_STANDARD>:<CONTRACT_ADDRESS>:<TOKEN_ID>."
-          link="https://docs.decentraland.org/creator/development-guide/sdk7/display-a-certified-nft/#add-an-nft"
+          text="NftShape displays an image, gif, or video NFT as a framed picture"
+          link="https://docs.decentraland.org/creator/scenes-sdk7/media/display-a-certified-nft"
           type="help"
         />
       }

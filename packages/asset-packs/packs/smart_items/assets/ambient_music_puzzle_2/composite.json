@@ -117,14 +117,29 @@
                       "default": "1"
                     },
                     "transform": {
-                      "in": { "steps": [{ "op": "toPercentage" }] },
-                      "out": { "steps": [{ "op": "fromPercentage" }] }
+                      "in": {
+                        "steps": [
+                          {
+                            "op": "toPercentage"
+                          }
+                        ]
+                      },
+                      "out": {
+                        "steps": [
+                          {
+                            "op": "fromPercentage"
+                          }
+                        ]
+                      }
                     }
                   }
                 ]
               }
             ],
-            "version": 2
+            "version": 2,
+            "helpTooltip": {
+              "text": "Play the file in Sound Path in a continuous loop. Swap the file for any other local sound file in the scene."
+            }
           }
         }
       }

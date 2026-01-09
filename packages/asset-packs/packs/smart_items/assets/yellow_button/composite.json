@@ -95,6 +95,9 @@
           "json": {
             "isBasicViewEnabled": true,
             "componentName": "Button",
+            "helpTooltip": {
+              "text": "Configure the button's hover text and actions. Set what happens when the button is clicked by configuring triggers and actions."
+            },
             "fields": [
               {
                 "name": "Hover Text",
@@ -105,7 +108,8 @@
                 "type": "asset-packs::Triggers",
                 "basicViewId": "trigger-when-clicked"
               }
-            ]
+            ],
+            "version": 1
           }
         }
       }

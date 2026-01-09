@@ -32,6 +32,9 @@
           "json": {
             "isBasicViewEnabled": true,
             "label": "Text Settings",
+            "helpTooltip": {
+              "text": "2D text that can be placed at any position and orientation, not limited to surfaces."
+            },
             "sections": [
               {
                 "id": "text-settings",
@@ -78,8 +81,20 @@
                       "basic": true
                     },
                     "transform": {
-                      "in": { "steps": [{ "op": "toHex" }] },
-                      "out": { "steps": [{ "op": "toColor4" }] }
+                      "in": {
+                        "steps": [
+                          {
+                            "op": "toHex"
+                          }
+                        ]
+                      },
+                      "out": {
+                        "steps": [
+                          {
+                            "op": "toColor4"
+                          }
+                        ]
+                      }
                     }
                   },
                   {

@@ -338,7 +338,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
           text={
             'Triggers activate actions based on player interactions like clicks, entering/exiting areas, or global events like "on spawn".'
           }
-          link="https://docs.decentraland.org/creator/editor/smart-items-advanced/"
+          link="https://docs.decentraland.org/creator/scene-editor/interactivity/smart-items-advanced"
           type="help"
         />
       }

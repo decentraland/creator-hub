@@ -125,7 +125,11 @@
           "json": {
             "isBasicViewEnabled": true,
             "componentName": "Explosion",
-            "fields": []
+            "fields": [],
+            "helpTooltip": {
+              "text": "Invisible until triggered by another smart item, it creates a visual effect of a cloud of smoke exploding outwards."
+            },
+            "version": 1
           }
         }
       }

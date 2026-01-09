@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from 'react';
 import type { Entity } from '@dcl/ecs';
 import { ActionPayload, ActionType } from '@dcl/asset-packs';
-import { Dropdown, Label } from '../../../ui';
+import { Dropdown, Label, InfoTooltip } from '../../../ui';
 import { withSdk } from '../../../../hoc/withSdk';
 import { Props } from './types';
 
@@ -79,7 +79,15 @@ const ChangeCameraAction: React.FC<Props & { sdk: any }> = ({ value, onUpdate, s
       )}
       <div className="row">
         <Dropdown
-          label="Camera"
+          label={
+            <>
+              Camera{' '}
+              <InfoTooltip
+                text="Select which camera to switch to. 'None' returns to the default player camera. 'This Entity' uses the camera component on this entity. Other options are cameras from other entities in the scene."
+                position="top center"
+              />
+            </>
+          }
           options={options}
           value={currentValue}
           onChange={handleChangeEntity}

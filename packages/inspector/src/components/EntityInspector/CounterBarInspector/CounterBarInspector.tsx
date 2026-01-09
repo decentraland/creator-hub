@@ -41,7 +41,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       rightContent={
         <InfoTooltip
           text="Counter tracks numerical values that change based on player actions. Use it for conditional logic and to trigger actions when reaching certain values."
-          link="https://docs.decentraland.org/creator/smart-items/#counter"
+          link="https://docs.decentraland.org/creator/scene-editor/interactivity/states-and-conditions#counter"
           type="help"
         />
       }

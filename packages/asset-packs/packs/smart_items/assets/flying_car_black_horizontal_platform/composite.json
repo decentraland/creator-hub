@@ -134,8 +134,16 @@
             "mode": {
               "$case": "move",
               "move": {
-                "start": { "x": 0, "y": 0, "z": 0 },
-                "end": { "x": 0, "y": 0, "z": 10 }
+                "start": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                },
+                "end": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 10
+                }
               }
             },
             "playing": true
@@ -176,7 +184,11 @@
                 "type": "asset-packs::Triggers",
                 "basicViewId": "trigger-when-start-reached"
               }
-            ]
+            ],
+            "helpTooltip": {
+              "text": "A black horizontal platform that looks like a flying car. Players can stand on it to move back and forth."
+            },
+            "version": 1
           }
         }
       }

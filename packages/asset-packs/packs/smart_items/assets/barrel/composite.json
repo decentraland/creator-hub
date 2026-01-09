@@ -129,7 +129,11 @@
                 "basicViewId": "action-explosion-damage",
                 "layout": "{\"radius\": { \"field\": \"TextField\", \"type\": \"number\", \"label\": \"Explosion Radius\" }, \"hits\": { \"field\": \"TextField\", \"type\": \"number\", \"label\": \"Explosion Damage\" }, \"layer\": { \"field\": \"Dropdown\", \"label\": \"Damage Target\" }}"
               }
-            ]
+            ],
+            "helpTooltip": {
+              "text": "Barrel that, when triggered to explode, can damage a player\u2019s health if they are nearby. Can be used with the Health Bar smart item."
+            },
+            "version": 1
           }
         }
       }

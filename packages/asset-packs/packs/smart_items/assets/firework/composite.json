@@ -112,7 +112,11 @@
           "json": {
             "isBasicViewEnabled": true,
             "componentName": "Firework",
-            "fields": []
+            "fields": [],
+            "helpTooltip": {
+              "text": "A firework that shoots up into the air and explodes. It is invisible until activated. Trigger it from another smart item."
+            },
+            "version": 1
           }
         }
       }

@@ -209,6 +209,9 @@
         "0": {
           "json": {
             "componentName": "Sit Spot",
+            "helpTooltip": {
+              "text": "Configure the sit spot's hover text and actions. Players can click to sit here. The spot tracks whether it's free or taken and shows a message when occupied."
+            },
             "fields": [
               {
                 "name": "Hover Text",
@@ -220,7 +223,8 @@
                 "basicViewId": "trigger-when-clicked"
               }
             ],
-            "assetId": "9efbab77-de76-41dd-9a9f-22dd0f139cf9"
+            "assetId": "9efbab77-de76-41dd-9a9f-22dd0f139cf9",
+            "version": 1
           }
         }
       }

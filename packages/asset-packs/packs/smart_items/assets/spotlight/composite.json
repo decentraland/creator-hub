@@ -65,6 +65,9 @@
           "json": {
             "isBasicViewEnabled": true,
             "label": "Light Settings",
+            "helpTooltip": {
+              "text": "A spotlight that can be used to illuminate a scene."
+            },
             "sections": [
               {
                 "id": "light-settings",
@@ -75,10 +78,24 @@
                     "label": "Color",
                     "type": "Color3",
                     "path": "color",
-                    "props": { "basic": true },
+                    "props": {
+                      "basic": true
+                    },
                     "transform": {
-                      "in": { "steps": [{ "op": "toHex" }] },
-                      "out": { "steps": [{ "op": "toColor3" }] }
+                      "in": {
+                        "steps": [
+                          {
+                            "op": "toHex"
+                          }
+                        ]
+                      },
+                      "out": {
+                        "steps": [
+                          {
+                            "op": "toColor3"
+                          }
+                        ]
+                      }
                     }
                   },
                   {

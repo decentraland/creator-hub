@@ -5,7 +5,7 @@ import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
 import { useComponentInput } from '../../../hooks/sdk/useComponentInput';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
-import { FileUploadField, Dropdown, Label } from '../../ui';
+import { FileUploadField, Dropdown, Label, InfoTooltip } from '../../ui';
 import { ACCEPTED_FILE_TYPES } from '../../ui/FileUploadField/types';
 import { useAppSelector } from '../../../redux/hooks';
 import { selectAssetCatalog } from '../../../redux/app';
@@ -59,6 +59,12 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       label="GLTF"
       className="GltfInspector"
       initialOpen={initialOpen}
+      rightContent={
+        <InfoTooltip
+          text="The GLTF assigns a 3D model file for the item's visible shape. It also handles collisions, to make an item clickable or block the player from walking through it."
+          type="help"
+        />
+      }
       onRemoveContainer={handleRemove}
     >
       <Block>

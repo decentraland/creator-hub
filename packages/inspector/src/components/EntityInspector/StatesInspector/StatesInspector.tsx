@@ -109,7 +109,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
       rightContent={
         <InfoTooltip
           text="States specify the status of entities. Use triggers to check or change states, and set actions accordingly."
-          link="https://docs.decentraland.org/creator/smart-items/#states"
+          link="https://docs.decentraland.org/creator/scene-editor/interactivity/states-and-conditions#states"
           type="help"
         />
       }
