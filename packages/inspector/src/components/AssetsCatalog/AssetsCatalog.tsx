@@ -29,16 +29,20 @@ const AssetsCatalog: React.FC<Props> = ({ catalog }) => {
   );
 
   const filteredCatalog = useMemo(() => {
-    if (!search) return [];
+    const trimmedSearch = search.trim();
+    if (!trimmedSearch) return [];
 
-    const searchLower = search.toLowerCase();
+    const searchLower = trimmedSearch.toLowerCase();
     const assets = selectedTheme ? selectedTheme.assets : catalog.flatMap(theme => theme.assets);
 
     const { starts, includes } = assets.reduce(
       (results: { starts: AssetPack['assets']; includes: AssetPack['assets'] }, asset) => {
-        const name = asset.name.toLowerCase();
-        const description = asset.description?.toLowerCase() || '';
-        const tags = asset.tags.map(tag => tag.toLowerCase());
+        // Safely handle potentially missing fields
+        const name = (asset.name || '').toLowerCase();
+        const description = (asset.description || '').toLowerCase();
+        const tags = (asset.tags || [])
+          .map(tag => (tag || '').toLowerCase())
+          .filter(tag => tag.length > 0);
 
         // Check if search matches name, description, or tags
         const nameMatches = name.includes(searchLower);
@@ -61,7 +65,18 @@ const AssetsCatalog: React.FC<Props> = ({ catalog }) => {
       { starts: [], includes: [] },
     );
 
-    return [...starts, ...includes];
+    // Deduplicate by asset id to prevent any edge cases where the same asset appears twice
+    const seen = new Set<string>();
+    const uniqueResults: AssetPack['assets'] = [];
+
+    for (const asset of [...starts, ...includes]) {
+      if (!seen.has(asset.id)) {
+        seen.add(asset.id);
+        uniqueResults.push(asset);
+      }
+    }
+
+    return uniqueResults;
   }, [catalog, selectedTheme, search]);
 
   useEffect(() => {
