@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { type ActionPayload, type ActionType, Colliders } from '@dcl/asset-packs';
 import { recursiveCheck } from '../../../../lib/utils/deep-equal';
 import { Block } from '../../../Block';
@@ -47,15 +47,16 @@ const SetVisibilityAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
     [payload, handleUpdate],
   );
 
-  const renderPhysicsCollidersMoreInfo = useCallback(() => {
-    return (
+  const renderPhysicsCollidersMoreInfo = useMemo(
+    () => (
       <InfoTooltip
         text={
           'Use the Collider property to turn on or off physical or clickable interaction with this item.'
         }
       />
-    );
-  }, []);
+    ),
+    [],
+  );
 
   return (
     <Block className="SetVisibilityActionContainer">
@@ -70,7 +71,7 @@ const SetVisibilityAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
       />
 
       <Dropdown
-        label={<>Collider {renderPhysicsCollidersMoreInfo()}</>}
+        label={<>Collider {renderPhysicsCollidersMoreInfo}</>}
         placeholder="Select Collider"
         options={COLLISION_LAYERS}
         value={payload.collider}

@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
 import { recursiveCheck } from '../../../../lib/utils/deep-equal';
-import { Dropdown, Label } from '../../../ui';
+import { Dropdown, Label, InfoTooltip } from '../../../ui';
 import RangeHourField from '../../../ui/RangeHourField/RangeHourField';
 import { TransitionMode } from '../../../../lib/sdk/components/SceneMetadata';
 import { MIDDAY_SECONDS } from '../../SceneInspector/utils';
@@ -63,7 +63,15 @@ const ChangeSkyboxAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
         </div>
         <div className="field">
           <Dropdown
-            label="Direction"
+            label={
+              <>
+                Direction{' '}
+                <InfoTooltip
+                  text="Direction of the skybox time transition. Undefined: closest direction."
+                  position="top center"
+                />
+              </>
+            }
             placeholder="Select Direction"
             options={[
               { value: '', label: 'Undefined' },

@@ -141,7 +141,11 @@
                 "type": "asset-packs::Triggers",
                 "basicViewId": "trigger-when-health-reaches-zero"
               }
-            ]
+            ],
+            "helpTooltip": {
+              "text": "A health bar that can be used to keep track of and display the player's health. It works together with other items like the spikes, the first aid and healing pad smart items."
+            },
+            "version": 1
           }
         }
       }

@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
 import { recursiveCheck } from '../../../../lib/utils/deep-equal';
-import { CheckboxField, FileUploadField } from '../../../ui';
+import { CheckboxField, FileUploadField, InfoTooltip } from '../../../ui';
 import { ACCEPTED_FILE_TYPES } from '../../../ui/FileUploadField/types';
 import { useAppSelector } from '../../../../redux/hooks';
 import { selectAssetCatalog } from '../../../../redux/app';
@@ -62,10 +62,22 @@ const PlayCustomEmoteAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
     return !files.assets.some($ => $.path === payload.src);
   }, [files, payload]);
 
+  const renderPathInfo = useMemo(
+    () => (
+      <InfoTooltip
+        text="Drag and drop a custom emote model file from the Local Assets, or click the foler icon to search for files. The file should be a .glb or .gltf 3D model with animation."
+        link="https://docs.decentraland.org/creator/scenes-sdk7/interactivity/player-avatar#custom-animations"
+        position="right center"
+      />
+    ),
+    [],
+  );
+
   return (
     <div className="PlayCustomEmoteActionContainer">
       <div className="row">
         <FileUploadField
+          label={<>File Path {renderPathInfo}</>}
           value={payload.src}
           accept={ACCEPTED_FILE_TYPES['model']}
           onDrop={handleDrop}
@@ -74,7 +86,15 @@ const PlayCustomEmoteAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
           isValidFile={isModel}
         />
         <CheckboxField
-          label="Loop"
+          label={
+            <>
+              Loop{' '}
+              <InfoTooltip
+                text="When enabled, the emote animation will loop continuously. When disabled, it plays once."
+                position="top center"
+              />
+            </>
+          }
           checked={payload.loop}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangeLoop(e)}
         />

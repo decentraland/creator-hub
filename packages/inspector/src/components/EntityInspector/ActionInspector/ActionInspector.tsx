@@ -1064,7 +1064,15 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
           <div className="row">
             <div className="field">
               <TextField
-                label="Multiplier"
+                label={
+                  <>
+                    Multiplier{' '}
+                    <InfoTooltip
+                      text="Multiplier for healing amount. A value of 1 heals the player by the base amount, higher values heal more, lower values heal less."
+                      position="top center"
+                    />
+                  </>
+                }
                 type="number"
                 value={getPartialPayload<ActionType.HEAL_PLAYER>(action)?.multiplier || 1}
                 onChange={createHandler<ActionType.HEAL_PLAYER>(
@@ -1159,7 +1167,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       rightContent={
         <InfoTooltip
           text="Actions list the capabilities of entities, from playing animations to changing visibility. Customize or add new actions, which are activated by triggers."
-          link="https://docs.decentraland.org/creator/editor/smart-items-advanced/"
+          link="https://docs.decentraland.org/creator/scene-editor/interactivity/smart-items-advanced"
           type="help"
         />
       }

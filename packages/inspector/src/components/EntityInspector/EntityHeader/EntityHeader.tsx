@@ -134,7 +134,7 @@ export default React.memo(
         createOption(sdk.components.Material, 'Material', {
           description:
             'Material determines the visual appearance of an object. It defines properties such as color, texture, and transparency',
-          link: 'https://docs.decentraland.org/creator/development-guide/sdk7/materials/',
+          link: 'https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/materials',
         }),
         createOption(
           sdk.components.VisibilityComponent,
@@ -155,39 +155,48 @@ export default React.memo(
           {
             description:
               'Use MeshRenderer to assign a primitive 3D shape to the item. Instead of using a 3D file from GLTF, assign a simple cube, plane, sphere, or cylinder. These shapes can be used together with Materials',
-            link: 'https://docs.decentraland.org/creator/development-guide/sdk7/shape-components/',
+            link: 'https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/shape-components',
           },
           {
             conflictsWith: [sdk.components.NftShape.componentId],
           },
         ),
         createOption(sdk.components.GltfNodeModifiers, 'Swap material', {
-          description: 'Override GLTF/GLB materials',
+          description:
+            'Override materials from a GLTF 3D model. Dissable shadows, replace the texture or color or other properties. Apply to all the model or specific nodes.',
+          link: 'https://docs.decentraland.org/creator/3d-modeling-and-animations/materials#override-gltf-materials',
         }),
         createOption(sdk.components.LightSource, 'Light Source', {
-          description: 'Add a point or spot light',
-          link: 'https://docs.decentraland.org/creator/development-guide/sdk7/lights/',
+          description:
+            'Add a light source. Can be point (in all directions) or spot light (in a specific direction).',
+          link: 'https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/lights',
         }),
         createOption(sdk.components.VirtualCamera, 'Virtual Camera', {
           description:
-            'Add camera behavior settings to this entity. Configure default transition by time or speed.',
+            'Momentarily replace the default camera with a virtual camera on the position of this entity.',
+          link: 'https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/camera#using-virtual-cameras',
         }),
         createOption(sdk.components.MeshCollider, 'Mesh Collider', {
           description:
             'MeshCollider defines the collision properties of an item, based on its invisible collision geometry. Collisions serve to make an item clickable or to block the player from walking through an item',
-          link: 'https://docs.decentraland.org/creator/development-guide/sdk7/colliders/',
+          link: 'https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/colliders',
         }),
         createOption(sdk.components.Animator, 'Animator', {
           description:
             'Animator controls the playback of animations for 3D models. Use it to play, stop, or loop animations on entities with GLTF models that contain animation data.',
-          link: 'https://docs.decentraland.org/creator/development-guide/sdk7/animations/',
+          link: 'https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/3d-model-animations',
+        }),
+        createOption(sdk.components.Tween, 'Tween', {
+          description:
+            'Animates entities by smoothly transitioning their position, rotation, or scale over time. Configure start and end positions, duration, easing functions, and looping behavior.',
+          link: 'https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/move-entities',
         }),
         createOption(
           sdk.components.NftShape,
           'Nft Shape',
           {
-            description: 'NftShape defines the shape of an item, based on its NFT',
-            link: 'https://docs.decentraland.org/creator/development-guide/sdk7/display-a-certified-nft/',
+            description: 'NftShape displays an image, gif, or video NFT as a framed picture',
+            link: 'https://docs.decentraland.org/creator/scenes-sdk7/media/display-a-certified-nft',
           },
           {
             conflictsWith: [
@@ -199,36 +208,41 @@ export default React.memo(
         ),
         createOption(sdk.components.Billboard, 'Billboard', {
           description:
-            'The Billboard component makes an Entity automatically reorient its rotation to always face the camera, as in retro 3D games that used 2D sprites.',
+            'Make an entity automatically reorient its rotation to always face the camera, as in retro 3D games that used 2D sprites.',
           link: 'https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/entity-positioning#face-the-player',
+        }),
+        createOption(sdk.components.AvatarAttach, 'Avatar Attach', {
+          description:
+            'Repositions an Entity to maintain the same position and rotation relative to an avatar anchor point. Entities with this component are not rendered in the canvas. Note: The Transform component is ignored - nest the item under a parent to offset from the anchor point.',
+          link: 'https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/entity-positioning#attach-an-entity-to-an-avatar',
         }),
         { header: 'Interaction' },
         createOption(sdk.components.States, 'States', {
           description:
             'States specify the status of entities. Use triggers to check or change states, and set actions accordingly.',
-          link: 'https://docs.decentraland.org/creator/smart-items/#states',
+          link: 'https://docs.decentraland.org/creator/scene-editor/interactivity/states-and-conditions#states',
         }),
         createOption(sdk.components.Triggers, 'Triggers', {
           description:
             'Triggers activate actions based on player interactions like clicks, entering/exiting areas, or global events like "on spawn".',
-          link: 'https://docs.decentraland.org/creator/smart-items/#triggers',
+          link: 'https://docs.decentraland.org/creator/scene-editor/interactivity/smart-items-advanced#interactions-between-items',
         }),
         createOption(sdk.components.Actions, 'Actions', {
           description:
             'Actions list the capabilities of entities, from playing animations to changing visibility. Customize or add new actions, which are activated by triggers.',
-          link: 'https://docs.decentraland.org/creator/smart-items/#actions',
+          link: 'https://docs.decentraland.org/creator/scene-editor/interactivity/smart-items-advanced#actions',
         }),
         createOption(sdk.components.AudioSource, 'Audio Source', {
           description:
             'AudioSource enables the playback of sound in your scene. The item emits sound that originates from its location, from an .mp3 file in your scene project',
-          link: 'https://docs.decentraland.org/creator/development-guide/sdk7/sounds',
+          link: 'https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/sounds',
         }),
         createOption(
           sdk.components.TextShape,
           'Text Shape',
           {
             description: 'Use TextShape to display text in the 3D space',
-            link: 'https://docs.decentraland.org/creator/development-guide/sdk7/text',
+            link: 'https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/text',
           },
           {
             conflictsWith: [sdk.components.NftShape.componentId],
@@ -237,17 +251,39 @@ export default React.memo(
         createOption(sdk.components.PointerEvents, 'Pointer Events', {
           description:
             'Use PointerEvents to configure the hints shown to players when they hover the cursor over the item. Change the text, the button, the max distance, etc',
-          link: 'https://docs.decentraland.org/creator/development-guide/sdk7/click-events',
+          link: 'https://docs.decentraland.org/creator/scenes-sdk7/interactivity/button-events/click-events',
         }),
         createOption(sdk.components.VideoPlayer, 'Video Player', {
           description: 'VideoPlayer plays a video file in your scene',
-          link: 'https://docs.decentraland.org/creator/development-guide/sdk7/video-playing/',
+          link: 'https://docs.decentraland.org/creator/scenes-sdk7/media/video-playing',
         }),
         createOption(sdk.components.Script, 'Script', {
           description:
-            'Attach custom scripts to entities with configurable parameters. Scripts can handle initialization and per-frame updates.',
-          // link: 'https://docs.decentraland.org/creator/development-guide/sdk7/scripts/',
+            'Write code that is linked to the entity. Scripts can handle initialization and per-frame updates.',
+          // link: 'https://docs.decentraland.org/creator/scene-editor/extend-with-code/scripts/',
         }),
+        createOption(sdk.components.SyncComponents, 'Multiplayer', {
+          description:
+            "Decentraland runs scenes locally. Players can see each other, but each player interacts with the environment independently. Changes in the environment aren't shared between players by default. Add a Multiplayer component to make the changes in an entity shared between players.",
+          link: 'https://docs.decentraland.org/creator/scenes-sdk7/networking/serverless-multiplayer',
+        }),
+        createOption(sdk.components.Counter, 'Counter', {
+          description:
+            'Counter tracks numerical values that change based on player actions. Use it for conditional logic and to trigger actions when reaching certain values.',
+          link: 'https://docs.decentraland.org/creator/scene-editor/interactivity/states-and-conditions#counter',
+        }),
+        createOption(
+          sdk.components.CounterBar,
+          'Counter Bar',
+          {
+            description:
+              'CounterBar creates a visual bar representation of a Counter component. Display the counter value as a colored bar that fills or empties based on the counter value relative to a maximum value.',
+            link: 'https://docs.decentraland.org/creator/scene-editor/interactivity/states-and-conditions#counter',
+          },
+          {
+            requires: [sdk.components.Counter.componentId],
+          },
+        ),
       ];
 
       const optionIds = options.reduce((set, option) => {

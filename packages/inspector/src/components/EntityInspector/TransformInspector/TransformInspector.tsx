@@ -10,7 +10,7 @@ import { withSdk } from '../../../hoc/withSdk';
 
 import { Block } from '../../Block';
 import { Container } from '../../Container';
-import { TextField } from '../../ui';
+import { TextField, InfoTooltip } from '../../ui';
 import { fromTransform, toTransform, fromTransformConfig } from './utils';
 import type { Props } from './types';
 import { Link, type Props as LinkProps } from './Link';
@@ -55,6 +55,13 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
       label="Transform"
       className="Transform"
       initialOpen={initialOpen}
+      rightContent={
+        <InfoTooltip
+          text="Transform defines the position, rotation, and scale of an entity in 3D space. Every entity has a Transform component that determines where and how it appears in the scene."
+          link="https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/entity-positioning#code-essentials"
+          type="help"
+        />
+      }
     >
       <Block label="Position">
         <TextField

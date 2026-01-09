@@ -214,6 +214,9 @@
           "json": {
             "isBasicViewEnabled": true,
             "componentName": "Door",
+            "helpTooltip": {
+              "text": "Configure the door's hover text and actions. Set what happens when the door is clicked, opened, or closed. The door can be toggled open and closed."
+            },
             "fields": [
               {
                 "name": "Hover Text",
@@ -234,7 +237,8 @@
                 "type": "asset-packs::Triggers",
                 "basicViewId": "trigger-when-closed"
               }
-            ]
+            ],
+            "version": 1
           }
         }
       }

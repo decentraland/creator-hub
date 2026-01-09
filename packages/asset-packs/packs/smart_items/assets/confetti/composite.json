@@ -166,7 +166,11 @@
           "json": {
             "isBasicViewEnabled": true,
             "componentName": "Confetti",
-            "fields": []
+            "fields": [],
+            "helpTooltip": {
+              "text": "A confetti explosion that can be used to celebrate. The item is invisible until it explodes. Trigger it from another smart item."
+            },
+            "version": 1
           }
         }
       }
@@ -178,7 +182,11 @@
           "json": {
             "isBasicViewEnabled": true,
             "componentName": "Confetti",
-            "fields": []
+            "fields": [],
+            "helpTooltip": {
+              "text": "A confetti explosion that can be used to celebrate. The item is invisible until it explodes. Trigger it from another smart item."
+            },
+            "version": 1
           }
         }
       }

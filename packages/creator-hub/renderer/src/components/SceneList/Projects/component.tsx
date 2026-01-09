@@ -157,7 +157,10 @@ function Project({ project }: { project: Project }) {
 
 function NoScenesAnchor(content: string) {
   const handleClick = useCallback(
-    () => misc.openExternal('https://docs.decentraland.org/creator/development-guide/sdk-101/'),
+    () =>
+      misc.openExternal(
+        'https://docs.decentraland.org/creator/scenes-sdk7/getting-started/sdk-101',
+      ),
     [],
   );
 
@@ -165,7 +168,7 @@ function NoScenesAnchor(content: string) {
     <a
       rel="noreferrer"
       target="_blank"
-      href="https://docs.decentraland.org/creator/development-guide/sdk-101/"
+      href="https://docs.decentraland.org/creator/scenes-sdk7/getting-started/sdk-101"
       onClick={handleClick}
     >
       {content}

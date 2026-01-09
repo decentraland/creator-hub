@@ -27,7 +27,6 @@
         }
       }
     },
-
     {
       "name": "core-schema::Name",
       "data": {
@@ -145,6 +144,9 @@
         "513": {
           "json": {
             "componentName": "Sit Spot",
+            "helpTooltip": {
+              "text": "Configure the sit spot's hover text and actions. Players can click to sit here. The spot tracks whether it's free or taken and shows a message when occupied."
+            },
             "fields": [
               {
                 "name": "Hover Text",
@@ -156,7 +158,8 @@
                 "basicViewId": "trigger-when-clicked"
               }
             ],
-            "assetId": "f209e8f5-6c37-4354-8de9-c4ad0b2bb4a0"
+            "assetId": "f209e8f5-6c37-4354-8de9-c4ad0b2bb4a0",
+            "version": 1
           }
         }
       }
@@ -179,7 +182,11 @@
         "0": {
           "json": {
             "componentName": "Wooden Chair",
-            "fields": []
+            "helpTooltip": {
+              "text": "A wooden chair that players can sit on. Click to sit down at this location."
+            },
+            "fields": [],
+            "version": 1
           }
         }
       }

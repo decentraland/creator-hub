@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   TweenType,
   InterpolationType,
@@ -134,34 +134,38 @@ const TweenAction: React.FC<Props> = ({ tween: tweenProp, onUpdateTween }: Props
     [tween, handleUpdate, isValidDuration],
   );
 
-  const renderTweenInfo = () => {
-    return (
+  const renderTweenInfo = useMemo(
+    () => (
       <InfoTooltip
         text={
-          "Use the next tween type to change the item's position, scale, or rotation over a period of time."
+          "Use the tween type to change the item's position, scale, or rotation over a period of time."
         }
-        link="https://docs.decentraland.org/creator/smart-items/#moving-rotating-or-scaling"
+        link="https://docs.decentraland.org/creator/scene-editor/interactivity/smart-items-advanced#moving-rotating-or-scaling"
       />
-    );
-  };
+    ),
+    [],
+  );
 
-  const renderRelativeInfo = () => {
-    return (
+  const renderRelativeInfo = useMemo(
+    () => (
       <InfoTooltip text="Relative tweens modify an item's position, scale, or rotation in relation to its current state, while absolute tweens fix them relative to the world." />
-    );
-  };
+    ),
+    [],
+  );
 
-  const rendeCurveTypeInfo = () => {
-    return (
+  const rendeCurveTypeInfo = useMemo(
+    () => (
       <InfoTooltip text="Tweens can follow different Curve Types that affect the rate of change over time." />
-    );
-  };
+    ),
+    [],
+  );
 
-  const renderDurationInfo = () => {
-    return (
+  const renderDurationInfo = useMemo(
+    () => (
       <InfoTooltip text="The duration set how long the whole movement should take in seconds." />
-    );
-  };
+    ),
+    [],
+  );
 
   const getLabel = useCallback(() => {
     switch (tween.type) {
@@ -182,7 +186,7 @@ const TweenAction: React.FC<Props> = ({ tween: tweenProp, onUpdateTween }: Props
     <div className="TweenActionContainer">
       <div className="row">
         <Dropdown
-          label={<>Select Tween {renderTweenInfo()}</>}
+          label={<>Select Tween {renderTweenInfo}</>}
           placeholder="Select a Tween Type"
           options={[
             ...Object.values(TweenType).map(tweenType => ({
@@ -270,13 +274,13 @@ const TweenAction: React.FC<Props> = ({ tween: tweenProp, onUpdateTween }: Props
           <div className="row">
             <CheckboxField
               checked={tween.relative}
-              label={<>Relative {renderRelativeInfo()}</>}
+              label={<>Relative {renderRelativeInfo}</>}
               onChange={handleChangeRelative}
             />
           </div>
           <div className="row">
             <Dropdown
-              label={<>Curve Type {rendeCurveTypeInfo()}</>}
+              label={<>Curve Type {rendeCurveTypeInfo}</>}
               placeholder="Select a Curve Type"
               options={[
                 ...Object.values(InterpolationType).map(interpolationType => ({
@@ -290,7 +294,7 @@ const TweenAction: React.FC<Props> = ({ tween: tweenProp, onUpdateTween }: Props
           </div>
           <div className="row">
             <RangeField
-              label={<>Duration {renderDurationInfo()}</>}
+              label={<>Duration {renderDurationInfo}</>}
               value={tween.duration}
               onChange={handleChangeDurationRange}
               isValidValue={isValidDuration}

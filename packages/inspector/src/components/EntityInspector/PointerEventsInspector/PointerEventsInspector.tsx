@@ -10,7 +10,7 @@ import { getAssetByModel } from '../../../lib/logic/catalog';
 import { CoreComponents } from '../../../lib/sdk/components';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
-import { TextField, CheckboxField, RangeField, Dropdown } from '../../ui';
+import { TextField, CheckboxField, RangeField, Dropdown, InfoTooltip } from '../../ui';
 import type { Props } from './types';
 import { useArrayState } from '../../../hooks/useArrayState';
 import {
@@ -85,6 +85,13 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       label="PointerEvents"
       className={cx('PointerEvents')}
       initialOpen={initialOpen}
+      rightContent={
+        <InfoTooltip
+          text="Configure the hints shown to players when they hover the cursor over the item. Change the text, the button, the max distance, etc"
+          link="https://docs.decentraland.org/creator/scenes-sdk7/interactivity/button-events/click-events"
+          type="help"
+        />
+      }
       onRemoveContainer={handleRemoveComponent}
     >
       {pointerEvents.map(($, idx) => (

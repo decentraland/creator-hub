@@ -138,7 +138,11 @@
                 "name": "Item Health Points",
                 "type": "asset-packs::Counter"
               }
-            ]
+            ],
+            "helpTooltip": {
+              "text": "A pallet-like structure that can be used to reveal a passageway when broken with another smart item, such as the Sword. It can also be used as a wall to block players."
+            },
+            "version": 1
           }
         }
       }

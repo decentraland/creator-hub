@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
 import { recursiveCheck } from '../../../../lib/utils/deep-equal';
-import { Dropdown } from '../../../ui';
+import { Dropdown, InfoTooltip } from '../../../ui';
 import { COLLISION_LAYERS } from '../../GltfInspector/utils';
 import type { Props } from './types';
 
@@ -57,7 +57,15 @@ const ChangeCollisionsAction: React.FC<Props> = ({ value, onUpdate }: Props) => 
       <div className="row">
         <div className="field">
           <Dropdown
-            label="Visible collisions"
+            label={
+              <>
+                Visible collisions{' '}
+                <InfoTooltip
+                  text="Collision layer for visible meshes. Controls which layers can interact with the visible parts of the entity (e.g., player movement, pointer events)."
+                  position="top center"
+                />
+              </>
+            }
             placeholder="Select Visible Collisions"
             options={collisionOptions}
             value={payload.visibleCollisions?.toString() ?? ''}
@@ -66,7 +74,15 @@ const ChangeCollisionsAction: React.FC<Props> = ({ value, onUpdate }: Props) => 
         </div>
         <div className="field">
           <Dropdown
-            label="Invisible collisions"
+            label={
+              <>
+                Invisible collisions{' '}
+                <InfoTooltip
+                  text="Collision layer for invisible meshes. Controls which layers can interact with invisible collision geometry (meshes who's name ends in _collider)."
+                  position="top center"
+                />
+              </>
+            }
             placeholder="Select Invisible Collisions"
             options={collisionOptions}
             value={payload.invisibleCollisions?.toString() ?? ''}

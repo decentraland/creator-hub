@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
 import { recursiveCheck } from '../../../../lib/utils/deep-equal';
 import { Block } from '../../../Block';
-import { Dropdown, RangeField, TextField } from '../../../ui';
+import { Dropdown, RangeField, TextField, InfoTooltip } from '../../../ui';
 import { FONTS, TEXT_ALIGN_MODES } from '../../TextShapeInspector/utils';
 import type { Props } from './types';
 
@@ -78,7 +78,16 @@ const ShowTextAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
       </Block>
       <Block>
         <RangeField
-          label="Hide After Seconds"
+          label={
+            <>
+              Hide After Seconds{' '}
+              <InfoTooltip
+                text="The text will automatically disappear after the specified number of seconds. Enter a value greater than 0."
+                type="info"
+                position="top center"
+              />
+            </>
+          }
           value={payload.hideAfterSeconds}
           onChange={handleChangeHideAfterSeconds}
           isValidValue={value => value > 0}

@@ -184,6 +184,9 @@
           "json": {
             "isBasicViewEnabled": true,
             "componentName": "Toggle Button",
+            "helpTooltip": {
+              "text": "Configure the toggle button's hover text and actions. Set what happens when the button is activated or deactivated. The button switches between activated and deactivated states when clicked."
+            },
             "fields": [
               {
                 "name": "Hover Text",
@@ -199,7 +202,8 @@
                 "type": "asset-packs::Triggers",
                 "basicViewId": "trigger-when-deactivated"
               }
-            ]
+            ],
+            "version": 1
           }
         }
       }

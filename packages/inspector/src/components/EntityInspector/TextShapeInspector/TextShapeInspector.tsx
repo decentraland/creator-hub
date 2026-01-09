@@ -7,7 +7,7 @@ import { analytics, Event } from '../../../lib/logic/analytics';
 import { CoreComponents } from '../../../lib/sdk/components';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
-import { TextField, CheckboxField, ColorField, Dropdown, TextArea } from '../../ui';
+import { TextField, CheckboxField, ColorField, Dropdown, TextArea, InfoTooltip } from '../../ui';
 import { fromTextShape, toTextShape, isValidInput, TEXT_ALIGN_MODES } from './utils';
 import type { Props } from './types';
 
@@ -42,6 +42,13 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
       label="TextShape"
       className="TextShape"
       initialOpen={initialOpen}
+      rightContent={
+        <InfoTooltip
+          text="Display text in the 3D space"
+          link="https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/text"
+          type="help"
+        />
+      }
       onRemoveContainer={handleRemove}
     >
       <Block>

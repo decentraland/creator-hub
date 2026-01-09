@@ -43,12 +43,12 @@ const learn_resources = [
   {
     title: 'Scene Editor About',
     icon: <BookmarkBorderIcon />,
-    href: 'https://docs.decentraland.org/creator/web-editor/',
+    href: 'https://docs.decentraland.org/creator/scene-editor/get-started/about-editor',
   },
   {
     title: 'Development Workflow',
     icon: <BookmarkBorderIcon />,
-    href: 'https://docs.decentraland.org/creator/development-guide/sdk7/dev-workflow/',
+    href: 'https://docs.decentraland.org/creator/scenes-sdk7/getting-started/dev-workflow',
   },
   {
     title: 'Product Updates',

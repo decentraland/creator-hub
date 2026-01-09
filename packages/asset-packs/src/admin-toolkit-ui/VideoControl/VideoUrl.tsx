@@ -11,7 +11,7 @@ import { LIVEKIT_STREAM_SRC } from '../../definitions';
 import { CONTENT_URL } from '../constants';
 
 const VIDEO_PLAYER_HELP_URL =
-  'https://docs.decentraland.org/creator/editor/scene-admin/#video-playing';
+  'https://docs.decentraland.org/creator/scene-editor/interactivity/video-screen';
 export const HELP_ICON = `${CONTENT_URL}/admin_toolkit/assets/icons/help.png`;
 
 export function VideoControlURL({

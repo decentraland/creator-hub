@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
 import { recursiveCheck } from '../../../../lib/utils/deep-equal';
 import { Block } from '../../../Block';
-import { Dropdown, RangeField } from '../../../ui';
+import { Dropdown, RangeField, InfoTooltip } from '../../../ui';
 import type { DropdownChangeEvent } from '../../../ui';
 import type { Props } from './types';
 
@@ -72,13 +72,23 @@ const LoopAction = <T extends ActionPayload<ActionType.START_LOOP | ActionType.S
     [payload, handleUpdate],
   );
 
+  const renderActionsInfo = useMemo(
+    () => (
+      <InfoTooltip
+        text="Lists all the actions that will be triggered repeatedly in a loop. You may select as many actions as you want."
+        position="top center"
+      />
+    ),
+    [],
+  );
+
   return (
     <div className="LoopActionContainer">
       {isStartLoopAction(payload) ? (
         <>
           <Block>
             <Dropdown
-              label="Action(s)"
+              label={<>Action(s) {renderActionsInfo}</>}
               options={actions}
               value={payload.actions}
               multiple

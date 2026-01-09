@@ -220,6 +220,9 @@
           "json": {
             "isBasicViewEnabled": true,
             "componentName": "Chest",
+            "helpTooltip": {
+              "text": "Configure the treasure chest's hover text and actions. Set what happens when the chest is clicked, opened, or closed. The chest can be toggled open and closed."
+            },
             "fields": [
               {
                 "name": "Hover Text",
@@ -240,7 +243,8 @@
                 "type": "asset-packs::Triggers",
                 "basicViewId": "trigger-when-closed"
               }
-            ]
+            ],
+            "version": 1
           }
         }
       }

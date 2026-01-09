@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { ActionPayload, ActionType, TextureMovementType } from '@dcl/asset-packs';
-import { Dropdown, TextField } from '../../../ui';
+import { Dropdown, TextField, InfoTooltip } from '../../../ui';
 import { Props } from './types';
 import { Block } from '../../../Block';
 
@@ -97,7 +97,15 @@ const SlideTextureAction: React.FC<Props> = ({ value, onUpdate }) => {
       </div>
       <div className="row">
         <TextField
-          label="Speed"
+          label={
+            <>
+              Speed{' '}
+              <InfoTooltip
+                text="The speed at which the texture slides, in units per second. Higher values move faster."
+                position="top center"
+              />
+            </>
+          }
           type="number"
           value={value.speed ?? 1}
           onChange={handleChangeSpeed}
@@ -105,7 +113,15 @@ const SlideTextureAction: React.FC<Props> = ({ value, onUpdate }) => {
       </div>
       <div className="row">
         <Dropdown
-          label="Movement Type"
+          label={
+            <>
+              Movement Type{' '}
+              <InfoTooltip
+                text="Offset: Moves the texture position. Tiling: Repeats the texture pattern. Use Offset for scrolling effects, Tiling for animated patterns."
+                position="top center"
+              />
+            </>
+          }
           options={MOVEMENT_TYPE_OPTIONS}
           value={value.movementType ?? TextureMovementType.TMT_OFFSET}
           onChange={handleChangeMovementType}
@@ -113,7 +129,15 @@ const SlideTextureAction: React.FC<Props> = ({ value, onUpdate }) => {
       </div>
       <div className="row">
         <TextField
-          label="Duration"
+          label={
+            <>
+              Duration{' '}
+              <InfoTooltip
+                text="How long the texture sliding animation lasts, in seconds. Enter -1 for infinite duration."
+                position="top center"
+              />
+            </>
+          }
           type="number"
           value={value.duration ?? -1}
           onChange={handleChangeDuration}

@@ -59,19 +59,18 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
       label="Billboard"
       className="BillboardContainer"
       initialOpen={initialOpen}
+      rightContent={
+        <InfoTooltip
+          text="Make an entity automatically reorient its rotation to always face the camera, as in retro 3D games that used 2D sprites."
+          link="https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/entity-positioning#face-the-player"
+          type="help"
+        />
+      }
       onRemoveContainer={handleRemove}
     >
       <Block>
         <Dropdown
-          label={
-            <>
-              Billboard Mode{' '}
-              <InfoTooltip
-                text="The Billboard component makes an Entity automatically reorient its rotation to always face the camera, as in retro 3D games that used 2D sprites."
-                link="https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/entity-positioning#face-the-player"
-              />
-            </>
-          }
+          label="Billboard Mode"
           options={BILLBOARD_MODE_OPTIONS}
           {...billboardMode}
         />

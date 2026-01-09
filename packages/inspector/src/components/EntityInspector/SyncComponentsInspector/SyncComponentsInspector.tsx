@@ -104,7 +104,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       rightContent={
         <InfoTooltip
           text="Decentraland runs scenes locally in a player's browser. By default, players are able to see each other and interact directly, but each player interacts with the environment independently. Changes in the environment aren't shared between players by default. Seeing the same content in the same state is extremely important for players to interact in more meaningful ways."
-          link="https://docs.decentraland.org/creator/development-guide/sdk7/serverless-multiplayer"
+          link="https://docs.decentraland.org/creator/scenes-sdk7/networking/serverless-multiplayer"
           type="help"
         />
       }

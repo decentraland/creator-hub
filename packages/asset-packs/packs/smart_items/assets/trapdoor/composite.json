@@ -227,6 +227,9 @@
           "json": {
             "isBasicViewEnabled": true,
             "componentName": "Door",
+            "helpTooltip": {
+              "text": "Configure the trapdoor's hover text and actions. Set what happens when the trapdoor is clicked, opened, or closed. The trapdoor can be toggled open and closed."
+            },
             "fields": [
               {
                 "name": "Hover Text",
@@ -247,7 +250,8 @@
                 "type": "asset-packs::Triggers",
                 "basicViewId": "trigger-when-closed"
               }
-            ]
+            ],
+            "version": 1
           }
         }
       }
