@@ -4,6 +4,7 @@ import { IoGridOutline as SquaresGridIcon } from 'react-icons/io5';
 import cx from 'classnames';
 
 import type { Material } from '@babylonjs/core';
+import { Texture, MultiMaterial } from '@babylonjs/core';
 import { CrdtMessageType } from '@dcl/ecs';
 
 import type { WithSdkProps } from '../../../hoc/withSdk';
@@ -58,7 +59,51 @@ const IGNORE_TEXTURES = [
   'GlowLayerBlurRTT',
   'GlowLayerBlurRTT2',
 ];
-const IGNORE_MESHES = ['BackgroundHelper', 'BackgroundPlane', 'BackgroundSkybox'];
+const IGNORE_MESHES = [
+  'BackgroundHelper',
+  'BackgroundPlane',
+  'BackgroundSkybox',
+  // Editor environment meshes from createDefaultEnvironment
+  'ground',
+  'skybox',
+  '__root__',
+  // Axis indicator meshes from layout manager
+  'axis_x_line',
+  'axis_y_line',
+  'axis_z_line',
+  'z_cone_axis',
+];
+
+/**
+ * Extracts textures from a material and adds them to the textures set.
+ * Materials can have multiple texture properties (albedoTexture, normalTexture, etc.)
+ */
+function collectTexturesFromMaterial(material: Material, texturesSet: Set<string>): void {
+  for (const key in material) {
+    const value = (material as any)[key];
+    if (value && typeof value === 'object' && 'getInternalTexture' in value) {
+      // This is a texture
+      const texture = value;
+      if (IGNORE_TEXTURES.includes(texture.name)) continue;
+
+      const isTexture = texture instanceof Texture;
+      const url = isTexture ? (texture as Texture).url : texture.name || '';
+
+      // Filter out editor-generated data URIs
+      if (url && url.startsWith('data:') && url.includes('EnvironmentBRDFTexture')) continue;
+
+      // Use URL as primary key for deduplication
+      if (url) {
+        texturesSet.add(url);
+      } else {
+        const internalTexture = texture.getInternalTexture();
+        if (internalTexture?.uniqueId != null) {
+          texturesSet.add(`__uniqueId_${internalTexture.uniqueId}`);
+        }
+      }
+    }
+  }
+}
 
 const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
   const ROOT = sdk.engine.RootEntity;
@@ -88,17 +133,52 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
       mesh =>
         !IGNORE_MESHES.includes(mesh.id) &&
         !mesh.id.startsWith(GROUND_MESH_PREFIX) &&
-        !mesh.id.startsWith('BoundingMesh'),
+        !mesh.id.startsWith('BoundingMesh') &&
+        !mesh.id.startsWith('axis_') && // Exclude all axis indicator meshes
+        !mesh.id.startsWith('axisHelper'), // Exclude axis helper meshes
     );
-    const triangles = meshes.reduce((acc, mesh) => acc + mesh.getTotalVertices(), 0);
-    const uniqueTextures = new Set(
-      sdk.scene.textures
-        .filter(texture => !IGNORE_TEXTURES.includes(texture.name))
-        .map(texture => texture.getInternalTexture()!.uniqueId),
-    );
-    const uniqueMaterials = new Set(
-      sdk.scene.materials.map(material => material.id).filter(id => !IGNORE_MATERIALS.includes(id)),
-    );
+    // Calculate triangle count correctly: getTotalIndices() / 3
+    // If a mesh doesn't have indices, it might be using vertices directly, so we fall back to vertices / 3
+    const triangles = meshes.reduce((acc, mesh) => {
+      const indices = mesh.getTotalIndices();
+      if (indices > 0) {
+        return acc + indices / 3;
+      }
+      // Fallback for meshes without indices (shouldn't happen for proper meshes, but safe fallback)
+      const vertices = mesh.getTotalVertices();
+      return acc + Math.floor(vertices / 3);
+    }, 0);
+
+    // Collect materials and textures only from user-created meshes (not editor meshes)
+    // This ensures we don't count editor-only materials/textures
+    const materialsFromMeshes = new Set<string>();
+    const texturesFromMaterials = new Set<string>();
+
+    meshes.forEach(mesh => {
+      // Handle multi-material meshes
+      if (mesh.material instanceof MultiMaterial) {
+        const multiMaterial = mesh.material;
+        multiMaterial.subMaterials.forEach((subMaterial: Material | null) => {
+          if (subMaterial) {
+            const materialId = subMaterial.id;
+            if (!IGNORE_MATERIALS.includes(materialId)) {
+              materialsFromMeshes.add(materialId);
+              collectTexturesFromMaterial(subMaterial, texturesFromMaterials);
+            }
+          }
+        });
+      } else if (mesh.material) {
+        // Collect materials from this mesh
+        const materialId = mesh.material.id;
+        if (!IGNORE_MATERIALS.includes(materialId)) {
+          materialsFromMeshes.add(materialId);
+          collectTexturesFromMaterial(mesh.material, texturesFromMaterials);
+        }
+      }
+    });
+
+    const uniqueMaterials = materialsFromMeshes;
+    const uniqueTextures = texturesFromMaterials;
 
     dispatch(
       setMetrics({
