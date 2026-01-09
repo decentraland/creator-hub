@@ -6,7 +6,7 @@
     "bucket",
     "chemical",
     "container",
-    "crystalline",
+    "fruit",
     "fuel",
     "hazardous",
     "storage",
@@ -14,6 +14,6 @@
     "toxic",
     "vessel"
   ],
-  "caption": "Green crystal bucket.",
+  "caption": "Green bucket filled with yellow fruit.",
   "author": "Decentraland Foundation"
 }
