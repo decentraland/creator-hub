@@ -16,7 +16,14 @@ export type ScriptInput = {
 
 export type ScriptLayout = {
   params: Record<string, ScriptParamUnion>;
+  actions?: ScriptAction[];
   error?: string;
+};
+
+export type ScriptAction = {
+  methodName: string;
+  description?: string;
+  params: Record<string, ScriptParamUnion>;
 };
 
 export type ScriptParamUnion =

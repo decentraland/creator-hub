@@ -57,6 +57,7 @@ import { initTriggers, damageTargets, healTargets } from './triggers';
 import { followMap } from './transform';
 import { getEasingFunctionFromInterpolation } from './tweens';
 import { REWARDS_SERVER_URL } from './admin-toolkit-ui/constants';
+import { callScriptMethod } from '~sdk/all-scripts';
 import {
   movePlayerTo,
   triggerEmote,
@@ -390,8 +391,27 @@ export function createActionsSystem(
             handleResetSkybox();
             break;
           }
-          default:
+          default: {
+            if (action.type.startsWith('script:')) {
+              const parts = action.type.split(':');
+              if (parts.length === 3) {
+                const scriptPath = parts[1];
+                const methodName = parts[2];
+                const payload = getPayload(action);
+
+                try {
+                  const paramValues = Object.values(payload || {});
+                  callScriptMethod(entity, scriptPath, methodName, ...paramValues);
+                } catch (error) {
+                  console.error(
+                    `[Script Action Error] Failed to call ${methodName} on ${scriptPath}:`,
+                    error,
+                  );
+                }
+              }
+            }
             break;
+          }
         }
       });
     }
