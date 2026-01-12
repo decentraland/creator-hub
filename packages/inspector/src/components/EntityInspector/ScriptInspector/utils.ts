@@ -5,7 +5,7 @@ import { determineAssetType } from '../../ImportAsset/utils';
 import type { TreeNode } from '../../ProjectAssetExplorer/ProjectView';
 import type { AssetNodeItem } from '../../ProjectAssetExplorer/types';
 import { isAssetNode } from '../../ProjectAssetExplorer/utils';
-import type { ScriptLayout } from './types';
+import type { ScriptItem, ScriptLayout } from './types';
 
 export function fromNumber(value: number): string {
   return value.toString();
@@ -47,8 +47,12 @@ export function buildScriptPath(name: string): string {
 
 export function isScriptNameAvailable({ assets }: AssetCatalogResponse, src: string): boolean {
   if (!src) return true;
-  const newScriptPath = buildScriptPath(src).toLowerCase();
-  return !assets.find($ => newScriptPath === $.path.toLowerCase());
+  return !assets.find($ => src === $.path.toLowerCase());
+}
+
+export function isScriptAlreadyAdded(scripts: ScriptItem[], src: string): boolean {
+  if (!src) return false;
+  return scripts.some(script => script.path === src);
 }
 
 export async function readScript(

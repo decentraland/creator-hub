@@ -32,6 +32,7 @@ import {
   buildScriptPath,
   readScript,
   mergeLayout,
+  isScriptAlreadyAdded,
 } from './utils';
 import { getScriptParams } from './parser';
 import type { Props, ScriptLayout, ScriptParamUnion, ChangeEvt, ScriptItem } from './types';
@@ -178,18 +179,22 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     [sdk, Script, setError],
   );
 
-  const getScriptNameErrors = useCallback(
+  const isScriptValid = useCallback(
     (scriptName: string): string | undefined => {
-      if (files && !isScriptNameAvailable(files, scriptName)) {
+      const scriptPath = buildScriptPath(scriptName);
+      if (files && !isScriptNameAvailable(files, scriptPath)) {
         return 'Script name already exists';
       }
+      if (isScriptAlreadyAdded(scripts, scriptPath)) {
+        return 'This script is already added to this entity';
+      }
     },
-    [files],
+    [files, scripts],
   );
 
   const handleCreateScript = useCallback(
     (scriptName: string) => {
-      if (getScriptNameErrors(scriptName) !== undefined) return;
+      if (isScriptValid(scriptName) !== undefined) return;
 
       const template = getScriptTemplateClass(scriptName);
       const scriptPath = buildScriptPath(scriptName);
@@ -201,12 +206,15 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       setShowCreateModal(false);
       setError(undefined);
     },
-    [createScript, dispatch, files],
+    [createScript, dispatch, isScriptValid, setError],
   );
 
   const handleImportScript = useCallback(
     async (path: string) => {
       try {
+        const error = isScriptValid(path);
+        if (error) return setError(error);
+
         const dataLayer = getDataLayerInterface();
         if (!dataLayer) return;
 
@@ -219,7 +227,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
         return setError(msg);
       }
     },
-    [createScript, setError],
+    [createScript, setError, isScriptValid],
   );
 
   const handleCloseCreateModal = useCallback(() => {
@@ -421,7 +429,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
         isOpen={showCreateModal}
         onClose={handleCloseCreateModal}
         onCreate={handleCreateScript}
-        isValid={getScriptNameErrors}
+        isValid={isScriptValid}
       />
     </Container>
   );
