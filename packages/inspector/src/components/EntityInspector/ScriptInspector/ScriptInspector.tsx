@@ -84,8 +84,8 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
 
   const createScript = useCallback(
     (path: string, priority = 0, content: string) => {
-      const { params, error } = getScriptParams(content);
-      const layout: ScriptLayout = { params, error };
+      const { params, actions, error } = getScriptParams(content);
+      const layout: ScriptLayout = { params, actions, error };
 
       const newScript: ScriptItem = {
         path,
@@ -135,6 +135,8 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       e.stopPropagation();
       setError(undefined);
 
+      if (scripts.length === 0) return;
+
       const dataLayer = getDataLayerInterface();
       if (!dataLayer) return;
 
@@ -176,17 +178,21 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       if (firstError) setError(firstError);
       await sdk.operations.dispatch();
     },
-    [sdk, Script, setError],
+    [sdk, Script, setError, scripts],
   );
 
   const isScriptValid = useCallback(
-    (scriptName: string): string | undefined => {
-      const scriptPath = buildScriptPath(scriptName);
-      if (files && !isScriptNameAvailable(files, scriptPath)) {
-        return 'Script name already exists';
-      }
+    (scriptNameOrPath: string): string | undefined => {
+      const scriptPath = scriptNameOrPath.includes('/')
+        ? scriptNameOrPath
+        : buildScriptPath(scriptNameOrPath);
+
       if (isScriptAlreadyAdded(scripts, scriptPath)) {
         return 'This script is already added to this entity';
+      }
+
+      if (files && !isScriptNameAvailable(files, scriptPath)) {
+        return 'Script name already exists';
       }
     },
     [files, scripts],
@@ -400,6 +406,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
             label="Path"
             accept={ACCEPTED_FILE_TYPES['script']}
             onDrop={handleImportScript}
+            onChange={(e: ChangeEvt) => handleImportScript(e.target.value)}
             isValidFile={isScriptNode}
             error={error}
             openFileExplorerOnMount={emptyScriptModuleMode === 'import'}

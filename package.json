@@ -23,7 +23,8 @@
   },
   "overrides": {
     "@babylonjs/serializers": "8.7.0",
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "ua-parser-js": "2.0.0"
   },
   "private": true,
   "scripts": {

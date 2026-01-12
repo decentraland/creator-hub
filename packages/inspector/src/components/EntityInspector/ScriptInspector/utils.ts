@@ -39,8 +39,9 @@ export const isScriptNode = (node: TreeNode): node is AssetNodeItem =>
   isAssetNode(node) && isScriptFile(node.name);
 
 export function buildScriptPath(name: string): string {
-  const scriptName = isScriptFile(name) ? name : `${name}.ts`;
   const scriptsDir = withAssetDir(`${DIRECTORY.SCENE}/${determineAssetType('ts')}`);
+  if (name.startsWith(scriptsDir)) return name; // if it's already a built path, return the name parameter
+  const scriptName = isScriptFile(name) ? name : `${name}.ts`;
   const scriptPath = `${scriptsDir}/${scriptName}`;
   return scriptPath;
 }
@@ -65,7 +66,8 @@ export async function readScript(
 }
 
 export function mergeLayout(source: ScriptLayout, target: ScriptLayout): ScriptLayout {
-  const layout: ScriptLayout = { params: {} };
+  const layout: ScriptLayout = { params: {}, actions: [] };
+
   for (const [name, value] of Object.entries(source.params)) {
     const targetParam = target.params[name];
     if (!targetParam || value.type !== targetParam.type) {
@@ -74,6 +76,9 @@ export function mergeLayout(source: ScriptLayout, target: ScriptLayout): ScriptL
       layout.params[name] = { ...value, ...targetParam };
     }
   }
+
+  layout.actions = source.actions;
   layout.error = source.error;
+
   return layout;
 }
