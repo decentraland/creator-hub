@@ -100,11 +100,11 @@ export function LearnPage() {
                   title="Let's build the metaverse together"
                 />
                 <Link
-                  url="https://docs.decentraland.org/creator/development-guide/sdk7/sdk-101/"
+                  url="https://docs.decentraland.org/creator/scenes-sdk7/getting-started/sdk-101"
                   title="About SDK"
                 />
                 <Link
-                  url="https://docs.decentraland.org/creator/development-guide/sdk7/dev-workflow/"
+                  url="https://docs.decentraland.org/creator/scenes-sdk7/getting-started/dev-workflow"
                   title="Development Workflow"
                 />
                 <Link

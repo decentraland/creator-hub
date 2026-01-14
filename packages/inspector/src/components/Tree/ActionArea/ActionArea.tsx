@@ -135,17 +135,17 @@ const ActionArea: React.FC<WithSdkProps & Props> = ({ sdk, ...props }) => {
       {isPlayer &&
         infoTooltip(
           'The player’s avatar. Nested items are fixed to the player’s position.',
-          'https://docs.decentraland.org/creator/web-editor/#special-entities',
+          'https://docs.decentraland.org/creator/scene-editor/get-started/scene-editor-essentials#special-entities',
         )}
       {isCamera &&
         infoTooltip(
           'The player’s camera. Nested items remain fixed to the camera’s position.',
-          'https://docs.decentraland.org/creator/web-editor/#special-entities',
+          'https://docs.decentraland.org/creator/scene-editor/get-started/scene-editor-essentials#special-entities',
         )}
       {isRoot &&
         infoTooltip(
           'The root entity. All items in the scene are children of this entity. Open it to adjust the scene settings.',
-          'https://docs.decentraland.org/creator/development-guide/sdk7/scene-metadata/#metadata',
+          'https://docs.decentraland.org/creator/scenes-sdk7/kinds-of-projects/scene-metadata',
         )}
     </div>
   );

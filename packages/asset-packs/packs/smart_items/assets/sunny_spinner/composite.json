@@ -126,7 +126,11 @@
           "json": {
             "isBasicViewEnabled": true,
             "componentName": "Sunny Spinner",
-            "fields": []
+            "fields": [],
+            "helpTooltip": {
+              "text": "A spinning set of sun rays that can look very cool. It is invisible until it is activated by other smart items, for example a trigger area or a button."
+            },
+            "version": 1
           }
         }
       }

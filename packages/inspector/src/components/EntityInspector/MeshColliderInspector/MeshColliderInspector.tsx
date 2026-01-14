@@ -5,7 +5,7 @@ import { useAllEntitiesHaveComponent } from '../../../hooks/sdk/useHasComponent'
 import { useMultiComponentInput } from '../../../hooks/sdk/useComponentInput';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
-import { TextField, Dropdown } from '../../ui';
+import { TextField, Dropdown, InfoTooltip } from '../../ui';
 import { SHAPES } from '../MeshRendererInspector/utils';
 import { MeshType } from '../MeshRendererInspector/types';
 import { COLLISION_LAYERS } from '../GltfInspector/utils';
@@ -50,6 +50,13 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
       label="MeshCollider"
       className="MeshCollider"
       initialOpen={initialOpen}
+      rightContent={
+        <InfoTooltip
+          text="MeshCollider defines the collision properties of an item, based on its invisible collision geometry. Collisions serve to make an item clickable or to block the player from walking through an item. To prevent camera collisions, set a same layer to both Physics and Pointer."
+          link="https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/colliders"
+          type="help"
+        />
+      }
       onRemoveContainer={handleRemove}
     >
       <Block>

@@ -83,21 +83,29 @@ const PlaySoundAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
     return !files.assets.some($ => $.path === payload.src);
   }, [files, payload]);
 
-  const renderPathInfo = () => {
-    return (
+  const renderPathInfo = useMemo(
+    () => (
       <InfoTooltip
         text="You can drag and drop an audio file from the Local Assets"
         position="right center"
       />
-    );
-  };
+    ),
+    [],
+  );
+
+  const renderGlobalInfo = useMemo(
+    () => (
+      <InfoTooltip text="When enabled, the sound plays globally and is not affected by the player's position. When disabled, the sound is positional and its volume decreases with distance." />
+    ),
+    [],
+  );
 
   return (
     <div className="PlaySoundActionContainer">
       <div className="row">
         <div className="field">
           <FileUploadField
-            label={<>Path {renderPathInfo()}</>}
+            label={<>Path {renderPathInfo}</>}
             value={payload.src}
             accept={ACCEPTED_FILE_TYPES['audio']}
             onDrop={handleDrop}
@@ -126,7 +134,7 @@ const PlaySoundAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
         </div>
         <div className="row">
           <CheckboxField
-            label="Global"
+            label={<>Global {renderGlobalInfo}</>}
             checked={!!payload.global}
             onChange={handleChangeGlobal}
           />

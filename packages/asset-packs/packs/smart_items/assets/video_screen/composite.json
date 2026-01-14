@@ -122,7 +122,11 @@
                 "name": "Config",
                 "type": "asset-packs::VideoScreen"
               }
-            ]
+            ],
+            "helpTooltip": {
+              "text": "A video screen that can play videos or live streams. It can be used together with the Admin Tools smart item to manage content live."
+            },
+            "version": 1
           }
         }
       }

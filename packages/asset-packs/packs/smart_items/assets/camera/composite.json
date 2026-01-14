@@ -48,6 +48,9 @@
           "json": {
             "isBasicViewEnabled": true,
             "componentName": "Camera",
+            "helpTooltip": {
+              "text": "Momentarily switch to this camera by triggering the item's actions. Set the transition time for camera changes and optionally select an entity for the camera to always look at."
+            },
             "sections": [
               {
                 "id": "camera-settings",

@@ -53,11 +53,11 @@ export function AlternativeServers(props: Props) {
   const handleClickLearnMore = useCallback(() => {
     if (option === 'custom') {
       return misc.openExternal(
-        'https://docs.decentraland.org/creator/development-guide/sdk7/publishing/#custom-servers',
+        'https://docs.decentraland.org/creator/scenes-sdk7/publishing/publishing#custom-servers',
       );
     }
     misc.openExternal(
-      'https://docs.decentraland.org/creator/development-guide/sdk7/publishing/#the-test-server',
+      'https://docs.decentraland.org/creator/scenes-sdk7/publishing/publishing#the-test-server',
     );
   }, [option]);
 

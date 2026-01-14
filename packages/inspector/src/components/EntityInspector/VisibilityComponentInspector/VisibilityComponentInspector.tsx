@@ -60,16 +60,17 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
       label="Visibility"
       className="VisibilityContainer"
       initialOpen={initialOpen}
+      rightContent={
+        <InfoTooltip
+          text="Visibility controls whether an object is visible or not to the player. Items marked as invisible are shown on the editor, but not to players running the scene."
+          type="help"
+        />
+      }
       onRemoveContainer={handleRemove}
     >
       <Block>
         <Dropdown
-          label={
-            <>
-              Visibility{' '}
-              <InfoTooltip text="Use the Visibility property to hide an item during scene execution while keeping it visible in the editor." />
-            </>
-          }
+          label="Visibility"
           options={VISIBILITY_OPTIONS}
           {...getInputProps('visible')}
         />

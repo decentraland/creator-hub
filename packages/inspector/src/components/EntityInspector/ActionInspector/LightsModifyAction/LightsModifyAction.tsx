@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { ActionPayload, ActionType } from '@dcl/asset-packs';
 import { Color3 } from '@dcl/ecs-math';
 import { Block } from '../../../Block';
-import { CheckboxField, ColorField, TextField } from '../../../ui';
+import { CheckboxField, ColorField, TextField, InfoTooltip } from '../../../ui';
 import { toHex, toColor3 } from '../../../ui/ColorField/utils';
 import { Props } from './types';
 
@@ -55,7 +55,15 @@ const LightsModifyAction: React.FC<Props> = ({ value, onUpdate }) => {
       <div className="row">
         <div className="field">
           <TextField
-            label="Intensity"
+            label={
+              <>
+                Intensity{' '}
+                <InfoTooltip
+                  text="The brightness of the light. Higher values produce brighter light. Typical range: 1000-50000. Default: 16000."
+                  position="top center"
+                />
+              </>
+            }
             type="number"
             value={value.intensity ?? 16000}
             onChange={handleChangeIntensity}

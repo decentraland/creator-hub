@@ -102,7 +102,11 @@
                 "basicViewId": "action-healing-interval",
                 "layout": "{\"interval\": { \"field\": \"RangeField\", \"label\": \"Healing Interval\", \"step\": \"0.1\" } }"
               }
-            ]
+            ],
+            "helpTooltip": {
+              "text": "A healing pad that heals damage when the player stands on it. It works together with the health bar smart item."
+            },
+            "version": 1
           }
         }
       }

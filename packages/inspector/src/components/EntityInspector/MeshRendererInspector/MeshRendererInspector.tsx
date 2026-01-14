@@ -5,7 +5,7 @@ import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
 import { useComponentInput } from '../../../hooks/sdk/useComponentInput';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
-import { TextField, Dropdown } from '../../ui';
+import { TextField, Dropdown, InfoTooltip } from '../../ui';
 import { fromMeshRenderer, toMeshRenderer, isValidInput, SHAPES } from './utils';
 
 import { Props, MeshType } from './types';
@@ -66,6 +66,13 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       label="MeshRenderer"
       className="MeshRenderer"
       initialOpen={initialOpen}
+      rightContent={
+        <InfoTooltip
+          text="Use MeshRenderer to assign a primitive 3D shape to the item. Instead of using a 3D file from GLTF, assign a simple cube, plane, sphere, or cylinder. These shapes can be used together with Materials"
+          link="https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/shape-components#primitive-shapes"
+          type="help"
+        />
+      }
       onRemoveContainer={handleRemove}
     >
       <Block>

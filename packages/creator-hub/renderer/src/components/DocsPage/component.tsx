@@ -46,7 +46,7 @@ export function DocsPage() {
                 />
                 <Link
                   title="Entities and components"
-                  url="https://docs.decentraland.org/creator/development-guide/sdk7/entities-components/"
+                  url="https://docs.decentraland.org/creator/scenes-sdk7/architecture/entities-components"
                 />
               </div>
             </div>
@@ -109,7 +109,7 @@ export function DocsPage() {
                   <div className="links vertical">
                     <Link
                       title="Example Scenes"
-                      url="https://docs.decentraland.org/creator/sdk7/examples/7/"
+                      url="https://docs.decentraland.org/creator/tutorials-and-examples/examples"
                     />
                     <Link
                       title="SDK & Editor Videos"
@@ -135,23 +135,23 @@ export function DocsPage() {
                   <div className="links vertical">
                     <Link
                       title="Entities and components"
-                      url="https://docs.decentraland.org/creator/development-guide/sdk7/entities-components/"
+                      url="https://docs.decentraland.org/creator/scenes-sdk7/architecture/entities-components"
                     />
                     <Link
                       title="Systems"
-                      url="https://docs.decentraland.org/creator/development-guide/sdk7/systems/"
+                      url="https://docs.decentraland.org/creator/scenes-sdk7/architecture/systems"
                     />
                     <Link
                       title="Custom components"
-                      url="https://docs.decentraland.org/creator/development-guide/sdk7/custom-components/"
+                      url="https://docs.decentraland.org/creator/scenes-sdk7/architecture/custom-components"
                     />
                     <Link
                       title="Querying components"
-                      url="https://docs.decentraland.org/creator/development-guide/sdk7/querying-components/"
+                      url="https://docs.decentraland.org/creator/scenes-sdk7/architecture/querying-components"
                     />
                     <Link
                       title="Data oriented programming"
-                      url="https://docs.decentraland.org/creator/development-guide/sdk7/data-oriented-programming/"
+                      url="https://docs.decentraland.org/creator/scenes-sdk7/architecture/data-oriented-programming"
                     />
                   </div>
                 </div>

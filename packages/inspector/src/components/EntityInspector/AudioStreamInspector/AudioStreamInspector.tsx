@@ -55,7 +55,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
       rightContent={
         <InfoTooltip
           text="The audio in the source must be in one of the following formats: .mp3, ogg, or aac. The source must also be an https URL (http URLs aren't supported), and the source should have CORS policies (Cross Origin Resource Sharing) that permit externally accessing it."
-          link="https://docs.decentraland.org/creator/development-guide/sdk7/audio-streaming"
+          link="https://docs.decentraland.org/creator/scenes-sdk7/media/audio-streaming"
           type="help"
         />
       }

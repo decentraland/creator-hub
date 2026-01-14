@@ -81,7 +81,11 @@
                 "name": "Controls",
                 "type": "asset-packs::AdminTools"
               }
-            ]
+            ],
+            "helpTooltip": {
+              "text": "Admin users can play videos, send text announcements, and trigger smart item actions. People with publish permissions are automatically admin users, you can add other users manually after publishing the scene."
+            },
+            "version": 1
           }
         }
       }

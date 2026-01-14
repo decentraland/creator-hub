@@ -41,7 +41,7 @@ const AdminToolkitView = withSdk<Props>(({ sdk, entity, initialOpen = true }) =>
       rightContent={
         <InfoTooltip
           text="Admin Tools enables a whole set of in-world actions for special admin users."
-          link="https://docs.decentraland.org/creator/smart-items/#admin-tools"
+          link="https://docs.decentraland.org/creator/scene-editor/operate-live/scene-admin"
           type="help"
         />
       }

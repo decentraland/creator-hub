@@ -123,7 +123,11 @@
                 "type": "asset-packs::VideoScreen"
               }
             ],
-            "assetId": "14ae6f10-29b1-4de1-a809-0cee19aeece9"
+            "assetId": "14ae6f10-29b1-4de1-a809-0cee19aeece9",
+            "helpTooltip": {
+              "text": "A large dome-shaped video screen that can play videos or live streams. It can be used together with the Admin Tools smart item to manage content live."
+            },
+            "version": 1
           }
         }
       }

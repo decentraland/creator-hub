@@ -107,7 +107,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       rightContent={
         <InfoTooltip
           text="Use this component to swap the material of a GLTF or GLB model. You can affect the entire model, or choose individual paths inside the model. See SDK7 docs."
-          link="https://docs.decentraland.org/creator/development-guide/sdk7/materials/#modify-gltf-materials"
+          link="https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/materials#modify-gltf-materials"
           type="help"
         />
       }

@@ -68,7 +68,11 @@
                 "type": "asset-packs::Triggers",
                 "basicViewId": "trigger-when-player-spawn"
               }
-            ]
+            ],
+            "helpTooltip": {
+              "text": "A respawn pad that can be used to respawn the player when they die. It can work together with the health bar smart item."
+            },
+            "version": 1
           }
         }
       }

@@ -112,7 +112,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       rightContent={
         <InfoTooltip
           text="More information related the tweens in the following link."
-          link="https://docs.decentraland.org/creator/development-guide/sdk7/move-entities"
+          link="https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/move-entities"
           type="help"
         />
       }

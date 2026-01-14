@@ -117,7 +117,17 @@ const TeleportPlayerAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
           />
         </Block>
       ) : (
-        <Block label="World Name">
+        <Block
+          label={
+            <>
+              World Name{' '}
+              <InfoTooltip
+                text="Enter the World name (realm) where players will be teleported. Format: worldname.dcl.eth or worldname.eth"
+                position="top center"
+              />
+            </>
+          }
+        >
           <TextField
             type="text"
             value={payload.realm || ''}

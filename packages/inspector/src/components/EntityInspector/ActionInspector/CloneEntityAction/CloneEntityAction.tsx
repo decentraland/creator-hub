@@ -1,8 +1,8 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
 import { type Vector3 } from '@dcl/ecs-math';
 import { recursiveCheck } from '../../../../lib/utils/deep-equal';
-import { TextField } from '../../../ui';
+import { TextField, InfoTooltip } from '../../../ui';
 import type { Props } from './types';
 
 import './CloneEntityAction.css';
@@ -80,30 +80,45 @@ const CloneEntityAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
     [payload, handleUpdate],
   );
 
+  const renderPositionInfo = useMemo(
+    () => (
+      <InfoTooltip
+        text="Position where the cloned entity will be placed, relative to the scene origin. X: left/right, Y: up/down, Z: forward/backward."
+        position="top center"
+      />
+    ),
+    [],
+  );
+
   return (
     <div className="CloneEntityActionContainer">
       <div className="row">
-        <TextField
-          leftLabel="X"
-          type="number"
-          value={payload.position?.x}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangePositionX(e)}
-          autoSelect
-        />
-        <TextField
-          leftLabel="Y"
-          type="number"
-          value={payload.position?.y}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangePositionY(e)}
-          autoSelect
-        />
-        <TextField
-          leftLabel="Z"
-          type="number"
-          value={payload.position?.z}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangePositionZ(e)}
-          autoSelect
-        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+          <div style={{ flex: 1, display: 'flex', gap: '8px' }}>
+            <TextField
+              leftLabel="X"
+              type="number"
+              value={payload.position?.x}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangePositionX(e)}
+              autoSelect
+            />
+            <TextField
+              leftLabel="Y"
+              type="number"
+              value={payload.position?.y}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangePositionY(e)}
+              autoSelect
+            />
+            <TextField
+              leftLabel="Z"
+              type="number"
+              value={payload.position?.z}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangePositionZ(e)}
+              autoSelect
+            />
+          </div>
+          {renderPositionInfo}
+        </div>
       </div>
     </div>
   );

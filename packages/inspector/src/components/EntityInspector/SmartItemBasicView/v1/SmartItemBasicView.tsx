@@ -99,7 +99,7 @@ const SmartItemBasicView = withSdk<Props>(({ sdk, entity }) => {
               rightContent={
                 <InfoTooltip
                   text="Admin Tools enables a whole set of in-world actions for special admin users."
-                  link="https://docs.decentraland.org/creator/editor/scene-admin/"
+                  link="https://docs.decentraland.org/creator/scene-editor/operate-live/scene-admin"
                   type="help"
                 />
               }
