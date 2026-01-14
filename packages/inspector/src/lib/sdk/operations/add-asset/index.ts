@@ -319,6 +319,17 @@ export function addAsset(engine: IEngine) {
                     });
                     break;
                   }
+                  case ActionType.SHOW_IMAGE: {
+                    const payload = getPayload<ActionType.SHOW_IMAGE>(action);
+                    newValue.push({
+                      ...action,
+                      jsonPayload: getJson<ActionType.SHOW_IMAGE>({
+                        ...payload,
+                        src: payload.src.replace('{assetPath}', base),
+                      }),
+                    });
+                    break;
+                  }
                   case ActionType.CHANGE_CAMERA: {
                     try {
                       const payload = getPayload<ActionType.CHANGE_CAMERA>(action);
