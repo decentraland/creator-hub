@@ -124,7 +124,11 @@ const FileUploadField: React.FC<Props> = ({
       accept: [DropTypesEnum.LocalAsset],
       drop: ({ value, context }: LocalAssetDrop, monitor) => {
         if (monitor.didDrop()) return;
-        const node = context.tree.get(value)!;
+        const node = context?.tree?.get(value);
+        if (!node) {
+          setDropError(true);
+          return;
+        }
         const element = getNode(node, context.tree, isValid);
         if (element) {
           handleDrop(withAssetDir(element.asset.src));
@@ -134,8 +138,8 @@ const FileUploadField: React.FC<Props> = ({
         }
       },
       canDrop: ({ value, context }: LocalAssetDrop) => {
-        const node = context.tree.get(value)!;
-        return !!getNode(node, context.tree, isValid);
+        const node = context?.tree?.get(value);
+        return !!node && !!getNode(node, context.tree, isValid);
       },
       collect: monitor => ({
         isHover: monitor.canDrop() && monitor.isOver(),

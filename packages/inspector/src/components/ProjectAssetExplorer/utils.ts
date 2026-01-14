@@ -76,8 +76,8 @@ export function getFullNodePath(item: AssetNode | TreeNode): string {
   return path;
 }
 
-export function isAssetNode(node: AssetNode | TreeNode): node is AssetNodeItem {
-  return node.type === 'asset';
+export function isAssetNode(node: AssetNode | TreeNode | undefined | null): node is AssetNodeItem {
+  return !!node && node.type === 'asset';
 }
 
 export const DEFAULT_FILTERS: Filter[] = [Filter.All /* Filter.Recents */];
