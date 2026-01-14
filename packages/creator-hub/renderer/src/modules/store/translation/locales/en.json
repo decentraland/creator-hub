@@ -332,24 +332,6 @@
         "timeout": "Update check timed out.\nPlease check your connection and try again."
       }
     },
-    "worlds_storage": {
-      "your_storage": "Your Storage",
-      "total_available_storage": "TOTAL AVAILABLE STORAGE",
-      "mana": "MANA",
-      "mana_earn_storage": "Earn 100 Mb of storage per 2,000 tokens (Polygon or Ethereum).",
-      "mana_holdings": "You have {mbs} Mb thanks to holding {owned} MANA tokens.",
-      "mana_buy": "BUY MANA",
-      "lands": "LANDs",
-      "lands_earn_storage": "Earn 100 Mb of storage per LAND.",
-      "lands_holdings": "You have {mbs} Mb thanks to holding {owned} LANDs.",
-      "lands_buy": "BUY LAND",
-      "names": "NAMEs",
-      "names_earn_storage": "Earn 100 Mb of storage per NAME.",
-      "names_holdings": "You have {mbs} Mb thanks to holding {owned} Decentraland NAMEs.",
-      "names_buy": "BUY NAME",
-      "proposal": "These storage rules were voted on and passed in a governance DAO proposal.",
-      "learn_more": "LEARN MORE"
-    },
     "world_settings": {
       "title": "World Settings - {worldName}",
       "tabs": {
@@ -360,126 +342,14 @@
           "label": "Layout"
         },
         "general": {
-          "label": "Misc."
-        }
-      },
-      "general": {
-        "world_spawn_coordinate": "World Spawn Coordinate",
-        "position": "Position",
-        "world_skybox": "World Skybox",
-        "auto_skybox": "Auto (decentraland time)",
-        "max_offset": "Max Offset",
-        "general": "General",
-        "single_player": "Single Player"
-      },
-      "details": {
-        "world_title": "World Title",
-        "description": "Description",
-        "age_rating": "Age Rating",
-        "categories": "Categories",
-        "author": "Author (Optional)",
-        "email": "Email (Optional)",
-        "thumbnail": "Thumbnail",
-        "replace_image": "Replace Image",
-        "set_image": "Choose image",
-        "no_image": "No image set",
-        "age_rating_options": {
-          "everyone": "E (Everyone, PG 13+)",
-          "teen": "T (Teens, PG 13+)",
-          "adult": "A (Adults, PG 18+)",
-          "restricted": "R (Restricted, PG 18+)"
+          "label": "General"
         },
-        "categories_options": {
-          "art": "🎨 Art",
-          "game": "🕹️ Game",
-          "casino": "🃏 Casino",
-          "social": "👥 Social",
-          "music": "🎶 Music",
-          "fashion": "👠 Fashion",
-          "crypto": "🪙 Crypto",
-          "education": "📚 Education",
-          "shop": "🛍️ Shop",
-          "business": "🏢 Business",
-          "sports": "🏅 Sports"
-        }
-      },
-      "layout": {
-        "world_layout": {
-          "title": "World Layout",
-          "world_size": "World size: {size}"
+        "variables": {
+          "label": "Variables"
         },
-        "multi_scene_title": "Multi-Scene World (Advanced)",
-        "multi_scene_description": "Allow your world to contain more than 1 scene.\nTotal world size will depend on your published world layout.",
-        "empty_world": {
-          "title": "No scene published in this world.",
-          "description": "You can add any scene by publishing it within this domain.",
-          "view_scenes": "View Scenes"
-        },
-        "current_world": "Current World",
-        "title_placeholder": "World Title",
-        "scene_title_placeholder": "Scene Title",
-        "scenes_count": "{count} {count, plural, one {scene} other {scenes}}",
-        "parcels_count": "{count} {count, plural, one {parcel} other {parcels}}",
-        "world_map": "World Map",
-        "scenes_title": "Scenes",
-        "actions": {
-          "edit_scene": "Edit Scene",
-          "unpublish": "Remove from World"
+        "permissions": {
+          "label": "Permissions"
         }
-      }
-    },
-    "world_permissions": {
-      "tabs": {
-        "access": {
-          "label": "Access"
-        },
-        "collaborators": {
-          "label": "Collaborators"
-        }
-      },
-      "title": "Permissions - {worldName}",
-      "invalid_address": "Invalid address",
-      "done": "Done",
-      "access": {
-        "description": "Manage who can access your World by toggling\nbetween <span>\"Private\"</span> and <span>\"Public\"</span>.",
-        "subtitle": "In <span>Private mode</span>, you can grant access to a max of 100 addresses (Decentraland users). Please note, if you revert to <span>Public mode</span>, your list of approved addresses will be erased.",
-        "warning": {
-          "title": "Warning",
-          "description": "If you revert to Public mode, your list of approved addresses will be erased."
-        },
-        "empty_list": "You haven't approved any addresses yet",
-        "public": "Public",
-        "private": "Private",
-        "approved_addresses": "Approved Addresses {number}",
-        "add_address": "Add address",
-        "actions": {
-          "remove": "Remove"
-        }
-      },
-      "collaborators": {
-        "description": "<span>Add up to 10 addresses</span> (Decentraland users) as collaborators and manage their permissions to deploy or stream into your World.",
-        "empty_list": "You haven't added any collaborators/addresses yet",
-        "add_collaborator": "Add collaborator",
-        "column_name_label": "Collaborators {number}",
-        "column_stream_label": "Stream",
-        "column_stream_tooltip": "User will be able to stream content into your World",
-        "column_deploy_label": "Location",
-        "column_deploy_tooltip": "User will be able to deploy new scenes to your World",
-        "all_parcels": "All Parcels",
-        "deployment": {
-          "world_wide": "All Parcels",
-          "parcels": "Custom Coordinates",
-          "none": "None"
-        },
-        "parcels_count": "{count} Parcels",
-        "actions": {
-          "remove": "Remove"
-        }
-      },
-      "parcels": {
-        "title": "Custom Coordinates",
-        "description": "Click individual tiles to include/exclude them in the layout.",
-        "parcels_count": "{count} Parcels"
       }
     },
     "create_project": {
@@ -749,6 +619,61 @@
     "errors": {
       "NO_INTERNET_CONNECTION": "No internet connection available",
       "REQUEST_TIMEOUT": "Request timed out. Please check your connection and try again."
+    }
+  },
+  "manage": {
+    "header": {
+      "title": "Manage"
+    },
+    "items": "{count} {count, plural, one {item} other {items}}",
+    "search": "Search",
+    "sort_by": "Sort by",
+    "sort": {
+      "latest": "Last published"
+    },
+    "empty_search": {
+      "title": "No results found",
+      "description": "Try adjusting your search to find what you're looking for."
+    },
+    "no_projects": {
+      "title": "You don't have any scenes yet",
+      "description": "Create and manage your scenes for your LANDs and Worlds. Start building now!"
+    },
+    "cards": {
+      "published": "Published",
+      "published_scene": "Published Scene",
+      "roles": {
+        "owner": "Owner",
+        "collaborator": "Collaborator",
+        "operator": "Operator",
+        "tenant": "Tenant"
+      },
+      "menu": {
+        "jump_in": "Jump In",
+        "copy_url": "Copy URL",
+        "edit_name": "Edit Name",
+        "permissions": "Permissions",
+        "parcel": "Parcel",
+        "unpublish": "Unpublish"
+      },
+      "no_scene": {
+        "title": "No scene published",
+        "view_scenes": "VIEW SCENES"
+      },
+      "worlds": {
+        "world": "World",
+        "multi-scene": "Multi-scene",
+        "scenes_count": "{count} {count, plural, one {scene} other {scenes}}",
+        "scene_settings": "Scene Settings",
+        "world_settings": "Settings",
+        "published_world": "Published World"
+      },
+      "land": {
+        "land": "LAND",
+        "land_settings": "LAND Settings",
+        "parcels_count": "{count} {count, plural, one {parcel} other {parcels}}",
+        "land_coords": "{coordX}, {coordY}"
+      }
     }
   }
 }
