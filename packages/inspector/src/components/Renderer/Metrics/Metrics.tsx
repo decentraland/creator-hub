@@ -26,7 +26,7 @@ import {
 } from '../../../redux/scene-metrics';
 import type { SceneMetrics } from '../../../redux/scene-metrics/types';
 import { Button } from '../../Button';
-import { getSceneLimits } from './utils';
+import { collectTexturesFromMaterial, getSceneLimits } from './utils';
 
 import './Metrics.css';
 
@@ -73,37 +73,6 @@ const IGNORE_MESHES = [
   'axis_z_line',
   'z_cone_axis',
 ];
-
-/**
- * Extracts textures from a material and adds them to the textures set.
- * Materials can have multiple texture properties (albedoTexture, normalTexture, etc.)
- */
-function collectTexturesFromMaterial(material: Material, texturesSet: Set<string>): void {
-  for (const key in material) {
-    const value = (material as any)[key];
-    if (value && typeof value === 'object' && 'getInternalTexture' in value) {
-      // This is a texture
-      const texture = value;
-      if (IGNORE_TEXTURES.includes(texture.name)) continue;
-
-      const isTexture = texture instanceof Texture;
-      const url = isTexture ? (texture as Texture).url : texture.name || '';
-
-      // Filter out editor-generated data URIs
-      if (url && url.startsWith('data:') && url.includes('EnvironmentBRDFTexture')) continue;
-
-      // Use URL as primary key for deduplication
-      if (url) {
-        texturesSet.add(url);
-      } else {
-        const internalTexture = texture.getInternalTexture();
-        if (internalTexture?.uniqueId != null) {
-          texturesSet.add(`__uniqueId_${internalTexture.uniqueId}`);
-        }
-      }
-    }
-  }
-}
 
 const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
   const ROOT = sdk.engine.RootEntity;
@@ -163,7 +132,7 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
             const materialId = subMaterial.id;
             if (!IGNORE_MATERIALS.includes(materialId)) {
               materialsFromMeshes.add(materialId);
-              collectTexturesFromMaterial(subMaterial, texturesFromMaterials);
+              collectTexturesFromMaterial(subMaterial, texturesFromMaterials, IGNORE_TEXTURES);
             }
           }
         });
@@ -172,21 +141,18 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
         const materialId = mesh.material.id;
         if (!IGNORE_MATERIALS.includes(materialId)) {
           materialsFromMeshes.add(materialId);
-          collectTexturesFromMaterial(mesh.material, texturesFromMaterials);
+          collectTexturesFromMaterial(mesh.material, texturesFromMaterials, IGNORE_TEXTURES);
         }
       }
     });
-
-    const uniqueMaterials = materialsFromMeshes;
-    const uniqueTextures = texturesFromMaterials;
 
     dispatch(
       setMetrics({
         triangles,
         entities: getNodes().length,
         bodies: meshes.length,
-        materials: uniqueMaterials.size,
-        textures: uniqueTextures.size,
+        materials: materialsFromMeshes.size,
+        textures: texturesFromMaterials.size,
       }),
     );
   }, [sdk, dispatch, getNodes, setMetrics]);
