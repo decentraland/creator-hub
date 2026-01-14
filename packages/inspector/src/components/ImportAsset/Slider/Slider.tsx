@@ -1,23 +1,21 @@
 import { useCallback, useMemo, useState } from 'react';
 
-import { AssetSlides } from './AssetSlides';
-
-import { determineAssetType, formatFileName } from '../utils';
-
-import { Asset } from '../types';
-import { PropTypes, Thumbnails } from './types';
-
-import './Slider.css';
 import { Error } from '../Error';
 import { Button } from '../../Button';
+import type { Asset } from '../types';
+import { determineAssetType, formatFileName } from '../utils';
+import { AssetSlides } from './AssetSlides';
 import { useSliderAssets } from './useSliderAssets';
+import type { PropTypes, Thumbnails } from './types';
+
+import './Slider.css';
 
 enum ImportStep {
   UPLOAD = 'upload',
   CONFIRM = 'confirm',
 }
 
-export function Slider({ assets, onSubmit, isNameValid }: PropTypes) {
+export function Slider({ assets, onSubmit, isNameAvailable, isImporting = false }: PropTypes) {
   const { assets: uploadedAssets, setAssets: setUploadedAssets } = useSliderAssets(assets);
   const [slide, setSlide] = useState(0);
   const [screenshots, setScreenshots] = useState<Thumbnails>({});
@@ -29,7 +27,7 @@ export function Slider({ assets, onSubmit, isNameValid }: PropTypes) {
 
     for (const asset of uploadedAssets) {
       const name = formatFileName(asset);
-      if (all.has(name) || !isNameValid(asset, name)) {
+      if (all.has(name) || !isNameAvailable(asset, name)) {
         invalid.add(name);
       } else {
         all.add(name);
@@ -37,7 +35,7 @@ export function Slider({ assets, onSubmit, isNameValid }: PropTypes) {
     }
 
     return invalid;
-  }, [uploadedAssets]);
+  }, [uploadedAssets, isNameAvailable]);
 
   const handleSubmit = useCallback(() => {
     onSubmit(
@@ -46,7 +44,7 @@ export function Slider({ assets, onSubmit, isNameValid }: PropTypes) {
         thumbnail: screenshots[$.blob.name],
       })),
     );
-  }, [uploadedAssets, screenshots, invalidNames, onSubmit]);
+  }, [uploadedAssets, screenshots, onSubmit]);
 
   const handleConfirmImport = useCallback(() => {
     if (invalidNames.size > 0) {
@@ -59,31 +57,25 @@ export function Slider({ assets, onSubmit, isNameValid }: PropTypes) {
   const handleScreenshot = useCallback(
     (file: Asset) => (thumbnail: string) => {
       const { name } = file.blob;
-      if (!screenshots[name]) {
-        setScreenshots($ => ({ ...$, [name]: thumbnail }));
-      }
+      setScreenshots(prev => (prev[name] ? prev : { ...prev, [name]: thumbnail }));
     },
-    [screenshots],
+    [],
   );
 
   const handleNameChange = useCallback(
     (fileIdx: number) => (newName: string) => {
-      setUploadedAssets(
-        uploadedAssets.map(($, i) => {
-          if (fileIdx !== i) return $;
-          return { ...$, name: newName };
-        }),
+      setUploadedAssets(prev =>
+        prev.map((asset, i) => (i === fileIdx ? { ...asset, name: newName } : asset)),
       );
     },
-    [uploadedAssets],
+    [setUploadedAssets],
   );
 
-  const manyAssets = useMemo(() => uploadedAssets.length > 1, [uploadedAssets]);
-  const countText = useMemo(() => `${slide + 1}/${uploadedAssets.length}`, [slide, uploadedAssets]);
-  const importText = useMemo(
-    () => `IMPORT${manyAssets ? ` ALL (${uploadedAssets.length})` : ''}`,
-    [manyAssets, uploadedAssets.length],
-  );
+  const manyAssets = uploadedAssets.length > 1;
+  const countText = `${slide + 1}/${uploadedAssets.length}`;
+  const importText = isImporting
+    ? 'IMPORTING...'
+    : `IMPORT${manyAssets ? ` ALL (${uploadedAssets.length})` : ''}`;
 
   const allScreenshotsTaken = useMemo(() => {
     const neededScreenshots = uploadedAssets.filter($ => {
@@ -93,24 +85,24 @@ export function Slider({ assets, onSubmit, isNameValid }: PropTypes) {
     return neededScreenshots.length === Object.keys(screenshots).length;
   }, [uploadedAssets, screenshots]);
 
-  const getInvalidAssets = useCallback(() => {
+  const isNameUnique = useCallback(
+    (asset: Asset) => !invalidNames.has(formatFileName(asset)),
+    [invalidNames],
+  );
+
+  const invalidAssets = useMemo(() => {
     return uploadedAssets
       .filter(asset => invalidNames.has(formatFileName(asset)))
       .map(asset => ({
         ...asset,
-        error: {
-          type: 'name',
-        },
+        error: { type: 'name' },
       })) as Asset[];
   }, [uploadedAssets, invalidNames]);
 
-  const isNameUnique = useCallback(
-    (asset: Asset) => {
-      const name = formatFileName(asset);
-      return !invalidNames.has(name);
-    },
-    [invalidNames],
-  );
+  const invalidAssetsErrorMessage =
+    invalidAssets.length > 1
+      ? 'These assets already exist in your Assets folder'
+      : 'This asset already exists in your Assets folder';
 
   if (!uploadedAssets.length) return null;
 
@@ -132,7 +124,7 @@ export function Slider({ assets, onSubmit, isNameValid }: PropTypes) {
             type="danger"
             size="big"
             onClick={handleConfirmImport}
-            disabled={!allScreenshotsTaken}
+            disabled={!allScreenshotsTaken || isImporting}
           >
             {importText}
           </Button>
@@ -140,10 +132,10 @@ export function Slider({ assets, onSubmit, isNameValid }: PropTypes) {
       )}
       {step === ImportStep.CONFIRM && (
         <>
-          <h2>Replace assets?</h2>
+          <h2>Replace Assets?</h2>
           <Error
-            assets={getInvalidAssets()}
-            errorMessage="This asset already exists in your Assets folder"
+            assets={invalidAssets}
+            errorMessage={invalidAssetsErrorMessage}
             primaryAction={{ name: 'Replace', onClick: handleSubmit }}
             secondaryAction={{ name: 'Back', onClick: () => setStep(ImportStep.UPLOAD) }}
           />
