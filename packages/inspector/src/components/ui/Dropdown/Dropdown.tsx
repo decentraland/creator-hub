@@ -22,7 +22,7 @@ import {
 import type { Props } from './types';
 import './Dropdown.css';
 
-const Dropdown: React.FC<Props> = props => {
+const Dropdown = React.forwardRef<HTMLInputElement, Props>((props, parentRef) => {
   const {
     className,
     disabled,
@@ -185,6 +185,7 @@ const Dropdown: React.FC<Props> = props => {
           error: !!error,
         })}
         onClick={handleClick}
+        ref={parentRef}
       >
         {isField ? renderPlaceholder() : trigger}
         {showOptions ? (
@@ -206,6 +207,6 @@ const Dropdown: React.FC<Props> = props => {
       {renderMessage()}
     </div>
   );
-};
+});
 
 export default React.memo(Dropdown);

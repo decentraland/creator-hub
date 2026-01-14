@@ -6,8 +6,8 @@ import { AssetPreview } from '../../AssetPreview';
 import { Input } from '../../Input';
 
 import { getAssetSize, getAssetResources } from '../utils';
-import { Asset } from '../types';
-import { AssetWithEmote } from './types';
+import type { Asset } from '../types';
+import type { AssetWithEmote } from './types';
 
 interface AssetSlidesProps {
   uploadedAssets: AssetWithEmote[];

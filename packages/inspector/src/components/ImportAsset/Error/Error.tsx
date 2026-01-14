@@ -1,18 +1,17 @@
 import { useCallback } from 'react';
+import cx from 'classnames';
 
 import { InfoTooltip } from '../../ui';
 import { formatFileName } from '../utils';
 
-import { PropTypes } from './types';
-
-import './Error.css';
-import { ValidationError } from '../types';
-
-import cx from 'classnames';
 import { Button } from '../../Button';
 
-export function Error(props: PropTypes) {
-  const { assets, errorMessage, primaryAction, secondaryAction } = props;
+import type { ValidationError } from '../types';
+import type { PropTypes } from './types';
+
+import './Error.css';
+
+export function Error({ assets, errorMessage, primaryAction, secondaryAction }: PropTypes) {
   const getErrorMessage = useCallback((error: ValidationError): string => {
     switch (error?.type) {
       case 'type':

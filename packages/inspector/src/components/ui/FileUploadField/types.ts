@@ -1,15 +1,17 @@
 import type { TreeNode } from '../../ProjectAssetExplorer/ProjectView';
 import type { Props as TextFieldProps } from '../TextField/types';
+import type { Props as DropdownProps } from '../Dropdown/types';
 
 export type Props = Omit<TextFieldProps, 'accept' | 'type' | 'onDrop'> & {
   accept?: string[];
-  isEnabledFileExplorer?: boolean;
   onDrop?: (path: string) => void | Promise<void>;
   onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
   isValidFile?: (node: TreeNode) => boolean;
   showPreview?: boolean;
   acceptURLs?: boolean;
+  isEnabledFileExplorer?: boolean;
   openFileExplorerOnMount?: boolean;
+  options?: DropdownProps['options'];
 };
 
 export const ACCEPTED_FILE_TYPES = {

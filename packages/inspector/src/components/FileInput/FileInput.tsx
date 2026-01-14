@@ -1,7 +1,7 @@
 import React, { useImperativeHandle, useCallback, useEffect, useRef } from 'react';
 import { useDrop } from 'react-dnd';
 import { NativeTypes } from 'react-dnd-html5-backend';
-import { PropTypes } from './types';
+import type { PropTypes } from './types';
 
 function parseAccept(accept: PropTypes['accept']) {
   let value = '';

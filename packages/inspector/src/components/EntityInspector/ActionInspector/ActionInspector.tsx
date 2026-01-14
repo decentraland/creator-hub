@@ -1270,12 +1270,10 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
                 label="Select an Action"
                 placeholder="Select an Action"
                 disabled={availableActions.length === 0}
-                options={[
-                  ...availableActions.map(availableAction => ({
-                    label: dynamicActionMapOption[availableAction] || availableAction,
-                    value: availableAction,
-                  })),
-                ]}
+                options={availableActions.map(availableAction => ({
+                  label: dynamicActionMapOption[availableAction] || availableAction,
+                  value: availableAction,
+                }))}
                 value={action.type}
                 searchable
                 onChange={e => handleChangeType(e, idx)}
