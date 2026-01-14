@@ -4,6 +4,7 @@
   "AUTH_SERVER_URL": "https://auth-api.decentraland.zone",
   "AUTH_DAPP_URL": "https://decentraland.zone/auth",
   "WEB_BUILDER_URL": "https://decentraland.zone/builder",
+  "EXPLORER_URL": "https://decentraland.zone/play",
   "PEER_URL": "https://peer.decentraland.zone",
   "WORLDS_CONTENT_SERVER_URL": "https://worlds-content-server.decentraland.zone",
   "PEER_TESTING_URL": "https://peer-testing.decentraland.zone",

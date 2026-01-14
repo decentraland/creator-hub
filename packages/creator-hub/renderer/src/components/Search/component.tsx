@@ -5,7 +5,7 @@ import type { OutlinedInputProps } from 'decentraland-ui2';
 import { debounce } from '/shared/utils';
 import './styles.css';
 
-type Props = OutlinedInputProps & {
+type Props = Omit<OutlinedInputProps, 'onChange'> & {
   onChange?: (value: string) => void;
 };
 
