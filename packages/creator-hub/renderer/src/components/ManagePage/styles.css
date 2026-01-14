@@ -1,0 +1,13 @@
+.ManagePage .Container {
+  flex-flow: column;
+  gap: 32px;
+  padding-bottom: 32px;
+}
+
+.ManagePage .FiltersBar {
+  margin: 0;
+}
+
+.ManagePage .FiltersBar .Select {
+  margin-right: 16px;
+}

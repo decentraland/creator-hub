@@ -5,7 +5,7 @@ import { Modal } from 'decentraland-ui2/dist/components/Modal/Modal';
 import { Box, IconButton, Typography } from 'decentraland-ui2';
 import './styles.css';
 
-type Props<T> = {
+export type Props<T> = {
   open: boolean;
   onClose: () => void;
   title: string;
@@ -70,4 +70,4 @@ function TabsModal<T>({
   );
 }
 
-export default TabsModal;
+export { TabsModal };
