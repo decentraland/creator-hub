@@ -107,15 +107,16 @@ export type WorldConfiguration = {
 };
 
 export type WorldScene = {
+  id: string;
   worldName: string;
   deployer: string;
   deploymentAuthChain: AuthChain;
   entity: Entity;
   entityId: IPFSv2;
   parcels: string[];
-  size: string;
-  thumbnailUrl?: string; // This is a computed field, not part of the API response
-  createdAt: string; // ISO 8601 string
+  size: bigint;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 export type WorldScenes = {
@@ -124,43 +125,8 @@ export type WorldScenes = {
 };
 
 export type WorldSettings = {
-  title?: string;
-  description?: string;
-  thumbnailUrl?: string;
-  contentRating?: SceneAgeRating;
-  categories?: SceneCategory[];
-  spawnCoordinates?: string;
-  skyboxTime?: number | null;
-  singlePlayer?: boolean;
-  showInPlaces?: boolean;
+  spawnCoordinates: string;
 };
-
-export enum SceneAgeRating {
-  RatingPending = 'RP',
-  Everyone = 'E',
-  Teen = 'T',
-  Adult = 'A',
-  Restricted = 'R',
-}
-
-export enum SceneCategory {
-  ART = 'art',
-  GAME = 'game',
-  CASINO = 'casino',
-  SOCIAL = 'social',
-  MUSIC = 'music',
-  FASHION = 'fashion',
-  CRYPTO = 'crypto',
-  EDUCATION = 'education',
-  SHOP = 'shop',
-  BUSINESS = 'business',
-  SPORTS = 'sports',
-}
-
-export enum WorldRoleType {
-  OWNER = 'owner',
-  COLLABORATOR = 'collaborator',
-}
 
 export type WorldInfo = {
   healthy: boolean;
@@ -279,34 +245,42 @@ export class Worlds {
   }
 
   public async fetchWorldScenes(worldName: string) {
-    try {
-      const result = await fetch(`${this.url}/world/${worldName}/scenes`);
-      if (result.ok) {
-        const json = await result.json();
-        return json as WorldScenes;
-      } else {
-        return null;
-      }
-    } catch (_) {
-      // Silent fail - world may not have scenes
+    const result = await fetch(`${this.url}/world/${worldName}/scenes`);
+    if (result.ok) {
+      const json = await result.json();
+      return json as WorldScenes;
+    } else {
+      return null;
     }
-
-    return null;
   }
 
   public async fetchWorldSettings(
     worldName: string,
-    limit: number = 100,
-    offset: number = 0,
-    coordinates: string[] = [],
+    limit?: number,
+    offset?: number,
+    coordinates?: string[],
   ) {
-    const urlParams = new URLSearchParams({
-      limit: limit.toString(),
-      offset: offset.toString(),
-      coordinates: coordinates.toString(),
-    });
+    const result = await fetch(
+      `${this.url}/world/${worldName}/settings?limit=${limit ?? ''}&offset=${offset ?? 0}&coordinates=${coordinates?.join(',') ?? ''}`,
+    );
+    if (result.ok) {
+      const json = await result.json();
+      return json as WorldSettings;
+    } else {
+      return null;
+    }
+  }
 
-    const result = await fetch(`${this.url}/world/${worldName}/settings?${urlParams.toString()}`);
+  public async putWorldSettings(worldName: string, settings: Partial<WorldSettings>) {
+    const result = await fetch(`${this.url}/world/${worldName}/settings`, {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    });
+    return result.status === 204;
+  }
+
+  public fetchWalletStats = async (address: string) => {
+    const result = await fetch(`${this.url}/wallet/${address}/stats`);
     if (result.ok) {
       const json = await result.json();
       return fromSnakeToCamel(json) as WorldSettings;
