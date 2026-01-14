@@ -7,6 +7,7 @@ import { getComponentName, getEnabledComponents } from '../../../hooks/sdk/useEn
 const DISABLED_COMPONENTS: string[] = [
   ComponentName.ACTIONS,
   ComponentName.TRIGGERS,
+  ComponentName.ACTION_TYPES,
   CoreComponents.NETWORK_ENTITY,
   CoreComponents.SYNC_COMPONENTS,
 ];
