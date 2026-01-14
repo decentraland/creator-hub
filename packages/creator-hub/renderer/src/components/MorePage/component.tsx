@@ -4,6 +4,7 @@ import { Box, Button, Card, CardContent, Container, Grid, Typography } from 'dec
 
 import { misc } from '#preload';
 
+import { config } from '/@/config';
 import { t } from '/@/modules/store/translation/utils';
 
 import EditorPng from '/assets/images/editor.png';
@@ -17,7 +18,7 @@ import { Navbar, NavbarItem } from '../Navbar';
 
 import './styles.css';
 
-const BUILDER_URL = 'https://decentraland.org/builder';
+const BUILDER_URL = config.get('WEB_BUILDER_URL');
 const SUBMIT_EVENT_URL = 'https://decentraland.org/events/submit';
 
 const HorizontalCardWithImage: React.FC<{
