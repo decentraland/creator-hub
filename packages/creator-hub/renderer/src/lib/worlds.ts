@@ -1,5 +1,6 @@
-import type { AuthIdentity } from '@dcl/crypto';
+import type { AuthIdentity, AuthChain } from '@dcl/crypto';
 import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
+import type { Entity, IPFSv2 } from '@dcl/schemas';
 import fetch from 'decentraland-crypto-fetch';
 
 import { config } from '/@/config';
@@ -70,6 +71,28 @@ export type Point = {
 
 export type WorldConfiguration = {
   name: string;
+};
+
+export type WorldScene = {
+  id: string;
+  worldName: string;
+  deployer: string;
+  deploymentAuthChain: AuthChain;
+  entity: Entity;
+  entityId: IPFSv2;
+  parcels: string[];
+  size: bigint;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type WorldScenes = {
+  scenes: WorldScene[];
+  total: number;
+};
+
+export type WorldSettings = {
+  spawnCoordinates: string;
 };
 
 export type WorldInfo = {
@@ -169,6 +192,41 @@ export class Worlds {
     }
 
     return null;
+  }
+
+  public async fetchWorldScenes(worldName: string) {
+    const result = await fetch(`${this.url}/world/${worldName}/scenes`);
+    if (result.ok) {
+      const json = await result.json();
+      return json as WorldScenes;
+    } else {
+      return null;
+    }
+  }
+
+  public async fetchWorldSettings(
+    worldName: string,
+    limit?: number,
+    offset?: number,
+    coordinates?: string[],
+  ) {
+    const result = await fetch(
+      `${this.url}/world/${worldName}/settings?limit=${limit ?? ''}&offset=${offset ?? 0}&coordinates=${coordinates?.join(',') ?? ''}`,
+    );
+    if (result.ok) {
+      const json = await result.json();
+      return json as WorldSettings;
+    } else {
+      return null;
+    }
+  }
+
+  public async putWorldSettings(worldName: string, settings: Partial<WorldSettings>) {
+    const result = await fetch(`${this.url}/world/${worldName}/settings`, {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    });
+    return result.status === 204;
   }
 
   public fetchWalletStats = async (address: string) => {
