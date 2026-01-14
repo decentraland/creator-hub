@@ -7,5 +7,5 @@
 }
 
 .Dropdown li.MuiMenuItem-root svg {
-  color: var(--text-on-secondary);
+  color: rgb(255, 255, 255, 0.6);
 }
