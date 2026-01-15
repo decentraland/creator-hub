@@ -1,0 +1,53 @@
+.StorageUsed {
+  width: 256px;
+  height: max-content;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  padding: 16px;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--dcl-silver);
+}
+
+.StorageUsed .MainTitle {
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.StorageUsed .Description {
+  margin-top: 16px;
+  font-size: 14px;
+  color: var(--light-gray);
+}
+
+.StorageUsed .DetailsButton {
+  width: max-content;
+  margin-top: 8px;
+}
+
+.StorageUsed .Progress {
+  margin: 24px auto;
+  position: relative;
+}
+
+.StorageUsed .Progress::before {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 24px solid rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+  z-index: -1;
+}
+
+.StorageUsed .ProgressValues {
+  font-size: 14px;
+  margin: 0 auto;
+}
+
+.StorageUsed .ProgressValues .UsedValue {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--primary);
+}

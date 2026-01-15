@@ -1,0 +1,77 @@
+.WorldsYourStorageModal .MuiTypography-h5 {
+  width: 100%;
+  text-align: center;
+  padding-left: 3rem;
+}
+
+.WorldsYourStorageModal .TotalStorage {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
+
+.WorldsYourStorageModal .Mbs {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.WorldsYourStorageModal .Asset {
+  margin: 3rem 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.WorldsYourStorageModal .Asset .Name {
+  font-weight: 700;
+}
+
+.WorldsYourStorageModal .Asset .Texts {
+  display: flex;
+  flex-direction: column;
+}
+
+.WorldsYourStorageModal .Asset .MuiButton-root {
+  min-width: 9rem;
+}
+
+.WorldsYourStorageModal .Asset .Subtitle {
+  color: var(--clear-divider);
+}
+
+.WorldsYourStorageModal .Asset .Amount {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.WorldsYourStorageModal .Asset .CheckIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--success);
+}
+
+.WorldsYourStorageModal .Separator {
+  border-color: var(--divider);
+}
+
+.WorldsYourStorageModal .Proposal {
+  text-align: center;
+  font-size: 1rem;
+}
+
+.WorldsYourStorageModal .Proposal .InfoIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  position: relative;
+  top: 0.25rem;
+  margin-right: 0.25rem;
+  color: var(--clear-divider);
+}
+
+.WorldsYourStorageModal .Proposal button {
+  padding: 0 0.4rem;
+}
