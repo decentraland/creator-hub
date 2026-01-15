@@ -1,7 +1,5 @@
 import React, { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Typography } from 'decentraland-ui2';
-import { t } from '/@/modules/store/translation/utils';
 import { WorldSettingsTab, type ManagedProject } from '/shared/types/manage';
 import { PublishedProjectCard } from '../PublishedProjectCard';
 import { WorldSettingsModal } from '../../Modals/WorldSettingsModal';
@@ -46,16 +44,6 @@ const ManagedProjectsList: React.FC<Props> = React.memo(({ projects }) => {
     /// TODO: check if this is the expected behavior
     navigate('/scenes');
   }, [navigate]);
-
-  /// TODO: show different messages when empty with or without search query
-  if (!projects || projects.length === 0) {
-    return (
-      <Box>
-        <Typography variant="h6">{t('manage.no_projects.title')}</Typography>
-        <Typography variant="body1">{t('manage.no_projects.description')}</Typography>
-      </Box>
-    );
-  }
 
   return (
     <div className="ManagedProjectsList">
