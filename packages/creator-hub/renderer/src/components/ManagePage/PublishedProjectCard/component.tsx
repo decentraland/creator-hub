@@ -5,7 +5,7 @@ import PublishedIcon from '@mui/icons-material/Cloud';
 import ParcelsIcon from '@mui/icons-material/Layers';
 import PermissionsIcon from '@mui/icons-material/Lock';
 import { Chip, Typography } from 'decentraland-ui2';
-import { config } from '/@/config';
+import { useSnackbar } from '/@/hooks/useSnackbar';
 import { t } from '/@/modules/store/translation/utils';
 import { misc } from '#preload';
 import { ContentCopy, OpenInNew } from '@mui/icons-material';
@@ -16,7 +16,7 @@ import thumbnailFallbackImage from './thumbnail-fallback.png';
 import { formatName, getJumpInUrl, getLogo, isENSDomain } from './utils';
 import './styles.css';
 
-const BUILDER_URL = config.get('WEB_BUILDER_URL');
+const BUILDER_URL = 'https://decentraland.org/builder';
 
 export type Props = {
   type: ManagedProjectType;
@@ -34,6 +34,8 @@ export type Props = {
 
 const PublishedProjectCard: React.FC<Props> = React.memo(
   ({ name, type, role, publishMetadata, onOpenSettings, onViewScenes }) => {
+    const { pushGeneric } = useSnackbar();
+
     const handleJumpIn = () => {
       const url = getJumpInUrl(name);
       misc.openExternal(url);
@@ -42,10 +44,11 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
     const handleCopyURL = () => {
       const url = getJumpInUrl(name);
       misc.copyToClipboard(url);
+      pushGeneric('success', t('snackbar.generic.url_copied'));
     };
 
     const handleEditName = () => {
-      const subdomain = isENSDomain(name) ? name.split('.')[0] : name;
+      const subdomain = isENSDomain(name) ? name : name.split('.')[0];
       misc.openExternal(`${BUILDER_URL}/names/${subdomain}`); /// TODO: test ENS here
     };
 

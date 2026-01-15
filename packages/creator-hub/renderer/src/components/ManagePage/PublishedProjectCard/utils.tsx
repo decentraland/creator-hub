@@ -40,6 +40,6 @@ export const isENSDomain = (name: string) => {
 
 export const getJumpInUrl = (world: string) => {
   return IS_DEV
-    ? `${EXPLORER_URL}/?realm=${WORLDS_CONTENT_SERVER_URL}/world/${world}&NETWORK=sepolia`
-    : `${EXPLORER_URL}/world/${world}`;
+    ? `https://decentraland.zone/play/?realm=${WORLDS_CONTENT_SERVER_URL}/world/${world}&NETWORK=sepolia`
+    : `https://decentraland.org/play/world/${world}`;
 };
