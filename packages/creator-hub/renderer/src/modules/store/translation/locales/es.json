@@ -527,19 +527,7 @@
       "invalid_scenes_folder": "Carpeta de escenas inválida. Por favor, ingresa una carpeta de escenas válida en la configuración de la aplicación antes de crear una escena.",
       "create_scene_failed": "Ocurrió un error al crear la escena. Por favor, inténtalo nuevamente.",
       "run_scene_failed": "Error al cargar el proyecto. Por favor, inténtalo de nuevo.",
-      "url_copied": "URL copiada al portapapeles",
-      "fetch_managed_projects_failed": "Error al cargar los proyectos gestionados",
-      "fetch_world_settings_failed": "Error al cargar la configuración del mundo. Por favor, inténtalo de nuevo.",
-      "fetch_ens_list_failed": "Error al cargar tu lista de Nombres",
-      "fetch_land_list_failed": "Error al cargar tu lista de Tierras",
-      "fetch_world_permissions_failed": "Error al cargar los permisos del mundo. Por favor, inténtalo de nuevo.",
-      "fetch_world_scenes_failed": "Error al cargar las escenas del mundo. Por favor, inténtalo de nuevo.",
-      "update_permissions_failed": "Error al actualizar los permisos del mundo. Por favor, inténtalo de nuevo.",
-      "add_permission_failed": "Error al agregar el permiso de dirección. Por favor, inténtalo de nuevo.",
-      "remove_permission_failed": "Error al eliminar el permiso de dirección. Por favor, inténtalo de nuevo.",
-      "fetch_parcels_permission_failed": "Error al cargar los permisos de parcela. Por favor, inténtalo de nuevo.",
-      "add_parcels_permission_failed": "Error al actualizar los permisos de parcela. Por favor, inténtalo de nuevo.",
-      "remove_parcels_permission_failed": "Error al actualizar los permisos de parcela. Por favor, inténtalo de nuevo."
+      "url_copied": "URL copiada al portapapeles"
     },
     "missing_projects": {
       "title": "{scenes} {scenes, plural, one {escena} other {escenas}} {scenes, plural, one {faltante} other {faltantes}}",

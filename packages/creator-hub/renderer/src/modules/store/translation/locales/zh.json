@@ -527,19 +527,7 @@
       "invalid_scenes_folder": "无效的场景文件夹。请在创建场景之前在设置中配置有效的场景文件夹。",
       "create_scene_failed": "尝试创建场景时发生错误。请重试。",
       "run_scene_failed": "加载项目失败。请重试。",
-      "url_copied": "URL已复制到剪贴板",
-      "fetch_managed_projects_failed": "获取管理项目失败",
-      "fetch_world_settings_failed": "获取世界设置失败。请重试。",
-      "fetch_ens_list_failed": "获取ENS列表失败",
-      "fetch_land_list_failed": "获取土地列表失败",
-      "fetch_world_permissions_failed": "获取世界权限失败。请重试。",
-      "fetch_world_scenes_failed": "获取世界场景失败。请重试。",
-      "update_permissions_failed": "更新世界权限失败。请重试。",
-      "add_permission_failed": "添加地址权限失败。请重试。",
-      "remove_permission_failed": "删除地址权限失败。请重试。",
-      "fetch_parcels_permission_failed": "获取地块权限失败。请重试。",
-      "add_parcels_permission_failed": "更新地块权限失败。请重试。",
-      "remove_parcels_permission_failed": "更新地块权限失败。请重试。"
+      "url_copied": "URL已复制到剪贴板"
     },
     "missing_projects": {
       "title": "{scenes} 丢失的 {scenes, plural, one {场景} other {场景}} 成立",
