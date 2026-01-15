@@ -46,13 +46,12 @@ const FileUploadField: React.FC<Props> = ({
   const [path, setPath] = useState<string | undefined>(value?.toString());
   const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
   const [dropError, setDropError] = useState<boolean>(false);
-  const [pendingUpload, setPendingUpload] = useState<{ path: string; isOnDrop: boolean } | null>(
-    null,
-  );
+  const [pendingUpload, setPendingUpload] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const files = useAppSelector(selectAssetCatalog);
   const dispatch = useAppDispatch();
   const id = useRef(uuidv4());
+  const assetsRefBeforeImport = useRef<unknown>(null);
 
   useEffect(() => {
     setPath(value?.toString());
@@ -61,24 +60,23 @@ const FileUploadField: React.FC<Props> = ({
     }
   }, [value, openFileExplorerOnMount]);
 
-  // Watch for asset catalog changes and trigger callback when pending upload file appears
   useEffect(() => {
     if (!pendingUpload || !files?.assets) return;
 
-    // Check if the pending file now exists in the catalog (filtered by accept extensions)
     const fileExists = files.assets.some(
-      asset => asset.path === pendingUpload.path && accept.some(ext => asset.path.endsWith(ext)),
+      asset => asset.path === pendingUpload && accept.some(ext => asset.path.endsWith(ext)),
     );
 
-    if (fileExists) {
-      if (pendingUpload.isOnDrop) {
-        onDrop?.(pendingUpload.path);
-      } else {
-        onChange?.({
-          target: { value: pendingUpload.path },
-        } as React.ChangeEvent<HTMLInputElement>);
-      }
+    const catalogRefreshed =
+      !!assetsRefBeforeImport.current && files.assets !== assetsRefBeforeImport.current;
+
+    if (fileExists && catalogRefreshed) {
+      const assetPath = pendingUpload;
       setPendingUpload(null);
+      assetsRefBeforeImport.current = null;
+      setPath(assetPath);
+      onDrop?.(assetPath);
+      onChange?.({ target: { value: assetPath } } as React.ChangeEvent<HTMLInputElement>);
     }
   }, [files, pendingUpload, accept, onDrop, onChange]);
 
@@ -129,6 +127,7 @@ const FileUploadField: React.FC<Props> = ({
         if (element) {
           handleDrop(withAssetDir(element.asset.src));
           setDropError(false);
+          setErrorMessage(undefined);
         } else {
           setDropError(true);
         }
@@ -142,7 +141,7 @@ const FileUploadField: React.FC<Props> = ({
         canDrop: monitor.canDrop(),
       }),
     }),
-    [files, isValid],
+    [isValid, handleDrop],
   );
 
   const handleClick = useCallback(() => {
@@ -159,8 +158,8 @@ const FileUploadField: React.FC<Props> = ({
         setPath(formattedValue);
         onChange && onChange(event);
         setDropError(false);
+        setErrorMessage(undefined);
       } else if (value) {
-        // There's a value but it's not a valid file name nor a valid https url.
         setDropError(true);
         setErrorMessage(
           acceptURLs && !isValidHttpsUrl(value)
@@ -169,7 +168,7 @@ const FileUploadField: React.FC<Props> = ({
         );
       }
     },
-    [addBase, setPath, setDropError, acceptURLs, onChange],
+    [addBase, acceptURLs, onChange, isValidFileName],
   );
 
   const handleChange = useCallback(
@@ -177,11 +176,16 @@ const FileUploadField: React.FC<Props> = ({
       const file = event.target.files?.[0];
       if (file && isValidFileName(file.name)) {
         setDropError(false);
+        setErrorMessage(undefined);
+
         const [newAsset] = await processAssets([file]);
         const basePath = withAssetDir(DIRECTORY.SCENE);
         const assetPackageName = buildAssetPath(newAsset);
         const content = await convertAssetToBinary(newAsset);
         const assetPath = `${basePath}/${assetPackageName}/${newAsset.name}.${newAsset.extension}`;
+
+        assetsRefBeforeImport.current = files?.assets;
+
         dispatch(
           importAsset({
             content,
@@ -190,14 +194,13 @@ const FileUploadField: React.FC<Props> = ({
             reload: true,
           }),
         );
-        setPath(assetPath);
-        setPendingUpload({ path: assetPath, isOnDrop: false });
+        setPendingUpload(assetPath);
       } else {
         setDropError(true);
       }
       if (inputRef.current) inputRef.current.value = '';
     },
-    [inputRef, setPath, setDropError],
+    [dispatch, isValidFileName, files?.assets],
   );
 
   const hasError = useMemo(() => {
