@@ -28,13 +28,7 @@ const KB = 1024;
 const MB = KB * 1024;
 const GB = MB * 1024;
 
-/**
- * Format size to GB, MB, KB or B, rounded to 2 decimal places.
- * @param size - size in bytes
- * @returns formatted string size
- * @example formatSize(1024 * 1024) // "1.00 MB"
- */
-export function formatSize(size: number): string {
+export function formatSize(size: number) {
   if (size < KB) {
     return `${size.toFixed(2)} B`;
   }
