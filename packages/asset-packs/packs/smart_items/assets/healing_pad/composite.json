@@ -19,11 +19,6 @@
             "id": "{self}",
             "value": [
               {
-                "name": "Play Heal Sound",
-                "type": "play_sound",
-                "jsonPayload": "{ \"src\": \"{assetPath}/heal.mp3\" }"
-              },
-              {
                 "name": "Heal Player",
                 "type": "heal_player",
                 "jsonPayload": "{ \"multiplier\": 5 }",
@@ -41,6 +36,11 @@
                 "type": "stop_loop",
                 "jsonPayload": "{ \"action\": \"Heal Player\" }",
                 "allowedInBasicView": true
+              },
+              {
+                "name": "_Play_Heal_Sound",
+                "type": "play_sound",
+                "jsonPayload": "{ \"src\": \"{assetPath}/heal.mp3\" }"
               }
             ]
           }
@@ -62,7 +62,7 @@
                   },
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Play Heal Sound"
+                    "name": "_Play_Heal_Sound"
                   }
                 ],
                 "basicViewId": "trigger-when-start-healing"
