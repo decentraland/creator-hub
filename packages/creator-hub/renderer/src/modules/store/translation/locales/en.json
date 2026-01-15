@@ -392,7 +392,8 @@
       "installing_dependencies_failed": "Failed installing dependencies",
       "invalid_scenes_folder": "Invalid Scenes Folder. Please configure a valid Scenes Folder in Settings before creating a scene.",
       "create_scene_failed": "An error occurred while trying to create the scene. Please try again.",
-      "run_scene_failed": "Failed to load project. Please try again."
+      "run_scene_failed": "Failed to load project. Please try again.",
+      "url_copied": "URL copied to clipboard"
     },
     "missing_projects": {
       "title": "{scenes} {scenes, plural, one {scene} other {scenes}} could not be loaded due to missing files",
