@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import type { SelectChangeEvent } from 'decentraland-ui2';
-import { MenuItem, Typography } from 'decentraland-ui2';
+import { Box, MenuItem, Typography } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
 import { actions as managementActions } from '/@/modules/store/management';
 import { useDispatch, useSelector } from '#store';
@@ -11,6 +11,8 @@ import { Container } from '../Container';
 import { FiltersBar } from '../FiltersBar';
 import { Select } from '../Select';
 import { Search } from '../Search';
+import { Row } from '../Row';
+import { Column } from '../Column';
 import { ManagedProjectsList } from './ManagedProjectsList';
 import { filterProjectsBy, sortProjectsBy } from './utils';
 import './styles.css';
@@ -29,7 +31,7 @@ export function ManagePage() {
   const { status, projects, sortBy, searchQuery } = useSelector(state => state.management);
   const dispatch = useDispatch();
 
-  const isLoading = status === 'loading';
+  const isLoading = status === 'idle' || status === 'loading';
 
   const projectsToShow = useMemo(() => {
     const filteredProjects = filterProjectsBy(projects, searchQuery);
@@ -58,35 +60,54 @@ export function ManagePage() {
         {isLoading ? (
           <Loader size={70} />
         ) : (
-          <>
-            <FiltersBar classNames="FiltersBar">
-              <Typography variant="h6">{t('manage.items', { count: projects.length })}</Typography>
-              <>
-                <Typography>{t('manage.sort_by')}</Typography>
-                <Select
-                  variant="standard"
-                  value={sortBy}
-                  onChange={handleDropdownChange}
-                >
-                  {SORT_OPTIONS.map(option => (
-                    <MenuItem
-                      key={option.value}
-                      value={option.value}
-                      className="sort-item"
-                    >
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-                <Search
-                  placeholder={t('manage.search')}
-                  defaultValue={searchQuery}
-                  onChange={handleSearch}
-                />
-              </>
-            </FiltersBar>
-            <ManagedProjectsList projects={projectsToShow} />
-          </>
+          <Row>
+            <Column className="ContentColumn">
+              <FiltersBar classNames="FiltersBar">
+                <Typography variant="h6">
+                  {t('manage.items', { count: projects.length })}
+                </Typography>
+                <>
+                  <Typography>{t('manage.sort_by')}</Typography>
+                  <Select
+                    variant="standard"
+                    value={sortBy}
+                    onChange={handleDropdownChange}
+                    disabled={!projects?.length}
+                  >
+                    {SORT_OPTIONS.map(option => (
+                      <MenuItem
+                        key={option.value}
+                        value={option.value}
+                        className="sort-item"
+                      >
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  <Search
+                    placeholder={t('manage.search')}
+                    defaultValue={searchQuery}
+                    disabled={!projects?.length}
+                    onChange={handleSearch}
+                  />
+                </>
+              </FiltersBar>
+              {projectsToShow.length === 0 ? (
+                <Box className="EmptyContainer">
+                  <Typography variant="h6">
+                    {searchQuery ? t('manage.empty_search.title') : t('manage.no_projects.title')}
+                  </Typography>
+                  <Typography variant="body1">
+                    {searchQuery
+                      ? t('manage.empty_search.description')
+                      : t('manage.no_projects.description')}
+                  </Typography>
+                </Box>
+              ) : (
+                <ManagedProjectsList projects={projectsToShow} />
+              )}
+            </Column>
+          </Row>
         )}
       </Container>
     </main>

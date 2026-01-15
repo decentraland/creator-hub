@@ -4,10 +4,35 @@
   padding-bottom: 32px;
 }
 
+.ManagePage .Container > .Loader {
+  height: 60vh;
+}
+
+.ManagePage .Container > .Row {
+  gap: 64px;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+}
+
+.ManagePage .ContentColumn {
+  width: 100%;
+  height: max-content;
+}
+
 .ManagePage .FiltersBar {
-  margin: 0;
+  margin: 0 0 32px 0;
 }
 
 .ManagePage .FiltersBar .Select {
   margin-right: 16px;
+}
+
+.ManagePage .EmptyContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  text-align: center;
+  gap: 8px;
 }
