@@ -19,7 +19,6 @@ import { type TreeNode } from '../../ProjectAssetExplorer/ProjectView';
 import { type AssetNodeItem } from '../../ProjectAssetExplorer/types';
 
 import { TextField } from '../TextField';
-import { Message, MessageType } from '../Message';
 
 import { type Props } from './types';
 
@@ -220,7 +219,7 @@ const FileUploadField: React.FC<Props> = ({
           label={label}
           onChange={handleChangeTextField}
           value={removeBase(path)}
-          error={!!value && hasError}
+          error={hasError ? error || errorMessage || 'File not valid.' : undefined}
           disabled={disabled}
           debounceTime={200}
           autoSelect
@@ -241,12 +240,6 @@ const FileUploadField: React.FC<Props> = ({
           </button>
         )}
       </div>
-      {hasError && (
-        <Message
-          text={error || errorMessage}
-          type={MessageType.ERROR}
-        />
-      )}
     </div>
   );
 };
