@@ -13,6 +13,7 @@ import { Select } from '../Select';
 import { Search } from '../Search';
 import { Row } from '../Row';
 import { Column } from '../Column';
+import { StorageUsed } from './StorageUsed';
 import { ManagedProjectsList } from './ManagedProjectsList';
 import { filterProjectsBy, sortProjectsBy } from './utils';
 import './styles.css';
@@ -107,6 +108,7 @@ export function ManagePage() {
                 <ManagedProjectsList projects={projectsToShow} />
               )}
             </Column>
+            <StorageUsed />
           </Row>
         )}
       </Container>

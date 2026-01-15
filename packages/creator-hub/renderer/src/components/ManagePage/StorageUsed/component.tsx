@@ -11,7 +11,7 @@ const StorageUsed = React.memo(() => {
   const [openDetailsModal, setOpenDetailsModal] = useState(false);
   const maxMbs = toMB(Number(storageStats?.maxAllowedSpace) || 0);
   const currentMbs = toMB(Number(storageStats?.usedSpace) || 0);
-  const usedPercentage = maxMbs > 0 ? (currentMbs * 100) / maxMbs : 0;
+  const usedPercentage = (currentMbs * 100) / maxMbs;
 
   const onViewDetails = useCallback(() => {
     setOpenDetailsModal(true);

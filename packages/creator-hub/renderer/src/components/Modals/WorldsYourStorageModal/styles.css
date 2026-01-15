@@ -72,6 +72,6 @@
   color: var(--clear-divider);
 }
 
-.WorldsYourStorageModal .Proposal .MuiButton-root {
+.WorldsYourStorageModal .Proposal button {
   padding: 0 0.4rem;
 }
