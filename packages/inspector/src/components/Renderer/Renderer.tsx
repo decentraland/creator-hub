@@ -274,15 +274,31 @@ const Renderer: React.FC = () => {
       return commonParts.join('/');
     }, '');
 
+    // Read resource files from the custom assets directory and prepare them for copying to the scene
     const files = await Promise.all(
-      asset.resources.map(async path => ({
-        path: path.startsWith(customAssetBasePath) ? path.replace(customAssetBasePath, '') : path,
-        content: await dataLayer.getFile({ path }).then(res => res.content),
-      })),
+      asset.resources.map(async resourcePath => {
+        // Use the full path to read from custom assets directory
+        const fileContent = await dataLayer
+          .getFile({ path: resourcePath })
+          .then(res => res.content);
+        // Extract just the filename for storing in the scene's custom folder
+        const fileName = resourcePath.split('/').pop()!;
+        return {
+          fileName,
+          content: fileContent,
+        };
+      }),
     );
     for (const file of files) {
-      content.set(file.path, file.content);
+      content.set(file.fileName, file.content);
     }
+
+    // Always write composite.json to ensure the folder is created, even if there are no resources
+    if (asset.composite) {
+      const compositeJson = new TextEncoder().encode(JSON.stringify(asset.composite, null, 2));
+      content.set('composite.json', compositeJson);
+    }
+
     const model: AssetNodeItem = {
       type: 'asset',
       name: asset.name,
