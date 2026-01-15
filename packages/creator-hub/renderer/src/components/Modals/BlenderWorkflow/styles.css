@@ -1,0 +1,15 @@
+.blender-workflow-content {
+  padding: 16px 0;
+}
+
+.blender-status,
+.blend-file-selection {
+  margin-bottom: 24px;
+}
+
+.blender-status h6,
+.blend-file-selection h6 {
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+

@@ -3,6 +3,8 @@ import path from 'node:path';
 import type { Scene } from '@dcl/schemas';
 
 import { writeFile } from '../services/fs';
+import type { EntityData, SceneExportData, ExportResult } from '/shared/types/ipc';
+import { invoke } from '../services/ipc';
 
 export type Coords = {
   x: number;
@@ -99,4 +101,11 @@ export function getRowsAndCols(parcels: Coords[]): {
     rows: Math.abs(limits.max.x) - Math.abs(limits.min.x) + 1,
     cols: Math.abs(limits.max.y) - Math.abs(limits.min.y) + 1,
   };
+}
+
+/**
+ * Export the current scene as a merged GLTF file
+ */
+export async function exportSceneAsGltf(data: SceneExportData): Promise<ExportResult> {
+  return invoke('scene.exportAsGltf', data);
 }

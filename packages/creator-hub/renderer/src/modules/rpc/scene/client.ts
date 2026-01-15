@@ -1,4 +1,5 @@
 import { RPC, type Transport } from '@dcl/mini-rpc';
+import type { EntityData } from '/shared/types/ipc';
 
 export enum AssetsTab {
   FileSystem = 'FileSystem',
@@ -21,6 +22,16 @@ export enum SceneInspectorTab {
   SETTINGS = 'settings',
 }
 
+export interface BlenderObjectData {
+  name: string;
+  position?: { x: number; y: number; z: number };
+  rotation?: { x: number; y: number; z: number; w: number };
+  scale?: { x: number; y: number; z: number };
+  gltfSrc?: string;
+  entityId?: number;
+  isDeleted?: boolean;
+}
+
 export enum Method {
   TOGGLE_COMPONENT = 'toggle_component',
   TOGGLE_PANEL = 'toggle_panel',
@@ -33,6 +44,11 @@ export enum Method {
   SET_CAMERA_TARGET = 'set_camera_target',
   SET_CAMERA_POSITION = 'set_camera_position',
   SET_SCENE_CUSTOM_CODE = 'set_scene_custom_code',
+  EXPORT_SCENE_TRIGGER = 'export_scene_trigger',
+  GET_SCENE_ENTITIES = 'get_scene_entities',
+  CREATE_ENTITIES_FROM_BLENDER = 'create_entities_from_blender',
+  CLEAN_BLENDER_ENTITIES = 'clean_blender_entities',
+  REFRESH_ASSET_CATALOG = 'refresh_asset_catalog',
 }
 
 export type Params = {
@@ -47,6 +63,11 @@ export type Params = {
   [Method.SET_CAMERA_TARGET]: { x: number; y: number; z: number };
   [Method.SET_CAMERA_POSITION]: { x: number; y: number; z: number };
   [Method.SET_SCENE_CUSTOM_CODE]: { hasCustomCode: boolean };
+  [Method.EXPORT_SCENE_TRIGGER]: Record<string, never>;
+  [Method.GET_SCENE_ENTITIES]: Record<string, never>;
+  [Method.CREATE_ENTITIES_FROM_BLENDER]: { objects: BlenderObjectData[] };
+  [Method.CLEAN_BLENDER_ENTITIES]: Record<string, never>;
+  [Method.REFRESH_ASSET_CATALOG]: Record<string, never>;
 };
 
 export type Result = {
@@ -61,6 +82,11 @@ export type Result = {
   [Method.SET_CAMERA_TARGET]: void;
   [Method.SET_CAMERA_POSITION]: void;
   [Method.SET_SCENE_CUSTOM_CODE]: void;
+  [Method.EXPORT_SCENE_TRIGGER]: void;
+  [Method.GET_SCENE_ENTITIES]: { entities: EntityData[] };
+  [Method.CREATE_ENTITIES_FROM_BLENDER]: { success: boolean; createdCount: number; updatedCount: number; deletedCount: number; error?: string };
+  [Method.CLEAN_BLENDER_ENTITIES]: { success: boolean; deletedCount: number; deletedFiles: string[]; error?: string };
+  [Method.REFRESH_ASSET_CATALOG]: void;
 };
 
 export class SceneRpcClient extends RPC<Method, Params, Result> {
@@ -110,5 +136,25 @@ export class SceneRpcClient extends RPC<Method, Params, Result> {
 
   setSceneCustomCode = (hasCustomCode: boolean) => {
     return this.request('set_scene_custom_code', { hasCustomCode });
+  };
+
+  exportSceneTrigger = () => {
+    return this.request('export_scene_trigger', {});
+  };
+
+  getSceneEntities = () => {
+    return this.request('get_scene_entities', {});
+  };
+
+  createEntitiesFromBlender = (objects: BlenderObjectData[]) => {
+    return this.request('create_entities_from_blender', { objects });
+  };
+
+  cleanBlenderEntities = () => {
+    return this.request('clean_blender_entities', {});
+  };
+
+  refreshAssetCatalog = () => {
+    return this.request('refresh_asset_catalog', {});
   };
 }
