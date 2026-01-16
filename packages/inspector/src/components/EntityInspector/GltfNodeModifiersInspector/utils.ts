@@ -54,29 +54,25 @@ export function ensureTextureDefaults(material: MaterialInput): MaterialInput {
   return withDefaults as MaterialInput;
 }
 
-export const fromComponent =
-  (basePath: string) =>
-  (value: PBGltfNodeModifiers): Input => {
-    return {
-      swaps: (value.modifiers ?? []).map(sw => ({
-        path: sw.path || '',
-        castShadows: sw.castShadows === undefined ? true : !!sw.castShadows,
-        material: ensureTextureDefaults(fromMaterial(basePath)(sw.material as any)),
-      })),
-    };
+export const fromComponent = (value: PBGltfNodeModifiers): Input => {
+  return {
+    swaps: (value.modifiers ?? []).map(sw => ({
+      path: sw.path || '',
+      castShadows: sw.castShadows === undefined ? true : !!sw.castShadows,
+      material: ensureTextureDefaults(fromMaterial(sw.material as any)),
+    })),
   };
+};
 
-export const toComponent =
-  (basePath: string) =>
-  (input: Input): PBGltfNodeModifiers => {
-    const swaps = coerceSwaps((input as any).swaps);
-    return {
-      modifiers: swaps.map(sw => ({
-        path: sw.path ?? '',
-        castShadows: !!sw.castShadows,
-        material: toMaterial(basePath)(sw.material) as any,
-      })),
-    } as PBGltfNodeModifiers;
-  };
+export const toComponent = (input: Input): PBGltfNodeModifiers => {
+  const swaps = coerceSwaps((input as any).swaps);
+  return {
+    modifiers: swaps.map(sw => ({
+      path: sw.path ?? '',
+      castShadows: !!sw.castShadows,
+      material: toMaterial(sw.material) as any,
+    })),
+  } as PBGltfNodeModifiers;
+};
 
 export const isValidInput = (_input: Input) => isValidMaterial();

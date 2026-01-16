@@ -5,6 +5,7 @@ import { addBasePath } from '../../../../lib/logic/add-base-path';
 
 import { useAppSelector } from '../../../../redux/hooks';
 import { selectAssetCatalog } from '../../../../redux/app';
+import { useAssetOptions } from '../../../../hooks/useAssetOptions';
 
 import {
   isAudio,
@@ -21,6 +22,7 @@ import { PLAY_MODE, PLAY_MODE_OPTIONS, type Props } from './types';
 import './PlaySoundAction.css';
 
 const PlaySoundAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
+  const audioOptions = useAssetOptions(ACCEPTED_FILE_TYPES['audio']);
   const [payload, setPayload] = useState<Partial<ActionPayload<ActionType.PLAY_SOUND>>>({
     ...value,
   });
@@ -108,6 +110,7 @@ const PlaySoundAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
             label={<>Path {renderPathInfo}</>}
             value={payload.src}
             accept={ACCEPTED_FILE_TYPES['audio']}
+            options={audioOptions}
             onDrop={handleDrop}
             onChange={handleChangeSrc}
             error={files && (!isValid || error)}

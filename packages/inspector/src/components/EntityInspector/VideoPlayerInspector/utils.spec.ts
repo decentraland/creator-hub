@@ -11,7 +11,6 @@ import {
 } from './utils';
 
 describe('VideoPlayerUtils', () => {
-  const base = '/base/path';
   const assetCatalogResponse = {
     basePath: '/base/path',
     assets: [
@@ -24,17 +23,22 @@ describe('VideoPlayerUtils', () => {
   describe('fromVideoPlayer', () => {
     it('converts PBVideoPlayer to VideoPlayerInput', () => {
       const videoPlayer = { src: '/base/path/video.mp4', loop: true, playing: false, volume: 0.5 };
-      const result = fromVideoPlayer(base)(videoPlayer);
-      expect(result).toEqual({ src: 'video.mp4', loop: true, playing: false, volume: '50' });
+      const result = fromVideoPlayer(videoPlayer);
+      expect(result).toEqual({
+        src: '/base/path/video.mp4',
+        loop: true,
+        playing: false,
+        volume: '50',
+      });
     });
   });
 
   describe('toVideoPlayer', () => {
     it('converts VideoPlayerInput to PBVideoPlayer', () => {
       const videoPlayerInput = { src: 'video.mp4', loop: true, playing: false, volume: '50' };
-      const result = toVideoPlayer(base)(videoPlayerInput);
+      const result = toVideoPlayer(videoPlayerInput);
       expect(result).toEqual({
-        src: '/base/path/video.mp4',
+        src: 'video.mp4',
         loop: true,
         playing: false,
         volume: 0.5,

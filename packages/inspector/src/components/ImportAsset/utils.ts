@@ -336,3 +336,51 @@ export function buildAssetPath(asset: Asset): string {
   const assetPath = isModelAsset(asset) ? `${classification}/${asset.name}` : classification;
   return assetPath;
 }
+
+const PATH_SEPARATOR = '/';
+const MAX_PATH_LENGTH = 25;
+
+export function isFilePath(value: string): boolean {
+  return value.includes(PATH_SEPARATOR) && !value.startsWith('http');
+}
+
+export function getFileName(path: string): string {
+  const parts = path.split(PATH_SEPARATOR);
+  return parts[parts.length - 1] || path;
+}
+
+export function getDirectoryPath(path: string): string {
+  const parts = path.split(PATH_SEPARATOR);
+  if (parts.length <= 1) return '';
+  return parts.slice(0, -1).join(PATH_SEPARATOR);
+}
+
+export function truncateMiddle(text: string, maxLength: number = MAX_PATH_LENGTH): string {
+  if (text.length <= maxLength) return text;
+  const ellipsis = '...';
+  const charsToShow = maxLength - ellipsis.length;
+  const frontChars = Math.ceil(charsToShow / 2);
+  const backChars = Math.floor(charsToShow / 2);
+  return text.slice(0, frontChars) + ellipsis + text.slice(-backChars);
+}
+
+export interface DropdownOption {
+  value?: string | number | readonly string[];
+  label?: string;
+  secondaryText?: string;
+  [key: string]: unknown;
+}
+
+export function formatPathOption<T extends DropdownOption>(option: T): T {
+  const value = option.value?.toString() ?? '';
+  if (!isFilePath(value)) return option;
+
+  const fileName = getFileName(value);
+  const dirPath = getDirectoryPath(value);
+
+  return {
+    ...option,
+    label: fileName,
+    secondaryText: dirPath ? truncateMiddle(dirPath) : undefined,
+  };
+}

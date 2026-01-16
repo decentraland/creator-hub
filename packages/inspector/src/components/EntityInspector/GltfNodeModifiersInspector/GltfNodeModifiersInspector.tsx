@@ -32,8 +32,8 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const { getInputProps } = useComponentInput(
     entity,
     GltfNodeModifiers,
-    fromComponent(files?.basePath ?? ''),
-    toComponent(files?.basePath ?? ''),
+    fromComponent,
+    toComponent,
     isValidInput,
   );
 
@@ -46,7 +46,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
 
   const addSwap = useCallback(() => {
     const current = componentValue ?? { modifiers: [] };
-    const existing = fromComponent(files?.basePath ?? '')(current).swaps;
+    const existing = fromComponent(current).swaps;
     const newSwaps = [
       ...existing,
       {
@@ -86,7 +86,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
 
   const swapsValue = useMemo(() => {
     const current = componentValue ?? { modifiers: [] };
-    return fromComponent(files?.basePath ?? '')(current).swaps;
+    return fromComponent(current).swaps;
   }, [componentValue, files]);
 
   const removeSwap = useCallback(

@@ -12,88 +12,84 @@ import { fromTexture, toTexture } from './Texture/utils';
 import type { MaterialInput } from './types';
 import { MaterialType } from './types';
 
-export const fromMaterial =
-  (base: string) =>
-  (value: PBMaterial): MaterialInput => {
-    switch (value.material?.$case) {
-      case 'unlit':
-        return {
-          type: MaterialType.MT_UNLIT,
-          alphaTest: String(value.material.unlit.alphaTest ?? 0.5),
-          castShadows: !!(value.material.unlit.castShadows ?? true),
-          diffuseColor: toHexOrUndefined(value.material.unlit.diffuseColor),
-          texture: fromTexture(base, value.material.unlit.texture ?? {}),
-          alphaTexture: fromTexture(base, value.material.unlit.alphaTexture ?? {}),
-        };
-      case 'pbr':
-      default:
-        return {
-          type: MaterialType.MT_PBR,
-          alphaTest: String(value.material?.pbr.alphaTest ?? 0.5),
-          castShadows: !!(value.material?.pbr.castShadows ?? true),
-          transparencyMode: toString(
-            value.material?.pbr.transparencyMode,
-            MaterialTransparencyMode.MTM_AUTO,
-          ),
-          metallic: toString(value.material?.pbr.metallic ?? 0.5),
-          roughness: toString(value.material?.pbr.roughness ?? 0.5),
-          specularIntensity: toString(value.material?.pbr.specularIntensity ?? 1),
-          emissiveIntensity: toString(value.material?.pbr.emissiveIntensity ?? 0),
-          directIntensity: toString(value.material?.pbr.directIntensity ?? 1),
-          albedoColor: toHexOrUndefined(value.material?.pbr.albedoColor),
-          emissiveColor: toHexOrUndefined(value.material?.pbr.emissiveColor),
-          reflectivityColor: toHexOrUndefined(value.material?.pbr.reflectivityColor),
-          texture: fromTexture(base, value.material?.pbr.texture ?? {}),
-          alphaTexture: fromTexture(base, value.material?.pbr.alphaTexture ?? {}),
-          bumpTexture: fromTexture(base, value.material?.pbr.bumpTexture ?? {}),
-          emissiveTexture: fromTexture(base, value.material?.pbr.emissiveTexture ?? {}),
-        };
-    }
-  };
+export const fromMaterial = (value: PBMaterial): MaterialInput => {
+  switch (value.material?.$case) {
+    case 'unlit':
+      return {
+        type: MaterialType.MT_UNLIT,
+        alphaTest: String(value.material.unlit.alphaTest ?? 0.5),
+        castShadows: !!(value.material.unlit.castShadows ?? true),
+        diffuseColor: toHexOrUndefined(value.material.unlit.diffuseColor),
+        texture: fromTexture(value.material.unlit.texture ?? {}),
+        alphaTexture: fromTexture(value.material.unlit.alphaTexture ?? {}),
+      };
+    case 'pbr':
+    default:
+      return {
+        type: MaterialType.MT_PBR,
+        alphaTest: String(value.material?.pbr.alphaTest ?? 0.5),
+        castShadows: !!(value.material?.pbr.castShadows ?? true),
+        transparencyMode: toString(
+          value.material?.pbr.transparencyMode,
+          MaterialTransparencyMode.MTM_AUTO,
+        ),
+        metallic: toString(value.material?.pbr.metallic ?? 0.5),
+        roughness: toString(value.material?.pbr.roughness ?? 0.5),
+        specularIntensity: toString(value.material?.pbr.specularIntensity ?? 1),
+        emissiveIntensity: toString(value.material?.pbr.emissiveIntensity ?? 0),
+        directIntensity: toString(value.material?.pbr.directIntensity ?? 1),
+        albedoColor: toHexOrUndefined(value.material?.pbr.albedoColor),
+        emissiveColor: toHexOrUndefined(value.material?.pbr.emissiveColor),
+        reflectivityColor: toHexOrUndefined(value.material?.pbr.reflectivityColor),
+        texture: fromTexture(value.material?.pbr.texture ?? {}),
+        alphaTexture: fromTexture(value.material?.pbr.alphaTexture ?? {}),
+        bumpTexture: fromTexture(value.material?.pbr.bumpTexture ?? {}),
+        emissiveTexture: fromTexture(value.material?.pbr.emissiveTexture ?? {}),
+      };
+  }
+};
 
-export const toMaterial =
-  (base: string) =>
-  (value: MaterialInput): PBMaterial => {
-    switch (value.type) {
-      case MaterialType.MT_UNLIT:
-        return {
-          material: {
-            $case: 'unlit',
-            unlit: {
-              alphaTest: Number(value.alphaTest ?? 0.5),
-              castShadows: !!(value.castShadows ?? true),
-              diffuseColor: toColor4OrUndefined(value.diffuseColor),
-              texture: toTexture(base, value.texture),
-              alphaTexture: toTexture(base, value.alphaTexture),
-            },
+export const toMaterial = (value: MaterialInput): PBMaterial => {
+  switch (value.type) {
+    case MaterialType.MT_UNLIT:
+      return {
+        material: {
+          $case: 'unlit',
+          unlit: {
+            alphaTest: Number(value.alphaTest ?? 0.5),
+            castShadows: !!(value.castShadows ?? true),
+            diffuseColor: toColor4OrUndefined(value.diffuseColor),
+            texture: toTexture(value.texture),
+            alphaTexture: toTexture(value.alphaTexture),
           },
-        };
-      case MaterialType.MT_PBR:
-      default:
-        return {
-          material: {
-            $case: 'pbr',
-            pbr: {
-              alphaTest: Number(value.alphaTest ?? 0.5),
-              castShadows: !!(value.castShadows ?? true),
-              transparencyMode: Number(value.transparencyMode || MaterialTransparencyMode.MTM_AUTO),
-              metallic: Number(value.metallic || 0.5),
-              roughness: Number(value.roughness || 0.5),
-              specularIntensity: Number(value.specularIntensity || 1),
-              emissiveIntensity: Number(value.emissiveIntensity || 0),
-              directIntensity: Number(value.directIntensity || 1),
-              albedoColor: toColor4OrUndefined(value.albedoColor),
-              emissiveColor: toColor3OrUndefined(value.emissiveColor),
-              reflectivityColor: toColor3OrUndefined(value.reflectivityColor),
-              texture: toTexture(base, value.texture),
-              alphaTexture: toTexture(base, value.alphaTexture),
-              bumpTexture: toTexture(base, value.bumpTexture),
-              emissiveTexture: toTexture(base, value.emissiveTexture),
-            },
+        },
+      };
+    case MaterialType.MT_PBR:
+    default:
+      return {
+        material: {
+          $case: 'pbr',
+          pbr: {
+            alphaTest: Number(value.alphaTest ?? 0.5),
+            castShadows: !!(value.castShadows ?? true),
+            transparencyMode: Number(value.transparencyMode || MaterialTransparencyMode.MTM_AUTO),
+            metallic: Number(value.metallic || 0.5),
+            roughness: Number(value.roughness || 0.5),
+            specularIntensity: Number(value.specularIntensity || 1),
+            emissiveIntensity: Number(value.emissiveIntensity || 0),
+            directIntensity: Number(value.directIntensity || 1),
+            albedoColor: toColor4OrUndefined(value.albedoColor),
+            emissiveColor: toColor3OrUndefined(value.emissiveColor),
+            reflectivityColor: toColor3OrUndefined(value.reflectivityColor),
+            texture: toTexture(value.texture),
+            alphaTexture: toTexture(value.alphaTexture),
+            bumpTexture: toTexture(value.bumpTexture),
+            emissiveTexture: toTexture(value.emissiveTexture),
           },
-        };
-    }
-  };
+        },
+      };
+  }
+};
 
 export function isValidMaterial(): boolean {
   return true;

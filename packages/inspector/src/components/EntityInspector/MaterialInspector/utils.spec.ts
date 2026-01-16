@@ -6,7 +6,6 @@ import { Texture } from './Texture/types';
 
 describe('fromMaterial', () => {
   it('should convert from unlit material', () => {
-    const base = 'base-path';
     const value: PBMaterial = {
       material: {
         $case: 'unlit' as const,
@@ -26,7 +25,7 @@ describe('fromMaterial', () => {
       },
     };
 
-    const result = fromMaterial(base)(value);
+    const result = fromMaterial(value);
 
     expect(result.type).toBe(MaterialType.MT_UNLIT);
     expect(result.alphaTest).toBe('0.75');
@@ -43,7 +42,6 @@ describe('fromMaterial', () => {
   });
 
   it('should convert from pbr material', () => {
-    const base = 'base-path';
     const value: PBMaterial = {
       material: {
         $case: 'pbr' as const,
@@ -73,7 +71,7 @@ describe('fromMaterial', () => {
       },
     };
 
-    const result = fromMaterial(base)(value);
+    const result = fromMaterial(value);
 
     expect(result.type).toBe(MaterialType.MT_PBR);
     expect(result.alphaTest).toBe('0.6');
@@ -101,7 +99,6 @@ describe('fromMaterial', () => {
 
 describe('toMaterial', () => {
   it('should convert to unlit material', () => {
-    const base = 'base-path';
     const value: MaterialInput = {
       type: MaterialType.MT_UNLIT,
       alphaTest: '0.75',
@@ -115,7 +112,7 @@ describe('toMaterial', () => {
       },
     };
 
-    const result = toMaterial(base)(value) as {
+    const result = toMaterial(value) as {
       material: { $case: 'unlit'; unlit: PBMaterial_UnlitMaterial };
     };
 
@@ -127,7 +124,7 @@ describe('toMaterial', () => {
       tex: {
         $case: 'texture',
         texture: {
-          src: 'base-path/some-src',
+          src: 'some-src',
           wrapMode: 1,
           filterMode: 1,
           offset: { x: 0, y: 0 },
@@ -138,7 +135,6 @@ describe('toMaterial', () => {
   });
 
   it('should convert to pbr material', () => {
-    const base = 'base-path';
     const value: MaterialInput = {
       type: MaterialType.MT_PBR,
       alphaTest: '0.6',
@@ -158,7 +154,7 @@ describe('toMaterial', () => {
       },
     };
 
-    const result = toMaterial(base)(value) as {
+    const result = toMaterial(value) as {
       material: { $case: 'pbr'; pbr: PBMaterial_PbrMaterial };
     };
 
@@ -170,7 +166,7 @@ describe('toMaterial', () => {
       tex: {
         $case: 'texture',
         texture: {
-          src: 'base-path/some-src',
+          src: 'some-src',
           wrapMode: 1,
           filterMode: 1,
           offset: { x: 0, y: 0 },
