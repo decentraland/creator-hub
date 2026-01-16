@@ -35,8 +35,8 @@ export default React.memo(
     const { getInputProps, isValid } = useComponentInput(
       entity,
       VideoPlayer,
-      fromVideoPlayer(files?.basePath ?? ''),
-      toVideoPlayer(files?.basePath ?? ''),
+      fromVideoPlayer,
+      toVideoPlayer,
       handleInputValidation,
       [files],
     );

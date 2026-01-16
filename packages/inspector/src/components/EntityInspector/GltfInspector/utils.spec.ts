@@ -11,7 +11,7 @@ describe('GltfInspector/utils', () => {
         invisibleMeshesCollisionMask: 2,
         visibleMeshesCollisionMask: 0,
       };
-      expect(utils.fromGltf('')(result)).toStrictEqual({
+      expect(utils.fromGltf(result)).toStrictEqual({
         src: 'some-path',
         invisibleMeshesCollisionMask: '2',
         visibleMeshesCollisionMask: '0',
@@ -25,7 +25,7 @@ describe('GltfInspector/utils', () => {
         invisibleMeshesCollisionMask: '2',
         visibleMeshesCollisionMask: '0',
       };
-      expect(utils.toGltf('')(result)).toStrictEqual({
+      expect(utils.toGltf(result)).toStrictEqual({
         src: 'some-path',
         invisibleMeshesCollisionMask: 2,
         visibleMeshesCollisionMask: 0,
@@ -42,7 +42,7 @@ describe('GltfInspector/utils', () => {
           },
         ],
       };
-      expect(utils.isValidInput(assets, 'path')).toBe(true);
+      expect(utils.isValidInput(assets, 'root/path')).toBe(true);
     });
     it('should return false when the file is not found', () => {
       const assets = {

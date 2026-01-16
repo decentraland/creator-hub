@@ -5,6 +5,7 @@ import { CheckboxField, FileUploadField, InfoTooltip } from '../../../ui';
 import { ACCEPTED_FILE_TYPES } from '../../../ui/FileUploadField/types';
 import { useAppSelector } from '../../../../redux/hooks';
 import { selectAssetCatalog } from '../../../../redux/app';
+import { useAssetOptions } from '../../../../hooks/useAssetOptions';
 import { addBasePath } from '../../../../lib/logic/add-base-path';
 import type { Props } from './types';
 import { isModel } from './utils';
@@ -18,6 +19,7 @@ function isValid(
 }
 
 const PlayCustomEmoteAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
+  const modelOptions = useAssetOptions(ACCEPTED_FILE_TYPES['model']);
   const [payload, setPayload] = useState<Partial<ActionPayload<ActionType.PLAY_CUSTOM_EMOTE>>>({
     ...value,
   });
@@ -80,6 +82,7 @@ const PlayCustomEmoteAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
           label={<>File Path {renderPathInfo}</>}
           value={payload.src}
           accept={ACCEPTED_FILE_TYPES['model']}
+          options={modelOptions}
           onDrop={handleDrop}
           onChange={handleChangeSrc}
           error={files && (!isValid || error)}

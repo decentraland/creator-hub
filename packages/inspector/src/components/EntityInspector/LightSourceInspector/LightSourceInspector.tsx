@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { withSdk } from '../../../hoc/withSdk';
 import { useAllEntitiesHaveComponent } from '../../../hooks/sdk/useHasComponent';
 import { useMultiComponentInput } from '../../../hooks/sdk/useComponentInput';
+import { useAssetOptions } from '../../../hooks/useAssetOptions';
 import { analytics, Event } from '../../../lib/logic/analytics';
 import { getAssetByModel } from '../../../lib/logic/catalog';
 import { CoreComponents } from '../../../lib/sdk/components';
@@ -18,6 +19,7 @@ import { fromComponent, toComponent, isValidInput } from './utils';
 export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
   const { LightSource, GltfContainer } = sdk.components;
 
+  const imageOptions = useAssetOptions(ACCEPTED_FILE_TYPES['image']);
   const allEntitiesHaveLightSource = useAllEntitiesHaveComponent(entities, LightSource);
   const { getInputProps } = useMultiComponentInput(
     entities,
@@ -100,6 +102,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
         <FileUploadField
           label="Path"
           accept={ACCEPTED_FILE_TYPES['image']}
+          options={imageOptions}
           {...getInputProps('shadowMaskSrc')}
         />
       </Block>
