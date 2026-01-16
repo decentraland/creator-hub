@@ -1,7 +1,9 @@
 .GeneralTab {
-  display: flex;
-  flex-direction: column;
   gap: 24px;
+}
+
+.GeneralTab .FormGroup {
+  gap: 16px;
 }
 
 .GeneralTab .TitleDivider {
@@ -47,10 +49,5 @@
 }
 
 .GeneralTab .InputContainer .MuiOutlinedInput-notchedOutline {
-  border-color: var(--transparent-gray-light);
-}
-
-.GeneralTab .Range.Field .RangeContainer {
-  gap: 24px;
-  width: 320px;
+  border-color: rgba(255, 255, 255, 0.2);
 }
