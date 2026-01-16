@@ -66,6 +66,9 @@ export * from './states';
 export * from './clone';
 export * from './lww';
 export * from './types';
+// Note: isAdmin is intentionally not exported here because it imports from ~system/UserIdentity
+// which is only available in the Decentraland scene runtime, not in browser/Node.js environments.
+// Import it directly: import { isAdmin } from '@dcl/asset-packs/admin'
 
 export const ActionSchemas = {
   [ActionType.PLAY_ANIMATION]: Schemas.Map({
