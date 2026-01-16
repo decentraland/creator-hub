@@ -7,12 +7,11 @@ import type { AssetNodeItem } from '../../../ProjectAssetExplorer/types';
 import { isAssetNode } from '../../../ProjectAssetExplorer/utils';
 import type { AssetCatalogResponse } from '../../../../lib/data-layer/remote-data-layer';
 import { isValidInput } from '../../GltfInspector/utils';
-import { removeBasePath } from '../../../../lib/logic/remove-base-path';
 import { isValidHttpsUrl } from '../../../../lib/utils/url';
 import { Texture } from './types';
 import type { TextureInput } from './types';
 
-export const fromTexture = (base: string, value: TextureUnion): TextureInput => {
+export const fromTexture = (value: TextureUnion): TextureInput => {
   switch (value.tex?.$case) {
     case 'avatarTexture':
       return {
@@ -32,8 +31,8 @@ export const fromTexture = (base: string, value: TextureUnion): TextureInput => 
     default: {
       const src = value?.tex?.texture.src ?? '';
       return {
+        src,
         type: Texture.TT_TEXTURE,
-        src: isValidHttpsUrl(src) ? src : removeBasePath(base, src),
         wrapMode: toString(value?.tex?.texture.wrapMode),
         filterMode: toString(value?.tex?.texture.filterMode),
         offset: {
@@ -49,7 +48,7 @@ export const fromTexture = (base: string, value: TextureUnion): TextureInput => 
   }
 };
 
-export const toTexture = (base: string, value?: TextureInput): TextureUnion => {
+export const toTexture = (value?: TextureInput): TextureUnion => {
   switch (value?.type) {
     case Texture.TT_AVATAR_TEXTURE:
       return {
@@ -79,7 +78,7 @@ export const toTexture = (base: string, value?: TextureInput): TextureUnion => {
         tex: {
           $case: 'texture',
           texture: {
-            src: isValidHttpsUrl(src) ? src : (src && base ? base + '/' : '') + src,
+            src,
             wrapMode: toNumber(value?.wrapMode ?? '0', TextureWrapMode.TWM_REPEAT),
             filterMode: toNumber(value?.filterMode ?? '0', TextureFilterMode.TFM_POINT),
             offset: {

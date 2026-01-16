@@ -92,7 +92,12 @@ const DynamicField: React.FC<WidgetProps> = ({
         return <ColorPicker {...commonProps} />;
 
       case WidgetType.FileUploadField:
-        return <FileUploadField {...commonProps} />;
+        return (
+          <FileUploadField
+            {...commonProps}
+            options={getDataSourceOptions(dataSource?.kind)}
+          />
+        );
 
       case WidgetType.EntityField:
         return <EntityField {...commonProps} />;
