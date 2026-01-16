@@ -5,15 +5,14 @@ import { ManagedProjectType } from '/shared/types/manage';
 import { config } from '/@/config';
 
 const IS_DEV = import.meta.env.DEV;
-const EXPLORER_URL = config.get('EXPLORER_URL');
 const WORLDS_CONTENT_SERVER_URL = config.get('WORLDS_CONTENT_SERVER_URL');
 
-export const getLogo = (type: ManagedProjectType, id: string) => {
+export const getLogo = (type: ManagedProjectType, subdomain: string) => {
   if (type === ManagedProjectType.LAND) return <LandCoordsIcon />;
   return (
     <img
-      src={id.endsWith('.dcl.eth') ? LogoDCLSVG : LogoENSSVG}
-      alt="Icon"
+      src={isENSDomain(subdomain) ? LogoENSSVG : LogoDCLSVG}
+      alt="Logo"
     />
   );
 };

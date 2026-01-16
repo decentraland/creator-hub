@@ -22,17 +22,23 @@ export type Content = {
 };
 
 export type Metadata = {
-  allowedMediaHostnames: any[];
+  allowedMediaHostnames?: any[];
   owner: string;
   main: string;
   contact: Contact;
   display: Display;
   tags: string[];
   scene: Scene;
+  sdkVersion: string;
   ecs7: boolean;
   runtimeVersion: string;
   source: Source;
   worldConfiguration: WorldConfiguration;
+  spawnPoints?: SpawnPoint[];
+  requiredPermissions?: string[];
+  featureToggles?: FeatureToggles;
+  skyboxConfig?: SkyboxConfig;
+  rating?: string;
 };
 
 export type Contact = {
@@ -42,6 +48,7 @@ export type Contact = {
 
 export type Display = {
   title: string;
+  description: string;
   favicon: string;
   navmapThumbnail: string;
 };
@@ -51,12 +58,37 @@ export type Scene = {
   parcels: string[];
 };
 
+export type SpawnPoint = {
+  name: string;
+  default?: boolean;
+  position: {
+    x: number[];
+    y: number[];
+    z: number[];
+  };
+  cameraTarget?: {
+    x: number;
+    y: number;
+    z: number;
+  };
+};
+
+export type FeatureToggles = {
+  voiceChat?: string;
+  portableExperiences?: string;
+};
+
+export type SkyboxConfig = {
+  fixedTime?: number;
+  transitionMode?: number;
+};
+
 export type Source = {
-  version: number;
+  version?: number;
   origin: string;
-  point: Point;
+  point?: Point;
   projectId: string;
-  layout: Layout;
+  layout?: Layout;
 };
 
 export type Layout = {
@@ -173,6 +205,10 @@ export class Worlds {
     return identity;
   }
 
+  public getContentSrcUrl(hash: string) {
+    return `${this.url}/contents/${hash}?resize`;
+  }
+
   public async fetchWorld(name: string) {
     try {
       const result = await fetch(`${this.url}/entities/active`, {
@@ -195,13 +231,19 @@ export class Worlds {
   }
 
   public async fetchWorldScenes(worldName: string) {
-    const result = await fetch(`${this.url}/world/${worldName}/scenes`);
-    if (result.ok) {
-      const json = await result.json();
-      return json as WorldScenes;
-    } else {
-      return null;
+    try {
+      const result = await fetch(`${this.url}/world/${worldName}/scenes`);
+      if (result.ok) {
+        const json = await result.json();
+        return json as WorldScenes;
+      } else {
+        return null;
+      }
+    } catch (_) {
+      // Silent fail - world may not have scenes
     }
+
+    return null;
   }
 
   public async fetchWorldSettings(

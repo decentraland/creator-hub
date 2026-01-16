@@ -34,14 +34,15 @@ type Props = Omit<TabsModalProps<WorldSettingsTab>, 'tabs' | 'title' | 'children
   project: ManagedProject | null;
 };
 
-const WorldSettingsModal: React.FC<Props> = React.memo(({ project, ...props }) => {
-  /// TODO: Implement modal content, here full modal content should be fetched and rendered based on the project prop.
+const WorldSettingsModal: React.FC<Props> = React.memo(({ project, activeTab, ...props }) => {
+  /// TODO: Implement modal content, here full modal content should be fetched and rendered based on the project prop. Consume WorldSettings from context
 
   if (!project) return null;
 
   return (
     <TabsModal
       {...props}
+      activeTab={activeTab}
       tabs={WORLD_SETTINGS_TABS}
       title={t('modal.world_settings.title', { worldName: project.id })}
       className="WorldSettingsModal"

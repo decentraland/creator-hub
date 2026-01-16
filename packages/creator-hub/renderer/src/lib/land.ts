@@ -1,5 +1,6 @@
 import fromUnixTime from 'date-fns/fromUnixTime';
 import { config } from '/@/config';
+import type { WorldDeployment } from './worlds';
 
 // TheGraph has a limit of a maximum of 1000 results per entity per query
 const MAX_RESULTS = 1000;
@@ -254,6 +255,10 @@ export type LandQueryResult = {
   }[];
 };
 
+export type LandDeployment = Omit<WorldDeployment, 'metadata'> & {
+  metadata: Omit<WorldDeployment['metadata'], 'worldConfiguration'>;
+};
+
 export enum Color {
   NEON_BLUE = '#00D3FF',
   SUMMER_RED = '#FF2D55',
@@ -282,6 +287,11 @@ export class Lands {
   private subgraph = config.get('LAND_MANAGER_SUBGRAPH');
   private LAND_REGISTRY_ADDRESS = config.get('LAND_REGISTRY_ADDRESS');
   private ESTATE_REGISTRY_ADDRESS = config.get('ESTATE_REGISTRY_ADDRESS');
+  private PEER_URL = config.get('PEER_URL');
+
+  public getContentSrcUrl(hash: string) {
+    return `${this.PEER_URL}/content/contents/${hash}?resize`;
+  }
 
   fetchLand = async (
     _address: string,
@@ -451,6 +461,26 @@ export class Lands {
       return [Object.values(landsMap), authorizations];
     }
   };
+
+  public async fetchLandPublishedScene(x: number, y: number): Promise<LandDeployment | null> {
+    try {
+      const pointer = coordsToId(x, y);
+      const result = await fetch(`${this.PEER_URL}/content/entities/active`, {
+        method: 'POST',
+        body: JSON.stringify({
+          pointers: [pointer],
+        }),
+      });
+
+      if (result.ok) {
+        const json = await result.json();
+        return json[0] as LandDeployment;
+      }
+    } catch (error) {
+      // Silent fail - land may not have a scene deployed
+    }
+    return null;
+  }
 }
 
 export const rentalFields = () => `

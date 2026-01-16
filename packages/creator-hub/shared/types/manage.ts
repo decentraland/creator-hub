@@ -10,13 +10,24 @@ export enum ManagedProjectType {
 
 export type ManagedProject = {
   id: string;
+  displayName: string;
   type: ManagedProjectType;
   role: 'owner' | 'operator';
-  title?: string;
-  thumbnail?: string;
+  deployment?: ProjectDeployment;
+};
+
+export type ProjectDeployment = {
+  title: string;
+  description: string;
+  thumbnail: string;
+  lastPublishedAt: number;
+  scenes: SceneDeployment[];
+};
+
+export type SceneDeployment = {
+  id: string;
   publishedAt: number;
-  totalParcels?: number;
-  totalScenes: number;
+  parcels: string[];
 };
 
 export enum WorldSettingsTab {

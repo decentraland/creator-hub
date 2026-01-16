@@ -50,20 +50,7 @@ const ManagedProjectsList: React.FC<Props> = React.memo(({ projects }) => {
       {projects.map(project => (
         <PublishedProjectCard
           key={project.id}
-          name={project.id}
-          type={project.type}
-          role={project.role}
-          /// TODO: code this condition reliably
-          publishMetadata={
-            project.title
-              ? {
-                  title: project.title,
-                  thumbnail: project.thumbnail,
-                  totalParcels: project.totalParcels,
-                  totalScenes: project.totalScenes,
-                }
-              : undefined
-          }
+          project={project}
           onOpenSettings={activeTab => handleOpenSettingsModal(project, activeTab)}
           onViewScenes={handleViewScenes}
         />

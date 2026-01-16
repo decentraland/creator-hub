@@ -8,13 +8,14 @@ import type { ChainId } from '@dcl/schemas';
 import type { Async } from '/shared/types/async';
 import type { ManagedProject } from '/shared/types/manage';
 import { ManagedProjectType, SortBy } from '/shared/types/manage';
-import type { Metadata } from '/@/lib/worlds';
+import type { WorldDeployment } from '/@/lib/worlds';
 import { Worlds } from '/@/lib/worlds';
 import type { AppState } from '/@/modules/store';
 import { fetchENSList } from '/@/modules/store/ens';
 import { fetchLandList } from '/@/modules/store/land';
 import { tryCatch } from '/shared/try-catch';
-import { coordsToId, LandType } from '/@/lib/land';
+import type { LandDeployment } from '/@/lib/land';
+import { Lands, LandType } from '/@/lib/land';
 
 // state
 export type ManagementState = {
@@ -58,84 +59,92 @@ export const fetchAllManagedProjectsDetails = createAsyncThunk(
 
       const WorldsAPI = new Worlds();
 
+      const getWorldThumbnailUrl = (deployment: WorldDeployment) => {
+        if (!deployment?.metadata.display.navmapThumbnail) return '';
+        const thumbnailFileName = deployment.metadata.display.navmapThumbnail;
+        const thumbnailContent = deployment.content.find(item => item.file === thumbnailFileName);
+        if (thumbnailContent) return WorldsAPI.getContentSrcUrl(thumbnailContent.hash);
+        return '';
+      };
+
       // Fetch deployment details for worlds that have entityId
       await Promise.all(
         ensList.map(async ens => {
-          let totalScenes = 0;
-          let publishedAt = 0;
-          let thumbnail = '';
-          let metadata: Metadata | null = null;
-
-          try {
-            const worldScenes = await WorldsAPI.fetchWorldScenes(ens.subdomain);
-            totalScenes = worldScenes?.total || 0;
-          } catch (error) {
-            // Ignore errors for individual worlds
-          }
-
-          try {
-            const world = await WorldsAPI.fetchWorld(ens.subdomain);
-            if (world && world.length > 0) {
-              publishedAt = world[0].timestamp;
-              metadata = world[0].metadata || null;
-              if (metadata?.display.navmapThumbnail) {
-                const thumbnailContent = world[0].content.find(
-                  item => item.file === metadata?.display.navmapThumbnail,
-                );
-                if (thumbnailContent) {
-                  thumbnail = `https://peer.decentraland.org/content/${thumbnailContent.hash}`; /// TODO: find the url for it.
-                }
-              }
-            }
-          } catch (error) {
-            // Ignore errors for individual worlds
-          }
+          const worldDeployment = await WorldsAPI.fetchWorld(ens.subdomain);
+          const worldScenes = await WorldsAPI.fetchWorldScenes(ens.subdomain);
 
           managedProjects.push({
             id: ens.subdomain,
+            displayName: ens.subdomain,
             type: ManagedProjectType.WORLD,
             role:
               ens.nftOwnerAddress.toLowerCase() === address.toLowerCase() ? 'owner' : 'operator',
-            title: metadata?.display?.title || '',
-            thumbnail,
-            totalParcels: metadata?.scene.parcels?.length,
-            totalScenes,
-            publishedAt,
+            deployment:
+              worldDeployment && worldDeployment[0]
+                ? {
+                    title: worldDeployment[0].metadata.display.title,
+                    description: worldDeployment[0].metadata.display.description,
+                    thumbnail: getWorldThumbnailUrl(worldDeployment[0]),
+                    lastPublishedAt:
+                      worldScenes?.scenes?.reduce(
+                        (max, scene) => Math.max(max, scene.createdAt.getTime()),
+                        0,
+                      ) ?? 0, // Get latest published scene date.
+                    scenes:
+                      worldScenes?.scenes?.map(scene => ({
+                        id: scene.id,
+                        publishedAt: scene.createdAt.getTime() ?? 0,
+                        parcels: scene.parcels,
+                      })) ?? [],
+                  }
+                : undefined,
           });
         }),
       );
 
+      const LandsAPI = new Lands();
+
+      const getLandThumbnailUrl = (deployment: LandDeployment) => {
+        if (!deployment?.metadata.display.navmapThumbnail) return '';
+        const thumbnailFileName = deployment.metadata.display.navmapThumbnail;
+        const thumbnailContent = deployment.content.find(item => item.file === thumbnailFileName);
+        if (thumbnailContent) return LandsAPI.getContentSrcUrl(thumbnailContent.hash);
+        return '';
+      };
+
       // Process Land data
+      await Promise.all(
+        landList.map(async land => {
+          let sceneDeployment: LandDeployment | null = null;
+          const landCoords =
+            land.type === LandType.PARCEL ? { x: land.x, y: land.y } : land.parcels?.[0];
+          if (landCoords?.x && landCoords?.y) {
+            sceneDeployment = await LandsAPI.fetchLandPublishedScene(landCoords.x, landCoords.y);
+          }
 
-      // Extract coordinates for all lands
-      const coordinates: string[] = [];
-      const coordToLandMap = new Map<string, (typeof landList)[0]>();
-
-      landList.forEach(land => {
-        if (land.type === LandType.PARCEL && land.x !== undefined && land.y !== undefined) {
-          const coord = coordsToId(land.x, land.y);
-          coordinates.push(coord);
-          coordToLandMap.set(coord, land);
-        } else if (land.type === LandType.ESTATE && land.parcels && land.parcels.length > 0) {
-          // For estates, check first parcel (scenes span all parcels)
-          const firstParcel = land.parcels[0];
-          const coord = coordsToId(firstParcel.x, firstParcel.y);
-          coordinates.push(coord);
-          coordToLandMap.set(coord, land);
-        }
-
-        managedProjects.push({
-          id: land.id,
-          type: ManagedProjectType.LAND,
-          role: land.owner.toLowerCase() === address.toLowerCase() ? 'owner' : 'operator',
-          title: '',
-          thumbnail: '',
-          totalParcels: land.type === LandType.PARCEL ? 1 : land.size,
-          totalScenes: 1, // 1 if scene deployed, 0 otherwise --- TODO: fetch real scene count
-          publishedAt: 0,
-          /// TODO: fill these missing fields.
-        });
-      });
+          managedProjects.push({
+            id: land.id,
+            displayName: land.type === LandType.ESTATE ? land.name : land.id,
+            type: ManagedProjectType.LAND,
+            role: land.owner.toLowerCase() === address.toLowerCase() ? 'owner' : 'operator',
+            deployment: sceneDeployment
+              ? {
+                  title: sceneDeployment.metadata?.display?.title || '',
+                  description: sceneDeployment.metadata?.display?.description || '',
+                  thumbnail: getLandThumbnailUrl(sceneDeployment),
+                  lastPublishedAt: sceneDeployment.timestamp,
+                  scenes: [
+                    {
+                      id: sceneDeployment.id,
+                      publishedAt: sceneDeployment.timestamp,
+                      parcels: sceneDeployment.metadata?.scene.parcels || [],
+                    },
+                  ],
+                }
+              : undefined,
+          });
+        }),
+      );
 
       return managedProjects;
     } catch (error: any) {
@@ -192,14 +201,6 @@ const getLandItems = createSelector([getManagedProjects], items =>
   items.filter(item => item.type === ManagedProjectType.LAND),
 );
 
-const getPublishedItems = createSelector([getManagedProjects], items =>
-  items.filter(item => item.publishedAt),
-);
-
-const getUnpublishedItems = createSelector([getManagedProjects], items =>
-  items.filter(item => !item.publishedAt),
-);
-
 // exports
 export const actions = {
   ...slice.actions,
@@ -215,6 +216,4 @@ export const selectors = {
   getError,
   getWorldItems,
   getLandItems,
-  getPublishedItems,
-  getUnpublishedItems,
 };

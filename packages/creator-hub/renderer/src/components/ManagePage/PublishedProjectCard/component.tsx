@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import type { ManagedProject } from '/shared/types/manage';
 import { ManagedProjectType, WorldSettingsTab } from '/shared/types/manage';
 import WorldSettingsIcon from '@mui/icons-material/SpaceDashboard';
 import PublishedIcon from '@mui/icons-material/Cloud';
@@ -19,41 +20,34 @@ import './styles.css';
 const BUILDER_URL = 'https://decentraland.org/builder';
 
 export type Props = {
-  type: ManagedProjectType;
-  name: string;
-  role?: 'owner' | 'operator';
-  publishMetadata?: {
-    title: string;
-    thumbnail?: string;
-    totalParcels?: number;
-    totalScenes: number;
-  };
+  project: ManagedProject;
   onOpenSettings: (tab?: WorldSettingsTab) => void;
   onViewScenes: () => void;
 };
 
 const PublishedProjectCard: React.FC<Props> = React.memo(
-  ({ name, type, role, publishMetadata, onOpenSettings, onViewScenes }) => {
+  ({ project, onOpenSettings, onViewScenes }) => {
     const { pushGeneric } = useSnackbar();
+    const { id, displayName, type, role, deployment } = project;
 
     const handleJumpIn = () => {
-      const url = getJumpInUrl(name);
+      const url = getJumpInUrl(id);
       misc.openExternal(url);
     };
 
     const handleCopyURL = () => {
-      const url = getJumpInUrl(name);
+      const url = getJumpInUrl(id);
       misc.copyToClipboard(url);
       pushGeneric('success', t('snackbar.generic.url_copied'));
     };
 
     const handleEditName = () => {
-      const subdomain = isENSDomain(name) ? name : name.split('.')[0];
+      const subdomain = isENSDomain(id) ? id : id.split('.')[0];
       misc.openExternal(`${BUILDER_URL}/names/${subdomain}`); /// TODO: test ENS here
     };
 
     const handleViewParcel = () => {
-      misc.openExternal(`${BUILDER_URL}/land/${name}`);
+      misc.openExternal(`${BUILDER_URL}/land/${id}`);
     };
 
     const handleManagePermissions = () => {
@@ -70,20 +64,20 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
           text: t('manage.cards.menu.jump_in'),
           icon: <OpenInNew />,
           handler: handleJumpIn,
-          active: !!publishMetadata,
+          active: !!deployment,
         },
         {
           text: t('manage.cards.menu.copy_url'),
           icon: <ContentCopy />,
           handler: handleCopyURL,
           divider: true,
-          active: !!publishMetadata,
+          active: !!deployment,
         },
         {
           text: t('manage.cards.menu.edit_name'),
           icon: <OpenInNew />,
           handler: handleEditName,
-          active: type === ManagedProjectType.WORLD && !isENSDomain(name),
+          active: type === ManagedProjectType.WORLD && !isENSDomain(id),
         },
         {
           text: t('manage.cards.menu.parcel'),
@@ -100,18 +94,18 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
         {
           text: t('manage.cards.menu.unpublish'),
           handler: handleUnpublish,
-          active: !!publishMetadata,
+          active: !!deployment,
         },
       ];
       return options.filter(option => option.active) as Option[];
-    }, [name, type, publishMetadata]);
+    }, [project]);
 
     return (
       <div className="PublishedProjectCard">
         <div className="CardHeader">
-          {getLogo(type, name)}
+          {getLogo(type, id)}
           <Typography className="HeaderTitle">
-            {type === ManagedProjectType.LAND ? name : formatName(name)}
+            {type === ManagedProjectType.LAND ? displayName : formatName(displayName)}
           </Typography>
           {dropdownOptions?.length && (
             <Dropdown
@@ -120,7 +114,7 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
             />
           )}
         </div>
-        {!publishMetadata ? (
+        {!deployment ? (
           <div className="EmptyScene">
             <Typography>{t('manage.cards.no_scene.title')}</Typography>
             <Button
@@ -135,7 +129,7 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
           <>
             <div className="CardThumbnail">
               <img
-                src={publishMetadata.thumbnail || thumbnailFallbackImage}
+                src={deployment.thumbnail || thumbnailFallbackImage}
                 alt="Project thumbnail" /// TODO: use offline fallback Image component when merged.
               />
               <div className="ChipsContainer">
@@ -144,21 +138,21 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
                   icon={<PublishedIcon />}
                   label={t('manage.cards.published')}
                 />
-                {type === 'world' && publishMetadata.totalScenes > 1 && (
+                {type === 'world' && deployment.scenes.length > 1 && (
                   <Chip
                     variant="outlined"
                     icon={<ParcelsIcon />}
                     label={t('manage.cards.worlds.scenes_count', {
-                      count: publishMetadata.totalScenes,
+                      count: deployment.scenes.length,
                     })}
                   />
                 )}
-                {type === 'land' && !!publishMetadata.totalParcels && (
+                {deployment.scenes.length === 1 && (
                   <Chip
                     variant="outlined"
                     icon={<ParcelsIcon />}
                     label={t('manage.cards.land.parcels_count', {
-                      count: publishMetadata.totalParcels,
+                      count: deployment.scenes[0].parcels.length,
                     })}
                   />
                 )}
@@ -179,7 +173,7 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
                   ? t('manage.cards.published_scene')
                   : t('manage.cards.worlds.published_world')}
               </Typography>
-              <Typography className="ProjectTitle">{publishMetadata.title}</Typography>
+              <Typography className="ProjectTitle">{deployment.title}</Typography>
               {type === 'world' && (
                 <Button
                   variant="contained"
