@@ -6,6 +6,7 @@ import { t } from '/@/modules/store/translation/utils';
 
 import { actions as workspaceActions } from '../workspace';
 import { actions as deploymentActions } from '../deployment';
+import { actions as managementActions } from '../management';
 import { shouldNotifyUpdates } from '../workspace/utils';
 import { createCustomNotification, createGenericNotification } from './utils';
 import type { Notification } from './types';
@@ -215,6 +216,13 @@ export const slice = createSlice({
         state.notifications = state.notifications.filter($ => $.requestId !== path);
         state.notifications.push(
           createCustomNotification({ type: 'deploy', path }, { duration: 0, requestId: path }),
+        );
+      })
+      .addCase(managementActions.fetchManagedProjects.rejected, state => {
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.fetch_managed_projects_failed'), {
+            duration: 5000,
+          }),
         );
       });
   },

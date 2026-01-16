@@ -96,7 +96,7 @@ export function PublishToLand(props: Props) {
       if (isHighlighted(x, y) || placed) {
         return {
           color: isValid || placed ? COLORS.selectedStroke : COLORS.indicatorStroke,
-          scale: 1.5,
+          scale: 1.35,
         };
       }
       return null;
@@ -108,7 +108,7 @@ export function PublishToLand(props: Props) {
     (x: number, y: number) => {
       const placed = isPlaced(x, y);
       if (isHighlighted(x, y) || placed) {
-        return { color: isValid || placed ? COLORS.selected : COLORS.indicator, scale: 1.2 };
+        return { color: isValid || placed ? COLORS.selected : COLORS.indicator, scale: 1.15 };
       }
       return null;
     },
@@ -182,7 +182,7 @@ export function PublishToLand(props: Props) {
           {/* @ts-expect-error TODO: Update properties in UI2, making the not required `optional` */}
           <Atlas
             tiles={tiles}
-            layers={[strokeLayer, highlightLayer, ownedLayer]}
+            layers={[ownedLayer, strokeLayer, highlightLayer]}
             onHover={handleHover}
             onClick={handlePlacement}
             withZoomControls

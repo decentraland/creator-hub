@@ -1,0 +1,14 @@
+.SearchInput {
+  width: 220px;
+  height: 40px;
+  border: 1px solid rgb(255, 255, 255, 0.2);
+}
+
+.SearchInput input {
+  padding: 12px;
+  font-weight: 600;
+}
+
+.SearchInput svg {
+  cursor: pointer;
+}

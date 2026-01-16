@@ -6,8 +6,8 @@ import { AuthServerProvider } from 'decentraland-connect';
 import { useDispatch } from '#store';
 import { config } from '/@/config';
 import { Profiles } from '/@/lib/profile';
-import { fetchENSList } from '/@/modules/store/ens';
-import { fetchLandList, fetchTiles } from '/@/modules/store/land';
+import { fetchTiles } from '/@/modules/store/land';
+import { fetchManagedProjects } from '/@/modules/store/management';
 import { identify } from '/@/modules/store/analytics';
 import { AuthContext } from '/@/contexts/AuthContext';
 import type { AuthSignInProps } from './types';
@@ -99,10 +99,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     if (wallet && chainId) {
-      dispatch(fetchENSList({ address: wallet, chainId }));
+      dispatch(fetchManagedProjects({ address: wallet, chainId }));
       dispatch(identify({ userId: wallet }));
       dispatch(fetchTiles());
-      dispatch(fetchLandList({ address: wallet }));
       setUser({ id: wallet });
     }
   }, [wallet, chainId]);

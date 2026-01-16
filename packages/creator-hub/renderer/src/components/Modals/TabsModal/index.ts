@@ -1,2 +1,1 @@
-import TabsModal from './component';
-export { TabsModal };
+export * from './component';
