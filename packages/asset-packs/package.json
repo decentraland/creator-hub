@@ -36,6 +36,22 @@
     "ts-node": "^10.9.1",
     "typescript": "5.5.3"
   },
+  "exports": {
+    ".": {
+      "types": "./dist/definitions.d.ts",
+      "default": "./dist/definitions.js"
+    },
+    "./admin": {
+      "types": "./dist/admin.d.ts",
+      "default": "./dist/admin.js"
+    },
+    "./dist/events": {
+      "types": "./dist/events.d.ts",
+      "default": "./dist/events.js"
+    },
+    "./catalog.json": "./catalog.json",
+    "./package.json": "./package.json"
+  },
   "files": [
     "dist",
     "bin",
