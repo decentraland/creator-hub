@@ -5,9 +5,8 @@ import type { WorldSettings } from '/@/lib/worlds';
 import { Row } from '/@/components/Row';
 import './styles.css';
 
-/// TODO: get real numbers from backenders
-const MAX_COORDINATE = 10000;
-const MIN_COORDINATE = -10000;
+const MIN_COORDINATE = -150;
+const MAX_COORDINATE = 150;
 
 const formatSpawnPoint = (x: string, y: string) => `${x},${y}`;
 
