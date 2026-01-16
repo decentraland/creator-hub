@@ -40,7 +40,7 @@ async function fetchAndCacheAdmins(): Promise<SceneAdmin[]> {
  *
  * @example
  * ```typescript
- * import { isAdmin } from '@dcl/asset-packs/admin'
+ * import { isAdmin } from '@dcl/asset-packs/dist/admin'
  *
  * async function onPlayerSpawn() {
  *   const isAdminUser = await isAdmin();
