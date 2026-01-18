@@ -83,7 +83,6 @@ export function useAssetImport(options: UseAssetImportOptions = {}): UseAssetImp
 
   const startImport = useCallback(
     async (files: File[]) => {
-      // Filter by accepted extensions if specified
       let filesToProcess = files;
       if (acceptExtensions?.length) {
         filesToProcess = files.filter(file =>

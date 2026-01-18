@@ -25,7 +25,6 @@ const FileUploadField: React.FC<Props> = ({
   openFileExplorerOnMount = false,
   options = [],
 }) => {
-  // Convert types from TextFieldProps to ImportAsset's FieldModeProps
   const normalizedValue = Array.isArray(value) ? value[0] : value;
   const normalizedError = typeof error === 'boolean' ? (error ? 'Invalid' : undefined) : error;
   const normalizedLabel = typeof label === 'string' ? label : undefined;

@@ -33,11 +33,13 @@ function getValueAndTypeFromType(
     case 'TSBooleanKeyword':
       return { type: 'boolean', value: false };
     case 'TSTypeReference':
-      if (
-        typeAnnotation.typeName.type === 'Identifier' &&
-        typeAnnotation.typeName.name === 'Entity'
-      ) {
-        return { type: 'entity', value: engine.RootEntity };
+      if (typeAnnotation.typeName.type === 'Identifier') {
+        if (typeAnnotation.typeName.name === 'Entity') {
+          return { type: 'entity', value: engine.RootEntity };
+        }
+        if (typeAnnotation.typeName.name === 'ActionCallback') {
+          return { type: 'action', value: { entity: engine.RootEntity, action: '' } };
+        }
       }
       break;
     case 'TSUnionType': // (e.g: string | undefined)
@@ -196,7 +198,7 @@ export function getScriptParams(content: string): ScriptParseResult {
   try {
     const ast = parse(content, {
       sourceType: 'module',
-      plugins: ['typescript'],
+      plugins: ['typescript', 'jsx'],
     });
 
     for (const statement of ast.program.body) {

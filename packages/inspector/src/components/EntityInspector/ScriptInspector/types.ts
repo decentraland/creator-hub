@@ -1,5 +1,5 @@
 import type { Entity } from '@dcl/ecs';
-import { type Script } from '@dcl/asset-packs';
+import { type Script, type ActionRef } from '@dcl/asset-packs';
 
 export type ChangeEvt = React.ChangeEvent<HTMLInputElement>;
 
@@ -30,7 +30,8 @@ export type ScriptParamUnion =
   | ScriptParamNumber
   | ScriptParamBoolean
   | ScriptParamString
-  | ScriptParamEntity;
+  | ScriptParamEntity
+  | ScriptParamAction;
 
 export type ScriptParam = {
   optional?: boolean;
@@ -54,4 +55,9 @@ export type ScriptParamString = ScriptParam & {
 export type ScriptParamEntity = ScriptParam & {
   type: 'entity';
   value: Entity;
+};
+
+export type ScriptParamAction = ScriptParam & {
+  type: 'action';
+  value: ActionRef;
 };
