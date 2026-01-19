@@ -54,6 +54,7 @@ import {
   TeleportMode,
 } from './enums';
 import { getExplorerComponents } from './components';
+import { COUNTER_VERSIONS, getLatestComponentVersion } from './versionated-components';
 
 export const LIVEKIT_STREAM_SRC = 'livekit-video://current-stream';
 export const VIDEO_URL_TYPE = 'https://';
@@ -288,7 +289,7 @@ export function getComponents(engine: IEngine) {
   return {
     Actions: getComponent<Actions>(ComponentName.ACTIONS, engine),
     States: getComponent<States>(ComponentName.STATES, engine),
-    Counter: getComponent<Counter>(ComponentName.COUNTER, engine),
+    Counter: getComponent<Counter>(getLatestComponentVersion(COUNTER_VERSIONS).versionName, engine),
     Triggers: getComponent<Triggers>(ComponentName.TRIGGERS, engine),
     CounterBar: getComponent<CounterBar>(ComponentName.COUNTER_BAR, engine),
     AdminTools: getComponent<AdminTools>(ComponentName.ADMIN_TOOLS, engine),
