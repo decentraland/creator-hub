@@ -54,7 +54,11 @@ import {
   TeleportMode,
 } from './enums';
 import { getExplorerComponents } from './components';
-import { COUNTER_VERSIONS, getLatestComponentVersion } from './versionated-components';
+import {
+  COUNTER_VERSIONS,
+  defineVersionedComponents,
+  getLatestComponentVersion,
+} from './versionated-components';
 
 export const LIVEKIT_STREAM_SRC = 'livekit-video://current-stream';
 export const VIDEO_URL_TYPE = 'https://';
@@ -325,10 +329,7 @@ export function createComponents(engine: IEngine) {
     ),
   });
 
-  const Counter = engine.defineComponent(ComponentName.COUNTER, {
-    id: Schemas.Number,
-    value: Schemas.Int,
-  });
+  const Counter = defineVersionedComponents(engine, COUNTER_VERSIONS).pop()!;
 
   const Triggers = engine.defineComponent(ComponentName.TRIGGERS, {
     value: Schemas.Array(
