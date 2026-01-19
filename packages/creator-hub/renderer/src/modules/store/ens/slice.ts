@@ -253,6 +253,7 @@ export const fetchENSList = createAsyncThunk(
     const dclNames = await thunkApi.dispatch(fetchDCLNames(payload)).unwrap();
     const ensNames = await thunkApi.dispatch(fetchENS(payload)).unwrap();
     const contributableNames = await thunkApi.dispatch(fetchContributableNames(payload)).unwrap();
+
     return [...dclNames, ...ensNames, ...contributableNames];
   },
 );
