@@ -1,10 +1,10 @@
 import type { YGAlign, YGJustify } from '@dcl/ecs';
-import { COUNTER_VERSIONS, getLatestComponentVersion } from './versionated-components';
+import { AssetPacksComponentsVersions, getLatestComponentVersion } from './versioning';
 
 export const ComponentName = {
   ACTION_TYPES: 'asset-packs::ActionTypes',
   ACTIONS: 'asset-packs::Actions',
-  COUNTER: getLatestComponentVersion(COUNTER_VERSIONS).versionName,
+  COUNTER: getLatestComponentVersion(AssetPacksComponentsVersions.Counter).versionName,
   TRIGGERS: 'asset-packs::Triggers',
   STATES: 'asset-packs::States',
   COUNTER_BAR: 'asset-packs::CounterBar',

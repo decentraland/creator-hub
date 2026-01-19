@@ -54,11 +54,7 @@ import {
   TeleportMode,
 } from './enums';
 import { getExplorerComponents } from './components';
-import {
-  COUNTER_VERSIONS,
-  defineVersionedComponents,
-  getLatestComponentVersion,
-} from './versionated-components';
+import { defineAssetPacksComponents } from './versioning';
 
 export const LIVEKIT_STREAM_SRC = 'livekit-video://current-stream';
 export const VIDEO_URL_TYPE = 'https://';
@@ -71,7 +67,7 @@ export * from './states';
 export * from './clone';
 export * from './lww';
 export * from './types';
-export * from './versionated-components';
+export * from './versioning';
 
 export const ActionSchemas = {
   [ActionType.PLAY_ANIMATION]: Schemas.Map({
@@ -294,7 +290,7 @@ export function getComponents(engine: IEngine) {
   return {
     Actions: getComponent<Actions>(ComponentName.ACTIONS, engine),
     States: getComponent<States>(ComponentName.STATES, engine),
-    Counter: getComponent<Counter>(getLatestComponentVersion(COUNTER_VERSIONS).versionName, engine),
+    Counter: getComponent<Counter>(ComponentName.COUNTER, engine),
     Triggers: getComponent<Triggers>(ComponentName.TRIGGERS, engine),
     CounterBar: getComponent<CounterBar>(ComponentName.COUNTER_BAR, engine),
     AdminTools: getComponent<AdminTools>(ComponentName.ADMIN_TOOLS, engine),
@@ -330,7 +326,7 @@ export function createComponents(engine: IEngine) {
     ),
   });
 
-  const Counter = defineVersionedComponents(engine, COUNTER_VERSIONS).pop()!;
+  const { Counter } = defineAssetPacksComponents(engine);
 
   const Triggers = engine.defineComponent(ComponentName.TRIGGERS, {
     value: Schemas.Array(
