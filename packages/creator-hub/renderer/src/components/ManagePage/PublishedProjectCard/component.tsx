@@ -80,26 +80,27 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
           text: t('manage.cards.menu.jump_in'),
           icon: <OpenInNew />,
           handler: handleJumpIn,
-          active: !!deployment,
+          active: type === ManagedProjectType.LAND || !!deployment,
         },
         {
           text: t('manage.cards.menu.copy_url'),
           icon: <ContentCopy />,
           handler: handleCopyURL,
           divider: true,
-          active: !!deployment,
-        },
-        {
-          text: t('manage.cards.menu.edit_name'),
-          icon: <OpenInNew />,
-          handler: handleEditName,
-          active: type === ManagedProjectType.WORLD && !isENSDomain(id),
+          active: type === ManagedProjectType.LAND || !!deployment,
         },
         {
           text: t('manage.cards.menu.parcel'),
           icon: <OpenInNew />,
           handler: handleViewParcel,
           active: type === ManagedProjectType.LAND,
+        },
+        {
+          text: t('manage.cards.menu.edit_name'),
+          icon: <OpenInNew />,
+          handler: handleEditName,
+          active:
+            type === ManagedProjectType.WORLD && role === WorldRoleType.OWNER && !isENSDomain(id),
         },
         {
           text: t('manage.cards.menu.permissions'),
@@ -110,7 +111,7 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
         {
           text: t('manage.cards.menu.unpublish'),
           handler: handleUnpublish,
-          active: !!deployment,
+          active: type === ManagedProjectType.WORLD && role === WorldRoleType.OWNER && !!deployment,
         },
       ];
       return options.filter(option => option.active) as Option[];
@@ -199,7 +200,7 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
                   : t('manage.cards.worlds.published_world')}
               </Typography>
               <Typography className="ProjectTitle">{deployment.title}</Typography>
-              {type === 'world' && (
+              {type === 'world' && role === WorldRoleType.OWNER && (
                 <Button
                   variant="contained"
                   color="secondary"
