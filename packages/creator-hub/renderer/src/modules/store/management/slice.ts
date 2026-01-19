@@ -84,77 +84,77 @@ export const fetchAllManagedProjectsDetails = createAsyncThunk(
       };
 
       // Process Worlds data
-      await Promise.all(
-        ensList.map(async ens => {
-          const worldDeployment = await WorldsAPI.fetchWorld(ens.subdomain);
-          const worldScenes = await WorldsAPI.fetchWorldScenes(ens.subdomain);
+      const worldsPromises = ensList.map(async ens => {
+        const [worldDeployment, worldScenes] = await Promise.all([
+          WorldsAPI.fetchWorld(ens.subdomain),
+          WorldsAPI.fetchWorldScenes(ens.subdomain),
+        ]);
 
-          managedProjects.push({
-            id: ens.subdomain,
-            displayName: ens.subdomain,
-            type: ManagedProjectType.WORLD,
-            role:
-              ens.nftOwnerAddress.toLowerCase() === address.toLowerCase()
-                ? WorldRoleType.OWNER
-                : WorldRoleType.COLLABORATOR,
-            deployment:
-              worldDeployment && worldDeployment[0]
-                ? {
-                    title: worldDeployment[0].metadata.display.title,
-                    description: worldDeployment[0].metadata.display.description,
-                    thumbnail: getThumbnailUrl(worldDeployment[0], $ =>
-                      WorldsAPI.getContentSrcUrl($),
-                    ),
-                    lastPublishedAt:
-                      worldScenes?.scenes?.reduce(
-                        (max, scene) => Math.max(max, scene.createdAt.getTime()),
-                        0,
-                      ) ?? 0, // Get latest published scene date.
-                    scenes:
-                      worldScenes?.scenes?.map(scene => ({
-                        id: scene.id,
-                        publishedAt: scene.createdAt.getTime() ?? 0,
-                        parcels: scene.parcels,
-                      })) ?? [],
-                  }
-                : undefined,
-          });
-        }),
-      );
-
-      // Process Lands data
-      await Promise.all(
-        landList.map(async land => {
-          let sceneDeployment: LandDeployment | null = null;
-          const landCoords =
-            land.type === LandType.PARCEL ? { x: land.x, y: land.y } : land.parcels?.[0];
-          if (landCoords?.x && landCoords?.y) {
-            sceneDeployment = await LandsAPI.fetchLandPublishedScene(landCoords.x, landCoords.y);
-          }
-
-          managedProjects.push({
-            id: land.id,
-            displayName: land.type === LandType.ESTATE ? land.name : land.id,
-            type: ManagedProjectType.LAND,
-            role: land.role,
-            deployment: sceneDeployment
+        managedProjects.push({
+          id: ens.subdomain,
+          displayName: ens.subdomain,
+          type: ManagedProjectType.WORLD,
+          role:
+            ens.nftOwnerAddress.toLowerCase() === address.toLowerCase()
+              ? WorldRoleType.OWNER
+              : WorldRoleType.COLLABORATOR,
+          deployment:
+            worldDeployment && worldDeployment[0]
               ? {
-                  title: sceneDeployment.metadata?.display?.title || '',
-                  description: sceneDeployment.metadata?.display?.description || '',
-                  thumbnail: getThumbnailUrl(sceneDeployment, $ => LandsAPI.getContentSrcUrl($)),
-                  lastPublishedAt: sceneDeployment.timestamp,
-                  scenes: [
-                    {
-                      id: sceneDeployment.id,
-                      publishedAt: sceneDeployment.timestamp,
-                      parcels: sceneDeployment.metadata?.scene.parcels || [],
-                    },
-                  ],
+                  title: worldDeployment[0].metadata.display.title,
+                  description: worldDeployment[0].metadata.display.description,
+                  thumbnail: getThumbnailUrl(worldDeployment[0], $ =>
+                    WorldsAPI.getContentSrcUrl($),
+                  ),
+                  lastPublishedAt:
+                    worldScenes?.scenes?.reduce(
+                      (max, scene) => Math.max(max, scene.createdAt.getTime()),
+                      0,
+                    ) ?? 0, // Get latest published scene date.
+                  scenes:
+                    worldScenes?.scenes?.map(scene => ({
+                      id: scene.id,
+                      publishedAt: scene.createdAt.getTime() ?? 0,
+                      parcels: scene.parcels,
+                    })) ?? [],
                 }
               : undefined,
-          });
-        }),
-      );
+        });
+      });
+
+      // Process Lands data
+      const landsPromises = landList.map(async land => {
+        let sceneDeployment: LandDeployment | null = null;
+        const landCoords =
+          land.type === LandType.PARCEL ? { x: land.x, y: land.y } : land.parcels?.[0];
+        if (landCoords?.x && landCoords?.y) {
+          sceneDeployment = await LandsAPI.fetchLandPublishedScene(landCoords.x, landCoords.y);
+        }
+
+        managedProjects.push({
+          id: land.id,
+          displayName: land.type === LandType.ESTATE ? land.name : land.id,
+          type: ManagedProjectType.LAND,
+          role: land.role,
+          deployment: sceneDeployment
+            ? {
+                title: sceneDeployment.metadata?.display?.title || '',
+                description: sceneDeployment.metadata?.display?.description || '',
+                thumbnail: getThumbnailUrl(sceneDeployment, $ => LandsAPI.getContentSrcUrl($)),
+                lastPublishedAt: sceneDeployment.timestamp,
+                scenes: [
+                  {
+                    id: sceneDeployment.id,
+                    publishedAt: sceneDeployment.timestamp,
+                    parcels: sceneDeployment.metadata?.scene.parcels || [],
+                  },
+                ],
+              }
+            : undefined,
+        });
+      });
+
+      await Promise.all([...worldsPromises, ...landsPromises]);
 
       return managedProjects;
     } catch (error) {
