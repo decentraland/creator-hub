@@ -253,14 +253,15 @@ export class Worlds {
 
   public async fetchWorldSettings(
     worldName: string,
-    limit?: number,
-    offset?: number,
-    coordinates?: string[],
+    limit: number = 100,
+    offset: number = 0,
+    coordinates: string[] = [],
   ) {
-    const urlParams = new URLSearchParams();
-    if (limit !== undefined) urlParams.set('limit', limit.toString());
-    if (offset !== undefined) urlParams.set('offset', offset.toString());
-    if (coordinates && coordinates.length > 0) urlParams.set('coordinates', coordinates.join(','));
+    const urlParams = new URLSearchParams({
+      limit: limit.toString(),
+      offset: offset.toString(),
+      coordinates: coordinates.toString(),
+    });
 
     const result = await fetch(`${this.url}/world/${worldName}/settings?${urlParams.toString()}`);
     if (result.ok) {

@@ -7,7 +7,6 @@ import type { Async } from '/shared/types/async';
 import { config } from '/@/config';
 import { DCLNames, ENS as ENSApi } from '/@/lib/ens';
 import { Worlds } from '/@/lib/worlds';
-import { tryCatch } from '/shared/try-catch';
 import { ens as ensContract, ensResolver, dclRegistrar } from './contracts';
 import { getEnsProvider, isValidENSName } from './utils';
 import { USER_PERMISSIONS, type ENS, type ENSError } from './types';
@@ -251,13 +250,10 @@ export const fetchContributableNames = createAsyncThunk(
 export const fetchENSList = createAsyncThunk(
   'ens/fetchENSList',
   async (payload: { address: string; chainId: ChainId }, thunkApi) => {
-    const [, dclNames] = await tryCatch(thunkApi.dispatch(fetchDCLNames(payload)).unwrap());
-    const [, ensNames] = await tryCatch(thunkApi.dispatch(fetchENS(payload)).unwrap());
-    const [, contributableNames] = await tryCatch(
-      thunkApi.dispatch(fetchContributableNames(payload)).unwrap(),
-    );
-
-    return [...(dclNames ?? []), ...(ensNames ?? []), ...(contributableNames ?? [])];
+    const dclNames = await thunkApi.dispatch(fetchDCLNames(payload)).unwrap();
+    const ensNames = await thunkApi.dispatch(fetchENS(payload)).unwrap();
+    const contributableNames = await thunkApi.dispatch(fetchContributableNames(payload)).unwrap();
+    return [...dclNames, ...ensNames, ...contributableNames];
   },
 );
 

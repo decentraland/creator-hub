@@ -395,7 +395,9 @@
       "run_scene_failed": "加载项目失败。请重试。",
       "url_copied": "URL已复制到剪贴板",
       "fetch_managed_projects_failed": "获取管理项目失败",
-      "fetch_world_settings_failed": "获取世界设置失败。请重试。"
+      "fetch_world_settings_failed": "获取世界设置失败。请重试。",
+      "fetch_ens_list_failed": "获取ENS列表失败",
+      "fetch_land_list_failed": "获取土地列表失败"
     },
     "missing_projects": {
       "title": "{scenes} 丢失的 {scenes, plural, one {场景} other {场景}} 成立",

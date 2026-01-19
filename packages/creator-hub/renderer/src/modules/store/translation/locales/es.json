@@ -395,7 +395,9 @@
       "run_scene_failed": "Error al cargar el proyecto. Por favor, inténtalo de nuevo.",
       "url_copied": "URL copiada al portapapeles",
       "fetch_managed_projects_failed": "Error al cargar los proyectos gestionados",
-      "fetch_world_settings_failed": "Error al cargar la configuración del mundo. Por favor, inténtalo de nuevo."
+      "fetch_world_settings_failed": "Error al cargar la configuración del mundo. Por favor, inténtalo de nuevo.",
+      "fetch_ens_list_failed": "Error al cargar tu lista de Nombres",
+      "fetch_land_list_failed": "Error al cargar tu lista de Tierras"
     },
     "missing_projects": {
       "title": "{scenes} {scenes, plural, one {escena} other {escenas}} {scenes, plural, one {faltante} other {faltantes}}",

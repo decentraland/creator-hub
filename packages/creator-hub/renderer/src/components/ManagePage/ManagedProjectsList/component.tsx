@@ -39,10 +39,7 @@ const ManagedProjectsList: React.FC<Props> = React.memo(({ projects }) => {
   }, []);
 
   const handleModalTabClick = useCallback((tab: WorldSettingsTab) => {
-    setSettingsModal(prevState => ({
-      ...prevState,
-      activeTab: tab,
-    }));
+    setSettingsModal(prevState => ({ ...prevState, activeTab: tab }));
   }, []);
 
   const handleViewScenes = useCallback(() => {

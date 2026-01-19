@@ -13,7 +13,6 @@ import { WorldRoleType, Worlds } from '/@/lib/worlds';
 import type { AppState } from '/@/modules/store';
 import { fetchENSList } from '/@/modules/store/ens';
 import { fetchLandList } from '/@/modules/store/land';
-import { tryCatch } from '/shared/try-catch';
 import type { LandDeployment } from '/@/lib/land';
 import { Lands, LandType } from '/@/lib/land';
 
@@ -49,11 +48,12 @@ export const fetchManagedProjects = createAsyncThunk(
   'management/fetchManagedProjects',
   async ({ address, chainId }: { address: string; chainId: ChainId }, { dispatch }) => {
     await Promise.all([
-      tryCatch(dispatch(fetchENSList({ address, chainId })).unwrap()),
-      tryCatch(dispatch(fetchLandList({ address })).unwrap()),
+      dispatch(fetchENSList({ address, chainId })).unwrap(),
+      dispatch(fetchLandList({ address })).unwrap(),
     ]);
 
-    await dispatch(fetchAllManagedProjectsDetails({ address })).unwrap();
+    const projects = await dispatch(fetchAllManagedProjectsDetails({ address })).unwrap();
+    return projects;
   },
 );
 
@@ -190,16 +190,16 @@ const slice = createSlice({
   },
   extraReducers: builder => {
     builder
-      .addCase(fetchAllManagedProjectsDetails.pending, state => {
+      .addCase(fetchManagedProjects.pending, state => {
         state.status = 'loading';
         state.error = null;
       })
-      .addCase(fetchAllManagedProjectsDetails.fulfilled, (state, action) => {
+      .addCase(fetchManagedProjects.fulfilled, (state, action) => {
         state.projects = action.payload;
         state.status = 'succeeded';
         state.error = null;
       })
-      .addCase(fetchAllManagedProjectsDetails.rejected, (state, action) => {
+      .addCase(fetchManagedProjects.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message || 'Failed to fetch managed projects';
       })

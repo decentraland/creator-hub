@@ -28,6 +28,12 @@ const COLLABORATOR_ROLES_LABELS = {
   [WorldRoleType.COLLABORATOR]: t('manage.cards.roles.collaborator'),
 };
 
+type CollaboratorRole = keyof typeof COLLABORATOR_ROLES_LABELS;
+
+function isCollaboratorRole(role: LandRoleType | WorldRoleType): role is CollaboratorRole {
+  return role in COLLABORATOR_ROLES_LABELS;
+}
+
 export type Props = {
   project: ManagedProject;
   onOpenSettings: (tab?: WorldSettingsTab) => void;
@@ -38,7 +44,7 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
   ({ project, onOpenSettings, onViewScenes }) => {
     const { pushGeneric } = useSnackbar();
     const { id, displayName, type, role, deployment } = project;
-    const roleLabel = COLLABORATOR_ROLES_LABELS[role as keyof typeof COLLABORATOR_ROLES_LABELS];
+    const roleLabel = isCollaboratorRole(role) ? COLLABORATOR_ROLES_LABELS[role] : null;
 
     const handleJumpIn = useCallback(() => {
       const url = getJumpInUrl(id);
