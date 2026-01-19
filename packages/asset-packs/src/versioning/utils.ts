@@ -1,57 +1,28 @@
 import type { ISchema, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
-import { type IEngine, Schemas } from '@dcl/ecs';
+import type { IEngine } from '@dcl/ecs';
+import { COUNTER_VERSIONS } from './components';
 
-const COUNTER_BASE_NAME = 'asset-packs::Counter';
-
-const Counter = COUNTER_BASE_NAME;
-
-const CounterV0 = {
-  id: Schemas.Number,
-  value: Schemas.Int,
-};
-
-const CounterV1 = {
-  id: Schemas.Number,
-  value: Schemas.Int,
-  random: Schemas.Boolean,
-};
-
-export const COUNTER_VERSIONS = [
-  { versionName: Counter, component: CounterV0 },
-  { versionName: `${Counter}-v1`, component: CounterV1 },
-];
-
-//Helpers
-type VersionedComponent = {
+export type VersionedComponent = {
   versionName: string;
   component: Record<string, ISchema>;
 };
+
+export const AssetPacksComponentsVersions = {
+  Counter: COUNTER_VERSIONS,
+  // Actions: ACTIONS_VERSIONS,
+  // Triggers: TRIGGERS_VERSIONS,
+} as const;
 
 export function getLatestComponentVersion(versionedComponents: VersionedComponent[]) {
   return versionedComponents[versionedComponents.length - 1];
 }
 
-export function defineVersionedComponents(
-  engine: IEngine,
-  versionedComponents: VersionedComponent[],
-) {
+function defineComponentVersions(engine: IEngine, versionedComponents: VersionedComponent[]) {
   const components = versionedComponents.map(({ versionName, component }) => {
     return engine.defineComponent(versionName, component);
   });
 
   return components;
-}
-
-export function removeOldComponentVersions(
-  engine: IEngine,
-  versionedComponents: VersionedComponent[],
-  currentComponentVersion: string,
-) {
-  versionedComponents.forEach(({ versionName }) => {
-    if (versionName !== currentComponentVersion) {
-      engine.removeComponentDefinition(versionName);
-    }
-  });
 }
 
 export function getCompositeComponentVersion(
@@ -102,4 +73,12 @@ export function migrateVersionedComponent(
   }
 
   engine.removeComponentDefinition(found.versionName);
+}
+
+export function defineAssetPacksComponents(engine: IEngine) {
+  const Counter = defineComponentVersions(engine, AssetPacksComponentsVersions.Counter).pop()!;
+  // const Actions = defineComponentVersions(engine, AssetPacksComponentsVersions.Actions).pop()!;
+  // const Triggers = defineComponentVersions(engine, AssetPacksComponentsVersions.Triggers).pop()!;
+
+  return { Counter };
 }
