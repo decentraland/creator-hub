@@ -8,7 +8,7 @@ import type { ChainId } from '@dcl/schemas';
 import type { Async } from '/shared/types/async';
 import type { ManagedProject } from '/shared/types/manage';
 import { ManagedProjectType, SortBy } from '/shared/types/manage';
-import type { WorldDeployment } from '/@/lib/worlds';
+import type { WorldDeployment, WorldSettings } from '/@/lib/worlds';
 import { Worlds } from '/@/lib/worlds';
 import type { AppState } from '/@/modules/store';
 import { fetchENSList } from '/@/modules/store/ens';
@@ -22,6 +22,12 @@ export type ManagementState = {
   sortBy: SortBy;
   searchQuery: string;
   projects: ManagedProject[]; // List of managed projects
+  worldSettings: {
+    worldName: string;
+    settings: WorldSettings | null;
+    status: 'idle' | 'loading' | 'succeeded' | 'failed';
+    error: string | null;
+  };
 };
 
 export const initialState: Async<ManagementState> = {
@@ -30,6 +36,12 @@ export const initialState: Async<ManagementState> = {
   projects: [],
   status: 'idle',
   error: null,
+  worldSettings: {
+    worldName: '',
+    settings: null,
+    status: 'idle',
+    error: null,
+  },
 };
 
 // thunks
@@ -58,16 +70,20 @@ export const fetchAllManagedProjectsDetails = createAsyncThunk(
       const managedProjects: ManagedProject[] = [];
 
       const WorldsAPI = new Worlds();
+      const LandsAPI = new Lands();
 
-      const getWorldThumbnailUrl = (deployment: WorldDeployment) => {
+      const getThumbnailUrl = (
+        deployment: WorldDeployment | LandDeployment | undefined,
+        getContentSrcUrl: (hash: string) => string,
+      ) => {
         if (!deployment?.metadata.display.navmapThumbnail) return '';
         const thumbnailFileName = deployment.metadata.display.navmapThumbnail;
         const thumbnailContent = deployment.content.find(item => item.file === thumbnailFileName);
-        if (thumbnailContent) return WorldsAPI.getContentSrcUrl(thumbnailContent.hash);
+        if (thumbnailContent) return getContentSrcUrl(thumbnailContent.hash);
         return '';
       };
 
-      // Fetch deployment details for worlds that have entityId
+      // Process Worlds data
       await Promise.all(
         ensList.map(async ens => {
           const worldDeployment = await WorldsAPI.fetchWorld(ens.subdomain);
@@ -84,7 +100,9 @@ export const fetchAllManagedProjectsDetails = createAsyncThunk(
                 ? {
                     title: worldDeployment[0].metadata.display.title,
                     description: worldDeployment[0].metadata.display.description,
-                    thumbnail: getWorldThumbnailUrl(worldDeployment[0]),
+                    thumbnail: getThumbnailUrl(worldDeployment[0], $ =>
+                      WorldsAPI.getContentSrcUrl($),
+                    ),
                     lastPublishedAt:
                       worldScenes?.scenes?.reduce(
                         (max, scene) => Math.max(max, scene.createdAt.getTime()),
@@ -102,17 +120,7 @@ export const fetchAllManagedProjectsDetails = createAsyncThunk(
         }),
       );
 
-      const LandsAPI = new Lands();
-
-      const getLandThumbnailUrl = (deployment: LandDeployment) => {
-        if (!deployment?.metadata.display.navmapThumbnail) return '';
-        const thumbnailFileName = deployment.metadata.display.navmapThumbnail;
-        const thumbnailContent = deployment.content.find(item => item.file === thumbnailFileName);
-        if (thumbnailContent) return LandsAPI.getContentSrcUrl(thumbnailContent.hash);
-        return '';
-      };
-
-      // Process Land data
+      // Process Lands data
       await Promise.all(
         landList.map(async land => {
           let sceneDeployment: LandDeployment | null = null;
@@ -131,7 +139,7 @@ export const fetchAllManagedProjectsDetails = createAsyncThunk(
               ? {
                   title: sceneDeployment.metadata?.display?.title || '',
                   description: sceneDeployment.metadata?.display?.description || '',
-                  thumbnail: getLandThumbnailUrl(sceneDeployment),
+                  thumbnail: getThumbnailUrl(sceneDeployment, $ => LandsAPI.getContentSrcUrl($)),
                   lastPublishedAt: sceneDeployment.timestamp,
                   scenes: [
                     {
@@ -147,12 +155,20 @@ export const fetchAllManagedProjectsDetails = createAsyncThunk(
       );
 
       return managedProjects;
-    } catch (error: any) {
+    } catch (error) {
       return rejectWithValue({
-        message: error.message || 'Failed to fetch managed items',
-        code: error.code,
+        message: (error as Error).message || 'Failed to fetch managed items',
       });
     }
+  },
+);
+
+export const fetchWorldSettings = createAsyncThunk(
+  'management/fetchWorldSettings',
+  async ({ worldName }: { worldName: string }) => {
+    const WorldsAPI = new Worlds();
+    const worldSettings = await WorldsAPI.fetchWorldSettings(worldName);
+    return worldSettings;
   },
 );
 
@@ -184,7 +200,22 @@ const slice = createSlice({
       })
       .addCase(fetchAllManagedProjectsDetails.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = (action.payload as Error)?.message || 'Failed to fetch managed projects';
+        state.error = action.error.message || 'Failed to fetch managed projects';
+      })
+      .addCase(fetchWorldSettings.pending, (state, action) => {
+        state.worldSettings.worldName = action.meta.arg.worldName;
+        state.worldSettings.settings = null;
+        state.worldSettings.status = 'loading';
+        state.worldSettings.error = null;
+      })
+      .addCase(fetchWorldSettings.fulfilled, (state, action) => {
+        state.worldSettings.settings = action.payload;
+        state.worldSettings.status = 'succeeded';
+        state.worldSettings.error = null;
+      })
+      .addCase(fetchWorldSettings.rejected, (state, action) => {
+        state.worldSettings.status = 'failed';
+        state.worldSettings.error = action.error.message || 'Failed to fetch world settings';
       });
   },
 });
@@ -206,6 +237,7 @@ export const actions = {
   ...slice.actions,
   fetchAllManagedProjectsDetails,
   fetchManagedProjects,
+  fetchWorldSettings,
 };
 
 export const reducer = slice.reducer;

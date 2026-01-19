@@ -7,6 +7,10 @@ import { config } from '/@/config';
 const IS_DEV = import.meta.env.DEV;
 const WORLDS_CONTENT_SERVER_URL = config.get('WORLDS_CONTENT_SERVER_URL');
 
+export const isENSDomain = (name: string) => {
+  return name.endsWith('.eth') && !name.endsWith('.dcl.eth');
+};
+
 export const getLogo = (type: ManagedProjectType, subdomain: string) => {
   if (type === ManagedProjectType.LAND) return <LandCoordsIcon />;
   return (
@@ -19,7 +23,7 @@ export const getLogo = (type: ManagedProjectType, subdomain: string) => {
 
 export const formatName = (name: string) => {
   // Separate base name and extension (.eth or .dcl.eth) with regex
-  const match = name.match(/^(.*?)(\.dcl\.eth|\.eth)?$/);
+  const match = name.match(/^(.+?)(\.dcl\.eth|\.eth)$/);
   if (match && match.length > 1) {
     const baseName = match[1];
     const extension = match[2] || '.dcl.eth';
@@ -31,10 +35,6 @@ export const formatName = (name: string) => {
     );
   }
   return name;
-};
-
-export const isENSDomain = (name: string) => {
-  return name.endsWith('.eth') && !name.endsWith('.dcl.eth');
 };
 
 export const getJumpInUrl = (world: string) => {

@@ -206,7 +206,7 @@ export class Worlds {
   }
 
   public getContentSrcUrl(hash: string) {
-    return `${this.url}/contents/${hash}?resize`;
+    return `${this.url}/contents/${hash}`;
   }
 
   public async fetchWorld(name: string) {
@@ -252,9 +252,12 @@ export class Worlds {
     offset?: number,
     coordinates?: string[],
   ) {
-    const result = await fetch(
-      `${this.url}/world/${worldName}/settings?limit=${limit ?? ''}&offset=${offset ?? 0}&coordinates=${coordinates?.join(',') ?? ''}`,
-    );
+    const urlParams = new URLSearchParams();
+    if (limit !== undefined) urlParams.set('limit', limit.toString());
+    if (offset !== undefined) urlParams.set('offset', offset.toString());
+    if (coordinates && coordinates.length > 0) urlParams.set('coordinates', coordinates.join(','));
+
+    const result = await fetch(`${this.url}/world/${worldName}/settings?${urlParams.toString()}`);
     if (result.ok) {
       const json = await result.json();
       return json as WorldSettings;

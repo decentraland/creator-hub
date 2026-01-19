@@ -224,6 +224,15 @@ export const slice = createSlice({
             duration: 5000,
           }),
         );
+      })
+      .addCase(managementActions.fetchWorldSettings.rejected, state => {
+        state.notifications = state.notifications.filter($ => $.requestId !== 'fetchWorldSettings');
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.fetch_world_settings_failed'), {
+            duration: 5000,
+            requestId: 'fetchWorldSettings',
+          }),
+        );
       });
   },
 });

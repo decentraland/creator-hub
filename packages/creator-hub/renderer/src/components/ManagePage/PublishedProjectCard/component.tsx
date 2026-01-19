@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import type { ManagedProject } from '/shared/types/manage';
 import { ManagedProjectType, WorldSettingsTab } from '/shared/types/manage';
 import WorldSettingsIcon from '@mui/icons-material/SpaceDashboard';
@@ -30,33 +30,33 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
     const { pushGeneric } = useSnackbar();
     const { id, displayName, type, role, deployment } = project;
 
-    const handleJumpIn = () => {
+    const handleJumpIn = useCallback(() => {
       const url = getJumpInUrl(id);
-      misc.openExternal(url);
-    };
+      void misc.openExternal(url);
+    }, [id]);
 
-    const handleCopyURL = () => {
+    const handleCopyURL = useCallback(() => {
       const url = getJumpInUrl(id);
-      misc.copyToClipboard(url);
+      void misc.copyToClipboard(url);
       pushGeneric('success', t('snackbar.generic.url_copied'));
-    };
+    }, [id, pushGeneric]);
 
-    const handleEditName = () => {
+    const handleEditName = useCallback(() => {
       const subdomain = isENSDomain(id) ? id : id.split('.')[0];
-      misc.openExternal(`${BUILDER_URL}/names/${subdomain}`); /// TODO: test ENS here
-    };
+      void misc.openExternal(`${BUILDER_URL}/names/${subdomain}`); /// TODO: test ENS here
+    }, [id]);
 
-    const handleViewParcel = () => {
-      misc.openExternal(`${BUILDER_URL}/land/${id}`);
-    };
+    const handleViewParcel = useCallback(() => {
+      void misc.openExternal(`${BUILDER_URL}/land/${id}`);
+    }, [id]);
 
-    const handleManagePermissions = () => {
+    const handleManagePermissions = useCallback(() => {
       onOpenSettings(WorldSettingsTab.PERMISSIONS);
-    };
+    }, [onOpenSettings]);
 
-    const handleUnpublish = () => {
+    const handleUnpublish = useCallback(() => {
       /// TODO: implement unpublish flow
-    };
+    }, []);
 
     const dropdownOptions = useMemo(() => {
       const options: Array<Option & { active: boolean }> = [
@@ -98,7 +98,15 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
         },
       ];
       return options.filter(option => option.active) as Option[];
-    }, [project]);
+    }, [
+      project,
+      handleJumpIn,
+      handleCopyURL,
+      handleEditName,
+      handleViewParcel,
+      handleManagePermissions,
+      handleUnpublish,
+    ]);
 
     return (
       <div className="PublishedProjectCard">
@@ -107,7 +115,7 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
           <Typography className="HeaderTitle">
             {type === ManagedProjectType.LAND ? displayName : formatName(displayName)}
           </Typography>
-          {dropdownOptions?.length && (
+          {!!dropdownOptions?.length && (
             <Dropdown
               className="options-dropdown"
               options={dropdownOptions}

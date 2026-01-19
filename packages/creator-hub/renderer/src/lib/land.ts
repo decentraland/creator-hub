@@ -290,7 +290,7 @@ export class Lands {
   private PEER_URL = config.get('PEER_URL');
 
   public getContentSrcUrl(hash: string) {
-    return `${this.PEER_URL}/content/contents/${hash}?resize`;
+    return `${this.PEER_URL}/content/contents/${hash}`;
   }
 
   fetchLand = async (

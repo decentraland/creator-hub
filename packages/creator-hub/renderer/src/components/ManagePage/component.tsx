@@ -62,7 +62,7 @@ export function ManagePage() {
         ) : (
           <Row>
             <Column className="ContentColumn">
-              <FiltersBar classNames="FiltersBar">
+              <FiltersBar className="FiltersBar">
                 <Typography variant="h6">
                   {t('manage.items', { count: projects.length })}
                 </Typography>
