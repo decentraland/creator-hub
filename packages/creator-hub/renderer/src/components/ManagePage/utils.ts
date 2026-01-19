@@ -3,7 +3,6 @@ import { SortBy } from '/shared/types/manage';
 
 export function filterProjectsBy(projects: ManagedProject[], searchQuery: string) {
   if (!searchQuery) return projects;
-  /// TODO: refine if search query should search in other fields
   return projects.filter(project =>
     [project.id, project.displayName, project.deployment?.title ?? '']
       .join(' ')

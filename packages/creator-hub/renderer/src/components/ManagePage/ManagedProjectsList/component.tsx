@@ -46,7 +46,6 @@ const ManagedProjectsList: React.FC<Props> = React.memo(({ projects }) => {
   }, []);
 
   const handleViewScenes = useCallback(() => {
-    /// TODO: check if this is the expected behavior
     navigate('/scenes');
   }, [navigate]);
 

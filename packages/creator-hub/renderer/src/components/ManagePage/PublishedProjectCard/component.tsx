@@ -43,7 +43,7 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
 
     const handleEditName = useCallback(() => {
       const subdomain = isENSDomain(id) ? id : id.split('.')[0];
-      void misc.openExternal(`${BUILDER_URL}/names/${subdomain}`); /// TODO: test ENS here
+      void misc.openExternal(`${BUILDER_URL}/names/${subdomain}`);
     }, [id]);
 
     const handleViewParcel = useCallback(() => {
@@ -55,7 +55,7 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
     }, [onOpenSettings]);
 
     const handleUnpublish = useCallback(() => {
-      /// TODO: implement unpublish flow
+      // TODO: implement unpublish functionality in future PR.
     }, []);
 
     const dropdownOptions = useMemo(() => {
@@ -138,7 +138,7 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
             <div className="CardThumbnail">
               <img
                 src={deployment.thumbnail || thumbnailFallbackImage}
-                alt="Project thumbnail" /// TODO: use offline fallback Image component when merged.
+                alt="Project thumbnail" // TODO: use offline fallback Image component when merged.
               />
               <div className="ChipsContainer">
                 <Chip

@@ -17,15 +17,14 @@ import { ManagedProjectsList } from './ManagedProjectsList';
 import { filterProjectsBy, sortProjectsBy } from './utils';
 import './styles.css';
 
-/// TODO: Add the other languages translations
-/// TODO: handle not signed in state
+// TODO: handle not signed in state and add other sort options in future PR.
 
 const SORT_OPTIONS: Array<{ label: string; value: SortBy }> = [
   {
     label: t('manage.sort.latest'),
     value: SortBy.LATEST,
   },
-]; /// TODO: add other sort options
+];
 
 export function ManagePage() {
   const { status, projects, sortBy, searchQuery } = useSelector(state => state.management);
