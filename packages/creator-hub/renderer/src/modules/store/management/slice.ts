@@ -67,8 +67,6 @@ export const fetchAllManagedProjectsDetails = createAsyncThunk(
       const ensList = Object.values(state.ens.data);
       const landList = state.land.data;
 
-      const managedProjects: ManagedProject[] = [];
-
       const WorldsAPI = new Worlds();
       const LandsAPI = new Lands();
 
@@ -84,13 +82,13 @@ export const fetchAllManagedProjectsDetails = createAsyncThunk(
       };
 
       // Process Worlds data
-      const worldsPromises = ensList.map(async ens => {
+      const worldsPromises: Promise<ManagedProject>[] = ensList.map(async ens => {
         const [worldDeployment, worldScenes] = await Promise.all([
           WorldsAPI.fetchWorld(ens.subdomain),
           WorldsAPI.fetchWorldScenes(ens.subdomain),
         ]);
 
-        managedProjects.push({
+        return {
           id: ens.subdomain,
           displayName: ens.subdomain,
           type: ManagedProjectType.WORLD,
@@ -110,7 +108,9 @@ export const fetchAllManagedProjectsDetails = createAsyncThunk(
                     worldScenes?.scenes?.reduce(
                       (max, scene) => Math.max(max, scene.createdAt.getTime()),
                       0,
-                    ) ?? 0, // Get latest published scene date.
+                    ) ??
+                    worldDeployment[0].timestamp ??
+                    0, // Get latest published scene date.
                   scenes:
                     worldScenes?.scenes?.map(scene => ({
                       id: scene.id,
@@ -119,11 +119,11 @@ export const fetchAllManagedProjectsDetails = createAsyncThunk(
                     })) ?? [],
                 }
               : undefined,
-        });
+        };
       });
 
       // Process Lands data
-      const landsPromises = landList.map(async land => {
+      const landsPromises: Promise<ManagedProject>[] = landList.map(async land => {
         let sceneDeployment: LandDeployment | null = null;
         const landCoords =
           land.type === LandType.PARCEL ? { x: land.x, y: land.y } : land.parcels?.[0];
@@ -131,7 +131,7 @@ export const fetchAllManagedProjectsDetails = createAsyncThunk(
           sceneDeployment = await LandsAPI.fetchLandPublishedScene(landCoords.x, landCoords.y);
         }
 
-        managedProjects.push({
+        return {
           id: land.id,
           displayName: land.type === LandType.ESTATE ? land.name : land.id,
           type: ManagedProjectType.LAND,
@@ -141,7 +141,7 @@ export const fetchAllManagedProjectsDetails = createAsyncThunk(
                 title: sceneDeployment.metadata?.display?.title || '',
                 description: sceneDeployment.metadata?.display?.description || '',
                 thumbnail: getThumbnailUrl(sceneDeployment, $ => LandsAPI.getContentSrcUrl($)),
-                lastPublishedAt: sceneDeployment.timestamp,
+                lastPublishedAt: sceneDeployment.timestamp ?? 0,
                 scenes: [
                   {
                     id: sceneDeployment.id,
@@ -151,11 +151,10 @@ export const fetchAllManagedProjectsDetails = createAsyncThunk(
                 ],
               }
             : undefined,
-        });
+        };
       });
 
-      await Promise.all([...worldsPromises, ...landsPromises]);
-
+      const managedProjects = await Promise.all([...worldsPromises, ...landsPromises]);
       return managedProjects;
     } catch (error) {
       return rejectWithValue({
