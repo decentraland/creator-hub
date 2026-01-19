@@ -1,3 +1,6 @@
+import type { RoleType as LandRoleType } from '/@/lib/land';
+import type { WorldRoleType } from '/@/lib/worlds';
+
 export enum SortBy {
   LATEST = 'latest',
 }
@@ -11,7 +14,7 @@ export type ManagedProject = {
   id: string;
   displayName: string;
   type: ManagedProjectType;
-  role: 'owner' | 'operator';
+  role: LandRoleType | WorldRoleType;
   deployment?: ProjectDeployment;
 };
 

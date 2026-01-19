@@ -127,6 +127,11 @@ export type WorldSettings = {
   spawnCoordinates: string;
 };
 
+export enum WorldRoleType {
+  OWNER = 'owner',
+  COLLABORATOR = 'collaborator',
+}
+
 export type WorldInfo = {
   healthy: boolean;
   configurations: {

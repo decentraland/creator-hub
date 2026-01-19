@@ -5,9 +5,12 @@ import WorldSettingsIcon from '@mui/icons-material/SpaceDashboard';
 import PublishedIcon from '@mui/icons-material/Cloud';
 import ParcelsIcon from '@mui/icons-material/Layers';
 import PermissionsIcon from '@mui/icons-material/Lock';
+import PersonIcon from '@mui/icons-material/Person';
 import { Chip, Typography } from 'decentraland-ui2';
 import { useSnackbar } from '/@/hooks/useSnackbar';
 import { t } from '/@/modules/store/translation/utils';
+import { WorldRoleType } from '/@/lib/worlds';
+import { RoleType as LandRoleType } from '/@/lib/land';
 import { misc } from '#preload';
 import { ContentCopy, OpenInNew } from '@mui/icons-material';
 import { Button } from '../../Button';
@@ -19,6 +22,12 @@ import './styles.css';
 
 const BUILDER_URL = 'https://decentraland.org/builder';
 
+const COLLABORATOR_ROLES_LABELS = {
+  [LandRoleType.OPERATOR]: t('manage.cards.roles.operator'),
+  [LandRoleType.TENANT]: t('manage.cards.roles.tenant'),
+  [WorldRoleType.COLLABORATOR]: t('manage.cards.roles.collaborator'),
+};
+
 export type Props = {
   project: ManagedProject;
   onOpenSettings: (tab?: WorldSettingsTab) => void;
@@ -29,6 +38,7 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
   ({ project, onOpenSettings, onViewScenes }) => {
     const { pushGeneric } = useSnackbar();
     const { id, displayName, type, role, deployment } = project;
+    const roleLabel = COLLABORATOR_ROLES_LABELS[role as keyof typeof COLLABORATOR_ROLES_LABELS];
 
     const handleJumpIn = useCallback(() => {
       const url = getJumpInUrl(id);
@@ -89,7 +99,7 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
           text: t('manage.cards.menu.permissions'),
           icon: <PermissionsIcon />,
           handler: handleManagePermissions,
-          active: type === ManagedProjectType.WORLD && role === 'owner',
+          active: type === ManagedProjectType.WORLD && role === WorldRoleType.OWNER,
         },
         {
           text: t('manage.cards.menu.unpublish'),
@@ -164,10 +174,11 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
                     })}
                   />
                 )}
-                {role === 'operator' && (
+                {roleLabel && (
                   <Chip
                     variant="outlined"
-                    label={t('manage.cards.roles.operator')}
+                    icon={<PersonIcon />}
+                    label={roleLabel}
                   />
                 )}
               </div>

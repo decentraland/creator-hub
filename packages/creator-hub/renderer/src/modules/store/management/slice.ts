@@ -9,7 +9,7 @@ import type { Async } from '/shared/types/async';
 import type { ManagedProject } from '/shared/types/manage';
 import { ManagedProjectType, SortBy } from '/shared/types/manage';
 import type { WorldDeployment, WorldSettings } from '/@/lib/worlds';
-import { Worlds } from '/@/lib/worlds';
+import { WorldRoleType, Worlds } from '/@/lib/worlds';
 import type { AppState } from '/@/modules/store';
 import { fetchENSList } from '/@/modules/store/ens';
 import { fetchLandList } from '/@/modules/store/land';
@@ -94,7 +94,9 @@ export const fetchAllManagedProjectsDetails = createAsyncThunk(
             displayName: ens.subdomain,
             type: ManagedProjectType.WORLD,
             role:
-              ens.nftOwnerAddress.toLowerCase() === address.toLowerCase() ? 'owner' : 'operator',
+              ens.nftOwnerAddress.toLowerCase() === address.toLowerCase()
+                ? WorldRoleType.OWNER
+                : WorldRoleType.COLLABORATOR,
             deployment:
               worldDeployment && worldDeployment[0]
                 ? {
@@ -134,7 +136,7 @@ export const fetchAllManagedProjectsDetails = createAsyncThunk(
             id: land.id,
             displayName: land.type === LandType.ESTATE ? land.name : land.id,
             type: ManagedProjectType.LAND,
-            role: land.owner.toLowerCase() === address.toLowerCase() ? 'owner' : 'operator',
+            role: land.role,
             deployment: sceneDeployment
               ? {
                   title: sceneDeployment.metadata?.display?.title || '',
