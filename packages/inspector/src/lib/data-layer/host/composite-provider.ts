@@ -1,7 +1,7 @@
 import type { Scene } from '@dcl/schemas';
 import type { CompositeDefinition, Entity, IEngine } from '@dcl/ecs';
 import { Composite, CrdtMessageType, EntityMappingMode } from '@dcl/ecs';
-import { initComponents } from '@dcl/asset-packs';
+import { initComponents, migrateVersionedComponent, COUNTER_VERSIONS } from '@dcl/asset-packs';
 import type { EditorComponents } from '../../sdk/components';
 import { EditorComponentNames } from '../../sdk/components';
 import type { FileSystemInterface } from '../types';
@@ -121,6 +121,7 @@ export class CompositeProvider implements StateProvider {
     fixNetworkEntityValues(this.engine);
     selectSceneEntity(this.engine);
     migrateSceneMetadata(this.engine);
+    migrateVersionedComponent(this.engine, COUNTER_VERSIONS);
     createTagsComponent(this.engine);
   }
 
