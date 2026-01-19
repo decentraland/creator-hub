@@ -1,10 +1,8 @@
-import type { ISchema } from '@dcl/ecs';
+import type { ISchema, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
 import { type IEngine, Schemas } from '@dcl/ecs';
 
-// Base names (string literal para evitar dependencia circular con enums.ts)
 const COUNTER_BASE_NAME = 'asset-packs::Counter';
 
-//Counter versioned definitions
 const Counter = COUNTER_BASE_NAME;
 
 const CounterV0 = {
@@ -56,35 +54,52 @@ export function removeOldComponentVersions(
   });
 }
 
-// export function migrateVersionedComponent(
-//   engine: IEngine,
-//   versionedComponents: VersionedComponent[],
-// ) {
-//   const latestVersion = versionedComponents[versionedComponents.length - 1];
+export function getCompositeComponentVersion(
+  engine: IEngine,
+  versionedComponents: VersionedComponent[],
+) {
+  for (let i = versionedComponents.length - 1; i >= 0; i--) {
+    const { versionName } = versionedComponents[i];
 
-//   // Buscar versiones viejas que tengan datos
-//   for (let i = versionedComponents.length - 2; i >= 0; i--) {
-//     // Excluye la última
-//     const { versionName } = versionedComponents[i];
-//     const OldComponent = engine.getComponentOrNull(versionName);
+    const component = engine.getComponentOrNull(
+      versionName,
+    ) as LastWriteWinElementSetComponentDefinition<unknown> | null;
 
-//     if (!OldComponent) continue;
+    if (!component) continue;
 
-//     // Obtener TODAS las entities que tienen este componente viejo
-//     for (const [entity, value] of engine.getEntitiesWith(OldComponent)) {
-//       // 1. Guardar el valor
-//       const oldValue = { ...value };
+    const entities = [...engine.getEntitiesWith(component)];
+    if (entities.length === 0) continue;
 
-//       // 2. Borrar del componente viejo
-//       OldComponent.deleteFrom(entity);
+    return {
+      versionIndex: i,
+      versionName,
+      component,
+      entities,
+    };
+  }
 
-//       // 3. Crear en el componente nuevo (con migración si es necesario)
-//       const NewComponent = engine.getComponent(latestVersion.versionName);
-//       const migratedValue = latestVersion.migrate ? latestVersion.migrate(oldValue) : oldValue;
-//       NewComponent.create(entity, migratedValue);
-//     }
+  return null;
+}
 
-//     // 4. Eliminar la definición del componente viejo
-//     engine.removeComponentDefinition(versionName);
-//   }
-// }
+export function migrateVersionedComponent(
+  engine: IEngine,
+  versionedComponents: VersionedComponent[],
+) {
+  const latestVersion = getLatestComponentVersion(versionedComponents);
+  const found = getCompositeComponentVersion(engine, versionedComponents);
+
+  if (!found) return;
+  if (found.versionName === latestVersion.versionName) return;
+
+  const NewComponent = engine.getComponent(
+    latestVersion.versionName,
+  ) as LastWriteWinElementSetComponentDefinition<unknown>;
+
+  for (const [entity, value] of found.entities) {
+    const oldValue = { ...value };
+    found.component.deleteFrom(entity);
+    NewComponent.createOrReplace(entity, oldValue);
+  }
+
+  engine.removeComponentDefinition(found.versionName);
+}
