@@ -9,14 +9,14 @@ type Props = Omit<OutlinedInputProps, 'onChange'> & {
   onChange?: (value: string) => void;
 };
 
-const Search: React.FC<Props> = React.memo(props => {
+const Search: React.FC<Props> = React.memo(({ onChange, ...props }) => {
   const onChangeDebounced = useCallback(
     debounce((event: React.ChangeEvent<HTMLInputElement>) => {
-      if (props.onChange) {
-        props.onChange(event.target.value);
+      if (onChange) {
+        onChange(event.target.value);
       }
     }, 500),
-    [props.onChange],
+    [onChange],
   );
 
   return (

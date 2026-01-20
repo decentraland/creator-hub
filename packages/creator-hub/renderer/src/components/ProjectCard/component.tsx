@@ -72,7 +72,12 @@ export function ProjectCard({
       <div className="info">
         <div className="title">
           <Typography variant="h6">{title}</Typography>
-          {!!dropdownOptions?.length && <Dropdown options={dropdownOptions} />}
+          {!!dropdownOptions?.length && (
+            <Dropdown
+              className="options-dropdown"
+              options={dropdownOptions}
+            />
+          )}
         </div>
         {description && <p className="description">{description}</p>}
         {content && <div className="content">{content}</div>}

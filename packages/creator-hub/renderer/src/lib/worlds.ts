@@ -128,6 +128,11 @@ export type WorldSettings = {
   spawnCoordinates: string;
 };
 
+export enum WorldRoleType {
+  OWNER = 'owner',
+  COLLABORATOR = 'collaborator',
+}
+
 export type WorldInfo = {
   healthy: boolean;
   configurations: {
@@ -245,24 +250,34 @@ export class Worlds {
   }
 
   public async fetchWorldScenes(worldName: string) {
-    const result = await fetch(`${this.url}/world/${worldName}/scenes`);
-    if (result.ok) {
-      const json = await result.json();
-      return json as WorldScenes;
-    } else {
-      return null;
+    try {
+      const result = await fetch(`${this.url}/world/${worldName}/scenes`);
+      if (result.ok) {
+        const json = await result.json();
+        return json as WorldScenes;
+      } else {
+        return null;
+      }
+    } catch (_) {
+      // Silent fail - world may not have scenes
     }
+
+    return null;
   }
 
   public async fetchWorldSettings(
     worldName: string,
-    limit?: number,
-    offset?: number,
-    coordinates?: string[],
+    limit: number = 100,
+    offset: number = 0,
+    coordinates: string[] = [],
   ) {
-    const result = await fetch(
-      `${this.url}/world/${worldName}/settings?limit=${limit ?? ''}&offset=${offset ?? 0}&coordinates=${coordinates?.join(',') ?? ''}`,
-    );
+    const urlParams = new URLSearchParams({
+      limit: limit.toString(),
+      offset: offset.toString(),
+      coordinates: coordinates.toString(),
+    });
+
+    const result = await fetch(`${this.url}/world/${worldName}/settings?${urlParams.toString()}`);
     if (result.ok) {
       const json = await result.json();
       return json as WorldSettings;

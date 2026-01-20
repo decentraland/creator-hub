@@ -1,14 +1,16 @@
 import React, { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import type { AppState } from '#store';
+import { useDispatch, useSelector } from '#store';
+import { fetchWorldSettings } from '/@/modules/store/management';
 import { WorldSettingsTab, type ManagedProject } from '/shared/types/manage';
-import { PublishedProjectCard } from '../PublishedProjectCard';
 import { WorldSettingsModal } from '../../Modals/WorldSettingsModal';
+import { PublishedProjectCard } from '../PublishedProjectCard';
 import './styles.css';
 
 type SettingsModalState = {
   activeTab: WorldSettingsTab;
   isOpen: boolean;
-  project?: ManagedProject;
 };
 
 type Props = {
@@ -20,11 +22,14 @@ const ManagedProjectsList: React.FC<Props> = React.memo(({ projects }) => {
     isOpen: false,
     activeTab: WorldSettingsTab.DETAILS,
   });
+  const dispatch = useDispatch();
+  const worldSettings = useSelector((state: AppState) => state.management.worldSettings);
   const navigate = useNavigate();
 
   const handleOpenSettingsModal = useCallback(
     (project: ManagedProject, activeTab: WorldSettingsTab = WorldSettingsTab.DETAILS) => {
-      setSettingsModal({ isOpen: true, project, activeTab });
+      dispatch(fetchWorldSettings({ worldName: project.id }));
+      setSettingsModal({ isOpen: true, activeTab });
     },
     [],
   );
@@ -34,14 +39,10 @@ const ManagedProjectsList: React.FC<Props> = React.memo(({ projects }) => {
   }, []);
 
   const handleModalTabClick = useCallback((tab: WorldSettingsTab) => {
-    setSettingsModal(prevState => ({
-      ...prevState,
-      activeTab: tab,
-    }));
+    setSettingsModal(prevState => ({ ...prevState, activeTab: tab }));
   }, []);
 
   const handleViewScenes = useCallback(() => {
-    /// TODO: check if this is the expected behavior
     navigate('/scenes');
   }, [navigate]);
 
@@ -50,20 +51,7 @@ const ManagedProjectsList: React.FC<Props> = React.memo(({ projects }) => {
       {projects.map(project => (
         <PublishedProjectCard
           key={project.id}
-          name={project.id}
-          type={project.type}
-          role={project.role}
-          /// TODO: code this condition reliably
-          publishMetadata={
-            project.title
-              ? {
-                  title: project.title,
-                  thumbnail: project.thumbnail,
-                  totalParcels: project.totalParcels,
-                  totalScenes: project.totalScenes,
-                }
-              : undefined
-          }
+          project={project}
           onOpenSettings={activeTab => handleOpenSettingsModal(project, activeTab)}
           onViewScenes={handleViewScenes}
         />
@@ -71,7 +59,9 @@ const ManagedProjectsList: React.FC<Props> = React.memo(({ projects }) => {
 
       <WorldSettingsModal
         open={settingsModal.isOpen}
-        project={settingsModal.isOpen ? (settingsModal.project as ManagedProject) : null}
+        worldName={worldSettings.worldName}
+        worldSettings={worldSettings.settings}
+        isLoading={worldSettings.status === 'loading' || worldSettings.status === 'idle'}
         activeTab={settingsModal.activeTab}
         onTabClick={handleModalTabClick}
         onClose={handleCloseSettingsModal}
