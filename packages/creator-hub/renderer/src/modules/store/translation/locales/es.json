@@ -572,6 +572,12 @@
       "title": "Aún no tienes ninguna escena",
       "description": "Crea y gestiona tus escenas para tus Tierras y Mundos. ¡Empieza a construir ahora!"
     },
+    "worlds_storage": {
+      "used": "Espacio usado",
+      "for_names": "para Nombres de Decentraland",
+      "description": "El almacenamiento total se calcula en base a las tenencias de MANA, LAND y NAME.",
+      "link": "Ver detalles"
+    },
     "cards": {
       "published": "Publicado",
       "published_scene": "Escena Publicada",
