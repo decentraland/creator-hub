@@ -58,7 +58,7 @@
 }
 
 .SceneList .no-scenes-card {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--transparent-gray-dark);
   border-radius: 8px;
   width: calc(768px - 64px * 2);
   padding: 64px;
