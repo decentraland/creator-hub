@@ -17,6 +17,7 @@ import {
   tweenSystem,
   VisibilityComponent,
 } from '@dcl/sdk/ecs';
+import { getComponentEntityTree } from '@dcl/ecs';
 import { Quaternion, Vector3 } from '@dcl/sdk/math';
 
 type Photo = {
@@ -72,25 +73,7 @@ export class PhotoMural {
   }
 
   /**
-   * Recursively checks if an entity is a descendant of the given parent entity
-   * @param entity - The entity to check
-   * @param parentEntity - The parent entity to check against
-   * @returns true if the entity is a descendant of the parent entity
-   */
-  private isDescendantOf(entity: Entity, parentEntity: Entity): boolean {
-    const transform = Transform.getOrNull(entity);
-    if (!transform || !transform.parent) {
-      return false;
-    }
-    if (transform.parent === parentEntity) {
-      return true;
-    }
-    // Recursively check the parent
-    return this.isDescendantOf(transform.parent, parentEntity);
-  }
-
-  /**
-   * Finds the button entities by recursively checking all descendants of the main entity
+   * Finds the button entities by checking all descendants of the main entity
    * Looks for entities with names starting with "previous_red" and "next_red"
    */
   private findButtonEntities() {
@@ -99,33 +82,30 @@ export class PhotoMural {
     let prevButtonFound = false;
     let nextButtonFound = false;
 
-    // Iterate through all entities with Transform to find descendants
-    for (const [childEntity] of engine.getEntitiesWith(Transform)) {
-      // Check if this entity is a descendant of our main entity (recursively)
-      if (this.isDescendantOf(childEntity, this.entity)) {
-        // Check if this descendant has a Name component
-        const nameComponent = Name.getOrNull(childEntity);
-        if (nameComponent) {
-          if (nameComponent.value.startsWith('previous_red')) {
-            if (prevButtonFound) {
-              console.error(
-                'PhotoMural: Multiple descendants found with name starting with "previous_red". Expected exactly one.',
-              );
-              prevButton = null;
-            } else {
-              prevButton = childEntity;
-              prevButtonFound = true;
-            }
-          } else if (nameComponent.value.startsWith('next_red')) {
-            if (nextButtonFound) {
-              console.error(
-                'PhotoMural: Multiple descendants found with name starting with "next_red". Expected exactly one.',
-              );
-              nextButton = null;
-            } else {
-              nextButton = childEntity;
-              nextButtonFound = true;
-            }
+    // Get all descendants of this.entity using getComponentEntityTree
+    for (const descendantEntity of getComponentEntityTree(engine, this.entity, Transform)) {
+      // Check if this descendant has a Name component
+      const nameComponent = Name.getOrNull(descendantEntity);
+      if (nameComponent) {
+        if (nameComponent.value.startsWith('previous_red')) {
+          if (prevButtonFound) {
+            console.error(
+              'PhotoMural: Multiple descendants found with name starting with "previous_red". Expected exactly one.',
+            );
+            prevButton = null;
+          } else {
+            prevButton = descendantEntity;
+            prevButtonFound = true;
+          }
+        } else if (nameComponent.value.startsWith('next_red')) {
+          if (nextButtonFound) {
+            console.error(
+              'PhotoMural: Multiple descendants found with name starting with "next_red". Expected exactly one.',
+            );
+            nextButton = null;
+          } else {
+            nextButton = descendantEntity;
+            nextButtonFound = true;
           }
         }
       }
