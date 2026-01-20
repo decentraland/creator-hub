@@ -260,16 +260,13 @@
       "title": "Preferencias de la aplicación",
       "tabs": {
         "scenes": {
-          "label": "ESCENAS",
-          "title": "Configuración de las escenas"
+          "label": "ESCENAS"
         },
         "editor": {
-          "label": "EDITOR",
-          "title": "Configuración del editor"
+          "label": "EDITOR"
         },
         "about": {
-          "label": "ACERCA DE",
-          "title": "Acerca de"
+          "label": "ACERCA DE"
         }
       },
       "about": {
@@ -334,6 +331,26 @@
         "bug_fixes": "Correcciones"
       }
     },
+    "world_settings": {
+      "title": "Configuración del Mundo - {worldName}",
+      "tabs": {
+        "details": {
+          "label": "Detalles"
+        },
+        "layout": {
+          "label": "Diseño"
+        },
+        "general": {
+          "label": "General"
+        },
+        "variables": {
+          "label": "Variables"
+        },
+        "permissions": {
+          "label": "Permisos"
+        }
+      }
+    },
     "create_project": {
       "title": "Crear Proyecto",
       "fields": {
@@ -375,7 +392,12 @@
       "installing_dependencies_failed": "Error al instalar dependencias",
       "invalid_scenes_folder": "Carpeta de escenas inválida. Por favor, ingresa una carpeta de escenas válida en la configuración de la aplicación antes de crear una escena.",
       "create_scene_failed": "Ocurrió un error al crear la escena. Por favor, inténtalo nuevamente.",
-      "run_scene_failed": "Error al cargar el proyecto. Por favor, inténtalo de nuevo."
+      "run_scene_failed": "Error al cargar el proyecto. Por favor, inténtalo de nuevo.",
+      "url_copied": "URL copiada al portapapeles",
+      "fetch_managed_projects_failed": "Error al cargar los proyectos gestionados",
+      "fetch_world_settings_failed": "Error al cargar la configuración del mundo. Por favor, inténtalo de nuevo.",
+      "fetch_ens_list_failed": "Error al cargar tu lista de Nombres",
+      "fetch_land_list_failed": "Error al cargar tu lista de Tierras"
     },
     "missing_projects": {
       "title": "{scenes} {scenes, plural, one {escena} other {escenas}} {scenes, plural, one {faltante} other {faltantes}}",
@@ -487,20 +509,75 @@
       "title": "Ordenar por:",
       "default": "Default",
       "newest": "Más Nuevas"
+    }
+  },
+  "learn": {
+    "header": {
+      "title": "Aprender",
+      "videos": "Videos",
+      "docs": "Documentación",
+      "more": "Más"
     },
-    "learn": {
-      "header": {
-        "title": "Aprender",
-        "videos": "Videos",
-        "docs": "Documentación",
-        "more": "Más"
+    "see_all": "Ver Más",
+    "videos": {
+      "title": "Videos"
+    },
+    "docs": {
+      "title": "Documentación para Creadores"
+    }
+  },
+  "manage": {
+    "header": {
+      "title": "Gestionar"
+    },
+    "items": "{count} {count, plural, one {elemento} other {elementos}}",
+    "search": "Buscar",
+    "sort_by": "Ordenar por",
+    "sort": {
+      "latest": "Última publicación"
+    },
+    "empty_search": {
+      "title": "No se encontraron resultados",
+      "description": "Intenta ajustar tu búsqueda para encontrar lo que estás buscando."
+    },
+    "no_projects": {
+      "title": "Aún no tienes ninguna escena",
+      "description": "Crea y gestiona tus escenas para tus Tierras y Mundos. ¡Empieza a construir ahora!"
+    },
+    "cards": {
+      "published": "Publicado",
+      "published_scene": "Escena Publicada",
+      "roles": {
+        "owner": "Propietario",
+        "collaborator": "Colaborador",
+        "operator": "Inquilino",
+        "tenant": "Arrendador"
       },
-      "see_all": "Ver Más",
-      "videos": {
-        "title": "Videos"
+      "menu": {
+        "jump_in": "Entrar",
+        "copy_url": "Copiar URL",
+        "edit_name": "Editar Nombre",
+        "permissions": "Permisos",
+        "parcel": "Parcela",
+        "unpublish": "Despublicar"
       },
-      "docs": {
-        "title": "Documentación para Creadores"
+      "no_scene": {
+        "title": "No hay escena publicada",
+        "view_scenes": "VER ESCENAS"
+      },
+      "worlds": {
+        "world": "Mundo",
+        "multi-scene": "Multi-escena",
+        "scenes_count": "{count} {count, plural, one {escena} other {escenas}}",
+        "scene_settings": "Configuración de Escena",
+        "world_settings": "Configuración",
+        "published_world": "Mundo Publicado"
+      },
+      "land": {
+        "land": "Tierra",
+        "land_settings": "Configuración de Tierra",
+        "parcels_count": "{count} {count, plural, one {parcela} other {parcelas}}",
+        "land_coords": "{coordX}, {coordY}"
       }
     }
   }

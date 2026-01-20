@@ -3,6 +3,7 @@
   "ENVIRONMENT": "production",
   "AUTH_SERVER_URL": "https://auth-api.decentraland.org",
   "AUTH_DAPP_URL": "https://decentraland.org/auth",
+  "DCL_NAME_STATS_URL": "https://dcl-name-stats.decentraland.org",
   "PEER_URL": "https://peer.decentraland.org",
   "WORLDS_CONTENT_SERVER_URL": "https://worlds-content-server.decentraland.org",
   "PEER_TESTING_URL": "https://peer-testing.decentraland.org",

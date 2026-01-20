@@ -260,16 +260,13 @@
       "title": "App Preferences",
       "tabs": {
         "scenes": {
-          "label": "SCENES",
-          "title": "Scenes Settings"
+          "label": "SCENES"
         },
         "editor": {
-          "label": "EDITOR",
-          "title": "Editor Settings"
+          "label": "EDITOR"
         },
         "about": {
-          "label": "ABOUT",
-          "title": "About"
+          "label": "ABOUT"
         }
       },
       "about": {
@@ -334,6 +331,26 @@
         "bug_fixes": "Bug Fixes"
       }
     },
+    "world_settings": {
+      "title": "World Settings - {worldName}",
+      "tabs": {
+        "details": {
+          "label": "Details"
+        },
+        "layout": {
+          "label": "Layout"
+        },
+        "general": {
+          "label": "General"
+        },
+        "variables": {
+          "label": "Variables"
+        },
+        "permissions": {
+          "label": "Permissions"
+        }
+      }
+    },
     "create_project": {
       "title": "Create Project",
       "fields": {
@@ -375,7 +392,12 @@
       "installing_dependencies_failed": "Failed installing dependencies",
       "invalid_scenes_folder": "Invalid Scenes Folder. Please configure a valid Scenes Folder in Settings before creating a scene.",
       "create_scene_failed": "An error occurred while trying to create the scene. Please try again.",
-      "run_scene_failed": "Failed to load project. Please try again."
+      "run_scene_failed": "Failed to load project. Please try again.",
+      "url_copied": "URL copied to clipboard",
+      "fetch_managed_projects_failed": "Failed to fetch managed projects",
+      "fetch_world_settings_failed": "Failed to fetch world settings. Please try again.",
+      "fetch_ens_list_failed": "Failed to fetch your NAMEs list",
+      "fetch_land_list_failed": "Failed to fetch your LANDs list"
     },
     "missing_projects": {
       "title": "{scenes} {scenes, plural, one {scene} other {scenes}} could not be loaded due to missing files",
@@ -502,6 +524,61 @@
     },
     "docs": {
       "title": "Creator Docs"
+    }
+  },
+  "manage": {
+    "header": {
+      "title": "Manage"
+    },
+    "items": "{count} {count, plural, one {item} other {items}}",
+    "search": "Search",
+    "sort_by": "Sort by",
+    "sort": {
+      "latest": "Last published"
+    },
+    "empty_search": {
+      "title": "No results found",
+      "description": "Try adjusting your search to find what you're looking for."
+    },
+    "no_projects": {
+      "title": "You don't have any scenes yet",
+      "description": "Create and manage your scenes for your LANDs and Worlds. Start building now!"
+    },
+    "cards": {
+      "published": "Published",
+      "published_scene": "Published Scene",
+      "roles": {
+        "owner": "Owner",
+        "collaborator": "Collaborator",
+        "operator": "Operator",
+        "tenant": "Tenant"
+      },
+      "menu": {
+        "jump_in": "Jump In",
+        "copy_url": "Copy URL",
+        "edit_name": "Edit Name",
+        "permissions": "Permissions",
+        "parcel": "Parcel",
+        "unpublish": "Unpublish"
+      },
+      "no_scene": {
+        "title": "No scene published",
+        "view_scenes": "VIEW SCENES"
+      },
+      "worlds": {
+        "world": "World",
+        "multi-scene": "Multi-scene",
+        "scenes_count": "{count} {count, plural, one {scene} other {scenes}}",
+        "scene_settings": "Scene Settings",
+        "world_settings": "Settings",
+        "published_world": "Published World"
+      },
+      "land": {
+        "land": "LAND",
+        "land_settings": "LAND Settings",
+        "parcels_count": "{count} {count, plural, one {parcel} other {parcels}}",
+        "land_coords": "{coordX}, {coordY}"
+      }
     }
   }
 }
