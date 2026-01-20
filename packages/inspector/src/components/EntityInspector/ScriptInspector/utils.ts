@@ -41,7 +41,7 @@ export const isScriptNode = (node: TreeNode): node is AssetNodeItem =>
 export function buildScriptPath(name: string): string {
   const scriptsDir = withAssetDir(`${DIRECTORY.SCENE}/${determineAssetType('ts')}`);
   if (name.startsWith(scriptsDir)) return name; // if it's already a built path, return the name parameter
-  const scriptName = isScriptFile(name) ? name : `${name}.ts`;
+  const scriptName = isScriptFile(name) ? name : `${name}.tsx`;
   const scriptPath = `${scriptsDir}/${scriptName}`;
   return scriptPath;
 }

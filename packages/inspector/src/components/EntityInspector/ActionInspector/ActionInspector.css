@@ -30,7 +30,8 @@
   flex: 1;
 }
 
-.ActionInspector > .content > .Block > .content .row .field > .Text.Field {
+.ActionInspector > .content > .Block > .content .row .field > .Text.Field,
+.ActionInspector > .content > .Block > .content .row > .Text.Field {
   width: 100%;
 }
 

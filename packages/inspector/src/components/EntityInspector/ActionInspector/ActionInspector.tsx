@@ -34,6 +34,7 @@ import { InfoTooltip } from '../../ui/InfoTooltip';
 import type { ScriptAction } from '../ScriptInspector/types';
 import { parseLayout } from '../ScriptInspector/utils';
 import { ScriptParamField } from '../ScriptInspector/ScriptParamField/ScriptParamField';
+import { truncateMiddle } from '../../ImportAsset/utils';
 import { PlaySoundAction } from './PlaySoundAction';
 import { TweenAction } from './TweenAction';
 import { isValidTween } from './TweenAction/utils';
@@ -155,6 +156,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     const result: Array<{
       actionType: string;
       label: string;
+      secondaryText: string;
       scriptPath: string;
       action: ScriptAction;
     }> = [];
@@ -171,18 +173,11 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
 
           for (const action of layout.actions) {
             const actionType = `script:${script.path}:${action.methodName}`;
-            const scriptName =
-              script.path
-                .split('/')
-                .pop()
-                ?.replace(/\.(ts|js)$/, '') || script.path;
-            const label = action.description
-              ? `${scriptName} - ${action.description}`
-              : `${scriptName}.${action.methodName}()`;
 
             result.push({
               actionType,
-              label,
+              label: action.methodName,
+              secondaryText: truncateMiddle(script.path),
               scriptPath: script.path,
               action,
             });
@@ -1270,10 +1265,14 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
                 label="Select an Action"
                 placeholder="Select an Action"
                 disabled={availableActions.length === 0}
-                options={availableActions.map(availableAction => ({
-                  label: dynamicActionMapOption[availableAction] || availableAction,
-                  value: availableAction,
-                }))}
+                options={availableActions.map(availableAction => {
+                  const scriptAction = scriptActions.find(sa => sa.actionType === availableAction);
+                  return {
+                    label: dynamicActionMapOption[availableAction] || availableAction,
+                    value: availableAction,
+                    secondaryText: scriptAction?.secondaryText,
+                  };
+                })}
                 value={action.type}
                 searchable
                 onChange={e => handleChangeType(e, idx)}

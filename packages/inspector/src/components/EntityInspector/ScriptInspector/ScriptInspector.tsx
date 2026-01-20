@@ -359,6 +359,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
             <RefreshIcon
               className="icon-item"
               onClick={handleReloadScripts}
+              size={15}
               style={{
                 cursor: scripts.length === 0 ? 'not-allowed' : 'pointer',
                 opacity: scripts.length === 0 ? 0.5 : 1,

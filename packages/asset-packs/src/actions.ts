@@ -57,7 +57,7 @@ import { initTriggers, damageTargets, healTargets } from './triggers';
 import { followMap } from './transform';
 import { getEasingFunctionFromInterpolation } from './tweens';
 import { REWARDS_SERVER_URL } from './admin-toolkit-ui/constants';
-import { callScriptMethod } from '~sdk/all-scripts';
+import { callScriptMethod } from '~sdk/script-utils';
 import {
   movePlayerTo,
   triggerEmote,
