@@ -41,9 +41,7 @@ import {
   TweenType,
   InterpolationType,
   ActionType,
-  TriggerType,
   TriggerConditionType,
-  TriggerConditionOperation,
   AlignMode,
   Font,
   Colliders,
@@ -326,40 +324,7 @@ export function createComponents(engine: IEngine) {
     ),
   });
 
-  const { Counter } = defineAssetPacksComponents(engine);
-
-  const Triggers = engine.defineComponent(ComponentName.TRIGGERS, {
-    value: Schemas.Array(
-      Schemas.Map({
-        type: Schemas.EnumString<TriggerType>(TriggerType, TriggerType.ON_INPUT_ACTION),
-        conditions: Schemas.Optional(
-          Schemas.Array(
-            Schemas.Map({
-              id: Schemas.Optional(Schemas.Int),
-              type: Schemas.EnumString<TriggerConditionType>(
-                TriggerConditionType,
-                TriggerConditionType.WHEN_STATE_IS,
-              ),
-              value: Schemas.String,
-            }),
-          ),
-        ),
-        operation: Schemas.Optional(
-          Schemas.EnumString<TriggerConditionOperation>(
-            TriggerConditionOperation,
-            TriggerConditionOperation.AND,
-          ),
-        ),
-        actions: Schemas.Array(
-          Schemas.Map({
-            id: Schemas.Optional(Schemas.Int),
-            name: Schemas.Optional(Schemas.String),
-          }),
-        ),
-        basicViewId: Schemas.Optional(Schemas.String),
-      }),
-    ),
-  });
+  const { Counter, Triggers } = defineAssetPacksComponents(engine);
 
   const States = engine.defineComponent(ComponentName.STATES, {
     id: Schemas.Number,
