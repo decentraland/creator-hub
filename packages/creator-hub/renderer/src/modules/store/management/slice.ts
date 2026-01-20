@@ -8,16 +8,15 @@ import type { ChainId } from '@dcl/schemas';
 import type { Async } from '/shared/types/async';
 import type { ManagedProject } from '/shared/types/manage';
 import { ManagedProjectType, SortBy } from '/shared/types/manage';
-import type { WorldsWalletStats } from '/@/lib/worlds';
+import type { WorldDeployment, WorldSettings, WorldsWalletStats } from '/@/lib/worlds';
+import { WorldRoleType, Worlds } from '/@/lib/worlds';
 import type { AppState } from '/@/modules/store';
 import { fetchENSList } from '/@/modules/store/ens';
 import { fetchLandList } from '/@/modules/store/land';
+import type { LandDeployment } from '/@/lib/land';
 import { Lands, LandType } from '/@/lib/land';
 import type { AccountHoldings } from '/@/lib/account';
 import { Account } from '/@/lib/account';
-import type { WorldDeployment, WorldSettings } from '/@/lib/worlds';
-import { WorldRoleType, Worlds } from '/@/lib/worlds';
-import type { LandDeployment } from '/@/lib/land';
 
 // state
 export type ManagementState = {
@@ -67,33 +66,6 @@ export const fetchManagedProjects = createAsyncThunk(
     ]);
 
     return projects;
-  },
-);
-
-export const fetchStorageStats = createAsyncThunk(
-  'management/fetchStorageStats',
-  async ({ address }: { address: string }) => {
-    const WorldsAPI = new Worlds();
-    const stats = await WorldsAPI.fetchWalletStats(address);
-    return stats;
-  },
-);
-
-export const fetchAccountHoldings = createAsyncThunk(
-  'management/fetchAccountHoldings',
-  async ({ address }: { address: string }) => {
-    const AccountAPI = new Account();
-    const holdings = await AccountAPI.fetchAccountHoldings(address);
-    return holdings;
-  },
-);
-
-export const fetchWorldSettings = createAsyncThunk(
-  'management/fetchWorldSettings',
-  async ({ worldName }: { worldName: string }) => {
-    const WorldsAPI = new Worlds();
-    const worldSettings = await WorldsAPI.fetchWorldSettings(worldName);
-    return worldSettings;
   },
 );
 
@@ -201,6 +173,33 @@ export const fetchAllManagedProjectsDetails = createAsyncThunk(
         message: (error as Error).message || 'Failed to fetch managed items',
       });
     }
+  },
+);
+
+export const fetchStorageStats = createAsyncThunk(
+  'management/fetchStorageStats',
+  async ({ address }: { address: string }) => {
+    const WorldsAPI = new Worlds();
+    const stats = await WorldsAPI.fetchWalletStats(address);
+    return stats;
+  },
+);
+
+export const fetchAccountHoldings = createAsyncThunk(
+  'management/fetchAccountHoldings',
+  async ({ address }: { address: string }) => {
+    const AccountAPI = new Account();
+    const holdings = await AccountAPI.fetchAccountHoldings(address);
+    return holdings;
+  },
+);
+
+export const fetchWorldSettings = createAsyncThunk(
+  'management/fetchWorldSettings',
+  async ({ worldName }: { worldName: string }) => {
+    const WorldsAPI = new Worlds();
+    const worldSettings = await WorldsAPI.fetchWorldSettings(worldName);
+    return worldSettings;
   },
 );
 
