@@ -16,10 +16,12 @@ export class ${className} {
   /**
    * Constructor / Inputs
    * Parameters declared here appear in the Script component UI in Creator Hub.
-   * Supported types: Entity, String, Number, Boolean.
+   * Supported types: Entity, String, Number, Boolean, ActionCallback.
    *
    * Note: After editing this file, click the refresh icon in the Script component UI
    * to see updated inputs.
+   *
+   * The `src` and `entity` fields in the constructor are required by internal references.
    */
   constructor(
     public src: string,     // DO NOT REMOVE
