@@ -295,11 +295,15 @@ export class Worlds {
   }
 
   public fetchWalletStats = async (address: string) => {
-    const result = await fetch(`${this.url}/wallet/${address}/stats`);
-    if (result.ok) {
-      const json = await result.json();
-      return fromSnakeToCamel(json) as WorldSettings;
-    } else {
+    try {
+      const result = await fetch(`${this.url}/wallet/${address}/stats`);
+      if (result.ok) {
+        const json = await result.json();
+        return json as WorldsWalletStats;
+      } else {
+        return null;
+      }
+    } catch (error) {
       return null;
     }
   }
