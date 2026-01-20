@@ -88,7 +88,7 @@ export function createTriggersSystem(
 
     // initialize triggers for given entity
     const types = triggers.value.reduce(
-      (types, trigger) => types.add(trigger.type),
+      (types: Set<TriggerType>, trigger: { type: TriggerType }) => types.add(trigger.type),
       new Set<TriggerType>(),
     );
     for (const type of types) {
