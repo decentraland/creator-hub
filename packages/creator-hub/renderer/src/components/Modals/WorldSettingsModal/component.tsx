@@ -1,9 +1,10 @@
 import React from 'react';
 import WorldSettingsIcon from '@mui/icons-material/SpaceDashboard';
 import { t } from '/@/modules/store/translation/utils';
-import type { ManagedProject } from '/shared/types/manage';
+import type { WorldSettings } from '/@/lib/worlds';
 import { WorldSettingsTab } from '/shared/types/manage';
 import type { Props as TabsModalProps } from '../TabsModal';
+import { Loader } from '../../Loader';
 import { TabsModal } from '../TabsModal';
 import './styles.css';
 
@@ -31,25 +32,34 @@ const WORLD_SETTINGS_TABS: Array<{ label: string; value: WorldSettingsTab }> = [
 ];
 
 type Props = Omit<TabsModalProps<WorldSettingsTab>, 'tabs' | 'title' | 'children'> & {
-  project: ManagedProject | null;
+  worldName: string;
+  worldSettings: WorldSettings | null;
+  isLoading: boolean;
 };
 
-const WorldSettingsModal: React.FC<Props> = React.memo(({ project, ...props }) => {
-  /// TODO: Implement modal content, here full modal content should be fetched and rendered based on the project prop.
+const WorldSettingsModal: React.FC<Props> = React.memo(
+  ({ worldName, worldSettings, isLoading, activeTab, ...props }) => {
+    // TODO: Implement modal content in future PR.
 
-  if (!project) return null;
-
-  return (
-    <TabsModal
-      {...props}
-      tabs={WORLD_SETTINGS_TABS}
-      title={t('modal.world_settings.title', { worldName: project.id })}
-      className="WorldSettingsModal"
-      icon={<WorldSettingsIcon />}
-    >
-      {project.id}
-    </TabsModal>
-  );
-});
+    return (
+      <TabsModal
+        {...props}
+        activeTab={activeTab}
+        tabs={WORLD_SETTINGS_TABS}
+        title={t('modal.world_settings.title', { worldName: worldName })}
+        className="WorldSettingsModal"
+        icon={<WorldSettingsIcon />}
+      >
+        {isLoading ? (
+          <Loader size={40} />
+        ) : worldSettings ? (
+          <div>World Settings</div>
+        ) : (
+          <div>No world settings found</div>
+        )}
+      </TabsModal>
+    );
+  },
+);
 
 export { WorldSettingsModal };
