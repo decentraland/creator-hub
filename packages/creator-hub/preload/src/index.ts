@@ -14,3 +14,4 @@ export * as npm from './services/npm';
 export * as settings from './modules/settings';
 export * as scene from './modules/scene';
 export * as custom from './modules/custom';
+export * as blender from './modules/blender';

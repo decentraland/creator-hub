@@ -31,6 +31,9 @@ import {
 import { Gizmos } from './Gizmos';
 import { Preferences } from './Preferences';
 import { ToolbarButton } from './ToolbarButton';
+import ExportGltf from './ExportGltf';
+import BlenderEntityCreator from '../BlenderEntityCreator/BlenderEntityCreator';
+import EntityCollector from '../EntityCollector/EntityCollector';
 
 import './Toolbar.css';
 
@@ -98,6 +101,9 @@ const Toolbar = withSdk(({ sdk }) => {
       </ToolbarButton>
       <Gizmos />
       <Preferences />
+      <ExportGltf />
+      <BlenderEntityCreator />
+      <EntityCollector />
       <ToolbarButton
         className="babylonjs-inspector"
         onClick={handleInspector}

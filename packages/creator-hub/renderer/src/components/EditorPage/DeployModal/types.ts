@@ -1,7 +1,7 @@
 import type { Project } from '/shared/types/projects';
 import type { Step as PublishStep } from '/@/components/Modals/PublishProject/types';
 
-export type ModalType = 'publish' | 'publish-history' | 'install-client' | 'warning';
+export type ModalType = 'publish' | 'publish-history' | 'install-client' | 'warning' | 'blender-workflow';
 
 export type ModalState = {
   type?: ModalType;
@@ -14,4 +14,5 @@ export type Props = {
   project: Project;
   onClose: (continued?: boolean) => void;
   initialStep?: PublishStep;
+  rpc?: any;
 };
