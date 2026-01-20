@@ -1,4 +1,6 @@
-/// TODO: add the real options
+import type { RoleType as LandRoleType } from '/@/lib/land';
+import type { WorldRoleType } from '/@/lib/worlds';
+
 export enum SortBy {
   LATEST = 'latest',
 }
@@ -10,13 +12,24 @@ export enum ManagedProjectType {
 
 export type ManagedProject = {
   id: string;
+  displayName: string;
   type: ManagedProjectType;
-  role: 'owner' | 'operator';
-  title?: string;
-  thumbnail?: string;
+  role: LandRoleType | WorldRoleType;
+  deployment?: ProjectDeployment;
+};
+
+export type ProjectDeployment = {
+  title: string;
+  description: string;
+  thumbnail: string;
+  lastPublishedAt: number;
+  scenes: SceneDeployment[];
+};
+
+export type SceneDeployment = {
+  id: string;
   publishedAt: number;
-  totalParcels?: number;
-  totalScenes: number;
+  parcels: string[];
 };
 
 export enum WorldSettingsTab {

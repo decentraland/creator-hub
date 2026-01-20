@@ -331,6 +331,24 @@
         "bug_fixes": "Bug Fixes"
       }
     },
+    "worlds_storage": {
+      "your_storage": "Your Storage",
+      "total_available_storage": "TOTAL AVAILABLE STORAGE",
+      "mana": "MANA",
+      "mana_earn_storage": "Earn 100 Mb of storage per 2,000 tokens (Polygon or Ethereum).",
+      "mana_holdings": "You have {mbs} Mb thanks to holding {owned} MANA tokens.",
+      "mana_buy": "BUY MANA",
+      "lands": "LANDs",
+      "lands_earn_storage": "Earn 100 Mb of storage per LAND.",
+      "lands_holdings": "You have {mbs} Mb thanks to holding {owned} LANDs.",
+      "lands_buy": "BUY LAND",
+      "names": "NAMEs",
+      "names_earn_storage": "Earn 100 Mb of storage per NAME.",
+      "names_holdings": "You have {mbs} Mb thanks to holding {owned} Decentraland NAMEs.",
+      "names_buy": "BUY NAME",
+      "proposal": "These storage rules were voted on and passed in a governance DAO proposal.",
+      "learn_more": "LEARN MORE"
+    },
     "world_settings": {
       "title": "World Settings - {worldName}",
       "tabs": {
@@ -352,24 +370,6 @@
           "label": "Permissions"
         }
       }
-    },
-    "worlds_storage": {
-      "your_storage": "Your Storage",
-      "total_available_storage": "TOTAL AVAILABLE STORAGE",
-      "mana": "MANA",
-      "mana_earn_storage": "Earn 100 Mb of storage per 2,000 tokens (Polygon or Ethereum).",
-      "mana_holdings": "You have {mbs} Mb thanks to holding {owned} MANA tokens.",
-      "mana_buy": "BUY MANA",
-      "lands": "LANDs",
-      "lands_earn_storage": "Earn 100 Mb of storage per LAND.",
-      "lands_holdings": "You have {mbs} Mb thanks to holding {owned} LANDs.",
-      "lands_buy": "BUY LAND",
-      "names": "NAMEs",
-      "names_earn_storage": "Earn 100 Mb of storage per NAME.",
-      "names_holdings": "You have {mbs} Mb thanks to holding {owned} Decentraland NAMEs.",
-      "names_buy": "BUY NAME",
-      "proposal": "These storage rules were voted on and passed in a governance DAO proposal.",
-      "learn_more": "LEARN MORE"
     },
     "create_project": {
       "title": "Create Project",
@@ -414,7 +414,10 @@
       "create_scene_failed": "An error occurred while trying to create the scene. Please try again.",
       "run_scene_failed": "Failed to load project. Please try again.",
       "url_copied": "URL copied to clipboard",
-      "fetch_managed_projects_failed": "Failed to fetch managed projects."
+      "fetch_managed_projects_failed": "Failed to fetch managed projects",
+      "fetch_world_settings_failed": "Failed to fetch world settings. Please try again.",
+      "fetch_ens_list_failed": "Failed to fetch your NAMEs list",
+      "fetch_land_list_failed": "Failed to fetch your LANDs list"
     },
     "missing_projects": {
       "title": "{scenes} {scenes, plural, one {scene} other {scenes}} could not be loaded due to missing files",
@@ -558,8 +561,8 @@
       "description": "Try adjusting your search to find what you're looking for."
     },
     "no_projects": {
-      "title": "You don't have any project yet",
-      "description": "Manage your LANDs and Worlds. Start building now!"
+      "title": "You don't have any scenes yet",
+      "description": "Create and manage your scenes for your LANDs and Worlds. Start building now!"
     },
     "worlds_storage": {
       "used": "Space used",

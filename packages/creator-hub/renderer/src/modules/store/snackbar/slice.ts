@@ -7,6 +7,8 @@ import { t } from '/@/modules/store/translation/utils';
 import { actions as workspaceActions } from '../workspace';
 import { actions as deploymentActions } from '../deployment';
 import { actions as managementActions } from '../management';
+import { actions as ensActions } from '../ens';
+import { actions as landActions } from '../land';
 import { shouldNotifyUpdates } from '../workspace/utils';
 import { createCustomNotification, createGenericNotification } from './utils';
 import type { Notification } from './types';
@@ -218,10 +220,41 @@ export const slice = createSlice({
           createCustomNotification({ type: 'deploy', path }, { duration: 0, requestId: path }),
         );
       })
+      .addCase(ensActions.fetchENSList.rejected, state => {
+        state.notifications = state.notifications.filter($ => $.requestId !== 'fetchENSList');
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.fetch_ens_list_failed'), {
+            duration: 5000,
+            requestId: 'fetchENSList',
+          }),
+        );
+      })
+      .addCase(landActions.fetchLandList.rejected, state => {
+        state.notifications = state.notifications.filter($ => $.requestId !== 'fetchLandList');
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.fetch_land_list_failed'), {
+            duration: 5000,
+            requestId: 'fetchLandList',
+          }),
+        );
+      })
       .addCase(managementActions.fetchManagedProjects.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'fetchManagedProjects',
+        );
         state.notifications.push(
           createGenericNotification('error', t('snackbar.generic.fetch_managed_projects_failed'), {
             duration: 5000,
+            requestId: 'fetchManagedProjects',
+          }),
+        );
+      })
+      .addCase(managementActions.fetchWorldSettings.rejected, state => {
+        state.notifications = state.notifications.filter($ => $.requestId !== 'fetchWorldSettings');
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.fetch_world_settings_failed'), {
+            duration: 5000,
+            requestId: 'fetchWorldSettings',
           }),
         );
       });

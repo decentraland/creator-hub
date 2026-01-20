@@ -1,12 +1,16 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
+import type { ManagedProject } from '/shared/types/manage';
 import { ManagedProjectType, WorldSettingsTab } from '/shared/types/manage';
 import WorldSettingsIcon from '@mui/icons-material/SpaceDashboard';
 import PublishedIcon from '@mui/icons-material/Cloud';
 import ParcelsIcon from '@mui/icons-material/Layers';
 import PermissionsIcon from '@mui/icons-material/Lock';
+import PersonIcon from '@mui/icons-material/Person';
 import { Chip, Typography } from 'decentraland-ui2';
 import { useSnackbar } from '/@/hooks/useSnackbar';
 import { t } from '/@/modules/store/translation/utils';
+import { WorldRoleType } from '/@/lib/worlds';
+import { RoleType as LandRoleType } from '/@/lib/land';
 import { misc } from '#preload';
 import { ContentCopy, OpenInNew } from '@mui/icons-material';
 import { Button } from '../../Button';
@@ -18,51 +22,57 @@ import './styles.css';
 
 const BUILDER_URL = 'https://decentraland.org/builder';
 
+const COLLABORATOR_ROLES_LABELS = {
+  [LandRoleType.OPERATOR]: t('manage.cards.roles.operator'),
+  [LandRoleType.TENANT]: t('manage.cards.roles.tenant'),
+  [WorldRoleType.COLLABORATOR]: t('manage.cards.roles.collaborator'),
+};
+
+type CollaboratorRole = keyof typeof COLLABORATOR_ROLES_LABELS;
+
+function isCollaboratorRole(role: LandRoleType | WorldRoleType): role is CollaboratorRole {
+  return role in COLLABORATOR_ROLES_LABELS;
+}
+
 export type Props = {
-  type: ManagedProjectType;
-  name: string;
-  role?: 'owner' | 'operator';
-  publishMetadata?: {
-    title: string;
-    thumbnail?: string;
-    totalParcels?: number;
-    totalScenes: number;
-  };
+  project: ManagedProject;
   onOpenSettings: (tab?: WorldSettingsTab) => void;
   onViewScenes: () => void;
 };
 
 const PublishedProjectCard: React.FC<Props> = React.memo(
-  ({ name, type, role, publishMetadata, onOpenSettings, onViewScenes }) => {
+  ({ project, onOpenSettings, onViewScenes }) => {
     const { pushGeneric } = useSnackbar();
+    const { id, displayName, type, role, deployment } = project;
+    const roleLabel = isCollaboratorRole(role) ? COLLABORATOR_ROLES_LABELS[role] : null;
 
-    const handleJumpIn = () => {
-      const url = getJumpInUrl(name);
-      misc.openExternal(url);
-    };
+    const handleJumpIn = useCallback(() => {
+      const url = getJumpInUrl(id);
+      void misc.openExternal(url);
+    }, [id]);
 
-    const handleCopyURL = () => {
-      const url = getJumpInUrl(name);
-      misc.copyToClipboard(url);
+    const handleCopyURL = useCallback(() => {
+      const url = getJumpInUrl(id);
+      void misc.copyToClipboard(url);
       pushGeneric('success', t('snackbar.generic.url_copied'));
-    };
+    }, [id, pushGeneric]);
 
-    const handleEditName = () => {
-      const subdomain = isENSDomain(name) ? name : name.split('.')[0];
-      misc.openExternal(`${BUILDER_URL}/names/${subdomain}`); /// TODO: test ENS here
-    };
+    const handleEditName = useCallback(() => {
+      const subdomain = isENSDomain(id) ? id : id.split('.')[0];
+      void misc.openExternal(`${BUILDER_URL}/names/${subdomain}`);
+    }, [id]);
 
-    const handleViewParcel = () => {
-      misc.openExternal(`${BUILDER_URL}/land/${name}`);
-    };
+    const handleViewParcel = useCallback(() => {
+      void misc.openExternal(`${BUILDER_URL}/land/${id}`);
+    }, [id]);
 
-    const handleManagePermissions = () => {
+    const handleManagePermissions = useCallback(() => {
       onOpenSettings(WorldSettingsTab.PERMISSIONS);
-    };
+    }, [onOpenSettings]);
 
-    const handleUnpublish = () => {
-      /// TODO: implement unpublish flow
-    };
+    const handleUnpublish = useCallback(() => {
+      // TODO: implement unpublish functionality in future PR.
+    }, []);
 
     const dropdownOptions = useMemo(() => {
       const options: Array<Option & { active: boolean }> = [
@@ -70,20 +80,14 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
           text: t('manage.cards.menu.jump_in'),
           icon: <OpenInNew />,
           handler: handleJumpIn,
-          active: !!publishMetadata,
+          active: type === ManagedProjectType.LAND || !!deployment,
         },
         {
           text: t('manage.cards.menu.copy_url'),
           icon: <ContentCopy />,
           handler: handleCopyURL,
           divider: true,
-          active: !!publishMetadata,
-        },
-        {
-          text: t('manage.cards.menu.edit_name'),
-          icon: <OpenInNew />,
-          handler: handleEditName,
-          active: type === ManagedProjectType.WORLD && !isENSDomain(name),
+          active: type === ManagedProjectType.LAND || !!deployment,
         },
         {
           text: t('manage.cards.menu.parcel'),
@@ -92,35 +96,50 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
           active: type === ManagedProjectType.LAND,
         },
         {
+          text: t('manage.cards.menu.edit_name'),
+          icon: <OpenInNew />,
+          handler: handleEditName,
+          active:
+            type === ManagedProjectType.WORLD && role === WorldRoleType.OWNER && !isENSDomain(id),
+        },
+        {
           text: t('manage.cards.menu.permissions'),
           icon: <PermissionsIcon />,
           handler: handleManagePermissions,
-          active: type === ManagedProjectType.WORLD && role === 'owner',
+          active: type === ManagedProjectType.WORLD && role === WorldRoleType.OWNER,
         },
         {
           text: t('manage.cards.menu.unpublish'),
           handler: handleUnpublish,
-          active: !!publishMetadata,
+          active: type === ManagedProjectType.WORLD && role === WorldRoleType.OWNER && !!deployment,
         },
       ];
       return options.filter(option => option.active) as Option[];
-    }, [name, type, publishMetadata]);
+    }, [
+      project,
+      handleJumpIn,
+      handleCopyURL,
+      handleEditName,
+      handleViewParcel,
+      handleManagePermissions,
+      handleUnpublish,
+    ]);
 
     return (
       <div className="PublishedProjectCard">
         <div className="CardHeader">
-          {getLogo(type, name)}
+          {getLogo(type, id)}
           <Typography className="HeaderTitle">
-            {type === ManagedProjectType.LAND ? name : formatName(name)}
+            {type === ManagedProjectType.LAND ? displayName : formatName(displayName)}
           </Typography>
-          {dropdownOptions?.length && (
+          {!!dropdownOptions?.length && (
             <Dropdown
               className="options-dropdown"
               options={dropdownOptions}
             />
           )}
         </div>
-        {!publishMetadata ? (
+        {!deployment ? (
           <div className="EmptyScene">
             <Typography>{t('manage.cards.no_scene.title')}</Typography>
             <Button
@@ -135,8 +154,8 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
           <>
             <div className="CardThumbnail">
               <img
-                src={publishMetadata.thumbnail || thumbnailFallbackImage}
-                alt="Project thumbnail" /// TODO: use offline fallback Image component when merged.
+                src={deployment.thumbnail || thumbnailFallbackImage}
+                alt="Project thumbnail" // TODO: use offline fallback Image component when merged.
               />
               <div className="ChipsContainer">
                 <Chip
@@ -144,28 +163,29 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
                   icon={<PublishedIcon />}
                   label={t('manage.cards.published')}
                 />
-                {type === 'world' && publishMetadata.totalScenes > 1 && (
+                {type === 'world' && deployment.scenes.length > 1 && (
                   <Chip
                     variant="outlined"
                     icon={<ParcelsIcon />}
                     label={t('manage.cards.worlds.scenes_count', {
-                      count: publishMetadata.totalScenes,
+                      count: deployment.scenes.length,
                     })}
                   />
                 )}
-                {type === 'land' && !!publishMetadata.totalParcels && (
+                {deployment.scenes.length === 1 && (
                   <Chip
                     variant="outlined"
                     icon={<ParcelsIcon />}
                     label={t('manage.cards.land.parcels_count', {
-                      count: publishMetadata.totalParcels,
+                      count: deployment.scenes[0].parcels.length,
                     })}
                   />
                 )}
-                {role === 'operator' && (
+                {roleLabel && (
                   <Chip
                     variant="outlined"
-                    label={t('manage.cards.roles.operator')}
+                    icon={<PersonIcon />}
+                    label={roleLabel}
                   />
                 )}
               </div>
@@ -179,8 +199,8 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
                   ? t('manage.cards.published_scene')
                   : t('manage.cards.worlds.published_world')}
               </Typography>
-              <Typography className="ProjectTitle">{publishMetadata.title}</Typography>
-              {type === 'world' && (
+              <Typography className="ProjectTitle">{deployment.title}</Typography>
+              {type === 'world' && role === WorldRoleType.OWNER && (
                 <Button
                   variant="contained"
                   color="secondary"
