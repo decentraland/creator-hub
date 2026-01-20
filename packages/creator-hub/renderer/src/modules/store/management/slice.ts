@@ -224,14 +224,16 @@ const slice = createSlice({
         state.status = 'loading';
         state.error = null;
       })
-      .addCase(fetchManagedProjects.fulfilled, (state, action) => {
-        state.projects = action.payload;
+      .addCase(fetchManagedProjects.fulfilled, state => {
         state.status = 'succeeded';
         state.error = null;
       })
       .addCase(fetchManagedProjects.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message || 'Failed to fetch managed projects';
+      })
+      .addCase(fetchAllManagedProjectsDetails.fulfilled, (state, action) => {
+        state.projects = action.payload;
       })
       .addCase(fetchStorageStats.fulfilled, (state, action) => {
         state.storageStats = action.payload;
