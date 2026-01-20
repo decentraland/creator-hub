@@ -562,6 +562,12 @@
       "title": "您还没有任何场景",
       "description": "为您的土地和世界创建和管理场景。现在开始构建！"
     },
+    "worlds_storage": {
+      "used": "已使用空间",
+      "for_names": "用于 Decentraland NAMEs",
+      "description": "总存储空间根据 MANA、LAND 和 NAME 持有量计算。",
+      "link": "查看详情"
+    },
     "cards": {
       "published": "已发布",
       "published_scene": "已发布的场景",
