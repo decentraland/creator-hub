@@ -16,5 +16,10 @@
     "vessel"
   ],
   "caption": "Grey pipe with a hole.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.585,
+    "y": 5.035,
+    "z": 0.336
+  }
 }

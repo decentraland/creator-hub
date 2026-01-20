@@ -18,5 +18,10 @@
     "tower"
   ],
   "caption": "Stone column with base and pedestal.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.023,
+    "y": 2.99,
+    "z": 1.023
+  }
 }

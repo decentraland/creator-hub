@@ -18,5 +18,10 @@
     "tunneling"
   ],
   "caption": "Half-pipe tunnel with curved top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.899,
+    "y": 3.851,
+    "z": 6.241
+  }
 }

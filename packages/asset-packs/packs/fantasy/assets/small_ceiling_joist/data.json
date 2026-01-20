@@ -20,5 +20,10 @@
     "weight"
   ],
   "caption": "Wooden beam supporting the ceiling.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.024,
+    "y": 0.272,
+    "z": 0.273
+  }
 }

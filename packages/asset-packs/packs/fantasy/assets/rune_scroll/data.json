@@ -19,5 +19,10 @@
     "scrollwork"
   ],
   "caption": "Red triangle on ancient scroll.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.602,
+    "y": 0.105,
+    "z": 0.566
+  }
 }

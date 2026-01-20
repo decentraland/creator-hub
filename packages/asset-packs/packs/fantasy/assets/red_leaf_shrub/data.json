@@ -21,5 +21,10 @@
     "roots"
   ],
   "caption": "Red leafy shrub.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.544,
+    "y": 0.785,
+    "z": 1.316
+  }
 }

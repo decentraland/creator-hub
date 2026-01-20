@@ -17,5 +17,10 @@
     "visible"
   ],
   "caption": "Open-top wooden drawer with one visible compartment.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.81,
+    "y": 0.438,
+    "z": 0.607
+  }
 }

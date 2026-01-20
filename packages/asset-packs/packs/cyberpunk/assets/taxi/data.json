@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["cab", "driver", "passenger", "ride", "street", "transportation", "urban", "vehicle"],
   "caption": "Yellow taxi with open door.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.51,
+    "y": 2.246,
+    "z": 6.496
+  }
 }

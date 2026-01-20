@@ -15,5 +15,10 @@
     "written"
   ],
   "caption": "",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.528,
+    "y": 5.007,
+    "z": 0.394
+  }
 }

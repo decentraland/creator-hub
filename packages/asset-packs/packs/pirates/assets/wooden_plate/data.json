@@ -22,5 +22,10 @@
     "tableware"
   ],
   "caption": "Woody wooden plate.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.509,
+    "y": 0.028,
+    "z": 0.509
+  }
 }

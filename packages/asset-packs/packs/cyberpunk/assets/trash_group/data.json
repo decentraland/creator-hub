@@ -15,5 +15,10 @@
     "waste"
   ],
   "caption": "Three colorful trash cans.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.207,
+    "y": 1.252,
+    "z": 1.604
+  }
 }

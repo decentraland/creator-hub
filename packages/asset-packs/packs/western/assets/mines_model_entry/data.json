@@ -18,5 +18,10 @@
     "threat"
   ],
   "caption": "Orange block with hole, potential mine obstacle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 10.654,
+    "y": 4.849,
+    "z": 7.328
+  }
 }

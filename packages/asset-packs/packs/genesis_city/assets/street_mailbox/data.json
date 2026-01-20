@@ -24,5 +24,10 @@
     "stationery"
   ],
   "caption": "Blue mailbox with a letter slot.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.705,
+    "y": 0.875,
+    "z": 1.363
+  }
 }

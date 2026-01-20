@@ -23,5 +23,10 @@
     "tomato"
   ],
   "caption": "Red tomato with green stem.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.318,
+    "y": 0.269,
+    "z": 0.335
+  }
 }

@@ -15,5 +15,10 @@
     "royal"
   ],
   "caption": "Red banner with golden emblem on wooden post.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.69,
+    "y": 2.099,
+    "z": 0.251
+  }
 }

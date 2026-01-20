@@ -19,5 +19,10 @@
     "railings"
   ],
   "caption": "Luxurious fence module with ornate finials.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.11,
+    "y": 1.141,
+    "z": 0.337
+  }
 }

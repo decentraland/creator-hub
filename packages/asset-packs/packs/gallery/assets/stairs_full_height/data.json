@@ -17,5 +17,10 @@
     "steps"
   ],
   "caption": "Red staircase leading up to a landing.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.006,
+    "y": 4,
+    "z": 4.173
+  }
 }

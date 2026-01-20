@@ -22,5 +22,10 @@
     "structure"
   ],
   "caption": "Dock module with wooden slats.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.677,
+    "y": 1.026,
+    "z": 2.683
+  }
 }

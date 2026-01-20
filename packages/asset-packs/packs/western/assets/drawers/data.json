@@ -18,5 +18,10 @@
     "table"
   ],
   "caption": "Brown wooden desk with three drawers.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.668,
+    "y": 1.138,
+    "z": 0.925
+  }
 }

@@ -22,5 +22,10 @@
     "structure"
   ],
   "caption": "Wooden fence with horizontal planks.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.242,
+    "y": 2.08,
+    "z": 3.001
+  }
 }

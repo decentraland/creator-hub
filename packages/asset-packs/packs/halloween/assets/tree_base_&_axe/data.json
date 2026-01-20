@@ -20,5 +20,10 @@
     "treebase"
   ],
   "caption": "Axe on wooden tree stump.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.163,
+    "y": 1.814,
+    "z": 2.346
+  }
 }

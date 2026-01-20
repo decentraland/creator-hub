@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["fantasy", "beam", "bench", "comfort", "furniture", "post", "seating", "structure"],
   "caption": "Wooden bench with vertical posts and horizontal beam.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.855,
+    "y": 0.635,
+    "z": 0.614
+  }
 }

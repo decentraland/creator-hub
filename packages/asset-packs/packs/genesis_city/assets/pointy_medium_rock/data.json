@@ -22,5 +22,10 @@
     "topography"
   ],
   "caption": "Gray rock with a pointed top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.345,
+    "y": 0.603,
+    "z": 1.214
+  }
 }

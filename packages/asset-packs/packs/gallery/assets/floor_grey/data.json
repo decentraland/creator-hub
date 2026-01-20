@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["appearance", "greyish", "hue", "shade", "tone", "visual"],
   "caption": "Grey concrete floor.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.01,
+    "z": 4
+  }
 }

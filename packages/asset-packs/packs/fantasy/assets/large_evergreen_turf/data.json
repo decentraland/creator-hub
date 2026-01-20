@@ -20,5 +20,10 @@
     "terrain"
   ],
   "caption": "Artificial turf field.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.104,
+    "z": 4
+  }
 }

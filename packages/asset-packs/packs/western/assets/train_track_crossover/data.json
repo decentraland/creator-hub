@@ -20,5 +20,10 @@
     "station"
   ],
   "caption": "Wooden x-shaped crossing on old train tracks.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6.182,
+    "y": 0.34,
+    "z": 6.141
+  }
 }

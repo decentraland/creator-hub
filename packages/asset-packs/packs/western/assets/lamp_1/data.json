@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["fixture", "glow", "handle", "illumination", "interior", "lamp", "lantern", "shade"],
   "caption": "Yellow lantern with black handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.314,
+    "y": 0.671,
+    "z": 0.31
+  }
 }

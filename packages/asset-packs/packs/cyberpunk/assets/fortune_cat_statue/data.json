@@ -19,5 +19,10 @@
     "relic"
   ],
   "caption": "Cat statue with collar and chinese sign.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.65,
+    "y": 2.041,
+    "z": 1.508
+  }
 }

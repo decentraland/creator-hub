@@ -15,5 +15,10 @@
     "radiant"
   ],
   "caption": "Red glowing pendant light.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.646,
+    "y": 1.342,
+    "z": 0.746
+  }
 }

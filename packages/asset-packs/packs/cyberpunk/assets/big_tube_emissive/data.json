@@ -15,5 +15,10 @@
     "tube"
   ],
   "caption": "Black curved lamp with glowing orange core.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 9.015,
+    "y": 14.32,
+    "z": 9.636
+  }
 }

@@ -15,5 +15,10 @@
     "tube"
   ],
   "caption": "Factory light tube.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 250.366,
+    "y": 200.078,
+    "z": 1658.139
+  }
 }

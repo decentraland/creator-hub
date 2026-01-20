@@ -23,5 +23,10 @@
     "wave"
   ],
   "caption": "Skeleton riding surfboard.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.619,
+    "y": 0.484,
+    "z": 0.882
+  }
 }

@@ -20,5 +20,10 @@
     "step"
   ],
   "caption": "Wooden staircase with multiple steps.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.603,
+    "y": 0.965,
+    "z": 2.044
+  }
 }

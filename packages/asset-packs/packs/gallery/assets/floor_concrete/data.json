@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["asphalt", "concrete", "foundation", "gravel", "grayscale", "pavement", "slab"],
   "caption": "Grayscale concrete floor.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.02,
+    "z": 4
+  }
 }

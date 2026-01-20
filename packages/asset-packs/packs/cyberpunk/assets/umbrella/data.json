@@ -16,5 +16,10 @@
     "weather"
   ],
   "caption": "Yellow umbrella with black handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 35.213,
+    "y": 143.179,
+    "z": 33.314
+  }
 }

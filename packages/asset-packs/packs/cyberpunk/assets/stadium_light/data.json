@@ -15,5 +15,10 @@
     "structure"
   ],
   "caption": "Black adjustable stadium light with metal pole.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.907,
+    "y": 10.718,
+    "z": 1.81
+  }
 }

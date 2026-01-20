@@ -25,5 +25,10 @@
     "searchable"
   ],
   "caption": "Potted plant with green leaves.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.129,
+    "y": 2.513,
+    "z": 0.55
+  }
 }

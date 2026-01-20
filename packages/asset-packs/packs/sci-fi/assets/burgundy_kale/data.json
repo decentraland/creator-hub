@@ -19,5 +19,10 @@
     "vibrant"
   ],
   "caption": "Red coral.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.559,
+    "y": 1.683,
+    "z": 0.471
+  }
 }

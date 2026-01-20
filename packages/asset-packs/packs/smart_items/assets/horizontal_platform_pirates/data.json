@@ -13,5 +13,10 @@
     "island"
   ],
   "description": "A horizontal platform that moves back and forth. Players can jump on it to reach places.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.218,
+    "y": 3.101,
+    "z": 2.54
+  }
 }

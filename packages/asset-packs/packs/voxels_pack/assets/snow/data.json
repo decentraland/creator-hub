@@ -17,5 +17,10 @@
     "winter"
   ],
   "caption": "Blue and white ice texture.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+  }
 }

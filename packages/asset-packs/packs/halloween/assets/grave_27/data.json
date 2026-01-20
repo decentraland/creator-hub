@@ -20,5 +20,10 @@
     "tomb"
   ],
   "caption": "Grave with glowing cross on.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.155,
+    "y": 1.662,
+    "z": 1.382
+  }
 }

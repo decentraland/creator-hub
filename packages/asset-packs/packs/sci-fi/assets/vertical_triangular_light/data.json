@@ -18,5 +18,10 @@
     "upright"
   ],
   "caption": "Vertical light with glowing tip.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.394,
+    "y": 1.248,
+    "z": 0.342
+  }
 }

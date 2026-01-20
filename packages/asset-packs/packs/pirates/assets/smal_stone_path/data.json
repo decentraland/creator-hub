@@ -18,5 +18,10 @@
     "walkway"
   ],
   "caption": "Stone path leading through the forest.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.056,
+    "z": 1
+  }
 }

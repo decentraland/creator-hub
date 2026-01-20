@@ -18,5 +18,10 @@
     "smoke"
   ],
   "caption": "Industrial furnace for burning materials.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.529,
+    "y": 0.747,
+    "z": 1.53
+  }
 }

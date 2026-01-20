@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["outline", "rectangle", "shape", "tile"],
   "caption": "White border tile.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.134,
+    "y": 0.004,
+    "z": 8.001
+  }
 }

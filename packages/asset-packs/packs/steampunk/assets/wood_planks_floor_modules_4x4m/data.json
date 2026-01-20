@@ -4,5 +4,10 @@
   "category": "tiles",
   "tags": ["furniture", "grid", "module", "plank", "room", "timber"],
   "caption": "Brown wooden flooring module with grid.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.143,
+    "z": 4
+  }
 }

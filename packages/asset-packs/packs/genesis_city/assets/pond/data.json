@@ -22,5 +22,10 @@
     "shore"
   ],
   "caption": "A serene pond with a rocky edge.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.02,
+    "y": 0.795,
+    "z": 5.414
+  }
 }

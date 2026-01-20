@@ -21,5 +21,10 @@
     "precious"
   ],
   "caption": "Golden octahedron with peridot gem.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.216,
+    "y": 0.402,
+    "z": 0.216
+  }
 }

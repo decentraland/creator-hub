@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["bench", "comfort", "furniture", "nature", "outdoor", "rustic", "seating"],
   "caption": "Brown wooden bench.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 8.004,
+    "y": 0.717,
+    "z": 2.01
+  }
 }

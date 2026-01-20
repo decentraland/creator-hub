@@ -15,5 +15,10 @@
     "turn"
   ],
   "caption": "Half-curved wooden track with curved top rail.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.406,
+    "y": 0.115,
+    "z": 3.501
+  }
 }

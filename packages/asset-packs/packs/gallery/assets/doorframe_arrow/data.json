@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["architecture", "building", "corridor", "doorframe", "doorway", "entrance", "structure"],
   "caption": "Door frame with glowing arrow.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 0.4
+  }
 }

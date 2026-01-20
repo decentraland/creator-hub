@@ -25,5 +25,10 @@
     "not"
   ],
   "caption": "Ornamental fountain with a circular base.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.877,
+    "y": 3.875,
+    "z": 1.905
+  }
 }

@@ -31,5 +31,10 @@
     "structure"
   ],
   "caption": "Classic white picket fence with one door.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.14,
+    "y": 1.757,
+    "z": 1.921
+  }
 }

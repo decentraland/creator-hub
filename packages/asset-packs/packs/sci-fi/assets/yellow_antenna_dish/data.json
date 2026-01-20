@@ -20,5 +20,10 @@
     "transmission"
   ],
   "caption": "Satellite dish with yellow antenna.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.951,
+    "y": 1.25,
+    "z": 0.816
+  }
 }

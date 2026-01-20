@@ -16,5 +16,10 @@
     "shining"
   ],
   "caption": "Glowing pendant light.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 640.525,
+    "y": 460.75,
+    "z": 1198.263
+  }
 }

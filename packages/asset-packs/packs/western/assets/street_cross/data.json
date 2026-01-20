@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["art", "cross", "furniture", "graphic", "silhouette", "visual"],
   "caption": "Wooden cross.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.584,
+    "y": 2.616,
+    "z": 0.327
+  }
 }

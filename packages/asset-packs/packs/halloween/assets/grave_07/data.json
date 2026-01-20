@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["graphic", "line", "marker", "monument", "outline", "prism", "shape", "silhouette"],
   "caption": "Black prism with glowing top and vertical line.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.308,
+    "y": 0.409,
+    "z": 2.036
+  }
 }

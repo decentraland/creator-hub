@@ -4,5 +4,10 @@
   "category": "media",
   "tags": ["nft", "collectible", "token", "digital", "art", "display"],
   "description": "Displays an image or gif NFT by using the item’s collection contract address and token ID. You can also optionally add a frame.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.5,
+    "y": 0.5,
+    "z": 0.083
+  }
 }

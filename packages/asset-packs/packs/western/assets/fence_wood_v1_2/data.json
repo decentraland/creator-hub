@@ -15,5 +15,10 @@
     "structure"
   ],
   "caption": "Wooden fence with two vertical posts.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.069,
+    "y": 1.461,
+    "z": 0.245
+  }
 }

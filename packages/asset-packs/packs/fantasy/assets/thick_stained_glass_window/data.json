@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["fantasy", "window", "stained", "glass", "art", "colored", "cross", "panes"],
   "caption": "Dark stained glass window featuring a cross.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.747,
+    "y": 2.175,
+    "z": 0.677
+  }
 }

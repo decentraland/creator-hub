@@ -28,5 +28,10 @@
     "terrain"
   ],
   "caption": "Wooden fence with two horizontal rails.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.218,
+    "y": 6.253,
+    "z": 5.072
+  }
 }

@@ -16,5 +16,10 @@
     "skull"
   ],
   "caption": "Skull-adorned rock.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.756,
+    "y": 0.889,
+    "z": 2.526
+  }
 }

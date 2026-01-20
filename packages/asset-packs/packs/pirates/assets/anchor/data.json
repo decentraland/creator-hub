@@ -22,5 +22,10 @@
     "vessel"
   ],
   "caption": "Yellow hook on an anchor.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.963,
+    "y": 1.342,
+    "z": 0.189
+  }
 }

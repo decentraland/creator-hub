@@ -25,5 +25,10 @@
     "tricorn"
   ],
   "caption": "Black tricorn hat with red feather.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.453,
+    "y": 0.324,
+    "z": 0.602
+  }
 }

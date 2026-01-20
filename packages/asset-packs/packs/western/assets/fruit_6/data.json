@@ -14,5 +14,10 @@
     "vessel"
   ],
   "caption": "Pink crystal-filled wooden barrel.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.62,
+    "y": 0.498,
+    "z": 0.613
+  }
 }

@@ -4,5 +4,10 @@
   "description": "A classic bench.",
   "tags": ["bench", "classic", "seat", "sitting", "furniture"],
   "author": "Decentraland Foundation",
-  "id": "94f8aa27-7e44-4660-a133-5f12bbe17fa2"
+  "id": "94f8aa27-7e44-4660-a133-5f12bbe17fa2",
+  "boundingBox": {
+    "x": 0.732,
+    "y": 2.548,
+    "z": 0.947
+  }
 }

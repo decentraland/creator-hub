@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["ally", "architectural", "building", "colored", "glass", "tile", "window", "windowpane"],
   "caption": "Blue and white tile window.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 0.4
+  }
 }

@@ -14,5 +14,10 @@
     "storefront"
   ],
   "caption": "Glowing blue 'mana' sign on.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.202,
+    "y": 0.499,
+    "z": 0.043
+  }
 }

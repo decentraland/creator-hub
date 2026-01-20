@@ -15,5 +15,10 @@
     "tube"
   ],
   "caption": "Black cylindrical pipe for furnace use.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.503,
+    "y": 1.618,
+    "z": 0.564
+  }
 }

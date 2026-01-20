@@ -26,5 +26,10 @@
     "warm"
   ],
   "caption": "Old-fashioned candle holder with one lit candle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.513,
+    "y": 0.451,
+    "z": 0.443
+  }
 }

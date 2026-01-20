@@ -27,5 +27,10 @@
     "spark"
   ],
   "caption": "Campfire with glowing flames and burning wood.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.582,
+    "y": 1.722,
+    "z": 2.305
+  }
 }

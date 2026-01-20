@@ -19,5 +19,10 @@
     "wallcorner"
   ],
   "caption": "Corner with diagonal tiles.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.025,
+    "y": 4,
+    "z": 4
+  }
 }

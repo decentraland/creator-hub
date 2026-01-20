@@ -15,5 +15,10 @@
     "zebra"
   ],
   "caption": "Zebra crossing sign.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 13.987,
+    "y": 0.062,
+    "z": 6.234
+  }
 }

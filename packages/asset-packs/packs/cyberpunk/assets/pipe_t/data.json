@@ -17,5 +17,10 @@
     "utility"
   ],
   "caption": "Pipe with t-shaped connector.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.715,
+    "y": 1.029,
+    "z": 1.442
+  }
 }

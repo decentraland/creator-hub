@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["scifi", "high", "column", "graphic", "shape", "visual"],
   "caption": "Blue and yellow vertical column.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.611,
+    "y": 3.051,
+    "z": 0.611
+  }
 }

@@ -21,5 +21,10 @@
     "storage"
   ],
   "caption": "Brown ceramic bowl with a handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.415,
+    "y": 0.541,
+    "z": 1.231
+  }
 }

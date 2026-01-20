@@ -4,5 +4,10 @@
   "category": "nature",
   "tags": ["fantasy", "swamp", "forest", "foliage", "leaf", "natural", "nature", "organic"],
   "caption": "Blue leaf design.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.498,
+    "y": 0.224,
+    "z": 0.342
+  }
 }

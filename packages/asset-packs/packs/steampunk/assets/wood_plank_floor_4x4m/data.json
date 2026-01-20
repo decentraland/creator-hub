@@ -15,5 +15,10 @@
     "office"
   ],
   "caption": "Brown wooden plank floor, 4x4 meters.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.143,
+    "z": 4
+  }
 }

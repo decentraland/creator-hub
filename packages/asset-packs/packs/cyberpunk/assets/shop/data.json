@@ -16,5 +16,10 @@
     "vendor"
   ],
   "caption": "Blue letter s.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.502,
+    "y": 0.505,
+    "z": 0.066
+  }
 }

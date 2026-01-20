@@ -17,5 +17,10 @@
     "wax"
   ],
   "caption": "Lit white candle with glowing yellow flame.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.207,
+    "y": 0.47,
+    "z": 0.239
+  }
 }

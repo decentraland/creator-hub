@@ -21,5 +21,10 @@
     "stem"
   ],
   "caption": "Orange, trumpet-shaped succulent with multiple stems.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.238,
+    "y": 0.763,
+    "z": 1.406
+  }
 }

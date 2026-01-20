@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["animal", "art", "cephalopod", "creature", "graphic", "marine", "octopus", "tentacles"],
   "caption": "Blue-tentacled octopus on.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 4,
+    "z": 0.327
+  }
 }

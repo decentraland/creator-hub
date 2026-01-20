@@ -27,5 +27,10 @@
     "trunk"
   ],
   "caption": "Edged pine tree with brown base.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.256,
+    "y": 5.716,
+    "z": 3.324
+  }
 }

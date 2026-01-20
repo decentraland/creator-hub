@@ -15,5 +15,10 @@
     "structure"
   ],
   "caption": "Dark brown wooden bench.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 8.128,
+    "y": 3.809,
+    "z": 2.267
+  }
 }

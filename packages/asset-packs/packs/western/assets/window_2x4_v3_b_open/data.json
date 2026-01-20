@@ -18,5 +18,10 @@
     "windowpane"
   ],
   "caption": "Open window on.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.421,
+    "y": 2.228,
+    "z": 0.36
+  }
 }

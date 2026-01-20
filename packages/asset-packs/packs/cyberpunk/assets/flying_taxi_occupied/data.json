@@ -15,5 +15,10 @@
     "vehicle"
   ],
   "caption": "Yellow flying taxi with open door.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.778,
+    "y": 2.472,
+    "z": 4.974
+  }
 }

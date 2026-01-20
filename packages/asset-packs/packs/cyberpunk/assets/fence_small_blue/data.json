@@ -16,5 +16,10 @@
     "yard"
   ],
   "caption": "Blue wooden fence.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1218.782,
+    "y": 405.895,
+    "z": 25.509
+  }
 }

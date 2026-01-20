@@ -21,5 +21,10 @@
     "roots"
   ],
   "caption": "Blue acacia tree.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 14.35,
+    "y": 12.236,
+    "z": 10.481
+  }
 }

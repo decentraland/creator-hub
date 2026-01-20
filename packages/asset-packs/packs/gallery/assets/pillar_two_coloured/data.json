@@ -14,5 +14,10 @@
     "structure"
   ],
   "caption": "Yellow pillar with two columns.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.5,
+    "y": 4,
+    "z": 0.5
+  }
 }

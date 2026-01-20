@@ -23,5 +23,10 @@
     "scheme"
   ],
   "caption": "Blue banner featuring a red crown logo.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.887,
+    "y": 2.228,
+    "z": 0.08
+  }
 }

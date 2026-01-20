@@ -18,5 +18,10 @@
     "star"
   ],
   "caption": "Glowing heart comet.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.023,
+    "y": 0.814,
+    "z": 0.982
+  }
 }

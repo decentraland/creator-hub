@@ -4,5 +4,10 @@
   "category": "furniture",
   "tags": ["desk", "dining", "flat", "furniture", "kitchen", "stationary", "table"],
   "caption": "Single console on a wooden table.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 47.725,
+    "y": 46.508,
+    "z": 39.15
+  }
 }

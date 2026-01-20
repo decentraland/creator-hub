@@ -20,5 +20,10 @@
     "vessel"
   ],
   "caption": "Cylindrical battery with glowing blue accents.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.119,
+    "y": 0.333,
+    "z": 0.119
+  }
 }

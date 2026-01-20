@@ -19,5 +19,10 @@
     "tapering"
   ],
   "caption": "Tall, pointed stalagmite-like structure.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.714,
+    "y": 1.651,
+    "z": 0.68
+  }
 }

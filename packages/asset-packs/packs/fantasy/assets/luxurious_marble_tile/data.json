@@ -4,5 +4,10 @@
   "category": "tiles",
   "tags": ["fantasy", "tile", "marble", "luxurious", "countertop", "interior", "realistic"],
   "caption": "Luxurious marble tile with realistic texture.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 0.03,
+    "z": 1
+  }
 }

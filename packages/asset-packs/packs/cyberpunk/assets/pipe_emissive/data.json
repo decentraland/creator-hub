@@ -13,5 +13,10 @@
     "radiant"
   ],
   "caption": "Emissive metal pipe.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.715,
+    "y": 0.715,
+    "z": 2.868
+  }
 }

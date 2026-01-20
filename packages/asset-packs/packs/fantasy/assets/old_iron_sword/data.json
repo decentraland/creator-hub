@@ -19,5 +19,10 @@
     "warrior"
   ],
   "caption": "Old iron sword with red handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.227,
+    "y": 0.13,
+    "z": 1.025
+  }
 }

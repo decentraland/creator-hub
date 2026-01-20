@@ -16,5 +16,10 @@
     "searchable"
   ],
   "caption": "Black chandelier featuring seven candles.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.503,
+    "y": 0.562,
+    "z": 0.244
+  }
 }

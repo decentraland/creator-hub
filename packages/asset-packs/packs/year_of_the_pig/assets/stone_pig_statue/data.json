@@ -23,5 +23,10 @@
     "pet"
   ],
   "caption": "Dog statue with a glowing finish.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.748,
+    "y": 0.869,
+    "z": 0.865
+  }
 }

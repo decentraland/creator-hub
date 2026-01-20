@@ -21,5 +21,10 @@
     "table"
   ],
   "caption": "Blue table with green base.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.305,
+    "y": 4.305,
+    "z": 4.67
+  }
 }

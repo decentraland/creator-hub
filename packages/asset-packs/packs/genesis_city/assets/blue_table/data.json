@@ -19,5 +19,10 @@
     "shade"
   ],
   "caption": "Blue table with four legs.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.278,
+    "y": 0.989,
+    "z": 2.555
+  }
 }

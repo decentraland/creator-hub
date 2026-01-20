@@ -20,5 +20,10 @@
     "slab"
   ],
   "caption": "Rocky terrain.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.186,
+    "y": 0.652,
+    "z": 1.612
+  }
 }

@@ -23,5 +23,10 @@
     "vine"
   ],
   "caption": "Green leafy vine.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.5,
+    "y": 2.383,
+    "z": 0.207
+  }
 }

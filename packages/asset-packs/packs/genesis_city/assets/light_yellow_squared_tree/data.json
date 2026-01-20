@@ -29,5 +29,10 @@
     "trunk"
   ],
   "caption": "A tree with yellow leaves.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.48,
+    "y": 6.183,
+    "z": 3.547
+  }
 }

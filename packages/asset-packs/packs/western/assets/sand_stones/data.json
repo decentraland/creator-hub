@@ -4,5 +4,10 @@
   "category": "ground",
   "tags": ["earthy", "gravel", "landscape", "mineral", "natural", "sand", "sediment", "terrain"],
   "caption": "Dunes and rocky terrain.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 16,
+    "y": 0.019,
+    "z": 16
+  }
 }

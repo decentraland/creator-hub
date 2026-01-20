@@ -18,5 +18,10 @@
     "tombstone"
   ],
   "caption": "White headstone with a grave marker.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.003,
+    "y": 1.753,
+    "z": 0.47
+  }
 }

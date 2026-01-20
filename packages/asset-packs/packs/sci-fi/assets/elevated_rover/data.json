@@ -18,5 +18,10 @@
     "vehicle"
   ],
   "caption": "Orange rover with camera on top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.2,
+    "y": 5.295,
+    "z": 5.172
+  }
 }

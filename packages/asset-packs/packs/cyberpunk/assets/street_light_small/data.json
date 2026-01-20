@@ -16,5 +16,10 @@
     "urban"
   ],
   "caption": "Blue-topped street light.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.395,
+    "y": 2.017,
+    "z": 0.395
+  }
 }

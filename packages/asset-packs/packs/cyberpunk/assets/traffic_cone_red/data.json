@@ -14,5 +14,10 @@
     "warning"
   ],
   "caption": "Red traffic cone.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.527,
+    "y": 0.554,
+    "z": 0.527
+  }
 }

@@ -16,5 +16,10 @@
     "vessel"
   ],
   "caption": "Antique greek vase with handles.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.678,
+    "y": 0.978,
+    "z": 0.678
+  }
 }

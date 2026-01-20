@@ -18,5 +18,10 @@
     "vessel"
   ],
   "caption": "Spilled barrel with glowing green liquid.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.922,
+    "y": 0.781,
+    "z": 0.762
+  }
 }

@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["appearance", "checkered", "diamond", "jewel", "luxury", "precious", "shape", "visual"],
   "caption": "Blue diamond-shaped token with a checkered pattern.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+  }
 }

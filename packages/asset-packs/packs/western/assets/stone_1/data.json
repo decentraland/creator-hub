@@ -14,5 +14,10 @@
     "shape"
   ],
   "caption": "Black, rocky cube-shaped object.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.817,
+    "y": 2.307,
+    "z": 4.304
+  }
 }

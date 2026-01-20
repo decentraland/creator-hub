@@ -25,5 +25,10 @@
     "tower"
   ],
   "caption": "Axe with wooden handle and metal head.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.289,
+    "y": 0.629,
+    "z": 0.097
+  }
 }

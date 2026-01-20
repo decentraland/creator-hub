@@ -14,5 +14,10 @@
     "vessel"
   ],
   "caption": "Green liquid in a cylindrical container.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.7,
+    "y": 0.849,
+    "z": 0.701
+  }
 }

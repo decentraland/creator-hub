@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["appearance", "checkered", "glass", "shape", "visual"],
   "caption": "Blue, 3d cube with checkered side pattern.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+  }
 }

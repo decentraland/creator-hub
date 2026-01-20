@@ -22,5 +22,10 @@
     "wings"
   ],
   "caption": "Rock-like creature with glowing blue eyes.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.063,
+    "y": 1.486,
+    "z": 1.164
+  }
 }

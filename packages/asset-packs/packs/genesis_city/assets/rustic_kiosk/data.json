@@ -20,5 +20,10 @@
     "vendor"
   ],
   "caption": "Red and white striped wooden cart.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.547,
+    "y": 2.555,
+    "z": 2.737
+  }
 }

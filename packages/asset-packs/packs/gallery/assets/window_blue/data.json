@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["clear", "glass", "opening", "rectangle", "shape", "window", "windowpane"],
   "caption": "Blue window frame has an opening.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 0.4
+  }
 }

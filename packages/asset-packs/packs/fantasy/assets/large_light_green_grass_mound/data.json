@@ -21,5 +21,10 @@
     "terrain"
   ],
   "caption": "Green grassy hill.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6.113,
+    "y": 0.416,
+    "z": 6.494
+  }
 }

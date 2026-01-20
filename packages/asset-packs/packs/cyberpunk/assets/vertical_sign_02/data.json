@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["illuminated", "upright"],
   "caption": "Yellow sign with black border.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 108.32,
+    "y": 340.491,
+    "z": 5.755
+  }
 }

@@ -22,5 +22,10 @@
     "vessel"
   ],
   "caption": "Green glass bottle with wooden cork.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.205,
+    "y": 0.675,
+    "z": 0.205
+  }
 }

@@ -19,5 +19,10 @@
     "steam"
   ],
   "caption": "Electric kettle with glowing blue light.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.167,
+    "y": 0.441,
+    "z": 0.209
+  }
 }

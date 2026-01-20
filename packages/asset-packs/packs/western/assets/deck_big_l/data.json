@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["architecture", "building", "deck", "outdoor", "stairs", "structure"],
   "caption": "Wooden staircase leading up to a deck.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 10.316,
+    "y": 4.755,
+    "z": 11.177
+  }
 }

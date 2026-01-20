@@ -17,5 +17,10 @@
     "wick"
   ],
   "caption": "Hanging lantern with glowing glass.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.619,
+    "y": 3.687,
+    "z": 2.795
+  }
 }

@@ -14,5 +14,10 @@
     "shine"
   ],
   "caption": "Glowing spotlight.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 29.796,
+    "z": 2
+  }
 }

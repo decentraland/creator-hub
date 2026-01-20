@@ -17,5 +17,10 @@
     "train"
   ],
   "caption": "Curved wooden train track.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.276,
+    "y": 0.115,
+    "z": 4.282
+  }
 }

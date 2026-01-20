@@ -20,5 +20,10 @@
     "storage"
   ],
   "caption": "Wooden 3-tier bookshelf with drawers.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.209,
+    "y": 2.41,
+    "z": 0.719
+  }
 }

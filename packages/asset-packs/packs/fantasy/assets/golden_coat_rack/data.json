@@ -18,5 +18,10 @@
     "royal"
   ],
   "caption": "Golden coat rack featuring a blue crown.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.842,
+    "y": 1.919,
+    "z": 0.773
+  }
 }

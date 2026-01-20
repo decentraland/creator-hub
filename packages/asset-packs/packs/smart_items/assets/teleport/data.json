@@ -4,5 +4,10 @@
   "category": "utils",
   "tags": ["teleport", "coordinates", "portal", "map", "travel", "location"],
   "description": "A clickable item that can be used to teleport players to different coordinates in Decentraland.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 21.28,
+    "y": 21.233,
+    "z": 21.28
+  }
 }

@@ -20,5 +20,10 @@
     "wire"
   ],
   "caption": "Coiled cable with glowing yellow connector.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.847,
+    "y": 0.186,
+    "z": 2.002
+  }
 }

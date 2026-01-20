@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["banner", "dot", "emblem", "flag", "graphic", "visual"],
   "caption": "Black and white flag featuring red dots.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1310.729,
+    "y": 364.032,
+    "z": 3.51
+  }
 }

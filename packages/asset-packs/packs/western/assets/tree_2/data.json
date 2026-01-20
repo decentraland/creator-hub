@@ -18,5 +18,10 @@
     "trunk"
   ],
   "caption": "Dry, leafless tree stands on rocky ground.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.505,
+    "y": 5.544,
+    "z": 2.735
+  }
 }

@@ -20,5 +20,10 @@
     "tower"
   ],
   "caption": "Textured brick wall with curved top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.071,
+    "y": 4,
+    "z": 4.071
+  }
 }

@@ -24,5 +24,10 @@
     "sitting"
   ],
   "caption": "Wooden stool with a flat top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.054,
+    "y": 0.451,
+    "z": 1.054
+  }
 }

@@ -17,5 +17,10 @@
     "zombie"
   ],
   "caption": "Zombie-like hand with extended fingers.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.321,
+    "y": 0.532,
+    "z": 0.24
+  }
 }

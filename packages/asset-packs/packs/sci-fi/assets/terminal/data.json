@@ -20,5 +20,10 @@
     "terminal"
   ],
   "caption": "Glowing screen arcade machine with coin slot.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.165,
+    "y": 2.201,
+    "z": 1.222
+  }
 }

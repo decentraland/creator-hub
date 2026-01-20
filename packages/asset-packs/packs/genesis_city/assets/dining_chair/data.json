@@ -24,5 +24,10 @@
     "sitting"
   ],
   "caption": "Red leather armchair.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.633,
+    "y": 1.425,
+    "z": 0.678
+  }
 }

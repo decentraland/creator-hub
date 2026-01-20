@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["aperture", "entrance", "glass", "glow", "illumination", "pane", "window", "windowpane"],
   "caption": "Blue glow emanates from the open window.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.791,
+    "y": 2.065,
+    "z": 0.951
+  }
 }

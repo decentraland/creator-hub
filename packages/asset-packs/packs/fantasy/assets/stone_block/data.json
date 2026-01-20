@@ -19,5 +19,10 @@
     "tower"
   ],
   "caption": "Stone block.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.222,
+    "y": 0.366,
+    "z": 0.222
+  }
 }

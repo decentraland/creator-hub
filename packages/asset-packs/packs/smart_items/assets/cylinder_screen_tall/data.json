@@ -4,5 +4,10 @@
   "category": "media",
   "tags": ["video", "screen", "video screen", "video player", "video player screen", "cylinder"],
   "description": "A cylindrical video screen that can play videos or live streams. It can be used together with the Admin Tools smart item to manage content live.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1.5,
+    "z": 1
+  }
 }

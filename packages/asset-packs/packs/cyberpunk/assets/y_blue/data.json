@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["angular", "geometric", "graphic", "motif", "pointy", "shape", "shaped", "visual"],
   "caption": "Y-shaped console with glowing screen.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.5,
+    "y": 0.5,
+    "z": 0.076
+  }
 }

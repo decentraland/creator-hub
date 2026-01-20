@@ -16,5 +16,10 @@
     "magical"
   ],
   "caption": "Medieval-style alchemist's equipment with glowing spheres.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.896,
+    "y": 0.978,
+    "z": 0.797
+  }
 }

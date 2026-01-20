@@ -21,5 +21,10 @@
     "vehicle"
   ],
   "caption": "Brown wooden table.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.528,
+    "y": 0.918,
+    "z": 2.528
+  }
 }

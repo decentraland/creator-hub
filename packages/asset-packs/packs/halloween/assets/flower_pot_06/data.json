@@ -20,5 +20,10 @@
     "searchable"
   ],
   "caption": "Flower-filled vase.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.336,
+    "y": 0.574,
+    "z": 0.323
+  }
 }

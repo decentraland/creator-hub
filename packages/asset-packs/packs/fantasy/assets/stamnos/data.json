@@ -20,5 +20,10 @@
     "tableware"
   ],
   "caption": "Orange vase with a handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.928,
+    "y": 0.751,
+    "z": 0.744
+  }
 }

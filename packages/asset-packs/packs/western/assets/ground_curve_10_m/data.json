@@ -16,5 +16,10 @@
     "tropical"
   ],
   "caption": "Banana-shaped with a glowing crescent moon.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 11.501,
+    "y": 0.416,
+    "z": 11.219
+  }
 }

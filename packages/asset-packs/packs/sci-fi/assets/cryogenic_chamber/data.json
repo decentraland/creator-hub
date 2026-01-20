@@ -22,5 +22,10 @@
     "vessel"
   ],
   "caption": "Cryogenic chamber.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.052,
+    "y": 0.534,
+    "z": 0.997
+  }
 }

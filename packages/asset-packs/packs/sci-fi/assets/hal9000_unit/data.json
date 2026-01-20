@@ -21,5 +21,10 @@
     "warning"
   ],
   "caption": "Walkie-talkie-style radio with glowing red light.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.386,
+    "y": 0.735,
+    "z": 0.142
+  }
 }

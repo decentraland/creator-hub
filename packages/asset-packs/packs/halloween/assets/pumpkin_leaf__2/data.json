@@ -18,5 +18,10 @@
     "vegetation"
   ],
   "caption": "Green leafy plant with one leaf.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.352,
+    "y": 0.152,
+    "z": 0.294
+  }
 }

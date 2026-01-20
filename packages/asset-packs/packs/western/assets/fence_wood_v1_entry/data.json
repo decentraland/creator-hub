@@ -15,5 +15,10 @@
     "structure"
   ],
   "caption": "Wooden ladders on a.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.937,
+    "y": 1.625,
+    "z": 0.245
+  }
 }

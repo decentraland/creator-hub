@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["board", "furniture", "grain", "panel", "plank", "timber", "woodenboard"],
   "caption": "Wooden board in corner.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.028,
+    "y": 4,
+    "z": 4
+  }
 }

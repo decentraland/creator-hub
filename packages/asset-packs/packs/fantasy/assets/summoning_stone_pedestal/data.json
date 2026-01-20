@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["fantasy", "circular", "summon", "forest", "foundation", "structure"],
   "caption": "Stone pedestal with a circular top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 8.003,
+    "y": 0.353,
+    "z": 8
+  }
 }

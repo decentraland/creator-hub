@@ -18,5 +18,10 @@
     "wire"
   ],
   "caption": "Telephone pole with multiple wires.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.897,
+    "y": 4.963,
+    "z": 4.892
+  }
 }

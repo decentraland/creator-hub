@@ -14,5 +14,10 @@
     "visual"
   ],
   "caption": "Rubik's cube in 6 vibrant colors.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+  }
 }

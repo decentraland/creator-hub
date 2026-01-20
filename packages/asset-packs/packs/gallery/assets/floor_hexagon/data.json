@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["hexagon", "scheme", "tile", "visual"],
   "caption": "Black and white checkered floor.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.025,
+    "z": 4
+  }
 }

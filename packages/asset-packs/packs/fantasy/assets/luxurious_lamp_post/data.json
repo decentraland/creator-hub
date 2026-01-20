@@ -17,5 +17,10 @@
     "stylish"
   ],
   "caption": "Tall lamp post with glowing top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.567,
+    "y": 2.544,
+    "z": 0.597
+  }
 }

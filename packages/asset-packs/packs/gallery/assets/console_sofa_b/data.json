@@ -19,5 +19,10 @@
     "sofa"
   ],
   "caption": "Remote control with buttons and joystick.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.863,
+    "y": 1.021,
+    "z": 2.625
+  }
 }

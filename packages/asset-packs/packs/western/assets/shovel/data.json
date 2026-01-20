@@ -15,5 +15,10 @@
     "shovel"
   ],
   "caption": "Digital shovel with wooden handle and metal blade.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.503,
+    "y": 1.586,
+    "z": 0.207
+  }
 }

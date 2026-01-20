@@ -22,5 +22,10 @@
     "meadow"
   ],
   "caption": "Empty grassy area with a large landmass.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 16,
+    "y": 0,
+    "z": 16
+  }
 }

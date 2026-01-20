@@ -18,5 +18,10 @@
     "trio"
   ],
   "caption": "Dark silhouette of three crows.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.929,
+    "y": 0.42,
+    "z": 0.881
+  }
 }

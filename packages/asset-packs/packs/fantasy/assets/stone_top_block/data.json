@@ -18,5 +18,10 @@
     "structure"
   ],
   "caption": "Concrete block.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.001,
+    "y": 1.636,
+    "z": 3.005
+  }
 }

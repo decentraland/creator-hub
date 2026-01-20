@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["axe", "function", "furniture", "handle", "utility", "weapon"],
   "caption": "Yellow-handled wooden axe.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.18,
+    "y": 1.897,
+    "z": 1.368
+  }
 }

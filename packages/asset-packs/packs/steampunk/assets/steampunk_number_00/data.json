@@ -14,5 +14,10 @@
     "steampunk"
   ],
   "caption": "Brown steampunk lantern with glowing red light.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.463,
+    "y": 0.919,
+    "z": 0.449
+  }
 }

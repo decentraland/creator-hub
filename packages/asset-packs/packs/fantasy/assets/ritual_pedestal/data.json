@@ -20,5 +20,10 @@
     "sacred"
   ],
   "caption": "Glowing runes adorn ancient ritual pedestal.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.829,
+    "y": 2.766,
+    "z": 2.974
+  }
 }

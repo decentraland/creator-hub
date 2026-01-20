@@ -20,5 +20,10 @@
     "plate"
   ],
   "caption": "Hot dog sandwich filling.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.542,
+    "y": 3.873,
+    "z": 6.963
+  }
 }

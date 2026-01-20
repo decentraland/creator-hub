@@ -17,5 +17,10 @@
     "tomb"
   ],
   "caption": "White cross-topped headstone with black border.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.01,
+    "y": 1.598,
+    "z": 0.462
+  }
 }

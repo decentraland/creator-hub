@@ -17,5 +17,10 @@
     "track"
   ],
   "caption": "Railroad track with a fork in it.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.369,
+    "y": 0.115,
+    "z": 6.131
+  }
 }

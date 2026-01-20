@@ -15,5 +15,10 @@
     "upright"
   ],
   "caption": "Pink pillar with a pointed top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.354,
+    "y": 3.853,
+    "z": 1.354
+  }
 }

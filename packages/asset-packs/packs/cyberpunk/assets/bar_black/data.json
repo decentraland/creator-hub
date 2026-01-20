@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["beam", "column", "grid", "hole", "metalwork", "perforation", "rod", "shadow"],
   "caption": "Black metal bar with many holes.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6.127,
+    "y": 1.557,
+    "z": 1.341
+  }
 }

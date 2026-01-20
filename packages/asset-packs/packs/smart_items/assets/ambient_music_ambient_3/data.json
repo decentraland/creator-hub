@@ -15,5 +15,10 @@
     "background music"
   ],
   "description": "An invisible item that plays an ambient background track with peaceful atmospheric layers.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.296,
+    "y": 0.016,
+    "z": 0.2
+  }
 }

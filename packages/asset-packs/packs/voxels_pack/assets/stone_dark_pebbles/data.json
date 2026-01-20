@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["earthy", "granite", "mineral", "natural", "pebble", "rough", "rugged"],
   "caption": "Dark grey stone with pebbles.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+  }
 }

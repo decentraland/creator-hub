@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["architecture", "block", "brick", "bricks", "building", "construction", "structure"],
   "caption": "White brick with blue construction lines.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+  }
 }

@@ -20,5 +20,10 @@
     "wobble"
   ],
   "caption": "Train tracks on a wobbly rail.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.032,
+    "y": 0.341,
+    "z": 5.684
+  }
 }

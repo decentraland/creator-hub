@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["disc", "disk", "graphic", "hole", "shape"],
   "caption": "Central hole in.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.394,
+    "y": 0.005,
+    "z": 0.394
+  }
 }

@@ -14,5 +14,10 @@
     "circular"
   ],
   "description": "A circular platform that moves up and down. Players can jump on it to reach higher places.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.613,
+    "y": 0.476,
+    "z": 2.67
+  }
 }

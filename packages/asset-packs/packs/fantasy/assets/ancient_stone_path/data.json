@@ -27,5 +27,10 @@
     "keep"
   ],
   "caption": "Stone path from an ancient era.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.23,
+    "y": 0.018,
+    "z": 1.179
+  }
 }

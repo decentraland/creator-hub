@@ -21,5 +21,10 @@
     "warning"
   ],
   "caption": "Red construction cone with white stripe.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.462,
+    "y": 0.664,
+    "z": 0.462
+  }
 }

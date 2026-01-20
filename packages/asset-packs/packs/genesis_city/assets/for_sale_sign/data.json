@@ -29,5 +29,10 @@
     "signage"
   ],
   "caption": "For sale real estate sign.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.212,
+    "y": 1.33,
+    "z": 1.857
+  }
 }

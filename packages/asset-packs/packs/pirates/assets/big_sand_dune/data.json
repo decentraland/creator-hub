@@ -23,5 +23,10 @@
     "vista"
   ],
   "caption": "Dune in the desert.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.061,
+    "y": 0.955,
+    "z": 3.563
+  }
 }

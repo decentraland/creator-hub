@@ -15,5 +15,10 @@
     "structure"
   ],
   "caption": "Orange house with glowing screen.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.225,
+    "y": 4.194,
+    "z": 4.195
+  }
 }

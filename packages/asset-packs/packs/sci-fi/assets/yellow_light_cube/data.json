@@ -17,5 +17,10 @@
     "visibility"
   ],
   "caption": "Yellow glowing cube.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.83,
+    "y": 0.379,
+    "z": 0.753
+  }
 }

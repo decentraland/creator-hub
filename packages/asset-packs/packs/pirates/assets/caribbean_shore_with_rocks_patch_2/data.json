@@ -25,5 +25,10 @@
     "seashore"
   ],
   "caption": "Rocky shoreline with rocks and grass.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6.602,
+    "y": 0.724,
+    "z": 6.463
+  }
 }

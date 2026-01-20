@@ -4,5 +4,10 @@
   "description": "A cozy loveseat.",
   "tags": ["loveseat", "couch", "sofa", "seat", "sitting", "furniture"],
   "author": "Decentraland Foundation",
-  "id": "18d84aff-36bc-4c04-bd95-b072c9c50567"
+  "id": "18d84aff-36bc-4c04-bd95-b072c9c50567",
+  "boundingBox": {
+    "x": 1.51,
+    "y": 2.815,
+    "z": 1.485
+  }
 }

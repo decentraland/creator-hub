@@ -20,5 +20,10 @@
     "rest"
   ],
   "caption": "Sushi bar.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 10.311,
+    "y": 5.15,
+    "z": 9.461
+  }
 }

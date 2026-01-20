@@ -24,5 +24,10 @@
     "space"
   ],
   "caption": "",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.877,
+    "y": 0.351,
+    "z": 0.666
+  }
 }

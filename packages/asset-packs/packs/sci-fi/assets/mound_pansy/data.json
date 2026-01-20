@@ -21,5 +21,10 @@
     "plant"
   ],
   "caption": "Glowing crystal rock with green plant.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.158,
+    "y": 0.904,
+    "z": 0.904
+  }
 }

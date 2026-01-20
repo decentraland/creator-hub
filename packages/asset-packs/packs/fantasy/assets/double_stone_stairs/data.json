@@ -19,5 +19,10 @@
     "structure"
   ],
   "caption": "Two stone steps leading up to stairs.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5,
+    "y": 4.052,
+    "z": 2.003
+  }
 }

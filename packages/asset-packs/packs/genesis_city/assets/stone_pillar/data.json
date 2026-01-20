@@ -28,5 +28,10 @@
     "tower"
   ],
   "caption": "Tall, stone pillar.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.482,
+    "y": 2.115,
+    "z": 0.491
+  }
 }

@@ -24,5 +24,10 @@
     "stool"
   ],
   "caption": "Wooden stool.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.749,
+    "y": 0.763,
+    "z": 0.521
+  }
 }

@@ -16,5 +16,10 @@
     "structure"
   ],
   "caption": "Wooden bridge-like structure with four vertical supports.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.781,
+    "y": 4.181,
+    "z": 2.354
+  }
 }

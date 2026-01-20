@@ -19,5 +19,10 @@
     "tile"
   ],
   "caption": "Collection of small rocks.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 0.054,
+    "z": 1
+  }
 }

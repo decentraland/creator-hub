@@ -18,5 +18,10 @@
     "space"
   ],
   "caption": "Red border rug.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.455,
+    "y": 0.018,
+    "z": 2
+  }
 }

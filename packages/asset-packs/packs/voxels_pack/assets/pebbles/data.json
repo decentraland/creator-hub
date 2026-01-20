@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["appearance", "cubes", "geometric", "golden", "pebbles", "shape", "visual"],
   "caption": "Golden cube structure.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+  }
 }

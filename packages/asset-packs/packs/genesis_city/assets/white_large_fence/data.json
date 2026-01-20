@@ -27,5 +27,10 @@
     "structure"
   ],
   "caption": "Long white fence with multiple vertical slats.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.128,
+    "y": 6.207,
+    "z": 5.108
+  }
 }

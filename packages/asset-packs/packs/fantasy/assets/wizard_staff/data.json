@@ -21,5 +21,10 @@
     "wand"
   ],
   "caption": "Blue ribbon tied around wooden staff.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.225,
+    "y": 2.006,
+    "z": 0.24
+  }
 }

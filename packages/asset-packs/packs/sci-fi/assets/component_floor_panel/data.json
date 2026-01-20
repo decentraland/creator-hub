@@ -4,5 +4,10 @@
   "category": "tiles",
   "tags": ["scifi", "tile", "checkered", "furniture", "interior", "panel", "paneling", "room"],
   "caption": "Checkered floor panel.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.013,
+    "z": 2
+  }
 }

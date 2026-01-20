@@ -22,5 +22,10 @@
     "vessel"
   ],
   "caption": "Wooden crate with rope.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.986,
+    "y": 0.531,
+    "z": 0.78
+  }
 }

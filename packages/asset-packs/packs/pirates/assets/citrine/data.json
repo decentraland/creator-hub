@@ -18,5 +18,10 @@
     "sparkle"
   ],
   "caption": "Yellow gemstone with facets.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.203,
+    "y": 0.365,
+    "z": 0.133
+  }
 }

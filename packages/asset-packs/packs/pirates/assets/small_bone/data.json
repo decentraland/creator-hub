@@ -22,5 +22,10 @@
     "structure"
   ],
   "caption": "Bone-shaped skull.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.192,
+    "y": 0.094,
+    "z": 0.74
+  }
 }

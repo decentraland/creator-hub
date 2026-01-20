@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["architectural", "building", "foliage", "nature", "outdoor", "roof", "structure"],
   "caption": "Green roof corner in 3d model.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.7,
+    "z": 4
+  }
 }

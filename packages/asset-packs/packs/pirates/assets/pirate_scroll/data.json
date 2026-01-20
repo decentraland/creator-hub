@@ -24,5 +24,10 @@
     "treasuremap"
   ],
   "caption": "Tattered pirate map.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.651,
+    "y": 0.113,
+    "z": 0.612
+  }
 }

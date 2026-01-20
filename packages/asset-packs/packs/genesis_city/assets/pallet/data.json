@@ -22,5 +22,10 @@
     "structure"
   ],
   "caption": "Wooden pallet with four horizontal slats.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.606,
+    "y": 0.44,
+    "z": 1.655
+  }
 }

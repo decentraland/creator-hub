@@ -4,5 +4,10 @@
   "category": "levers",
   "tags": ["lever", "handle", "pull", "push", "open", "close", "sci-fi"],
   "description": "A lever that can be pulled or pushed to trigger actions on other smart items.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.071,
+    "y": 0.81,
+    "z": 2.738
+  }
 }

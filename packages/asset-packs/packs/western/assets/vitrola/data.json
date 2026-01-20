@@ -14,5 +14,10 @@
     "vinyl"
   ],
   "caption": "Vintage phonograph with glowing horn speaker.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.039,
+    "y": 1.391,
+    "z": 1.042
+  }
 }

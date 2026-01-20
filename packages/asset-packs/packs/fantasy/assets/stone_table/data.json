@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["fantasy", "table", "rune", "desk", "dining", "furniture", "kitchen", "leg"],
   "caption": "Dark grey wooden table with four legs.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.426,
+    "y": 0.851,
+    "z": 1.539
+  }
 }

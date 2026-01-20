@@ -19,5 +19,10 @@
     "radiance"
   ],
   "caption": "Red lantern with attached string.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 13.746,
+    "y": 208.297,
+    "z": 14.309
+  }
 }

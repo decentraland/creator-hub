@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["clear", "glass", "interior", "pane", "panel", "rectangle", "window", "windowpane"],
   "caption": "Blue 2x2 window.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.737,
+    "y": 1.646,
+    "z": 0.579
+  }
 }

@@ -27,5 +27,10 @@
     "vessel"
   ],
   "caption": "Wooden paddle with a handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.33,
+    "y": 0.108,
+    "z": 2.965
+  }
 }

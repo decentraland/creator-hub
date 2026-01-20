@@ -25,5 +25,10 @@
     "yard"
   ],
   "caption": "Vintage wheelbarrow filled with yellow sand.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.451,
+    "y": 1.137,
+    "z": 1.046
+  }
 }

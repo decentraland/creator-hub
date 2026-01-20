@@ -28,5 +28,10 @@
     "petals"
   ],
   "caption": "Red flowered plant.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.882,
+    "y": 0.925,
+    "z": 1.234
+  }
 }

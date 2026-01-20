@@ -4,5 +4,10 @@
   "category": "tiles",
   "tags": ["fantasy", "tile", "cobblestone", "brick", "building", "concrete", "path", "pavement"],
   "caption": "Cobblestone tile.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.054,
+    "z": 4
+  }
 }

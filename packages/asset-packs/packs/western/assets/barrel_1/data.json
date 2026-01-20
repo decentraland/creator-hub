@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["band", "container", "drum", "fuel", "storage", "tank", "vessel"],
   "caption": "Wooden barrel with metal band.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.797,
+    "y": 0.762,
+    "z": 1.114
+  }
 }

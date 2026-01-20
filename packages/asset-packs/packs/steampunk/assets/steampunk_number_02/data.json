@@ -15,5 +15,10 @@
     "timepiece"
   ],
   "caption": "Steampunk clock with glowing red face.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.463,
+    "y": 0.923,
+    "z": 0.453
+  }
 }

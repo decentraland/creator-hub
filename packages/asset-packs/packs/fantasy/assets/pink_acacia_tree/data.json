@@ -23,5 +23,10 @@
     "organic"
   ],
   "caption": "Pink flowers on a tree.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 8.024,
+    "y": 9.588,
+    "z": 6.538
+  }
 }

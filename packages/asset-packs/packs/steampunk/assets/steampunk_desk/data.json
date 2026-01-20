@@ -20,5 +20,10 @@
     "study"
   ],
   "caption": "Vintage wooden desk with metal legs.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.046,
+    "y": 1.027,
+    "z": 1.174
+  }
 }

@@ -24,5 +24,10 @@
     "wilderness"
   ],
   "caption": "Camping tripod with glowing red key attached.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.317,
+    "y": 2.331,
+    "z": 1.185
+  }
 }

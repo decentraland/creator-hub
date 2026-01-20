@@ -20,5 +20,10 @@
     "tower"
   ],
   "caption": "Stone blocks stacked in a tower.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 1.64,
+    "z": 3.022
+  }
 }

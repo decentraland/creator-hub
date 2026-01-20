@@ -15,5 +15,10 @@
     "structure"
   ],
   "caption": "Ornate stone pillar with intricate carvings.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.779,
+    "y": 4.009,
+    "z": 0.78
+  }
 }

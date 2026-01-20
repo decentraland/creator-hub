@@ -30,5 +30,10 @@
     "threshold"
   ],
   "caption": "Wooden picket fence with a door.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.14,
+    "y": 1.757,
+    "z": 1.921
+  }
 }

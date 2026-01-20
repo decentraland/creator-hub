@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["graphic", "grid", "layout", "minimalist", "visual"],
   "caption": "Red grid pattern on.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.025,
+    "z": 4
+  }
 }

@@ -15,5 +15,10 @@
     "structural"
   ],
   "caption": "Stone stair railing.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.21,
+    "y": 0.847,
+    "z": 1.002
+  }
 }

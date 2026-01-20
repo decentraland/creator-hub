@@ -23,5 +23,10 @@
     "vegetation"
   ],
   "caption": "A green fern.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.332,
+    "y": 0.301,
+    "z": 0.545
+  }
 }

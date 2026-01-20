@@ -18,5 +18,10 @@
     "royal"
   ],
   "caption": "Blue flag featuring a red crown.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.824,
+    "y": 2.257,
+    "z": 0.454
+  }
 }

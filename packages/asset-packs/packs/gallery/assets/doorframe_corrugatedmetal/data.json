@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["architecture", "building", "corrugated", "corrugation", "doorframe", "structure"],
   "caption": "Corrugated metal door frame.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 0.4
+  }
 }

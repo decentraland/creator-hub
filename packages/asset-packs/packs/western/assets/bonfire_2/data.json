@@ -19,5 +19,10 @@
     "warmth"
   ],
   "caption": "Burning fire on.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.657,
+    "y": 1.782,
+    "z": 0.65
+  }
 }

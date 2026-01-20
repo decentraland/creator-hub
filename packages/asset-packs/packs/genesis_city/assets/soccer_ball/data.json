@@ -23,5 +23,10 @@
     "throw"
   ],
   "caption": "Soccer ball.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.462,
+    "y": 0.459,
+    "z": 0.459
+  }
 }

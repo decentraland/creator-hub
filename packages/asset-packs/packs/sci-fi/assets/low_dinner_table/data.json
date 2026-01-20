@@ -19,5 +19,10 @@
     "table"
   ],
   "caption": "Black table with central hole.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.866,
+    "y": 1.124,
+    "z": 3.866
+  }
 }

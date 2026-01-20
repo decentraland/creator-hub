@@ -19,5 +19,10 @@
     "warning"
   ],
   "caption": "Yellow tube-shaped barrier with black stripes.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.346,
+    "y": 0.808,
+    "z": 0.097
+  }
 }

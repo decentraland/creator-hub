@@ -18,5 +18,10 @@
     "window"
   ],
   "caption": "Alien spaceship with glowing cockpit.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 4,
+    "z": 0.329
+  }
 }

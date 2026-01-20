@@ -20,5 +20,10 @@
     "utility"
   ],
   "caption": "Grid-patterned table with a grid design.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.495,
+    "y": 0.876,
+    "z": 5.495
+  }
 }

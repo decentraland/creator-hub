@@ -15,5 +15,10 @@
     "toothed"
   ],
   "caption": "Gear with 10 sharp teeth.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.452,
+    "y": 0.548,
+    "z": 2.831
+  }
 }

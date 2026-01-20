@@ -16,5 +16,10 @@
     "table"
   ],
   "caption": "Modern coffee table with top surface and shelf.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.481,
+    "y": 0.479,
+    "z": 1.211
+  }
 }

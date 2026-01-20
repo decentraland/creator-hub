@@ -4,5 +4,10 @@
   "description": "An outdoor chair.",
   "tags": ["chair", "seat", "sitting", "furniture"],
   "author": "Decentraland Foundation",
-  "id": "23440c2d-cc32-4312-9e6c-15836f81a49f"
+  "id": "23440c2d-cc32-4312-9e6c-15836f81a49f",
+  "boundingBox": {
+    "x": 0.967,
+    "y": 1.568,
+    "z": 0.846
+  }
 }

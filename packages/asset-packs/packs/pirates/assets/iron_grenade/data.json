@@ -20,5 +20,10 @@
     "warfare"
   ],
   "caption": "Iron grenade with glowing fuse.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.294,
+    "y": 0.362,
+    "z": 0.294
+  }
 }

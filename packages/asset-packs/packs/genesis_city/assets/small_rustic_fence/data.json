@@ -26,5 +26,10 @@
     "slats"
   ],
   "caption": "Wooden fence with three vertical slats.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.219,
+    "y": 2.202,
+    "z": 1.27
+  }
 }

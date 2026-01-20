@@ -15,5 +15,10 @@
     "visual"
   ],
   "caption": "Blue and black poster.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1.08,
+    "z": 0
+  }
 }

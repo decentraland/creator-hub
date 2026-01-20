@@ -17,5 +17,10 @@
     "table"
   ],
   "caption": "Lamp on table.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.539,
+    "y": 0.405,
+    "z": 0.956
+  }
 }

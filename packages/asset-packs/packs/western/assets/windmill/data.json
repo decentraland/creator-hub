@@ -19,5 +19,10 @@
     "windmill"
   ],
   "caption": "A single-bladed windmill.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.426,
+    "y": 7.378,
+    "z": 1.588
+  }
 }

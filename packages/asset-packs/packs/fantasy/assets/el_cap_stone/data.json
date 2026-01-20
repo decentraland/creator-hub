@@ -22,5 +22,10 @@
     "yosemite"
   ],
   "caption": "Rock formation inspired by el capitan's peak.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.85,
+    "y": 2.285,
+    "z": 1.364
+  }
 }

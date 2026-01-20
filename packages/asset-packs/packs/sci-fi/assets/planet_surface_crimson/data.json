@@ -14,5 +14,10 @@
     "terrain"
   ],
   "caption": "Red, jagged edge planetoid.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 16,
+    "y": 0.24,
+    "z": 16
+  }
 }

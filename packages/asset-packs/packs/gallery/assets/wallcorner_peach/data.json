@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["appearance", "function", "peach", "shape"],
   "caption": "Red corner piece of 3d puzzle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 2.04
+  }
 }

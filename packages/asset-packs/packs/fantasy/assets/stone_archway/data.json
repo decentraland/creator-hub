@@ -21,5 +21,10 @@
     "tower"
   ],
   "caption": "Stone brick archway.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.464,
+    "y": 4.791,
+    "z": 1.224
+  }
 }

@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["architecture", "building", "furniture", "interior", "room", "window"],
   "caption": "Red window frame with black interior.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 0.4
+  }
 }

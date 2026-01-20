@@ -17,5 +17,10 @@
     "tower"
   ],
   "caption": "Cracked stone pillar.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.603,
+    "y": 4,
+    "z": 0.5
+  }
 }

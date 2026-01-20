@@ -18,5 +18,10 @@
     "vessel"
   ],
   "caption": "Orange crate with a wooden handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.728,
+    "y": 0.333,
+    "z": 0.405
+  }
 }

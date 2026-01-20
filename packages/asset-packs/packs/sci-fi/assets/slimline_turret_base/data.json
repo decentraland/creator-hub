@@ -22,5 +22,10 @@
     "protection"
   ],
   "caption": "Red turret base with glowing screen.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.128,
+    "y": 1.555,
+    "z": 4.128
+  }
 }

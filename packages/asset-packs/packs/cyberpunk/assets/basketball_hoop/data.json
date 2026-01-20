@@ -16,5 +16,10 @@
     "stadium"
   ],
   "caption": "Basketball hoop with ball in the net.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.948,
+    "y": 1.66,
+    "z": 0.907
+  }
 }

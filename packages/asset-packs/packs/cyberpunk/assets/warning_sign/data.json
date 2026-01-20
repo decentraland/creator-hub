@@ -14,5 +14,10 @@
     "warning"
   ],
   "caption": "Red flag.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.185,
+    "y": 2.441,
+    "z": 0.134
+  }
 }

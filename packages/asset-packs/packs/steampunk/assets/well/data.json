@@ -18,5 +18,10 @@
     "outdoor"
   ],
   "caption": "Wooden well cover.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.777,
+    "y": 2.998,
+    "z": 2.46
+  }
 }

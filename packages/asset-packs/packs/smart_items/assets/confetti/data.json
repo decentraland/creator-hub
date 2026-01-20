@@ -4,5 +4,10 @@
   "category": "party",
   "tags": ["confetti", "explosion", "party", "fireworks", "celebration"],
   "description": "A confetti explosion that can be used to celebrate. The item is invisible until it explodes. Trigger it from another smart item.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.62,
+    "y": 0.403,
+    "z": 1.01
+  }
 }

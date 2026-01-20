@@ -19,5 +19,10 @@
     "terrain"
   ],
   "caption": "Brown mountain in the distance.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 14.962,
+    "y": 3.582,
+    "z": 8.482
+  }
 }

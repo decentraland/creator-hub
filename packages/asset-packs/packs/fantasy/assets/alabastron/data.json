@@ -16,5 +16,10 @@
     "royal"
   ],
   "caption": "Purple alabastron with pink neck decoration.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.296,
+    "y": 0.87,
+    "z": 0.322
+  }
 }

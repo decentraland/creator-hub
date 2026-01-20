@@ -15,5 +15,10 @@
     "wire"
   ],
   "caption": "Neon blue tube.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.5,
+    "y": 0.083,
+    "z": 0.076
+  }
 }

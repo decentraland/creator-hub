@@ -14,5 +14,10 @@
     "windowpane"
   ],
   "caption": "Dark-framed, empty 2x2 window.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.406,
+    "y": 1.789,
+    "z": 1.316
+  }
 }

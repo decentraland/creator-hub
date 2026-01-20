@@ -20,5 +20,10 @@
     "workspace"
   ],
   "caption": "Sticky note-covered bulletin board.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.931,
+    "y": 3.503,
+    "z": 2.023
+  }
 }

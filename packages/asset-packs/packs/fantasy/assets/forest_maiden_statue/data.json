@@ -17,5 +17,10 @@
     "outdoor"
   ],
   "caption": "Fantasy-themed statue with glowing gemstone.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.862,
+    "y": 4.014,
+    "z": 3.143
+  }
 }

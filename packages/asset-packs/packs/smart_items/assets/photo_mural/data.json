@@ -3,5 +3,10 @@
   "name": "Photo Mural",
   "category": "party",
   "tags": ["photo", "mural", "gallery", "display"],
-  "description": "A photo mural that displays photos taken by players in the provided coordinates."
+  "description": "A photo mural that displays photos taken by players in the provided coordinates.",
+  "boundingBox": {
+    "x": 4.474,
+    "y": 4.482,
+    "z": 1.039
+  }
 }

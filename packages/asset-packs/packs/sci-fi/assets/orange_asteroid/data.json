@@ -17,5 +17,10 @@
     "space"
   ],
   "caption": "Asteroid-shaped object with a smooth surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.514,
+    "y": 1.187,
+    "z": 1.497
+  }
 }

@@ -19,5 +19,10 @@
     "lawn"
   ],
   "caption": "Plant with two spikes on top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.36,
+    "y": 0.618,
+    "z": 0.181
+  }
 }

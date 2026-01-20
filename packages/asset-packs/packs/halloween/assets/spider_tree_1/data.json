@@ -17,5 +17,10 @@
     "winter"
   ],
   "caption": "Red tree with glowing icicles.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.151,
+    "y": 4.61,
+    "z": 4.225
+  }
 }

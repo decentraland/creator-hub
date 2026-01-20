@@ -23,5 +23,10 @@
     "terrain"
   ],
   "caption": "Brown rock with jagged edges.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 9.231,
+    "y": 4.625,
+    "z": 9.957
+  }
 }

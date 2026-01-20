@@ -17,5 +17,10 @@
     "visual"
   ],
   "caption": "Orange cable with a striped design.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.491,
+    "y": 0.123,
+    "z": 1.062
+  }
 }

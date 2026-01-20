@@ -14,5 +14,10 @@
     "welcome"
   ],
   "caption": "Pink chinese character logo.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.979,
+    "y": 0.472,
+    "z": 0.066
+  }
 }

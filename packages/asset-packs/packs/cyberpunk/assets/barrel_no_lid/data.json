@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["container", "cylindrical", "drum", "storage", "stripes", "tank", "vessel"],
   "caption": "Green substance in cylindrical container.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.781,
+    "y": 1.138,
+    "z": 0.743
+  }
 }

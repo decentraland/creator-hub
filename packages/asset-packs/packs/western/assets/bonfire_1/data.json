@@ -16,5 +16,10 @@
     "wilderness"
   ],
   "caption": "Camping tent surrounded by rocks.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.692,
+    "y": 2.189,
+    "z": 1.662
+  }
 }

@@ -15,5 +15,10 @@
     "textile"
   ],
   "caption": "Red lantern with yellow gauze cover.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.413,
+    "y": 0.918,
+    "z": 0.409
+  }
 }

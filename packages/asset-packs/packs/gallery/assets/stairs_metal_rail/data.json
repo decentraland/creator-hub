@@ -18,5 +18,10 @@
     "structure"
   ],
   "caption": "Metal staircase with a railing.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 5.136,
+    "z": 4.2
+  }
 }

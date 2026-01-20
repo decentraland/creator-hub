@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["barrier", "bars", "entrance", "gate"],
   "caption": "Iron gate with vertical and horizontal bars.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.729,
+    "y": 5.291,
+    "z": 2.706
+  }
 }

@@ -18,5 +18,10 @@
     "sleeping"
   ],
   "caption": "Metal-framed single bed.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.294,
+    "y": 1.005,
+    "z": 2.677
+  }
 }

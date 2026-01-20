@@ -13,5 +13,10 @@
     "vehicle"
   ],
   "caption": "Street sweeper with two brooms.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.317,
+    "y": 3.936,
+    "z": 7.198
+  }
 }

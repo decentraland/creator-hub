@@ -21,5 +21,10 @@
     "turn"
   ],
   "caption": "Curved hallway intersection.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6.031,
+    "y": 3.819,
+    "z": 6.031
+  }
 }

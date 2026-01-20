@@ -20,5 +20,10 @@
     "wire"
   ],
   "caption": "Yellow cable with glowing connector.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.424,
+    "y": 0.123,
+    "z": 4.062
+  }
 }

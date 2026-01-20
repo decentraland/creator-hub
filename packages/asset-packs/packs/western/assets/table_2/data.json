@@ -15,5 +15,10 @@
     "workspace"
   ],
   "caption": "Brown wooden table.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.332,
+    "y": 1.029,
+    "z": 2.56
+  }
 }

@@ -14,5 +14,10 @@
     "terrain"
   ],
   "caption": "Gray cobblestone tile with cracks.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.063,
+    "z": 4
+  }
 }

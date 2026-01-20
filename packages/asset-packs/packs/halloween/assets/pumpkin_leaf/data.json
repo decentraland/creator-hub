@@ -17,5 +17,10 @@
     "vegetable"
   ],
   "caption": "Green leaf-shaped plant with a stem.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.333,
+    "y": 0.478,
+    "z": 0.13
+  }
 }

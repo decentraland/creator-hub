@@ -19,5 +19,10 @@
     "upholstery"
   ],
   "caption": "Orange couch with two cushions.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.351,
+    "y": 3.764,
+    "z": 1.357
+  }
 }

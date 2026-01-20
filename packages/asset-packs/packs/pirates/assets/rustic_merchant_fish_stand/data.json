@@ -29,5 +29,10 @@
     "ship"
   ],
   "caption": "Fish stand made of wood.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.764,
+    "y": 1.291,
+    "z": 1.082
+  }
 }

@@ -28,5 +28,10 @@
     "petal"
   ],
   "caption": "Red flower with 3 petals on green stem.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.265,
+    "y": 0.306,
+    "z": 1.421
+  }
 }

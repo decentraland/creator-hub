@@ -21,5 +21,10 @@
     "turbine"
   ],
   "caption": "Yellow exhaust fan.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.312,
+    "y": 0.075,
+    "z": 0.656
+  }
 }

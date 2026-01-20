@@ -20,5 +20,10 @@
     "space"
   ],
   "caption": "Cozy bedroom with a central bed.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.213,
+    "y": 1.245,
+    "z": 2.652
+  }
 }

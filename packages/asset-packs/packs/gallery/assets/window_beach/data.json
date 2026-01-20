@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["beach", "glass", "scene", "setting", "silhouette", "window"],
   "caption": "Brown-framed window.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 0.4
+  }
 }

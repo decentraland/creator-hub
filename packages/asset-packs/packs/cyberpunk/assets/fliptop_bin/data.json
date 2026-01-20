@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["bin", "container", "drum", "flip", "receptacle", "storage", "tank", "trash", "vessel"],
   "caption": "Blue trash can with a flip top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.541,
+    "y": 1.179,
+    "z": 0.541
+  }
 }

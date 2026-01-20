@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["controller", "electronics", "furniture", "gaming"],
   "caption": "Black gaming controller featuring red and green buttons.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.992,
+    "y": 1.538,
+    "z": 2.933
+  }
 }

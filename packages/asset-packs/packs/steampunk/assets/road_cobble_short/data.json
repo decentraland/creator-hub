@@ -4,5 +4,10 @@
   "category": "tiles",
   "tags": ["architecture", "asphalt", "cobble", "cobblestone", "landscape", "pavement", "terrain"],
   "caption": "Cobblestone road section in dark grey.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.001,
+    "y": 0.042,
+    "z": 2
+  }
 }

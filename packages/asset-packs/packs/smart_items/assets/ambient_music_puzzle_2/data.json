@@ -15,5 +15,10 @@
     "brain teaser"
   ],
   "description": "An invisible item that plays a whimsical puzzle track for playful challenges.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.296,
+    "y": 0.016,
+    "z": 0.2
+  }
 }

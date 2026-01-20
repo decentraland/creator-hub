@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["architecture", "boulder", "landscape", "monument", "nature", "outdoor", "terrain"],
   "caption": "Red rock.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.25,
+    "y": 2.853,
+    "z": 1.348
+  }
 }

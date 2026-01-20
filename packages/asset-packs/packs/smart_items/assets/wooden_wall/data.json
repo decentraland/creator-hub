@@ -4,5 +4,10 @@
   "category": "health",
   "tags": ["health", "damage", "breakable", "wood", "wooden", "wall", "blockade"],
   "description": "A pallet-like structure that can be used to reveal a passageway when broken with another smart item, such as the Sword. It can also be used as a wall to block players.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.093,
+    "y": 3.01,
+    "z": 4.128
+  }
 }

@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["scifi", "dock", "port", "metal", "flat", "outline", "rectangle", "shape", "straight"],
   "caption": "Red border platform.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3,
+    "y": 0.36,
+    "z": 3
+  }
 }

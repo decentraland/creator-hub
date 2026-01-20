@@ -18,5 +18,10 @@
     "vessel"
   ],
   "caption": "Yellow oxygen tank with blue stripes.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.353,
+    "y": 1.581,
+    "z": 0.377
+  }
 }

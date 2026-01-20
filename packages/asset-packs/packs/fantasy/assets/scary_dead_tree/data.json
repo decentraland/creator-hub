@@ -20,5 +20,10 @@
     "trunk"
   ],
   "caption": "Dead tree in a dark forest.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.543,
+    "y": 5.728,
+    "z": 4.366
+  }
 }

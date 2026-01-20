@@ -16,5 +16,10 @@
     "study"
   ],
   "caption": "Multicolored bookshelf with books and decorations.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+  }
 }

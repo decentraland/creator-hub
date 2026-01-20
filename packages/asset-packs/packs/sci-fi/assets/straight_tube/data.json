@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["scifi", "tube", "cylindrical", "shape", "stripe"],
   "caption": "Orange and black striped cylinders on.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.499,
+    "y": 2.008,
+    "z": 0.503
+  }
 }

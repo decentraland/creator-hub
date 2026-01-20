@@ -16,5 +16,10 @@
     "undead"
   ],
   "caption": "Purple 3d skull.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.321,
+    "y": 0.247,
+    "z": 0.296
+  }
 }

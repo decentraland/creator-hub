@@ -20,5 +20,10 @@
     "sink"
   ],
   "caption": "Black faucet has glowing blue light.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.337,
+    "y": 3.469,
+    "z": 0.861
+  }
 }

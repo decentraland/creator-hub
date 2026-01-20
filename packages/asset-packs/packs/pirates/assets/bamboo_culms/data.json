@@ -23,5 +23,10 @@
     "plant"
   ],
   "caption": "Bamboo stalks stand upright in a row.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.171,
+    "y": 3.709,
+    "z": 0.171
+  }
 }

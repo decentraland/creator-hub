@@ -4,5 +4,10 @@
   "category": "text",
   "tags": ["game mechanics", "defeat", "loss"],
   "description": "3D text that can be displayed when a player loses or finishes a game. Invisible until triggered.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.475,
+    "y": 1.955,
+    "z": 1.172
+  }
 }

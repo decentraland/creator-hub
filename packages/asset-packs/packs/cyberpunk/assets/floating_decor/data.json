@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["architecture", "decor", "section", "shape", "space", "structure", "visual"],
   "caption": "Decorative 3d model of a glowing sphere.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 45.09,
+    "y": 206.284,
+    "z": 69.406
+  }
 }

@@ -24,5 +24,10 @@
     "smoke"
   ],
   "caption": "Blue dragon statue with glowing flames.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.422,
+    "y": 3.931,
+    "z": 2.656
+  }
 }

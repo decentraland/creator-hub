@@ -4,5 +4,10 @@
   "description": "A steampunk-style bench.",
   "tags": ["bench", "steampunk", "seat", "sitting", "furniture"],
   "author": "Decentraland Foundation",
-  "id": "77fbddc8-5e17-44a9-9e44-390609033828"
+  "id": "77fbddc8-5e17-44a9-9e44-390609033828",
+  "boundingBox": {
+    "x": 2.425,
+    "y": 1.16,
+    "z": 0.842
+  }
 }

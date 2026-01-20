@@ -4,5 +4,10 @@
   "category": "buttons",
   "tags": ["button", "switch", "toggle", "activate"],
   "description": "A red button that can be clicked to trigger actions on other smart items.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.294,
+    "y": 0.112,
+    "z": 0.294
+  }
 }

@@ -4,5 +4,10 @@
   "category": "doors",
   "tags": ["door", "scifi", "hallway", "sliding", "interactive", "space ship", "spaceship"],
   "description": "A massive sci-fi door that opens and closes vertically when clicked by a player.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6.285,
+    "y": 4.954,
+    "z": 0.297
+  }
 }

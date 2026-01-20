@@ -16,5 +16,10 @@
     "radiator"
   ],
   "caption": "Orange and white robot with glowing screen.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.976,
+    "y": 0.889,
+    "z": 0.918
+  }
 }

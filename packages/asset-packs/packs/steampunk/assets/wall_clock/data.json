@@ -14,5 +14,10 @@
     "rustic"
   ],
   "caption": "Rustic wall clock with red frame.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.064,
+    "y": 0.251,
+    "z": 1.042
+  }
 }

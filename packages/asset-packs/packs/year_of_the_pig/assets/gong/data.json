@@ -20,5 +20,10 @@
     "table"
   ],
   "caption": "Red wooden gong with hanging mallets.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.526,
+    "y": 3.769,
+    "z": 1.929
+  }
 }

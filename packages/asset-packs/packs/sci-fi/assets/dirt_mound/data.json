@@ -20,5 +20,10 @@
     "shape"
   ],
   "caption": "Red, rounded mound with a smooth surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.271,
+    "y": 0.713,
+    "z": 2.202
+  }
 }

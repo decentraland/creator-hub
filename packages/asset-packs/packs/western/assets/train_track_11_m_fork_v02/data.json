@@ -17,5 +17,10 @@
     "train"
   ],
   "caption": "Railroad crossing with intersecting tracks.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 8.758,
+    "y": 0.348,
+    "z": 11.282
+  }
 }

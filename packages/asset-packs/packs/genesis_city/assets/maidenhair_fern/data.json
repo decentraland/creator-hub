@@ -24,5 +24,10 @@
     "verdant"
   ],
   "caption": "Green fern leaf.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.09,
+    "y": 0.547,
+    "z": 0.873
+  }
 }

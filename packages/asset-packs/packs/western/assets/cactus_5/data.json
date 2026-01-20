@@ -15,5 +15,10 @@
     "thorny"
   ],
   "caption": "Two glowing cacti on a.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.889,
+    "y": 4.329,
+    "z": 2.349
+  }
 }

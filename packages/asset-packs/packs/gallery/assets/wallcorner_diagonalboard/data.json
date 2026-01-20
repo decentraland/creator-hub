@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["board", "boarding", "diagonal", "panel", "rail", "structure", "system"],
   "caption": "Corner piece with diagonal boarding.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.043,
+    "y": 4,
+    "z": 2.043
+  }
 }

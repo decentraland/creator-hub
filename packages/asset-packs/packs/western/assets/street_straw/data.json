@@ -4,5 +4,10 @@
   "category": "nature",
   "tags": ["appearance", "beverage", "drink", "function", "like", "patterned", "straw", "utensil"],
   "caption": "Straw-like object with a colorful design.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.279,
+    "y": 0.952,
+    "z": 1.264
+  }
 }

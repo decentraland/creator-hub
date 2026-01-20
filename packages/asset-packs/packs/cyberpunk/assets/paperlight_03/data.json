@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["fixture", "glow", "hole", "illumination", "lantern", "pendant", "string"],
   "caption": "Red cube with glowing center.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.638,
+    "y": 2.054,
+    "z": 0.638
+  }
 }

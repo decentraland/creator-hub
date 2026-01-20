@@ -28,5 +28,10 @@
     "terrain"
   ],
   "caption": "Green grass tile.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.136,
+    "z": 2
+  }
 }

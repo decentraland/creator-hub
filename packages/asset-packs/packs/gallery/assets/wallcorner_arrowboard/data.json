@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["direction", "guide", "indicator", "landmark", "marker", "navigation", "path", "shape"],
   "caption": "Corner with glowing arrow on its surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.041,
+    "y": 4,
+    "z": 4
+  }
 }

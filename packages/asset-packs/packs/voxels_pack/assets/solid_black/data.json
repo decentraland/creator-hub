@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["graphic", "shape", "uielement", "visual"],
   "caption": "Black cube with glowing white triangle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+  }
 }

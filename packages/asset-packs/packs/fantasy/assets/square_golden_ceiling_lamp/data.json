@@ -18,5 +18,10 @@
     "stylish"
   ],
   "caption": "Golden ceiling lamp with blue glass shade.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.578,
+    "y": 2.834,
+    "z": 0.578
+  }
 }

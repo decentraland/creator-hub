@@ -17,5 +17,10 @@
     "terrain"
   ],
   "caption": "Pile of rocks with grass on top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.419,
+    "y": 0.816,
+    "z": 2.354
+  }
 }

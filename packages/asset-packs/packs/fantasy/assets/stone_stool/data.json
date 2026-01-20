@@ -17,5 +17,10 @@
     "table"
   ],
   "caption": "Blue glowing stool.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.071,
+    "y": 0.59,
+    "z": 0.782
+  }
 }

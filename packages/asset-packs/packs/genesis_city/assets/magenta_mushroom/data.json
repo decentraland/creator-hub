@@ -27,5 +27,10 @@
     "plant"
   ],
   "caption": "Red glowing mushroom.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.212,
+    "y": 0.201,
+    "z": 0.216
+  }
 }

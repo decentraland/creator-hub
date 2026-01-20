@@ -20,5 +20,10 @@
     "warrior"
   ],
   "caption": "Wooden chest with metal plates.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.465,
+    "y": 0.888,
+    "z": 0.763
+  }
 }

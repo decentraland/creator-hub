@@ -14,5 +14,10 @@
     "warning"
   ],
   "caption": "Wooden sign with an arrow.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.131,
+    "y": 4.399,
+    "z": 1.646
+  }
 }

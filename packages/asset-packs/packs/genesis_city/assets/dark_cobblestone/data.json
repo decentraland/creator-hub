@@ -4,5 +4,10 @@
   "category": "ground",
   "tags": ["genesis", "city", "town", "cobblestone", "dusk", "evening", "gloom", "night", "shade"],
   "caption": "Cobblestone floor with dark color scheme.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 16,
+    "y": 0.019,
+    "z": 16
+  }
 }

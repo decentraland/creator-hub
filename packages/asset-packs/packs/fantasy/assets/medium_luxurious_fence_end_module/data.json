@@ -20,5 +20,10 @@
     "tower"
   ],
   "caption": "Tall, gray tower with a glowing top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.33,
+    "y": 1.141,
+    "z": 0.329
+  }
 }

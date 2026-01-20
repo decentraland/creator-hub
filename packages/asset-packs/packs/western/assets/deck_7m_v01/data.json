@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["bench", "brick", "comfort", "furniture", "nature", "outdoor", "seating"],
   "caption": "Wooden bench with rough, textured surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 7.031,
+    "y": 0.717,
+    "z": 2.002
+  }
 }

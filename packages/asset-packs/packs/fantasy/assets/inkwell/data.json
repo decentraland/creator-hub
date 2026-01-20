@@ -20,5 +20,10 @@
     "writing"
   ],
   "caption": "Inkwell with quill pen.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.189,
+    "y": 0.389,
+    "z": 0.237
+  }
 }

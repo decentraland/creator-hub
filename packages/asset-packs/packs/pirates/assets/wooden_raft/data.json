@@ -25,5 +25,10 @@
     "water"
   ],
   "caption": "Wooden raft with sail on top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.934,
+    "y": 4.509,
+    "z": 3.766
+  }
 }

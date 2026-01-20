@@ -4,5 +4,10 @@
   "category": "ground",
   "tags": ["earth", "granite", "slate", "terrain", "tile"],
   "caption": "Dark blue stone tile wall.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 16,
+    "y": 0.019,
+    "z": 16
+  }
 }

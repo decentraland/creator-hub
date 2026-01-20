@@ -22,5 +22,10 @@
     "sitting"
   ],
   "caption": "Blue throne with diamond pattern.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.94,
+    "y": 2.006,
+    "z": 1.127
+  }
 }

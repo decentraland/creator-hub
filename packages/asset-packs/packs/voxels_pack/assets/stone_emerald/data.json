@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["architecture", "block", "emerald", "intricate", "monument", "structure"],
   "caption": "Emerald block with intricate stone patterns.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+  }
 }

@@ -16,5 +16,10 @@
     "train"
   ],
   "caption": "Wooden train track with 6 segments.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.621,
+    "y": 0.341,
+    "z": 6.297
+  }
 }

@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["architecture", "building", "concrete", "foundation", "structure"],
   "caption": "Concrete floor.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.02,
+    "z": 2
+  }
 }

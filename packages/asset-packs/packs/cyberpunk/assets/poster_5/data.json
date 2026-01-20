@@ -15,5 +15,10 @@
     "visual"
   ],
   "caption": "Electronic circuit board poster.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.001,
+    "y": 0.623,
+    "z": 0.025
+  }
 }

@@ -18,5 +18,10 @@
     "vessel"
   ],
   "caption": "Black emergency oxygen tank with two handles.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.894,
+    "y": 1.92,
+    "z": 0.687
+  }
 }

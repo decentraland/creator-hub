@@ -15,5 +15,10 @@
     "loyalty"
   ],
   "caption": "Traditional japanese archway with glowing lanterns.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 7.883,
+    "y": 5.625,
+    "z": 3.846
+  }
 }

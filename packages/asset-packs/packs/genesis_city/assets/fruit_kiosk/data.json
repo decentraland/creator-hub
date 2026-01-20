@@ -23,5 +23,10 @@
     "vendor"
   ],
   "caption": "Fresh fruit stand.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.722,
+    "y": 2.772,
+    "z": 3.41
+  }
 }

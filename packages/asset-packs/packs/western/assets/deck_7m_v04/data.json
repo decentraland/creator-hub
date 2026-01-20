@@ -18,5 +18,10 @@
     "table"
   ],
   "caption": "Wooden bench under a wooden roof.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 7.019,
+    "y": 4.576,
+    "z": 2.08
+  }
 }

@@ -16,5 +16,10 @@
     "structure"
   ],
   "caption": "Dome-shaped structure with multiple frame sections.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 8.715,
+    "y": 4.408,
+    "z": 8.319
+  }
 }

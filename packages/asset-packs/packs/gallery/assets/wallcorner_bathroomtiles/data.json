@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["bathroom", "ceramic", "marble", "porcelain", "tile"],
   "caption": "Bathroom corner tile.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.03,
+    "y": 4,
+    "z": 4
+  }
 }

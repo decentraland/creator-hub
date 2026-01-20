@@ -29,5 +29,10 @@
     "waterfront"
   ],
   "caption": "Dock module with a curved wooden surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.677,
+    "y": 1.026,
+    "z": 2.647
+  }
 }

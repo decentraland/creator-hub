@@ -18,5 +18,10 @@
     "window"
   ],
   "caption": "Glowing glass roof.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.2,
+    "z": 4
+  }
 }

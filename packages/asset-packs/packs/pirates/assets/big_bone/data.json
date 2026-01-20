@@ -22,5 +22,10 @@
     "structure"
   ],
   "caption": "Bone from an ancient skeleton.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.192,
+    "y": 0.094,
+    "z": 1.029
+  }
 }

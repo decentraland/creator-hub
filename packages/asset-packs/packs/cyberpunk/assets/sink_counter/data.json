@@ -19,5 +19,10 @@
     "sink"
   ],
   "caption": "White kitchen counter featuring two blue sinks.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.243,
+    "y": 1.655,
+    "z": 1.365
+  }
 }

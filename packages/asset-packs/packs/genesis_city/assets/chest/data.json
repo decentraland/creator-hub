@@ -22,5 +22,10 @@
     "storage"
   ],
   "caption": "Brown wooden chest with a handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.717,
+    "y": 0.596,
+    "z": 1.42
+  }
 }

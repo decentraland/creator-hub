@@ -17,5 +17,10 @@
     "structure"
   ],
   "caption": "Chest with a hinged lid.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.402,
+    "y": 0.279,
+    "z": 1.098
+  }
 }

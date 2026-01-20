@@ -21,5 +21,10 @@
     "wrist"
   ],
   "caption": "Red wristband on a man's hand.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.131,
+    "y": 0.461,
+    "z": 0.155
+  }
 }

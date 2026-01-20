@@ -17,5 +17,10 @@
     "vessel"
   ],
   "caption": "Plastic cups lined up.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.139,
+    "y": 0.419,
+    "z": 0.139
+  }
 }

@@ -15,5 +15,10 @@
     "relaxing music"
   ],
   "description": "An invisible item that plays a chilled lo‑fi track for cozy ambient vibes.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.296,
+    "y": 0.016,
+    "z": 0.2
+  }
 }

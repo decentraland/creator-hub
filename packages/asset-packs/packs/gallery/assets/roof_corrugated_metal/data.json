@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["corrugated", "corrugation", "panel", "plate", "roof", "roofing", "sheeting"],
   "caption": "Corrugated metal roof.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.432,
+    "y": 1.449,
+    "z": 4.098
+  }
 }

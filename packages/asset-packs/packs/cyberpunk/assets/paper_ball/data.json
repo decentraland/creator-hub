@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["art", "ball", "creased", "crumpled", "dot", "folded", "paper", "product", "thumbnail"],
   "caption": "Black dot patterned crumpled paper.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 34.377,
+    "y": 21.358,
+    "z": 39.701
+  }
 }

@@ -22,5 +22,10 @@
     "vegetation"
   ],
   "caption": "Single green, untextured plant.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.3,
+    "y": 0.523,
+    "z": 0.315
+  }
 }

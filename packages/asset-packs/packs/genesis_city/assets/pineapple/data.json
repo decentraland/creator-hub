@@ -20,5 +20,10 @@
     "tropical"
   ],
   "caption": "Pineapple with green top and orange body.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.303,
+    "y": 0.541,
+    "z": 0.303
+  }
 }

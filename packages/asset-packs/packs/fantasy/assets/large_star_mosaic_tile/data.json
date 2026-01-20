@@ -4,5 +4,10 @@
   "category": "tiles",
   "tags": ["fantasy", "tile", "mosaic", "celestial", "glow", "radiant", "shimmer", "star"],
   "caption": "Mosaic tile shaped like a star.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.055,
+    "z": 2
+  }
 }

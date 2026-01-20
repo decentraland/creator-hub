@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["arrowboard", "board", "furniture", "interior", "patterned", "room", "zigzag"],
   "caption": "Brown and red zigzag patterned wall.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 0.401
+  }
 }

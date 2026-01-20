@@ -27,5 +27,10 @@
     "surf"
   ],
   "caption": "Rocky shoreline with blue waters.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 7.036,
+    "y": 0.722,
+    "z": 6.704
+  }
 }

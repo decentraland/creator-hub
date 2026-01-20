@@ -15,5 +15,10 @@
     "wave"
   ],
   "caption": "Beach-themed wall feature.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.033,
+    "y": 4,
+    "z": 2.04
+  }
 }

@@ -17,5 +17,10 @@
     "vegetation"
   ],
   "caption": "Darkened cactus with glowing spikes.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.693,
+    "y": 2.483,
+    "z": 2.589
+  }
 }

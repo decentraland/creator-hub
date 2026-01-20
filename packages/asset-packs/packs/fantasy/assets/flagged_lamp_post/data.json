@@ -19,5 +19,10 @@
     "urban"
   ],
   "caption": "Tall street lamp with glowing blue banner.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.89,
+    "y": 2.912,
+    "z": 0.669
+  }
 }

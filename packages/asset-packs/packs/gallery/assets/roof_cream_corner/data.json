@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["architectural", "building", "cream", "exterior", "roof"],
   "caption": "Cream-colored roof at the building's corner.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.7,
+    "z": 4
+  }
 }

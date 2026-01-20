@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["architecture", "building", "grain", "interior", "room", "space"],
   "caption": "Wooden floor texture.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.01,
+    "z": 2
+  }
 }

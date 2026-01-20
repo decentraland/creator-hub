@@ -25,5 +25,10 @@
     "sculpture"
   ],
   "caption": "Fountain features statues at both levels.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.186,
+    "y": 3.679,
+    "z": 1.835
+  }
 }

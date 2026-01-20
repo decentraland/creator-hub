@@ -20,5 +20,10 @@
     "vegetation"
   ],
   "caption": "Blue plant with long leaves.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.339,
+    "y": 0.905,
+    "z": 0.168
+  }
 }

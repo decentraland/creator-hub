@@ -24,5 +24,10 @@
     "skeleton"
   ],
   "caption": "A glowing fish with exposed bones.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.387,
+    "y": 0.042,
+    "z": 0.156
+  }
 }

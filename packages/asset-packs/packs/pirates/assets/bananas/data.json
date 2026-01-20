@@ -25,5 +25,10 @@
     "tropical"
   ],
   "caption": "Two ripe yellow bananas.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.353,
+    "y": 0.194,
+    "z": 0.376
+  }
 }

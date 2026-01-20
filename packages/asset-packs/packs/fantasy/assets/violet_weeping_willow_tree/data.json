@@ -23,5 +23,10 @@
     "outdoor"
   ],
   "caption": "Weeping willow tree with purple foliage.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6.999,
+    "y": 6.888,
+    "z": 6.72
+  }
 }

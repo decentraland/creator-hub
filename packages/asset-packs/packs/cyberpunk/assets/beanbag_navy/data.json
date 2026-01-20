@@ -20,5 +20,10 @@
     "seating"
   ],
   "caption": "Blue bean bag chair.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.806,
+    "y": 0.994,
+    "z": 1.729
+  }
 }

@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["container", "cylindrical", "shape", "storage", "stripe", "tube", "vessel"],
   "caption": "Red and white striped tube.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 124.161,
+    "y": 1295.772,
+    "z": 124.161
+  }
 }

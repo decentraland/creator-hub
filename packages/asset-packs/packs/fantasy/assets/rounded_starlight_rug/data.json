@@ -21,5 +21,10 @@
     "stellar"
   ],
   "caption": "Star emblem on.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.007,
+    "y": 0.056,
+    "z": 4.007
+  }
 }

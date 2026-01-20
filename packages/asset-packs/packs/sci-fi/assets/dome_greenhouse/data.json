@@ -18,5 +18,10 @@
     "structure"
   ],
   "caption": "Blue greenhouse-shaped room with black exterior.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 9.25,
+    "y": 4.604,
+    "z": 9.25
+  }
 }

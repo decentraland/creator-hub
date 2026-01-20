@@ -15,5 +15,10 @@
     "woman"
   ],
   "caption": "Human figure in mid-action.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.775,
+    "y": 0.218,
+    "z": 0
+  }
 }

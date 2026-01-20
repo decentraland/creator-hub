@@ -22,5 +22,10 @@
     "vessel"
   ],
   "caption": "Wooden bucket with a handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.461,
+    "y": 0.437,
+    "z": 0.457
+  }
 }

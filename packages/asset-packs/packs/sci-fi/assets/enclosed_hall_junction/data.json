@@ -17,5 +17,10 @@
     "structure"
   ],
   "caption": "Entrance to a large, dimly lit hallway.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 16.243,
+    "y": 4.187,
+    "z": 16.241
+  }
 }

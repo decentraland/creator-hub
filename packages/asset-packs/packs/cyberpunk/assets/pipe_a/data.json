@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["fixture", "glow", "illumination", "interior", "pipe", "room", "visual"],
   "caption": "Blue glowing pipe.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.014,
+    "y": 2.073,
+    "z": 0.836
+  }
 }

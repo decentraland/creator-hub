@@ -4,5 +4,10 @@
   "category": "party",
   "tags": ["light", "rays", "sun", "explosion"],
   "description": "A spinning set of sun rays that can look very cool. It is invisible until it is activated by other smart items, for example a trigger area or a button.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 18.554,
+    "y": 18.554,
+    "z": 3.499
+  }
 }

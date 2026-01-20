@@ -18,5 +18,10 @@
     "warning"
   ],
   "caption": "Red light atop a traffic post.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.266,
+    "y": 1.127,
+    "z": 0.266
+  }
 }

@@ -24,5 +24,10 @@
     "structure"
   ],
   "caption": "Three-barred fence with colored vertical posts.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.128,
+    "y": 2.208,
+    "z": 1.313
+  }
 }

@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["curved", "shape", "silhouette", "swirling", "tube", "visual"],
   "caption": "Black, curved game console with swirling pattern.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 9.015,
+    "y": 14.32,
+    "z": 9.636
+  }
 }

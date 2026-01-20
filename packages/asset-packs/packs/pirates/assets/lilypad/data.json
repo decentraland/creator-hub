@@ -23,5 +23,10 @@
     "river"
   ],
   "caption": "Green lily pad.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.703,
+    "y": 0.022,
+    "z": 0.787
+  }
 }

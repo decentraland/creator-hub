@@ -19,5 +19,10 @@
     "seasonal"
   ],
   "caption": "Carved pumpkin with glowing jack-o-lantern face.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.629,
+    "y": 0.621,
+    "z": 0.658
+  }
 }

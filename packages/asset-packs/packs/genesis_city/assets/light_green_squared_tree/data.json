@@ -27,5 +27,10 @@
     "verdant"
   ],
   "caption": "Light green tree model with a base.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.48,
+    "y": 6.183,
+    "z": 3.547
+  }
 }

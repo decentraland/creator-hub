@@ -24,5 +24,10 @@
     "sculpture"
   ],
   "caption": "Cat statue sits atop a wooden box.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.96,
+    "y": 1.536,
+    "z": 2.612
+  }
 }

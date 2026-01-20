@@ -17,5 +17,10 @@
     "steps"
   ],
   "caption": "Dark, glowing staircase.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 4.307
+  }
 }

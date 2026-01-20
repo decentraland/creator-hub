@@ -19,5 +19,10 @@
     "wick"
   ],
   "caption": "A glowing yellow candle in a black holder.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.143,
+    "y": 0.269,
+    "z": 0.135
+  }
 }

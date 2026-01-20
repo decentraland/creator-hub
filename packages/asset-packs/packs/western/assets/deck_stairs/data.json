@@ -16,5 +16,10 @@
     "steps"
   ],
   "caption": "Wooden staircase leading up to deck.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.79,
+    "y": 4.755,
+    "z": 7.635
+  }
 }

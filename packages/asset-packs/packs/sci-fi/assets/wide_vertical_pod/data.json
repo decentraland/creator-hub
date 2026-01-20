@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["scifi", "storage", "spaceship", "cylindrical", "pod", "shape", "stripe"],
   "caption": "Tall, red-and-white striped cylinder with glowing blue core.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.404,
+    "y": 1.66,
+    "z": 1.404
+  }
 }

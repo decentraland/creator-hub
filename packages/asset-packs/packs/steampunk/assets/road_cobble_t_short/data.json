@@ -4,5 +4,10 @@
   "category": "tiles",
   "tags": ["asphalt", "cobble", "cobblestone", "gravel", "highway", "path", "pavement", "roadway"],
   "caption": "Cobblestone road surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3,
+    "y": 0.042,
+    "z": 4
+  }
 }

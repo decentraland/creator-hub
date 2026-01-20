@@ -15,5 +15,10 @@
     "vessel"
   ],
   "caption": "Glowing metal pipe.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.715,
+    "y": 1.037,
+    "z": 1.049
+  }
 }

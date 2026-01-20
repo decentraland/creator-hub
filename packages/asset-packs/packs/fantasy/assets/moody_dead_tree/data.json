@@ -20,5 +20,10 @@
     "stronghold"
   ],
   "caption": "Dead tree in a dark atmosphere.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.474,
+    "y": 5.706,
+    "z": 4.812
+  }
 }

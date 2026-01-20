@@ -20,5 +20,10 @@
     "web"
   ],
   "caption": "A glowing red spider hangs from a string.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.019,
+    "y": 0.435,
+    "z": 0.099
+  }
 }

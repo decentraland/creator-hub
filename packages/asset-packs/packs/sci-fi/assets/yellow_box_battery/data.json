@@ -21,5 +21,10 @@
     "panel"
   ],
   "caption": "Battery pack featuring digital display and controls.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.172,
+    "y": 0.541,
+    "z": 0.54
+  }
 }

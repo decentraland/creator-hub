@@ -3,5 +3,10 @@
   "name": "Clap Meter",
   "category": "party",
   "tags": ["clap", "meter", "party", "interactive", "display"],
-  "description": "A clap meter that displays the number of claps emotes from players in the scene."
+  "description": "A clap meter that displays the number of claps emotes from players in the scene.",
+  "boundingBox": {
+    "x": 5.598,
+    "y": 2.713,
+    "z": 7.05
+  }
 }

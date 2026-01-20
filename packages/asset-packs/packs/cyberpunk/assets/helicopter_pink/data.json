@@ -16,5 +16,10 @@
     "vehicle"
   ],
   "caption": "Pink helicopter in flight.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 10.223,
+    "y": 3.749,
+    "z": 14.317
+  }
 }

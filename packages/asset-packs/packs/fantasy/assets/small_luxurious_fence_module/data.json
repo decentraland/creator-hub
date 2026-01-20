@@ -18,5 +18,10 @@
     "upscale"
   ],
   "caption": "Glowing golden gate for your luxury fence.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.111,
+    "y": 1.141,
+    "z": 0.329
+  }
 }

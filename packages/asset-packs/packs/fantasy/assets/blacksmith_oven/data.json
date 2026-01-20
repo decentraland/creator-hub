@@ -21,5 +21,10 @@
     "smoke"
   ],
   "caption": "Red oven with yellow emblem.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.301,
+    "y": 1.446,
+    "z": 2.971
+  }
 }

@@ -15,5 +15,10 @@
     "star"
   ],
   "caption": "Glazed ceramic star-shaped tile.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.067,
+    "z": 2
+  }
 }

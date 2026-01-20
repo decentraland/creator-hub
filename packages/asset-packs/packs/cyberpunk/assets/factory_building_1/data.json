@@ -17,5 +17,10 @@
     "manufacturing"
   ],
   "caption": "Factory building with glowing neon sign.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 8.13,
+    "y": 11.581,
+    "z": 9.267
+  }
 }

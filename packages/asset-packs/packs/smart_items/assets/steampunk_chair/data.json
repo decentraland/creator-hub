@@ -4,5 +4,10 @@
   "description": "A steampunk chair.",
   "tags": ["chair", "steampunk", "seat", "sitting", "furniture"],
   "author": "Decentraland Foundation",
-  "id": "229a1c72-6b2f-45ad-b809-41ee681eeeeb"
+  "id": "229a1c72-6b2f-45ad-b809-41ee681eeeeb",
+  "boundingBox": {
+    "x": 0.775,
+    "y": 1.856,
+    "z": 0.931
+  }
 }

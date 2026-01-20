@@ -19,5 +19,10 @@
     "vault"
   ],
   "caption": "Church with a glowing cross over an open grave.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.281,
+    "y": 1.629,
+    "z": 2.663
+  }
 }

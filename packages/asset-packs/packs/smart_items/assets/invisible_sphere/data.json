@@ -4,5 +4,10 @@
   "category": "primitives",
   "tags": ["invisible", "wall", "sphere", "ball", "globe", "round", "collider"],
   "description": "A sphere that is invisible. It can be used to create a round area that the player can't walk through.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+  }
 }

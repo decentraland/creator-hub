@@ -17,5 +17,10 @@
     "utility"
   ],
   "caption": "Tall black pole with blue stripe.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.266,
+    "y": 1.125,
+    "z": 0.266
+  }
 }

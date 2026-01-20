@@ -18,5 +18,10 @@
     "threat"
   ],
   "caption": "Asteroid-shaped projectile with a glowing core.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.735,
+    "y": 0.597,
+    "z": 1.013
+  }
 }

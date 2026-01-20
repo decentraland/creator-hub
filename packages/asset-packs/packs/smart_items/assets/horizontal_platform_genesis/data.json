@@ -4,5 +4,10 @@
   "category": "platforms",
   "tags": ["platform", "horizontal", "interactive", "floating", "elevator", "lift"],
   "description": "A horizontal platform that moves back and forth. Players can jump on it to reach places.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.829,
+    "z": 2
+  }
 }

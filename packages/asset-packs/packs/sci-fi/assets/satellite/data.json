@@ -17,5 +17,10 @@
     "technology"
   ],
   "caption": "Blue satellite dish in cartoon style.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.465,
+    "y": 2.694,
+    "z": 3.746
+  }
 }

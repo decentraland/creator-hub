@@ -18,5 +18,10 @@
     "volume"
   ],
   "caption": "Three colorful books stacked on top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.872,
+    "y": 0.268,
+    "z": 0.792
+  }
 }

@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["hue", "pigment", "shade", "shape", "smooth", "tint"],
   "caption": "Pink cube with a smooth surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+  }
 }

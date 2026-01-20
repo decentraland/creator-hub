@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["barrier", "boundary", "enclosure", "grid", "security", "wire"],
   "caption": "Black wire fence with six vertical bars.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.451,
+    "y": 4.537,
+    "z": 3.636
+  }
 }

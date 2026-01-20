@@ -25,5 +25,10 @@
     "sunflower"
   ],
   "caption": "Sunflower with bright yellow petals.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.37,
+    "y": 0.325,
+    "z": 0.488
+  }
 }

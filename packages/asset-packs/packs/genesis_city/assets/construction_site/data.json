@@ -27,5 +27,10 @@
     "vehicles"
   ],
   "caption": "Construction site with heavy machinery.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 7.48,
+    "y": 2.355,
+    "z": 7.339
+  }
 }

@@ -4,5 +4,10 @@
   "category": "party",
   "tags": ["trippy", "hypnotic", "spiral", "circle", "party"],
   "description": "A spinning square spiral that can be used to create a hypnotic effect. It is invisible until it is activated by other smart items, for example a trigger area or a button.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 12.283,
+    "y": 12.283,
+    "z": 8.517
+  }
 }

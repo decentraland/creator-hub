@@ -19,5 +19,10 @@
     "smoke"
   ],
   "caption": "Campfire with burning wood.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.9,
+    "y": 2.304,
+    "z": 2.631
+  }
 }

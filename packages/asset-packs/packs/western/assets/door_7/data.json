@@ -16,5 +16,10 @@
     "window"
   ],
   "caption": "Blue interior window.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.018,
+    "y": 2.346,
+    "z": 0.139
+  }
 }

@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["appearance", "checkerboard", "diamond", "shape", "visual"],
   "caption": "Yellow cube with a red checkerboard pattern.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+  }
 }

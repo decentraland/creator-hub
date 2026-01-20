@@ -17,5 +17,10 @@
     "winged"
   ],
   "caption": "Upside-down baseball bat.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.243,
+    "y": 0.632,
+    "z": 0.177
+  }
 }

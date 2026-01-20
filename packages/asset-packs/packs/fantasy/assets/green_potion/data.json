@@ -15,5 +15,10 @@
     "wellness"
   ],
   "caption": "Green glass bottle with cork stopper.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.279,
+    "y": 0.588,
+    "z": 0.322
+  }
 }

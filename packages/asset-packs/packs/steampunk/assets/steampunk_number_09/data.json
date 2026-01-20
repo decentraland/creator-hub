@@ -15,5 +15,10 @@
     "timepiece"
   ],
   "caption": "Vintage steampunk clock featuring glowing numerals.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.463,
+    "y": 0.924,
+    "z": 0.45
+  }
 }

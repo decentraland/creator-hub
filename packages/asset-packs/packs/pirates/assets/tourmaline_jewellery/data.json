@@ -21,5 +21,10 @@
     "valuable"
   ],
   "caption": "Purple gemstone.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.337,
+    "y": 0.281,
+    "z": 0.32
+  }
 }

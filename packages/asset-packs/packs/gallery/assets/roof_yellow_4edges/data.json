@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["architecture", "building", "facade", "flat", "four", "roof", "structure"],
   "caption": "Yellow roof with a flat top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.7,
+    "z": 4
+  }
 }

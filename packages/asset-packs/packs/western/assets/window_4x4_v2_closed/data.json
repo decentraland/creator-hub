@@ -15,5 +15,10 @@
     "windowpane"
   ],
   "caption": "Darkened window with blue panes.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.353,
+    "y": 2.065,
+    "z": 0.354
+  }
 }

@@ -26,5 +26,10 @@
     "structure"
   ],
   "caption": "White fence with four vertical posts.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.128,
+    "y": 4.208,
+    "z": 3.113
+  }
 }

@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["board", "diagonal", "flat", "panel", "structure"],
   "caption": "Diagonal board panel.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 0.403
+  }
 }

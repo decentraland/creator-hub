@@ -23,5 +23,10 @@
     "terrarium"
   ],
   "caption": "Green gecko figurine in a red pot.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.936,
+    "y": 1.783,
+    "z": 1.002
+  }
 }

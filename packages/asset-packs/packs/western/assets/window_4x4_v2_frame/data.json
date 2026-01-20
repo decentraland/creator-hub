@@ -18,5 +18,10 @@
     "windowstyle"
   ],
   "caption": "Dark-framed window without glass.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.359,
+    "y": 2.065,
+    "z": 0.354
+  }
 }

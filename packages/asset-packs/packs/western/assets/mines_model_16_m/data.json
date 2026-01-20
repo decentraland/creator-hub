@@ -20,5 +20,10 @@
     "wheat"
   ],
   "caption": "Bread on a wooden table.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 18.421,
+    "y": 4.743,
+    "z": 11.601
+  }
 }

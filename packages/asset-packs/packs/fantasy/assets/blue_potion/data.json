@@ -16,5 +16,10 @@
     "neck"
   ],
   "caption": "Blue glass bottle with a white label.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.248,
+    "y": 0.573,
+    "z": 0.248
+  }
 }

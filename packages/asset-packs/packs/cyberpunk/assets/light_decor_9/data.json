@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["font", "graphic", "letter", "logo", "typography"],
   "caption": "Blue letter t.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 949.366,
+    "y": 175.34,
+    "z": 949.365
+  }
 }

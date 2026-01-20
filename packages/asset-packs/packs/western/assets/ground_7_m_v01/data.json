@@ -13,5 +13,10 @@
     "soap"
   ],
   "caption": "Yellow soap bar with realistic texture.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.049,
+    "y": 0.462,
+    "z": 7.641
+  }
 }

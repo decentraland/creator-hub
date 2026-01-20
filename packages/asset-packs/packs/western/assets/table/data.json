@@ -16,5 +16,10 @@
     "table"
   ],
   "caption": "Brown wooden table with a central drawer.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.515,
+    "y": 0.966,
+    "z": 1.375
+  }
 }

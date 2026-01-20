@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["antique", "box", "burial", "coffin", "container", "death", "funeral", "grave", "relic"],
   "caption": "Brown wooden coffin.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.912,
+    "y": 0.56,
+    "z": 2.321
+  }
 }

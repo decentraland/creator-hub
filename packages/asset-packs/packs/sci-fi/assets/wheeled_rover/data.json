@@ -20,5 +20,10 @@
     "vehicle"
   ],
   "caption": "Rover with camera and wheels.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.034,
+    "y": 2.591,
+    "z": 3.843
+  }
 }

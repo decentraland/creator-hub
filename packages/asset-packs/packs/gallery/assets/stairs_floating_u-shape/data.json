@@ -17,5 +17,10 @@
     "step"
   ],
   "caption": "U-shaped staircase.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.02,
+    "y": 5.171,
+    "z": 4.199
+  }
 }

@@ -4,5 +4,10 @@
   "category": "media",
   "tags": ["audio", "stream", "live", "music", "radio", "sound", "soundscape"],
   "description": "A smart item that can be used to play audio from a live stream.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.109,
+    "y": 0.427,
+    "z": 0.284
+  }
 }

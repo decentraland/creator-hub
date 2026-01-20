@@ -20,5 +20,10 @@
     "potted"
   ],
   "caption": "Red-streaked potted plant.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.325,
+    "y": 0.356,
+    "z": 0.328
+  }
 }

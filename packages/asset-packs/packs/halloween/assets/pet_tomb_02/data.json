@@ -20,5 +20,10 @@
     "tomb"
   ],
   "caption": "Dark-colored house with a glowing red roof.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.623,
+    "y": 3.487,
+    "z": 3.936
+  }
 }

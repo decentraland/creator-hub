@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["scifi", "tile", "cross", "emblem", "graphic", "graphics", "panel", "shape", "visual"],
   "caption": "Yellow cross with glowing screen.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.048,
+    "z": 2
+  }
 }

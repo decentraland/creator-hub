@@ -4,5 +4,10 @@
   "category": "year of the pig",
   "tags": ["decoration", "pig", "banner", "flag", "advertisement", "display", "pole", "poster"],
   "caption": "Pig symbol banner hangs from wooden pole.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.674,
+    "y": 1.603,
+    "z": 0.021
+  }
 }

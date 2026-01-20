@@ -20,5 +20,10 @@
     "structure"
   ],
   "caption": "Ancient stone pagoda lantern.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.612,
+    "y": 1.691,
+    "z": 1.612
+  }
 }

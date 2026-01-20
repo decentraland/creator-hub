@@ -16,5 +16,10 @@
     "tableware"
   ],
   "caption": "Dark brown coffee table.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.214,
+    "y": 0.636,
+    "z": 1.605
+  }
 }

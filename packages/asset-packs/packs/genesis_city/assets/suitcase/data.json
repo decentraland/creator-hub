@@ -23,5 +23,10 @@
     "work"
   ],
   "caption": "Brown leather briefcase with a handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.205,
+    "y": 0.58,
+    "z": 0.981
+  }
 }

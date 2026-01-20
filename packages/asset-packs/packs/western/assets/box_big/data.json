@@ -14,5 +14,10 @@
     "vessel"
   ],
   "caption": "Brown wooden box.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.077,
+    "y": 0.796,
+    "z": 0.946
+  }
 }

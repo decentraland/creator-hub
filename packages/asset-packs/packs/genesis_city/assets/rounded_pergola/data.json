@@ -23,5 +23,10 @@
     "structure"
   ],
   "caption": "Pergola with a wooden top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.271,
+    "y": 4.648,
+    "z": 5.271
+  }
 }

@@ -18,5 +18,10 @@
     "tiered"
   ],
   "caption": "Pagoda with three tiers.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.617,
+    "y": 0.75,
+    "z": 0.617
+  }
 }

@@ -20,5 +20,10 @@
     "vacation"
   ],
   "caption": "Yellow umbrella with red handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.064,
+    "y": 3.063,
+    "z": 3.34
+  }
 }

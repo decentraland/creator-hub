@@ -35,6 +35,12 @@ export type AssetComposite = {
   }>;
 };
 
+export type BoundingBox = {
+  x: number;
+  y: number;
+  z: number;
+};
+
 export type AssetData = {
   id: string;
   name: string;
@@ -43,6 +49,7 @@ export type AssetData = {
   composite: AssetComposite;
   description?: string;
   author?: string;
+  boundingBox?: BoundingBox;
 };
 
 export type AssetDataWithoutComposite = Omit<AssetData, 'composite'>;

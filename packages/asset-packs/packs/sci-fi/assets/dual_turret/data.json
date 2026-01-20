@@ -23,5 +23,10 @@
     "rifle"
   ],
   "caption": "Futuristic spacecraft with glowing blue turrets.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.867,
+    "y": 1.175,
+    "z": 3.054
+  }
 }

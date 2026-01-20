@@ -4,5 +4,10 @@
   "category": "Text",
   "tags": ["sign", "road", "square"],
   "description": "A sign post that can be used to display a text message.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.773,
+    "y": 2.486,
+    "z": 0.129
+  }
 }

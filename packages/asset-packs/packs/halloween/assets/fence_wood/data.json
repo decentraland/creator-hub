@@ -16,5 +16,10 @@
     "structure"
   ],
   "caption": "Wooden picket fence with six vertical posts.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.357,
+    "y": 1.152,
+    "z": 2.34
+  }
 }

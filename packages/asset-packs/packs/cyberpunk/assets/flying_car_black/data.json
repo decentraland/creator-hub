@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["auto", "automobile", "coupe", "driving", "sedan", "speed", "transport", "vehicle"],
   "caption": "Black flying car with glowing side lights.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.787,
+    "y": 2.222,
+    "z": 4.977
+  }
 }

@@ -16,5 +16,10 @@
     "tone"
   ],
   "caption": "Martian landscape texture.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 16,
+    "y": 0.019,
+    "z": 16
+  }
 }

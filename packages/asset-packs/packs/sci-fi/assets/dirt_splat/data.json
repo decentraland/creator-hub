@@ -23,5 +23,10 @@
     "wet"
   ],
   "caption": "Red splatter paint on a glossy surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.463,
+    "y": 0.617,
+    "z": 3.993
+  }
 }

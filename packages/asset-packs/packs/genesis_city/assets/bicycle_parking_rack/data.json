@@ -27,5 +27,10 @@
     "urban"
   ],
   "caption": "Bicycle parking rack.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.861,
+    "y": 0.435,
+    "z": 2.421
+  }
 }

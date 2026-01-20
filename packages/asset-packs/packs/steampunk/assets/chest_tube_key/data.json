@@ -15,5 +15,10 @@
     "vessel"
   ],
   "caption": "Key in a chest shape, glowing screen.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.085,
+    "y": 0.331,
+    "z": 0.413
+  }
 }

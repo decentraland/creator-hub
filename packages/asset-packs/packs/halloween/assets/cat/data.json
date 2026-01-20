@@ -20,5 +20,10 @@
     "pet"
   ],
   "caption": "Black cat with glowing yellow eyes.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.456,
+    "y": 0.705,
+    "z": 0.841
+  }
 }

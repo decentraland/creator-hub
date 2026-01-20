@@ -16,5 +16,10 @@
     "tomb"
   ],
   "caption": "White wooden coffin with a cross.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.016,
+    "y": 1.029,
+    "z": 2.377
+  }
 }

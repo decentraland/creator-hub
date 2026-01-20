@@ -18,5 +18,10 @@
     "wheat"
   ],
   "caption": "Yellow, wedge-shaped cheese slice.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 10.301,
+    "y": 0.695,
+    "z": 10.554
+  }
 }

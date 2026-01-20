@@ -17,5 +17,10 @@
     "tombstone"
   ],
   "caption": "White marble headstone with black lid.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.99,
+    "y": 1.358,
+    "z": 2.494
+  }
 }

@@ -17,5 +17,10 @@
     "writing"
   ],
   "caption": "Blue letter d.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.5,
+    "y": 0.5,
+    "z": 0.076
+  }
 }

@@ -19,5 +19,10 @@
     "tower"
   ],
   "caption": "Tall stone pillar with a tapered top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.323,
+    "y": 4.005,
+    "z": 1.323
+  }
 }

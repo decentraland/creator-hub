@@ -23,5 +23,10 @@
     "vessel"
   ],
   "caption": "Blue vase with a handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.419,
+    "y": 0.675,
+    "z": 0.419
+  }
 }

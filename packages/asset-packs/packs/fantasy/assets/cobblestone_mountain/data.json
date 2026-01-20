@@ -17,5 +17,10 @@
     "terrain"
   ],
   "caption": "Brown mountain with jagged peak.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 15.92,
+    "y": 4.553,
+    "z": 10.28
+  }
 }

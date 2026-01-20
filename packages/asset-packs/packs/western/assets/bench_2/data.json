@@ -16,5 +16,10 @@
     "seating"
   ],
   "caption": "Wooden bench.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.966,
+    "y": 0.527,
+    "z": 0.639
+  }
 }

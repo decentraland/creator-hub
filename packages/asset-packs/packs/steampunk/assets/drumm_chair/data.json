@@ -19,5 +19,10 @@
     "sitting"
   ],
   "caption": "Red leather armchair with drum set.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.607,
+    "y": 0.811,
+    "z": 0.579
+  }
 }

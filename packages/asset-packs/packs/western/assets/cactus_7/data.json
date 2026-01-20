@@ -18,5 +18,10 @@
     "vegetation"
   ],
   "caption": "Black cactus with spikes.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.035,
+    "y": 3.172,
+    "z": 1.917
+  }
 }

@@ -24,5 +24,10 @@
     "recreation"
   ],
   "caption": "Red and blue kids' swing set.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.49,
+    "y": 2.49,
+    "z": 3.538
+  }
 }

@@ -18,5 +18,10 @@
     "liquid"
   ],
   "caption": "Fire hydrant with glowing red accents.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.475,
+    "y": 0.695,
+    "z": 0.411
+  }
 }

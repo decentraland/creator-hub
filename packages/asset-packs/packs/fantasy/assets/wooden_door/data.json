@@ -19,5 +19,10 @@
     "structure"
   ],
   "caption": "Brown wooden door with visible hinge.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.685,
+    "y": 3.242,
+    "z": 0.485
+  }
 }

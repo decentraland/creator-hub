@@ -26,5 +26,10 @@
     "plant"
   ],
   "caption": "Sweet peas in a long planter.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.013,
+    "y": 1.218,
+    "z": 1.569
+  }
 }

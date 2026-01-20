@@ -24,5 +24,10 @@
     "protective"
   ],
   "caption": "Orange hard hat for safety.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.405,
+    "y": 0.472,
+    "z": 0.499
+  }
 }

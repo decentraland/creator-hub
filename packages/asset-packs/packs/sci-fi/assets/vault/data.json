@@ -18,5 +18,10 @@
     "vault"
   ],
   "caption": "Vault with glowing screen and multiple compartments.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.714,
+    "y": 2.595,
+    "z": 1.735
+  }
 }

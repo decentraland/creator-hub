@@ -4,5 +4,10 @@
   "category": "social",
   "tags": ["social", "links", "twitter", "x"],
   "description": "A clickable item that opens your X page in a browser window. Paste an X URL in the ‘URL’ field.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 2,
+    "z": 2
+  }
 }

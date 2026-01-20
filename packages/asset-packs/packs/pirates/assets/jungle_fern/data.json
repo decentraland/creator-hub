@@ -24,5 +24,10 @@
     "verdant"
   ],
   "caption": "Green fern with multiple fronds.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.699,
+    "y": 0.7,
+    "z": 1.635
+  }
 }

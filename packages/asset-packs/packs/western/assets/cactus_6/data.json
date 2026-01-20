@@ -20,5 +20,10 @@
     "spine"
   ],
   "caption": "Prickly cactus with six sharp spines.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.012,
+    "y": 2.752,
+    "z": 1.952
+  }
 }

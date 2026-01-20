@@ -19,5 +19,10 @@
     "window"
   ],
   "caption": "Broken glass window with two panes missing.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.267,
+    "y": 2.03,
+    "z": 0.191
+  }
 }

@@ -28,5 +28,10 @@
     "tree"
   ],
   "caption": "Wooden merchant stand with a covered top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.769,
+    "y": 1.313,
+    "z": 1.059
+  }
 }

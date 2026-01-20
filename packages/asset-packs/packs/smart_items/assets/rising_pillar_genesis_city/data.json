@@ -4,5 +4,10 @@
   "category": "platforms",
   "tags": ["platform", "rising", "pillar", "elevator", "lift", "sci-fi"],
   "description": "A pillar that rises up out of the ground. Players can use it to reach high places.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.492,
+    "y": 0.112,
+    "z": 2.492
+  }
 }

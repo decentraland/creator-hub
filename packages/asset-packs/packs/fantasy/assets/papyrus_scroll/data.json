@@ -18,5 +18,10 @@
     "scrollwork"
   ],
   "caption": "Single scroll with cylindrical shape and glowing screen.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.109,
+    "y": 0.119,
+    "z": 0.575
+  }
 }

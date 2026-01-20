@@ -19,5 +19,10 @@
     "wire"
   ],
   "caption": "Long, looped cable with glowing yellow connector.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.477,
+    "y": 0.183,
+    "z": 4
+  }
 }

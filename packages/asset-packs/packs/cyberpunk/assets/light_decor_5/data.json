@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["art", "decor", "graphic", "motif", "stripes", "visual"],
   "caption": "Alternating white and black striped pattern.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 949.366,
+    "y": 1173.6,
+    "z": 949.366
+  }
 }

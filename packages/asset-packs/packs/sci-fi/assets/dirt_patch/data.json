@@ -16,5 +16,10 @@
     "shape"
   ],
   "caption": "Red, rounded candy-shaped object.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.102,
+    "y": 0.389,
+    "z": 1.933
+  }
 }

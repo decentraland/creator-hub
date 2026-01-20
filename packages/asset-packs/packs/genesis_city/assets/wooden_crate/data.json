@@ -20,5 +20,10 @@
     "vessel"
   ],
   "caption": "Brown wooden crate with lid.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.201,
+    "y": 0.337,
+    "z": 0.619
+  }
 }

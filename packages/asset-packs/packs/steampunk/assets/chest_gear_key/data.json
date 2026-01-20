@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["collectible", "gear", "hardware", "key", "lock", "mechanism", "relic"],
   "caption": "Gear key with a gear on top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.085,
+    "y": 0.104,
+    "z": 0.413
+  }
 }

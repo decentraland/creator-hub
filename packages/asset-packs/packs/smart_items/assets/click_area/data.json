@@ -4,5 +4,10 @@
   "category": "utils",
   "tags": ["click", "area", "interaction", "trigger", "invisible", "clickable"],
   "description": "An invisible area that, when clicked by a player, can trigger actions in other smart items",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+  }
 }

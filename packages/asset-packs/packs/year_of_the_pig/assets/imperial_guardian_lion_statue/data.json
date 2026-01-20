@@ -19,5 +19,10 @@
     "sculpture"
   ],
   "caption": "Lion statue.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.417,
+    "y": 3.05,
+    "z": 1.892
+  }
 }

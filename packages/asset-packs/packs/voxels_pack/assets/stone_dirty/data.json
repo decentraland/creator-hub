@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["brick", "dirty", "grime", "rough", "rugged"],
   "caption": "Dirty stone wall in blue background.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+  }
 }

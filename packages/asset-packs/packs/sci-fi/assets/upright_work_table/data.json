@@ -16,5 +16,10 @@
     "workspace"
   ],
   "caption": "Blue table with orange accents.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.933,
+    "y": 1.025,
+    "z": 0.933
+  }
 }

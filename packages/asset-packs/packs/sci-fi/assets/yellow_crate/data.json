@@ -15,5 +15,10 @@
     "vehicle"
   ],
   "caption": "Yellow crate has a glowing red switch.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.797,
+    "y": 0.817,
+    "z": 0.945
+  }
 }

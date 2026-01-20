@@ -19,5 +19,10 @@
     "web"
   ],
   "caption": "Black and white spider web with glowing center.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.501,
+    "y": 0.501,
+    "z": 0.057
+  }
 }

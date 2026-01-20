@@ -18,5 +18,10 @@
     "river"
   ],
   "caption": "Bathroom sink with two faucets.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.95,
+    "y": 3.037,
+    "z": 3.814
+  }
 }

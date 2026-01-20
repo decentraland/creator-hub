@@ -23,5 +23,10 @@
     "spore"
   ],
   "caption": "Blue glowing mushroom under a tree.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.771,
+    "y": 0.791,
+    "z": 0.786
+  }
 }

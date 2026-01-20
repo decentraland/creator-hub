@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["architecture", "barrier", "boundary", "enclosure", "structure", "wavy"],
   "caption": "Black and red wavy fence.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2289.846,
+    "y": 401.243,
+    "z": 25.509
+  }
 }

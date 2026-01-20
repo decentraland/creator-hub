@@ -20,5 +20,10 @@
     "steel"
   ],
   "caption": "Vintage motorcycle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.067,
+    "y": 1.679,
+    "z": 4.264
+  }
 }

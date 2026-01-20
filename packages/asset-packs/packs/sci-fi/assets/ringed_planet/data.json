@@ -16,5 +16,10 @@
     "world"
   ],
   "caption": "Yellow glowing orb on red planet.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6.234,
+    "y": 4.015,
+    "z": 7.12
+  }
 }

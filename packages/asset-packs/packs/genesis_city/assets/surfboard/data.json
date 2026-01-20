@@ -27,5 +27,10 @@
     "surf"
   ],
   "caption": "Blue surfboard featuring yellow fins.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.381,
+    "y": 0.86,
+    "z": 2.802
+  }
 }

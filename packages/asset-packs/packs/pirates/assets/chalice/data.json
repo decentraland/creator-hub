@@ -26,5 +26,10 @@
     "vessel"
   ],
   "caption": "Glowing gold chalice.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.175,
+    "y": 0.234,
+    "z": 0.175
+  }
 }

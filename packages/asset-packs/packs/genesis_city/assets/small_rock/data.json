@@ -25,5 +25,10 @@
     "space"
   ],
   "caption": "Space rock.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.136,
+    "y": 0.338,
+    "z": 0.682
+  }
 }

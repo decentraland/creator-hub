@@ -17,5 +17,10 @@
     "table"
   ],
   "caption": "Black metal lantern hangs from a hook.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.411,
+    "y": 1.121,
+    "z": 0.602
+  }
 }

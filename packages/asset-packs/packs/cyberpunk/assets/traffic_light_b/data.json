@@ -16,5 +16,10 @@
     "visibility"
   ],
   "caption": "Traffic light with three lights on pole.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.071,
+    "y": 4.875,
+    "z": 0.875
+  }
 }

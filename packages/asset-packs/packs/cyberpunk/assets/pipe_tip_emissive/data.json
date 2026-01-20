@@ -14,5 +14,10 @@
     "tip"
   ],
   "caption": "Emissive pipe tip.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.511,
+    "y": 0.511,
+    "z": 2.585
+  }
 }

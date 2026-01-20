@@ -22,5 +22,10 @@
     "smoke"
   ],
   "caption": "Yellow stove with glowing red light.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.797,
+    "y": 1.732,
+    "z": 0.833
+  }
 }

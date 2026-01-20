@@ -4,5 +4,10 @@
   "description": "A sit spot for seating interactions.",
   "tags": ["sit", "seat", "sitting", "furniture"],
   "author": "Decentraland Foundation",
-  "id": "ce374705-d5f6-4837-b9ca-c0744527cfd5"
+  "id": "ce374705-d5f6-4837-b9ca-c0744527cfd5",
+  "boundingBox": {
+    "x": 0.635,
+    "y": 1.212,
+    "z": 1.551
+  }
 }

@@ -14,5 +14,10 @@
     "vehicle"
   ],
   "caption": "Yellow flying taxi with glowing screen.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.802,
+    "y": 2.475,
+    "z": 4.981
+  }
 }

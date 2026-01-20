@@ -17,5 +17,10 @@
     "tower"
   ],
   "caption": "Ancient egyptian wall.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 0.404
+  }
 }

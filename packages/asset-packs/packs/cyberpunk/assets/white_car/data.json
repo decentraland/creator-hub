@@ -16,5 +16,10 @@
     "vehicle"
   ],
   "caption": "Blue-roofed white car.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.847,
+    "y": 1.815,
+    "z": 6.561
+  }
 }

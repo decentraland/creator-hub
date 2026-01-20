@@ -22,5 +22,10 @@
     "volcano"
   ],
   "caption": "Red, hollowed-out crater-like volcano cone.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.723,
+    "y": 1.094,
+    "z": 2.621
+  }
 }

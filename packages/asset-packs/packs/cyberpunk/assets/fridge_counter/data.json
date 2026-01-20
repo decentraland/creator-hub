@@ -13,5 +13,10 @@
     "tabletop"
   ],
   "caption": "White countertop surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.126,
+    "y": 1.009,
+    "z": 1.287
+  }
 }

@@ -16,5 +16,10 @@
     "structure"
   ],
   "caption": "Dark brick wall.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 16,
+    "y": 0.019,
+    "z": 16
+  }
 }

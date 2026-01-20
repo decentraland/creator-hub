@@ -19,5 +19,10 @@
     "warning"
   ],
   "caption": "Emergency panel with glowing yellow stripe.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.052,
+    "z": 2
+  }
 }

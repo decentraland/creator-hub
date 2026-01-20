@@ -15,5 +15,10 @@
     "sitting"
   ],
   "author": "Decentraland Foundation",
-  "id": "9f19aff5-b3bb-46c3-acaa-b95ce5ede4d8"
+  "id": "9f19aff5-b3bb-46c3-acaa-b95ce5ede4d8",
+  "boundingBox": {
+    "x": 0.548,
+    "y": 1.66,
+    "z": 0.608
+  }
 }

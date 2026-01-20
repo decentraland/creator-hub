@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["appearance", "font", "graphic", "letter", "logo", "typography", "visual"],
   "caption": "Blue letter p.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.5,
+    "y": 0.5,
+    "z": 0.076
+  }
 }
