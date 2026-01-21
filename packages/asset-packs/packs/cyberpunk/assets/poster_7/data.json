@@ -15,5 +15,10 @@
     "typography"
   ],
   "caption": "Glowing neon sign featuring the word 'nerd'.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.002,
+    "y": 0.562,
+    "z": 0
+  }
 }

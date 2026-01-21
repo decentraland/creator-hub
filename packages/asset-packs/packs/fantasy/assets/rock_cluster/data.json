@@ -19,5 +19,10 @@
     "terrain"
   ],
   "caption": "Dark rocky cluster.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.558,
+    "y": 0.034,
+    "z": 1.532
+  }
 }

@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["gear", "hole", "industrial", "machinery", "mechanical", "mechanism"],
   "caption": "Red gear with a central hole.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.605,
+    "y": 0.306,
+    "z": 0.698
+  }
 }

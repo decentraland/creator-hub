@@ -17,5 +17,10 @@
     "upholstery"
   ],
   "caption": "Cream-colored cushion with top and bottom.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.632,
+    "y": 0.632,
+    "z": 0.131
+  }
 }

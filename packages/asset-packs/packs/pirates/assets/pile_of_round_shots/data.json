@@ -20,5 +20,10 @@
     "spherical"
   ],
   "caption": "Balls of glowing blue spheres.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.974,
+    "y": 0.633,
+    "z": 0.851
+  }
 }

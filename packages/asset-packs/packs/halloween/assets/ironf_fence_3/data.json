@@ -18,5 +18,10 @@
     "tower"
   ],
   "caption": "Six-bar metal fence.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.052,
+    "y": 6.805,
+    "z": 2.745
+  }
 }

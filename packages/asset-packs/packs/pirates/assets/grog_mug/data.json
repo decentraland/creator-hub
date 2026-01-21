@@ -28,5 +28,10 @@
     "vessel"
   ],
   "caption": "A classic ceramic mug with a handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.253,
+    "y": 0.267,
+    "z": 0.206
+  }
 }

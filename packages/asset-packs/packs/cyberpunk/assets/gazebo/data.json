@@ -18,5 +18,10 @@
     "trunk"
   ],
   "caption": "Black and white striped gazebo.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 511.789,
+    "y": 168.479,
+    "z": 501.051
+  }
 }

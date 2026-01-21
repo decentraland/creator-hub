@@ -19,5 +19,10 @@
     "terrain"
   ],
   "caption": "Red, crater-like dome with smooth surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.748,
+    "y": 0.595,
+    "z": 1.789
+  }
 }

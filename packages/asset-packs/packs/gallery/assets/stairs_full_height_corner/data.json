@@ -15,5 +15,10 @@
     "winding"
   ],
   "caption": "Full-height corner staircase.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.01,
+    "y": 4,
+    "z": 4.202
+  }
 }

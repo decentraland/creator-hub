@@ -20,5 +20,10 @@
     "sculpture"
   ],
   "caption": "Glowing dragon statue.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.795,
+    "y": 1.863,
+    "z": 2.991
+  }
 }

@@ -23,5 +23,10 @@
     "sea"
   ],
   "caption": "Serene lake with an island and rocks.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 8.005,
+    "y": 0.4,
+    "z": 7.451
+  }
 }

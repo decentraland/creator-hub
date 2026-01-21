@@ -26,5 +26,10 @@
     "vibrant"
   ],
   "caption": "Sunflower head with bright yellow petals.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.675,
+    "y": 0.611,
+    "z": 0.219
+  }
 }

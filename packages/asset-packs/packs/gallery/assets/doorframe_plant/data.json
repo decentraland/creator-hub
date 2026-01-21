@@ -19,5 +19,10 @@
     "vegetation"
   ],
   "caption": "Open doorway with two plants.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 0.481
+  }
 }

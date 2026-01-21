@@ -18,5 +18,10 @@
     "kitchen"
   ],
   "caption": "Blue table on brown base.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.406,
+    "y": 0.998,
+    "z": 1.775
+  }
 }

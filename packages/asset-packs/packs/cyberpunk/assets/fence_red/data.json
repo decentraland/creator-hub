@@ -13,5 +13,10 @@
     "straight"
   ],
   "caption": "Red fence with horizontal bar.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2289.846,
+    "y": 25.509,
+    "z": 399.28
+  }
 }

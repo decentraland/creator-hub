@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["furniture", "hexagon", "interior", "room", "space", "tile"],
   "caption": "Green and black patterned floor tile.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.025,
+    "z": 2
+  }
 }

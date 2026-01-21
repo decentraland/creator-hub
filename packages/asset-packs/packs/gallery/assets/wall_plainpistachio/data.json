@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["cardboard", "paper", "plainness", "simplicity"],
   "caption": "Plain green cardboard sheet.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 0.4
+  }
 }

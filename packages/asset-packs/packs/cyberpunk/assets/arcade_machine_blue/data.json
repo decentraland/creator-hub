@@ -4,5 +4,10 @@
   "category": "furniture",
   "tags": ["arcade", "buttons", "cabinet", "display", "entertainment", "machine", "retro"],
   "caption": "Glowing blue arcade machine with buttons.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.387,
+    "y": 2.644,
+    "z": 1.608
+  }
 }

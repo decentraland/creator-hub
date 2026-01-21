@@ -15,5 +15,10 @@
     "visual"
   ],
   "caption": "Red striped ramp.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3,
+    "y": 1.36,
+    "z": 3
+  }
 }

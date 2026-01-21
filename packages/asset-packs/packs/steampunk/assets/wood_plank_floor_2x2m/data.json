@@ -4,5 +4,10 @@
   "category": "tiles",
   "tags": ["furniture", "interior", "plank", "room", "woodwork"],
   "caption": "Two wooden planks forming a floor design.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.143,
+    "z": 2
+  }
 }

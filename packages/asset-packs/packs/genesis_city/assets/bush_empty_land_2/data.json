@@ -25,5 +25,10 @@
     "twig"
   ],
   "caption": "Green tree without leaves or branches.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.299,
+    "y": 2.546,
+    "z": 2.505
+  }
 }

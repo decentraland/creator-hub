@@ -15,5 +15,10 @@
     "tone"
   ],
   "caption": "Purple coral reef with multiple branches.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.305,
+    "y": 2.273,
+    "z": 0.916
+  }
 }

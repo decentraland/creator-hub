@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["architectural", "building", "colored", "cream", "facade", "roof", "structure", "type"],
   "caption": "Roof with a visible edge.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.7,
+    "z": 4
+  }
 }

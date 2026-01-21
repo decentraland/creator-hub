@@ -20,5 +20,10 @@
     "structure"
   ],
   "caption": "Metal panel featuring exposed bolts.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 0.449
+  }
 }

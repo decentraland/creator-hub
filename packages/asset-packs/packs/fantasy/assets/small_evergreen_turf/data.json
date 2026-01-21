@@ -21,5 +21,10 @@
     "outdoor"
   ],
   "caption": "Evergreen tree with green foliage.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 0.05,
+    "z": 1.001
+  }
 }

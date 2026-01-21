@@ -16,5 +16,10 @@
     "terrain"
   ],
   "caption": "Brown pebble on plain green surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.192,
+    "y": 0.185,
+    "z": 0.055
+  }
 }

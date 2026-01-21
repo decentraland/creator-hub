@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["fantasy", "stair", "step", "staircase", "steps", "stepway"],
   "caption": "Three-step stone staircase.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 0.499,
+    "z": 1.09
+  }
 }

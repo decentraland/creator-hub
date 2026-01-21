@@ -14,5 +14,10 @@
     "shape"
   ],
   "caption": "Gray rock with a smooth surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.369,
+    "y": 3.575,
+    "z": 1.708
+  }
 }

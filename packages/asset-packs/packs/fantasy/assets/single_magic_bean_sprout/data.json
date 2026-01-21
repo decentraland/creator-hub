@@ -19,5 +19,10 @@
     "whimsy"
   ],
   "caption": "Mystical bean.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.201,
+    "y": 0.904,
+    "z": 0.139
+  }
 }

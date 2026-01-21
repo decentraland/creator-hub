@@ -26,5 +26,10 @@
     "petal"
   ],
   "caption": "Single green plumeria tree.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.871,
+    "y": 0.703,
+    "z": 1.055
+  }
 }

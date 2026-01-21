@@ -23,5 +23,10 @@
     "vegetation"
   ],
   "caption": "Moss-covered boulder.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.08,
+    "y": 0.339,
+    "z": 0.844
+  }
 }

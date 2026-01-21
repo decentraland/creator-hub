@@ -24,5 +24,10 @@
     "terrain"
   ],
   "caption": "Dune in the desert.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.645,
+    "y": 0.721,
+    "z": 2.732
+  }
 }

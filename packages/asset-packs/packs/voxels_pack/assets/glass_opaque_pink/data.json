@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["appearance", "glass", "glassy", "metallic", "opaque", "pinkish", "reflective", "shiny"],
   "caption": "Opaque pink cube with reflective surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+  }
 }

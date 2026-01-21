@@ -16,5 +16,10 @@
     "transportation"
   ],
   "caption": "Teleportation device with glowing screen.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.904,
+    "y": 0.454,
+    "z": 2.904
+  }
 }

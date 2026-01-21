@@ -27,5 +27,10 @@
     "stem"
   ],
   "caption": "Three red flowers.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.261,
+    "y": 0.287,
+    "z": 0.786
+  }
 }

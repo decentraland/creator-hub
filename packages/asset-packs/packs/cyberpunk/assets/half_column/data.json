@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["column", "picture", "split", "thumbnail", "upright"],
   "caption": "Half column with glowing blue accents.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 97.414,
+    "y": 534.081,
+    "z": 27.555
+  }
 }

@@ -19,5 +19,10 @@
     "storage"
   ],
   "caption": "Bike rack with multiple bike slots.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.065,
+    "y": 0.906,
+    "z": 1.952
+  }
 }

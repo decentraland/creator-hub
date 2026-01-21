@@ -23,5 +23,10 @@
     "spring"
   ],
   "caption": "Pink hyacinth flower with layered petals.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.648,
+    "y": 1.04,
+    "z": 0.758
+  }
 }

@@ -15,5 +15,10 @@
     "terrain"
   ],
   "caption": "Red, jagged mountain with a smooth base.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 15.822,
+    "y": 10.197,
+    "z": 13.707
+  }
 }

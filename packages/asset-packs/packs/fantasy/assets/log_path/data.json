@@ -24,5 +24,10 @@
     "rustic"
   ],
   "caption": "Wooden logs along a forest path.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.196,
+    "y": 0.47,
+    "z": 1.713
+  }
 }

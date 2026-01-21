@@ -17,5 +17,10 @@
     "visual"
   ],
   "caption": "Rock with a smooth surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.217,
+    "y": 7.899,
+    "z": 5.344
+  }
 }

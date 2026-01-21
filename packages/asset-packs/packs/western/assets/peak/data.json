@@ -15,5 +15,10 @@
     "weapon"
   ],
   "caption": "Wooden-handled pickaxe with metal head.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.999,
+    "y": 0.989,
+    "z": 0.143
+  }
 }

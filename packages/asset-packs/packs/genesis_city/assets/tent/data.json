@@ -23,5 +23,10 @@
     "tented"
   ],
   "caption": "Blue tent with wooden poles.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6.529,
+    "y": 2.325,
+    "z": 4.517
+  }
 }

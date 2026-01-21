@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["hue", "room", "scene", "setting", "space", "terrain", "tile"],
   "caption": "Yellow floor tile.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.01,
+    "z": 2
+  }
 }

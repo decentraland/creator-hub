@@ -18,5 +18,10 @@
     "terrain"
   ],
   "caption": "Rock with rough, uneven surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.594,
+    "y": 2.081,
+    "z": 1.42
+  }
 }

@@ -18,5 +18,10 @@
     "wax"
   ],
   "caption": "Blue candle with glowing orange flame.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.176,
+    "y": 0.388,
+    "z": 0.191
+  }
 }

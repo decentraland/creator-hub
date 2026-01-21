@@ -17,5 +17,10 @@
     "worship"
   ],
   "caption": "Open bible with a cross on top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.549,
+    "y": 0.421,
+    "z": 2.154
+  }
 }

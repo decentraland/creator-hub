@@ -4,5 +4,10 @@
   "category": "utils",
   "tags": ["admin", "tools", "moderation", "streaming", "announcements"],
   "description": "An invisible cube that adds a scene admin interface in-world, from which you can manage videos and streams, trigger smart item actions, and send out scene-wide text announcements.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.02,
+    "y": 1.52,
+    "z": 1.287
+  }
 }

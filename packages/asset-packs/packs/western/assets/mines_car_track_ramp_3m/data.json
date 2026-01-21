@@ -16,5 +16,10 @@
     "vehicle"
   ],
   "caption": "Wooden train tracks with multiple planks.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.235,
+    "y": 0.116,
+    "z": 3.2
+  }
 }

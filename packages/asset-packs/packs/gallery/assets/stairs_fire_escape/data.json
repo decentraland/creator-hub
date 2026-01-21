@@ -20,5 +20,10 @@
     "safety"
   ],
   "caption": "Fire escape staircase with railings.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.04,
+    "y": 5.173,
+    "z": 4.198
+  }
 }

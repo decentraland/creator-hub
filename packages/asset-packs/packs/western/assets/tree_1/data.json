@@ -16,5 +16,10 @@
     "trunk"
   ],
   "caption": "Brown tree stands amidst orange rocks.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.97,
+    "y": 7.72,
+    "z": 3.136
+  }
 }

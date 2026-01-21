@@ -20,5 +20,10 @@
     "shapes"
   ],
   "caption": "Chalkboard sign with colorful sections on easel.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.728,
+    "y": 0.94,
+    "z": 1.683
+  }
 }

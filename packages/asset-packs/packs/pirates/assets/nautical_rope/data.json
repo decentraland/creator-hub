@@ -25,5 +25,10 @@
     "woven"
   ],
   "caption": "Brown rope with connected loops.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.599,
+    "y": 0.194,
+    "z": 0.553
+  }
 }

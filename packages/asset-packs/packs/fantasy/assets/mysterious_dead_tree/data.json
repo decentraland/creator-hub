@@ -21,5 +21,10 @@
     "twisted"
   ],
   "caption": "Dead tree with gnarled branches.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 7.396,
+    "y": 7.553,
+    "z": 3.597
+  }
 }

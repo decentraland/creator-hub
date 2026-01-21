@@ -20,5 +20,10 @@
     "worn"
   ],
   "caption": "Stone path with worn stones.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.055,
+    "z": 1
+  }
 }

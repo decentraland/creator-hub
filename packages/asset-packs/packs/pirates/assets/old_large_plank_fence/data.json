@@ -23,5 +23,10 @@
     "rustic"
   ],
   "caption": "Old wooden fence with weathered planks.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.242,
+    "y": 2.089,
+    "z": 5.006
+  }
 }

@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["scifi", "computer", "parts", "spaceship", "eye", "jewel", "metallic", "shape", "shiny"],
   "caption": "Red gemstone with metallic border.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.716,
+    "y": 0.127,
+    "z": 0.716
+  }
 }

@@ -22,5 +22,10 @@
     "roots"
   ],
   "caption": "Dark forest scene featuring glowing mushrooms.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.139,
+    "y": 5.319,
+    "z": 4.407
+  }
 }

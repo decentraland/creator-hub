@@ -18,5 +18,10 @@
     "starry"
   ],
   "caption": "A glowing star.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.026,
+    "z": 4
+  }
 }

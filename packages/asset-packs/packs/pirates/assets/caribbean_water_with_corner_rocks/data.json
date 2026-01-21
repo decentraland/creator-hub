@@ -26,5 +26,10 @@
     "tropical"
   ],
   "caption": "Caribbean island with rocky shores.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 8,
+    "y": 0.335,
+    "z": 8
+  }
 }

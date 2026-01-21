@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["flat", "tile"],
   "caption": "White floor tile with black border.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.02,
+    "z": 2
+  }
 }

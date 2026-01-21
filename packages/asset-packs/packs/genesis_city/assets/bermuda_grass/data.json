@@ -20,5 +20,10 @@
     "turf"
   ],
   "caption": "Green grass with white polka dots.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 16,
+    "y": 0.019,
+    "z": 16
+  }
 }

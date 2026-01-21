@@ -26,5 +26,10 @@
     "sitting"
   ],
   "caption": "Brown wooden table with four legs.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.271,
+    "y": 0.99,
+    "z": 1.271
+  }
 }

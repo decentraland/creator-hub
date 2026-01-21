@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["container", "crate", "drum", "fruit", "fuel", "hazardous", "storage", "tank", "vessel"],
   "caption": "Brown wooden crate filled with yellow fruit.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.549,
+    "y": 0.377,
+    "z": 0.709
+  }
 }

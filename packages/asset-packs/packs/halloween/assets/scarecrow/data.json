@@ -18,5 +18,10 @@
     "statue"
   ],
   "caption": "Scarecrow with glowing red eyes.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.022,
+    "y": 2.724,
+    "z": 2.065
+  }
 }

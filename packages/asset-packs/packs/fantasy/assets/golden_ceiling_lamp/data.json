@@ -20,5 +20,10 @@
     "warm"
   ],
   "caption": "Glowing blue ceiling lamp.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.811,
+    "y": 3.117,
+    "z": 0.811
+  }
 }

@@ -24,5 +24,10 @@
     "tower"
   ],
   "caption": "Dock module with a wooden top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.833,
+    "y": 1.015,
+    "z": 2.011
+  }
 }

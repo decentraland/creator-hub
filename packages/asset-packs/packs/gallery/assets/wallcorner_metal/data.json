@@ -14,5 +14,10 @@
     "vessel"
   ],
   "caption": "Metal corner bracket for wall.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 2.04
+  }
 }

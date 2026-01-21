@@ -22,5 +22,10 @@
     "tower"
   ],
   "caption": "Wooden palisade fence.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.855,
+    "y": 0.941,
+    "z": 0.457
+  }
 }

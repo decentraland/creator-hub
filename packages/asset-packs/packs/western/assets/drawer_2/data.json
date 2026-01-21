@@ -18,5 +18,10 @@
     "storage"
   ],
   "caption": "Single-handle wooden drawer.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.709,
+    "y": 0.377,
+    "z": 0.549
+  }
 }

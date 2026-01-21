@@ -16,5 +16,10 @@
     "structure"
   ],
   "caption": "Wooden deck with a railing.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 7.207,
+    "y": 4.755,
+    "z": 2.044
+  }
 }

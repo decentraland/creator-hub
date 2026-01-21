@@ -17,5 +17,10 @@
     "vegetation"
   ],
   "caption": "Cactus with rocks at its base.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.722,
+    "y": 4.487,
+    "z": 1.836
+  }
 }

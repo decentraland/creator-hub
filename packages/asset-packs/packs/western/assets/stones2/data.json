@@ -4,5 +4,10 @@
   "category": "ground",
   "tags": ["earthy", "granite", "marble", "mineral", "natural", "slate"],
   "caption": "Dark blue stone-like surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 16,
+    "y": 0.019,
+    "z": 16
+  }
 }

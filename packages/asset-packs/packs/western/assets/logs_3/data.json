@@ -20,5 +20,10 @@
     "tree"
   ],
   "caption": "Three logs stacked on top of each other.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.25,
+    "y": 0.618,
+    "z": 0.871
+  }
 }

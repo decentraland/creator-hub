@@ -17,5 +17,10 @@
     "sushi"
   ],
   "caption": "Sushi food container with a lid.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.201,
+    "y": 0.263,
+    "z": 0.143
+  }
 }

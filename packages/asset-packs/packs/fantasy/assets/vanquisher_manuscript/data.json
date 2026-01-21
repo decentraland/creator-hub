@@ -18,5 +18,10 @@
     "spine"
   ],
   "caption": "Open book with golden cover and pink symbol.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.378,
+    "y": 0.146,
+    "z": 0.471
+  }
 }

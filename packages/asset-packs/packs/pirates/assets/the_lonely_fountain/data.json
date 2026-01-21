@@ -25,5 +25,10 @@
     "outdoor"
   ],
   "caption": "Fountain features glowing statue in dark setting.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.478,
+    "y": 3.02,
+    "z": 4.478
+  }
 }

@@ -16,5 +16,10 @@
     "stripe"
   ],
   "caption": "Blue pill-shaped capsule.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.236,
+    "y": 0.12,
+    "z": 0.168
+  }
 }

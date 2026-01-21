@@ -18,5 +18,10 @@
     "warrior"
   ],
   "caption": "Red gear at the center.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.39,
+    "y": 0.302,
+    "z": 1.204
+  }
 }

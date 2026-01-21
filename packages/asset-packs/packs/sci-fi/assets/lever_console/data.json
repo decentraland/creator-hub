@@ -16,5 +16,10 @@
     "switch"
   ],
   "caption": "Yellow lever console.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.39,
+    "y": 1.222,
+    "z": 0.473
+  }
 }

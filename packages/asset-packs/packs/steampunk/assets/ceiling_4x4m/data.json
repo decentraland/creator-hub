@@ -4,5 +4,10 @@
   "category": "tiles",
   "tags": ["architecture", "ceiling", "height", "interior", "room", "space", "tile"],
   "caption": "Red, glazed tile ceiling.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.163,
+    "z": 4
+  }
 }

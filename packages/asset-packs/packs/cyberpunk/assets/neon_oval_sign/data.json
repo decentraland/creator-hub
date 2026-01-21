@@ -18,5 +18,10 @@
     "storefront"
   ],
   "caption": "Pink neon oval sign.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.681,
+    "y": 0.739,
+    "z": 0.021
+  }
 }

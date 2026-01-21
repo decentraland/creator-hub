@@ -15,5 +15,10 @@
     "vegetable"
   ],
   "caption": "Green pumpkin with a yellow stem.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+  }
 }

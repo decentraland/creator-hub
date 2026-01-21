@@ -19,5 +19,10 @@
     "water"
   ],
   "caption": "Red bucket with a wooden handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.462,
+    "y": 0.672,
+    "z": 0.512
+  }
 }

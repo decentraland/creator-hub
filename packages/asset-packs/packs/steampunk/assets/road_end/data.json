@@ -16,5 +16,10 @@
     "warning"
   ],
   "caption": "Red stop sign at road end.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.041,
+    "z": 1.911
+  }
 }

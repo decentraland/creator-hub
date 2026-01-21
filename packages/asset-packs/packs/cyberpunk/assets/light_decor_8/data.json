@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["alternating", "decor", "graphic", "strip", "thumbnail", "visual"],
   "caption": "Vertical strip with alternating yellow and black sections.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 436.434,
+    "y": 2407.128,
+    "z": 37.641
+  }
 }

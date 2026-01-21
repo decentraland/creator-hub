@@ -18,5 +18,10 @@
     "stem"
   ],
   "caption": "Single white flower with yellow stamens.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.094,
+    "y": 0.274,
+    "z": 0.098
+  }
 }

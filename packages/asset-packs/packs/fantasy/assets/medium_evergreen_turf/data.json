@@ -22,5 +22,10 @@
     "terrain"
   ],
   "caption": "Green, angular surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.084,
+    "z": 2
+  }
 }

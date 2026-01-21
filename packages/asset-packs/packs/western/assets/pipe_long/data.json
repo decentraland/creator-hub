@@ -14,5 +14,10 @@
     "vessel"
   ],
   "caption": "Black pipe.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.485,
+    "y": 2.316,
+    "z": 0.485
+  }
 }

@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["staircase", "stairs", "steps"],
   "caption": "Blue spiral staircase.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.049,
+    "y": 5.165,
+    "z": 4.036
+  }
 }

@@ -20,5 +20,10 @@
     "structure"
   ],
   "caption": "Short concrete wall.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 2,
+    "z": 0.6
+  }
 }

@@ -14,5 +14,10 @@
     "spherical"
   ],
   "description": "A spherical video screen that can play videos or live streams. It can be used together with the Admin Tools smart item to manage content live.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 50,
+    "y": 50,
+    "z": 50
+  }
 }

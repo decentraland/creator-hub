@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["fitting", "fixture", "hardware", "industrial", "pipe", "plumbing", "system", "tip"],
   "caption": "Black pipe tip.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.511,
+    "y": 0.511,
+    "z": 2.585
+  }
 }

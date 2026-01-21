@@ -20,5 +20,10 @@
     "wick"
   ],
   "caption": "White candle with glowing wick.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.191,
+    "y": 0.421,
+    "z": 0.182
+  }
 }

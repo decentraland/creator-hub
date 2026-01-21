@@ -15,5 +15,10 @@
     "warning"
   ],
   "caption": "Red stop sign with white outline.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.88,
+    "y": 2.463,
+    "z": 0.123
+  }
 }

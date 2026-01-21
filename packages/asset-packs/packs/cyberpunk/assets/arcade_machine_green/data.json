@@ -13,5 +13,10 @@
     "retro"
   ],
   "caption": "Glowing green arcade machine.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.387,
+    "y": 2.642,
+    "z": 1.608
+  }
 }

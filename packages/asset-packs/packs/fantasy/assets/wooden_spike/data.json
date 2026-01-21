@@ -21,5 +21,10 @@
     "trunk"
   ],
   "caption": "Tall, spiked, pointed top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.493,
+    "y": 2.042,
+    "z": 0.427
+  }
 }

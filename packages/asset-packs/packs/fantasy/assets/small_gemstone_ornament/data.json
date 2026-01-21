@@ -15,5 +15,10 @@
     "sparkle"
   ],
   "caption": "Black gemstone ornament.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.294,
+    "y": 0.235,
+    "z": 0.294
+  }
 }

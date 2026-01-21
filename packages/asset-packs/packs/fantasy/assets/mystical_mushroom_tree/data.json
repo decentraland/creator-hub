@@ -23,5 +23,10 @@
     "roots"
   ],
   "caption": "Mushroom with a tree-like cap and purple stem.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.464,
+    "y": 6.41,
+    "z": 5.035
+  }
 }

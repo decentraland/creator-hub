@@ -4,5 +4,10 @@
   "category": "tiles",
   "tags": ["scifi", "tile", "building", "furniture", "interior", "panel", "room", "stripe"],
   "caption": "Yellow stripe on wooden floor panel.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3,
+    "y": 0.094,
+    "z": 3
+  }
 }

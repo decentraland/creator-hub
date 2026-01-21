@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["appearance", "block", "golden", "metallic", "shape", "shiny"],
   "caption": "Golden cube block.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+  }
 }

@@ -18,5 +18,10 @@
     "ribbon"
   ],
   "caption": "Red ribbon tied to wooden staff.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.342,
+    "y": 2.073,
+    "z": 0.139
+  }
 }

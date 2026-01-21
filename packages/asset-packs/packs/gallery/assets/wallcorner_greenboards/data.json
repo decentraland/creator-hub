@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["board", "furniture", "visual"],
   "caption": "Green corner board.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.027,
+    "y": 4,
+    "z": 4
+  }
 }

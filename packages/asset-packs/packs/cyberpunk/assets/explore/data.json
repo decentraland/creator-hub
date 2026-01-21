@@ -15,5 +15,10 @@
     "path"
   ],
   "caption": "Glowing green sign with 'explore' in white.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.934,
+    "y": 0.47,
+    "z": 0.066
+  }
 }

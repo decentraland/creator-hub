@@ -16,5 +16,10 @@
     "vegetation"
   ],
   "caption": "Tall green plant with brown leaves.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.485,
+    "y": 1.406,
+    "z": 3.116
+  }
 }

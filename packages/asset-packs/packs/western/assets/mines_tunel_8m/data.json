@@ -17,5 +17,10 @@
     "tunnelway"
   ],
   "caption": "Brown tunnel with glowing red interior.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.575,
+    "y": 3.898,
+    "z": 8.023
+  }
 }

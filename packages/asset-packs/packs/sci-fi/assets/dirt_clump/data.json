@@ -21,5 +21,10 @@
     "rubble"
   ],
   "caption": "Crinkled red paper-like material.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.337,
+    "y": 0.621,
+    "z": 2.96
+  }
 }

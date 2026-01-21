@@ -25,5 +25,10 @@
     "shade"
   ],
   "caption": "Blue prism.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 8,
+    "y": 0,
+    "z": 8
+  }
 }

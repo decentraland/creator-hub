@@ -26,5 +26,10 @@
     "roots"
   ],
   "caption": "Banana leaf.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.061,
+    "y": 1.909,
+    "z": 1.986
+  }
 }

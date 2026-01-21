@@ -17,5 +17,10 @@
     "star"
   ],
   "caption": "Blue star-shaped game console.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.222,
+    "y": 3.387,
+    "z": 3.387
+  }
 }

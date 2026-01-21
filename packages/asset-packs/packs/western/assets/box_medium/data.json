@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["box", "boxy", "container", "drum", "rectangular", "shape", "storage", "tank", "vessel"],
   "caption": "Brown wooden crate.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.797,
+    "y": 0.518,
+    "z": 0.775
+  }
 }

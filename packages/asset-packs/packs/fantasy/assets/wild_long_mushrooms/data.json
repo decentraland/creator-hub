@@ -21,5 +21,10 @@
     "wild"
   ],
   "caption": "Three glowing mushrooms.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.263,
+    "y": 0.749,
+    "z": 0.222
+  }
 }

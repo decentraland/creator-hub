@@ -4,5 +4,10 @@
   "category": "tiles",
   "tags": ["scifi", "tile", "appearance", "flat", "panel", "rectangular", "smooth", "visual"],
   "caption": "White floor panel with smooth surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.058,
+    "z": 2
+  }
 }

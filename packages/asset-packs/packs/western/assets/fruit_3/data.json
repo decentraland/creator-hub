@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["box", "container", "crystal", "glowing", "riches"],
   "caption": "Brown wooden box containing glowing orange crystals.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.549,
+    "y": 0.377,
+    "z": 0.709
+  }
 }

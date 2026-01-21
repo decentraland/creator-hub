@@ -24,5 +24,10 @@
     "venue"
   ],
   "caption": "Outdoor theater under a colorful awning.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.155,
+    "y": 6.059,
+    "z": 9.216
+  }
 }

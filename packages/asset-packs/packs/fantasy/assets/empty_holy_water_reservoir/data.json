@@ -22,5 +22,10 @@
     "shiny"
   ],
   "caption": "Empty holy water reservoir with blue and orange stripes.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.846,
+    "y": 0.999,
+    "z": 0.831
+  }
 }

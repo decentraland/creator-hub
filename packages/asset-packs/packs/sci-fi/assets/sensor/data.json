@@ -21,5 +21,10 @@
     "technology"
   ],
   "caption": "Robot with camera on top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.996,
+    "y": 2.231,
+    "z": 0.948
+  }
 }

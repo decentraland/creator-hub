@@ -17,5 +17,10 @@
     "warning"
   ],
   "caption": "Yellow caution tape.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6.169,
+    "y": 0.161,
+    "z": 0.159
+  }
 }

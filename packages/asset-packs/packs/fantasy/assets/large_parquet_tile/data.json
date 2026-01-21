@@ -4,5 +4,10 @@
   "category": "tiles",
   "tags": ["fantasy", "tile", "wood", "wooden", "parquet", "furniture", "interior", "woodwork"],
   "caption": "Wooden parquet tile.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.039,
+    "y": 0.048,
+    "z": 4.019
+  }
 }

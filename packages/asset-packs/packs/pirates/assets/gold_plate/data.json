@@ -21,5 +21,10 @@
     "precious"
   ],
   "caption": "Glowing diamond plate on a pedestal.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.437,
+    "y": 0.028,
+    "z": 0.437
+  }
 }

@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["clear", "glass", "opaque", "outline", "pane", "rectangle", "shape", "window"],
   "caption": "White window with a black outline.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 0.4
+  }
 }

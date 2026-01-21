@@ -16,5 +16,10 @@
     "searchable"
   ],
   "caption": "Brown hat with a brim.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 13.154,
+    "y": 4.798,
+    "z": 11.584
+  }
 }

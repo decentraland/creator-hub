@@ -24,5 +24,10 @@
     "toxic"
   ],
   "caption": "Antique greek oil vase.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.561,
+    "y": 0.572,
+    "z": 0.585
+  }
 }

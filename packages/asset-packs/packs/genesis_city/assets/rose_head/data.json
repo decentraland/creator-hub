@@ -25,5 +25,10 @@
     "rose"
   ],
   "caption": "Purple origami flower with a bright red center.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.649,
+    "y": 0.657,
+    "z": 0.4
+  }
 }

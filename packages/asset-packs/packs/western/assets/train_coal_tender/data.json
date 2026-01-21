@@ -17,5 +17,10 @@
     "vehicle"
   ],
   "caption": "Black train tender featuring a white stripe.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.308,
+    "y": 2.894,
+    "z": 6.363
+  }
 }

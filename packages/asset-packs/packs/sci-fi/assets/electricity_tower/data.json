@@ -21,5 +21,10 @@
     "tower"
   ],
   "caption": "Electricity tower with four poles.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.205,
+    "y": 4.845,
+    "z": 0.205
+  }
 }

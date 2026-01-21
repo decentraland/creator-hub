@@ -4,5 +4,10 @@
   "category": "tiles",
   "tags": ["asphalt", "highway", "pavement", "segment", "strip", "type"],
   "caption": "Red road surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.04,
+    "z": 3.048
+  }
 }

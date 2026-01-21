@@ -23,5 +23,10 @@
     "timber"
   ],
   "caption": "Wooden planks in different angles.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.008,
+    "y": 0.579,
+    "z": 3.104
+  }
 }

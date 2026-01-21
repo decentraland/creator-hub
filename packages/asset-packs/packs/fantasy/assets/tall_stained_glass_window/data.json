@@ -14,5 +14,10 @@
     "searchable"
   ],
   "caption": "Stained glass window featuring purple and orange hues.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.628,
+    "y": 1.717,
+    "z": 0.217
+  }
 }

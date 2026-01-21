@@ -17,5 +17,10 @@
     "threshold"
   ],
   "caption": "Open door in a hallway.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6.237,
+    "y": 3.816,
+    "z": 0.226
+  }
 }

@@ -18,5 +18,10 @@
     "train"
   ],
   "caption": "Train track with a fork at the end.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 9.487,
+    "y": 0.341,
+    "z": 11.278
+  }
 }

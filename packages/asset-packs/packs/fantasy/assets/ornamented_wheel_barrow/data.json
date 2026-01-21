@@ -20,5 +20,10 @@
     "wheelbarrow"
   ],
   "caption": "Vintage wheelbarrow with ornate metal handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.771,
+    "y": 1.012,
+    "z": 1.085
+  }
 }

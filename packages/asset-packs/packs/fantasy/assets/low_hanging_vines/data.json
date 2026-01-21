@@ -19,5 +19,10 @@
     "vine"
   ],
   "caption": "Digital illustration of a hanging plant.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6.023,
+    "y": 2.976,
+    "z": 0.261
+  }
 }

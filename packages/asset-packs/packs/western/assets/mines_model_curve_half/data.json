@@ -14,5 +14,10 @@
     "vessel"
   ],
   "caption": "Glowing cylinder with curved top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 17.063,
+    "y": 4.791,
+    "z": 14.31
+  }
 }

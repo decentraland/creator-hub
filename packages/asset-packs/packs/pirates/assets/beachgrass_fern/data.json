@@ -24,5 +24,10 @@
     "outdoor"
   ],
   "caption": "Green fern plant.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.275,
+    "y": 0.84,
+    "z": 1.325
+  }
 }

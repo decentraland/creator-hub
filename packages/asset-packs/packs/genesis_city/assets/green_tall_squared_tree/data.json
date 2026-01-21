@@ -28,5 +28,10 @@
     "verdant"
   ],
   "caption": "Tall, dark tree with a lighter top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.48,
+    "y": 6.183,
+    "z": 3.547
+  }
 }

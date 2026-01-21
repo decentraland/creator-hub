@@ -17,5 +17,10 @@
     "wildlife"
   ],
   "caption": "Green bear with glowing red eyes.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6.073,
+    "y": 8.29,
+    "z": 4.639
+  }
 }

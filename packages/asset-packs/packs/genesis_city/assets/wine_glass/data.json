@@ -25,5 +25,10 @@
     "table"
   ],
   "caption": "Blue wine glass with stem.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.151,
+    "y": 0.235,
+    "z": 0.151
+  }
 }

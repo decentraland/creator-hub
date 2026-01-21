@@ -15,5 +15,10 @@
     "wire"
   ],
   "caption": "Glowing metal wire loop.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.706,
+    "y": 0.744,
+    "z": 0.368
+  }
 }

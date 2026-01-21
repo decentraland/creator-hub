@@ -17,5 +17,10 @@
     "trunk"
   ],
   "caption": "Black tree without leaves on.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.085,
+    "y": 5.616,
+    "z": 4.646
+  }
 }

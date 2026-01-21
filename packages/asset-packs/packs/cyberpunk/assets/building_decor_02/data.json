@@ -19,5 +19,10 @@
     "structure"
   ],
   "caption": "Vintage-style arcade machine with glowing screen.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1181.826,
+    "y": 178.656,
+    "z": 189.958
+  }
 }

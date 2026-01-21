@@ -19,5 +19,10 @@
     "wax"
   ],
   "caption": "Red candle with glowing flame.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.215,
+    "y": 0.494,
+    "z": 0.215
+  }
 }

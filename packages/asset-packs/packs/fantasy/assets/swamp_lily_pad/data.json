@@ -24,5 +24,10 @@
     "petal"
   ],
   "caption": "Lily pad.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.419,
+    "y": 0.036,
+    "z": 0.473
+  }
 }

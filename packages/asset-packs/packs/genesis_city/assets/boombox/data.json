@@ -21,5 +21,10 @@
     "stereo"
   ],
   "caption": "Purple boombox with glowing screen.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.27,
+    "y": 0.997,
+    "z": 1.166
+  }
 }

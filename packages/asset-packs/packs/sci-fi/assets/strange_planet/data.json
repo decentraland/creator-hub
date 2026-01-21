@@ -18,5 +18,10 @@
     "spherical"
   ],
   "caption": "Spherical object with protrusions and a hollow center.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.945,
+    "y": 4.026,
+    "z": 3.798
+  }
 }

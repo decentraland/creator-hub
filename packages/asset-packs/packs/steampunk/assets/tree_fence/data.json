@@ -20,5 +20,10 @@
     "security"
   ],
   "caption": "Fence shaped like a tree with gears.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.316,
+    "y": 0.482,
+    "z": 2.595
+  }
 }

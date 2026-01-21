@@ -28,5 +28,10 @@
     "trunk"
   ],
   "caption": "Pine tree with green base and yellow branches.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.256,
+    "y": 5.716,
+    "z": 3.324
+  }
 }

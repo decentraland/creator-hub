@@ -18,5 +18,10 @@
     "window"
   ],
   "caption": "Retro-futuristic briefcase with glowing screen.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.723,
+    "y": 0.708,
+    "z": 0.306
+  }
 }

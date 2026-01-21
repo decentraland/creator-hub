@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["emblem", "eras", "graphics", "logo", "marker", "monument"],
   "caption": "Red 's' sign.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.252,
+    "y": 3.909,
+    "z": 4.044
+  }
 }

@@ -17,5 +17,10 @@
     "twisted"
   ],
   "caption": "Twisted tree on.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.777,
+    "y": 6.3,
+    "z": 5.93
+  }
 }

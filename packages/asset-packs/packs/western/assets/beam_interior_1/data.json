@@ -20,5 +20,10 @@
     "interior"
   ],
   "caption": "Wooden beam for interior use.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.519,
+    "y": 3.37,
+    "z": 0.803
+  }
 }

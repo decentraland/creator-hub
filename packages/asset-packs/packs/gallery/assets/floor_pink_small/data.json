@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["hue", "pinkish", "shade", "tile"],
   "caption": "Pink floor tile.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.01,
+    "z": 2
+  }
 }

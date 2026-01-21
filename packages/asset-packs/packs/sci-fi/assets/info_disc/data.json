@@ -17,5 +17,10 @@
     "visual"
   ],
   "caption": "Blue and yellow data disc.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.362,
+    "y": 0.061,
+    "z": 0.315
+  }
 }

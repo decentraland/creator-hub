@@ -16,5 +16,10 @@
     "structure"
   ],
   "caption": "White church with a glowing cross.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.271,
+    "y": 2.423,
+    "z": 1.343
+  }
 }

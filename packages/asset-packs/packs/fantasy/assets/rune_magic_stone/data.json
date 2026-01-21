@@ -17,5 +17,10 @@
     "spell"
   ],
   "caption": "Magic stone with glowing blue cracks.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.011,
+    "y": 0.295,
+    "z": 2
+  }
 }

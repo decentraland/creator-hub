@@ -4,5 +4,10 @@
   "description": "A modern sofa.",
   "tags": ["sofa", "couch", "seat", "sitting", "furniture"],
   "author": "Decentraland Foundation",
-  "id": "5abc4439-9a22-4056-a73a-ae3312348cfe"
+  "id": "5abc4439-9a22-4056-a73a-ae3312348cfe",
+  "boundingBox": {
+    "x": 3.764,
+    "y": 1.357,
+    "z": 1.351
+  }
 }

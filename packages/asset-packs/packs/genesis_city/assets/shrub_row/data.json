@@ -24,5 +24,10 @@
     "vegetation"
   ],
   "caption": "A row of glowing shrubs.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.598,
+    "y": 4.558,
+    "z": 0.402
+  }
 }

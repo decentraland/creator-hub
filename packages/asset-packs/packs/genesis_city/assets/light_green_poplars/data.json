@@ -28,5 +28,10 @@
     "vegetation"
   ],
   "caption": "Green tree in the forest.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.438,
+    "y": 2.337,
+    "z": 5.113
+  }
 }

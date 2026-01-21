@@ -4,5 +4,10 @@
   "category": "sounds",
   "tags": ["alarm", "siren", "warning", "alert"],
   "description": "A siren that can be used to scare away intruders. It can be activated by other smart items, for example a trigger area or a button.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.955,
+    "y": 0.955,
+    "z": 3.157
+  }
 }

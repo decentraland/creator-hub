@@ -18,5 +18,10 @@
     "vehicle"
   ],
   "caption": "Coal cart with black wheels.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.911,
+    "y": 1.141,
+    "z": 1.285
+  }
 }

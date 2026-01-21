@@ -22,5 +22,10 @@
     "vessel"
   ],
   "caption": "Brown cardboard box with a white label.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.842,
+    "y": 0.629,
+    "z": 1.387
+  }
 }

@@ -28,5 +28,10 @@
     "meadow"
   ],
   "caption": "Dandelion with glowing yellow flowers.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.581,
+    "y": 0.706,
+    "z": 0.561
+  }
 }

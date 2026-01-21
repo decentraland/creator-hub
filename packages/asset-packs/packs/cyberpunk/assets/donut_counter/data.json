@@ -20,5 +20,10 @@
     "snack"
   ],
   "caption": "Vintage blue display case.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.173,
+    "y": 0.741,
+    "z": 0.857
+  }
 }

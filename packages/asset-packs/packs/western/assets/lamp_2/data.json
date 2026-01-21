@@ -17,5 +17,10 @@
     "smoke"
   ],
   "caption": "Lit lantern with glowing yellow flame.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.314,
+    "y": 0.671,
+    "z": 0.31
+  }
 }

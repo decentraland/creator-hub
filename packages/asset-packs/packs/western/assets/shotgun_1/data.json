@@ -20,5 +20,10 @@
     "weapon"
   ],
   "caption": "Shotgun with wooden stock.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.694,
+    "y": 0.249,
+    "z": 0.155
+  }
 }

@@ -16,5 +16,10 @@
     "tent"
   ],
   "caption": "Blue tent with open front.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 25.007,
+    "y": 5.471,
+    "z": 11.479
+  }
 }

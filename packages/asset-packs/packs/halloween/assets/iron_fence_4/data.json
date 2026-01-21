@@ -13,5 +13,10 @@
     "structure"
   ],
   "caption": "Iron fence with four vertical bars.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.052,
+    "y": 7.032,
+    "z": 3.35
+  }
 }

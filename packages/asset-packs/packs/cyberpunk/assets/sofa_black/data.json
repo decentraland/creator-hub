@@ -15,5 +15,10 @@
     "upholstery"
   ],
   "caption": "Black sofa featuring blue accents.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.104,
+    "y": 1.148,
+    "z": 1.253
+  }
 }

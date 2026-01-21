@@ -22,5 +22,10 @@
     "recreation"
   ],
   "caption": "Red plastic slide with glowing blue rails.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.974,
+    "y": 2.71,
+    "z": 0.935
+  }
 }

@@ -15,5 +15,10 @@
     "spookyexpression"
   ],
   "caption": "Spooky 3d skull with glowing red eyes.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.361,
+    "y": 0.247,
+    "z": 0.21
+  }
 }

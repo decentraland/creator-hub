@@ -14,5 +14,10 @@
     "vehicle"
   ],
   "caption": "Red plastic toy car on.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.48,
+    "y": 0.15,
+    "z": 0.477
+  }
 }

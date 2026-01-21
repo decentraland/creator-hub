@@ -14,5 +14,10 @@
     "vessel"
   ],
   "caption": "Emissive pipe holder.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.911,
+    "y": 0.74,
+    "z": 0.265
+  }
 }

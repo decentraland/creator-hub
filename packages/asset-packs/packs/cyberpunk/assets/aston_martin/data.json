@@ -16,5 +16,10 @@
     "vehicle"
   ],
   "caption": "Aston martin car with a driver.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.916,
+    "y": 1.803,
+    "z": 6.712
+  }
 }

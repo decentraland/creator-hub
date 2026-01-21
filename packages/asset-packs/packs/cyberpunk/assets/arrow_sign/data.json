@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["direction", "glyph", "graphic", "indicator", "pointing", "visual"],
   "caption": "White arrow points to the right.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 825.086,
+    "y": 103.556,
+    "z": 32.395
+  }
 }

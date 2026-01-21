@@ -4,5 +4,10 @@
   "category": "ground",
   "tags": ["scifi", "appearance", "hue", "shade", "speckle", "tone", "venus", "visual"],
   "caption": "Orange, speckled surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 16,
+    "y": 0.019,
+    "z": 16
+  }
 }

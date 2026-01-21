@@ -14,5 +14,10 @@
     "upright"
   ],
   "caption": "Three flags on a flagpole.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1299.226,
+    "y": 328.762,
+    "z": 158.398
+  }
 }

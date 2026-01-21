@@ -15,5 +15,10 @@
     "rectangle"
   ],
   "caption": "Three flags side by side on black.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1134.415,
+    "y": 165.722,
+    "z": 3.924
+  }
 }

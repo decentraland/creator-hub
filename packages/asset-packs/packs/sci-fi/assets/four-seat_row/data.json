@@ -23,5 +23,10 @@
     "maple"
   ],
   "caption": "Red leather armchair.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.603,
+    "y": 1.045,
+    "z": 1.063
+  }
 }

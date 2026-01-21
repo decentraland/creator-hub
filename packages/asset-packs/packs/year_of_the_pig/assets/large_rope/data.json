@@ -16,5 +16,10 @@
     "twine"
   ],
   "caption": "Brown rope with a gentle curve.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5,
+    "y": 0.373,
+    "z": 0.094
+  }
 }

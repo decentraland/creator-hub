@@ -4,5 +4,10 @@
   "category": "health",
   "tags": ["health", "enemy", "damage"],
   "description": "Barrel that, when triggered to explode, can damage a player’s health if they are nearby. Can be used with the Health Bar smart item.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.925,
+    "y": 1.145,
+    "z": 0.925
+  }
 }

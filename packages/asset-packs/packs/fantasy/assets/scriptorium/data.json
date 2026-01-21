@@ -23,5 +23,10 @@
     "writing"
   ],
   "caption": "A medieval-style scriptorium.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.66,
+    "y": 1.272,
+    "z": 0.746
+  }
 }

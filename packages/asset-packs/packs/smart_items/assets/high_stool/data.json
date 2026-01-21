@@ -4,5 +4,10 @@
   "description": "A high stool.",
   "tags": ["stool", "seat", "sitting", "furniture"],
   "author": "Decentraland Foundation",
-  "id": "154775df-3504-4202-82dd-fe8cd17cf716"
+  "id": "154775df-3504-4202-82dd-fe8cd17cf716",
+  "boundingBox": {
+    "x": 0.585,
+    "y": 0.984,
+    "z": 0.613
+  }
 }

@@ -16,5 +16,10 @@
     "visual"
   ],
   "caption": "Short wall featuring graffiti art.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.002,
+    "y": 2,
+    "z": 0.612
+  }
 }

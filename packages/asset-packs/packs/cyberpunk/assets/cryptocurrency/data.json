@@ -14,5 +14,10 @@
     "token"
   ],
   "caption": "Blue chinese sign.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.844,
+    "y": 0.444,
+    "z": 0.066
+  }
 }

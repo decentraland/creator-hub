@@ -16,5 +16,10 @@
     "structure"
   ],
   "caption": "Black block with a smooth surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.333,
+    "y": 0.231,
+    "z": 0.548
+  }
 }

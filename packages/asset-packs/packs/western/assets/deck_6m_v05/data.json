@@ -16,5 +16,10 @@
     "trunk"
   ],
   "caption": "Wooden bench with two levels and railings.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6.008,
+    "y": 4.755,
+    "z": 2.04
+  }
 }

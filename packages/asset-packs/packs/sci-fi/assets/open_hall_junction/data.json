@@ -17,5 +17,10 @@
     "table"
   ],
   "caption": "White wooden table with black legs.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6.031,
+    "y": 3.8,
+    "z": 6.031
+  }
 }

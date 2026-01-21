@@ -14,5 +14,10 @@
     "tier"
   ],
   "caption": "Three-tiered candle holder.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.503,
+    "y": 0.709,
+    "z": 0.244
+  }
 }

@@ -17,5 +17,10 @@
     "liquid"
   ],
   "caption": "Coffee machine.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 50.553,
+    "y": 80.739,
+    "z": 65.384
+  }
 }

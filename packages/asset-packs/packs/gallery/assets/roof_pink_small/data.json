@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["roof", "shape", "tile"],
   "caption": "Pink roof with glowing neon lights.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.2,
+    "z": 2
+  }
 }

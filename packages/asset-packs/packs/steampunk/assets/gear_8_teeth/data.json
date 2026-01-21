@@ -20,5 +20,10 @@
     "topping"
   ],
   "caption": "Pizza with various toppings.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.953,
+    "y": 0.5,
+    "z": 2.255
+  }
 }

@@ -13,5 +13,10 @@
     "structure"
   ],
   "caption": "Stone floor texture.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.104,
+    "z": 4
+  }
 }

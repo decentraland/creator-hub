@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["box", "container", "dressing", "explosive", "hazard", "prop", "tnt"],
   "caption": "Brown tnt explosive container.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.681,
+    "y": 0.419,
+    "z": 0.569
+  }
 }

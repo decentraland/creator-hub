@@ -20,5 +20,10 @@
     "spider"
   ],
   "caption": "Eight-legged arachnid.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.054,
+    "y": 0.038,
+    "z": 0.075
+  }
 }

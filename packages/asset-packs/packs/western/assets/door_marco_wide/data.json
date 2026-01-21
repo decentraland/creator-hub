@@ -18,5 +18,10 @@
     "structure"
   ],
   "caption": "Wide door with glowing metal handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.243,
+    "y": 2.428,
+    "z": 0.179
+  }
 }

@@ -23,5 +23,10 @@
     "vessel"
   ],
   "caption": "Red clay pot with a handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.673,
+    "y": 0.673,
+    "z": 0.888
+  }
 }

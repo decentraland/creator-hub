@@ -18,5 +18,10 @@
     "storefront"
   ],
   "caption": "Neon sign with glowing yellow letters.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.852,
+    "y": 0.073,
+    "z": 0.854
+  }
 }

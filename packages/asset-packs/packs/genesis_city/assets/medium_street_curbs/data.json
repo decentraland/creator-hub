@@ -20,5 +20,10 @@
     "structure"
   ],
   "caption": "Wooden block with sharp edges.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.947,
+    "y": 0.172,
+    "z": 0.962
+  }
 }

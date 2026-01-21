@@ -21,5 +21,10 @@
     "wellness"
   ],
   "caption": "Blue glass bottle with cork.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.135,
+    "y": 0.515,
+    "z": 0.148
+  }
 }

@@ -20,5 +20,10 @@
     "smoker"
   ],
   "caption": "Red and black smoker with a handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.709,
+    "y": 2.057,
+    "z": 0.933
+  }
 }

@@ -24,5 +24,10 @@
     "stem"
   ],
   "caption": "Red glowing mushroom.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.228,
+    "y": 0.24,
+    "z": 0.33
+  }
 }

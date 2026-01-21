@@ -25,5 +25,10 @@
     "tiered"
   ],
   "caption": "Three-tiered candelabra with glowing candles.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.345,
+    "y": 0.408,
+    "z": 0.159
+  }
 }

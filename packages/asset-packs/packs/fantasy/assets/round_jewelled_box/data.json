@@ -18,5 +18,10 @@
     "precious"
   ],
   "caption": "Jeweled box with ornate lid.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.855,
+    "y": 0.921,
+    "z": 0.843
+  }
 }

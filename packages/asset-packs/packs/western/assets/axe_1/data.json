@@ -16,5 +16,10 @@
     "weapon"
   ],
   "caption": "Wooden-handled battle axe.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.467,
+    "y": 1.224,
+    "z": 0.143
+  }
 }

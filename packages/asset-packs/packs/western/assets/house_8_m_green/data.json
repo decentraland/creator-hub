@@ -20,5 +20,10 @@
     "stronghold"
   ],
   "caption": "Greenish-blue house.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 8.856,
+    "y": 9.134,
+    "z": 9.393
+  }
 }

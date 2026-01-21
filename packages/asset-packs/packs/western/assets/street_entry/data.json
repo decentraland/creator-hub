@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["directional", "entrance", "gate", "grain", "outdoor", "pathway", "street"],
   "caption": "Black wooden sign with white border.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.972,
+    "y": 5.137,
+    "z": 0.315
+  }
 }

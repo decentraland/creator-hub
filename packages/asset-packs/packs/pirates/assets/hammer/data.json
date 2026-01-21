@@ -28,5 +28,10 @@
     "work"
   ],
   "caption": "Wooden handle hammer.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.234,
+    "y": 0.113,
+    "z": 0.549
+  }
 }

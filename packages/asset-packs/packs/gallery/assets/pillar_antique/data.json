@@ -13,5 +13,10 @@
     "statue"
   ],
   "caption": "Tall, ornate pillar with a glowing top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.812,
+    "y": 4,
+    "z": 0.812
+  }
 }

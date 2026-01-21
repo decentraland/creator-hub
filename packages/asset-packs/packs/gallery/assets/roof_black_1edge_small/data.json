@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["flat", "profile", "roof", "shape", "type"],
   "caption": "Black roof with a glowing edge.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.7,
+    "z": 2
+  }
 }

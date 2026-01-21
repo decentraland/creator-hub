@@ -15,5 +15,10 @@
     "tablet"
   ],
   "caption": "Purple pill capsule with a blue label.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.296,
+    "y": 1.769,
+    "z": 1.777
+  }
 }

@@ -13,5 +13,10 @@
     "visual"
   ],
   "caption": "Poster with white text.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.002,
+    "y": 0.624,
+    "z": 0.025
+  }
 }

@@ -15,5 +15,10 @@
     "upright"
   ],
   "caption": "Cylindrical column with glowing top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.278,
+    "y": 3.194,
+    "z": 1.278
+  }
 }

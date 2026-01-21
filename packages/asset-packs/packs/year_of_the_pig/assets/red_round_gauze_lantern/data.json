@@ -23,5 +23,10 @@
     "warm"
   ],
   "caption": "Red lantern with gauze material.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.523,
+    "y": 0.87,
+    "z": 0.523
+  }
 }

@@ -14,5 +14,10 @@
     "tube"
   ],
   "caption": "Colored tube models with distinct caps.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.569,
+    "y": 0.854,
+    "z": 0.577
+  }
 }

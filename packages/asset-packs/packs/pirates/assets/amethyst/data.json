@@ -19,5 +19,10 @@
     "sparkling"
   ],
   "caption": "Pink gemstone with facets.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.39,
+    "y": 0.28,
+    "z": 0.39
+  }
 }

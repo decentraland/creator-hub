@@ -18,5 +18,10 @@
     "structure"
   ],
   "caption": "Gray two-story house.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 7.532,
+    "y": 9.876,
+    "z": 9.393
+  }
 }

@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["art", "board", "checkered", "chess", "graphic", "tile", "visual"],
   "caption": "Black and white checkered cube.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+  }
 }

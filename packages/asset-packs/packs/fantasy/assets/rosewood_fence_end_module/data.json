@@ -20,5 +20,10 @@
     "searchable"
   ],
   "caption": "Red fence post.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.274,
+    "y": 1.116,
+    "z": 0.265
+  }
 }

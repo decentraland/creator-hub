@@ -20,5 +20,10 @@
     "workspace"
   ],
   "caption": "Utility hallway with desk and shelves.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6.032,
+    "y": 3.835,
+    "z": 3.12
+  }
 }

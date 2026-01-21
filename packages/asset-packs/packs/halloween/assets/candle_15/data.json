@@ -17,5 +17,10 @@
     "warm"
   ],
   "caption": "Red candle holder containing a white candle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.193,
+    "y": 0.431,
+    "z": 0.2
+  }
 }

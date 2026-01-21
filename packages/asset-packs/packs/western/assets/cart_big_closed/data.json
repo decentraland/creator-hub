@@ -14,5 +14,10 @@
     "wagon"
   ],
   "caption": "Brown covered wagon with two wheels.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.861,
+    "y": 4.031,
+    "z": 7.12
+  }
 }

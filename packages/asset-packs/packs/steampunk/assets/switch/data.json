@@ -16,5 +16,10 @@
     "switchplate"
   ],
   "caption": "Switch with lever on top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.275,
+    "y": 0.49,
+    "z": 0.44
+  }
 }

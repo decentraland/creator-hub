@@ -23,5 +23,10 @@
     "roots"
   ],
   "caption": "Tropical fruit with brown skin.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.283,
+    "y": 0.356,
+    "z": 0.327
+  }
 }

@@ -26,5 +26,10 @@
     "wodden"
   ],
   "caption": "Wooden ladder.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.889,
+    "y": 3.042,
+    "z": 0.172
+  }
 }

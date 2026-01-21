@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["doorframe", "doorhandle", "doorway", "entrance", "flat", "gate", "metallic", "portal"],
   "caption": "Dark vertical door with.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.223,
+    "y": 2.445,
+    "z": 0.16
+  }
 }

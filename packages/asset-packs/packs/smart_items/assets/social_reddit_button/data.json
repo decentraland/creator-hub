@@ -4,5 +4,10 @@
   "category": "social",
   "tags": ["social", "links", "reddit"],
   "description": "A clickable item that can open your Reddit page in a browser window. Paste a Reddit page URL in the 'URL' field.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 2,
+    "z": 2
+  }
 }

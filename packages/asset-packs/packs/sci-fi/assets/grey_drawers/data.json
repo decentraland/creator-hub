@@ -19,5 +19,10 @@
     "vessel"
   ],
   "caption": "Vintage orange storage cart with two drawers.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.653,
+    "y": 1.288,
+    "z": 0.776
+  }
 }

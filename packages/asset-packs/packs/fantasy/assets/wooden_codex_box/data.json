@@ -17,5 +17,10 @@
     "sun"
   ],
   "caption": "Wooden chest with glowing sun emblem.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.327,
+    "y": 0.472,
+    "z": 0.832
+  }
 }

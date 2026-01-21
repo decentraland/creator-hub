@@ -18,5 +18,10 @@
     "structure"
   ],
   "caption": "Stone staircase with intricate details.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.002,
+    "y": 0.43,
+    "z": 1.152
+  }
 }

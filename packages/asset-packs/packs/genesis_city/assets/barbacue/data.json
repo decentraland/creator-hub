@@ -31,5 +31,10 @@
     "heat"
   ],
   "caption": "Barbecue grill with sizzling food.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.852,
+    "y": 0.792,
+    "z": 1.057
+  }
 }

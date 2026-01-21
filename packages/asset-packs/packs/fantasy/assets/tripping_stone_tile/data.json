@@ -4,5 +4,10 @@
   "category": "tiles",
   "tags": ["fantasy", "tile", "path", "granite"],
   "caption": "Dark colored tile or stone.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.606,
+    "y": 0.038,
+    "z": 0.382
+  }
 }

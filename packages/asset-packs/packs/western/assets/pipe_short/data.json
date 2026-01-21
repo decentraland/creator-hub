@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["container", "drum", "fuel", "pipe", "pointed", "storage", "tank", "tube", "vessel"],
   "caption": "Dark pipe with pointed end.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.485,
+    "y": 0.913,
+    "z": 0.485
+  }
 }

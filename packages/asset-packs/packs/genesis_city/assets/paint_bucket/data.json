@@ -20,5 +20,10 @@
     "vessel"
   ],
   "caption": "Blue paint bucket with a handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.577,
+    "y": 0.517,
+    "z": 0.6
+  }
 }

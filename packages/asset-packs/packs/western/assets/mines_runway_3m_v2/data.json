@@ -16,5 +16,10 @@
     "strip"
   ],
   "caption": "Four colored planks on a runway.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.235,
+    "y": 0.181,
+    "z": 3.194
+  }
 }

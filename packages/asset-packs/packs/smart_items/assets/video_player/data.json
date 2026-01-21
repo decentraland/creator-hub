@@ -4,5 +4,10 @@
   "category": "deprecated",
   "tags": ["video", "screen"],
   "description": "DEPRECATED: A video player that can be used to play videos.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.01,
+    "y": 1.67,
+    "z": 2.969
+  }
 }

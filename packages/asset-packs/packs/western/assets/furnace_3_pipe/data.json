@@ -14,5 +14,10 @@
     "pipe"
   ],
   "caption": "Black pipe with a cylindrical hole.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.503,
+    "y": 1.333,
+    "z": 0.564
+  }
 }

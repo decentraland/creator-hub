@@ -17,5 +17,10 @@
     "waste"
   ],
   "caption": "Empty food box with a red line.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.216,
+    "y": 0.36,
+    "z": 0.349
+  }
 }

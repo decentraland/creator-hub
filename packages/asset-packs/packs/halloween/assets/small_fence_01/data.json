@@ -15,5 +15,10 @@
     "structure"
   ],
   "caption": "Vertical wooden fence with six slats.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.732,
+    "y": 0.516,
+    "z": 0.723
+  }
 }

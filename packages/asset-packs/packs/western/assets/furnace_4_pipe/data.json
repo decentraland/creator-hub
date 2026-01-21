@@ -17,5 +17,10 @@
     "ventilation"
   ],
   "caption": "Black pipe with flange at one end.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.503,
+    "y": 2.737,
+    "z": 0.564
+  }
 }

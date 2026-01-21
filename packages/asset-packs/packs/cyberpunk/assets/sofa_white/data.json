@@ -4,5 +4,10 @@
   "category": "furniture",
   "tags": ["comfort", "furniture", "interior", "minimalist", "room", "seating", "sofa", "space"],
   "caption": "White leather armchair.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.098,
+    "y": 1.148,
+    "z": 1.253
+  }
 }

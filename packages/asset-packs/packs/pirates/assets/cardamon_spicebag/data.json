@@ -27,5 +27,10 @@
     "vessel"
   ],
   "caption": "Spice bag with a handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.81,
+    "y": 0.873,
+    "z": 0.695
+  }
 }

@@ -18,5 +18,10 @@
     "warm"
   ],
   "caption": "Yellow candle in blue glass vase.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.185,
+    "y": 0.257,
+    "z": 0.185
+  }
 }

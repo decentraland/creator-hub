@@ -29,5 +29,10 @@
     "timber"
   ],
   "caption": "Wooden fence post.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.218,
+    "y": 1.289,
+    "z": 1.28
+  }
 }

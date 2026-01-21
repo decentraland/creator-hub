@@ -4,5 +4,10 @@
   "category": "nature",
   "tags": ["boulder", "earthy", "granite", "landscape", "natural", "pebble", "terrain"],
   "caption": "Three brown stones.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.186,
+    "y": 1.001,
+    "z": 2.655
+  }
 }

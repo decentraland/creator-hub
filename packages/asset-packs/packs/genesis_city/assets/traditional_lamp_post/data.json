@@ -25,5 +25,10 @@
     "table"
   ],
   "caption": "Traditional lamp post with glowing yellow light.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.55,
+    "y": 3.781,
+    "z": 3.641
+  }
 }

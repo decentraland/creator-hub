@@ -20,5 +20,10 @@
     "work"
   ],
   "caption": "Yellow tripod with camera on top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.812,
+    "y": 1.436,
+    "z": 0.812
+  }
 }

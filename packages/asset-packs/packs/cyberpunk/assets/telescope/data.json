@@ -14,5 +14,10 @@
     "tripod"
   ],
   "caption": "Black tripod with camera on top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.486,
+    "y": 2.099,
+    "z": 1.533
+  }
 }

@@ -18,5 +18,10 @@
     "sprout"
   ],
   "caption": "Green, curved bean sprout with spiral top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.516,
+    "y": 1.274,
+    "z": 0.735
+  }
 }

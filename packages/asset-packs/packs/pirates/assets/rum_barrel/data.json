@@ -25,5 +25,10 @@
     "vessel"
   ],
   "caption": "Wooden barrel with metal hoop.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.976,
+    "y": 1.163,
+    "z": 0.953
+  }
 }

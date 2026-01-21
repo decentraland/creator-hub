@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["ceramic", "cream", "furniture", "interior", "porcelain", "tile"],
   "caption": "Black-edged cream-colored floor tile.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.01,
+    "z": 4
+  }
 }

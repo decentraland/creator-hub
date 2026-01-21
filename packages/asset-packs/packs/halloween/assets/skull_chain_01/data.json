@@ -18,5 +18,10 @@
     "spooky"
   ],
   "caption": "Hanging skull pendant.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.449,
+    "y": 2.761,
+    "z": 0.449
+  }
 }

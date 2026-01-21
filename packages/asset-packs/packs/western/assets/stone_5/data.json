@@ -4,5 +4,10 @@
   "category": "nature",
   "tags": ["earthy", "landscape", "mass", "natural", "shape", "size", "terrain"],
   "caption": "Five brown stones in different shapes.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.691,
+    "y": 0.405,
+    "z": 2.626
+  }
 }

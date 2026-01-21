@@ -14,5 +14,10 @@
     "tower"
   ],
   "caption": "Yellow line on old building.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.085,
+    "y": 23.87,
+    "z": 17.824
+  }
 }

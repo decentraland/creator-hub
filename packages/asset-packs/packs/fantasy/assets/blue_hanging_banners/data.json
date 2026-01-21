@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["fantasy", "wall", "banner", "fabric", "ambiance", "hanging", "scheme", "visual"],
   "caption": "Two banners hang from a horizontal bar.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.083,
+    "y": 1.534,
+    "z": 0.748
+  }
 }

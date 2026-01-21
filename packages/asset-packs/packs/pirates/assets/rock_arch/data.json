@@ -21,5 +21,10 @@
     "structure"
   ],
   "caption": "Jagged rock formation with a smooth top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 12.718,
+    "y": 7.693,
+    "z": 3.23
+  }
 }

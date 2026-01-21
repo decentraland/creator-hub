@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["graphic", "outline", "shape", "visual"],
   "caption": "Green cube with black outline.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+  }
 }

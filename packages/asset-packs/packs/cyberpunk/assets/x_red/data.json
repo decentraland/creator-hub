@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["alert", "cross", "emblem", "hazard", "logo", "mark", "medical", "warning"],
   "caption": "Red cross symbol.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.5,
+    "y": 0.5,
+    "z": 0.076
+  }
 }

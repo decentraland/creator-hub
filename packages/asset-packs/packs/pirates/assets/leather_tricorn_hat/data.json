@@ -23,5 +23,10 @@
     "tricorn"
   ],
   "caption": "Red tricorn hat with black brim.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.723,
+    "y": 0.234,
+    "z": 0.419
+  }
 }

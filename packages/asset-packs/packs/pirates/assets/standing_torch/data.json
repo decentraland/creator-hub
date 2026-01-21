@@ -28,5 +28,10 @@
     "wick"
   ],
   "caption": "Standing torch with wooden handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.277,
+    "y": 1.588,
+    "z": 0.277
+  }
 }

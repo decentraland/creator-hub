@@ -15,5 +15,10 @@
     "cheerful"
   ],
   "description": "An invisible item that plays an upbeat track for cheerful, dynamic builds.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.296,
+    "y": 0.016,
+    "z": 0.2
+  }
 }

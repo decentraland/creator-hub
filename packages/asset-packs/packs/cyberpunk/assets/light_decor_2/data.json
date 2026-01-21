@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["decor", "dot", "dots", "effect", "graphic", "line", "minimalist", "visual"],
   "caption": "Red dots.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 436.434,
+    "y": 2280.162,
+    "z": 0.001
+  }
 }

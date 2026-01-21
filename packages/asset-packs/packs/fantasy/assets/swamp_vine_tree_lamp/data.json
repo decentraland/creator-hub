@@ -21,5 +21,10 @@
     "outdoor"
   ],
   "caption": "A glowing lamp on a tree branch.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.374,
+    "y": 5.708,
+    "z": 3.722
+  }
 }

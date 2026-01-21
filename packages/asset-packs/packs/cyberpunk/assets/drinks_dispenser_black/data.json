@@ -15,5 +15,10 @@
     "vending"
   ],
   "caption": "Black vending machine with drink slots.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.389,
+    "y": 0.98,
+    "z": 0.489
+  }
 }

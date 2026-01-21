@@ -25,5 +25,10 @@
     "roots"
   ],
   "caption": "Wooden table with natural wood finish.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.337,
+    "y": 0.781,
+    "z": 2.337
+  }
 }

@@ -20,5 +20,10 @@
     "vessel"
   ],
   "caption": "Gray planter with hole for planting.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.514,
+    "y": 0.52,
+    "z": 0.514
+  }
 }

@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["art", "furniture", "interior", "room", "scheme", "tile", "turquoise"],
   "caption": "Turquoise corner tile.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.018,
+    "y": 4,
+    "z": 4
+  }
 }

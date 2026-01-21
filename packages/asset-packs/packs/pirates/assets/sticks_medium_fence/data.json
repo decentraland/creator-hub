@@ -26,5 +26,10 @@
     "structure"
   ],
   "caption": "Three wooden planks forming a fence.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.115,
+    "y": 1.011,
+    "z": 3.064
+  }
 }

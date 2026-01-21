@@ -15,5 +15,10 @@
     "spherical"
   ],
   "caption": "Glowing blue sphere with multiple led lights.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.004,
+    "y": 1.319,
+    "z": 0
+  }
 }

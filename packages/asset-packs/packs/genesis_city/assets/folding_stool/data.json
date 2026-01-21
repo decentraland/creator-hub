@@ -21,5 +21,10 @@
     "sitting"
   ],
   "caption": "Black folding stool.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.747,
+    "y": 0.71,
+    "z": 0.669
+  }
 }

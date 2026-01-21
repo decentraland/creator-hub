@@ -17,5 +17,10 @@
     "terrain"
   ],
   "caption": "Red, mountain-shaped object with a smooth surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 10.323,
+    "y": 9.582,
+    "z": 11.426
+  }
 }

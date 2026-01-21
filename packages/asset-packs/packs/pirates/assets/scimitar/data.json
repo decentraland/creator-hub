@@ -24,5 +24,10 @@
     "warrior"
   ],
   "caption": "Scimitar with yellow handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.272,
+    "y": 1.138,
+    "z": 0.119
+  }
 }

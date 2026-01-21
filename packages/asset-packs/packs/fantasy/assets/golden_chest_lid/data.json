@@ -18,5 +18,10 @@
     "wealth"
   ],
   "caption": "Golden treasure chest.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.703,
+    "y": 0.615,
+    "z": 1.082
+  }
 }

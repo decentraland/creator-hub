@@ -18,5 +18,10 @@
     "stem"
   ],
   "caption": "Carved orange pumpkin with glowing eyes.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.749,
+    "y": 0.596,
+    "z": 0.786
+  }
 }

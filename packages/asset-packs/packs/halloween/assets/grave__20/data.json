@@ -17,5 +17,10 @@
     "tombstone"
   ],
   "caption": "Stone monument with a flat top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.994,
+    "y": 1.455,
+    "z": 0.462
+  }
 }

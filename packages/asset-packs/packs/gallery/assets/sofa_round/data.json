@@ -18,5 +18,10 @@
     "upholstery"
   ],
   "caption": "Red leather armchair.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 7.183,
+    "y": 1.013,
+    "z": 5.256
+  }
 }

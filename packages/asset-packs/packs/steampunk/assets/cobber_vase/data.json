@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["antique", "ceramic", "collectible", "container", "pottery", "vase", "vessel"],
   "caption": "Red ceramic vase.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.572,
+    "y": 0.798,
+    "z": 0.601
+  }
 }

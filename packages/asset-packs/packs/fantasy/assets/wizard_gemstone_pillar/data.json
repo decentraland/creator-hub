@@ -16,5 +16,10 @@
     "wizard"
   ],
   "caption": "Blue gemstone pillar with glowing blue gem.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.388,
+    "y": 2.739,
+    "z": 1.388
+  }
 }

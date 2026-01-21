@@ -16,5 +16,10 @@
     "space"
   ],
   "caption": "Five glowing pebbles on a dark floor.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.155,
+    "y": 0.034,
+    "z": 1.509
+  }
 }

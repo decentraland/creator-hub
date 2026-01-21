@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["angel", "art", "divine", "figure", "heavenly", "holy", "sacred", "sculpture", "statue"],
   "caption": "Angel statue atop a pedestal.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.494,
+    "y": 4.271,
+    "z": 1.696
+  }
 }

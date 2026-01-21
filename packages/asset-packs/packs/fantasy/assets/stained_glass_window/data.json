@@ -17,5 +17,10 @@
     "shades"
   ],
   "caption": "Stained glass window with blue and orange shapes.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.055,
+    "y": 1.876,
+    "z": 0.287
+  }
 }

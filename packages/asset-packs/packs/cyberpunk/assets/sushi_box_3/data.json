@@ -17,5 +17,10 @@
     "sushi"
   ],
   "caption": "Sushi box containing fresh sushi.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.384,
+    "y": 0.219,
+    "z": 0.384
+  }
 }

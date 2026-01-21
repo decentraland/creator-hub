@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["collectible", "lettering", "logo", "rubiks", "sides", "typography", "visual"],
   "caption": "Black rubik's cube with white lettering.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+  }
 }

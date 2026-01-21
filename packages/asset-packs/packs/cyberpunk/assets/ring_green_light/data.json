@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["graphic", "shape", "visual"],
   "caption": "Green circular.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.102,
+    "z": 2
+  }
 }

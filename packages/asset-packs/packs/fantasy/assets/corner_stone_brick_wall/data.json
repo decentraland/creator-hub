@@ -18,5 +18,10 @@
     "structure"
   ],
   "caption": "Brick wall with a corner stone.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.089,
+    "y": 4,
+    "z": 4.065
+  }
 }

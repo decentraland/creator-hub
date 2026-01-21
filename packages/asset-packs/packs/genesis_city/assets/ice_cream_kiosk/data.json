@@ -28,5 +28,10 @@
     "treat"
   ],
   "caption": "Cartoon characters at colorful ice cream stand.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.528,
+    "y": 2.364,
+    "z": 1.488
+  }
 }

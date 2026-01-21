@@ -4,5 +4,10 @@
   "category": "lights",
   "tags": ["light", "light source", "light emitter", "point light", "illumination", "brightness"],
   "description": "A point light that can be used to illuminate a scene.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.453,
+    "y": 0.624,
+    "z": 0.523
+  }
 }

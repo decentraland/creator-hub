@@ -18,5 +18,10 @@
     "stripes"
   ],
   "caption": "Red and yellow striped horizontal charging station.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.773,
+    "y": 0.53,
+    "z": 0.456
+  }
 }

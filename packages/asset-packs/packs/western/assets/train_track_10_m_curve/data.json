@@ -4,5 +4,10 @@
   "category": "tiles",
   "tags": ["curve", "rail", "railroad", "railway", "track", "train", "transportation"],
   "caption": "Curved wooden train track with glowing orange lights.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 10.576,
+    "y": 0.343,
+    "z": 10.474
+  }
 }

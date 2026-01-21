@@ -19,5 +19,10 @@
     "wavy"
   ],
   "caption": "Blue pillow with wavy texture.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 66.048,
+    "y": 44.728,
+    "z": 24.039
+  }
 }

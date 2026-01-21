@@ -14,5 +14,10 @@
     "windowpane"
   ],
   "caption": "Open window with two panes.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.741,
+    "y": 2.045,
+    "z": 0.554
+  }
 }

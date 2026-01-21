@@ -4,5 +4,10 @@
   "category": "Text",
   "tags": ["bubble", "text", "message", "chat"],
   "description": "A bubble that can be used to display text.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.834,
+    "y": 0.765,
+    "z": 0.026
+  }
 }

@@ -15,5 +15,10 @@
     "science fiction"
   ],
   "description": "An invisible item that plays a spacefaring sci‑fi track for interstellar builds.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.296,
+    "y": 0.016,
+    "z": 0.2
+  }
 }

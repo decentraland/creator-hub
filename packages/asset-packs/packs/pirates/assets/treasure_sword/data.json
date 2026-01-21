@@ -22,5 +22,10 @@
     "royal"
   ],
   "caption": "Purple gemstone sword.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.297,
+    "y": 1.142,
+    "z": 0.119
+  }
 }

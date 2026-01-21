@@ -16,5 +16,10 @@
     "sparkling"
   ],
   "caption": "Blue gemstone chandelier.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.415,
+    "y": 0.655,
+    "z": 0.415
+  }
 }

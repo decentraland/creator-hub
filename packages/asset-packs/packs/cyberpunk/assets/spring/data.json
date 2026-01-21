@@ -19,5 +19,10 @@
     "vibration"
   ],
   "caption": "Coiled metal spring.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 267.154,
+    "y": 24.936,
+    "z": 23.924
+  }
 }

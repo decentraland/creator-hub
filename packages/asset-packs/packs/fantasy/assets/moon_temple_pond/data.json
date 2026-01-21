@@ -22,5 +22,10 @@
     "structure"
   ],
   "caption": "Temple with pond, glowing crescent moon, and bridge.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6.266,
+    "y": 5.001,
+    "z": 3.881
+  }
 }

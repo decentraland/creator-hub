@@ -17,5 +17,10 @@
     "vessel"
   ],
   "caption": "Black oil barrel with glowing red light.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.778,
+    "y": 1.167,
+    "z": 1.127
+  }
 }

@@ -20,5 +20,10 @@
     "wine"
   ],
   "caption": "Red liquid in a chalice on pedestal.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.135,
+    "y": 0.19,
+    "z": 0.155
+  }
 }

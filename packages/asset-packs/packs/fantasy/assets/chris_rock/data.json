@@ -17,5 +17,10 @@
     "rough"
   ],
   "caption": "Black, jagged rock with rough surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.288,
+    "y": 3.731,
+    "z": 2.532
+  }
 }

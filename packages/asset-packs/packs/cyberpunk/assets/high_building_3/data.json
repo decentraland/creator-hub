@@ -15,5 +15,10 @@
     "urban"
   ],
   "caption": "Skyscraper with textured exterior.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.085,
+    "y": 20.325,
+    "z": 19.429
+  }
 }

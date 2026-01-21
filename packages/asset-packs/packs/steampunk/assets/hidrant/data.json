@@ -19,5 +19,10 @@
     "ocean"
   ],
   "caption": "Red fire hydrant with glowing nozzles.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.769,
+    "y": 1.179,
+    "z": 0.8
+  }
 }

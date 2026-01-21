@@ -27,5 +27,10 @@
     "trunk"
   ],
   "caption": "Yellow pine tree with glowing top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.101,
+    "y": 3.109,
+    "z": 4.511
+  }
 }

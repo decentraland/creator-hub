@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["dot", "glow", "hue", "illumination", "luminescence", "orb", "radiance", "spherical"],
   "caption": "Blue glowing orb.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.103,
+    "z": 2
+  }
 }

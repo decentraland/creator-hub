@@ -18,5 +18,10 @@
     "tower"
   ],
   "caption": "Black pillar with white top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.621,
+    "y": 4,
+    "z": 0.621
+  }
 }

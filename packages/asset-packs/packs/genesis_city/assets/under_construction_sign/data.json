@@ -26,5 +26,10 @@
     "warning"
   ],
   "caption": "Under-construction sign.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.271,
+    "y": 2.34,
+    "z": 0.836
+  }
 }

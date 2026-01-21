@@ -20,5 +20,10 @@
     "table"
   ],
   "caption": "Orange lantern with gauze wrap.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.284,
+    "y": 0.59,
+    "z": 0.28
+  }
 }

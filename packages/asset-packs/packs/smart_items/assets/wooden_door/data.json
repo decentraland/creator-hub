@@ -4,5 +4,10 @@
   "category": "doors",
   "tags": ["door", "wood", "wooden", "door", "doorway", "entrance", "exit"],
   "description": "A wooden door that can be opened or closed when clicked by a player.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.683,
+    "y": 3.279,
+    "z": 0.485
+  }
 }

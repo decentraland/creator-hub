@@ -21,5 +21,10 @@
     "sapphire"
   ],
   "caption": "Orange gemstone with a glowing blue facet.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.39,
+    "y": 0.338,
+    "z": 0.162
+  }
 }

@@ -24,5 +24,10 @@
     "wealth"
   ],
   "caption": "Gold coins in a worn leather sack.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.529,
+    "y": 0.41,
+    "z": 1.026
+  }
 }

@@ -18,5 +18,10 @@
     "room"
   ],
   "caption": "Gray refrigerator with a handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.694,
+    "y": 1.279,
+    "z": 0.648
+  }
 }

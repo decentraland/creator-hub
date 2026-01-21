@@ -28,5 +28,10 @@
     "ocean"
   ],
   "caption": "Fire hydrant with two nozzles on top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.588,
+    "y": 0.588,
+    "z": 1.26
+  }
 }

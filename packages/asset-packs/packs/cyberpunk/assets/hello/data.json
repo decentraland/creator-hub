@@ -19,5 +19,10 @@
     "welcome"
   ],
   "caption": "Glowing orange sign with 'hello' written on it.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.941,
+    "y": 0.458,
+    "z": 0.066
+  }
 }

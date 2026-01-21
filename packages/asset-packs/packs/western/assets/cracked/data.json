@@ -15,5 +15,10 @@
     "shard"
   ],
   "caption": "Red, cracked surface with a central circle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 16,
+    "y": 0.019,
+    "z": 16
+  }
 }

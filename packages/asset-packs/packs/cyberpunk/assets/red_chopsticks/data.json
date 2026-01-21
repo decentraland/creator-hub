@@ -17,5 +17,10 @@
     "utensil"
   ],
   "caption": "Red chopsticks for eating.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.19,
+    "y": 0.101,
+    "z": 0.281
+  }
 }

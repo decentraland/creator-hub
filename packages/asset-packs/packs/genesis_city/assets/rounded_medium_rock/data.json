@@ -27,5 +27,10 @@
     "tower"
   ],
   "caption": "Rocky terrain with glowing embers.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.445,
+    "y": 0.687,
+    "z": 1.06
+  }
 }

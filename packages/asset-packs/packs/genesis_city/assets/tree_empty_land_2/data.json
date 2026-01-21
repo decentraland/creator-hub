@@ -24,5 +24,10 @@
     "leaves"
   ],
   "caption": "Dead pink tree stump.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 7.121,
+    "y": 10.16,
+    "z": 8.361
+  }
 }

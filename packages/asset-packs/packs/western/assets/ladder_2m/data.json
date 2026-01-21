@@ -17,5 +17,10 @@
     "tiered"
   ],
   "caption": "Two-tiered wooden ladder.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.858,
+    "y": 0.716,
+    "z": 0.983
+  }
 }

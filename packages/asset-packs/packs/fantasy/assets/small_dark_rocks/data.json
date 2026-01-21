@@ -20,5 +20,10 @@
     "terrain"
   ],
   "caption": "Dark, rocky terrain.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.94,
+    "y": 0.036,
+    "z": 1.446
+  }
 }

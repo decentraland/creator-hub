@@ -4,5 +4,10 @@
   "description": "A wooden chair with armrests.",
   "tags": ["chair", "wood", "seat", "sitting", "furniture"],
   "author": "Decentraland Foundation",
-  "id": "a35bc93b-91a3-4838-a1ee-b61ba26bcc63"
+  "id": "a35bc93b-91a3-4838-a1ee-b61ba26bcc63",
+  "boundingBox": {
+    "x": 0.879,
+    "y": 1.208,
+    "z": 0.927
+  }
 }

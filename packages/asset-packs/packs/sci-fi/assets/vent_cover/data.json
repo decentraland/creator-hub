@@ -17,5 +17,10 @@
     "ventilation"
   ],
   "caption": "Circular vent cover with central hole.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.266,
+    "y": 1.171,
+    "z": 1.171
+  }
 }

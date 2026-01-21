@@ -26,5 +26,10 @@
     "trunk"
   ],
   "caption": "Long wooden fence with brown posts.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.128,
+    "y": 6.207,
+    "z": 5.108
+  }
 }

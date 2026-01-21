@@ -14,5 +14,10 @@
     "table"
   ],
   "caption": "Dark wood console table.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.812,
+    "y": 0.719,
+    "z": 0.812
+  }
 }

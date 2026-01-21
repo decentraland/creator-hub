@@ -18,5 +18,10 @@
     "table"
   ],
   "caption": "Dark wood desk with two drawers.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.045,
+    "y": 1.268,
+    "z": 0.828
+  }
 }

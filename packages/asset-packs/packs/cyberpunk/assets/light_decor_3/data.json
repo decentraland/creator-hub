@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["ambiance", "glow", "illumination", "source", "strip", "visual"],
   "caption": "Glowing led strip.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 436.435,
+    "y": 2329.303,
+    "z": 0
+  }
 }

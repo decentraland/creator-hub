@@ -19,5 +19,10 @@
     "technology"
   ],
   "caption": "Futuristic medical scanner device.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.595,
+    "y": 2.479,
+    "z": 3.477
+  }
 }

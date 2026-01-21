@@ -19,5 +19,10 @@
     "utility"
   ],
   "caption": "Orange and black cable adapter.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.19,
+    "y": 0.19,
+    "z": 0.3
+  }
 }

@@ -19,5 +19,10 @@
     "warm"
   ],
   "caption": "Red lantern with glowing candle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.251,
+    "y": 0.622,
+    "z": 0.251
+  }
 }

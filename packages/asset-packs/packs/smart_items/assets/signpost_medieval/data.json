@@ -4,5 +4,10 @@
   "category": "Text",
   "tags": ["sign", "medieval"],
   "description": "A sign post that can be used to display a text message.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.22,
+    "y": 3.113,
+    "z": 1.226
+  }
 }

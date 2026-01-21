@@ -16,5 +16,10 @@
     "vehicle"
   ],
   "caption": "Blue flying car with glowing orange flames.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.782,
+    "y": 2.227,
+    "z": 4.975
+  }
 }

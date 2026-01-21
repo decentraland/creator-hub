@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["appearance", "grid", "layout", "shape", "space", "visual"],
   "caption": "Red grid pattern.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.025,
+    "z": 2
+  }
 }

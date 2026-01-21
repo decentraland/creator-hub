@@ -15,5 +15,10 @@
     "vehicle"
   ],
   "caption": "Blue helicopter spinning rapidly.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 10.309,
+    "y": 3.749,
+    "z": 14.323
+  }
 }

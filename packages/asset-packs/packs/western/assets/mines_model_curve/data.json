@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["explosive", "hazard", "landscape", "mine", "obstacle", "shape", "terrain"],
   "caption": "Brown cone-shaped object with a base.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 15.855,
+    "y": 4.765,
+    "z": 17.081
+  }
 }

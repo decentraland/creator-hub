@@ -18,5 +18,10 @@
     "table"
   ],
   "caption": "Blue tabletop.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.006,
+    "y": 3.809,
+    "z": 2.267
+  }
 }

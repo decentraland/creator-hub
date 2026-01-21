@@ -22,5 +22,10 @@
     "technology"
   ],
   "caption": "Futuristic command console with multiple screens.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.695,
+    "y": 1.916,
+    "z": 2.901
+  }
 }

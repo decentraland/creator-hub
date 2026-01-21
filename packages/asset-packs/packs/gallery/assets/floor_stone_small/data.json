@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["architecture", "earthy", "interior", "natural", "tile"],
   "caption": "Stone floor texture with natural tones.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.01,
+    "z": 2
+  }
 }

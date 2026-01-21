@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["fantasy", "chest", "compartment", "container", "interior", "loot", "secure", "storage"],
   "caption": "Open chest with glowing blue light inside.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.387,
+    "y": 0.593,
+    "z": 1.082
+  }
 }

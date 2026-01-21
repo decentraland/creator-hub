@@ -16,5 +16,10 @@
     "vessel"
   ],
   "caption": "Yellow and black cylindrical object.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.27,
+    "y": 0.541,
+    "z": 0.277
+  }
 }

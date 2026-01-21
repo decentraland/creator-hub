@@ -16,5 +16,10 @@
     "rustic"
   ],
   "caption": "Rustic wooden parquet tile.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.039,
+    "y": 0.123,
+    "z": 4.019
+  }
 }

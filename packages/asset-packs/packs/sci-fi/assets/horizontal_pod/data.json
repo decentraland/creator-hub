@@ -14,5 +14,10 @@
     "vessel"
   ],
   "caption": "Red-striped metal cylinder in a cage.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.83,
+    "y": 1.908,
+    "z": 1.863
+  }
 }

@@ -20,5 +20,10 @@
     "transaction"
   ],
   "caption": "Emissive shop sign.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6.114,
+    "y": 4.994,
+    "z": 9.096
+  }
 }

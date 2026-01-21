@@ -20,5 +20,10 @@
     "vehicle"
   ],
   "caption": "Cart track module for straight racing.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.6,
+    "y": 0.063,
+    "z": 2
+  }
 }

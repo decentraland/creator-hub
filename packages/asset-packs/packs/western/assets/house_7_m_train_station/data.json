@@ -20,5 +20,10 @@
     "village"
   ],
   "caption": "Rural home with a sloping roof.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 7.532,
+    "y": 7.869,
+    "z": 9.397
+  }
 }

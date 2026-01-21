@@ -17,5 +17,10 @@
     "vegetation"
   ],
   "caption": "Green grass patch with surrounding rocks.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.121,
+    "y": 0.836,
+    "z": 1.868
+  }
 }

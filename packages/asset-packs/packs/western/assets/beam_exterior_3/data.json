@@ -17,5 +17,10 @@
     "trestle"
   ],
   "caption": "Wooden scaffold with horizontal beams.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.256,
+    "y": 4.181,
+    "z": 0.828
+  }
 }

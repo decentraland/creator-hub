@@ -4,5 +4,10 @@
   "category": "social",
   "tags": ["social", "links", "telegram"],
   "description": "A clickable item that can open your Telegram page in a browser window. Paste a Telegram page URL in the 'URL' field.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 2.003,
+    "z": 2
+  }
 }

@@ -15,5 +15,10 @@
     "signage"
   ],
   "caption": "Blue sign with two black handles.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.307,
+    "y": 2.502,
+    "z": 1.827
+  }
 }

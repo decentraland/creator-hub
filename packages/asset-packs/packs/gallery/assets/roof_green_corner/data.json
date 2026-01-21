@@ -13,5 +13,10 @@
     "vegetation"
   ],
   "caption": "Green roof in a corner.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.7,
+    "z": 4
+  }
 }

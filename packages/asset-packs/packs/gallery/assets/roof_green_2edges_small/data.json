@@ -13,5 +13,10 @@
     "vegetation"
   ],
   "caption": "Green roof with two sloping edges.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.7,
+    "z": 2
+  }
 }

@@ -15,5 +15,10 @@
     "textile"
   ],
   "caption": "Red and white checkered rug.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.448,
+    "y": 0.041,
+    "z": 2
+  }
 }

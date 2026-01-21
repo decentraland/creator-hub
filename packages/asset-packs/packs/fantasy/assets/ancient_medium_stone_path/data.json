@@ -21,5 +21,10 @@
     "structure"
   ],
   "caption": "Gray stone building blocks.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.259,
+    "y": 0.05,
+    "z": 2.37
+  }
 }

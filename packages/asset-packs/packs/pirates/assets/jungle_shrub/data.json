@@ -24,5 +24,10 @@
     "vegetation"
   ],
   "caption": "Green plant with multiple leaves.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.567,
+    "y": 0.455,
+    "z": 1.255
+  }
 }

@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["block", "foliage", "growth", "landscape", "moss", "nature", "terrain", "vegetation"],
   "caption": "Gray stone block with green moss.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+  }
 }

@@ -18,5 +18,10 @@
     "stalactite"
   ],
   "caption": "Gray stalagmite with a pointed peak.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.455,
+    "y": 1.236,
+    "z": 0.433
+  }
 }

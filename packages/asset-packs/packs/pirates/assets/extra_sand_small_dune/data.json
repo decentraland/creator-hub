@@ -20,5 +20,10 @@
     "terrain"
   ],
   "caption": "Dunes of shifting golden sand.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.974,
+    "y": 0.238,
+    "z": 0.818
+  }
 }

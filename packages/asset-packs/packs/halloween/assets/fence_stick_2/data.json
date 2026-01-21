@@ -14,5 +14,10 @@
     "stick"
   ],
   "caption": "Red vertical slat, possibly part of a fence.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.246,
+    "y": 1.508,
+    "z": 0.237
+  }
 }

@@ -23,5 +23,10 @@
     "trunk"
   ],
   "caption": "Log with a visible crack.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.049,
+    "y": 0.496,
+    "z": 0.494
+  }
 }

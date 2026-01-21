@@ -4,5 +4,10 @@
   "category": "platforms",
   "tags": ["platform", "horizontal", "interactive", "car", "flying", "vehicle"],
   "description": "A blue horizontal platform that looks like a flying car. Players can stand on it to move back and forth.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.782,
+    "y": 2.227,
+    "z": 4.975
+  }
 }

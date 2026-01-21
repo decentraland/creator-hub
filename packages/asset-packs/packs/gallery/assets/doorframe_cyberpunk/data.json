@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["doorframe", "futuristic", "industrial", "metallic", "sleek", "tech", "urban"],
   "caption": "Dark blue door frame with glowing screen.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 0.402
+  }
 }

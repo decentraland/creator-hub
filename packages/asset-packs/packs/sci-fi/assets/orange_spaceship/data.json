@@ -18,5 +18,10 @@
     "vibrant"
   ],
   "caption": "Orange spaceship with glowing blue accents.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 11.439,
+    "y": 5.471,
+    "z": 12.868
+  }
 }

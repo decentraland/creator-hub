@@ -14,5 +14,10 @@
     "slatted"
   ],
   "caption": "Wooden bench with slatted backrest.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6.053,
+    "y": 0.717,
+    "z": 2.012
+  }
 }

@@ -20,5 +20,10 @@
     "tank"
   ],
   "caption": "Burning wooden barrel.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.098,
+    "y": 2.015,
+    "z": 2.199
+  }
 }

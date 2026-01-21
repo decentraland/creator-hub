@@ -15,5 +15,10 @@
     "seating"
   ],
   "caption": "Wooden bench with backrest.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.223,
+    "y": 3.37,
+    "z": 0.659
+  }
 }

@@ -20,5 +20,10 @@
     "seating"
   ],
   "caption": "Two wooden planks.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.751,
+    "y": 1.858,
+    "z": 0.531
+  }
 }

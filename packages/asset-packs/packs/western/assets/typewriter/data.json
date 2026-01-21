@@ -17,5 +17,10 @@
     "writing"
   ],
   "caption": "Blue typewriter on white paper.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.78,
+    "y": 0.564,
+    "z": 0.691
+  }
 }

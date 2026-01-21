@@ -20,5 +20,10 @@
     "visual"
   ],
   "caption": "Easter egg with glowing blue-green screen.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.758,
+    "y": 1.013,
+    "z": 0.715
+  }
 }

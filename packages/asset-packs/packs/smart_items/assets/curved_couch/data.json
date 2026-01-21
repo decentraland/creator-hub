@@ -4,5 +4,10 @@
   "description": "A curved couch.",
   "tags": ["couch", "sofa", "seat", "sitting", "furniture"],
   "author": "Decentraland Foundation",
-  "id": "8fb839a7-3609-4634-b283-6a3ae1d3ffde"
+  "id": "8fb839a7-3609-4634-b283-6a3ae1d3ffde",
+  "boundingBox": {
+    "x": 4.433,
+    "y": 1.283,
+    "z": 2.066
+  }
 }

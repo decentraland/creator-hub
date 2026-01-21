@@ -13,5 +13,10 @@
     "vessel"
   ],
   "caption": "Red and white striped soda can.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 124.161,
+    "y": 1537.641,
+    "z": 124.161
+  }
 }

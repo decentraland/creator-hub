@@ -26,5 +26,10 @@
     "shore"
   ],
   "caption": "Pond with two rocky sides.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 7,
+    "y": 0.396,
+    "z": 7.591
+  }
 }

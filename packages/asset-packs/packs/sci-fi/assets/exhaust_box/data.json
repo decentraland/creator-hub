@@ -18,5 +18,10 @@
     "vehicle"
   ],
   "caption": "Blue exhaust box with mesh pattern.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.97,
+    "y": 0.647,
+    "z": 0.347
+  }
 }

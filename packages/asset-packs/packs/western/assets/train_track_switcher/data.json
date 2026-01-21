@@ -15,5 +15,10 @@
     "train"
   ],
   "caption": "Mechanical train track switcher with lever and wooden planks.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.451,
+    "y": 1.528,
+    "z": 0.609
+  }
 }

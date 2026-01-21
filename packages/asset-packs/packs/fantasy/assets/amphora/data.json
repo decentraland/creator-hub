@@ -19,5 +19,10 @@
     "vessel"
   ],
   "caption": "Antique greek amphora.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.745,
+    "y": 0.991,
+    "z": 0.705
+  }
 }

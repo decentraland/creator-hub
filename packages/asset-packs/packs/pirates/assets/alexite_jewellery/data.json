@@ -23,5 +23,10 @@
     "valuable"
   ],
   "caption": "Purple gemstone in orange holder.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.391,
+    "y": 0.401,
+    "z": 0.352
+  }
 }

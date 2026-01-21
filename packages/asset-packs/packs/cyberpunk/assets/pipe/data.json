@@ -14,5 +14,10 @@
     "tube"
   ],
   "caption": "Metal pipe with bolt on one end.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.715,
+    "y": 0.715,
+    "z": 2.868
+  }
 }

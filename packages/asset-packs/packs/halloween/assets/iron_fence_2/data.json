@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["barrier", "boundary", "defense", "enclosure", "gate", "grid", "railing", "security"],
   "caption": "Six-bar iron fence.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.061,
+    "y": 7.376,
+    "z": 3.392
+  }
 }

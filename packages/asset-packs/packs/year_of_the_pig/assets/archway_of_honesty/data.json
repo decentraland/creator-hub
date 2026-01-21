@@ -18,5 +18,10 @@
     "torii"
   ],
   "caption": "Traditional japanese torii gate with hanging lanterns.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.629,
+    "y": 5.355,
+    "z": 3.767
+  }
 }

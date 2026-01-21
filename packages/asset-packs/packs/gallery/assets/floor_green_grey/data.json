@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["hue", "shade", "tile", "tone"],
   "caption": "Green and grey floor pattern.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.01,
+    "z": 4
+  }
 }

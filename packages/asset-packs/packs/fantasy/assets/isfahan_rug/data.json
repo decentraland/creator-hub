@@ -15,5 +15,10 @@
     "tilework"
   ],
   "caption": "Blue and yellow decorative tile with shape pattern.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.402,
+    "y": 0.043,
+    "z": 6.843
+  }
 }

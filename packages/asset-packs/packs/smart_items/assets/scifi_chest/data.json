@@ -4,5 +4,10 @@
   "category": "chests",
   "tags": ["chest", "sci-fi", "open", "close"],
   "description": "A chest that can be opened and closed when clicked. It can be used to store items.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.913,
+    "y": 1.409,
+    "z": 1.03
+  }
 }

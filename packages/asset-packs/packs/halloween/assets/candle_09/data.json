@@ -18,5 +18,10 @@
     "kitchen"
   ],
   "caption": "Lit candle on wooden stand.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.165,
+    "y": 0.462,
+    "z": 0.191
+  }
 }

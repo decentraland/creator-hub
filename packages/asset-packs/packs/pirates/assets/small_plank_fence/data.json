@@ -19,5 +19,10 @@
     "timber"
   ],
   "caption": "Wooden planks are often used in construction.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.242,
+    "y": 2.022,
+    "z": 1
+  }
 }

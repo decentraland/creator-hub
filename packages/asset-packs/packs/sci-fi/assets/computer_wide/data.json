@@ -20,5 +20,10 @@
     "workspace"
   ],
   "caption": "Computer with glowing screen displays graphs.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.461,
+    "y": 1.61,
+    "z": 0.692
+  }
 }

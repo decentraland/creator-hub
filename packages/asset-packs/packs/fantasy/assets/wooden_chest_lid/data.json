@@ -16,5 +16,10 @@
     "storage"
   ],
   "caption": "Wooden chest with a hinged lid.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.387,
+    "y": 0.474,
+    "z": 1.082
+  }
 }

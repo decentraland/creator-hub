@@ -25,5 +25,10 @@
     "stem"
   ],
   "caption": "Bamboo stalk with attached green leaves.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.118,
+    "y": 3.479,
+    "z": 1.174
+  }
 }

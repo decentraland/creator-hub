@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["ambiance", "glow", "grid", "illumination", "ornamentation", "visual"],
   "caption": "Blue and white grid light decoration.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 442.025,
+    "y": 464.143,
+    "z": 0
+  }
 }

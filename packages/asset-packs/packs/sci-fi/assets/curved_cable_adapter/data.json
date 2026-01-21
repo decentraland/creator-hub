@@ -19,5 +19,10 @@
     "stripe"
   ],
   "caption": "Curved cable adapter with glowing orange stripe.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.287,
+    "y": 0.19,
+    "z": 0.285
+  }
 }

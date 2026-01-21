@@ -18,5 +18,10 @@
     "undead"
   ],
   "caption": "Relaxed skeleton on its back.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.575,
+    "y": 0.395,
+    "z": 1.985
+  }
 }

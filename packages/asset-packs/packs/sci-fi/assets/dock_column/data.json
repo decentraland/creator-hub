@@ -16,5 +16,10 @@
     "vessel"
   ],
   "caption": "Docking station with 4 slots.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.24,
+    "y": 3,
+    "z": 0.36
+  }
 }

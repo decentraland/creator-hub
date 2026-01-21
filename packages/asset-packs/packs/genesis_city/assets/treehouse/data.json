@@ -31,5 +31,10 @@
     "trunk"
   ],
   "caption": "Rustic wooden treehouse with a ladder.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.558,
+    "y": 5.358,
+    "z": 3.172
+  }
 }

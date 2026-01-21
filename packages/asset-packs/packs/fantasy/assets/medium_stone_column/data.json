@@ -20,5 +20,10 @@
     "tower"
   ],
   "caption": "Three ancient stone pillars.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.222,
+    "y": 0.982,
+    "z": 0.222
+  }
 }

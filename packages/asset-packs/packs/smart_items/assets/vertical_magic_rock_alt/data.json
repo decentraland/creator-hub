@@ -16,5 +16,10 @@
     "lift"
   ],
   "description": "A vertical platform that moves up and down. Players can jump on it to reach higher places.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.499,
+    "y": 0.562,
+    "z": 1.437
+  }
 }

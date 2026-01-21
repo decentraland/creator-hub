@@ -16,5 +16,10 @@
     "vessel"
   ],
   "caption": "Black cauldron with a metal handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.616,
+    "y": 0.475,
+    "z": 0.638
+  }
 }

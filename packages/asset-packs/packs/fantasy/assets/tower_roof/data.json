@@ -14,5 +14,10 @@
     "thatched"
   ],
   "caption": "A traditional, thatched-roof hut.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 8.296,
+    "y": 7.906,
+    "z": 8.242
+  }
 }

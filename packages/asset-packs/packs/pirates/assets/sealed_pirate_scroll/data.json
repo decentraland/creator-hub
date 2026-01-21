@@ -23,5 +23,10 @@
     "seal"
   ],
   "caption": "Red seal on ancient parchment scroll.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.121,
+    "y": 0.134,
+    "z": 0.606
+  }
 }

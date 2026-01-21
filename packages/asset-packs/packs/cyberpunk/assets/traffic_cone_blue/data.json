@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["attention", "hazard", "marker", "obstacle", "safety", "traffic", "visual", "warning"],
   "caption": "Blue traffic cone.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.527,
+    "y": 0.554,
+    "z": 0.527
+  }
 }

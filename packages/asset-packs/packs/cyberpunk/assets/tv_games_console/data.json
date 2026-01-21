@@ -14,5 +14,10 @@
     "television"
   ],
   "caption": "Tv with game controllers on top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.334,
+    "y": 1.6,
+    "z": 1.198
+  }
 }

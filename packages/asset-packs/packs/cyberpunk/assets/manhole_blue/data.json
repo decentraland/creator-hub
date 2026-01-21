@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["concrete", "cover", "infrastructure", "manhole", "pavement", "street", "urban"],
   "caption": "Blue manhole cover featuring a circular design.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.797,
+    "y": 1.794,
+    "z": 0.075
+  }
 }

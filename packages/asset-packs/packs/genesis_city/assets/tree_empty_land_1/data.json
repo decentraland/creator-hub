@@ -24,5 +24,10 @@
     "roots"
   ],
   "caption": "Empty tree trunk.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 7.079,
+    "y": 7.677,
+    "z": 8.169
+  }
 }

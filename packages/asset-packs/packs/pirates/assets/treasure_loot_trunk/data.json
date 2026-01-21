@@ -27,5 +27,10 @@
     "wealth"
   ],
   "caption": "Glowing treasure chest with golden lock and key.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.013,
+    "y": 0.778,
+    "z": 0.801
+  }
 }

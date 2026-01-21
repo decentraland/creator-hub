@@ -25,5 +25,10 @@
     "structure"
   ],
   "caption": "Wooden bridge with rugged edges.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.336,
+    "y": 2.122,
+    "z": 2.069
+  }
 }

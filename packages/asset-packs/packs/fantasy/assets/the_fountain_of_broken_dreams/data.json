@@ -23,5 +23,10 @@
     "serene"
   ],
   "caption": "Broken fountain with blue water.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 7.707,
+    "y": 4.574,
+    "z": 7.736
+  }
 }

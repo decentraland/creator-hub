@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["architectural", "colored", "cream", "rendered", "roof", "visible", "visual"],
   "caption": "Two-edged roof.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.7,
+    "z": 4
+  }
 }

@@ -23,5 +23,10 @@
     "vessel"
   ],
   "caption": "Treasure chest with open lid.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.469,
+    "y": 0.335,
+    "z": 0.677
+  }
 }

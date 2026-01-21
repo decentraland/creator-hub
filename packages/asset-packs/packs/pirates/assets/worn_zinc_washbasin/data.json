@@ -24,5 +24,10 @@
     "utilitarian"
   ],
   "caption": "Black metal sink with handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.964,
+    "y": 0.363,
+    "z": 0.785
+  }
 }

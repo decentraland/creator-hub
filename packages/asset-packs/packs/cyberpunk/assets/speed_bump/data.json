@@ -18,5 +18,10 @@
     "vehicle"
   ],
   "caption": "Speed bump on the road.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 7.381,
+    "y": 0.166,
+    "z": 1.184
+  }
 }

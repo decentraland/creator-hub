@@ -4,5 +4,10 @@
   "category": "tiles",
   "tags": ["fantasy", "tile", "marble", "checkers", "checkered", "floorplan", "grid", "layout"],
   "caption": "Checkered tile with marble texture.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 0.03,
+    "z": 1
+  }
 }

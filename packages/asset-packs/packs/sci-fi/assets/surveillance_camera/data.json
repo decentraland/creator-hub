@@ -20,5 +20,10 @@
     "watch"
   ],
   "caption": "Surveillance camera with red and white sticker.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.283,
+    "y": 0.457,
+    "z": 0.966
+  }
 }

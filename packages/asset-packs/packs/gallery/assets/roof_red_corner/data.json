@@ -15,5 +15,10 @@
     "tower"
   ],
   "caption": "Red roof corner in 3d model.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.7,
+    "z": 4
+  }
 }

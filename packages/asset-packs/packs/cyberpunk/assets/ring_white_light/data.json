@@ -14,5 +14,10 @@
     "radiant"
   ],
   "caption": "Glowing orb with light source at center.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.101,
+    "z": 2
+  }
 }

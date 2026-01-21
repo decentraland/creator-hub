@@ -20,5 +20,10 @@
     "terrain"
   ],
   "caption": "Brown rock with a smooth surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.689,
+    "y": 1.401,
+    "z": 2.858
+  }
 }

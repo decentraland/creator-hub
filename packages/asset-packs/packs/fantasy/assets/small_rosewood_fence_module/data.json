@@ -17,5 +17,10 @@
     "rosewood"
   ],
   "caption": "Blue handle on top of rosewood fence module.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.129,
+    "y": 1.116,
+    "z": 0.265
+  }
 }

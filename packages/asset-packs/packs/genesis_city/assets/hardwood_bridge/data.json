@@ -26,5 +26,10 @@
     "latticework"
   ],
   "caption": "Wooden bridge with metal railings.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6.094,
+    "y": 2.413,
+    "z": 2.006
+  }
 }

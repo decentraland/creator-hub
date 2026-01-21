@@ -26,5 +26,10 @@
     "table"
   ],
   "caption": "Red wooden table.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.305,
+    "y": 8.436,
+    "z": 4.67
+  }
 }

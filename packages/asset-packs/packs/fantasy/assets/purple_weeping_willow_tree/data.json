@@ -22,5 +22,10 @@
     "roots"
   ],
   "caption": "Purple weeping willow tree with pink leaves.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 7.681,
+    "y": 8.597,
+    "z": 7.462
+  }
 }

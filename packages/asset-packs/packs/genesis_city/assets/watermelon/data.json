@@ -27,5 +27,10 @@
     "summer"
   ],
   "caption": "A juicy watermelon.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.685,
+    "y": 0.59,
+    "z": 0.602
+  }
 }

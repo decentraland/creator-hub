@@ -17,5 +17,10 @@
     "wellness"
   ],
   "caption": "Tall, slender bottle with a green cap.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.211,
+    "y": 0.469,
+    "z": 0.211
+  }
 }

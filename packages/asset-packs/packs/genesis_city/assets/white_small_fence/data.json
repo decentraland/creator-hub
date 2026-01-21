@@ -26,5 +26,10 @@
     "structure"
   ],
   "caption": "White wooden fence.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.128,
+    "y": 2.208,
+    "z": 1.313
+  }
 }

@@ -4,5 +4,10 @@
   "category": "Seats",
   "description": "A simple black plastic chair.",
   "tags": ["chair", "sit", "sitting", "seat", "seating", "furniture"],
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.675,
+    "y": 1.416,
+    "z": 0.631
+  }
 }

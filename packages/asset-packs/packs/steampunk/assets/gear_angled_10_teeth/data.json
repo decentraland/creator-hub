@@ -14,5 +14,10 @@
     "toothed"
   ],
   "caption": "Gear with 10 angled teeth.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.567,
+    "y": 0.551,
+    "z": 2.964
+  }
 }

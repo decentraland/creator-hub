@@ -27,5 +27,10 @@
     "structure"
   ],
   "caption": "White railing on modern bridge.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6.572,
+    "y": 2.355,
+    "z": 1.23
+  }
 }

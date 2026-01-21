@@ -27,5 +27,10 @@
     "stem"
   ],
   "caption": "Red flower with green leaves.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.422,
+    "y": 0.996,
+    "z": 0.355
+  }
 }

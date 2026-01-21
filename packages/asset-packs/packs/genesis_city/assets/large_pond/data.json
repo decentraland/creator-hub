@@ -23,5 +23,10 @@
     "shore"
   ],
   "caption": "A serene pond surrounded by rocks.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.403,
+    "y": 1.042,
+    "z": 7.55
+  }
 }

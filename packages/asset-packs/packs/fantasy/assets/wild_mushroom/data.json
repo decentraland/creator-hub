@@ -16,5 +16,10 @@
     "outdoor"
   ],
   "caption": "A glowing blue-green mushroom.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.216,
+    "y": 0.223,
+    "z": 0.234
+  }
 }

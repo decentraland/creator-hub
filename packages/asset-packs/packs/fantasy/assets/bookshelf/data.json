@@ -20,5 +20,10 @@
     "tiered"
   ],
   "caption": "Wooden bookshelf with metal bolts.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.708,
+    "y": 2.107,
+    "z": 0.78
+  }
 }

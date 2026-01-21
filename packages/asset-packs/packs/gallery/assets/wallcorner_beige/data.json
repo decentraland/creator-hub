@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["architectural", "cornerpiece", "shape"],
   "caption": "Yellow corner piece of vintage arcade machine.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 2.04
+  }
 }

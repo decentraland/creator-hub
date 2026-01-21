@@ -21,5 +21,10 @@
     "tower"
   ],
   "caption": "Dark, ominous archway with glowing blue symbols.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.464,
+    "y": 5.383,
+    "z": 1.224
+  }
 }

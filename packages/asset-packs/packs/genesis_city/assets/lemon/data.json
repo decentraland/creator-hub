@@ -24,5 +24,10 @@
     "sour"
   ],
   "caption": "Yellow lemon-shaped object.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.151,
+    "y": 0.208,
+    "z": 0.174
+  }
 }

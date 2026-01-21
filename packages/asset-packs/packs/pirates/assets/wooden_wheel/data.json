@@ -25,5 +25,10 @@
     "wheelbarrow"
   ],
   "caption": "Wooden wheel with metal spokes.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.078,
+    "y": 1.078,
+    "z": 0.144
+  }
 }

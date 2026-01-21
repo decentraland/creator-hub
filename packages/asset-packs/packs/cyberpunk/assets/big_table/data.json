@@ -18,5 +18,10 @@
     "table"
   ],
   "caption": "Cup on a wooden table.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 203.906,
+    "y": 74.948,
+    "z": 66.323
+  }
 }

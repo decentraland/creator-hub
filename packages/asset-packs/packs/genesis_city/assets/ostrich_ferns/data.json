@@ -27,5 +27,10 @@
     "plant"
   ],
   "caption": "Origami crane made from green paper.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.487,
+    "y": 0.598,
+    "z": 0.583
+  }
 }

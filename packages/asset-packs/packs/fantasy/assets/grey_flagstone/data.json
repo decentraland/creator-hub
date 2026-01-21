@@ -4,5 +4,10 @@
   "category": "ground",
   "tags": ["fantasy", "earthy", "flagstone", "geological", "mineral", "natural", "terrain"],
   "caption": "Gray flagstone texture on a worn surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 16,
+    "y": 0.019,
+    "z": 16
+  }
 }

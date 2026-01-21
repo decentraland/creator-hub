@@ -20,5 +20,10 @@
     "tombstone"
   ],
   "caption": "Tombstone with 'rip' carved into its surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.031,
+    "y": 1.454,
+    "z": 0.462
+  }
 }

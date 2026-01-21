@@ -18,5 +18,10 @@
     "trunk"
   ],
   "caption": "Bare tree branch against.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.208,
+    "y": 6.63,
+    "z": 4.177
+  }
 }

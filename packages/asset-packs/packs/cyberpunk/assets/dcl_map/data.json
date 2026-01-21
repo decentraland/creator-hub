@@ -16,5 +16,10 @@
     "workspace"
   ],
   "caption": "Pink patterned computer monitor.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.408,
+    "y": 2.058,
+    "z": 2.958
+  }
 }

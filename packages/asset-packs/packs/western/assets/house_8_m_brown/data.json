@@ -15,5 +15,10 @@
     "structure"
   ],
   "caption": "Single-story house with dark roof and brown walls.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 8.869,
+    "y": 8.795,
+    "z": 9.512
+  }
 }

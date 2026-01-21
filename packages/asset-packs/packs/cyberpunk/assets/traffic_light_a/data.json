@@ -13,5 +13,10 @@
     "warning"
   ],
   "caption": "Traffic light with red, yellow, and green lights.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.071,
+    "y": 4.876,
+    "z": 0.875
+  }
 }

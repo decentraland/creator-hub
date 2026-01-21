@@ -15,5 +15,10 @@
     "step"
   ],
   "caption": "Blue paneled staircase.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.02,
+    "y": 5.17,
+    "z": 4.2
+  }
 }

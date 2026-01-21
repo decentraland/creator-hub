@@ -20,5 +20,10 @@
     "stem"
   ],
   "caption": "Red apple with green stem.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.158,
+    "y": 0.173,
+    "z": 0.166
+  }
 }

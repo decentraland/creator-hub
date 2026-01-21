@@ -26,5 +26,10 @@
     "roof"
   ],
   "caption": "Red mailbox on green background.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.958,
+    "y": 1.667,
+    "z": 0.32
+  }
 }

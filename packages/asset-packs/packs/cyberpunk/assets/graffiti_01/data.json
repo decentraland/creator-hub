@@ -16,5 +16,10 @@
     "thumbnail"
   ],
   "caption": "Four figures in suits with masks.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 423.197,
+    "y": 2.687,
+    "z": 335.147
+  }
 }

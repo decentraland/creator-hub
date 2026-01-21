@@ -23,5 +23,10 @@
     "vessel"
   ],
   "caption": "Blue bottle with orange label and yellow ribbon.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.264,
+    "y": 0.55,
+    "z": 0.305
+  }
 }

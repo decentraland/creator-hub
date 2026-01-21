@@ -22,5 +22,10 @@
     "trunk"
   ],
   "caption": "Blue tree without leaves.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 8.133,
+    "y": 16.256,
+    "z": 14.644
+  }
 }

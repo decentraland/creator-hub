@@ -17,5 +17,10 @@
     "spirit"
   ],
   "caption": "Ghostly figure with darkened lower half.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.121,
+    "y": 0.831,
+    "z": 0.846
+  }
 }

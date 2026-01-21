@@ -25,5 +25,10 @@
     "sitting"
   ],
   "caption": "Wooden coffee table with four sturdy legs.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.494,
+    "y": 0.72,
+    "z": 1.439
+  }
 }

@@ -20,5 +20,10 @@
     "outdoor"
   ],
   "caption": "Egg-shaped object with green and white moss-like texture.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.92,
+    "y": 4.018,
+    "z": 1.574
+  }
 }

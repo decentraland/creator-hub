@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["architecture", "glass", "pane", "sill", "trim", "window"],
   "caption": "Vertical metal bars on a wooden frame.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.417,
+    "y": 2.019,
+    "z": 0.354
+  }
 }

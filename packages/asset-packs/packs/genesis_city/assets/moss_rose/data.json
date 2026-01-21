@@ -28,5 +28,10 @@
     "searchable"
   ],
   "caption": "Yellow flower on green stem.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.644,
+    "y": 0.63,
+    "z": 0.364
+  }
 }

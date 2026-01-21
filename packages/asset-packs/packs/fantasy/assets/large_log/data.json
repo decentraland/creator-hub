@@ -21,5 +21,10 @@
     "trunk"
   ],
   "caption": "Cinnamon stick on log.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5,
+    "y": 0.497,
+    "z": 0.522
+  }
 }

@@ -20,5 +20,10 @@
     "silhouette"
   ],
   "caption": "Dog-shaped mountain.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 19.067,
+    "y": 6.665,
+    "z": 13.255
+  }
 }

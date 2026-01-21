@@ -17,5 +17,10 @@
     "utility"
   ],
   "caption": "Hanging lanterns on a wooden pole.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.121,
+    "y": 4.977,
+    "z": 0.504
+  }
 }

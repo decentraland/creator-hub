@@ -18,5 +18,10 @@
     "structure"
   ],
   "caption": "Red house-shaped letter v.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.632,
+    "y": 0.632,
+    "z": 0.131
+  }
 }

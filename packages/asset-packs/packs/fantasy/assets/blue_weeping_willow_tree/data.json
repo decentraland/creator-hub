@@ -21,5 +21,10 @@
     "willow"
   ],
   "caption": "Weeping willow tree with blue leaves.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 7.241,
+    "y": 7.198,
+    "z": 7.23
+  }
 }

@@ -27,5 +27,10 @@
     "wealth"
   ],
   "caption": "Glowing treasure chest overflowing with golden coins.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.469,
+    "y": 0.401,
+    "z": 0.655
+  }
 }

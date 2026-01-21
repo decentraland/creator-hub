@@ -19,5 +19,10 @@
     "waste"
   ],
   "caption": "Broken plastic lid.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.14,
+    "y": 0.142,
+    "z": 0.14
+  }
 }

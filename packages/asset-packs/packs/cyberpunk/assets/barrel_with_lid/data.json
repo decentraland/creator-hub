@@ -16,5 +16,10 @@
     "vessel"
   ],
   "caption": "Barrel with a removable lid.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.972,
+    "y": 1.224,
+    "z": 0.905
+  }
 }

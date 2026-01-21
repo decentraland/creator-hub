@@ -18,5 +18,10 @@
     "trunk"
   ],
   "caption": "Red cross with brown leaves.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6,
+    "y": 0.057,
+    "z": 6
+  }
 }

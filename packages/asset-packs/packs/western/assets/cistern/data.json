@@ -20,5 +20,10 @@
     "stronghold"
   ],
   "caption": "Water tower.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.065,
+    "y": 8.179,
+    "z": 2.671
+  }
 }

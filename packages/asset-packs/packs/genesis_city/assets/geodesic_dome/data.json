@@ -25,5 +25,10 @@
     "structure"
   ],
   "caption": "Geodesic dome with a glowing interior.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.359,
+    "y": 2.384,
+    "z": 4.359
+  }
 }

@@ -21,5 +21,10 @@
     "technology"
   ],
   "caption": "Cryogenic chamber.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.227,
+    "y": 0.923,
+    "z": 1.196
+  }
 }

@@ -26,5 +26,10 @@
     "stem"
   ],
   "caption": "A glowing, modern arecaceae plant.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.458,
+    "y": 1.218,
+    "z": 2.569
+  }
 }

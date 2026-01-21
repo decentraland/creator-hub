@@ -22,5 +22,10 @@
     "terrain"
   ],
   "caption": "Gray rock with rough surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.975,
+    "y": 1.578,
+    "z": 1.739
+  }
 }

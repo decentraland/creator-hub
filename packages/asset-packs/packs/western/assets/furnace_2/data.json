@@ -16,5 +16,10 @@
     "warmth"
   ],
   "caption": "Black furnace with glowing orange light.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.109,
+    "y": 1.737,
+    "z": 1.825
+  }
 }
