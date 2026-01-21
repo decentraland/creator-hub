@@ -290,7 +290,9 @@ export function createGizmoManager(context: SceneContext) {
       }
     },
     getGizmoTypes() {
-      return [GizmoType.POSITION, GizmoType.ROTATION, GizmoType.SCALE] as const;
+      // Keep array order matching enum values for indexing compatibility
+      // FREE (0) will be mapped to POSITION in setGizmoType
+      return [GizmoType.FREE, GizmoType.POSITION, GizmoType.ROTATION, GizmoType.SCALE] as const;
     },
     setGizmoType(type: GizmoType) {
       // Map FREE to POSITION for backward compatibility
