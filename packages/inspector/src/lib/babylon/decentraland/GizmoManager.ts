@@ -11,7 +11,7 @@ import type { SceneContext } from './SceneContext';
 import type { EcsEntity } from './EcsEntity';
 import { GizmoType as TransformerType } from './gizmos/types';
 import type { IGizmoTransformer } from './gizmos';
-import { FreeGizmo, PositionGizmo, RotationGizmo, ScaleGizmo } from './gizmos';
+import { PositionGizmo, RotationGizmo, ScaleGizmo } from './gizmos';
 import { snapManager, snapPosition, snapRotation, snapScale } from './snap-manager';
 
 export function createGizmoManager(context: SceneContext) {
@@ -32,7 +32,6 @@ export function createGizmoManager(context: SceneContext) {
   const positionTransformer = new PositionGizmo(gizmoManager, snapPosition);
   const rotationTransformer = new RotationGizmo(gizmoManager, snapRotation);
   const scaleTransformer = new ScaleGizmo(gizmoManager, snapScale);
-  const freeTransformer = new FreeGizmo(context.scene);
 
   // Add alignment state
   let isGizmoWorldAligned = true;
@@ -196,9 +195,6 @@ export function createGizmoManager(context: SceneContext) {
       if (currentTransformer.type === TransformerType.ROTATION) {
         // Update rotation based on current transformer type
         syncGizmoRotation(node, selectedEntities, isGizmoWorldAligned);
-      } else if (currentTransformer.type === TransformerType.FREE) {
-        // Update free gizmo indicator with ECS updates
-        (currentTransformer as FreeGizmo).updateGizmoIndicator();
       }
       // For non-rotation gizmos, let the transformers handle rotation
       // Don't reset rotation if it already exists
@@ -294,9 +290,13 @@ export function createGizmoManager(context: SceneContext) {
       }
     },
     getGizmoTypes() {
-      return [GizmoType.FREE, GizmoType.POSITION, GizmoType.ROTATION, GizmoType.SCALE] as const;
+      return [GizmoType.POSITION, GizmoType.ROTATION, GizmoType.SCALE] as const;
     },
     setGizmoType(type: GizmoType) {
+      // Map FREE to POSITION for backward compatibility
+      if (type === GizmoType.FREE) {
+        type = GizmoType.POSITION;
+      }
       // Then disable all Babylon gizmos
       gizmoManager.positionGizmoEnabled = false;
       gizmoManager.rotationGizmoEnabled = false;
@@ -409,49 +409,6 @@ export function createGizmoManager(context: SceneContext) {
           if ('setSnapDistance' in currentTransformer) {
             currentTransformer.setSnapDistance(
               snapManager.isEnabled() ? snapManager.getScaleSnap() : 0,
-            );
-          }
-
-          break;
-        }
-        case GizmoType.FREE: {
-          currentTransformer = freeTransformer;
-          currentTransformer.setup();
-          currentTransformer.setEntities(selectedEntities);
-
-          // Pass GizmoManager reference to FreeGizmo for centroid calculation
-          if ('setGizmoManager' in currentTransformer) {
-            (currentTransformer as any).setGizmoManager(calculateCentroid);
-          }
-
-          // Set up callbacks for ECS updates
-          if ('setUpdateCallbacks' in currentTransformer) {
-            currentTransformer.setUpdateCallbacks(updateEntityPosition, () => {
-              void context.operations.dispatch();
-              isUpdatingFromGizmo = false;
-            });
-          }
-
-          // Set world alignment
-          if ('setWorldAligned' in currentTransformer) {
-            currentTransformer.setWorldAligned(isGizmoWorldAligned);
-          }
-
-          // Set up callback to update gizmo position after drag ends
-          if ('setOnDragEndCallback' in currentTransformer) {
-            currentTransformer.setOnDragEndCallback?.(() => {
-              updateGizmoPosition();
-            });
-          }
-
-          // Enable the free gizmo to set up its observables
-          if ('enable' in currentTransformer) {
-            currentTransformer.enable();
-          }
-
-          if ('setSnapDistance' in currentTransformer) {
-            currentTransformer.setSnapDistance(
-              snapManager.isEnabled() ? snapManager.getPositionSnap() : 0,
             );
           }
 

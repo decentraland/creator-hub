@@ -1,8 +1,10 @@
-import type { GizmoManager, Matrix } from '@babylonjs/core';
-import { Vector3, TransformNode, Quaternion } from '@babylonjs/core';
+import type { GizmoManager, Matrix, Scene, AbstractMesh } from '@babylonjs/core';
+import { Vector3, TransformNode, Quaternion, Plane } from '@babylonjs/core';
 import type { Entity } from '@dcl/ecs';
+
 import type { EcsEntity } from '../EcsEntity';
 import { LEFT_BUTTON } from '../mouse-utils';
+import { snapVector } from '../snap-manager';
 import type { IGizmoTransformer, IPlaneDragGizmoWithMesh, Vector3Axis } from './types';
 import { GizmoType } from './types';
 import { configureGizmoButtons } from './utils';
@@ -19,11 +21,15 @@ export class PositionGizmo implements IGizmoTransformer {
   private entityStates = new Map<Entity, EntityState>();
   private pivotPosition: Vector3 | null = null;
   private isDragging = false;
+  private isFreeDragging = false;
   private currentEntities: EcsEntity[] = [];
   private updateEntityPosition: ((entity: EcsEntity) => void) | null = null;
   private dispatchOperations: (() => void) | null = null;
   private isWorldAligned = true;
   private parentMatrixCache = new Map<TransformNode, Matrix>();
+  private snapDistance = 0;
+  private lastSnappedPivotPosition: Vector3 | null = null;
+  private dragPlanePosition: Vector3 | null = null;
 
   private dragStartObserver: any = null;
   private dragObserver: any = null;
@@ -89,6 +95,7 @@ export class PositionGizmo implements IGizmoTransformer {
     if (!positionGizmo) return;
 
     this.setupDragObservables();
+    this.setupFreeDragObservables();
     this.applyPlanarGizmoOffsets();
     configureGizmoButtons(positionGizmo, [LEFT_BUTTON]);
   }
@@ -99,6 +106,7 @@ export class PositionGizmo implements IGizmoTransformer {
 
     this.gizmoManager.positionGizmoEnabled = false;
     this.cleanupDragObservables();
+    this.cleanupFreeDragObservables();
     this.resetState();
   }
 
@@ -124,6 +132,7 @@ export class PositionGizmo implements IGizmoTransformer {
     const positionGizmo = this.getPositionGizmo();
     if (!positionGizmo) return;
 
+    this.snapDistance = distance;
     positionGizmo.snapDistance = distance;
     positionGizmo.planarGizmoEnabled = true;
 
@@ -142,10 +151,19 @@ export class PositionGizmo implements IGizmoTransformer {
     return this.gizmoManager.gizmos.positionGizmo;
   }
 
+  private getScene(): Scene | null {
+    const positionGizmo = this.getPositionGizmo();
+    if (!positionGizmo) return null;
+    return positionGizmo.gizmoLayer.originalScene;
+  }
+
   private resetState(): void {
     this.entityStates.clear();
     this.pivotPosition = null;
     this.isDragging = false;
+    this.isFreeDragging = false;
+    this.lastSnappedPivotPosition = null;
+    this.dragPlanePosition = null;
     this.currentEntities = [];
   }
 
@@ -375,7 +393,276 @@ export class PositionGizmo implements IGizmoTransformer {
 
   private resetDragState(): void {
     this.isDragging = false;
+    this.isFreeDragging = false;
     this.pivotPosition = null;
+    this.lastSnappedPivotPosition = null;
+    this.dragPlanePosition = null;
     this.entityStates.clear();
+  }
+
+  // ========== Free Drag Methods (merged from FreeGizmo) ==========
+
+  private setupFreeDragObservables(): void {
+    const scene = this.getScene();
+    if (!scene) return;
+
+    scene.onPointerDown = event => {
+      // Only start drag on left mouse button
+      if (event.button !== LEFT_BUTTON || this.currentEntities.length === 0) return;
+
+      const clickedEntity = this.findClickedEntityFromSelected();
+      if (!clickedEntity) return;
+
+      // Check if we clicked on the gizmo itself - if so, don't start free drag
+      const positionGizmo = this.getPositionGizmo();
+      if (positionGizmo && this.isGizmoMesh(event)) {
+        return; // Let the gizmo handle it
+      }
+
+      this.startFreeDrag();
+    };
+
+    scene.onPointerMove = () => {
+      if (!this.isFreeDragging) return;
+
+      const delta = this.calculateFreeDragDelta();
+      if (!delta) return;
+
+      this.handleFreeDrag(delta);
+    };
+
+    scene.onPointerUp = () => {
+      if (this.isFreeDragging) {
+        this.handleFreeDragEnd();
+      }
+    };
+  }
+
+  private cleanupFreeDragObservables(): void {
+    const scene = this.getScene();
+    if (!scene) return;
+
+    scene.onPointerDown = undefined;
+    scene.onPointerMove = undefined;
+    scene.onPointerUp = undefined;
+  }
+
+  private isGizmoMesh(_event: any): boolean {
+    const scene = this.getScene();
+    const positionGizmo = this.getPositionGizmo();
+    if (!positionGizmo || !scene) return false;
+
+    const pickResult = scene.pick(scene.pointerX, scene.pointerY);
+    if (!pickResult?.hit || !pickResult.pickedMesh) return false;
+
+    const mesh = pickResult.pickedMesh;
+
+    // Check if the mesh is part of any gizmo
+    const gizmos = [
+      positionGizmo.xGizmo,
+      positionGizmo.yGizmo,
+      positionGizmo.zGizmo,
+      positionGizmo.xPlaneGizmo,
+      positionGizmo.yPlaneGizmo,
+      positionGizmo.zPlaneGizmo,
+    ];
+
+    for (const gizmo of gizmos) {
+      if (gizmo?._rootMesh && (mesh === gizmo._rootMesh || mesh.isDescendantOf(gizmo._rootMesh))) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private findClickedEntityFromSelected(): { entity: EcsEntity; mesh: AbstractMesh } | null {
+    const scene = this.getScene();
+    if (!scene) return null;
+
+    const pickResult = scene.pick(scene.pointerX, scene.pointerY, mesh => {
+      for (const entity of this.currentEntities) {
+        if (
+          mesh.isDescendantOf(entity) ||
+          mesh === entity.meshRenderer ||
+          mesh === entity.gltfContainer
+        ) {
+          return true;
+        }
+      }
+      return false;
+    });
+
+    if (!pickResult?.hit || !pickResult.pickedMesh) return null;
+
+    for (const entity of this.currentEntities) {
+      if (
+        pickResult.pickedMesh.isDescendantOf(entity) ||
+        pickResult.pickedMesh === entity.meshRenderer ||
+        pickResult.pickedMesh === entity.gltfContainer
+      ) {
+        return { entity, mesh: pickResult.pickedMesh };
+      }
+    }
+
+    return null;
+  }
+
+  private startFreeDrag(): void {
+    this.isFreeDragging = true;
+    this.initializeFreeDragPivot();
+    this.initializeFreeDragOffsets();
+
+    if (this.pivotPosition) {
+      this.dragPlanePosition = this.pivotPosition.clone();
+    }
+  }
+
+  private initializeFreeDragPivot(): void {
+    const scene = this.getScene();
+    if (!scene) return;
+
+    const pickInfo = scene.pick(scene.pointerX, scene.pointerY);
+    this.pivotPosition = pickInfo?.pickedPoint
+      ? pickInfo.pickedPoint.clone()
+      : this.calculateCentroid(this.currentEntities);
+    this.lastSnappedPivotPosition = this.pivotPosition.clone();
+  }
+
+  private initializeFreeDragOffsets(): void {
+    this.entityStates.clear();
+    for (const entity of this.currentEntities) {
+      const worldPosition = entity.getAbsolutePosition();
+      const offset = worldPosition.subtract(this.pivotPosition!);
+
+      this.entityStates.set(entity.entityId, {
+        position: entity.position.clone(),
+        scale: entity.scaling.clone(),
+        rotation: entity.rotationQuaternion?.clone() || Quaternion.Identity(),
+        offset,
+      });
+    }
+  }
+
+  private calculateFreeDragDelta(): Vector3 | null {
+    const scene = this.getScene();
+    if (!scene || !this.pivotPosition || !this.dragPlanePosition) return null;
+
+    const camera = scene.activeCamera;
+    if (!camera) return null;
+
+    const ray = scene.createPickingRay(scene.pointerX, scene.pointerY, null, camera);
+
+    const dragPlane = Plane.FromPositionAndNormal(
+      new Vector3(0, this.dragPlanePosition.y, 0),
+      Vector3.Up(),
+    );
+
+    const distance = ray.intersectsPlane(dragPlane);
+    if (distance === null) return null;
+
+    const newPosition = ray.origin.add(ray.direction.scale(distance));
+    const delta = newPosition.subtract(this.pivotPosition);
+
+    return delta;
+  }
+
+  private handleFreeDrag(delta: Vector3): void {
+    if (!this.isFreeDragging || !this.pivotPosition || !this.lastSnappedPivotPosition) return;
+
+    const worldDelta = delta.clone();
+    worldDelta.y = 0; // keep Y position unchanged for free drag
+    this.pivotPosition.addInPlace(worldDelta);
+
+    if (this.shouldMoveEntitiesForFreeDrag()) {
+      this.moveEntitiesToFreeDragPivot();
+    }
+  }
+
+  private shouldMoveEntitiesForFreeDrag(): boolean {
+    if (this.snapDistance <= 0) return true;
+
+    const distanceFromLastSnapped = Vector3.Distance(
+      this.pivotPosition!,
+      this.lastSnappedPivotPosition!,
+    );
+    return distanceFromLastSnapped >= this.snapDistance;
+  }
+
+  private moveEntitiesToFreeDragPivot(): void {
+    const finalPivotPosition = this.getFreeDragSnappedPivotPosition();
+
+    for (const entity of this.currentEntities) {
+      const state = this.entityStates.get(entity.entityId);
+      if (!state) continue;
+
+      const newWorldPosition = finalPivotPosition.add(state.offset);
+      this.applyWorldPositionToEntity(entity, newWorldPosition);
+    }
+
+    if (this.updateEntityPosition) {
+      this.currentEntities.forEach(this.updateEntityPosition);
+    }
+  }
+
+  private getFreeDragSnappedPivotPosition(): Vector3 {
+    if (this.snapDistance <= 0) return this.pivotPosition!;
+
+    const snappedPivotPosition = snapVector(this.pivotPosition!, this.snapDistance);
+    snappedPivotPosition.y = this.pivotPosition!.y;
+    this.lastSnappedPivotPosition = snappedPivotPosition.clone();
+
+    return snappedPivotPosition;
+  }
+
+  private applyWorldPositionToEntity(entity: EcsEntity, worldPosition: Vector3): void {
+    const parent = entity.parent instanceof TransformNode ? entity.parent : null;
+
+    if (parent) {
+      const parentWorldMatrix = parent.getWorldMatrix();
+      const parentWorldMatrixInverse = parentWorldMatrix.invert();
+      const localPosition = Vector3.TransformCoordinates(worldPosition, parentWorldMatrixInverse);
+      entity.position.copyFrom(localPosition);
+    } else {
+      entity.position.copyFrom(worldPosition);
+    }
+
+    this.updateEntityTransformImmediate(entity);
+  }
+
+  private updateEntityTransformImmediate(entity: EcsEntity): void {
+    entity.computeWorldMatrix(true);
+
+    if (typeof (entity as any).refreshBoundingInfo === 'function') {
+      (entity as any).refreshBoundingInfo();
+    }
+
+    if (typeof entity.getChildMeshes === 'function') {
+      entity.getChildMeshes().forEach(mesh => {
+        if (typeof mesh.refreshBoundingInfo === 'function') {
+          mesh.refreshBoundingInfo({});
+        }
+        if (typeof mesh.computeWorldMatrix === 'function') {
+          mesh.computeWorldMatrix(true);
+        }
+      });
+    }
+  }
+
+  private handleFreeDragEnd(): void {
+    this.isFreeDragging = false;
+    this.pivotPosition = null;
+    this.dragPlanePosition = null;
+    this.lastSnappedPivotPosition = null;
+
+    // Sync the gizmo position after free drag
+    const gizmoNode = this.gizmoManager.attachedNode as TransformNode;
+    if (gizmoNode && this.currentEntities.length > 0) {
+      const centroid = this.calculateCentroid(this.currentEntities);
+      gizmoNode.position.copyFrom(centroid);
+      gizmoNode.computeWorldMatrix(true);
+    }
+
+    this.dispatchOperations?.();
   }
 }
