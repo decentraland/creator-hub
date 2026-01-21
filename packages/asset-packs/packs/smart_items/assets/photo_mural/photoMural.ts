@@ -10,12 +10,14 @@ import {
   MaterialTransparencyMode,
   MeshCollider,
   MeshRenderer,
+  Name,
   pointerEventsSystem,
   Transform,
   Tween,
   tweenSystem,
   VisibilityComponent,
 } from '@dcl/sdk/ecs';
+import { getComponentEntityTree } from '@dcl/ecs';
 import { Quaternion, Vector3 } from '@dcl/sdk/math';
 
 type Photo = {
@@ -41,7 +43,9 @@ export class PhotoMural {
   // Entities
   carouselEntity: Entity;
   buttonSoundEntity: Entity;
-  spinnerEntity: Entity;
+  spinnerEntity: Entity | null = null;
+  button_prev: Entity | null = null;
+  button_next: Entity | null = null;
 
   // Timer
   refreshRate: number = 10;
@@ -53,8 +57,6 @@ export class PhotoMural {
   constructor(
     public src: string,
     public entity: Entity,
-    public button_prev: Entity,
-    public button_next: Entity,
     public coordinates: string,
   ) {
     this.carouselEntity = engine.addEntity();
@@ -71,10 +73,68 @@ export class PhotoMural {
   }
 
   /**
+   * Finds the button entities by checking all descendants of the main entity
+   * Looks for entities with names starting with "previous_red" and "next_red"
+   */
+  private findButtonEntities() {
+    let prevButton: Entity | null = null;
+    let nextButton: Entity | null = null;
+    let prevButtonFound = false;
+    let nextButtonFound = false;
+
+    // Get all descendants of this.entity using getComponentEntityTree
+    for (const descendantEntity of getComponentEntityTree(engine, this.entity, Transform)) {
+      // Check if this descendant has a Name component
+      const nameComponent = Name.getOrNull(descendantEntity);
+      if (nameComponent) {
+        if (nameComponent.value.startsWith('previous_red')) {
+          if (prevButtonFound) {
+            console.error(
+              'PhotoMural: Multiple descendants found with name starting with "previous_red". Expected exactly one.',
+            );
+            prevButton = null;
+          } else {
+            prevButton = descendantEntity;
+            prevButtonFound = true;
+          }
+        } else if (nameComponent.value.startsWith('next_red')) {
+          if (nextButtonFound) {
+            console.error(
+              'PhotoMural: Multiple descendants found with name starting with "next_red". Expected exactly one.',
+            );
+            nextButton = null;
+          } else {
+            nextButton = descendantEntity;
+            nextButtonFound = true;
+          }
+        }
+      }
+    }
+
+    // Set the found buttons or log errors
+    if (prevButton === null) {
+      console.error(
+        'PhotoMural: No descendant entity found with name starting with "previous_red"',
+      );
+    } else {
+      this.button_prev = prevButton;
+    }
+
+    if (nextButton === null) {
+      console.error('PhotoMural: No descendant entity found with name starting with "next_red"');
+    } else {
+      this.button_next = nextButton;
+    }
+  }
+
+  /**
    * Start function - called when the script is initialized
    */
   async start() {
     console.log('PhotoMural initialized for entity:', this.entity);
+
+    // Find button entities by name
+    this.findButtonEntities();
 
     // Setup Spinner first - show immediately since we're loading
     this.setupSpinner();
@@ -122,8 +182,12 @@ export class PhotoMural {
     });
 
     // Setup Buttons
-    this.setupButton(this.button_prev, -1);
-    this.setupButton(this.button_next, 1);
+    if (this.button_prev) {
+      this.setupButton(this.button_prev, -1);
+    }
+    if (this.button_next) {
+      this.setupButton(this.button_next, 1);
+    }
 
     // Initialize scene IDs from coordinates and then fetch photos
     await this.initPhotoMuralSystem([this.coordinates]);
@@ -195,11 +259,15 @@ export class PhotoMural {
   }
 
   private showSpinner() {
-    VisibilityComponent.getMutable(this.spinnerEntity).visible = true;
+    if (this.spinnerEntity) {
+      VisibilityComponent.getMutable(this.spinnerEntity).visible = true;
+    }
   }
 
   private hideSpinner() {
-    VisibilityComponent.getMutable(this.spinnerEntity).visible = false;
+    if (this.spinnerEntity) {
+      VisibilityComponent.getMutable(this.spinnerEntity).visible = false;
+    }
   }
 
   private async initPhotoMuralSystem(sceneCoords: string[]) {
