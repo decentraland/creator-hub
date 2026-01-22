@@ -173,3 +173,33 @@ export type CaptchaData = {
     width: number;
   };
 };
+
+/**
+ * Reference to an action on an entity.
+ * Used to store action references in script parameters.
+ */
+export type ActionRef = {
+  entity: Entity;
+  action: string;
+};
+
+/**
+ * A callback function that triggers an action.
+ * Scripts receive this as a parameter and can call it to trigger the referenced action.
+ *
+ * @example
+ * ```typescript
+ * export class Padlock {
+ *   constructor(
+ *     public src: string,
+ *     public entity: Entity,
+ *     public onUnlock: ActionCallback
+ *   ) {}
+ *
+ *   solve() {
+ *     this.onUnlock(); // Triggers the action selected in the editor
+ *   }
+ * }
+ * ```
+ */
+export type ActionCallback = () => void;
