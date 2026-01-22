@@ -225,7 +225,8 @@ const slice = createSlice({
         state.status = 'loading';
         state.error = null;
       })
-      .addCase(fetchManagedProjects.fulfilled, state => {
+      .addCase(fetchManagedProjects.fulfilled, (state, action) => {
+        state.projects = action.payload;
         state.status = 'succeeded';
         state.error = null;
       })
@@ -278,6 +279,8 @@ export const actions = {
   fetchAllManagedProjectsDetails,
   fetchManagedProjects,
   fetchWorldSettings,
+  fetchStorageStats,
+  fetchAccountHoldings,
 };
 
 export const reducer = slice.reducer;
