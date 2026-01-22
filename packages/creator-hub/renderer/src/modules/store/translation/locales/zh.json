@@ -331,6 +331,24 @@
         "bug_fixes": "錯誤修復"
       }
     },
+    "worlds_storage": {
+      "your_storage": "您的存储",
+      "total_available_storage": "总可用存储",
+      "mana": "MANA",
+      "mana_earn_storage": "每 2,000 个代币（Polygon 或 Ethereum）赚取 100 Mb 存储空间。",
+      "mana_holdings": "由于持有 {owned} MANA 代币，您拥有 {mbs} Mb。",
+      "mana_buy": "购买 MANA",
+      "lands": "LANDs",
+      "lands_earn_storage": "每个 LAND 赚取 100 Mb 存储空间。",
+      "lands_holdings": "由于持有 {owned} LANDs，您拥有 {mbs} Mb。",
+      "lands_buy": "购买 LAND",
+      "names": "NAMEs",
+      "names_earn_storage": "每个 NAME 赚取 100 Mb 存储空间。",
+      "names_holdings": "由于持有 {owned} Decentraland NAMEs，您拥有 {mbs} Mb。",
+      "names_buy": "购买 NAME",
+      "proposal": "这些存储规则经过治理 DAO 提案的投票并获得通过。",
+      "learn_more": "了解更多"
+    },
     "world_settings": {
       "title": "世界设置 - {worldName}",
       "tabs": {
@@ -543,6 +561,12 @@
     "no_projects": {
       "title": "您还没有任何场景",
       "description": "为您的土地和世界创建和管理场景。现在开始构建！"
+    },
+    "worlds_storage": {
+      "used": "已使用空间",
+      "for_names": "用于 Decentraland NAMEs",
+      "description": "总存储空间根据 MANA、LAND 和 NAME 持有量计算。",
+      "link": "查看详情"
     },
     "cards": {
       "published": "已发布",

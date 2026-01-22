@@ -8,19 +8,23 @@ import type { ChainId } from '@dcl/schemas';
 import type { Async } from '/shared/types/async';
 import type { ManagedProject } from '/shared/types/manage';
 import { ManagedProjectType, SortBy } from '/shared/types/manage';
-import type { WorldDeployment, WorldSettings } from '/@/lib/worlds';
+import type { WorldDeployment, WorldSettings, WorldsWalletStats } from '/@/lib/worlds';
 import { WorldRoleType, Worlds } from '/@/lib/worlds';
 import type { AppState } from '/@/modules/store';
 import { fetchENSList } from '/@/modules/store/ens';
 import { fetchLandList } from '/@/modules/store/land';
 import type { LandDeployment } from '/@/lib/land';
 import { Lands, LandType } from '/@/lib/land';
+import type { AccountHoldings } from '/@/lib/account';
+import { Account } from '/@/lib/account';
 
 // state
 export type ManagementState = {
   sortBy: SortBy;
   searchQuery: string;
-  projects: ManagedProject[]; // List of managed projects
+  projects: ManagedProject[];
+  storageStats: WorldsWalletStats | null;
+  accountHoldings: AccountHoldings | null;
   worldSettings: {
     worldName: string;
     settings: WorldSettings | null;
@@ -33,6 +37,8 @@ export const initialState: Async<ManagementState> = {
   sortBy: SortBy.LATEST,
   searchQuery: '',
   projects: [],
+  storageStats: null,
+  accountHoldings: null,
   status: 'idle',
   error: null,
   worldSettings: {
@@ -47,12 +53,18 @@ export const initialState: Async<ManagementState> = {
 export const fetchManagedProjects = createAsyncThunk(
   'management/fetchManagedProjects',
   async ({ address, chainId }: { address: string; chainId: ChainId }, { dispatch }) => {
+    // Fetch NAMEs and Land parcels/estates in parallel.
     await Promise.all([
       dispatch(fetchENSList({ address, chainId })).unwrap(),
       dispatch(fetchLandList({ address })).unwrap(),
     ]);
 
-    const projects = await dispatch(fetchAllManagedProjectsDetails({ address })).unwrap();
+    const [projects] = await Promise.all([
+      dispatch(fetchAllManagedProjectsDetails({ address })).unwrap(),
+      dispatch(fetchStorageStats({ address })).unwrap(),
+      dispatch(fetchAccountHoldings({ address })).unwrap(),
+    ]);
+
     return projects;
   },
 );
@@ -164,6 +176,24 @@ export const fetchAllManagedProjectsDetails = createAsyncThunk(
   },
 );
 
+export const fetchStorageStats = createAsyncThunk(
+  'management/fetchStorageStats',
+  async ({ address }: { address: string }) => {
+    const WorldsAPI = new Worlds();
+    const stats = await WorldsAPI.fetchWalletStats(address);
+    return stats;
+  },
+);
+
+export const fetchAccountHoldings = createAsyncThunk(
+  'management/fetchAccountHoldings',
+  async ({ address }: { address: string }) => {
+    const AccountAPI = new Account();
+    const holdings = await AccountAPI.fetchAccountHoldings(address);
+    return holdings;
+  },
+);
+
 export const fetchWorldSettings = createAsyncThunk(
   'management/fetchWorldSettings',
   async ({ worldName }: { worldName: string }) => {
@@ -194,14 +224,22 @@ const slice = createSlice({
         state.status = 'loading';
         state.error = null;
       })
-      .addCase(fetchManagedProjects.fulfilled, (state, action) => {
-        state.projects = action.payload;
+      .addCase(fetchManagedProjects.fulfilled, state => {
         state.status = 'succeeded';
         state.error = null;
       })
       .addCase(fetchManagedProjects.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message || 'Failed to fetch managed projects';
+      })
+      .addCase(fetchAllManagedProjectsDetails.fulfilled, (state, action) => {
+        state.projects = action.payload;
+      })
+      .addCase(fetchStorageStats.fulfilled, (state, action) => {
+        state.storageStats = action.payload;
+      })
+      .addCase(fetchAccountHoldings.fulfilled, (state, action) => {
+        state.accountHoldings = action.payload;
       })
       .addCase(fetchWorldSettings.pending, (state, action) => {
         state.worldSettings.worldName = action.meta.arg.worldName;
@@ -222,16 +260,13 @@ const slice = createSlice({
 });
 
 // selectors
-const getManagedProjects = (state: Async<ManagementState>) => state.projects;
-const getError = (state: Async<ManagementState>) => state.error;
-
-const getWorldItems = createSelector([getManagedProjects], items =>
-  items.filter(item => item.type === ManagedProjectType.WORLD),
+const getManagementState = (state: AppState) => state.management;
+const getManagedProjects = createSelector(
+  getManagementState,
+  managementState => managementState.projects,
 );
 
-const getLandItems = createSelector([getManagedProjects], items =>
-  items.filter(item => item.type === ManagedProjectType.LAND),
-);
+const getError = createSelector(getManagementState, managementState => managementState.error);
 
 // exports
 export const actions = {
@@ -239,6 +274,8 @@ export const actions = {
   fetchAllManagedProjectsDetails,
   fetchManagedProjects,
   fetchWorldSettings,
+  fetchStorageStats,
+  fetchAccountHoldings,
 };
 
 export const reducer = slice.reducer;
@@ -247,6 +284,4 @@ export const selectors = {
   ...slice.selectors,
   getManagedProjects,
   getError,
-  getWorldItems,
-  getLandItems,
 };

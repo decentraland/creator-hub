@@ -331,6 +331,24 @@
         "bug_fixes": "Bug Fixes"
       }
     },
+    "worlds_storage": {
+      "your_storage": "Your Storage",
+      "total_available_storage": "TOTAL AVAILABLE STORAGE",
+      "mana": "MANA",
+      "mana_earn_storage": "Earn 100 Mb of storage per 2,000 tokens (Polygon or Ethereum).",
+      "mana_holdings": "You have {mbs} Mb thanks to holding {owned} MANA tokens.",
+      "mana_buy": "BUY MANA",
+      "lands": "LANDs",
+      "lands_earn_storage": "Earn 100 Mb of storage per LAND.",
+      "lands_holdings": "You have {mbs} Mb thanks to holding {owned} LANDs.",
+      "lands_buy": "BUY LAND",
+      "names": "NAMEs",
+      "names_earn_storage": "Earn 100 Mb of storage per NAME.",
+      "names_holdings": "You have {mbs} Mb thanks to holding {owned} Decentraland NAMEs.",
+      "names_buy": "BUY NAME",
+      "proposal": "These storage rules were voted on and passed in a governance DAO proposal.",
+      "learn_more": "LEARN MORE"
+    },
     "world_settings": {
       "title": "World Settings - {worldName}",
       "tabs": {
@@ -543,6 +561,12 @@
     "no_projects": {
       "title": "You don't have any scenes yet",
       "description": "Create and manage your scenes for your LANDs and Worlds. Start building now!"
+    },
+    "worlds_storage": {
+      "used": "Space used",
+      "for_names": "for Decentraland NAMEs",
+      "description": "Total storage is calculated based on MANA, LAND, and NAME holdings.",
+      "link": "View details"
     },
     "cards": {
       "published": "Published",
