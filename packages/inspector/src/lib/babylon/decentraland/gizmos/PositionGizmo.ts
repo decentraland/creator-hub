@@ -104,6 +104,11 @@ export class PositionGizmo implements IGizmoTransformer {
     const positionGizmo = this.getPositionGizmo();
     if (!positionGizmo) return;
 
+    // Make sure gizmo is visible again if it was hidden during free drag
+    if (this.isFreeDragging) {
+      this.showGizmo();
+    }
+
     this.gizmoManager.positionGizmoEnabled = false;
     this.cleanupDragObservables();
     this.cleanupFreeDragObservables();
@@ -510,6 +515,7 @@ export class PositionGizmo implements IGizmoTransformer {
 
   private startFreeDrag(): void {
     this.isFreeDragging = true;
+    this.hideGizmo();
     this.initializeFreeDragPivot();
     this.initializeFreeDragOffsets();
 
@@ -663,6 +669,49 @@ export class PositionGizmo implements IGizmoTransformer {
       gizmoNode.computeWorldMatrix(true);
     }
 
+    // Show the gizmo again at the new position
+    this.showGizmo();
+
     this.dispatchOperations?.();
+  }
+
+  private hideGizmo(): void {
+    const positionGizmo = this.getPositionGizmo();
+    if (!positionGizmo) return;
+
+    const gizmos = [
+      positionGizmo.xGizmo,
+      positionGizmo.yGizmo,
+      positionGizmo.zGizmo,
+      positionGizmo.xPlaneGizmo,
+      positionGizmo.yPlaneGizmo,
+      positionGizmo.zPlaneGizmo,
+    ];
+
+    for (const gizmo of gizmos) {
+      if (gizmo?._rootMesh) {
+        gizmo._rootMesh.setEnabled(false);
+      }
+    }
+  }
+
+  private showGizmo(): void {
+    const positionGizmo = this.getPositionGizmo();
+    if (!positionGizmo) return;
+
+    const gizmos = [
+      positionGizmo.xGizmo,
+      positionGizmo.yGizmo,
+      positionGizmo.zGizmo,
+      positionGizmo.xPlaneGizmo,
+      positionGizmo.yPlaneGizmo,
+      positionGizmo.zPlaneGizmo,
+    ];
+
+    for (const gizmo of gizmos) {
+      if (gizmo?._rootMesh) {
+        gizmo._rootMesh.setEnabled(true);
+      }
+    }
   }
 }
