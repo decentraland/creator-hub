@@ -1,12 +1,15 @@
 import { useNavigate } from 'react-router-dom';
+import { Typography } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
+
 import { misc } from '#preload';
 
 import { Container } from '../Container';
 import { Navbar, NavbarItem } from '../Navbar';
-import './styles.css';
+import { Image } from '../Image';
 import { Title } from '../Title';
-import { Typography } from 'decentraland-ui2';
+
+import './styles.css';
 
 function Playlist(props: { list: string; videos: { id: string; title: string }[]; title: string }) {
   return (
@@ -42,9 +45,10 @@ function Video(props: { id: string; list: string; title: string }) {
       onClick={() => misc.openExternal(url)}
       title={props.title}
     >
-      <img
+      <Image
         className="thumbnail"
         src={`https://img.youtube.com/vi/${props.id}/0.jpg`}
+        alt={props.title}
       />
       <span className="title">{props.title}</span>
     </div>

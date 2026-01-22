@@ -1,5 +1,6 @@
 import fromUnixTime from 'date-fns/fromUnixTime';
 import { config } from '/@/config';
+import { fetch } from '/shared/fetch';
 
 // TheGraph has a limit of a maximum of 1000 results per entity per query
 const MAX_RESULTS = 1000;

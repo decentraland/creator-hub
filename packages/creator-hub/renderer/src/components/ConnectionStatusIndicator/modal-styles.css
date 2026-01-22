@@ -1,0 +1,58 @@
+.ConnectionModal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0 24px 24px;
+}
+
+.ConnectionModal .CloseButtonContainer {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.ConnectionModal .icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: #ffffff0d;
+  margin-bottom: 16px;
+}
+
+.ConnectionModal .icon {
+  font-size: 64px;
+}
+
+.ConnectionModal .icon.offline {
+  color: var(--error);
+}
+
+.ConnectionModal .icon.slow {
+  color: var(--danger);
+}
+
+.ConnectionModal .title {
+  margin-bottom: 12px;
+}
+
+.ConnectionModal .message {
+  color: var(--secondary-text);
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.ConnectionModal .actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.ConnectionModal .retry-button {
+  width: 100%;
+}

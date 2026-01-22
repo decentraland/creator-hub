@@ -10,6 +10,9 @@ import { fetchENSList } from '/@/modules/store/ens';
 import { fetchLandList, fetchTiles } from '/@/modules/store/land';
 import { identify } from '/@/modules/store/analytics';
 import { AuthContext } from '/@/contexts/AuthContext';
+import { isNavigatorOnline } from '/@/lib/connection';
+import { useSnackbar } from '/@/hooks/useSnackbar';
+import { t } from '/@/modules/store/translation/utils';
 import type { AuthSignInProps } from './types';
 
 // Initialize the provider
@@ -21,10 +24,16 @@ const DEFAULT_CHAIN_ID: ChainId = (Number(config.get('CHAIN_ID')) ??
 
 export const provider = new AuthServerProvider();
 
+const MAX_SIGNIN_ATTEMPTS = 3;
+const SIGNIN_TIMEOUT_IN_MS = 60_000;
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { pushGeneric } = useSnackbar();
   const initSignInResultRef = useRef<AuthSignInProps>();
+  const signInAttemptCountRef = useRef<number>(0);
+  const activeSignInTabsRef = useRef<Set<string>>(new Set());
   const [wallet, setWallet] = useState<string>();
   const [avatar, setAvatar] = useState<Avatar>();
   const [isSignedIn, setIsSignedIn] = useState(false);
@@ -49,23 +58,60 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setWallet(connectedAccount);
       setIsSignedIn(true);
       fetchAvatar(connectedAccount);
+      signInAttemptCountRef.current = 0;
     }
-  }, []);
+  }, [fetchAvatar]);
 
   const signIn = useCallback(async () => {
-    const initSignInResult = await AuthServerProvider.initSignIn();
-    initSignInResultRef.current = initSignInResult;
-    navigate('/sign-in');
-    AuthServerProvider.finishSignIn(initSignInResult)
-      .then(finishSignIn)
-      .catch(error => {
-        console.error(error);
-      })
-      .finally(() => {
-        initSignInResultRef.current = undefined;
-        navigate(-1);
+    if (!isNavigatorOnline()) {
+      pushGeneric('error', t('connection.offline.message'));
+      return;
+    }
+
+    if (signInAttemptCountRef.current >= MAX_SIGNIN_ATTEMPTS) {
+      pushGeneric('error', t('sign_in.errors.max_attempts'));
+      return;
+    }
+
+    try {
+      signInAttemptCountRef.current += 1;
+
+      const initSignInPromise = AuthServerProvider.initSignIn();
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Signin timeout')), SIGNIN_TIMEOUT_IN_MS);
       });
-  }, []);
+
+      const initSignInResult = await Promise.race([initSignInPromise, timeoutPromise]);
+      initSignInResultRef.current = initSignInResult;
+
+      // track this signin session to prevent duplicates
+      const sessionId = Date.now().toString();
+      activeSignInTabsRef.current.add(sessionId);
+
+      navigate('/sign-in');
+
+      AuthServerProvider.finishSignIn(initSignInResult)
+        .then(finishSignIn)
+        .catch(error => {
+          console.error('Signin error:', error);
+          pushGeneric('error', error?.message || t('sign_in.errors.failed'));
+        })
+        .finally(() => {
+          initSignInResultRef.current = undefined;
+          activeSignInTabsRef.current.delete(sessionId);
+          navigate(-1);
+        });
+    } catch (error: any) {
+      console.error('Signin initialization error:', error);
+      pushGeneric(
+        'error',
+        error?.message === 'Signin timeout'
+          ? t('sign_in.errors.timeout')
+          : t('sign_in.errors.init_failed'),
+      );
+      initSignInResultRef.current = undefined;
+    }
+  }, [navigate, pushGeneric, finishSignIn]);
 
   const signOut = useCallback(() => {
     setWallet(undefined);
@@ -105,7 +151,31 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       dispatch(fetchLandList({ address: wallet }));
       setUser({ id: wallet });
     }
-  }, [wallet, chainId]);
+  }, [wallet, chainId, dispatch]);
+
+  // reset signin attempt counter when coming back online
+  useEffect(() => {
+    const handleOnline = () => {
+      signInAttemptCountRef.current = 0;
+    };
+
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, []);
+
+  // reset signin attempt counter after 5 minutes
+  useEffect(() => {
+    const resetInterval = setInterval(
+      () => {
+        if (signInAttemptCountRef.current > 0) {
+          signInAttemptCountRef.current = 0;
+        }
+      },
+      5 * 60 * 1000,
+    );
+
+    return () => clearInterval(resetInterval);
+  }, []);
 
   return (
     <AuthContext.Provider
