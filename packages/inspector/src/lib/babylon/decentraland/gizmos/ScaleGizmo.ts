@@ -455,6 +455,18 @@ export class ScaleGizmo implements IGizmoTransformer {
     // Make the uniform scale cube 2x bigger for easier selection
     uniformGizmo.scaleRatio = 2;
 
+    // Reset the uniform scale gizmo rotation to align with axis gizmos
+    // The uniform scale cube should always be axis-aligned, not rotated
+    const uniformMesh = (uniformGizmo as any)._rootMesh;
+    if (uniformMesh) {
+      if (uniformMesh.rotationQuaternion) {
+        uniformMesh.rotationQuaternion.set(0, 0, 0, 1); // Identity rotation
+      } else {
+        uniformMesh.rotation.set(0, 0, 0); // Euler rotation reset
+      }
+      uniformMesh.computeWorldMatrix(true);
+    }
+
     // Get the scene to create a new cube mesh
     const scene = this.gizmoManager.gizmos.scaleGizmo?._rootMesh?.getScene();
     if (!scene) return;
@@ -478,7 +490,11 @@ export class ScaleGizmo implements IGizmoTransformer {
     // Defer configuration to next render frame — gizmo meshes aren't fully initialized until then
     const scene = this.gizmoManager.gizmos.scaleGizmo?._rootMesh?.getScene();
     if (scene) {
-      scene.onBeforeRenderObservable.addOnce(() => this.configureUniformScaleGizmo());
+      scene.onBeforeRenderObservable.addOnce(() => {
+        this.configureUniformScaleGizmo();
+        // Reset rotation after configuration to ensure alignment
+        this.resetUniformScaleGizmoRotation();
+      });
     }
   }
 
@@ -553,6 +569,26 @@ export class ScaleGizmo implements IGizmoTransformer {
 
     // Scale gizmo should always be locally aligned
     TransformUtils.alignGizmo(gizmoNode, this.currentEntities);
+
+    // Ensure uniform scale gizmo rotation is reset to align with axis gizmos
+    this.resetUniformScaleGizmoRotation();
+  }
+
+  private resetUniformScaleGizmoRotation(): void {
+    if (!this.gizmoManager.gizmos.scaleGizmo) return;
+    const uniformGizmo = this.gizmoManager.gizmos.scaleGizmo.uniformScaleGizmo;
+    if (!uniformGizmo) return;
+
+    // Reset the uniform scale gizmo rotation to identity to align with axis gizmos
+    const uniformMesh = (uniformGizmo as any)._rootMesh;
+    if (uniformMesh) {
+      if (uniformMesh.rotationQuaternion) {
+        uniformMesh.rotationQuaternion.set(0, 0, 0, 1); // Identity rotation
+      } else {
+        uniformMesh.rotation.set(0, 0, 0); // Euler rotation reset
+      }
+      uniformMesh.computeWorldMatrix(true);
+    }
   }
 
   private setupDragObservables(): void {
@@ -770,6 +806,9 @@ export class ScaleGizmo implements IGizmoTransformer {
       // Scale gizmo should always be locally aligned
       TransformUtils.alignGizmo(gizmoNode, this.currentEntities);
     }
+
+    // Reset uniform scale gizmo rotation to ensure it stays aligned
+    this.resetUniformScaleGizmoRotation();
 
     this.isDraggingUniformScale = false;
     this.initialUniformScaleMousePos = null;
