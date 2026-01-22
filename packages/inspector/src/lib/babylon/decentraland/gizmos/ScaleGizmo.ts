@@ -215,7 +215,35 @@ export class ScaleGizmo implements IGizmoTransformer {
       // Calculate scale factor based on total mouse movement (both X and Y)
       // Use the sum of deltaX and deltaY so dragging in any direction affects scale
       const dragDistance = deltaX + deltaY;
-      const scaleFactor = 1.0 + (dragDistance / 100.0) * this.scaleSensitivity;
+
+      // Map drag distance to scale factor:
+      // - Origin (dragDistance = 0) → scaleFactor = 1.0 (original size)
+      // - Positive drag (right/up) → scaleFactor > 1.0 (growing)
+      // - Small negative drag (left/down) → scaleFactor < 1.0 but > 0 (shrinking, stays positive)
+      // - Large negative drag → scaleFactor can go negative (requires pronounced drag)
+      const positiveSensitivity = 200.0; // Sensitivity for positive drags (right/up)
+      const negativeSensitivity = 600.0; // Gentler sensitivity for negative drags (left/down) to prevent going negative too quickly
+      const negativeThreshold = -500.0; // Threshold before allowing negative scale (requires very pronounced drag)
+
+      let scaleFactor: number;
+      if (dragDistance >= 0) {
+        // Positive drag: scale increases smoothly
+        scaleFactor = 1.0 + (dragDistance / positiveSensitivity) * this.scaleSensitivity;
+      } else if (dragDistance >= negativeThreshold) {
+        // Small to moderate negative drag: scale decreases but stays positive
+        // Use gentler sensitivity for negative values to allow smooth shrinking without going negative
+        scaleFactor = 1.0 + (dragDistance / negativeSensitivity) * this.scaleSensitivity;
+        // Clamp to prevent going negative until threshold
+        scaleFactor = Math.max(0.01, scaleFactor);
+      } else {
+        // Large negative drag: allow negative scaling
+        // Calculate the scale at the threshold, then continue from there
+        const thresholdScale =
+          1.0 + (negativeThreshold / negativeSensitivity) * this.scaleSensitivity;
+        const excessDrag = dragDistance - negativeThreshold;
+        // Use same sensitivity as positive for the excess drag beyond threshold
+        scaleFactor = thresholdScale + (excessDrag / positiveSensitivity) * this.scaleSensitivity;
+      }
 
       // Apply uniform scaling to all entities
       for (const entity of this.currentEntities) {
@@ -306,8 +334,36 @@ export class ScaleGizmo implements IGizmoTransformer {
       const deltaY = currentMousePos.y - initialMousePos.y;
 
       // Use the drag direction for scaling
-      const dragDirection = deltaX + deltaY;
-      const scaleFactor = 1.0 + (dragDirection / 100.0) * this.scaleSensitivity;
+      const dragDistance = deltaX + deltaY;
+
+      // Map drag distance to scale factor with same logic as uniform scale:
+      // - Origin (dragDistance = 0) → scaleFactor = 1.0 (original size)
+      // - Positive drag → scaleFactor > 1.0 (growing)
+      // - Small negative drag → scaleFactor < 1.0 but > 0 (shrinking, stays positive)
+      // - Large negative drag → scaleFactor can go negative (requires pronounced drag)
+      const positiveSensitivity = 200.0; // Sensitivity for positive drags (right/up)
+      const negativeSensitivity = 600.0; // Gentler sensitivity for negative drags (left/down) to prevent going negative too quickly
+      const negativeThreshold = -500.0; // Threshold before allowing negative scale (requires very pronounced drag)
+
+      let scaleFactor: number;
+      if (dragDistance >= 0) {
+        // Positive drag: scale increases smoothly
+        scaleFactor = 1.0 + (dragDistance / positiveSensitivity) * this.scaleSensitivity;
+      } else if (dragDistance >= negativeThreshold) {
+        // Small to moderate negative drag: scale decreases but stays positive
+        // Use gentler sensitivity for negative values to allow smooth shrinking without going negative
+        scaleFactor = 1.0 + (dragDistance / negativeSensitivity) * this.scaleSensitivity;
+        // Clamp to prevent going negative until threshold
+        scaleFactor = Math.max(0.01, scaleFactor);
+      } else {
+        // Large negative drag: allow negative scaling
+        // Calculate the scale at the threshold, then continue from there
+        const thresholdScale =
+          1.0 + (negativeThreshold / negativeSensitivity) * this.scaleSensitivity;
+        const excessDrag = dragDistance - negativeThreshold;
+        // Use same sensitivity as positive for the excess drag beyond threshold
+        scaleFactor = thresholdScale + (excessDrag / positiveSensitivity) * this.scaleSensitivity;
+      }
 
       // Apply scaling based on plane type
       for (const entity of this.currentEntities) {
