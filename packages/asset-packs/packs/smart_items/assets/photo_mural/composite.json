@@ -436,7 +436,7 @@
               {
                 "path": "{assetPath}/photoMural.ts",
                 "priority": 0,
-                "layout": "{\"params\":{\"button_prev\":{\"type\":\"entity\",\"optional\":false,\"value\":518},\"button_next\":{\"type\":\"entity\",\"optional\":false,\"value\":522},\"coordinates\":{\"type\":\"string\",\"optional\":false,\"value\":\"0,0\"}}}"
+                "layout": "{\"params\":{\"coordinates\":{\"type\":\"string\",\"optional\":false,\"value\":\"0,0\"}}}"
               }
             ]
           }

@@ -1,4 +1,3 @@
-import * as utils from '@dcl-sdk/utils';
 import type { Entity } from '@dcl/sdk/ecs';
 import {
   Animator,
@@ -135,7 +134,7 @@ export class WearableScanner {
       });
 
       // check wearables
-      utils.timers.setTimeout(async () => {
+      setTimeout(async () => {
         const accepted = await this.checkWearables(this.wearableId);
         if (accepted) {
           Animator.playSingleAnimation(this.entity, 'Allow_Action', true);
@@ -188,4 +187,33 @@ export class WearableScanner {
 
     return result;
   }
+}
+
+// Manage delays
+
+// Timer system for handling delayed callbacks using delta time
+interface TimerCallback {
+  callback: () => void | Promise<void>;
+  remainingTime: number;
+}
+
+const timerCallbacks: TimerCallback[] = [];
+
+engine.addSystem((dt: number) => {
+  for (let i = timerCallbacks.length - 1; i >= 0; i--) {
+    const timer = timerCallbacks[i];
+    timer.remainingTime -= dt;
+
+    if (timer.remainingTime <= 0) {
+      timer.callback();
+      timerCallbacks.splice(i, 1);
+    }
+  }
+});
+
+function setTimeout(callback: () => void | Promise<void>, delayMs: number) {
+  timerCallbacks.push({
+    callback,
+    remainingTime: delayMs / 1000, // Convert milliseconds to seconds
+  });
 }
