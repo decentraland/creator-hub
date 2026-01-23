@@ -1,14 +1,21 @@
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import type { ElectronApplication, JSHandle } from 'playwright';
 import { _electron as electron } from 'playwright';
 import { afterAll, beforeAll, expect, test } from 'vitest';
 import type { BrowserWindow } from 'electron';
 
+const electronPath = require('electron') as string;
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const creatorHubDir = join(__dirname, '..');
+
 let electronApp: ElectronApplication;
 
 beforeAll(async () => {
   electronApp = await electron.launch({
+    executablePath: electronPath,
     args: ['.'],
-    cwd: process.cwd(),
+    cwd: creatorHubDir,
   });
 });
 
@@ -48,7 +55,8 @@ test('Main window state', async () => {
 
 test('Main window web content', async () => {
   const page = await electronApp.firstWindow();
-  await page.waitForSelector('#app', { state: 'visible' });
+  // Wait for React to render the main content inside #app
+  await page.waitForSelector('#app main.Main', { state: 'visible' });
   const element = await page.$('#app', { strict: true });
   expect(element, 'Was unable to find the root element').toBeDefined();
   expect((await element!.innerHTML()).trim(), 'Window content was empty').not.equal('');
