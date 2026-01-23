@@ -60,7 +60,7 @@
     "directory": "packages/asset-packs"
   },
   "scripts": {
-    "build": "npm run build:js && npm run build:lib && npm run build:catalog",
+    "build": "npm run build:lib && npm run build:js && npm run build:catalog",
     "build:catalog": "ts-node --project tsconfig.scripts.json ./scripts/catalog.ts",
     "build:js": "sdk-commands build",
     "build:lib": "tsc --project tsconfig.lib.json",

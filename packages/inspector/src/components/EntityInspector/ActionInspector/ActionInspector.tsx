@@ -618,15 +618,41 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     [actions, handleModifyAction],
   );
 
+  const getActionTypeForDropdown = useCallback((action: Action) => {
+    if (action.type === ActionType.CALL_SCRIPT_METHOD) {
+      const payload = getPartialPayload<ActionType.CALL_SCRIPT_METHOD>(action);
+      return `script:${payload.scriptPath}:${payload.methodName}`;
+    }
+    return action.type;
+  }, []);
+
   const handleChangeType = useCallback(
     ({ target: { value } }: React.ChangeEvent<HTMLSelectElement>, idx: number) => {
+      const scriptAction = scriptActions.find(sa => sa.actionType === value);
+      if (scriptAction) {
+        const defaultParams: Record<string, any> = {};
+        for (const [name, param] of Object.entries(scriptAction.action.params)) {
+          defaultParams[name] = param.value;
+        }
+        handleModifyAction(idx, {
+          ...actions[idx],
+          type: ActionType.CALL_SCRIPT_METHOD,
+          jsonPayload: JSON.stringify({
+            scriptPath: scriptAction.scriptPath,
+            methodName: scriptAction.action.methodName,
+            params: defaultParams,
+          }),
+        });
+        return;
+      }
+
       handleModifyAction(idx, {
         ...actions[idx],
         type: value,
         jsonPayload: getDefaultPayload(value),
       });
     },
-    [actions, handleModifyAction],
+    [actions, handleModifyAction, scriptActions],
   );
 
   const handleChangeName = useCallback(
@@ -1205,31 +1231,33 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
           />
         );
       }
+      case ActionType.CALL_SCRIPT_METHOD: {
+        const payload = getPartialPayload<ActionType.CALL_SCRIPT_METHOD>(action);
+        const { scriptPath, methodName, params } = payload;
+        const paramValues = params as Record<string, any> | undefined;
+        const scriptActionType = `script:${scriptPath}:${methodName}`;
+        const scriptAction = scriptActions.find(sa => sa.actionType === scriptActionType);
+        if (!scriptAction) return null;
+
+        const paramTypes = scriptAction.action.params;
+
+        return (
+          <div className="row params">
+            {Object.entries(paramTypes).map(([name, param]) => (
+              <ScriptParamField
+                key={name}
+                name={name}
+                param={{ ...param, value: paramValues?.[name] ?? param.value }}
+                onUpdate={value => {
+                  const updatedParams = { ...paramValues, [name]: value };
+                  handleChangeScriptAction({ scriptPath, methodName, params: updatedParams }, idx);
+                }}
+              />
+            ))}
+          </div>
+        );
+      }
       default: {
-        if (action.type.startsWith('script:')) {
-          const scriptAction = scriptActions.find(sa => sa.actionType === action.type);
-          if (!scriptAction) return null;
-
-          const payload = getPartialPayload(action) as Record<string, any> | undefined;
-          const params = scriptAction.action.params;
-
-          return (
-            <div className="row params">
-              {Object.entries(params).map(([name, param]) => (
-                <ScriptParamField
-                  key={name}
-                  name={name}
-                  param={{ ...param, value: payload?.[name] ?? param.value }}
-                  onUpdate={value => {
-                    const updatedPayload = { ...payload, [name]: value };
-                    handleChangeScriptAction(updatedPayload, idx);
-                  }}
-                />
-              ))}
-            </div>
-          );
-        }
-
         // TODO: handle generic schemas with something like <JsonSchemaField/>
         return null;
       }
@@ -1273,7 +1301,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
                     secondaryText: scriptAction?.secondaryText,
                   };
                 })}
-                value={action.type}
+                value={getActionTypeForDropdown(action)}
                 searchable
                 onChange={e => handleChangeType(e, idx)}
               />

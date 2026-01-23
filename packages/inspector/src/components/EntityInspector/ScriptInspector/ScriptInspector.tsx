@@ -247,10 +247,9 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
 
         if (currentScript?.path === path) return;
 
-        // check for duplicates (excluding current index when updating)
-        const isDuplicate = scripts.some(
-          (script, i) => (isNewScript || i !== index) && script.path === path,
-        );
+        // check for duplicates (excluding current script when updating)
+        const scriptsToCheck = isNewScript ? scripts : scripts.filter((_, i) => i !== index);
+        const isDuplicate = isScriptAlreadyAdded(scriptsToCheck, path);
 
         if (isDuplicate) {
           if (isNewScript) {

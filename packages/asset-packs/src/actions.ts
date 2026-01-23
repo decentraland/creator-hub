@@ -391,27 +391,12 @@ export function createActionsSystem(
             handleResetSkybox();
             break;
           }
-          default: {
-            if (action.type.startsWith('script:')) {
-              const parts = action.type.split(':');
-              if (parts.length === 3) {
-                const scriptPath = parts[1];
-                const methodName = parts[2];
-                const payload = getPayload(action);
-
-                try {
-                  const paramValues = Object.values(payload || {});
-                  callScriptMethod(entity, scriptPath, methodName, ...paramValues);
-                } catch (error) {
-                  console.error(
-                    `[Script Action Error] Failed to call ${methodName} on ${scriptPath}:`,
-                    error,
-                  );
-                }
-              }
-            }
+          case ActionType.CALL_SCRIPT_METHOD: {
+            handleCallScriptMethod(entity, getPayload<ActionType.CALL_SCRIPT_METHOD>(action));
             break;
           }
+          default:
+            break;
         }
       });
     }
@@ -1601,5 +1586,19 @@ export function createActionsSystem(
         });
       },
     );
+  }
+
+  function handleCallScriptMethod(
+    entity: Entity,
+    payload: ActionPayload<ActionType.CALL_SCRIPT_METHOD>,
+  ) {
+    const { scriptPath, methodName, params } = payload;
+
+    try {
+      const paramValues = Object.values(params || {});
+      callScriptMethod(entity, scriptPath, methodName, ...paramValues);
+    } catch (error) {
+      console.error(`[Script Action Error] Failed to call ${methodName} on ${scriptPath}:`, error);
+    }
   }
 }
