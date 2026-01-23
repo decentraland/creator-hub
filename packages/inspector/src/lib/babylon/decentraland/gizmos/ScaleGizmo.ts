@@ -213,8 +213,8 @@ export class ScaleGizmo implements IGizmoTransformer {
       const deltaY = currentMousePos.y - this.initialUniformScaleMousePos.y;
 
       // Calculate scale factor based on total mouse movement (both X and Y)
-      // Use the sum of deltaX and deltaY so dragging in any direction affects scale
-      const dragDistance = deltaX + deltaY;
+      // Invert Y axis so up = bigger, down = smaller (more intuitive)
+      const dragDistance = deltaX - deltaY;
 
       // Map drag distance to scale factor:
       // - Origin (dragDistance = 0) → scaleFactor = 1.0 (original size)
@@ -334,7 +334,8 @@ export class ScaleGizmo implements IGizmoTransformer {
       const deltaY = currentMousePos.y - initialMousePos.y;
 
       // Use the drag direction for scaling
-      const dragDistance = deltaX + deltaY;
+      // Invert Y axis so up = bigger, down = smaller (more intuitive)
+      const dragDistance = deltaX - deltaY;
 
       // Map drag distance to scale factor with same logic as uniform scale:
       // - Origin (dragDistance = 0) → scaleFactor = 1.0 (original size)
