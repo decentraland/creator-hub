@@ -17,6 +17,16 @@ vi.mock('electron', () => {
   };
 });
 
+vi.mock('electron-log/main', () => {
+  return {
+    default: {
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    },
+  };
+});
+
 vi.mock('@sentry/electron/main', () => {
   const mockCaptureException = vi.fn();
   return {
