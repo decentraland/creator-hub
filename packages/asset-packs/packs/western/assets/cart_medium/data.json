@@ -15,5 +15,10 @@
     "vessel"
   ],
   "caption": "Wicker wheel cart.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.797,
+    "y": 2.045,
+    "z": 4.561
+  }
 }

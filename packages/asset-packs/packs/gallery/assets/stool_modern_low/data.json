@@ -17,5 +17,10 @@
     "table"
   ],
   "caption": "Black low stool with silver leg.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.725,
+    "y": 0.877,
+    "z": 0.725
+  }
 }

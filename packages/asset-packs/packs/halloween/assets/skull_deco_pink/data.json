@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["art", "graphic", "shape", "skull"],
   "caption": "Pink, green, blue, and red skull.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.361,
+    "y": 0.247,
+    "z": 0.21
+  }
 }

@@ -24,5 +24,10 @@
     "timber"
   ],
   "caption": "Wooden fence with three planks.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.242,
+    "y": 2.077,
+    "z": 1.013
+  }
 }

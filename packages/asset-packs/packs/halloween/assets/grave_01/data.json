@@ -18,5 +18,10 @@
     "tombstone"
   ],
   "caption": "White cross atop ancient monument.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1.616,
+    "z": 0.462
+  }
 }

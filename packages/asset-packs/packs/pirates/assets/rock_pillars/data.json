@@ -26,5 +26,10 @@
     "tower"
   ],
   "caption": "Three pillar-like structures made of stone blocks.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.25,
+    "y": 3.226,
+    "z": 3.055
+  }
 }

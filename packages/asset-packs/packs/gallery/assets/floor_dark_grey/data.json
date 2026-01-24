@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["greyish", "hue", "shade", "sombre", "tile", "tone"],
   "caption": "Dark grey floor.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.01,
+    "z": 4
+  }
 }

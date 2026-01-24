@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["decor", "fixture", "glow", "illumination", "interior", "lamp", "switch", "switchplate"],
   "caption": "Red glowing switch.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.539,
+    "y": 0.405,
+    "z": 0.956
+  }
 }

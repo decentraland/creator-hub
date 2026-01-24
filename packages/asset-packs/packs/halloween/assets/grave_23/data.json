@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["flame", "grave", "memorial", "monument", "obelisk", "statue", "tombstone"],
   "caption": "Tall gray obelisk with glowing red flame.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.044,
+    "y": 3.613,
+    "z": 1.099
+  }
 }

@@ -17,5 +17,10 @@
     "wagon"
   ],
   "caption": "Wooden railroad track with 3 cars.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.235,
+    "y": 0.116,
+    "z": 3.245
+  }
 }

@@ -19,5 +19,10 @@
     "rounded"
   ],
   "caption": "Small brown rock.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.154,
+    "y": 0.134,
+    "z": 0.044
+  }
 }

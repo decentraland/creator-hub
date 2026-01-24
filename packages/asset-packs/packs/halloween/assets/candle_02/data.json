@@ -19,5 +19,10 @@
     "warm"
   ],
   "caption": "Lit candle in a holder.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.165,
+    "y": 0.382,
+    "z": 0.217
+  }
 }

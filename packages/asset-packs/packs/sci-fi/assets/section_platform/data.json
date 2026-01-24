@@ -14,5 +14,10 @@
     "visual"
   ],
   "caption": "Red border platform on.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.002,
+    "y": 0.361,
+    "z": 3
+  }
 }

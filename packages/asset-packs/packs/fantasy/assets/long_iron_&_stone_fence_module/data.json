@@ -17,5 +17,10 @@
     "structure"
   ],
   "caption": "Long iron and stone fence with spikes.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.13,
+    "y": 1.196,
+    "z": 0.265
+  }
 }

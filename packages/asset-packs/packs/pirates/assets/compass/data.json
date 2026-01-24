@@ -24,5 +24,10 @@
     "pointing"
   ],
   "caption": "Glowing compass with a red arrow.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.304,
+    "y": 0.037,
+    "z": 0.328
+  }
 }

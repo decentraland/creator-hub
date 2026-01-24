@@ -22,5 +22,10 @@
     "sitting"
   ],
   "caption": "Red leather folding chair.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.773,
+    "y": 1.205,
+    "z": 0.853
+  }
 }

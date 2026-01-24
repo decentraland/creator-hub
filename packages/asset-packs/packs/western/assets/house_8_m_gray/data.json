@@ -17,5 +17,10 @@
     "structure"
   ],
   "caption": "Wooden house with a black roof.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 8.667,
+    "y": 9.134,
+    "z": 9.379
+  }
 }

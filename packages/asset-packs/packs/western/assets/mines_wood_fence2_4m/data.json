@@ -16,5 +16,10 @@
     "structure"
   ],
   "caption": "Wooden fence with four panels.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.039,
+    "y": 2.674,
+    "z": 0.551
+  }
 }

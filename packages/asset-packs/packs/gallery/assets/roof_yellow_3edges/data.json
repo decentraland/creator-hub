@@ -13,5 +13,10 @@
     "triangular"
   ],
   "caption": "Three-edged roof with a yellow finish.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.7,
+    "z": 4
+  }
 }

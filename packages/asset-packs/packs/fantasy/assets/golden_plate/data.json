@@ -15,5 +15,10 @@
     "shiny"
   ],
   "caption": "Orange diamond-shaped game with yellow border.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.304,
+    "y": 0.014,
+    "z": 0.304
+  }
 }

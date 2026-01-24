@@ -22,5 +22,10 @@
     "structure"
   ],
   "caption": "Turret array with glowing red lights.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.369,
+    "y": 0.814,
+    "z": 1.557
+  }
 }

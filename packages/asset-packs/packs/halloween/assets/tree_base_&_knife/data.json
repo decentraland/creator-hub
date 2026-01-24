@@ -18,5 +18,10 @@
     "weapon"
   ],
   "caption": "Blood-stained hunting knife protrudes from tree stump.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.68,
+    "y": 1.577,
+    "z": 1.862
+  }
 }

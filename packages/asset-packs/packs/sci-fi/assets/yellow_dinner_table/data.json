@@ -22,5 +22,10 @@
     "table"
   ],
   "caption": "Yellow table with orange legs.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.655,
+    "y": 0.988,
+    "z": 1.328
+  }
 }

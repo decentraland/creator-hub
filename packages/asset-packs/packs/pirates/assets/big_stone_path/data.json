@@ -20,5 +20,10 @@
     "terrain"
   ],
   "caption": "Gray stone pathway leading to ancient ruins.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.056,
+    "z": 1.005
+  }
 }

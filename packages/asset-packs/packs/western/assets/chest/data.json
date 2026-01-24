@@ -16,5 +16,10 @@
     "storage"
   ],
   "caption": "Brown wooden chest with two secure compartments.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.332,
+    "y": 0.908,
+    "z": 0.775
+  }
 }

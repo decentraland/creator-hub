@@ -19,5 +19,10 @@
     "zombie"
   ],
   "caption": "Green, three-fingered hand with a claw.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.313,
+    "y": 0.557,
+    "z": 0.224
+  }
 }

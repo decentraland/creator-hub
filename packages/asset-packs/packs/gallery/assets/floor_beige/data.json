@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["tile"],
   "caption": "Yellow floor tile with black border.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.01,
+    "z": 4
+  }
 }

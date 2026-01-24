@@ -19,5 +19,10 @@
     "terrain"
   ],
   "caption": "A brick on the ground.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.18,
+    "y": 0.135,
+    "z": 5.18
+  }
 }

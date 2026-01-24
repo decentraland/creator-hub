@@ -19,5 +19,10 @@
     "window"
   ],
   "caption": "Monitor display shows gui.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.891,
+    "y": 0.676,
+    "z": 0.309
+  }
 }

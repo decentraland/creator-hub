@@ -15,5 +15,10 @@
     "shape"
   ],
   "caption": "Black, rough rock.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.705,
+    "y": 1.546,
+    "z": 0.654
+  }
 }

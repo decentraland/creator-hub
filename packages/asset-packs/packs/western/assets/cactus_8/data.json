@@ -20,5 +20,10 @@
     "spiny"
   ],
   "caption": "Tall cactus with glowing pink flower.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.4,
+    "y": 3.237,
+    "z": 2.223
+  }
 }

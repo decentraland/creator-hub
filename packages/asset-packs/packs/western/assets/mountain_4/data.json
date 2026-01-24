@@ -17,5 +17,10 @@
     "terrain"
   ],
   "caption": "Mountain peak.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 14.188,
+    "y": 10.298,
+    "z": 12.971
+  }
 }

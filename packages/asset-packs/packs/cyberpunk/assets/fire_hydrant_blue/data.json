@@ -19,5 +19,10 @@
     "maintenance"
   ],
   "caption": "Blue fire hydrant with two nozzles.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.475,
+    "y": 0.695,
+    "z": 0.411
+  }
 }

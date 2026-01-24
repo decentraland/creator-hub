@@ -18,5 +18,10 @@
     "wax"
   ],
   "caption": "Two lit candles in a metal holder.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.735,
+    "y": 0.579,
+    "z": 0.5
+  }
 }

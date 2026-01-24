@@ -19,5 +19,10 @@
     "walls"
   ],
   "caption": "Traditional japanese temple with glowing lanterns.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 12.064,
+    "y": 11.804,
+    "z": 10.36
+  }
 }

@@ -25,5 +25,10 @@
     "vessel"
   ],
   "caption": "Blue bottle with gold cap.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.187,
+    "y": 0.248,
+    "z": 0.187
+  }
 }

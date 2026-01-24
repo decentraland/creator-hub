@@ -19,5 +19,10 @@
     "terrain"
   ],
   "caption": "Broken stone path with curved edges.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.012,
+    "y": 0.057,
+    "z": 2.004
+  }
 }

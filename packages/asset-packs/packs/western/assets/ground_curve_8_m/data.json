@@ -4,5 +4,10 @@
   "category": "tiles",
   "tags": ["appearance", "curve", "paper", "shape", "visual"],
   "caption": "Curved yellow paper.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.542,
+    "y": 0.379,
+    "z": 8.72
+  }
 }

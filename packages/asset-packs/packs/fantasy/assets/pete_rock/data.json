@@ -17,5 +17,10 @@
     "terrain"
   ],
   "caption": "Black, jagged rock.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.315,
+    "y": 2.489,
+    "z": 1.637
+  }
 }

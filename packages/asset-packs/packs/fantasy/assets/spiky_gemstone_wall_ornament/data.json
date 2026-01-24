@@ -16,5 +16,10 @@
     "spiky"
   ],
   "caption": "Decorative wall ornament with spiked facets.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.46,
+    "y": 0.508,
+    "z": 0.112
+  }
 }

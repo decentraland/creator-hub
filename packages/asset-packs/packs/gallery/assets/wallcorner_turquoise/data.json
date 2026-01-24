@@ -13,5 +13,10 @@
     "turquoise"
   ],
   "caption": "Blue corner on the wall.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 2.04
+  }
 }

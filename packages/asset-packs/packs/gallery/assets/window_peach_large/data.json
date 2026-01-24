@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["appearance", "glass", "pane", "rectangle", "shape", "visual", "window"],
   "caption": "Red window with a black frame.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 0.4
+  }
 }

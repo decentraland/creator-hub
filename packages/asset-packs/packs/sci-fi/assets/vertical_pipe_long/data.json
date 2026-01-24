@@ -14,5 +14,10 @@
     "vessel"
   ],
   "caption": "Red-streaked vertical pipe.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.35,
+    "y": 0.752,
+    "z": 0.35
+  }
 }

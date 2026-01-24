@@ -20,5 +20,10 @@
     "living"
   ],
   "caption": "Gaming bed with built-in console.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 239.089,
+    "y": 44.921,
+    "z": 326.281
+  }
 }

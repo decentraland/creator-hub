@@ -16,5 +16,10 @@
     "visual"
   ],
   "caption": "Computer screen with glowing icons.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 0.627,
+    "z": 0.016
+  }
 }

@@ -4,5 +4,10 @@
   "category": "chests",
   "tags": ["chest", "metal", "button", "switch"],
   "description": "A small metal case, with a lid that slides open when clicked. It can be used to hold a button inside.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.062,
+    "y": 0.634,
+    "z": 4.831
+  }
 }

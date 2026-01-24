@@ -19,5 +19,10 @@
     "vessel"
   ],
   "caption": "Closed wooden crate.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.747,
+    "y": 0.74,
+    "z": 0.749
+  }
 }

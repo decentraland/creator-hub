@@ -22,5 +22,10 @@
     "pole"
   ],
   "caption": "Skull-adorned black flag on wooden pole.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.589,
+    "y": 3.257,
+    "z": 0.354
+  }
 }

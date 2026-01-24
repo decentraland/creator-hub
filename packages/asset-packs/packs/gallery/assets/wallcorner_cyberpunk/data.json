@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["cybernetic", "futuristic", "industrial", "metallic"],
   "caption": "Dark blue and black futuristic wall corner.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.048,
+    "y": 4,
+    "z": 2.048
+  }
 }

@@ -14,5 +14,10 @@
     "transportation"
   ],
   "caption": "Wooden train track with glowing orange lights.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.638,
+    "y": 0.338,
+    "z": 10.247
+  }
 }

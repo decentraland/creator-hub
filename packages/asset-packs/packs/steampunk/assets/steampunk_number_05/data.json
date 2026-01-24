@@ -18,5 +18,10 @@
     "victorian"
   ],
   "caption": "Brown steampunk number lock with glowing screen.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.463,
+    "y": 0.923,
+    "z": 0.456
+  }
 }

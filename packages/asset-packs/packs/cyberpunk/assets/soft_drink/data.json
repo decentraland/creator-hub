@@ -15,5 +15,10 @@
     "vessel"
   ],
   "caption": "Red cup for soda.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.172,
+    "y": 0.316,
+    "z": 0.177
+  }
 }

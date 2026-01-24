@@ -19,5 +19,10 @@
     "visual"
   ],
   "caption": "Red banner with white border.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.93,
+    "y": 2.553,
+    "z": 0.079
+  }
 }

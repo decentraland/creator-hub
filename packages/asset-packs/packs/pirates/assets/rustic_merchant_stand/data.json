@@ -26,5 +26,10 @@
     "table"
   ],
   "caption": "Rustic wooden stand for storing goods.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.769,
+    "y": 1.291,
+    "z": 1.059
+  }
 }

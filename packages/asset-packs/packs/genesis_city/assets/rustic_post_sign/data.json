@@ -22,5 +22,10 @@
     "weathered"
   ],
   "caption": "Wooden sign pointing to the right.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.376,
+    "y": 1.229,
+    "z": 2.129
+  }
 }

@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["box", "container", "furniture", "interior", "room", "shape", "space"],
   "caption": "Brown box with design on its surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.556,
+    "y": 0.548,
+    "z": 0.542
+  }
 }

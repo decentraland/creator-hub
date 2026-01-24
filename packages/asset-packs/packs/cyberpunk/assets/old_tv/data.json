@@ -14,5 +14,10 @@
     "television"
   ],
   "caption": "Vintage tv set.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.745,
+    "y": 1.613,
+    "z": 0.761
+  }
 }

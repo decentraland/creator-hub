@@ -13,5 +13,10 @@
     "shot"
   ],
   "description": "A virtual camera that can be used to change the player's view. Use the Change Camera action to switch to this camera.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.5,
+    "y": 0.659,
+    "z": 0.951
+  }
 }

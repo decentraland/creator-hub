@@ -27,5 +27,10 @@
     "visor"
   ],
   "caption": "Vintage street clock with glowing face.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.836,
+    "y": 2.912,
+    "z": 0.86
+  }
 }

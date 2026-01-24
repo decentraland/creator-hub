@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["fantasy", "blue", "banner", "court", "artwork", "graphic", "typography", "visual"],
   "caption": "Purple banner with blue border.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.93,
+    "y": 2.553,
+    "z": 0.079
+  }
 }

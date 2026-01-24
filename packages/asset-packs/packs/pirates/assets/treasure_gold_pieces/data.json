@@ -23,5 +23,10 @@
     "wealth"
   ],
   "caption": "Golden coins.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.365,
+    "y": 0.027,
+    "z": 0.285
+  }
 }

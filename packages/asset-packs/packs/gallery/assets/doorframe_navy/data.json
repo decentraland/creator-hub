@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["architecture", "building", "doorframe", "furniture", "interior", "shape", "structure"],
   "caption": "Dark blue door frame.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 0.4
+  }
 }

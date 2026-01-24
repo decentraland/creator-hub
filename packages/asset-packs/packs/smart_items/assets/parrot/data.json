@@ -4,5 +4,10 @@
   "category": "sounds",
   "tags": ["parrot", "bird", "sound", "alarm", "warning", "alert"],
   "description": "A parrot that starts making noise when activated. It can be used as an alarm system.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.738,
+    "y": 2.178,
+    "z": 1.181
+  }
 }

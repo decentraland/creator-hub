@@ -20,5 +20,10 @@
     "victory"
   ],
   "caption": "White chalice filled with bright red liquid.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.081,
+    "y": 0.303,
+    "z": 0.093
+  }
 }

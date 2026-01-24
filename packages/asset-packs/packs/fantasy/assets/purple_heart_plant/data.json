@@ -23,5 +23,10 @@
     "stem"
   ],
   "caption": "Blue flower with six petals.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.171,
+    "y": 0.493,
+    "z": 1.191
+  }
 }

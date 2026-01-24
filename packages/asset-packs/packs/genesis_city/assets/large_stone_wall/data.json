@@ -27,5 +27,10 @@
     "tower"
   ],
   "caption": "Long, stone wall with holes.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.316,
+    "y": 1.83,
+    "z": 5.058
+  }
 }

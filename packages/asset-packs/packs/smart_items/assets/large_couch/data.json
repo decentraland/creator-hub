@@ -4,5 +4,10 @@
   "description": "A large couch.",
   "tags": ["couch", "sofa", "seat", "sitting", "furniture"],
   "author": "Decentraland Foundation",
-  "id": "07a20e9a-a0f6-48a0-a01a-f5233a11a1c4"
+  "id": "07a20e9a-a0f6-48a0-a01a-f5233a11a1c4",
+  "boundingBox": {
+    "x": 3.348,
+    "y": 1.485,
+    "z": 1.51
+  }
 }

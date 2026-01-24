@@ -19,5 +19,10 @@
     "sushi"
   ],
   "caption": "Sushi shelf with two levels.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.633,
+    "y": 3.846,
+    "z": 0.645
+  }
 }

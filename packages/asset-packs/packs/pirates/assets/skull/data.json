@@ -26,5 +26,10 @@
     "undead"
   ],
   "caption": "Skull with a shocked face.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.456,
+    "y": 0.453,
+    "z": 0.586
+  }
 }

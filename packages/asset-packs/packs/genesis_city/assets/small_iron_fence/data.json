@@ -24,5 +24,10 @@
     "structure"
   ],
   "caption": "Metal iron fence.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.374,
+    "y": 1.545,
+    "z": 1.094
+  }
 }

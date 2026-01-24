@@ -17,5 +17,10 @@
     "weapon"
   ],
   "caption": "Wooden rifle with glowing red dot.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.244,
+    "y": 0.08,
+    "z": 0.638
+  }
 }

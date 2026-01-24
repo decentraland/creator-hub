@@ -23,5 +23,10 @@
     "wheat"
   ],
   "caption": "Bread loaf with visible slices.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.117,
+    "y": 0.072,
+    "z": 0.186
+  }
 }

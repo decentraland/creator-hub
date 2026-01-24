@@ -15,5 +15,10 @@
     "visual"
   ],
   "caption": "Red logo on vertical chip.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.119,
+    "y": 0.282,
+    "z": 0.053
+  }
 }

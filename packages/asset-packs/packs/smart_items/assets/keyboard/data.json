@@ -4,5 +4,10 @@
   "category": "buttons",
   "tags": ["keyboard", "button", "switch", "toggle", "activate"],
   "description": "A keyboard that can be clicked to trigger actions on other smart items.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.789,
+    "y": 0.043,
+    "z": 0.269
+  }
 }

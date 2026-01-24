@@ -16,5 +16,10 @@
     "traffic"
   ],
   "caption": "Straight road with varied textures.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.041,
+    "z": 2.055
+  }
 }

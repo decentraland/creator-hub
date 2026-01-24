@@ -14,5 +14,10 @@
     "tiles"
   ],
   "caption": "Red tile roof.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.354,
+    "y": 1.497,
+    "z": 8.217
+  }
 }

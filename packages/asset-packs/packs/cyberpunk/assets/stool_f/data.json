@@ -19,5 +19,10 @@
     "table"
   ],
   "caption": "Blue led-lit stool.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.626,
+    "y": 1.604,
+    "z": 0.689
+  }
 }

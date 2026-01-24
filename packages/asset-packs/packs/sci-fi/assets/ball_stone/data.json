@@ -4,5 +4,10 @@
   "category": "nature",
   "tags": ["scifi", "rock", "planet", "ally", "ball", "marble", "orb", "shape"],
   "caption": "Red, rounded ally with a smooth surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.02,
+    "y": 0.888,
+    "z": 1.063
+  }
 }

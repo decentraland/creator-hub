@@ -21,5 +21,10 @@
     "vessel"
   ],
   "caption": "Pink bottle with white lid on.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.226,
+    "y": 0.386,
+    "z": 0.261
+  }
 }

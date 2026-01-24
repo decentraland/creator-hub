@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["graphic", "line", "shape"],
   "caption": "Black ring with glowing center.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.101,
+    "z": 2
+  }
 }

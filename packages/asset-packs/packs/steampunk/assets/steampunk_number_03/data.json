@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["clockwork", "futuristic", "gear", "industrial", "mechanism", "number", "steampunk"],
   "caption": "Red numbered steampunk cylinder.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.463,
+    "y": 0.899,
+    "z": 0.454
+  }
 }

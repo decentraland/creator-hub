@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["appearance", "roof", "shape", "visual"],
   "caption": "Dark blue roof with a single edge.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.7,
+    "z": 4
+  }
 }

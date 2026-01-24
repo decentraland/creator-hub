@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["block", "furniture", "interior", "peach", "plainpeach"],
   "caption": "Red block with a plain peach texture.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 0.4
+  }
 }

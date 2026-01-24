@@ -15,5 +15,10 @@
     "trunk"
   ],
   "caption": "Red tree.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.185,
+    "y": 4.922,
+    "z": 2.597
+  }
 }

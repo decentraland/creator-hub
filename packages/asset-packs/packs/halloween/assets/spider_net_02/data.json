@@ -17,5 +17,10 @@
     "webbing"
   ],
   "caption": "Black wireframe spider web with glowing spider.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.649,
+    "y": 0.541,
+    "z": 0.355
+  }
 }

@@ -15,5 +15,10 @@
     "structure"
   ],
   "caption": "White brick wall.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.5,
+    "y": 5,
+    "z": 0.482
+  }
 }

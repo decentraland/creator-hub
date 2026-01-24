@@ -16,5 +16,10 @@
     "tobacco"
   ],
   "caption": "Black cigarette packs.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.261,
+    "y": 0.027,
+    "z": 0.294
+  }
 }

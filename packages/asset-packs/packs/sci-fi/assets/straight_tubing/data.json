@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["scifi", "tube", "cylinders", "cylindrical", "shape", "stack", "straight"],
   "caption": "Gray metal cylinder stack.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.303,
+    "y": 3,
+    "z": 0.429
+  }
 }

@@ -19,5 +19,10 @@
     "trunk"
   ],
   "caption": "Black tree with glowing green leaves.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 14.35,
+    "y": 12.236,
+    "z": 10.481
+  }
 }

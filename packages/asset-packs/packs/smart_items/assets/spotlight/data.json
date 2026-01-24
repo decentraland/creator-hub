@@ -16,5 +16,10 @@
     "shine"
   ],
   "description": "A spotlight that can be used to illuminate a scene.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.5,
+    "y": 2,
+    "z": 2.05
+  }
 }

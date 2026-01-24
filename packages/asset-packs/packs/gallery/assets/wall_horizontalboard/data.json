@@ -13,5 +13,10 @@
     "visual"
   ],
   "caption": "Horizontal game board with a grid.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 0.4
+  }
 }

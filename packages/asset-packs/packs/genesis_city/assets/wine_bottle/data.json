@@ -24,5 +24,10 @@
     "vessel"
   ],
   "caption": "Wine bottle with cork.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.229,
+    "y": 0.61,
+    "z": 0.229
+  }
 }

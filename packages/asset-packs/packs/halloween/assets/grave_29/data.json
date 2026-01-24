@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["computer", "desktop", "display", "electronic", "laptop", "monitor", "technology"],
   "caption": "Open laptop with glowing screen.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.022,
+    "y": 1.006,
+    "z": 2.011
+  }
 }

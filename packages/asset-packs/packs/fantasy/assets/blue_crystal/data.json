@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["fantasy", "crystal", "faceted", "hue", "jagged", "mineral", "shape"],
   "caption": "Blue crystal with sharp edges.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.164,
+    "y": 1.838,
+    "z": 1.088
+  }
 }

@@ -25,5 +25,10 @@
     "steel"
   ],
   "caption": "Blue-handled sword.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.565,
+    "y": 0.115,
+    "z": 1.565
+  }
 }

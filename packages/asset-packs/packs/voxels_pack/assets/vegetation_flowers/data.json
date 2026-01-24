@@ -18,5 +18,10 @@
     "shine"
   ],
   "caption": "Green gemstone with white sparkles.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+  }
 }

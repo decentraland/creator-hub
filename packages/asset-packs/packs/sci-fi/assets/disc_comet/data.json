@@ -19,5 +19,10 @@
     "shape"
   ],
   "caption": "Comet-shaped object with rough surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.149,
+    "y": 2.144,
+    "z": 2.175
+  }
 }

@@ -4,5 +4,10 @@
   "category": "health",
   "tags": ["enemy", "zombie"],
   "description": "A zombie that can chase the player and cause damage.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 75,
+    "y": 172.744,
+    "z": 132.76
+  }
 }

@@ -18,5 +18,10 @@
     "stem"
   ],
   "caption": "Orange flowers on green stems.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.192,
+    "y": 0.303,
+    "z": 0.256
+  }
 }

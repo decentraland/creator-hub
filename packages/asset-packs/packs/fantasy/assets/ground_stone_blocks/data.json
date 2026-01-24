@@ -24,5 +24,10 @@
     "tower"
   ],
   "caption": "Three gray stone blocks.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.002,
+    "y": 0.24,
+    "z": 1.162
+  }
 }

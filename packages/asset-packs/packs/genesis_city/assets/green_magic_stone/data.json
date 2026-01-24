@@ -21,5 +21,10 @@
     "swirl"
   ],
   "caption": "Magic brown stone with swirling green.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.137,
+    "y": 1.317,
+    "z": 1.045
+  }
 }

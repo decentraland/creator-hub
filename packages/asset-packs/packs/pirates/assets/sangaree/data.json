@@ -23,5 +23,10 @@
     "watering"
   ],
   "caption": "Red watering can with spout.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.44,
+    "y": 0.618,
+    "z": 0.414
+  }
 }

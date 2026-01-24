@@ -14,5 +14,10 @@
     "structure"
   ],
   "caption": "Wooden deck on a house.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.24,
+    "y": 3.796,
+    "z": 11.463
+  }
 }

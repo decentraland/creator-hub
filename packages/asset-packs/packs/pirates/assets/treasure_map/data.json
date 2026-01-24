@@ -29,5 +29,10 @@
     "navigation"
   ],
   "caption": "Treasure map features compass, keyhole, and island.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.715,
+    "y": 0.125,
+    "z": 0.672
+  }
 }

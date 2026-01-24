@@ -15,5 +15,10 @@
     "vehicle"
   ],
   "caption": "Blue and white city bus.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.753,
+    "y": 5.21,
+    "z": 19.14
+  }
 }

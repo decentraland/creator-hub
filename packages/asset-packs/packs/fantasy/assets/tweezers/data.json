@@ -20,5 +20,10 @@
     "shape"
   ],
   "caption": "Tweezers with two handles and a curved tip.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.356,
+    "y": 0.058,
+    "z": 0.704
+  }
 }

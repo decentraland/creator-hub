@@ -20,5 +20,10 @@
     "pot"
   ],
   "caption": "Flower-filled vase.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.203,
+    "y": 0.47,
+    "z": 0.207
+  }
 }

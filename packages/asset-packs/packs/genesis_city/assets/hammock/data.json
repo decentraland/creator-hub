@@ -23,5 +23,10 @@
     "textile"
   ],
   "caption": "Checkered hammock for lounging.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.105,
+    "y": 0.636,
+    "z": 4.615
+  }
 }

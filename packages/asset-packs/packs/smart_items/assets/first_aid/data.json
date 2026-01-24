@@ -4,5 +4,10 @@
   "category": "health",
   "tags": ["health", "enemy", "damage"],
   "description": "A one-time use first aid kit that can restore a player’s health when triggered. After being used, it disappears. Can be used with the Health Bar smart item.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.62,
+    "y": 0.56,
+    "z": 0.263
+  }
 }

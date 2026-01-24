@@ -30,5 +30,10 @@
     "sycamore"
   ],
   "caption": "Sycamore tree with green leaves.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.703,
+    "y": 3.224,
+    "z": 5.751
+  }
 }

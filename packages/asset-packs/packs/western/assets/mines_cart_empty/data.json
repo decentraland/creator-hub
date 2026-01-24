@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["bin", "cart", "container", "speed", "storage", "transport", "vehicle", "vessel"],
   "caption": "Black cart with empty bin on top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.911,
+    "y": 1.1,
+    "z": 1.282
+  }
 }

@@ -20,5 +20,10 @@
     "wand"
   ],
   "caption": "Tall, slender cactus with purple crystals.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.275,
+    "y": 1.311,
+    "z": 0.373
+  }
 }

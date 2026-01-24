@@ -21,5 +21,10 @@
     "wire"
   ],
   "caption": "Long, looped cable with yellow line.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.501,
+    "y": 0.18,
+    "z": 2.062
+  }
 }

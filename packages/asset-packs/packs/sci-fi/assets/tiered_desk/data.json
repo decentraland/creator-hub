@@ -22,5 +22,10 @@
     "technology"
   ],
   "caption": "Three-tiered desk with keyboard and mouse.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 1.033,
+    "z": 1.069
+  }
 }

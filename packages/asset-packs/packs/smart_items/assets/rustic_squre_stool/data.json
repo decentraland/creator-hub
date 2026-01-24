@@ -4,5 +4,10 @@
   "description": "A rustic square stool.",
   "tags": ["stool", "square", "seat", "sitting", "furniture"],
   "author": "Decentraland Foundation",
-  "id": "d1917fd5-7ca0-4ccb-939a-15b2286edc1b"
+  "id": "d1917fd5-7ca0-4ccb-939a-15b2286edc1b",
+  "boundingBox": {
+    "x": 0.578,
+    "y": 0.521,
+    "z": 0.567
+  }
 }

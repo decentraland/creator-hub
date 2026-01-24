@@ -20,5 +20,10 @@
     "skull"
   ],
   "caption": "Skull with glowing candle beside a gun.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.007,
+    "y": 0.827,
+    "z": 0.805
+  }
 }

@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["fantasy", "skirting", "board", "baseboard", "architectural", "trim"],
   "caption": "Gray skirting board.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.001,
+    "y": 0.12,
+    "z": 0.05
+  }
 }

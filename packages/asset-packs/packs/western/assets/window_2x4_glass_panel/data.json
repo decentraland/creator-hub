@@ -17,5 +17,10 @@
     "windowpane"
   ],
   "caption": "Two-by-four wooden window frame.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.888,
+    "y": 1.571,
+    "z": 0.109
+  }
 }

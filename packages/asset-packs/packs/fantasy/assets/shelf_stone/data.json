@@ -18,5 +18,10 @@
     "tombstone"
   ],
   "caption": "Stone shelf with a glowing top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.532,
+    "y": 1.073,
+    "z": 1.578
+  }
 }

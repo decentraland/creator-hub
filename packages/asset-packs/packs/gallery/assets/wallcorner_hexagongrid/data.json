@@ -18,5 +18,10 @@
     "tower"
   ],
   "caption": "Corner with grid pattern.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.026,
+    "y": 4,
+    "z": 2.04
+  }
 }

@@ -23,5 +23,10 @@
     "wings"
   ],
   "caption": "Pink origami crane.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.107,
+    "y": 0.971,
+    "z": 0.877
+  }
 }

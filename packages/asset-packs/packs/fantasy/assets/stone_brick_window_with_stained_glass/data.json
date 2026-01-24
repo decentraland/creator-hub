@@ -20,5 +20,10 @@
     "tower"
   ],
   "caption": "Stained glass window in old stone building.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 4,
+    "z": 0.853
+  }
 }

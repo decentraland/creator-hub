@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["architectural", "column", "slender", "structural", "upright"],
   "caption": "Tall, slender column with glowing top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.274,
+    "y": 6.076,
+    "z": 1.274
+  }
 }

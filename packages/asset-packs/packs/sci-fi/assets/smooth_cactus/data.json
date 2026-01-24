@@ -17,5 +17,10 @@
     "succulent"
   ],
   "caption": "Green cactus topped with blue glowing spheres.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.988,
+    "y": 1.798,
+    "z": 1.1
+  }
 }

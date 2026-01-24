@@ -20,5 +20,10 @@
     "vegetation"
   ],
   "caption": "Green plant with leaves and stems.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.184,
+    "y": 0.664,
+    "z": 1.457
+  }
 }

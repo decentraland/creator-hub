@@ -17,5 +17,10 @@
     "turning"
   ],
   "caption": "Gear with 5 angled teeth.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.56,
+    "y": 0.522,
+    "z": 1.781
+  }
 }

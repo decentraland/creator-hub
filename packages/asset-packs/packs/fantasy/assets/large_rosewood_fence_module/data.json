@@ -18,5 +18,10 @@
     "structure"
   ],
   "caption": "Red wooden fence module with glowing bolt.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.131,
+    "y": 1.116,
+    "z": 0.265
+  }
 }

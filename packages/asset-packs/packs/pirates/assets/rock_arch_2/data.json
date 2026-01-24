@@ -24,5 +24,10 @@
     "tower"
   ],
   "caption": "Rock with an arch-shaped top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 11.663,
+    "y": 7.539,
+    "z": 2.825
+  }
 }

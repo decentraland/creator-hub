@@ -19,5 +19,10 @@
     "supports"
   ],
   "caption": "Red japanese archway with black supports.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 8.672,
+    "y": 5.665,
+    "z": 2.758
+  }
 }

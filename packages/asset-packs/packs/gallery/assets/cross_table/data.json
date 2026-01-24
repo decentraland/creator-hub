@@ -18,5 +18,10 @@
     "table"
   ],
   "caption": "Table with an 'x' symbol on top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.428,
+    "y": 0.823,
+    "z": 1.244
+  }
 }

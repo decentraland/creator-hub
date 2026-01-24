@@ -20,5 +20,10 @@
     "metallic"
   ],
   "caption": "Modern, sleek kiosk with glowing screen.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.625,
+    "y": 0.652,
+    "z": 1.962
+  }
 }

@@ -17,5 +17,10 @@
     "trunk"
   ],
   "caption": "A glowing red tree with one branch.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.151,
+    "y": 4.614,
+    "z": 4.225
+  }
 }

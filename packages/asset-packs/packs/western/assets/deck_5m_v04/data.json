@@ -19,5 +19,10 @@
     "structure"
   ],
   "caption": "Wooden picnic table with benches.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.122,
+    "y": 3.809,
+    "z": 2.267
+  }
 }

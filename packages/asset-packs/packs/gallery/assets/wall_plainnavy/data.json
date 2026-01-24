@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["architectural", "building", "fortress", "interior", "room", "structure"],
   "caption": "Navy blue wall.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 0.4
+  }
 }

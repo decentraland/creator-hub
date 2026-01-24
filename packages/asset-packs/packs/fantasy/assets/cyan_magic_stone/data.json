@@ -14,5 +14,10 @@
     "valuable"
   ],
   "caption": "Blue, crystal-like object with jagged edges.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.843,
+    "y": 1.914,
+    "z": 0.773
+  }
 }

@@ -27,5 +27,10 @@
     "suspension"
   ],
   "caption": "Wooden rope bridge with railings.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.779,
+    "y": 1.7,
+    "z": 1.501
+  }
 }

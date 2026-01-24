@@ -19,5 +19,10 @@
     "structure"
   ],
   "caption": "Stone church tower on pedestal.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.506,
+    "y": 2.434,
+    "z": 1.559
+  }
 }

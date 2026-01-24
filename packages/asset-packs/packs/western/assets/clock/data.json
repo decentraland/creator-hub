@@ -17,5 +17,10 @@
     "timepiece"
   ],
   "caption": "Wooden grandfather clock with glowing face.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.89,
+    "y": 3.038,
+    "z": 0.834
+  }
 }

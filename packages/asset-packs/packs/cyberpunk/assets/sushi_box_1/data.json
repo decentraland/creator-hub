@@ -18,5 +18,10 @@
     "sushi"
   ],
   "caption": "Red sushi boxes with white dots.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.125,
+    "y": 0.237,
+    "z": 0.384
+  }
 }

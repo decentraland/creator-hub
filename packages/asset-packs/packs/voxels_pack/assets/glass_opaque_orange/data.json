@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["dye", "glass", "hue", "opaque", "pigment", "shade", "tint"],
   "caption": "Orange glass cube.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+  }
 }

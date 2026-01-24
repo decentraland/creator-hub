@@ -18,5 +18,10 @@
     "trunk"
   ],
   "caption": "Red heart-shaped carving on ancient tree trunk.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.31,
+    "y": 4.892,
+    "z": 3.609
+  }
 }

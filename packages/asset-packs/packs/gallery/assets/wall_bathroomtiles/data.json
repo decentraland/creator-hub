@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["appearance", "bathroom", "ceramic", "glass", "glossy", "mirror", "reflective", "tile"],
   "caption": "Blue glass tile.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 0.4
+  }
 }

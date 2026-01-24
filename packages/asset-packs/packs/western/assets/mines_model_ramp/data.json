@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["gradient", "incline", "landscape", "pathway", "rampway", "slope", "terrain"],
   "caption": "Orange, sloping ramp with smooth surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6.885,
+    "y": 4.329,
+    "z": 14.8
+  }
 }

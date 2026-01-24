@@ -20,5 +20,10 @@
     "sitting"
   ],
   "caption": "A gallows with a noose, a table, and chair.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.488,
+    "y": 3.702,
+    "z": 0.62
+  }
 }

@@ -15,5 +15,10 @@
     "radiant"
   ],
   "caption": "Red light bulb with glowing top lights.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1330.376,
+    "y": 187.279,
+    "z": 51.784
+  }
 }

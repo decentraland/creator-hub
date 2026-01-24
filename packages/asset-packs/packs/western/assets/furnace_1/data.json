@@ -14,5 +14,10 @@
     "stove"
   ],
   "caption": "Black stove with glowing firebox.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.109,
+    "y": 1.737,
+    "z": 1.715
+  }
 }

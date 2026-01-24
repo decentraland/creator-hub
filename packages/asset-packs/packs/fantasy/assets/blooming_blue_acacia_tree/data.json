@@ -22,5 +22,10 @@
     "petal"
   ],
   "caption": "Blue acacia tree with detailed texture.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 8.628,
+    "y": 8.604,
+    "z": 6.881
+  }
 }

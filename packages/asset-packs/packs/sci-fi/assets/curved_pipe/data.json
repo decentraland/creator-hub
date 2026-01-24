@@ -16,5 +16,10 @@
     "vessel"
   ],
   "caption": "Red striped curved pipe.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.475,
+    "y": 0.921,
+    "z": 0.35
+  }
 }

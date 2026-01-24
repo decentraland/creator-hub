@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["scifi", "box", "storage", "container", "crate", "drum", "label", "tank", "vessel"],
   "caption": "Blue crate featuring a green label.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.185,
+    "y": 0.554,
+    "z": 0.67
+  }
 }

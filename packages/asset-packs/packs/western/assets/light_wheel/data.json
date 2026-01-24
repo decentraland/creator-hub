@@ -20,5 +20,10 @@
     "spoke"
   ],
   "caption": "Metal wheel with glowing candle spokes.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.857,
+    "y": 1.254,
+    "z": 1.855
+  }
 }

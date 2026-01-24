@@ -19,5 +19,10 @@
     "warrior"
   ],
   "caption": "Iron sword with a golden handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.214,
+    "y": 0.121,
+    "z": 1.038
+  }
 }

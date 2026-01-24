@@ -18,5 +18,10 @@
     "vessel"
   ],
   "caption": "Oxygen tanks in yellow connectors.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.376,
+    "y": 2.962,
+    "z": 1.292
+  }
 }

@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["bench", "comfort", "furniture", "home", "interior", "room", "seat", "space"],
   "caption": "Dark brown wooden bench.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.512,
+    "y": 3.37,
+    "z": 0.701
+  }
 }

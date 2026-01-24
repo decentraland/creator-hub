@@ -21,5 +21,10 @@
     "wire"
   ],
   "caption": "Yellow cable with attached clip.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.268,
+    "y": 0.123,
+    "z": 2.001
+  }
 }

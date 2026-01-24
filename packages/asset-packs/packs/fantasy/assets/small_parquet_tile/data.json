@@ -14,5 +14,10 @@
     "space"
   ],
   "caption": "Brown and pink parquet tiles.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.012,
+    "y": 0.064,
+    "z": 2.004
+  }
 }

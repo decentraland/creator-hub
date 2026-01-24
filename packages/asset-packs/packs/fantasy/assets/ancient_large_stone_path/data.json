@@ -21,5 +21,10 @@
     "structure"
   ],
   "caption": "Stone path in a ruined village.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.518,
+    "y": 0.067,
+    "z": 4.74
+  }
 }

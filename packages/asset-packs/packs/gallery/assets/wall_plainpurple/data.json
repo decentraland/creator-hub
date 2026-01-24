@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["hue", "interior", "plainpurple", "room", "shade", "space", "tone"],
   "caption": "Purple wall.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 0.4
+  }
 }

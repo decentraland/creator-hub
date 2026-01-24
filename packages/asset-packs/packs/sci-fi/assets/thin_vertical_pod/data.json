@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["scifi", "storage", "spaceship", "control", "graphic", "interface", "pod", "visual"],
   "caption": "Red button on glowing screen.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.681,
+    "y": 2.941,
+    "z": 1.681
+  }
 }

@@ -20,5 +20,10 @@
     "vessel"
   ],
   "caption": "Golden lekythos vase.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.363,
+    "y": 0.952,
+    "z": 0.363
+  }
 }

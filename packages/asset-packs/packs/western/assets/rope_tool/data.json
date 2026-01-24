@@ -15,5 +15,10 @@
     "torture"
   ],
   "caption": "Wooden gallows with a noose.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.423,
+    "y": 3.815,
+    "z": 0.911
+  }
 }

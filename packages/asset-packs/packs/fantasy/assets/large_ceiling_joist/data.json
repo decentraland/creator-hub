@@ -17,5 +17,10 @@
     "timber"
   ],
   "caption": "Long wooden beam.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.015,
+    "y": 0.304,
+    "z": 0.274
+  }
 }

@@ -14,5 +14,10 @@
     "timber"
   ],
   "caption": "Curved wooden runway with brown and tan planks.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.516,
+    "y": 0.181,
+    "z": 3.494
+  }
 }

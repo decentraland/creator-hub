@@ -20,5 +20,10 @@
     "tome"
   ],
   "caption": "Open book with visible pages.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.587,
+    "y": 0.115,
+    "z": 0.516
+  }
 }

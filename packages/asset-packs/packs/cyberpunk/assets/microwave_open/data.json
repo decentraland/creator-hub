@@ -15,5 +15,10 @@
     "stainless"
   ],
   "caption": "Open microwave with swinging door.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.938,
+    "y": 0.451,
+    "z": 1.036
+  }
 }

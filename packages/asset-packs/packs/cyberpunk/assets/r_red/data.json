@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["appearance", "branding", "font", "graphic", "letter", "logo", "typography", "visual"],
   "caption": "Blue letter 'r' in bold font.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.5,
+    "y": 0.5,
+    "z": 0.076
+  }
 }

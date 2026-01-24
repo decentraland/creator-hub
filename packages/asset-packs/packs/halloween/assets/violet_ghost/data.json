@@ -17,5 +17,10 @@
     "visage"
   ],
   "caption": "Blue glowing ghost.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.145,
+    "y": 1.016,
+    "z": 0.772
+  }
 }

@@ -4,5 +4,10 @@
   "category": "primitives",
   "tags": ["invisible", "wall", "cylinder", "column", "pillar", "collider"],
   "description": "A cylinder that is invisible. It can be used to create a wall or a column that the player can't walk through.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+  }
 }

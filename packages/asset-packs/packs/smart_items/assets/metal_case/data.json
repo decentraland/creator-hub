@@ -4,5 +4,10 @@
   "category": "chests",
   "tags": ["chest", "fuse box", "compartment", "tin", "open"],
   "description": "A metal case that can be opened to reveal its contents. It can be used to store items.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.367,
+    "y": 2.576,
+    "z": 1.393
+  }
 }

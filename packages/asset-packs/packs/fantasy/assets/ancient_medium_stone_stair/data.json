@@ -19,5 +19,10 @@
     "walkway"
   ],
   "caption": "Ancient stone staircase with multiple steps.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.002,
+    "y": 0.43,
+    "z": 1.15
+  }
 }

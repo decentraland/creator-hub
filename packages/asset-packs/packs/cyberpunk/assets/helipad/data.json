@@ -18,5 +18,10 @@
     "water"
   ],
   "caption": "Indoor swimming pool with steps.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 20.252,
+    "y": 3.635,
+    "z": 21.028
+  }
 }

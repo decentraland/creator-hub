@@ -26,5 +26,10 @@
     "stripe"
   ],
   "caption": "Green bar with gray stripe, resembles ruler.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.598,
+    "y": 4.558,
+    "z": 0.24
+  }
 }

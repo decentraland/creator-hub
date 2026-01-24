@@ -16,5 +16,10 @@
     "uneven"
   ],
   "caption": "Uneven stone tile.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.577,
+    "y": 0.038,
+    "z": 1.09
+  }
 }

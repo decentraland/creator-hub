@@ -18,5 +18,10 @@
     "paper"
   ],
   "caption": "Green origami crane.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.25,
+    "y": 0.124,
+    "z": 0.28
+  }
 }

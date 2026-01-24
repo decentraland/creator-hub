@@ -28,5 +28,10 @@
     "river"
   ],
   "caption": "A rusty old well with a bucket.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.796,
+    "y": 2.435,
+    "z": 1.727
+  }
 }

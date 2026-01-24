@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["diamond", "floorplan", "interior", "rhombus", "room", "shape", "space", "tile"],
   "caption": "Blue diamond-shaped floor tile.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.01,
+    "z": 4
+  }
 }

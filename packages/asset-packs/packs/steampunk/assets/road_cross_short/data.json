@@ -18,5 +18,10 @@
     "vehicle"
   ],
   "caption": "Red and brown road crossing.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.028,
+    "y": 0.056,
+    "z": 4
+  }
 }

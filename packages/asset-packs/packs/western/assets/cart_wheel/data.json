@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["bucket", "cart", "container", "drum", "storage", "tank", "vessel", "wheelbarrow"],
   "caption": "Wooden wheelbarrow with one wheel.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.035,
+    "y": 0.867,
+    "z": 0.978
+  }
 }

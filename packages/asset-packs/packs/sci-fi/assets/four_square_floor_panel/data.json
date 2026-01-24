@@ -4,5 +4,10 @@
   "category": "tiles",
   "tags": ["scifi", "tile", "four", "grid", "layout", "panel", "room", "space"],
   "caption": "Four glowing floor panels.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.04,
+    "z": 2
+  }
 }

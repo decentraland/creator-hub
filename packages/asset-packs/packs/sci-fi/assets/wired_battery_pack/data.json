@@ -21,5 +21,10 @@
     "wired"
   ],
   "caption": "Wired battery pack with switch on top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.481,
+    "y": 0.376,
+    "z": 1.069
+  }
 }

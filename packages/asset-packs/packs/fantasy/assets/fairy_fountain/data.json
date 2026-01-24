@@ -19,5 +19,10 @@
     "visual"
   ],
   "caption": "Blue fountain on yellow base.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.2,
+    "y": 0.902,
+    "z": 1.2
+  }
 }

@@ -14,5 +14,10 @@
     "win screen"
   ],
   "description": "3D text that can be displayed when a player wins a game. Invisible until triggered.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.221,
+    "y": 2.282,
+    "z": 1.236
+  }
 }

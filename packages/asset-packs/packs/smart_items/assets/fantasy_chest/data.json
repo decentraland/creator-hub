@@ -4,5 +4,10 @@
   "category": "chests",
   "tags": ["chest", "treasure", "loot", "open"],
   "description": "A chest that can be opened to reveal its contents. It can be used to store items.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.703,
+    "y": 0.891,
+    "z": 1.588
+  }
 }

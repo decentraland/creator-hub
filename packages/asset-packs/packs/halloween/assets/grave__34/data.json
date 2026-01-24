@@ -18,5 +18,10 @@
     "wax"
   ],
   "caption": "Lit candle in a white pillar holder.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.052,
+    "y": 3.847,
+    "z": 1.099
+  }
 }

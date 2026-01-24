@@ -19,5 +19,10 @@
     "warrior"
   ],
   "caption": "Glowing metal chest with gear on top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.352,
+    "y": 1.116,
+    "z": 1.342
+  }
 }

@@ -19,5 +19,10 @@
     "octo"
   ],
   "caption": "Octopus-like creature with multiple limbs.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 7.372,
+    "y": 5.636,
+    "z": 7.952
+  }
 }

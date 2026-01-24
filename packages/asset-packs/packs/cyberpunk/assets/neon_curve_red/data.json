@@ -14,5 +14,10 @@
     "urban"
   ],
   "caption": "Red neon sign with glowing curves.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.167,
+    "y": 0.759,
+    "z": 0.076
+  }
 }

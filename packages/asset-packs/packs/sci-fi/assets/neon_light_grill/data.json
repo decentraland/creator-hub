@@ -17,5 +17,10 @@
     "radiant"
   ],
   "caption": "Glowing neon grill.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.002,
+    "y": 0.196,
+    "z": 0.645
+  }
 }

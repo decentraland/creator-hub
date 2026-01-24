@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["bench", "brick", "furniture", "nature", "outdoor", "rest", "seat"],
   "caption": "Wooden bench with rough, brick-like texture.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.122,
+    "y": 0.717,
+    "z": 2.001
+  }
 }

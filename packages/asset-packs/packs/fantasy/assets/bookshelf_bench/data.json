@@ -15,5 +15,10 @@
     "table"
   ],
   "caption": "Brown wooden bench on.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.99,
+    "y": 0.751,
+    "z": 1.03
+  }
 }

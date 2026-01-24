@@ -19,5 +19,10 @@
     "tail"
   ],
   "caption": "Comet-shaped object.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.481,
+    "y": 1.941,
+    "z": 1.718
+  }
 }

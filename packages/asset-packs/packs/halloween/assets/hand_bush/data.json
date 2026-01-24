@@ -15,5 +15,10 @@
     "sprite"
   ],
   "caption": "Green hand with blue dots.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.63,
+    "y": 7.547,
+    "z": 5.261
+  }
 }

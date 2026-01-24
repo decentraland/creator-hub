@@ -20,5 +20,10 @@
     "tower"
   ],
   "caption": "Rough-textured stone wall.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3,
+    "y": 1,
+    "z": 0.3
+  }
 }

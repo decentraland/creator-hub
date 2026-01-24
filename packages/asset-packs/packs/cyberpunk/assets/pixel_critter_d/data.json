@@ -17,5 +17,10 @@
     "space"
   ],
   "caption": "Neon green pixel art alien.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.628,
+    "y": 1.798,
+    "z": 0.094
+  }
 }

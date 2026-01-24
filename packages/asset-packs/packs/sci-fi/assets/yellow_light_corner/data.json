@@ -19,5 +19,10 @@
     "warning"
   ],
   "caption": "Yellow corner lamp.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.253,
+    "y": 0.149,
+    "z": 1.253
+  }
 }

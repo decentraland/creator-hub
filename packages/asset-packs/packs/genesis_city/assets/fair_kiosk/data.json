@@ -23,5 +23,10 @@
     "vehicle"
   ],
   "caption": "Red kiosk with wooden roof and counter.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.948,
+    "y": 2.608,
+    "z": 3.48
+  }
 }

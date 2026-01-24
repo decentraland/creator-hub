@@ -16,5 +16,10 @@
     "space"
   ],
   "caption": "Gray hallway with white floor.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6.025,
+    "y": 3.835,
+    "z": 6.013
+  }
 }

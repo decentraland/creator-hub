@@ -4,5 +4,10 @@
   "category": "party",
   "tags": ["explosion", "detonation", "boom", "blast"],
   "description": "Invisible until triggered by another smart item, it creates a visual effect of a cloud of smoke exploding outwards.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.27,
+    "y": 1.742,
+    "z": 1.881
+  }
 }

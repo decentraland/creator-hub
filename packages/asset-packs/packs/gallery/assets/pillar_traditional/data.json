@@ -18,5 +18,10 @@
     "tower"
   ],
   "caption": "Classic stone column.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.7,
+    "y": 4,
+    "z": 0.7
+  }
 }

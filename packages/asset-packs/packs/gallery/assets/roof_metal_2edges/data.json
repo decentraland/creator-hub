@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["architectural", "cladding", "facade", "panel", "roof", "roofed", "roofing", "sheeting"],
   "caption": "Metal roof with visible edges.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.7,
+    "z": 4
+  }
 }

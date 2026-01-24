@@ -17,5 +17,10 @@
     "urban"
   ],
   "caption": "Orange street light with glowing globe.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.582,
+    "y": 2.63,
+    "z": 0.582
+  }
 }

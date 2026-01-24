@@ -18,5 +18,10 @@
     "windowpane"
   ],
   "caption": "Darkened room window frame.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.153,
+    "y": 1.646,
+    "z": 0.16
+  }
 }

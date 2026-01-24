@@ -32,5 +32,10 @@
     "sleep"
   ],
   "caption": "Wooden wheelbarrow for gardening use.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.906,
+    "y": 1.322,
+    "z": 1.591
+  }
 }

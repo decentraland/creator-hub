@@ -16,5 +16,10 @@
     "ornamentation"
   ],
   "caption": "Purple and orange wall decoration.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.336,
+    "y": 0.936,
+    "z": 0.116
+  }
 }

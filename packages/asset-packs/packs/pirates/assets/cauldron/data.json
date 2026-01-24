@@ -22,5 +22,10 @@
     "vessel"
   ],
   "caption": "Cauldron with glowing red liquid inside.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.473,
+    "y": 0.591,
+    "z": 0.554
+  }
 }

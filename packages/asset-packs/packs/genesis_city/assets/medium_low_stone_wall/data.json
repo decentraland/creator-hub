@@ -23,5 +23,10 @@
     "structure"
   ],
   "caption": "Wooden plank with visible grain.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.316,
+    "y": 1.107,
+    "z": 3.058
+  }
 }

@@ -22,5 +22,10 @@
     "tropical"
   ],
   "caption": "Half coconut.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.288,
+    "y": 0.189,
+    "z": 0.339
+  }
 }

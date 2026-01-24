@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["curve", "cushion", "graphic", "outline", "peach", "shape", "silhouette"],
   "caption": "Red, v-shaped letter with a top and bottom.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.632,
+    "y": 0.632,
+    "z": 0.131
+  }
 }

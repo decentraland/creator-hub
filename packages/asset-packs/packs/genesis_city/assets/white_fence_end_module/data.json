@@ -30,5 +30,10 @@
     "tower"
   ],
   "caption": "White monument with pointed top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.128,
+    "y": 1.208,
+    "z": 0.3
+  }
 }

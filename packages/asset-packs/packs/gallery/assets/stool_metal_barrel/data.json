@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["container", "cylindrical", "drum", "storage", "tank", "vessel"],
   "caption": "Metal barrel with a lid.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.545,
+    "y": 0.544,
+    "z": 0.543
+  }
 }

@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["interior", "room", "space", "tile"],
   "caption": "Purple floor tile.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.01,
+    "z": 2
+  }
 }

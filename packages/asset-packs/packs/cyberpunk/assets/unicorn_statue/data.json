@@ -16,5 +16,10 @@
     "unicorn"
   ],
   "caption": "Unicorn statue with a glowing horn.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.447,
+    "y": 4.418,
+    "z": 4.039
+  }
 }

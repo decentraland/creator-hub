@@ -16,5 +16,10 @@
     "tomb"
   ],
   "caption": "Black casket with glowing screen and cross.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.99,
+    "y": 1.598,
+    "z": 2.528
+  }
 }

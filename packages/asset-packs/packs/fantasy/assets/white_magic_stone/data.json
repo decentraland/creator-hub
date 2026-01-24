@@ -15,5 +15,10 @@
     "shape"
   ],
   "caption": "Black circle with white border.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.194,
+    "y": 0.217,
+    "z": 0.185
+  }
 }

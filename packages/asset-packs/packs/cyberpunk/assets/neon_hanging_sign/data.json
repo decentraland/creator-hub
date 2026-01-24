@@ -15,5 +15,10 @@
     "storefront"
   ],
   "caption": "Blue neon sign shaped like an open book.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.998,
+    "y": 0.522,
+    "z": 0.044
+  }
 }

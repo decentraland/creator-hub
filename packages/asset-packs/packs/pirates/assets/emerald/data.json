@@ -18,5 +18,10 @@
     "valuable"
   ],
   "caption": "Green gemstone with a smooth surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.346,
+    "y": 0.146,
+    "z": 0.347
+  }
 }

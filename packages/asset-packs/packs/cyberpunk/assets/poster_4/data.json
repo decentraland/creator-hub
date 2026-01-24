@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["artwork", "dot", "graphic", "poster", "visual"],
   "caption": "Poster featuring a dot pattern.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.004,
+    "y": 0.625,
+    "z": 0.025
+  }
 }

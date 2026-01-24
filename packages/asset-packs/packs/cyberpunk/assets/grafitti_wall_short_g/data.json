@@ -17,5 +17,10 @@
     "vibrant"
   ],
   "caption": "Alien and squid graffiti on city wall.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.006,
+    "y": 2.001,
+    "z": 0.639
+  }
 }

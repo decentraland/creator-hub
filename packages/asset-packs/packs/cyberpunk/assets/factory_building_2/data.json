@@ -15,5 +15,10 @@
     "structure"
   ],
   "caption": "Factory building with a prominent chimney.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 7.364,
+    "y": 21.579,
+    "z": 7.364
+  }
 }

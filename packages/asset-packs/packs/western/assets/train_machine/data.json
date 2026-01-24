@@ -17,5 +17,10 @@
     "wagon"
   ],
   "caption": "Black train with yellow stripes and chimney.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.205,
+    "y": 5.262,
+    "z": 10.065
+  }
 }

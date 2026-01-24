@@ -23,5 +23,10 @@
     "rocky"
   ],
   "caption": "Gray ally-shaped crystal.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.488,
+    "y": 2.944,
+    "z": 2.536
+  }
 }

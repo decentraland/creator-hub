@@ -4,5 +4,10 @@
   "category": "tiles",
   "tags": ["cardboard", "hue", "landscape", "natural", "organic", "outdoor", "paper", "terrain"],
   "caption": "Old newspaper with yellow tint.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.569,
+    "y": 0.441,
+    "z": 11.418
+  }
 }

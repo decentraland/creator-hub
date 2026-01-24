@@ -4,5 +4,10 @@
   "category": "tiles",
   "tags": ["scifi", "tile", "vent", "furniture", "interior", "panel", "room", "scheme", "visual"],
   "caption": "Red and white floor panel.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3,
+    "y": 0.075,
+    "z": 3
+  }
 }

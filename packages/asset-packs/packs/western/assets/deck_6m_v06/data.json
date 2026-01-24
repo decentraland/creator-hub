@@ -14,5 +14,10 @@
     "stage"
   ],
   "caption": "Wooden bench with backrest.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6.009,
+    "y": 4.755,
+    "z": 2.044
+  }
 }

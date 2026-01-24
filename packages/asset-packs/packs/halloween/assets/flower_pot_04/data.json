@@ -20,5 +20,10 @@
     "included"
   ],
   "caption": "Blue ceramic pot containing a small plant.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.382,
+    "y": 0.362,
+    "z": 0.327
+  }
 }

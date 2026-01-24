@@ -24,5 +24,10 @@
     "vessel"
   ],
   "caption": "Red spice bag containing a spicy powder.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.803,
+    "y": 0.865,
+    "z": 0.678
+  }
 }

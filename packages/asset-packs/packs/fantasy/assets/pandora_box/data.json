@@ -20,5 +20,10 @@
     "vessel"
   ],
   "caption": "A glowing pandora's box opens to reveal gem.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.703,
+    "y": 0.416,
+    "z": 0.5
+  }
 }

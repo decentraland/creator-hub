@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["detonator", "explosive", "handle", "mechanism", "military", "tnt", "weapon"],
   "caption": "Red tnt detonator with black handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.496,
+    "y": 0.753,
+    "z": 0.292
+  }
 }

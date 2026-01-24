@@ -24,5 +24,10 @@
     "shelter"
   ],
   "caption": "Blue folding table with built-in umbrella.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.776,
+    "y": 2.82,
+    "z": 2.776
+  }
 }

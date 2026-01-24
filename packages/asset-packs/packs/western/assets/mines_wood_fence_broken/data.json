@@ -16,5 +16,10 @@
     "splinter"
   ],
   "caption": "Broken wooden fence.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.409,
+    "y": 2.674,
+    "z": 0.701
+  }
 }

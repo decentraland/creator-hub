@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["architectural", "curve", "line", "shape", "zig", "zigzag"],
   "caption": "Zigzag pattern on its surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.033,
+    "y": 4,
+    "z": 2.04
+  }
 }

@@ -4,5 +4,10 @@
   "category": "health",
   "tags": ["health", "enemy", "robot"],
   "description": "A robot that can chase the player and cause damage. It can also be destroyed by the player. Use it together with the health bar smart item.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.859,
+    "y": 3.33,
+    "z": 3.352
+  }
 }

@@ -19,5 +19,10 @@
     "wire"
   ],
   "caption": "Kinked cable with yellow connector.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.168,
+    "y": 0.123,
+    "z": 1.062
+  }
 }

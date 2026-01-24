@@ -19,5 +19,10 @@
     "stirring"
   ],
   "caption": "Green cauldron filled with glowing liquid.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.897,
+    "y": 1.19,
+    "z": 0.892
+  }
 }

@@ -14,5 +14,10 @@
     "waste"
   ],
   "caption": "Green trash can with open lid.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.723,
+    "y": 2.37,
+    "z": 1.785
+  }
 }

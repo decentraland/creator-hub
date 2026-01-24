@@ -19,5 +19,10 @@
     "vegetation"
   ],
   "caption": "Light green hillside.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.929,
+    "y": 0.296,
+    "z": 2.848
+  }
 }

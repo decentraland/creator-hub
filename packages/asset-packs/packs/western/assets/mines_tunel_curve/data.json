@@ -20,5 +20,10 @@
     "nutrition"
   ],
   "caption": "Bread with a hole in the center.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6.345,
+    "y": 3.851,
+    "z": 7.21
+  }
 }

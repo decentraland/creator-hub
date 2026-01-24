@@ -16,5 +16,10 @@
     "train"
   ],
   "caption": "Wooden deck on top of a train.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 7.047,
+    "y": 3.806,
+    "z": 2.199
+  }
 }

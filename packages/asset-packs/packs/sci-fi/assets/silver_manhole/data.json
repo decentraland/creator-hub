@@ -18,5 +18,10 @@
     "utility"
   ],
   "caption": "Manhole cover with a metal lid.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.592,
+    "y": 0.24,
+    "z": 1.592
+  }
 }

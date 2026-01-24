@@ -16,5 +16,10 @@
     "structure"
   ],
   "caption": "Spiral staircase in zero gravity.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.043,
+    "y": 5.165,
+    "z": 4.032
+  }
 }

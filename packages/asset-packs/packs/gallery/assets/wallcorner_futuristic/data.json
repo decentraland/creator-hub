@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["age", "futuristic", "metallic", "sleek", "space", "tech"],
   "caption": "Futuristic wall corner with metallic finish.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.031,
+    "y": 4,
+    "z": 4
+  }
 }

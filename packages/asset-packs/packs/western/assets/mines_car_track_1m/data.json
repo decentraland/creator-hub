@@ -15,5 +15,10 @@
     "track"
   ],
   "caption": "Wooden plank with two exposed nails.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.235,
+    "y": 0.116,
+    "z": 1.226
+  }
 }

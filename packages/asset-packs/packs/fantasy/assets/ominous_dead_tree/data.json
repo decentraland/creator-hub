@@ -21,5 +21,10 @@
     "roots"
   ],
   "caption": "Dead, glowing tree in a dark forest.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.186,
+    "y": 6.401,
+    "z": 6.029
+  }
 }

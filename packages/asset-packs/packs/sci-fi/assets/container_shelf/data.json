@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["scifi", "box", "storage", "container", "cylindrical", "shelf", "vessel"],
   "caption": "Yellow and black striped cylinder.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.186,
+    "y": 0.311,
+    "z": 0.186
+  }
 }

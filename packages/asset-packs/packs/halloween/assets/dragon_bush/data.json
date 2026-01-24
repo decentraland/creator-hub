@@ -16,5 +16,10 @@
     "wings"
   ],
   "caption": "Green dragon-like creature with a bushy tail.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.01,
+    "y": 5.309,
+    "z": 19.568
+  }
 }

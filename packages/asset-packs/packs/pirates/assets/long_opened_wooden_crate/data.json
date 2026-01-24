@@ -19,5 +19,10 @@
     "vessel"
   ],
   "caption": "Large wooden crate on the ground.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.986,
+    "y": 0.488,
+    "z": 0.76
+  }
 }

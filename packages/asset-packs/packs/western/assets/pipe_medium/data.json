@@ -16,5 +16,10 @@
     "vessel"
   ],
   "caption": "Old metal pipe.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.485,
+    "y": 1.321,
+    "z": 0.485
+  }
 }

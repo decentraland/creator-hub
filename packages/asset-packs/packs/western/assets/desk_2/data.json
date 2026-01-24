@@ -17,5 +17,10 @@
     "table"
   ],
   "caption": "Wooden desk with single drawer.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.963,
+    "y": 1.336,
+    "z": 1.288
+  }
 }

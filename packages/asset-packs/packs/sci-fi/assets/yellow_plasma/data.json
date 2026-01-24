@@ -23,5 +23,10 @@
     "vessel"
   ],
   "caption": "Yellow plasma bottle with white cap.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.226,
+    "y": 0.387,
+    "z": 0.261
+  }
 }

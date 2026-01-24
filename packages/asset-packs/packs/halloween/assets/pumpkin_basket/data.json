@@ -16,5 +16,10 @@
     "seasonal"
   ],
   "caption": "Jack-o-lantern on red basket.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.552,
+    "y": 0.826,
+    "z": 0.825
+  }
 }

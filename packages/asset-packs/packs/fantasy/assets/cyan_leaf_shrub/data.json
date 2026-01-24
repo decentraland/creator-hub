@@ -19,5 +19,10 @@
     "vegetation"
   ],
   "caption": "Blue leaf on green stem.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.548,
+    "y": 0.787,
+    "z": 1.318
+  }
 }

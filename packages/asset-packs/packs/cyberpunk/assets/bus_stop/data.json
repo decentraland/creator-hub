@@ -19,5 +19,10 @@
     "vehicle"
   ],
   "caption": "Bus stop with bench and trash can.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 12.236,
+    "y": 4.06,
+    "z": 10.85
+  }
 }

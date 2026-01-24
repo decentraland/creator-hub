@@ -20,5 +20,10 @@
     "riches"
   ],
   "caption": "Treasure chest with glowing screen.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.993,
+    "y": 0.095,
+    "z": 0.291
+  }
 }

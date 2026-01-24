@@ -14,5 +14,10 @@
     "woodwork"
   ],
   "caption": "Smooth wooden plank.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.481,
+    "y": 0.344,
+    "z": 0.437
+  }
 }

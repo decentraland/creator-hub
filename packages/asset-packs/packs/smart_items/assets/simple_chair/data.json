@@ -4,5 +4,10 @@
   "description": "A simple chair.",
   "tags": ["chair", "seat", "sitting", "furniture"],
   "author": "Decentraland Foundation",
-  "id": "954c511b-c0e5-4719-81f7-eb6954c2d843"
+  "id": "954c511b-c0e5-4719-81f7-eb6954c2d843",
+  "boundingBox": {
+    "x": 0.601,
+    "y": 1.339,
+    "z": 0.679
+  }
 }

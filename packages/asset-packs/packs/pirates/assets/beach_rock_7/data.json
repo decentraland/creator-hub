@@ -22,5 +22,10 @@
     "wave"
   ],
   "caption": "Rock from the beach.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 7.256,
+    "y": 9.033,
+    "z": 6.84
+  }
 }

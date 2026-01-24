@@ -25,5 +25,10 @@
     "vessel"
   ],
   "caption": "Old-fashioned pirate ship with multiple masts.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.394,
+    "y": 13.628,
+    "z": 18.021
+  }
 }

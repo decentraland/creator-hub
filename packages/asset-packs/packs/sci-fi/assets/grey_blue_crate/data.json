@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["scifi", "box", "storage", "container", "crate", "drum", "strap", "tank", "vessel"],
   "caption": "Blue and grey crate with orange strap.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.797,
+    "y": 0.817,
+    "z": 0.945
+  }
 }

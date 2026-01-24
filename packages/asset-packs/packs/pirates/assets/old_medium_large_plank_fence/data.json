@@ -21,5 +21,10 @@
     "timber"
   ],
   "caption": "Wooden fence with varied plank sizes.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.242,
+    "y": 2.077,
+    "z": 3
+  }
 }

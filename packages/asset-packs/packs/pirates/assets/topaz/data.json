@@ -20,5 +20,10 @@
     "sparkling"
   ],
   "caption": "Blue soap-like object with rounded edges.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.239,
+    "y": 0.102,
+    "z": 0.487
+  }
 }

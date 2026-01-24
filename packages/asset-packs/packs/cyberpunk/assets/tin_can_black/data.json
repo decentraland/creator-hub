@@ -17,5 +17,10 @@
     "vessel"
   ],
   "caption": "Black metal tin can.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.141,
+    "y": 0.242,
+    "z": 0.142
+  }
 }

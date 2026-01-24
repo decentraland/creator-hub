@@ -24,5 +24,10 @@
     "spout"
   ],
   "caption": "Fountain with two spouts in blue.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.053,
+    "y": 3.715,
+    "z": 4.053
+  }
 }

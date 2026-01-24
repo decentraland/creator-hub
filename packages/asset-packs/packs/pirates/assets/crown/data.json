@@ -24,5 +24,10 @@
     "valuable"
   ],
   "caption": "Crown featuring multiple precious gemstones.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.444,
+    "y": 0.212,
+    "z": 0.444
+  }
 }

@@ -22,5 +22,10 @@
     "trunk"
   ],
   "caption": "Brown textured log.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.003,
+    "y": 0.28,
+    "z": 0.244
+  }
 }

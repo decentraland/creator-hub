@@ -18,5 +18,10 @@
     "vessel"
   ],
   "caption": "Multi-tiered canister with colored compartments.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.042,
+    "y": 3.538,
+    "z": 1.042
+  }
 }

@@ -16,5 +16,10 @@
     "trunk"
   ],
   "caption": "A glowing tree stands alone.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.981,
+    "y": 3.417,
+    "z": 2.407
+  }
 }

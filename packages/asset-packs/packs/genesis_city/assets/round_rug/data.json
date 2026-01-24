@@ -17,5 +17,10 @@
     "space"
   ],
   "caption": "Colorful rug with a circular design.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.709,
+    "y": 3.689,
+    "z": 0.038
+  }
 }

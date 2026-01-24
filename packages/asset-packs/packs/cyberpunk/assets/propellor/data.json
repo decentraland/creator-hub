@@ -16,5 +16,10 @@
     "spinning"
   ],
   "caption": "Central hub propeller.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.948,
+    "y": 0.415,
+    "z": 0.948
+  }
 }

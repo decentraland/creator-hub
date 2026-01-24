@@ -23,5 +23,10 @@
     "outdoor"
   ],
   "caption": "Green grass in a field.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.547,
+    "y": 1.181,
+    "z": 0.558
+  }
 }

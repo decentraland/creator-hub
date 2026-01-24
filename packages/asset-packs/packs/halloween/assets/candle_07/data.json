@@ -19,5 +19,10 @@
     "wax"
   ],
   "caption": "Lit candle in pink wax holder.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.23,
+    "y": 0.218,
+    "z": 0.254
+  }
 }

@@ -4,5 +4,10 @@
   "category": "Text",
   "tags": ["sign", "neon", "rect"],
   "description": "A sign that can be used to display a text message.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 1.125,
+    "z": 1.91
+  }
 }

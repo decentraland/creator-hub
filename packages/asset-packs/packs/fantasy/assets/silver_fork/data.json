@@ -19,5 +19,10 @@
     "utensil"
   ],
   "caption": "Yellow-handled fork for eating.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.064,
+    "y": 0.021,
+    "z": 0.395
+  }
 }

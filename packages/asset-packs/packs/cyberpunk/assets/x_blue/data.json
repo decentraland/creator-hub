@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["cross", "effect", "graphic", "shadow", "shape", "visual"],
   "caption": "Blue cross with glowing edges.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.5,
+    "y": 0.5,
+    "z": 0.076
+  }
 }

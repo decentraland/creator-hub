@@ -26,5 +26,10 @@
     "trunk"
   ],
   "caption": "Poplar tree model.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.595,
+    "y": 2.337,
+    "z": 5.113
+  }
 }

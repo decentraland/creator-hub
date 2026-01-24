@@ -16,5 +16,10 @@
     "shape"
   ],
   "caption": "Orange brick-shaped structure.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.17,
+    "y": 0.081,
+    "z": 0.404
+  }
 }

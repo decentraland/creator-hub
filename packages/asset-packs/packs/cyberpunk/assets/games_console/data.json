@@ -15,5 +15,10 @@
     "recreation"
   ],
   "caption": "White gaming console with attached controllers.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.868,
+    "y": 0.345,
+    "z": 0.493
+  }
 }

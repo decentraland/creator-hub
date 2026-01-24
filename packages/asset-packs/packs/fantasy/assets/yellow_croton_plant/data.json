@@ -18,5 +18,10 @@
     "stems"
   ],
   "caption": "Three yellow croton leaves.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.06,
+    "y": 1.39,
+    "z": 0.892
+  }
 }

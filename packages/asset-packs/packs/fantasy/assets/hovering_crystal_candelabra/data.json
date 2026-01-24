@@ -21,5 +21,10 @@
     "table"
   ],
   "caption": "Blue crystal atop golden candle holder.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.233,
+    "y": 2.836,
+    "z": 1.233
+  }
 }

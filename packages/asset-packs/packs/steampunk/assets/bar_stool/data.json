@@ -20,5 +20,10 @@
     "sitting"
   ],
   "caption": "Red stool with black handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.667,
+    "y": 0.818,
+    "z": 0.72
+  }
 }

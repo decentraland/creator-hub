@@ -19,5 +19,10 @@
     "kitchen"
   ],
   "caption": "Hot dog with toppings on a bun.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.376,
+    "y": 0.14,
+    "z": 0.232
+  }
 }

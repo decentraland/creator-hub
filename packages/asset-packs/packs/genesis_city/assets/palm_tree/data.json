@@ -24,5 +24,10 @@
     "vegetation"
   ],
   "caption": "Palm tree with a green top and brown trunk.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.666,
+    "y": 4.071,
+    "z": 6.73
+  }
 }

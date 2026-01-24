@@ -15,5 +15,10 @@
     "world"
   ],
   "caption": "Orange planet with detailed surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.261,
+    "y": 2.815,
+    "z": 3.226
+  }
 }

@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["accent", "bright", "furniture", "hue", "interior", "vibrant", "wallcorner"],
   "caption": "Orange corner piece.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 2.04
+  }
 }

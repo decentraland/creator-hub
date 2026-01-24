@@ -21,5 +21,10 @@
     "vegetation"
   ],
   "caption": "Rock covered in green moss.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.386,
+    "y": 0.636,
+    "z": 1.753
+  }
 }

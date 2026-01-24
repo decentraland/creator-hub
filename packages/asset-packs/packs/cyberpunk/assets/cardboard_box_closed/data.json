@@ -18,5 +18,10 @@
     "transport"
   ],
   "caption": "Yellow arrow points up from a cardboard box.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.706,
+    "y": 0.712,
+    "z": 0.708
+  }
 }

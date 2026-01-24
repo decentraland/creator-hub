@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["checkered", "colored", "colorful", "cuboid", "shaped", "vibrant", "visual"],
   "caption": "Pink cube with checkered side panels.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+  }
 }

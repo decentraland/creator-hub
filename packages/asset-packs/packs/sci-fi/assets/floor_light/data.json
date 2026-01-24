@@ -17,5 +17,10 @@
     "radiant"
   ],
   "caption": "Yellow coin.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.64,
+    "y": 0.309,
+    "z": 0.643
+  }
 }

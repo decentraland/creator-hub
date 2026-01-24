@@ -15,5 +15,10 @@
     "terrain"
   ],
   "caption": "Cobblestone road with straight sections.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.016,
+    "y": 0.042,
+    "z": 2
+  }
 }

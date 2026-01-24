@@ -24,5 +24,10 @@
     "structure"
   ],
   "caption": "Metal fence with barbed wire.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.466,
+    "y": 1.307,
+    "z": 2.797
+  }
 }

@@ -4,5 +4,10 @@
   "category": "primitives",
   "tags": ["invisible", "wall", "dome", "sphere", "semisphere", "hemisphere", "globe", "collider"],
   "description": "A dome that is invisible. It can be used to create a semicircular wall that the player can't walk through.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 0.5,
+    "z": 1
+  }
 }

@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["architectural", "building", "night", "roof", "shading", "shadow", "silhouette"],
   "caption": "Black roof with two edges.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.7,
+    "z": 4
+  }
 }

@@ -17,5 +17,10 @@
     "space"
   ],
   "caption": "Fallen leaves on the ground.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.057,
+    "y": 0.006,
+    "z": 2.895
+  }
 }

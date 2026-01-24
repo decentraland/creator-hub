@@ -17,5 +17,10 @@
     "wagon"
   ],
   "caption": "Open wagon with benches.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.861,
+    "y": 4.009,
+    "z": 7.12
+  }
 }

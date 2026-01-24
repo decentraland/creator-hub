@@ -20,5 +20,10 @@
     "stronghold"
   ],
   "caption": "Black cube with glowing screen.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.119,
+    "y": 5.127,
+    "z": 6.282
+  }
 }

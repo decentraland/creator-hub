@@ -21,5 +21,10 @@
     "terrain"
   ],
   "caption": "Rock with rough, weathered surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6.07,
+    "y": 4.148,
+    "z": 5.004
+  }
 }

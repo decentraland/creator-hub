@@ -17,5 +17,10 @@
     "terrain"
   ],
   "caption": "Mountain range.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 16.804,
+    "y": 14.194,
+    "z": 6.195
+  }
 }

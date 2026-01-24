@@ -18,5 +18,10 @@
     "tower"
   ],
   "caption": "Dark grey textured brick wall.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 4,
+    "z": 0.798
+  }
 }

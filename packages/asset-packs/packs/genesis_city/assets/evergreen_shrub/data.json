@@ -24,5 +24,10 @@
     "vegetation"
   ],
   "caption": "",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.533,
+    "y": 0.86,
+    "z": 2.298
+  }
 }

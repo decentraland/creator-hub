@@ -17,5 +17,10 @@
     "structure"
   ],
   "caption": "Glass-paneled staircase with a corner.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.12,
+    "y": 5.154,
+    "z": 4.124
+  }
 }

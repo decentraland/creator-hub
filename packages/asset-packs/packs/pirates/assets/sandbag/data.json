@@ -25,5 +25,10 @@
     "textile"
   ],
   "caption": "Brown sandbag.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.101,
+    "y": 0.241,
+    "z": 0.784
+  }
 }

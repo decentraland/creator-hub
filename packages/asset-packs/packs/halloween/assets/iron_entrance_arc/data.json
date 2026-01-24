@@ -18,5 +18,10 @@
     "structure"
   ],
   "caption": "Glowing metal archway.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 9.329,
+    "y": 12.602,
+    "z": 3.554
+  }
 }

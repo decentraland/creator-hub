@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["clear", "cream", "glass", "hue", "reflection", "shade", "shape", "window"],
   "caption": "Dark glass window with a glowing frame.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 0.4
+  }
 }

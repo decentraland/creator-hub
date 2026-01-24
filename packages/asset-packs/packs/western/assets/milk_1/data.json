@@ -18,5 +18,10 @@
     "vessel"
   ],
   "caption": "Milk jug with handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.417,
+    "y": 0.772,
+    "z": 0.412
+  }
 }

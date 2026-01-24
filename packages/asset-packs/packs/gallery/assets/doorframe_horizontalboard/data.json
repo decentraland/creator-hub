@@ -15,5 +15,10 @@
     "structure"
   ],
   "caption": "Horizontal brick door frame with single arch.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 0.4
+  }
 }

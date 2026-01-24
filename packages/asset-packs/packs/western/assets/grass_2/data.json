@@ -4,5 +4,10 @@
   "category": "nature",
   "tags": ["architecture", "hue", "landscape", "like", "setting", "terrain"],
   "caption": "Coral reef scene with orange hues.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.434,
+    "y": 0.971,
+    "z": 1.962
+  }
 }

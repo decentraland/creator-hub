@@ -19,5 +19,10 @@
     "utensil"
   ],
   "caption": "Sushi shelf with multiple compartments.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.645,
+    "y": 4.132,
+    "z": 1.629
+  }
 }

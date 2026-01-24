@@ -15,5 +15,10 @@
     "structure"
   ],
   "caption": "White roof with three edges.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.7,
+    "z": 2
+  }
 }

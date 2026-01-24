@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["architecture", "building", "exterior", "interior", "roof", "structure"],
   "caption": "White roof featuring a distinctive corner.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.7,
+    "z": 4
+  }
 }

@@ -17,5 +17,10 @@
     "windowpane"
   ],
   "caption": "Four panes of glass in a window.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.502,
+    "y": 1.645,
+    "z": 0.107
+  }
 }

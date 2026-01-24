@@ -4,5 +4,10 @@
   "category": "health",
   "tags": ["health", "bar", "meter", "progress", "damage"],
   "description": "A health bar that can be used to keep track of and display the player's health. It works together with other items like the spikes, the first aid and healing pad smart items.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.1,
+    "y": 1,
+    "z": 0.1
+  }
 }

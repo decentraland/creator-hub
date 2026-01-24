@@ -14,5 +14,10 @@
     "vessel"
   ],
   "caption": "Red bucket with a handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.672,
+    "y": 0.488,
+    "z": 0.664
+  }
 }

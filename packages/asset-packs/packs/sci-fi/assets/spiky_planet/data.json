@@ -16,5 +16,10 @@
     "terrain"
   ],
   "caption": "Spiky blue planet.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.651,
+    "y": 4.76,
+    "z": 4.746
+  }
 }

@@ -15,5 +15,10 @@
     "party music"
   ],
   "description": "An invisible item that plays an energetic dance club track for lively electronic party scenes.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.296,
+    "y": 0.016,
+    "z": 0.2
+  }
 }

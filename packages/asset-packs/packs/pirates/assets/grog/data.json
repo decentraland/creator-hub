@@ -23,5 +23,10 @@
     "vessel"
   ],
   "caption": "Blue bottle with cork stopper.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.443,
+    "y": 0.372,
+    "z": 0.418
+  }
 }

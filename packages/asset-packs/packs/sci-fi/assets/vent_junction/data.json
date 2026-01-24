@@ -17,5 +17,10 @@
     "ventilation"
   ],
   "caption": "Orange lighted orb.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.111,
+    "y": 1.032,
+    "z": 1.114
+  }
 }

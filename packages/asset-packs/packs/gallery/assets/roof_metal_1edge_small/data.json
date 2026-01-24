@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["plate", "roof", "roofing", "shape", "sheet", "strip", "type"],
   "caption": "Metal roof with a sharp edge.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.7,
+    "z": 2
+  }
 }

@@ -19,5 +19,10 @@
     "tome"
   ],
   "caption": "A scroll featuring an ancient design.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.34,
+    "y": 0.049,
+    "z": 0.543
+  }
 }

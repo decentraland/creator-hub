@@ -16,5 +16,10 @@
     "step"
   ],
   "caption": "Red staircase with black handrails.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.02,
+    "y": 5.133,
+    "z": 4.255
+  }
 }

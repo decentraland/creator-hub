@@ -20,5 +20,10 @@
     "train"
   ],
   "caption": "Wooden planked train track.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.38,
+    "y": 0.116,
+    "z": 3.245
+  }
 }

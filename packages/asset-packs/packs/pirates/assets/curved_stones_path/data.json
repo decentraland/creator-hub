@@ -21,5 +21,10 @@
     "tower"
   ],
   "caption": "Curved stone pathway leading to treasure.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.006,
+    "y": 0.057,
+    "z": 2
+  }
 }

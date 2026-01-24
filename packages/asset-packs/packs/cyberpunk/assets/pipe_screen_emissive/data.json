@@ -16,5 +16,10 @@
     "shiny"
   ],
   "caption": "Glowing screen on a retro-style pipe.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.715,
+    "y": 1.384,
+    "z": 3.482
+  }
 }

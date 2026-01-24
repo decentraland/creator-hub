@@ -18,5 +18,10 @@
     "radiant"
   ],
   "caption": "Glowing cross-shaped lanterns.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.88,
+    "y": 0.381,
+    "z": 1.258
+  }
 }

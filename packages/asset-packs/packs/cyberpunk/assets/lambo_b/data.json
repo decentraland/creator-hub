@@ -14,5 +14,10 @@
     "vehicle"
   ],
   "caption": "Red lamborghini sports car with open doors.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.769,
+    "y": 1.574,
+    "z": 6.505
+  }
 }

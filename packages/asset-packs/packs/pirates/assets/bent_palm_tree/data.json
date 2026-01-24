@@ -26,5 +26,10 @@
     "structure"
   ],
   "caption": "Palm tree with curved trunk.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 9.074,
+    "y": 6.285,
+    "z": 4.762
+  }
 }

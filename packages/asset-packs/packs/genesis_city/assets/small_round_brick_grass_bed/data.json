@@ -23,5 +23,10 @@
     "rest"
   ],
   "caption": "Green-topped brick.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.055,
+    "z": 2
+  }
 }

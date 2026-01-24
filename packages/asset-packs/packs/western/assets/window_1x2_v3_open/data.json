@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["clear", "entrance", "glass", "interior", "opening", "sight", "window", "windowpane"],
   "caption": "Open-style window with brown frame.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.406,
+    "y": 1.751,
+    "z": 0.477
+  }
 }

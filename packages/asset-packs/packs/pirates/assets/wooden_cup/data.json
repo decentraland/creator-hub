@@ -23,5 +23,10 @@
     "vessel"
   ],
   "caption": "Brown ceramic vase with black band.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.239,
+    "y": 0.276,
+    "z": 0.258
+  }
 }

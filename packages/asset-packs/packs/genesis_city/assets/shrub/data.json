@@ -24,5 +24,10 @@
     "vegetation"
   ],
   "caption": "Green shrub with multiple leaf clusters.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.839,
+    "y": 0.793,
+    "z": 1.804
+  }
 }

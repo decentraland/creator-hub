@@ -4,5 +4,10 @@
   "category": "doors",
   "tags": ["padlock", "lock", "puzzle", "interactive", "genesis"],
   "description": "An interactive 4-digit combination lock that can be solved by clicking the wheels. It calls the Open action on the unlocked entity when the combination is correct.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.462,
+    "y": 0.566,
+    "z": 0.319
+  }
 }

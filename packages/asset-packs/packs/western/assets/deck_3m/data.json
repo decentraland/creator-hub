@@ -19,5 +19,10 @@
     "table"
   ],
   "caption": "Wooden deck with a table on top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.04,
+    "y": 0.717,
+    "z": 2.012
+  }
 }

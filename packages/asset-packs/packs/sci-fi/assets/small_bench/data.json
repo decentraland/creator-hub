@@ -18,5 +18,10 @@
     "seating"
   ],
   "caption": "Blue table featuring bright orange brackets.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.099,
+    "y": 0.795,
+    "z": 0.661
+  }
 }

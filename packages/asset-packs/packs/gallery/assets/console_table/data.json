@@ -16,5 +16,10 @@
     "wii"
   ],
   "caption": "Nintendo wii game controller.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.155,
+    "y": 0.834,
+    "z": 1.689
+  }
 }

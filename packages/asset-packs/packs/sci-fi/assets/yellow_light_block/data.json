@@ -19,5 +19,10 @@
     "warning"
   ],
   "caption": "Yellow light block.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.43,
+    "y": 0.136,
+    "z": 1.253
+  }
 }

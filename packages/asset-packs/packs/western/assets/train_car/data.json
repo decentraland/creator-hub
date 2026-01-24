@@ -17,5 +17,10 @@
     "vehicle"
   ],
   "caption": "Black train car with glowing white lettering.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.308,
+    "y": 4.304,
+    "z": 10.131
+  }
 }

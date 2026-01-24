@@ -19,5 +19,10 @@
     "vessel"
   ],
   "caption": "Red chemical in a soup bowl.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.289,
+    "y": 0.069,
+    "z": 0.289
+  }
 }

@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["roof", "roofing", "type"],
   "caption": "Metal roof with one edge.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.7,
+    "z": 4
+  }
 }

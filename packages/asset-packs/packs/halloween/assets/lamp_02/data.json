@@ -16,5 +16,10 @@
     "table"
   ],
   "caption": "Orange lamp on a.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.405,
+    "y": 0.832,
+    "z": 0.428
+  }
 }

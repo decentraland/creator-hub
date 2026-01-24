@@ -17,5 +17,10 @@
     "vegetation"
   ],
   "caption": "Black cactus with sharp spines.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.428,
+    "y": 4.242,
+    "z": 1.866
+  }
 }

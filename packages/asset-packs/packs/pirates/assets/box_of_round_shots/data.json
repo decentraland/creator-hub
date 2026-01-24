@@ -27,5 +27,10 @@
     "vessel"
   ],
   "caption": "Wooden box containing black rocks.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.322,
+    "y": 0.501,
+    "z": 0.667
+  }
 }

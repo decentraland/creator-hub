@@ -118,6 +118,22 @@ Go to the `packages/creator-hub` in this monorepo and do this:
 
 Now you are all set, you can start developing the SDK7 scene in this repo, use it from the local Builder and test it by previewing the scene, which should use your local Builder Server serving the development javascript files.
 
+### Maintenance Scripts
+
+#### Adding Bounding Box Metadata
+
+To add bounding box dimensions to asset models (extracted from .glb files):
+
+```bash
+# Process all packs
+npm run add-bounding-boxes
+
+# Process specific pack(s)
+npm run add-bounding-boxes pirates halloween cyberpunk
+```
+
+The script extracts real dimensions from the .glb files and updates each asset's `data.json` with a `boundingBox` field containing `x`, `y`, and `z` dimensions in meters.
+
 ### Troubleshooting
 
 #### Missing `@dcl/ecs` dependency

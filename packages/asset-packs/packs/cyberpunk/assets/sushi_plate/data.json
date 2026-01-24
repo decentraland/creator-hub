@@ -20,5 +20,10 @@
     "tableware"
   ],
   "caption": "Sushi plate with assorted sushi pieces.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.384,
+    "y": 0.015,
+    "z": 0.29
+  }
 }

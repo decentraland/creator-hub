@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["art", "graphic", "pixel", "retro", "shape", "visual"],
   "caption": "Red and black digital cube.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+  }
 }

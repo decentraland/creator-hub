@@ -17,5 +17,10 @@
     "structure"
   ],
   "caption": "Small wooden house with a green roof.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.445,
+    "y": 8.87,
+    "z": 9.473
+  }
 }

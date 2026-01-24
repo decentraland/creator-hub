@@ -21,5 +21,10 @@
     "visual"
   ],
   "caption": "Spherical object with textured surface.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.337,
+    "y": 0.354,
+    "z": 0.354
+  }
 }

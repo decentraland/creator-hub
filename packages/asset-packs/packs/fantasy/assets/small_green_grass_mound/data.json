@@ -21,5 +21,10 @@
     "plant"
   ],
   "caption": "Overgrown green hill.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.091,
+    "y": 0.257,
+    "z": 3.273
+  }
 }

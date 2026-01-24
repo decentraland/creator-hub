@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["four", "geometric", "outline", "shape", "silhouette"],
   "caption": "Basic geometric shape.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.7,
+    "z": 2
+  }
 }

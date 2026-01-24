@@ -20,5 +20,10 @@
     "warning"
   ],
   "caption": "Skull-adorned sign in.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.666,
+    "y": 3.242,
+    "z": 0.437
+  }
 }

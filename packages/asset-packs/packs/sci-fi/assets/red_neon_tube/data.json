@@ -18,5 +18,10 @@
     "tube"
   ],
   "caption": "Glowing neon tube in dark space.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.715,
+    "y": 0.131,
+    "z": 0.135
+  }
 }

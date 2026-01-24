@@ -14,5 +14,10 @@
     "table"
   ],
   "caption": "Red wooden table with brown base.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.67,
+    "y": 0.772,
+    "z": 0.73
+  }
 }

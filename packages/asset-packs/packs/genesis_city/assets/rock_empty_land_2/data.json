@@ -16,5 +16,10 @@
     "terrain"
   ],
   "caption": "Empty land with a large rock.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.291,
+    "y": 2.263,
+    "z": 1.352
+  }
 }

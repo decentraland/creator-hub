@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["accent", "architectural", "building", "facade", "structure"],
   "caption": "Corner piece for walls.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.105,
+    "y": 4,
+    "z": 2.105
+  }
 }

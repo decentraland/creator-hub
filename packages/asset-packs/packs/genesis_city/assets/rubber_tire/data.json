@@ -18,5 +18,10 @@
     "vehicle"
   ],
   "caption": "Black rubber tire, silver hubcap.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.908,
+    "y": 0.908,
+    "z": 0.277
+  }
 }

@@ -18,5 +18,10 @@
     "source"
   ],
   "caption": "Lighting cube with glowing side face.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.83,
+    "y": 0.379,
+    "z": 0.753
+  }
 }

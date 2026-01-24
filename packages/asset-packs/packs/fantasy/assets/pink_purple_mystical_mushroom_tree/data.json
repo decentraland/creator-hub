@@ -24,5 +24,10 @@
     "organic"
   ],
   "caption": "Two glowing mushrooms atop a mushroom tree.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.699,
+    "y": 5.433,
+    "z": 4.445
+  }
 }

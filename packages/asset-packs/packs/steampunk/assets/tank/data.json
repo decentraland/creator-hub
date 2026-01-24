@@ -17,5 +17,10 @@
     "vessel"
   ],
   "caption": "Lantern with glass jar and metal handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.922,
+    "y": 3.477,
+    "z": 1.812
+  }
 }

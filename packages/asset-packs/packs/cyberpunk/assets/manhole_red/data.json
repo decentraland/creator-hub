@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["container", "cover", "fuel", "hazardous", "manhole", "storage", "toxic", "vessel"],
   "caption": "Red manhole cover with black border.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.797,
+    "y": 1.794,
+    "z": 0.075
+  }
 }

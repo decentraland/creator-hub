@@ -19,5 +19,10 @@
     "wings"
   ],
   "caption": "Black crow with glowing red eyes.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.746,
+    "y": 0.43,
+    "z": 0.505
+  }
 }

@@ -15,5 +15,10 @@
     "space"
   ],
   "caption": "Incomplete parquet tile.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.039,
+    "y": 0.048,
+    "z": 3.406
+  }
 }

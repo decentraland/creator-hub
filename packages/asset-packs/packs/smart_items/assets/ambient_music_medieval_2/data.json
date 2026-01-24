@@ -15,5 +15,10 @@
     "renaissance"
   ],
   "description": "An invisible item that plays a medieval‑inspired track for fantasy builds.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.296,
+    "y": 0.016,
+    "z": 0.2
+  }
 }

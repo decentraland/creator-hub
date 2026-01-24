@@ -15,5 +15,10 @@
     "visual"
   ],
   "caption": "Blue screen on top of billboard.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.123,
+    "y": 3.718,
+    "z": 0.651
+  }
 }

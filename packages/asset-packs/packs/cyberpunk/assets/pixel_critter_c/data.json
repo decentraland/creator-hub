@@ -17,5 +17,10 @@
     "upright"
   ],
   "caption": "Creature with glowing blue eyes.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.953,
+    "y": 1.798,
+    "z": 0.094
+  }
 }

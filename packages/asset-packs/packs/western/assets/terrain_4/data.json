@@ -15,5 +15,10 @@
     "yellowish"
   ],
   "caption": "Desert terrain with yellowish texture.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 9.028,
+    "y": 1.171,
+    "z": 5.219
+  }
 }

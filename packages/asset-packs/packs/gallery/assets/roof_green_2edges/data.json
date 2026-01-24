@@ -16,5 +16,10 @@
     "vegetation"
   ],
   "caption": "Green roof model for 3d rendering.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.7,
+    "z": 4
+  }
 }

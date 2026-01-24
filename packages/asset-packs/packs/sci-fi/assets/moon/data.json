@@ -19,5 +19,10 @@
     "spherical"
   ],
   "caption": "Brightly colored, glowing sphere.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.484,
+    "y": 4.314,
+    "z": 4.453
+  }
 }

@@ -17,5 +17,10 @@
     "wax"
   ],
   "caption": "A glowing white candle in a black holder.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.143,
+    "y": 0.424,
+    "z": 0.135
+  }
 }

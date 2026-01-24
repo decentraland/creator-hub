@@ -19,5 +19,10 @@
     "warning"
   ],
   "caption": "Cross-shaped sign with glowing yellow bars.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.88,
+    "y": 0.381,
+    "z": 1.258
+  }
 }

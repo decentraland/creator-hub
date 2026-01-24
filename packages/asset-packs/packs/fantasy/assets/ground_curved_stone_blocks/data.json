@@ -17,5 +17,10 @@
     "sculpted"
   ],
   "caption": "Curved stone block.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.727,
+    "y": 0.312,
+    "z": 4.745
+  }
 }

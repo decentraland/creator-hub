@@ -22,5 +22,10 @@
     "river"
   ],
   "caption": "Blue pond surrounded by a ring of stones.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.821,
+    "y": 0.356,
+    "z": 2.798
+  }
 }

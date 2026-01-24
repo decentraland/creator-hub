@@ -4,5 +4,10 @@
   "category": "nature",
   "tags": ["architecture", "building", "monument", "sculpture", "statue", "structure"],
   "caption": "Rock surrounded by four stones.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.487,
+    "y": 0.533,
+    "z": 2.059
+  }
 }

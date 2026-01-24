@@ -19,5 +19,10 @@
     "tower"
   ],
   "caption": "Red pavilion under blue roof.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.156,
+    "y": 4.947,
+    "z": 5.423
+  }
 }

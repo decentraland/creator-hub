@@ -24,5 +24,10 @@
     "structure"
   ],
   "caption": "Glowing street lamp post with lanterns.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.059,
+    "y": 2.812,
+    "z": 0.812
+  }
 }

@@ -16,5 +16,10 @@
     "turn"
   ],
   "caption": "Road segment with sharp turn.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.04,
+    "z": 2
+  }
 }

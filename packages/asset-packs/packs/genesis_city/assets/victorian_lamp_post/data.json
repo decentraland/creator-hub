@@ -22,5 +22,10 @@
     "victorian"
   ],
   "caption": "Yellow globe atop tall metal lamp post.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.658,
+    "y": 3.324,
+    "z": 0.714
+  }
 }

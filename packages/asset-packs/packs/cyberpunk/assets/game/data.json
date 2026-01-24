@@ -14,5 +14,10 @@
     "writing"
   ],
   "caption": "Green text with chinese characters on black.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.921,
+    "y": 0.443,
+    "z": 0.066
+  }
 }

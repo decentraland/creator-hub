@@ -21,5 +21,10 @@
     "warning"
   ],
   "caption": "Blue glowing block.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.433,
+    "y": 0.136,
+    "z": 1.253
+  }
 }

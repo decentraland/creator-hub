@@ -14,5 +14,10 @@
     "windowpane"
   ],
   "caption": "Four-paned window frame with top and bottom.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.359,
+    "y": 2.278,
+    "z": 0.354
+  }
 }

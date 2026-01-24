@@ -18,5 +18,10 @@
     "shape"
   ],
   "caption": "Glowing blue stone with a glowing orb.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.606,
+    "y": 2.119,
+    "z": 4.058
+  }
 }

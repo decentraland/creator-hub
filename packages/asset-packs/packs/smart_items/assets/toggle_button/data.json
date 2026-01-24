@@ -4,5 +4,10 @@
   "category": "buttons",
   "tags": ["button", "toggle", "activate", "switch", "on", "off"],
   "description": "A button that can be clicked to toggle on or off and change the state of other smart items.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.331,
+    "y": 0.505,
+    "z": 2.04
+  }
 }

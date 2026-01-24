@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["appearance", "glass", "pane", "rectangle", "shape", "window", "windowpane"],
   "caption": "Dark wooden window frame.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.421,
+    "y": 2.228,
+    "z": 0.36
+  }
 }

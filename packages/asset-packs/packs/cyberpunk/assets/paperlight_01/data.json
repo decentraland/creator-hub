@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["ambiance", "fixture", "hanging", "hook", "interior", "lantern", "paper", "room"],
   "caption": "Vintage red lantern hangs from a hook.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.446,
+    "y": 1.421,
+    "z": 0.446
+  }
 }

@@ -19,5 +19,10 @@
     "winged"
   ],
   "caption": "Black bats hang upside down.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.827,
+    "y": 0.61,
+    "z": 0.789
+  }
 }

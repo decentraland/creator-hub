@@ -14,5 +14,10 @@
     "stripes"
   ],
   "caption": "Two glowing orange rings float.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.498,
+    "y": 2.258,
+    "z": 1.257
+  }
 }

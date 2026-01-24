@@ -22,5 +22,10 @@
     "sidewalk"
   ],
   "caption": "Worn stone path.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.056,
+    "z": 1.003
+  }
 }

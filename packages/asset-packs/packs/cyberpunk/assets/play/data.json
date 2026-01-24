@@ -16,5 +16,10 @@
     "typography"
   ],
   "caption": "Chinese character for 'play' or 'take.'.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.45,
+    "y": 0.421,
+    "z": 0.066
+  }
 }

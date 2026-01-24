@@ -15,5 +15,10 @@
     "structure"
   ],
   "caption": "Wooden ladder with horizontal rungs.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.913,
+    "y": 3.27,
+    "z": 0.384
+  }
 }

@@ -25,5 +25,10 @@
     "sea"
   ],
   "caption": "Green fish with yellow fins.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.392,
+    "y": 0.059,
+    "z": 0.272
+  }
 }

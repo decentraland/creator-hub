@@ -19,5 +19,10 @@
     "tassel"
   ],
   "caption": "Red lantern with yellow tassel.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.572,
+    "y": 1.408,
+    "z": 0.544
+  }
 }

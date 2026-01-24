@@ -19,5 +19,10 @@
     "supernatural"
   ],
   "caption": "Ghost in white sheet.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.147,
+    "y": 1.016,
+    "z": 0.772
+  }
 }

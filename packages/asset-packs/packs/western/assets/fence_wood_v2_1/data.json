@@ -14,5 +14,10 @@
     "timber"
   ],
   "caption": "Wooden fence with vertical slats.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.002,
+    "y": 1.564,
+    "z": 0.245
+  }
 }

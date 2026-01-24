@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["bigger", "hue", "shade", "shape", "size", "tint", "window"],
   "caption": "Vintage pink window frame.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 0.4
+  }
 }

@@ -18,5 +18,10 @@
     "smooth"
   ],
   "caption": "Smooth wooden log.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.666,
+    "y": 2.626,
+    "z": 0.65
+  }
 }

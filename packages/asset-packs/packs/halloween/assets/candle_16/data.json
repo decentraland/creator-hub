@@ -19,5 +19,10 @@
     "heat"
   ],
   "caption": "Bright red candle on a cake.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.143,
+    "y": 0.226,
+    "z": 0.14
+  }
 }

@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["access", "climb", "five", "height", "ladder", "meter", "rung", "step", "structure"],
   "caption": "Five-meter long wooden ladder.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.358,
+    "y": 0.727,
+    "z": 1.005
+  }
 }

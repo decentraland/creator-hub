@@ -16,5 +16,10 @@
     "tomb"
   ],
   "caption": "Pink coffin with open lid.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.464,
+    "y": 1.166,
+    "z": 2.654
+  }
 }

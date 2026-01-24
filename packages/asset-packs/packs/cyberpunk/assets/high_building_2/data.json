@@ -14,5 +14,10 @@
     "urban"
   ],
   "caption": "Tall skyscraper.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 5.085,
+    "y": 28.315,
+    "z": 5.33
+  }
 }

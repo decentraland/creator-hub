@@ -16,5 +16,10 @@
     "rusty"
   ],
   "caption": "Barbed wire fence.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.516,
+    "y": 0.464,
+    "z": 0.81
+  }
 }

@@ -18,5 +18,10 @@
     "vessel"
   ],
   "caption": "Red box filled with shiny red fruit.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.549,
+    "y": 0.377,
+    "z": 0.709
+  }
 }

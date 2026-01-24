@@ -31,5 +31,10 @@
     "shooting"
   ],
   "caption": "Flintlock pistol with wooden handle and metal barrel.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.146,
+    "y": 0.256,
+    "z": 0.773
+  }
 }

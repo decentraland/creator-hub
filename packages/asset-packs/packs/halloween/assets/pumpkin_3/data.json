@@ -17,5 +17,10 @@
     "spooky"
   ],
   "caption": "Carved, glowing jack-o-lantern.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.832,
+    "y": 0.682,
+    "z": 0.786
+  }
 }

@@ -25,5 +25,10 @@
     "smoke"
   ],
   "caption": "Tall white candle with a glowing wick.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.067,
+    "y": 0.286,
+    "z": 0.067
+  }
 }

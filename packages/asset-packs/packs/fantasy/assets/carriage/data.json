@@ -18,5 +18,10 @@
     "vehicle"
   ],
   "caption": "Blue carriage with purple interior and brown roof.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.89,
+    "y": 1.665,
+    "z": 3.319
+  }
 }

@@ -29,5 +29,10 @@
     "trunk"
   ],
   "caption": "A sycamore tree with yellow leaves.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.703,
+    "y": 3.224,
+    "z": 5.748
+  }
 }

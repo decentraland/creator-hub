@@ -20,5 +20,10 @@
     "sushi"
   ],
   "caption": "Sushi dish in two boxes.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.462,
+    "y": 0.175,
+    "z": 0.488
+  }
 }

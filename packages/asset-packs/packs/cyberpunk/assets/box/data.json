@@ -15,5 +15,10 @@
     "rectangular"
   ],
   "caption": "Brown cardboard box with white label.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.631,
+    "y": 0.29,
+    "z": 0.429
+  }
 }

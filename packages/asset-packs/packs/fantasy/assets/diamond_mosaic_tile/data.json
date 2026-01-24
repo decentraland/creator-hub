@@ -16,5 +16,10 @@
     "visual"
   ],
   "caption": "Mosaic tile featuring a diamond pattern.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.06,
+    "z": 2.007
+  }
 }

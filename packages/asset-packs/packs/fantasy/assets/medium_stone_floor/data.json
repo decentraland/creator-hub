@@ -13,5 +13,10 @@
     "terrain"
   ],
   "caption": "Realistic stone floor.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.104,
+    "z": 2
+  }
 }

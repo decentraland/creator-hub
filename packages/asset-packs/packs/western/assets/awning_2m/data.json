@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["awning", "canvas", "fabric", "hue", "pigment", "roof", "roofing", "shade", "tone"],
   "caption": "Dark roofing material.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.03,
+    "y": 0.442,
+    "z": 1.38
+  }
 }

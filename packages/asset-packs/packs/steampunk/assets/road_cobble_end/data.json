@@ -16,5 +16,10 @@
     "urban"
   ],
   "caption": "Cobblestone road end.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.043,
+    "z": 1.901
+  }
 }

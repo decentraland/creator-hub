@@ -14,5 +14,10 @@
     "radiant"
   ],
   "caption": "Glowing base on tall, black vertical.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.5,
+    "y": 4,
+    "z": 0.5
+  }
 }

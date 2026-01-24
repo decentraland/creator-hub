@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["festive", "garland", "holiday", "ribbon", "wreath"],
   "caption": "Red garland with pink dots.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 15.028,
+    "y": 0.387,
+    "z": 0.756
+  }
 }

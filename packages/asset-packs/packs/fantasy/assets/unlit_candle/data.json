@@ -20,5 +20,10 @@
     "smoke"
   ],
   "caption": "Unlit candle with a white wick.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.124,
+    "y": 0.588,
+    "z": 0.124
+  }
 }

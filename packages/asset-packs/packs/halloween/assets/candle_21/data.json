@@ -19,5 +19,10 @@
     "wick"
   ],
   "caption": "White candle in a red holder.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.197,
+    "y": 0.484,
+    "z": 0.197
+  }
 }

@@ -20,5 +20,10 @@
     "tower"
   ],
   "caption": "Stone pillar.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.771,
+    "y": 4.008,
+    "z": 0.771
+  }
 }

@@ -4,5 +4,10 @@
   "category": "structures",
   "tags": ["bright", "clothing", "fashion", "hat", "headgear", "vibrant"],
   "caption": "Orange baseball cap.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 17.197,
+    "y": 4.907,
+    "z": 17.427
+  }
 }

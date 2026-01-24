@@ -17,5 +17,10 @@
     "treatment"
   ],
   "caption": "White paper-like material with black outline.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 100,
+    "y": 41.943,
+    "z": 402.243
+  }
 }

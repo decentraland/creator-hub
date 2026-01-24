@@ -28,5 +28,10 @@
     "warfare"
   ],
   "caption": "Wooden wheel atop an old cannon.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.363,
+    "y": 1.084,
+    "z": 1.904
+  }
 }

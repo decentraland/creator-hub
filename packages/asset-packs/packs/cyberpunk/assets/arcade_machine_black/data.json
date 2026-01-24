@@ -4,5 +4,10 @@
   "category": "furniture",
   "tags": ["arcade", "buttons", "cabinet", "entertainment", "glossy", "machine", "retro"],
   "caption": "Glowing screen arcade machine.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.387,
+    "y": 2.644,
+    "z": 1.608
+  }
 }

@@ -21,5 +21,10 @@
     "plant"
   ],
   "caption": "Mound of grass.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.746,
+    "y": 0.269,
+    "z": 3.105
+  }
 }

@@ -15,5 +15,10 @@
     "utility"
   ],
   "caption": "Telephone pole with a metal cross.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.882,
+    "y": 4.934,
+    "z": 0.891
+  }
 }

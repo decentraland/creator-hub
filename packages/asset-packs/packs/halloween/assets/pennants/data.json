@@ -19,5 +19,10 @@
     "supernatural"
   ],
   "caption": "Spooky pennants hang from a row.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6.138,
+    "y": 0.884,
+    "z": 0.519
+  }
 }

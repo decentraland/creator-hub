@@ -18,5 +18,10 @@
     "trunk"
   ],
   "caption": "Wooden logs lined up.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.217,
+    "y": 0.62,
+    "z": 0.876
+  }
 }

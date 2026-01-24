@@ -26,5 +26,10 @@
     "swim"
   ],
   "caption": "Metallic fish.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.368,
+    "y": 0.059,
+    "z": 0.189
+  }
 }

@@ -16,5 +16,10 @@
     "rich"
   ],
   "caption": "Purple gemstone wall ornament.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.193,
+    "y": 0.37,
+    "z": 0.034
+  }
 }

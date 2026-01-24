@@ -15,5 +15,10 @@
     "weapon"
   ],
   "caption": "Silver knife, yellow handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.07,
+    "y": 0.02,
+    "z": 0.404
+  }
 }

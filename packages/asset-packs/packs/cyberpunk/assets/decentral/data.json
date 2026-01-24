@@ -15,5 +15,10 @@
     "relic"
   ],
   "caption": "Chinese character sign.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.448,
+    "y": 0.468,
+    "z": 0.066
+  }
 }

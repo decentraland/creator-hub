@@ -24,5 +24,10 @@
     "trunk"
   ],
   "caption": "Wooden log.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.664,
+    "y": 0.111,
+    "z": 0.637
+  }
 }

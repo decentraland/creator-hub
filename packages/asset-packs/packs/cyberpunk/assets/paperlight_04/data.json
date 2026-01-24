@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["hanging", "shape"],
   "caption": "Red cube with glowing side cubes.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 132.176,
+    "y": 323.083,
+    "z": 51.783
+  }
 }

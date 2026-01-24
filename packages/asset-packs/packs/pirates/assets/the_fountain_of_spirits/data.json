@@ -25,5 +25,10 @@
     "sculpture"
   ],
   "caption": "Fountain with flowing water in.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.746,
+    "y": 3.908,
+    "z": 4.746
+  }
 }

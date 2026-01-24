@@ -15,5 +15,10 @@
     "warning"
   ],
   "caption": "Overhead road sign with three glowing lights.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 15.114,
+    "y": 8.262,
+    "z": 1.503
+  }
 }

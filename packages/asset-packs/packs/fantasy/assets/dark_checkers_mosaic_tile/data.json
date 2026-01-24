@@ -4,5 +4,10 @@
   "category": "tiles",
   "tags": ["fantasy", "tile", "mosaic", "alternating", "art", "checkered", "checkers", "visual"],
   "caption": "Checkered tile with glowing center.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.059,
+    "z": 2
+  }
 }

@@ -16,5 +16,10 @@
     "ventilation"
   ],
   "caption": "Long, straight vent with yellow stripe.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4.017,
+    "y": 1.036,
+    "z": 1.036
+  }
 }

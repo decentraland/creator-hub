@@ -17,5 +17,10 @@
     "sectioning"
   ],
   "caption": "Yellow metal railing with curved top.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 3.107,
+    "y": 1.092,
+    "z": 0.106
+  }
 }

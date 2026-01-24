@@ -4,5 +4,10 @@
   "category": "sounds",
   "tags": ["bell", "sound", "alarm", "church"],
   "description": "A large metal bell that rings when clicked.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2.092,
+    "y": 1.808,
+    "z": 1.154
+  }
 }

@@ -24,5 +24,10 @@
     "travel"
   ],
   "caption": "Red bicycle with white wheels.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.861,
+    "y": 0.884,
+    "z": 1.203
+  }
 }

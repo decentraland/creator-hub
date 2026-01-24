@@ -16,5 +16,10 @@
     "spatial"
   ],
   "caption": "Red 2x2 meter ceiling tile.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.132,
+    "z": 2
+  }
 }

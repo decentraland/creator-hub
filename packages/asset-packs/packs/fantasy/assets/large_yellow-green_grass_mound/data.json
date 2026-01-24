@@ -22,5 +22,10 @@
     "vegetation"
   ],
   "caption": "Yellow-green grass mound.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 6.512,
+    "y": 0.204,
+    "z": 6.324
+  }
 }

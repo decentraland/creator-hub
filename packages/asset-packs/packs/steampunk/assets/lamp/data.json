@@ -16,5 +16,10 @@
     "table"
   ],
   "caption": "Tall, slim lamp with glowing red base.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 0.876,
+    "y": 4.004,
+    "z": 0.854
+  }
 }

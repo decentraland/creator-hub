@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["edged", "roof", "type"],
   "caption": "Lime green roof with two edges.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.7,
+    "z": 2
+  }
 }

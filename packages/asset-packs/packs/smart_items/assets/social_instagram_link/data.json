@@ -4,5 +4,10 @@
   "category": "social",
   "tags": ["social", "links", "instagram"],
   "description": "A clickable item that can open your Instagram page in a browser window. Paste a Instagram page URL in the 'URL' field.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 2.003,
+    "z": 2
+  }
 }

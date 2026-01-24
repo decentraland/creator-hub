@@ -15,5 +15,10 @@
     "vibrant"
   ],
   "caption": "Vibrant street art covering urban wall.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 4,
+    "z": 0.324
+  }
 }

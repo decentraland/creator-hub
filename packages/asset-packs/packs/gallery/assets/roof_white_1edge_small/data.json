@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["architecture", "building", "roof", "roofed", "roofline", "shape", "structure"],
   "caption": "White roof with glowing edges.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 0.7,
+    "z": 2
+  }
 }

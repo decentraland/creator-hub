@@ -19,5 +19,10 @@
     "stalk"
   ],
   "caption": "Straw with a handle.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.429,
+    "y": 0.822,
+    "z": 2.742
+  }
 }

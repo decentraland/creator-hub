@@ -22,5 +22,10 @@
     "workplace"
   ],
   "caption": "Folding ladder with step stool.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.635,
+    "y": 2.369,
+    "z": 0.86
+  }
 }

@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["architectural", "archway", "arrowboard", "doorframe", "doorway", "entrance", "stripes"],
   "caption": "Red and black striped doorway entrance.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 2,
+    "y": 4,
+    "z": 0.401
+  }
 }

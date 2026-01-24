@@ -16,5 +16,10 @@
     "temperature"
   ],
   "caption": "Red and black lava-textured cube.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+  }
 }

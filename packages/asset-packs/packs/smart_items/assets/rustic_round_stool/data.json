@@ -4,5 +4,10 @@
   "description": "A rustic round stool.",
   "tags": ["stool", "round", "seat", "sitting", "furniture"],
   "author": "Decentraland Foundation",
-  "id": "5369971d-0593-4319-829d-1b2437201a0d"
+  "id": "5369971d-0593-4319-829d-1b2437201a0d",
+  "boundingBox": {
+    "x": 0.618,
+    "y": 0.52,
+    "z": 0.622
+  }
 }

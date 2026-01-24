@@ -4,5 +4,10 @@
   "category": "decorations",
   "tags": ["floral", "graphic", "interior", "magnolia", "tile"],
   "caption": "Black and white magnolia floor pattern.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 4,
+    "y": 0.01,
+    "z": 4
+  }
 }

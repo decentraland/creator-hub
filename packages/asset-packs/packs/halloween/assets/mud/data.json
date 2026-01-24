@@ -17,5 +17,10 @@
     "wet"
   ],
   "caption": "Muddy surface with dark center.",
-  "author": "Decentraland Foundation"
+  "author": "Decentraland Foundation",
+  "boundingBox": {
+    "x": 1.011,
+    "y": 0.133,
+    "z": 0.666
+  }
 }
