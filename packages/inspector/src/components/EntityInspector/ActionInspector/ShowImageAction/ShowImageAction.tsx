@@ -4,6 +4,7 @@ import { recursiveCheck } from '../../../../lib/utils/deep-equal';
 import { addBasePath } from '../../../../lib/logic/add-base-path';
 import { useAppSelector } from '../../../../redux/hooks';
 import { selectAssetCatalog } from '../../../../redux/app';
+import { useAssetOptions } from '../../../../hooks/useAssetOptions';
 import { Block } from '../../../Block';
 import {
   Dropdown,
@@ -29,6 +30,7 @@ function isValid(
 }
 
 const ShowImageAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
+  const imageOptions = useAssetOptions(ACCEPTED_FILE_TYPES['image']);
   const [payload, setPayload] = useState<Partial<ActionPayload<ActionType.SHOW_IMAGE>>>({
     ...value,
   });
@@ -137,6 +139,7 @@ const ShowImageAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
           label={<>Path {renderPathInfo}</>}
           value={payload.src}
           accept={ACCEPTED_FILE_TYPES['image']}
+          options={imageOptions}
           onDrop={handleDrop}
           onChange={handleChangeSrc}
           error={files && (!isValid || error)}

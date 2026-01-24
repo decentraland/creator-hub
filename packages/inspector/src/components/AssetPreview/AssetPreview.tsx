@@ -1,14 +1,15 @@
 import { useCallback, useMemo, useState, useRef } from 'react';
-import { AiOutlineSound } from 'react-icons/ai';
-import { IoVideocamOutline } from 'react-icons/io5';
-import { FaFile } from 'react-icons/fa';
+import { AiOutlineSound as AudioIcon } from 'react-icons/ai';
+import { IoVideocamOutline as VideoIcon } from 'react-icons/io5';
+import { FaFile as OtherIcon } from 'react-icons/fa';
+import { SiTypescript as ScriptIcon } from 'react-icons/si';
 import cx from 'classnames';
 import { PreviewCamera, PreviewProjection } from '@dcl/schemas';
 import { WearablePreview } from 'decentraland-ui';
 
+import { Loading } from '../Loading';
 import { toEmoteWithBlobs, toWearableWithBlobs } from './utils';
 import { type Props } from './types';
-import { Loading } from '../Loading';
 
 import './AssetPreview.css';
 
@@ -43,11 +44,14 @@ export function AssetPreview({ value, resources, onScreenshot, onLoad, isEmote }
       case 'mp3':
       case 'wav':
       case 'ogg':
-        return <AiOutlineSound size="large" />;
+        return <AudioIcon size="large" />;
       case 'mp4':
-        return <IoVideocamOutline size="large" />;
+        return <VideoIcon size="large" />;
+      case 'ts':
+      case 'tsx':
+        return <ScriptIcon size="large" />;
       default:
-        return <FaFile size="large" />;
+        return <OtherIcon size="large" />;
     }
   }, []);
 

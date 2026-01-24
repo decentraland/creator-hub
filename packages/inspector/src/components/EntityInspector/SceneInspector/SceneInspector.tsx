@@ -25,6 +25,7 @@ import { AddButton } from '../AddButton';
 import MoreOptionsMenu from '../MoreOptionsMenu';
 import { Button } from '../../Button';
 import { useAppDispatch, useAppSelector } from '../../../redux/hooks';
+import { useAssetOptions } from '../../../hooks/useAssetOptions';
 import {
   getHiddenSceneInspectorTabs,
   getSelectedSceneInspectorTab,
@@ -110,6 +111,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const { Scene } = sdk.components;
 
   const hasScene = useHasComponent(entity, Scene);
+  const imageOptions = useAssetOptions(ACCEPTED_FILE_TYPES['image']);
   const { getInputProps } = useComponentInput(entity, Scene, fromScene, toScene, isValidInput);
   const nameProps = getInputProps('name');
   const descriptionProps = getInputProps('description');
@@ -467,6 +469,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
               {...thumbnailProps}
               label="Thumbnail"
               accept={ACCEPTED_FILE_TYPES['image']}
+              options={imageOptions}
               onDrop={handleDrop}
               isValidFile={isImage}
               showPreview
