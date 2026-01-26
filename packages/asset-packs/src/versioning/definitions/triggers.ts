@@ -1,8 +1,9 @@
 import { Schemas } from '@dcl/ecs';
 import type { IEngine } from '@dcl/ecs';
-import { TriggerType, TriggerConditionType, TriggerConditionOperation } from './trigger-enums';
+import { BaseComponentNames } from '../../enums';
+import { TriggerType, TriggerConditionType, TriggerConditionOperation } from '../../trigger-enums';
 
-const TRIGGERS_BASE_NAME = 'asset-packs::Triggers';
+const TRIGGERS_BASE_NAME = BaseComponentNames.TRIGGERS;
 
 const TriggersV0 = {
   value: Schemas.Array(
