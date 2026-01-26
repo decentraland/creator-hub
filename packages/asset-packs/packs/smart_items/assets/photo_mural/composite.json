@@ -11,16 +11,16 @@
               "y": 0.08,
               "z": 0
             },
+            "scale": {
+              "x": 0.15,
+              "y": 0.15,
+              "z": 0.15
+            },
             "rotation": {
               "x": 0.7041,
               "y": 0,
               "z": 0,
               "w": -0.7101
-            },
-            "scale": {
-              "x": 0.15,
-              "y": 0.15,
-              "z": 0.15
             },
             "parent": 514
           }
@@ -32,16 +32,16 @@
               "y": 0.05,
               "z": 0
             },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
             "rotation": {
               "x": 1,
               "y": 0,
               "z": 0,
               "w": 0
-            },
-            "scale": {
-              "x": 1,
-              "y": 1,
-              "z": 1
             },
             "parent": 515
           }
@@ -53,16 +53,16 @@
               "y": 1.25,
               "z": -0.331
             },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
             "rotation": {
               "x": 0.707,
               "y": 0,
               "z": 0,
               "w": 0.707
-            },
-            "scale": {
-              "x": 1,
-              "y": 1,
-              "z": 1
             },
             "parent": 0
           }
@@ -74,16 +74,16 @@
               "y": 0.08,
               "z": 0
             },
+            "scale": {
+              "x": 0.15,
+              "y": 0.15,
+              "z": 0.15
+            },
             "rotation": {
               "x": 0.7041,
               "y": 0,
               "z": 0,
               "w": -0.7101
-            },
-            "scale": {
-              "x": 0.15,
-              "y": 0.15,
-              "z": 0.15
             },
             "parent": 517
           }
@@ -95,16 +95,16 @@
               "y": 0.052,
               "z": 0
             },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
             "rotation": {
               "x": 1,
               "y": 0,
               "z": 0,
               "w": 0
-            },
-            "scale": {
-              "x": 1,
-              "y": 1,
-              "z": 1
             },
             "parent": 518
           }
@@ -116,16 +116,16 @@
               "y": 1.25,
               "z": -0.33
             },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
             "rotation": {
               "x": 0.7071,
               "y": 0,
               "z": 0,
               "w": 0.7071
-            },
-            "scale": {
-              "x": 1,
-              "y": 1,
-              "z": 1
             },
             "parent": 0
           }
@@ -137,12 +137,12 @@
       "data": {
         "0": {
           "json": {
-            "value": "billboard.glb"
+            "value": "photo_mural"
           }
         },
         "513": {
           "json": {
-            "value": "Text"
+            "value": "Text_2"
           }
         },
         "514": {
@@ -157,7 +157,7 @@
         },
         "516": {
           "json": {
-            "value": "Text_2"
+            "value": "Text"
           }
         },
         "517": {
@@ -167,7 +167,7 @@
         },
         "518": {
           "json": {
-            "value": "next_button_2"
+            "value": "next_button"
           }
         }
       }
@@ -177,12 +177,12 @@
       "data": {
         "513": {
           "json": {
-            "componentIds": ["core::TextShape", "asset-packs::Counter"]
+            "componentIds": [1030, 3981387903]
           }
         },
         "516": {
           "json": {
-            "componentIds": ["core::TextShape", "asset-packs::Counter"]
+            "componentIds": [1030, 3981387903]
           }
         }
       }
@@ -218,7 +218,7 @@
             "isBasicViewEnabled": true,
             "componentName": "",
             "fields": [],
-            "assetId": "dd0d51c1-f16f-41c2-9bf1-735fe5b17dc4",
+            "assetId": "14b8fec1-5d65-490e-83da-f5da1ada4c7a",
             "label": "Text Settings",
             "sections": [
               {
@@ -304,7 +304,7 @@
             "isBasicViewEnabled": true,
             "componentName": "",
             "fields": [],
-            "assetId": "dd0d51c1-f16f-41c2-9bf1-735fe5b17dc4",
+            "assetId": "14b8fec1-5d65-490e-83da-f5da1ada4c7a",
             "label": "Text Settings",
             "sections": [
               {
@@ -436,7 +436,7 @@
               {
                 "path": "{assetPath}/photoMural.ts",
                 "priority": 0,
-                "layout": "{\"params\":{\"coordinates\":{\"type\":\"string\",\"optional\":false,\"value\":\"0,0\"}}}"
+                "layout": "{\"params\":{\"use_current_scene\":{\"type\":\"boolean\",\"optional\":true,\"value\":true},\"coordinates\":{\"type\":\"string\",\"optional\":false,\"value\":\"0,0\"},\"world_id\":{\"type\":\"string\",\"optional\":true,\"value\":\"\"}}}"
               }
             ]
           }
