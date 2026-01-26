@@ -132,12 +132,7 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
           <Typography className="HeaderTitle">
             {type === ManagedProjectType.LAND ? displayName : formatName(displayName)}
           </Typography>
-          {!!dropdownOptions?.length && (
-            <Dropdown
-              className="options-dropdown"
-              options={dropdownOptions}
-            />
-          )}
+          {!!dropdownOptions?.length && <Dropdown options={dropdownOptions} />}
         </div>
         {!deployment ? (
           <div className="EmptyScene">

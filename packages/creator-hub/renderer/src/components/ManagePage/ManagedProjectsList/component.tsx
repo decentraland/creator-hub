@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { AppState } from '#store';
 import { useDispatch, useSelector } from '#store';
-import { fetchWorldSettings } from '/@/modules/store/management';
+import { fetchWorldScenes, fetchWorldSettings } from '/@/modules/store/management';
 import { WorldSettingsTab, type ManagedProject } from '/shared/types/manage';
 import { WorldSettingsModal } from '../../Modals/WorldSettingsModal';
 import { PublishedProjectCard } from '../PublishedProjectCard';
@@ -29,6 +29,8 @@ const ManagedProjectsList: React.FC<Props> = React.memo(({ projects }) => {
   const handleOpenSettingsModal = useCallback(
     (project: ManagedProject, activeTab: WorldSettingsTab = WorldSettingsTab.DETAILS) => {
       dispatch(fetchWorldSettings({ worldName: project.id }));
+      dispatch(fetchWorldScenes({ worldName: project.id }));
+
       setSettingsModal({ isOpen: true, activeTab });
     },
     [],
@@ -60,6 +62,7 @@ const ManagedProjectsList: React.FC<Props> = React.memo(({ projects }) => {
       <WorldSettingsModal
         open={settingsModal.isOpen}
         worldName={worldSettings.worldName}
+        worldScenes={worldSettings.scenes}
         worldSettings={worldSettings.settings}
         isLoading={worldSettings.status === 'loading' || worldSettings.status === 'idle'}
         activeTab={settingsModal.activeTab}

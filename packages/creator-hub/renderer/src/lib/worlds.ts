@@ -107,7 +107,6 @@ export type WorldConfiguration = {
 };
 
 export type WorldScene = {
-  id: string;
   worldName: string;
   deployer: string;
   deploymentAuthChain: AuthChain;
@@ -115,8 +114,8 @@ export type WorldScene = {
   entityId: IPFSv2;
   parcels: string[];
   size: bigint;
+  thumbnailUrl?: string; // This is a computed field, not part of the API response
   createdAt: Date;
-  updatedAt: Date;
 };
 
 export type WorldScenes = {
@@ -125,8 +124,38 @@ export type WorldScenes = {
 };
 
 export type WorldSettings = {
-  spawnCoordinates: string;
+  title?: string;
+  description?: string;
+  thumbnailUrl?: string;
+  contentRating?: SceneAgeRating;
+  categories?: SceneCategory[];
+  spawnCoordinates?: string;
+  skyboxTime?: number | null;
+  singlePlayer?: boolean;
+  showInPlaces?: boolean;
 };
+
+export enum SceneAgeRating {
+  RatingPending = 'RP',
+  Everyone = 'E',
+  Teen = 'T',
+  Adult = 'A',
+  Restricted = 'R',
+}
+
+export enum SceneCategory {
+  ART = 'art',
+  GAME = 'game',
+  CASINO = 'casino',
+  SOCIAL = 'social',
+  MUSIC = 'music',
+  FASHION = 'fashion',
+  CRYPTO = 'crypto',
+  EDUCATION = 'education',
+  SHOP = 'shop',
+  BUSINESS = 'business',
+  SPORTS = 'sports',
+}
 
 export enum WorldRoleType {
   OWNER = 'owner',
@@ -280,16 +309,45 @@ export class Worlds {
     const result = await fetch(`${this.url}/world/${worldName}/settings?${urlParams.toString()}`);
     if (result.ok) {
       const json = await result.json();
-      return json as WorldSettings;
+      return fromSnakeToCamel(json) as WorldSettings;
     } else {
       return null;
     }
   }
 
-  public async putWorldSettings(worldName: string, settings: Partial<WorldSettings>) {
+  public async putWorldSettings(
+    address: string,
+    worldName: string,
+    settings: Partial<WorldSettings>,
+  ) {
+    const formData = new FormData();
+    const snakeCaseSettings = fromCamelToSnake(settings);
+
+    Object.entries(snakeCaseSettings).forEach(([key, value]) => {
+      if (value !== undefined) {
+        if (Array.isArray(value)) {
+          value.forEach(item => {
+            formData.append(key, String(item));
+          });
+        } else {
+          formData.append(key, String(value));
+        }
+      }
+    });
+
     const result = await fetch(`${this.url}/world/${worldName}/settings`, {
       method: 'PUT',
-      body: JSON.stringify(settings),
+      headers: { 'Content-Type': 'multipart/form-data' },
+      identity: this.withIdentity(address),
+      body: formData,
+    });
+    return result.status === 204;
+  }
+
+  public async unpublishWorldScene(address: string, worldName: string, sceneCoords: string) {
+    const result = await fetch(`${this.url}/world/${worldName}/scenes/${sceneCoords}`, {
+      method: 'DELETE',
+      identity: this.withIdentity(address),
     });
     return result.status === 204;
   }
