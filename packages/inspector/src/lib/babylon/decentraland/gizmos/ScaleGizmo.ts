@@ -224,6 +224,7 @@ export class ScaleGizmo implements IGizmoTransformer {
       const positiveSensitivity = 200.0; // Sensitivity for positive drags (right/up)
       const negativeSensitivity = 600.0; // Gentler sensitivity for negative drags (left/down) to prevent going negative too quickly
       const negativeThreshold = -500.0; // Threshold before allowing negative scale (requires very pronounced drag)
+      const minScaleValue = 0.001; // Minimum absolute scale value to prevent getting stuck at 0
 
       let scaleFactor: number;
       if (dragDistance >= 0) {
@@ -233,8 +234,10 @@ export class ScaleGizmo implements IGizmoTransformer {
         // Small to moderate negative drag: scale decreases but stays positive
         // Use gentler sensitivity for negative values to allow smooth shrinking without going negative
         scaleFactor = 1.0 + (dragDistance / negativeSensitivity) * this.scaleSensitivity;
-        // Clamp to prevent going negative until threshold
-        scaleFactor = Math.max(0.01, scaleFactor);
+        // Clamp to minimum positive value to prevent exactly 0, but allow very small values
+        if (scaleFactor <= 0 || (scaleFactor > 0 && scaleFactor < minScaleValue)) {
+          scaleFactor = minScaleValue;
+        }
       } else {
         // Large negative drag: allow negative scaling
         // Calculate the scale at the threshold, then continue from there
@@ -243,6 +246,14 @@ export class ScaleGizmo implements IGizmoTransformer {
         const excessDrag = dragDistance - negativeThreshold;
         // Use same sensitivity as positive for the excess drag beyond threshold
         scaleFactor = thresholdScale + (excessDrag / positiveSensitivity) * this.scaleSensitivity;
+        // Ensure negative values never reach exactly 0 - clamp to minimum absolute value
+        if (scaleFactor >= 0 && scaleFactor < minScaleValue) {
+          // Transitioning from positive to negative: go to negative minimum
+          scaleFactor = -minScaleValue;
+        } else if (scaleFactor < 0 && scaleFactor > -minScaleValue) {
+          // Very small negative: clamp to negative minimum
+          scaleFactor = -minScaleValue;
+        }
       }
 
       // Apply uniform scaling to all entities
@@ -255,6 +266,7 @@ export class ScaleGizmo implements IGizmoTransformer {
         if (!offset || !initialScale || !initialRotation || !initialPosition) continue;
 
         // Apply uniform scale change
+        // scaleFactor is already clamped to never be exactly 0 (minScaleValue or -minScaleValue)
         const scaleChange = new Vector3(scaleFactor, scaleFactor, scaleFactor);
         this.applyScaleTransform(entity, scaleChange, offset, initialScale, initialRotation);
 
@@ -345,6 +357,7 @@ export class ScaleGizmo implements IGizmoTransformer {
       const positiveSensitivity = 200.0; // Sensitivity for positive drags (right/up)
       const negativeSensitivity = 600.0; // Gentler sensitivity for negative drags (left/down) to prevent going negative too quickly
       const negativeThreshold = -500.0; // Threshold before allowing negative scale (requires very pronounced drag)
+      const minScaleValue = 0.001; // Minimum absolute scale value to prevent getting stuck at 0
 
       let scaleFactor: number;
       if (dragDistance >= 0) {
@@ -354,8 +367,10 @@ export class ScaleGizmo implements IGizmoTransformer {
         // Small to moderate negative drag: scale decreases but stays positive
         // Use gentler sensitivity for negative values to allow smooth shrinking without going negative
         scaleFactor = 1.0 + (dragDistance / negativeSensitivity) * this.scaleSensitivity;
-        // Clamp to prevent going negative until threshold
-        scaleFactor = Math.max(0.01, scaleFactor);
+        // Clamp to minimum positive value to prevent exactly 0, but allow very small values
+        if (scaleFactor <= 0 || (scaleFactor > 0 && scaleFactor < minScaleValue)) {
+          scaleFactor = minScaleValue;
+        }
       } else {
         // Large negative drag: allow negative scaling
         // Calculate the scale at the threshold, then continue from there
@@ -364,6 +379,14 @@ export class ScaleGizmo implements IGizmoTransformer {
         const excessDrag = dragDistance - negativeThreshold;
         // Use same sensitivity as positive for the excess drag beyond threshold
         scaleFactor = thresholdScale + (excessDrag / positiveSensitivity) * this.scaleSensitivity;
+        // Ensure negative values never reach exactly 0 - clamp to minimum absolute value
+        if (scaleFactor >= 0 && scaleFactor < minScaleValue) {
+          // Transitioning from positive to negative: go to negative minimum
+          scaleFactor = -minScaleValue;
+        } else if (scaleFactor < 0 && scaleFactor > -minScaleValue) {
+          // Very small negative: clamp to negative minimum
+          scaleFactor = -minScaleValue;
+        }
       }
 
       // Apply scaling based on plane type
