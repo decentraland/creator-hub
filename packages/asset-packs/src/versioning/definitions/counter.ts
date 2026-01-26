@@ -1,7 +1,8 @@
 import { Schemas } from '@dcl/ecs';
 import type { IEngine } from '@dcl/ecs';
+import { BaseComponentNames } from '../../enums';
 
-const COUNTER_BASE_NAME = 'asset-packs::Counter';
+const COUNTER_BASE_NAME = BaseComponentNames.COUNTER;
 
 const CounterV0 = {
   id: Schemas.Number,

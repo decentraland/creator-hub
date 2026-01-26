@@ -1,11 +1,7 @@
 import type { ISchema, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
 import type { IEngine } from '@dcl/ecs';
-import {
-  COUNTER_VERSIONS,
-  TRIGGERS_VERSIONS,
-  defineCounterComponent,
-  defineTriggersComponent,
-} from './definitions';
+import { BaseComponentNames } from '../enums';
+import { COUNTER_VERSIONS, TRIGGERS_VERSIONS } from './definitions';
 
 export type VersionedComponent = {
   versionName: string;
@@ -14,8 +10,8 @@ export type VersionedComponent = {
 
 //this needs to be exported with enums for all components
 const VERSIONS_REGISTRY: Record<string, VersionedComponent[]> = {
-  'asset-packs::Counter': COUNTER_VERSIONS,
-  'asset-packs::Triggers': TRIGGERS_VERSIONS,
+  [BaseComponentNames.COUNTER]: COUNTER_VERSIONS,
+  [BaseComponentNames.TRIGGERS]: TRIGGERS_VERSIONS,
 };
 
 export const getLatestVersionName = (baseName: string) => {
@@ -66,14 +62,6 @@ export function migrateVersionedComponent(
     }
   }
   console.log('[MIGRATION] Finished');
-}
-
-//TOOD move to definitions
-export function defineAssetPacksComponents(engine: IEngine) {
-  const Counter = defineCounterComponent(engine);
-  const Triggers = defineTriggersComponent(engine);
-
-  return { Counter, Triggers };
 }
 
 export function migrateAllAssetPacksComponents(engine: IEngine) {

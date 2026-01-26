@@ -52,7 +52,7 @@ import {
   TeleportMode,
 } from './enums';
 import { getExplorerComponents } from './components';
-import { defineAssetPacksComponents } from './versioning';
+import { defineTriggersComponent, defineCounterComponent } from './versioning';
 
 export const LIVEKIT_STREAM_SRC = 'livekit-video://current-stream';
 export const VIDEO_URL_TYPE = 'https://';
@@ -324,7 +324,8 @@ export function createComponents(engine: IEngine) {
     ),
   });
 
-  const { Counter, Triggers } = defineAssetPacksComponents(engine);
+  const Counter = defineCounterComponent(engine);
+  const Triggers = defineTriggersComponent(engine);
 
   const States = engine.defineComponent(ComponentName.STATES, {
     id: Schemas.Number,
