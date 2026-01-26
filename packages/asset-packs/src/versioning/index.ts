@@ -1,2 +1,2 @@
-export * from './utils';
+export * from './migration-utils';
 export * from './definitions';

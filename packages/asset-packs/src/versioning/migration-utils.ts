@@ -8,7 +8,6 @@ export type VersionedComponent = {
   component: Record<string, ISchema>;
 };
 
-//this needs to be exported with enums for all components
 const VERSIONS_REGISTRY: Record<string, VersionedComponent[]> = {
   [BaseComponentNames.COUNTER]: COUNTER_VERSIONS,
   [BaseComponentNames.TRIGGERS]: TRIGGERS_VERSIONS,
@@ -65,6 +64,6 @@ export function migrateVersionedComponent(
 }
 
 export function migrateAllAssetPacksComponents(engine: IEngine) {
-  migrateVersionedComponent(engine, 'asset-packs::Counter', COUNTER_VERSIONS);
-  migrateVersionedComponent(engine, 'asset-packs::Triggers', TRIGGERS_VERSIONS);
+  migrateVersionedComponent(engine, BaseComponentNames.COUNTER, COUNTER_VERSIONS);
+  migrateVersionedComponent(engine, BaseComponentNames.TRIGGERS, TRIGGERS_VERSIONS);
 }
