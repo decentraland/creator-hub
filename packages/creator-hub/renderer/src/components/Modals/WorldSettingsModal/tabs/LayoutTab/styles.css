@@ -1,0 +1,199 @@
+.LayoutTab {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-height: 100%;
+}
+
+/* World Scenes View */
+
+.LayoutTab .MultiSceneToggle {
+  background-color: var(--dark-gray);
+  border-radius: 6px;
+  padding: 12px 16px;
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.LayoutTab .MultiSceneToggle .ToggleContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.LayoutTab .MultiSceneToggle .ToggleDescription {
+  font-weight: 500;
+  white-space: pre-line;
+}
+
+.LayoutTab .MultiSceneToggle .MuiSwitch-root {
+  margin-top: -6px;
+}
+
+.LayoutTab .EmptyWorldState {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.LayoutTab .EmptyDescription {
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 24px;
+}
+
+.LayoutTab .InfoItem {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  color: var(--dcl-silver);
+  font-weight: 500;
+}
+
+.LayoutTab .InfoItem .MuiSvgIcon-root {
+  width: 16px;
+  height: 16px;
+}
+
+.LayoutTab .WorldInfo {
+  width: 100%;
+  display: flex;
+  gap: 16px;
+  background-color: var(--black);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.LayoutTab .WorldThumbnail {
+  width: 144px;
+  height: 90px;
+  flex-shrink: 0;
+  background-color: var(--dark-gray);
+}
+
+.LayoutTab .WorldThumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.LayoutTab .WorldInfo .WorldInfoContent {
+  flex: 1;
+  padding: 8px 0;
+}
+
+.LayoutTab .WorldInfo .CurrentWorldLabel {
+  font-size: 12px;
+  color: var(--dropdown);
+  text-transform: uppercase;
+}
+
+.LayoutTab .WorldInfo .WorldTitle {
+  font-weight: 600;
+  color: var(--white);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.LayoutTab .WorldInfo .WorldMetadata {
+  gap: 24px;
+}
+
+.LayoutTab .WorldInfo .WorldMapButton {
+  margin: auto 8px 8px 0;
+  height: max-content;
+}
+
+.LayoutTab .ScenesSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.LayoutTab .ScenesSection .SceneItem {
+  display: flex;
+  gap: 16px;
+  padding-right: 8px;
+  background-color: var(--black);
+  border-radius: 6px;
+  align-items: center;
+  overflow: hidden;
+}
+
+.LayoutTab .SceneItem .SceneThumbnail {
+  width: 96px;
+  height: 60px;
+  background-color: var(--dark-gray);
+}
+
+.LayoutTab .SceneItem .SceneThumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.LayoutTab .SceneItem .SceneInfo {
+  flex: 1;
+  padding: 8px 0;
+}
+
+.LayoutTab .SceneTitle {
+  font-weight: 500;
+  color: var(--white);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.LayoutTab .SceneMetadata {
+  display: flex;
+  gap: 8px;
+}
+
+.LayoutTab .SceneMetadata .MuiChip-root {
+  background-color: rgba(36, 33, 41, 0.5);
+  color: var(--white);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.LayoutTab .SceneMetadata .MuiChip-root .MuiSvgIcon-root {
+  color: var(--light-gray);
+  width: 14px;
+  height: 14px;
+}
+
+.LayoutTab .SceneMenuButton {
+  flex-shrink: 0;
+  color: var(--light-gray);
+}
+
+.LayoutTab .SceneMenuButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* World Layout View */
+
+.LayoutTab .WorldLayoutBackButton {
+  color: var(--dcl-silver);
+  width: 24px;
+  height: 24px;
+}
+
+.LayoutTab .WorldLayoutBackButton:hover {
+  color: var(--white);
+  cursor: pointer;
+}
+
+.LayoutTab .WorldLayoutTitle {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  gap: 8px;
+}
