@@ -224,7 +224,7 @@ export class ScaleGizmo implements IGizmoTransformer {
       const positiveSensitivity = 200.0; // Sensitivity for positive drags (right/up)
       const negativeSensitivity = 600.0; // Gentler sensitivity for negative drags (left/down) to prevent going negative too quickly
       const negativeThreshold = -500.0; // Threshold before allowing negative scale (requires very pronounced drag)
-      const minScaleValue = 0.001; // Minimum absolute scale value to prevent getting stuck at 0
+      const minScaleValue = 0.01; // Minimum absolute scale value to prevent getting stuck at 0
 
       let scaleFactor: number;
       if (dragDistance >= 0) {
@@ -357,7 +357,7 @@ export class ScaleGizmo implements IGizmoTransformer {
       const positiveSensitivity = 200.0; // Sensitivity for positive drags (right/up)
       const negativeSensitivity = 600.0; // Gentler sensitivity for negative drags (left/down) to prevent going negative too quickly
       const negativeThreshold = -500.0; // Threshold before allowing negative scale (requires very pronounced drag)
-      const minScaleValue = 0.001; // Minimum absolute scale value to prevent getting stuck at 0
+      const minScaleValue = 0.01; // Minimum absolute scale value to prevent getting stuck at 0
 
       let scaleFactor: number;
       if (dragDistance >= 0) {
