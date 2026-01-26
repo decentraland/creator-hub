@@ -12,6 +12,7 @@ export type VersionedComponent = {
   component: Record<string, ISchema>;
 };
 
+//this needs to be exported with enums for all components
 const VERSIONS_REGISTRY: Record<string, VersionedComponent[]> = {
   'asset-packs::Counter': COUNTER_VERSIONS,
   'asset-packs::Triggers': TRIGGERS_VERSIONS,
@@ -24,33 +25,47 @@ export const getLatestVersionName = (baseName: string) => {
 
 export function migrateVersionedComponent(
   engine: IEngine,
+  baseName: string,
   versionedComponents: VersionedComponent[],
 ) {
-  const latestVersion = versionedComponents[versionedComponents.length - 1];
+  const latestComponentVersion = versionedComponents[versionedComponents.length - 1];
 
-  for (let i = 0; i < versionedComponents.length - 1; i++) {
-    const oldVersion = versionedComponents[i];
+  console.log(`[MIGRATION] component: ${baseName}`);
+  console.log(`[MIGRATION] target version: ${latestComponentVersion.versionName}`);
 
-    const oldComponent = engine.getComponentOrNull(
-      oldVersion.versionName,
-    ) as LastWriteWinElementSetComponentDefinition<unknown> | null;
+  // Filter components that match the baseName pattern (excluding target)
+  const componentsToMigrate = [...engine.componentsIter()].filter(c => {
+    const isComponentVersion =
+      c.componentName === baseName || c.componentName.startsWith(`${baseName}-v`);
+    return isComponentVersion && c.componentName !== latestComponentVersion.versionName;
+  });
 
-    if (!oldComponent) continue;
+  console.log(
+    `[MIGRATION] Versions to migrate to latest: ${componentsToMigrate.map(c => c.componentName)}`,
+  );
 
+  for (const component of componentsToMigrate) {
+    const oldComponent = component as LastWriteWinElementSetComponentDefinition<unknown>;
     const entities = [...engine.getEntitiesWith(oldComponent)];
+
+    console.log(`[MIGRATION] Entities with ${component.componentName}: ${entities.length}`);
+
     if (entities.length === 0) continue;
 
-    const newComponent = engine.getComponent(
-      latestVersion.versionName,
+    const targetComponent = engine.getComponent(
+      latestComponentVersion.versionName,
     ) as LastWriteWinElementSetComponentDefinition<unknown>;
 
     for (const [entity, value] of entities) {
+      console.log(
+        `[MIGRATION] Migrating entity ${entity} from ${component.componentName} to ${latestComponentVersion.versionName}`,
+      );
+      console.log('[MIGRATION] Old value:', value);
       oldComponent.deleteFrom(entity);
-      newComponent.createOrReplace(entity, { ...value });
+      targetComponent.createOrReplace(entity, { ...value });
     }
-
-    engine.removeComponentDefinition(oldVersion.versionName);
   }
+  console.log('[MIGRATION] Finished');
 }
 
 //TOOD move to definitions
@@ -62,6 +77,6 @@ export function defineAssetPacksComponents(engine: IEngine) {
 }
 
 export function migrateAllAssetPacksComponents(engine: IEngine) {
-  migrateVersionedComponent(engine, COUNTER_VERSIONS);
-  migrateVersionedComponent(engine, TRIGGERS_VERSIONS);
+  migrateVersionedComponent(engine, 'asset-packs::Counter', COUNTER_VERSIONS);
+  migrateVersionedComponent(engine, 'asset-packs::Triggers', TRIGGERS_VERSIONS);
 }
