@@ -9,7 +9,7 @@ import type {
 } from '@babel/types';
 import { engine } from '@dcl/ecs';
 
-import type { ScriptParamUnion } from './types';
+import type { ScriptParamUnion, ScriptAction } from './types';
 
 function getValueAndTypeFromExpression(expression: Expression): ScriptParamUnion {
   switch (expression.type) {
@@ -33,11 +33,13 @@ function getValueAndTypeFromType(
     case 'TSBooleanKeyword':
       return { type: 'boolean', value: false };
     case 'TSTypeReference':
-      if (
-        typeAnnotation.typeName.type === 'Identifier' &&
-        typeAnnotation.typeName.name === 'Entity'
-      ) {
-        return { type: 'entity', value: engine.RootEntity };
+      if (typeAnnotation.typeName.type === 'Identifier') {
+        if (typeAnnotation.typeName.name === 'Entity') {
+          return { type: 'entity', value: engine.RootEntity };
+        }
+        if (typeAnnotation.typeName.name === 'ActionCallback') {
+          return { type: 'action', value: { entity: engine.RootEntity, action: '' } };
+        }
       }
       break;
     case 'TSUnionType': // (e.g: string | undefined)
@@ -85,6 +87,32 @@ function assertScriptSignature(params: (FunctionParameter | TSParameterProperty)
   ) {
     throw new Error('Second parameter must be "entity: Entity"');
   }
+}
+
+function extractJSDocDescription(
+  comments?: { type: string; value: string }[] | undefined | null,
+): string | undefined {
+  if (!comments) return undefined;
+
+  for (const comment of comments) {
+    if (comment.type === 'CommentBlock') {
+      const lines = comment.value.split('\n').map(line => line.trim().replace(/^\*\s?/, ''));
+      const descriptionLines: string[] = [];
+
+      for (const line of lines) {
+        // stop at first @tag
+        if (line.startsWith('@')) break;
+        if (line.length > 0) {
+          descriptionLines.push(line);
+        }
+      }
+
+      const description = descriptionLines.join(' ').trim();
+      return description.length > 0 ? description : undefined;
+    }
+  }
+
+  return undefined;
 }
 
 function extractParamsFromFunctionParams(
@@ -159,16 +187,18 @@ function extractParamsFromFunctionParams(
 
 export type ScriptParseResult = {
   params: Record<string, ScriptParamUnion>;
+  actions: ScriptAction[];
   error?: string;
 };
 
 export function getScriptParams(content: string): ScriptParseResult {
   let params: Record<string, ScriptParamUnion> = {};
+  const actions: ScriptAction[] = [];
 
   try {
     const ast = parse(content, {
       sourceType: 'module',
-      plugins: ['typescript'],
+      plugins: ['typescript', 'jsx'],
     });
 
     for (const statement of ast.program.body) {
@@ -209,14 +239,36 @@ export function getScriptParams(content: string): ScriptParseResult {
           params = extractParamsFromFunctionParams(restParams);
         }
 
+        // extract @action tagged methods
+        for (const member of classDeclaration.body.body) {
+          if (member.type === 'ClassMethod' && member.kind === 'method') {
+            const leadingComments = member.leadingComments;
+            const hasActionTag = leadingComments?.some(
+              comment => comment.type === 'CommentBlock' && comment.value.includes('@action'),
+            );
+
+            if (hasActionTag && member.key.type === 'Identifier') {
+              const methodName = member.key.name;
+              const methodParams = extractParamsFromFunctionParams(member.params);
+              const description = extractJSDocDescription(leadingComments);
+
+              actions.push({
+                methodName,
+                description,
+                params: methodParams,
+              });
+            }
+          }
+        }
+
         break;
       }
     }
 
-    return { params };
+    return { params, actions };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : '';
     console.warn('Failed to parse script params:', error);
-    return { params, error: errorMessage };
+    return { params, actions, error: errorMessage };
   }
 }

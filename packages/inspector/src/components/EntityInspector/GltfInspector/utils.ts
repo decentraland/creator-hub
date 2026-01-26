@@ -6,39 +6,33 @@ import type { TreeNode } from '../../ProjectAssetExplorer/ProjectView';
 import { isAssetNode } from '../../ProjectAssetExplorer/utils';
 import type { AssetNodeItem } from '../../ProjectAssetExplorer/types';
 import type { AssetCatalogResponse } from '../../../tooling-entrypoint';
-import { removeBasePath } from '../../../lib/logic/remove-base-path';
 import type { GltfContainerInput } from './types';
 
-export const fromGltf =
-  (base: string) =>
-  (value: PBGltfContainer): GltfContainerInput => {
-    return {
-      src: removeBasePath(base, value.src),
-      visibleMeshesCollisionMask: toString(value.visibleMeshesCollisionMask, ColliderLayer.CL_NONE),
-      invisibleMeshesCollisionMask: toString(
-        value.invisibleMeshesCollisionMask,
-        ColliderLayer.CL_PHYSICS,
-      ),
-    };
+export const fromGltf = (value: PBGltfContainer): GltfContainerInput => {
+  return {
+    ...value,
+    visibleMeshesCollisionMask: toString(value.visibleMeshesCollisionMask, ColliderLayer.CL_NONE),
+    invisibleMeshesCollisionMask: toString(
+      value.invisibleMeshesCollisionMask,
+      ColliderLayer.CL_PHYSICS,
+    ),
   };
+};
 
-export const toGltf =
-  (base: string) =>
-  (value: GltfContainerInput): PBGltfContainer => {
-    return {
-      src: base ? base + '/' + value.src : value.src,
-      visibleMeshesCollisionMask: toNumber(value.visibleMeshesCollisionMask, ColliderLayer.CL_NONE),
-      invisibleMeshesCollisionMask: toNumber(
-        value.invisibleMeshesCollisionMask,
-        ColliderLayer.CL_PHYSICS,
-      ),
-    };
+export const toGltf = (value: GltfContainerInput): PBGltfContainer => {
+  return {
+    ...value,
+    visibleMeshesCollisionMask: toNumber(value.visibleMeshesCollisionMask, ColliderLayer.CL_NONE),
+    invisibleMeshesCollisionMask: toNumber(
+      value.invisibleMeshesCollisionMask,
+      ColliderLayer.CL_PHYSICS,
+    ),
   };
+};
 
-export function isValidInput({ basePath, assets }: AssetCatalogResponse, src: string): boolean {
-  // Allow empty strings (optional field)
+export function isValidInput({ assets }: AssetCatalogResponse, src: string): boolean {
   if (!src) return true;
-  return !!assets.find($ => (basePath ? basePath + '/' + src : src) === $.path);
+  return !!assets.find($ => src === $.path);
 }
 
 export const isAsset = (value: string): boolean =>

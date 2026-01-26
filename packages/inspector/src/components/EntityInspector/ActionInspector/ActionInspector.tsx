@@ -31,6 +31,10 @@ import { AddButton } from '../AddButton';
 import { Button } from '../../Button';
 import { InfoTooltip } from '../../ui/InfoTooltip';
 
+import type { ScriptAction } from '../ScriptInspector/types';
+import { parseLayout } from '../ScriptInspector/utils';
+import { ScriptParamField } from '../ScriptInspector/ScriptParamField/ScriptParamField';
+import { truncateMiddle } from '../../ImportAsset/utils';
 import { PlaySoundAction } from './PlaySoundAction';
 import { TweenAction } from './TweenAction';
 import { isValidTween } from './TweenAction/utils';
@@ -129,7 +133,7 @@ const ActionMapOption: Record<string, string> = {
 };
 
 export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) => {
-  const { Actions, States, Counter, GltfContainer, Rewards } = sdk.components;
+  const { Actions, States, Counter, GltfContainer, Rewards, Script } = sdk.components;
   const [componentValue, setComponentValue, isComponentEqual] = useComponentValue<
     EditorComponentsTypes['Actions']
   >(entityId, Actions);
@@ -137,7 +141,6 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
   const [actions, addAction, modifyAction, removeAction] = useArrayState<Action>(
     componentValue === null ? [] : componentValue.value,
   );
-  const [isFocused, setIsFocused] = useState(false);
   const [animations, setAnimations] = useState<AnimationGroup[]>([]);
   const [states, setStates] = useState<string[]>(States.getOrNull(entityId)?.value || []);
 
@@ -147,6 +150,56 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
   const hasRewards = useHasComponent(entityId, Rewards);
   const hasGltf = useHasComponent(entityId, GltfContainer);
   const [gltfValue] = useComponentValue(entityId, GltfContainer);
+
+  // gather all script actions from all entities with Script components
+  const scriptActions = useMemo(() => {
+    const result: Array<{
+      actionType: string;
+      label: string;
+      secondaryText: string;
+      scriptPath: string;
+      action: ScriptAction;
+    }> = [];
+
+    try {
+      const entitiesWithScripts = Array.from(sdk.engine.getEntitiesWith(Script));
+
+      for (const [_, scriptComponent] of entitiesWithScripts) {
+        const scripts = scriptComponent.value || [];
+
+        for (const script of scripts) {
+          const layout = parseLayout(script.layout);
+          if (!layout || !layout.actions || layout.actions.length === 0) continue;
+
+          for (const action of layout.actions) {
+            const actionType = `script:${script.path}:${action.methodName}`;
+
+            result.push({
+              actionType,
+              label: action.methodName,
+              secondaryText: truncateMiddle(script.path),
+              scriptPath: script.path,
+              action,
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to gather script actions:', error);
+    }
+
+    return result;
+  }, [sdk, Script]);
+
+  const dynamicActionMapOption = useMemo(() => {
+    const map: Record<string, string> = { ...ActionMapOption };
+
+    for (const scriptAction of scriptActions) {
+      map[scriptAction.actionType] = scriptAction.label;
+    }
+
+    return map;
+  }, [scriptActions]);
 
   useChange(
     (event, sdk) => {
@@ -320,14 +373,14 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     (updatedActions: Action[]) => {
       if (hasActions && areValidActions(updatedActions)) {
         const current = sdk.components.Actions.get(entityId);
-        if (isComponentEqual({ ...current, value: updatedActions }) || isFocused) {
+        if (isComponentEqual({ ...current, value: updatedActions })) {
           return;
         }
 
         setComponentValue({ ...current, value: [...updatedActions] });
       }
     },
-    [isFocused, isComponentEqual, hasActions, entityId, sdk],
+    [isComponentEqual, hasActions, entityId, sdk],
   );
 
   const handleModifyAction = useCallback(
@@ -359,8 +412,9 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
 
   const allActions = useMemo(() => {
     const actions = getActionTypes(sdk.engine as any);
-    return actions;
-  }, [sdk]);
+    const scriptActionTypes = scriptActions.map(sa => sa.actionType);
+    return [...actions, ...scriptActionTypes];
+  }, [sdk, scriptActions]);
 
   const availableActions = useMemo(() => {
     return allActions.filter(action => {
@@ -564,15 +618,41 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     [actions, handleModifyAction],
   );
 
+  const getActionTypeForDropdown = useCallback((action: Action) => {
+    if (action.type === ActionType.CALL_SCRIPT_METHOD) {
+      const payload = getPartialPayload<ActionType.CALL_SCRIPT_METHOD>(action);
+      return `script:${payload.scriptPath}:${payload.methodName}`;
+    }
+    return action.type;
+  }, []);
+
   const handleChangeType = useCallback(
     ({ target: { value } }: React.ChangeEvent<HTMLSelectElement>, idx: number) => {
+      const scriptAction = scriptActions.find(sa => sa.actionType === value);
+      if (scriptAction) {
+        const defaultParams: Record<string, any> = {};
+        for (const [name, param] of Object.entries(scriptAction.action.params)) {
+          defaultParams[name] = param.value;
+        }
+        handleModifyAction(idx, {
+          ...actions[idx],
+          type: ActionType.CALL_SCRIPT_METHOD,
+          jsonPayload: JSON.stringify({
+            scriptPath: scriptAction.scriptPath,
+            methodName: scriptAction.action.methodName,
+            params: defaultParams,
+          }),
+        });
+        return;
+      }
+
       handleModifyAction(idx, {
         ...actions[idx],
         type: value,
         jsonPayload: getDefaultPayload(value),
       });
     },
-    [actions, handleModifyAction],
+    [actions, handleModifyAction, scriptActions],
   );
 
   const handleChangeName = useCallback(
@@ -706,17 +786,6 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     [actions, handleModifyAction],
   );
 
-  const handleFocusInput = useCallback(
-    ({ type }: React.FocusEvent<HTMLInputElement>) => {
-      if (type === 'focus') {
-        setIsFocused(true);
-      } else {
-        setIsFocused(false);
-      }
-    },
-    [setIsFocused],
-  );
-
   const handleChangeVideo = useCallback(
     (value: ActionPayload<ActionType.PLAY_VIDEO_STREAM>, idx: number) => {
       handleModifyAction(idx, {
@@ -732,6 +801,16 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       handleModifyAction(idx, {
         ...actions[idx],
         jsonPayload: getJson<ActionType.PLAY_AUDIO_STREAM>(value),
+      });
+    },
+    [actions, handleModifyAction],
+  );
+
+  const handleChangeScriptAction = useCallback(
+    (payload: Record<string, any>, idx: number) => {
+      handleModifyAction(idx, {
+        ...actions[idx],
+        jsonPayload: JSON.stringify(payload),
       });
     },
     [actions, handleModifyAction],
@@ -1152,6 +1231,32 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
           />
         );
       }
+      case ActionType.CALL_SCRIPT_METHOD: {
+        const payload = getPartialPayload<ActionType.CALL_SCRIPT_METHOD>(action);
+        const { scriptPath, methodName, params } = payload;
+        const paramValues = params as Record<string, any> | undefined;
+        const scriptActionType = `script:${scriptPath}:${methodName}`;
+        const scriptAction = scriptActions.find(sa => sa.actionType === scriptActionType);
+        if (!scriptAction) return null;
+
+        const paramTypes = scriptAction.action.params;
+
+        return (
+          <div className="row params">
+            {Object.entries(paramTypes).map(([name, param]) => (
+              <ScriptParamField
+                key={name}
+                name={name}
+                param={{ ...param, value: paramValues?.[name] ?? param.value }}
+                onUpdate={value => {
+                  const updatedParams = { ...paramValues, [name]: value };
+                  handleChangeScriptAction({ scriptPath, methodName, params: updatedParams }, idx);
+                }}
+              />
+            ))}
+          </div>
+        );
+      }
       default: {
         // TODO: handle generic schemas with something like <JsonSchemaField/>
         return null;
@@ -1182,21 +1287,21 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
                 label="Name"
                 value={action.name}
                 onChange={e => handleChangeName(e, idx)}
-                onFocus={handleFocusInput}
-                onBlur={handleFocusInput}
                 autoSelect
               />
               <Dropdown
                 label="Select an Action"
                 placeholder="Select an Action"
                 disabled={availableActions.length === 0}
-                options={[
-                  ...availableActions.map(availableAction => ({
-                    label: ActionMapOption[availableAction],
+                options={availableActions.map(availableAction => {
+                  const scriptAction = scriptActions.find(sa => sa.actionType === availableAction);
+                  return {
+                    label: dynamicActionMapOption[availableAction] || availableAction,
                     value: availableAction,
-                  })),
-                ]}
-                value={action.type}
+                    secondaryText: scriptAction?.secondaryText,
+                  };
+                })}
+                value={getActionTypeForDropdown(action)}
                 searchable
                 onChange={e => handleChangeType(e, idx)}
               />

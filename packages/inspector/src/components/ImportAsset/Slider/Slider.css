@@ -50,9 +50,13 @@
   display: none;
 }
 
+.Slider .asset .Input {
+  margin-top: 10px;
+}
+
 .Slider .asset .name-error {
   font-size: 12px;
-  color: var(--yellow);
+  color: var(--error);
 }
 
 .Slider .asset .size {

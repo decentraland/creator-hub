@@ -262,6 +262,11 @@ export const ActionSchemas = {
     direction: Schemas.Optional(Schemas.Int),
   }),
   [ActionType.RESET_SKYBOX]: Schemas.Map({}),
+  [ActionType.CALL_SCRIPT_METHOD]: Schemas.Map({
+    scriptPath: Schemas.String,
+    methodName: Schemas.String,
+    params: Schemas.Optional(Schemas.Map({})),
+  }),
 };
 
 export type ActionPayload<T extends ActionType = any> = T extends keyof typeof ActionSchemas

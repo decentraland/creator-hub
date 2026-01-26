@@ -106,6 +106,7 @@ export enum ActionType {
   CHANGE_COLLISIONS = 'change_collisions',
   CHANGE_SKYBOX = 'change_skybox',
   RESET_SKYBOX = 'reset_skybox',
+  CALL_SCRIPT_METHOD = 'call_script_method',
 }
 
 export enum TriggerType {
