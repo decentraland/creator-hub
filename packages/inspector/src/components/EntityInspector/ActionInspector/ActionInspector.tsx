@@ -413,7 +413,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
   const allActions = useMemo(() => {
     const actions = getActionTypes(sdk.engine as any);
     const scriptActionTypes = scriptActions.map(sa => sa.actionType);
-    return [...actions, ...scriptActionTypes];
+    return [...actions.filter(a => a !== ActionType.CALL_SCRIPT_METHOD), ...scriptActionTypes];
   }, [sdk, scriptActions]);
 
   const availableActions = useMemo(() => {
