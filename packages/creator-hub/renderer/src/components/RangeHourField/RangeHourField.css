@@ -6,7 +6,7 @@
   padding: 4px 12px;
   border-radius: 8px;
   border: 1px solid var(--transparent-gray-light);
-  color: var(--text-on-secondary);
+  color: rgb(255, 255, 255, 0.7);
   font-size: 14px;
   font-family: var(--font-family);
   font-weight: 600;

@@ -57,7 +57,7 @@
 .DetailsTab .InputLabel .MuiInputBase-root {
   width: 100%;
   border: 1px solid var(--transparent-gray-light);
-  color: var(--text-on-secondary);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .DetailsTab .InputLabel .Select {

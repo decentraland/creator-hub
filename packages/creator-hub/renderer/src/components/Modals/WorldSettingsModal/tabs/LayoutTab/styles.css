@@ -43,7 +43,7 @@
 }
 
 .LayoutTab .EmptyDescription {
-  color: var(--text-on-secondary);
+  color: rgba(255, 255, 255, 0.7);
   margin-bottom: 24px;
 }
 
