@@ -53,6 +53,7 @@ export function migrateVersionedComponent(
   }
 }
 
+//TOOD move to definitions
 export function defineAssetPacksComponents(engine: IEngine) {
   const Counter = defineCounterComponent(engine);
   const Triggers = defineTriggersComponent(engine);
