@@ -113,9 +113,9 @@ export type WorldScene = {
   entity: Entity;
   entityId: IPFSv2;
   parcels: string[];
-  size: bigint;
+  size: string;
   thumbnailUrl?: string; // This is a computed field, not part of the API response
-  createdAt: Date;
+  createdAt: string; // ISO 8601 string
 };
 
 export type WorldScenes = {

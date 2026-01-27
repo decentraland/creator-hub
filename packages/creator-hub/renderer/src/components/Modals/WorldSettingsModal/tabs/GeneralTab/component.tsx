@@ -8,14 +8,13 @@ import {
   Typography,
 } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
+import { MAX_COORDINATE, MIN_COORDINATE } from '/@/modules/world';
 import type { WorldSettings } from '/@/lib/worlds';
 import { coordsToId, idToCoords } from '/@/lib/land';
 import { Row } from '/@/components/Row';
 import { RangeHourField, MIDDAY_SECONDS } from '/@/components/RangeHourField';
 import './styles.css';
 
-const MIN_COORDINATE = -150;
-const MAX_COORDINATE = 150;
 const INTEGER_REGEX = /^-?\d+$/;
 
 type Props = {
