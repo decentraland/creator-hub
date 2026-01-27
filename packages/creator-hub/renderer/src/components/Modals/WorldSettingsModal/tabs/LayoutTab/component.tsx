@@ -10,7 +10,7 @@ import type { WorldScene, WorldSettings } from '/@/lib/worlds';
 import type { Coords } from '/@/lib/land';
 import { idToCoords } from '/@/lib/land';
 import { t } from '/@/modules/store/translation/utils';
-import { getWorldDimensions } from '/@/modules/world';
+import { formatWorldSize, getWorldDimensions, MAX_COORDINATE } from '/@/modules/world';
 import type { Option } from '/@/components/Dropdown';
 import { Dropdown } from '/@/components/Dropdown';
 import { Button } from '/@/components/Button';
@@ -53,8 +53,9 @@ const WorldScenesView: React.FC<{
     navigate('/scenes');
   }, [navigate]);
 
-  const getBaseParcel = useCallback((parcels: string[]): Coords => {
-    let baseParcel = { x: 0, y: 0 };
+  const getBaseParcel = useCallback((parcels: string[]): Coords | null => {
+    if (!parcels?.length) return null;
+    let baseParcel = { x: MAX_COORDINATE, y: MAX_COORDINATE };
     parcels.forEach(parcel => {
       const [x, y] = idToCoords(parcel);
       if (Number(x) < baseParcel.x || Number(y) < baseParcel.y) {
@@ -87,10 +88,8 @@ const WorldScenesView: React.FC<{
   );
 
   const worldSize = useMemo(() => {
-    const dimensions = getWorldDimensions(worldScenes || []);
-    return dimensions.width > 0 && dimensions.height > 0
-      ? `${dimensions.height}x${dimensions.width}`
-      : '';
+    const { width, height } = getWorldDimensions(worldScenes || []);
+    return formatWorldSize({ width, height });
   }, [worldScenes]);
 
   return (
@@ -198,7 +197,7 @@ const WorldScenesView: React.FC<{
                     />
                     <InfoItem
                       icon={<LocationIcon />}
-                      label={getBaseParcel(scene.parcels || []).join(', ')}
+                      label={getBaseParcel(scene.parcels || [])?.join(', ') || ''}
                     />
                   </Box>
                 </Box>
