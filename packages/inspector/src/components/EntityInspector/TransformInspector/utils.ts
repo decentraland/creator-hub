@@ -48,7 +48,7 @@ export function toTransform(currentValue?: TransformType, config?: TransformConf
     const result: TransformType = {
       position: mapToNumber(inputs.position),
       scale: currentValue
-        ? getScale(currentValue.scale, scale, !!config?.porportionalScaling)
+        ? getScale(currentValue.scale, scale, inputs.scale, !!config?.porportionalScaling)
         : scale,
       rotation: {
         x: quaternion.x,
@@ -76,6 +76,7 @@ export const mapToNumber = <T extends Record<string, unknown>>(
 export const getScale = (
   oldValue: Vector3Type,
   value: Vector3Type,
+  inputStrings: { x: string; y: string; z: string },
   maintainPorportion: boolean,
 ) => {
   if (!maintainPorportion) return value;
@@ -92,14 +93,49 @@ export const getScale = (
 
   if (changedFactor === undefined) return value;
 
+  // Check if the input looks incomplete (e.g., "0" when typing "0.5")
+  // If the changed value is 0 and old value was non-zero, and the input string
+  // is exactly "0" (not "0.0" or "0.00"), it might be incomplete
+  const changedValue = value[changedFactor];
+  const oldChangedValue = oldValue[changedFactor];
+  const inputString = inputStrings[changedFactor];
+
+  const isIncompleteInput =
+    changedValue === 0 && Math.abs(oldChangedValue) > 0.01 && inputString === '0';
+
   const vector = { ...value };
 
   for (const factor in vector) {
     const key = factor as keyof Vector3Type;
     if (changedFactor === key) continue;
-    const div = oldValue[changedFactor] || 1;
-    const ratio = value[changedFactor] / div;
-    vector[key] = oldValue[key] * ratio;
+
+    if (isIncompleteInput) {
+      // For incomplete input, preserve old values for unchanged fields
+      // This prevents intermediate "0" from corrupting the values
+      vector[key] = oldValue[key];
+    } else if (oldValue[changedFactor] === 0 && value[changedFactor] !== 0) {
+      // Recovering from incomplete input (0 -> non-zero)
+      // Use the unchanged field value as the base (it should be the original value)
+      // Scale proportionally: newValue = baseValue * (newChangedValue / baseValue)
+      // But we want: newValue = baseValue * ratio where ratio = newChangedValue / originalChangedValue
+      // Since originalChangedValue was the value before it became 0, and unchanged fields
+      // still have that original value, we can use unchanged field as reference
+      const baseValue = oldValue[key];
+      // Calculate ratio based on what the changed value should be relative to the base
+      // If base is 1 and new changed is 0.5, ratio is 0.5/1 = 0.5
+      const ratio = value[changedFactor] / baseValue;
+      vector[key] = baseValue * ratio;
+    } else {
+      // Normal proportional scaling
+      const div = oldValue[changedFactor] || 1;
+      if (div === 0) {
+        // Can't calculate ratio from 0, preserve old values
+        vector[key] = oldValue[key];
+      } else {
+        const ratio = value[changedFactor] / div;
+        vector[key] = oldValue[key] * ratio;
+      }
+    }
   }
 
   return vector;

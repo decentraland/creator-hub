@@ -133,9 +133,10 @@ describe('TransformInspector utils', () => {
     it('should return the same value when maintainPorportion is false', () => {
       const oldValue = { x: 1, y: 2, z: 3 };
       const value = { x: 4, y: 5, z: 6 };
+      const inputStrings = { x: '4', y: '5', z: '6' };
       const mantainProportion = false;
 
-      const result = getScale(oldValue, value, mantainProportion);
+      const result = getScale(oldValue, value, inputStrings, mantainProportion);
 
       expect(result).toEqual(value);
     });
@@ -143,9 +144,10 @@ describe('TransformInspector utils', () => {
     it('should scale proportionally when x is changed', () => {
       const oldValue = { x: 2, y: 4, z: 6 };
       const value = { x: 4, y: 4, z: 6 };
+      const inputStrings = { x: '4', y: '4', z: '6' };
       const mantainProportion = true;
 
-      const result = getScale(oldValue, value, mantainProportion);
+      const result = getScale(oldValue, value, inputStrings, mantainProportion);
 
       expect(result).toEqual({ x: 4, y: 8, z: 12 });
     });
@@ -153,9 +155,10 @@ describe('TransformInspector utils', () => {
     it('should scale proportionally when y is changed', () => {
       const oldValue = { x: 1, y: 2, z: 3 };
       const value = { x: 1, y: 4, z: 3 };
+      const inputStrings = { x: '1', y: '4', z: '3' };
       const mantainProportion = true;
 
-      const result = getScale(oldValue, value, mantainProportion);
+      const result = getScale(oldValue, value, inputStrings, mantainProportion);
 
       expect(result).toEqual({ x: 2, y: 4, z: 6 });
     });
@@ -163,9 +166,10 @@ describe('TransformInspector utils', () => {
     it('should scale proportionally when z is changed', () => {
       const oldValue = { x: 2, y: 4, z: 6 };
       const value = { x: 2, y: 4, z: 3 };
+      const inputStrings = { x: '2', y: '4', z: '3' };
       const mantainProportion = true;
 
-      const result = getScale(oldValue, value, mantainProportion);
+      const result = getScale(oldValue, value, inputStrings, mantainProportion);
 
       expect(result).toEqual({ x: 1, y: 2, z: 3 });
     });
@@ -173,9 +177,10 @@ describe('TransformInspector utils', () => {
     it('should return the same value when no dimensions are changed', () => {
       const oldValue = { x: 1, y: 2, z: 3 };
       const value = { x: 1, y: 2, z: 3 };
+      const inputStrings = { x: '1', y: '2', z: '3' };
       const mantainProportion = true;
 
-      const result = getScale(oldValue, value, mantainProportion);
+      const result = getScale(oldValue, value, inputStrings, mantainProportion);
 
       expect(result).toEqual(value);
     });
@@ -183,9 +188,10 @@ describe('TransformInspector utils', () => {
     it('should scale proportionally when changing to decimal values less than 1', () => {
       const oldValue = { x: 1, y: 1, z: 1 };
       const value = { x: 0.5, y: 1, z: 1 };
+      const inputStrings = { x: '0.5', y: '1', z: '1' };
       const mantainProportion = true;
 
-      const result = getScale(oldValue, value, mantainProportion);
+      const result = getScale(oldValue, value, inputStrings, mantainProportion);
 
       expect(result).toEqual({ x: 0.5, y: 0.5, z: 0.5 });
     });
@@ -193,11 +199,61 @@ describe('TransformInspector utils', () => {
     it('should scale proportionally when changing from decimal to decimal', () => {
       const oldValue = { x: 0.5, y: 0.5, z: 0.5 };
       const value = { x: 0.25, y: 0.5, z: 0.5 };
+      const inputStrings = { x: '0.25', y: '0.5', z: '0.5' };
       const mantainProportion = true;
 
-      const result = getScale(oldValue, value, mantainProportion);
+      const result = getScale(oldValue, value, inputStrings, mantainProportion);
 
       expect(result).toEqual({ x: 0.25, y: 0.25, z: 0.25 });
+    });
+
+    it('should preserve old values when input is incomplete (typing "0" before "0.5")', () => {
+      const oldValue = { x: 1, y: 1, z: 1 };
+      const value = { x: 0, y: 1, z: 1 };
+      const inputStrings = { x: '0', y: '1', z: '1' };
+      const mantainProportion = true;
+
+      const result = getScale(oldValue, value, inputStrings, mantainProportion);
+
+      // Should preserve old values for unchanged fields to avoid zeroing them out
+      expect(result).toEqual({ x: 0, y: 1, z: 1 });
+    });
+
+    it('should apply proportional scaling when input is complete (typing "0.5")', () => {
+      const oldValue = { x: 1, y: 1, z: 1 };
+      const value = { x: 0.5, y: 1, z: 1 };
+      const inputStrings = { x: '0.5', y: '1', z: '1' };
+      const mantainProportion = true;
+
+      const result = getScale(oldValue, value, inputStrings, mantainProportion);
+
+      expect(result).toEqual({ x: 0.5, y: 0.5, z: 0.5 });
+    });
+
+    it('should apply proportional scaling when intentionally setting to 0 (input "0.0")', () => {
+      const oldValue = { x: 1, y: 1, z: 1 };
+      const value = { x: 0, y: 1, z: 1 };
+      const inputStrings = { x: '0.0', y: '1', z: '1' };
+      const mantainProportion = true;
+
+      const result = getScale(oldValue, value, inputStrings, mantainProportion);
+
+      // Should apply proportional scaling when input is "0.0" (complete, not incomplete)
+      expect(result).toEqual({ x: 0, y: 0, z: 0 });
+    });
+
+    it('should recover correctly when typing "0.5" after incomplete "0" input', () => {
+      // Simulates the scenario: user types "0" (incomplete), then types "0.5"
+      // After "0", oldValue would be {x: 0, y: 1, z: 1} (preserved from incomplete input)
+      const oldValue = { x: 0, y: 1, z: 1 };
+      const value = { x: 0.5, y: 1, z: 1 };
+      const inputStrings = { x: '0.5', y: '1', z: '1' };
+      const mantainProportion = true;
+
+      const result = getScale(oldValue, value, inputStrings, mantainProportion);
+
+      // Should scale proportionally: 0.5 relative to base 1 = 0.5 for all
+      expect(result).toEqual({ x: 0.5, y: 0.5, z: 0.5 });
     });
   });
   describe('when converting the TransformConfig to TransformConfigInput', () => {
