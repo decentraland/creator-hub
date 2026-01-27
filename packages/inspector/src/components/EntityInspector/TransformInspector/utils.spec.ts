@@ -134,10 +134,9 @@ describe('TransformInspector utils', () => {
       const oldValue = { x: 1, y: 2, z: 3 };
       const value = { x: 4, y: 5, z: 6 };
       const inputStrings = { x: '4', y: '5', z: '6' };
-      const lastGoodValue = undefined;
       const mantainProportion = false;
 
-      const result = getScale(oldValue, value, inputStrings, lastGoodValue, mantainProportion);
+      const result = getScale(oldValue, value, inputStrings, undefined, mantainProportion);
 
       expect(result).toEqual(value);
     });
@@ -207,7 +206,6 @@ describe('TransformInspector utils', () => {
 
       expect(result).toEqual({ x: 0.25, y: 0.25, z: 0.25 });
     });
-
     it('should preserve old values when input is incomplete (typing "0" before "0.5")', () => {
       const oldValue = { x: 1, y: 1, z: 1 };
       const value = { x: 0, y: 1, z: 1 };
@@ -220,7 +218,7 @@ describe('TransformInspector utils', () => {
       expect(result).toEqual({ x: 0, y: 1, z: 1 });
     });
 
-    it('should apply proportional scaling when input is complete (typing "0.5")', () => {
+    it('should scale proportionally when input is complete (typing "0.5")', () => {
       const oldValue = { x: 1, y: 1, z: 1 };
       const value = { x: 0.5, y: 1, z: 1 };
       const inputStrings = { x: '0.5', y: '1', z: '1' };
@@ -246,30 +244,30 @@ describe('TransformInspector utils', () => {
     it('should recover correctly when typing "0.5" after incomplete "0" input', () => {
       // Simulates the scenario: user types "0" (incomplete), then types "0.5"
       // After "0", oldValue would be {x: 0, y: 1, z: 1} (preserved from incomplete input)
-      // lastGoodValue is the original value before incomplete input: {x: 1, y: 1, z: 1}
+      // originalValue is the original value before incomplete input: {x: 1, y: 1, z: 1}
       const oldValue = { x: 0, y: 1, z: 1 };
       const value = { x: 0.5, y: 1, z: 1 };
       const inputStrings = { x: '0.5', y: '1', z: '1' };
-      const lastGoodValue = { x: 1, y: 1, z: 1 };
+      const originalValue = { x: 1, y: 1, z: 1 };
       const mantainProportion = true;
 
-      const result = getScale(oldValue, value, inputStrings, lastGoodValue, mantainProportion);
+      const result = getScale(oldValue, value, inputStrings, originalValue, mantainProportion);
 
       // Should scale proportionally: 0.5 relative to base 1 = 0.5 for all
       expect(result).toEqual({ x: 0.5, y: 0.5, z: 0.5 });
     });
 
     it('should recover correctly with uneven scale when typing "0.5" after incomplete "0" input', () => {
-      // Simulates the scenario: user has uneven scale {x: 1, y: 2, z: 4}, types "0" (incomplete), then types "0.5"
+      // Simulates: user has {x: 1, y: 2, z: 4}, types "0" (incomplete), then types "0.5"
       // After "0", oldValue would be {x: 0, y: 2, z: 4} (preserved from incomplete input)
-      // lastGoodValue is the original value before incomplete input: {x: 1, y: 2, z: 4}
+      // originalValue is the value before incomplete input: {x: 1, y: 2, z: 4}
       const oldValue = { x: 0, y: 2, z: 4 };
       const value = { x: 0.5, y: 2, z: 4 };
       const inputStrings = { x: '0.5', y: '2', z: '4' };
-      const lastGoodValue = { x: 1, y: 2, z: 4 };
+      const originalValue = { x: 1, y: 2, z: 4 };
       const mantainProportion = true;
 
-      const result = getScale(oldValue, value, inputStrings, lastGoodValue, mantainProportion);
+      const result = getScale(oldValue, value, inputStrings, originalValue, mantainProportion);
 
       // Should scale proportionally: 0.5 relative to original x=1 gives ratio 0.5
       // So y = 2 * 0.5 = 1, z = 4 * 0.5 = 2
