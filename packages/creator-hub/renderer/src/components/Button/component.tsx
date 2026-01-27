@@ -42,6 +42,7 @@ export function ButtonGroup({ extra, ...props }: GroupProps) {
           className="extra-button"
           color={props.color}
           size="small"
+          disabled={props.disabled}
           onClick={handleToggle}
         >
           <ArrowDropDownIcon />

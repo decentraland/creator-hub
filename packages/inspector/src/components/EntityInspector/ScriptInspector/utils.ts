@@ -5,7 +5,7 @@ import { determineAssetType } from '../../ImportAsset/utils';
 import type { TreeNode } from '../../ProjectAssetExplorer/ProjectView';
 import type { AssetNodeItem } from '../../ProjectAssetExplorer/types';
 import { isAssetNode } from '../../ProjectAssetExplorer/utils';
-import type { ScriptLayout } from './types';
+import type { ScriptItem, ScriptLayout } from './types';
 
 export function fromNumber(value: number): string {
   return value.toString();
@@ -39,16 +39,21 @@ export const isScriptNode = (node: TreeNode): node is AssetNodeItem =>
   isAssetNode(node) && isScriptFile(node.name);
 
 export function buildScriptPath(name: string): string {
-  const scriptName = isScriptFile(name) ? name : `${name}.ts`;
   const scriptsDir = withAssetDir(`${DIRECTORY.SCENE}/${determineAssetType('ts')}`);
+  if (name.startsWith(scriptsDir)) return name; // if it's already a built path, return the name parameter
+  const scriptName = isScriptFile(name) ? name : `${name}.tsx`;
   const scriptPath = `${scriptsDir}/${scriptName}`;
   return scriptPath;
 }
 
 export function isScriptNameAvailable({ assets }: AssetCatalogResponse, src: string): boolean {
   if (!src) return true;
-  const newScriptPath = buildScriptPath(src).toLowerCase();
-  return !assets.find($ => newScriptPath === $.path.toLowerCase());
+  return !assets.find($ => src === $.path.toLowerCase());
+}
+
+export function isScriptAlreadyAdded(scripts: ScriptItem[], src: string): boolean {
+  if (!src) return false;
+  return scripts.some(script => script.path === src);
 }
 
 export async function readScript(
@@ -61,7 +66,8 @@ export async function readScript(
 }
 
 export function mergeLayout(source: ScriptLayout, target: ScriptLayout): ScriptLayout {
-  const layout: ScriptLayout = { params: {} };
+  const layout: ScriptLayout = { params: {}, actions: [] };
+
   for (const [name, value] of Object.entries(source.params)) {
     const targetParam = target.params[name];
     if (!targetParam || value.type !== targetParam.type) {
@@ -70,6 +76,9 @@ export function mergeLayout(source: ScriptLayout, target: ScriptLayout): ScriptL
       layout.params[name] = { ...value, ...targetParam };
     }
   }
+
+  layout.actions = source.actions;
   layout.error = source.error;
+
   return layout;
 }

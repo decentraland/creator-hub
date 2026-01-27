@@ -57,6 +57,7 @@ import { initTriggers, damageTargets, healTargets } from './triggers';
 import { followMap } from './transform';
 import { getEasingFunctionFromInterpolation } from './tweens';
 import { REWARDS_SERVER_URL } from './admin-toolkit-ui/constants';
+import { callScriptMethod } from '~sdk/script-utils';
 import {
   movePlayerTo,
   triggerEmote,
@@ -388,6 +389,10 @@ export function createActionsSystem(
           }
           case ActionType.RESET_SKYBOX: {
             handleResetSkybox();
+            break;
+          }
+          case ActionType.CALL_SCRIPT_METHOD: {
+            handleCallScriptMethod(entity, getPayload<ActionType.CALL_SCRIPT_METHOD>(action));
             break;
           }
           default:
@@ -1581,5 +1586,19 @@ export function createActionsSystem(
         });
       },
     );
+  }
+
+  function handleCallScriptMethod(
+    entity: Entity,
+    payload: ActionPayload<ActionType.CALL_SCRIPT_METHOD>,
+  ) {
+    const { scriptPath, methodName, params } = payload;
+
+    try {
+      const paramValues = Object.values(params || {});
+      callScriptMethod(entity, scriptPath, methodName, ...paramValues);
+    } catch (error) {
+      console.error(`[Script Action Error] Failed to call ${methodName} on ${scriptPath}:`, error);
+    }
   }
 }

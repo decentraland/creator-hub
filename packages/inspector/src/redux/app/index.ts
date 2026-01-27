@@ -13,7 +13,6 @@ export interface AppState {
   preferences: InspectorPreferences | undefined;
   assetsCatalog: AssetCatalogResponse | undefined;
   thumbnails: GetFilesResponse['files'];
-  uploadFile: Record<string, File | string | undefined>;
   customAssets: CustomAsset[];
 }
 
@@ -23,7 +22,6 @@ export const initialState: AppState = {
   preferences: undefined,
   assetsCatalog: undefined,
   thumbnails: [],
-  uploadFile: {},
   customAssets: [],
 };
 
@@ -52,20 +50,12 @@ export const appState = createSlice({
     updateThumbnails: (state, { payload }: PayloadAction<GetFilesResponse>) => {
       state.thumbnails = payload.files;
     },
-    updateUploadFile: (state, { payload }: PayloadAction<AppState['uploadFile']>) => {
-      state.uploadFile = payload;
-    },
   },
 });
 
 // Actions
-export const {
-  updateCanSave,
-  updatePreferences,
-  updateAssetCatalog,
-  updateThumbnails,
-  updateUploadFile,
-} = appState.actions;
+export const { updateCanSave, updatePreferences, updateAssetCatalog, updateThumbnails } =
+  appState.actions;
 
 // Selectors
 export const selectCanSave = (state: RootState): boolean => state.app.canSave;
@@ -74,7 +64,6 @@ export const selectInspectorPreferences = (state: RootState): InspectorPreferenc
 };
 export const selectAssetCatalog = (state: RootState) => state.app.assetsCatalog;
 export const selectThumbnails = (state: RootState) => state.app.thumbnails;
-export const selectUploadFile = (state: RootState) => state.app.uploadFile;
 export const selectCustomAssets = (state: RootState) => state.app.customAssets;
 
 // Reducer

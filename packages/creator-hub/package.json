@@ -31,6 +31,9 @@
     "semver": "7.6.3",
     "tree-kill": "1.2.2"
   },
+  "overrides": {
+    "ua-parser-js": "2.0.0"
+  },
   "devDependencies": {
     "@dcl/hooks": "0.0.2",
     "@reduxjs/toolkit": "2.2.6",
@@ -51,7 +54,7 @@
     "cross-env": "7.0.3",
     "dcl-catalyst-client": "21.8.1",
     "decentraland-ui2": "0.23.1",
-    "electron": "37.3.1",
+    "electron": "40.0.0",
     "electron-builder": "26.0.12",
     "flat": "6.0.1",
     "react": "18.3.1",

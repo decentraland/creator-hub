@@ -32,8 +32,8 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const { getInputProps, isValid } = useComponentInput(
     entity,
     VideoPlayer,
-    fromVideoPlayer(files?.basePath ?? ''),
-    toVideoPlayer(files?.basePath ?? ''),
+    fromVideoPlayer,
+    toVideoPlayer,
     () => true,
     [files],
   );
