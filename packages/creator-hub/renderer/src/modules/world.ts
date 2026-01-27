@@ -22,7 +22,7 @@ export function getWorldDimensions(worldScenes: WorldScene[]): WorldDimensions {
   let maxX: number = MIN_COORDINATE;
   let maxY: number = MIN_COORDINATE;
 
-  parcels.values().forEach(parcel => {
+  Array.from(parcels).forEach(parcel => {
     const [x, y] = idToCoords(parcel);
     minX = Math.min(minX, Number(x));
     maxX = Math.max(maxX, Number(x));
