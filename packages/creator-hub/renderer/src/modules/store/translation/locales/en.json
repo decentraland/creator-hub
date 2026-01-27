@@ -328,7 +328,8 @@
         "error": "We couldn't check for updates.\nPlease try again later.",
         "update_available": "Update Available",
         "whats_new": "What's New",
-        "bug_fixes": "Bug Fixes"
+        "bug_fixes": "Bug Fixes",
+        "timeout": "Update check timed out.\nPlease check your connection and try again."
       }
     },
     "worlds_storage": {
@@ -464,6 +465,12 @@
       "body": "Remember the verification number below.<br></br>You'll be prompted to confirm it in your web browser to securely link your sign in.",
       "verification_code_info": "Keep this number private. It ensures that your sign-in is secure and unique to you.",
       "expiration": "Verification number will expire in {minutes}:{seconds} minutes"
+    },
+    "errors": {
+      "max_attempts": "Maximum signin attempts reached. Please try again later.",
+      "failed": "Signin failed. Please try again.",
+      "timeout": "Signin request timed out. Please check your connection and try again.",
+      "init_failed": "Failed to initialize signin. Please check your connection."
     }
   },
   "more": {
@@ -603,6 +610,23 @@
         "parcels_count": "{count} {count, plural, one {parcel} other {parcels}}",
         "land_coords": "{coordX}, {coordY}"
       }
+    }
+  },
+  "connection": {
+    "offline": {
+      "tooltip": "No internet connection",
+      "title": "No Connection",
+      "message": "You are currently offline. Some features may not be available until you reconnect to the internet.",
+      "retry": "Retry Connection",
+      "checking": "Checking..."
+    },
+    "slow": {
+      "tooltip": "Slow connection detected",
+      "message": "Your internet connection appears to be slow. Some features may take longer to load."
+    },
+    "errors": {
+      "NO_INTERNET_CONNECTION": "No internet connection available",
+      "REQUEST_TIMEOUT": "Request timed out. Please check your connection and try again."
     }
   }
 }

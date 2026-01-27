@@ -15,6 +15,7 @@ import { useDispatch, useSelector } from '#store';
 import { misc } from '#preload';
 import { AppSettings } from '../Modals/AppSettings';
 import { Header } from '../Header';
+import { ConnectionStatusIndicator } from '../ConnectionStatusIndicator';
 
 export enum NavbarItem {
   HOME = 'home',
@@ -92,6 +93,7 @@ export function Navbar(props: { active: NavbarItem }) {
       </>
       <>
         <Box className="actions">
+          <ConnectionStatusIndicator />
           <Button
             variant="outlined"
             color="secondary"

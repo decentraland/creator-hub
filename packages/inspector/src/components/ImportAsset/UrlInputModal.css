@@ -1,0 +1,29 @@
+/* URL Modal */
+.UrlInputModal {
+  width: 400px;
+  max-width: 90vw;
+}
+
+.UrlInputModalContent {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.UrlInputModalContent h3 {
+  margin: 0;
+  font-weight: 600;
+  color: var(--base-01);
+  text-align: center;
+}
+
+.UrlInputModalContent .error {
+  margin: 0;
+}
+
+.UrlInputModalActions {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+}

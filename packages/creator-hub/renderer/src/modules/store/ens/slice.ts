@@ -5,6 +5,7 @@ import pLimit from 'p-limit';
 import type { ChainId } from '@dcl/schemas/dist/dapps/chain-id';
 import type { Async } from '/shared/types/async';
 import { config } from '/@/config';
+import { fetch } from '/shared/fetch';
 import { DCLNames, ENS as ENSApi } from '/@/lib/ens';
 import { Worlds } from '/@/lib/worlds';
 import { ens as ensContract, ensResolver, dclRegistrar } from './contracts';

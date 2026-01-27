@@ -1,5 +1,8 @@
+import type { ActionRef } from '@dcl/asset-packs';
+
 import { TextField, CheckboxField } from '../../../ui';
 import EntityField from '../../../ui/EntityField/EntityField';
+import ActionField from './ActionField';
 import { fromNumber, toNumber, isValidNumber } from '../utils';
 
 import type { Props } from './types';
@@ -35,6 +38,16 @@ export function ScriptParamField({ name, param, onUpdate }: Props) {
           onChange={e => onUpdate(Number(e.target.value))}
         />
       );
+
+    case 'action':
+      return (
+        <ActionField
+          label={name}
+          value={param.value}
+          onChange={(value: ActionRef) => onUpdate(value)}
+        />
+      );
+
     case 'string':
     default:
       return (

@@ -5,6 +5,7 @@ import { withSdk } from '../../../hoc/withSdk';
 import { useAllEntitiesHaveComponent } from '../../../hooks/sdk/useHasComponent';
 import { useMultiComponentInput } from '../../../hooks/sdk/useComponentInput';
 import { getComponentValue } from '../../../hooks/sdk/useComponentValue';
+import { useAssetOptions } from '../../../hooks/useAssetOptions';
 import { analytics, Event } from '../../../lib/logic/analytics';
 import { getAssetByModel } from '../../../lib/logic/catalog';
 import { CoreComponents } from '../../../lib/sdk/components';
@@ -19,6 +20,7 @@ import type { Props } from './types';
 
 export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
   const files = useAppSelector(selectAssetCatalog);
+  const audioOptions = useAssetOptions(ACCEPTED_FILE_TYPES['audio']);
   const { AudioSource, GltfContainer } = sdk.components;
 
   const allEntitiesHaveAudioSource = useAllEntitiesHaveComponent(entities, AudioSource);
@@ -78,6 +80,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
           {...audioClipUrl}
           label="Path"
           accept={ACCEPTED_FILE_TYPES['audio']}
+          options={audioOptions}
           error={files && !isValid}
           isValidFile={isAudio}
         />

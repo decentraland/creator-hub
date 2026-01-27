@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import { withSdk } from '../../../hoc/withSdk';
 import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
 import { useComponentInput } from '../../../hooks/sdk/useComponentInput';
+import { useAssetOptions } from '../../../hooks/useAssetOptions';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { FileUploadField, Dropdown, Label, InfoTooltip } from '../../ui';
@@ -16,6 +17,7 @@ import './GltfInspector.css';
 
 export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const files = useAppSelector(selectAssetCatalog);
+  const modelOptions = useAssetOptions(ACCEPTED_FILE_TYPES['model']);
   const { GltfContainer } = sdk.components;
 
   const hasGltf = useHasComponent(entity, GltfContainer);
@@ -26,8 +28,8 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const { getInputProps, isValid } = useComponentInput(
     entity,
     GltfContainer,
-    fromGltf(files?.basePath ?? ''),
-    toGltf(files?.basePath ?? ''),
+    fromGltf,
+    toGltf,
     handleInputValidation,
     [files],
   );
@@ -72,6 +74,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
           {...getInputProps('src')}
           label="Path"
           accept={ACCEPTED_FILE_TYPES['model']}
+          options={modelOptions}
           onDrop={handleDrop}
           error={files && !isValid}
           isValidFile={isModel}

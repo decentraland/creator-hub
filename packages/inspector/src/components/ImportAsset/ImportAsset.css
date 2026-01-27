@@ -152,3 +152,52 @@
 .ImportAssetModal h2 {
   text-align: center;
 }
+
+/* Field Mode Styles */
+.ImportAssetField {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.ImportAssetField .ImportAssetFieldContainer {
+  display: flex;
+  flex-direction: row;
+  align-items: end;
+  width: 100%;
+  gap: 4px;
+}
+
+.ImportAssetField .ImportAssetFieldContainer > input {
+  display: none;
+}
+
+.ImportAssetField .ImportAssetFieldContainer .ImportAssetFieldButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px;
+  cursor: pointer;
+  background-color: transparent;
+  border-color: transparent;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 4px;
+  color: var(--base-01);
+}
+
+.ImportAssetField .ImportAssetFieldContainer .ImportAssetFieldButton:hover {
+  border-color: var(--base-09);
+}
+
+.ImportAssetField .ImportAssetFieldContainer .ImportAssetFieldButton:focus {
+  border-color: var(--base-01);
+}
+
+.ImportAssetField .ImportAssetFieldContainer.disabled .ImportAssetFieldButton {
+  pointer-events: none;
+}
+
+.ImportAssetField .ImportAssetFieldContainer.droppeable .Dropdown .DropdownContainer {
+  border: 1px dashed var(--base-01);
+}

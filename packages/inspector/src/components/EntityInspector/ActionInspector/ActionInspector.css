@@ -19,13 +19,19 @@
   row-gap: 12px;
 }
 
+.ActionInspector > .content > .Block > .content .row.params {
+  flex-direction: column;
+  align-items: normal;
+}
+
 .ActionInspector > .content > .Block > .content .row .field {
   display: flex;
   flex-direction: column;
   flex: 1;
 }
 
-.ActionInspector > .content > .Block > .content .row .field > .Text.Field {
+.ActionInspector > .content > .Block > .content .row .field > .Text.Field,
+.ActionInspector > .content > .Block > .content .row > .Text.Field {
   width: 100%;
 }
 

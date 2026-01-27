@@ -2,8 +2,6 @@ import { useCallback } from 'react';
 import { withSdk } from '../../../hoc/withSdk';
 import { useAllEntitiesHaveComponent } from '../../../hooks/sdk/useHasComponent';
 import { useMultiComponentInput } from '../../../hooks/sdk/useComponentInput';
-import { useAppSelector } from '../../../redux/hooks';
-import { selectAssetCatalog } from '../../../redux/app';
 import { Block } from '../../Block';
 import { Dropdown, InfoTooltip } from '../../ui';
 import { Container } from '../../Container';
@@ -14,7 +12,6 @@ import { type Props as TextureProps } from './Texture';
 import { type Props, MaterialType } from './types';
 
 export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
-  const files = useAppSelector(selectAssetCatalog);
   const { Material } = sdk.components;
 
   const allEntitiesHaveMaterial = useAllEntitiesHaveComponent(entities, Material);
@@ -22,8 +19,8 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
   const { getInputProps } = useMultiComponentInput(
     entities,
     Material,
-    fromMaterial(files?.basePath ?? ''),
-    toMaterial(files?.basePath ?? ''),
+    fromMaterial,
+    toMaterial,
     isValidMaterial,
   );
 
