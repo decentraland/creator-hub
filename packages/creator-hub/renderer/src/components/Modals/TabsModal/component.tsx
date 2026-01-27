@@ -1,3 +1,4 @@
+import cx from 'classnames';
 import CloseIcon from '@mui/icons-material/CloseRounded';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
@@ -15,6 +16,7 @@ export type Props<T> = {
   onTabClick: (tab: T) => void;
   children: React.ReactNode;
   className?: string;
+  orientation?: 'horizontal' | 'vertical';
 };
 
 function TabsModal<T>({
@@ -27,6 +29,7 @@ function TabsModal<T>({
   onTabClick,
   children,
   className = '',
+  orientation = 'vertical',
 }: Props<T>) {
   return (
     <Modal
@@ -46,11 +49,16 @@ function TabsModal<T>({
             />
           </IconButton>
         </Box>
-        <Box className="TabsModalLayout">
+        <Box
+          className={cx(
+            'TabsModalLayout',
+            orientation === 'horizontal' ? 'Horizontal' : 'Vertical',
+          )}
+        >
           <Tabs
-            className="TabsModalSidebar"
-            orientation="vertical"
+            className="TabsList"
             variant="scrollable"
+            orientation={orientation}
             value={activeTab}
             onChange={(_event, newValue) => onTabClick(newValue)}
           >
