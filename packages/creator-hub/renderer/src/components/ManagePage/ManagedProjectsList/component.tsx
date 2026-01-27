@@ -5,12 +5,18 @@ import { useDispatch, useSelector } from '#store';
 import { fetchWorldScenes, fetchWorldSettings } from '/@/modules/store/management';
 import { WorldSettingsTab, type ManagedProject } from '/shared/types/manage';
 import { WorldSettingsModal } from '../../Modals/WorldSettingsModal';
+import { WorldPermissionsModal } from '../../Modals/WorldPermissionsModal';
 import { PublishedProjectCard } from '../PublishedProjectCard';
 import './styles.css';
 
 type SettingsModalState = {
   activeTab: WorldSettingsTab;
   isOpen: boolean;
+};
+
+type PermissionsModalState = {
+  isOpen: boolean;
+  worldName: string;
 };
 
 type Props = {
@@ -22,14 +28,26 @@ const ManagedProjectsList: React.FC<Props> = React.memo(({ projects }) => {
     isOpen: false,
     activeTab: WorldSettingsTab.DETAILS,
   });
+  const [permissionsModal, setPermissionsModal] = useState<PermissionsModalState>({
+    isOpen: false,
+    worldName: '',
+  });
   const dispatch = useDispatch();
   const worldSettings = useSelector((state: AppState) => state.management.worldSettings);
   const navigate = useNavigate();
 
+  const handleOpenPermissionsModal = useCallback((worldName: string) => {
+    setPermissionsModal({ isOpen: true, worldName });
+  }, []);
+
+  const handleClosePermissionsModal = useCallback(() => {
+    setPermissionsModal({ isOpen: false, worldName: '' });
+  }, []);
+
   const handleOpenSettingsModal = useCallback(
-    (project: ManagedProject, activeTab: WorldSettingsTab = WorldSettingsTab.DETAILS) => {
-      dispatch(fetchWorldSettings({ worldName: project.id }));
-      dispatch(fetchWorldScenes({ worldName: project.id }));
+    (worldName: string, activeTab: WorldSettingsTab = WorldSettingsTab.DETAILS) => {
+      dispatch(fetchWorldSettings({ worldName }));
+      dispatch(fetchWorldScenes({ worldName }));
       setSettingsModal({ isOpen: true, activeTab });
     },
     [],
@@ -39,7 +57,7 @@ const ManagedProjectsList: React.FC<Props> = React.memo(({ projects }) => {
     setSettingsModal({ isOpen: false, activeTab: WorldSettingsTab.DETAILS });
   }, []);
 
-  const handleModalTabClick = useCallback((tab: WorldSettingsTab) => {
+  const handleSettingsModalTabClick = useCallback((tab: WorldSettingsTab) => {
     setSettingsModal(prevState => ({ ...prevState, activeTab: tab }));
   }, []);
 
@@ -53,7 +71,8 @@ const ManagedProjectsList: React.FC<Props> = React.memo(({ projects }) => {
         <PublishedProjectCard
           key={project.id}
           project={project}
-          onOpenSettings={activeTab => handleOpenSettingsModal(project, activeTab)}
+          onOpenSettings={activeTab => handleOpenSettingsModal(project.id, activeTab)}
+          onOpenPermissions={() => handleOpenPermissionsModal(project.id)}
           onViewScenes={handleViewScenes}
         />
       ))}
@@ -65,8 +84,13 @@ const ManagedProjectsList: React.FC<Props> = React.memo(({ projects }) => {
         worldSettings={worldSettings.settings}
         isLoading={worldSettings.status === 'loading' || worldSettings.status === 'idle'}
         activeTab={settingsModal.activeTab}
-        onTabClick={handleModalTabClick}
+        onTabClick={handleSettingsModalTabClick}
         onClose={handleCloseSettingsModal}
+      />
+      <WorldPermissionsModal
+        open={permissionsModal.isOpen}
+        worldName={permissionsModal.worldName}
+        onClose={handleClosePermissionsModal}
       />
     </div>
   );

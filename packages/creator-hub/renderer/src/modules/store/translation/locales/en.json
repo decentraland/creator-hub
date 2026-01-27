@@ -428,6 +428,19 @@
         }
       }
     },
+    "world_permissions": {
+      "tabs": {
+        "access": {
+          "label": "Access"
+        },
+        "collaborators": {
+          "label": "Collaborators"
+        }
+      },
+      "title": "Permissions - {worldName}",
+      "access": {},
+      "collaborators": {}
+    },
     "create_project": {
       "title": "Create Project",
       "fields": {

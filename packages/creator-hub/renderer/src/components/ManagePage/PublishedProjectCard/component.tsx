@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react';
-import type { ManagedProject } from '/shared/types/manage';
-import { ManagedProjectType, WorldSettingsTab } from '/shared/types/manage';
+import type { ManagedProject, WorldSettingsTab } from '/shared/types/manage';
+import { ManagedProjectType } from '/shared/types/manage';
 import WorldSettingsIcon from '@mui/icons-material/SpaceDashboard';
 import PublishedIcon from '@mui/icons-material/Cloud';
 import ParcelsIcon from '@mui/icons-material/Layers';
@@ -37,11 +37,12 @@ function isCollaboratorRole(role: LandRoleType | WorldRoleType): role is Collabo
 export type Props = {
   project: ManagedProject;
   onOpenSettings: (tab?: WorldSettingsTab) => void;
+  onOpenPermissions: () => void;
   onViewScenes: () => void;
 };
 
 const PublishedProjectCard: React.FC<Props> = React.memo(
-  ({ project, onOpenSettings, onViewScenes }) => {
+  ({ project, onOpenSettings, onOpenPermissions, onViewScenes }) => {
     const { pushGeneric } = useSnackbar();
     const { id, displayName, type, role, deployment } = project;
     const roleLabel = isCollaboratorRole(role) ? COLLABORATOR_ROLES_LABELS[role] : null;
@@ -65,10 +66,6 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
     const handleViewParcel = useCallback(() => {
       void misc.openExternal(`${BUILDER_URL}/land/${id}`);
     }, [id]);
-
-    const handleManagePermissions = useCallback(() => {
-      onOpenSettings(WorldSettingsTab.PERMISSIONS);
-    }, [onOpenSettings]);
 
     const handleUnpublish = useCallback(() => {
       // TODO: implement unpublish functionality in future PR.
@@ -105,7 +102,7 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
         {
           text: t('manage.cards.menu.permissions'),
           icon: <PermissionsIcon />,
-          handler: handleManagePermissions,
+          handler: onOpenPermissions,
           active: type === ManagedProjectType.WORLD && role === WorldRoleType.OWNER,
         },
         {
@@ -121,8 +118,8 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
       handleCopyURL,
       handleEditName,
       handleViewParcel,
-      handleManagePermissions,
       handleUnpublish,
+      onOpenPermissions,
     ]);
 
     return (
