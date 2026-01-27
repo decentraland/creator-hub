@@ -37,6 +37,10 @@ function formatAngle(angle: number) {
 }
 
 export function toTransform(currentValue?: TransformType, config?: TransformConfig) {
+  // Track the last good value before incomplete input to use for recovery
+  // Initialize with currentValue if it exists, otherwise it will be set on first complete input
+  let lastGoodValue: Vector3Type | undefined = currentValue?.scale;
+
   return (inputs: TransformInput): TransformType => {
     const quaternion = Quaternion.RotationYawPitchRoll(
       (Number(inputs.rotation.y) * Math.PI) / 180,
@@ -45,11 +49,41 @@ export function toTransform(currentValue?: TransformType, config?: TransformConf
     );
     const scale = mapToNumber(inputs.scale);
 
+    // Check if we're detecting incomplete input
+    let hasIncompleteInput = false;
+    if (currentValue) {
+      const scaleInputStrings = inputs.scale;
+      // Check if any field looks like incomplete input ("0" when old value was non-zero)
+      hasIncompleteInput = Object.keys(scaleInputStrings).some(key => {
+        const k = key as keyof typeof scaleInputStrings;
+        const inputStr = scaleInputStrings[k];
+        const numValue = scale[k];
+        const oldNumValue = currentValue.scale[k];
+        return numValue === 0 && Math.abs(oldNumValue) > 0.01 && inputStr === '0';
+      });
+    }
+
+    // Calculate the scale result
+    const scaleResult = currentValue
+      ? getScale(
+          currentValue.scale,
+          scale,
+          inputs.scale,
+          lastGoodValue,
+          !!config?.porportionalScaling,
+        )
+      : scale;
+
+    // Update lastGoodValue if input is complete (not incomplete)
+    // Use the result we're about to return, not currentValue
+    if (!hasIncompleteInput) {
+      lastGoodValue = scaleResult;
+    }
+    // If incomplete, lastGoodValue stays as it was (the value before incomplete input)
+
     const result: TransformType = {
       position: mapToNumber(inputs.position),
-      scale: currentValue
-        ? getScale(currentValue.scale, scale, inputs.scale, !!config?.porportionalScaling)
-        : scale,
+      scale: scaleResult,
       rotation: {
         x: quaternion.x,
         y: quaternion.y,
@@ -77,6 +111,7 @@ export const getScale = (
   oldValue: Vector3Type,
   value: Vector3Type,
   inputStrings: { x: string; y: string; z: string },
+  lastGoodValue: Vector3Type | undefined,
   maintainPorportion: boolean,
 ) => {
   if (!maintainPorportion) return value;
@@ -115,16 +150,16 @@ export const getScale = (
       vector[key] = oldValue[key];
     } else if (oldValue[changedFactor] === 0 && value[changedFactor] !== 0) {
       // Recovering from incomplete input (0 -> non-zero)
-      // Use the unchanged field value as the base (it should be the original value)
-      // Scale proportionally: newValue = baseValue * (newChangedValue / baseValue)
-      // But we want: newValue = baseValue * ratio where ratio = newChangedValue / originalChangedValue
-      // Since originalChangedValue was the value before it became 0, and unchanged fields
-      // still have that original value, we can use unchanged field as reference
-      const baseValue = oldValue[key];
-      // Calculate ratio based on what the changed value should be relative to the base
-      // If base is 1 and new changed is 0.5, ratio is 0.5/1 = 0.5
-      const ratio = value[changedFactor] / baseValue;
-      vector[key] = baseValue * ratio;
+      // Use lastGoodValue (the value before incomplete input) as the base for calculations
+      if (lastGoodValue && lastGoodValue[changedFactor] !== 0) {
+        // We have the original value before incomplete input, use it for proportional scaling
+        const originalChangedValue = lastGoodValue[changedFactor];
+        const ratio = value[changedFactor] / originalChangedValue;
+        vector[key] = lastGoodValue[key] * ratio;
+      } else {
+        // Don't have lastGoodValue, can't reliably calculate, preserve old values
+        vector[key] = oldValue[key];
+      }
     } else {
       // Normal proportional scaling
       const div = oldValue[changedFactor] || 1;
