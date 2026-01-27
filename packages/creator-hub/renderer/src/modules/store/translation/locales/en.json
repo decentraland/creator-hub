@@ -446,6 +446,19 @@
       "proposal": "These storage rules were voted on and passed in a governance DAO proposal.",
       "learn_more": "LEARN MORE"
     },
+    "world_permissions": {
+      "tabs": {
+        "access": {
+          "label": "Access"
+        },
+        "collaborators": {
+          "label": "Collaborators"
+        }
+      },
+      "title": "Permissions - {worldName}",
+      "access": {},
+      "collaborators": {}
+    },
     "create_project": {
       "title": "Create Project",
       "fields": {
