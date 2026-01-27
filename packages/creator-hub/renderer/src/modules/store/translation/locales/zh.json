@@ -359,13 +359,71 @@
           "label": "布局"
         },
         "general": {
-          "label": "常规"
+          "label": "其他"
+        }
+      },
+      "general": {
+        "world_spawn_coordinate": "世界生成坐标",
+        "position": "位置",
+        "world_skybox": "世界天空盒",
+        "auto_skybox": "自动（Decentraland 时间）",
+        "max_offset": "最大偏移",
+        "general": "常规",
+        "single_player": "单人游戏"
+      },
+      "details": {
+        "world_title": "世界标题",
+        "description": "描述",
+        "age_rating": "年龄分级",
+        "categories": "类别",
+        "author": "作者（可选）",
+        "email": "电子邮件（可选）",
+        "thumbnail": "缩略图",
+        "replace_image": "替换图片",
+        "set_image": "选择图片",
+        "no_image": "未设置图片",
+        "age_rating_options": {
+          "everyone": "E（所有人，PG 13+）",
+          "teen": "T（青少年，PG 13+）",
+          "adult": "A（成人，PG 18+）",
+          "restricted": "R（限制级，PG 18+）"
         },
-        "variables": {
-          "label": "变量"
+        "categories_options": {
+          "art": "🎨 艺术",
+          "game": "🕹️ 游戏",
+          "casino": "🃏 赌场",
+          "social": "👥 社交",
+          "music": "🎶 音乐",
+          "fashion": "👠 时尚",
+          "crypto": "🪙 加密货币",
+          "education": "📚 教育",
+          "shop": "🛍️ 商店",
+          "business": "🏢 商务",
+          "sports": "🏅 体育"
+        }
+      },
+      "layout": {
+        "world_layout": {
+          "title": "世界布局",
+          "world_size": "世界大小：{size}"
         },
-        "permissions": {
-          "label": "权限"
+        "multi_scene_title": "多场景世界（高级）",
+        "multi_scene_description": "允许您的世界包含多个场景。\n总的世界大小将取决于您发布的世界布局。",
+        "empty_world": {
+          "title": "此世界中未发布场景。",
+          "description": "您可以通过在此域中发布任何场景来添加它。",
+          "view_scenes": "查看场景"
+        },
+        "current_world": "当前世界",
+        "title_placeholder": "世界标题",
+        "scene_title_placeholder": "场景标题",
+        "scenes_count": "{count} 个{count, plural, one {场景} other {场景}}",
+        "parcels_count": "{count} 个{count, plural, one {地块} other {地块}}",
+        "world_map": "世界地图",
+        "scenes_title": "场景",
+        "actions": {
+          "edit_scene": "编辑场景",
+          "unpublish": "取消发布"
         }
       }
     },

@@ -45,15 +45,3 @@ export function getWorldDimensions(worldScenes: WorldScene[]): WorldDimensions {
     height,
   };
 }
-
-export function getSceneParcelsSet(worldScenes: WorldScene[]): Set<string> {
-  const parcelsSet = new Set<string>();
-
-  worldScenes.forEach(scene => {
-    scene.parcels?.forEach(parcel => {
-      parcelsSet.add(parcel);
-    });
-  });
-
-  return parcelsSet;
-}

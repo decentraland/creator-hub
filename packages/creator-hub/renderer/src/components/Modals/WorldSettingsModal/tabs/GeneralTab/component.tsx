@@ -12,7 +12,6 @@ import type { WorldSettings } from '/@/lib/worlds';
 import { coordsToId, idToCoords } from '/@/lib/land';
 import { Row } from '/@/components/Row';
 import { RangeHourField, MIDDAY_SECONDS } from '/@/components/RangeHourField';
-
 import './styles.css';
 
 const MIN_COORDINATE = -150;

@@ -10,12 +10,13 @@ import type { WorldScene, WorldSettings } from '/@/lib/worlds';
 import type { Coords } from '/@/lib/land';
 import { idToCoords } from '/@/lib/land';
 import { t } from '/@/modules/store/translation/utils';
+import { getWorldDimensions } from '/@/modules/world';
 import type { Option } from '/@/components/Dropdown';
 import { Dropdown } from '/@/components/Dropdown';
 import { Button } from '/@/components/Button';
 import { Row } from '/@/components/Row';
-import './styles.css';
 import { WorldAtlas } from '/@/components/WorldAtlas';
+import './styles.css';
 
 enum LayoutView {
   SCENES = 'worldScenes',
@@ -62,14 +63,12 @@ const WorldScenesView: React.FC<{
     return [baseParcel.x, baseParcel.y];
   }, []);
 
-  const handleEditScene = useCallback((scene: WorldScene) => {
-    /// TODO: Implement edit scene
-    console.log('Edit scene', scene);
+  const handleEditScene = useCallback((_scene: WorldScene) => {
+    // TODO: Implement edit scene in future PR.
   }, []);
 
-  const handleUnpublishScene = useCallback((scene: WorldScene) => {
-    // TODO: Implement unpublish scene
-    console.log('Unpublish scene', scene);
+  const handleUnpublishScene = useCallback((_scene: WorldScene) => {
+    // TODO: Implement unpublish scene in future PR.
   }, []);
 
   const getDropdownOptions = useCallback(
@@ -87,25 +86,10 @@ const WorldScenesView: React.FC<{
   );
 
   const worldSize = useMemo(() => {
-    if (!worldScenes || worldScenes.length === 0) return '0x0';
-    let minX: number | null = null;
-    let maxX: number | null = null;
-    let minY: number | null = null;
-    let maxY: number | null = null;
-
-    worldScenes.forEach(scene => {
-      scene.parcels?.forEach(parcel => {
-        const [x, y] = idToCoords(parcel);
-        minX = minX !== null ? Math.min(minX, Number(x)) : Number(x);
-        maxX = maxX !== null ? Math.max(maxX, Number(x)) : Number(x);
-        minY = minY !== null ? Math.min(minY, Number(y)) : Number(y);
-        maxY = maxY !== null ? Math.max(maxY, Number(y)) : Number(y);
-      });
-    });
-
-    const width = maxX !== null && minX !== null ? maxX - minX + 1 : 0;
-    const height = maxY !== null && minY !== null ? maxY - minY + 1 : 0;
-    return width > 0 && height > 0 ? `${height}x${width}` : '';
+    const dimensions = getWorldDimensions(worldScenes || []);
+    return dimensions.width > 0 && dimensions.height > 0
+      ? `${dimensions.height}x${dimensions.width}`
+      : '';
   }, [worldScenes]);
 
   return (

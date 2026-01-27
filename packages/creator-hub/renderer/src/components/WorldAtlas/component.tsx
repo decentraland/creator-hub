@@ -4,18 +4,29 @@ import { Atlas } from 'decentraland-ui2/dist/components/Atlas/Atlas';
 import type { AtlasProps } from 'decentraland-ui2/dist/components/Atlas/Atlas.types';
 import { Box, Typography } from 'decentraland-ui2';
 import type { WorldScene } from '/@/lib/worlds';
+import { getWorldDimensions } from '/@/modules/world';
 import { t } from '/@/modules/store/translation/utils';
-import { getSceneParcelsSet, getWorldDimensions } from './utils';
-import { WORLD_ATLAS_COLORS } from './constants';
 import './styles.css';
 
 type Props = Partial<AtlasProps> & {
   worldScenes: WorldScene[];
 };
 
+enum WorldAtlasColors {
+  emptyParcel = '#0D0B0E',
+  worldParcel = '#FF2D55',
+  sceneParcel = '#1F87E5',
+  selectedParcel = '#5E5B67',
+  selectedStroke = '#FFFFFF',
+}
+
 const WorldAtlas: React.FC<Props> = React.memo(({ worldScenes, ...props }) => {
   const dimensions = useMemo(() => getWorldDimensions(worldScenes), [worldScenes]);
-  const sceneParcels = useMemo(() => getSceneParcelsSet(worldScenes), [worldScenes]);
+
+  const sceneParcelsSet = useMemo(
+    () => new Set(worldScenes.flatMap(scene => scene.parcels ?? [])),
+    [worldScenes],
+  );
 
   const worldSize = useMemo(() => {
     if (!dimensions.width || !dimensions.height) return '';
@@ -28,7 +39,7 @@ const WorldAtlas: React.FC<Props> = React.memo(({ worldScenes, ...props }) => {
         x <= dimensions.maxX &&
         y >= dimensions.minY &&
         y <= dimensions.maxY
-        ? { color: WORLD_ATLAS_COLORS.worldParcel, scale: 1.0 }
+        ? { color: WorldAtlasColors.worldParcel, scale: 1.0 }
         : null;
     },
     [dimensions],
@@ -37,9 +48,9 @@ const WorldAtlas: React.FC<Props> = React.memo(({ worldScenes, ...props }) => {
   const scenesLayer = useCallback(
     (x: number, y: number) => {
       const key = `${x},${y}`;
-      return sceneParcels.has(key) ? { color: WORLD_ATLAS_COLORS.sceneParcel, scale: 1.0 } : null;
+      return sceneParcelsSet.has(key) ? { color: WorldAtlasColors.sceneParcel, scale: 1.0 } : null;
     },
-    [sceneParcels],
+    [sceneParcelsSet],
   );
 
   const centerX = Math.floor((dimensions.minX + dimensions.maxX) / 2);

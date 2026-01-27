@@ -308,14 +308,12 @@ export class Worlds {
     settings: Partial<WorldSettings>,
   ) {
     const formData = new FormData();
-    const snakeCaseSettings = fromCamelToSnake(settings);
+    const formattedSettings = fromCamelToSnake(settings);
 
-    Object.entries(snakeCaseSettings).forEach(([key, value]) => {
+    Object.entries(formattedSettings).forEach(([key, value]) => {
       if (value !== undefined) {
         if (Array.isArray(value)) {
-          value.forEach(item => {
-            formData.append(key, String(item));
-          });
+          value.forEach(item => formData.append(key, String(item)));
         } else {
           formData.append(key, String(value));
         }
