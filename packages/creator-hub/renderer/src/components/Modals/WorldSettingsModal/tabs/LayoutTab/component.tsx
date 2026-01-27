@@ -16,6 +16,7 @@ import { Dropdown } from '/@/components/Dropdown';
 import { Button } from '/@/components/Button';
 import { Row } from '/@/components/Row';
 import { WorldAtlas } from '/@/components/WorldAtlas';
+import { Image } from '/@/components/Image';
 import './styles.css';
 
 enum LayoutView {
@@ -132,12 +133,11 @@ const WorldScenesView: React.FC<{
         <>
           <Box className="WorldInfo">
             <Box className="WorldThumbnail">
-              {worldSettings.thumbnailUrl && (
-                <img
-                  src={worldSettings.thumbnailUrl}
-                  alt={worldSettings.title}
-                />
-              )}
+              <Image
+                src={worldSettings.thumbnailUrl || ''}
+                alt={worldSettings.title || ''}
+                fallbackSrc="/assets/images/scene-thumbnail-fallback.png"
+              />
             </Box>
             <Box className="WorldInfoContent">
               <Typography className="CurrentWorldLabel">
@@ -178,12 +178,11 @@ const WorldScenesView: React.FC<{
                 className="SceneItem"
               >
                 <Box className="SceneThumbnail">
-                  {scene.thumbnailUrl && (
-                    <img
-                      src={scene.thumbnailUrl}
-                      alt={`Scene ${index + 1}`}
-                    />
-                  )}
+                  <Image
+                    src={scene.thumbnailUrl || ''}
+                    alt={`Scene ${index + 1}`}
+                    fallbackSrc="/assets/images/scene-thumbnail-fallback.png"
+                  />
                 </Box>
                 <Box className="SceneInfo">
                   <Typography className="SceneTitle">

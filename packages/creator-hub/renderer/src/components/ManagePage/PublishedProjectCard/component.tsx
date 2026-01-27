@@ -13,10 +13,10 @@ import { WorldRoleType } from '/@/lib/worlds';
 import { RoleType as LandRoleType } from '/@/lib/land';
 import { misc } from '#preload';
 import { ContentCopy, OpenInNew } from '@mui/icons-material';
+import { Image } from '../../Image';
 import { Button } from '../../Button';
 import { Dropdown } from '../../Dropdown';
 import type { Option } from '../../Dropdown';
-import thumbnailFallbackImage from './thumbnail-fallback.png';
 import { formatName, getJumpInUrl, getLogo, isENSDomain } from './utils';
 import './styles.css';
 
@@ -148,9 +148,10 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
         ) : (
           <>
             <div className="CardThumbnail">
-              <img
-                src={deployment.thumbnail || thumbnailFallbackImage}
-                alt="Project thumbnail" // TODO: use offline fallback Image component when merged.
+              <Image
+                src={deployment.thumbnail}
+                alt="Project thumbnail"
+                fallbackSrc="/assets/images/scene-thumbnail-fallback.png"
               />
               <div className="ChipsContainer">
                 <Chip
