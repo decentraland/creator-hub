@@ -30,7 +30,6 @@ const ManagedProjectsList: React.FC<Props> = React.memo(({ projects }) => {
     (project: ManagedProject, activeTab: WorldSettingsTab = WorldSettingsTab.DETAILS) => {
       dispatch(fetchWorldSettings({ worldName: project.id }));
       dispatch(fetchWorldScenes({ worldName: project.id }));
-
       setSettingsModal({ isOpen: true, activeTab });
     },
     [],

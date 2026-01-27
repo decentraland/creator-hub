@@ -360,13 +360,71 @@
           "label": "Diseño"
         },
         "general": {
-          "label": "General"
+          "label": "Varios"
+        }
+      },
+      "general": {
+        "world_spawn_coordinate": "Coordenada de Aparición del Mundo",
+        "position": "Posición",
+        "world_skybox": "Skybox del Mundo",
+        "auto_skybox": "Auto (hora de Decentraland)",
+        "max_offset": "Desplazamiento Máximo",
+        "general": "General",
+        "single_player": "Un Solo Jugador"
+      },
+      "details": {
+        "world_title": "Título del Mundo",
+        "description": "Descripción",
+        "age_rating": "Clasificación de Edad",
+        "categories": "Categorías",
+        "author": "Autor (Opcional)",
+        "email": "Correo Electrónico (Opcional)",
+        "thumbnail": "Miniatura",
+        "replace_image": "Reemplazar Imagen",
+        "set_image": "Elegir imagen",
+        "no_image": "No hay imagen",
+        "age_rating_options": {
+          "everyone": "E (Todos, PG 13+)",
+          "teen": "T (Adolescentes, PG 13+)",
+          "adult": "A (Adultos, PG 18+)",
+          "restricted": "R (Restringido, PG 18+)"
         },
-        "variables": {
-          "label": "Variables"
+        "categories_options": {
+          "art": "🎨 Arte",
+          "game": "🕹️ Juego",
+          "casino": "🃏 Casino",
+          "social": "👥 Social",
+          "music": "🎶 Música",
+          "fashion": "👠 Moda",
+          "crypto": "🪙 Cripto",
+          "education": "📚 Educación",
+          "shop": "🛍️ Tienda",
+          "business": "🏢 Negocios",
+          "sports": "🏅 Deportes"
+        }
+      },
+      "layout": {
+        "world_layout": {
+          "title": "Diseño del Mundo",
+          "world_size": "Tamaño del mundo: {size}"
         },
-        "permissions": {
-          "label": "Permisos"
+        "multi_scene_title": "Mundo Multi-Escena (Avanzado)",
+        "multi_scene_description": "Permite que tu mundo contenga más de 1 escena.\nEl tamaño total del mundo dependerá del diseño del mundo publicado.",
+        "empty_world": {
+          "title": "No hay escenas publicadas en este mundo.",
+          "description": "Puedes agregar cualquier escena publicándola dentro de este dominio.",
+          "view_scenes": "Ver Escenas"
+        },
+        "current_world": "Mundo Actual",
+        "title_placeholder": "Título del Mundo",
+        "scene_title_placeholder": "Título de la Escena",
+        "scenes_count": "{count} {count, plural, one {escena} other {escenas}}",
+        "parcels_count": "{count} {count, plural, one {parcela} other {parcelas}}",
+        "world_map": "Mapa del Mundo",
+        "scenes_title": "Escenas",
+        "actions": {
+          "edit_scene": "Editar Escena",
+          "unpublish": "Despublicar"
         }
       }
     },

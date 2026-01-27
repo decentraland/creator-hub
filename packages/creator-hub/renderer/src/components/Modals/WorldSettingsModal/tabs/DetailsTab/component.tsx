@@ -104,8 +104,6 @@ const DetailsTab: React.FC<Props> = React.memo(({ worldSettings, onChangeSetting
     [onChangeSettings],
   );
 
-  console.log(worldSettings.thumbnailUrl);
-
   return (
     <Box className="DetailsTab">
       <InputLabel

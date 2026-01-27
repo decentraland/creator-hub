@@ -424,7 +424,7 @@
         "scenes_title": "Scenes",
         "actions": {
           "edit_scene": "Edit Scene",
-          "unpublish": "Unpublish"
+          "unpublish": "Remove from World"
         }
       }
     },
