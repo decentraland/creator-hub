@@ -44,6 +44,8 @@ export class ScaleGizmo implements IGizmoTransformer {
 
   // Sensitivity multiplier: higher = model scales more relative to gizmo visual movement
   private readonly scaleSensitivity = 2.0;
+  // Minimum absolute scale value to prevent getting stuck at 0 (UI rounds values, so 0.01 is safe)
+  private readonly minScaleValue = 0.01;
   private planeCubesCreated = false;
   private planeCubeMeshes: Mesh[] = []; // Store references to dispose them
   private planeMaterials: Map<
@@ -224,7 +226,7 @@ export class ScaleGizmo implements IGizmoTransformer {
       const positiveSensitivity = 200.0; // Sensitivity for positive drags (right/up)
       const negativeSensitivity = 600.0; // Gentler sensitivity for negative drags (left/down) to prevent going negative too quickly
       const negativeThreshold = -500.0; // Threshold before allowing negative scale (requires very pronounced drag)
-      const minScaleValue = 0.01; // Minimum absolute scale value to prevent getting stuck at 0
+      const minScaleValue = this.minScaleValue;
 
       let scaleFactor: number;
       if (dragDistance >= 0) {
@@ -357,7 +359,7 @@ export class ScaleGizmo implements IGizmoTransformer {
       const positiveSensitivity = 200.0; // Sensitivity for positive drags (right/up)
       const negativeSensitivity = 600.0; // Gentler sensitivity for negative drags (left/down) to prevent going negative too quickly
       const negativeThreshold = -500.0; // Threshold before allowing negative scale (requires very pronounced drag)
-      const minScaleValue = 0.01; // Minimum absolute scale value to prevent getting stuck at 0
+      const minScaleValue = this.minScaleValue;
 
       let scaleFactor: number;
       if (dragDistance >= 0) {
@@ -731,6 +733,26 @@ export class ScaleGizmo implements IGizmoTransformer {
       initialScale.z * scaleChange.z,
     );
 
+    // Clamp final scale values to ensure they never go below minimum
+    newWorldScale.x =
+      Math.abs(newWorldScale.x) < this.minScaleValue
+        ? newWorldScale.x >= 0
+          ? this.minScaleValue
+          : -this.minScaleValue
+        : newWorldScale.x;
+    newWorldScale.y =
+      Math.abs(newWorldScale.y) < this.minScaleValue
+        ? newWorldScale.y >= 0
+          ? this.minScaleValue
+          : -this.minScaleValue
+        : newWorldScale.y;
+    newWorldScale.z =
+      Math.abs(newWorldScale.z) < this.minScaleValue
+        ? newWorldScale.z >= 0
+          ? this.minScaleValue
+          : -this.minScaleValue
+        : newWorldScale.z;
+
     const parent = entity.parent instanceof TransformNode ? entity.parent : null;
 
     if (parent) {
@@ -751,7 +773,48 @@ export class ScaleGizmo implements IGizmoTransformer {
         initialScale.y * scaleChange.y,
         initialScale.z * scaleChange.z,
       );
+
+      // Clamp final scale values to ensure they never go below minimum
+      localScale.x =
+        Math.abs(localScale.x) < this.minScaleValue
+          ? localScale.x >= 0
+            ? this.minScaleValue
+            : -this.minScaleValue
+          : localScale.x;
+      localScale.y =
+        Math.abs(localScale.y) < this.minScaleValue
+          ? localScale.y >= 0
+            ? this.minScaleValue
+            : -this.minScaleValue
+          : localScale.y;
+      localScale.z =
+        Math.abs(localScale.z) < this.minScaleValue
+          ? localScale.z >= 0
+            ? this.minScaleValue
+            : -this.minScaleValue
+          : localScale.z;
+
       const snappedLocalScale = this.snapScale(localScale);
+
+      // Final clamp after snapping to ensure minimum scale is maintained
+      snappedLocalScale.x =
+        Math.abs(snappedLocalScale.x) < this.minScaleValue
+          ? snappedLocalScale.x >= 0
+            ? this.minScaleValue
+            : -this.minScaleValue
+          : snappedLocalScale.x;
+      snappedLocalScale.y =
+        Math.abs(snappedLocalScale.y) < this.minScaleValue
+          ? snappedLocalScale.y >= 0
+            ? this.minScaleValue
+            : -this.minScaleValue
+          : snappedLocalScale.y;
+      snappedLocalScale.z =
+        Math.abs(snappedLocalScale.z) < this.minScaleValue
+          ? snappedLocalScale.z >= 0
+            ? this.minScaleValue
+            : -this.minScaleValue
+          : snappedLocalScale.z;
 
       // Apply transforms
       entity.position.copyFrom(localPosition);
@@ -768,6 +831,27 @@ export class ScaleGizmo implements IGizmoTransformer {
       // For entities without parent, apply world transforms directly
       entity.position.copyFrom(newWorldPosition);
       const snappedWorldScale = this.snapScale(newWorldScale);
+
+      // Final clamp after snapping to ensure minimum scale is maintained
+      snappedWorldScale.x =
+        Math.abs(snappedWorldScale.x) < this.minScaleValue
+          ? snappedWorldScale.x >= 0
+            ? this.minScaleValue
+            : -this.minScaleValue
+          : snappedWorldScale.x;
+      snappedWorldScale.y =
+        Math.abs(snappedWorldScale.y) < this.minScaleValue
+          ? snappedWorldScale.y >= 0
+            ? this.minScaleValue
+            : -this.minScaleValue
+          : snappedWorldScale.y;
+      snappedWorldScale.z =
+        Math.abs(snappedWorldScale.z) < this.minScaleValue
+          ? snappedWorldScale.z >= 0
+            ? this.minScaleValue
+            : -this.minScaleValue
+          : snappedWorldScale.z;
+
       entity.scaling.copyFrom(snappedWorldScale);
       if (!entity.rotationQuaternion) {
         entity.rotationQuaternion = new Quaternion();
