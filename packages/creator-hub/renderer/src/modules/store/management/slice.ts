@@ -284,7 +284,7 @@ const slice = createSlice({
         state.worldSettings.error = null;
       })
       .addCase(fetchWorldSettings.fulfilled, (state, action) => {
-        state.worldSettings.settings = action.payload;
+        state.worldSettings.settings = action.payload ?? {};
         state.worldSettings.status = 'succeeded';
         state.worldSettings.error = null;
       })
