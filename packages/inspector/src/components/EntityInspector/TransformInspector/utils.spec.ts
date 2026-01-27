@@ -142,12 +142,12 @@ describe('TransformInspector utils', () => {
 
     it('should scale proportionally when x is changed', () => {
       const oldValue = { x: 2, y: 4, z: 6 };
-      const value = { x: 4, y: 5, z: 6 };
+      const value = { x: 4, y: 4, z: 6 };
       const mantainProportion = true;
 
       const result = getScale(oldValue, value, mantainProportion);
 
-      expect(result).toEqual({ x: 4, y: 10, z: 12 });
+      expect(result).toEqual({ x: 4, y: 8, z: 12 });
     });
 
     it('should scale proportionally when y is changed', () => {
@@ -178,6 +178,26 @@ describe('TransformInspector utils', () => {
       const result = getScale(oldValue, value, mantainProportion);
 
       expect(result).toEqual(value);
+    });
+
+    it('should scale proportionally when changing to decimal values less than 1', () => {
+      const oldValue = { x: 1, y: 1, z: 1 };
+      const value = { x: 0.5, y: 1, z: 1 };
+      const mantainProportion = true;
+
+      const result = getScale(oldValue, value, mantainProportion);
+
+      expect(result).toEqual({ x: 0.5, y: 0.5, z: 0.5 });
+    });
+
+    it('should scale proportionally when changing from decimal to decimal', () => {
+      const oldValue = { x: 0.5, y: 0.5, z: 0.5 };
+      const value = { x: 0.25, y: 0.5, z: 0.5 };
+      const mantainProportion = true;
+
+      const result = getScale(oldValue, value, mantainProportion);
+
+      expect(result).toEqual({ x: 0.25, y: 0.25, z: 0.25 });
     });
   });
   describe('when converting the TransformConfig to TransformConfigInput', () => {

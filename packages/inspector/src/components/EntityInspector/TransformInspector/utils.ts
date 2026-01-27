@@ -98,9 +98,8 @@ export const getScale = (
     const key = factor as keyof Vector3Type;
     if (changedFactor === key) continue;
     const div = oldValue[changedFactor] || 1;
-    const sign = Math.sign(value[changedFactor]);
-    vector[key] =
-      Math.abs((value[changedFactor] / div) * (value[key] || value[changedFactor])) * sign;
+    const ratio = value[changedFactor] / div;
+    vector[key] = oldValue[key] * ratio;
   }
 
   return vector;
