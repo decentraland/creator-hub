@@ -1,6 +1,6 @@
 import { Schemas } from '@dcl/ecs';
 import type { IEngine } from '@dcl/ecs';
-import { BaseComponentNames } from '../../enums';
+import { BaseComponentNames } from '../../constants';
 import { TriggerType, TriggerConditionType, TriggerConditionOperation } from '../../trigger-enums';
 
 const TRIGGERS_BASE_NAME = BaseComponentNames.TRIGGERS;

@@ -1,6 +1,6 @@
 import { Schemas } from '@dcl/ecs';
 import type { IEngine } from '@dcl/ecs';
-import { BaseComponentNames } from '../../enums';
+import { BaseComponentNames } from '../../constants';
 
 const COUNTER_BASE_NAME = BaseComponentNames.COUNTER;
 
