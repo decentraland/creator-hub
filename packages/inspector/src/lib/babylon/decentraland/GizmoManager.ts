@@ -24,6 +24,10 @@ export function createGizmoManager(context: SceneContext) {
   let currentTransformer: IGizmoTransformer | null = null;
   let isUpdatingFromGizmo = false;
 
+  // Spawn point gizmo state
+  let attachedSpawnPointIndex: number | null = null;
+  let onSpawnPointPositionChange: ((index: number, position: Vector3) => void) | null = null;
+
   // Create and initialize Babylon.js gizmo manager
   const gizmoManager = new BabylonGizmoManager(context.scene);
   gizmoManager.usePointerToAttachGizmos = false;
@@ -489,6 +493,109 @@ export function createGizmoManager(context: SceneContext) {
       if (selectedEntities.length > 0) {
         updateGizmoTransform();
       }
+    },
+    /**
+     * Attaches the position gizmo to a spawn point transform node
+     */
+    attachToSpawnPoint(
+      spawnPointNode: TransformNode,
+      spawnPointIndex: number,
+      onPositionChange: (index: number, position: Vector3) => void,
+    ) {
+      // Detach from any entities first
+      selectedEntities = [];
+
+      // Store spawn point state
+      attachedSpawnPointIndex = spawnPointIndex;
+      onSpawnPointPositionChange = onPositionChange;
+
+      // Disable all gizmos except position
+      gizmoManager.positionGizmoEnabled = false;
+      gizmoManager.rotationGizmoEnabled = false;
+      gizmoManager.scaleGizmoEnabled = false;
+
+      // Clean up current transformer
+      if (currentTransformer) {
+        currentTransformer.cleanup();
+        currentTransformer = null;
+      }
+
+      // Setup position gizmo for spawn point
+      currentTransformer = positionTransformer;
+      currentTransformer.setup();
+      currentTransformer.setEntities([]);
+
+      // Custom update callback for spawn point
+      if ('setUpdateCallbacks' in currentTransformer) {
+        currentTransformer.setUpdateCallbacks(
+          // Update callback - called during drag
+          () => {
+            if (attachedSpawnPointIndex !== null && onSpawnPointPositionChange) {
+              const newPosition = spawnPointNode.position.clone();
+              onSpawnPointPositionChange(attachedSpawnPointIndex, newPosition);
+            }
+          },
+          // Dispatch callback - called on drag end
+          () => {
+            if (attachedSpawnPointIndex !== null && onSpawnPointPositionChange) {
+              const newPosition = spawnPointNode.position.clone();
+              onSpawnPointPositionChange(attachedSpawnPointIndex, newPosition);
+            }
+          },
+        );
+      }
+
+      // Force world aligned for spawn points
+      if ('setWorldAligned' in currentTransformer) {
+        currentTransformer.setWorldAligned(true);
+      }
+
+      gizmoManager.positionGizmoEnabled = true;
+
+      if ('enable' in currentTransformer) {
+        currentTransformer.enable();
+      }
+
+      if ('setSnapDistance' in currentTransformer) {
+        currentTransformer.setSnapDistance(
+          snapManager.isEnabled() ? snapManager.getPositionSnap() : 0,
+        );
+      }
+
+      // Attach gizmo to the spawn point node
+      gizmoManager.attachToNode(spawnPointNode);
+      events.emit('change');
+    },
+    /**
+     * Detaches gizmo from spawn point
+     */
+    detachFromSpawnPoint() {
+      if (attachedSpawnPointIndex === null) return;
+
+      attachedSpawnPointIndex = null;
+      onSpawnPointPositionChange = null;
+
+      // Clean up transformer
+      if (currentTransformer) {
+        currentTransformer.cleanup();
+        currentTransformer = null;
+      }
+
+      gizmoManager.positionGizmoEnabled = false;
+      gizmoManager.attachToNode(null);
+      events.emit('change');
+    },
+    /**
+     * Checks if gizmo is attached to a spawn point
+     */
+    isAttachedToSpawnPoint() {
+      return attachedSpawnPointIndex !== null;
+    },
+    /**
+     * Gets the attached spawn point index
+     */
+    getAttachedSpawnPointIndex() {
+      return attachedSpawnPointIndex;
     },
   };
 }

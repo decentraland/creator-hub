@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { IoIosImage } from 'react-icons/io';
+import cx from 'classnames';
+import type { Vector3 } from '@babylonjs/core';
 
 import { useComponentInput } from '../../../hooks/sdk/useComponentInput';
 import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
@@ -177,6 +179,81 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const [spawnPoints, addSpawnPoint, modifySpawnPoint, removeSpawnPoint] =
     useArrayState<SceneSpawnPoint>(componentValue === null ? [] : componentValue.spawnPoints);
 
+  // Spawn point visibility and selection state
+  const [showSpawnPoints, setShowSpawnPoints] = useState(true);
+  const [selectedSpawnPointIndex, setSelectedSpawnPointIndex] = useState<number | null>(null);
+
+  // Get spawn point manager from scene context
+  const spawnPointManager = sdk.sceneContext.spawnPoints;
+  const gizmoManager = sdk.gizmos;
+
+  // Subscribe to spawn point manager selection changes
+  useEffect(() => {
+    const unsubscribe = spawnPointManager.onSelectionChange((index: number | null) => {
+      setSelectedSpawnPointIndex(index);
+
+      // Attach/detach gizmo based on selection
+      if (index !== null) {
+        const node = spawnPointManager.getSpawnPointNode(index);
+        if (node) {
+          gizmoManager.attachToSpawnPoint(node, index, handleSpawnPointPositionChange);
+        }
+      } else {
+        gizmoManager.detachFromSpawnPoint();
+      }
+    });
+    return unsubscribe;
+  }, [spawnPointManager, gizmoManager]);
+
+  // Handle spawn point visibility toggle
+  const handleShowSpawnPointsChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const visible = e.target.checked;
+      setShowSpawnPoints(visible);
+      spawnPointManager.setVisible(visible);
+    },
+    [spawnPointManager],
+  );
+
+  // Handle spawn point selection from UI click
+  const handleSpawnPointClick = useCallback(
+    (index: number) => {
+      if (selectedSpawnPointIndex === index) {
+        // Deselect if clicking the same one
+        spawnPointManager.selectSpawnPoint(null);
+      } else {
+        // Select the spawn point
+        spawnPointManager.selectSpawnPoint(index, spawnPoints);
+      }
+    },
+    [selectedSpawnPointIndex, spawnPointManager, spawnPoints],
+  );
+
+  // Handle position change from gizmo drag
+  const handleSpawnPointPositionChange = useCallback(
+    (index: number, position: Vector3) => {
+      if (index >= 0 && index < spawnPoints.length) {
+        const spawnPoint = spawnPoints[index];
+        const input = fromSceneSpawnPoint(spawnPoint);
+        const newInput = {
+          ...input,
+          position: {
+            x: position.x,
+            y: position.y,
+            z: position.z,
+          },
+        };
+        modifySpawnPoint(index, toSceneSpawnPoint(spawnPoint.name, newInput));
+      }
+    },
+    [spawnPoints, modifySpawnPoint],
+  );
+
+  // Initialize spawn point manager visibility
+  useEffect(() => {
+    spawnPointManager.setVisible(showSpawnPoints);
+  }, []);
+
   const handleDrop = useCallback(async (thumbnail: string) => {
     const { operations } = sdk;
     operations.updateValue(Scene, entity, { thumbnail });
@@ -228,16 +305,25 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const renderSpawnPoint = useCallback(
     (spawnPoint: SceneSpawnPoint, index: number) => {
       const input = fromSceneSpawnPoint(spawnPoint);
+      const isSelected = selectedSpawnPointIndex === index;
       return (
         <Block
-          className="SpawnPointContainer"
+          className={cx('SpawnPointContainer', { selected: isSelected })}
           key={spawnPoint.name}
+          onClick={() => handleSpawnPointClick(index)}
         >
           <Block className="RightContent">
             <MoreOptionsMenu>
               <Button
                 className="RemoveButton"
-                onClick={() => removeSpawnPoint(index)}
+                onClick={e => {
+                  e.stopPropagation();
+                  // Deselect if deleting selected spawn point
+                  if (isSelected) {
+                    spawnPointManager.selectSpawnPoint(null);
+                  }
+                  removeSpawnPoint(index);
+                }}
               >
                 Delete
               </Button>
@@ -363,7 +449,13 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
         </Block>
       );
     },
-    [modifySpawnPoint, removeSpawnPoint],
+    [
+      modifySpawnPoint,
+      removeSpawnPoint,
+      selectedSpawnPointIndex,
+      handleSpawnPointClick,
+      spawnPointManager,
+    ],
   );
 
   const hiddenSceneInspectorTabs = useAppSelector(getHiddenSceneInspectorTabs);
@@ -546,6 +638,11 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
             label="Spawn Settings"
             className="underlined"
           ></Block>
+          <CheckboxField
+            label="Show Spawn Points in 3D View"
+            checked={showSpawnPoints}
+            onChange={handleShowSpawnPointsChange}
+          />
           {spawnPoints.map((spawnPoint, index) => renderSpawnPoint(spawnPoint, index))}
           <AddButton onClick={handleAddSpawnPoint}>Add Spawn Point</AddButton>
           <Block

@@ -71,6 +71,17 @@
 
 .Container.Scene .SpawnPointContainer {
   position: relative;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.Container.Scene .SpawnPointContainer:hover > .content {
+  border-color: #505052;
+}
+
+.Container.Scene .SpawnPointContainer.selected > .content {
+  border-color: #00CED1;
+  background: rgba(0, 206, 209, 0.1);
 }
 
 .Container.Scene .SpawnPointContainer .RightContent {
