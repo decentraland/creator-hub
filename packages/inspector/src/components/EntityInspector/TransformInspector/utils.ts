@@ -36,10 +36,11 @@ function formatAngle(angle: number) {
   return value === '360.00' ? '0.00' : value;
 }
 
+/**
+ * Creates a converter function that transforms TransformInput to TransformType.
+ * Handles proportional scaling when enabled in config.
+ */
 export function toTransform(currentValue?: TransformType, config?: TransformConfig) {
-  // Track the original scale before any incomplete input
-  let originalScale: Vector3Type | undefined = currentValue?.scale;
-
   return (inputs: TransformInput): TransformType => {
     const quaternion = Quaternion.RotationYawPitchRoll(
       (Number(inputs.rotation.y) * Math.PI) / 180,
@@ -48,35 +49,9 @@ export function toTransform(currentValue?: TransformType, config?: TransformConf
     );
     const scale = mapToNumber(inputs.scale);
 
-    // Check if we're detecting incomplete input
-    let hasIncompleteInput = false;
-    if (currentValue) {
-      const scaleInputStrings = inputs.scale;
-      hasIncompleteInput = Object.keys(scaleInputStrings).some(key => {
-        const k = key as keyof typeof scaleInputStrings;
-        const inputStr = scaleInputStrings[k];
-        const numValue = scale[k];
-        const oldNumValue = currentValue!.scale[k];
-        return numValue === 0 && Math.abs(oldNumValue) > 0.01 && inputStr === '0';
-      });
-    }
-
-    // Calculate scale result
     const scaleResult = currentValue
-      ? getScale(
-          currentValue.scale,
-          scale,
-          inputs.scale,
-          originalScale,
-          !!config?.porportionalScaling,
-        )
+      ? getScale(currentValue.scale, scale, !!config?.porportionalScaling)
       : scale;
-
-    // Update originalScale if input is complete (not incomplete)
-    // This way originalScale always points to the last complete value
-    if (!hasIncompleteInput) {
-      originalScale = scaleResult;
-    }
 
     const result: TransformType = {
       position: mapToNumber(inputs.position),
@@ -104,17 +79,33 @@ export const mapToNumber = <T extends Record<string, unknown>>(
   return res;
 };
 
+/**
+ * Calculates proportionally scaled values when one axis changes.
+ *
+ * When proportional scaling is enabled and one axis changes, the other axes
+ * are scaled by the same ratio to maintain proportions.
+ *
+ * Formula: newValue[otherAxis] = oldValue[otherAxis] * (newValue[changedAxis] / oldValue[changedAxis])
+ *
+ * Special handling:
+ * - If the changed value is 0 and would zero out all axes, only the changed axis
+ *   is set to 0 while others are preserved. This prevents accidental data loss
+ *   when typing decimal values like "0.5" (where "0" is an intermediate state).
+ * - If the old changed value is 0, we can't calculate a ratio, so values are preserved.
+ *
+ * @param oldValue - The previous scale values
+ * @param value - The new scale values (with one axis changed by the user)
+ * @param maintainProportion - Whether proportional scaling is enabled
+ * @returns The calculated scale values
+ */
 export const getScale = (
   oldValue: Vector3Type,
   value: Vector3Type,
-  inputStrings: { x: string; y: string; z: string },
-  originalValue: Vector3Type | undefined,
-  maintainPorportion: boolean,
-) => {
-  if (!maintainPorportion) return value;
+  maintainProportion: boolean,
+): Vector3Type => {
+  if (!maintainProportion) return value;
 
   let changedFactor: keyof Vector3Type | undefined = undefined;
-
   for (const factor in value) {
     const key = factor as keyof Vector3Type;
     if (oldValue[key] !== value[key]) {
@@ -125,47 +116,48 @@ export const getScale = (
 
   if (changedFactor === undefined) return value;
 
-  // Check if the input looks incomplete (e.g., "0" when typing "0.5")
-  // If the changed value is 0 and old value was non-zero, and the input string
-  // is exactly "0" (not "0.0" or "0.00"), it might be incomplete
-  const changedValue = value[changedFactor];
   const oldChangedValue = oldValue[changedFactor];
-  const inputString = inputStrings[changedFactor];
+  const newChangedValue = value[changedFactor];
 
-  const isIncompleteInput =
-    changedValue === 0 && Math.abs(oldChangedValue) > 0.01 && inputString === '0';
+  // If the new value is 0, don't apply proportional scaling to other axes.
+  // This prevents zeroing out all values when typing decimals like "0.5"
+  // where "0" is just an intermediate typing state.
+  // Users who want all zeros can manually set each axis to 0.
+  if (newChangedValue === 0) {
+    return value;
+  }
 
+  // If oldChangedValue is 0, we can't calculate a ratio directly.
+  // But if the other axes have a consistent value, use that as reference.
+  // This handles the case where user typed "0" then "0.25" - we want 0.25 to scale all axes.
+  if (oldChangedValue === 0) {
+    // Find a non-zero reference value from other axes
+    const otherKeys = (['x', 'y', 'z'] as const).filter(k => k !== changedFactor);
+    const referenceKey = otherKeys.find(k => oldValue[k] !== 0);
+
+    if (referenceKey) {
+      // Use the reference axis to calculate the ratio
+      const ratio = newChangedValue / oldValue[referenceKey];
+      const vector = { ...value };
+      for (const key of otherKeys) {
+        vector[key] = oldValue[key] * ratio;
+      }
+      return vector;
+    }
+    // All axes are 0, can't calculate ratio
+    return value;
+  }
+
+  const ratio = newChangedValue / oldChangedValue;
   const vector = { ...value };
 
   for (const factor in vector) {
     const key = factor as keyof Vector3Type;
     if (changedFactor === key) continue;
 
-    if (isIncompleteInput) {
-      // For incomplete input, preserve old values for unchanged fields
-      // This prevents intermediate "0" from corrupting the values
-      vector[key] = oldValue[key];
-    } else if (oldValue[changedFactor] === 0 && value[changedFactor] !== 0) {
-      // Recovering from incomplete input (0 -> non-zero)
-      // Use originalValue (the value before incomplete input) as the base for calculations
-      if (originalValue && originalValue[changedFactor] !== 0) {
-        const ratio = value[changedFactor] / originalValue[changedFactor];
-        vector[key] = originalValue[key] * ratio;
-      } else {
-        // Don't have originalValue, preserve old values
-        vector[key] = oldValue[key];
-      }
-    } else {
-      // Normal proportional scaling - use oldValue[key] as the base
-      const div = oldValue[changedFactor] || 1;
-      if (div === 0) {
-        // Can't calculate ratio from 0, preserve old values
-        vector[key] = oldValue[key];
-      } else {
-        const ratio = value[changedFactor] / div;
-        vector[key] = oldValue[key] * ratio;
-      }
-    }
+    // apply ratio to unchanged axes using their OLD values as the base
+    // Formula: newY = oldY * ratio
+    vector[key] = oldValue[key] * ratio;
   }
 
   return vector;
