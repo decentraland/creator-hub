@@ -4,6 +4,10 @@ import type { EcsEntity } from '../decentraland/EcsEntity';
 import { snapManager } from '../decentraland/snap-manager';
 import { keyState, Keys } from '../decentraland/keys';
 import { getAncestors, isAncestor, mapNodes } from '../../sdk/nodes';
+import { createSpawnPointManager } from '../decentraland/spawn-point-manager';
+import { store } from '../../../redux/store';
+import { selectSceneInspectorTab } from '../../../redux/ui';
+import { SceneInspectorTab } from '../../../redux/ui/types';
 
 let isSnapEnabled = snapManager.isEnabled();
 let isShiftKeyDown = false;
@@ -91,6 +95,44 @@ export function interactWithScene(
 
   const mesh = pickingResult!.pickedMesh;
 
+  // Check if clicked on a spawn point mesh BEFORE checking for entities
+  const spawnPointManager = createSpawnPointManager(scene);
+  if (mesh && spawnPointManager.isMeshSpawnPoint(mesh)) {
+    if (pointerEvent === 'pointerDown') {
+      clickStartTimer = setTimeout(() => {
+        isDragging = true;
+      }, 150);
+    } else if (pointerEvent === 'pointerUp' && !isDragging) {
+      const spawnPointIndex = spawnPointManager.findSpawnPointByMesh(mesh);
+      if (spawnPointIndex !== null) {
+        // Get spawn points data from the ECS entity context to pass to selectSpawnPoint
+        const ecsEntity = scene.transformNodes.find(n => isEcsEntity(n));
+        if (ecsEntity) {
+          const context = ecsEntity.context.deref()!;
+          const { engine, editorComponents, operations } = context;
+          const sceneValue = editorComponents.Scene.getOrNull(engine.RootEntity);
+          const spawnPoints = sceneValue?.spawnPoints;
+
+          // Select the spawn point
+          spawnPointManager.selectSpawnPoint(spawnPointIndex, spawnPoints);
+
+          // Deselect any selected entities
+          operations.updateSelectedEntity(engine.RootEntity);
+          void operations.dispatch();
+
+          // Switch to Settings tab
+          store.dispatch(selectSceneInspectorTab({ tab: SceneInspectorTab.SETTINGS }));
+        }
+      }
+    }
+    // Clear isDragging flag each pointerUp
+    if (pointerEvent === 'pointerUp') {
+      clearTimeout(clickStartTimer);
+      isDragging = false;
+    }
+    return; // Don't process entity selection
+  }
+
   const entity = mesh && findParentEntity(mesh);
 
   if (entity && pointerEvent === 'pointerDown') {
@@ -115,6 +157,8 @@ export function interactWithScene(
       entity.entityId,
       !!keyState[Keys.KEY_CTRL] || !!keyState[Keys.KEY_SHIFT],
     );
+    // Deselect any spawn point when selecting an entity
+    spawnPointManager.selectSpawnPoint(null);
     void operations.dispatch();
   } else if (!entity && pointerEvent === 'pointerUp' && !isDragging) {
     // Clicked on sky or grid ground.
@@ -124,6 +168,8 @@ export function interactWithScene(
       const context = ecsEntity.context.deref()!;
       const { operations, engine } = context;
       operations.updateSelectedEntity(engine.RootEntity);
+      // Deselect any spawn point
+      spawnPointManager.selectSpawnPoint(null);
       void operations.dispatch();
     }
   }
