@@ -29,22 +29,40 @@ const AssetsCatalog: React.FC<Props> = ({ catalog }) => {
   );
 
   const filteredCatalog = useMemo(() => {
-    if (!search) return [];
+    const trimmedSearch = search.trim();
+    if (!trimmedSearch) return [];
 
-    const searchLower = search.toLowerCase();
+    const searchLower = trimmedSearch.toLowerCase();
     const assets = selectedTheme ? selectedTheme.assets : catalog.flatMap(theme => theme.assets);
 
-    const { starts, includes } = assets.reduce(
-      (results: { starts: AssetPack['assets']; includes: AssetPack['assets'] }, asset) => {
-        const name = asset.name.toLowerCase();
-        if (name.split(' ').some(word => word.startsWith(searchLower))) results.starts.push(asset);
-        if (name.includes(searchLower)) results.includes.push(asset);
-        return results;
-      },
-      { starts: [], includes: [] },
-    );
+    const starts: AssetPack['assets'] = [];
+    const includes: AssetPack['assets'] = [];
 
-    return starts.length ? starts : includes;
+    for (const asset of assets) {
+      const name = (asset.name || '').toLowerCase();
+      const description = (asset.description || '').toLowerCase();
+      const tags = (asset.tags || []).map(tag => (tag || '').toLowerCase());
+
+      // Priority 1: name word or tag starts with search term
+      const nameStarts = name.split(' ').some(word => word.startsWith(searchLower));
+      const tagStarts = tags.some(tag => tag.startsWith(searchLower));
+
+      if (nameStarts || tagStarts) {
+        starts.push(asset);
+      } else {
+        // Priority 2: search term appears anywhere in name, description, or tags
+        const nameIncludes = name.includes(searchLower);
+        const descriptionIncludes = description.includes(searchLower);
+        const tagIncludes = tags.some(tag => tag.includes(searchLower));
+
+        if (nameIncludes || descriptionIncludes || tagIncludes) {
+          includes.push(asset);
+        }
+      }
+    }
+
+    // Return high-priority matches first, then lower-priority matches
+    return [...starts, ...includes];
   }, [catalog, selectedTheme, search]);
 
   useEffect(() => {
@@ -85,7 +103,7 @@ const AssetsCatalog: React.FC<Props> = ({ catalog }) => {
     }
 
     return renderEmptySearch();
-  }, [filteredCatalog]);
+  }, [filteredCatalog, renderEmptySearch]);
 
   if (!catalog) {
     return null;
