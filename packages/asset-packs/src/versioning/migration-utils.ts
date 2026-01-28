@@ -1,6 +1,6 @@
 import type { ISchema, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
 import type { IEngine } from '@dcl/ecs';
-import { BaseComponentNames } from '../enums';
+import { BaseComponentNames } from '../constants';
 import { COUNTER_VERSIONS, TRIGGERS_VERSIONS } from './definitions';
 
 export type VersionedComponent = {
