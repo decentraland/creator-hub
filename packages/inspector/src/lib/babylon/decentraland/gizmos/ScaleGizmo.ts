@@ -34,9 +34,9 @@ export class ScaleGizmo implements IGizmoTransformer {
   private pivotPosition: Vector3 | null = null;
   private initialGizmoScale: Vector3 | null = null;
   private isDragging = false;
-  private dragStartObserver: any = null;
-  private dragObserver: any = null;
-  private dragEndObserver: any = null;
+  private dragStartObserver: Observer<unknown> | null = null;
+  private dragObserver: Observer<unknown> | null = null;
+  private dragEndObserver: Observer<unknown> | null = null;
   private currentEntities: EcsEntity[] = [];
   private updateEntityScale: ((entity: EcsEntity) => void) | null = null;
   private dispatchOperations: (() => void) | null = null;
@@ -46,6 +46,10 @@ export class ScaleGizmo implements IGizmoTransformer {
   private readonly scaleSensitivity = 2.0;
   // Minimum absolute scale value to prevent getting stuck at 0 (UI rounds values, so 0.01 is safe)
   private readonly minScaleValue = 0.01;
+  // Sensitivity constants for drag-based scaling
+  private readonly positiveSensitivity = 200.0; // Sensitivity for positive drags (right/up)
+  private readonly negativeSensitivity = 600.0; // Gentler sensitivity for negative drags (left/down)
+  private readonly negativeThreshold = -500.0; // Threshold before allowing negative scale
   private planeCubesCreated = false;
   private planeCubeMeshes: Mesh[] = []; // Store references to dispose them
   private planeMaterials: Map<
@@ -62,6 +66,58 @@ export class ScaleGizmo implements IGizmoTransformer {
     private gizmoManager: GizmoManager,
     private snapScale: (scale: Vector3) => Vector3,
   ) {}
+
+  private clampScaleComponent(value: number): number {
+    if (Math.abs(value) < this.minScaleValue) {
+      return value >= 0 ? this.minScaleValue : -this.minScaleValue;
+    }
+    return value;
+  }
+
+  private clampScale(scale: Vector3): void {
+    scale.x = this.clampScaleComponent(scale.x);
+    scale.y = this.clampScaleComponent(scale.y);
+    scale.z = this.clampScaleComponent(scale.z);
+  }
+
+  /**
+   * Calculate scale factor based on drag distance.
+   * Maps drag distance to scale factor with asymmetric sensitivity:
+   * - Origin (dragDistance = 0) → scaleFactor = 1.0 (original size)
+   * - Positive drag (right/up) → scaleFactor > 1.0 (growing)
+   * - Small negative drag (left/down) → scaleFactor < 1.0 but > 0 (shrinking, stays positive)
+   * - Large negative drag → scaleFactor can go negative (requires pronounced drag)
+   */
+  private calculateScaleFactor(dragDistance: number): number {
+    let scaleFactor: number;
+
+    if (dragDistance >= 0) {
+      // Positive drag: scale increases smoothly
+      scaleFactor = 1.0 + (dragDistance / this.positiveSensitivity) * this.scaleSensitivity;
+    } else if (dragDistance >= this.negativeThreshold) {
+      // Small to moderate negative drag: scale decreases but stays positive
+      scaleFactor = 1.0 + (dragDistance / this.negativeSensitivity) * this.scaleSensitivity;
+      // Clamp to minimum positive value to prevent exactly 0
+      if (scaleFactor <= 0 || (scaleFactor > 0 && scaleFactor < this.minScaleValue)) {
+        scaleFactor = this.minScaleValue;
+      }
+    } else {
+      // Large negative drag: allow negative scaling
+      const thresholdScale =
+        1.0 + (this.negativeThreshold / this.negativeSensitivity) * this.scaleSensitivity;
+      const excessDrag = dragDistance - this.negativeThreshold;
+      scaleFactor =
+        thresholdScale + (excessDrag / this.positiveSensitivity) * this.scaleSensitivity;
+      // Ensure negative values never reach exactly 0
+      if (scaleFactor >= 0 && scaleFactor < this.minScaleValue) {
+        scaleFactor = -this.minScaleValue;
+      } else if (scaleFactor < 0 && scaleFactor > -this.minScaleValue) {
+        scaleFactor = -this.minScaleValue;
+      }
+    }
+
+    return scaleFactor;
+  }
 
   setup(): void {
     if (!this.gizmoManager.gizmos.scaleGizmo) return;
@@ -137,6 +193,8 @@ export class ScaleGizmo implements IGizmoTransformer {
   }
 
   private addUniformScaleDragBehavior(uniformGizmo: any): void {
+    if (this.uniformScalePointerObservers.length > 0) return;
+
     const scene = uniformGizmo._rootMesh?.getScene();
     if (!scene) return;
 
@@ -217,46 +275,7 @@ export class ScaleGizmo implements IGizmoTransformer {
       // Calculate scale factor based on total mouse movement (both X and Y)
       // Invert Y axis so up = bigger, down = smaller (more intuitive)
       const dragDistance = deltaX - deltaY;
-
-      // Map drag distance to scale factor:
-      // - Origin (dragDistance = 0) → scaleFactor = 1.0 (original size)
-      // - Positive drag (right/up) → scaleFactor > 1.0 (growing)
-      // - Small negative drag (left/down) → scaleFactor < 1.0 but > 0 (shrinking, stays positive)
-      // - Large negative drag → scaleFactor can go negative (requires pronounced drag)
-      const positiveSensitivity = 200.0; // Sensitivity for positive drags (right/up)
-      const negativeSensitivity = 600.0; // Gentler sensitivity for negative drags (left/down) to prevent going negative too quickly
-      const negativeThreshold = -500.0; // Threshold before allowing negative scale (requires very pronounced drag)
-      const minScaleValue = this.minScaleValue;
-
-      let scaleFactor: number;
-      if (dragDistance >= 0) {
-        // Positive drag: scale increases smoothly
-        scaleFactor = 1.0 + (dragDistance / positiveSensitivity) * this.scaleSensitivity;
-      } else if (dragDistance >= negativeThreshold) {
-        // Small to moderate negative drag: scale decreases but stays positive
-        // Use gentler sensitivity for negative values to allow smooth shrinking without going negative
-        scaleFactor = 1.0 + (dragDistance / negativeSensitivity) * this.scaleSensitivity;
-        // Clamp to minimum positive value to prevent exactly 0, but allow very small values
-        if (scaleFactor <= 0 || (scaleFactor > 0 && scaleFactor < minScaleValue)) {
-          scaleFactor = minScaleValue;
-        }
-      } else {
-        // Large negative drag: allow negative scaling
-        // Calculate the scale at the threshold, then continue from there
-        const thresholdScale =
-          1.0 + (negativeThreshold / negativeSensitivity) * this.scaleSensitivity;
-        const excessDrag = dragDistance - negativeThreshold;
-        // Use same sensitivity as positive for the excess drag beyond threshold
-        scaleFactor = thresholdScale + (excessDrag / positiveSensitivity) * this.scaleSensitivity;
-        // Ensure negative values never reach exactly 0 - clamp to minimum absolute value
-        if (scaleFactor >= 0 && scaleFactor < minScaleValue) {
-          // Transitioning from positive to negative: go to negative minimum
-          scaleFactor = -minScaleValue;
-        } else if (scaleFactor < 0 && scaleFactor > -minScaleValue) {
-          // Very small negative: clamp to negative minimum
-          scaleFactor = -minScaleValue;
-        }
-      }
+      const scaleFactor = this.calculateScaleFactor(dragDistance);
 
       // Apply uniform scaling to all entities
       for (const entity of this.currentEntities) {
@@ -350,46 +369,7 @@ export class ScaleGizmo implements IGizmoTransformer {
       // Use the drag direction for scaling
       // Invert Y axis so up = bigger, down = smaller (more intuitive)
       const dragDistance = deltaX - deltaY;
-
-      // Map drag distance to scale factor with same logic as uniform scale:
-      // - Origin (dragDistance = 0) → scaleFactor = 1.0 (original size)
-      // - Positive drag → scaleFactor > 1.0 (growing)
-      // - Small negative drag → scaleFactor < 1.0 but > 0 (shrinking, stays positive)
-      // - Large negative drag → scaleFactor can go negative (requires pronounced drag)
-      const positiveSensitivity = 200.0; // Sensitivity for positive drags (right/up)
-      const negativeSensitivity = 600.0; // Gentler sensitivity for negative drags (left/down) to prevent going negative too quickly
-      const negativeThreshold = -500.0; // Threshold before allowing negative scale (requires very pronounced drag)
-      const minScaleValue = this.minScaleValue;
-
-      let scaleFactor: number;
-      if (dragDistance >= 0) {
-        // Positive drag: scale increases smoothly
-        scaleFactor = 1.0 + (dragDistance / positiveSensitivity) * this.scaleSensitivity;
-      } else if (dragDistance >= negativeThreshold) {
-        // Small to moderate negative drag: scale decreases but stays positive
-        // Use gentler sensitivity for negative values to allow smooth shrinking without going negative
-        scaleFactor = 1.0 + (dragDistance / negativeSensitivity) * this.scaleSensitivity;
-        // Clamp to minimum positive value to prevent exactly 0, but allow very small values
-        if (scaleFactor <= 0 || (scaleFactor > 0 && scaleFactor < minScaleValue)) {
-          scaleFactor = minScaleValue;
-        }
-      } else {
-        // Large negative drag: allow negative scaling
-        // Calculate the scale at the threshold, then continue from there
-        const thresholdScale =
-          1.0 + (negativeThreshold / negativeSensitivity) * this.scaleSensitivity;
-        const excessDrag = dragDistance - negativeThreshold;
-        // Use same sensitivity as positive for the excess drag beyond threshold
-        scaleFactor = thresholdScale + (excessDrag / positiveSensitivity) * this.scaleSensitivity;
-        // Ensure negative values never reach exactly 0 - clamp to minimum absolute value
-        if (scaleFactor >= 0 && scaleFactor < minScaleValue) {
-          // Transitioning from positive to negative: go to negative minimum
-          scaleFactor = -minScaleValue;
-        } else if (scaleFactor < 0 && scaleFactor > -minScaleValue) {
-          // Very small negative: clamp to negative minimum
-          scaleFactor = -minScaleValue;
-        }
-      }
+      const scaleFactor = this.calculateScaleFactor(dragDistance);
 
       // Apply scaling based on plane type
       for (const entity of this.currentEntities) {
@@ -734,24 +714,7 @@ export class ScaleGizmo implements IGizmoTransformer {
     );
 
     // Clamp final scale values to ensure they never go below minimum
-    newWorldScale.x =
-      Math.abs(newWorldScale.x) < this.minScaleValue
-        ? newWorldScale.x >= 0
-          ? this.minScaleValue
-          : -this.minScaleValue
-        : newWorldScale.x;
-    newWorldScale.y =
-      Math.abs(newWorldScale.y) < this.minScaleValue
-        ? newWorldScale.y >= 0
-          ? this.minScaleValue
-          : -this.minScaleValue
-        : newWorldScale.y;
-    newWorldScale.z =
-      Math.abs(newWorldScale.z) < this.minScaleValue
-        ? newWorldScale.z >= 0
-          ? this.minScaleValue
-          : -this.minScaleValue
-        : newWorldScale.z;
+    this.clampScale(newWorldScale);
 
     const parent = entity.parent instanceof TransformNode ? entity.parent : null;
 
@@ -774,47 +737,10 @@ export class ScaleGizmo implements IGizmoTransformer {
         initialScale.z * scaleChange.z,
       );
 
-      // Clamp final scale values to ensure they never go below minimum
-      localScale.x =
-        Math.abs(localScale.x) < this.minScaleValue
-          ? localScale.x >= 0
-            ? this.minScaleValue
-            : -this.minScaleValue
-          : localScale.x;
-      localScale.y =
-        Math.abs(localScale.y) < this.minScaleValue
-          ? localScale.y >= 0
-            ? this.minScaleValue
-            : -this.minScaleValue
-          : localScale.y;
-      localScale.z =
-        Math.abs(localScale.z) < this.minScaleValue
-          ? localScale.z >= 0
-            ? this.minScaleValue
-            : -this.minScaleValue
-          : localScale.z;
-
       const snappedLocalScale = this.snapScale(localScale);
 
-      // Final clamp after snapping to ensure minimum scale is maintained
-      snappedLocalScale.x =
-        Math.abs(snappedLocalScale.x) < this.minScaleValue
-          ? snappedLocalScale.x >= 0
-            ? this.minScaleValue
-            : -this.minScaleValue
-          : snappedLocalScale.x;
-      snappedLocalScale.y =
-        Math.abs(snappedLocalScale.y) < this.minScaleValue
-          ? snappedLocalScale.y >= 0
-            ? this.minScaleValue
-            : -this.minScaleValue
-          : snappedLocalScale.y;
-      snappedLocalScale.z =
-        Math.abs(snappedLocalScale.z) < this.minScaleValue
-          ? snappedLocalScale.z >= 0
-            ? this.minScaleValue
-            : -this.minScaleValue
-          : snappedLocalScale.z;
+      // Clamp after snapping to ensure minimum scale is maintained
+      this.clampScale(snappedLocalScale);
 
       // Apply transforms
       entity.position.copyFrom(localPosition);
@@ -832,25 +758,8 @@ export class ScaleGizmo implements IGizmoTransformer {
       entity.position.copyFrom(newWorldPosition);
       const snappedWorldScale = this.snapScale(newWorldScale);
 
-      // Final clamp after snapping to ensure minimum scale is maintained
-      snappedWorldScale.x =
-        Math.abs(snappedWorldScale.x) < this.minScaleValue
-          ? snappedWorldScale.x >= 0
-            ? this.minScaleValue
-            : -this.minScaleValue
-          : snappedWorldScale.x;
-      snappedWorldScale.y =
-        Math.abs(snappedWorldScale.y) < this.minScaleValue
-          ? snappedWorldScale.y >= 0
-            ? this.minScaleValue
-            : -this.minScaleValue
-          : snappedWorldScale.y;
-      snappedWorldScale.z =
-        Math.abs(snappedWorldScale.z) < this.minScaleValue
-          ? snappedWorldScale.z >= 0
-            ? this.minScaleValue
-            : -this.minScaleValue
-          : snappedWorldScale.z;
+      // Clamp after snapping to ensure minimum scale is maintained
+      this.clampScale(snappedWorldScale);
 
       entity.scaling.copyFrom(snappedWorldScale);
       if (!entity.rotationQuaternion) {
