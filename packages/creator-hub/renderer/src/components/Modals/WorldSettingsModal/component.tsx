@@ -1,5 +1,7 @@
 import React, { useCallback } from 'react';
 import WorldSettingsIcon from '@mui/icons-material/SpaceDashboard';
+import { useDispatch } from '#store';
+import { actions as managementActions } from '/@/modules/store/management';
 import { t } from '/@/modules/store/translation/utils';
 import type { WorldScene, WorldSettings } from '/@/lib/worlds';
 import { WorldSettingsTab } from '/shared/types/manage';

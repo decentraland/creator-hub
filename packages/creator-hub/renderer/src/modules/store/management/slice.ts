@@ -242,6 +242,12 @@ const slice = createSlice({
     setSearchQuery: (state, action: PayloadAction<string>) => {
       state.searchQuery = action.payload;
     },
+    updateWorldSettings: (state, action: PayloadAction<Partial<WorldSettings>>) => {
+      state.worldSettings.settings = {
+        ...(state.worldSettings.settings ?? {}),
+        ...action.payload,
+      } as WorldSettings;
+    },
     clearError: state => {
       state.error = null;
     },
