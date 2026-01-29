@@ -5,18 +5,18 @@ import { getLatestVersionName } from './versioning';
 export { BaseComponentNames } from './constants';
 
 export const ComponentName = {
-  ACTION_TYPES: 'asset-packs::ActionTypes',
-  ACTIONS: 'asset-packs::Actions',
+  ACTION_TYPES: getLatestVersionName('asset-packs::ActionTypes'),
+  ACTIONS: getLatestVersionName('asset-packs::Actions'),
   COUNTER: getLatestVersionName('asset-packs::Counter'),
   TRIGGERS: getLatestVersionName('asset-packs::Triggers'),
-  STATES: 'asset-packs::States',
-  COUNTER_BAR: 'asset-packs::CounterBar',
-  ADMIN_TOOLS: 'asset-packs::AdminTools',
-  VIDEO_SCREEN: 'asset-packs::VideoScreen',
-  REWARDS: 'asset-packs::Rewards',
-  TEXT_ANNOUNCEMENTS: 'asset-packs::TextAnnouncements',
-  VIDEO_CONTROL_STATE: 'asset-packs::VideoControlState',
-  SCRIPT: 'asset-packs::Script',
+  STATES: getLatestVersionName('asset-packs::States'),
+  COUNTER_BAR: getLatestVersionName('asset-packs::CounterBar'),
+  ADMIN_TOOLS: getLatestVersionName('asset-packs::AdminTools'),
+  VIDEO_SCREEN: getLatestVersionName('asset-packs::VideoScreen'),
+  REWARDS: getLatestVersionName('asset-packs::Rewards'),
+  TEXT_ANNOUNCEMENTS: getLatestVersionName('asset-packs::TextAnnouncements'),
+  VIDEO_CONTROL_STATE: getLatestVersionName('asset-packs::VideoControlState'),
+  SCRIPT: getLatestVersionName('asset-packs::Script'),
 } as const;
 
 export type ComponentName = (typeof ComponentName)[keyof typeof ComponentName];
@@ -179,12 +179,5 @@ export enum ProximityLayer {
   NON_PLAYER = 'non_player',
 }
 
-export enum AdminPermissions {
-  PUBLIC = 'PUBLIC',
-  PRIVATE = 'PRIVATE',
-}
-
-export enum MediaSource {
-  VideoURL,
-  LiveStream,
-}
+// Re-export for backward compatibility
+export { AdminPermissions, MediaSource } from './constants';
