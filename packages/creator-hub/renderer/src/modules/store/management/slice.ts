@@ -8,7 +8,7 @@ import type { ChainId } from '@dcl/schemas';
 import type { Async } from '/shared/types/async';
 import type { ManagedProject } from '/shared/types/manage';
 import { ManagedProjectType, SortBy } from '/shared/types/manage';
-import type { WorldDeployment, WorldSettings, WorldsWalletStats } from '/@/lib/worlds';
+import type { WorldScene, WorldSettings, WorldsWalletStats } from '/@/lib/worlds';
 import { WorldRoleType, Worlds } from '/@/lib/worlds';
 import type { AppState } from '/@/modules/store';
 import { fetchENSList } from '/@/modules/store/ens';
@@ -17,6 +17,7 @@ import type { LandDeployment } from '/@/lib/land';
 import { Lands, LandType } from '/@/lib/land';
 import type { AccountHoldings } from '/@/lib/account';
 import { Account } from '/@/lib/account';
+import { getThumbnailUrlFromDeployment } from './utils';
 
 // state
 export type ManagementState = {
@@ -27,7 +28,8 @@ export type ManagementState = {
   accountHoldings: AccountHoldings | null;
   worldSettings: {
     worldName: string;
-    settings: WorldSettings | null;
+    settings: WorldSettings;
+    scenes: WorldScene[];
     status: 'idle' | 'loading' | 'succeeded' | 'failed';
     error: string | null;
   };
@@ -43,7 +45,8 @@ export const initialState: Async<ManagementState> = {
   error: null,
   worldSettings: {
     worldName: '',
-    settings: null,
+    settings: {},
+    scenes: [],
     status: 'idle',
     error: null,
   },
@@ -82,17 +85,6 @@ export const fetchAllManagedProjectsDetails = createAsyncThunk(
       const WorldsAPI = new Worlds();
       const LandsAPI = new Lands();
 
-      const getThumbnailUrl = (
-        deployment: WorldDeployment | LandDeployment | undefined,
-        getContentSrcUrl: (hash: string) => string,
-      ) => {
-        if (!deployment?.metadata.display.navmapThumbnail) return '';
-        const thumbnailFileName = deployment.metadata.display.navmapThumbnail;
-        const thumbnailContent = deployment.content.find(item => item.file === thumbnailFileName);
-        if (thumbnailContent) return getContentSrcUrl(thumbnailContent.hash);
-        return '';
-      };
-
       // Process Worlds data
       const worldsPromises: Promise<ManagedProject>[] = ensList.map(async ens => {
         const [worldDeployment, worldScenes] = await Promise.all([
@@ -113,20 +105,20 @@ export const fetchAllManagedProjectsDetails = createAsyncThunk(
               ? {
                   title: worldDeployment[0].metadata.display.title,
                   description: worldDeployment[0].metadata.display.description,
-                  thumbnail: getThumbnailUrl(worldDeployment[0], $ =>
+                  thumbnail: getThumbnailUrlFromDeployment(worldDeployment[0], $ =>
                     WorldsAPI.getContentSrcUrl($),
                   ),
                   lastPublishedAt:
                     worldScenes?.scenes?.reduce(
-                      (max, scene) => Math.max(max, scene.createdAt.getTime()),
+                      (max, scene) => Math.max(max, new Date(scene.createdAt).getTime() ?? 0),
                       0,
                     ) ??
                     worldDeployment[0].timestamp ??
                     0, // Get latest published scene date.
                   scenes:
                     worldScenes?.scenes?.map(scene => ({
-                      id: scene.id,
-                      publishedAt: scene.createdAt.getTime() ?? 0,
+                      id: scene.entityId,
+                      publishedAt: new Date(scene.createdAt).getTime() ?? 0,
                       parcels: scene.parcels,
                     })) ?? [],
                 }
@@ -152,7 +144,9 @@ export const fetchAllManagedProjectsDetails = createAsyncThunk(
             ? {
                 title: sceneDeployment.metadata?.display?.title || '',
                 description: sceneDeployment.metadata?.display?.description || '',
-                thumbnail: getThumbnailUrl(sceneDeployment, $ => LandsAPI.getContentSrcUrl($)),
+                thumbnail: getThumbnailUrlFromDeployment(sceneDeployment, $ =>
+                  LandsAPI.getContentSrcUrl($),
+                ),
                 lastPublishedAt: sceneDeployment.timestamp ?? 0,
                 scenes: [
                   {
@@ -203,6 +197,39 @@ export const fetchWorldSettings = createAsyncThunk(
   },
 );
 
+export const fetchWorldScenes = createAsyncThunk(
+  'management/fetchWorldScenes',
+  async ({ worldName }: { worldName: string }) => {
+    const WorldsAPI = new Worlds();
+    const worldScenes = await WorldsAPI.fetchWorldScenes(worldName);
+    return (
+      worldScenes?.scenes.map(scene => ({
+        ...scene,
+        thumbnailUrl: getThumbnailUrlFromDeployment(scene.entity, $ =>
+          WorldsAPI.getContentSrcUrl($),
+        ),
+      })) ?? []
+    );
+  },
+);
+
+export const unpublishWorldScene = createAsyncThunk(
+  'management/unpublishWorldScene',
+  async ({
+    address,
+    worldName,
+    sceneCoords,
+  }: {
+    address: string;
+    worldName: string;
+    sceneCoords: string;
+  }) => {
+    const WorldsAPI = new Worlds();
+    const success = await WorldsAPI.unpublishWorldScene(address, worldName, sceneCoords);
+    return success;
+  },
+);
+
 // slice
 const slice = createSlice({
   name: 'management',
@@ -213,6 +240,12 @@ const slice = createSlice({
     },
     setSearchQuery: (state, action: PayloadAction<string>) => {
       state.searchQuery = action.payload;
+    },
+    updateWorldSettings: (state, action: PayloadAction<Partial<WorldSettings>>) => {
+      state.worldSettings.settings = {
+        ...(state.worldSettings.settings ?? {}),
+        ...action.payload,
+      } as WorldSettings;
     },
     clearError: state => {
       state.error = null;
@@ -241,14 +274,17 @@ const slice = createSlice({
       .addCase(fetchAccountHoldings.fulfilled, (state, action) => {
         state.accountHoldings = action.payload;
       })
+      .addCase(fetchWorldScenes.fulfilled, (state, action) => {
+        state.worldSettings.scenes = action.payload;
+      })
       .addCase(fetchWorldSettings.pending, (state, action) => {
         state.worldSettings.worldName = action.meta.arg.worldName;
-        state.worldSettings.settings = null;
+        state.worldSettings.settings = {} as WorldSettings;
         state.worldSettings.status = 'loading';
         state.worldSettings.error = null;
       })
       .addCase(fetchWorldSettings.fulfilled, (state, action) => {
-        state.worldSettings.settings = action.payload;
+        state.worldSettings.settings = action.payload ?? {};
         state.worldSettings.status = 'succeeded';
         state.worldSettings.error = null;
       })

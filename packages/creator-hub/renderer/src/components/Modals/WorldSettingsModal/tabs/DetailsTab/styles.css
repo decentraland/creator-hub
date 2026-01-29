@@ -1,0 +1,74 @@
+.DetailsTab {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 24px;
+}
+
+.DetailsTab .ColBig {
+  grid-column: span 4;
+}
+
+.DetailsTab .ColHalf {
+  grid-column: span 3;
+}
+
+.DetailsTab .ThumbnailContainer {
+  grid-row: 1 / span 2;
+  grid-column: 5 / span 2;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.DetailsTab .ThumbnailContainer .ThumbnailBackground {
+  width: 100%;
+  height: 8rem;
+  border-radius: 8px;
+  background-color: var(--transparent-gray-dark);
+  border: 1px solid var(--transparent-gray-light);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.DetailsTab .ThumbnailContainer .ThumbnailImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.DetailsTab .ThumbnailContainer > .Button {
+  width: max-content;
+  text-transform: uppercase;
+}
+
+.DetailsTab .InputLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.DetailsTab .InputLabel > .MuiTypography-root {
+  color: var(--text);
+}
+
+.DetailsTab .InputLabel .MuiInputBase-root {
+  width: 100%;
+  border: 1px solid var(--transparent-gray-light);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.DetailsTab .InputLabel .Select {
+  height: 40px;
+}
+
+.DetailsTab .InputLabel .Select .MuiInput-input {
+  font-weight: 400;
+}
+
+.DetailsTab .InputLabel .Select:hover {
+  border-color: var(--white);
+  background-color: transparent;
+}

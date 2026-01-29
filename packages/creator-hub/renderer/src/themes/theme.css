@@ -28,7 +28,8 @@
   --twitter: #1da1f2;
 
   /* Dropdowns */
-  --translusent-gray: rgba(255, 255, 255, 0.08);
+  --transparent-gray-dark: rgba(255, 255, 255, 0.05);
+  --transparent-gray-light: rgba(255, 255, 255, 0.23);
 
   /* fonts */
   --font-family:

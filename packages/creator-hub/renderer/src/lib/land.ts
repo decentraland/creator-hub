@@ -8,7 +8,16 @@ const MAX_RESULTS = 1000;
 
 const SEPARATOR = ',';
 
+export type Coords = [number, number];
+
 export const coordsToId = (x: string | number, y: string | number) => `${x}${SEPARATOR}${y}`;
+export const idToCoords = (id: string): [string | number, string | number] => {
+  const [x = '', y = ''] = id
+    ?.split(SEPARATOR)
+    .map(num => parseInt(num, 10))
+    .map(num => (isNaN(num) ? '' : num)) || ['', ''];
+  return [x, y];
+};
 
 const fromParcel = (parcel: ParcelFields, role: RoleType) => {
   const id = coordsToId(parcel.x, parcel.y);

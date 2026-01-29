@@ -360,13 +360,71 @@
           "label": "Layout"
         },
         "general": {
-          "label": "General"
+          "label": "Misc."
+        }
+      },
+      "general": {
+        "world_spawn_coordinate": "World Spawn Coordinate",
+        "position": "Position",
+        "world_skybox": "World Skybox",
+        "auto_skybox": "Auto (decentraland time)",
+        "max_offset": "Max Offset",
+        "general": "General",
+        "single_player": "Single Player"
+      },
+      "details": {
+        "world_title": "World Title",
+        "description": "Description",
+        "age_rating": "Age Rating",
+        "categories": "Categories",
+        "author": "Author (Optional)",
+        "email": "Email (Optional)",
+        "thumbnail": "Thumbnail",
+        "replace_image": "Replace Image",
+        "set_image": "Choose image",
+        "no_image": "No image set",
+        "age_rating_options": {
+          "everyone": "E (Everyone, PG 13+)",
+          "teen": "T (Teens, PG 13+)",
+          "adult": "A (Adults, PG 18+)",
+          "restricted": "R (Restricted, PG 18+)"
         },
-        "variables": {
-          "label": "Variables"
+        "categories_options": {
+          "art": "🎨 Art",
+          "game": "🕹️ Game",
+          "casino": "🃏 Casino",
+          "social": "👥 Social",
+          "music": "🎶 Music",
+          "fashion": "👠 Fashion",
+          "crypto": "🪙 Crypto",
+          "education": "📚 Education",
+          "shop": "🛍️ Shop",
+          "business": "🏢 Business",
+          "sports": "🏅 Sports"
+        }
+      },
+      "layout": {
+        "world_layout": {
+          "title": "World Layout",
+          "world_size": "World size: {size}"
         },
-        "permissions": {
-          "label": "Permissions"
+        "multi_scene_title": "Multi-Scene World (Advanced)",
+        "multi_scene_description": "Allow your world to contain more than 1 scene.\nTotal world size will depend on your published world layout.",
+        "empty_world": {
+          "title": "No scene published in this world.",
+          "description": "You can add any scene by publishing it within this domain.",
+          "view_scenes": "View Scenes"
+        },
+        "current_world": "Current World",
+        "title_placeholder": "World Title",
+        "scene_title_placeholder": "Scene Title",
+        "scenes_count": "{count} {count, plural, one {scene} other {scenes}}",
+        "parcels_count": "{count} {count, plural, one {parcel} other {parcels}}",
+        "world_map": "World Map",
+        "scenes_title": "Scenes",
+        "actions": {
+          "edit_scene": "Edit Scene",
+          "unpublish": "Remove from World"
         }
       }
     },
