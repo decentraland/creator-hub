@@ -1,7 +1,20 @@
 import type { ISchema, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
 import type { IEngine } from '@dcl/ecs';
 import { BaseComponentNames } from '../constants';
-import { COUNTER_VERSIONS, TRIGGERS_VERSIONS } from './definitions';
+import {
+  COUNTER_VERSIONS,
+  TRIGGERS_VERSIONS,
+  ACTION_TYPES_VERSIONS,
+  ACTIONS_VERSIONS,
+  STATES_VERSIONS,
+  COUNTER_BAR_VERSIONS,
+  ADMIN_TOOLS_VERSIONS,
+  VIDEO_SCREEN_VERSIONS,
+  REWARDS_VERSIONS,
+  TEXT_ANNOUNCEMENTS_VERSIONS,
+  VIDEO_CONTROL_STATE_VERSIONS,
+  SCRIPT_VERSIONS,
+} from './definitions';
 
 export type VersionedComponent = {
   versionName: string;
@@ -11,6 +24,16 @@ export type VersionedComponent = {
 const VERSIONS_REGISTRY: Record<string, VersionedComponent[]> = {
   [BaseComponentNames.COUNTER]: COUNTER_VERSIONS,
   [BaseComponentNames.TRIGGERS]: TRIGGERS_VERSIONS,
+  [BaseComponentNames.ACTION_TYPES]: ACTION_TYPES_VERSIONS,
+  [BaseComponentNames.ACTIONS]: ACTIONS_VERSIONS,
+  [BaseComponentNames.STATES]: STATES_VERSIONS,
+  [BaseComponentNames.COUNTER_BAR]: COUNTER_BAR_VERSIONS,
+  [BaseComponentNames.ADMIN_TOOLS]: ADMIN_TOOLS_VERSIONS,
+  [BaseComponentNames.VIDEO_SCREEN]: VIDEO_SCREEN_VERSIONS,
+  [BaseComponentNames.REWARDS]: REWARDS_VERSIONS,
+  [BaseComponentNames.TEXT_ANNOUNCEMENTS]: TEXT_ANNOUNCEMENTS_VERSIONS,
+  [BaseComponentNames.VIDEO_CONTROL_STATE]: VIDEO_CONTROL_STATE_VERSIONS,
+  [BaseComponentNames.SCRIPT]: SCRIPT_VERSIONS,
 };
 
 export const getLatestVersionName = (baseName: string) => {
@@ -66,4 +89,22 @@ export function migrateVersionedComponent(
 export function migrateAllAssetPacksComponents(engine: IEngine) {
   migrateVersionedComponent(engine, BaseComponentNames.COUNTER, COUNTER_VERSIONS);
   migrateVersionedComponent(engine, BaseComponentNames.TRIGGERS, TRIGGERS_VERSIONS);
+  migrateVersionedComponent(engine, BaseComponentNames.ACTION_TYPES, ACTION_TYPES_VERSIONS);
+  migrateVersionedComponent(engine, BaseComponentNames.ACTIONS, ACTIONS_VERSIONS);
+  migrateVersionedComponent(engine, BaseComponentNames.STATES, STATES_VERSIONS);
+  migrateVersionedComponent(engine, BaseComponentNames.COUNTER_BAR, COUNTER_BAR_VERSIONS);
+  migrateVersionedComponent(engine, BaseComponentNames.ADMIN_TOOLS, ADMIN_TOOLS_VERSIONS);
+  migrateVersionedComponent(engine, BaseComponentNames.VIDEO_SCREEN, VIDEO_SCREEN_VERSIONS);
+  migrateVersionedComponent(engine, BaseComponentNames.REWARDS, REWARDS_VERSIONS);
+  migrateVersionedComponent(
+    engine,
+    BaseComponentNames.TEXT_ANNOUNCEMENTS,
+    TEXT_ANNOUNCEMENTS_VERSIONS,
+  );
+  migrateVersionedComponent(
+    engine,
+    BaseComponentNames.VIDEO_CONTROL_STATE,
+    VIDEO_CONTROL_STATE_VERSIONS,
+  );
+  migrateVersionedComponent(engine, BaseComponentNames.SCRIPT, SCRIPT_VERSIONS);
 }

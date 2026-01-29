@@ -12,3 +12,13 @@ export const BaseComponentNames = {
   VIDEO_CONTROL_STATE: 'asset-packs::VideoControlState',
   SCRIPT: 'asset-packs::Script',
 } as const;
+
+export enum AdminPermissions {
+  PUBLIC = 'PUBLIC',
+  PRIVATE = 'PRIVATE',
+}
+
+export enum MediaSource {
+  VideoURL,
+  LiveStream,
+}
