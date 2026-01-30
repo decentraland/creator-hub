@@ -1,5 +1,16 @@
 import type { GizmoManager, Nullable, IRotationGizmo } from '@babylonjs/core';
-import { Vector3, TransformNode, Quaternion, Matrix, Color3 } from '@babylonjs/core';
+import {
+  Vector3,
+  TransformNode,
+  Quaternion,
+  Matrix,
+  Color3,
+  ShaderMaterial,
+  Effect,
+  Mesh,
+  type Scene,
+  type Observer,
+} from '@babylonjs/core';
 import type { Entity } from '@dcl/ecs';
 import type { EcsEntity } from '../EcsEntity';
 import { snapManager } from '../snap-manager';
@@ -7,6 +18,39 @@ import { LEFT_BUTTON } from '../mouse-utils';
 import type { IGizmoTransformer } from './types';
 import { GizmoType } from './types';
 import { configureGizmoButtons } from './utils';
+
+// Depth cues: outward-facing side of each loop brighter, inward-facing duller
+const DEPTH_CUE_VERTEX_SHADER = `
+  precision highp float;
+  attribute vec3 position;
+  attribute vec3 normal;
+  uniform mat4 worldViewProjection;
+  uniform mat4 world;
+  varying vec3 vWorldPos;
+  varying vec3 vWorldNormal;
+  void main() {
+    gl_Position = worldViewProjection * vec4(position, 1.0);
+    vWorldPos = (world * vec4(position, 1.0)).xyz;
+    vWorldNormal = (world * vec4(normal, 0.0)).xyz;
+  }
+`;
+
+const DEPTH_CUE_FRAGMENT_SHADER = `
+  precision highp float;
+  varying vec3 vWorldPos;
+  varying vec3 vWorldNormal;
+  uniform vec3 baseColor;
+  uniform vec3 cameraPosition;
+  uniform float alpha;
+  void main() {
+    vec3 N = normalize(vWorldNormal);
+    vec3 V = normalize(cameraPosition - vWorldPos);
+    float NdotV = dot(N, V);
+    float facing = smoothstep(-0.4, 0.6, NdotV);
+    float brightness = mix(0.45, 1.0, facing);
+    gl_FragColor = vec4(baseColor * brightness, alpha);
+  }
+`;
 
 // Types for better type safety
 type EntityTransformData = {
@@ -21,6 +65,16 @@ type DragState = {
   multiTransform?: TransformNode;
   lastAppliedSnapAngle?: number; // Track the last applied snap angle for smooth snapping
   initialGizmoRotation?: Quaternion; // Store initial gizmo rotation for world-aligned drag
+};
+
+type AxisDepthCueData = {
+  rotationMesh: Mesh;
+  coloredMaterial: unknown;
+  hoverMaterial: unknown;
+  disableMaterial: unknown;
+  depthCueColored: ShaderMaterial;
+  depthCueHover: ShaderMaterial;
+  depthCueDisable: ShaderMaterial;
 };
 
 // Helper class for entity rotation calculations
@@ -203,6 +257,10 @@ export class RotationGizmo implements IGizmoTransformer {
   // Store original materials for customization
   private originalMaterials: Map<any, { colored: any; hover: any }> = new Map();
 
+  // Depth-cue: outward-facing side of each loop brighter, inward duller
+  private depthCueAxisData: AxisDepthCueData[] = [];
+  private beforeRenderObserver: Nullable<Observer<Scene>> = null;
+
   constructor(
     private gizmoManager: GizmoManager,
     private snapRotation: (rotation: Quaternion) => Quaternion,
@@ -214,6 +272,7 @@ export class RotationGizmo implements IGizmoTransformer {
     this.rotationGizmo = this.gizmoManager.gizmos.rotationGizmo;
     this.rotationGizmo.updateGizmoRotationToMatchAttachedMesh = !this.isWorldAligned;
     this.customizeGizmoAppearance();
+    this.applyDepthCueToRotationLoops();
   }
 
   private customizeGizmoAppearance(): void {
@@ -262,6 +321,111 @@ export class RotationGizmo implements IGizmoTransformer {
     }
   }
 
+  private applyDepthCueToRotationLoops(): void {
+    if (!this.rotationGizmo) return;
+
+    Effect.ShadersStore['rotationGizmoDepthCueVertexShader'] = DEPTH_CUE_VERTEX_SHADER;
+    Effect.ShadersStore['rotationGizmoDepthCueFragmentShader'] = DEPTH_CUE_FRAGMENT_SHADER;
+
+    const axisGizmos = [
+      { gizmo: this.rotationGizmo.xGizmo, baseColor: new Color3(0.9, 0.2, 0.2) },
+      { gizmo: this.rotationGizmo.yGizmo, baseColor: new Color3(0.2, 0.9, 0.2) },
+      { gizmo: this.rotationGizmo.zGizmo, baseColor: new Color3(0.2, 0.2, 0.9) },
+    ];
+
+    const planeGizmo = this.rotationGizmo.xGizmo as { _gizmoMesh?: Mesh };
+    const scene = planeGizmo._gizmoMesh?.getScene() as Scene;
+    if (!scene) return;
+
+    for (const { gizmo, baseColor } of axisGizmos) {
+      const plane = gizmo as { _gizmoMesh?: Mesh };
+      const gizmoMesh = plane._gizmoMesh;
+      if (!gizmoMesh) continue;
+
+      const children = gizmoMesh.getChildMeshes();
+      const rotationMesh = children.find(m => m.visibility > 0) ?? children[0];
+      if (!rotationMesh || !(rotationMesh instanceof Mesh)) continue;
+
+      const coloredMaterial = gizmo.coloredMaterial;
+      const hoverMaterial = gizmo.hoverMaterial;
+      const disableMaterial = gizmo.disableMaterial;
+
+      const depthCueColored = this.createDepthCueMaterial(scene, baseColor, 1, 'depthCueColored');
+      const depthCueHover = this.createDepthCueMaterial(scene, baseColor, 1, 'depthCueHover');
+      const depthCueDisable = this.createDepthCueMaterial(
+        scene,
+        new Color3(0.5, 0.5, 0.5),
+        0.4,
+        'depthCueDisable',
+      );
+
+      this.depthCueAxisData.push({
+        rotationMesh,
+        coloredMaterial,
+        hoverMaterial,
+        disableMaterial,
+        depthCueColored,
+        depthCueHover,
+        depthCueDisable,
+      });
+    }
+
+    this.beforeRenderObserver = scene.onBeforeRenderObservable.add(() => {
+      const cam = scene.activeCamera;
+      for (const data of this.depthCueAxisData) {
+        const current = data.rotationMesh.material;
+        if (current === data.coloredMaterial) data.rotationMesh.material = data.depthCueColored;
+        else if (current === data.hoverMaterial) data.rotationMesh.material = data.depthCueHover;
+        else if (current === data.disableMaterial)
+          data.rotationMesh.material = data.depthCueDisable;
+
+        const mat = data.rotationMesh.material;
+        if (
+          cam &&
+          (mat === data.depthCueColored ||
+            mat === data.depthCueHover ||
+            mat === data.depthCueDisable)
+        ) {
+          (mat as ShaderMaterial).setVector3('cameraPosition', cam.globalPosition);
+        }
+      }
+    });
+  }
+
+  private createDepthCueMaterial(
+    scene: Scene,
+    baseColor: Color3,
+    alpha: number,
+    name: string,
+  ): ShaderMaterial {
+    const mat = new ShaderMaterial(
+      name,
+      scene,
+      { vertex: 'rotationGizmoDepthCue', fragment: 'rotationGizmoDepthCue' },
+      {
+        attributes: ['position', 'normal'],
+        uniforms: ['world', 'worldViewProjection', 'baseColor', 'cameraPosition', 'alpha'],
+      },
+    );
+    mat.setColor3('baseColor', baseColor);
+    mat.setFloat('alpha', alpha);
+    mat.backFaceCulling = false;
+    return mat;
+  }
+
+  private removeDepthCueFromRotationLoops(): void {
+    if (this.beforeRenderObserver) {
+      this.beforeRenderObserver.remove();
+      this.beforeRenderObserver = null;
+    }
+    for (const data of this.depthCueAxisData) {
+      data.depthCueColored.dispose();
+      data.depthCueHover.dispose();
+      data.depthCueDisable.dispose();
+    }
+    this.depthCueAxisData = [];
+  }
+
   enable(): void {
     if (!this.gizmoManager.gizmos.rotationGizmo) return;
     this.setupDragObservables();
@@ -270,6 +434,7 @@ export class RotationGizmo implements IGizmoTransformer {
   }
 
   cleanup(): void {
+    this.removeDepthCueFromRotationLoops();
     this.rotationGizmo = null;
     this.cleanupDragObservables();
     this.clearDragState();
