@@ -1,5 +1,4 @@
 import { Schemas } from '@dcl/ecs';
-import type { IEngine } from '@dcl/ecs';
 import type { MapResult } from '@dcl/ecs/dist/schemas/Map';
 import { BaseComponentNames } from '../base-names';
 
@@ -12,9 +11,5 @@ const InspectorUIStateV0 = {
 export const INSPECTOR_UI_STATE_VERSIONS = [
   { versionName: INSPECTOR_UI_STATE_BASE_NAME, component: InspectorUIStateV0 },
 ];
-
-export function defineInspectorUIStateComponent(engine: IEngine) {
-  return engine.defineComponent(INSPECTOR_UI_STATE_BASE_NAME, InspectorUIStateV0);
-}
 
 export type InspectorUIStateType = MapResult<typeof InspectorUIStateV0>;
