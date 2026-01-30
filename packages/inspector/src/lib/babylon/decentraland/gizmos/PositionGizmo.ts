@@ -775,11 +775,11 @@ export class PositionGizmo implements IGizmoTransformer {
     // Create the mesh in the gizmo layer's scene (like FreeGizmo does)
     const gizmoScene = positionGizmo.gizmoLayer.utilityLayerScene;
 
-    // Create a small disc at the center of the gizmo
+    // Create a disc at the center of the gizmo (large enough to see and click easily)
     const circle = MeshBuilder.CreateDisc(
       'positionGizmoCenterCircle',
       {
-        radius: 0.015,
+        radius: 0.05,
         tessellation: 32,
       },
       gizmoScene,
