@@ -87,24 +87,7 @@ export function migrateVersionedComponent(
 }
 
 export function migrateAllAssetPacksComponents(engine: IEngine) {
-  migrateVersionedComponent(engine, BaseComponentNames.COUNTER, COUNTER_VERSIONS);
-  migrateVersionedComponent(engine, BaseComponentNames.TRIGGERS, TRIGGERS_VERSIONS);
-  migrateVersionedComponent(engine, BaseComponentNames.ACTION_TYPES, ACTION_TYPES_VERSIONS);
-  migrateVersionedComponent(engine, BaseComponentNames.ACTIONS, ACTIONS_VERSIONS);
-  migrateVersionedComponent(engine, BaseComponentNames.STATES, STATES_VERSIONS);
-  migrateVersionedComponent(engine, BaseComponentNames.COUNTER_BAR, COUNTER_BAR_VERSIONS);
-  migrateVersionedComponent(engine, BaseComponentNames.ADMIN_TOOLS, ADMIN_TOOLS_VERSIONS);
-  migrateVersionedComponent(engine, BaseComponentNames.VIDEO_SCREEN, VIDEO_SCREEN_VERSIONS);
-  migrateVersionedComponent(engine, BaseComponentNames.REWARDS, REWARDS_VERSIONS);
-  migrateVersionedComponent(
-    engine,
-    BaseComponentNames.TEXT_ANNOUNCEMENTS,
-    TEXT_ANNOUNCEMENTS_VERSIONS,
-  );
-  migrateVersionedComponent(
-    engine,
-    BaseComponentNames.VIDEO_CONTROL_STATE,
-    VIDEO_CONTROL_STATE_VERSIONS,
-  );
-  migrateVersionedComponent(engine, BaseComponentNames.SCRIPT, SCRIPT_VERSIONS);
+  Object.entries(VERSIONS_REGISTRY).forEach(([baseName, versions]) => {
+    migrateVersionedComponent(engine, baseName, versions);
+  });
 }
