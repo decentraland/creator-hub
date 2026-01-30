@@ -1,4 +1,5 @@
 import type { VersionedComponent } from '@dcl/asset-packs';
+import type { IEngine, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
 import { BaseComponentNames } from './base-names';
 import { SELECTION_VERSIONS } from './definitions/selection';
 import { NODES_VERSIONS } from './definitions/nodes';
@@ -30,3 +31,28 @@ export const getLatestVersionName = (baseName: string) => {
   const versions = VERSIONS_REGISTRY[baseName];
   return versions[versions.length - 1].versionName;
 };
+
+/**
+ * Defines all versions of all versioned components and returns the latest version of each.
+ * This function iterates over VERSIONS_REGISTRY, defines all versions (necessary for migrations),
+ * and returns an object with the latest version of each component keyed by baseName.
+ */
+export function defineAllVersionedComponents(engine: IEngine) {
+  const components: Record<string, LastWriteWinElementSetComponentDefinition<unknown>> = {};
+
+  Object.entries(VERSIONS_REGISTRY).forEach(([baseName, versions]) => {
+    // Define all versions (necessary for migrations to work)
+    versions.forEach(v => {
+      engine.defineComponent(v.versionName, v.component);
+    });
+
+    // Get the last version (the one we use normally)
+    const lastVersion = versions[versions.length - 1];
+    components[baseName] = engine.defineComponent(
+      lastVersion.versionName,
+      lastVersion.component,
+    ) as LastWriteWinElementSetComponentDefinition<unknown>;
+  });
+
+  return components;
+}

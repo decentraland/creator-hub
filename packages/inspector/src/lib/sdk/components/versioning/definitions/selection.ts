@@ -1,5 +1,4 @@
 import { Schemas } from '@dcl/ecs';
-import type { IEngine } from '@dcl/ecs';
 import { BaseComponentNames } from '../base-names';
 
 const SELECTION_BASE_NAME = BaseComponentNames.SELECTION;
@@ -9,7 +8,3 @@ const SelectionV0 = {
 };
 
 export const SELECTION_VERSIONS = [{ versionName: SELECTION_BASE_NAME, component: SelectionV0 }];
-
-export function defineSelectionComponent(engine: IEngine) {
-  return engine.defineComponent(SELECTION_BASE_NAME, SelectionV0);
-}

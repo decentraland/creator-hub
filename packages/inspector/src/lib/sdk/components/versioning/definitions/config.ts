@@ -1,5 +1,4 @@
 import { Schemas } from '@dcl/ecs';
-import type { IEngine } from '@dcl/ecs';
 import type { MapResult } from '@dcl/ecs/dist/schemas/Map';
 import { BaseComponentNames } from '../base-names';
 
@@ -125,9 +124,5 @@ const ConfigV0 = {
 };
 
 export const CONFIG_VERSIONS = [{ versionName: CONFIG_BASE_NAME, component: ConfigV0 }];
-
-export function defineConfigComponent(engine: IEngine) {
-  return engine.defineComponent(CONFIG_BASE_NAME, ConfigV0);
-}
 
 export type ConfigComponentType = MapResult<typeof ConfigV0>;
