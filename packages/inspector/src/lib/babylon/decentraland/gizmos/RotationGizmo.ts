@@ -1,5 +1,5 @@
 import type { GizmoManager, Nullable, IRotationGizmo } from '@babylonjs/core';
-import { Vector3, TransformNode, Quaternion, Matrix } from '@babylonjs/core';
+import { Vector3, TransformNode, Quaternion, Matrix, Color3 } from '@babylonjs/core';
 import type { Entity } from '@dcl/ecs';
 import type { EcsEntity } from '../EcsEntity';
 import { snapManager } from '../snap-manager';
@@ -20,6 +20,7 @@ type DragState = {
   transformData: Map<Entity, EntityTransformData>;
   multiTransform?: TransformNode;
   lastAppliedSnapAngle?: number; // Track the last applied snap angle for smooth snapping
+  initialGizmoRotation?: Quaternion; // Store initial gizmo rotation for world-aligned drag
 };
 
 // Helper class for entity rotation calculations
@@ -199,6 +200,9 @@ export class RotationGizmo implements IGizmoTransformer {
   private isWorldAligned = true;
   private sceneContext: any = null;
 
+  // Store original materials for customization
+  private originalMaterials: Map<any, { colored: any; hover: any }> = new Map();
+
   constructor(
     private gizmoManager: GizmoManager,
     private snapRotation: (rotation: Quaternion) => Quaternion,
@@ -209,6 +213,53 @@ export class RotationGizmo implements IGizmoTransformer {
 
     this.rotationGizmo = this.gizmoManager.gizmos.rotationGizmo;
     this.rotationGizmo.updateGizmoRotationToMatchAttachedMesh = !this.isWorldAligned;
+    this.customizeGizmoAppearance();
+  }
+
+  private customizeGizmoAppearance(): void {
+    if (!this.rotationGizmo) return;
+
+    // Access axis gizmos (xGizmo, yGizmo, zGizmo) - these are public properties
+    const axisGizmos = [
+      this.rotationGizmo.xGizmo,
+      this.rotationGizmo.yGizmo,
+      this.rotationGizmo.zGizmo,
+    ];
+
+    for (const gizmo of axisGizmos) {
+      if (!gizmo) continue;
+
+      // Access public material properties
+      const coloredMaterial = gizmo.coloredMaterial;
+      const hoverMaterial = gizmo.hoverMaterial;
+
+      if (coloredMaterial && hoverMaterial) {
+        // Store original materials for reference
+        this.originalMaterials.set(gizmo, {
+          colored: coloredMaterial,
+          hover: hoverMaterial,
+        });
+
+        // Customize hover material to be brighter/thicker instead of yellow
+        // Preserve original color but make it brighter and more emissive
+        const originalColor = coloredMaterial.diffuseColor || new Color3(1, 1, 1);
+        const originalEmissive = coloredMaterial.emissiveColor || new Color3(0, 0, 0);
+
+        // Make hover color brighter (1.5x) while preserving the original color
+        hoverMaterial.diffuseColor = new Color3(
+          Math.min(1, originalColor.r * 1.5),
+          Math.min(1, originalColor.g * 1.5),
+          Math.min(1, originalColor.b * 1.5),
+        );
+
+        // Increase emissive to make it appear thicker/brighter
+        hoverMaterial.emissiveColor = new Color3(
+          Math.min(1, originalEmissive.r + originalColor.r * 0.6),
+          Math.min(1, originalEmissive.g + originalColor.g * 0.6),
+          Math.min(1, originalEmissive.b + originalColor.b * 0.6),
+        );
+      }
+    }
   }
 
   enable(): void {
@@ -226,9 +277,29 @@ export class RotationGizmo implements IGizmoTransformer {
   }
 
   setEntities(entities: EcsEntity[]): void {
+    const previousEntityIds = new Set(this.currentEntityIds);
     this.currentEntities = entities;
     this.currentEntityIds = new Set(entities.map(e => e.entityId));
+
+    // Check if entities changed
+    const entitiesChanged =
+      previousEntityIds.size !== this.currentEntityIds.size ||
+      Array.from(this.currentEntityIds).some(id => !previousEntityIds.has(id));
+
+    // Always sync gizmo rotation, especially when world-aligned
+    // This fixes the bug where gizmo doesn't reset when switching entities
     this.syncGizmoRotation();
+
+    // If world-aligned and entities changed, ensure gizmo is reset to identity
+    if (this.isWorldAligned && entitiesChanged) {
+      if (this.gizmoManager.attachedNode) {
+        const gizmoNode = this.gizmoManager.attachedNode as TransformNode;
+        if (gizmoNode.rotationQuaternion) {
+          gizmoNode.rotationQuaternion.set(0, 0, 0, 1);
+          gizmoNode.computeWorldMatrix(true);
+        }
+      }
+    }
   }
 
   setUpdateCallbacks(
@@ -277,6 +348,16 @@ export class RotationGizmo implements IGizmoTransformer {
 
     // Store the initial gizmo rotation for delta calculation
     this.dragState!.startRotation = gizmoNode.rotationQuaternion?.clone() || Quaternion.Identity();
+
+    // For world-aligned mode, allow the gizmo to rotate during drag
+    // Store the initial rotation and temporarily enable rotation matching
+    if (this.isWorldAligned && this.rotationGizmo) {
+      this.dragState!.initialGizmoRotation =
+        gizmoNode.rotationQuaternion?.clone() || Quaternion.Identity();
+      // Temporarily allow the gizmo to rotate with the attached mesh
+      // This makes the whole gimbal rotate during drag
+      this.rotationGizmo.updateGizmoRotationToMatchAttachedMesh = true;
+    }
   }
 
   update(entities: EcsEntity[], gizmoNode: TransformNode): void {
@@ -300,10 +381,15 @@ export class RotationGizmo implements IGizmoTransformer {
       this.updateMultipleEntitiesRotation();
     }
 
-    // Only sync gizmo for world alignment
-    // For local alignment, let the gizmo maintain its current rotation
-    if (this.isWorldAligned) {
+    // Restore world-aligned behavior: disable rotation matching and reset gizmo
+    if (this.isWorldAligned && this.rotationGizmo) {
+      // Disable rotation matching first
+      this.rotationGizmo.updateGizmoRotationToMatchAttachedMesh = false;
+      // Then sync/reset the gizmo rotation back to identity
       this.syncGizmoRotation();
+    } else if (!this.isWorldAligned) {
+      // For local alignment, let the gizmo maintain its current rotation
+      // No sync needed
     }
 
     this.clearDragState();
@@ -670,7 +756,17 @@ export class RotationGizmo implements IGizmoTransformer {
     if (!this.gizmoManager.attachedNode) return;
 
     const gizmoNode = this.gizmoManager.attachedNode as TransformNode;
-    GizmoSyncHelper.syncGizmoRotation(gizmoNode, this.currentEntities, this.isWorldAligned);
+
+    // Always ensure world-aligned gizmo is reset to identity, regardless of previous state
+    if (this.isWorldAligned) {
+      if (gizmoNode.rotationQuaternion) {
+        gizmoNode.rotationQuaternion.set(0, 0, 0, 1);
+      }
+      gizmoNode.computeWorldMatrix(true);
+    } else {
+      // For local alignment, use the helper
+      GizmoSyncHelper.syncGizmoRotation(gizmoNode, this.currentEntities, this.isWorldAligned);
+    }
   }
 
   private updateMultipleEntitiesRotation(): void {
