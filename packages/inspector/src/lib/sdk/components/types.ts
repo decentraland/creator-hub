@@ -1,5 +1,14 @@
 import { ComponentName } from '@dcl/asset-packs';
 import { getLatestSceneComponentVersion } from './SceneMetadata';
+import { NODES_VERSIONS } from './versioning/definitions/nodes';
+import { TRANSFORM_CONFIG_VERSIONS } from './versioning/definitions/transform-config';
+
+// Helper to get latest version name from versions array
+const getLatestVersionName = (
+  versions: typeof NODES_VERSIONS | typeof TRANSFORM_CONFIG_VERSIONS,
+) => {
+  return versions[versions.length - 1].versionName;
+};
 
 export enum CoreComponents {
   ANIMATOR = 'core::Animator',
@@ -29,14 +38,14 @@ export enum CoreComponents {
 export const EditorComponentNames = {
   Selection: 'inspector::Selection',
   Scene: getLatestSceneComponentVersion().key,
-  Nodes: 'inspector::Nodes',
+  Nodes: getLatestVersionName(NODES_VERSIONS),
   ActionTypes: ComponentName.ACTION_TYPES,
   Actions: ComponentName.ACTIONS,
   Counter: ComponentName.COUNTER,
   CounterBar: ComponentName.COUNTER_BAR,
   Triggers: ComponentName.TRIGGERS,
   States: ComponentName.STATES,
-  TransformConfig: 'inspector::TransformConfig',
+  TransformConfig: getLatestVersionName(TRANSFORM_CONFIG_VERSIONS),
   Hide: 'inspector::Hide',
   Lock: 'inspector::Lock',
   Config: 'inspector::Config',
