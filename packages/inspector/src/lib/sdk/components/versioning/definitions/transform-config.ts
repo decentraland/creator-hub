@@ -1,6 +1,6 @@
 import { Schemas } from '@dcl/ecs';
 import type { IEngine } from '@dcl/ecs';
-import { BaseComponentNames } from '../constants';
+import { BaseComponentNames } from '../base-names';
 
 const TRANSFORM_CONFIG_BASE_NAME = BaseComponentNames.TRANSFORM_CONFIG;
 

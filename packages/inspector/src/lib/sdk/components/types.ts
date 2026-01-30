@@ -28,7 +28,7 @@ export enum CoreComponents {
 }
 
 export const EditorComponentNames = {
-  Selection: 'inspector::Selection',
+  Selection: getLatestVersionName(BaseComponentNames.SELECTION),
   Scene: getLatestSceneComponentVersion().key,
   Nodes: getLatestVersionName(BaseComponentNames.NODES),
   ActionTypes: ComponentName.ACTION_TYPES,
@@ -38,16 +38,16 @@ export const EditorComponentNames = {
   Triggers: ComponentName.TRIGGERS,
   States: ComponentName.STATES,
   TransformConfig: getLatestVersionName(BaseComponentNames.TRANSFORM_CONFIG),
-  Hide: 'inspector::Hide',
-  Lock: 'inspector::Lock',
-  Config: 'inspector::Config',
-  Ground: 'inspector::Ground',
-  Tile: 'inspector::Tile',
-  CustomAsset: 'inspector::CustomAsset',
+  Hide: getLatestVersionName(BaseComponentNames.HIDE),
+  Lock: getLatestVersionName(BaseComponentNames.LOCK),
+  Config: getLatestVersionName(BaseComponentNames.CONFIG),
+  Ground: getLatestVersionName(BaseComponentNames.GROUND),
+  Tile: getLatestVersionName(BaseComponentNames.TILE),
+  CustomAsset: getLatestVersionName(BaseComponentNames.CUSTOM_ASSET),
   AdminTools: ComponentName.ADMIN_TOOLS,
   Rewards: ComponentName.REWARDS,
   VideoScreen: ComponentName.VIDEO_SCREEN,
-  InspectorUIState: 'inspector::UIState',
+  InspectorUIState: getLatestVersionName(BaseComponentNames.INSPECTOR_UI_STATE),
   Script: ComponentName.SCRIPT,
 } as const;
 
