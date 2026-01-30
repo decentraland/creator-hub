@@ -46,8 +46,8 @@ const DEPTH_CUE_FRAGMENT_SHADER = `
     vec3 N = normalize(vWorldNormal);
     vec3 V = normalize(cameraPosition - vWorldPos);
     float NdotV = dot(N, V);
-    float facing = smoothstep(-0.4, 0.6, NdotV);
-    float brightness = mix(0.45, 1.0, facing);
+    float facing = smoothstep(-0.3, 0.5, NdotV);
+    float brightness = mix(0.2, 1.15, facing);
     gl_FragColor = vec4(baseColor * brightness, alpha);
   }
 `;
@@ -271,8 +271,6 @@ export class RotationGizmo implements IGizmoTransformer {
 
     this.rotationGizmo = this.gizmoManager.gizmos.rotationGizmo;
     this.rotationGizmo.updateGizmoRotationToMatchAttachedMesh = !this.isWorldAligned;
-    this.customizeGizmoAppearance();
-    this.applyDepthCueToRotationLoops();
   }
 
   private customizeGizmoAppearance(): void {
@@ -324,6 +322,8 @@ export class RotationGizmo implements IGizmoTransformer {
   private applyDepthCueToRotationLoops(): void {
     if (!this.rotationGizmo) return;
 
+    this.removeDepthCueFromRotationLoops();
+
     Effect.ShadersStore['rotationGizmoDepthCueVertexShader'] = DEPTH_CUE_VERTEX_SHADER;
     Effect.ShadersStore['rotationGizmoDepthCueFragmentShader'] = DEPTH_CUE_FRAGMENT_SHADER;
 
@@ -346,12 +346,19 @@ export class RotationGizmo implements IGizmoTransformer {
       const rotationMesh = children.find(m => m.visibility > 0) ?? children[0];
       if (!rotationMesh || !(rotationMesh instanceof Mesh)) continue;
 
+      rotationMesh.scaling.set(1.25, 1.25, 1.25);
+
       const coloredMaterial = gizmo.coloredMaterial;
       const hoverMaterial = gizmo.hoverMaterial;
       const disableMaterial = gizmo.disableMaterial;
 
       const depthCueColored = this.createDepthCueMaterial(scene, baseColor, 1, 'depthCueColored');
-      const depthCueHover = this.createDepthCueMaterial(scene, baseColor, 1, 'depthCueHover');
+      const hoverBaseColor = new Color3(
+        Math.min(1, baseColor.r * 1.5),
+        Math.min(1, baseColor.g * 1.5),
+        Math.min(1, baseColor.b * 1.5),
+      );
+      const depthCueHover = this.createDepthCueMaterial(scene, hoverBaseColor, 1, 'depthCueHover');
       const depthCueDisable = this.createDepthCueMaterial(
         scene,
         new Color3(0.5, 0.5, 0.5),
@@ -428,6 +435,10 @@ export class RotationGizmo implements IGizmoTransformer {
 
   enable(): void {
     if (!this.gizmoManager.gizmos.rotationGizmo) return;
+    this.rotationGizmo = this.gizmoManager.gizmos.rotationGizmo;
+    // Run customization when rotation gizmo is enabled so first use shows new gizmo
+    this.customizeGizmoAppearance();
+    this.applyDepthCueToRotationLoops();
     this.setupDragObservables();
     // Configure gizmo to only work with left click
     configureGizmoButtons(this.gizmoManager.gizmos.rotationGizmo, [LEFT_BUTTON]);
