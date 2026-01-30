@@ -46,8 +46,8 @@ const DEPTH_CUE_FRAGMENT_SHADER = `
     vec3 N = normalize(vWorldNormal);
     vec3 V = normalize(cameraPosition - vWorldPos);
     float NdotV = dot(N, V);
-    float facing = smoothstep(-0.3, 0.5, NdotV);
-    float brightness = mix(0.2, 1.15, facing);
+    float facing = smoothstep(-0.2, 0.35, NdotV);
+    float brightness = mix(0.08, 1.4, facing);
     gl_FragColor = vec4(baseColor * brightness, alpha);
   }
 `;
@@ -337,16 +337,18 @@ export class RotationGizmo implements IGizmoTransformer {
     const scene = planeGizmo._gizmoMesh?.getScene() as Scene;
     if (!scene) return;
 
+    const LOOP_SCALE = 1.4;
+
     for (const { gizmo, baseColor } of axisGizmos) {
       const plane = gizmo as { _gizmoMesh?: Mesh };
       const gizmoMesh = plane._gizmoMesh;
       if (!gizmoMesh) continue;
 
+      gizmoMesh.scaling.set(LOOP_SCALE, LOOP_SCALE, LOOP_SCALE);
+
       const children = gizmoMesh.getChildMeshes();
       const rotationMesh = children.find(m => m.visibility > 0) ?? children[0];
       if (!rotationMesh || !(rotationMesh instanceof Mesh)) continue;
-
-      rotationMesh.scaling.set(1.25, 1.25, 1.25);
 
       const coloredMaterial = gizmo.coloredMaterial;
       const hoverMaterial = gizmo.hoverMaterial;
