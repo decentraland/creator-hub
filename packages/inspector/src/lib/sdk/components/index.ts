@@ -34,6 +34,8 @@ import type { ConfigComponentType } from './Config';
 import { ConfigComponentSchema } from './Config';
 import type { InspectorUIStateType } from './InspectorUIState';
 import { InspectorUIStateSchema } from './InspectorUIState';
+import { defineNodesComponent } from './versioning/definitions/nodes';
+import { defineTransformConfigComponent } from './versioning/definitions/transform-config';
 import { EditorComponentNames as BaseEditorComponentNames } from './types';
 
 export { SceneAgeRating, SceneCategory };
@@ -232,6 +234,18 @@ export function createComponents(engine: IEngine): SdkComponents {
 
 /* istanbul ignore next */
 export function createEditorComponents(engine: IEngine): EditorComponents {
+  const {
+    ActionTypes,
+    Actions,
+    Counter,
+    Triggers,
+    States,
+    CounterBar,
+    AdminTools,
+    Rewards,
+    VideoScreen,
+    Script,
+  } = createAssetPacksComponents(engine as any);
   const Selection = engine.defineComponent(EditorComponentNames.Selection, {
     gizmo: Schemas.Int,
   });
@@ -247,32 +261,9 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
 
   const Scene = defineSceneComponents(engine).pop() as ReturnType<typeof defineSceneComponents>[0];
 
-  const Nodes = engine.defineComponent(EditorComponentNames.Nodes, {
-    value: Schemas.Array(
-      Schemas.Map({
-        entity: Schemas.Entity,
-        open: Schemas.Optional(Schemas.Boolean),
-        children: Schemas.Array(Schemas.Entity),
-      }),
-    ),
-  });
+  const Nodes = defineNodesComponent(engine);
 
-  const {
-    ActionTypes,
-    Actions,
-    Counter,
-    Triggers,
-    States,
-    CounterBar,
-    AdminTools,
-    Rewards,
-    VideoScreen,
-    Script,
-  } = createAssetPacksComponents(engine as any);
-
-  const TransformConfig = engine.defineComponent(EditorComponentNames.TransformConfig, {
-    porportionalScaling: Schemas.Optional(Schemas.Boolean),
-  });
+  const TransformConfig = defineTransformConfigComponent(engine);
 
   const Hide = engine.defineComponent(EditorComponentNames.Hide, {
     value: Schemas.Boolean,
