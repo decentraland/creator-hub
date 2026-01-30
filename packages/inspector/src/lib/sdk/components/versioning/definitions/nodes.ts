@@ -1,6 +1,6 @@
 import { Schemas } from '@dcl/ecs';
 import type { IEngine } from '@dcl/ecs';
-import { BaseComponentNames } from '../constants';
+import { BaseComponentNames } from '../base-names';
 
 const NODES_BASE_NAME = BaseComponentNames.NODES;
 
