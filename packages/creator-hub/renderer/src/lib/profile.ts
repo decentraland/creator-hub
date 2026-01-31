@@ -1,5 +1,6 @@
 import type { Avatar, Profile } from '@dcl/schemas';
 import { config } from '/@/config';
+import { fetch } from '/shared/fetch';
 
 export class Profiles {
   private url = config.get('PEER_URL');

@@ -32,11 +32,15 @@ import {
   buildScriptPath,
   readScript,
   mergeLayout,
+  isScriptAlreadyAdded,
+  isScriptFile,
 } from './utils';
 import { getScriptParams } from './parser';
 import type { Props, ScriptLayout, ScriptParamUnion, ChangeEvt, ScriptItem } from './types';
 
 import './ScriptInspector.css';
+
+type ScriptModuleMode = 'create' | 'import' | undefined;
 
 export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) => {
   const { Script } = sdk.components;
@@ -45,9 +49,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
 
   const hasScript = useHasComponent(entityId, Script);
   const [componentValue, setComponentValue] = useComponentValue(entityId, Script);
-  const [emptyScriptModuleMode, setEmptyScriptModuleMode] = useState<
-    'create' | 'import' | undefined
-  >(undefined);
+  const [emptyScriptModuleMode, setEmptyScriptModuleMode] = useState<ScriptModuleMode>(undefined);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
   const scripts = componentValue?.value ?? [];
@@ -81,10 +83,23 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     return scripts.map(script => parseLayout(script.layout));
   }, [scripts]);
 
+  const allScriptsInScene = useMemo(() => {
+    return files?.assets.filter($ => isScriptFile($.path)) ?? [];
+  }, [files]);
+
+  const getDropdownOptions = useCallback(
+    (currentScriptPath?: string) => {
+      return allScriptsInScene
+        .filter(({ path }) => path === currentScriptPath || !isScriptAlreadyAdded(scripts, path))
+        .map(({ path }) => ({ label: path, value: path }));
+    },
+    [allScriptsInScene, scripts],
+  );
+
   const createScript = useCallback(
     (path: string, priority = 0, content: string) => {
-      const { params, error } = getScriptParams(content);
-      const layout: ScriptLayout = { params, error };
+      const { params, actions, error } = getScriptParams(content);
+      const layout: ScriptLayout = { params, actions, error };
 
       const newScript: ScriptItem = {
         path,
@@ -110,6 +125,11 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     [removeScript],
   );
 
+  const handleScriptModuleMode = useCallback((mode: ScriptModuleMode) => {
+    setEmptyScriptModuleMode(mode);
+    setError(undefined);
+  }, []);
+
   const handleEditScript = useCallback(
     async (e: React.MouseEvent<HTMLButtonElement>, index: number) => {
       try {
@@ -133,6 +153,8 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     async (e: React.MouseEvent<SVGElement>) => {
       e.stopPropagation();
       setError(undefined);
+
+      if (scripts.length === 0) return;
 
       const dataLayer = getDataLayerInterface();
       if (!dataLayer) return;
@@ -175,21 +197,29 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       if (firstError) setError(firstError);
       await sdk.operations.dispatch();
     },
-    [sdk, Script, setError],
+    [sdk, Script, setError, scripts],
   );
 
-  const getScriptNameErrors = useCallback(
-    (scriptName: string): string | undefined => {
-      if (files && !isScriptNameAvailable(files, scriptName)) {
+  const isScriptValid = useCallback(
+    (scriptNameOrPath: string): string | undefined => {
+      const scriptPath = scriptNameOrPath.includes('/')
+        ? scriptNameOrPath
+        : buildScriptPath(scriptNameOrPath);
+
+      if (isScriptAlreadyAdded(scripts, scriptPath)) {
+        return 'This script is already added to this entity';
+      }
+
+      if (files && !isScriptNameAvailable(files, scriptPath)) {
         return 'Script name already exists';
       }
     },
-    [files],
+    [files, scripts],
   );
 
   const handleCreateScript = useCallback(
     (scriptName: string) => {
-      if (getScriptNameErrors(scriptName) !== undefined) return;
+      if (isScriptValid(scriptName) !== undefined) return;
 
       const template = getScriptTemplateClass(scriptName);
       const scriptPath = buildScriptPath(scriptName);
@@ -201,31 +231,65 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       setShowCreateModal(false);
       setError(undefined);
     },
-    [createScript, dispatch, files],
-  );
-
-  const handleImportScript = useCallback(
-    async (path: string) => {
-      try {
-        const dataLayer = getDataLayerInterface();
-        if (!dataLayer) return;
-
-        const content = await retry(readScript, [dataLayer, path]);
-
-        createScript(path, 0, content);
-      } catch (error) {
-        const msg = 'Failed to import script';
-        console.error(`${msg}:`, error);
-        return setError(msg);
-      }
-    },
-    [createScript, setError],
+    [createScript, dispatch, isScriptValid, setError],
   );
 
   const handleCloseCreateModal = useCallback(() => {
     setShowCreateModal(false);
     setError(undefined);
   }, []);
+
+  const handleScriptSelection = useCallback(
+    async (path: string, index?: number) => {
+      const isNewScript = index === undefined;
+      try {
+        const currentScript = isNewScript ? undefined : scripts[index];
+
+        if (currentScript?.path === path) return;
+
+        // check for duplicates (excluding current script when updating)
+        const scriptsToCheck = isNewScript ? scripts : scripts.filter((_, i) => i !== index);
+        const isDuplicate = isScriptAlreadyAdded(scriptsToCheck, path);
+
+        if (isDuplicate) {
+          if (isNewScript) {
+            setError('This script is already added to this entity');
+          }
+          return;
+        }
+
+        const dataLayer = getDataLayerInterface();
+        if (!dataLayer) return;
+
+        const content = await retry(readScript, [dataLayer, path]);
+        const { params, actions, error: parseError } = getScriptParams(content);
+        const layout: ScriptLayout = { params, actions, error: parseError };
+
+        if (isNewScript) {
+          addScript({
+            path,
+            priority: 0,
+            layout: JSON.stringify(layout),
+          });
+          setEmptyScriptModuleMode(undefined);
+          setError(undefined);
+        } else {
+          updateScript(index, {
+            ...currentScript!,
+            path,
+            layout: JSON.stringify(layout),
+          });
+        }
+      } catch (err) {
+        const msg = isNewScript ? 'Failed to import script' : 'Failed to update script path';
+        console.error(`${msg}:`, err);
+        if (isNewScript) {
+          setError(msg);
+        }
+      }
+    },
+    [scripts, addScript, updateScript, setError, setEmptyScriptModuleMode],
+  );
 
   const handleUpdateDynamicField = useCallback(
     (index: number, paramName: string, paramValue: ScriptParamUnion['value']) => {
@@ -294,6 +358,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
             <RefreshIcon
               className="icon-item"
               onClick={handleReloadScripts}
+              size={15}
               style={{
                 cursor: scripts.length === 0 ? 'not-allowed' : 'pointer',
                 opacity: scripts.length === 0 ? 0.5 : 1,
@@ -336,12 +401,9 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
               <FileUploadField
                 label="Path"
                 value={script.path}
-                onDrop={(path: string) => {
-                  updateScript(index, { ...script, path });
-                }}
-                onChange={(e: ChangeEvt) => {
-                  updateScript(index, { ...script, path: e.target.value });
-                }}
+                options={getDropdownOptions(script.path)}
+                onDrop={(path: string) => handleScriptSelection(path, index)}
+                onChange={(e: ChangeEvt) => handleScriptSelection(e.target.value, index)}
                 isValidFile={isScriptNode}
                 accept={ACCEPTED_FILE_TYPES['script']}
                 error={!isValidPath(script.path) ? 'Invalid script path' : undefined}
@@ -380,7 +442,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
           rightContent={
             scripts.length > 0 ? (
               <MoreOptionsMenu>
-                <Button onClick={() => setEmptyScriptModuleMode(undefined)}>
+                <Button onClick={() => handleScriptModuleMode(undefined)}>
                   <RemoveIcon />
                   Delete Script Module
                 </Button>
@@ -391,10 +453,12 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
           <FileUploadField
             label="Path"
             accept={ACCEPTED_FILE_TYPES['script']}
-            onDrop={handleImportScript}
+            onDrop={(path: string) => handleScriptSelection(path)}
+            onChange={(e: ChangeEvt) => handleScriptSelection(e.target.value)}
             isValidFile={isScriptNode}
             error={error}
             openFileExplorerOnMount={emptyScriptModuleMode === 'import'}
+            options={getDropdownOptions()}
           />
           <div className="actions">
             <AddButton onClick={() => setShowCreateModal(true)}>Create New Script</AddButton>
@@ -402,11 +466,11 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
         </Container>
       ) : (
         <div className="actions">
-          <AddButton onClick={() => setEmptyScriptModuleMode('create')}>
+          <AddButton onClick={() => handleScriptModuleMode('create')}>
             Add New Script Module
           </AddButton>
           <MoreOptionsMenu icon={<>⌄</>}>
-            <Button onClick={() => setEmptyScriptModuleMode('import')}>
+            <Button onClick={() => handleScriptModuleMode('import')}>
               <FileUploadIcon />
               Import Script File
             </Button>
@@ -421,7 +485,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
         isOpen={showCreateModal}
         onClose={handleCloseCreateModal}
         onCreate={handleCreateScript}
-        isValid={getScriptNameErrors}
+        isValid={isScriptValid}
       />
     </Container>
   );

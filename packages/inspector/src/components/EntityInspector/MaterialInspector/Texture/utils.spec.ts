@@ -6,7 +6,6 @@ import { Texture } from './types';
 
 describe('fromTexture', () => {
   it('should convert from avatarTexture', () => {
-    const base = 'base-path';
     const value: TextureUnion = {
       tex: {
         $case: 'avatarTexture',
@@ -18,7 +17,7 @@ describe('fromTexture', () => {
       },
     };
 
-    const result = fromTexture(base, value);
+    const result = fromTexture(value);
 
     expect(result.type).toBe(Texture.TT_AVATAR_TEXTURE);
     expect(result.userId).toBe('user123');
@@ -27,7 +26,6 @@ describe('fromTexture', () => {
   });
 
   it('should convert from videoTexture', () => {
-    const base = 'base-path';
     const value: TextureUnion = {
       tex: {
         $case: 'videoTexture',
@@ -39,7 +37,7 @@ describe('fromTexture', () => {
       },
     };
 
-    const result = fromTexture(base, value);
+    const result = fromTexture(value);
 
     expect(result.type).toBe(Texture.TT_VIDEO_TEXTURE);
     expect(result.videoPlayerEntity).toBe('123');
@@ -48,7 +46,6 @@ describe('fromTexture', () => {
   });
 
   it('should convert from texture with a base path', () => {
-    const base = 'base-path';
     const value: TextureUnion = {
       tex: {
         $case: 'texture',
@@ -62,7 +59,7 @@ describe('fromTexture', () => {
       },
     };
 
-    const result = fromTexture(base, value);
+    const result = fromTexture(value);
 
     expect(result.type).toBe(Texture.TT_TEXTURE);
     expect(result.src).toBe('image.png');
@@ -73,7 +70,6 @@ describe('fromTexture', () => {
   });
 
   it('should convert from texture without a base path', () => {
-    const base = '';
     const value: TextureUnion = {
       tex: {
         $case: 'texture',
@@ -87,7 +83,7 @@ describe('fromTexture', () => {
       },
     };
 
-    const result = fromTexture(base, value);
+    const result = fromTexture(value);
 
     expect(result.type).toBe(Texture.TT_TEXTURE);
     expect(result.src).toBe('image.png');
@@ -98,7 +94,6 @@ describe('fromTexture', () => {
   });
 
   it('should convert from texture with default offset and tiling when not provided', () => {
-    const base = 'base-path';
     const value: TextureUnion = {
       tex: {
         $case: 'texture',
@@ -110,7 +105,7 @@ describe('fromTexture', () => {
       },
     };
 
-    const result = fromTexture(base, value);
+    const result = fromTexture(value);
 
     expect(result.type).toBe(Texture.TT_TEXTURE);
     expect(result.src).toBe('image.png');
@@ -121,7 +116,6 @@ describe('fromTexture', () => {
   });
 
   it('should convert from texture with different offset and tiling values', () => {
-    const base = 'base-path';
     const value: TextureUnion = {
       tex: {
         $case: 'texture',
@@ -135,7 +129,7 @@ describe('fromTexture', () => {
       },
     };
 
-    const result = fromTexture(base, value);
+    const result = fromTexture(value);
 
     expect(result.type).toBe(Texture.TT_TEXTURE);
     expect(result.src).toBe('image.png');
@@ -148,7 +142,6 @@ describe('fromTexture', () => {
 
 describe('toTexture', () => {
   it('should convert to avatarTexture', () => {
-    const base = 'base-path';
     const value: TextureInput = {
       type: Texture.TT_AVATAR_TEXTURE,
       userId: 'user123',
@@ -156,7 +149,7 @@ describe('toTexture', () => {
       filterMode: String(TextureFilterMode.TFM_BILINEAR),
     };
 
-    const result = toTexture(base, value) as {
+    const result = toTexture(value) as {
       tex: { $case: 'avatarTexture'; avatarTexture: AvatarTexture };
     };
 
@@ -167,7 +160,6 @@ describe('toTexture', () => {
   });
 
   it('should convert to videoTexture', () => {
-    const base = 'base-path';
     const value: TextureInput = {
       type: Texture.TT_VIDEO_TEXTURE,
       videoPlayerEntity: '123',
@@ -175,7 +167,7 @@ describe('toTexture', () => {
       filterMode: String(TextureFilterMode.TFM_POINT),
     };
 
-    const result = toTexture(base, value) as {
+    const result = toTexture(value) as {
       tex: { $case: 'videoTexture'; videoTexture: VideoTexture };
     };
 
@@ -186,17 +178,16 @@ describe('toTexture', () => {
   });
 
   it('should convert to texture with offset and tiling', () => {
-    const base = 'base-path';
     const value: TextureInput = {
       type: Texture.TT_TEXTURE,
-      src: 'image.png',
+      src: 'base-path/image.png',
       wrapMode: String(TextureWrapMode.TWM_REPEAT),
       filterMode: String(TextureFilterMode.TFM_POINT),
       offset: { x: '0.5', y: '0.25' },
       tiling: { x: '2.0', y: '1.5' },
     };
 
-    const result = toTexture(base, value) as { tex: { $case: 'texture'; texture: EcsTexture } };
+    const result = toTexture(value) as { tex: { $case: 'texture'; texture: EcsTexture } };
 
     expect(result.tex.$case).toBe('texture');
     expect(result.tex.texture.src).toBe('base-path/image.png');
@@ -207,15 +198,14 @@ describe('toTexture', () => {
   });
 
   it('should convert to texture with default offset and tiling when not provided', () => {
-    const base = 'base-path';
     const value: TextureInput = {
       type: Texture.TT_TEXTURE,
-      src: 'image.png',
+      src: 'base-path/image.png',
       wrapMode: String(TextureWrapMode.TWM_REPEAT),
       filterMode: String(TextureFilterMode.TFM_POINT),
     };
 
-    const result = toTexture(base, value) as { tex: { $case: 'texture'; texture: EcsTexture } };
+    const result = toTexture(value) as { tex: { $case: 'texture'; texture: EcsTexture } };
 
     expect(result.tex.$case).toBe('texture');
     expect(result.tex.texture.src).toBe('base-path/image.png');
@@ -226,17 +216,16 @@ describe('toTexture', () => {
   });
 
   it('should convert to texture with different offset and tiling values', () => {
-    const base = 'base-path';
     const value: TextureInput = {
       type: Texture.TT_TEXTURE,
-      src: 'image.png',
+      src: 'base-path/image.png',
       wrapMode: String(TextureWrapMode.TWM_REPEAT),
       filterMode: String(TextureFilterMode.TFM_POINT),
       offset: { x: '0.1', y: '0.3' },
       tiling: { x: '2.5', y: '3.0' },
     };
 
-    const result = toTexture(base, value) as { tex: { $case: 'texture'; texture: EcsTexture } };
+    const result = toTexture(value) as { tex: { $case: 'texture'; texture: EcsTexture } };
 
     expect(result.tex.$case).toBe('texture');
     expect(result.tex.texture.src).toBe('base-path/image.png');

@@ -1,0 +1,22 @@
+.ActionField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ActionFieldLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.ActionFieldInputs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ActionFieldInputs .EntityDropdown,
+.ActionFieldInputs .Dropdown {
+  width: 100%;
+}

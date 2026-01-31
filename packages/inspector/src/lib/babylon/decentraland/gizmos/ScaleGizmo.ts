@@ -34,9 +34,9 @@ export class ScaleGizmo implements IGizmoTransformer {
   private pivotPosition: Vector3 | null = null;
   private initialGizmoScale: Vector3 | null = null;
   private isDragging = false;
-  private dragStartObserver: any = null;
-  private dragObserver: any = null;
-  private dragEndObserver: any = null;
+  private dragStartObserver: Observer<unknown> | null = null;
+  private dragObserver: Observer<unknown> | null = null;
+  private dragEndObserver: Observer<unknown> | null = null;
   private currentEntities: EcsEntity[] = [];
   private updateEntityScale: ((entity: EcsEntity) => void) | null = null;
   private dispatchOperations: (() => void) | null = null;
@@ -44,6 +44,12 @@ export class ScaleGizmo implements IGizmoTransformer {
 
   // Sensitivity multiplier: higher = model scales more relative to gizmo visual movement
   private readonly scaleSensitivity = 2.0;
+  // Minimum absolute scale value to prevent getting stuck at 0 (UI rounds values, so 0.01 is safe)
+  private readonly minScaleValue = 0.01;
+  // Sensitivity constants for drag-based scaling
+  private readonly positiveSensitivity = 200.0; // Sensitivity for positive drags (right/up)
+  private readonly negativeSensitivity = 600.0; // Gentler sensitivity for negative drags (left/down)
+  private readonly negativeThreshold = -500.0; // Threshold before allowing negative scale
   private planeCubesCreated = false;
   private planeCubeMeshes: Mesh[] = []; // Store references to dispose them
   private planeMaterials: Map<
@@ -52,11 +58,66 @@ export class ScaleGizmo implements IGizmoTransformer {
   > = new Map(); // Store material refs
   private activelyDraggingPlane: Mesh | null = null;
   private planePointerObservers: Observer<PointerInfo>[] = [];
+  private isDraggingUniformScale = false;
+  private initialUniformScaleMousePos: { x: number; y: number } | null = null;
+  private uniformScalePointerObservers: Observer<PointerInfo>[] = [];
 
   constructor(
     private gizmoManager: GizmoManager,
     private snapScale: (scale: Vector3) => Vector3,
   ) {}
+
+  private clampScaleComponent(value: number): number {
+    if (Math.abs(value) < this.minScaleValue) {
+      return value >= 0 ? this.minScaleValue : -this.minScaleValue;
+    }
+    return value;
+  }
+
+  private clampScale(scale: Vector3): void {
+    scale.x = this.clampScaleComponent(scale.x);
+    scale.y = this.clampScaleComponent(scale.y);
+    scale.z = this.clampScaleComponent(scale.z);
+  }
+
+  /**
+   * Calculate scale factor based on drag distance.
+   * Maps drag distance to scale factor with asymmetric sensitivity:
+   * - Origin (dragDistance = 0) → scaleFactor = 1.0 (original size)
+   * - Positive drag (right/up) → scaleFactor > 1.0 (growing)
+   * - Small negative drag (left/down) → scaleFactor < 1.0 but > 0 (shrinking, stays positive)
+   * - Large negative drag → scaleFactor can go negative (requires pronounced drag)
+   */
+  private calculateScaleFactor(dragDistance: number): number {
+    let scaleFactor: number;
+
+    if (dragDistance >= 0) {
+      // Positive drag: scale increases smoothly
+      scaleFactor = 1.0 + (dragDistance / this.positiveSensitivity) * this.scaleSensitivity;
+    } else if (dragDistance >= this.negativeThreshold) {
+      // Small to moderate negative drag: scale decreases but stays positive
+      scaleFactor = 1.0 + (dragDistance / this.negativeSensitivity) * this.scaleSensitivity;
+      // Clamp to minimum positive value to prevent exactly 0
+      if (scaleFactor <= 0 || (scaleFactor > 0 && scaleFactor < this.minScaleValue)) {
+        scaleFactor = this.minScaleValue;
+      }
+    } else {
+      // Large negative drag: allow negative scaling
+      const thresholdScale =
+        1.0 + (this.negativeThreshold / this.negativeSensitivity) * this.scaleSensitivity;
+      const excessDrag = dragDistance - this.negativeThreshold;
+      scaleFactor =
+        thresholdScale + (excessDrag / this.positiveSensitivity) * this.scaleSensitivity;
+      // Ensure negative values never reach exactly 0
+      if (scaleFactor >= 0 && scaleFactor < this.minScaleValue) {
+        scaleFactor = -this.minScaleValue;
+      } else if (scaleFactor < 0 && scaleFactor > -this.minScaleValue) {
+        scaleFactor = -this.minScaleValue;
+      }
+    }
+
+    return scaleFactor;
+  }
 
   setup(): void {
     if (!this.gizmoManager.gizmos.scaleGizmo) return;
@@ -131,6 +192,129 @@ export class ScaleGizmo implements IGizmoTransformer {
     this.planePointerObservers.push(hoverObserver);
   }
 
+  private addUniformScaleDragBehavior(uniformGizmo: any): void {
+    if (this.uniformScalePointerObservers.length > 0) return;
+
+    const scene = uniformGizmo._rootMesh?.getScene();
+    if (!scene) return;
+
+    // Get the mesh of the uniform scale gizmo - try different possible properties
+    const uniformMesh = uniformGizmo._rootMesh || uniformGizmo._mesh || uniformGizmo._gizmoMesh;
+    if (!uniformMesh) return;
+
+    // Also get the root mesh of the scale gizmo to check hierarchy
+    const scaleGizmoRoot = this.gizmoManager.gizmos.scaleGizmo?._rootMesh;
+    if (!scaleGizmoRoot) return;
+
+    const onPointerDown = (pointerInfo: PointerInfo) => {
+      if (pointerInfo.type !== PointerEventTypes.POINTERDOWN) return;
+
+      const pickInfo = pointerInfo.pickInfo;
+      if (!pickInfo || !pickInfo.hit || !pickInfo.pickedMesh) return;
+
+      if (pointerInfo.event.button !== LEFT_BUTTON) return;
+
+      // Check if the uniform scale gizmo mesh was picked
+      // The uniform scale gizmo might be nested, so check the picked mesh hierarchy
+      let currentMesh: Mesh | null = pickInfo.pickedMesh as Mesh;
+      let isUniformScaleMesh = false;
+
+      // Check if the picked mesh is the uniform mesh itself
+      if (currentMesh === uniformMesh) {
+        isUniformScaleMesh = true;
+      } else {
+        // Check the parent hierarchy to see if it's a child of the uniform mesh
+        while (currentMesh && currentMesh !== scaleGizmoRoot) {
+          if (currentMesh === uniformMesh || currentMesh.parent === uniformMesh) {
+            isUniformScaleMesh = true;
+            break;
+          }
+          currentMesh = currentMesh.parent as Mesh | null;
+        }
+      }
+
+      // Also check by name if the mesh name contains "uniform"
+      if (!isUniformScaleMesh && pickInfo.pickedMesh.name) {
+        const meshName = pickInfo.pickedMesh.name.toLowerCase();
+        if (meshName.includes('uniform') || meshName.includes('uniformscale')) {
+          isUniformScaleMesh = true;
+        }
+      }
+
+      if (isUniformScaleMesh) {
+        this.isDraggingUniformScale = true;
+        this.initialUniformScaleMousePos = {
+          x: pointerInfo.event.clientX,
+          y: pointerInfo.event.clientY,
+        };
+
+        // Start the drag
+        if (this.gizmoManager.attachedNode) {
+          this.onDragStart(this.currentEntities, this.gizmoManager.attachedNode as TransformNode);
+        }
+      }
+    };
+
+    const onPointerMove = (pointerInfo: PointerInfo) => {
+      if (
+        !this.isDraggingUniformScale ||
+        !this.initialUniformScaleMousePos ||
+        pointerInfo.type !== PointerEventTypes.POINTERMOVE ||
+        !this.pivotPosition ||
+        !this.gizmoManager.attachedNode
+      )
+        return;
+
+      const currentMousePos = {
+        x: pointerInfo.event.clientX,
+        y: pointerInfo.event.clientY,
+      };
+      const deltaX = currentMousePos.x - this.initialUniformScaleMousePos.x;
+      const deltaY = currentMousePos.y - this.initialUniformScaleMousePos.y;
+
+      // Calculate scale factor based on total mouse movement (both X and Y)
+      // Invert Y axis so up = bigger, down = smaller (more intuitive)
+      const dragDistance = deltaX - deltaY;
+      const scaleFactor = this.calculateScaleFactor(dragDistance);
+
+      // Apply uniform scaling to all entities
+      for (const entity of this.currentEntities) {
+        const offset = this.initialOffsets.get(entity.entityId);
+        const initialScale = this.initialScales.get(entity.entityId);
+        const initialRotation = this.initialRotations.get(entity.entityId);
+        const initialPosition = this.initialPositions.get(entity.entityId);
+
+        if (!offset || !initialScale || !initialRotation || !initialPosition) continue;
+
+        // Apply uniform scale change
+        // scaleFactor is already clamped to never be exactly 0 (minScaleValue or -minScaleValue)
+        const scaleChange = new Vector3(scaleFactor, scaleFactor, scaleFactor);
+        this.applyScaleTransform(entity, scaleChange, offset, initialScale, initialRotation);
+
+        if (this.updateEntityScale) {
+          this.updateEntityScale(entity);
+        }
+      }
+    };
+
+    const onPointerUp = (pointerInfo: PointerInfo) => {
+      if (!this.isDraggingUniformScale || pointerInfo.type !== PointerEventTypes.POINTERUP) return;
+
+      this.isDraggingUniformScale = false;
+      this.initialUniformScaleMousePos = null;
+      this.onDragEnd();
+
+      if (this.dispatchOperations) {
+        this.dispatchOperations();
+      }
+    };
+
+    const downObserver = scene.onPointerObservable.add(onPointerDown);
+    const moveObserver = scene.onPointerObservable.add(onPointerMove);
+    const upObserver = scene.onPointerObservable.add(onPointerUp);
+    this.uniformScalePointerObservers.push(downObserver, moveObserver, upObserver);
+  }
+
   private addPlaneDragBehavior(planeMesh: Mesh, planeType: PlaneType): void {
     const scene = planeMesh.getScene();
     let isDragging = false;
@@ -183,8 +367,9 @@ export class ScaleGizmo implements IGizmoTransformer {
       const deltaY = currentMousePos.y - initialMousePos.y;
 
       // Use the drag direction for scaling
-      const dragDirection = deltaX + deltaY;
-      const scaleFactor = 1.0 + (dragDirection / 100.0) * this.scaleSensitivity;
+      // Invert Y axis so up = bigger, down = smaller (more intuitive)
+      const dragDistance = deltaX - deltaY;
+      const scaleFactor = this.calculateScaleFactor(dragDistance);
 
       // Apply scaling based on plane type
       for (const entity of this.currentEntities) {
@@ -282,6 +467,9 @@ export class ScaleGizmo implements IGizmoTransformer {
 
     // Create plane cubes (also on first activation)
     this.createPlaneCubes();
+
+    // Add custom drag behavior for uniform scale gizmo
+    this.addUniformScaleDragBehavior(uniformGizmo);
   }
 
   enable(): void {
@@ -313,6 +501,9 @@ export class ScaleGizmo implements IGizmoTransformer {
       for (const observer of this.planePointerObservers) {
         scene.onPointerObservable.remove(observer);
       }
+      for (const observer of this.uniformScalePointerObservers) {
+        scene.onPointerObservable.remove(observer);
+      }
     }
 
     // Dispose plane cube meshes
@@ -324,6 +515,9 @@ export class ScaleGizmo implements IGizmoTransformer {
     this.planeCubeMeshes = [];
     this.planeCubesCreated = false;
     this.planePointerObservers = [];
+    this.uniformScalePointerObservers = [];
+    this.isDraggingUniformScale = false;
+    this.initialUniformScaleMousePos = null;
     this.currentEntities = [];
     this.clearInitialState();
   }
@@ -466,6 +660,12 @@ export class ScaleGizmo implements IGizmoTransformer {
   update(entities: EcsEntity[], gizmoNode: TransformNode): void {
     if (!this.isDragging || !this.initialGizmoScale || !this.pivotPosition) return;
 
+    // Skip the default update if we're handling uniform scale with custom mouse tracking
+    if (this.isDraggingUniformScale) {
+      // The uniform scale is handled by the custom pointer observers
+      return;
+    }
+
     // Calculate scale change from gizmo
     const scaleChange = new Vector3(
       gizmoNode.scaling.x / this.initialGizmoScale.x,
@@ -513,6 +713,9 @@ export class ScaleGizmo implements IGizmoTransformer {
       initialScale.z * scaleChange.z,
     );
 
+    // Clamp final scale values to ensure they never go below minimum
+    this.clampScale(newWorldScale);
+
     const parent = entity.parent instanceof TransformNode ? entity.parent : null;
 
     if (parent) {
@@ -533,7 +736,11 @@ export class ScaleGizmo implements IGizmoTransformer {
         initialScale.y * scaleChange.y,
         initialScale.z * scaleChange.z,
       );
+
       const snappedLocalScale = this.snapScale(localScale);
+
+      // Clamp after snapping to ensure minimum scale is maintained
+      this.clampScale(snappedLocalScale);
 
       // Apply transforms
       entity.position.copyFrom(localPosition);
@@ -550,6 +757,10 @@ export class ScaleGizmo implements IGizmoTransformer {
       // For entities without parent, apply world transforms directly
       entity.position.copyFrom(newWorldPosition);
       const snappedWorldScale = this.snapScale(newWorldScale);
+
+      // Clamp after snapping to ensure minimum scale is maintained
+      this.clampScale(snappedWorldScale);
+
       entity.scaling.copyFrom(snappedWorldScale);
       if (!entity.rotationQuaternion) {
         entity.rotationQuaternion = new Quaternion();
@@ -577,6 +788,8 @@ export class ScaleGizmo implements IGizmoTransformer {
       TransformUtils.alignGizmo(gizmoNode, this.currentEntities);
     }
 
+    this.isDraggingUniformScale = false;
+    this.initialUniformScaleMousePos = null;
     this.clearInitialState();
   }
 

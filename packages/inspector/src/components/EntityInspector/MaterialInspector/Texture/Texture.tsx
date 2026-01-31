@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { type Entity } from '@dcl/ecs';
 import { withSdk } from '../../../../hoc/withSdk';
 import { useEntitiesWith } from '../../../../hooks/sdk/useEntitiesWith';
-import { removeBasePath } from '../../../../lib/logic/remove-base-path';
+import { useAssetOptions } from '../../../../hooks/useAssetOptions';
 import { Block } from '../../../Block';
 import { Container } from '../../../Container';
 import { Dropdown, FileUploadField, TextField } from '../../../ui';
@@ -31,10 +31,7 @@ const TextureInspector = withSdk<Props>(({ sdk, label, texture, files, getInputP
   const handleDrop = useCallback(
     (src: string) => {
       const srcInput = getTextureProps('src');
-      // The component FileUploadField build the asset path with the format: assets/scene/ASSET_CATEGORY/filename.extension
-      // The utils fromTexture is adding the basePath again, as the toTexture is removing the basePath, so we need to remove it again
-      // TODO: Refactor EntityInspector/MaterialInspector/Texture/utils.ts::fromTexture util to not remove the basePath
-      const value = removeBasePath(files?.basePath ?? '', src);
+      const value = src;
       srcInput?.onChange &&
         srcInput.onChange({
           target: { value },
@@ -127,14 +124,12 @@ function NormalTexture({
   isValid: (value: string | number | readonly string[]) => boolean;
   files?: Props['files'];
 }) {
+  const imageOptions = useAssetOptions(ACCEPTED_FILE_TYPES['image']);
   const src = getTextureProps('src');
 
   const handleChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      // The component FileUploadField build the asset path with the format: assets/scene/ASSET_CATEGORY/filename.extension
-      // The utils fromTexture is adding the basePath again, as the toTexture is removing the basePath, so we need to remove it again
-      // TODO: Refactor EntityInspector/MaterialInspector/Texture/utils.ts::fromTexture util to not remove the basePath
-      const value = removeBasePath(files?.basePath ?? '', event.target.value);
+      const value = event.target.value;
       src?.onChange &&
         src.onChange({
           target: { value },
@@ -150,6 +145,7 @@ function NormalTexture({
           {...src}
           label="Path"
           accept={ACCEPTED_FILE_TYPES['image']}
+          options={imageOptions}
           onDrop={handleDrop}
           onChange={handleChange}
           error={!!src.value && !isValid(src.value)}

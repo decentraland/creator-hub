@@ -10,6 +10,7 @@ import {
   MaterialTransparencyMode,
   MeshCollider,
   MeshRenderer,
+  Name,
   pointerEventsSystem,
   Transform,
   Tween,
@@ -17,6 +18,8 @@ import {
   VisibilityComponent,
 } from '@dcl/sdk/ecs';
 import { Quaternion, Vector3 } from '@dcl/sdk/math';
+import { executeTask } from '@dcl/sdk/ecs';
+import { getSceneInformation } from '~system/Runtime';
 
 type Photo = {
   id: string;
@@ -41,7 +44,9 @@ export class PhotoMural {
   // Entities
   carouselEntity: Entity;
   buttonSoundEntity: Entity;
-  spinnerEntity: Entity;
+  spinnerEntity: Entity | null = null;
+  button_prev: Entity | null = null;
+  button_next: Entity | null = null;
 
   // Timer
   refreshRate: number = 10;
@@ -50,12 +55,16 @@ export class PhotoMural {
   // Cache
   photosBySceneId = new Map<string, Photo[]>();
 
+  // Configuration
+  worldName: string | null = null;
+  targetCoordinates: string[] = [];
+
   constructor(
     public src: string,
     public entity: Entity,
-    public button_prev: Entity,
-    public button_next: Entity,
-    public coordinates: string,
+    public use_current_scene: boolean = true,
+    public coordinates: string = '',
+    public world_id: string = '',
   ) {
     this.carouselEntity = engine.addEntity();
 
@@ -71,10 +80,142 @@ export class PhotoMural {
   }
 
   /**
+   * Recursively checks if an entity is a descendant of the given parent entity
+   * @param entity - The entity to check
+   * @param parentEntity - The parent entity to check against
+   * @returns true if the entity is a descendant of the parent entity
+   */
+  private isDescendantOf(entity: Entity, parentEntity: Entity): boolean {
+    const transform = Transform.getOrNull(entity);
+    if (!transform || !transform.parent) {
+      return false;
+    }
+    if (transform.parent === parentEntity) {
+      return true;
+    }
+    // Recursively check the parent
+    return this.isDescendantOf(transform.parent, parentEntity);
+  }
+
+  /**
+   * Finds the button entities by recursively checking all descendants of the main entity
+   * Looks for entities with names starting with "previous_red" and "next_red"
+   */
+  private findButtonEntities() {
+    let prevButton: Entity | null = null;
+    let nextButton: Entity | null = null;
+    let prevButtonFound = false;
+    let nextButtonFound = false;
+
+    // Iterate through all entities with Transform to find descendants
+    for (const [childEntity, _transform] of engine.getEntitiesWith(Transform)) {
+      // Check if this entity is a descendant of our main entity (recursively)
+      if (this.isDescendantOf(childEntity, this.entity)) {
+        // Check if this descendant has a Name component
+        const nameComponent = Name.getOrNull(childEntity);
+        if (nameComponent) {
+          if (nameComponent.value.startsWith('previous_red')) {
+            if (prevButtonFound) {
+              console.error(
+                'PhotoMural: Multiple descendants found with name starting with "previous_red". Expected exactly one.',
+              );
+              prevButton = null;
+            } else {
+              prevButton = childEntity;
+              prevButtonFound = true;
+            }
+          } else if (nameComponent.value.startsWith('next_red')) {
+            if (nextButtonFound) {
+              console.error(
+                'PhotoMural: Multiple descendants found with name starting with "next_red". Expected exactly one.',
+              );
+              nextButton = null;
+            } else {
+              nextButton = childEntity;
+              nextButtonFound = true;
+            }
+          }
+        }
+      }
+    }
+
+    // Set the found buttons or log errors
+    if (prevButton === null) {
+      console.error(
+        'PhotoMural: No descendant entity found with name starting with "previous_red"',
+      );
+    } else {
+      this.button_prev = prevButton;
+    }
+
+    if (nextButton === null) {
+      console.error('PhotoMural: No descendant entity found with name starting with "next_red"');
+    } else {
+      this.button_next = nextButton;
+    }
+  }
+
+  /**
+   * Reads the scene configuration to determine world or coordinates
+   */
+  private async readSceneConfiguration(): Promise<void> {
+    if (this.use_current_scene) {
+      try {
+        await executeTask(async () => {
+          const sceneInfo = await getSceneInformation({});
+
+          if (sceneInfo && sceneInfo.metadataJson) {
+            const sceneJson = JSON.parse(sceneInfo.metadataJson);
+
+            // Check for worldConfiguration first
+            if (sceneJson.worldConfiguration && sceneJson.worldConfiguration.name) {
+              this.worldName = sceneJson.worldConfiguration.name;
+              this.targetCoordinates = [sceneJson.scene.base];
+              console.log('PhotoMural: Using world from scene configuration:', this.worldName);
+            } else if (sceneJson.scene && sceneJson.scene.base) {
+              // Fall back to base parcel coordinates
+              this.targetCoordinates = [sceneJson.scene.base];
+              console.log(
+                'PhotoMural: Using base parcel from scene configuration:',
+                this.targetCoordinates,
+              );
+            } else {
+              console.warn(
+                'PhotoMural: No worldConfiguration or base parcel found in scene.json, using empty configuration',
+              );
+              this.targetCoordinates = [];
+            }
+          }
+        });
+      } catch (e) {
+        console.error('PhotoMural: Error reading scene configuration:', e);
+        this.targetCoordinates = [];
+      }
+    } else {
+      // Manual mode: use provided world_id and coordinates
+      if (this.world_id && this.world_id.length > 0) {
+        this.worldName = this.world_id;
+        console.log('PhotoMural: Using provided world_id:', this.worldName);
+      } else if (this.coordinates && this.coordinates.length > 0) {
+        this.targetCoordinates = [this.coordinates];
+        console.log('PhotoMural: Using provided coordinates:', this.targetCoordinates);
+      } else {
+        console.warn(
+          'PhotoMural: use_current_scene is false but no world_id or coordinates provided',
+        );
+        this.targetCoordinates = [];
+      }
+    }
+  }
+
+  /**
    * Start function - called when the script is initialized
    */
   async start() {
     console.log('PhotoMural initialized for entity:', this.entity);
+
+    // Find button entities by name
+    this.findButtonEntities();
 
     // Setup Spinner first - show immediately since we're loading
     this.setupSpinner();
@@ -122,11 +263,29 @@ export class PhotoMural {
     });
 
     // Setup Buttons
-    this.setupButton(this.button_prev, -1);
-    this.setupButton(this.button_next, 1);
+    if (this.button_prev) {
+      this.setupButton(this.button_prev, -1);
+    }
+    if (this.button_next) {
+      this.setupButton(this.button_next, 1);
+    }
 
-    // Initialize scene IDs from coordinates and then fetch photos
-    await this.initPhotoMuralSystem([this.coordinates]);
+    // Read scene configuration to determine world or coordinates
+    await this.readSceneConfiguration();
+
+    // Initialize scene IDs from world or coordinates
+    if (this.worldName) {
+      await this.initPhotoMuralSystemFromWorld(this.worldName);
+      // If world lookup failed and we have coordinates as fallback, use them
+      if (this.sceneIds.length === 0 && this.targetCoordinates.length > 0) {
+        console.log('PhotoMural: World lookup failed, falling back to coordinates');
+        await this.initPhotoMuralSystem(this.targetCoordinates);
+      }
+    } else if (this.targetCoordinates.length > 0) {
+      await this.initPhotoMuralSystem(this.targetCoordinates);
+    } else {
+      console.error('PhotoMural: No valid configuration found (world or coordinates)');
+    }
 
     // Initial fetch - spinner is already visible
     this.getCameraReelPhotos();
@@ -195,13 +354,76 @@ export class PhotoMural {
   }
 
   private showSpinner() {
-    VisibilityComponent.getMutable(this.spinnerEntity).visible = true;
+    if (this.spinnerEntity) {
+      VisibilityComponent.getMutable(this.spinnerEntity).visible = true;
+    }
   }
 
   private hideSpinner() {
-    VisibilityComponent.getMutable(this.spinnerEntity).visible = false;
+    if (this.spinnerEntity) {
+      VisibilityComponent.getMutable(this.spinnerEntity).visible = false;
+    }
   }
 
+  /**
+   * Initialize photo mural system from world name
+   * Uses Places API to get the world's place ID, then uses that to fetch photos
+   */
+  private async initPhotoMuralSystemFromWorld(worldName: string) {
+    try {
+      // Use Places API to get the world's place ID by filtering by world name
+      // According to the API spec, we can use world_names parameter for exact match
+      const response = await fetch(
+        `https://places.decentraland.org/api/destinations?world_names=${encodeURIComponent(worldName)}&only_worlds=true&limit=1`,
+      );
+      const destinationsData = await response.json();
+
+      if (
+        destinationsData &&
+        destinationsData.ok &&
+        destinationsData.data &&
+        destinationsData.data.length > 0
+      ) {
+        // Get the world's place ID (UUID)
+        const worldPlace = destinationsData.data[0];
+        if (worldPlace.id) {
+          this.sceneIds.push(worldPlace.id);
+          console.log(`PhotoMural: Found world ${worldName} with place ID: ${worldPlace.id}`);
+        } else {
+          console.error(`PhotoMural: World ${worldName} found but has no place ID`);
+        }
+      } else {
+        // Fallback: try the worlds endpoint
+        const worldsResponse = await fetch(
+          `https://places.decentraland.org/api/worlds?names=${encodeURIComponent(worldName)}&limit=1`,
+        );
+        const worldsData = await worldsResponse.json();
+
+        if (worldsData && worldsData.ok && worldsData.data && worldsData.data.length > 0) {
+          const world = worldsData.data[0];
+          if (world.id) {
+            this.sceneIds.push(world.id);
+            console.log(`PhotoMural: Found world ${worldName} with ID: ${world.id}`);
+          } else {
+            console.error(`PhotoMural: World ${worldName} found but has no ID`);
+          }
+        } else {
+          console.error(`PhotoMural: World ${worldName} not found in Places API`);
+        }
+      }
+
+      // Deduplicate
+      this.sceneIds = [...new Set(this.sceneIds)];
+      console.log(`PhotoMural: Found ${this.sceneIds.length} place(s) for world ${worldName}`);
+    } catch (e) {
+      console.error('Error fetching world from Places API', worldName, e);
+    }
+  }
+
+  /**
+   * Initialize photo mural system from coordinates
+   * Fetches scene IDs from parcel coordinates
+   */
   private async initPhotoMuralSystem(sceneCoords: string[]) {
     for (const coord of sceneCoords) {
       try {
@@ -226,19 +448,21 @@ export class PhotoMural {
     // Ensure spinner is visible when fetching starts
     this.showSpinner();
 
-    for (const sceneId of this.sceneIds) {
+    // Fetch photos from place IDs (works for both Genesis City places and worlds)
+    // Worlds are represented as places with UUIDs in the system
+    for (const placeId of this.sceneIds) {
       try {
-        const response = await fetch(getCameraReelURL(sceneId));
+        const response = await fetch(getCameraReelURL(placeId));
         const photosBody = await response.json();
-        this.photosBySceneId.set(sceneId, photosBody.images);
+        this.photosBySceneId.set(placeId, photosBody.images || photosBody.data || []);
       } catch (e) {
-        console.error('Error fetching photos for scene', sceneId, e);
+        console.error('Error fetching photos for place', placeId, e);
       }
     }
 
     const allPhotos: Photo[] = [];
-    this.sceneIds.forEach(sceneId => {
-      const photos = this.photosBySceneId.get(sceneId);
+    this.sceneIds.forEach(placeId => {
+      const photos = this.photosBySceneId.get(placeId);
       if (photos) {
         allPhotos.push(...photos.map((photo: any) => ({ ...photo })));
       }

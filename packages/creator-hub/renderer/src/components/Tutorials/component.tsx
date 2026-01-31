@@ -4,6 +4,7 @@ import { useDispatch } from '#store';
 import { useCallback } from 'react';
 import { actions } from '/@/modules/store/editor';
 import { Typography } from 'decentraland-ui2';
+import { Image } from '../Image';
 
 /* TODO: if we wanted to fetch this playlist from YouTube, we could use the their API:
 
@@ -61,9 +62,10 @@ export function Tutorial(props: { title: string; id: string; list?: string }) {
       onClick={handleClick}
     >
       <div className="thumbnail-wrapper">
-        <img
+        <Image
           className="thumbnail"
           src={`https://img.youtube.com/vi/${props.id}/0.jpg`}
+          alt={props.title}
         />
       </div>
       <div className="title">{props.title}</div>

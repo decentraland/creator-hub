@@ -128,6 +128,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
                 handleEventInfoChange({ maxDistance: Number(e.target.value) }, idx)
               }
               value={$.eventInfo?.maxDistance ?? DEFAULTS.eventInfo.maxDistance}
+              step={0.01}
             />
           </Block>
           <Block label="Show feedback">

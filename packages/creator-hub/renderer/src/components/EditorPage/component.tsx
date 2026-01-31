@@ -17,6 +17,8 @@ import { useEditor } from '/@/hooks/useEditor';
 import { useSettings } from '/@/hooks/useSettings';
 import { useSceneCustomCode } from '/@/hooks/useSceneCustomCode';
 import { useDeploy } from '/@/hooks/useDeploy';
+import { useConnectionStatus } from '/@/hooks/useConnectionStatus';
+import { ConnectionStatus } from '/@/lib/connection';
 
 import EditorPng from '/assets/images/editor.png';
 
@@ -25,6 +27,7 @@ import { Button } from '../Button';
 import { Header } from '../Header';
 import { Row } from '../Row';
 import { ButtonGroup } from '../Button';
+import { ConnectionStatusIndicator } from '../ConnectionStatusIndicator';
 import { DeployModal } from './DeployModal';
 import { PreviewOptions, PublishOptions } from './MenuOptions';
 import { getPublishButtonText, getPublishOptions } from './utils';
@@ -64,8 +67,11 @@ export function EditorPage() {
 
   const userId = useSelector(state => state.analytics.userId);
   const { detectCustomCode, isLoading: isDetectingCustomCode } = useSceneCustomCode(project);
+  const { status } = useConnectionStatus();
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
   const [modalState, setModalState] = useState<ModalState>({ type: undefined });
+
+  const isOffline = status === ConnectionStatus.OFFLINE;
 
   const handleIframeRef = useCallback(
     (e: React.SyntheticEvent<HTMLIFrameElement, Event>) => {
@@ -275,7 +281,9 @@ export function EditorPage() {
               </Button>
               <ButtonGroup
                 color="secondary"
-                disabled={loadingPreview || isInstallingProject || isDetectingCustomCode}
+                disabled={
+                  loadingPreview || isInstallingProject || isDetectingCustomCode || isOffline
+                }
                 onClick={handleOpenPreview}
                 startIcon={loadingPreview ? <Loader size={20} /> : <PlayCircleIcon />}
                 extra={
@@ -290,7 +298,9 @@ export function EditorPage() {
               {publishOptions.length > 0 ? (
                 <ButtonGroup
                   color="primary"
-                  disabled={loadingPublish || isInstallingProject || isDetectingCustomCode}
+                  disabled={
+                    loadingPublish || isInstallingProject || isDetectingCustomCode || isOffline
+                  }
                   onClick={() => {
                     if (deployment?.status === 'pending') {
                       openModal('publish', 'deploy');
@@ -306,13 +316,16 @@ export function EditorPage() {
               ) : (
                 <Button
                   color="primary"
-                  disabled={loadingPublish || isInstallingProject || isDetectingCustomCode}
+                  disabled={
+                    loadingPublish || isInstallingProject || isDetectingCustomCode || isOffline
+                  }
                   onClick={handlePublishScene}
-                  startIcon={<PublicIcon />}
+                  startIcon={isDeploying ? <Loader size={20} /> : <PublicIcon />}
                 >
                   {publishButtonText}
                 </Button>
               )}
+              <ConnectionStatusIndicator />
             </div>
           </Header>
           <iframe

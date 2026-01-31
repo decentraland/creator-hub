@@ -1,6 +1,5 @@
 import type { PBVideoPlayer } from '@dcl/ecs';
 
-import { removeBasePath } from '../../../lib/logic/remove-base-path';
 import type { AssetCatalogResponse } from '../../../tooling-entrypoint';
 import type { TreeNode } from '../../ProjectAssetExplorer/ProjectView';
 import { isAssetNode } from '../../ProjectAssetExplorer/utils';
@@ -8,29 +7,23 @@ import type { AssetNodeItem } from '../../ProjectAssetExplorer/types';
 import { isValidHttpsUrl } from '../../../lib/utils/url';
 import type { VideoPlayerInput } from './types';
 
-const getPath = (base: string, src: string) => (base ? base + '/' + src : src);
-
-export const fromVideoPlayer =
-  (base: string) =>
-  (value: PBVideoPlayer): VideoPlayerInput => {
-    return {
-      src: isValidHttpsUrl(value.src) ? value.src : removeBasePath(base, value.src),
-      loop: value.loop,
-      playing: value.playing,
-      volume: volumeFromVideoPlayer(value.volume),
-    };
+export const fromVideoPlayer = (value: PBVideoPlayer): VideoPlayerInput => {
+  return {
+    src: value.src,
+    loop: value.loop,
+    playing: value.playing,
+    volume: volumeFromVideoPlayer(value.volume),
   };
+};
 
-export const toVideoPlayer =
-  (base: string) =>
-  (value: VideoPlayerInput): PBVideoPlayer => {
-    return {
-      src: isValidHttpsUrl(value.src) ? value.src : getPath(base, value.src),
-      loop: value.loop,
-      playing: value.playing,
-      volume: volumeToVideoPlayer(value.volume),
-    };
+export const toVideoPlayer = (value: VideoPlayerInput): PBVideoPlayer => {
+  return {
+    src: value.src,
+    loop: value.loop,
+    playing: value.playing,
+    volume: volumeToVideoPlayer(value.volume),
   };
+};
 
 export function volumeFromVideoPlayer(volume: number | undefined): string {
   const value = (volume ?? 1.0) * 100;

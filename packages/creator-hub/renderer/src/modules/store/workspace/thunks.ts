@@ -6,7 +6,7 @@ import { fs, npm, scene, settings, workspace } from '#preload';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
-import { type Project, ProjectError } from '/shared/types/projects';
+import { type DependencyState, type Project, ProjectError } from '/shared/types/projects';
 import type { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import { WorkspaceError } from '/shared/types/workspace';
 
@@ -95,12 +95,22 @@ export const runProject = createAsyncThunk(
     // or because the user deleted it while the app was running.
     // In any case, we have to "npm install" & "npm outdated"
     const hasNodeModules = await workspace.hasNodeModules(project.path);
-    const dependencyAvailableUpdates = hasNodeModules
-      ? await workspace.getOutdatedPackages(project.path)
-      : await (async () => {
-          await dispatch(installProject({ path: project.path })).unwrap();
-          return workspace.getOutdatedPackages(project.path);
-        })();
+    let dependencyAvailableUpdates: DependencyState = {};
+
+    try {
+      dependencyAvailableUpdates = hasNodeModules
+        ? await workspace.getOutdatedPackages(project.path)
+        : await (async () => {
+            await dispatch(installProject({ path: project.path })).unwrap();
+            return workspace.getOutdatedPackages(project.path);
+          })();
+    } catch (error) {
+      console.warn(
+        'Failed to check for outdated packages, continuing without update check:',
+        error,
+      );
+      dependencyAvailableUpdates = {};
+    }
 
     if (shouldUpdateDependencies(strategy, dependencyAvailableUpdates)) {
       await dispatch(updatePackages({ ...project, dependencyAvailableUpdates })).unwrap();
