@@ -23,31 +23,31 @@ import { configureGizmoButtons } from './utils';
 const DEPTH_CUE_VERTEX_SHADER = `
   precision highp float;
   attribute vec3 position;
-  attribute vec3 normal;
   uniform mat4 worldViewProjection;
   uniform mat4 world;
   varying vec3 vWorldPos;
-  varying vec3 vWorldNormal;
   void main() {
     gl_Position = worldViewProjection * vec4(position, 1.0);
     vWorldPos = (world * vec4(position, 1.0)).xyz;
-    vWorldNormal = (world * vec4(normal, 0.0)).xyz;
   }
 `;
 
 const DEPTH_CUE_FRAGMENT_SHADER = `
   precision highp float;
   varying vec3 vWorldPos;
-  varying vec3 vWorldNormal;
   uniform vec3 baseColor;
   uniform vec3 cameraPosition;
+  uniform vec3 gizmoCenter;
   uniform float alpha;
   void main() {
-    vec3 N = normalize(vWorldNormal);
     vec3 V = normalize(cameraPosition - vWorldPos);
-    float NdotV = dot(N, V);
-    float facing = smoothstep(-0.2, 0.35, NdotV);
-    float brightness = mix(0.08, 1.4, facing);
+    vec3 toFragment = vWorldPos - gizmoCenter;
+    float dist = length(toFragment);
+    if (dist < 0.001) { gl_FragColor = vec4(baseColor, alpha); return; }
+    toFragment /= dist;
+    float frontBack = dot(toFragment, V);
+    float facing = smoothstep(-0.4, 0.2, frontBack);
+    float brightness = mix(0.06, 1.5, facing);
     gl_FragColor = vec4(baseColor * brightness, alpha);
   }
 `;
@@ -337,14 +337,10 @@ export class RotationGizmo implements IGizmoTransformer {
     const scene = planeGizmo._gizmoMesh?.getScene() as Scene;
     if (!scene) return;
 
-    const LOOP_SCALE = 1.4;
-
     for (const { gizmo, baseColor } of axisGizmos) {
       const plane = gizmo as { _gizmoMesh?: Mesh };
       const gizmoMesh = plane._gizmoMesh;
       if (!gizmoMesh) continue;
-
-      gizmoMesh.scaling.set(LOOP_SCALE, LOOP_SCALE, LOOP_SCALE);
 
       const children = gizmoMesh.getChildMeshes();
       const rotationMesh = children.find(m => m.visibility > 0) ?? children[0];
@@ -356,9 +352,9 @@ export class RotationGizmo implements IGizmoTransformer {
 
       const depthCueColored = this.createDepthCueMaterial(scene, baseColor, 1, 'depthCueColored');
       const hoverBaseColor = new Color3(
-        Math.min(1, baseColor.r * 1.5),
-        Math.min(1, baseColor.g * 1.5),
-        Math.min(1, baseColor.b * 1.5),
+        Math.min(1, baseColor.r * 1.2 + 0.5),
+        Math.min(1, baseColor.g * 1.2 + 0.5),
+        Math.min(1, baseColor.b * 1.2 + 0.5),
       );
       const depthCueHover = this.createDepthCueMaterial(scene, hoverBaseColor, 1, 'depthCueHover');
       const depthCueDisable = this.createDepthCueMaterial(
@@ -381,6 +377,11 @@ export class RotationGizmo implements IGizmoTransformer {
 
     this.beforeRenderObserver = scene.onBeforeRenderObservable.add(() => {
       const cam = scene.activeCamera;
+      const attachedNode = this.gizmoManager.attachedNode;
+      const gizmoCenter = attachedNode
+        ? (attachedNode as TransformNode).getAbsolutePosition()
+        : Vector3.Zero();
+
       for (const data of this.depthCueAxisData) {
         const current = data.rotationMesh.material;
         if (current === data.coloredMaterial) data.rotationMesh.material = data.depthCueColored;
@@ -395,7 +396,9 @@ export class RotationGizmo implements IGizmoTransformer {
             mat === data.depthCueHover ||
             mat === data.depthCueDisable)
         ) {
-          (mat as ShaderMaterial).setVector3('cameraPosition', cam.globalPosition);
+          const shaderMat = mat as ShaderMaterial;
+          shaderMat.setVector3('cameraPosition', cam.globalPosition);
+          shaderMat.setVector3('gizmoCenter', gizmoCenter);
         }
       }
     });
@@ -412,8 +415,15 @@ export class RotationGizmo implements IGizmoTransformer {
       scene,
       { vertex: 'rotationGizmoDepthCue', fragment: 'rotationGizmoDepthCue' },
       {
-        attributes: ['position', 'normal'],
-        uniforms: ['world', 'worldViewProjection', 'baseColor', 'cameraPosition', 'alpha'],
+        attributes: ['position'],
+        uniforms: [
+          'world',
+          'worldViewProjection',
+          'baseColor',
+          'cameraPosition',
+          'gizmoCenter',
+          'alpha',
+        ],
       },
     );
     mat.setColor3('baseColor', baseColor);
