@@ -6,7 +6,14 @@ import type {
   PointerInfo,
   StandardMaterial,
 } from '@babylonjs/core';
-import { Vector3, TransformNode, Quaternion, Color3, PointerEventTypes } from '@babylonjs/core';
+import {
+  Vector3,
+  TransformNode,
+  Quaternion,
+  Color3,
+  PointerEventTypes,
+  MeshBuilder,
+} from '@babylonjs/core';
 import type { Entity } from '@dcl/ecs';
 import type { EcsEntity } from '../EcsEntity';
 import { LEFT_BUTTON } from '../mouse-utils';
@@ -481,9 +488,14 @@ export class ScaleGizmo implements IGizmoTransformer {
     // Make the uniform scale cube 2x bigger for easier selection
     uniformGizmo.scaleRatio = 2;
 
-    // Get the scene to create a new cube mesh
+    // Replace the default octahedron with an axis-aligned cube (no rotation needed)
     const scene = this.gizmoManager.gizmos.scaleGizmo?._rootMesh?.getScene();
-    if (!scene) return;
+    if (scene) {
+      const cube = MeshBuilder.CreateBox('uniformScaleCenter', { size: 1 }, scene);
+      cube.scaling.scaleInPlace(0.01); // Match approximate size of original center
+      uniformGizmo.setCustomMesh(cube);
+      cube.material = uniformGizmo.coloredMaterial; // Use same gray/white as other gizmo parts
+    }
 
     // Create plane cubes (also on first activation)
     this.createPlaneCubes();
