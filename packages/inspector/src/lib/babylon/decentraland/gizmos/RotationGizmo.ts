@@ -47,7 +47,7 @@ const DEPTH_CUE_FRAGMENT_SHADER = `
     toFragment /= dist;
     float frontBack = dot(toFragment, V);
     float facing = smoothstep(-0.4, 0.2, frontBack);
-    float brightness = mix(0.06, 1.5, facing);
+    float brightness = mix(0.18, 1.35, facing);
     gl_FragColor = vec4(baseColor * brightness, alpha);
   }
 `;
@@ -352,9 +352,9 @@ export class RotationGizmo implements IGizmoTransformer {
 
       const depthCueColored = this.createDepthCueMaterial(scene, baseColor, 1, 'depthCueColored');
       const hoverBaseColor = new Color3(
-        Math.min(1, baseColor.r * 1.2 + 0.5),
-        Math.min(1, baseColor.g * 1.2 + 0.5),
-        Math.min(1, baseColor.b * 1.2 + 0.5),
+        Math.min(1, baseColor.r * 1.35 + 0.2),
+        Math.min(1, baseColor.g * 1.35 + 0.2),
+        Math.min(1, baseColor.b * 1.35 + 0.2),
       );
       const depthCueHover = this.createDepthCueMaterial(scene, hoverBaseColor, 1, 'depthCueHover');
       const depthCueDisable = this.createDepthCueMaterial(
