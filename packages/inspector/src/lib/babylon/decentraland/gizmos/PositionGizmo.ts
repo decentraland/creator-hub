@@ -107,6 +107,7 @@ export class PositionGizmo implements IGizmoTransformer {
     this.setupDragObservables();
     this.setupFreeDragObservables();
     this.applyPlanarGizmoOffsets();
+    this.setAxisScaleRatio(positionGizmo);
     this.createCenterCircle();
     configureGizmoButtons(positionGizmo, [LEFT_BUTTON]);
   }
@@ -155,6 +156,8 @@ export class PositionGizmo implements IGizmoTransformer {
     positionGizmo.snapDistance = distance;
     positionGizmo.planarGizmoEnabled = true;
 
+    this.setAxisScaleRatio(positionGizmo);
+
     if (positionGizmo.xPlaneGizmo) {
       positionGizmo.xPlaneGizmo.scaleRatio = 0.5;
     }
@@ -166,6 +169,21 @@ export class PositionGizmo implements IGizmoTransformer {
     }
   }
 
+  /** Slightly larger axis arrows for easier clicking */
+  private setAxisScaleRatio(positionGizmo: ReturnType<typeof this.getPositionGizmo>): void {
+    if (!positionGizmo) return;
+    const axisScaleRatio = 1.25;
+    if (positionGizmo.xGizmo) {
+      positionGizmo.xGizmo.scaleRatio = axisScaleRatio;
+    }
+    if (positionGizmo.yGizmo) {
+      positionGizmo.yGizmo.scaleRatio = axisScaleRatio;
+    }
+    if (positionGizmo.zGizmo) {
+      positionGizmo.zGizmo.scaleRatio = axisScaleRatio;
+    }
+  }
+
   private getPositionGizmo() {
     return this.gizmoManager.gizmos.positionGizmo;
   }
@@ -174,6 +192,13 @@ export class PositionGizmo implements IGizmoTransformer {
     const positionGizmo = this.getPositionGizmo();
     if (!positionGizmo) return null;
     return positionGizmo.gizmoLayer.originalScene;
+  }
+
+  /** Returns the utility layer scene where gizmo meshes (including center circle) live. Use for picking. */
+  private getGizmoScene(): Scene | null {
+    const positionGizmo = this.getPositionGizmo();
+    if (!positionGizmo?.gizmoLayer) return null;
+    return positionGizmo.gizmoLayer.utilityLayerScene;
   }
 
   private resetState(): void {
@@ -474,11 +499,14 @@ export class PositionGizmo implements IGizmoTransformer {
   }
 
   private isGizmoMesh(_event: any): boolean {
-    const scene = this.getScene();
     const positionGizmo = this.getPositionGizmo();
-    if (!positionGizmo || !scene) return false;
+    if (!positionGizmo) return false;
 
-    const pickResult = scene.pick(scene.pointerX, scene.pointerY);
+    // Gizmo meshes live in the utility layer scene
+    const gizmoScene = this.getGizmoScene();
+    if (!gizmoScene) return false;
+
+    const pickResult = gizmoScene.pick(gizmoScene.pointerX, gizmoScene.pointerY);
     if (!pickResult?.hit || !pickResult.pickedMesh) return false;
 
     const mesh = pickResult.pickedMesh;
@@ -511,10 +539,11 @@ export class PositionGizmo implements IGizmoTransformer {
   }
 
   private isCenterCircle(_event: any): boolean {
-    const scene = this.getScene();
-    if (!scene || !this.centerCircleMesh) return false;
+    const gizmoScene = this.getGizmoScene();
+    if (!gizmoScene || !this.centerCircleMesh) return false;
 
-    const pickResult = scene.pick(scene.pointerX, scene.pointerY);
+    // Pick from the utility layer scene where the center circle lives (main scene pick would miss it)
+    const pickResult = gizmoScene.pick(gizmoScene.pointerX, gizmoScene.pointerY);
     if (!pickResult?.hit || !pickResult.pickedMesh) return false;
 
     const mesh = pickResult.pickedMesh;
@@ -796,17 +825,18 @@ export class PositionGizmo implements IGizmoTransformer {
     // Position at the center (0, 0, 0) relative to gizmo
     circle.position = Vector3.Zero();
 
-    // Attach to the gizmo node so it follows the gizmo
-    const gizmoNode = this.gizmoManager.attachedNode as TransformNode;
-    if (gizmoNode) {
-      circle.parent = gizmoNode;
+    // Parent to the same node as the axis gizmos so the circle scales with the rest of the gizmo
+    const axisRoot = positionGizmo.xGizmo?._rootMesh;
+    if (axisRoot?.parent) {
+      circle.parent = axisRoot.parent as TransformNode;
     } else {
-      // If no gizmo node yet, we'll attach it later when entities are set
-      // For now, attach to the scene root
-      circle.parent = null;
+      const gizmoNode = this.gizmoManager.attachedNode as TransformNode;
+      if (gizmoNode) {
+        circle.parent = gizmoNode;
+      }
     }
 
-    // Make it pickable
+    // Make it pickable so it can be clicked for free movement
     circle.isPickable = true;
 
     // Rotate to face upward (disc is created in XZ plane by default, rotate to be horizontal)
@@ -826,10 +856,17 @@ export class PositionGizmo implements IGizmoTransformer {
   private updateCenterCirclePosition(): void {
     if (!this.centerCircleMesh) return;
 
-    const gizmoNode = this.gizmoManager.attachedNode as TransformNode;
-    if (gizmoNode) {
-      this.centerCircleMesh.parent = gizmoNode;
+    const positionGizmo = this.getPositionGizmo();
+    const axisRoot = positionGizmo?.xGizmo?._rootMesh;
+    if (axisRoot?.parent) {
+      this.centerCircleMesh.parent = axisRoot.parent as TransformNode;
       this.centerCircleMesh.position = Vector3.Zero();
+    } else {
+      const gizmoNode = this.gizmoManager.attachedNode as TransformNode;
+      if (gizmoNode) {
+        this.centerCircleMesh.parent = gizmoNode;
+        this.centerCircleMesh.position = Vector3.Zero();
+      }
     }
   }
 }
