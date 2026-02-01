@@ -184,6 +184,7 @@ const ShowImageAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
           }
           value={payload.hideAfterSeconds}
           onChange={handleChangeHideAfterSeconds}
+          step={0.01}
         />
       </Block>
       <Block>

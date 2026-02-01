@@ -3,5 +3,6 @@
   "name": "Photo Mural",
   "category": "party",
   "tags": ["photo", "mural", "gallery", "display"],
-  "description": "A photo mural that displays photos taken by players in the provided coordinates."
+  "description": "A photo mural that displays photos taken by players in the provided coordinates.",
+  "version": 2
 }
