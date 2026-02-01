@@ -252,6 +252,17 @@ export class EcsEntity extends BABYLON.TransformNode {
   isOutOfBoundaries() {
     return !!this.boundingInfoMesh?.showBoundingBox;
   }
+
+  /**
+   * Re-checks whether this entity is out of layout bounds and updates the red outline.
+   * Call this when the scene parcels change so all entities are re-evaluated without manual selection.
+   */
+  refreshOutOfBoundsState() {
+    const mesh = this.boundingInfoMesh;
+    if (mesh) {
+      updateMeshBoundingBoxVisibility(this, mesh);
+    }
+  }
 }
 
 /**

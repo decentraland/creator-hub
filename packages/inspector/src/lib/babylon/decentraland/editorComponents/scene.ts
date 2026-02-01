@@ -14,6 +14,13 @@ export const putSceneComponent: ComponentOperation = (entity, component) => {
     const lm = getLayoutManager(context.scene);
     const didChange = lm.setLayout(value.layout);
 
+    // if the layout changed, re-check out-of-bounds for all entities so red outlines update immediately
+    if (didChange) {
+      for (const ecsEntity of context.getAllEntities()) {
+        ecsEntity.refreshOutOfBoundsState();
+      }
+    }
+
     // if the layout changed, we might need to update the grounds
     if (didChange) {
       // find the ground entity

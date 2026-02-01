@@ -157,6 +157,10 @@ export class SceneContext {
     return this.#entities.get(entityId) || null;
   }
 
+  getAllEntities(): EcsEntity[] {
+    return Array.from(this.#entities.values());
+  }
+
   resolveFile(src: string): string | null {
     // filenames are lower cased as per https://adr.decentraland.org/adr/ADR-80
     const normalized = src.toLowerCase();
