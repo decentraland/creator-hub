@@ -302,6 +302,11 @@ const getManagedProjects = createSelector(
   managementState => managementState.projects,
 );
 
+const getWorldSettings = createSelector(
+  getManagementState,
+  managementState => managementState.worldSettings,
+);
+
 const getError = createSelector(getManagementState, managementState => managementState.error);
 
 // exports
@@ -312,6 +317,7 @@ export const actions = {
   fetchWorldSettings,
   fetchStorageStats,
   fetchAccountHoldings,
+  fetchWorldScenes,
 };
 
 export const reducer = slice.reducer;
@@ -319,5 +325,6 @@ export const reducer = slice.reducer;
 export const selectors = {
   ...slice.selectors,
   getManagedProjects,
+  getWorldSettings,
   getError,
 };
