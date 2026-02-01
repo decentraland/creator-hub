@@ -311,18 +311,7 @@ export class Worlds {
       const json = await result.json();
       return fromSnakeToCamel(json) as WorldSettings;
     } else {
-      /// TODO: remove this once the API is updated
-      return {
-        title: '',
-        description: '',
-        thumbnailUrl: '',
-        contentRating: SceneAgeRating.Teen,
-        categories: [],
-        spawnCoordinates: '',
-        skyboxTime: null,
-        singlePlayer: false,
-        showInPlaces: false,
-      } as WorldSettings;
+      return null;
     }
   }
 
@@ -346,9 +335,9 @@ export class Worlds {
 
     const result = await fetch(`${this.url}/world/${worldName}/settings`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'multipart/form-data' },
       identity: this.withIdentity(address),
-      body: JSON.stringify(formattedSettings),
+      body: formData,
     });
     return result.status === 204;
   }

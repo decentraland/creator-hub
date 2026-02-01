@@ -28,7 +28,6 @@ const CopyToClipboard: React.FC<Props> = React.memo(
     }, [showPopup]);
 
     const handleCopy = useCallback(async () => {
-      console.log('handleCopy', text);
       await misc.copyToClipboard(text);
       if (onCopy) onCopy();
       if (showPopup) {
