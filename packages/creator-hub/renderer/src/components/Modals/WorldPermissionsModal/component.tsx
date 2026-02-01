@@ -6,6 +6,7 @@ import {
   addAddressPermission,
   removeAddressPermission,
   updateWorldPermissions,
+  actions as permissionsActions,
 } from '/@/modules/store/permissions';
 import type { AddressWorldPermission, WorldScene } from '/@/lib/worlds';
 import { WorldPermissionName, WorldPermissionType, type WorldPermissions } from '/@/lib/worlds';
@@ -214,6 +215,7 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
       // Reset state when the modal is closed.
       setActiveTab(WorldPermissionsTab.ACCESS);
       setActiveCollaboratorAddress(null);
+      dispatch(permissionsActions.clearState());
       onClose();
     }, [onClose]);
 
