@@ -147,8 +147,12 @@ const WorldPermissionsParcelsTab: React.FC<Props> = React.memo(
     }, [dragStatus]);
 
     const handleGoBack = useCallback(() => {
-      const parcelsToAdd = Array.from(selectedParcels.difference(initialParcels));
-      const parcelsToRemove = Array.from(initialParcels.difference(selectedParcels));
+      const parcelsToAdd = Array.from(selectedParcels).filter(
+        parcel => !initialParcels.has(parcel),
+      );
+      const parcelsToRemove = Array.from(initialParcels).filter(
+        parcel => !selectedParcels.has(parcel),
+      );
 
       if (parcelsToAdd.length > 0) {
         dispatch(
