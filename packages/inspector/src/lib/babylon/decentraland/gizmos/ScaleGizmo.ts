@@ -1,11 +1,4 @@
-import type {
-  GizmoManager,
-  IScaleGizmo,
-  Mesh,
-  Observer,
-  PointerInfo,
-  StandardMaterial,
-} from '@babylonjs/core';
+import type { GizmoManager, IScaleGizmo, Mesh, Observer, PointerInfo } from '@babylonjs/core';
 import {
   Vector3,
   TransformNode,
@@ -13,6 +6,7 @@ import {
   Color3,
   PointerEventTypes,
   MeshBuilder,
+  StandardMaterial,
 } from '@babylonjs/core';
 import type { Entity } from '@dcl/ecs';
 import type { EcsEntity } from '../EcsEntity';
@@ -474,7 +468,10 @@ export class ScaleGizmo implements IGizmoTransformer {
       const cube = MeshBuilder.CreateBox('uniformScaleCenter', { size: 1 }, scene);
       cube.scaling.scaleInPlace(0.01); // Match approximate size of original center
       uniformGizmo.setCustomMesh(cube);
-      cube.material = uniformGizmo.coloredMaterial; // Use same gray/white as other gizmo parts
+      const whiteMaterial = new StandardMaterial('uniformScaleCenterMat', scene);
+      whiteMaterial.diffuseColor = Color3.White();
+      whiteMaterial.emissiveColor = new Color3(0.15, 0.15, 0.15); // Slight emissive so it reads white
+      cube.material = whiteMaterial;
     }
 
     // Create plane cubes (also on first activation)
