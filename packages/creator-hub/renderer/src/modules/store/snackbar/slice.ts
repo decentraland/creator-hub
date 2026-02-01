@@ -7,6 +7,7 @@ import { t } from '/@/modules/store/translation/utils';
 import { actions as workspaceActions } from '../workspace';
 import { actions as deploymentActions } from '../deployment';
 import { actions as managementActions } from '../management';
+import { actions as permissionsActions } from '../permissions';
 import { actions as ensActions } from '../ens';
 import { actions as landActions } from '../land';
 import { shouldNotifyUpdates } from '../workspace/utils';
@@ -256,6 +257,100 @@ export const slice = createSlice({
             duration: 5000,
             requestId: 'fetchWorldSettings',
           }),
+        );
+      })
+      .addCase(managementActions.fetchWorldScenes.rejected, state => {
+        state.notifications = state.notifications.filter($ => $.requestId !== 'fetchWorldScenes');
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.fetch_world_scenes_failed'), {
+            duration: 5000,
+            requestId: 'fetchWorldScenes',
+          }),
+        );
+      })
+      .addCase(permissionsActions.fetchWorldPermissions.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'fetchWorldPermissions',
+        );
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.fetch_world_permissions_failed'), {
+            duration: 5000,
+            requestId: 'fetchWorldPermissions',
+          }),
+        );
+      })
+      .addCase(permissionsActions.updateWorldPermissions.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'updateWorldPermissions',
+        );
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.update_permissions_failed'), {
+            duration: 5000,
+            requestId: 'updateWorldPermissions',
+          }),
+        );
+      })
+      .addCase(permissionsActions.addAddressPermission.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'addAddressPermission',
+        );
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.add_permission_failed'), {
+            duration: 5000,
+            requestId: 'addAddressPermission',
+          }),
+        );
+      })
+      .addCase(permissionsActions.removeAddressPermission.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'removeAddressPermission',
+        );
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.remove_permission_failed'), {
+            duration: 5000,
+            requestId: 'removeAddressPermission',
+          }),
+        );
+      })
+      .addCase(permissionsActions.fetchParcelsPermission.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'fetchParcelsPermission',
+        );
+        state.notifications.push(
+          createGenericNotification(
+            'error',
+            t('snackbar.generic.fetch_parcels_permission_failed'),
+            {
+              duration: 5000,
+              requestId: 'fetchParcelsPermission',
+            },
+          ),
+        );
+      })
+      .addCase(permissionsActions.addParcelsPermission.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'addParcelsPermission',
+        );
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.add_parcels_permission_failed'), {
+            duration: 5000,
+            requestId: 'addParcelsPermission',
+          }),
+        );
+      })
+      .addCase(permissionsActions.removeParcelsPermission.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'removeParcelsPermission',
+        );
+        state.notifications.push(
+          createGenericNotification(
+            'error',
+            t('snackbar.generic.remove_parcels_permission_failed'),
+            {
+              duration: 5000,
+              requestId: 'removeParcelsPermission',
+            },
+          ),
         );
       });
   },

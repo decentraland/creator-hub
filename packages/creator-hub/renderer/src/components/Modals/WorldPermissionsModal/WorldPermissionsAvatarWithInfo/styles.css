@@ -1,0 +1,17 @@
+.Avatar {
+  align-items: center;
+  gap: 10px;
+  height: max-content;
+  justify-self: flex-start;
+}
+
+.Avatar .Paragraph {
+  color: var(--dcl-silver);
+  cursor: pointer;
+  padding-right: 12px;
+}
+
+.Avatar .Paragraph span {
+  color: var(--text);
+  margin-right: 10px;
+}

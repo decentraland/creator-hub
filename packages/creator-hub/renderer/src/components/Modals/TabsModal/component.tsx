@@ -12,6 +12,7 @@ export type Props<T> = {
   title: string;
   icon?: React.ReactNode;
   tabs: { value: T; label: string }[];
+  showTabs?: boolean;
   activeTab: T;
   onTabClick: (tab: T) => void;
   children: React.ReactNode;
@@ -24,7 +25,8 @@ function TabsModal<T>({
   onClose,
   title,
   icon,
-  tabs,
+  tabs = [],
+  showTabs = true,
   activeTab,
   onTabClick,
   children,
@@ -55,22 +57,24 @@ function TabsModal<T>({
             orientation === 'horizontal' ? 'Horizontal' : 'Vertical',
           )}
         >
-          <Tabs
-            className="TabsList"
-            variant="scrollable"
-            orientation={orientation}
-            value={activeTab}
-            onChange={(_event, newValue) => onTabClick(newValue)}
-          >
-            {tabs.map(tab => (
-              <Tab
-                key={`tab-${tab.value}`}
-                className="TabsModalTab"
-                value={tab.value}
-                label={tab.label}
-              />
-            ))}
-          </Tabs>
+          {showTabs && (
+            <Tabs
+              className="TabsList"
+              variant="scrollable"
+              orientation={orientation}
+              value={activeTab}
+              onChange={(_event, newValue) => onTabClick(newValue)}
+            >
+              {tabs.map(tab => (
+                <Tab
+                  key={`tab-${tab.value}`}
+                  className="TabsModalTab"
+                  value={tab.value}
+                  label={tab.label}
+                />
+              ))}
+            </Tabs>
+          )}
           <Box className="TabsModalContent">{children}</Box>
         </Box>
       </Box>
