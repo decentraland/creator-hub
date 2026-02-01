@@ -1,2 +1,1 @@
-import { WorldAtlas } from './component';
-export { WorldAtlas };
+export * from './component';

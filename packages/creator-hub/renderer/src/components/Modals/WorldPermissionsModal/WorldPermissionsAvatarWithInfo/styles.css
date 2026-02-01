@@ -6,16 +6,12 @@
 }
 
 .Avatar .Paragraph {
+  color: var(--dcl-silver);
   cursor: pointer;
   padding-right: 12px;
 }
 
-.Avatar .Paragraph .Name {
+.Avatar .Paragraph span {
   color: var(--text);
   margin-right: 10px;
-}
-
-.Avatar .Paragraph span:last-child {
-  color: var(--dcl-silver);
-  font-family: var(--font-family);
 }

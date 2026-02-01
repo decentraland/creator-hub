@@ -456,8 +456,49 @@
         }
       },
       "title": "Permissions - {worldName}",
-      "access": {},
-      "collaborators": {}
+      "invalid_address": "Invalid address",
+      "done": "Done",
+      "access": {
+        "description": "Manage who can access your World by toggling\nbetween <span>\"Private\"</span> and <span>\"Public\"</span>.",
+        "subtitle": "In <span>Private mode</span>, you can grant access to a max of 100 addresses (Decentraland users). Please note, if you revert to <span>Public mode</span>, your list of approved addresses will be erased.",
+        "warning": {
+          "title": "Warning",
+          "description": "If you revert to Public mode, your list of approved addresses will be erased."
+        },
+        "empty_list": "You haven't approved any addresses yet",
+        "public": "Public",
+        "private": "Private",
+        "approved_addresses": "Approved Addresses {number}",
+        "add_address": "Add address",
+        "actions": {
+          "remove": "Remove"
+        }
+      },
+      "collaborators": {
+        "description": "<span>Add up to 10 addresses</span> (Decentraland users) as collaborators and manage their permissions to deploy or stream into your World.",
+        "empty_list": "You haven't added any collaborators/addresses yet",
+        "add_collaborator": "Add collaborator",
+        "column_name_label": "Collaborators {number}",
+        "column_stream_label": "Stream",
+        "column_stream_tooltip": "User will be able to stream content into your World",
+        "column_deploy_label": "Location",
+        "column_deploy_tooltip": "User will be able to deploy new scenes to your World",
+        "all_parcels": "All Parcels",
+        "deployment": {
+          "world_wide": "All Parcels",
+          "parcels": "Custom Coordinates",
+          "none": "None"
+        },
+        "parcels_count": "{count} Parcels",
+        "actions": {
+          "remove": "Remove"
+        }
+      },
+      "parcels": {
+        "title": "Custom Coordinates",
+        "description": "Click individual tiles to include/exclude them in the layout.",
+        "parcels_count": "{count} Parcels"
+      }
     },
     "create_project": {
       "title": "Create Project",
@@ -508,7 +549,15 @@
       "fetch_managed_projects_failed": "Failed to fetch managed projects",
       "fetch_world_settings_failed": "Failed to fetch world settings. Please try again.",
       "fetch_ens_list_failed": "Failed to fetch your NAMEs list",
-      "fetch_land_list_failed": "Failed to fetch your LANDs list"
+      "fetch_land_list_failed": "Failed to fetch your LANDs list",
+      "fetch_world_permissions_failed": "Failed to fetch world permissions. Please try again.",
+      "fetch_world_scenes_failed": "Failed to fetch world scenes. Please try again.",
+      "update_permissions_failed": "Failed to update world permissions. Please try again.",
+      "add_permission_failed": "Failed to add address permission. Please try again.",
+      "remove_permission_failed": "Failed to remove address permission. Please try again.",
+      "fetch_parcels_permission_failed": "Failed to fetch parcel permissions. Please try again.",
+      "add_parcels_permission_failed": "Failed to update parcel permissions. Please try again.",
+      "remove_parcels_permission_failed": "Failed to update parcel permissions. Please try again."
     },
     "missing_projects": {
       "title": "{scenes} {scenes, plural, one {scene} other {scenes}} could not be loaded due to missing files",

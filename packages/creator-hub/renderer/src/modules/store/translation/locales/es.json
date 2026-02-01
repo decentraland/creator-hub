@@ -424,8 +424,62 @@
         "scenes_title": "Escenas",
         "actions": {
           "edit_scene": "Editar Escena",
-          "unpublish": "Despublicar"
+          "unpublish": "Quitar del Mundo"
         }
+      }
+    },
+    "world_permissions": {
+      "tabs": {
+        "access": {
+          "label": "Acceso"
+        },
+        "collaborators": {
+          "label": "Colaboradores"
+        }
+      },
+      "title": "Permisos - {worldName}",
+      "invalid_address": "Dirección inválida",
+      "done": "Hecho",
+      "access": {
+        "description": "Gestiona quién puede acceder a tu Mundo alternando\nentre <span>\"Privado\"</span> y <span>\"Público\"</span>.",
+        "subtitle": "En <span>modo Privado</span>, puedes otorgar acceso a un máximo de 100 direcciones (usuarios de Decentraland). Ten en cuenta que si vuelves al <span>modo Público</span>, tu lista de direcciones aprobadas será borrada.",
+        "warning": {
+          "title": "Advertencia",
+          "description": "Si vuelves al modo Público, tu lista de direcciones aprobadas será borrada."
+        },
+        "empty_list": "Aún no has aprobado ninguna dirección",
+        "public": "Público",
+        "private": "Privado",
+        "approved_addresses": "Direcciones Aprobadas {number}",
+        "add_address": "Agregar dirección",
+        "actions": {
+          "remove": "Eliminar"
+        }
+      },
+      "collaborators": {
+        "description": "<span>Agrega hasta 10 direcciones</span> (usuarios de Decentraland) como colaboradores y gestiona sus permisos para publicar o transmitir en tu Mundo.",
+        "empty_list": "Aún no has agregado ningún colaborador/dirección",
+        "add_collaborator": "Agregar colaborador",
+        "column_name_label": "Colaboradores {number}",
+        "column_stream_label": "Transmisión",
+        "column_stream_tooltip": "El usuario podrá transmitir contenido en tu Mundo",
+        "column_deploy_label": "Ubicación",
+        "column_deploy_tooltip": "El usuario podrá publicar nuevas escenas en tu Mundo",
+        "all_parcels": "Todas las Parcelas",
+        "deployment": {
+          "world_wide": "Todas las Parcelas",
+          "parcels": "Coordenadas Personalizadas",
+          "none": "Ninguna"
+        },
+        "parcels_count": "{count} Parcelas",
+        "actions": {
+          "remove": "Eliminar"
+        }
+      },
+      "parcels": {
+        "title": "Coordenadas Personalizadas",
+        "description": "Haz clic en las celdas individuales para incluirlas/excluirlas del diseño.",
+        "parcels_count": "{count} Parcelas"
       }
     },
     "create_project": {
@@ -477,7 +531,15 @@
       "fetch_managed_projects_failed": "Error al cargar los proyectos gestionados",
       "fetch_world_settings_failed": "Error al cargar la configuración del mundo. Por favor, inténtalo de nuevo.",
       "fetch_ens_list_failed": "Error al cargar tu lista de Nombres",
-      "fetch_land_list_failed": "Error al cargar tu lista de Tierras"
+      "fetch_land_list_failed": "Error al cargar tu lista de Tierras",
+      "fetch_world_permissions_failed": "Error al cargar los permisos del mundo. Por favor, inténtalo de nuevo.",
+      "fetch_world_scenes_failed": "Error al cargar las escenas del mundo. Por favor, inténtalo de nuevo.",
+      "update_permissions_failed": "Error al actualizar los permisos del mundo. Por favor, inténtalo de nuevo.",
+      "add_permission_failed": "Error al agregar el permiso de dirección. Por favor, inténtalo de nuevo.",
+      "remove_permission_failed": "Error al eliminar el permiso de dirección. Por favor, inténtalo de nuevo.",
+      "fetch_parcels_permission_failed": "Error al cargar los permisos de parcela. Por favor, inténtalo de nuevo.",
+      "add_parcels_permission_failed": "Error al actualizar los permisos de parcela. Por favor, inténtalo de nuevo.",
+      "remove_parcels_permission_failed": "Error al actualizar los permisos de parcela. Por favor, inténtalo de nuevo."
     },
     "missing_projects": {
       "title": "{scenes} {scenes, plural, one {escena} other {escenas}} {scenes, plural, one {faltante} other {faltantes}}",

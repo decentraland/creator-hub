@@ -57,22 +57,24 @@ function TabsModal<T>({
             orientation === 'horizontal' ? 'Horizontal' : 'Vertical',
           )}
         >
-          <Tabs
-            className="TabsList"
-            variant="scrollable"
-            orientation={orientation}
-            value={activeTab}
-            onChange={(_event, newValue) => onTabClick(newValue)}
-          >
-            {tabs.map(tab => (
-              <Tab
-                key={`tab-${tab.value}`}
-                className="TabsModalTab"
-                value={tab.value}
-                label={tab.label}
-              />
-            ))}
-          </Tabs>
+          {showTabs && (
+            <Tabs
+              className="TabsList"
+              variant="scrollable"
+              orientation={orientation}
+              value={activeTab}
+              onChange={(_event, newValue) => onTabClick(newValue)}
+            >
+              {tabs.map(tab => (
+                <Tab
+                  key={`tab-${tab.value}`}
+                  className="TabsModalTab"
+                  value={tab.value}
+                  label={tab.label}
+                />
+              ))}
+            </Tabs>
+          )}
           <Box className="TabsModalContent">{children}</Box>
         </Box>
       </Box>

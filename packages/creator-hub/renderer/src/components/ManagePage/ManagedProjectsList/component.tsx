@@ -1,8 +1,15 @@
 import React, { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { AppState } from '#store';
 import { useDispatch, useSelector } from '#store';
-import { fetchWorldScenes, fetchWorldSettings } from '/@/modules/store/management';
+import {
+  fetchWorldSettings,
+  fetchWorldScenes,
+  selectors as managementSelectors,
+} from '/@/modules/store/management';
+import {
+  fetchWorldPermissions,
+  selectors as permissionsSelectors,
+} from '/@/modules/store/permissions';
 import { WorldSettingsTab, type ManagedProject } from '/shared/types/manage';
 import { WorldSettingsModal } from '../../Modals/WorldSettingsModal';
 import { WorldPermissionsModal } from '../../Modals/WorldPermissionsModal';
@@ -16,7 +23,6 @@ type SettingsModalState = {
 
 type PermissionsModalState = {
   isOpen: boolean;
-  worldName: string;
 };
 
 type Props = {
@@ -30,18 +36,19 @@ const ManagedProjectsList: React.FC<Props> = React.memo(({ projects }) => {
   });
   const [permissionsModal, setPermissionsModal] = useState<PermissionsModalState>({
     isOpen: false,
-    worldName: '',
   });
+  const worldSettings = useSelector(managementSelectors.getWorldSettings);
+  const worldPermissions = useSelector(permissionsSelectors.getPermissionsState);
   const dispatch = useDispatch();
-  const worldSettings = useSelector((state: AppState) => state.management.worldSettings);
   const navigate = useNavigate();
 
   const handleOpenPermissionsModal = useCallback((worldName: string) => {
-    setPermissionsModal({ isOpen: true, worldName });
+    dispatch(fetchWorldPermissions({ worldName }));
+    setPermissionsModal({ isOpen: true });
   }, []);
 
   const handleClosePermissionsModal = useCallback(() => {
-    setPermissionsModal({ isOpen: false, worldName: '' });
+    setPermissionsModal({ isOpen: false });
   }, []);
 
   const handleOpenSettingsModal = useCallback(
@@ -89,7 +96,13 @@ const ManagedProjectsList: React.FC<Props> = React.memo(({ projects }) => {
       />
       <WorldPermissionsModal
         open={permissionsModal.isOpen}
-        worldName={permissionsModal.worldName}
+        worldName={worldPermissions.worldName}
+        worldOwnerAddress={worldPermissions.permissions?.owner ?? ''}
+        worldScenes={worldSettings.scenes}
+        worldPermissions={worldPermissions.permissions?.permissions}
+        worldPermissionsSummary={worldPermissions.permissions?.summary}
+        isLoading={worldPermissions.status === 'loading' || worldPermissions.status === 'idle'}
+        isLoadingNewUser={worldPermissions.loadingNewUser}
         onClose={handleClosePermissionsModal}
       />
     </div>

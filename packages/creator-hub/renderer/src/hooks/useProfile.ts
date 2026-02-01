@@ -15,7 +15,7 @@ export const useProfile = (walletAddress: string) => {
     if (walletAddress && !profileState) {
       dispatch(profilesActions.fetchProfile({ address: walletAddress }));
     }
-  }, [walletAddress]);
+  }, [walletAddress, profileState]);
 
   return {
     avatar: profileState?.avatar,

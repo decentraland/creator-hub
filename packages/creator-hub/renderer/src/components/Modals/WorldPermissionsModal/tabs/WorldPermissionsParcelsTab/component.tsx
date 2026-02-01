@@ -8,9 +8,9 @@ import type { WorldScene } from '/@/lib/worlds';
 import { WorldPermissionName } from '/@/lib/worlds';
 import { MAX_COORDINATE, MIN_COORDINATE } from '/@/modules/world';
 import {
-  actions as managementActions,
-  selectors as managementSelectors,
-} from '/@/modules/store/management';
+  actions as permissionsActions,
+  selectors as permissionsSelectors,
+} from '/@/modules/store/permissions';
 import { WorldAtlas, WorldAtlasColors } from '/@/components/WorldAtlas';
 import { WorldPermissionsAvatarWithInfo } from '../../WorldPermissionsAvatarWithInfo';
 import './styles.css';
@@ -33,7 +33,7 @@ const WorldPermissionsParcelsTab: React.FC<Props> = React.memo(
       to: { x: number; y: number } | null;
     }>({ isSelectingParcels: false, from: null, to: null });
     const initialParcelsState = useSelector(state =>
-      managementSelectors.getParcelsStateForAddress(state, walletAddress),
+      permissionsSelectors.getParcelsStateForAddress(state, walletAddress),
     );
     const initialParcels = useMemo(
       () => new Set(initialParcelsState?.parcels || []),
@@ -147,16 +147,12 @@ const WorldPermissionsParcelsTab: React.FC<Props> = React.memo(
     }, [dragStatus]);
 
     const handleGoBack = useCallback(() => {
-      const parcelsToAdd = Array.from(selectedParcels).filter(
-        parcel => !initialParcels.has(parcel),
-      );
-      const parcelsToRemove = Array.from(initialParcels).filter(
-        parcel => !selectedParcels.has(parcel),
-      );
+      const parcelsToAdd = Array.from(selectedParcels.difference(initialParcels));
+      const parcelsToRemove = Array.from(initialParcels.difference(selectedParcels));
 
       if (parcelsToAdd.length > 0) {
         dispatch(
-          managementActions.addParcelsPermission({
+          permissionsActions.addParcelsPermission({
             worldName,
             permissionName: WorldPermissionName.Deployment,
             walletAddress,
@@ -167,7 +163,7 @@ const WorldPermissionsParcelsTab: React.FC<Props> = React.memo(
 
       if (parcelsToRemove.length > 0) {
         dispatch(
-          managementActions.removeParcelsPermission({
+          permissionsActions.removeParcelsPermission({
             worldName,
             permissionName: WorldPermissionName.Deployment,
             walletAddress,
