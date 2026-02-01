@@ -171,8 +171,8 @@ const slice = createSlice({
   name: 'permissions',
   initialState,
   reducers: {
-    clearError: state => {
-      state.error = null;
+    clearState: () => {
+      return { ...initialState };
     },
   },
   extraReducers: builder => {
