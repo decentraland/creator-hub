@@ -309,6 +309,8 @@ const getLandItems = createSelector([getManagedProjects], items =>
   items.filter(item => item.type === ManagedProjectType.LAND),
 );
 
+const getWorldSettings = (state: Async<ManagementState>) => state.worldSettings;
+
 // exports
 export const actions = {
   ...slice.actions,
@@ -317,6 +319,7 @@ export const actions = {
   fetchWorldSettings,
   fetchStorageStats,
   fetchAccountHoldings,
+  fetchWorldScenes,
 };
 
 export const reducer = slice.reducer;
@@ -324,6 +327,7 @@ export const reducer = slice.reducer;
 export const selectors = {
   ...slice.selectors,
   getManagedProjects,
+  getWorldSettings,
   getError,
   getWorldItems,
   getLandItems,
