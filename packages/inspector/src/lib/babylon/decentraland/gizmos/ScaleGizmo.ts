@@ -470,7 +470,8 @@ export class ScaleGizmo implements IGizmoTransformer {
       uniformGizmo.setCustomMesh(cube);
       const whiteMaterial = new StandardMaterial('uniformScaleCenterMat', scene);
       whiteMaterial.diffuseColor = Color3.White();
-      whiteMaterial.emissiveColor = new Color3(0.15, 0.15, 0.15); // Slight emissive so it reads white
+      // Strong emissive so the center cube reads as white in the utility layer (lighting is often dim)
+      whiteMaterial.emissiveColor = new Color3(0.75, 0.75, 0.75);
       cube.material = whiteMaterial;
     }
 
