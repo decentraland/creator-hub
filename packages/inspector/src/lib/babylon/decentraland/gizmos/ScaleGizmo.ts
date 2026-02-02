@@ -193,6 +193,9 @@ export class ScaleGizmo implements IGizmoTransformer {
     this.planePointerObservers.push(hoverObserver);
   }
 
+  private static readonly UNIFORM_CUBE_EMISSIVE_DEFAULT = new Color3(0.75, 0.75, 0.75);
+  private static readonly UNIFORM_CUBE_EMISSIVE_HOVER = new Color3(1, 1, 1);
+
   private addUniformScaleDragBehavior(uniformGizmo: any): void {
     if (this.uniformScalePointerObservers.length > 0) return;
 
@@ -202,6 +205,13 @@ export class ScaleGizmo implements IGizmoTransformer {
     // Get the mesh of the uniform scale gizmo - try different possible properties
     const uniformMesh = uniformGizmo._rootMesh || uniformGizmo._mesh || uniformGizmo._gizmoMesh;
     if (!uniformMesh) return;
+
+    // Center cube is the custom mesh we set (only child of _rootMesh after setCustomMesh)
+    const centerCube = uniformGizmo._rootMesh.getChildMeshes()[0];
+    const centerMaterial =
+      centerCube?.material && centerCube.material.getClassName?.() === 'StandardMaterial'
+        ? (centerCube.material as StandardMaterial)
+        : null;
 
     // Also get the root mesh of the scale gizmo to check hierarchy
     const scaleGizmoRoot = this.gizmoManager.gizmos.scaleGizmo?._rootMesh;
@@ -310,10 +320,20 @@ export class ScaleGizmo implements IGizmoTransformer {
       }
     };
 
+    const onPointerMoveHover = (pointerInfo: PointerInfo) => {
+      if (pointerInfo.type !== PointerEventTypes.POINTERMOVE || !centerMaterial) return;
+      const pickInfo = pointerInfo.pickInfo;
+      const isHovering = pickInfo?.hit && pickInfo.pickedMesh === centerCube;
+      centerMaterial.emissiveColor = isHovering
+        ? ScaleGizmo.UNIFORM_CUBE_EMISSIVE_HOVER
+        : ScaleGizmo.UNIFORM_CUBE_EMISSIVE_DEFAULT;
+    };
+
     const downObserver = scene.onPointerObservable.add(onPointerDown);
     const moveObserver = scene.onPointerObservable.add(onPointerMove);
     const upObserver = scene.onPointerObservable.add(onPointerUp);
-    this.uniformScalePointerObservers.push(downObserver, moveObserver, upObserver);
+    const hoverObserver = scene.onPointerObservable.add(onPointerMoveHover);
+    this.uniformScalePointerObservers.push(downObserver, moveObserver, upObserver, hoverObserver);
   }
 
   private addPlaneDragBehavior(planeMesh: Mesh, planeType: PlaneType): void {
@@ -471,7 +491,7 @@ export class ScaleGizmo implements IGizmoTransformer {
       const whiteMaterial = new StandardMaterial('uniformScaleCenterMat', scene);
       whiteMaterial.diffuseColor = Color3.White();
       // Strong emissive so the center cube reads as white in the utility layer (lighting is often dim)
-      whiteMaterial.emissiveColor = new Color3(0.75, 0.75, 0.75);
+      whiteMaterial.emissiveColor = ScaleGizmo.UNIFORM_CUBE_EMISSIVE_DEFAULT.clone();
       cube.material = whiteMaterial;
     }
 
