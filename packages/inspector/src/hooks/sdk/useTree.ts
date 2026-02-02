@@ -1,6 +1,7 @@
 import { useCallback, useState, useEffect } from 'react';
 import type { Entity } from '@dcl/ecs';
 
+import type { GizmoType } from '../../lib/utils/gizmo';
 import {
   CAMERA,
   findParent,
@@ -160,9 +161,9 @@ export const useTree = () => {
   );
 
   const duplicate = useCallback(
-    async (entity: Entity) => {
+    async (entity: Entity, preferredGizmo?: GizmoType) => {
       if (entity === ROOT || !sdk) return;
-      sdk.operations.duplicateEntity(entity);
+      sdk.operations.duplicateEntity(entity, preferredGizmo);
       await sdk.operations.dispatch();
       handleUpdate();
     },
