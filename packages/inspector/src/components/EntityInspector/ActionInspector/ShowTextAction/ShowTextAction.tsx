@@ -91,6 +91,7 @@ const ShowTextAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
           value={payload.hideAfterSeconds}
           onChange={handleChangeHideAfterSeconds}
           isValidValue={value => value > 0}
+          step={0.01}
         />
       </Block>
       <Block label="Font">
