@@ -8,6 +8,9 @@ import {
   ShaderMaterial,
   Effect,
   Mesh,
+  MeshBuilder,
+  VertexBuffer,
+  VertexData,
   type Scene,
   type Observer,
 } from '@babylonjs/core';
@@ -76,6 +79,9 @@ type AxisDepthCueData = {
   depthCueHover: ShaderMaterial;
   depthCueDisable: ShaderMaterial;
 };
+
+// Visual/picking config: make the rotation rings easier to hit without changing their diameter
+const ROTATION_RING_THICKNESS_MULTIPLIER = 2.25;
 
 // Helper class for entity rotation calculations
 class EntityRotationHelper {
@@ -319,6 +325,143 @@ export class RotationGizmo implements IGizmoTransformer {
     }
   }
 
+  private thickenRotationLoops(): void {
+    if (!this.rotationGizmo) return;
+
+    const axisGizmos = [
+      this.rotationGizmo.xGizmo,
+      this.rotationGizmo.yGizmo,
+      this.rotationGizmo.zGizmo,
+    ];
+
+    for (const gizmo of axisGizmos) {
+      if (!gizmo) continue;
+
+      const plane = gizmo as { _gizmoMesh?: Mesh };
+      const gizmoMesh = plane._gizmoMesh;
+      if (!gizmoMesh) continue;
+
+      // Babylon's rotation gizmo usually has multiple children (visible ring + optional collider ring).
+      // We detect ring-like (torus-ish) meshes and rebuild their geometry with a thicker tube.
+      const children = gizmoMesh.getChildMeshes(false).filter((m): m is Mesh => m instanceof Mesh);
+      for (const child of children) {
+        if (!child.isVerticesDataPresent(VertexBuffer.PositionKind)) continue;
+
+        child.computeWorldMatrix(true);
+        child.refreshBoundingInfo(true);
+        const ext = child.getBoundingInfo().boundingBox.extendSize;
+        if (!this.isLikelyRotationRing(ext)) continue;
+
+        this.rebuildTorusLikeMeshWithThickerTube(child, ROTATION_RING_THICKNESS_MULTIPLIER);
+      }
+    }
+  }
+
+  private isLikelyRotationRing(ext: Vector3): boolean {
+    // A torus ring (in local space) is "flat": one axis is much smaller than the other two,
+    // and the two large extents are roughly equal.
+    const values = [ext.x, ext.y, ext.z].sort((a, b) => a - b);
+    const [minE, midE, maxE] = values;
+    if (!Number.isFinite(minE) || !Number.isFinite(midE) || !Number.isFinite(maxE)) return false;
+    if (minE <= 0 || midE <= 0 || maxE <= 0) return false;
+
+    const largeSimilar = Math.abs(maxE - midE) / maxE < 0.2;
+    const flatEnough = minE / midE < 0.45;
+    const bigEnough = midE > 0.05;
+    return largeSimilar && flatEnough && bigEnough;
+  }
+
+  private getSmallestExtentAxisIndex(ext: Vector3): 0 | 1 | 2 {
+    if (ext.x <= ext.y && ext.x <= ext.z) return 0;
+    if (ext.y <= ext.x && ext.y <= ext.z) return 1;
+    return 2;
+  }
+
+  private axisVectorFromIndex(index: 0 | 1 | 2): Vector3 {
+    if (index === 0) return Vector3.Right();
+    if (index === 1) return Vector3.Up();
+    return Vector3.Forward();
+  }
+
+  private quaternionFromTo(from: Vector3, to: Vector3): Quaternion {
+    const f = from.clone().normalize();
+    const t = to.clone().normalize();
+    const dot = Vector3.Dot(f, t);
+
+    if (dot > 0.999999) return Quaternion.Identity();
+
+    if (dot < -0.999999) {
+      // 180° rotation; pick an arbitrary orthogonal axis
+      const arbitrary = Math.abs(f.x) < 0.1 ? Vector3.Right() : Vector3.Up();
+      const axis = Vector3.Cross(f, arbitrary).normalize();
+      return Quaternion.RotationAxis(axis, Math.PI);
+    }
+
+    const axis = Vector3.Cross(f, t);
+    const s = Math.sqrt((1 + dot) * 2);
+    const invs = 1 / s;
+    return new Quaternion(axis.x * invs, axis.y * invs, axis.z * invs, s * 0.5);
+  }
+
+  private estimateTessellation(mesh: Mesh): number {
+    // Torus vertex count is roughly (tess+1)^2. This is a heuristic, but good enough here.
+    const vertexCount = Math.max(0, mesh.getTotalVertices());
+    const estimate = Math.round(Math.sqrt(vertexCount)) - 1;
+    return Math.min(128, Math.max(24, estimate || 48));
+  }
+
+  private rebuildTorusLikeMeshWithThickerTube(mesh: Mesh, thicknessMultiplier: number): void {
+    const scene = mesh.getScene();
+    if (!scene) return;
+
+    mesh.computeWorldMatrix(true);
+    mesh.refreshBoundingInfo(true);
+    const ext = mesh.getBoundingInfo().boundingBox.extendSize;
+
+    const minAxisIdx = this.getSmallestExtentAxisIndex(ext);
+    const extValues = [ext.x, ext.y, ext.z].sort((a, b) => a - b);
+    const minExtent = extValues[0];
+    const outerRadius = extValues[2]; // max extent in the ring plane
+
+    // Interpret extents as torus parameters in local space:
+    // - minorRadius ~= minExtent
+    // - outerRadius ~= majorRadius + minorRadius
+    const oldMinorRadius = minExtent;
+    const oldOuterDiameter = outerRadius * 2;
+    const oldThickness = oldMinorRadius * 2;
+
+    // Keep outer diameter stable while thickening the tube:
+    const newThickness = Math.min(
+      oldOuterDiameter * 0.6,
+      Math.max(oldThickness * thicknessMultiplier, oldThickness),
+    );
+    const newDiameter = Math.max(0.0001, oldOuterDiameter - newThickness);
+
+    const tessellation = this.estimateTessellation(mesh);
+
+    const tmp = MeshBuilder.CreateTorus(
+      `${mesh.name}_thickTmp`,
+      { diameter: newDiameter, thickness: newThickness, tessellation },
+      scene,
+    );
+
+    // Align tmp torus axis to match the existing mesh's symmetry axis
+    tmp.refreshBoundingInfo(true);
+    const tmpExt = tmp.getBoundingInfo().boundingBox.extendSize;
+    const tmpAxisIdx = this.getSmallestExtentAxisIndex(tmpExt);
+
+    const fromAxis = this.axisVectorFromIndex(tmpAxisIdx);
+    const toAxis = this.axisVectorFromIndex(minAxisIdx);
+    tmp.rotationQuaternion = this.quaternionFromTo(fromAxis, toAxis);
+    tmp.bakeCurrentTransformIntoVertices();
+
+    const vd = VertexData.ExtractFromMesh(tmp);
+    vd.applyToMesh(mesh, true);
+    mesh.refreshBoundingInfo(true);
+
+    tmp.dispose();
+  }
+
   private applyDepthCueToRotationLoops(): void {
     if (!this.rotationGizmo) return;
 
@@ -450,6 +593,7 @@ export class RotationGizmo implements IGizmoTransformer {
     this.rotationGizmo = this.gizmoManager.gizmos.rotationGizmo;
     // Run customization when rotation gizmo is enabled so first use shows new gizmo
     this.customizeGizmoAppearance();
+    this.thickenRotationLoops();
     this.applyDepthCueToRotationLoops();
     this.setupDragObservables();
     // Configure gizmo to only work with left click
