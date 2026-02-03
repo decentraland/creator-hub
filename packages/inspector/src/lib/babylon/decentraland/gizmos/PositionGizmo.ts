@@ -477,6 +477,9 @@ export class PositionGizmo implements IGizmoTransformer {
     const onPointerMove = (pointerInfo: PointerInfo) => {
       if (pointerInfo.type !== PointerEventTypes.POINTERMOVE) return;
       if (!this.isFreeDragging) return;
+      // Match standard gizmo UX: free-drag is active only while holding the button.
+      const buttons = (pointerInfo.event as any)?.buttons;
+      if (typeof buttons === 'number' && (buttons & 1) === 0) return;
 
       // Ensure gizmo stays hidden during free drag (fixes Shift key bug)
       this.hideGizmo();
@@ -563,16 +566,22 @@ export class PositionGizmo implements IGizmoTransformer {
 
       if (!pickCenterCircle()) return;
 
-      // Start free drag when clicking the center circle.
-      // Babylon's IMouseEvent isn't always a DOM MouseEvent, so these may not exist.
-      (pointerInfo.event as any)?.preventDefault?.();
-      (pointerInfo.event as any)?.stopPropagation?.();
+      // Start free drag on press (consistent with other gizmo handles).
+      // Hide the other gizmo meshes immediately to avoid accidental axis drags.
       this.startFreeDrag();
+    };
+
+    const onPointerUp = (pointerInfo: PointerInfo) => {
+      if (pointerInfo.type !== PointerEventTypes.POINTERUP) return;
+      if (this.isFreeDragging) {
+        this.handleFreeDragEnd();
+      }
     };
 
     this.centerCirclePointerObservers.push(
       gizmoScene.onPointerObservable.add(onPointerMove),
       gizmoScene.onPointerObservable.add(onPointerDown),
+      gizmoScene.onPointerObservable.add(onPointerUp),
     );
   }
 
