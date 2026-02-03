@@ -66,6 +66,7 @@ export class ScaleGizmo implements IGizmoTransformer {
   constructor(
     private gizmoManager: GizmoManager,
     private snapScale: (scale: Vector3) => Vector3,
+    private getUniformScaleOnly?: () => boolean,
   ) {}
 
   private clampScaleComponent(value: number): number {
@@ -399,7 +400,8 @@ export class ScaleGizmo implements IGizmoTransformer {
       const dragDistance = deltaX - deltaY;
       const scaleFactor = this.calculateScaleFactor(dragDistance);
 
-      // Apply scaling based on plane type
+      // Apply scaling based on plane type (or uniform when proportional scaling is locked)
+      const uniformOnly = this.getUniformScaleOnly?.() ?? false;
       for (const entity of this.currentEntities) {
         const initialScale = initialEntityScales.get(entity.entityId);
         const offset = this.initialOffsets.get(entity.entityId);
@@ -408,10 +410,10 @@ export class ScaleGizmo implements IGizmoTransformer {
 
         if (!initialScale || !offset || !initialRotation || !initialPosition) continue;
 
-        // Calculate scale change based on plane type
         let scaleChange: Vector3;
-
-        if (planeType === 'XY') {
+        if (uniformOnly) {
+          scaleChange = new Vector3(scaleFactor, scaleFactor, scaleFactor);
+        } else if (planeType === 'XY') {
           scaleChange = new Vector3(scaleFactor, scaleFactor, 1);
         } else if (planeType === 'XZ') {
           scaleChange = new Vector3(scaleFactor, 1, scaleFactor);
@@ -709,6 +711,15 @@ export class ScaleGizmo implements IGizmoTransformer {
       gizmoNode.scaling.y / this.initialGizmoScale.y,
       gizmoNode.scaling.z / this.initialGizmoScale.z,
     );
+
+    // When proportional scaling is locked (Transform scale lock), force uniform scale
+    if (this.getUniformScaleOnly?.()) {
+      const product = scaleChange.x * scaleChange.y * scaleChange.z;
+      const s = product <= 0 ? this.minScaleValue : Math.pow(product, 1 / 3);
+      scaleChange.set(s, s, s);
+      // Keep gizmo node scaling uniform so the gizmo visual matches entity behavior
+      gizmoNode.scaling.copyFrom(this.initialGizmoScale).scaleInPlace(s);
+    }
 
     for (const entity of entities) {
       const offset = this.initialOffsets.get(entity.entityId);
