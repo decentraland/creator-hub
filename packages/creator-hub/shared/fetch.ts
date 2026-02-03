@@ -22,7 +22,7 @@ export const isFetchError = (
  * Check if there's an internet connection
  */
 function isOnline(): boolean {
-  if (typeof navigator !== 'undefined' && typeof navigator.onLine !== 'undefined') {
+  if (typeof navigator !== 'undefined' && typeof navigator?.onLine === 'boolean') {
     return navigator.onLine;
   }
 
