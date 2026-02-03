@@ -47,7 +47,7 @@ const DEPTH_CUE_FRAGMENT_SHADER = `
     toFragment /= dist;
     float frontBack = dot(toFragment, V);
     float facing = smoothstep(-0.4, 0.2, frontBack);
-    float brightness = mix(0.25, 1, facing);
+    float brightness = mix(0.25, 1.0, facing);
     gl_FragColor = vec4(baseColor * brightness, alpha);
   }
 `;
