@@ -197,21 +197,21 @@ export class ScaleGizmo implements IGizmoTransformer {
   private static readonly UNIFORM_CUBE_EMISSIVE_HOVER = new Color3(1, 1, 1);
 
   private addUniformScaleDragBehavior(uniformGizmo: any): void {
-    if (this.uniformScalePointerObservers.length > 0) return;
-
     const scene = uniformGizmo._rootMesh?.getScene();
     if (!scene) return;
+
+    // Remove any existing observers so we always register for the current cube.
+    // configureUniformScaleGizmo runs twice (from setup() and from enable() next frame) and
+    // replaces the center cube on the second run; without re-registering we'd keep observers
+    // pointing at the disposed cube/material and hover would stop working after switching away and back.
+    for (const obs of this.uniformScalePointerObservers) {
+      scene.onPointerObservable.remove(obs);
+    }
+    this.uniformScalePointerObservers = [];
 
     // Get the mesh of the uniform scale gizmo - try different possible properties
     const uniformMesh = uniformGizmo._rootMesh || uniformGizmo._mesh || uniformGizmo._gizmoMesh;
     if (!uniformMesh) return;
-
-    // Center cube is the custom mesh we set (only child of _rootMesh after setCustomMesh)
-    const centerCube = uniformGizmo._rootMesh.getChildMeshes()[0];
-    const centerMaterial =
-      centerCube?.material && centerCube.material.getClassName?.() === 'StandardMaterial'
-        ? (centerCube.material as StandardMaterial)
-        : null;
 
     // Also get the root mesh of the scale gizmo to check hierarchy
     const scaleGizmoRoot = this.gizmoManager.gizmos.scaleGizmo?._rootMesh;
@@ -321,7 +321,14 @@ export class ScaleGizmo implements IGizmoTransformer {
     };
 
     const onPointerMoveHover = (pointerInfo: PointerInfo) => {
-      if (pointerInfo.type !== PointerEventTypes.POINTERMOVE || !centerMaterial) return;
+      if (pointerInfo.type !== PointerEventTypes.POINTERMOVE) return;
+      // Resolve current center cube/material each time (mesh may be replaced when configureUniformScaleGizmo runs again)
+      const centerCube = uniformGizmo._rootMesh.getChildMeshes()[0];
+      const centerMaterial =
+        centerCube?.material && centerCube.material.getClassName?.() === 'StandardMaterial'
+          ? (centerCube.material as StandardMaterial)
+          : null;
+      if (!centerMaterial) return;
       const pickInfo = pointerInfo.pickInfo;
       const isHovering = pickInfo?.hit && pickInfo.pickedMesh === centerCube;
       centerMaterial.emissiveColor = isHovering
