@@ -184,6 +184,7 @@
         "world": "Publish to your World",
         "land": "Publish to your Land",
         "server": "Publish to Server",
+        "scene_size": "Scene size: {size}",
         "loading": "Loading...",
         "error": "Error",
         "warning": {

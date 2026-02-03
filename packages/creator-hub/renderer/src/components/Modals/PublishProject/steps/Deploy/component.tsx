@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import cx from 'classnames';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import { ChainId } from '@dcl/schemas';
 import { Typography, Checkbox } from 'decentraland-ui2';
 
 import { misc } from '#preload';
@@ -18,7 +17,6 @@ import { useCounter } from '/@/hooks/useCounter';
 import { type Deployment } from '/@/modules/store/deployment/slice';
 import { getInvalidFiles, MAX_FILE_SIZE_BYTES } from '/@/modules/store/deployment/utils';
 import { t } from '/@/modules/store/translation/utils';
-import { addBase64ImagePrefix } from '/@/modules/image';
 import { REPORT_ISSUES_URL } from '/@/modules/utils';
 import { formatSize } from '/@/modules/file';
 
@@ -30,6 +28,7 @@ import { ExpandMore } from '/@/components/ExpandMore';
 
 import type { Step } from '/@/components/Step/types';
 import type { Props } from '/@/components/Modals/PublishProject/types';
+import { ProjectStepWrapper } from '/@/components/Modals/PublishProject/ProjectStepWrapper';
 
 import './styles.css';
 
@@ -47,7 +46,7 @@ function getPath(filename: string) {
 
 export function Deploy(props: Props) {
   const { project, previousStep, onStep, onBack } = props;
-  const { chainId, wallet, avatar, signOut } = useAuth();
+  const { signOut } = useAuth();
   const { updateProjectInfo } = useWorkspace();
   const { loadingPublish, publishError } = useEditor();
   const { getDeployment, executeDeployment } = useDeploy();
@@ -211,100 +210,62 @@ export function Deploy(props: Props) {
             </div>
           </div>
         ) : (
-          <>
-            <div className="ethereum">
-              <div className="chip network">
-                {chainId === ChainId.ETHEREUM_MAINNET
-                  ? t('modal.publish_project.deploy.ethereum.mainnet')
-                  : t('modal.publish_project.deploy.ethereum.testnet')}
+          <ProjectStepWrapper
+            isWorld={isWorld}
+            project={project}
+            className="scene"
+          >
+            {loadingPublish ? (
+              <div className="header">
+                <Loader />
+                <Typography variant="h5">
+                  {t('modal.publish_project.deploy.deploying.publish')}
+                </Typography>
               </div>
-              {wallet ? (
-                <div className="chip address">
-                  {wallet.slice(0, 6)}...{wallet.slice(-4)}
-                </div>
-              ) : null}
-              {isWorld ? (
-                avatar ? (
-                  <div className="chip username">
-                    {avatar.name}
-                    {avatar.hasClaimedName ? <i className="verified"></i> : null}
-                  </div>
-                ) : null
-              ) : (
-                <div className="chip parcel">
-                  <i className="pin"></i>
-                  {project.scene.base}
-                </div>
-              )}
-            </div>
-            <div className="scene">
-              <div className="info">
-                <div
-                  className="thumbnail"
-                  style={{ backgroundImage: `url(${addBase64ImagePrefix(project.thumbnail)})` }}
-                />
-                <div className="text">
-                  <Typography variant="body1">{project.title}</Typography>
-                  <Typography
-                    variant="body2"
-                    color="#A09BA8"
-                  >
-                    {project.description}
-                  </Typography>
-                </div>
-              </div>
-              {loadingPublish ? (
-                <div className="header">
-                  <Loader />
-                  <Typography variant="h5">
-                    {t('modal.publish_project.deploy.deploying.publish')}
-                  </Typography>
-                </div>
-              ) : publishError || !deployment || deployment.status === 'failed' ? (
-                <Error
-                  errorMessage={deployment?.error?.message}
-                  errorCause={publishError || deployment?.error?.cause}
-                  errorType={
-                    publishError
-                      ? 'code_error'
-                      : deployment?.error?.name === 'INVALID_IDENTITY'
-                        ? 'identity_error'
-                        : 'deployment_error'
-                  }
-                  steps={steps}
-                  onRetry={handleDeployRetry}
-                  onReportIssue={handleReportIssue}
-                  goToSignIn={handleGoToSignIn}
-                />
-              ) : (
-                <>
-                  {deployment.status === 'idle' && (
-                    <Idle
-                      files={deployment.files}
-                      error={deployment.error}
-                      onClick={() => (skipWarning ? handlePublish() : setShowWarning(true))}
-                    />
-                  )}
-                  {deployment.status === 'pending' && (
-                    <Deploying
-                      deployment={deployment}
-                      url={jumpInUrl}
-                      steps={steps}
-                      onClick={handleJumpIn}
-                      onRetry={handleDeployRetry}
-                    />
-                  )}
-                  {deployment.status === 'complete' && (
-                    <Success
-                      info={deployment.info}
-                      url={jumpInUrl}
-                      onClick={handleJumpIn}
-                    />
-                  )}
-                </>
-              )}
-            </div>
-          </>
+            ) : publishError || !deployment || deployment.status === 'failed' ? (
+              <Error
+                errorMessage={deployment?.error?.message}
+                errorCause={publishError || deployment?.error?.cause}
+                errorType={
+                  publishError
+                    ? 'code_error'
+                    : deployment?.error?.name === 'INVALID_IDENTITY'
+                      ? 'identity_error'
+                      : 'deployment_error'
+                }
+                steps={steps}
+                onRetry={handleDeployRetry}
+                onReportIssue={handleReportIssue}
+                goToSignIn={handleGoToSignIn}
+              />
+            ) : (
+              <>
+                {deployment.status === 'idle' && (
+                  <Idle
+                    files={deployment.files}
+                    error={deployment.error}
+                    onClick={() => (skipWarning ? handlePublish() : setShowWarning(true))}
+                  />
+                )}
+                {deployment.status === 'pending' && (
+                  <Deploying
+                    deployment={deployment}
+                    url={jumpInUrl}
+                    steps={steps}
+                    onClick={handleJumpIn}
+                    onRetry={handleDeployRetry}
+                  />
+                )}
+                {deployment.status === 'complete' && (
+                  <Success
+                    info={deployment.info}
+                    url={jumpInUrl}
+                    onClick={handleJumpIn}
+                  />
+                )}
+              </>
+            )}
+          </ProjectStepWrapper>
         )}
       </div>
     </PublishModal>

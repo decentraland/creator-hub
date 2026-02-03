@@ -184,6 +184,7 @@
         "world": "发布到您的世界",
         "land": "发布到您的土地",
         "server": "发布到服务器",
+        "scene_size": "场景大小：{size}",
         "loading": "加载中...",
         "error": "错误",
         "warning": {

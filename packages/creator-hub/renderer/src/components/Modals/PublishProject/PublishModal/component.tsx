@@ -18,7 +18,7 @@ export function PublishModal(props: React.PropsWithChildren<ModalProps>) {
       size="small"
       {...rest}
       onBack={onBack || onBackNoop}
-      onClose={handleClose as any} // ui2 is not typing this correctly..."reason" is being provided anyway...
+      onClose={handleClose}
     >
       {props.children}
     </Modal>
