@@ -11,6 +11,7 @@ import {
   MeshBuilder,
   VertexBuffer,
   VertexData,
+  Material,
   type Scene,
   type Observer,
 } from '@babylonjs/core';
@@ -572,6 +573,10 @@ export class RotationGizmo implements IGizmoTransformer {
     mat.setColor3('baseColor', baseColor);
     mat.setFloat('alpha', alpha);
     mat.backFaceCulling = false;
+    // IMPORTANT: enable alpha blending so gl_FragColor.a is respected.
+    // Without this, the shader writes alpha but the material is still rendered as opaque.
+    mat.transparencyMode = Material.MATERIAL_ALPHABLEND;
+    mat.needAlphaBlending = () => true;
     return mat;
   }
 
