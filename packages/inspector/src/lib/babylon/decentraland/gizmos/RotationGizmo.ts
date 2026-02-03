@@ -49,9 +49,9 @@ const DEPTH_CUE_FRAGMENT_SHADER = `
     if (dist < 0.001) { gl_FragColor = vec4(baseColor, alpha); return; }
     toFragment /= dist;
     float frontBack = dot(toFragment, V);
+    // Facing goes 0 (far side) -> 1 (near side). We fade alpha rather than darken color.
     float facing = smoothstep(-0.4, 0.2, frontBack);
-    float brightness = mix(0.25, 1.0, facing);
-    gl_FragColor = vec4(baseColor * brightness, alpha);
+    gl_FragColor = vec4(baseColor, alpha * facing);
   }
 `;
 
