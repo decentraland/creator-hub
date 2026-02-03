@@ -180,7 +180,7 @@ export class PhotoMural {
                 this.targetCoordinates,
               );
             } else {
-              console.warn(
+              console.log(
                 'PhotoMural: No worldConfiguration or base parcel found in scene.json, using empty configuration',
               );
               this.targetCoordinates = [];
@@ -200,7 +200,7 @@ export class PhotoMural {
         this.targetCoordinates = [this.coordinates];
         console.log('PhotoMural: Using provided coordinates:', this.targetCoordinates);
       } else {
-        console.warn(
+        console.log(
           'PhotoMural: use_current_scene is false but no world_id or coordinates provided',
         );
         this.targetCoordinates = [];
