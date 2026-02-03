@@ -22,7 +22,6 @@ import './styles.css';
 enum WorldPermissionsTab {
   ACCESS = 'access',
   COLLABORATORS = 'collaborators',
-  PARCELS = 'parcels',
 }
 
 const WORLD_PERMISSIONS_TABS: Array<{ label: string; value: WorldPermissionsTab }> = [
@@ -66,6 +65,11 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
       () => Object.keys(worldPermissionsSummary || {}),
       [worldPermissionsSummary],
     );
+
+    const handleTabClick = useCallback((tab: WorldPermissionsTab) => {
+      setActiveTab(tab);
+      setActiveCollaboratorAddress(null);
+    }, []);
 
     const handleToggleAccessPermission = useCallback(() => {
       if (!worldPermissions) return;
@@ -192,7 +196,6 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
 
     const handleGrantParcelsDeploymentPermission = useCallback(
       (walletAddress: string) => {
-        setActiveTab(WorldPermissionsTab.PARCELS);
         setActiveCollaboratorAddress(walletAddress);
         dispatch(fetchWorldScenes({ worldName }));
         dispatch(
@@ -207,7 +210,6 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
     );
 
     const handleGoBackToCollaboratorsTab = useCallback(() => {
-      setActiveTab(WorldPermissionsTab.COLLABORATORS);
       setActiveCollaboratorAddress(null);
     }, []);
 
@@ -224,12 +226,10 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
         {...props}
         title={t('modal.world_permissions.title', { worldName: worldName })}
         className="WorldPermissionsModal"
-        orientation="horizontal"
         icon={<LockIcon />}
         tabs={WORLD_PERMISSIONS_TABS}
-        showTabs={activeTab !== WorldPermissionsTab.PARCELS}
         activeTab={activeTab}
-        onTabClick={setActiveTab}
+        onTabClick={handleTabClick}
         onClose={handleClose}
       >
         {isLoading && !worldPermissions ? (
@@ -247,27 +247,27 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
                   onRemoveAccessFromAddress={handleRemoveAccessFromAddress}
                 />
               )}
-              {activeTab === WorldPermissionsTab.COLLABORATORS && (
-                <WorldPermissionsCollaboratorsTab
-                  worldDeploymentPermissions={worldPermissions.deployment}
-                  worldStreamingPermissions={worldPermissions.streaming}
-                  worldPermissionsSummary={worldPermissionsSummary || {}}
-                  collaboratorUsersList={collaboratorUsersList}
-                  isLoadingNewUser={isLoadingNewUser}
-                  onAddCollaborator={handleAddCollaborator}
-                  onRemoveCollaborator={handleRemoveCollaborator}
-                  onGrantWorldWideDeploymentPermission={handleGrantWorldWideDeploymentPermission}
-                  onGrantParcelsDeploymentPermission={handleGrantParcelsDeploymentPermission}
-                />
-              )}
-              {activeTab === WorldPermissionsTab.PARCELS && (
-                <WorldPermissionsParcelsTab
-                  worldName={worldName}
-                  worldScenes={worldScenes || []}
-                  walletAddress={activeCollaboratorAddress ?? ''}
-                  onGoBack={handleGoBackToCollaboratorsTab}
-                />
-              )}
+              {activeTab === WorldPermissionsTab.COLLABORATORS &&
+                (!activeCollaboratorAddress ? (
+                  <WorldPermissionsCollaboratorsTab
+                    worldDeploymentPermissions={worldPermissions.deployment}
+                    worldStreamingPermissions={worldPermissions.streaming}
+                    worldPermissionsSummary={worldPermissionsSummary || {}}
+                    collaboratorUsersList={collaboratorUsersList}
+                    isLoadingNewUser={isLoadingNewUser}
+                    onAddCollaborator={handleAddCollaborator}
+                    onRemoveCollaborator={handleRemoveCollaborator}
+                    onGrantWorldWideDeploymentPermission={handleGrantWorldWideDeploymentPermission}
+                    onGrantParcelsDeploymentPermission={handleGrantParcelsDeploymentPermission}
+                  />
+                ) : (
+                  <WorldPermissionsParcelsTab
+                    worldName={worldName}
+                    worldScenes={worldScenes || []}
+                    walletAddress={activeCollaboratorAddress ?? ''}
+                    onGoBack={handleGoBackToCollaboratorsTab}
+                  />
+                ))}
             </>
           )
         )}
