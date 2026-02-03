@@ -1,10 +1,6 @@
 import { Schemas } from '@dcl/ecs';
-import { BaseComponentNames } from '../base-names';
 
-const SELECTION_BASE_NAME = BaseComponentNames.SELECTION;
-
-const SelectionV0 = {
-  gizmo: Schemas.Int,
-};
-
-export const SELECTION_VERSIONS = [{ versionName: SELECTION_BASE_NAME, component: SelectionV0 }];
+export const SELECTION_VERSIONS = [
+  { gizmo: Schemas.Int },
+  { gizmo: Schemas.Int, testing: Schemas.Optional(Schemas.Number) },
+] as const;

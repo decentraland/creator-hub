@@ -20,8 +20,6 @@ import type {
 } from '@dcl/asset-packs';
 import { createComponents as createAssetPacksComponents } from '@dcl/asset-packs';
 import type { Layout } from '../../utils/layout';
-import type { GizmoType } from '../../utils/gizmo';
-import type { TransformConfig } from './TransformConfig';
 import type { TransitionMode } from './SceneMetadata';
 import {
   Coords,
@@ -30,9 +28,11 @@ import {
   SceneAgeRating,
   SceneCategory,
 } from './SceneMetadata';
-import type { ConfigComponentType } from './versioning/definitions/config';
-import type { InspectorUIStateType } from './versioning/definitions/inspector-ui-state';
-import { defineAllVersionedComponents, BaseComponentNames } from './versioning/constants';
+import {
+  defineAllVersionedComponents,
+  BaseComponentNames,
+  type InspectorVersionedComponents,
+} from './versioning/constants';
 import { EditorComponentNames as BaseEditorComponentNames } from './types';
 
 export { SceneAgeRating, SceneCategory };
@@ -87,36 +87,41 @@ export type SceneComponent = {
   spawnPoints?: SceneSpawnPoint[];
 };
 
-// eslint-disable-next-line @typescript-eslint/ban-types
-export type GroundComponent = {};
-// eslint-disable-next-line @typescript-eslint/ban-types
-export type TileComponent = {};
+/**
+ * Utility type to extract the value type from a component definition
+ */
+type ComponentValue<T> = T extends LastWriteWinElementSetComponentDefinition<infer V> ? V : never;
 
-export type CustomAssetComponent = {
-  assetId: string;
-};
-
+/**
+ * Value types for all editor components.
+ * Inspector versioned components automatically use the latest version type from their definitions.
+ */
 export type EditorComponentsTypes = {
-  Selection: { gizmo: GizmoType };
+  Selection: ComponentValue<InspectorVersionedComponents[typeof BaseComponentNames.SELECTION]>;
+  Nodes: ComponentValue<InspectorVersionedComponents[typeof BaseComponentNames.NODES]>;
+  TransformConfig: ComponentValue<
+    InspectorVersionedComponents[typeof BaseComponentNames.TRANSFORM_CONFIG]
+  >;
+  Hide: ComponentValue<InspectorVersionedComponents[typeof BaseComponentNames.HIDE]>;
+  Lock: ComponentValue<InspectorVersionedComponents[typeof BaseComponentNames.LOCK]>;
+  Ground: ComponentValue<InspectorVersionedComponents[typeof BaseComponentNames.GROUND]>;
+  Tile: ComponentValue<InspectorVersionedComponents[typeof BaseComponentNames.TILE]>;
+  CustomAsset: ComponentValue<InspectorVersionedComponents[typeof BaseComponentNames.CUSTOM_ASSET]>;
+  Config: ComponentValue<InspectorVersionedComponents[typeof BaseComponentNames.CONFIG]>;
+  InspectorUIState: ComponentValue<
+    InspectorVersionedComponents[typeof BaseComponentNames.INSPECTOR_UI_STATE]
+  >;
+  // Other components
   Scene: SceneComponent;
-  Nodes: { value: Node[] };
-  TransformConfig: TransformConfig;
   ActionTypes: ActionTypes;
   Actions: Actions;
   Triggers: Triggers;
   States: States;
   Counter: Counter;
-  Hide: { value: boolean };
-  Lock: { value: boolean };
   CounterBar: CounterBar;
-  Config: ConfigComponentType;
-  Ground: GroundComponent;
-  Tile: TileComponent;
-  CustomAsset: CustomAssetComponent;
   AdminTools: AdminTools;
   VideoScreen: VideoScreen;
   Rewards: Rewards;
-  InspectorUIState: InspectorUIStateType;
   Script: Script;
 };
 
@@ -256,46 +261,17 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
 
   const Scene = defineSceneComponents(engine).pop() as ReturnType<typeof defineSceneComponents>[0];
 
-  // Define all versioned components (all versions for migrations, returns latest)
   const versionedComponents = defineAllVersionedComponents(engine);
-  const Selection = versionedComponents[
-    BaseComponentNames.SELECTION
-  ] as LastWriteWinElementSetComponentDefinition<{
-    gizmo: GizmoType;
-  }>;
-  const Nodes = versionedComponents[
-    BaseComponentNames.NODES
-  ] as LastWriteWinElementSetComponentDefinition<{
-    value: Node[];
-  }>;
-  const TransformConfig = versionedComponents[
-    BaseComponentNames.TRANSFORM_CONFIG
-  ] as LastWriteWinElementSetComponentDefinition<TransformConfig>;
-  const Hide = versionedComponents[
-    BaseComponentNames.HIDE
-  ] as LastWriteWinElementSetComponentDefinition<{
-    value: boolean;
-  }>;
-  const Lock = versionedComponents[
-    BaseComponentNames.LOCK
-  ] as LastWriteWinElementSetComponentDefinition<{
-    value: boolean;
-  }>;
-  const Ground = versionedComponents[
-    BaseComponentNames.GROUND
-  ] as LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['Ground']>;
-  const Tile = versionedComponents[
-    BaseComponentNames.TILE
-  ] as LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['Tile']>;
-  const CustomAsset = versionedComponents[
-    BaseComponentNames.CUSTOM_ASSET
-  ] as LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['CustomAsset']>;
-  const Config = versionedComponents[
-    BaseComponentNames.CONFIG
-  ] as LastWriteWinElementSetComponentDefinition<ConfigComponentType>;
-  const InspectorUIState = versionedComponents[
-    BaseComponentNames.INSPECTOR_UI_STATE
-  ] as LastWriteWinElementSetComponentDefinition<InspectorUIStateType>;
+  const Selection = versionedComponents[BaseComponentNames.SELECTION];
+  const Nodes = versionedComponents[BaseComponentNames.NODES];
+  const TransformConfig = versionedComponents[BaseComponentNames.TRANSFORM_CONFIG];
+  const Hide = versionedComponents[BaseComponentNames.HIDE];
+  const Lock = versionedComponents[BaseComponentNames.LOCK];
+  const Ground = versionedComponents[BaseComponentNames.GROUND];
+  const Tile = versionedComponents[BaseComponentNames.TILE];
+  const CustomAsset = versionedComponents[BaseComponentNames.CUSTOM_ASSET];
+  const Config = versionedComponents[BaseComponentNames.CONFIG];
+  const InspectorUIState = versionedComponents[BaseComponentNames.INSPECTOR_UI_STATE];
 
   return {
     Selection,
