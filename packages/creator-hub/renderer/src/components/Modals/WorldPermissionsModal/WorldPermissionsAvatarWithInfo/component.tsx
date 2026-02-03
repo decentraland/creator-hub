@@ -1,9 +1,8 @@
 import React from 'react';
-import { AvatarFace, Skeleton, Typography } from 'decentraland-ui2';
+import { Address, AvatarFace, Skeleton, Typography } from 'decentraland-ui2';
 import { useProfile } from '/@/hooks/useProfile';
 import { Row } from '/@/components/Row';
 import { CopyToClipboard } from '/@/components/CopyToClipboard';
-import { getResumedAddress } from '../utils';
 import './styles.css';
 
 export type Props = {
@@ -40,8 +39,11 @@ export const WorldPermissionsAvatarWithInfo: React.FC<Props> = React.memo(
           showPopup
         >
           <Typography className="Paragraph">
-            {avatar?.name && <span>{avatar.name}</span>}
-            {getResumedAddress(walletAddress)}
+            {avatar?.name && <span className="Name">{avatar.name}</span>}
+            <Address
+              value={walletAddress}
+              shorten
+            />
           </Typography>
         </CopyToClipboard>
       </Row>
