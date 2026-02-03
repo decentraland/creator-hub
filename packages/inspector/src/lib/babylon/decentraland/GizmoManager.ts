@@ -33,8 +33,10 @@ export function createGizmoManager(context: SceneContext) {
   const rotationTransformer = new RotationGizmo(gizmoManager, snapRotation);
   const scaleTransformer = new ScaleGizmo(gizmoManager, snapScale, () => {
     if (selectedEntities.length === 0) return false;
-    const config = context.editorComponents.TransformConfig.getOrNull(selectedEntities[0].entityId);
-    return !!config?.porportionalScaling;
+    // If any selected entity has proportional scaling locked, force uniform scale for all
+    return selectedEntities.some(
+      e => !!context.editorComponents.TransformConfig.getOrNull(e.entityId)?.porportionalScaling,
+    );
   });
   const freeTransformer = new FreeGizmo(context.scene);
 
