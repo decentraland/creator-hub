@@ -480,7 +480,7 @@ const slice = createSlice({
           const { permissions, summary, owner } = action.payload;
           state.worldPermissions.permissions = permissions;
           state.worldPermissions.summary = summary;
-          state.worldPermissions.owner = owner;
+          state.worldPermissions.owner = owner || '';
           state.worldPermissions.status = 'succeeded';
           state.worldPermissions.error = null;
         } else {
