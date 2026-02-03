@@ -8,9 +8,9 @@ import type { WorldScene } from '/@/lib/worlds';
 import { WorldPermissionName } from '/@/lib/worlds';
 import { MAX_COORDINATE, MIN_COORDINATE } from '/@/modules/world';
 import {
-  actions as permissionsActions,
-  selectors as permissionsSelectors,
-} from '/@/modules/store/permissions';
+  actions as managementActions,
+  selectors as managementSelectors,
+} from '/@/modules/store/management';
 import { WorldAtlas, WorldAtlasColors } from '/@/components/WorldAtlas';
 import { WorldPermissionsAvatarWithInfo } from '../../WorldPermissionsAvatarWithInfo';
 import './styles.css';
@@ -33,7 +33,7 @@ const WorldPermissionsParcelsTab: React.FC<Props> = React.memo(
       to: { x: number; y: number } | null;
     }>({ isSelectingParcels: false, from: null, to: null });
     const initialParcelsState = useSelector(state =>
-      permissionsSelectors.getParcelsStateForAddress(state, walletAddress),
+      managementSelectors.getParcelsStateForAddress(state, walletAddress),
     );
     const initialParcels = useMemo(
       () => new Set(initialParcelsState?.parcels || []),
@@ -156,7 +156,7 @@ const WorldPermissionsParcelsTab: React.FC<Props> = React.memo(
 
       if (parcelsToAdd.length > 0) {
         dispatch(
-          permissionsActions.addParcelsPermission({
+          managementActions.addParcelsPermission({
             worldName,
             permissionName: WorldPermissionName.Deployment,
             walletAddress,
@@ -167,7 +167,7 @@ const WorldPermissionsParcelsTab: React.FC<Props> = React.memo(
 
       if (parcelsToRemove.length > 0) {
         dispatch(
-          permissionsActions.removeParcelsPermission({
+          managementActions.removeParcelsPermission({
             worldName,
             permissionName: WorldPermissionName.Deployment,
             walletAddress,

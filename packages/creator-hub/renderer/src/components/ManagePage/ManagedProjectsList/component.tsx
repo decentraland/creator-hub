@@ -4,12 +4,9 @@ import { useDispatch, useSelector } from '#store';
 import {
   fetchWorldSettings,
   fetchWorldScenes,
+  fetchWorldPermissions,
   selectors as managementSelectors,
 } from '/@/modules/store/management';
-import {
-  fetchWorldPermissions,
-  selectors as permissionsSelectors,
-} from '/@/modules/store/permissions';
 import { WorldSettingsTab, type ManagedProject } from '/shared/types/manage';
 import { WorldSettingsModal } from '../../Modals/WorldSettingsModal';
 import { WorldPermissionsModal } from '../../Modals/WorldPermissionsModal';
@@ -38,7 +35,7 @@ const ManagedProjectsList: React.FC<Props> = React.memo(({ projects }) => {
     isOpen: false,
   });
   const worldSettings = useSelector(managementSelectors.getWorldSettings);
-  const worldPermissions = useSelector(permissionsSelectors.getPermissionsState);
+  const worldPermissions = useSelector(managementSelectors.getPermissionsState);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -97,10 +94,10 @@ const ManagedProjectsList: React.FC<Props> = React.memo(({ projects }) => {
       <WorldPermissionsModal
         open={permissionsModal.isOpen}
         worldName={worldPermissions.worldName}
-        worldOwnerAddress={worldPermissions.permissions?.owner ?? ''}
+        worldOwnerAddress={worldPermissions.owner}
         worldScenes={worldSettings.scenes}
-        worldPermissions={worldPermissions.permissions?.permissions}
-        worldPermissionsSummary={worldPermissions.permissions?.summary}
+        worldPermissions={worldPermissions.permissions ?? undefined}
+        worldPermissionsSummary={worldPermissions.summary}
         isLoading={worldPermissions.status === 'loading' || worldPermissions.status === 'idle'}
         isLoadingNewUser={worldPermissions.loadingNewUser}
         onClose={handleClosePermissionsModal}

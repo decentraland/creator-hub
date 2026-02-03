@@ -6,11 +6,11 @@ import {
   addAddressPermission,
   removeAddressPermission,
   updateWorldPermissions,
-  actions as permissionsActions,
-} from '/@/modules/store/permissions';
+  fetchWorldScenes,
+  actions as managementActions,
+} from '/@/modules/store/management';
 import type { AddressWorldPermission, WorldScene } from '/@/lib/worlds';
 import { WorldPermissionName, WorldPermissionType, type WorldPermissions } from '/@/lib/worlds';
-import { fetchWorldScenes } from '/@/modules/store/management';
 import { useDispatch } from '#store';
 import { Loader } from '../../Loader';
 import { TabsModal, type Props as TabsModalProps } from '../TabsModal';
@@ -215,7 +215,7 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
       // Reset state when the modal is closed.
       setActiveTab(WorldPermissionsTab.ACCESS);
       setActiveCollaboratorAddress(null);
-      dispatch(permissionsActions.clearState());
+      dispatch(managementActions.clearPermissionsState());
       onClose();
     }, [onClose]);
 
