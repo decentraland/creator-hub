@@ -7,7 +7,6 @@ import { t } from '/@/modules/store/translation/utils';
 import { actions as workspaceActions } from '../workspace';
 import { actions as deploymentActions } from '../deployment';
 import { actions as managementActions } from '../management';
-import { actions as permissionsActions } from '../permissions';
 import { actions as ensActions } from '../ens';
 import { actions as landActions } from '../land';
 import { shouldNotifyUpdates } from '../workspace/utils';
@@ -268,7 +267,7 @@ export const slice = createSlice({
           }),
         );
       })
-      .addCase(permissionsActions.fetchWorldPermissions.rejected, state => {
+      .addCase(managementActions.fetchWorldPermissions.rejected, state => {
         state.notifications = state.notifications.filter(
           $ => $.requestId !== 'fetchWorldPermissions',
         );
@@ -279,7 +278,7 @@ export const slice = createSlice({
           }),
         );
       })
-      .addCase(permissionsActions.updateWorldPermissions.rejected, state => {
+      .addCase(managementActions.updateWorldPermissions.rejected, state => {
         state.notifications = state.notifications.filter(
           $ => $.requestId !== 'updateWorldPermissions',
         );
@@ -290,7 +289,7 @@ export const slice = createSlice({
           }),
         );
       })
-      .addCase(permissionsActions.addAddressPermission.rejected, state => {
+      .addCase(managementActions.addAddressPermission.rejected, state => {
         state.notifications = state.notifications.filter(
           $ => $.requestId !== 'addAddressPermission',
         );
@@ -301,7 +300,7 @@ export const slice = createSlice({
           }),
         );
       })
-      .addCase(permissionsActions.removeAddressPermission.rejected, state => {
+      .addCase(managementActions.removeAddressPermission.rejected, state => {
         state.notifications = state.notifications.filter(
           $ => $.requestId !== 'removeAddressPermission',
         );
@@ -312,7 +311,7 @@ export const slice = createSlice({
           }),
         );
       })
-      .addCase(permissionsActions.fetchParcelsPermission.rejected, state => {
+      .addCase(managementActions.fetchParcelsPermission.rejected, state => {
         state.notifications = state.notifications.filter(
           $ => $.requestId !== 'fetchParcelsPermission',
         );
@@ -327,7 +326,7 @@ export const slice = createSlice({
           ),
         );
       })
-      .addCase(permissionsActions.addParcelsPermission.rejected, state => {
+      .addCase(managementActions.addParcelsPermission.rejected, state => {
         state.notifications = state.notifications.filter(
           $ => $.requestId !== 'addParcelsPermission',
         );
@@ -338,7 +337,7 @@ export const slice = createSlice({
           }),
         );
       })
-      .addCase(permissionsActions.removeParcelsPermission.rejected, state => {
+      .addCase(managementActions.removeParcelsPermission.rejected, state => {
         state.notifications = state.notifications.filter(
           $ => $.requestId !== 'removeParcelsPermission',
         );
