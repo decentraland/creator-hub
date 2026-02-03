@@ -1,4 +1,12 @@
-import type { GizmoManager, Matrix, Scene, AbstractMesh, Mesh } from '@babylonjs/core';
+import type {
+  GizmoManager,
+  Matrix,
+  Scene,
+  AbstractMesh,
+  Mesh,
+  Observer,
+  PointerInfo,
+} from '@babylonjs/core';
 import {
   Vector3,
   TransformNode,
@@ -7,6 +15,7 @@ import {
   MeshBuilder,
   Color3,
   StandardMaterial,
+  PointerEventTypes,
 } from '@babylonjs/core';
 import type { Entity } from '@dcl/ecs';
 
@@ -16,7 +25,7 @@ import { snapVector } from '../snap-manager';
 import type { IGizmoTransformer, IPlaneDragGizmoWithMesh, Vector3Axis } from './types';
 import { GizmoType } from './types';
 import { configureGizmoButtons } from './utils';
-import { FULL_ALPHA } from './constants';
+import { FULL_ALPHA, YELLOW_HOVER_COLOR, YELLOW_HOVER_EMISSIVE } from './constants';
 
 interface EntityState {
   position: Vector3;
@@ -44,6 +53,10 @@ export class PositionGizmo implements IGizmoTransformer {
   private dragObserver: any = null;
   private dragEndObserver: any = null;
   private centerCircleMesh: Mesh | null = null;
+  private centerCircleMaterial: StandardMaterial | null = null;
+  private centerCirclePointerObservers: Array<Observer<PointerInfo>> = [];
+  private freeDragPointerObservers: Array<Observer<PointerInfo>> = [];
+  private isHoveringCenterCircle = false;
 
   constructor(
     private gizmoManager: GizmoManager,
@@ -109,6 +122,7 @@ export class PositionGizmo implements IGizmoTransformer {
     this.applyPlanarGizmoOffsets();
     this.setAxisScaleRatio(positionGizmo);
     this.createCenterCircle();
+    this.setupCenterCirclePointerBehaviors();
     configureGizmoButtons(positionGizmo, [LEFT_BUTTON]);
   }
 
@@ -121,6 +135,7 @@ export class PositionGizmo implements IGizmoTransformer {
       this.showGizmo();
     }
 
+    this.cleanupCenterCirclePointerBehaviors();
     this.destroyCenterCircle();
     this.gizmoManager.positionGizmoEnabled = false;
     this.cleanupDragObservables();
@@ -199,6 +214,13 @@ export class PositionGizmo implements IGizmoTransformer {
     const positionGizmo = this.getPositionGizmo();
     if (!positionGizmo?.gizmoLayer) return null;
     return positionGizmo.gizmoLayer.utilityLayerScene;
+  }
+
+  /** Root node in the gizmo utility layer scene. This is the node that maintains constant screen size. */
+  private getPositionGizmoRootMesh(): Mesh | TransformNode | null {
+    const positionGizmo = this.getPositionGizmo();
+    if (!positionGizmo) return null;
+    return ((positionGizmo as any)._rootMesh as Mesh | TransformNode | undefined) ?? null;
   }
 
   private resetState(): void {
@@ -450,27 +472,10 @@ export class PositionGizmo implements IGizmoTransformer {
     const scene = this.getScene();
     if (!scene) return;
 
-    scene.onPointerDown = event => {
-      // Only start drag on left mouse button
-      if (event.button !== LEFT_BUTTON || this.currentEntities.length === 0) return;
+    if (this.freeDragPointerObservers.length > 0) return;
 
-      // Check if we clicked on the center circle - if so, start free drag
-      if (this.isCenterCircle(event)) {
-        this.startFreeDrag();
-        return;
-      }
-
-      // Check if we clicked on the gizmo itself - if so, let the gizmo handle it
-      const positionGizmo = this.getPositionGizmo();
-      if (positionGizmo && this.isGizmoMesh(event)) {
-        return; // Let the gizmo handle it
-      }
-
-      // Disabled: clicking and dragging on the model no longer starts free drag
-      // The free drag is now only activated by clicking the center circle
-    };
-
-    scene.onPointerMove = () => {
+    const onPointerMove = (pointerInfo: PointerInfo) => {
+      if (pointerInfo.type !== PointerEventTypes.POINTERMOVE) return;
       if (!this.isFreeDragging) return;
 
       // Ensure gizmo stays hidden during free drag (fixes Shift key bug)
@@ -482,72 +487,109 @@ export class PositionGizmo implements IGizmoTransformer {
       this.handleFreeDrag(delta);
     };
 
-    scene.onPointerUp = () => {
+    const onPointerUp = (pointerInfo: PointerInfo) => {
+      if (pointerInfo.type !== PointerEventTypes.POINTERUP) return;
       if (this.isFreeDragging) {
         this.handleFreeDragEnd();
       }
     };
+
+    this.freeDragPointerObservers.push(
+      scene.onPointerObservable.add(onPointerMove),
+      scene.onPointerObservable.add(onPointerUp),
+    );
   }
 
   private cleanupFreeDragObservables(): void {
     const scene = this.getScene();
     if (!scene) return;
 
-    scene.onPointerDown = undefined;
-    scene.onPointerMove = undefined;
-    scene.onPointerUp = undefined;
+    for (const observer of this.freeDragPointerObservers) {
+      scene.onPointerObservable.remove(observer);
+    }
+    this.freeDragPointerObservers = [];
   }
 
-  private isGizmoMesh(_event: any): boolean {
-    const positionGizmo = this.getPositionGizmo();
-    if (!positionGizmo) return false;
-
-    // Gizmo meshes live in the utility layer scene
-    const gizmoScene = this.getGizmoScene();
-    if (!gizmoScene) return false;
-
-    const pickResult = gizmoScene.pick(gizmoScene.pointerX, gizmoScene.pointerY);
-    if (!pickResult?.hit || !pickResult.pickedMesh) return false;
-
-    const mesh = pickResult.pickedMesh;
-
-    // Check if the mesh is the center circle
-    if (
-      this.centerCircleMesh &&
-      (mesh === this.centerCircleMesh || mesh.isDescendantOf(this.centerCircleMesh))
-    ) {
-      return false; // Center circle is handled separately
-    }
-
-    // Check if the mesh is part of any gizmo
-    const gizmos = [
-      positionGizmo.xGizmo,
-      positionGizmo.yGizmo,
-      positionGizmo.zGizmo,
-      positionGizmo.xPlaneGizmo,
-      positionGizmo.yPlaneGizmo,
-      positionGizmo.zPlaneGizmo,
-    ];
-
-    for (const gizmo of gizmos) {
-      if (gizmo?._rootMesh && (mesh === gizmo._rootMesh || mesh.isDescendantOf(gizmo._rootMesh))) {
-        return true;
-      }
-    }
-
-    return false;
+  private isPickedCenterCircleMesh(pickedMesh: AbstractMesh | null | undefined): boolean {
+    if (!pickedMesh || !this.centerCircleMesh) return false;
+    return pickedMesh === this.centerCircleMesh || pickedMesh.isDescendantOf(this.centerCircleMesh);
   }
 
-  private isCenterCircle(_event: any): boolean {
+  private setCenterCircleHoverState(isHovering: boolean): void {
+    if (this.isHoveringCenterCircle === isHovering) return;
+    this.isHoveringCenterCircle = isHovering;
+
+    if (!this.centerCircleMaterial) return;
+
+    const canvas = this.getGizmoScene()?.getEngine().getRenderingCanvas();
+    if (canvas) {
+      canvas.style.cursor = isHovering ? 'pointer' : '';
+    }
+
+    if (isHovering && !this.isFreeDragging) {
+      this.centerCircleMaterial.diffuseColor = YELLOW_HOVER_COLOR;
+      this.centerCircleMaterial.emissiveColor = YELLOW_HOVER_EMISSIVE;
+    } else {
+      // Keep it white when not hovering (as originally intended)
+      this.centerCircleMaterial.diffuseColor = new Color3(1, 1, 1);
+      this.centerCircleMaterial.emissiveColor = new Color3(0.8, 0.8, 0.8);
+    }
+  }
+
+  private setupCenterCirclePointerBehaviors(): void {
     const gizmoScene = this.getGizmoScene();
-    if (!gizmoScene || !this.centerCircleMesh) return false;
+    if (!gizmoScene || !this.centerCircleMesh) return;
+    if (this.centerCirclePointerObservers.length > 0) return;
 
-    // Pick from the utility layer scene where the center circle lives (main scene pick would miss it)
-    const pickResult = gizmoScene.pick(gizmoScene.pointerX, gizmoScene.pointerY);
-    if (!pickResult?.hit || !pickResult.pickedMesh) return false;
+    const pickCenterCircle = (): boolean => {
+      if (!this.centerCircleMesh) return false;
+      // Important: do a dedicated pick restricted to the center circle, so other gizmo meshes
+      // (axis lines/arrows starting at the origin) don't "steal" the pick.
+      const pickResult = gizmoScene.pick(gizmoScene.pointerX, gizmoScene.pointerY, mesh =>
+        this.isPickedCenterCircleMesh(mesh),
+      );
+      return !!pickResult?.hit;
+    };
 
-    const mesh = pickResult.pickedMesh;
-    return mesh === this.centerCircleMesh || mesh.isDescendantOf(this.centerCircleMesh);
+    const onPointerMove = (pointerInfo: PointerInfo) => {
+      if (pointerInfo.type !== PointerEventTypes.POINTERMOVE) return;
+      const isHovering = pickCenterCircle();
+      this.setCenterCircleHoverState(isHovering);
+    };
+
+    const onPointerDown = (pointerInfo: PointerInfo) => {
+      if (pointerInfo.type !== PointerEventTypes.POINTERDOWN) return;
+      if (pointerInfo.event.button !== LEFT_BUTTON) return;
+
+      if (!pickCenterCircle()) return;
+
+      // Start free drag when clicking the center circle.
+      // Babylon's IMouseEvent isn't always a DOM MouseEvent, so these may not exist.
+      (pointerInfo.event as any)?.preventDefault?.();
+      (pointerInfo.event as any)?.stopPropagation?.();
+      this.startFreeDrag();
+    };
+
+    this.centerCirclePointerObservers.push(
+      gizmoScene.onPointerObservable.add(onPointerMove),
+      gizmoScene.onPointerObservable.add(onPointerDown),
+    );
+  }
+
+  private cleanupCenterCirclePointerBehaviors(): void {
+    const gizmoScene = this.getGizmoScene();
+    if (!gizmoScene) return;
+
+    for (const observer of this.centerCirclePointerObservers) {
+      gizmoScene.onPointerObservable.remove(observer);
+    }
+    this.centerCirclePointerObservers = [];
+    this.isHoveringCenterCircle = false;
+
+    const canvas = gizmoScene.getEngine().getRenderingCanvas();
+    if (canvas) {
+      canvas.style.cursor = '';
+    }
   }
 
   private findClickedEntityFromSelected(): { entity: EcsEntity; mesh: AbstractMesh } | null {
@@ -804,36 +846,34 @@ export class PositionGizmo implements IGizmoTransformer {
     // Create the mesh in the gizmo layer's scene (like FreeGizmo does)
     const gizmoScene = positionGizmo.gizmoLayer.utilityLayerScene;
 
-    // Create a disc at the center of the gizmo (large enough to see and click easily)
+    // Create a disc at the center of the gizmo.
+    // NOTE: It must be parented under the gizmo root in the utility-layer scene
+    // so it maintains the same constant-screen-size scaling as the rest of the gizmo.
     const circle = MeshBuilder.CreateDisc(
       'positionGizmoCenterCircle',
       {
-        radius: 0.05,
+        radius: 0.022,
         tessellation: 32,
       },
       gizmoScene,
     );
 
-    // Create white material
+    // Create material (default white, hover turns yellow like the plane handles)
     const material = new StandardMaterial('positionGizmoCenterCircleMat', gizmoScene);
     material.diffuseColor = new Color3(1, 1, 1);
     material.emissiveColor = new Color3(0.8, 0.8, 0.8);
     material.alpha = FULL_ALPHA;
     material.disableLighting = true;
     circle.material = material;
+    this.centerCircleMaterial = material;
 
     // Position at the center (0, 0, 0) relative to gizmo
     circle.position = Vector3.Zero();
 
-    // Parent to the same node as the axis gizmos so the circle scales with the rest of the gizmo
-    const axisRoot = positionGizmo.xGizmo?._rootMesh;
-    if (axisRoot?.parent) {
-      circle.parent = axisRoot.parent as TransformNode;
-    } else {
-      const gizmoNode = this.gizmoManager.attachedNode as TransformNode;
-      if (gizmoNode) {
-        circle.parent = gizmoNode;
-      }
+    // Parent to the gizmo root mesh (utility layer) for consistent scaling
+    const gizmoRoot = this.getPositionGizmoRootMesh();
+    if (gizmoRoot) {
+      circle.parent = gizmoRoot as TransformNode;
     }
 
     // Make it pickable so it can be clicked for free movement
@@ -844,6 +884,7 @@ export class PositionGizmo implements IGizmoTransformer {
 
     this.centerCircleMesh = circle;
     this.updateCenterCirclePosition();
+    this.setCenterCircleHoverState(false);
   }
 
   private destroyCenterCircle(): void {
@@ -851,22 +892,15 @@ export class PositionGizmo implements IGizmoTransformer {
       this.centerCircleMesh.dispose();
       this.centerCircleMesh = null;
     }
+    this.centerCircleMaterial = null;
   }
 
   private updateCenterCirclePosition(): void {
     if (!this.centerCircleMesh) return;
-
-    const positionGizmo = this.getPositionGizmo();
-    const axisRoot = positionGizmo?.xGizmo?._rootMesh;
-    if (axisRoot?.parent) {
-      this.centerCircleMesh.parent = axisRoot.parent as TransformNode;
-      this.centerCircleMesh.position = Vector3.Zero();
-    } else {
-      const gizmoNode = this.gizmoManager.attachedNode as TransformNode;
-      if (gizmoNode) {
-        this.centerCircleMesh.parent = gizmoNode;
-        this.centerCircleMesh.position = Vector3.Zero();
-      }
+    const gizmoRoot = this.getPositionGizmoRootMesh();
+    if (gizmoRoot) {
+      this.centerCircleMesh.parent = gizmoRoot as TransformNode;
     }
+    this.centerCircleMesh.position = Vector3.Zero();
   }
 }
