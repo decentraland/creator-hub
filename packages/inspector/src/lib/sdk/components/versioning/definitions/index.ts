@@ -6,5 +6,5 @@ export { LOCK_VERSIONS } from './lock';
 export { GROUND_VERSIONS } from './ground';
 export { TILE_VERSIONS } from './tile';
 export { CUSTOM_ASSET_VERSIONS } from './custom-asset';
-export { CONFIG_VERSIONS, ConfigComponentType } from './config';
-export { INSPECTOR_UI_STATE_VERSIONS, InspectorUIStateType } from './inspector-ui-state';
+export { CONFIG_VERSIONS } from './config';
+export { INSPECTOR_UI_STATE_VERSIONS } from './inspector-ui-state';
