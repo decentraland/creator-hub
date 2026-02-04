@@ -415,34 +415,59 @@ export class RotationGizmo implements IGizmoTransformer {
     const scene = mesh.getScene();
     if (!scene) return;
 
-    mesh.computeWorldMatrix(true);
-    mesh.refreshBoundingInfo(true);
-    const ext = mesh.getBoundingInfo().boundingBox.extendSize;
+    type OriginalTorusParams = {
+      outerDiameter: number;
+      thickness: number;
+      tessellation: number;
+      axisIndex: 0 | 1 | 2;
+    };
 
-    const minAxisIdx = this.getSmallestExtentAxisIndex(ext);
-    const extValues = [ext.x, ext.y, ext.z].sort((a, b) => a - b);
-    const minExtent = extValues[0];
-    const outerRadius = extValues[2]; // max extent in the ring plane
+    // IMPORTANT: make this operation idempotent.
+    // Gizmo meshes can be reused across selections/enables; recomputing from already-thickened
+    // geometry will "inflate" rings every time.
+    const meta = (mesh.metadata ??= {}) as Record<string, unknown>;
+    const META_KEY = '__rotationGizmoOriginalTorus';
 
-    // Interpret extents as torus parameters in local space:
-    // - minorRadius ~= minExtent
-    // - outerRadius ~= majorRadius + minorRadius
-    const oldMinorRadius = minExtent;
-    const oldOuterDiameter = outerRadius * 2;
-    const oldThickness = oldMinorRadius * 2;
+    let original = meta[META_KEY] as OriginalTorusParams | undefined;
+    if (!original) {
+      mesh.computeWorldMatrix(true);
+      mesh.refreshBoundingInfo(true);
+      const ext = mesh.getBoundingInfo().boundingBox.extendSize;
 
-    // Keep outer diameter stable while thickening the tube:
+      const axisIndex = this.getSmallestExtentAxisIndex(ext);
+      const extValues = [ext.x, ext.y, ext.z].sort((a, b) => a - b);
+      const minExtent = extValues[0];
+      const outerRadius = extValues[2]; // max extent in the ring plane
+
+      // Interpret extents as torus parameters in local space:
+      // - minorRadius ~= minExtent
+      // - outerRadius ~= majorRadius + minorRadius
+      const outerDiameter = outerRadius * 2;
+      const thickness = minExtent * 2;
+
+      original = {
+        outerDiameter,
+        thickness,
+        tessellation: this.estimateTessellation(mesh),
+        axisIndex,
+      };
+      meta[META_KEY] = original;
+    }
+
+    const minAxisIdx = original.axisIndex;
+
+    // Keep OUTER diameter stable while thickening the tube.
+    // Cap thickness to avoid turning the torus into a solid disk.
+    const maxThickness = original.outerDiameter * 0.35;
     const newThickness = Math.min(
-      oldOuterDiameter * 0.6,
-      Math.max(oldThickness * thicknessMultiplier, oldThickness),
+      maxThickness,
+      Math.max(original.thickness * thicknessMultiplier, original.thickness),
     );
-    const newDiameter = Math.max(0.0001, oldOuterDiameter - newThickness);
-
-    const tessellation = this.estimateTessellation(mesh);
+    const newDiameter = Math.max(0.0001, original.outerDiameter - newThickness);
 
     const tmp = MeshBuilder.CreateTorus(
       `${mesh.name}_thickTmp`,
-      { diameter: newDiameter, thickness: newThickness, tessellation },
+      { diameter: newDiameter, thickness: newThickness, tessellation: original.tessellation },
       scene,
     );
 
