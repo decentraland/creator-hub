@@ -26,8 +26,25 @@ export class ENS {
   public async fetchNames(address: string) {
     const response: Response = await fetch(this.subgraph, {
       method: 'POST',
+      headers: {
+        accept: 'application/graphql-response+json, application/json, multipart/mixed',
+        'accept-language': 'en-US,en;q=0.9,es;q=0.8',
+        'cache-control': ' no-cache',
+        'content-type': ' application/json',
+        origin: ' https://api.studio.thegraph.com',
+        pragma: ' no-cache',
+        priority: ' u=1, i',
+        'sec-ch-ua': ' "Not(A:Brand";v="8", "Chromium";v="144", "Google Chrome";v="144"',
+        'sec-ch-ua-mobile': ' ?0',
+        'sec-ch-ua-platform': ' "macOS"',
+        'sec-fetch-dest': ' empty',
+        'sec-fetch-mode': ' cors',
+        'sec-fetch-site': ' same-origin',
+        'user-agent':
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) creator-hub/0.0.0-dev Chrome/138.0.7204.235 Electron/37.3.1 Safari/537.36',
+      },
       body: JSON.stringify({
-        query: `{
+        query: `query getENS {
           domains(
             where: {or: [
               { wrappedOwner: "${address.toLowerCase()}" },
@@ -37,6 +54,8 @@ export class ENS {
             name
           }
         }`,
+        operationName: 'getENS',
+        extensions: {},
       }),
     });
 
@@ -60,6 +79,23 @@ export class ENS {
 
     const response: Response = await fetch(this.subgraph, {
       method: 'POST',
+      headers: {
+        accept: 'application/graphql-response+json, application/json, multipart/mixed',
+        'accept-language': 'en-US,en;q=0.9,es;q=0.8',
+        'cache-control': ' no-cache',
+        'content-type': ' application/json',
+        origin: ' https://api.studio.thegraph.com',
+        pragma: ' no-cache',
+        priority: ' u=1, i',
+        'sec-ch-ua': ' "Not(A:Brand";v="8", "Chromium";v="144", "Google Chrome";v="144"',
+        'sec-ch-ua-mobile': ' ?0',
+        'sec-ch-ua-platform': ' "macOS"',
+        'sec-fetch-dest': ' empty',
+        'sec-fetch-mode': ' cors',
+        'sec-fetch-site': ' same-origin',
+        'user-agent':
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) creator-hub/0.0.0-dev Chrome/138.0.7204.235 Electron/37.3.1 Safari/537.36',
+      },
       body: JSON.stringify({
         query: `query getOwners($domains: [String]) {
           domains(where: { name_in: $domains }) {
@@ -69,6 +105,8 @@ export class ENS {
             }
           }
         }`,
+        operationName: 'getOwners',
+        extensions: {},
         variables: { domains },
       }),
     });
