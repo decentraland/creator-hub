@@ -142,7 +142,7 @@
         },
         "513": {
           "json": {
-            "value": "Text_2"
+            "value": "Text"
           }
         },
         "514": {
@@ -157,7 +157,7 @@
         },
         "516": {
           "json": {
-            "value": "Text"
+            "value": "Text_2"
           }
         },
         "517": {
@@ -218,7 +218,7 @@
             "isBasicViewEnabled": true,
             "componentName": "",
             "fields": [],
-            "assetId": "14b8fec1-5d65-490e-83da-f5da1ada4c7a",
+            "assetId": "4e8ed7d0-f65b-4840-9369-5cf54ca273f3",
             "label": "Text Settings",
             "sections": [
               {
@@ -304,7 +304,7 @@
             "isBasicViewEnabled": true,
             "componentName": "",
             "fields": [],
-            "assetId": "14b8fec1-5d65-490e-83da-f5da1ada4c7a",
+            "assetId": "4e8ed7d0-f65b-4840-9369-5cf54ca273f3",
             "label": "Text Settings",
             "sections": [
               {
@@ -428,6 +428,23 @@
       }
     },
     {
+      "name": "asset-packs::Actions",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "type": "call_script_method",
+                "name": "Reset",
+                "jsonPayload": "{\"scriptPath\":\"assets/custom/photo_mural/photoMural.ts\",\"methodName\":\"resetPhotos\",\"params\":{}}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
       "name": "asset-packs::Script",
       "data": {
         "0": {
@@ -436,7 +453,7 @@
               {
                 "path": "{assetPath}/photoMural.ts",
                 "priority": 0,
-                "layout": "{\"params\":{\"use_current_scene\":{\"type\":\"boolean\",\"optional\":true,\"value\":true},\"coordinates\":{\"type\":\"string\",\"optional\":false,\"value\":\"0,0\"},\"world_id\":{\"type\":\"string\",\"optional\":true,\"value\":\"\"}}}"
+                "layout": "{\"params\":{\"use_current_scene\":{\"type\":\"boolean\",\"optional\":true,\"value\":true},\"coordinates\":{\"type\":\"string\",\"optional\":false,\"value\":\"0,0\"},\"world_id\":{\"type\":\"string\",\"optional\":true,\"value\":\"\"}},\"actions\":[{\"methodName\":\"resetPhotos\",\"description\":\"Resets the photo mural: - deletes any existing displayed photos (thumbnails + selected photo entities) - fetches fresh data from the server - shows the spinner while fetching\",\"params\":{}}]}"
               }
             ]
           }

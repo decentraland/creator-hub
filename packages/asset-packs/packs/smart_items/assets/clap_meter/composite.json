@@ -11,16 +11,16 @@
               "y": 0.05,
               "z": 0
             },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
             "rotation": {
               "x": -5.929230630780102e-21,
               "y": 2.341712956877018e-8,
               "z": 3.028142786434124e-20,
               "w": 1
-            },
-            "scale": {
-              "x": 1,
-              "y": 1,
-              "z": 1
             },
             "parent": 0
           }
@@ -32,16 +32,16 @@
               "y": 3.8,
               "z": 0
             },
+            "scale": {
+              "x": 1.5,
+              "y": 1.5,
+              "z": 1.5
+            },
             "rotation": {
               "x": 0,
               "y": 0,
               "z": 0,
               "w": 1
-            },
-            "scale": {
-              "x": 1.5,
-              "y": 1.5,
-              "z": 1.5
             },
             "parent": 0
           }
@@ -72,17 +72,17 @@
       "data": {
         "0": {
           "json": {
-            "value": "clapMeter"
+            "value": "Clap Meter"
           }
         },
         "513": {
           "json": {
-            "value": "Needle"
+            "value": "Needle_2"
           }
         },
         "514": {
           "json": {
-            "value": "clapMeterText"
+            "value": "clapMeterText_2"
           }
         }
       }
@@ -92,22 +92,17 @@
       "data": {
         "0": {
           "json": {
-            "componentIds": [
-              "asset-packs::Counter",
-              "asset-packs::Actions",
-              "asset-packs::States",
-              "core::Transform"
-            ]
+            "componentIds": [3981387903, 2193198513, 2709697014, 1]
           }
         },
         "513": {
           "json": {
-            "componentIds": ["core::Transform", "asset-packs::Counter", "core::VisibilityComponent"]
+            "componentIds": [1, 3981387903, 1081]
           }
         },
         "514": {
           "json": {
-            "componentIds": ["core::TextShape", "asset-packs::Counter", "asset-packs::States"]
+            "componentIds": [1030, 3981387903, 2709697014]
           }
         }
       }
@@ -123,17 +118,6 @@
         "513": {
           "json": {
             "visible": true
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::Actions",
-      "data": {
-        "0": {
-          "json": {
-            "id": "{self}",
-            "value": []
           }
         }
       }
@@ -170,6 +154,23 @@
       }
     },
     {
+      "name": "asset-packs::Actions",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "type": "call_script_method",
+                "name": "Reset",
+                "jsonPayload": "{\"scriptPath\":\"assets/asset-packs/clap_meter/ClapMeter.ts\",\"methodName\":\"resetClapMeter\",\"params\":{\"newPlayer\":\"\"}}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
       "name": "asset-packs::Script",
       "data": {
         "0": {
@@ -178,7 +179,7 @@
               {
                 "path": "{assetPath}/ClapMeter.ts",
                 "priority": 0,
-                "layout": "{\"params\":{\"emoteDetected\":{\"type\":\"string\",\"optional\":true,\"value\":\"clap\"},\"max_increment\":{\"type\":\"number\",\"optional\":true,\"value\":2},\"min_increment\":{\"type\":\"number\",\"optional\":true,\"value\":1},\"diminishing_threshold\":{\"type\":\"number\",\"optional\":true,\"value\":25}}}"
+                "layout": "{\"params\":{\"emoteDetected\":{\"type\":\"string\",\"optional\":true,\"value\":\"urn:decentraland:off-chain:base-emotes:clap\"},\"max_increment\":{\"type\":\"number\",\"optional\":true,\"value\":2},\"min_increment\":{\"type\":\"number\",\"optional\":true,\"value\":1},\"diminishing_threshold\":{\"type\":\"number\",\"optional\":true,\"value\":25}},\"actions\":[{\"methodName\":\"resetClapMeter\",\"description\":\"Resets the clap meter to its initial state\",\"params\":{\"newPlayer\":{\"type\":\"string\",\"optional\":true,\"value\":\"\"}}}]}"
               }
             ]
           }
