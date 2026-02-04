@@ -77,12 +77,12 @@
         },
         "513": {
           "json": {
-            "value": "Needle_2"
+            "value": "Needle"
           }
         },
         "514": {
           "json": {
-            "value": "clapMeterText_2"
+            "value": "clapMeterText"
           }
         }
       }
