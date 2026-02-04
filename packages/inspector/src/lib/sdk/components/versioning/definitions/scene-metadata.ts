@@ -31,166 +31,73 @@ export enum TransitionMode {
 
 // SceneMetadata component versions
 // Each element in the array represents a version of the component
-export const SCENE_METADATA_VERSIONS = [
-  // V0 - Original version
-  {
-    name: Schemas.Optional(Schemas.String),
-    description: Schemas.Optional(Schemas.String),
-    thumbnail: Schemas.Optional(Schemas.String),
-    ageRating: Schemas.Optional(Schemas.EnumString(SceneAgeRating, SceneAgeRating.Teen)),
-    categories: Schemas.Optional(
-      Schemas.Array(Schemas.EnumString(SceneCategory, SceneCategory.GAME)),
-    ),
-    author: Schemas.Optional(Schemas.String),
-    email: Schemas.Optional(Schemas.String),
-    tags: Schemas.Optional(Schemas.Array(Schemas.String)),
-    layout: Schemas.Map({
-      base: Coords,
-      parcels: Schemas.Array(Coords),
-    }),
-    silenceVoiceChat: Schemas.Optional(Schemas.Boolean),
-    disablePortableExperiences: Schemas.Optional(Schemas.Boolean),
-    spawnPoints: Schemas.Optional(
-      Schemas.Array(
-        Schemas.Map({
-          name: Schemas.String,
-          default: Schemas.Optional(Schemas.Boolean),
-          position: Schemas.Map({
-            x: Schemas.OneOf({
-              single: Schemas.Int,
-              range: Schemas.Array(Schemas.Int),
-            }),
-            y: Schemas.OneOf({
-              single: Schemas.Int,
-              range: Schemas.Array(Schemas.Int),
-            }),
-            z: Schemas.OneOf({
-              single: Schemas.Int,
-              range: Schemas.Array(Schemas.Int),
-            }),
-          }),
-          cameraTarget: Schemas.Optional(
-            Schemas.Map({
-              x: Schemas.Int,
-              y: Schemas.Int,
-              z: Schemas.Int,
-            }),
-          ),
-        }),
-      ),
-    ),
-  },
-  // V1 - Added skyboxConfig
-  {
-    name: Schemas.Optional(Schemas.String),
-    description: Schemas.Optional(Schemas.String),
-    thumbnail: Schemas.Optional(Schemas.String),
-    ageRating: Schemas.Optional(Schemas.EnumString(SceneAgeRating, SceneAgeRating.Teen)),
-    categories: Schemas.Optional(
-      Schemas.Array(Schemas.EnumString(SceneCategory, SceneCategory.GAME)),
-    ),
-    author: Schemas.Optional(Schemas.String),
-    email: Schemas.Optional(Schemas.String),
-    tags: Schemas.Optional(Schemas.Array(Schemas.String)),
-    layout: Schemas.Map({
-      base: Coords,
-      parcels: Schemas.Array(Coords),
-    }),
-    silenceVoiceChat: Schemas.Optional(Schemas.Boolean),
-    disablePortableExperiences: Schemas.Optional(Schemas.Boolean),
-    spawnPoints: Schemas.Optional(
-      Schemas.Array(
-        Schemas.Map({
-          name: Schemas.String,
-          default: Schemas.Optional(Schemas.Boolean),
-          position: Schemas.Map({
-            x: Schemas.OneOf({
-              single: Schemas.Int,
-              range: Schemas.Array(Schemas.Int),
-            }),
-            y: Schemas.OneOf({
-              single: Schemas.Int,
-              range: Schemas.Array(Schemas.Int),
-            }),
-            z: Schemas.OneOf({
-              single: Schemas.Int,
-              range: Schemas.Array(Schemas.Int),
-            }),
-          }),
-          cameraTarget: Schemas.Optional(
-            Schemas.Map({
-              x: Schemas.Int,
-              y: Schemas.Int,
-              z: Schemas.Int,
-            }),
-          ),
-        }),
-      ),
-    ),
-    skyboxConfig: Schemas.Optional(
+
+// V0 - Original version
+const SceneMetadataV0 = {
+  name: Schemas.Optional(Schemas.String),
+  description: Schemas.Optional(Schemas.String),
+  thumbnail: Schemas.Optional(Schemas.String),
+  ageRating: Schemas.Optional(Schemas.EnumString(SceneAgeRating, SceneAgeRating.Teen)),
+  categories: Schemas.Optional(
+    Schemas.Array(Schemas.EnumString(SceneCategory, SceneCategory.GAME)),
+  ),
+  author: Schemas.Optional(Schemas.String),
+  email: Schemas.Optional(Schemas.String),
+  tags: Schemas.Optional(Schemas.Array(Schemas.String)),
+  layout: Schemas.Map({
+    base: Coords,
+    parcels: Schemas.Array(Coords),
+  }),
+  silenceVoiceChat: Schemas.Optional(Schemas.Boolean),
+  disablePortableExperiences: Schemas.Optional(Schemas.Boolean),
+  spawnPoints: Schemas.Optional(
+    Schemas.Array(
       Schemas.Map({
-        fixedTime: Schemas.Optional(Schemas.Int),
-        transitionMode: Schemas.Optional(
-          Schemas.EnumNumber(TransitionMode, TransitionMode.TM_FORWARD),
+        name: Schemas.String,
+        default: Schemas.Optional(Schemas.Boolean),
+        position: Schemas.Map({
+          x: Schemas.OneOf({
+            single: Schemas.Int,
+            range: Schemas.Array(Schemas.Int),
+          }),
+          y: Schemas.OneOf({
+            single: Schemas.Int,
+            range: Schemas.Array(Schemas.Int),
+          }),
+          z: Schemas.OneOf({
+            single: Schemas.Int,
+            range: Schemas.Array(Schemas.Int),
+          }),
+        }),
+        cameraTarget: Schemas.Optional(
+          Schemas.Map({
+            x: Schemas.Int,
+            y: Schemas.Int,
+            z: Schemas.Int,
+          }),
         ),
       }),
     ),
-  },
-  // V2 - Added creator
-  {
-    name: Schemas.Optional(Schemas.String),
-    description: Schemas.Optional(Schemas.String),
-    thumbnail: Schemas.Optional(Schemas.String),
-    ageRating: Schemas.Optional(Schemas.EnumString(SceneAgeRating, SceneAgeRating.Teen)),
-    categories: Schemas.Optional(
-      Schemas.Array(Schemas.EnumString(SceneCategory, SceneCategory.GAME)),
-    ),
-    author: Schemas.Optional(Schemas.String),
-    email: Schemas.Optional(Schemas.String),
-    tags: Schemas.Optional(Schemas.Array(Schemas.String)),
-    layout: Schemas.Map({
-      base: Coords,
-      parcels: Schemas.Array(Coords),
-    }),
-    silenceVoiceChat: Schemas.Optional(Schemas.Boolean),
-    disablePortableExperiences: Schemas.Optional(Schemas.Boolean),
-    spawnPoints: Schemas.Optional(
-      Schemas.Array(
-        Schemas.Map({
-          name: Schemas.String,
-          default: Schemas.Optional(Schemas.Boolean),
-          position: Schemas.Map({
-            x: Schemas.OneOf({
-              single: Schemas.Int,
-              range: Schemas.Array(Schemas.Int),
-            }),
-            y: Schemas.OneOf({
-              single: Schemas.Int,
-              range: Schemas.Array(Schemas.Int),
-            }),
-            z: Schemas.OneOf({
-              single: Schemas.Int,
-              range: Schemas.Array(Schemas.Int),
-            }),
-          }),
-          cameraTarget: Schemas.Optional(
-            Schemas.Map({
-              x: Schemas.Int,
-              y: Schemas.Int,
-              z: Schemas.Int,
-            }),
-          ),
-        }),
+  ),
+};
+
+// V1 - Added skyboxConfig
+const SceneMetadataV1 = {
+  ...SceneMetadataV0,
+  skyboxConfig: Schemas.Optional(
+    Schemas.Map({
+      fixedTime: Schemas.Optional(Schemas.Int),
+      transitionMode: Schemas.Optional(
+        Schemas.EnumNumber(TransitionMode, TransitionMode.TM_FORWARD),
       ),
-    ),
-    skyboxConfig: Schemas.Optional(
-      Schemas.Map({
-        fixedTime: Schemas.Optional(Schemas.Int),
-        transitionMode: Schemas.Optional(
-          Schemas.EnumNumber(TransitionMode, TransitionMode.TM_FORWARD),
-        ),
-      }),
-    ),
-    creator: Schemas.Optional(Schemas.String),
-  },
-] as const;
+    }),
+  ),
+};
+
+// V2 - Added creator
+const SceneMetadataV2 = {
+  ...SceneMetadataV1,
+  creator: Schemas.Optional(Schemas.String),
+};
+
+export const SCENE_METADATA_VERSIONS = [SceneMetadataV0, SceneMetadataV1, SceneMetadataV2] as const;

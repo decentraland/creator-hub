@@ -1,6 +1,5 @@
 import { Schemas } from '@dcl/ecs';
 
-export const SELECTION_VERSIONS = [
-  { gizmo: Schemas.Int },
-  { gizmo: Schemas.Int, testing: Schemas.Optional(Schemas.Number) },
-] as const;
+const SelectionV0 = { gizmo: Schemas.Int };
+
+export const SELECTION_VERSIONS = [SelectionV0] as const;

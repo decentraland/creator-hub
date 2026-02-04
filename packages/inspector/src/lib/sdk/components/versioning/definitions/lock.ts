@@ -1,3 +1,5 @@
 import { Schemas } from '@dcl/ecs';
 
-export const LOCK_VERSIONS = [{ value: Schemas.Boolean }] as const;
+const LockV0 = { value: Schemas.Boolean };
+
+export const LOCK_VERSIONS = [LockV0] as const;

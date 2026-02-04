@@ -1,2 +1,4 @@
 // eslint-disable-next-line @typescript-eslint/ban-types
-export const GROUND_VERSIONS = [{}] as const;
+const GroundV0 = {};
+
+export const GROUND_VERSIONS = [GroundV0] as const;

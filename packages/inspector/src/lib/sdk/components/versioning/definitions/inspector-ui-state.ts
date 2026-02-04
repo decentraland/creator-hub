@@ -1,5 +1,5 @@
 import { Schemas } from '@dcl/ecs';
 
-export const INSPECTOR_UI_STATE_VERSIONS = [
-  { sceneInfoPanelVisible: Schemas.Optional(Schemas.Boolean) },
-] as const;
+const InspectorUIStateV0 = { sceneInfoPanelVisible: Schemas.Optional(Schemas.Boolean) };
+
+export const INSPECTOR_UI_STATE_VERSIONS = [InspectorUIStateV0] as const;

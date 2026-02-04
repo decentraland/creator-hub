@@ -1,2 +1,4 @@
 // eslint-disable-next-line @typescript-eslint/ban-types
-export const TILE_VERSIONS = [{}] as const;
+const TileV0 = {};
+
+export const TILE_VERSIONS = [TileV0] as const;
