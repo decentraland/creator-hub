@@ -18,17 +18,21 @@ export const isFetchError = (
   error instanceof FetchError &&
   (Array.isArray(type) ? type.includes(error.name) : type === '*' || error.name === type);
 
-/**
- * Check if there's an internet connection
- */
-function isOnline(): boolean {
-  if (typeof navigator !== 'undefined' && typeof navigator?.onLine === 'boolean') {
-    return navigator.onLine;
+/** Check if there's an internet connection */
+async function isOnline(): Promise<boolean> {
+  try {
+    // navigator object is partially implemented in nodejs runtime/electron,
+    // in that case navigator.onLine may be undefined.
+    if (typeof navigator !== 'undefined' && typeof navigator?.onLine === 'boolean') {
+      return navigator.onLine;
+    } else {
+      const { net } = await import('electron');
+      return net.isOnline();
+    }
+  } catch (error) {
+    // Fallback for Nodejs process, when navigator is not defined, so just rely on timeout...
+    return true;
   }
-
-  // for Nodejs process, just rely on timeout...
-
-  return true;
 }
 
 /**
@@ -42,7 +46,7 @@ export async function fetch(
   init?: RequestInit,
   timeoutMs: number = 5000,
 ): Promise<Response> {
-  if (!isOnline()) {
+  if (!(await isOnline())) {
     throw new FetchError('NO_INTERNET_CONNECTION');
   }
 
