@@ -257,6 +257,100 @@ export const slice = createSlice({
             requestId: 'fetchWorldSettings',
           }),
         );
+      })
+      .addCase(managementActions.fetchWorldScenes.rejected, state => {
+        state.notifications = state.notifications.filter($ => $.requestId !== 'fetchWorldScenes');
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.fetch_world_scenes_failed'), {
+            duration: 5000,
+            requestId: 'fetchWorldScenes',
+          }),
+        );
+      })
+      .addCase(managementActions.fetchWorldPermissions.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'fetchWorldPermissions',
+        );
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.fetch_world_permissions_failed'), {
+            duration: 5000,
+            requestId: 'fetchWorldPermissions',
+          }),
+        );
+      })
+      .addCase(managementActions.updateWorldPermissions.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'updateWorldPermissions',
+        );
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.update_permissions_failed'), {
+            duration: 5000,
+            requestId: 'updateWorldPermissions',
+          }),
+        );
+      })
+      .addCase(managementActions.addAddressPermission.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'addAddressPermission',
+        );
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.add_permission_failed'), {
+            duration: 5000,
+            requestId: 'addAddressPermission',
+          }),
+        );
+      })
+      .addCase(managementActions.removeAddressPermission.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'removeAddressPermission',
+        );
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.remove_permission_failed'), {
+            duration: 5000,
+            requestId: 'removeAddressPermission',
+          }),
+        );
+      })
+      .addCase(managementActions.fetchParcelsPermission.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'fetchParcelsPermission',
+        );
+        state.notifications.push(
+          createGenericNotification(
+            'error',
+            t('snackbar.generic.fetch_parcels_permission_failed'),
+            {
+              duration: 5000,
+              requestId: 'fetchParcelsPermission',
+            },
+          ),
+        );
+      })
+      .addCase(managementActions.addParcelsPermission.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'addParcelsPermission',
+        );
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.add_parcels_permission_failed'), {
+            duration: 5000,
+            requestId: 'addParcelsPermission',
+          }),
+        );
+      })
+      .addCase(managementActions.removeParcelsPermission.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'removeParcelsPermission',
+        );
+        state.notifications.push(
+          createGenericNotification(
+            'error',
+            t('snackbar.generic.remove_parcels_permission_failed'),
+            {
+              duration: 5000,
+              requestId: 'removeParcelsPermission',
+            },
+          ),
+        );
       });
   },
 });
