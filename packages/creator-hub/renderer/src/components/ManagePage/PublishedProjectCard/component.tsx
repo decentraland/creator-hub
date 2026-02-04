@@ -2,7 +2,6 @@ import React, { useCallback, useMemo } from 'react';
 import type { ManagedProject, WorldSettingsTab } from '/shared/types/manage';
 import { ManagedProjectType } from '/shared/types/manage';
 import WorldSettingsIcon from '@mui/icons-material/SpaceDashboard';
-import PublishedIcon from '@mui/icons-material/Cloud';
 import ParcelsIcon from '@mui/icons-material/Layers';
 import PermissionsIcon from '@mui/icons-material/Lock';
 import PersonIcon from '@mui/icons-material/Person';
@@ -151,11 +150,6 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
                 fallbackSrc="/assets/images/scene-thumbnail-fallback.png"
               />
               <div className="ChipsContainer">
-                <Chip
-                  variant="outlined"
-                  icon={<PublishedIcon />}
-                  label={t('manage.cards.published')}
-                />
                 {type === 'world' && deployment.scenes.length > 1 && (
                   <Chip
                     variant="outlined"
