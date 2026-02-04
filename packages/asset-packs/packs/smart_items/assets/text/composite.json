@@ -53,6 +53,16 @@
                 "items": [
                   {
                     "component": "core::TextShape",
+                    "widget": "Dropdown",
+                    "label": "Font",
+                    "type": "text",
+                    "path": "font",
+                    "dataSource": {
+                      "kind": "fonts"
+                    }
+                  },
+                  {
+                    "component": "core::TextShape",
                     "widget": "TextField",
                     "label": "Font Size",
                     "type": "number",

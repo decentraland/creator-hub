@@ -3,6 +3,7 @@ import future from 'fp-future';
 import * as BABYLON from '@babylonjs/core';
 import * as GUI from '@babylonjs/gui';
 import type { PBTextShape } from '@dcl/ecs';
+import { Font } from '@dcl/ecs';
 import { ComponentType } from '@dcl/ecs';
 
 import type { ComponentOperation } from '../component-operations';
@@ -17,8 +18,8 @@ import { toHex } from '../../../../components/ui/ColorField/utils';
 export const TEXT_SHAPE_RATIO = 33;
 
 export const putTextShapeComponent: ComponentOperation = async (entity, component) => {
-  // load font
-  await loadFont();
+  // load fonts used by TextShape
+  await loadFonts();
 
   if (component.componentType === ComponentType.LastWriteWinElementSet) {
     const value = component.getOrNull(entity.entityId) as PBTextShape | null;
@@ -31,7 +32,7 @@ export const putTextShapeComponent: ComponentOperation = async (entity, componen
       let tb = createTextBlock(value);
       const canvas = GUI.AdvancedDynamicTexture.CreateFullscreenUI('canvas');
       const ctx = canvas.getContext();
-      ctx.font = `${tb.fontSizeInPixels}px ${tb.fontFamily}`;
+      ctx.font = `${tb.fontWeight || 'normal'} ${tb.fontSizeInPixels}px ${tb.fontFamily}`;
       canvas.dispose();
       const lines = tb.text.split('\n');
       const longest = lines.reduce((a, b) => (a.length > b.length ? a : b));
@@ -102,7 +103,29 @@ function createTextBlock(value: PBTextShape) {
       typeof value.lineCount === 'number' ? (index < value.lineCount ? line : '') : line,
     ) // remove lines if lineCount is set
     .join('\n');
-  tb.fontFamily = 'Noto Sans';
+  const font = value.font ?? Font.F_SANS_SERIF;
+  switch (font) {
+    case Font.F_SERIF: {
+      // Unity maps SERIF -> Inter-Semibold
+      tb.fontFamily = 'Inter, "Noto Sans", Arial, sans-serif';
+      tb.fontWeight = '600';
+      break;
+    }
+    case Font.F_MONOSPACE: {
+      // Prefer a real monospace font for MONOSPACE
+      tb.fontFamily =
+        '"Roboto Mono", "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
+      tb.fontWeight = '400';
+      break;
+    }
+    case Font.F_SANS_SERIF:
+    default: {
+      // Unity maps SANS_SERIF -> LiberationSans
+      tb.fontFamily = '"Liberation Sans", Inter, "Noto Sans", Arial, sans-serif';
+      tb.fontWeight = '400';
+      break;
+    }
+  }
   tb.fontSize = (value.fontSize ?? 0) * 3;
   tb.width = `${value.width ?? 0}px`;
   tb.height = `${value.height ?? 0}px`;
@@ -122,16 +145,40 @@ function createTextBlock(value: PBTextShape) {
 }
 
 let fontFuture: IFuture<void> | null = null;
-async function loadFont() {
+async function loadFonts() {
   if (!fontFuture) {
     fontFuture = future();
-    const font = new FontFace(
-      'Noto Sans',
-      'url(https://fonts.gstatic.com/s/notosans/v36/o-0bIpQlx3QUlC5A4PNB6Ryti20_6n1iPHjc5a7du3mhPy0.woff2)', // latin
-    );
-    await font.load();
-    document.fonts.add(font);
-    fontFuture.resolve();
+    try {
+      // Load Inter (regular + semibold) and Liberation Sans (for SDK font mapping).
+      // If a family fails to load for any reason, the renderer will fall back to the next family.
+      const linkId = 'dcl-textshape-fonts';
+      if (!document.getElementById(linkId)) {
+        const link = document.createElement('link');
+        link.id = linkId;
+        link.rel = 'stylesheet';
+        link.href =
+          'https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Liberation+Sans:wght@400;700&family=Roboto+Mono:wght@400&display=swap';
+        document.head.appendChild(link);
+      }
+
+      // Also keep Noto Sans as a reliable fallback (already used historically in the Inspector).
+      const notoSans = new FontFace(
+        'Noto Sans',
+        'url(https://fonts.gstatic.com/s/notosans/v36/o-0bIpQlx3QUlC5A4PNB6Ryti20_6n1iPHjc5a7du3mhPy0.woff2)', // latin
+      );
+      await notoSans.load();
+      document.fonts.add(notoSans);
+
+      // Ask the browser to resolve these faces (best-effort).
+      await Promise.allSettled([
+        document.fonts.load('400 16px Inter'),
+        document.fonts.load('600 16px Inter'),
+        document.fonts.load('400 16px "Liberation Sans"'),
+        document.fonts.load('400 16px "Roboto Mono"'),
+      ]);
+    } finally {
+      fontFuture.resolve();
+    }
   }
   return fontFuture;
 }
