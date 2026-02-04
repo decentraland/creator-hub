@@ -1,0 +1,64 @@
+.WorldCollaboratorsTab {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.WorldCollaboratorsTab > .MuiTypography-root {
+  display: block;
+  white-space: pre-line;
+  color: var(--text-on-secondary);
+}
+
+.WorldCollaboratorsTab > .MuiTypography-root span {
+  color: var(--white);
+}
+
+.WorldCollaboratorsTab .CollaboratorsFormContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.WorldCollaboratorsTab .CollaboratorsList {
+  background-color: var(--black);
+  height: max-content;
+  flex-shrink: 0;
+}
+
+.WorldCollaboratorsTab .EmptyList {
+  color: var(--dcl-silver);
+  height: 8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.WorldCollaboratorsTab .TableRow {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr 180px 32px;
+  align-items: center;
+  justify-items: center;
+  padding: 8px 16px;
+}
+
+.WorldCollaboratorsTab .CollaboratorsHeaderRow {
+  color: var(--light-gray);
+  border-bottom: 1px solid var(--dcl-silver);
+}
+
+.WorldCollaboratorsTab .CollaboratorsHeaderRow .MuiSvgIcon-root {
+  width: 16px;
+  height: 16px;
+}
+
+.WorldCollaboratorsTab .CollaboratorsHeader {
+  justify-self: flex-start;
+}
+
+.WorldCollaboratorsTab .LocationHeader {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}

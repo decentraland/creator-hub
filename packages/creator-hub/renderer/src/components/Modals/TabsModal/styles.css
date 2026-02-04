@@ -5,6 +5,7 @@
 
 .MuiPaper-root:has(.TabsModal) {
   background-image: none;
+  background-color: var(--black);
   padding: 0;
   width: max-content;
 }
@@ -21,6 +22,7 @@
   overflow: hidden;
   display: flex;
   flex-flow: column nowrap;
+  background-color: #0000001a;
 }
 
 /* Header Styles */
@@ -55,16 +57,39 @@
   width: 100%;
   flex: 1;
   display: flex;
+  position: relative;
+}
+
+.TabsModal .TabsModalLayout.Vertical {
   flex-direction: row;
   overflow: hidden;
 }
 
-/* Sidebar Styles */
-.TabsModal .TabsModalSidebar {
+.TabsModal .TabsModalLayout.Horizontal {
+  flex-direction: column;
+  background-color: var(--darker-gray);
+  padding: 0 32px;
+  gap: 24px;
+  overflow: auto;
+}
+
+/* TabsList Styles */
+
+.TabsModal .Vertical .TabsList {
   flex-shrink: 0;
   height: 100%;
   min-width: 160px;
   padding: 16px 0;
+}
+
+.TabsModal .Horizontal .TabsList {
+  flex-shrink: 0;
+  width: 100%;
+  padding-top: 24px;
+  background-color: var(--darker-gray);
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .TabsModal .TabsModalTab {
@@ -73,7 +98,7 @@
   min-height: 42px;
   font-family: var(--font-family);
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-on-secondary);
 }
 
 .TabsModal .TabsModalTab:hover {
@@ -88,11 +113,19 @@
 /* Content Area Styles */
 .TabsModal .TabsModalContent {
   flex: 1;
-  padding: 24px 32px 0px;
-  background-color: var(--darker-gray);
-  overflow: auto;
   width: 100%;
+}
+
+.TabsModal .Vertical .TabsModalContent {
+  background-color: var(--darker-gray);
+  padding: 24px 32px 0px;
   height: 100%;
+  overflow: auto;
+}
+
+.TabsModal .Horizontal .TabsModalContent {
+  padding: 0px;
+  height: max-content;
 }
 
 .TabsModal .TabsModalContent > div:first-of-type {

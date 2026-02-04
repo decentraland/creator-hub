@@ -5,11 +5,18 @@ import {
   type PayloadAction,
 } from '@reduxjs/toolkit';
 import type { ChainId } from '@dcl/schemas';
+import { AuthServerProvider } from 'decentraland-connect';
 import type { Async } from '/shared/types/async';
 import type { ManagedProject } from '/shared/types/manage';
 import { ManagedProjectType, SortBy } from '/shared/types/manage';
-import type { WorldScene, WorldSettings, WorldsWalletStats } from '/@/lib/worlds';
-import { WorldRoleType, Worlds } from '/@/lib/worlds';
+import type {
+  WorldScene,
+  WorldSettings,
+  WorldsWalletStats,
+  WorldPermissionsResponse,
+  WorldPermissions,
+} from '/@/lib/worlds';
+import { WorldRoleType, Worlds, WorldPermissionType } from '/@/lib/worlds';
 import type { AppState } from '/@/modules/store';
 import { fetchENSList } from '/@/modules/store/ens';
 import { fetchLandList } from '/@/modules/store/land';
@@ -18,6 +25,16 @@ import { Lands, LandType } from '/@/lib/land';
 import type { AccountHoldings } from '/@/lib/account';
 import { Account } from '/@/lib/account';
 import { getThumbnailUrlFromDeployment } from './utils';
+import type {
+  AddressPermissionPayload,
+  ParcelsPermissionPayload,
+  WorldPermissionsPayload,
+} from './types';
+
+export type ParcelsPermission = {
+  parcels: string[];
+  status: 'loading' | 'succeeded' | 'failed';
+};
 
 // state
 export type ManagementState = {
@@ -30,6 +47,16 @@ export type ManagementState = {
     worldName: string;
     settings: WorldSettings;
     scenes: WorldScene[];
+    status: 'idle' | 'loading' | 'succeeded' | 'failed';
+    error: string | null;
+  };
+  worldPermissions: {
+    worldName: string;
+    owner: string;
+    summary: WorldPermissionsResponse['summary'];
+    permissions: WorldPermissions | null;
+    parcels: Record<string, ParcelsPermission>;
+    loadingNewUser: boolean;
     status: 'idle' | 'loading' | 'succeeded' | 'failed';
     error: string | null;
   };
@@ -47,6 +74,16 @@ export const initialState: Async<ManagementState> = {
     worldName: '',
     settings: {},
     scenes: [],
+    status: 'idle',
+    error: null,
+  },
+  worldPermissions: {
+    worldName: '',
+    owner: '',
+    permissions: null,
+    summary: {},
+    parcels: {},
+    loadingNewUser: false,
     status: 'idle',
     error: null,
   },
@@ -97,7 +134,7 @@ export const fetchAllManagedProjectsDetails = createAsyncThunk(
           displayName: ens.subdomain,
           type: ManagedProjectType.WORLD,
           role:
-            ens.nftOwnerAddress.toLowerCase() === address.toLowerCase()
+            ens.nftOwnerAddress && ens.nftOwnerAddress?.toLowerCase() === address?.toLowerCase()
               ? WorldRoleType.OWNER
               : WorldRoleType.COLLABORATOR,
           deployment:
@@ -230,6 +267,142 @@ export const unpublishWorldScene = createAsyncThunk(
   },
 );
 
+export const fetchWorldPermissions = createAsyncThunk(
+  'management/fetchWorldPermissions',
+  async ({ worldName }: { worldName: string }) => {
+    const WorldsAPI = new Worlds();
+    const worldPermissions = await WorldsAPI.getPermissions(worldName);
+    return worldPermissions;
+  },
+);
+
+export const updateWorldPermissions = createAsyncThunk(
+  'management/updateWorldPermissions',
+  async (
+    { worldName, worldPermissionName, worldPermissionType }: WorldPermissionsPayload,
+    { dispatch },
+  ) => {
+    const connectedAccount = AuthServerProvider.getAccount();
+    if (!connectedAccount) throw new Error('No connected account found');
+
+    const WorldsAPI = new Worlds();
+    const success = await WorldsAPI.postPermissionType(
+      connectedAccount,
+      worldName,
+      worldPermissionName,
+      worldPermissionType,
+    );
+    if (success) {
+      await dispatch(fetchWorldPermissions({ worldName })).unwrap();
+    } else {
+      throw new Error('Failed to update world permissions');
+    }
+  },
+);
+
+export const addAddressPermission = createAsyncThunk(
+  'management/addAddressPermission',
+  async ({ worldName, permissionName, walletAddress }: AddressPermissionPayload, { dispatch }) => {
+    const connectedAccount = AuthServerProvider.getAccount();
+    if (!connectedAccount) throw new Error('No connected account found');
+
+    const WorldsAPI = new Worlds();
+    const success = await WorldsAPI.putPermissionType(
+      connectedAccount,
+      worldName,
+      permissionName,
+      walletAddress,
+    );
+    if (success) {
+      await dispatch(fetchWorldPermissions({ worldName })).unwrap();
+    } else {
+      throw new Error('Failed to add address permission');
+    }
+  },
+);
+
+export const removeAddressPermission = createAsyncThunk(
+  'management/removeAddressPermission',
+  async ({ worldName, permissionName, walletAddress }: AddressPermissionPayload, { dispatch }) => {
+    const connectedAccount = AuthServerProvider.getAccount();
+    if (!connectedAccount) throw new Error('No connected account found');
+    const WorldsAPI = new Worlds();
+
+    const success = await WorldsAPI.deletePermissionType(
+      connectedAccount,
+      worldName,
+      permissionName,
+      walletAddress,
+    );
+    if (success) {
+      await dispatch(fetchWorldPermissions({ worldName })).unwrap();
+    } else {
+      throw new Error('Failed to remove address permission');
+    }
+  },
+);
+
+export const fetchParcelsPermission = createAsyncThunk(
+  'management/fetchParcelsPermission',
+  async ({ worldName, permissionName, walletAddress }: AddressPermissionPayload) => {
+    const WorldsAPI = new Worlds();
+    const parcels = await WorldsAPI.fetchParcelsPermission(
+      worldName,
+      permissionName,
+      walletAddress,
+    );
+    return { walletAddress, parcels };
+  },
+);
+
+export const addParcelsPermission = createAsyncThunk(
+  'management/addParcelsPermission',
+  async (
+    { worldName, permissionName, walletAddress, parcels }: ParcelsPermissionPayload,
+    { dispatch },
+  ) => {
+    const connectedAccount = AuthServerProvider.getAccount();
+    if (!connectedAccount) throw new Error('No connected account found');
+    const WorldsAPI = new Worlds();
+    const success = await WorldsAPI.postParcelsPermission(
+      connectedAccount,
+      worldName,
+      permissionName,
+      walletAddress,
+      parcels,
+    );
+    if (success) {
+      await dispatch(fetchWorldPermissions({ worldName })).unwrap();
+    } else {
+      throw new Error('Failed to add parcels permission');
+    }
+  },
+);
+
+export const removeParcelsPermission = createAsyncThunk(
+  'management/removeParcelsPermission',
+  async (
+    { worldName, permissionName, walletAddress, parcels }: ParcelsPermissionPayload,
+    { dispatch },
+  ) => {
+    const connectedAccount = AuthServerProvider.getAccount();
+    if (!connectedAccount) throw new Error('No connected account found');
+    const WorldsAPI = new Worlds();
+    const success = await WorldsAPI.deleteParcelsPermission(
+      connectedAccount,
+      worldName,
+      permissionName,
+      walletAddress,
+      parcels,
+    );
+    if (success) {
+      await dispatch(fetchWorldPermissions({ worldName })).unwrap();
+    } else {
+      throw new Error('Failed to remove parcels permission');
+    }
+  },
+);
+
 // slice
 const slice = createSlice({
   name: 'management',
@@ -249,6 +422,9 @@ const slice = createSlice({
     },
     clearError: state => {
       state.error = null;
+    },
+    clearPermissionsState: state => {
+      state.worldPermissions = initialState.worldPermissions;
     },
   },
   extraReducers: builder => {
@@ -291,6 +467,66 @@ const slice = createSlice({
       .addCase(fetchWorldSettings.rejected, (state, action) => {
         state.worldSettings.status = 'failed';
         state.worldSettings.error = action.error.message || 'Failed to fetch world settings';
+      })
+      .addCase(fetchWorldPermissions.pending, (state, action) => {
+        state.worldPermissions.worldName = action.meta.arg.worldName;
+        state.worldPermissions.status = 'loading';
+        state.worldPermissions.error = null;
+      })
+      .addCase(fetchWorldPermissions.fulfilled, (state, action) => {
+        if (action.payload !== null) {
+          const { permissions, summary, owner } = action.payload;
+          state.worldPermissions.permissions = permissions;
+          state.worldPermissions.summary = summary;
+          state.worldPermissions.owner = owner || '';
+          state.worldPermissions.status = 'succeeded';
+          state.worldPermissions.error = null;
+        } else {
+          state.worldPermissions.status = 'failed';
+          state.worldPermissions.error = 'Failed to fetch world permissions';
+        }
+      })
+      .addCase(fetchWorldPermissions.rejected, (state, action) => {
+        state.worldPermissions.status = 'failed';
+        state.worldPermissions.error = action.error.message || 'Failed to fetch world permissions';
+      })
+      .addCase(addAddressPermission.pending, (state, action) => {
+        const { walletAddress, permissionName } = action.meta.arg;
+        const permissionData = state.worldPermissions.permissions?.[permissionName];
+        if (
+          permissionData &&
+          permissionData.type === WorldPermissionType.AllowList &&
+          !permissionData.wallets?.includes(walletAddress)
+        ) {
+          // Only show loading state if the user is not already in the allow list.
+          state.worldPermissions.loadingNewUser = true;
+        }
+      })
+      .addCase(addAddressPermission.fulfilled, state => {
+        state.worldPermissions.loadingNewUser = false;
+      })
+      .addCase(addAddressPermission.rejected, state => {
+        state.worldPermissions.loadingNewUser = false;
+      })
+      .addCase(fetchParcelsPermission.pending, (state, action) => {
+        const { walletAddress } = action.meta.arg;
+        state.worldPermissions.parcels[walletAddress] = {
+          parcels: state.worldPermissions.parcels[walletAddress]?.parcels || [],
+          status: 'loading',
+        };
+      })
+      .addCase(fetchParcelsPermission.fulfilled, (state, action) => {
+        const { walletAddress, parcels } = action.payload;
+        state.worldPermissions.parcels[walletAddress] = {
+          parcels: parcels?.parcels || [],
+          status: 'succeeded',
+        };
+      })
+      .addCase(fetchParcelsPermission.rejected, (state, action) => {
+        const { walletAddress } = action.meta.arg;
+        if (state.worldPermissions.parcels[walletAddress]) {
+          state.worldPermissions.parcels[walletAddress].status = 'failed';
+        }
       });
   },
 });
@@ -302,7 +538,24 @@ const getManagedProjects = createSelector(
   managementState => managementState.projects,
 );
 
+const getWorldSettings = createSelector(
+  getManagementState,
+  managementState => managementState.worldSettings,
+);
+
 const getError = createSelector(getManagementState, managementState => managementState.error);
+
+const getPermissionsState = createSelector(
+  getManagementState,
+  managementState => managementState.worldPermissions,
+);
+
+const getParcelsStateForAddress = (
+  state: AppState,
+  walletAddress: string,
+): ParcelsPermission | undefined => {
+  return state.management.worldPermissions.parcels[walletAddress];
+};
 
 // exports
 export const actions = {
@@ -312,6 +565,14 @@ export const actions = {
   fetchWorldSettings,
   fetchStorageStats,
   fetchAccountHoldings,
+  fetchWorldScenes,
+  fetchWorldPermissions,
+  updateWorldPermissions,
+  addAddressPermission,
+  removeAddressPermission,
+  fetchParcelsPermission,
+  addParcelsPermission,
+  removeParcelsPermission,
 };
 
 export const reducer = slice.reducer;
@@ -319,5 +580,8 @@ export const reducer = slice.reducer;
 export const selectors = {
   ...slice.selectors,
   getManagedProjects,
+  getWorldSettings,
   getError,
+  getPermissionsState,
+  getParcelsStateForAddress,
 };

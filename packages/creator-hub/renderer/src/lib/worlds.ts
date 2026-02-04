@@ -211,21 +211,34 @@ export type AllowListPermissionSetting = {
   wallets: string[];
 };
 
+export type AddressWorldPermission = {
+  permission: 'deployment' | 'streaming';
+  world_wide: boolean; // If world_wide is set, parcels will not be returned
+  parcel_count?: number;
+};
+
 export type WorldPermissions = {
   deployment: AllowListPermissionSetting;
   access: AllowListPermissionSetting | UnrestrictedPermissionSetting;
-  streaming: AllowListPermissionSetting;
+  streaming: AllowListPermissionSetting | UnrestrictedPermissionSetting;
 };
 
 export type WorldPermissionsResponse = {
   permissions: WorldPermissions;
+  summary: Record<string, AddressWorldPermission[]>;
+  owner: string;
 };
 
-export enum WorldPermissionNames {
+export enum WorldPermissionName {
   Deployment = 'deployment',
   Access = 'access',
   Streaming = 'streaming',
 }
+
+export type WorldParcelsResponse = {
+  parcels: string[];
+  total: number;
+};
 
 const WORLD_CONTENT_SERVER_URL = config.get('WORLDS_CONTENT_SERVER_URL');
 
@@ -355,56 +368,125 @@ export class Worlds {
     const result = await fetch(`${this.url}/world/${worldName}/permissions`);
     if (result.ok) {
       const json: WorldPermissionsResponse = await result.json();
-      return json.permissions;
+      return json;
     } else {
       return null;
     }
   };
 
   public postPermissionType = async (
-    address: string,
+    authenticatedAddress: string,
     worldName: string,
-    worldPermissionNames: WorldPermissionNames,
+    worldPermissionName: WorldPermissionName,
     worldPermissionType: WorldPermissionType,
   ) => {
     const result = await fetch(
-      `${this.url}/world/${worldName}/permissions/${worldPermissionNames}`,
+      `${this.url}/world/${worldName}/permissions/${worldPermissionName}`,
       {
         method: 'POST',
+        identity: this.withIdentity(authenticatedAddress),
         metadata: {
           type: worldPermissionType,
         },
-        identity: this.withIdentity(address),
       },
     );
     return result.status === 204;
   };
 
   public putPermissionType = async (
-    address: string,
+    authenticatedAddress: string,
     worldName: string,
-    worldPermissionNames: WorldPermissionNames,
+    worldPermissionName: WorldPermissionName,
+    walletAddress: string,
   ) => {
     const result = await fetch(
-      `${this.url}/world/${worldName}/permissions/${worldPermissionNames}/${address}`,
+      `${this.url}/world/${worldName}/permissions/${worldPermissionName}/${walletAddress}`,
       {
         method: 'PUT',
-        identity: this.withIdentity(address),
+        identity: this.withIdentity(authenticatedAddress),
       },
     );
     return result.status === 204;
   };
 
   public deletePermissionType = async (
-    address: string,
+    authenticatedAddress: string,
     worldName: string,
-    worldPermissionNames: WorldPermissionNames,
+    worldPermissionName: WorldPermissionName,
+    walletAddress: string,
   ) => {
     const result = await fetch(
-      `${this.url}/world/${worldName}/permissions/${worldPermissionNames}/${address}`,
+      `${this.url}/world/${worldName}/permissions/${worldPermissionName}/${walletAddress}`,
       {
         method: 'DELETE',
-        identity: this.withIdentity(address),
+        identity: this.withIdentity(authenticatedAddress),
+      },
+    );
+    return result.status === 204;
+  };
+
+  public fetchParcelsPermission = async (
+    worldName: string,
+    worldPermissionName: WorldPermissionName,
+    walletAddress: string,
+    params?: {
+      limit?: number;
+      offset?: number;
+      x1?: number;
+      x2?: number;
+      y1?: number;
+      y2?: number;
+    },
+  ) => {
+    const urlParams = new URLSearchParams(
+      Object.entries(params || {})
+        .filter(([_, value]) => value !== undefined && value !== null)
+        .map(([key, value]) => [key, value?.toString()]),
+    );
+    const result = await fetch(
+      `${this.url}/world/${worldName}/permissions/${worldPermissionName}/address/${walletAddress}/parcels?${urlParams.toString()}`,
+    );
+    if (result.ok) {
+      const json = await result.json();
+      return json as WorldParcelsResponse;
+    } else {
+      return null;
+    }
+  };
+
+  public postParcelsPermission = async (
+    authenticatedAddress: string,
+    worldName: string,
+    worldPermissionName: WorldPermissionName,
+    walletAddress: string,
+    parcels: string[],
+  ) => {
+    const result = await fetch(
+      `${this.url}/world/${worldName}/permissions/${worldPermissionName}/address/${walletAddress}/parcels`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        identity: this.withIdentity(authenticatedAddress),
+        body: JSON.stringify({ parcels }),
+      },
+    );
+    return result.status === 204;
+  };
+
+  public deleteParcelsPermission = async (
+    authenticatedAddress: string,
+    worldName: string,
+    worldPermissionName: WorldPermissionName,
+    walletAddress: string,
+    parcels: string[],
+  ) => {
+    const result = await fetch(
+      `${this.url}/world/${worldName}/permissions/${worldPermissionName}/address/${walletAddress}/parcels`,
+      {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        identity: this.withIdentity(authenticatedAddress),
+        body: JSON.stringify({ parcels }),
       },
     );
     return result.status === 204;

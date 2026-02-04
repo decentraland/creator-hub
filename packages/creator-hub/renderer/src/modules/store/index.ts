@@ -19,6 +19,7 @@ import * as land from './land';
 import * as settings from './settings';
 import * as defaultEditor from './defaultEditor';
 import * as management from './management';
+import * as profiles from './profiles';
 
 export function createRootReducer() {
   return {
@@ -33,6 +34,7 @@ export function createRootReducer() {
     settings: settings.reducer,
     defaultEditor: defaultEditor.reducer,
     management: management.reducer,
+    profiles: profiles.reducer,
   };
 }
 

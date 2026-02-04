@@ -1,0 +1,21 @@
+.Avatar {
+  align-items: center;
+  gap: 10px;
+  height: max-content;
+  justify-self: flex-start;
+}
+
+.Avatar .Paragraph {
+  cursor: pointer;
+  padding-right: 12px;
+}
+
+.Avatar .Paragraph .Name {
+  color: var(--text);
+  margin-right: 10px;
+}
+
+.Avatar .Paragraph span:last-child {
+  color: var(--dcl-silver);
+  font-family: var(--font-family);
+}

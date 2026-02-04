@@ -425,8 +425,62 @@
         "scenes_title": "场景",
         "actions": {
           "edit_scene": "编辑场景",
-          "unpublish": "取消发布"
+          "unpublish": "从世界中移除"
         }
+      }
+    },
+    "world_permissions": {
+      "tabs": {
+        "access": {
+          "label": "访问"
+        },
+        "collaborators": {
+          "label": "协作者"
+        }
+      },
+      "title": "权限 - {worldName}",
+      "invalid_address": "无效地址",
+      "done": "完成",
+      "access": {
+        "description": "通过在<span>\"私有\"</span>和<span>\"公开\"</span>之间切换\n来管理谁可以访问您的世界。",
+        "subtitle": "在<span>私有模式</span>下，您可以授予最多 100 个地址（Decentraland 用户）访问权限。请注意，如果您恢复到<span>公开模式</span>，您的已批准地址列表将被清除。",
+        "warning": {
+          "title": "警告",
+          "description": "如果您恢复到公开模式，您的已批准地址列表将被清除。"
+        },
+        "empty_list": "您还没有批准任何地址",
+        "public": "公开",
+        "private": "私有",
+        "approved_addresses": "已批准的地址 {number}",
+        "add_address": "添加地址",
+        "actions": {
+          "remove": "移除"
+        }
+      },
+      "collaborators": {
+        "description": "<span>添加最多 10 个地址</span>（Decentraland 用户）作为协作者，并管理他们在您世界中的部署或流媒体权限。",
+        "empty_list": "您还没有添加任何协作者/地址",
+        "add_collaborator": "添加协作者",
+        "column_name_label": "协作者 {number}",
+        "column_stream_label": "流媒体",
+        "column_stream_tooltip": "用户将能够向您的世界流式传输内容",
+        "column_deploy_label": "位置",
+        "column_deploy_tooltip": "用户将能够在您的世界中部署新场景",
+        "all_parcels": "所有地块",
+        "deployment": {
+          "world_wide": "所有地块",
+          "parcels": "自定义坐标",
+          "none": "无"
+        },
+        "parcels_count": "{count} 个地块",
+        "actions": {
+          "remove": "移除"
+        }
+      },
+      "parcels": {
+        "title": "自定义坐标",
+        "description": "点击单个瓷砖以将它们包含/排除在布局中。",
+        "parcels_count": "{count} 个地块"
       }
     },
     "create_project": {
@@ -457,6 +511,9 @@
       "cancel": "取消"
     }
   },
+  "popup": {
+    "copied_to_clipboard": "已复制！"
+  },
   "snackbar": {
     "generic": {
       "import_scene": "导入场景...",
@@ -475,7 +532,15 @@
       "fetch_managed_projects_failed": "获取管理项目失败",
       "fetch_world_settings_failed": "获取世界设置失败。请重试。",
       "fetch_ens_list_failed": "获取ENS列表失败",
-      "fetch_land_list_failed": "获取土地列表失败"
+      "fetch_land_list_failed": "获取土地列表失败",
+      "fetch_world_permissions_failed": "获取世界权限失败。请重试。",
+      "fetch_world_scenes_failed": "获取世界场景失败。请重试。",
+      "update_permissions_failed": "更新世界权限失败。请重试。",
+      "add_permission_failed": "添加地址权限失败。请重试。",
+      "remove_permission_failed": "删除地址权限失败。请重试。",
+      "fetch_parcels_permission_failed": "获取地块权限失败。请重试。",
+      "add_parcels_permission_failed": "更新地块权限失败。请重试。",
+      "remove_parcels_permission_failed": "更新地块权限失败。请重试。"
     },
     "missing_projects": {
       "title": "{scenes} 丢失的 {scenes, plural, one {场景} other {场景}} 成立",
@@ -635,7 +700,6 @@
       "link": "查看详情"
     },
     "cards": {
-      "published": "已发布",
       "published_scene": "已发布的场景",
       "roles": {
         "owner": "所有者",

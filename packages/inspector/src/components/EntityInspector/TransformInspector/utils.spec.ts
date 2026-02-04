@@ -130,54 +130,136 @@ describe('TransformInspector utils', () => {
     });
   });
   describe('getScale', () => {
-    it('should return the same value when maintainPorportion is false', () => {
+    it('should return the same value when maintainProportion is false', () => {
       const oldValue = { x: 1, y: 2, z: 3 };
       const value = { x: 4, y: 5, z: 6 };
-      const mantainProportion = false;
+      const maintainProportion = false;
 
-      const result = getScale(oldValue, value, mantainProportion);
+      const result = getScale(oldValue, value, maintainProportion);
 
       expect(result).toEqual(value);
     });
 
     it('should scale proportionally when x is changed', () => {
       const oldValue = { x: 2, y: 4, z: 6 };
-      const value = { x: 4, y: 5, z: 6 };
-      const mantainProportion = true;
+      const value = { x: 4, y: 4, z: 6 };
+      const maintainProportion = true;
 
-      const result = getScale(oldValue, value, mantainProportion);
+      const result = getScale(oldValue, value, maintainProportion);
 
-      expect(result).toEqual({ x: 4, y: 10, z: 12 });
+      // x doubled (2 -> 4), so y and z should also double (4 -> 8, 6 -> 12)
+      expect(result).toEqual({ x: 4, y: 8, z: 12 });
     });
 
     it('should scale proportionally when y is changed', () => {
       const oldValue = { x: 1, y: 2, z: 3 };
       const value = { x: 1, y: 4, z: 3 };
-      const mantainProportion = true;
+      const maintainProportion = true;
 
-      const result = getScale(oldValue, value, mantainProportion);
+      const result = getScale(oldValue, value, maintainProportion);
 
+      // y doubled (2 -> 4), so x and z should also double
       expect(result).toEqual({ x: 2, y: 4, z: 6 });
     });
 
     it('should scale proportionally when z is changed', () => {
       const oldValue = { x: 2, y: 4, z: 6 };
       const value = { x: 2, y: 4, z: 3 };
-      const mantainProportion = true;
+      const maintainProportion = true;
 
-      const result = getScale(oldValue, value, mantainProportion);
+      const result = getScale(oldValue, value, maintainProportion);
 
+      // z halved (6 -> 3), so x and y should also halve
       expect(result).toEqual({ x: 1, y: 2, z: 3 });
     });
 
     it('should return the same value when no dimensions are changed', () => {
       const oldValue = { x: 1, y: 2, z: 3 };
       const value = { x: 1, y: 2, z: 3 };
-      const mantainProportion = true;
+      const maintainProportion = true;
 
-      const result = getScale(oldValue, value, mantainProportion);
+      const result = getScale(oldValue, value, maintainProportion);
 
       expect(result).toEqual(value);
+    });
+
+    it('should scale proportionally when changing to decimal values less than 1', () => {
+      const oldValue = { x: 1, y: 1, z: 1 };
+      const value = { x: 0.5, y: 1, z: 1 };
+      const maintainProportion = true;
+
+      const result = getScale(oldValue, value, maintainProportion);
+
+      // x halved, so all should become 0.5
+      expect(result).toEqual({ x: 0.5, y: 0.5, z: 0.5 });
+    });
+
+    it('should scale proportionally when changing from decimal to decimal', () => {
+      const oldValue = { x: 0.5, y: 0.5, z: 0.5 };
+      const value = { x: 0.25, y: 0.5, z: 0.5 };
+      const maintainProportion = true;
+
+      const result = getScale(oldValue, value, maintainProportion);
+
+      // x halved (0.5 -> 0.25), so all should halve
+      expect(result).toEqual({ x: 0.25, y: 0.25, z: 0.25 });
+    });
+
+    it('should use other axes as reference when old changed value is zero', () => {
+      const oldValue = { x: 0, y: 1, z: 1 };
+      const value = { x: 0.5, y: 1, z: 1 };
+      const maintainProportion = true;
+
+      const result = getScale(oldValue, value, maintainProportion);
+
+      // When oldChangedValue is 0, use another axis (y=1) as reference
+      // ratio = 0.5 / 1 = 0.5, so all axes become 0.5
+      expect(result).toEqual({ x: 0.5, y: 0.5, z: 0.5 });
+    });
+
+    it('should not apply proportional scaling when setting to zero (prevents accidental data loss)', () => {
+      const oldValue = { x: 1, y: 1, z: 1 };
+      const value = { x: 0, y: 1, z: 1 };
+      const maintainProportion = true;
+
+      const result = getScale(oldValue, value, maintainProportion);
+
+      // When setting one axis to 0, we don't proportionally scale others to 0
+      // This prevents data loss when typing decimals like "0.5" where "0" is intermediate
+      expect(result).toEqual({ x: 0, y: 1, z: 1 });
+    });
+
+    it('should handle uneven scales correctly', () => {
+      const oldValue = { x: 1, y: 2, z: 4 };
+      const value = { x: 2, y: 2, z: 4 };
+      const maintainProportion = true;
+
+      const result = getScale(oldValue, value, maintainProportion);
+
+      // x doubled (1 -> 2), so y should double (2 -> 4) and z should double (4 -> 8)
+      expect(result).toEqual({ x: 2, y: 4, z: 8 });
+    });
+
+    it('should handle negative scales', () => {
+      const oldValue = { x: 1, y: 1, z: 1 };
+      const value = { x: -1, y: 1, z: 1 };
+      const maintainProportion = true;
+
+      const result = getScale(oldValue, value, maintainProportion);
+
+      // x went negative, ratio is -1
+      expect(result).toEqual({ x: -1, y: -1, z: -1 });
+    });
+
+    it('should handle scaling with negative old values', () => {
+      const oldValue = { x: -2, y: 4, z: 6 };
+      const value = { x: -4, y: 4, z: 6 };
+      const maintainProportion = true;
+
+      const result = getScale(oldValue, value, maintainProportion);
+
+      // x doubled in magnitude (-2 -> -4), ratio is 2
+      expect(result).toEqual({ x: -4, y: 8, z: 12 });
     });
   });
   describe('when converting the TransformConfig to TransformConfigInput', () => {
