@@ -3,6 +3,7 @@ import type { SelectChangeEvent } from 'decentraland-ui2';
 import { Box, MenuItem, Typography } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
 import { actions as managementActions } from '/@/modules/store/management';
+import { useAuth } from '/@/hooks/useAuth';
 import { useDispatch, useSelector } from '#store';
 import { SortBy } from '/shared/types/manage';
 import { Navbar, NavbarItem } from '../Navbar';
@@ -15,10 +16,11 @@ import { Row } from '../Row';
 import { Column } from '../Column';
 import { ManagedProjectsList } from './ManagedProjectsList';
 import { StorageUsed } from './StorageUsed';
+import { SignInCard } from './SignInCard';
 import { filterProjectsBy, sortProjectsBy } from './utils';
 import './styles.css';
 
-// TODO: handle not signed in state and add other sort options in future PR.
+// TODO: update design for not signed in state and add other sort options in future PR.
 
 const SORT_OPTIONS: Array<{ label: string; value: SortBy }> = [
   {
@@ -28,6 +30,7 @@ const SORT_OPTIONS: Array<{ label: string; value: SortBy }> = [
 ];
 
 export function ManagePage() {
+  const { isSignedIn, isSigningIn, signIn } = useAuth();
   const { status, projects, sortBy, searchQuery } = useSelector(state => state.management);
   const dispatch = useDispatch();
 
@@ -57,7 +60,9 @@ export function ManagePage() {
       <Navbar active={NavbarItem.MANAGE} />
       <Container>
         <Typography variant="h3">{t('manage.header.title')}</Typography>
-        {isLoading ? (
+        {!isSignedIn && !isSigningIn ? (
+          <SignInCard onClickSignIn={signIn} />
+        ) : isLoading ? (
           <Loader size={70} />
         ) : (
           <Row>

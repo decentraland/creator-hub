@@ -151,7 +151,7 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
         // Delete the collaborator's deployment permission
         if (
           worldPermissions?.deployment.type === WorldPermissionType.AllowList &&
-          worldPermissions.deployment.wallets.includes(walletAddress)
+          worldPermissions.deployment.wallets?.includes(walletAddress)
         ) {
           dispatch(
             removeAddressPermission({
@@ -165,7 +165,7 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
         // Delete the collaborator's streaming permission
         if (
           worldPermissions?.streaming.type === WorldPermissionType.AllowList &&
-          worldPermissions.streaming.wallets.includes(walletAddress)
+          worldPermissions.streaming.wallets?.includes(walletAddress)
         ) {
           dispatch(
             removeAddressPermission({

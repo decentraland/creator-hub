@@ -439,7 +439,9 @@ export class Worlds {
     },
   ) => {
     const urlParams = new URLSearchParams(
-      Object.entries(params || {}).map(([key, value]) => [key, value?.toString()]),
+      Object.entries(params || {})
+        .filter(([_, value]) => value !== undefined && value !== null)
+        .map(([key, value]) => [key, value?.toString()]),
     );
     const result = await fetch(
       `${this.url}/world/${worldName}/permissions/${worldPermissionName}/address/${walletAddress}/parcels?${urlParams.toString()}`,

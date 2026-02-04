@@ -134,7 +134,7 @@ export const fetchAllManagedProjectsDetails = createAsyncThunk(
           displayName: ens.subdomain,
           type: ManagedProjectType.WORLD,
           role:
-            ens.nftOwnerAddress.toLowerCase() === address.toLowerCase()
+            ens.nftOwnerAddress && ens.nftOwnerAddress?.toLowerCase() === address?.toLowerCase()
               ? WorldRoleType.OWNER
               : WorldRoleType.COLLABORATOR,
           deployment:

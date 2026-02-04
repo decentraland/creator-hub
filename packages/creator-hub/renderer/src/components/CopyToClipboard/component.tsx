@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import cx from 'classnames';
 import { Popper } from 'decentraland-ui2';
 import { misc } from '#preload';
@@ -19,6 +19,7 @@ const CopyToClipboard: React.FC<Props> = React.memo(
     const [hasCopiedText, setHasCopiedText] = useState(false);
     const [fadeOut, setFadeOut] = useState(false);
     const anchorRef = useRef<HTMLDivElement>(null);
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const handleTransitionEnd = useCallback(() => {
       if (showPopup) {
@@ -32,9 +33,21 @@ const CopyToClipboard: React.FC<Props> = React.memo(
       if (onCopy) onCopy();
       if (showPopup) {
         setHasCopiedText(true);
-        setTimeout(() => setFadeOut(true), timeOut);
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => {
+          setFadeOut(true);
+          timeoutRef.current = null;
+        }, timeOut);
       }
     }, [text, showPopup, timeOut, onCopy]);
+
+    useEffect(() => {
+      return () => {
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+      };
+    }, []);
 
     return (
       <>
