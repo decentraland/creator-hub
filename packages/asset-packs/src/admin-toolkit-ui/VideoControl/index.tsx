@@ -5,6 +5,7 @@ import { getScaleUIFactor } from '../../ui';
 import { Button } from '../Button';
 import { CONTENT_URL } from '../constants';
 import { State } from '../types';
+import type { AdminTools } from '../../definitions';
 import { Header } from '../Header';
 import {
   getVideoPlayers,
@@ -107,7 +108,10 @@ export function VideoControl({ engine, state }: { engine: IEngine; state: State 
             {videoPlayers.length > 1 && (
               <UiEntity uiTransform={{ flexDirection: 'column' }}>
                 <Dropdown
-                  options={videoPlayers.map(player => `<b>${player.customName}</b>`)}
+                  options={videoPlayers.map(
+                    (player: NonNullable<AdminTools['videoControl']['videoPlayers']>[0]) =>
+                      `<b>${player.customName}</b>`,
+                  )}
                   selectedIndex={state.videoControl.selectedVideoPlayer ?? 0}
                   onChange={idx => (state.videoControl.selectedVideoPlayer = idx)}
                   textAlign="middle-left"

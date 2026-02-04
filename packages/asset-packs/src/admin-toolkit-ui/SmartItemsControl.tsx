@@ -124,7 +124,9 @@ function SmartItemSelector({
         key="SmartItemsControlDropdownSelector"
         acceptEmpty
         emptyLabel="Select Smart Item"
-        options={smartItems.map(item => item.customName)}
+        options={smartItems.map(
+          (item: NonNullable<AdminTools['smartItemsControl']['smartItems']>[0]) => item.customName,
+        )}
         selectedIndex={selectedIndex ?? -1}
         onChange={onSelect}
         textAlign="middle-left"
@@ -174,7 +176,7 @@ function ActionSelector({
         <Dropdown
           acceptEmpty
           emptyLabel="Select Action"
-          options={actions.map(action => action.name)}
+          options={actions.map((action: Action) => action.name)}
           selectedIndex={selectedIndex}
           onChange={onChange}
           disabled={disabled}
@@ -273,8 +275,9 @@ export function SmartItemsControl({ engine, state }: { engine: IEngine; state: S
 
   const selectedActionIndex =
     state.smartItemsControl.selectedSmartItem !== undefined
-      ? actions.findIndex(action => {
-          const selectedSmartItem = smartItems[state.smartItemsControl.selectedSmartItem!];
+      ? actions.findIndex((action: Action) => {
+          const selectedSmartItem: NonNullable<AdminTools['smartItemsControl']['smartItems']>[0] =
+            smartItems[state.smartItemsControl.selectedSmartItem!];
           const stateSelectedAction = state.smartItemsControl.smartItems.get(
             selectedSmartItem.entity as Entity,
           )?.selectedAction;

@@ -11,7 +11,7 @@ import type { TreeNode } from '../../ProjectAssetExplorer/ProjectView';
 import type { AssetNodeItem } from '../../ProjectAssetExplorer/types';
 import { isAssetNode } from '../../ProjectAssetExplorer/utils';
 import { ACCEPTED_FILE_TYPES } from '../../ui/FileUploadField/types';
-import { TransitionMode } from '../../../lib/sdk/components/SceneMetadata';
+import { TransitionMode } from '../../../lib/sdk/components/versioning/definitions/scene-metadata';
 import type { SceneInput, SpawnPointInput } from './types';
 
 function getValue(coord: SceneSpawnPointCoord) {

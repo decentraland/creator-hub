@@ -17,7 +17,6 @@ import { toSceneComponent } from './utils/component';
 import { addNodesComponentsToPlayerAndCamera } from './utils/migrations/add-nodes-to-player-and-camera';
 import { fixNetworkEntityValues } from './utils/migrations/fix-network-entity-values';
 import { selectSceneEntity } from './utils/migrations/select-scene-entity';
-import { migrateSceneMetadata } from './utils/migrations/migrate-scene-metadata';
 import { migrateInspectorComponents } from './utils/migrations/migrate-inspector-components';
 import {
   type StateProvider,
@@ -121,7 +120,6 @@ export class CompositeProvider implements StateProvider {
     addNodesComponentsToPlayerAndCamera(this.engine);
     fixNetworkEntityValues(this.engine);
     selectSceneEntity(this.engine);
-    migrateSceneMetadata(this.engine);
     migrateAllAssetPacksComponents(this.engine);
     migrateInspectorComponents(this.engine);
     createTagsComponent(this.engine);

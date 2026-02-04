@@ -1,5 +1,4 @@
 import { ComponentName } from '@dcl/asset-packs';
-import { getLatestSceneComponentVersion } from './SceneMetadata';
 import { BaseComponentNames, getLatestVersionName } from './versioning/constants';
 
 export enum CoreComponents {
@@ -29,7 +28,7 @@ export enum CoreComponents {
 
 export const EditorComponentNames = {
   Selection: getLatestVersionName(BaseComponentNames.SELECTION),
-  Scene: getLatestSceneComponentVersion().key,
+  Scene: getLatestVersionName(BaseComponentNames.SCENE_METADATA),
   Nodes: getLatestVersionName(BaseComponentNames.NODES),
   ActionTypes: ComponentName.ACTION_TYPES,
   Actions: ComponentName.ACTIONS,

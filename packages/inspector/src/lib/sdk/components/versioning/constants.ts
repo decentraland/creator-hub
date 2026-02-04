@@ -12,15 +12,10 @@ import { TILE_VERSIONS } from './definitions/tile';
 import { CUSTOM_ASSET_VERSIONS } from './definitions/custom-asset';
 import { CONFIG_VERSIONS } from './definitions/config';
 import { INSPECTOR_UI_STATE_VERSIONS } from './definitions/inspector-ui-state';
+import { SCENE_METADATA_VERSIONS } from './definitions/scene-metadata';
 
 export { BaseComponentNames };
 
-/**
- * Converts a simplified versions array (just schemas) into the full VersionedComponent format.
- * Version names are automatically generated:
- * - Index 0: baseName
- * - Index 1+: baseName-v{index}
- */
 function createVersionedComponents<T extends readonly any[]>(
   baseName: string,
   schemas: T,
@@ -31,20 +26,12 @@ function createVersionedComponents<T extends readonly any[]>(
   }));
 }
 
-/**
- * Utility type: Extracts the schema from the LAST element of a readonly array
- * and converts it to a TypeScript type using MapResult.
- */
 type LastSchema<T extends readonly any[]> = T extends readonly [...any[], infer Last]
   ? Last extends Record<string, any>
     ? MapResult<Last>
     : never
   : never;
 
-/**
- * Raw versions registry with `as const` to preserve literal types for type inference.
- * This allows TypeScript to extract the schema from the last version automatically.
- */
 const VERSIONS_REGISTRY_RAW = {
   [BaseComponentNames.SELECTION]: SELECTION_VERSIONS,
   [BaseComponentNames.NODES]: NODES_VERSIONS,
@@ -56,6 +43,7 @@ const VERSIONS_REGISTRY_RAW = {
   [BaseComponentNames.CUSTOM_ASSET]: CUSTOM_ASSET_VERSIONS,
   [BaseComponentNames.CONFIG]: CONFIG_VERSIONS,
   [BaseComponentNames.INSPECTOR_UI_STATE]: INSPECTOR_UI_STATE_VERSIONS,
+  [BaseComponentNames.SCENE_METADATA]: SCENE_METADATA_VERSIONS,
 } as const;
 
 /**
@@ -69,13 +57,6 @@ export const VERSIONS_REGISTRY: Record<string, VersionedComponent[]> = Object.fr
   ]),
 );
 
-/**
- * Component types for all inspector versioned components.
- *
- * Types are automatically inferred from the LAST element of each VERSIONS array.
- * When you add a new version (e.g., add SelectionV2 to the array), the type
- * automatically updates - no manual type changes needed!
- */
 export type InspectorVersionedComponents = {
   [K in keyof typeof VERSIONS_REGISTRY_RAW]: LastWriteWinElementSetComponentDefinition<
     LastSchema<(typeof VERSIONS_REGISTRY_RAW)[K]>
@@ -87,11 +68,6 @@ export const getLatestVersionName = (baseName: string) => {
   return versions[versions.length - 1].versionName;
 };
 
-/**
- * Defines all versions of all versioned components and returns the latest version of each.
- * This function iterates over VERSIONS_REGISTRY, defines all versions (necessary for migrations),
- * and returns a properly typed object with the latest version of each component keyed by baseName.
- */
 export function defineAllVersionedComponents(engine: IEngine): InspectorVersionedComponents {
   const components: Record<string, any> = {};
 

@@ -145,7 +145,7 @@ export function createTriggersSystem(
               if (entity) {
                 const actions = Actions.getOrNull(entity);
                 if (actions) {
-                  const action = actions.value.find($ => $.name === triggerAction.name);
+                  const action = actions.value.find(($: Action) => $.name === triggerAction.name);
                   if (action) {
                     // actions are enqueued to be executed on the next tick after all the triggers have been processed,
                     // this is to avoid one trigger messing with other trigger's conditions
@@ -329,7 +329,7 @@ export function createTriggersSystem(
       // This usually happens with entities that are created at runtime and are being syncronized.
       // If you receive an entity with pointerEvent this function inside the createTriggerSystem is generating another one with the same values.
       const existingIndex = pointerEvent.pointerEvents.findIndex(
-        $ => $.eventInfo?.button === opts.button,
+        ($: { eventInfo?: { button?: InputAction } }) => $.eventInfo?.button === opts.button,
       );
       if (existingIndex !== -1) {
         const eventInfo = pointerEvent.pointerEvents[existingIndex].eventInfo;
@@ -360,7 +360,7 @@ export function createTriggersSystem(
       // This usually happens with entities that are created at runtime and are being syncronized.
       // If you receive an entity with pointerEvent this function inside the createTriggerSystem is generating another one with the same values.
       const existingIndex = pointerEvent.pointerEvents.findIndex(
-        $ => $.eventInfo?.button === opts.button,
+        ($: { eventInfo?: { button?: InputAction } }) => $.eventInfo?.button === opts.button,
       );
       if (existingIndex !== -1) {
         const eventInfo = pointerEvent.pointerEvents[existingIndex].eventInfo;

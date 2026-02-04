@@ -3,7 +3,7 @@ import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
 import { recursiveCheck } from '../../../../lib/utils/deep-equal';
 import { Dropdown, Label, InfoTooltip } from '../../../ui';
 import RangeHourField from '../../../ui/RangeHourField/RangeHourField';
-import { TransitionMode } from '../../../../lib/sdk/components/SceneMetadata';
+import { TransitionMode } from '../../../../lib/sdk/components/versioning/definitions/scene-metadata';
 import { MIDDAY_SECONDS } from '../../SceneInspector/utils';
 import type { Props } from './types';
 
