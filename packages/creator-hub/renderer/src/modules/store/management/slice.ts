@@ -24,6 +24,7 @@ import type { LandDeployment } from '/@/lib/land';
 import { Lands, LandType } from '/@/lib/land';
 import type { AccountHoldings } from '/@/lib/account';
 import { Account } from '/@/lib/account';
+import { getMockData } from '/@/modules/store/mock';
 import { getThumbnailUrlFromDeployment } from './utils';
 import type {
   AddressPermissionPayload,
@@ -65,7 +66,7 @@ export type ManagementState = {
 export const initialState: Async<ManagementState> = {
   sortBy: SortBy.LATEST,
   searchQuery: '',
-  projects: [],
+  projects: getMockData('management.projects') ?? [],
   storageStats: null,
   accountHoldings: null,
   status: 'idle',
@@ -198,6 +199,7 @@ export const fetchAllManagedProjectsDetails = createAsyncThunk(
       });
 
       const managedProjects = await Promise.all([...worldsPromises, ...landsPromises]);
+
       return managedProjects;
     } catch (error) {
       return rejectWithValue({
