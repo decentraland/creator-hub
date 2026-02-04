@@ -1,3 +1,5 @@
 import { Schemas } from '@dcl/ecs';
 
-export const HIDE_VERSIONS = [{ value: Schemas.Boolean }] as const;
+const HideV0 = { value: Schemas.Boolean };
+
+export const HIDE_VERSIONS = [HideV0] as const;
