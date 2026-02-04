@@ -5,42 +5,39 @@
   align-items: center;
   justify-content: center;
   gap: 24px;
-  padding: 0 24px;
 }
 
-.MuiModal-root .SelectWorld .box {
-  display: flex;
-  width: 100%;
-  gap: 24px;
-}
-
-.MuiModal-root .SelectWorld .thumbnail {
-  width: 250px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.MuiModal-root .SelectWorld .thumbnail img {
-  width: 100%;
-  object-fit: cover;
-  border-radius: 8px;
-}
-
-.MuiModal-root .SelectWorld .box .selection {
+.MuiModal-root .SelectWorld .selection {
   display: flex;
   flex-direction: column;
   flex-grow: 1;
-  gap: 30px;
+  gap: 16px;
+  width: 100%;
 }
 
-.MuiModal-root .SelectWorld .box .selection .MuiSelect-select {
+.MuiModal-root .SelectWorld .selection .Row {
+  gap: 8px;
+}
+
+.MuiModal-root .SelectWorld .selection .MuiSelect-select {
   display: flex;
   align-items: center;
 }
 
-.MuiModal-root .SelectWorld .box .selection #world-name-label {
+.MuiModal-root .SelectWorld .selection .MuiOutlinedInput-notchedOutline {
+  border-color: var(--transparent-gray-light);
+}
+
+.MuiModal-root .SelectWorld .selection #world-name-label {
   transform: translate(0, -9px) scale(0.75);
+}
+
+.SelectWorld-ENSProvider {
+  width: 11rem;
+}
+
+.SelectWorld-WorldName {
+  width: 100%;
 }
 
 .SelectWorld-ENSProvider-Img {

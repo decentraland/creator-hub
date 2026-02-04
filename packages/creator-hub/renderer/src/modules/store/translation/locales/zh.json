@@ -126,6 +126,10 @@
     "publish_project": {
       "title": "公共场所 \"{title}\"",
       "select": "选择要部署此场景的位置：",
+      "roles": {
+        "owner": "所有者",
+        "collaborator": "协作者"
+      },
       "worlds": {
         "title": "世界赛",
         "description": "在创世城地图中找不到。 \n最多可同时加入 100 个用户。",

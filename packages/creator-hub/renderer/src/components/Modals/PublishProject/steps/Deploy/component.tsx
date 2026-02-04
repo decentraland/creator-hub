@@ -216,7 +216,7 @@ export function Deploy(props: Props) {
             className="scene"
           >
             {loadingPublish ? (
-              <div className="header">
+              <div className="header Loading">
                 <Loader />
                 <Typography variant="h5">
                   {t('modal.publish_project.deploy.deploying.publish')}

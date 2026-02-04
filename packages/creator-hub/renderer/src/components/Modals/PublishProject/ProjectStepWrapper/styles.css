@@ -33,7 +33,7 @@
   display: inline-flex;
   width: 16px;
   height: 16px;
-  background: center no-repeat url(../images/verified.svg);
+  background: center no-repeat url(verified.svg);
 }
 
 .ProjectStepWrapper .chip.parcel .pin {
@@ -91,7 +91,7 @@
 /* Wrapper Content */
 
 .ProjectStepWrapper .ProjectContainer .content {
-  width: 600px;
+  width: 100%;
   min-height: 475px;
   max-height: 550px;
   overflow: auto;

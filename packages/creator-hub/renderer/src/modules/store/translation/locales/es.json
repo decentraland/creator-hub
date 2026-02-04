@@ -126,6 +126,10 @@
     "publish_project": {
       "title": "Publicar escena \"{title}\"",
       "select": "Selecciona dónde quieres publicar tu escena",
+      "roles": {
+        "owner": "Propietario",
+        "collaborator": "Colaborador"
+      },
       "worlds": {
         "title": "Worlds",
         "description": "No se puede encontrar en el mapa de Genesis City. \nHasta 100 usuarios pueden unirse simultáneamente.",

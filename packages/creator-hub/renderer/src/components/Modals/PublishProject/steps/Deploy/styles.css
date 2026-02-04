@@ -13,6 +13,7 @@
   gap: 16px;
   justify-content: stretch;
   flex: 1 1 auto;
+  height: 100%;
 }
 
 .Deploy .scene .files .filters {
@@ -105,6 +106,7 @@
 }
 
 .Deploy .scene .Success {
+  height: 100%;
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
@@ -158,7 +160,9 @@
 .Deploy .scene .Deploying,
 .Deploy .scene .Error {
   display: flex;
+  justify-content: center;
   flex-direction: column;
+  height: 100%;
   width: 100%;
 }
 .Deploy .scene .Error .header,
@@ -177,6 +181,10 @@
   white-space: pre-wrap;
   max-height: 250px;
   overflow: auto;
+}
+
+.Deploy .scene .header.Loading {
+  height: 100%;
 }
 
 .Deploy .scene .header {
@@ -204,6 +212,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  height: 100%;
 }
 
 .Deploy .scene .Error .description {
@@ -294,6 +303,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-top: auto;
 }
 
 .Deploy .publish-warning .dont-show-again {

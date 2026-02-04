@@ -4,9 +4,6 @@ import WarningIcon from '@mui/icons-material/Warning';
 import type { WorldConfiguration } from '@dcl/schemas';
 import {
   Checkbox,
-  CircularProgress as Loader,
-  FormControl,
-  InputLabel,
   MenuItem,
   Select,
   Typography,
@@ -20,7 +17,6 @@ import { useSelector } from '#store';
 
 import { config } from '/@/config';
 import { t } from '/@/modules/store/translation/utils';
-import { addBase64ImagePrefix } from '/@/modules/image';
 import { ENSProvider } from '/@/modules/store/ens/types';
 import { getEnsProvider } from '/@/modules/store/ens/utils';
 import { useEditor } from '/@/hooks/useEditor';
@@ -30,8 +26,10 @@ import EmptyWorldSVG from '/assets/images/empty-deploy-to-world.svg';
 import LogoDCLSVG from '/assets/images/logo-dcl.svg';
 import LogoENSSVG from '/assets/images/logo-ens.svg';
 
+import { Row } from '/@/components/Row';
+import { Button } from '/@/components/Button';
 import { PublishModal } from '../../PublishModal';
-import { Button } from '../../../../Button';
+import { ProjectStepWrapper } from '../../ProjectStepWrapper';
 import { type Props } from '../../types';
 
 import './styles.css';
@@ -51,7 +49,7 @@ export function PublishToWorld(props: Props) {
   return (
     <PublishModal
       title={t('modal.publish_project.worlds.select_world.title')}
-      subtitle={t('modal.publish_project.worlds.select_world.description')}
+      size="large"
       {...props}
     >
       {!emptyNames ? (
@@ -139,15 +137,23 @@ function SelectWorld({ project, onPublish }: { project: Project; onPublish: () =
   const projectIsReady = project.status === 'succeeded';
 
   return (
-    <div className="SelectWorld">
-      <div className="box">
-        <div className="thumbnail">
-          {!projectIsReady ? <Loader /> : <img src={addBase64ImagePrefix(project.thumbnail)} />}
-        </div>
-        <div className="selection">
+    <ProjectStepWrapper
+      isWorld
+      project={project}
+      className="SelectWorld"
+    >
+      <div className="selection">
+        <Typography
+          variant="h6"
+          color="#A09BA8"
+        >
+          {t('modal.publish_project.worlds.select_world.description')}
+        </Typography>
+        <Row>
           <Select
-            variant="standard"
+            variant="outlined"
             color="secondary"
+            className="SelectWorld-ENSProvider"
             value={ensProvider}
             onChange={handleChangeSelectProvider}
           >
@@ -166,60 +172,54 @@ function SelectWorld({ project, onPublish }: { project: Project; onPublish: () =
               {t(`modal.publish_project.worlds.select_world.ens_providers.${ENSProvider.ENS}`)}
             </MenuItem>
           </Select>
-          <FormControl>
-            <InputLabel id="world-name-label">
-              {t('modal.publish_project.worlds.select_world.world_name')}
-            </InputLabel>
-            <Select
-              variant="standard"
-              color="secondary"
-              labelId="world-name-label"
-              label={t('modal.publish_project.worlds.select_world.world_name')}
-              displayEmpty
-              value={name}
-              onChange={handleChangeSelectName}
-              disabled={listNames.length === 0}
-              renderValue={selected => {
-                if (selected === '') {
-                  return <em>{t('modal.publish_project.worlds.select_world.placeholder')}</em>;
-                }
+          <Select
+            variant="outlined"
+            color="secondary"
+            className="SelectWorld-WorldName"
+            displayEmpty
+            value={name}
+            onChange={handleChangeSelectName}
+            disabled={listNames.length === 0}
+            renderValue={selected => {
+              if (selected === '') {
+                return <em>{t('modal.publish_project.worlds.select_world.placeholder')}</em>;
+              }
 
-                return selected;
-              }}
+              return selected;
+            }}
+          >
+            <MenuItem
+              disabled
+              value=""
             >
+              <em>{t('modal.publish_project.worlds.select_world.placeholder')}</em>
+            </MenuItem>
+            {listNames.map((_world: string) => (
               <MenuItem
-                disabled
-                value=""
+                key={_world}
+                value={_world}
               >
-                <em>{t('modal.publish_project.worlds.select_world.placeholder')}</em>
+                {_world}
               </MenuItem>
-              {listNames.map((_world: string) => (
-                <MenuItem
-                  key={_world}
-                  value={_world}
-                >
-                  {_world}
-                </MenuItem>
-              ))}
-              <MenuItem onClick={handleClaimNewName}>
-                <AddIcon />
-                {ensProvider === ENSProvider.DCL
-                  ? t('modal.publish_project.worlds.select_world.claim_new_name')
-                  : t('modal.publish_project.worlds.select_world.claim_new_ens_domain')}
-              </MenuItem>
-            </Select>
-          </FormControl>
-          {hasWorldContent && (
-            <div className="WorldHasContent">
-              <div className="WarningIcon">
-                <WarningIcon />
-              </div>
-              <Typography variant="caption">
-                {t('modal.publish_project.worlds.select_world.world_has_content', { world: name })}
-              </Typography>
+            ))}
+            <MenuItem onClick={handleClaimNewName}>
+              <AddIcon />
+              {ensProvider === ENSProvider.DCL
+                ? t('modal.publish_project.worlds.select_world.claim_new_name')
+                : t('modal.publish_project.worlds.select_world.claim_new_ens_domain')}
+            </MenuItem>
+          </Select>
+        </Row>
+        {hasWorldContent && (
+          <div className="WorldHasContent">
+            <div className="WarningIcon">
+              <WarningIcon />
             </div>
-          )}
-        </div>
+            <Typography variant="caption">
+              {t('modal.publish_project.worlds.select_world.world_has_content', { world: name })}
+            </Typography>
+          </div>
+        )}
       </div>
       <div className="actions">
         {hasWorldContent && (
@@ -237,12 +237,13 @@ function SelectWorld({ project, onPublish }: { project: Project; onPublish: () =
         )}
         <Button
           onClick={handleClick}
+          size="large"
           disabled={!projectIsReady || !name || (hasWorldContent && !confirmWorldReplaceContent)}
         >
           {t('modal.publish_project.worlds.select_world.action')}
         </Button>
       </div>
-    </div>
+    </ProjectStepWrapper>
   );
 }
 

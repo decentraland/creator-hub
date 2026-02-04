@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import cx from 'classnames';
 import PinIcon from '@mui/icons-material/Place';
 import ParcelsIcon from '@mui/icons-material/GridViewRounded';
@@ -9,6 +9,8 @@ import { formatWorldSize } from '/@/modules/world';
 import { t } from '/@/modules/store/translation/utils';
 import type { Project } from '/shared/types/projects';
 import { useAuth } from '/@/hooks/useAuth';
+import { useSelector } from '#store';
+import { coordsToId, RoleType } from '/@/lib/land';
 import './styles.css';
 
 type Props = {
@@ -18,8 +20,40 @@ type Props = {
   className?: string;
 };
 
+enum UserRole {
+  OWNER = 'owner',
+  COLLABORATOR = 'collaborator',
+}
+
 const ProjectStepWrapper: React.FC<Props> = ({ isWorld, project, children, className }) => {
   const { chainId, wallet, avatar } = useAuth();
+  const ensData = useSelector(state => state.ens.data);
+  const landData = useSelector(state => state.land.data);
+
+  const userRole: UserRole | null = useMemo(() => {
+    if (!wallet) return null;
+
+    if (isWorld && project.worldConfiguration?.name) {
+      const ensEntry = ensData[project.worldConfiguration.name];
+      if (ensEntry) {
+        const isOwner = ensEntry.nftOwnerAddress?.toLowerCase() === wallet.toLowerCase();
+        return isOwner ? UserRole.OWNER : UserRole.COLLABORATOR;
+      }
+    } else if (!isWorld && project.scene.base) {
+      const landEntry = landData.find(
+        land =>
+          (land.type === 'parcel' && coordsToId(land.x!, land.y!) === project.scene.base) ||
+          (land.type === 'estate' &&
+            land.parcels?.some(parcel => coordsToId(parcel.x!, parcel.y!) === project.scene.base)),
+      );
+
+      if (landEntry) {
+        return landEntry.role === RoleType.OWNER ? UserRole.OWNER : UserRole.COLLABORATOR;
+      }
+    }
+
+    return null;
+  }, [wallet, isWorld, project, ensData, landData]);
 
   return (
     <div className="ProjectStepWrapper">
@@ -49,6 +83,9 @@ const ProjectStepWrapper: React.FC<Props> = ({ isWorld, project, children, class
             <PinIcon className="pin" />
             {project.scene.base}
           </div>
+        )}
+        {userRole && (
+          <div className="chip role">{t(`modal.publish_project.roles.${userRole}`)}</div>
         )}
       </div>
       <div className="ProjectContainer">

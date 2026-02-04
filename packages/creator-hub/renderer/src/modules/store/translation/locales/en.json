@@ -126,13 +126,17 @@
     "publish_project": {
       "title": "Publish \"{title}\"",
       "select": "Where would you like to deploy your scene to?",
+      "roles": {
+        "owner": "Owner",
+        "collaborator": "Collaborator"
+      },
       "worlds": {
         "title": "Worlds",
         "description": "Your own virtual space, separate from Genesis City. Claim yours when you get a NAME.",
         "action": "Publish to a World",
         "select_world": {
           "title": "Publish to World",
-          "description": "Select the Decentraland NAME or ENS Domain that will define the URL",
+          "description": "Choose the domain where your world will be published.",
           "world_name": "WORLD (NAME)",
           "placeholder": "Select a Name",
           "claim_new_name": "Claim a new NAME",
