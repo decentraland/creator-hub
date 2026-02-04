@@ -19,7 +19,7 @@ export const isFetchError = (
   (Array.isArray(type) ? type.includes(error.name) : type === '*' || error.name === type);
 
 /** Check if there's an internet connection */
-async function isOnline(): Promise<boolean> {
+function isOnline(): boolean {
   try {
     // navigator object is partially implemented in nodejs runtime/electron,
     // in that case navigator.onLine may be undefined, so we fallback to true.
@@ -40,7 +40,7 @@ export async function fetch(
   init?: RequestInit,
   timeoutMs: number = 5000,
 ): Promise<Response> {
-  if (!(await isOnline())) {
+  if (!isOnline()) {
     throw new FetchError('NO_INTERNET_CONNECTION');
   }
 
