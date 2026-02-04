@@ -20,29 +20,16 @@ import type {
 } from '@dcl/asset-packs';
 import { createComponents as createAssetPacksComponents } from '@dcl/asset-packs';
 import type { Layout } from '../../utils/layout';
-import type { TransitionMode } from './SceneMetadata';
-import {
-  Coords,
-  defineSceneComponents,
-  getLatestSceneComponentVersion,
-  SceneAgeRating,
-  SceneCategory,
-} from './SceneMetadata';
+import type { TransitionMode } from './versioning/definitions/scene-metadata';
+import { Coords, SceneAgeRating, SceneCategory } from './versioning/definitions/scene-metadata';
 import {
   defineAllVersionedComponents,
   BaseComponentNames,
   type InspectorVersionedComponents,
 } from './versioning/constants';
-import { EditorComponentNames as BaseEditorComponentNames } from './types';
 
 export { SceneAgeRating, SceneCategory };
-export { CoreComponents, AllComponentsType } from './types';
-
-// Override the Scene property with the dynamic value
-export const EditorComponentNames = {
-  ...BaseEditorComponentNames,
-  Scene: getLatestSceneComponentVersion().key,
-} as const;
+export { CoreComponents, AllComponentsType, EditorComponentNames } from './types';
 
 export type Component<T = unknown> = ComponentDefinition<T>;
 export type Node = { entity: Entity; open?: boolean; children: Entity[] };
@@ -98,6 +85,7 @@ type ComponentValue<T> = T extends LastWriteWinElementSetComponentDefinition<inf
  */
 export type EditorComponentsTypes = {
   Selection: ComponentValue<InspectorVersionedComponents[typeof BaseComponentNames.SELECTION]>;
+  Scene: ComponentValue<InspectorVersionedComponents[typeof BaseComponentNames.SCENE_METADATA]>;
   Nodes: ComponentValue<InspectorVersionedComponents[typeof BaseComponentNames.NODES]>;
   TransformConfig: ComponentValue<
     InspectorVersionedComponents[typeof BaseComponentNames.TRANSFORM_CONFIG]
@@ -112,7 +100,6 @@ export type EditorComponentsTypes = {
     InspectorVersionedComponents[typeof BaseComponentNames.INSPECTOR_UI_STATE]
   >;
   // Other components
-  Scene: SceneComponent;
   ActionTypes: ActionTypes;
   Actions: Actions;
   Triggers: Triggers;
@@ -257,12 +244,10 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
       parcels: Schemas.Array(Coords),
     }),
   });
-  //TODO change how we define Scene components to use the same approach
-
-  const Scene = defineSceneComponents(engine).pop() as ReturnType<typeof defineSceneComponents>[0];
 
   const versionedComponents = defineAllVersionedComponents(engine);
   const Selection = versionedComponents[BaseComponentNames.SELECTION];
+  const Scene = versionedComponents[BaseComponentNames.SCENE_METADATA];
   const Nodes = versionedComponents[BaseComponentNames.NODES];
   const TransformConfig = versionedComponents[BaseComponentNames.TRANSFORM_CONFIG];
   const Hide = versionedComponents[BaseComponentNames.HIDE];

@@ -8,3 +8,4 @@ export { TILE_VERSIONS } from './tile';
 export { CUSTOM_ASSET_VERSIONS } from './custom-asset';
 export { CONFIG_VERSIONS } from './config';
 export { INSPECTOR_UI_STATE_VERSIONS } from './inspector-ui-state';
+export { SCENE_METADATA_VERSIONS } from './scene-metadata';

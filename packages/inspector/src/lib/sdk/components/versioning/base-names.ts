@@ -9,4 +9,5 @@ export const BaseComponentNames = {
   CUSTOM_ASSET: 'inspector::CustomAsset',
   CONFIG: 'inspector::Config',
   INSPECTOR_UI_STATE: 'inspector::UIState',
+  SCENE_METADATA: 'inspector::SceneMetadata',
 } as const;
