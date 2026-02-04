@@ -29,36 +29,21 @@ export const Gizmos = withSdk(({ sdk }) => {
   const [selection, setSelection] = useComponentValue(entity || ROOT, sdk.components.Selection);
 
   const handlePositionGizmo = useCallback(
-    () =>
-      setSelection({
-        gizmo: selection.gizmo !== GizmoType.POSITION ? GizmoType.POSITION : GizmoType.FREE,
-      }),
-    [selection, setSelection],
+    () => setSelection({ gizmo: GizmoType.POSITION }),
+    [setSelection],
   );
   const handleRotationGizmo = useCallback(
-    () =>
-      setSelection({
-        gizmo: selection.gizmo !== GizmoType.ROTATION ? GizmoType.ROTATION : GizmoType.FREE,
-      }),
-    [selection, setSelection],
+    () => setSelection({ gizmo: GizmoType.ROTATION }),
+    [setSelection],
   );
   const handleScaleGizmo = useCallback(
-    () =>
-      setSelection({
-        gizmo: selection.gizmo !== GizmoType.SCALE ? GizmoType.SCALE : GizmoType.FREE,
-      }),
-    [selection, setSelection],
-  );
-
-  const handleFreeGizmo = useCallback(
-    () => setSelection({ gizmo: GizmoType.FREE }),
-    [selection, setSelection],
+    () => setSelection({ gizmo: GizmoType.SCALE }),
+    [setSelection],
   );
 
   useHotkey(['M'], handlePositionGizmo);
   useHotkey(['R'], handleRotationGizmo);
   useHotkey(['X'], handleScaleGizmo);
-  useHotkey(['F'], handleFreeGizmo);
 
   const { isGizmoWorldAligned, setGizmoWorldAligned } = useGizmoAlignment();
 
@@ -79,16 +64,10 @@ export const Gizmos = withSdk(({ sdk }) => {
       ref={ref}
     >
       <ToolbarButton
-        className={cx('gizmo free', { active: selection?.gizmo === GizmoType.FREE })}
-        disabled={disableGizmos}
-        onClick={handleFreeGizmo}
-        title="Free movement tool"
-      />
-      <ToolbarButton
         className={cx('gizmo position', { active: selection?.gizmo === GizmoType.POSITION })}
         disabled={disableGizmos}
         onClick={handlePositionGizmo}
-        title="Translation tool"
+        title="Move tool"
       />
       <ToolbarButton
         className={cx('gizmo rotation', { active: selection?.gizmo === GizmoType.ROTATION })}

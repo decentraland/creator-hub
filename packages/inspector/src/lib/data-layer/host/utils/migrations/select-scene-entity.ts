@@ -16,7 +16,7 @@ export function selectSceneEntity(engine: IEngine) {
 
     function system() {
       engine.removeSystem(system);
-      Selection!.createOrReplace(engine.RootEntity, { gizmo: GizmoType.FREE });
+      Selection!.createOrReplace(engine.RootEntity, { gizmo: GizmoType.POSITION });
     }
 
     engine.addSystem(system);
