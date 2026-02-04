@@ -1,5 +1,5 @@
 import type { YGAlign, YGJustify } from '@dcl/ecs';
-import { getLatestVersionName } from './versioning';
+import { getLatestVersionName } from './versioning/version-names';
 
 // Re-export for backward compatibility
 export { BaseComponentNames } from './constants';

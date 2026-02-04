@@ -36,11 +36,6 @@ const VERSIONS_REGISTRY: Record<string, VersionedComponent[]> = {
   [BaseComponentNames.SCRIPT]: SCRIPT_VERSIONS,
 };
 
-export const getLatestVersionName = (baseName: string) => {
-  const versions = VERSIONS_REGISTRY[baseName];
-  return versions[versions.length - 1].versionName;
-};
-
 export function migrateVersionedComponent(
   engine: IEngine,
   baseName: string,
