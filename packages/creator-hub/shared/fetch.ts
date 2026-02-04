@@ -22,16 +22,10 @@ export const isFetchError = (
 async function isOnline(): Promise<boolean> {
   try {
     // navigator object is partially implemented in nodejs runtime/electron,
-    // in that case navigator.onLine may be undefined.
-    if (typeof navigator !== 'undefined' && typeof navigator?.onLine === 'boolean') {
-      return navigator.onLine;
-    } else {
-      const { net } = await import('electron');
-      return net.isOnline();
-    }
+    // in that case navigator.onLine may be undefined, so we fallback to true.
+    return navigator.onLine ?? true;
   } catch (error) {
-    // Fallback for Nodejs process, when navigator is not defined, so just rely on timeout...
-    return true;
+    return true; // On Nodejs process navigator is not defined, just rely on timeout...
   }
 }
 
