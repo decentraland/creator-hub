@@ -106,15 +106,15 @@ function createTextBlock(value: PBTextShape) {
   const font = value.font ?? Font.F_SANS_SERIF;
   switch (font) {
     case Font.F_SERIF: {
-      // Unity maps SERIF -> Inter-Semibold
-      tb.fontFamily = 'Inter, "Noto Sans", Arial, sans-serif';
+      // Use an actual serif font (Unity screenshot shows clear serifs)
+      tb.fontFamily = '"Liberation Serif", "Noto Serif", Georgia, "Times New Roman", Times, serif';
       tb.fontWeight = '600';
       break;
     }
     case Font.F_MONOSPACE: {
       // Prefer a real monospace font for MONOSPACE
       tb.fontFamily =
-        '"Roboto Mono", "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
+        '"Liberation Mono", "Roboto Mono", "SFMono-Regular", Menlo, Monaco, Consolas, "Courier New", monospace';
       tb.fontWeight = '400';
       break;
     }
@@ -149,7 +149,10 @@ async function loadFonts() {
   if (!fontFuture) {
     fontFuture = future();
     try {
-      // Load Inter (regular + semibold) and Liberation Sans (for SDK font mapping).
+      // Load fonts for TextShape mappings:
+      // - Sans Serif: Liberation Sans (Unity-like)
+      // - Serif: Liberation Serif (actual serif)
+      // - Monospace: Liberation Mono (actual monospace)
       // If a family fails to load for any reason, the renderer will fall back to the next family.
       const linkId = 'dcl-textshape-fonts';
       if (!document.getElementById(linkId)) {
@@ -157,7 +160,7 @@ async function loadFonts() {
         link.id = linkId;
         link.rel = 'stylesheet';
         link.href =
-          'https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Liberation+Sans:wght@400;700&family=Roboto+Mono:wght@400&display=swap';
+          'https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Liberation+Sans:wght@400;700&family=Liberation+Serif:wght@400;700&family=Liberation+Mono:wght@400;700&family=Roboto+Mono:wght@400&display=swap';
         document.head.appendChild(link);
       }
 
@@ -174,6 +177,8 @@ async function loadFonts() {
         document.fonts.load('400 16px Inter'),
         document.fonts.load('600 16px Inter'),
         document.fonts.load('400 16px "Liberation Sans"'),
+        document.fonts.load('400 16px "Liberation Serif"'),
+        document.fonts.load('400 16px "Liberation Mono"'),
         document.fonts.load('400 16px "Roboto Mono"'),
       ]);
     } finally {
