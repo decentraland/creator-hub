@@ -12,7 +12,7 @@
   "ATLAS_SERVER_API_URL": "https://api.decentraland.zone/v2",
   "RPC_URL": "https://rpc.decentraland.org/sepolia",
   "MARKETPLACE_SUBGRAPH": "https://subgraph.decentraland.org/marketplace-sepolia",
-  "ENS_SUBGRAPH": "https://api.studio.thegraph.com/query/49574/enssepolia/version/latest",
+  "ENS_SUBGRAPH": "https://subgraph.decentraland.org/ens-sepolia",
   "RENTALS_SUBGRAPH": "https://subgraph.decentraland.org/rentals-ethereum-sepolia",
   "LAND_MANAGER_SUBGRAPH": "https://subgraph.decentraland.org/land-manager-sepolia",
   "LAND_REGISTRY_ADDRESS": "0x42f4ba48791e2de32f5fbf553441c2672864bb33",
