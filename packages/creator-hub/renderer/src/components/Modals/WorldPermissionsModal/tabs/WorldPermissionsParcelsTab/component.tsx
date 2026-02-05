@@ -32,9 +32,11 @@ const WorldPermissionsParcelsTab: React.FC<Props> = React.memo(
       from: { x: number; y: number } | null;
       to: { x: number; y: number } | null;
     }>({ isSelectingParcels: false, from: null, to: null });
-    const initialParcelsState = useSelector(state =>
-      managementSelectors.getParcelsStateForAddress(state, walletAddress),
+    const parcelsStateSelector = useMemo(
+      () => managementSelectors.makeParcelsStateForAddressSelector(),
+      [],
     );
+    const initialParcelsState = useSelector(state => parcelsStateSelector(state, walletAddress));
     const initialParcels = useMemo(
       () => new Set(initialParcelsState?.parcels || []),
       [initialParcelsState],

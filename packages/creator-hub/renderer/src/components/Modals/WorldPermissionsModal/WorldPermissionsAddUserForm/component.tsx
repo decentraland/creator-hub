@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import AddIcon from '@mui/icons-material/AddRounded';
 import { isValid as isValidAddress } from 'decentraland-ui2/dist/components/AddressField/utils';
-import { TextField } from 'decentraland-ui2';
+import { Box, TextField } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
 import { Row } from '/@/components/Row';
 import { Button } from '/@/components/Button';
@@ -9,11 +8,13 @@ import './styles.css';
 
 type Props = {
   addButtonLabel: string;
+  cancelButtonLabel?: string;
   onSubmitAddress: (address: string) => void;
+  onCancel?: () => void;
 };
 
 export const WorldPermissionsAddUserForm: React.FC<Props> = React.memo(
-  ({ addButtonLabel, onSubmitAddress }) => {
+  ({ addButtonLabel, cancelButtonLabel, onSubmitAddress, onCancel }) => {
     const [address, setAddress] = useState('');
     const [hasError, setHasError] = useState(false);
 
@@ -32,8 +33,14 @@ export const WorldPermissionsAddUserForm: React.FC<Props> = React.memo(
       setAddress('');
     }, [address, hasError, onSubmitAddress]);
 
+    const handleCancel = useCallback(() => {
+      setAddress('');
+      setHasError(false);
+      onCancel?.();
+    }, [onCancel]);
+
     return (
-      <Row className="AddUserWrapper">
+      <Box className="AddUserWrapper">
         <TextField
           placeholder="0x..."
           variant="outlined"
@@ -44,15 +51,24 @@ export const WorldPermissionsAddUserForm: React.FC<Props> = React.memo(
           error={hasError}
           helperText={hasError ? t('modal.world_permissions.invalid_address') : ''}
         />
-        <Button
-          onClick={handleAddAddress}
-          disabled={!address || hasError}
-          color="secondary"
-          startIcon={<AddIcon />}
-        >
-          {addButtonLabel}
-        </Button>
-      </Row>
+        <Row className="AddUserActions">
+          {onCancel && (
+            <Button
+              onClick={handleCancel}
+              color="secondary"
+            >
+              {cancelButtonLabel || t('modal.cancel')}
+            </Button>
+          )}
+          <Button
+            onClick={handleAddAddress}
+            disabled={!address || hasError}
+            color="primary"
+          >
+            {addButtonLabel}
+          </Button>
+        </Row>
+      </Box>
     );
   },
 );

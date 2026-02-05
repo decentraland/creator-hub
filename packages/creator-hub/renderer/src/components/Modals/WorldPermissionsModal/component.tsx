@@ -43,6 +43,8 @@ type Props = Pick<TabsModalProps<WorldPermissionsTab>, 'open' | 'onClose'> & {
   worldPermissionsSummary?: Record<string, AddressWorldPermission[]>;
   isLoading: boolean;
   isLoadingNewUser: boolean;
+  accessPassword?: string | null;
+  isLoadingPassword?: boolean;
 };
 
 const WorldPermissionsModal: React.FC<Props> = React.memo(
@@ -54,6 +56,8 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
     worldPermissionsSummary,
     isLoading,
     isLoadingNewUser,
+    accessPassword,
+    isLoadingPassword = false,
     onClose,
     ...props
   }) => {
@@ -71,20 +75,33 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
       setActiveCollaboratorAddress(null);
     }, []);
 
-    const handleToggleAccessPermission = useCallback(() => {
-      if (!worldPermissions) return;
-      const newPermissionType =
-        worldPermissions.access.type === WorldPermissionType.AllowList
-          ? WorldPermissionType.Unrestricted
-          : WorldPermissionType.AllowList;
-      dispatch(
-        updateWorldPermissions({
-          worldName,
-          worldPermissionName: WorldPermissionName.Access,
-          worldPermissionType: newPermissionType,
-        }),
-      );
-    }, [worldName, worldPermissions]);
+    const handleChangeAccessType = useCallback(
+      (accessType: WorldPermissionType) => {
+        if (!worldPermissions) return;
+        dispatch(
+          updateWorldPermissions({
+            worldName,
+            worldPermissionName: WorldPermissionName.Access,
+            worldPermissionType: accessType,
+          }),
+        );
+      },
+      [worldName, worldPermissions],
+    );
+
+    const handleSetAccessPassword = useCallback(
+      (password: string) => {
+        dispatch(
+          updateWorldPermissions({
+            worldName,
+            worldPermissionName: WorldPermissionName.Access,
+            worldPermissionType: WorldPermissionType.SharedSecret,
+            secret: password,
+          }),
+        );
+      },
+      [worldName],
+    );
 
     const handleAddAccessToAddress = useCallback(
       (walletAddress: string) => {
@@ -239,12 +256,14 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
             <>
               {activeTab === WorldPermissionsTab.ACCESS && (
                 <WorldPermissionsAccessTab
-                  isPublic={worldPermissions?.access.type === WorldPermissionType.Unrestricted}
-                  isLoadingNewUser={isLoadingNewUser}
                   worldAccessPermissions={worldPermissions?.access}
-                  onToggleAccessPermission={handleToggleAccessPermission}
+                  isLoadingNewUser={isLoadingNewUser}
+                  accessPassword={accessPassword}
+                  isLoadingPassword={isLoadingPassword}
+                  onChangeAccessType={handleChangeAccessType}
                   onAddAccessToAddress={handleAddAccessToAddress}
                   onRemoveAccessFromAddress={handleRemoveAccessFromAddress}
+                  onSetAccessPassword={handleSetAccessPassword}
                 />
               )}
               {activeTab === WorldPermissionsTab.COLLABORATORS &&

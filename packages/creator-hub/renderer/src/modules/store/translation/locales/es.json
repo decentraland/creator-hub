@@ -441,8 +441,17 @@
       "invalid_address": "Dirección inválida",
       "done": "Hecho",
       "access": {
+        "title": "¿Quién puede acceder a este mundo?",
         "description": "Gestiona quién puede acceder a tu Mundo alternando\nentre <span>\"Privado\"</span> y <span>\"Público\"</span>.",
         "subtitle": "En <span>modo Privado</span>, puedes otorgar acceso a un máximo de 100 direcciones (usuarios de Decentraland). Ten en cuenta que si vuelves al <span>modo Público</span>, tu lista de direcciones aprobadas será borrada.",
+        "type": {
+          "public": "Público",
+          "invitation_only": "Solo con invitación",
+          "password_protected": "Protegido con contraseña",
+          "public_description": "Cualquiera puede acceder a este mundo",
+          "invitation_only_description": "Solo las direcciones aprobadas pueden acceder a este mundo",
+          "password_protected_description": "Solo los usuarios que conocen la contraseña pueden unirse"
+        },
         "warning": {
           "title": "Advertencia",
           "description": "Si vuelves al modo Público, tu lista de direcciones aprobadas será borrada."
@@ -452,15 +461,38 @@
         "private": "Privado",
         "approved_addresses": "Direcciones Aprobadas {number}",
         "add_address": "Agregar dirección",
+        "new_invite": "Nueva Invitación",
+        "confirm": "Confirmar",
+        "cancel": "Cancelar",
         "actions": {
           "remove": "Eliminar"
+        }
+      },
+      "password": {
+        "current_password": "Contraseña actual",
+        "copy_to_clipboard": "Copiar al Portapapeles",
+        "change_password": "Cambiar Contraseña",
+        "create_new_password": "Crear Nueva Contraseña",
+        "empty_state": "La contraseña de este mundo no está definida.",
+        "dialog": {
+          "create_title": "Crear Nueva Contraseña",
+          "change_title": "Cambiar Contraseña",
+          "type_password": "Escribe tu contraseña",
+          "repeat_password": "Repite tu contraseña"
+        },
+        "error": {
+          "empty": "La contraseña no puede estar vacía",
+          "too_short": "La contraseña debe tener al menos {min} caracteres",
+          "mismatch": "Las contraseñas no coinciden"
         }
       },
       "collaborators": {
         "description": "<span>Agrega hasta 10 direcciones</span> (usuarios de Decentraland) como colaboradores y gestiona sus permisos para publicar o transmitir en tu Mundo.",
         "empty_list": "Aún no has agregado ningún colaborador/dirección",
         "add_collaborator": "Agregar colaborador",
+        "add": "Agregar",
         "column_name_label": "Colaboradores {number}",
+        "column_collaborators": "Colaboradores",
         "column_stream_label": "Transmisión",
         "column_stream_tooltip": "El usuario podrá transmitir contenido en tu Mundo",
         "column_deploy_label": "Ubicación",
@@ -474,6 +506,10 @@
         "parcels_count": "{count} Parcelas",
         "actions": {
           "remove": "Eliminar"
+        },
+        "dialog": {
+          "title": "Agregar Colaborador",
+          "label": "Ingresa la dirección de billetera o ENS"
         }
       },
       "parcels": {

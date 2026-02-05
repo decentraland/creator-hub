@@ -4,14 +4,17 @@
   gap: 24px;
 }
 
-.WorldCollaboratorsTab > .MuiTypography-root {
+.WorldCollaboratorsTab > .MuiTypography-h6 {
   display: block;
   white-space: pre-line;
   color: var(--text-on-secondary);
+  font-size: 14px;
+  font-weight: 400;
 }
 
-.WorldCollaboratorsTab > .MuiTypography-root span {
+.WorldCollaboratorsTab > .MuiTypography-h6 span {
   color: var(--white);
+  font-weight: 500;
 }
 
 .WorldCollaboratorsTab .CollaboratorsFormContainer {
@@ -20,10 +23,24 @@
   gap: 16px;
 }
 
+.WorldCollaboratorsTab .CollaboratorsListHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.WorldCollaboratorsTab .CollaboratorsCount {
+  color: var(--text-on-secondary);
+  font-size: 13px;
+}
+
 .WorldCollaboratorsTab .CollaboratorsList {
   background-color: var(--black);
+  border-radius: 8px;
   height: max-content;
   flex-shrink: 0;
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 .WorldCollaboratorsTab .EmptyList {
