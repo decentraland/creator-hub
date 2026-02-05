@@ -58,8 +58,6 @@ export type ManagementState = {
     permissions: WorldPermissions | null;
     parcels: Record<string, ParcelsPermission>;
     loadingNewUser: boolean;
-    accessPassword: string | null;
-    accessPasswordStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
     status: 'idle' | 'loading' | 'succeeded' | 'failed';
     error: string | null;
   };
@@ -87,8 +85,6 @@ export const initialState: Async<ManagementState> = {
     summary: {},
     parcels: {},
     loadingNewUser: false,
-    accessPassword: null,
-    accessPasswordStatus: 'idle',
     status: 'idle',
     error: null,
   },
@@ -300,10 +296,6 @@ export const updateWorldPermissions = createAsyncThunk(
     );
     if (success) {
       await dispatch(fetchWorldPermissions({ worldName })).unwrap();
-      // Fetch the password if we just set a SharedSecret permission
-      if (worldPermissionType === WorldPermissionType.SharedSecret && secret) {
-        await dispatch(fetchAccessPassword({ worldName })).unwrap();
-      }
     } else {
       throw new Error('Failed to update world permissions');
     }
@@ -410,17 +402,6 @@ export const removeParcelsPermission = createAsyncThunk(
     } else {
       throw new Error('Failed to remove parcels permission');
     }
-  },
-);
-
-export const fetchAccessPassword = createAsyncThunk(
-  'management/fetchAccessPassword',
-  async ({ worldName }: { worldName: string }) => {
-    const connectedAccount = AuthServerProvider.getAccount();
-    if (!connectedAccount) throw new Error('No connected account found');
-    const WorldsAPI = new Worlds();
-    const password = await WorldsAPI.getAccessPassword(connectedAccount, worldName);
-    return password;
   },
 );
 
@@ -549,16 +530,6 @@ const slice = createSlice({
         if (state.worldPermissions.parcels[walletAddress]) {
           state.worldPermissions.parcels[walletAddress].status = 'failed';
         }
-      })
-      .addCase(fetchAccessPassword.pending, state => {
-        state.worldPermissions.accessPasswordStatus = 'loading';
-      })
-      .addCase(fetchAccessPassword.fulfilled, (state, action) => {
-        state.worldPermissions.accessPassword = action.payload;
-        state.worldPermissions.accessPasswordStatus = 'succeeded';
-      })
-      .addCase(fetchAccessPassword.rejected, state => {
-        state.worldPermissions.accessPasswordStatus = 'failed';
       });
   },
 });
@@ -609,7 +580,6 @@ export const actions = {
   fetchParcelsPermission,
   addParcelsPermission,
   removeParcelsPermission,
-  fetchAccessPassword,
 };
 
 export const reducer = slice.reducer;

@@ -452,7 +452,7 @@ export class Worlds {
       communities?: string[];
     },
   ) => {
-    const body: {
+    const metadata: {
       type: WorldPermissionType;
       secret?: string;
       wallets?: string[];
@@ -462,13 +462,13 @@ export class Worlds {
     };
 
     if (options?.secret !== undefined) {
-      body.secret = options.secret;
+      metadata.secret = options.secret;
     }
     if (options?.wallets !== undefined) {
-      body.wallets = options.wallets;
+      metadata.wallets = options.wallets;
     }
     if (options?.communities !== undefined) {
-      body.communities = options.communities;
+      metadata.communities = options.communities;
     }
 
     const encodedWorldName = encodeURIComponent(worldName);
@@ -476,26 +476,11 @@ export class Worlds {
       `${this.url}/world/${encodedWorldName}/permissions/${worldPermissionName}`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         identity: this.withIdentity(authenticatedAddress),
-        body: JSON.stringify(body),
+        metadata,
       },
     );
     return result.status === 204;
-  };
-
-  public getAccessPassword = async (authenticatedAddress: string, worldName: string) => {
-    const encodedWorldName = encodeURIComponent(worldName);
-    const result = await fetch(`${this.url}/world/${encodedWorldName}/permissions/access/secret`, {
-      method: 'GET',
-      identity: this.withIdentity(authenticatedAddress),
-    });
-    if (result.ok) {
-      const json: { secret: string } = await result.json();
-      return json.secret;
-    } else {
-      return null;
-    }
   };
 
   public putPermissionType = async (
