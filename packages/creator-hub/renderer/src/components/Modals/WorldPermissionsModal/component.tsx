@@ -43,8 +43,6 @@ type Props = Pick<TabsModalProps<WorldPermissionsTab>, 'open' | 'onClose'> & {
   worldPermissionsSummary?: Record<string, AddressWorldPermission[]>;
   isLoading: boolean;
   isLoadingNewUser: boolean;
-  accessPassword?: string | null;
-  isLoadingPassword?: boolean;
 };
 
 const WorldPermissionsModal: React.FC<Props> = React.memo(
@@ -56,8 +54,6 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
     worldPermissionsSummary,
     isLoading,
     isLoadingNewUser,
-    accessPassword,
-    isLoadingPassword = false,
     onClose,
     ...props
   }) => {
@@ -258,8 +254,6 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
                 <WorldPermissionsAccessTab
                   worldAccessPermissions={worldPermissions?.access}
                   isLoadingNewUser={isLoadingNewUser}
-                  accessPassword={accessPassword}
-                  isLoadingPassword={isLoadingPassword}
                   onChangeAccessType={handleChangeAccessType}
                   onAddAccessToAddress={handleAddAccessToAddress}
                   onRemoveAccessFromAddress={handleRemoveAccessFromAddress}

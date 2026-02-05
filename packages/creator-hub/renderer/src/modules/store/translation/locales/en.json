@@ -500,11 +500,10 @@
         }
       },
       "password": {
-        "current_password": "Current password",
-        "copy_to_clipboard": "Copy to Clipboard",
         "change_password": "Change Password",
         "create_new_password": "Create New Password",
         "empty_state": "The password for this world is not defined.",
+        "has_password": "This world is password protected.",
         "dialog": {
           "create_title": "Create New Password",
           "change_title": "Change Password",

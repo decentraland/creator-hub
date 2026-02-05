@@ -5,7 +5,6 @@ import {
   fetchWorldSettings,
   fetchWorldScenes,
   fetchWorldPermissions,
-  fetchAccessPassword,
   selectors as managementSelectors,
 } from '/@/modules/store/management';
 import { WorldSettingsTab, type ManagedProject } from '/shared/types/manage';
@@ -42,7 +41,6 @@ const ManagedProjectsList: React.FC<Props> = React.memo(({ projects }) => {
 
   const handleOpenPermissionsModal = useCallback((worldName: string) => {
     dispatch(fetchWorldPermissions({ worldName }));
-    dispatch(fetchAccessPassword({ worldName }));
     setPermissionsModal({ isOpen: true });
   }, []);
 
@@ -102,8 +100,6 @@ const ManagedProjectsList: React.FC<Props> = React.memo(({ projects }) => {
         worldPermissionsSummary={worldPermissions.summary}
         isLoading={worldPermissions.status === 'loading' || worldPermissions.status === 'idle'}
         isLoadingNewUser={worldPermissions.loadingNewUser}
-        accessPassword={worldPermissions.accessPassword}
-        isLoadingPassword={worldPermissions.accessPasswordStatus === 'loading'}
         onClose={handleClosePermissionsModal}
       />
     </div>

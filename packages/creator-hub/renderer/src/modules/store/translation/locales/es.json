@@ -500,11 +500,10 @@
         }
       },
       "password": {
-        "current_password": "Contraseña actual",
-        "copy_to_clipboard": "Copiar al Portapapeles",
         "change_password": "Cambiar Contraseña",
         "create_new_password": "Crear Nueva Contraseña",
         "empty_state": "La contraseña de este mundo no está definida.",
+        "has_password": "Este mundo está protegido por contraseña.",
         "dialog": {
           "create_title": "Crear Nueva Contraseña",
           "change_title": "Cambiar Contraseña",

@@ -500,11 +500,10 @@
         }
       },
       "password": {
-        "current_password": "当前密码",
-        "copy_to_clipboard": "复制到剪贴板",
         "change_password": "更改密码",
         "create_new_password": "创建新密码",
         "empty_state": "此世界的密码尚未设置。",
+        "has_password": "此世界受密码保护。",
         "dialog": {
           "create_title": "创建新密码",
           "change_title": "更改密码",

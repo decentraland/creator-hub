@@ -3,41 +3,30 @@ import cx from 'classnames';
 import AddIcon from '@mui/icons-material/AddRounded';
 import { Box, MenuItem, type SelectChangeEvent, Typography } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
-import type { AllowListPermissionSetting, UnrestrictedPermissionSetting } from '/@/lib/worlds';
-import { WorldPermissionType } from '/@/lib/worlds';
+import { WorldPermissionType, type WorldPermissions } from '/@/lib/worlds';
 import { Row } from '/@/components/Row';
 import { Button } from '/@/components/Button';
 import { Select } from '/@/components/Select';
 import { WorldPermissionsAddUserForm } from '../../WorldPermissionsAddUserForm';
 import { WorldPermissionsPasswordSection } from '../../WorldPermissionsPasswordSection';
+import { WorldPermissionsPasswordDialog } from '../../WorldPermissionsPasswordDialog';
 import {
   WorldPermissionsLoadingItem,
   WorldPermissionsAccessItem,
 } from '../../WorldPermissionsItem';
 import './styles.css';
 
-type AccessPermissionType =
-  | WorldPermissionType.Unrestricted
-  | WorldPermissionType.AllowList
-  | WorldPermissionType.SharedSecret;
-
-type AccessPermissionSetting =
-  | AllowListPermissionSetting
-  | UnrestrictedPermissionSetting
-  | { type: WorldPermissionType.SharedSecret };
-
 type Props = {
-  worldAccessPermissions: AccessPermissionSetting;
+  worldAccessPermissions: WorldPermissions['access'];
   isLoadingNewUser: boolean;
-  accessPassword?: string | null;
   isLoadingPassword?: boolean;
-  onChangeAccessType: (accessType: AccessPermissionType) => void;
+  onChangeAccessType: (accessType: WorldPermissionType) => void;
   onAddAccessToAddress: (address: string) => void;
   onRemoveAccessFromAddress: (address: string) => void;
   onSetAccessPassword: (password: string) => void;
 };
 
-const ACCESS_TYPE_OPTIONS: Array<{ label: string; value: AccessPermissionType }> = [
+const ACCESS_TYPE_OPTIONS: Array<{ label: string; value: WorldPermissionType }> = [
   {
     label: t('modal.world_permissions.access.type.public'),
     value: WorldPermissionType.Unrestricted,
@@ -52,7 +41,7 @@ const ACCESS_TYPE_OPTIONS: Array<{ label: string; value: AccessPermissionType }>
   },
 ];
 
-const getAccessTypeDescription = (accessType: AccessPermissionType): string => {
+const getAccessTypeDescription = (accessType: WorldPermissionType): string => {
   switch (accessType) {
     case WorldPermissionType.Unrestricted:
       return t('modal.world_permissions.access.type.public_description');
@@ -69,7 +58,6 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
   const {
     worldAccessPermissions,
     isLoadingNewUser,
-    accessPassword,
     isLoadingPassword = false,
     onChangeAccessType,
     onAddAccessToAddress,
@@ -78,18 +66,36 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
   } = props;
 
   const [showInviteForm, setShowInviteForm] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
 
-  const currentAccessType = worldAccessPermissions.type as AccessPermissionType;
+  const currentAccessType = worldAccessPermissions.type;
   const isPublic = currentAccessType === WorldPermissionType.Unrestricted;
   const isPasswordProtected = currentAccessType === WorldPermissionType.SharedSecret;
   const isInvitationOnly = currentAccessType === WorldPermissionType.AllowList;
 
   const handleAccessTypeChange = useCallback(
-    (event: SelectChangeEvent<AccessPermissionType>) => {
-      onChangeAccessType(event.target.value as AccessPermissionType);
+    (event: SelectChangeEvent<WorldPermissionType>) => {
+      const value = event.target.value as WorldPermissionType;
+      if (value === WorldPermissionType.SharedSecret) {
+        setShowPasswordDialog(true);
+      } else {
+        onChangeAccessType(value);
+      }
     },
     [onChangeAccessType],
   );
+
+  const handlePasswordSubmit = useCallback(
+    (password: string) => {
+      onSetAccessPassword(password);
+      setShowPasswordDialog(false);
+    },
+    [onSetAccessPassword],
+  );
+
+  const handlePasswordDialogClose = useCallback(() => {
+    setShowPasswordDialog(false);
+  }, []);
 
   const handleShowInviteForm = useCallback(() => {
     setShowInviteForm(true);
@@ -107,10 +113,11 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
     [onAddAccessToAddress],
   );
 
-  const walletsCount =
+  const wallets =
     worldAccessPermissions.type === WorldPermissionType.AllowList
-      ? (worldAccessPermissions as AllowListPermissionSetting).wallets?.length || 0
-      : 0;
+      ? worldAccessPermissions.wallets
+      : [];
+  const walletsCount = wallets.length;
 
   return (
     <Box className={cx('WorldAccessTab', { RestrictedAccess: !isPublic })}>
@@ -142,12 +149,18 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
 
       {isPasswordProtected && (
         <WorldPermissionsPasswordSection
-          password={accessPassword ?? undefined}
+          hasPassword={isPasswordProtected}
           isLoading={isLoadingPassword}
-          onCreatePassword={onSetAccessPassword}
-          onChangePassword={onSetAccessPassword}
+          onSetPassword={onSetAccessPassword}
         />
       )}
+
+      <WorldPermissionsPasswordDialog
+        open={showPasswordDialog}
+        isChanging={false}
+        onClose={handlePasswordDialogClose}
+        onSubmit={handlePasswordSubmit}
+      />
 
       {isInvitationOnly && worldAccessPermissions.type === WorldPermissionType.AllowList && (
         <Box className="AccessFormContainer">
@@ -184,7 +197,7 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
 
           <Box className="AccessList">
             {walletsCount > 0
-              ? (worldAccessPermissions as AllowListPermissionSetting).wallets?.map(wallet => (
+              ? wallets.map(wallet => (
                   <WorldPermissionsAccessItem
                     key={wallet}
                     walletAddress={wallet.toLowerCase()}

@@ -871,6 +871,7 @@ describe('management slice', () => {
         TEST_WORLD_NAME,
         'deployment',
         WorldPermissionType.AllowList,
+        undefined,
       );
       expect(mockWorldsAPI.getPermissions).toHaveBeenCalledWith(TEST_WORLD_NAME);
     });
