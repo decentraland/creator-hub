@@ -1,0 +1,45 @@
+/* Shared dialog styles for WorldPermissionsModal dialogs */
+.WorldPermissionsDialog .MuiDialog-paper {
+  background-color: var(--dark-gray);
+  border-radius: 8px;
+}
+
+.WorldPermissionsDialog .DialogTitle {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 24px 24px 16px;
+}
+
+.WorldPermissionsDialog .DialogContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0 24px 24px;
+}
+
+.WorldPermissionsDialog .DialogField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.WorldPermissionsDialog .DialogLabel {
+  color: var(--text-on-secondary);
+  font-size: 13px;
+}
+
+.WorldPermissionsDialog .MuiOutlinedInput-root {
+  background-color: var(--black);
+}
+
+.WorldPermissionsDialog .MuiOutlinedInput-notchedOutline {
+  border-color: var(--transparent-gray-light);
+}
+
+.WorldPermissionsDialog .DialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}

@@ -1205,7 +1205,8 @@ describe('management slice', () => {
         },
       });
 
-      const parcelsState = selectors.getParcelsStateForAddress(
+      const selectParcelsForAddress = selectors.makeParcelsStateForAddressSelector();
+      const parcelsState = selectParcelsForAddress(
         store.getState() as AppState,
         TEST_WALLET_ADDRESS,
       );
@@ -1215,10 +1216,8 @@ describe('management slice', () => {
     });
 
     it('should return undefined for non-existent address', () => {
-      const parcelsState = selectors.getParcelsStateForAddress(
-        store.getState() as AppState,
-        '0xnonexistent',
-      );
+      const selectParcelsForAddress = selectors.makeParcelsStateForAddressSelector();
+      const parcelsState = selectParcelsForAddress(store.getState() as AppState, '0xnonexistent');
       expect(parcelsState).toBeUndefined();
     });
   });

@@ -88,6 +88,8 @@ export const initialState: Async<ManagementState> = {
     summary: {},
     parcels: {},
     loadingNewUser: false,
+    accessPassword: null,
+    accessPasswordStatus: 'idle',
     status: 'idle',
     error: null,
   },
@@ -302,7 +304,7 @@ export const fetchWorldPermissions = createAsyncThunk(
 export const updateWorldPermissions = createAsyncThunk(
   'management/updateWorldPermissions',
   async (
-    { worldName, worldPermissionName, worldPermissionType }: WorldPermissionsPayload,
+    { worldName, worldPermissionName, worldPermissionType, secret }: WorldPermissionsPayload,
     { dispatch },
   ) => {
     const connectedAccount = AuthServerProvider.getAccount();
@@ -314,9 +316,14 @@ export const updateWorldPermissions = createAsyncThunk(
       worldName,
       worldPermissionName,
       worldPermissionType,
+      secret ? { secret } : undefined,
     );
     if (success) {
       await dispatch(fetchWorldPermissions({ worldName })).unwrap();
+      // Fetch the password if we just set a SharedSecret permission
+      if (worldPermissionType === WorldPermissionType.SharedSecret && secret) {
+        await dispatch(fetchAccessPassword({ worldName })).unwrap();
+      }
     } else {
       throw new Error('Failed to update world permissions');
     }
@@ -447,6 +454,17 @@ export const removeParcelsPermission = createAsyncThunk(
     } else {
       throw new Error('Failed to remove parcels permission');
     }
+  },
+);
+
+export const fetchAccessPassword = createAsyncThunk(
+  'management/fetchAccessPassword',
+  async ({ worldName }: { worldName: string }) => {
+    const connectedAccount = AuthServerProvider.getAccount();
+    if (!connectedAccount) throw new Error('No connected account found');
+    const WorldsAPI = new Worlds();
+    const password = await WorldsAPI.getAccessPassword(connectedAccount, worldName);
+    return password;
   },
 );
 
@@ -589,6 +607,16 @@ const slice = createSlice({
         if (state.worldPermissions.parcels[walletAddress]) {
           state.worldPermissions.parcels[walletAddress].status = 'failed';
         }
+      })
+      .addCase(fetchAccessPassword.pending, state => {
+        state.worldPermissions.accessPasswordStatus = 'loading';
+      })
+      .addCase(fetchAccessPassword.fulfilled, (state, action) => {
+        state.worldPermissions.accessPassword = action.payload;
+        state.worldPermissions.accessPasswordStatus = 'succeeded';
+      })
+      .addCase(fetchAccessPassword.rejected, state => {
+        state.worldPermissions.accessPasswordStatus = 'failed';
       });
   },
 });
@@ -617,12 +645,16 @@ const getPermissionsState = createSelector(
   managementState => managementState.worldPermissions,
 );
 
-const getParcelsStateForAddress = (
-  state: AppState,
-  walletAddress: string,
-): ParcelsPermission | undefined => {
-  return state.management.worldPermissions.parcels[walletAddress];
-};
+const getParcelsMap = createSelector(
+  getPermissionsState,
+  permissionsState => permissionsState.parcels,
+);
+
+const makeParcelsStateForAddressSelector = () =>
+  createSelector(
+    [getParcelsMap, (_state: AppState, walletAddress: string) => walletAddress],
+    (parcels, walletAddress): ParcelsPermission | undefined => parcels[walletAddress],
+  );
 
 // exports
 export const actions = {
@@ -640,6 +672,7 @@ export const actions = {
   fetchParcelsPermission,
   addParcelsPermission,
   removeParcelsPermission,
+  fetchAccessPassword,
   unpublishEntireWorld,
 };
 
@@ -652,5 +685,5 @@ export const selectors = {
   getWorldScenes,
   getError,
   getPermissionsState,
-  getParcelsStateForAddress,
+  makeParcelsStateForAddressSelector,
 };
