@@ -1,0 +1,44 @@
+.PasswordSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.PasswordSection .PasswordLabel {
+  color: var(--text-on-secondary);
+  font-size: 13px;
+}
+
+.PasswordSection .PasswordFieldRow {
+  max-width: 320px;
+}
+
+.PasswordSection .PasswordField {
+  width: 100%;
+}
+
+.PasswordSection .PasswordField .MuiOutlinedInput-root {
+  background-color: var(--black);
+}
+
+.PasswordSection .PasswordField .MuiOutlinedInput-notchedOutline {
+  border-color: var(--transparent-gray-light);
+}
+
+.PasswordSection .PasswordActions {
+  gap: 8px;
+}
+
+.PasswordSection .PasswordEmptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  gap: 16px;
+}
+
+.PasswordSection .PasswordEmptyText {
+  color: var(--text-on-secondary);
+  text-align: center;
+}

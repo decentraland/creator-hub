@@ -441,8 +441,17 @@
       "invalid_address": "无效地址",
       "done": "完成",
       "access": {
+        "title": "谁可以访问这个世界？",
         "description": "通过在<span>\"私有\"</span>和<span>\"公开\"</span>之间切换\n来管理谁可以访问您的世界。",
         "subtitle": "在<span>私有模式</span>下，您可以授予最多 100 个地址（Decentraland 用户）访问权限。请注意，如果您恢复到<span>公开模式</span>，您的已批准地址列表将被清除。",
+        "type": {
+          "public": "公开",
+          "invitation_only": "仅限邀请",
+          "password_protected": "密码保护",
+          "public_description": "任何人都可以访问这个世界",
+          "invitation_only_description": "只有已批准的地址才能访问这个世界",
+          "password_protected_description": "只有知道访问密码的用户才能加入"
+        },
         "warning": {
           "title": "警告",
           "description": "如果您恢复到公开模式，您的已批准地址列表将被清除。"
@@ -452,15 +461,38 @@
         "private": "私有",
         "approved_addresses": "已批准的地址 {number}",
         "add_address": "添加地址",
+        "new_invite": "新邀请",
+        "confirm": "确认",
+        "cancel": "取消",
         "actions": {
           "remove": "移除"
+        }
+      },
+      "password": {
+        "current_password": "当前密码",
+        "copy_to_clipboard": "复制到剪贴板",
+        "change_password": "更改密码",
+        "create_new_password": "创建新密码",
+        "empty_state": "此世界的密码尚未设置。",
+        "dialog": {
+          "create_title": "创建新密码",
+          "change_title": "更改密码",
+          "type_password": "输入您的密码",
+          "repeat_password": "重复您的密码"
+        },
+        "error": {
+          "empty": "密码不能为空",
+          "too_short": "密码必须至少 {min} 个字符",
+          "mismatch": "密码不匹配"
         }
       },
       "collaborators": {
         "description": "<span>添加最多 10 个地址</span>（Decentraland 用户）作为协作者，并管理他们在您世界中的部署或流媒体权限。",
         "empty_list": "您还没有添加任何协作者/地址",
         "add_collaborator": "添加协作者",
+        "add": "添加",
         "column_name_label": "协作者 {number}",
+        "column_collaborators": "协作者",
         "column_stream_label": "流媒体",
         "column_stream_tooltip": "用户将能够向您的世界流式传输内容",
         "column_deploy_label": "位置",
@@ -474,6 +506,10 @@
         "parcels_count": "{count} 个地块",
         "actions": {
           "remove": "移除"
+        },
+        "dialog": {
+          "title": "添加协作者",
+          "label": "输入钱包地址或 ENS"
         }
       },
       "parcels": {

@@ -459,8 +459,17 @@
       "invalid_address": "Invalid address",
       "done": "Done",
       "access": {
+        "title": "Who can access this world?",
         "description": "Manage who can access your World by toggling\nbetween <span>\"Private\"</span> and <span>\"Public\"</span>.",
         "subtitle": "In <span>Private mode</span>, you can grant access to a max of 100 addresses (Decentraland users). Please note, if you revert to <span>Public mode</span>, your list of approved addresses will be erased.",
+        "type": {
+          "public": "Public",
+          "invitation_only": "Invitation only",
+          "password_protected": "Password protected",
+          "public_description": "Anyone can access this world",
+          "invitation_only_description": "Only approved addresses can access this world",
+          "password_protected_description": "Only users who know the access password can join"
+        },
         "warning": {
           "title": "Warning",
           "description": "If you revert to Public mode, your list of approved addresses will be erased."
@@ -470,15 +479,38 @@
         "private": "Private",
         "approved_addresses": "Approved Addresses {number}",
         "add_address": "Add address",
+        "new_invite": "New Invite",
+        "confirm": "Confirm",
+        "cancel": "Cancel",
         "actions": {
           "remove": "Remove"
+        }
+      },
+      "password": {
+        "current_password": "Current password",
+        "copy_to_clipboard": "Copy to Clipboard",
+        "change_password": "Change Password",
+        "create_new_password": "Create New Password",
+        "empty_state": "The password for this world is not defined.",
+        "dialog": {
+          "create_title": "Create New Password",
+          "change_title": "Change Password",
+          "type_password": "Type your password",
+          "repeat_password": "Repeat your password"
+        },
+        "error": {
+          "empty": "Password cannot be empty",
+          "too_short": "Password must be at least {min} characters",
+          "mismatch": "Passwords do not match"
         }
       },
       "collaborators": {
         "description": "<span>Add up to 10 addresses</span> (Decentraland users) as collaborators and manage their permissions to deploy or stream into your World.",
         "empty_list": "You haven't added any collaborators/addresses yet",
         "add_collaborator": "Add collaborator",
+        "add": "Add",
         "column_name_label": "Collaborators {number}",
+        "column_collaborators": "Collaborators",
         "column_stream_label": "Stream",
         "column_stream_tooltip": "User will be able to stream content into your World",
         "column_deploy_label": "Location",
@@ -492,6 +524,10 @@
         "parcels_count": "{count} Parcels",
         "actions": {
           "remove": "Remove"
+        },
+        "dialog": {
+          "title": "Add Collaborator",
+          "label": "Enter wallet address or ENS"
         }
       },
       "parcels": {

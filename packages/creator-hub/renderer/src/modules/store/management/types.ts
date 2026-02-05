@@ -4,6 +4,7 @@ export type WorldPermissionsPayload = {
   worldName: string;
   worldPermissionName: WorldPermissionName;
   worldPermissionType: WorldPermissionType;
+  secret?: string;
 };
 
 export type AddressPermissionPayload = {
