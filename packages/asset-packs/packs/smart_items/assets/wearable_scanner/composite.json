@@ -279,7 +279,7 @@
               {
                 "path": "{assetPath}/WearableScanner.ts",
                 "priority": 0,
-                "layout": "{\"params\":{\"wearableId\":{\"type\":\"string\",\"optional\":false,\"value\":\"urn:decentraland:off-chain:base-avatars:thug_life\"},\"activatedEntity\":{\"type\":\"action\",\"optional\":false,\"value\":{\"entity\":515,\"action\":\"Open\"}}}}"
+                "layout": "{\"params\":{\"wearableId\":{\"type\":\"string\",\"optional\":false,\"value\":\"urn:decentraland:off-chain:base-avatars:thug_life\"},\"onAccessGranted\":{\"type\":\"action\",\"optional\":false,\"value\":{\"entity\":515,\"action\":\"Open\"}}}}"
               }
             ]
           }

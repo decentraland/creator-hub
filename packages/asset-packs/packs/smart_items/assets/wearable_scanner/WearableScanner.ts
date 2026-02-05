@@ -35,7 +35,7 @@ export class WearableScanner {
     public src: string,
     public entity: Entity,
     public wearableId: string,
-    public activatedEntity: ActionCallback,
+    public onAccessGranted: ActionCallback,
   ) {
     // Trim the wearableId URN in constructor
     this.wearableId = this.trimUrn(wearableId);
@@ -144,8 +144,8 @@ export class WearableScanner {
             loop: false,
           });
           console.log('Access Granted');
-          if (this.activatedEntity) {
-            this.activatedEntity();
+          if (this.onAccessGranted) {
+            this.onAccessGranted();
           }
         } else {
           Animator.playSingleAnimation(this.entity, 'NotAllow_Action', true);
