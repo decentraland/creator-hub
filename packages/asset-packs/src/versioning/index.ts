@@ -1,4 +1,18 @@
 export * from './migration-utils';
-export * from './definitions';
-export * from './version-names';
-export { BaseComponentNames } from '../constants';
+export { getLatestVersionName } from './component-names';
+export {
+  BaseComponentNames,
+  VERSIONS_REGISTRY,
+  defineCounterComponent,
+  defineTriggersComponent,
+  defineActionTypesComponent,
+  defineActionsComponent,
+  defineStatesComponent,
+  defineCounterBarComponent,
+  defineAdminToolsComponent,
+  defineVideoScreenComponent,
+  defineRewardsComponent,
+  defineTextAnnouncementsComponent,
+  defineVideoControlStateComponent,
+  defineScriptComponent,
+} from './constants';

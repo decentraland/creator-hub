@@ -10,17 +10,8 @@ const VideoControlStateV0 = {
   streamKey: Schemas.Optional(Schemas.String),
 };
 
-const VideoControlStateV1 = {
-  ...VideoControlStateV0,
-  newTestProp: Schemas.Optional(Schemas.Boolean),
-};
-
-export const VIDEO_CONTROL_STATE_VERSIONS = [
-  { versionName: VIDEO_CONTROL_STATE_BASE_NAME, component: VideoControlStateV0 },
-  { versionName: `${VIDEO_CONTROL_STATE_BASE_NAME}-v1`, component: VideoControlStateV1 },
-];
+export const VIDEO_CONTROL_STATE_VERSIONS = [VideoControlStateV0];
 
 export function defineVideoControlStateComponent(engine: IEngine) {
-  engine.defineComponent(VIDEO_CONTROL_STATE_BASE_NAME, VideoControlStateV0);
-  return engine.defineComponent(`${VIDEO_CONTROL_STATE_BASE_NAME}-v1`, VideoControlStateV1);
+  return engine.defineComponent(VIDEO_CONTROL_STATE_BASE_NAME, VideoControlStateV0);
 }
