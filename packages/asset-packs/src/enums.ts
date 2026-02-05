@@ -1,23 +1,12 @@
 import type { YGAlign, YGJustify } from '@dcl/ecs';
-import { getLatestVersionName } from './versioning/version-names';
+import { COMPONENT_NAMES } from './versioning/component-names';
 
 // Re-export for backward compatibility
 export { BaseComponentNames } from './constants';
 
-export const ComponentName = {
-  ACTION_TYPES: getLatestVersionName('asset-packs::ActionTypes'),
-  ACTIONS: getLatestVersionName('asset-packs::Actions'),
-  COUNTER: getLatestVersionName('asset-packs::Counter'),
-  TRIGGERS: getLatestVersionName('asset-packs::Triggers'),
-  STATES: getLatestVersionName('asset-packs::States'),
-  COUNTER_BAR: getLatestVersionName('asset-packs::CounterBar'),
-  ADMIN_TOOLS: getLatestVersionName('asset-packs::AdminTools'),
-  VIDEO_SCREEN: getLatestVersionName('asset-packs::VideoScreen'),
-  REWARDS: getLatestVersionName('asset-packs::Rewards'),
-  TEXT_ANNOUNCEMENTS: getLatestVersionName('asset-packs::TextAnnouncements'),
-  VIDEO_CONTROL_STATE: getLatestVersionName('asset-packs::VideoControlState'),
-  SCRIPT: getLatestVersionName('asset-packs::Script'),
-} as const;
+// All components currently have only V0, so component names are just the base names
+// When adding V1 to any component, update version-names.ts and this will automatically pick it up
+export const ComponentName = COMPONENT_NAMES;
 
 export type ComponentName = (typeof ComponentName)[keyof typeof ComponentName];
 export enum TweenType {

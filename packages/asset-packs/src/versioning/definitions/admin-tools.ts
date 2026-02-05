@@ -66,17 +66,8 @@ const AdminToolsV0 = {
   }),
 };
 
-const AdminToolsV1 = {
-  ...AdminToolsV0,
-  newTestProp: Schemas.Optional(Schemas.Boolean),
-};
-
-export const ADMIN_TOOLS_VERSIONS = [
-  { versionName: ADMIN_TOOLS_BASE_NAME, component: AdminToolsV0 },
-  { versionName: `${ADMIN_TOOLS_BASE_NAME}-v1`, component: AdminToolsV1 },
-];
+export const ADMIN_TOOLS_VERSIONS = [AdminToolsV0];
 
 export function defineAdminToolsComponent(engine: IEngine) {
-  engine.defineComponent(ADMIN_TOOLS_BASE_NAME, AdminToolsV0);
-  return engine.defineComponent(`${ADMIN_TOOLS_BASE_NAME}-v1`, AdminToolsV1);
+  return engine.defineComponent(ADMIN_TOOLS_BASE_NAME, AdminToolsV0);
 }

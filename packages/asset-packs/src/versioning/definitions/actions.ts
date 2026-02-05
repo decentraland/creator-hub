@@ -18,17 +18,8 @@ const ActionsV0 = {
   ),
 };
 
-const ActionsV1 = {
-  ...ActionsV0,
-  newTestProp: Schemas.Optional(Schemas.Boolean),
-};
-
-export const ACTIONS_VERSIONS = [
-  { versionName: ACTIONS_BASE_NAME, component: ActionsV0 },
-  { versionName: `${ACTIONS_BASE_NAME}-v1`, component: ActionsV1 },
-];
+export const ACTIONS_VERSIONS = [ActionsV0];
 
 export function defineActionsComponent(engine: IEngine) {
-  engine.defineComponent(ACTIONS_BASE_NAME, ActionsV0);
-  return engine.defineComponent(`${ACTIONS_BASE_NAME}-v1`, ActionsV1);
+  return engine.defineComponent(ACTIONS_BASE_NAME, ActionsV0);
 }

@@ -10,17 +10,8 @@ const RewardsV0 = {
   testMode: Schemas.Boolean,
 };
 
-const RewardsV1 = {
-  ...RewardsV0,
-  newTestProp: Schemas.Optional(Schemas.Boolean),
-};
-
-export const REWARDS_VERSIONS = [
-  { versionName: REWARDS_BASE_NAME, component: RewardsV0 },
-  { versionName: `${REWARDS_BASE_NAME}-v1`, component: RewardsV1 },
-];
+export const REWARDS_VERSIONS = [RewardsV0];
 
 export function defineRewardsComponent(engine: IEngine) {
-  engine.defineComponent(REWARDS_BASE_NAME, RewardsV0);
-  return engine.defineComponent(`${REWARDS_BASE_NAME}-v1`, RewardsV1);
+  return engine.defineComponent(REWARDS_BASE_NAME, RewardsV0);
 }

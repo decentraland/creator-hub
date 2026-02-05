@@ -10,17 +10,8 @@ const VideoScreenV0 = {
   defaultURL: Schemas.String,
 };
 
-const VideoScreenV1 = {
-  ...VideoScreenV0,
-  newTestProp: Schemas.Optional(Schemas.Boolean),
-};
-
-export const VIDEO_SCREEN_VERSIONS = [
-  { versionName: VIDEO_SCREEN_BASE_NAME, component: VideoScreenV0 },
-  { versionName: `${VIDEO_SCREEN_BASE_NAME}-v1`, component: VideoScreenV1 },
-];
+export const VIDEO_SCREEN_VERSIONS = [VideoScreenV0];
 
 export function defineVideoScreenComponent(engine: IEngine) {
-  engine.defineComponent(VIDEO_SCREEN_BASE_NAME, VideoScreenV0);
-  return engine.defineComponent(`${VIDEO_SCREEN_BASE_NAME}-v1`, VideoScreenV1);
+  return engine.defineComponent(VIDEO_SCREEN_BASE_NAME, VideoScreenV0);
 }

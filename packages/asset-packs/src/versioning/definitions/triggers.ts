@@ -38,17 +38,8 @@ const TriggersV0 = {
   ),
 };
 
-const TriggersV1 = {
-  ...TriggersV0,
-  newTestProp: Schemas.Optional(Schemas.Boolean),
-};
-
-export const TRIGGERS_VERSIONS = [
-  { versionName: TRIGGERS_BASE_NAME, component: TriggersV0 },
-  { versionName: `${TRIGGERS_BASE_NAME}-v1`, component: TriggersV1 },
-];
+export const TRIGGERS_VERSIONS = [TriggersV0];
 
 export function defineTriggersComponent(engine: IEngine) {
-  engine.defineComponent(TRIGGERS_BASE_NAME, TriggersV0);
-  return engine.defineComponent(`${TRIGGERS_BASE_NAME}-v1`, TriggersV1);
+  return engine.defineComponent(TRIGGERS_BASE_NAME, TriggersV0);
 }

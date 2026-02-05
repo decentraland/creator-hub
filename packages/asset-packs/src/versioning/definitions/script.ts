@@ -14,17 +14,8 @@ const ScriptV0 = {
   ),
 };
 
-const ScriptV1 = {
-  ...ScriptV0,
-  newTestProp: Schemas.Optional(Schemas.Boolean),
-};
-
-export const SCRIPT_VERSIONS = [
-  { versionName: SCRIPT_BASE_NAME, component: ScriptV0 },
-  { versionName: `${SCRIPT_BASE_NAME}-v1`, component: ScriptV1 },
-];
+export const SCRIPT_VERSIONS = [ScriptV0];
 
 export function defineScriptComponent(engine: IEngine) {
-  engine.defineComponent(SCRIPT_BASE_NAME, ScriptV0);
-  return engine.defineComponent(`${SCRIPT_BASE_NAME}-v1`, ScriptV1);
+  return engine.defineComponent(SCRIPT_BASE_NAME, ScriptV0);
 }

@@ -10,17 +10,8 @@ const CounterBarV0 = {
   maxValue: Schemas.Optional(Schemas.Float),
 };
 
-const CounterBarV1 = {
-  ...CounterBarV0,
-  newTestProp: Schemas.Optional(Schemas.Boolean),
-};
-
-export const COUNTER_BAR_VERSIONS = [
-  { versionName: COUNTER_BAR_BASE_NAME, component: CounterBarV0 },
-  { versionName: `${COUNTER_BAR_BASE_NAME}-v1`, component: CounterBarV1 },
-];
+export const COUNTER_BAR_VERSIONS = [CounterBarV0];
 
 export function defineCounterBarComponent(engine: IEngine) {
-  engine.defineComponent(COUNTER_BAR_BASE_NAME, CounterBarV0);
-  return engine.defineComponent(`${COUNTER_BAR_BASE_NAME}-v1`, CounterBarV1);
+  return engine.defineComponent(COUNTER_BAR_BASE_NAME, CounterBarV0);
 }
