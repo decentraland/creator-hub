@@ -20,16 +20,30 @@ import type {
 } from '@dcl/asset-packs';
 import { createComponents as createAssetPacksComponents } from '@dcl/asset-packs';
 import type { Layout } from '../../utils/layout';
-import type { TransitionMode } from './versioning/definitions/scene-metadata';
-import { Coords, SceneAgeRating, SceneCategory } from './versioning/definitions/scene-metadata';
+import type { GizmoType } from '../../utils/gizmo';
+import type { TransformConfig } from './TransformConfig';
+import type { TransitionMode } from './SceneMetadata';
 import {
-  defineAllVersionedComponents,
-  BaseComponentNames,
-  type InspectorVersionedComponents,
-} from './versioning/constants';
+  Coords,
+  defineSceneComponents,
+  getLatestSceneComponentVersion,
+  SceneAgeRating,
+  SceneCategory,
+} from './SceneMetadata';
+import type { ConfigComponentType } from './Config';
+import { ConfigComponentSchema } from './Config';
+import type { InspectorUIStateType } from './InspectorUIState';
+import { InspectorUIStateSchema } from './InspectorUIState';
+import { EditorComponentNames as BaseEditorComponentNames } from './types';
 
 export { SceneAgeRating, SceneCategory };
-export { CoreComponents, AllComponentsType, EditorComponentNames } from './types';
+export { CoreComponents, AllComponentsType } from './types';
+
+// Override the Scene property with the dynamic value
+export const EditorComponentNames = {
+  ...BaseEditorComponentNames,
+  Scene: getLatestSceneComponentVersion().key,
+} as const;
 
 export type Component<T = unknown> = ComponentDefinition<T>;
 export type Node = { entity: Entity; open?: boolean; children: Entity[] };
@@ -74,41 +88,36 @@ export type SceneComponent = {
   spawnPoints?: SceneSpawnPoint[];
 };
 
-/**
- * Utility type to extract the value type from a component definition
- */
-type ComponentValue<T> = T extends LastWriteWinElementSetComponentDefinition<infer V> ? V : never;
+// eslint-disable-next-line @typescript-eslint/ban-types
+export type GroundComponent = {};
+// eslint-disable-next-line @typescript-eslint/ban-types
+export type TileComponent = {};
 
-/**
- * Value types for all editor components.
- * Inspector versioned components automatically use the latest version type from their definitions.
- */
+export type CustomAssetComponent = {
+  assetId: string;
+};
+
 export type EditorComponentsTypes = {
-  Selection: ComponentValue<InspectorVersionedComponents[typeof BaseComponentNames.SELECTION]>;
-  Scene: ComponentValue<InspectorVersionedComponents[typeof BaseComponentNames.SCENE_METADATA]>;
-  Nodes: ComponentValue<InspectorVersionedComponents[typeof BaseComponentNames.NODES]>;
-  TransformConfig: ComponentValue<
-    InspectorVersionedComponents[typeof BaseComponentNames.TRANSFORM_CONFIG]
-  >;
-  Hide: ComponentValue<InspectorVersionedComponents[typeof BaseComponentNames.HIDE]>;
-  Lock: ComponentValue<InspectorVersionedComponents[typeof BaseComponentNames.LOCK]>;
-  Ground: ComponentValue<InspectorVersionedComponents[typeof BaseComponentNames.GROUND]>;
-  Tile: ComponentValue<InspectorVersionedComponents[typeof BaseComponentNames.TILE]>;
-  CustomAsset: ComponentValue<InspectorVersionedComponents[typeof BaseComponentNames.CUSTOM_ASSET]>;
-  Config: ComponentValue<InspectorVersionedComponents[typeof BaseComponentNames.CONFIG]>;
-  InspectorUIState: ComponentValue<
-    InspectorVersionedComponents[typeof BaseComponentNames.INSPECTOR_UI_STATE]
-  >;
-  // Other components
+  Selection: { gizmo: GizmoType };
+  Scene: SceneComponent;
+  Nodes: { value: Node[] };
+  TransformConfig: TransformConfig;
   ActionTypes: ActionTypes;
   Actions: Actions;
   Triggers: Triggers;
   States: States;
   Counter: Counter;
+  Hide: { value: boolean };
+  Lock: { value: boolean };
   CounterBar: CounterBar;
+  Config: ConfigComponentType;
+  Ground: GroundComponent;
+  Tile: TileComponent;
+  CustomAsset: CustomAssetComponent;
   AdminTools: AdminTools;
   VideoScreen: VideoScreen;
   Rewards: Rewards;
+  InspectorUIState: InspectorUIStateType;
   Script: Script;
 };
 
@@ -223,6 +232,31 @@ export function createComponents(engine: IEngine): SdkComponents {
 
 /* istanbul ignore next */
 export function createEditorComponents(engine: IEngine): EditorComponents {
+  const Selection = engine.defineComponent(EditorComponentNames.Selection, {
+    gizmo: Schemas.Int,
+  });
+
+  // legacy component
+  // we define the schema of the legacy component for retrocompat purposes
+  engine.defineComponent('inspector::Scene', {
+    layout: Schemas.Map({
+      base: Coords,
+      parcels: Schemas.Array(Coords),
+    }),
+  });
+
+  const Scene = defineSceneComponents(engine).pop() as ReturnType<typeof defineSceneComponents>[0];
+
+  const Nodes = engine.defineComponent(EditorComponentNames.Nodes, {
+    value: Schemas.Array(
+      Schemas.Map({
+        entity: Schemas.Entity,
+        open: Schemas.Optional(Schemas.Boolean),
+        children: Schemas.Array(Schemas.Entity),
+      }),
+    ),
+  });
+
   const {
     ActionTypes,
     Actions,
@@ -236,27 +270,30 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
     Script,
   } = createAssetPacksComponents(engine as any);
 
-  // legacy component
-  // we define the schema of the legacy component for retrocompat purposes
-  engine.defineComponent('inspector::Scene', {
-    layout: Schemas.Map({
-      base: Coords,
-      parcels: Schemas.Array(Coords),
-    }),
+  const TransformConfig = engine.defineComponent(EditorComponentNames.TransformConfig, {
+    porportionalScaling: Schemas.Optional(Schemas.Boolean),
   });
 
-  const versionedComponents = defineAllVersionedComponents(engine);
-  const Selection = versionedComponents[BaseComponentNames.SELECTION];
-  const Scene = versionedComponents[BaseComponentNames.SCENE_METADATA];
-  const Nodes = versionedComponents[BaseComponentNames.NODES];
-  const TransformConfig = versionedComponents[BaseComponentNames.TRANSFORM_CONFIG];
-  const Hide = versionedComponents[BaseComponentNames.HIDE];
-  const Lock = versionedComponents[BaseComponentNames.LOCK];
-  const Ground = versionedComponents[BaseComponentNames.GROUND];
-  const Tile = versionedComponents[BaseComponentNames.TILE];
-  const CustomAsset = versionedComponents[BaseComponentNames.CUSTOM_ASSET];
-  const Config = versionedComponents[BaseComponentNames.CONFIG];
-  const InspectorUIState = versionedComponents[BaseComponentNames.INSPECTOR_UI_STATE];
+  const Hide = engine.defineComponent(EditorComponentNames.Hide, {
+    value: Schemas.Boolean,
+  });
+
+  const Lock = engine.defineComponent(EditorComponentNames.Lock, {
+    value: Schemas.Boolean,
+  });
+
+  const Config = engine.defineComponent(EditorComponentNames.Config, ConfigComponentSchema);
+
+  const InspectorUIState = engine.defineComponent(
+    EditorComponentNames.InspectorUIState,
+    InspectorUIStateSchema,
+  );
+
+  const Ground = engine.defineComponent(EditorComponentNames.Ground, {});
+  const Tile = engine.defineComponent(EditorComponentNames.Tile, {});
+  const CustomAsset = engine.defineComponent(EditorComponentNames.CustomAsset, {
+    assetId: Schemas.String,
+  });
 
   return {
     Selection,

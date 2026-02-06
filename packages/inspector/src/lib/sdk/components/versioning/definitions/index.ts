@@ -1,11 +1,2 @@
-export { SELECTION_VERSIONS } from './selection';
-export { NODES_VERSIONS } from './nodes';
-export { TRANSFORM_CONFIG_VERSIONS } from './transform-config';
-export { HIDE_VERSIONS } from './hide';
-export { LOCK_VERSIONS } from './lock';
-export { GROUND_VERSIONS } from './ground';
-export { TILE_VERSIONS } from './tile';
-export { CUSTOM_ASSET_VERSIONS } from './custom-asset';
-export { CONFIG_VERSIONS } from './config';
-export { INSPECTOR_UI_STATE_VERSIONS } from './inspector-ui-state';
-export { SCENE_METADATA_VERSIONS } from './scene-metadata';
+export { SceneAgeRating, SceneCategory, Coords, TransitionMode } from './scene-metadata';
+export { TransformOnError } from './config';

@@ -1,7 +1,7 @@
 import type { Scene } from '@dcl/schemas';
 import type { CompositeDefinition, Entity, IEngine } from '@dcl/ecs';
 import { Composite, CrdtMessageType, EntityMappingMode } from '@dcl/ecs';
-import { initComponents, migrateAllAssetPacksComponents } from '@dcl/asset-packs';
+import { initComponents } from '@dcl/asset-packs';
 import type { EditorComponents } from '../../sdk/components';
 import { EditorComponentNames } from '../../sdk/components';
 import type { FileSystemInterface } from '../types';
@@ -17,7 +17,7 @@ import { toSceneComponent } from './utils/component';
 import { addNodesComponentsToPlayerAndCamera } from './utils/migrations/add-nodes-to-player-and-camera';
 import { fixNetworkEntityValues } from './utils/migrations/fix-network-entity-values';
 import { selectSceneEntity } from './utils/migrations/select-scene-entity';
-import { migrateInspectorComponents } from './utils/migrations/migrate-inspector-components';
+import { migrateSceneMetadata } from './utils/migrations/migrate-scene-metadata';
 import {
   type StateProvider,
   type Operation,
@@ -120,8 +120,7 @@ export class CompositeProvider implements StateProvider {
     addNodesComponentsToPlayerAndCamera(this.engine);
     fixNetworkEntityValues(this.engine);
     selectSceneEntity(this.engine);
-    migrateAllAssetPacksComponents(this.engine);
-    migrateInspectorComponents(this.engine);
+    migrateSceneMetadata(this.engine);
     createTagsComponent(this.engine);
   }
 
