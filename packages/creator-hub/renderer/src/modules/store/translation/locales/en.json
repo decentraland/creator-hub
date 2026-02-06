@@ -216,7 +216,8 @@
         "loading": "Loading...",
         "error": "Error",
         "warning": {
-          "message": "PLEASE READ CAREFULLY:<ul><li>After deployment, your scene will undergo processing before becoming available.</li><li>This process may take 15 minutes on average.</li><li>During this time, your scene will appear empty until it has been updated on the client.</li></ul>",
+          "message_basic": "PLEASE READ CAREFULLY:<ul><li>After deployment, your scene will undergo processing before becoming available.</li><li>This process may take 15 minutes on average.</li><li>During this time, your scene will appear empty until it has been updated on the client.</li></ul>",
+          "message_replacing_world_content": "PLEASE READ CAREFULLY:<ul><li>The existing content in your World will be totally or partially replaced with the new content you're about to publish.</li><li>After deployment, your scene will undergo processing before becoming available.</li><li>This process may take 15 minutes on average.</li><li>During this time, your scene will appear empty until it has been updated on the client.</li></ul>",
           "checkbox": "Don't show again",
           "continue": "Continue",
           "back": "Go back"

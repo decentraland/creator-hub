@@ -547,6 +547,11 @@ const getWorldSettings = createSelector(
   managementState => managementState.worldSettings,
 );
 
+const getWorldScenes = createSelector(
+  getManagementState,
+  managementState => managementState.worldSettings.scenes,
+);
+
 const getError = createSelector(getManagementState, managementState => managementState.error);
 
 const getPermissionsState = createSelector(
@@ -585,6 +590,7 @@ export const selectors = {
   ...slice.selectors,
   getManagedProjects,
   getWorldSettings,
+  getWorldScenes,
   getError,
   getPermissionsState,
   getParcelsStateForAddress,

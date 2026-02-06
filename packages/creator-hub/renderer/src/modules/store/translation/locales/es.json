@@ -216,7 +216,8 @@
         "loading": "Cargando...",
         "error": "Error",
         "warning": {
-          "message": "POR FAVOR LEA CUIDADOSAMENTE:<ul><li>Después de la implementación, tu escena pasará por un proceso antes de estar disponible.</li><li>Este proceso puede tardar en promedio 15 minutos.</li><li>Durante este tiempo, tu escena aparecerá vacía hasta que se haya actualizado en el cliente.</li></ul>",
+          "message_basic": "POR FAVOR LEA CUIDADOSAMENTE:<ul><li>Después de la implementación, tu escena pasará por un proceso antes de estar disponible.</li><li>Este proceso puede tardar en promedio 15 minutos.</li><li>Durante este tiempo, tu escena aparecerá vacía hasta que se haya actualizado en el cliente.</li></ul>",
+          "message_replacing_world_content": "POR FAVOR LEA CUIDADOSAMENTE:<ul><li>El contenido existente en tu Mundo será total o parcialmente reemplazado con el nuevo contenido que estás a punto de publicar.</li><li>Después de la implementación, tu escena pasará por un proceso antes de estar disponible.</li><li>Este proceso puede tardar en promedio 15 minutos.</li><li>Durante este tiempo, tu escena aparecerá vacía hasta que se haya actualizado en el cliente.</li></ul>",
           "checkbox": "No mostrar de nuevo",
           "continue": "Continuar",
           "back": "Regresar"

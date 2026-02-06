@@ -4,6 +4,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { Typography, Checkbox } from 'decentraland-ui2';
 
 import { misc } from '#preload';
+import { useSelector } from '#store';
 
 import { type File, type Info, type Status } from '/@/lib/deploy';
 
@@ -16,6 +17,8 @@ import { useCounter } from '/@/hooks/useCounter';
 
 import { type Deployment } from '/@/modules/store/deployment/slice';
 import { getInvalidFiles, MAX_FILE_SIZE_BYTES } from '/@/modules/store/deployment/utils';
+import { selectors as managementSelectors } from '/@/modules/store/management/slice';
+
 import { t } from '/@/modules/store/translation/utils';
 import { REPORT_ISSUES_URL } from '/@/modules/utils';
 import { formatSize } from '/@/modules/file';
@@ -51,10 +54,19 @@ export function Deploy(props: Props) {
   const { loadingPublish, publishError } = useEditor();
   const { getDeployment, executeDeployment } = useDeploy();
   const { pushCustom } = useSnackbar();
+  const worldScenes = useSelector(managementSelectors.getWorldScenes);
   const [showWarning, setShowWarning] = useState(false);
   const [skipWarning, setSkipWarning] = useState(project.info.skipPublishWarning ?? false);
   const deployment = getDeployment(project.path);
   const isWorld = previousStep === 'publish-to-world' || !!deployment?.info.isWorld;
+
+  /** True if any of the project parcels overlap with any of the existing world scenes parcels */
+  const isReplacingWorldContent: boolean = useMemo(() => {
+    if (!isWorld) return false;
+    const projectParcels = project.scene.parcels;
+    const worldScenesParcels = worldScenes?.map(scene => scene.parcels).flat();
+    return projectParcels.some(parcel => worldScenesParcels.includes(parcel));
+  }, [isWorld, worldScenes, project.scene.parcels]);
 
   const handlePublish = useCallback(() => {
     setShowWarning(false);
@@ -177,10 +189,15 @@ export function Deploy(props: Props) {
             <div className="content">
               <div className="Warning" />
               <div className="message">
-                {t('modal.publish_project.deploy.warning.message', {
-                  ul: (child: string) => <ul>{child}</ul>,
-                  li: (child: string) => <li>{child}</li>,
-                })}
+                {t(
+                  isReplacingWorldContent
+                    ? 'modal.publish_project.deploy.warning.message_replacing_world_content'
+                    : 'modal.publish_project.deploy.warning.message_basic',
+                  {
+                    ul: (child: string) => <ul>{child}</ul>,
+                    li: (child: string) => <li>{child}</li>,
+                  },
+                )}
               </div>
             </div>
             <div className="actions">
