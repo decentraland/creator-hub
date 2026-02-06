@@ -81,6 +81,12 @@ export function PublishToWorld(props: Props) {
     return names[name]?.nftOwnerAddress?.toLocaleLowerCase() === wallet.toLocaleLowerCase();
   }, [names, name, wallet]);
 
+  const hasWorldWidePermissions: boolean = useMemo(() => {
+    return (
+      isOwner || (worldPermissions?.status === 'succeeded' && !worldPermissions?.parcels.length)
+    );
+  }, [isOwner, worldPermissions]);
+
   const handleBack = useCallback(() => {
     if (step === Step.CONFIRM_OVERWRITE) {
       setStep(Step.LOCATION);
@@ -163,6 +169,7 @@ export function PublishToWorld(props: Props) {
               project={project}
               isOwner={isOwner}
               worldSettings={worldSettings}
+              hasWorldWidePermissions={hasWorldWidePermissions}
               onChangeName={handleChangeName}
               onSelectLocation={handleSelectLocation}
               onPublish={handlePublish}
@@ -171,9 +178,9 @@ export function PublishToWorld(props: Props) {
           {step === Step.LOCATION && (
             <SelectLocation
               project={project}
-              isOwner={isOwner}
               worldScenes={worldSettings.scenes}
               worldPermissions={worldPermissions}
+              hasWorldWidePermissions={hasWorldWidePermissions}
               onShowConfirmation={handleShowConfirmation}
               onPublish={handlePublish}
             />
@@ -199,6 +206,7 @@ function SelectWorld({
   project,
   isOwner,
   worldSettings,
+  hasWorldWidePermissions,
   onChangeName,
   onSelectLocation,
   onPublish,
@@ -207,6 +215,7 @@ function SelectWorld({
   project: Project;
   isOwner: boolean;
   worldSettings: WorldSettingsState;
+  hasWorldWidePermissions: boolean;
   onChangeName: (name: string) => void;
   onSelectLocation: (projectUpdates: Partial<Project>) => void;
   onPublish: (projectUpdates: Partial<Project>) => Promise<void>;
@@ -263,6 +272,7 @@ function SelectWorld({
   const handleChangeSelectName = useCallback(
     (e: SelectChangeEvent) => {
       if (!e.target.value) return;
+      setIsMultiSceneEnabled(false);
       onChangeName(e.target.value);
     },
     [onChangeName],
@@ -290,7 +300,7 @@ function SelectWorld({
   const handleNext = useCallback(async () => {
     const worldConfiguration: WorldConfiguration = { ...project.worldConfiguration, name };
 
-    if (isMultiSceneEnabled) {
+    if (isMultiSceneEnabled && worldSettings.scenes.length > 0) {
       onSelectLocation({ worldConfiguration });
     } else {
       // In single scene mode, ensure the project base parcel is 0,0
@@ -302,13 +312,13 @@ function SelectWorld({
       };
       onPublish({ worldConfiguration, scene });
     }
-  }, [isMultiSceneEnabled, onPublish]);
+  }, [isMultiSceneEnabled, worldSettings.scenes.length, onPublish, onSelectLocation]);
 
   // Update the multi scene enabled state when the world scenes or owner changes
   useEffect(() => {
     // Always enable multi scene if the user is not the owner as they will have to choose a location.
-    setIsMultiSceneEnabled(!isOwner || worldSettings.scenes.length > 1);
-  }, [isOwner, worldSettings.scenes.length]);
+    setIsMultiSceneEnabled(!hasWorldWidePermissions || worldSettings.scenes.length > 1);
+  }, [hasWorldWidePermissions, worldSettings.scenes.length]);
 
   // TODO: handle failed state...
   const projectIsReady = project.status === 'succeeded';
@@ -403,7 +413,7 @@ function SelectWorld({
             <Switch
               checked={isMultiSceneEnabled}
               onChange={handleMultiSceneToggle}
-              disabled={!isOwner}
+              disabled={!hasWorldWidePermissions}
             />
           </Row>
           {isMultiSceneEnabled && worldSettings.status !== 'loading' && (
@@ -460,7 +470,7 @@ function SelectWorld({
           disabled={!projectIsReady || !name}
           endIcon={<ArrowForwardIcon />}
         >
-          {isMultiSceneEnabled
+          {isMultiSceneEnabled && worldSettings.scenes.length > 0
             ? t('modal.publish_project.worlds.select_world.actions.select_location')
             : t('modal.publish_project.worlds.select_world.actions.review')}
         </Button>
@@ -494,14 +504,14 @@ function SelectLocation({
   worldScenes,
   worldPermissions,
   project,
-  isOwner,
+  hasWorldWidePermissions,
   onPublish,
   onShowConfirmation,
 }: {
   worldScenes: WorldScene[];
   worldPermissions?: ParcelsPermission;
   project: Project;
-  isOwner: boolean;
+  hasWorldWidePermissions: boolean;
   onPublish: (projectUpdates: Partial<Project>) => void;
   onShowConfirmation: (projectUpdates: Partial<Project>) => void;
 }) {
@@ -520,13 +530,12 @@ function SelectLocation({
   }, [placement, permissionsSet, project.scene.parcels]);
 
   function getInitialPlacement(): Coordinate | null {
-    const isWorldWideCollaborator = isOwner || !worldPermissions?.parcels.length;
     if (project.scene.base) {
       // If project has a base parcel, check if the user has permission to deploy into it
       // before setting the initial placement.
       const [x, y] = parseCoords(project.scene.base);
       if (
-        isWorldWideCollaborator ||
+        hasWorldWidePermissions ||
         calculateParcels(project, { x, y }).every(parcel =>
           permissionsSet.has(coordsToId(parcel.x, parcel.y)),
         )
@@ -534,7 +543,7 @@ function SelectLocation({
         return { x, y };
       }
     }
-    if (isWorldWideCollaborator && !worldScenes.length) {
+    if (hasWorldWidePermissions && !worldScenes.length) {
       return { x: 0, y: 0 };
     }
     return null;
@@ -584,11 +593,10 @@ function SelectLocation({
   const isValidHoverPlacement = useMemo(() => {
     return (
       hover &&
-      (isOwner ||
-        (worldPermissions?.status === 'succeeded' && !worldPermissions.parcels.length) || // If the permission has no parcels, user has world-wide permissions
+      (hasWorldWidePermissions ||
         Array.from(hoverProjectParcels).every(parcel => worldPermissions?.parcels.includes(parcel)))
     );
-  }, [isOwner, worldPermissions, hover, hoverProjectParcels]);
+  }, [hasWorldWidePermissions, worldPermissions, hover, hoverProjectParcels]);
 
   const isHoveredParcel = useCallback(
     (x: number, y: number) => hoverProjectParcels.has(coordsToId(x, y)),
