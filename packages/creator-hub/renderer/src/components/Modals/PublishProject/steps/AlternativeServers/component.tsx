@@ -8,7 +8,7 @@ import { isUrl } from '/shared/utils';
 import { t } from '/@/modules/store/translation/utils';
 import { useEditor } from '/@/hooks/useEditor';
 
-import GenesisPlazaPng from '/assets/images/genesis_plaza.png';
+import GenesisPlazaPng from '/assets/images/genesis_plaza.webp';
 
 import { PublishModal } from '../../PublishModal';
 import type { AlternativeTarget, Props } from '../../types';
