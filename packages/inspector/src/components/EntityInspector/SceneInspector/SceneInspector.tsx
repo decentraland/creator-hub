@@ -35,7 +35,7 @@ import { SceneInspectorTab } from '../../../redux/ui/types';
 import { Tab } from '../Tab';
 import { transformBinaryToBase64Resource } from '../../../lib/data-layer/host/fs-utils';
 import { selectThumbnails } from '../../../redux/app';
-import { TransitionMode } from '../../../lib/sdk/components/SceneMetadata';
+import { TransitionMode } from '../../../lib/sdk/components/versioning/definitions/scene-metadata';
 import { Layout } from './Layout';
 import type { Props } from './types';
 import {

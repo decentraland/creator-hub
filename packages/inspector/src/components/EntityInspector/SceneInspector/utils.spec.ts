@@ -1,6 +1,6 @@
 import type { EditorComponentsTypes } from '../../../lib/sdk/components';
 import { SceneAgeRating, SceneCategory } from '../../../lib/sdk/components';
-import { TransitionMode } from '../../../lib/sdk/components/SceneMetadata';
+import { TransitionMode } from '../../../lib/sdk/components/versioning/definitions/scene-metadata';
 import type { Layout } from '../../../lib/utils/layout';
 import type { SceneInput } from './types';
 import { fromScene, isValidInput, parseParcels, toScene } from './utils';

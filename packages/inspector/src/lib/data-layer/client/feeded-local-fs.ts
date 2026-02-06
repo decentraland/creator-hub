@@ -9,7 +9,7 @@ import { createFileSystemInterface } from '../../logic/file-system-interface';
 import { createEngineContext } from '../host/utils/engine';
 import { createInMemoryStorage } from '../../logic/storage/in-memory';
 import { SceneAgeRating } from '../../sdk/components';
-import { TransitionMode } from '../../sdk/components/SceneMetadata';
+import { TransitionMode } from '../../sdk/components/versioning/definitions/scene-metadata';
 import { getScriptTemplateClass } from '../../../components/EntityInspector/ScriptInspector/templates';
 import { downloadAssets } from './builder-utils';
 import { SCENE_INFO_MARKDOWN, THUMBNAIL } from './constants';
