@@ -163,7 +163,8 @@
           "location": {
             "description": "Select where your scene will be published.",
             "parcels_place": "Placing {count} parcels at",
-            "available_parcels_count": "Available parcels: {count}"
+            "available_parcels_count": "Available parcels: {count}",
+            "no_parcels_fit_error": "Current scene size doesn’t fit in the available parcels."
           },
           "confirm_overwrite": {
             "title": "Overwrite scenes?",

@@ -163,7 +163,8 @@
           "location": {
             "description": "Selecciona dónde se publicará tu escena.",
             "parcels_place": "Colocando {count} parcelas en",
-            "available_parcels_count": "Parcelas disponibles: {count}"
+            "available_parcels_count": "Parcelas disponibles: {count}",
+            "no_parcels_fit_error": "La escena actual no cabe en las parcelas disponibles."
           },
           "confirm_overwrite": {
             "title": "¿Sobrescribir escenas?",

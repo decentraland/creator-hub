@@ -512,6 +512,13 @@ function SelectLocation({
   const [hover, setHover] = useState<Coordinate | null>(null);
   const [placement, setPlacement] = useState<Coordinate | null>(getInitialPlacement);
 
+  const noParcelsFit: boolean = useMemo(() => {
+    // TODO: in the future we should make this more accurate by checking if the project parcels shape fits in the available parcels shape.
+    return (
+      !placement && permissionsSet.size > 0 && permissionsSet.size < project.scene.parcels?.length
+    );
+  }, [placement, permissionsSet, project.scene.parcels]);
+
   function getInitialPlacement(): Coordinate | null {
     const isWorldWideCollaborator = isOwner || !worldPermissions?.parcels.length;
     if (project.scene.base) {
@@ -704,6 +711,15 @@ function SelectLocation({
         y={atlasInitialCenter?.y}
       />
       <div className="actions">
+        {noParcelsFit && (
+          <Typography
+            variant="body2"
+            color="#FB3B3B"
+          >
+            {t('modal.publish_project.worlds.select_world.location.no_parcels_fit_error')}
+          </Typography>
+        )}
+
         {placement && (
           <Button
             variant="outlined"
@@ -726,7 +742,7 @@ function SelectLocation({
         <Button
           size="large"
           onClick={handleNext}
-          disabled={!placement}
+          disabled={!placement || noParcelsFit}
           endIcon={<ArrowForwardIcon />}
         >
           {t('modal.publish_project.worlds.select_world.actions.review')}
