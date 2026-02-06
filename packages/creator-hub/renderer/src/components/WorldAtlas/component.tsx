@@ -9,8 +9,10 @@ import { getWorldDimensions, MAX_COORDINATE, MIN_COORDINATE } from '/@/modules/w
 import { t } from '/@/modules/store/translation/utils';
 import './styles.css';
 
+export type AtlasScene = Pick<WorldScene, 'parcels'>;
+
 type Props = Partial<AtlasProps> & {
-  worldScenes: WorldScene[];
+  worldScenes: AtlasScene[];
   showWorldSize?: boolean;
   onMouseDownEvent?: (e: React.MouseEvent<HTMLDivElement>) => void;
   onMouseEnter?: () => void;

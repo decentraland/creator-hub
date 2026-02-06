@@ -135,19 +135,41 @@
         "description": "在创世城地图中找不到。 \n最多可同时加入 100 个用户。",
         "action": "发布到世界",
         "select_world": {
-          "title": "發佈到世界",
-          "description": "選擇將定義 URL 的 Decentraland 姓名 或 ENS 網域",
+          "title": "发布到您的世界",
+          "description": "选择将发布您的世界的域名。",
           "world_name": "世界（名稱）",
           "placeholder": "選擇名稱",
           "claim_new_name": "索取新名字",
           "claim_new_ens_domain": "申請 ENS 域名",
-          "action": "發布",
+          "actions": {
+            "select_location": "選擇位置",
+            "review": "審核",
+            "publish": "發布",
+            "reset": "重置",
+            "cancel": "取消",
+            "confirm": "確認"
+          },
           "ens_providers": {
             "dcl": "姓名",
             "ens": "ENS 域"
           },
-          "world_has_content": "{world} World 中的現有內容將替換為您要發布的新內容。",
-          "confirm_world_replace_content": "我了解此操作不可逆轉"
+          "multi_scene": {
+            "title": "多場景世界（高級）",
+            "description": "允許你的世界包含超過1個場景。總世界大小將取決於你發布的世界佈局。",
+            "current_world": "當前世界",
+            "settings_button": "設定",
+            "scenes_count": "{count} {count, plural, one {场景} other {场景}}"
+          },
+          "location": {
+            "description": "选择将发布您的场景的位置。",
+            "parcels_place": "在以下位置放置 {count} 个地块"
+          },
+          "confirm_overwrite": {
+            "title": "覆盖场景？",
+            "description": "在此处发布您的场景将删除所选地块中存在的所有场景。",
+            "scenes_count": "您选择的地块已包含 <b>{count} {count, plural, one {场景} other {场景}}</b>：",
+            "scene_title_placeholder": "场景 {index}"
+          }
         },
         "empty_names": {
           "title": "您沒有任何可用的世界",

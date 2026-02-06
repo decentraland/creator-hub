@@ -36,6 +36,25 @@ export type ParcelsPermission = {
   status: 'loading' | 'succeeded' | 'failed';
 };
 
+export type WorldSettingsState = {
+  worldName: string;
+  settings: WorldSettings;
+  scenes: WorldScene[];
+  status: 'idle' | 'loading' | 'succeeded' | 'failed';
+  error: string | null;
+};
+
+export type WorldPermissionsState = {
+  worldName: string;
+  owner: string;
+  summary: WorldPermissionsResponse['summary'];
+  permissions: WorldPermissions | null;
+  parcels: Record<string, ParcelsPermission>;
+  loadingNewUser: boolean;
+  status: 'idle' | 'loading' | 'succeeded' | 'failed';
+  error: string | null;
+};
+
 // state
 export type ManagementState = {
   sortBy: SortBy;
@@ -43,23 +62,8 @@ export type ManagementState = {
   projects: ManagedProject[];
   storageStats: WorldsWalletStats | null;
   accountHoldings: AccountHoldings | null;
-  worldSettings: {
-    worldName: string;
-    settings: WorldSettings;
-    scenes: WorldScene[];
-    status: 'idle' | 'loading' | 'succeeded' | 'failed';
-    error: string | null;
-  };
-  worldPermissions: {
-    worldName: string;
-    owner: string;
-    summary: WorldPermissionsResponse['summary'];
-    permissions: WorldPermissions | null;
-    parcels: Record<string, ParcelsPermission>;
-    loadingNewUser: boolean;
-    status: 'idle' | 'loading' | 'succeeded' | 'failed';
-    error: string | null;
-  };
+  worldSettings: WorldSettingsState;
+  worldPermissions: WorldPermissionsState;
 };
 
 export const initialState: Async<ManagementState> = {

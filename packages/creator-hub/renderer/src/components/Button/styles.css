@@ -70,7 +70,7 @@
 
 .Button.MuiButton-outlined,
 .Button.MuiButton-outlined.MuiButtonGroup-grouped {
-  background-color: transparent;
+  background-color: transparent !important;
 }
 
 /* ButtonGroup */

@@ -91,6 +91,8 @@
 /* Wrapper Content */
 
 .ProjectStepWrapper .ProjectContainer .content {
+  display: flex;
+  flex-direction: column;
   width: 100%;
   min-height: 475px;
   max-height: 550px;

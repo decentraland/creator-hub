@@ -1,5 +1,7 @@
 /* Select World Modal */
 .MuiModal-root .SelectWorld {
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -7,10 +9,15 @@
   gap: 24px;
 }
 
+.MuiModal-root .actions .MuiButton-root {
+  height: 40px;
+}
+
+/* Selection */
+
 .MuiModal-root .SelectWorld .selection {
   display: flex;
   flex-direction: column;
-  flex-grow: 1;
   gap: 16px;
   width: 100%;
 }
@@ -28,8 +35,9 @@
   border-color: var(--transparent-gray-light);
 }
 
-.MuiModal-root .SelectWorld .selection #world-name-label {
-  transform: translate(0, -9px) scale(0.75);
+.SelectWorld-WorldName .Loader {
+  margin-right: 24px;
+  width: max-content;
 }
 
 .SelectWorld-ENSProvider {
@@ -51,6 +59,7 @@
   width: 100%;
   justify-content: flex-end;
   align-items: center;
+  margin-top: auto;
 }
 
 .MuiModal-root .SelectWorld .actions:has(.ConfirmWorldReplaceContent) {
@@ -76,6 +85,167 @@
   background-color: #ff7439;
   border-radius: 50%;
   padding: 4px;
+}
+
+/* Advanced Settings */
+
+.MuiModal-root .SelectWorld .AdvancedSettings {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  padding: 12px 16px;
+  background-color: var(--dark-gray);
+  border-radius: 8px;
+}
+
+.MuiModal-root .SelectWorld .AdvancedSettings > .Row {
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.MuiModal-root .SelectWorld .AdvancedSettingsHeaderTexts {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.MuiModal-root .SelectWorld .AdvancedSettingsDescription {
+  font-weight: 500;
+  white-space: pre-line;
+}
+
+.MuiModal-root .SelectWorld .MuiSwitch-root {
+  margin-top: -6px;
+}
+
+.MuiModal-root .SelectWorld .WorldInfoItem {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  color: var(--dcl-silver);
+  font-weight: 500;
+}
+
+.MuiModal-root .SelectWorld .WorldInfoItem .MuiSvgIcon-root {
+  width: 16px;
+  height: 16px;
+}
+
+.MuiModal-root .SelectWorld .WorldInfo {
+  width: calc(100% - 32px);
+  margin-left: auto;
+  display: flex;
+  gap: 16px;
+  background-color: var(--black);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.MuiModal-root .SelectWorld .WorldInfo .WorldThumbnail {
+  width: 144px;
+  height: 90px;
+  flex-shrink: 0;
+  background-color: var(--dark-gray);
+}
+
+.MuiModal-root .SelectWorld .WorldInfo .WorldThumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.MuiModal-root .SelectWorld .WorldInfo .WorldInfoContent {
+  flex: 1;
+  padding: 8px 0;
+  overflow: hidden;
+}
+
+.MuiModal-root .SelectWorld .WorldInfo .CurrentWorldLabel {
+  font-size: 12px;
+  color: var(--dropdown);
+  text-transform: uppercase;
+}
+
+.MuiModal-root .SelectWorld .WorldInfo .WorldTitle {
+  font-weight: 600;
+  color: var(--white);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.MuiModal-root .SelectWorld .WorldInfo .WorldMetadata {
+  gap: 24px;
+}
+
+.MuiModal-root .SelectWorld .WorldInfo .WorldSettingsButton {
+  margin: auto 8px 8px 0;
+  height: max-content;
+}
+
+/* Select Location Modal */
+.MuiModal-root .SelectLocation {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.MuiModal-root .SelectLocation .actions {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: auto;
+}
+
+.MuiModal-root .SelectLocation .SelectedParcelInfo {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.MuiModal-root .SelectLocation .SelectedParcelInfo .MuiSvgIcon-root {
+  width: 16px;
+  height: 16px;
+  color: var(--text-on-secondary);
+}
+
+/* Confirm Overwrite Modal */
+.MuiModal-root .ConfirmOverwrite {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 520px;
+  margin: auto;
+  padding: 32px 32px 24px;
+  border-radius: 8px;
+  background-color: var(--black);
+  text-align: center;
+}
+
+.MuiModal-root .ConfirmOverwrite .ScenesList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.MuiModal-root .ConfirmOverwrite .ScenesList li span {
+  color: var(--dcl-silver);
+}
+
+.MuiModal-root .ConfirmOverwrite .actions {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  align-items: center;
+  margin-top: 16px;
 }
 
 /* Empty Names Modal */
