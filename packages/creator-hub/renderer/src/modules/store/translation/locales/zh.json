@@ -162,7 +162,8 @@
           },
           "location": {
             "description": "选择将发布您的场景的位置。",
-            "parcels_place": "在以下位置放置 {count} 个地块"
+            "parcels_place": "在以下位置放置 {count} 个地块",
+            "available_parcels_count": "可用地块：{count}"
           },
           "confirm_overwrite": {
             "title": "覆盖场景？",

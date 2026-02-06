@@ -14,6 +14,7 @@ export type AtlasScene = Pick<WorldScene, 'parcels'>;
 type Props = Partial<AtlasProps> & {
   worldScenes: AtlasScene[];
   showWorldSize?: boolean;
+  floatingContent?: React.ReactNode;
   onMouseDownEvent?: (e: React.MouseEvent<HTMLDivElement>) => void;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
@@ -30,6 +31,7 @@ export const WorldAtlasColors = {
 const WorldAtlas: React.FC<Props> = React.memo(
   ({
     worldScenes,
+    floatingContent,
     showWorldSize = true,
     isDraggable = true,
     withZoomControls = true,
@@ -106,12 +108,17 @@ const WorldAtlas: React.FC<Props> = React.memo(
           x={props.x ?? centerX}
           y={props.y ?? centerY}
         />
-        {showWorldSize && worldSize && (
-          <Box className="WorldSizeOverlay">
-            <ParcelsIcon />
-            <Typography variant="body2">
-              {t('modal.world_settings.layout.world_layout.world_size', { size: worldSize })}
-            </Typography>
+        {(floatingContent || (showWorldSize && worldSize)) && (
+          <Box className="TopLeftOverlay">
+            {showWorldSize && worldSize && (
+              <Box className="WorldSize">
+                <ParcelsIcon />
+                <Typography variant="body2">
+                  {t('modal.world_settings.layout.world_layout.world_size', { size: worldSize })}
+                </Typography>
+              </Box>
+            )}
+            {floatingContent}
           </Box>
         )}
       </Box>

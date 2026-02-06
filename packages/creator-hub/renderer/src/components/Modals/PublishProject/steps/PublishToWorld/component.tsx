@@ -4,9 +4,17 @@ import ArrowForwardIcon from '@mui/icons-material/ChevronRight';
 import WorldIcon from '@mui/icons-material/SpaceDashboard';
 import MultiSceneIcon from '@mui/icons-material/Layers';
 import ParcelsIcon from '@mui/icons-material/GridOn';
+import OutlinedParcelsIcon from '@mui/icons-material/GridViewOutlined';
 import LocationIcon from '@mui/icons-material/LocationOn';
 import type { SceneParcels, WorldConfiguration } from '@dcl/schemas';
-import { MenuItem, Select, Typography, type SelectChangeEvent, Switch } from 'decentraland-ui2';
+import {
+  MenuItem,
+  Select,
+  Typography,
+  type SelectChangeEvent,
+  Switch,
+  Box,
+} from 'decentraland-ui2';
 
 import type { Project } from '/shared/types/projects';
 import { WorldSettingsTab } from '/shared/types/manage';
@@ -679,6 +687,18 @@ function SelectLocation({
         onHover={handleHover}
         onClick={handleSelectParcel}
         worldScenes={newWorldScenes}
+        floatingContent={
+          permissionsSet.size > 0 && (
+            <Box className="AvailableParcelsCount">
+              <OutlinedParcelsIcon />
+              <Typography variant="body2">
+                {t('modal.publish_project.worlds.select_world.location.available_parcels_count', {
+                  count: permissionsSet.size,
+                })}
+              </Typography>
+            </Box>
+          )
+        }
         height={350}
         x={atlasInitialCenter?.x}
         y={atlasInitialCenter?.y}

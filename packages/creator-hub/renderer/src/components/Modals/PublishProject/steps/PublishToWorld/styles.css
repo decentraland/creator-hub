@@ -194,6 +194,12 @@
   gap: 16px;
 }
 
+.MuiModal-root .SelectLocation .AvailableParcelsCount {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .MuiModal-root .SelectLocation .actions {
   display: flex;
   gap: 16px;
