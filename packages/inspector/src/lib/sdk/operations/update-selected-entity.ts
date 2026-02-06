@@ -21,7 +21,11 @@ function isAncestorOf(ancestorId: Entity, targetId: Entity, nodes: Node[]): bool
 }
 
 export function updateSelectedEntity(engine: IEngine) {
-  return function updateSelectedEntity(entity: Entity, multiple: boolean = false) {
+  return function updateSelectedEntity(
+    entity: Entity,
+    multiple: boolean = false,
+    preferredGizmo?: GizmoType,
+  ) {
     let gizmo = GizmoType.FREE;
     let deletedSelection = false;
 
@@ -56,8 +60,8 @@ export function updateSelectedEntity(engine: IEngine) {
     if (multiple && Selection.has(entity)) {
       Selection.deleteFrom(entity);
     } else if (!Selection.has(entity) || deletedSelection) {
-      // then select new entity
-      Selection.createOrReplace(entity, { gizmo });
+      // then select new entity (preserve preferred gizmo when provided, e.g. after duplicate)
+      Selection.createOrReplace(entity, { gizmo: preferredGizmo ?? gizmo });
     }
 
     store.dispatch(clearError());
