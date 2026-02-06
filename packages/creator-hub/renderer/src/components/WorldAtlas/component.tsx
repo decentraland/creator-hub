@@ -15,17 +15,20 @@ type Props = Partial<AtlasProps> & {
   worldScenes: AtlasScene[];
   showWorldSize?: boolean;
   floatingContent?: React.ReactNode;
+  colorsOverride?: Partial<Record<keyof typeof WorldAtlasColors, string>>;
   onMouseDownEvent?: (e: React.MouseEvent<HTMLDivElement>) => void;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
 };
 
 export const WorldAtlasColors = {
-  emptyParcel: '#000000',
-  worldParcel: '#FF2D55',
-  sceneParcel: '#1F87E5',
-  selectedParcel: '#5E5B67',
-  selectedStroke: '#FFFFFF',
+  noPermissionParcel: '#000000CC', // Black semi-transparent overlay
+  unavailableParcel: '#000000', // Black
+  availableParcel: 'transparent', // Default tiles color.
+  worldParcel: '#FF2D55', // Red
+  sceneParcel: '#1F87E5', // Blue
+  selectedParcel: '#FF9990', // Pink
+  selectedStroke: '#FF0044', // Red
 } as const;
 
 const WorldAtlas: React.FC<Props> = React.memo(
@@ -36,6 +39,7 @@ const WorldAtlas: React.FC<Props> = React.memo(
     isDraggable = true,
     withZoomControls = true,
     height = 480,
+    colorsOverride = {},
     onMouseDownEvent,
     onMouseEnter,
     onMouseLeave,
@@ -44,6 +48,11 @@ const WorldAtlas: React.FC<Props> = React.memo(
     const dimensions = useMemo(() => getWorldDimensions(worldScenes), [worldScenes]);
     const centerX = Math.floor((dimensions.minX + dimensions.maxX) / 2);
     const centerY = Math.floor((dimensions.minY + dimensions.maxY) / 2);
+
+    const colors = useMemo(
+      () => (colorsOverride ? { ...WorldAtlasColors, ...colorsOverride } : WorldAtlasColors),
+      [colorsOverride],
+    );
 
     const sceneParcelsSet = useMemo(
       () => new Set(worldScenes.flatMap(scene => scene.parcels ?? [])),
@@ -63,7 +72,9 @@ const WorldAtlas: React.FC<Props> = React.memo(
 
     const emptyParcelLayer = useCallback(
       (x: number, y: number) =>
-        isWithinWorldBounds(x, y) ? { color: WorldAtlasColors.emptyParcel, scale: 1.0 } : null,
+        isWithinWorldBounds(x, y)
+          ? { color: colors.availableParcel }
+          : { color: colors.unavailableParcel },
       [isWithinWorldBounds],
     );
 
@@ -74,7 +85,7 @@ const WorldAtlas: React.FC<Props> = React.memo(
           x <= dimensions.maxX &&
           y >= dimensions.minY &&
           y <= dimensions.maxY
-          ? { color: WorldAtlasColors.worldParcel, scale: 1.0 }
+          ? { color: colors.worldParcel }
           : null;
       },
       [dimensions],
@@ -83,9 +94,7 @@ const WorldAtlas: React.FC<Props> = React.memo(
     const scenesLayer = useCallback(
       (x: number, y: number) => {
         const key = coordsToId(x, y);
-        return sceneParcelsSet.has(key)
-          ? { color: WorldAtlasColors.sceneParcel, scale: 1.0 }
-          : null;
+        return sceneParcelsSet.has(key) ? { color: colors.sceneParcel } : null;
       },
       [sceneParcelsSet],
     );

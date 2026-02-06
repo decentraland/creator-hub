@@ -614,50 +614,34 @@ function SelectLocation({
     return Array.from(placedProjectParcels).some(parcel => sceneParcelsSet.has(parcel));
   }, [placedProjectParcels, sceneParcelsSet]);
 
-  const scenesLayer = useCallback(
+  /** Parcels where the user has or not deployment permission if they are collaborators. */
+  const permissionsLayer = useCallback(
+    (x: number, y: number) =>
+      hasWorldWidePermissions || worldPermissions?.parcels.includes(coordsToId(x, y))
+        ? null // Available parcel color is applied by default.
+        : { color: WorldAtlasColors.noPermissionParcel, scale: 1.1 }, // Darken the parcel to make it "not available".
+    [hasWorldWidePermissions, worldPermissions],
+  );
+
+  const placedStrokeLayer = useCallback(
+    (x: number, y: number) =>
+      isPlacedParcel(x, y) ? { color: COLORS.selectedStroke, scale: 1.35 } : null,
+    [isPlacedParcel],
+  );
+
+  const placedHighlightLayer = useCallback(
+    (x: number, y: number) =>
+      isPlacedParcel(x, y) ? { color: COLORS.selected, scale: 1.15 } : null,
+    [isPlacedParcel],
+  );
+
+  const hoverLayer = useCallback(
     (x: number, y: number) => {
-      return sceneParcelsSet.has(coordsToId(x, y))
-        ? { color: WorldAtlasColors.sceneParcel, scale: 1.0 }
+      return isHoveredParcel(x, y)
+        ? { color: isValidHoverPlacement ? COLORS.selected : COLORS.indicator, scale: 1.1 }
         : null;
     },
-    [sceneParcelsSet],
-  );
-
-  const strokeLayer = useCallback(
-    (x: number, y: number) => {
-      const placed = isPlacedParcel(x, y);
-      if (isHoveredParcel(x, y) || placed) {
-        return {
-          color: isValidHoverPlacement || placed ? COLORS.selectedStroke : COLORS.indicatorStroke,
-          scale: 1.35,
-        };
-      }
-      return null;
-    },
-    [isPlacedParcel, isHoveredParcel, isValidHoverPlacement],
-  );
-
-  const highlightLayer = useCallback(
-    (x: number, y: number) => {
-      const placed = isPlacedParcel(x, y);
-      if (isHoveredParcel(x, y) || placed) {
-        return {
-          color: isValidHoverPlacement || placed ? COLORS.selected : COLORS.indicator,
-          scale: 1.15,
-        };
-      }
-      return null;
-    },
-    [isPlacedParcel, isHoveredParcel, isValidHoverPlacement],
-  );
-
-  /** Parcels where the user has deployment permission if they are collaborators. */
-  const permissionsLayer = useCallback(
-    (x: number, y: number) => {
-      const key = coordsToId(x, y);
-      return worldPermissions?.parcels.includes(key) ? { color: COLORS.freeParcel } : null;
-    },
-    [worldPermissions],
+    [isHoveredParcel, isValidHoverPlacement],
   );
 
   const handleHover = useCallback((x: number, y: number) => {
@@ -700,10 +684,11 @@ function SelectLocation({
         {t('modal.publish_project.worlds.select_world.location.description')}
       </Typography>
       <WorldAtlas
-        layers={[permissionsLayer, scenesLayer, strokeLayer, highlightLayer]}
+        layers={[permissionsLayer, placedStrokeLayer, placedHighlightLayer, hoverLayer]}
         onHover={handleHover}
         onClick={handleSelectParcel}
         worldScenes={newWorldScenes}
+        colorsOverride={!hasWorldWidePermissions ? { availableParcel: '#43404a' } : undefined}
         floatingContent={
           permissionsSet.size > 0 && (
             <Box className="AvailableParcelsCount">
