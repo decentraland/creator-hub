@@ -303,12 +303,14 @@ function SelectWorld({
     if (isMultiSceneEnabled && worldSettings.scenes.length > 0) {
       onSelectLocation({ worldConfiguration });
     } else {
-      // In single scene mode, ensure the project base parcel is 0,0
+      // In single scene mode, ensure the project base parcel is the previous scene base parcel or 0,0 by default.
+      const [x, y] =
+        worldSettings.scenes.length === 1
+          ? getBaseParcel(worldSettings.scenes[0].parcels) || [0, 0]
+          : [0, 0];
       const scene: SceneParcels = {
-        base: coordsToId(0, 0),
-        parcels: calculateParcels(project, { x: 0, y: 0 }).map(parcel =>
-          coordsToId(parcel.x, parcel.y),
-        ),
+        base: coordsToId(x, y),
+        parcels: calculateParcels(project, { x, y }).map(parcel => coordsToId(parcel.x, parcel.y)),
       };
       onPublish({ worldConfiguration, scene });
     }
