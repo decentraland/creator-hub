@@ -15,7 +15,7 @@ import type {
 } from '../../../sdk/components';
 import { SceneCategory } from '../../../sdk/components';
 import { getConfig } from '../../../logic/config';
-import type { TransitionMode } from '../../../sdk/components/versioning/definitions/scene-metadata';
+import type { TransitionMode } from '../../../sdk/components/SceneMetadata';
 
 export function isEqual(
   component: ComponentDefinition<unknown>,

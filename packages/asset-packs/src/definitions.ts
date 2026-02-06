@@ -50,20 +50,8 @@ import {
   TeleportMode,
 } from './enums';
 import { getExplorerComponents } from './components';
-import {
-  defineTriggersComponent,
-  defineCounterComponent,
-  defineActionTypesComponent,
-  defineActionsComponent,
-  defineStatesComponent,
-  defineCounterBarComponent,
-  defineAdminToolsComponent,
-  defineVideoScreenComponent,
-  defineRewardsComponent,
-  defineTextAnnouncementsComponent,
-  defineVideoControlStateComponent,
-  defineScriptComponent,
-} from './versioning';
+import { defineAllComponents, type AssetPacksVersionedComponents } from './versioning/registry';
+import { BaseComponentNames } from './constants';
 
 export const LIVEKIT_STREAM_SRC = 'livekit-video://current-stream';
 export const VIDEO_URL_TYPE = 'https://';
@@ -312,33 +300,20 @@ export function getComponents(engine: IEngine) {
 }
 
 export function createComponents(engine: IEngine) {
-  const ActionTypes = defineActionTypesComponent(engine);
-  const Actions = defineActionsComponent(engine);
-  const Counter = defineCounterComponent(engine);
-  const Triggers = defineTriggersComponent(engine);
-
-  const States = defineStatesComponent(engine);
-  const CounterBar = defineCounterBarComponent(engine);
-  const VideoScreen = defineVideoScreenComponent(engine);
-  const AdminTools = defineAdminToolsComponent(engine);
-  const Rewards = defineRewardsComponent(engine);
-  const TextAnnouncements = defineTextAnnouncementsComponent(engine);
-  const VideoControlState = defineVideoControlStateComponent(engine);
-  const Script = defineScriptComponent(engine);
-
+  const components = defineAllComponents(engine) as AssetPacksVersionedComponents;
   return {
-    ActionTypes,
-    Actions,
-    Counter,
-    Triggers,
-    States,
-    CounterBar,
-    AdminTools,
-    Rewards,
-    TextAnnouncements,
-    VideoControlState,
-    VideoScreen,
-    Script,
+    ActionTypes: components[BaseComponentNames.ACTION_TYPES],
+    Actions: components[BaseComponentNames.ACTIONS],
+    Counter: components[BaseComponentNames.COUNTER],
+    Triggers: components[BaseComponentNames.TRIGGERS],
+    States: components[BaseComponentNames.STATES],
+    CounterBar: components[BaseComponentNames.COUNTER_BAR],
+    AdminTools: components[BaseComponentNames.ADMIN_TOOLS],
+    Rewards: components[BaseComponentNames.REWARDS],
+    TextAnnouncements: components[BaseComponentNames.TEXT_ANNOUNCEMENTS],
+    VideoControlState: components[BaseComponentNames.VIDEO_CONTROL_STATE],
+    VideoScreen: components[BaseComponentNames.VIDEO_SCREEN],
+    Script: components[BaseComponentNames.SCRIPT],
   };
 }
 

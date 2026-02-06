@@ -1,12 +1,24 @@
 import type { YGAlign, YGJustify } from '@dcl/ecs';
-import { COMPONENT_NAMES } from './versioning/component-names';
+import { getLatestVersionName } from './versioning/registry';
+import { BaseComponentNames } from './constants';
 
 // Re-export for backward compatibility
 export { BaseComponentNames } from './constants';
 
-// All components currently have only V0, so component names are just the base names
-// When adding V1 to any component, update version-names.ts and this will automatically pick it up
-export const ComponentName = COMPONENT_NAMES;
+export const ComponentName = {
+  ACTION_TYPES: getLatestVersionName(BaseComponentNames.ACTION_TYPES),
+  ACTIONS: getLatestVersionName(BaseComponentNames.ACTIONS),
+  COUNTER: getLatestVersionName(BaseComponentNames.COUNTER),
+  TRIGGERS: getLatestVersionName(BaseComponentNames.TRIGGERS),
+  STATES: getLatestVersionName(BaseComponentNames.STATES),
+  COUNTER_BAR: getLatestVersionName(BaseComponentNames.COUNTER_BAR),
+  ADMIN_TOOLS: getLatestVersionName(BaseComponentNames.ADMIN_TOOLS),
+  VIDEO_SCREEN: getLatestVersionName(BaseComponentNames.VIDEO_SCREEN),
+  REWARDS: getLatestVersionName(BaseComponentNames.REWARDS),
+  TEXT_ANNOUNCEMENTS: getLatestVersionName(BaseComponentNames.TEXT_ANNOUNCEMENTS),
+  VIDEO_CONTROL_STATE: getLatestVersionName(BaseComponentNames.VIDEO_CONTROL_STATE),
+  SCRIPT: getLatestVersionName(BaseComponentNames.SCRIPT),
+} as const;
 
 export type ComponentName = (typeof ComponentName)[keyof typeof ComponentName];
 export enum TweenType {
