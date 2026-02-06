@@ -350,12 +350,36 @@ export const fetchParcelsPermission = createAsyncThunk(
   'management/fetchParcelsPermission',
   async ({ worldName, permissionName, walletAddress }: AddressPermissionPayload) => {
     const WorldsAPI = new Worlds();
-    const parcels = await WorldsAPI.fetchParcelsPermission(
+    const LIMIT = 100;
+
+    // TODO: This is a workaround to fetch all parcels in parallel.
+    // We should use a more efficient approach to avoid overloading the API.
+    const firstPage = await WorldsAPI.fetchParcelsPermission(
       worldName,
       permissionName,
       walletAddress,
+      { limit: LIMIT, offset: 0 },
     );
-    return { walletAddress, parcels };
+
+    if (!firstPage || firstPage.total <= LIMIT) {
+      return { walletAddress, parcels: firstPage };
+    }
+
+    const totalPages = Math.ceil(firstPage.total / LIMIT);
+    const remainingPagesPromises = Array.from({ length: totalPages - 1 }, (_, page) =>
+      WorldsAPI.fetchParcelsPermission(worldName, permissionName, walletAddress, {
+        limit: LIMIT,
+        offset: (page + 1) * LIMIT,
+      }),
+    );
+
+    const pages = await Promise.all(remainingPagesPromises);
+    const allParcels = [...firstPage.parcels, ...pages.flatMap(p => p?.parcels || [])];
+
+    return {
+      walletAddress,
+      parcels: { parcels: allParcels, total: firstPage.total },
+    };
   },
 );
 

@@ -429,14 +429,14 @@ export class Worlds {
     worldName: string,
     worldPermissionName: WorldPermissionName,
     walletAddress: string,
-    params?: {
+    params: {
       limit?: number;
       offset?: number;
       x1?: number;
       x2?: number;
       y1?: number;
       y2?: number;
-    },
+    } = { offset: 0, limit: 100 },
   ) => {
     const urlParams = new URLSearchParams(
       Object.entries(params || {})
