@@ -1,5 +1,5 @@
 import type { PBTextShape } from '@dcl/ecs';
-import { TextAlignMode } from '@dcl/ecs';
+import { Font, TextAlignMode } from '@dcl/ecs';
 import { fromTextShape, toTextShape, isValidInput } from './utils';
 import type { TextShapeInput } from './types';
 
@@ -7,6 +7,7 @@ describe('fromTextShape', () => {
   it('should convert PBTextShape to TextShapeInput', () => {
     const pbTextShape: PBTextShape = {
       text: 'Hello, World!',
+      font: Font.F_SANS_SERIF,
       fontSize: 16,
       fontAutoSize: true,
       textAlign: TextAlignMode.TAM_MIDDLE_CENTER,
@@ -25,6 +26,7 @@ describe('fromTextShape', () => {
 
     expect(result).toEqual({
       text: 'Hello, World!',
+      font: Font.F_SANS_SERIF.toString(),
       fontSize: '16',
       fontAutoSize: true,
       textAlign: TextAlignMode.TAM_MIDDLE_CENTER.toString(),
@@ -45,6 +47,7 @@ describe('toTextShape', () => {
   it('should convert TextShapeInput to PBTextShape', () => {
     const textShapeInput: TextShapeInput = {
       text: 'Hello, World!',
+      font: Font.F_SANS_SERIF.toString(),
       fontSize: '16',
       fontAutoSize: true,
       textAlign: TextAlignMode.TAM_MIDDLE_CENTER.toString(),
@@ -63,6 +66,7 @@ describe('toTextShape', () => {
 
     expect(result).toEqual({
       text: 'Hello, World!',
+      font: Font.F_SANS_SERIF,
       fontSize: 16,
       fontAutoSize: true,
       textAlign: TextAlignMode.TAM_MIDDLE_CENTER,
