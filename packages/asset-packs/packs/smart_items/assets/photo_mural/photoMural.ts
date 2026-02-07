@@ -72,7 +72,7 @@ export class PhotoMural {
     this.buttonSoundEntity = engine.addEntity();
     Transform.create(this.buttonSoundEntity, { parent: this.entity });
     AudioSource.create(this.buttonSoundEntity, {
-      audioClipUrl: '{assetPath}/button-sound.mp3',
+      audioClipUrl: this.src + '/button-sound.mp3',
       playing: false,
       loop: false,
       volume: 1.0,
@@ -250,7 +250,7 @@ export class PhotoMural {
     } else {
       // Fallback if no src provided, maybe use the one from remote example or just skip
       GltfContainer.create(billboard, {
-        src: '{assetPath}/billboard.glb', // Default from remote example
+        src: this.src + '/billboard.glb', // Default from remote example
         visibleMeshesCollisionMask: ColliderLayer.CL_POINTER,
         invisibleMeshesCollisionMask: ColliderLayer.CL_PHYSICS,
       });
@@ -336,7 +336,7 @@ export class PhotoMural {
     MeshRenderer.setPlane(this.spinnerEntity);
     Material.setPbrMaterial(this.spinnerEntity, {
       texture: Material.Texture.Common({
-        src: '{assetPath}/spinner.png',
+        src: this.src + '/spinner.png',
       }),
       transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND,
       castShadows: false,
