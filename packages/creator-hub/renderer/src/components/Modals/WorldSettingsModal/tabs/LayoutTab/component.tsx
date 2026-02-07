@@ -7,10 +7,8 @@ import ParcelsIcon from '@mui/icons-material/GridViewRounded';
 import ArrowBackIcon from '@mui/icons-material/ArrowBackRounded';
 import { Box, Switch, Typography } from 'decentraland-ui2';
 import type { WorldScene, WorldSettings } from '/@/lib/worlds';
-import type { Coords } from '/@/lib/land';
-import { idToCoords } from '/@/lib/land';
 import { t } from '/@/modules/store/translation/utils';
-import { formatWorldSize, getWorldDimensions, MAX_COORDINATE } from '/@/modules/world';
+import { formatWorldSize, getBaseParcel, getWorldDimensions } from '/@/modules/world';
 import type { Option } from '/@/components/Dropdown';
 import { Dropdown } from '/@/components/Dropdown';
 import { Button } from '/@/components/Button';
@@ -52,18 +50,6 @@ const WorldScenesView: React.FC<{
   const handleViewScenes = useCallback(() => {
     navigate('/scenes');
   }, [navigate]);
-
-  const getBaseParcel = useCallback((parcels: string[]): Coords | null => {
-    if (!parcels?.length) return null;
-    let baseParcel = { x: MAX_COORDINATE, y: MAX_COORDINATE };
-    parcels.forEach(parcel => {
-      const [x, y] = idToCoords(parcel);
-      if (Number(x) < baseParcel.x || Number(y) < baseParcel.y) {
-        baseParcel = { x: Number(x), y: Number(y) };
-      }
-    });
-    return [baseParcel.x, baseParcel.y];
-  }, []);
 
   const handleEditScene = useCallback((_scene: WorldScene) => {
     // TODO: Implement edit scene in future PR.
@@ -142,7 +128,10 @@ const WorldScenesView: React.FC<{
               <Typography className="CurrentWorldLabel">
                 {t('modal.world_settings.layout.current_world')}
               </Typography>
-              <Typography variant="h6">
+              <Typography
+                variant="h6"
+                className="WorldTitle"
+              >
                 {worldSettings.title || t('modal.world_settings.layout.title_placeholder')}
               </Typography>
               <Row className="WorldMetadata">

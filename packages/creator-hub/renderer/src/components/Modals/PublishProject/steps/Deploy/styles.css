@@ -7,80 +7,13 @@
   gap: 24px;
 }
 
-.Deploy .ethereum {
-  display: flex;
-  gap: 8px;
-}
-
-.Deploy .chip {
-  min-height: 24px;
-  border-radius: 16px;
-  padding: 4px 10px;
-  font-size: 13px;
-  line-height: 18px;
-  background-color: var(--transparent-gray-dark);
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.Deploy .chip.network {
-  background-color: #1f87e5;
-  text-transform: uppercase;
-}
-
-.Deploy .chip.username .verified {
-  display: inline-flex;
-  width: 16px;
-  height: 16px;
-  background: center no-repeat url(images/verified.svg);
-}
-
-.Deploy .chip.parcel .pin {
-  display: inline-flex;
-  width: 16px;
-  height: 16px;
-  background: center no-repeat url(images/pin.svg);
-}
-
-.Deploy .scene {
-  flex: 1;
-  display: flex;
-  gap: 24px;
-}
-
-.Deploy .scene .info {
-  flex: 0 0 auto;
-  width: 256px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding-right: 24px;
-  border-right: 1px solid var(--dark-gray);
-}
-
-.Deploy .scene .info .thumbnail {
-  width: 100%;
-  height: 160px;
-  background-position: center;
-  background-size: cover;
-  background-repeat: no-repeat;
-  border-radius: 8px;
-}
-
-.Deploy .scene .info .text {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
 .Deploy .scene .files {
   display: flex;
   flex-direction: column;
   gap: 16px;
   justify-content: stretch;
   flex: 1 1 auto;
+  height: 100%;
 }
 
 .Deploy .scene .files .filters {
@@ -173,11 +106,10 @@
 }
 
 .Deploy .scene .Success {
+  height: 100%;
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  padding-left: 32px;
-  border-left: 1px solid var(--dark-gray);
 }
 
 .Deploy .scene .Success .content {
@@ -226,7 +158,9 @@
 .Deploy .scene .Deploying,
 .Deploy .scene .Error {
   display: flex;
+  justify-content: center;
   flex-direction: column;
+  height: 100%;
   width: 100%;
 }
 .Deploy .scene .Error .header,
@@ -245,6 +179,10 @@
   white-space: pre-wrap;
   max-height: 250px;
   overflow: auto;
+}
+
+.Deploy .scene .header.Loading {
+  height: 100%;
 }
 
 .Deploy .scene .header {
@@ -272,6 +210,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  height: 100%;
 }
 
 .Deploy .scene .Error .description {
@@ -290,6 +229,11 @@
   margin: 32px 0;
 }
 
+.Deploy .scene .Deploying .actions,
+.Deploy .scene .Deploying .header {
+  margin-top: auto;
+}
+
 .Deploy .scene .Deploying .info {
   display: flex;
   flex-direction: row;
@@ -298,6 +242,7 @@
   padding: 20px;
   width: 450px;
   color: var(--dcl-silver);
+  margin-bottom: auto;
 }
 
 .Deploy .scene .Deploying .info svg {
@@ -362,6 +307,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-top: auto;
 }
 
 .Deploy .publish-warning .dont-show-again {

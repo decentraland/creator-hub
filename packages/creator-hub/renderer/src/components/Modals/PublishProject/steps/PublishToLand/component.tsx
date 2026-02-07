@@ -5,29 +5,16 @@ import { Box, Button, styled, Typography } from 'decentraland-ui2';
 
 import { useSelector } from '#store';
 
-import type { Project } from '/shared/types/projects';
-
 import { config } from '/@/config';
 import { t } from '/@/modules/store/translation/utils';
 import { selectors as landSelectors } from '/@/modules/store/land';
 import { useEditor } from '/@/hooks/useEditor';
 import { useWorkspace } from '/@/hooks/useWorkspace';
-import { type Props } from '../../types';
+import { COLORS, type Props, type Coordinate } from '../../types';
+import { calculateParcels, parseCoords } from '../../utils';
 import { PublishModal } from '../../PublishModal';
-import { COLORS, type Coordinate } from './types';
 
 const CONTENT_SERVER = config.get('PEER_URL');
-
-function parseCoords(coords: string) {
-  return coords.split(',').map(coord => parseInt(coord, 10)) as [number, number];
-}
-function calculateParcels(project: Project, point: Coordinate): Coordinate[] {
-  const [baseX, baseY] = parseCoords(project.scene.base);
-  return project.scene.parcels.map(parcel => {
-    const [x, y] = parseCoords(parcel);
-    return { x: x - baseX + point.x, y: y - baseY + point.y };
-  });
-}
 
 const PublishToLandModal = styled(PublishModal)({
   '& > .MuiPaper-root > .MuiBox-root:last-child': {
@@ -49,6 +36,11 @@ export function PublishToLand(props: Props) {
 
   // Memoize the project parcels centered around the hover position
   const projectParcels = useMemo(() => calculateParcels(project, hover), [project, hover]);
+
+  const placedParcels = useMemo(
+    () => (placement ? calculateParcels(project, placement) : []),
+    [project, placement],
+  );
 
   const handleNext = useCallback(async () => {
     if (!placement) return;
@@ -78,12 +70,8 @@ export function PublishToLand(props: Props) {
   );
 
   const isPlaced = useCallback(
-    (x: number, y: number) => {
-      if (!placement) return false;
-      const placedParcels = calculateParcels(project, placement);
-      return placedParcels.some(parcel => parcel.x === x && parcel.y === y);
-    },
-    [project, placement],
+    (x: number, y: number) => placedParcels.some(parcel => parcel.x === x && parcel.y === y),
+    [placedParcels],
   );
 
   const isValid = useMemo(() => {
