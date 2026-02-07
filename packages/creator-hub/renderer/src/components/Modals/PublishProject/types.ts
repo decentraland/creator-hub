@@ -2,15 +2,23 @@ import { type Project } from '/shared/types/projects';
 
 export type Coordinate = { x: number; y: number };
 
+export type DeploymentMetadata = {
+  isMultiScene?: boolean;
+};
+
 export type Props = {
   open: boolean;
   project: Project;
   initialStep?: Step;
   disableGoBack?: boolean;
   previousStep?: Step;
+  deploymentMetadata?: DeploymentMetadata;
   onClose: () => void;
   onBack?: () => void;
-  onStep: (step: Step, opts?: { resetHistory?: boolean }) => void;
+  onStep: (
+    step: Step,
+    opts?: { resetHistory?: boolean; deploymentMetadata?: DeploymentMetadata },
+  ) => void;
 };
 
 export type Step =

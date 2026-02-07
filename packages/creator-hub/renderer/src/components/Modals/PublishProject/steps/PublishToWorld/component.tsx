@@ -69,6 +69,7 @@ export function PublishToWorld(props: Props) {
   const dispatch = useDispatch();
   const names = useSelector(state => state.ens.data);
   const [name, setName] = useState('');
+  const [isMultiSceneEnabled, setIsMultiSceneEnabled] = useState<boolean>(false);
   const worldSettings = useSelector(managementSelectors.getWorldSettings);
   const worldPermissions = useSelector(state =>
     managementSelectors.getParcelsStateForAddress(state, wallet || ''),
@@ -99,20 +100,20 @@ export function PublishToWorld(props: Props) {
 
   const handleChangeName = useCallback(
     (worldName: string) => {
+      setIsMultiSceneEnabled(false);
+      setName(worldName);
+
       dispatch(managementActions.fetchWorldSettings({ worldName }));
       dispatch(managementActions.fetchWorldScenes({ worldName }));
-      if (!isOwner) {
-        dispatch(
-          managementActions.fetchParcelsPermission({
-            worldName,
-            permissionName: WorldPermissionName.Deployment,
-            walletAddress: wallet || '',
-          }),
-        );
-      }
-      setName(worldName);
+      dispatch(
+        managementActions.fetchParcelsPermission({
+          worldName,
+          permissionName: WorldPermissionName.Deployment,
+          walletAddress: wallet || '',
+        }),
+      );
     },
-    [isOwner, wallet],
+    [wallet],
   );
 
   const handleUpdateProject = useCallback(
@@ -128,9 +129,9 @@ export function PublishToWorld(props: Props) {
     async (projectUpdates?: Partial<Project>) => {
       if (projectUpdates) await handleUpdateProject(projectUpdates);
       publishScene({ targetContent: WORLDS_CONTENT_SERVER });
-      props.onStep('deploy');
+      props.onStep('deploy', { deploymentMetadata: { isMultiScene: isMultiSceneEnabled } });
     },
-    [props.onStep, publishScene, updateSceneJson, updateProject],
+    [isMultiSceneEnabled, props.onStep, publishScene, handleUpdateProject],
   );
 
   const handleSelectLocation = useCallback(async (projectUpdates: Partial<Project>) => {
@@ -151,6 +152,12 @@ export function PublishToWorld(props: Props) {
     }
   }, []);
 
+  // Update the multi scene enabled state when the world scenes or permissions change
+  useEffect(() => {
+    // Always enable multi scene if the user is a restricted collaborator as they will have to choose a location.
+    setIsMultiSceneEnabled(!hasWorldWidePermissions || worldSettings.scenes.length > 1);
+  }, [hasWorldWidePermissions, worldSettings.scenes.length]);
+
   return (
     <PublishModal
       title={t('modal.publish_project.worlds.select_world.title')}
@@ -169,6 +176,8 @@ export function PublishToWorld(props: Props) {
               project={project}
               isOwner={isOwner}
               worldSettings={worldSettings}
+              isMultiSceneEnabled={isMultiSceneEnabled}
+              onChangeMultiScene={setIsMultiSceneEnabled}
               hasWorldWidePermissions={hasWorldWidePermissions}
               onChangeName={handleChangeName}
               onSelectLocation={handleSelectLocation}
@@ -207,6 +216,8 @@ function SelectWorld({
   isOwner,
   worldSettings,
   hasWorldWidePermissions,
+  isMultiSceneEnabled,
+  onChangeMultiScene,
   onChangeName,
   onSelectLocation,
   onPublish,
@@ -216,6 +227,8 @@ function SelectWorld({
   isOwner: boolean;
   worldSettings: WorldSettingsState;
   hasWorldWidePermissions: boolean;
+  isMultiSceneEnabled: boolean;
+  onChangeMultiScene: (isMultiSceneEnabled: boolean) => void;
   onChangeName: (name: string) => void;
   onSelectLocation: (projectUpdates: Partial<Project>) => void;
   onPublish: (projectUpdates: Partial<Project>) => Promise<void>;
@@ -226,7 +239,6 @@ function SelectWorld({
       ? getEnsProvider(project.worldConfiguration?.name)
       : ENSProvider.DCL,
   );
-  const [isMultiSceneEnabled, setIsMultiSceneEnabled] = useState<boolean>(false);
   const [settingsModal, setSettingsModal] = useState<{
     isOpen: boolean;
     activeTab: WorldSettingsTab;
@@ -272,17 +284,9 @@ function SelectWorld({
   const handleChangeSelectName = useCallback(
     (e: SelectChangeEvent) => {
       if (!e.target.value) return;
-      setIsMultiSceneEnabled(false);
       onChangeName(e.target.value);
     },
     [onChangeName],
-  );
-
-  const handleMultiSceneToggle = useCallback(
-    (_event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
-      setIsMultiSceneEnabled(checked);
-    },
-    [],
   );
 
   const handleOpenWorldSettings = useCallback(() => {
@@ -303,24 +307,16 @@ function SelectWorld({
     if (isMultiSceneEnabled && worldSettings.scenes.length > 0) {
       onSelectLocation({ worldConfiguration });
     } else {
-      // In single scene mode, ensure the project base parcel is the previous scene base parcel or 0,0 by default.
-      const [x, y] =
-        worldSettings.scenes.length === 1
-          ? getBaseParcel(worldSettings.scenes[0].parcels) || [0, 0]
-          : [0, 0];
+      // In single scene mode, ensure the project base parcel is 0,0.
       const scene: SceneParcels = {
-        base: coordsToId(x, y),
-        parcels: calculateParcels(project, { x, y }).map(parcel => coordsToId(parcel.x, parcel.y)),
+        base: coordsToId(0, 0),
+        parcels: calculateParcels(project, { x: 0, y: 0 }).map(parcel =>
+          coordsToId(parcel.x, parcel.y),
+        ),
       };
       onPublish({ worldConfiguration, scene });
     }
   }, [isMultiSceneEnabled, worldSettings.scenes.length, onPublish, onSelectLocation]);
-
-  // Update the multi scene enabled state when the world scenes or owner changes
-  useEffect(() => {
-    // Always enable multi scene if the user is not the owner as they will have to choose a location.
-    setIsMultiSceneEnabled(!hasWorldWidePermissions || worldSettings.scenes.length > 1);
-  }, [hasWorldWidePermissions, worldSettings.scenes.length]);
 
   // TODO: handle failed state...
   const projectIsReady = project.status === 'succeeded';
@@ -414,7 +410,7 @@ function SelectWorld({
             </div>
             <Switch
               checked={isMultiSceneEnabled}
-              onChange={handleMultiSceneToggle}
+              onChange={(_e, checked) => onChangeMultiScene(checked)}
               disabled={!hasWorldWidePermissions}
             />
           </Row>

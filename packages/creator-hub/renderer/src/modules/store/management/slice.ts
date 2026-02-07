@@ -271,6 +271,15 @@ export const unpublishWorldScene = createAsyncThunk(
   },
 );
 
+export const unpublishEntireWorld = createAsyncThunk(
+  'management/unpublishEntireWorld',
+  async ({ address, worldName }: { address: string; worldName: string }) => {
+    const WorldsAPI = new Worlds();
+    const success = await WorldsAPI.unpublishEntireWorld(address, worldName);
+    return success;
+  },
+);
+
 export const fetchWorldPermissions = createAsyncThunk(
   'management/fetchWorldPermissions',
   async ({ worldName }: { worldName: string }) => {
@@ -479,6 +488,7 @@ const slice = createSlice({
         state.accountHoldings = action.payload;
       })
       .addCase(fetchWorldScenes.fulfilled, (state, action) => {
+        if (action.meta.arg.worldName !== state.worldSettings.worldName) return;
         state.worldSettings.scenes = action.payload;
       })
       .addCase(fetchWorldSettings.pending, (state, action) => {
@@ -488,20 +498,28 @@ const slice = createSlice({
         state.worldSettings.error = null;
       })
       .addCase(fetchWorldSettings.fulfilled, (state, action) => {
+        if (action.meta.arg.worldName !== state.worldSettings.worldName) return;
         state.worldSettings.settings = action.payload ?? {};
         state.worldSettings.status = 'succeeded';
         state.worldSettings.error = null;
       })
       .addCase(fetchWorldSettings.rejected, (state, action) => {
+        if (action.meta.arg.worldName !== state.worldSettings.worldName) return;
         state.worldSettings.status = 'failed';
         state.worldSettings.error = action.error.message || 'Failed to fetch world settings';
       })
       .addCase(fetchWorldPermissions.pending, (state, action) => {
-        state.worldPermissions.worldName = action.meta.arg.worldName;
+        const prevWorldName = state.worldPermissions.worldName;
+        const newWorldName = action.meta.arg.worldName;
+        if (prevWorldName && newWorldName !== prevWorldName) {
+          state.worldPermissions = initialState.worldPermissions; // Reset state when switching worlds
+        }
+        state.worldPermissions.worldName = newWorldName;
         state.worldPermissions.status = 'loading';
         state.worldPermissions.error = null;
       })
       .addCase(fetchWorldPermissions.fulfilled, (state, action) => {
+        if (action.meta.arg.worldName !== state.worldPermissions.worldName) return;
         if (action.payload !== null) {
           const { permissions, summary, owner } = action.payload;
           state.worldPermissions.permissions = permissions;
@@ -537,13 +555,15 @@ const slice = createSlice({
         state.worldPermissions.loadingNewUser = false;
       })
       .addCase(fetchParcelsPermission.pending, (state, action) => {
-        const { walletAddress } = action.meta.arg;
+        const { walletAddress, worldName } = action.meta.arg;
+        state.worldPermissions.worldName = worldName;
         state.worldPermissions.parcels[walletAddress] = {
           parcels: state.worldPermissions.parcels[walletAddress]?.parcels || [],
           status: 'loading',
         };
       })
       .addCase(fetchParcelsPermission.fulfilled, (state, action) => {
+        if (action.meta.arg.worldName !== state.worldSettings.worldName) return;
         const { walletAddress, parcels } = action.payload;
         state.worldPermissions.parcels[walletAddress] = {
           parcels: parcels?.parcels || [],
@@ -551,6 +571,7 @@ const slice = createSlice({
         };
       })
       .addCase(fetchParcelsPermission.rejected, (state, action) => {
+        if (action.meta.arg.worldName !== state.worldSettings.worldName) return;
         const { walletAddress } = action.meta.arg;
         if (state.worldPermissions.parcels[walletAddress]) {
           state.worldPermissions.parcels[walletAddress].status = 'failed';
@@ -606,6 +627,7 @@ export const actions = {
   fetchParcelsPermission,
   addParcelsPermission,
   removeParcelsPermission,
+  unpublishEntireWorld,
 };
 
 export const reducer = slice.reducer;

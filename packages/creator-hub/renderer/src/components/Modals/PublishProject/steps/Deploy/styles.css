@@ -110,8 +110,6 @@
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  padding-left: 32px;
-  border-left: 1px solid var(--dark-gray);
 }
 
 .Deploy .scene .Success .content {
@@ -231,6 +229,11 @@
   margin: 32px 0;
 }
 
+.Deploy .scene .Deploying .actions,
+.Deploy .scene .Deploying .header {
+  margin-top: auto;
+}
+
 .Deploy .scene .Deploying .info {
   display: flex;
   flex-direction: row;
@@ -239,6 +242,7 @@
   padding: 20px;
   width: 450px;
   color: var(--dcl-silver);
+  margin-bottom: auto;
 }
 
 .Deploy .scene .Deploying .info svg {

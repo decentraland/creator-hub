@@ -350,6 +350,14 @@ export class Worlds {
     return result.status === 204;
   }
 
+  public async unpublishEntireWorld(address: string, worldName: string) {
+    const result = await fetch(`${this.url}/entities/${worldName}`, {
+      method: 'DELETE',
+      identity: this.withIdentity(address),
+    });
+    return result.status === 204;
+  }
+
   public fetchWalletStats = async (address: string) => {
     try {
       const result = await fetch(`${this.url}/wallet/${address}/stats`);
