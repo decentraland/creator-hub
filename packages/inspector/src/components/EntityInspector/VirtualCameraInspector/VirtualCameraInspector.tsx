@@ -10,7 +10,7 @@ import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { Dropdown, TextField } from '../../ui';
 import { InfoTooltip } from '../../ui/InfoTooltip';
-import { engine as CoreEngine } from '@dcl/ecs';
+import { engine as CoreEngine, VirtualCamera as VirtualCameraSDK } from '@dcl/ecs';
 import type { Entity } from '@dcl/ecs';
 
 type Props = {
@@ -39,19 +39,42 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
 
   const mode: ModeOptionValue = useMemo(() => {
     const dt = (currentValue as any)?.defaultTransition;
-    if (dt && typeof dt === 'object') {
-      if (typeof dt.speed === 'number') return 'speed';
-      if (typeof dt.time === 'number') return 'time';
+    if (dt && typeof dt === 'object' && dt.transitionMode) {
+      const tm = dt.transitionMode;
+      // Check if it's a Time transition (has time property)
+      if (typeof tm === 'object' && 'time' in tm && typeof tm.time === 'number') {
+        return 'time';
+      }
+      // Check if it's a Speed transition (has speed property)
+      if (typeof tm === 'object' && 'speed' in tm && typeof tm.speed === 'number') {
+        return 'speed';
+      }
     }
     return 'time';
   }, [currentValue]);
 
   const numericValue: number | '' = useMemo(() => {
     const dt = (currentValue as any)?.defaultTransition;
-    if (mode === 'speed') {
-      return typeof dt?.speed === 'number' ? dt.speed : 1;
+    if (dt && typeof dt === 'object' && dt.transitionMode) {
+      const tm = dt.transitionMode;
+      if (
+        mode === 'speed' &&
+        typeof tm === 'object' &&
+        'speed' in tm &&
+        typeof tm.speed === 'number'
+      ) {
+        return tm.speed;
+      }
+      if (
+        mode === 'time' &&
+        typeof tm === 'object' &&
+        'time' in tm &&
+        typeof tm.time === 'number'
+      ) {
+        return tm.time;
+      }
     }
-    return typeof dt?.time === 'number' ? dt.time : 1;
+    return 0;
   }, [currentValue, mode]);
 
   const allEntityOptions = useMemo(() => {
@@ -94,10 +117,23 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       const nextMode = e.target.value as ModeOptionValue;
       const prev = VirtualCamera.getOrNull(entity) ?? {};
       const prevDt = (prev as any).defaultTransition ?? {};
-      const nextDt =
-        nextMode === 'speed'
-          ? { speed: typeof prevDt.speed === 'number' ? prevDt.speed : 1 }
-          : { time: typeof prevDt.time === 'number' ? prevDt.time : 1 };
+
+      // Extract current numeric value from transitionMode
+      let currentValue = 0;
+      if (prevDt.transitionMode) {
+        const tm = prevDt.transitionMode;
+        if (typeof tm === 'object') {
+          if ('time' in tm && typeof tm.time === 'number') currentValue = tm.time;
+          if ('speed' in tm && typeof tm.speed === 'number') currentValue = tm.speed;
+        }
+      }
+
+      const nextDt = {
+        transitionMode:
+          nextMode === 'speed'
+            ? VirtualCameraSDK.Transition.Speed(currentValue)
+            : VirtualCameraSDK.Transition.Time(currentValue),
+      };
       sdk.operations.updateValue(VirtualCamera, entity, {
         ...(prev as any),
         defaultTransition: nextDt,
@@ -113,7 +149,12 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       const nextNumber = parseFloat(raw);
       if (Number.isNaN(nextNumber)) return;
       const prev = VirtualCamera.getOrNull(entity) ?? {};
-      const nextDt = mode === 'speed' ? { speed: nextNumber } : { time: nextNumber };
+      const nextDt = {
+        transitionMode:
+          mode === 'speed'
+            ? VirtualCameraSDK.Transition.Speed(nextNumber)
+            : VirtualCameraSDK.Transition.Time(nextNumber),
+      };
       sdk.operations.updateValue(VirtualCamera, entity, {
         ...(prev as any),
         defaultTransition: nextDt,
