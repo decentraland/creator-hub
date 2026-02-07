@@ -2,10 +2,10 @@ import type { IEngine } from '@dcl/ecs';
 
 import type { EditorComponents } from '../../../../sdk/components';
 import {
-  BaseComponentNames,
-  VERSIONS_REGISTRY,
-  getLatestVersionName,
-} from '../../../../sdk/components/versioning/constants';
+  removeOldSceneVersions,
+  VERSIONS,
+  getLatestSceneComponentVersion,
+} from '../../../../sdk/components/SceneMetadata';
 
 /**
  * Retrieves the latest version of the Scene component from the engine.
@@ -18,12 +18,11 @@ import {
  */
 export function getCompositeLatestSceneComponent(engine: IEngine) {
   let component = null;
-  const versions = VERSIONS_REGISTRY[BaseComponentNames.SCENE_METADATA];
 
   // Iterate in reverse order to find the latest component version
-  for (let i = versions.length - 1; i >= 0; i--) {
-    const versionName = versions[i].versionName;
-    const Scene = engine.getComponentOrNull(versionName) as EditorComponents['Scene'] | null;
+  for (let i = VERSIONS.length - 1; i >= 0; i--) {
+    const name = VERSIONS[i].key;
+    const Scene = engine.getComponentOrNull(name) as EditorComponents['Scene'] | null;
 
     if (Scene) {
       const scene = Scene.getMutableOrNull(engine.RootEntity);
@@ -47,22 +46,17 @@ export function migrateSceneMetadata(engine: IEngine) {
 
   const { component, value } = latestComponent;
 
-  const latestVersionName = getLatestVersionName(BaseComponentNames.SCENE_METADATA);
-  const isRunningLatestVersion = component.componentName === latestVersionName;
+  const latestComponentVersion = getLatestSceneComponentVersion();
+  const isRunningLatestVersion = component.componentName === latestComponentVersion.key;
 
   if (isRunningLatestVersion) return;
   const oldComponent = component;
 
   oldComponent.deleteFrom(engine.RootEntity);
+  removeOldSceneVersions(engine, latestComponentVersion.key);
 
-  // Remove old version components
-  const versions = VERSIONS_REGISTRY[BaseComponentNames.SCENE_METADATA];
-  versions.forEach(({ versionName }) => {
-    if (versionName !== latestVersionName) {
-      engine.removeComponentDefinition(versionName);
-    }
-  });
-
-  const SceneMetadata = engine.getComponent(latestVersionName) as EditorComponents['Scene'];
+  const SceneMetadata = engine.getComponent(
+    latestComponentVersion.key,
+  ) as EditorComponents['Scene'];
   SceneMetadata.createOrReplace(engine.RootEntity, value);
 }

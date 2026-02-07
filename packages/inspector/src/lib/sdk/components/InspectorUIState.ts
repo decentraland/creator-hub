@@ -1,9 +1,8 @@
-import type { LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
-import type { InspectorVersionedComponents } from './versioning/constants';
-import type { BaseComponentNames } from './versioning/base-names';
+import { Schemas } from '@dcl/ecs';
+import type { MapResult } from '@dcl/ecs/dist/schemas/Map';
 
-type ComponentValue<T> = T extends LastWriteWinElementSetComponentDefinition<infer V> ? V : never;
+export const InspectorUIStateSchema = {
+  sceneInfoPanelVisible: Schemas.Optional(Schemas.Boolean),
+};
 
-export type InspectorUIStateType = ComponentValue<
-  InspectorVersionedComponents[typeof BaseComponentNames.INSPECTOR_UI_STATE]
->;
+export type InspectorUIStateType = MapResult<typeof InspectorUIStateSchema>;
