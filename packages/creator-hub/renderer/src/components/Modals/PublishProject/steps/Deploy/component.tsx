@@ -6,7 +6,7 @@ import { Typography, Checkbox } from 'decentraland-ui2';
 
 import { misc } from '#preload';
 
-import type { File, Info, Status } from '/@/lib/deploy';
+import { type File, type Info, type Status } from '/@/lib/deploy';
 
 import { useAuth } from '/@/hooks/useAuth';
 import { useWorkspace } from '/@/hooks/useWorkspace';
@@ -20,6 +20,7 @@ import { getInvalidFiles, MAX_FILE_SIZE_BYTES } from '/@/modules/store/deploymen
 import { t } from '/@/modules/store/translation/utils';
 import { addBase64ImagePrefix } from '/@/modules/image';
 import { REPORT_ISSUES_URL } from '/@/modules/utils';
+import { formatSize } from '/@/modules/file';
 
 import { PublishModal } from '/@/components/Modals/PublishProject/PublishModal';
 import { ConnectedSteps } from '/@/components/Step';
@@ -42,23 +43,6 @@ function getPath(filename: string) {
         -(MAX_FILE_PATH_LENGTH / 2),
       )}`
     : filename;
-}
-
-const KB = 1024;
-const MB = KB * 1024;
-const GB = MB * 1024;
-
-function getSize(size: number) {
-  if (size < KB) {
-    return `${size.toFixed(2)} B`;
-  }
-  if (size < MB) {
-    return `${(size / KB).toFixed(2)} KB`;
-  }
-  if (size < GB) {
-    return `${(size / MB).toFixed(2)} MB`;
-  }
-  return `${(size / GB).toFixed(2)} GB`;
 }
 
 export function Deploy(props: Props) {
@@ -350,7 +334,7 @@ function Idle({ files, error, onClick }: IdleProps) {
         </div>
         <div className="size">
           {t('modal.publish_project.deploy.files.size', {
-            size: getSize(files.reduce((total, file) => total + file.size, 0)),
+            size: formatSize(files.reduce((total, file) => total + file.size, 0)),
             b: (child: string) => (
               <b>
                 {child}/{MAX_FILE_SIZE_BYTES / 1e6}MB
@@ -371,7 +355,7 @@ function Idle({ files, error, onClick }: IdleProps) {
             >
               {getPath(file.name)}
             </div>
-            <div className="size">{getSize(file.size)}</div>
+            <div className="size">{formatSize(file.size)}</div>
           </div>
         ))}
       </div>

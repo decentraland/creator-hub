@@ -3,6 +3,9 @@
     "message": "安装 decentraland 编辑器 v${version}",
     "errors": {
       "moveAppFailed": "请将 Creator Hub 应用程序移动到应用程序文件夹，并从那里打开它",
+      "checkUpdatesFailed": "无法检查更新",
+      "downloadFailed": "无法下载更新",
+      "installFailed": "无法安装更新",
       "unknown": "发生未知错误"
     }
   },
@@ -257,16 +260,13 @@
       "title": "應用程式首選項",
       "tabs": {
         "scenes": {
-          "label": "場景",
-          "title": "場景設定"
+          "label": "場景"
         },
         "editor": {
-          "label": "編輯器",
-          "title": "編輯器設定"
+          "label": "編輯器"
         },
         "about": {
-          "label": "關於",
-          "title": "關於"
+          "label": "關於"
         }
       },
       "about": {
@@ -332,6 +332,156 @@
         "timeout": "檢查更新超時。\n請檢查您的連接並重試。"
       }
     },
+    "worlds_storage": {
+      "your_storage": "您的存储",
+      "total_available_storage": "总可用存储",
+      "mana": "MANA",
+      "mana_earn_storage": "每 2,000 个代币（Polygon 或 Ethereum）赚取 100 Mb 存储空间。",
+      "mana_holdings": "由于持有 {owned} MANA 代币，您拥有 {mbs} Mb。",
+      "mana_buy": "购买 MANA",
+      "lands": "LANDs",
+      "lands_earn_storage": "每个 LAND 赚取 100 Mb 存储空间。",
+      "lands_holdings": "由于持有 {owned} LANDs，您拥有 {mbs} Mb。",
+      "lands_buy": "购买 LAND",
+      "names": "NAMEs",
+      "names_earn_storage": "每个 NAME 赚取 100 Mb 存储空间。",
+      "names_holdings": "由于持有 {owned} Decentraland NAMEs，您拥有 {mbs} Mb。",
+      "names_buy": "购买 NAME",
+      "proposal": "这些存储规则经过治理 DAO 提案的投票并获得通过。",
+      "learn_more": "了解更多"
+    },
+    "world_settings": {
+      "title": "世界设置 - {worldName}",
+      "tabs": {
+        "details": {
+          "label": "详情"
+        },
+        "layout": {
+          "label": "布局"
+        },
+        "general": {
+          "label": "其他"
+        }
+      },
+      "general": {
+        "world_spawn_coordinate": "世界生成坐标",
+        "position": "位置",
+        "world_skybox": "世界天空盒",
+        "auto_skybox": "自动（Decentraland 时间）",
+        "max_offset": "最大偏移",
+        "general": "常规",
+        "single_player": "单人游戏"
+      },
+      "details": {
+        "world_title": "世界标题",
+        "description": "描述",
+        "age_rating": "年龄分级",
+        "categories": "类别",
+        "author": "作者（可选）",
+        "email": "电子邮件（可选）",
+        "thumbnail": "缩略图",
+        "replace_image": "替换图片",
+        "set_image": "选择图片",
+        "no_image": "未设置图片",
+        "age_rating_options": {
+          "everyone": "E（所有人，PG 13+）",
+          "teen": "T（青少年，PG 13+）",
+          "adult": "A（成人，PG 18+）",
+          "restricted": "R（限制级，PG 18+）"
+        },
+        "categories_options": {
+          "art": "🎨 艺术",
+          "game": "🕹️ 游戏",
+          "casino": "🃏 赌场",
+          "social": "👥 社交",
+          "music": "🎶 音乐",
+          "fashion": "👠 时尚",
+          "crypto": "🪙 加密货币",
+          "education": "📚 教育",
+          "shop": "🛍️ 商店",
+          "business": "🏢 商务",
+          "sports": "🏅 体育"
+        }
+      },
+      "layout": {
+        "world_layout": {
+          "title": "世界布局",
+          "world_size": "世界大小：{size}"
+        },
+        "multi_scene_title": "多场景世界（高级）",
+        "multi_scene_description": "允许您的世界包含多个场景。\n总的世界大小将取决于您发布的世界布局。",
+        "empty_world": {
+          "title": "此世界中未发布场景。",
+          "description": "您可以通过在此域中发布任何场景来添加它。",
+          "view_scenes": "查看场景"
+        },
+        "current_world": "当前世界",
+        "title_placeholder": "世界标题",
+        "scene_title_placeholder": "场景标题",
+        "scenes_count": "{count} 个{count, plural, one {场景} other {场景}}",
+        "parcels_count": "{count} 个{count, plural, one {地块} other {地块}}",
+        "world_map": "世界地图",
+        "scenes_title": "场景",
+        "actions": {
+          "edit_scene": "编辑场景",
+          "unpublish": "从世界中移除"
+        }
+      }
+    },
+    "world_permissions": {
+      "tabs": {
+        "access": {
+          "label": "访问"
+        },
+        "collaborators": {
+          "label": "协作者"
+        }
+      },
+      "title": "权限 - {worldName}",
+      "invalid_address": "无效地址",
+      "done": "完成",
+      "access": {
+        "description": "通过在<span>\"私有\"</span>和<span>\"公开\"</span>之间切换\n来管理谁可以访问您的世界。",
+        "subtitle": "在<span>私有模式</span>下，您可以授予最多 100 个地址（Decentraland 用户）访问权限。请注意，如果您恢复到<span>公开模式</span>，您的已批准地址列表将被清除。",
+        "warning": {
+          "title": "警告",
+          "description": "如果您恢复到公开模式，您的已批准地址列表将被清除。"
+        },
+        "empty_list": "您还没有批准任何地址",
+        "public": "公开",
+        "private": "私有",
+        "approved_addresses": "已批准的地址 {number}",
+        "add_address": "添加地址",
+        "actions": {
+          "remove": "移除"
+        }
+      },
+      "collaborators": {
+        "description": "<span>添加最多 10 个地址</span>（Decentraland 用户）作为协作者，并管理他们在您世界中的部署或流媒体权限。",
+        "empty_list": "您还没有添加任何协作者/地址",
+        "add_collaborator": "添加协作者",
+        "column_name_label": "协作者 {number}",
+        "column_stream_label": "流媒体",
+        "column_stream_tooltip": "用户将能够向您的世界流式传输内容",
+        "column_deploy_label": "位置",
+        "column_deploy_tooltip": "用户将能够在您的世界中部署新场景",
+        "all_parcels": "所有地块",
+        "deployment": {
+          "world_wide": "所有地块",
+          "parcels": "自定义坐标",
+          "none": "无"
+        },
+        "parcels_count": "{count} 个地块",
+        "actions": {
+          "remove": "移除"
+        }
+      },
+      "parcels": {
+        "title": "自定义坐标",
+        "description": "点击单个瓷砖以将它们包含/排除在布局中。",
+        "parcels_count": "{count} 个地块"
+      }
+    },
     "create_project": {
       "title": "創建場景",
       "fields": {
@@ -360,6 +510,9 @@
       "cancel": "取消"
     }
   },
+  "popup": {
+    "copied_to_clipboard": "已复制！"
+  },
   "snackbar": {
     "generic": {
       "import_scene": "导入场景...",
@@ -373,7 +526,20 @@
       "installing_dependencies_failed": "安装依赖项失败",
       "invalid_scenes_folder": "无效的场景文件夹。请在创建场景之前在设置中配置有效的场景文件夹。",
       "create_scene_failed": "尝试创建场景时发生错误。请重试。",
-      "run_scene_failed": "加载项目失败。请重试。"
+      "run_scene_failed": "加载项目失败。请重试。",
+      "url_copied": "URL已复制到剪贴板",
+      "fetch_managed_projects_failed": "获取管理项目失败",
+      "fetch_world_settings_failed": "获取世界设置失败。请重试。",
+      "fetch_ens_list_failed": "获取ENS列表失败",
+      "fetch_land_list_failed": "获取土地列表失败",
+      "fetch_world_permissions_failed": "获取世界权限失败。请重试。",
+      "fetch_world_scenes_failed": "获取世界场景失败。请重试。",
+      "update_permissions_failed": "更新世界权限失败。请重试。",
+      "add_permission_failed": "添加地址权限失败。请重试。",
+      "remove_permission_failed": "删除地址权限失败。请重试。",
+      "fetch_parcels_permission_failed": "获取地块权限失败。请重试。",
+      "add_parcels_permission_failed": "更新地块权限失败。请重试。",
+      "remove_parcels_permission_failed": "更新地块权限失败。请重试。"
     },
     "missing_projects": {
       "title": "{scenes} 丢失的 {scenes, plural, one {场景} other {场景}} 成立",
@@ -491,20 +657,80 @@
       "title": "排序方式：",
       "default": "默认",
       "newest": "最新"
+    }
+  },
+  "learn": {
+    "header": {
+      "title": "学习",
+      "videos": "视频",
+      "docs": "创作者文档",
+      "more": "更多"
     },
-    "learn": {
-      "header": {
-        "title": "学习",
-        "videos": "视频",
-        "docs": "创作者文档",
-        "more": "更多"
+    "see_all": "查看全部",
+    "videos": {
+      "title": "视频"
+    },
+    "docs": {
+      "title": "创作者文档"
+    }
+  },
+  "manage": {
+    "header": {
+      "title": "管理"
+    },
+    "items": "{count} {count, plural, one {项目} other {项目}}",
+    "search": "搜索",
+    "sort_by": "排序方式",
+    "sort": {
+      "latest": "最后发布"
+    },
+    "empty_search": {
+      "title": "未找到结果",
+      "description": "尝试调整搜索以找到您要查找的内容。"
+    },
+    "no_projects": {
+      "title": "您还没有任何场景",
+      "description": "为您的土地和世界创建和管理场景。现在开始构建！"
+    },
+    "worlds_storage": {
+      "used": "已使用空间",
+      "for_names": "用于 Decentraland NAMEs",
+      "description": "总存储空间根据 MANA、LAND 和 NAME 持有量计算。",
+      "link": "查看详情"
+    },
+    "cards": {
+      "published_scene": "已发布的场景",
+      "roles": {
+        "owner": "所有者",
+        "collaborator": "协作者",
+        "operator": "租户",
+        "tenant": "出租人"
       },
-      "see_all": "查看全部",
-      "videos": {
-        "title": "视频"
+      "menu": {
+        "jump_in": "进入",
+        "copy_url": "复制URL",
+        "edit_name": "编辑名称",
+        "permissions": "权限",
+        "parcel": "地块",
+        "unpublish": "取消发布"
       },
-      "docs": {
-        "title": "创作者文档"
+      "no_scene": {
+        "title": "未发布场景",
+        "view_scenes": "查看场景"
+      },
+      "worlds": {
+        "world": "世界",
+        "multi-scene": "多场景",
+        "scenes_count": "{count} {count, plural, one {场景} other {场景}}",
+        "scene_settings": "场景设置",
+        "world_settings": "设置",
+        "published_world": "已发布的世界"
+      },
+      "land": {
+        "land": "土地",
+        "land_settings": "土地设置",
+        "parcels_count": "{count} {count, plural, one {地块} other {地块}}",
+        "land_coords": "{coordX}, {coordY}"
       }
     },
     "connection": {

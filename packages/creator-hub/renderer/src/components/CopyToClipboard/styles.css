@@ -1,0 +1,15 @@
+.CopyToClipboardPopup {
+  z-index: 1500;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background-color: var(--darker-gray);
+  color: var(--white);
+  font-size: 14px;
+  font-weight: 500;
+  margin-left: 12px;
+}
+
+.CopyToClipboardPopup.FadeOut {
+  opacity: 0;
+  transition: opacity 0.3s linear;
+}

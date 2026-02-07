@@ -1,0 +1,14 @@
+.AddUserWrapper {
+  width: 100%;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.AddUserWrapper .MuiOutlinedInput-notchedOutline {
+  border-color: var(--transparent-gray-light);
+}
+
+.AddUserWrapper .MuiButton-root {
+  height: 40px;
+  flex-shrink: 0;
+}

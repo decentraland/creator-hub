@@ -1,0 +1,56 @@
+.GeneralTab {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.GeneralTab .TitleDivider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.GeneralTab .TitleDivider span {
+  flex-shrink: 0;
+  line-height: 1.5;
+  color: var(--dcl-silver);
+}
+
+.GeneralTab .TitleDivider hr {
+  width: 100%;
+  border-color: var(--dark-gray);
+}
+
+.GeneralTab .MuiFormGroup-root {
+  gap: 16px;
+}
+
+.GeneralTab .InputContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.GeneralTab .InputContainer .Row {
+  gap: 8px;
+}
+
+.GeneralTab .InputContainer .Label {
+  color: var(--light-gray);
+  margin-right: 8px;
+}
+
+.GeneralTab .InputContainer .MuiInputBase-root {
+  height: 2.5rem;
+  width: 8rem;
+  font-weight: 600;
+}
+
+.GeneralTab .InputContainer .MuiOutlinedInput-notchedOutline {
+  border-color: var(--transparent-gray-light);
+}
+
+.GeneralTab .Range.Field .RangeContainer {
+  gap: 24px;
+  width: 320px;
+}
