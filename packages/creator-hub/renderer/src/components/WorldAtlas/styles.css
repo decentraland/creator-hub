@@ -1,0 +1,28 @@
+.WorldAtlasContainer {
+  position: relative;
+  width: 100%;
+}
+
+.WorldSizeOverlay {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 10;
+  background-color: var(--light-gray);
+  border: 1px solid var(--darker-gray);
+  padding: 4px 12px;
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.WorldSizeOverlay .MuiTypography-root {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.WorldSizeOverlay .MuiSvgIcon-root {
+  width: 16px;
+  height: 16px;
+}

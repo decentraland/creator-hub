@@ -1,0 +1,78 @@
+@import "../RangeField/RangeField.css";
+
+.RangeHour.Range.Field .RangeContainer input[type="time"] {
+  height: 40px;
+  width: 100px;
+  padding: 4px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--transparent-gray-light);
+  color: var(--text-on-secondary);
+  font-size: 14px;
+  font-family: var(--font-family);
+  font-weight: 600;
+  text-align: center;
+  background-color: transparent;
+}
+
+.RangeHour.Range.Field .RangeContainer input:hover:not(:disabled) {
+  border-color: var(--white);
+}
+
+.RangeHour.Range.Field .RangeContainer input:focus:not(:disabled) {
+  outline: none;
+  border-color: var(--dcl);
+  border-width: 2px;
+}
+
+.RangeHour.Range.Field .RangeContainer input:disabled {
+  color: var(--transparent-gray-light);
+  cursor: not-allowed;
+}
+
+.RangeHour.Range.Field .RangeContainer input[type="time"]::-webkit-calendar-picker-indicator {
+  display: none;
+}
+
+.RangeHour.Range.Field .RangeContainer .RangeInput {
+  background: linear-gradient(
+    90deg,
+    #361c75 0%,
+    #534787 15%,
+    #bf8dac 30%,
+    #46cee9 50%,
+    #af80a9 70%,
+    #714171 85%,
+    #40247b 100%
+  ) !important;
+  height: 8px !important;
+  border-radius: 4px !important;
+}
+
+.RangeHour.Range.Field .RangeContainer .RangeInput::before,
+.RangeHour.Range.Field .RangeContainer .RangeInput::after {
+  background: #361c75 !important;
+}
+
+.RangeHour.Range.Field .RangeContainer .RangeInput::-webkit-slider-thumb {
+  background: white !important;
+}
+
+.RangeHour.Range.Field .RangeContainer .RangeInput::-moz-range-thumb {
+  background: white !important;
+}
+
+.RangeHour.Range.Field .RangeContainer .RangeInput::-ms-thumb {
+  background: white !important;
+}
+
+.RangeHour.Range.Field .RangeContainer .RangeInput::-webkit-slider-runnable-track {
+  background: none !important;
+}
+
+.RangeHour.Range.Field .RangeContainer .RangeInput::-moz-range-track {
+  background: none !important;
+}
+
+.RangeHour.Range.Field .RangeContainer .RangeInput::-ms-track {
+  background: none !important;
+}

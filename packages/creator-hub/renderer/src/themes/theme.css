@@ -28,7 +28,8 @@
   --twitter: #1da1f2;
 
   /* Dropdowns */
-  --translusent-gray: rgba(255, 255, 255, 0.08);
+  --transparent-gray-dark: rgba(255, 255, 255, 0.05);
+  --transparent-gray-light: rgba(255, 255, 255, 0.23);
 
   /* fonts */
   --font-family:
@@ -50,7 +51,7 @@
   --text: #ffffff;
   --secondary-text: #676370;
   --text-on-primary: #ffffff;
-  --text-on-secondary: #ffffff;
+  --text-on-secondary: #ffffffb2;
   --divider: #67637033;
   --dropdown: #716b7c;
   --dropdown-hover: #24212933;
