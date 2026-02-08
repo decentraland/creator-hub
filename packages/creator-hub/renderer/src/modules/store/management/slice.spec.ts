@@ -664,6 +664,148 @@ describe('management slice', () => {
         expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.status).toBe('succeeded');
       });
     });
+
+    describe('worldName validation', () => {
+      it('should update parcels when worldName matches', () => {
+        // Dispatch pending to set the worldName
+        store.dispatch({
+          type: fetchParcelsPermission.pending.type,
+          meta: {
+            arg: {
+              worldName: TEST_WORLD_NAME,
+              permissionName: 'deployment',
+              walletAddress: TEST_WALLET_ADDRESS,
+            },
+          },
+        });
+
+        // Dispatch fulfilled with matching worldName
+        store.dispatch({
+          type: fetchParcelsPermission.fulfilled.type,
+          payload: {
+            walletAddress: TEST_WALLET_ADDRESS,
+            parcels: { parcels: ['0,0', '1,1', '2,2'] },
+          },
+          meta: {
+            arg: {
+              worldName: TEST_WORLD_NAME,
+              permissionName: 'deployment',
+              walletAddress: TEST_WALLET_ADDRESS,
+            },
+          },
+        });
+
+        const state = store.getState().management;
+        expect(state.worldPermissions.worldName).toBe(TEST_WORLD_NAME);
+        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.parcels).toEqual([
+          '0,0',
+          '1,1',
+          '2,2',
+        ]);
+        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.status).toBe('succeeded');
+      });
+
+      it('should not update parcels when worldName does not match on fulfilled', () => {
+        // Set up initial state with one worldName
+        store.dispatch({
+          type: fetchParcelsPermission.pending.type,
+          meta: {
+            arg: {
+              worldName: TEST_WORLD_NAME,
+              permissionName: 'deployment',
+              walletAddress: TEST_WALLET_ADDRESS,
+            },
+          },
+        });
+
+        // Try to dispatch fulfilled with a different worldName
+        store.dispatch({
+          type: fetchParcelsPermission.fulfilled.type,
+          payload: {
+            walletAddress: TEST_WALLET_ADDRESS,
+            parcels: { parcels: ['0,0', '1,1', '2,2'] },
+          },
+          meta: {
+            arg: {
+              worldName: 'different-world',
+              permissionName: 'deployment',
+              walletAddress: TEST_WALLET_ADDRESS,
+            },
+          },
+        });
+
+        const state = store.getState().management;
+        // worldName should still be the original one
+        expect(state.worldPermissions.worldName).toBe(TEST_WORLD_NAME);
+        // Parcels should still be in loading state (from pending action)
+        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.status).toBe('loading');
+        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.parcels).toEqual([]);
+      });
+
+      it('should not update parcels when worldName does not match on rejected', () => {
+        // Set up initial state with one worldName
+        store.dispatch({
+          type: fetchParcelsPermission.pending.type,
+          meta: {
+            arg: {
+              worldName: TEST_WORLD_NAME,
+              permissionName: 'deployment',
+              walletAddress: TEST_WALLET_ADDRESS,
+            },
+          },
+        });
+
+        // Try to dispatch rejected with a different worldName
+        store.dispatch({
+          type: fetchParcelsPermission.rejected.type,
+          error: { message: 'Failed to fetch parcels' },
+          meta: {
+            arg: {
+              worldName: 'different-world',
+              permissionName: 'deployment',
+              walletAddress: TEST_WALLET_ADDRESS,
+            },
+          },
+        });
+
+        const state = store.getState().management;
+        // worldName should still be the original one
+        expect(state.worldPermissions.worldName).toBe(TEST_WORLD_NAME);
+        // Parcels should still be in loading state (should not be set to failed)
+        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.status).toBe('loading');
+      });
+
+      it('should update parcels to failed when worldName matches on rejected', () => {
+        // Set up initial state
+        store.dispatch({
+          type: fetchParcelsPermission.pending.type,
+          meta: {
+            arg: {
+              worldName: TEST_WORLD_NAME,
+              permissionName: 'deployment',
+              walletAddress: TEST_WALLET_ADDRESS,
+            },
+          },
+        });
+
+        // Dispatch rejected with matching worldName
+        store.dispatch({
+          type: fetchParcelsPermission.rejected.type,
+          error: { message: 'Failed to fetch parcels' },
+          meta: {
+            arg: {
+              worldName: TEST_WORLD_NAME,
+              permissionName: 'deployment',
+              walletAddress: TEST_WALLET_ADDRESS,
+            },
+          },
+        });
+
+        const state = store.getState().management;
+        expect(state.worldPermissions.worldName).toBe(TEST_WORLD_NAME);
+        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.status).toBe('failed');
+      });
+    });
   });
 
   describe('unpublishWorldScene', () => {
@@ -1037,6 +1179,18 @@ describe('management slice', () => {
     });
 
     it('should return parcels state for specific address', () => {
+      // Dispatch pending first to set the worldName
+      store.dispatch({
+        type: fetchParcelsPermission.pending.type,
+        meta: {
+          arg: {
+            worldName: TEST_WORLD_NAME,
+            permissionName: 'deployment',
+            walletAddress: TEST_WALLET_ADDRESS,
+          },
+        },
+      });
+
       store.dispatch({
         type: fetchParcelsPermission.fulfilled.type,
         payload: {
