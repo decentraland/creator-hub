@@ -363,6 +363,11 @@
           "label": "Misc."
         }
       },
+      "discard_confirmation": "You have unsaved changes. Save before leaving?",
+      "actions": {
+        "save": "Save changes",
+        "discard": "Discard"
+      },
       "general": {
         "world_spawn_coordinate": "World Spawn Coordinate",
         "position": "Position",
@@ -530,6 +535,7 @@
       "url_copied": "URL copied to clipboard",
       "fetch_managed_projects_failed": "Failed to fetch managed projects",
       "fetch_world_settings_failed": "Failed to fetch world settings. Please try again.",
+      "update_world_settings_failed": "Failed to update world settings. Please try again.",
       "fetch_ens_list_failed": "Failed to fetch your NAMEs list",
       "fetch_land_list_failed": "Failed to fetch your LANDs list",
       "fetch_world_permissions_failed": "Failed to fetch world permissions. Please try again.",

@@ -363,6 +363,11 @@
           "label": "Varios"
         }
       },
+      "discard_confirmation": "Tienes cambios sin guardar. ¿Guardar antes de salir?",
+      "actions": {
+        "save": "Guardar",
+        "discard": "Descartar"
+      },
       "general": {
         "world_spawn_coordinate": "Coordenada de Aparición del Mundo",
         "position": "Posición",
@@ -530,6 +535,7 @@
       "url_copied": "URL copiada al portapapeles",
       "fetch_managed_projects_failed": "Error al cargar los proyectos gestionados",
       "fetch_world_settings_failed": "Error al cargar la configuración del mundo. Por favor, inténtalo de nuevo.",
+      "update_world_settings_failed": "Error al actualizar la configuración del mundo. Por favor, inténtalo de nuevo.",
       "fetch_ens_list_failed": "Error al cargar tu lista de Nombres",
       "fetch_land_list_failed": "Error al cargar tu lista de Tierras",
       "fetch_world_permissions_failed": "Error al cargar los permisos del mundo. Por favor, inténtalo de nuevo.",
