@@ -1,9 +1,6 @@
 # Decentraland Creator Hub
 
-[![Release](https://img.shields.io/github/v/release/decentraland/creator-hub?include_prereleases)](https://github.com/decentraland/creator-hub/releases)
-[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey.svg)]()
-[![Downloads](https://img.shields.io/github/downloads/decentraland/creator-hub/total.svg)](https://github.com/decentraland/creator-hub/releases)
-[![CI Status](https://github.com/decentraland/creator-hub/workflows/Creator%20Hub/badge.svg)](https://github.com/decentraland/creator-hub/actions/workflows/creator-hub.yml)
+[![Release](https://img.shields.io/github/v/release/decentraland/creator-hub?include_prereleases)](https://github.com/decentraland/creator-hub/releases) [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey.svg)]() [![Downloads](https://img.shields.io/github/downloads/decentraland/creator-hub/total.svg)](https://github.com/decentraland/creator-hub/releases) [![CI Status](https://github.com/decentraland/creator-hub/workflows/Creator%20Hub/badge.svg)](https://github.com/decentraland/creator-hub/actions/workflows/creator-hub.yml)
 
 Decentraland Creator Hub is an Electron-based application designed for creating, editing, and deploying Decentraland scenes. This application is distributed for both Windows and MacOS, supporting both x64 and ARM architectures.
 
@@ -106,6 +103,22 @@ On MacOS:
 ```bash
 tail -f ~/Library/Logs/creator-hub/main.log
 ```
+
+### Application environment
+
+Production builds default to the production environment (`decentraland.org` APIs). For testing against development environment (`decentraland.zone`), you can override this behavior using local storage.
+
+**Switch to Development Environment:**
+
+1. Open the Creator Hub application
+2. Open DevTools (View → Toggle Developer Tools)
+3. Go to the `Application` tab in DevTools. Under `Storage`, select `Local Storage` and then the entry for the Creator Hub
+4. Add a new key-value pair:
+   - Key: `DCL_ENV_OVERRIDE`
+   - Value: `dev`
+5. Refresh the application (Ctrl+R or Cmd+R)
+
+The app will now use development environment APIs (`decentraland.zone`). To **switch back to Production** just remove the variable or set it to `prod`. This setting will persist across app restarts until changed again.
 
 ## Installation Process
 
