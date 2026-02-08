@@ -91,7 +91,12 @@ const GeneralTab: React.FC<Props> = ({ worldSettings, onChangeSettings }) => {
       <FormGroup>
         <TitleDivider title={t('modal.world_settings.general.general')} />
         <FormControlLabel
-          control={<Checkbox />}
+          control={
+            <Checkbox
+              checked={worldSettings.singlePlayer || false}
+              onChange={e => onChangeSettings({ singlePlayer: e.target.checked })}
+            />
+          }
           label={t('modal.world_settings.general.single_player')}
         />
       </FormGroup>

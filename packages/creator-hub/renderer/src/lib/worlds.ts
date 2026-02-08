@@ -278,9 +278,24 @@ export class Worlds {
     return null;
   }
 
-  public async fetchWorldScenes(worldName: string) {
+  public async fetchWorldScenes(
+    worldName: string,
+    params?: {
+      limit?: number;
+      offset?: number;
+      x1?: number;
+      x2?: number;
+      y1?: number;
+      y2?: number;
+    },
+  ) {
     try {
-      const result = await fetch(`${this.url}/world/${worldName}/scenes`);
+      const urlParams = new URLSearchParams(
+        Object.entries(params || {})
+          .filter(([_, value]) => value !== undefined && value !== null)
+          .map(([key, value]) => [key, value?.toString()]),
+      );
+      const result = await fetch(`${this.url}/world/${worldName}/scenes?${urlParams.toString()}`);
       if (result.ok) {
         const json = await result.json();
         return json as WorldScenes;
@@ -294,19 +309,8 @@ export class Worlds {
     return null;
   }
 
-  public async fetchWorldSettings(
-    worldName: string,
-    limit: number = 100,
-    offset: number = 0,
-    coordinates: string[] = [],
-  ) {
-    const urlParams = new URLSearchParams({
-      limit: limit.toString(),
-      offset: offset.toString(),
-      coordinates: coordinates.toString(),
-    });
-
-    const result = await fetch(`${this.url}/world/${worldName}/settings?${urlParams.toString()}`);
+  public async fetchWorldSettings(worldName: string) {
+    const result = await fetch(`${this.url}/world/${worldName}/settings`);
     if (result.ok) {
       const json = await result.json();
       return fromSnakeToCamel(json) as WorldSettings;

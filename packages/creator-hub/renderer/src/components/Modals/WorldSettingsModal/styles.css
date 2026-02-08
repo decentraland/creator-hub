@@ -5,3 +5,32 @@
 .WorldSettingsModal .Loader {
   height: 100%;
 }
+
+.WorldSettingsModal .TabsModalContent {
+  display: flex;
+  flex-direction: column;
+}
+
+.WorldSettingsModal .ActionsContainer {
+  position: sticky;
+  bottom: 8px;
+  margin: auto 0 8px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  background-color: var(--black);
+  border-radius: 8px;
+}
+
+.WorldSettingsModal .ActionsContainer .UnsavedChangesText {
+  color: var(--text-on-secondary);
+  margin-right: auto;
+}
+
+.WorldSettingsModal .ActionsContainer .MuiButton-root {
+  width: max-content;
+  margin: 0;
+  flex-shrink: 0;
+  min-width: 5rem;
+}

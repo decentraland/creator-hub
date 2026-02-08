@@ -111,7 +111,7 @@ const DetailsTab: React.FC<Props> = React.memo(({ worldSettings, onChangeSetting
         className="ColBig"
       >
         <TextField
-          value={worldSettings.title}
+          value={worldSettings.title || ''}
           onChange={e => onChangeSettings({ title: e.target.value })}
         />
       </InputLabel>
@@ -122,7 +122,7 @@ const DetailsTab: React.FC<Props> = React.memo(({ worldSettings, onChangeSetting
         <TextField
           rows={4}
           multiline
-          value={worldSettings.description}
+          value={worldSettings.description || ''}
           onChange={e => onChangeSettings({ description: e.target.value })}
         />
       </InputLabel>
@@ -146,7 +146,6 @@ const DetailsTab: React.FC<Props> = React.memo(({ worldSettings, onChangeSetting
           component="label"
           variant="contained"
           color="secondary"
-          onClick={() => onChangeSettings({ thumbnailUrl: '' })}
           startIcon={<FolderIcon />}
         >
           {worldSettings.thumbnailUrl
@@ -166,7 +165,7 @@ const DetailsTab: React.FC<Props> = React.memo(({ worldSettings, onChangeSetting
         className="ColHalf"
       >
         <Select
-          value={worldSettings.contentRating}
+          value={worldSettings.contentRating || ''}
           onChange={e => onChangeSettings({ contentRating: e.target.value as SceneAgeRating })}
         >
           {AGE_RATING_OPTIONS.map(option => (

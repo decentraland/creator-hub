@@ -258,6 +258,17 @@ export const slice = createSlice({
           }),
         );
       })
+      .addCase(managementActions.updateWorldSettings.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'updateWorldSettings',
+        );
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.update_world_settings_failed'), {
+            duration: 5000,
+            requestId: 'updateWorldSettings',
+          }),
+        );
+      })
       .addCase(managementActions.fetchWorldScenes.rejected, state => {
         state.notifications = state.notifications.filter($ => $.requestId !== 'fetchWorldScenes');
         state.notifications.push(

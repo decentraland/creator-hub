@@ -213,13 +213,6 @@ describe('management slice', () => {
       expect(state.searchQuery).toBe(testQuery);
     });
 
-    it('should merge new settings with existing settings', () => {
-      const newSettings = { name: 'Updated World', description: 'Updated description' };
-      store.dispatch(actions.updateWorldSettings(newSettings));
-      const state = store.getState().management;
-      expect(state.worldSettings.settings).toMatchObject(newSettings);
-    });
-
     it('should clear error', () => {
       store.dispatch({
         type: fetchManagedProjects.rejected.type,

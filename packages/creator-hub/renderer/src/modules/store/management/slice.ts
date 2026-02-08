@@ -234,6 +234,25 @@ export const fetchWorldSettings = createAsyncThunk(
   },
 );
 
+export const updateWorldSettings = createAsyncThunk(
+  'management/updateWorldSettings',
+  async (
+    { worldName, worldSettings }: { worldName: string; worldSettings: Partial<WorldSettings> },
+    { dispatch },
+  ) => {
+    const connectedAccount = AuthServerProvider.getAccount();
+    if (!connectedAccount) throw new Error('No connected account found');
+
+    const WorldsAPI = new Worlds();
+    const success = await WorldsAPI.putWorldSettings(connectedAccount, worldName, worldSettings);
+    if (success) {
+      await dispatch(fetchWorldSettings({ worldName })).unwrap();
+    } else {
+      throw new Error('Failed to update world settings');
+    }
+  },
+);
+
 export const fetchWorldScenes = createAsyncThunk(
   'management/fetchWorldScenes',
   async ({ worldName }: { worldName: string }) => {
@@ -414,12 +433,6 @@ const slice = createSlice({
     setSearchQuery: (state, action: PayloadAction<string>) => {
       state.searchQuery = action.payload;
     },
-    updateWorldSettings: (state, action: PayloadAction<Partial<WorldSettings>>) => {
-      state.worldSettings.settings = {
-        ...(state.worldSettings.settings ?? {}),
-        ...action.payload,
-      } as WorldSettings;
-    },
     clearError: state => {
       state.error = null;
     },
@@ -454,8 +467,10 @@ const slice = createSlice({
         state.worldSettings.scenes = action.payload;
       })
       .addCase(fetchWorldSettings.pending, (state, action) => {
+        if (state.worldSettings.worldName !== action.meta.arg.worldName) {
+          state.worldSettings.settings = {} as WorldSettings;
+        }
         state.worldSettings.worldName = action.meta.arg.worldName;
-        state.worldSettings.settings = {} as WorldSettings;
         state.worldSettings.status = 'loading';
         state.worldSettings.error = null;
       })
@@ -463,6 +478,10 @@ const slice = createSlice({
         state.worldSettings.settings = action.payload ?? {};
         state.worldSettings.status = 'succeeded';
         state.worldSettings.error = null;
+      })
+      .addCase(updateWorldSettings.rejected, (state, action) => {
+        state.worldSettings.status = 'failed';
+        state.worldSettings.error = action.error.message || 'Failed to save world settings';
       })
       .addCase(fetchWorldSettings.rejected, (state, action) => {
         state.worldSettings.status = 'failed';
@@ -563,6 +582,7 @@ export const actions = {
   fetchAllManagedProjectsDetails,
   fetchManagedProjects,
   fetchWorldSettings,
+  updateWorldSettings,
   fetchStorageStats,
   fetchAccountHoldings,
   fetchWorldScenes,

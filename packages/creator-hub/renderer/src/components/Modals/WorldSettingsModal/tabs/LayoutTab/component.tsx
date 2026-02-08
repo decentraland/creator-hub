@@ -25,7 +25,6 @@ enum LayoutView {
 type Props = {
   worldScenes: WorldScene[];
   worldSettings: WorldSettings;
-  onChangeSettings: (_settings: Partial<WorldSettings>) => void;
 };
 
 const InfoItem = ({ icon, label }: { icon: React.ReactNode; label: string }) => {
