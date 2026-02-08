@@ -91,6 +91,9 @@ export function Deploy(props: Props) {
           }),
         ).unwrap();
         setUndeployStatus('complete');
+        dispatch(
+          managementActions.fetchWorldScenes({ worldName: project.worldConfiguration.name }),
+        );
       } catch {
         setUndeployStatus('failed');
         return; // Stop here if undeploy fails
@@ -211,6 +214,9 @@ export function Deploy(props: Props) {
     return stepsList;
   }, [deployment?.componentsStatus, getStepDescription, needsUndeploy, undeployStatus, isWorld]);
 
+  const hasError =
+    publishError || !deployment || deployment.status === 'failed' || undeployStatus === 'failed';
+
   return (
     <PublishModal
       title={title}
@@ -268,37 +274,14 @@ export function Deploy(props: Props) {
             project={project}
             className="scene"
           >
-            {undeployStatus === 'pending' ? (
-              <div className="Deploying">
-                <div className="header">
-                  <Loader />
-                  <Typography variant="h5">
-                    {t('modal.publish_project.deploy.deploying.publish')}
-                  </Typography>
-                </div>
-                <ConnectedSteps steps={steps} />
-                <div className="info">
-                  <InfoOutlinedIcon />
-                  {t('modal.publish_project.deploy.deploying.info')}
-                </div>
-              </div>
-            ) : undeployStatus === 'failed' ? (
-              <Error
-                errorMessage={t('modal.publish_project.deploy.deploying.step.failed')}
-                errorType="deployment_error"
-                steps={steps}
-                onRetry={handleDeployRetry}
-                onReportIssue={handleReportIssue}
-                goToSignIn={handleGoToSignIn}
-              />
-            ) : loadingPublish ? (
+            {loadingPublish ? (
               <div className="header Loading">
                 <Loader />
                 <Typography variant="h5">
                   {t('modal.publish_project.deploy.deploying.publish')}
                 </Typography>
               </div>
-            ) : publishError || !deployment || deployment.status === 'failed' ? (
+            ) : hasError ? (
               <Error
                 errorMessage={deployment?.error?.message}
                 errorCause={publishError || deployment?.error?.cause}
