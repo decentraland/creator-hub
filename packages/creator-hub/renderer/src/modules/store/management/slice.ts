@@ -487,6 +487,9 @@ const slice = createSlice({
       .addCase(fetchAccountHoldings.fulfilled, (state, action) => {
         state.accountHoldings = action.payload;
       })
+      .addCase(fetchWorldScenes.pending, (state, action) => {
+        state.worldSettings.worldName = action.meta.arg.worldName;
+      })
       .addCase(fetchWorldScenes.fulfilled, (state, action) => {
         if (action.meta.arg.worldName !== state.worldSettings.worldName) return;
         state.worldSettings.scenes = action.payload;
@@ -563,7 +566,7 @@ const slice = createSlice({
         };
       })
       .addCase(fetchParcelsPermission.fulfilled, (state, action) => {
-        if (action.meta.arg.worldName !== state.worldSettings.worldName) return;
+        if (action.meta.arg.worldName !== state.worldPermissions.worldName) return;
         const { walletAddress, parcels } = action.payload;
         state.worldPermissions.parcels[walletAddress] = {
           parcels: parcels?.parcels || [],
@@ -571,7 +574,7 @@ const slice = createSlice({
         };
       })
       .addCase(fetchParcelsPermission.rejected, (state, action) => {
-        if (action.meta.arg.worldName !== state.worldSettings.worldName) return;
+        if (action.meta.arg.worldName !== state.worldPermissions.worldName) return;
         const { walletAddress } = action.meta.arg;
         if (state.worldPermissions.parcels[walletAddress]) {
           state.worldPermissions.parcels[walletAddress].status = 'failed';

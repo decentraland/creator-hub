@@ -75,7 +75,7 @@ const WorldAtlas: React.FC<Props> = React.memo(
         isWithinWorldBounds(x, y)
           ? { color: colors.availableParcel }
           : { color: colors.unavailableParcel },
-      [isWithinWorldBounds],
+      [isWithinWorldBounds, colors],
     );
 
     const worldLayer = useCallback(
@@ -88,7 +88,7 @@ const WorldAtlas: React.FC<Props> = React.memo(
           ? { color: colors.worldParcel }
           : null;
       },
-      [dimensions],
+      [dimensions, colors],
     );
 
     const scenesLayer = useCallback(
@@ -96,7 +96,7 @@ const WorldAtlas: React.FC<Props> = React.memo(
         const key = coordsToId(x, y);
         return sceneParcelsSet.has(key) ? { color: colors.sceneParcel } : null;
       },
-      [sceneParcelsSet],
+      [sceneParcelsSet, colors],
     );
 
     return (

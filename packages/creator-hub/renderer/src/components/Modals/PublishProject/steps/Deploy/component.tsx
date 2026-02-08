@@ -226,7 +226,7 @@ export function Deploy(props: Props) {
               <div className="Warning" />
               <div className="message">
                 {t(
-                  isReplacingWorldContent
+                  isReplacingWorldContent || needsUndeploy
                     ? 'modal.publish_project.deploy.warning.message_replacing_world_content'
                     : 'modal.publish_project.deploy.warning.message_basic',
                   {

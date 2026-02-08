@@ -248,7 +248,7 @@ function SelectWorld({
     const { width, height } = getWorldDimensions(worldSettings.scenes || []);
     return width !== 0 && height !== 0
       ? formatWorldSize({ width, height })
-      : formatWorldSize({ width: project.layout.rows, height: project.layout.cols });
+      : formatWorldSize({ width: project.layout.cols, height: project.layout.rows });
   }, [worldSettings.scenes]);
 
   const listNames = useMemo(() => {
