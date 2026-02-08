@@ -49,10 +49,7 @@ const WorldAtlas: React.FC<Props> = React.memo(
     const centerX = Math.floor((dimensions.minX + dimensions.maxX) / 2);
     const centerY = Math.floor((dimensions.minY + dimensions.maxY) / 2);
 
-    const colors = useMemo(
-      () => (colorsOverride ? { ...WorldAtlasColors, ...colorsOverride } : WorldAtlasColors),
-      [colorsOverride],
-    );
+    const colors = useMemo(() => ({ ...WorldAtlasColors, ...colorsOverride }), [colorsOverride]);
 
     const sceneParcelsSet = useMemo(
       () => new Set(worldScenes.flatMap(scene => scene.parcels ?? [])),
@@ -71,10 +68,9 @@ const WorldAtlas: React.FC<Props> = React.memo(
     );
 
     const emptyParcelLayer = useCallback(
-      (x: number, y: number) =>
-        isWithinWorldBounds(x, y)
-          ? { color: colors.availableParcel }
-          : { color: colors.unavailableParcel },
+      (x: number, y: number) => ({
+        color: isWithinWorldBounds(x, y) ? colors.availableParcel : colors.unavailableParcel,
+      }),
       [isWithinWorldBounds, colors],
     );
 

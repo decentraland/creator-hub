@@ -492,7 +492,7 @@ const slice = createSlice({
       })
       .addCase(fetchWorldScenes.fulfilled, (state, action) => {
         if (action.meta.arg.worldName !== state.worldSettings.worldName) return;
-        state.worldSettings.scenes = action.payload;
+        state.worldSettings.scenes = action.payload ?? [];
       })
       .addCase(fetchWorldSettings.pending, (state, action) => {
         state.worldSettings.worldName = action.meta.arg.worldName;

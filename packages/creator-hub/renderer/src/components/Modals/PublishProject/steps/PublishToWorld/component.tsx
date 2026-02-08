@@ -68,7 +68,11 @@ export function PublishToWorld(props: Props) {
   const { wallet } = useAuth();
   const dispatch = useDispatch();
   const names = useSelector(state => state.ens.data);
-  const [name, setName] = useState('');
+  const [name, setName] = useState(() => {
+    // Restore the previously selected world name if it exists and it's available on the list.
+    const prevName = project?.worldConfiguration?.name;
+    return prevName && names[prevName] ? prevName : '';
+  });
   const [isMultiSceneEnabled, setIsMultiSceneEnabled] = useState<boolean>(false);
   const worldSettings = useSelector(managementSelectors.getWorldSettings);
   const worldPermissions = useSelector(state =>
@@ -134,15 +138,21 @@ export function PublishToWorld(props: Props) {
     [isMultiSceneEnabled, props.onStep, publishScene, handleUpdateProject],
   );
 
-  const handleSelectLocation = useCallback(async (projectUpdates: Partial<Project>) => {
-    if (projectUpdates) await handleUpdateProject(projectUpdates);
-    setStep(Step.LOCATION);
-  }, []);
+  const handleSelectLocation = useCallback(
+    async (projectUpdates: Partial<Project>) => {
+      if (projectUpdates) await handleUpdateProject(projectUpdates);
+      setStep(Step.LOCATION);
+    },
+    [handleUpdateProject],
+  );
 
-  const handleShowConfirmation = useCallback(async (projectUpdates: Partial<Project>) => {
-    if (projectUpdates) await handleUpdateProject(projectUpdates);
-    setStep(Step.CONFIRM_OVERWRITE);
-  }, []);
+  const handleShowConfirmation = useCallback(
+    async (projectUpdates: Partial<Project>) => {
+      if (projectUpdates) await handleUpdateProject(projectUpdates);
+      setStep(Step.CONFIRM_OVERWRITE);
+    },
+    [handleUpdateProject],
+  );
 
   useEffect(() => {
     // Initialize the name and world settings when the project is loaded
@@ -316,7 +326,7 @@ function SelectWorld({
       };
       onPublish({ worldConfiguration, scene });
     }
-  }, [isMultiSceneEnabled, worldSettings.scenes.length, onPublish, onSelectLocation]);
+  }, [project, name, isMultiSceneEnabled, worldSettings.scenes, onPublish, onSelectLocation]);
 
   // TODO: handle failed state...
   const projectIsReady = project.status === 'succeeded';
@@ -669,7 +679,7 @@ function SelectLocation({
     } else {
       onPublish({ scene });
     }
-  }, [placement, onPublish]);
+  }, [placement, placedProjectParcels, isOverlappingScenes, onShowConfirmation, onPublish]);
 
   return (
     <div className="SelectLocation">

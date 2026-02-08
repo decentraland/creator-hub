@@ -73,7 +73,7 @@ export function Deploy(props: Props) {
   const isReplacingWorldContent: boolean = useMemo(() => {
     if (!isWorld) return false;
     const projectParcels = project.scene.parcels;
-    const worldScenesParcels = worldScenes?.map(scene => scene.parcels).flat();
+    const worldScenesParcels = worldScenes.map(scene => scene.parcels).flat();
     return projectParcels.some(parcel => worldScenesParcels.includes(parcel));
   }, [isWorld, worldScenes, project.scene.parcels]);
 
@@ -209,7 +209,7 @@ export function Deploy(props: Props) {
     }
 
     return stepsList;
-  }, [deployment?.componentsStatus, getStepDescription, needsUndeploy, undeployStatus]);
+  }, [deployment?.componentsStatus, getStepDescription, needsUndeploy, undeployStatus, isWorld]);
 
   return (
     <PublishModal
