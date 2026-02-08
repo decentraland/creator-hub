@@ -1,18 +1,16 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import LayersIcon from '@mui/icons-material/Layers';
 import MapIcon from '@mui/icons-material/GridOn';
 import LocationIcon from '@mui/icons-material/LocationOn';
 import ParcelsIcon from '@mui/icons-material/GridViewRounded';
 import ArrowBackIcon from '@mui/icons-material/ArrowBackRounded';
-import { Box, Switch, Typography } from 'decentraland-ui2';
+import { Box, Typography } from 'decentraland-ui2';
 import type { WorldScene, WorldSettings } from '/@/lib/worlds';
 import type { Coords } from '/@/lib/land';
 import { idToCoords } from '/@/lib/land';
 import { t } from '/@/modules/store/translation/utils';
 import { formatWorldSize, getWorldDimensions, MAX_COORDINATE } from '/@/modules/world';
 import type { Option } from '/@/components/Dropdown';
-import { Dropdown } from '/@/components/Dropdown';
 import { Button } from '/@/components/Button';
 import { Row } from '/@/components/Row';
 import { WorldAtlas } from '/@/components/WorldAtlas';
@@ -45,13 +43,8 @@ const WorldScenesView: React.FC<{
   worldScenes: WorldScene[];
   onViewLayout: () => void;
 }> = React.memo(({ worldSettings, worldScenes, onViewLayout }) => {
-  const [multiSceneEnabled, setMultiSceneEnabled] = useState(true);
+  // const [multiSceneEnabled, setMultiSceneEnabled] = useState(true);
   const hasScenes = worldScenes && worldScenes.length > 0;
-  const navigate = useNavigate();
-
-  const handleViewScenes = useCallback(() => {
-    navigate('/scenes');
-  }, [navigate]);
 
   const getBaseParcel = useCallback((parcels: string[]): Coords | null => {
     if (!parcels?.length) return null;
@@ -73,7 +66,7 @@ const WorldScenesView: React.FC<{
     // TODO: Implement unpublish scene in future PR.
   }, []);
 
-  const getDropdownOptions = useCallback(
+  const _getDropdownOptions = useCallback(
     (scene: WorldScene): Option[] => [
       {
         text: t('modal.world_settings.layout.actions.edit_scene'),
@@ -105,10 +98,11 @@ const WorldScenesView: React.FC<{
             {t('modal.world_settings.layout.multi_scene_description')}
           </Typography>
         </Box>
-        <Switch
+        {/* TODO: implement functionality on future PR */}
+        {/* <Switch
           checked={multiSceneEnabled}
           onChange={event => setMultiSceneEnabled(event.target.checked)}
-        />
+        /> */}
       </Box>
 
       {!hasScenes ? (
@@ -120,13 +114,6 @@ const WorldScenesView: React.FC<{
           >
             {t('modal.world_settings.layout.empty_world.description')}
           </Typography>
-          <Button
-            variant="contained"
-            color="secondary"
-            onClick={handleViewScenes}
-          >
-            {t('modal.world_settings.layout.empty_world.view_scenes')}
-          </Button>
         </Box>
       ) : (
         <>
@@ -201,7 +188,8 @@ const WorldScenesView: React.FC<{
                     />
                   </Box>
                 </Box>
-                <Dropdown options={getDropdownOptions(scene)} />
+                {/* TODO: implement functionality on future PR */}
+                {/* <Dropdown options={getDropdownOptions(scene)} /> */}
               </Box>
             ))}
           </Box>
