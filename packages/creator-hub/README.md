@@ -106,19 +106,21 @@ tail -f ~/Library/Logs/creator-hub/main.log
 
 ### Application environment
 
-Production builds default to the production environment (`decentraland.org` APIs). For testing against development environment (`decentraland.zone`), you can override this behavior using local storage.
+Production builds default to the production environment (`decentraland.org` APIs). For testing against development environment (`decentraland.zone`), you can override this behavior using a command-line argument.
 
 **Switch to Development Environment:**
 
-1. Open the Creator Hub application
-2. Open DevTools (View → Toggle Developer Tools)
-3. Go to the `Application` tab in DevTools. Under `Storage`, select `Local Storage` and then the entry for the Creator Hub
-4. Add a new key-value pair:
-   - Key: `DCL_ENV_OVERRIDE`
-   - Value: `dev`
-5. Refresh the application (Ctrl+R or Cmd+R)
+Launch the application with the `--env` flag:
 
-The app will now use development environment APIs (`decentraland.zone`). To **switch back to Production** just remove the variable or set it to `prod`. This setting will persist across app restarts until changed again.
+```bash
+# Development environment
+./Decentraland\ Creator\ Hub.app/Contents/MacOS/Decentraland\ Creator\ Hub --env=dev
+
+# Production environment
+./Decentraland\ Creator\ Hub.app/Contents/MacOS/Decentraland\ Creator\ Hub --env=prod
+```
+
+The app will use the specified environment APIs. If no `--env` argument is provided, the app will use the default environment based on the build type (dev builds use development, production builds use production).
 
 ## Installation Process
 
