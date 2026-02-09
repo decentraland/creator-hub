@@ -131,6 +131,28 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
       [worldName, worldOwnerAddress, worldPermissions],
     );
 
+    const handleAddAccessToCommunity = useCallback(
+      (communityId: string) => {
+        if (worldPermissions?.access.type !== WorldPermissionType.AllowList) return;
+        const currentCommunities = worldPermissions.access.communities ?? [];
+        if (currentCommunities.includes(communityId)) return;
+        withUpdating(
+          dispatch(
+            updateWorldPermissions({
+              worldName,
+              worldPermissionName: WorldPermissionName.Access,
+              worldPermissionType: WorldPermissionType.AllowList,
+              options: {
+                wallets: worldPermissions.access.wallets,
+                communities: [...currentCommunities, communityId],
+              },
+            }),
+          ),
+        );
+      },
+      [worldName, worldPermissions],
+    );
+
     const handleRemoveAccessFromAddress = useCallback(
       (walletAddress: string) => {
         if (
@@ -307,6 +329,7 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
                   isLoadingNewUser={isLoadingNewUser}
                   onChangeAccessType={handleChangeAccessType}
                   onAddAccessToAddress={handleAddAccessToAddress}
+                  onAddAccessToCommunity={handleAddAccessToCommunity}
                   onRemoveAccessFromAddress={handleRemoveAccessFromAddress}
                   onClearAccessList={handleClearAccessList}
                   onSetAccessPassword={handleSetAccessPassword}

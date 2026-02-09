@@ -466,6 +466,10 @@
         "confirm": "确认",
         "cancel": "取消",
         "wrong_address_format": "地址格式错误",
+        "community_search_placeholder": "搜索社区...",
+        "community_searching": "搜索中...",
+        "community_no_results": "未找到社区",
+        "community_members": "{count} 成员",
         "invite_tabs": {
           "wallet_address": "钱包地址",
           "community": "社区",

@@ -27,6 +27,7 @@ type Props = {
   isLoadingPassword?: boolean;
   onChangeAccessType: (accessType: WorldPermissionType) => void;
   onAddAccessToAddress: (address: string) => void;
+  onAddAccessToCommunity: (communityId: string) => void;
   onRemoveAccessFromAddress: (address: string) => void;
   onClearAccessList: () => void;
   onSetAccessPassword: (password: string) => void;
@@ -87,6 +88,7 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
     isLoadingPassword = false,
     onChangeAccessType,
     onAddAccessToAddress,
+    onAddAccessToCommunity,
     onRemoveAccessFromAddress,
     onClearAccessList,
     onSetAccessPassword,
@@ -141,6 +143,14 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
     [onAddAccessToAddress],
   );
 
+  const handleAddCommunity = useCallback(
+    (communityId: string) => {
+      onAddAccessToCommunity(communityId);
+      setShowInviteForm(false);
+    },
+    [onAddAccessToCommunity],
+  );
+
   const apiWallets =
     worldAccessPermissions.type === WorldPermissionType.AllowList
       ? worldAccessPermissions.wallets
@@ -180,6 +190,7 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
       <Box className="WorldAccessTab CenteredContent">
         <WorldPermissionsAddUserForm
           onSubmitAddress={handleAddAddress}
+          onSubmitCommunity={handleAddCommunity}
           onCancel={handleHideInviteForm}
         />
       </Box>

@@ -466,6 +466,10 @@
         "confirm": "Confirmar",
         "cancel": "Cancelar",
         "wrong_address_format": "Formato de dirección incorrecto",
+        "community_search_placeholder": "Buscar una comunidad...",
+        "community_searching": "Buscando...",
+        "community_no_results": "No se encontraron comunidades",
+        "community_members": "{count} Miembros",
         "invite_tabs": {
           "wallet_address": "Dirección de Wallet",
           "community": "Comunidad",

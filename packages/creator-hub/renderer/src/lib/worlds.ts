@@ -209,6 +209,7 @@ export type UnrestrictedPermissionSetting = {
 export type AllowListPermissionSetting = {
   type: WorldPermissionType.AllowList;
   wallets: string[];
+  communities?: string[];
 };
 
 export type SharedSecretPermissionSetting = {
