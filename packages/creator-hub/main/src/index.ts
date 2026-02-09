@@ -10,8 +10,9 @@ import { deployServer, killAllPreviews } from '/@/modules/cli';
 import { killInspectorServer } from '/@/modules/inspector';
 import { runMigrations } from '/@/modules/migrations';
 import { getAnalytics, track } from './modules/analytics';
-import { tryOpenDevToolsOnPort } from './modules/app-args-handle';
+import { tryOpenDevToolsOnPort, parseEnvArgument } from './modules/app-args-handle';
 import { addEditorsPathsToConfig } from './modules/code';
+import { setEnvOverride } from './modules/electron';
 
 import '/@/security-restrictions';
 
@@ -60,6 +61,11 @@ app
   .then(async () => {
     await runMigrations();
     log.info(`[App] Ready v${app.getVersion()}`);
+
+    const envOverride = parseEnvArgument(process.argv);
+    setEnvOverride(envOverride);
+    log.info(`[App] Environment override: ${envOverride || 'none'}`);
+
     initIpc();
     log.info('[IPC] Ready');
     await restoreOrCreateMainWindow();
