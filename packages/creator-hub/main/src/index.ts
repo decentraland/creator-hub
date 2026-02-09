@@ -34,7 +34,6 @@ if (!isSingleInstance) {
 }
 app.on('second-instance', async (_e: unknown, argv: string[]) => {
   await restoreOrCreateMainWindow();
-
   tryOpenDevToolsOnPort(argv);
 });
 
