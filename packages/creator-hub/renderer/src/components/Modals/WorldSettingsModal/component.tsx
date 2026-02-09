@@ -71,7 +71,7 @@ const WorldSettingsModal: React.FC<Props> = React.memo(
         className="WorldSettingsModal"
         icon={<WorldSettingsIcon />}
       >
-        {isLoading ? (
+        {isLoading && !hasChanges ? (
           <Loader size={40} />
         ) : (
           <>

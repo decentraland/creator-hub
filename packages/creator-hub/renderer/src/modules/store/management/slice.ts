@@ -238,18 +238,19 @@ export const updateWorldSettings = createAsyncThunk(
   'management/updateWorldSettings',
   async (
     { worldName, worldSettings }: { worldName: string; worldSettings: Partial<WorldSettings> },
-    { dispatch },
+    { dispatch, rejectWithValue },
   ) => {
     const connectedAccount = AuthServerProvider.getAccount();
     if (!connectedAccount) throw new Error('No connected account found');
 
     const WorldsAPI = new Worlds();
-    const success = await WorldsAPI.putWorldSettings(connectedAccount, worldName, worldSettings);
-    if (success) {
-      await dispatch(fetchWorldSettings({ worldName })).unwrap();
-    } else {
-      throw new Error('Failed to update world settings');
-    }
+    const { success, error } = await WorldsAPI.putWorldSettings(
+      connectedAccount,
+      worldName,
+      worldSettings,
+    );
+    if (!success) return rejectWithValue({ message: error });
+    dispatch(fetchWorldSettings({ worldName }));
   },
 );
 

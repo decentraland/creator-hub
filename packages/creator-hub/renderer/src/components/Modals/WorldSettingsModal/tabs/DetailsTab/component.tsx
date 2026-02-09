@@ -96,7 +96,7 @@ const DetailsTab: React.FC<Props> = React.memo(({ worldSettings, onChangeSetting
       if (file) {
         const reader = new FileReader();
         reader.onload = event => {
-          onChangeSettings({ thumbnailUrl: event.target?.result as string });
+          onChangeSettings({ thumbnail: event.target?.result as string });
         };
         reader.readAsDataURL(file);
       }
@@ -130,10 +130,10 @@ const DetailsTab: React.FC<Props> = React.memo(({ worldSettings, onChangeSetting
       <Box className="ThumbnailContainer">
         <Typography>{t('modal.world_settings.details.thumbnail')}</Typography>
         <div className="ThumbnailBackground">
-          {worldSettings.thumbnailUrl ? (
+          {worldSettings.thumbnail ? (
             <img
               className="ThumbnailImage"
-              src={worldSettings.thumbnailUrl}
+              src={worldSettings.thumbnail}
               alt={t('modal.world_settings.details.thumbnail')}
             />
           ) : (
@@ -148,7 +148,7 @@ const DetailsTab: React.FC<Props> = React.memo(({ worldSettings, onChangeSetting
           color="secondary"
           startIcon={<FolderIcon />}
         >
-          {worldSettings.thumbnailUrl
+          {worldSettings.thumbnail
             ? t('modal.world_settings.details.replace_image')
             : t('modal.world_settings.details.set_image')}
           <input
@@ -187,7 +187,11 @@ const DetailsTab: React.FC<Props> = React.memo(({ worldSettings, onChangeSetting
           multiple
           maxSelected={3}
           value={worldSettings.categories || []}
-          onChange={e => onChangeSettings({ categories: e.target.value as SceneCategory[] })}
+          onChange={e =>
+            onChangeSettings({
+              categories: e.target.value.length ? (e.target.value as SceneCategory[]) : null,
+            })
+          }
         >
           {CATEGORIES_OPTIONS.map(option => (
             <MenuItem

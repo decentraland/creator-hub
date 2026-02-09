@@ -126,9 +126,10 @@ export type WorldScenes = {
 export type WorldSettings = {
   title?: string;
   description?: string;
-  thumbnailUrl?: string;
+  thumbnail?: string;
+  thumbnailHash?: string;
   contentRating?: SceneAgeRating;
-  categories?: SceneCategory[];
+  categories?: SceneCategory[] | null;
   spawnCoordinates?: string;
   skyboxTime?: number | null;
   singlePlayer?: boolean;
@@ -313,6 +314,9 @@ export class Worlds {
     const result = await fetch(`${this.url}/world/${worldName}/settings`);
     if (result.ok) {
       const json = await result.json();
+      if (json.thumbnail_hash) {
+        json.thumbnail = this.getContentSrcUrl(json.thumbnail_hash);
+      }
       return fromSnakeToCamel(json) as WorldSettings;
     } else {
       return null;
@@ -323,27 +327,36 @@ export class Worlds {
     address: string,
     worldName: string,
     settings: Partial<WorldSettings>,
-  ) {
+  ): Promise<{ success: boolean; error?: string }> {
     const formData = new FormData();
     const formattedSettings = fromCamelToSnake(settings);
 
-    Object.entries(formattedSettings).forEach(([key, value]) => {
-      if (value !== undefined) {
-        if (Array.isArray(value)) {
-          value.forEach(item => formData.append(key, String(item)));
-        } else {
-          formData.append(key, String(value));
-        }
+    for (const [key, value] of Object.entries(formattedSettings)) {
+      if (key === 'thumbnail' && typeof value === 'string' && value.startsWith('data:')) {
+        const blob = await fetch(value) // Convert base64 data URL to Blob for file upload
+          .then(res => res.blob())
+          .catch(() => 'null');
+        formData.append(key, blob);
+      } else if (Array.isArray(value)) {
+        value.forEach(item => formData.append(key, String(item)));
+      } else {
+        formData.append(key, String(value));
       }
-    });
+    }
 
     const result = await fetch(`${this.url}/world/${worldName}/settings`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'multipart/form-data' },
       identity: this.withIdentity(address),
       body: formData,
     });
-    return result.status === 204;
+
+    // Parse error from response body for 400 Bad Request
+    if (result.status === 400) {
+      const { error } = await result.json().catch(() => ({ error: '' }));
+      return { success: false, error };
+    }
+
+    return { success: result.status === 200 };
   }
 
   public async unpublishWorldScene(address: string, worldName: string, sceneCoords: string) {

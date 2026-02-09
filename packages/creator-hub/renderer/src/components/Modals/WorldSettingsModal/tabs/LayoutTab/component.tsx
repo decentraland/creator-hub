@@ -119,7 +119,7 @@ const WorldScenesView: React.FC<{
           <Box className="WorldInfo">
             <Box className="WorldThumbnail">
               <Image
-                src={worldSettings.thumbnailUrl || ''}
+                src={worldSettings.thumbnail || ''}
                 alt={worldSettings.title || ''}
                 fallbackSrc="/assets/images/scene-thumbnail-fallback.png"
               />

@@ -258,12 +258,14 @@ export const slice = createSlice({
           }),
         );
       })
-      .addCase(managementActions.updateWorldSettings.rejected, state => {
+      .addCase(managementActions.updateWorldSettings.rejected, (state, action) => {
         state.notifications = state.notifications.filter(
           $ => $.requestId !== 'updateWorldSettings',
         );
+        const errorMessage =
+          (action.payload as any)?.message || t('snackbar.generic.update_world_settings_failed');
         state.notifications.push(
-          createGenericNotification('error', t('snackbar.generic.update_world_settings_failed'), {
+          createGenericNotification('error', errorMessage, {
             duration: 5000,
             requestId: 'updateWorldSettings',
           }),
