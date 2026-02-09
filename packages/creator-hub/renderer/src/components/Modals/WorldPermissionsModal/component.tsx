@@ -15,6 +15,7 @@ import { useDispatch } from '#store';
 import { Loader } from '../../Loader';
 import { TabsModal, type Props as TabsModalProps } from '../TabsModal';
 import { WorldPermissionsAccessTab } from './tabs/WorldPermissionsAccessTab';
+import type { CsvData } from './WorldPermissionsAddUserForm';
 import { WorldPermissionsCollaboratorsTab } from './tabs/WorldPermissionsCollaboratorsTab';
 import { WorldPermissionsParcelsTab } from './tabs/WorldPermissionsParcelsTab';
 import './styles.css';
@@ -145,6 +146,34 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
               options: {
                 wallets: worldPermissions.access.wallets,
                 communities: [...currentCommunities, communityId],
+              },
+            }),
+          ),
+        );
+      },
+      [worldName, worldPermissions],
+    );
+
+    const handleSubmitCsvData = useCallback(
+      (data: CsvData) => {
+        if (worldPermissions?.access.type !== WorldPermissionType.AllowList) return;
+        const currentWallets = worldPermissions.access.wallets ?? [];
+        const currentCommunities = worldPermissions.access.communities ?? [];
+
+        const newWallets = data.addresses.filter(a => !currentWallets.includes(a));
+        const newCommunities = data.communityIds.filter(c => !currentCommunities.includes(c));
+
+        if (newWallets.length === 0 && newCommunities.length === 0) return;
+
+        withUpdating(
+          dispatch(
+            updateWorldPermissions({
+              worldName,
+              worldPermissionName: WorldPermissionName.Access,
+              worldPermissionType: WorldPermissionType.AllowList,
+              options: {
+                wallets: [...currentWallets, ...newWallets],
+                communities: [...currentCommunities, ...newCommunities],
               },
             }),
           ),
@@ -330,6 +359,7 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
                   onChangeAccessType={handleChangeAccessType}
                   onAddAccessToAddress={handleAddAccessToAddress}
                   onAddAccessToCommunity={handleAddAccessToCommunity}
+                  onSubmitCsv={handleSubmitCsvData}
                   onRemoveAccessFromAddress={handleRemoveAccessFromAddress}
                   onClearAccessList={handleClearAccessList}
                   onSetAccessPassword={handleSetAccessPassword}

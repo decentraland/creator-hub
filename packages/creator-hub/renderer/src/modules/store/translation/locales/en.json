@@ -493,6 +493,12 @@
           "community": "Community",
           "import_csv": "Import CSV"
         },
+        "csv_drop_text": "Drop your CSV file here or",
+        "csv_browse": "Browse your device files",
+        "csv_addresses_count": "{count} {count, plural, one {address} other {addresses}}",
+        "csv_communities_count": "{count} {count, plural, one {community} other {communities}}",
+        "csv_invalid_count": "{count} invalid {count, plural, one {address} other {addresses}}",
+        "csv_replace": "Replace",
         "actions": {
           "remove": "Remove"
         }

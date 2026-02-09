@@ -10,7 +10,7 @@ import { WorldPermissionType, type WorldPermissions } from '/@/lib/worlds';
 import { Row } from '/@/components/Row';
 import { Button } from '/@/components/Button';
 import { Select } from '/@/components/Select';
-import { WorldPermissionsAddUserForm } from '../../WorldPermissionsAddUserForm';
+import { WorldPermissionsAddUserForm, type CsvData } from '../../WorldPermissionsAddUserForm';
 import { WorldPermissionsPasswordSection } from '../../WorldPermissionsPasswordSection';
 import { WorldPermissionsPasswordForm } from '../../WorldPermissionsPasswordDialog';
 import {
@@ -28,6 +28,7 @@ type Props = {
   onChangeAccessType: (accessType: WorldPermissionType) => void;
   onAddAccessToAddress: (address: string) => void;
   onAddAccessToCommunity: (communityId: string) => void;
+  onSubmitCsv: (data: CsvData) => void;
   onRemoveAccessFromAddress: (address: string) => void;
   onClearAccessList: () => void;
   onSetAccessPassword: (password: string) => void;
@@ -89,6 +90,7 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
     onChangeAccessType,
     onAddAccessToAddress,
     onAddAccessToCommunity,
+    onSubmitCsv,
     onRemoveAccessFromAddress,
     onClearAccessList,
     onSetAccessPassword,
@@ -151,6 +153,14 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
     [onAddAccessToCommunity],
   );
 
+  const handleSubmitCsv = useCallback(
+    (data: CsvData) => {
+      onSubmitCsv(data);
+      setShowInviteForm(false);
+    },
+    [onSubmitCsv],
+  );
+
   const apiWallets =
     worldAccessPermissions.type === WorldPermissionType.AllowList
       ? worldAccessPermissions.wallets
@@ -191,6 +201,7 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
         <WorldPermissionsAddUserForm
           onSubmitAddress={handleAddAddress}
           onSubmitCommunity={handleAddCommunity}
+          onSubmitCsv={handleSubmitCsv}
           onCancel={handleHideInviteForm}
         />
       </Box>

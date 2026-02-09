@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { isValid as isValidAddress } from 'decentraland-ui2/dist/components/AddressField/utils';
 import SearchIcon from '@mui/icons-material/Search';
 import PeopleIcon from '@mui/icons-material/People';
+import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
 import { Box, InputAdornment, Tab, Tabs, TextField, Typography } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
 import { Button } from '/@/components/Button';
@@ -14,14 +15,57 @@ enum InviteTab {
   ImportCsv = 2,
 }
 
+type CsvParseResult = {
+  fileName: string;
+  addresses: string[];
+  communityIds: string[];
+  invalidLines: string[];
+};
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function parseCsvContent(fileName: string, content: string): CsvParseResult {
+  const lines = content
+    .split(/[\r\n]+/)
+    .map(line => line.trim())
+    .filter(line => line.length > 0);
+
+  const addresses: string[] = [];
+  const communityIds: string[] = [];
+  const invalidLines: string[] = [];
+
+  for (const line of lines) {
+    if (isValidAddress(line)) {
+      addresses.push(line.toLowerCase());
+    } else if (UUID_REGEX.test(line)) {
+      communityIds.push(line);
+    } else {
+      invalidLines.push(line);
+    }
+  }
+
+  return {
+    fileName,
+    addresses: [...new Set(addresses)],
+    communityIds: [...new Set(communityIds)],
+    invalidLines,
+  };
+}
+
+export type CsvData = {
+  addresses: string[];
+  communityIds: string[];
+};
+
 type Props = {
   onSubmitAddress: (address: string) => void;
   onSubmitCommunity: (communityId: string) => void;
+  onSubmitCsv: (data: CsvData) => void;
   onCancel: () => void;
 };
 
 export const WorldPermissionsAddUserForm: React.FC<Props> = React.memo(
-  ({ onSubmitAddress, onSubmitCommunity, onCancel }) => {
+  ({ onSubmitAddress, onSubmitCommunity, onSubmitCsv, onCancel }) => {
     const [address, setAddress] = useState('');
     const [hasError, setHasError] = useState(false);
     const [activeTab, setActiveTab] = useState<InviteTab>(InviteTab.WalletAddress);
@@ -33,12 +77,17 @@ export const WorldPermissionsAddUserForm: React.FC<Props> = React.memo(
     const [selectedCommunity, setSelectedCommunity] = useState<CommunityMinimal | null>(null);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    // CSV state
+    const [csvResult, setCsvResult] = useState<CsvParseResult | null>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     const handleChangeAddress = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
       setAddress(event.target.value);
       setHasError(false);
     }, []);
 
-    const handleAddAddress = useCallback(async () => {
+    const handleAddAddress = useCallback(() => {
       if (hasError || !address) return;
       if (!isValidAddress(address)) {
         setHasError(true);
@@ -53,12 +102,21 @@ export const WorldPermissionsAddUserForm: React.FC<Props> = React.memo(
       onSubmitCommunity(selectedCommunity.id);
     }, [selectedCommunity, onSubmitCommunity]);
 
+    const handleConfirmCsv = useCallback(() => {
+      if (!csvResult) return;
+      onSubmitCsv({
+        addresses: csvResult.addresses,
+        communityIds: csvResult.communityIds,
+      });
+    }, [csvResult, onSubmitCsv]);
+
     const handleCancel = useCallback(() => {
       setAddress('');
       setHasError(false);
       setSearchQuery('');
       setSearchResults([]);
       setSelectedCommunity(null);
+      setCsvResult(null);
       onCancel();
     }, [onCancel]);
 
@@ -75,6 +133,54 @@ export const WorldPermissionsAddUserForm: React.FC<Props> = React.memo(
 
     const handleSelectCommunity = useCallback((community: CommunityMinimal) => {
       setSelectedCommunity(community);
+    }, []);
+
+    // CSV file handling
+    const processFile = useCallback((file: File) => {
+      if (!file.name.toLowerCase().endsWith('.csv')) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const content = e.target?.result as string;
+        setCsvResult(parseCsvContent(file.name, content));
+      };
+      reader.readAsText(file);
+    }, []);
+
+    const handleDragOver = useCallback((e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(true);
+    }, []);
+
+    const handleDragLeave = useCallback((e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+    }, []);
+
+    const handleDrop = useCallback(
+      (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+        const file = e.dataTransfer.files[0];
+        if (file) processFile(file);
+      },
+      [processFile],
+    );
+
+    const handleFileInputChange = useCallback(
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) processFile(file);
+        // Reset input so same file can be selected again
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      },
+      [processFile],
+    );
+
+    const handleBrowseClick = useCallback(() => {
+      fileInputRef.current?.click();
     }, []);
 
     // Debounced community search
@@ -105,6 +211,23 @@ export const WorldPermissionsAddUserForm: React.FC<Props> = React.memo(
 
     const isWalletTab = activeTab === InviteTab.WalletAddress;
     const isCommunityTab = activeTab === InviteTab.Community;
+    const isCsvTab = activeTab === InviteTab.ImportCsv;
+
+    const csvHasData =
+      csvResult && (csvResult.addresses.length > 0 || csvResult.communityIds.length > 0);
+
+    let confirmDisabled = true;
+    let confirmHandler = handleAddAddress;
+    if (isWalletTab) {
+      confirmDisabled = !address || hasError;
+      confirmHandler = handleAddAddress;
+    } else if (isCommunityTab) {
+      confirmDisabled = !selectedCommunity;
+      confirmHandler = handleConfirmCommunity;
+    } else if (isCsvTab) {
+      confirmDisabled = !csvHasData;
+      confirmHandler = handleConfirmCsv;
+    }
 
     return (
       <Box className="AddUserForm">
@@ -122,10 +245,7 @@ export const WorldPermissionsAddUserForm: React.FC<Props> = React.memo(
         >
           <Tab label={t('modal.world_permissions.access.invite_tabs.wallet_address')} />
           <Tab label={t('modal.world_permissions.access.invite_tabs.community')} />
-          <Tab
-            label={t('modal.world_permissions.access.invite_tabs.import_csv')}
-            disabled
-          />
+          <Tab label={t('modal.world_permissions.access.invite_tabs.import_csv')} />
         </Tabs>
 
         {isWalletTab && (
@@ -206,6 +326,96 @@ export const WorldPermissionsAddUserForm: React.FC<Props> = React.memo(
           </Box>
         )}
 
+        {isCsvTab && (
+          <Box className="CsvContainer">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              style={{ display: 'none' }}
+              onChange={handleFileInputChange}
+            />
+            {!csvResult ? (
+              <Box
+                className={`CsvDropZone ${isDragging ? 'Dragging' : ''}`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                <Typography
+                  variant="body2"
+                  className="CsvDropZoneText"
+                >
+                  {t('modal.world_permissions.access.csv_drop_text')}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  className="CsvDropZoneBrowse"
+                  onClick={handleBrowseClick}
+                >
+                  {t('modal.world_permissions.access.csv_browse')}
+                </Typography>
+              </Box>
+            ) : (
+              <Box
+                className={`CsvDropZone CsvFileInfo ${isDragging ? 'Dragging' : ''}`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                <Box className="CsvFileDetails">
+                  <Box className="CsvFileNameRow">
+                    <InsertDriveFileOutlinedIcon fontSize="small" />
+                    <Typography
+                      variant="body2"
+                      className="CsvFileName"
+                    >
+                      {csvResult.fileName}
+                    </Typography>
+                  </Box>
+                  {csvResult.addresses.length > 0 && (
+                    <Typography
+                      variant="caption"
+                      className="CsvFileStat"
+                    >
+                      {t('modal.world_permissions.access.csv_addresses_count', {
+                        count: csvResult.addresses.length,
+                      })}
+                    </Typography>
+                  )}
+                  {csvResult.communityIds.length > 0 && (
+                    <Typography
+                      variant="caption"
+                      className="CsvFileStat"
+                    >
+                      {t('modal.world_permissions.access.csv_communities_count', {
+                        count: csvResult.communityIds.length,
+                      })}
+                    </Typography>
+                  )}
+                  {csvResult.invalidLines.length > 0 && (
+                    <Typography
+                      variant="caption"
+                      className="CsvFileStatError"
+                    >
+                      {t('modal.world_permissions.access.csv_invalid_count', {
+                        count: csvResult.invalidLines.length,
+                      })}
+                    </Typography>
+                  )}
+                </Box>
+                <Typography
+                  variant="body2"
+                  className="CsvReplaceLink"
+                  onClick={handleBrowseClick}
+                >
+                  {t('modal.world_permissions.access.csv_replace')}
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        )}
+
         <Box className="AddUserFormActions">
           <Button
             onClick={handleCancel}
@@ -214,8 +424,8 @@ export const WorldPermissionsAddUserForm: React.FC<Props> = React.memo(
             {t('modal.world_permissions.access.cancel')}
           </Button>
           <Button
-            onClick={isWalletTab ? handleAddAddress : handleConfirmCommunity}
-            disabled={isWalletTab ? !address || hasError : !selectedCommunity}
+            onClick={confirmHandler}
+            disabled={confirmDisabled}
             color="primary"
           >
             {t('modal.world_permissions.access.confirm')}
