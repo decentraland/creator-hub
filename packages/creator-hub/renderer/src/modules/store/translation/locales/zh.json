@@ -477,7 +477,8 @@
           "create_title": "创建新密码",
           "change_title": "更改密码",
           "type_password": "输入您的密码",
-          "repeat_password": "重复您的密码"
+          "repeat_password": "重复您的密码",
+          "info": "请务必记下您的密码，以免丢失！"
         },
         "error": {
           "empty": "密码不能为空",

@@ -1,6 +1,9 @@
 import React, { useCallback, useState } from 'react';
 import cx from 'classnames';
 import AddIcon from '@mui/icons-material/AddRounded';
+import LockIcon from '@mui/icons-material/Lock';
+import PeopleIcon from '@mui/icons-material/People';
+import PublicIcon from '@mui/icons-material/Public';
 import { Box, MenuItem, type SelectChangeEvent, Typography } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
 import { WorldPermissionType, type WorldPermissions } from '/@/lib/worlds';
@@ -9,7 +12,7 @@ import { Button } from '/@/components/Button';
 import { Select } from '/@/components/Select';
 import { WorldPermissionsAddUserForm } from '../../WorldPermissionsAddUserForm';
 import { WorldPermissionsPasswordSection } from '../../WorldPermissionsPasswordSection';
-import { WorldPermissionsPasswordDialog } from '../../WorldPermissionsPasswordDialog';
+import { WorldPermissionsPasswordForm } from '../../WorldPermissionsPasswordDialog';
 import {
   WorldPermissionsLoadingItem,
   WorldPermissionsAccessItem,
@@ -26,20 +29,38 @@ type Props = {
   onSetAccessPassword: (password: string) => void;
 };
 
-const ACCESS_TYPE_OPTIONS: Array<{ label: string; value: WorldPermissionType }> = [
+const ACCESS_TYPE_OPTIONS: Array<{
+  label: string;
+  value: WorldPermissionType;
+  icon: React.ReactNode;
+}> = [
   {
     label: t('modal.world_permissions.access.type.public'),
     value: WorldPermissionType.Unrestricted,
+    icon: <PublicIcon fontSize="small" />,
   },
   {
     label: t('modal.world_permissions.access.type.invitation_only'),
     value: WorldPermissionType.AllowList,
+    icon: <PeopleIcon fontSize="small" />,
   },
   {
     label: t('modal.world_permissions.access.type.password_protected'),
     value: WorldPermissionType.SharedSecret,
+    icon: <LockIcon fontSize="small" />,
   },
 ];
+
+const renderAccessTypeOption = (value: WorldPermissionType) => {
+  const option = ACCESS_TYPE_OPTIONS.find(o => o.value === value);
+  if (!option) return '';
+  return (
+    <Box className="AccessTypeValue">
+      {option.icon}
+      {option.label}
+    </Box>
+  );
+};
 
 const getAccessTypeDescription = (accessType: WorldPermissionType): string => {
   switch (accessType) {
@@ -66,7 +87,7 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
   } = props;
 
   const [showInviteForm, setShowInviteForm] = useState(false);
-  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
 
   const currentAccessType = worldAccessPermissions.type;
   const isPublic = currentAccessType === WorldPermissionType.Unrestricted;
@@ -77,8 +98,9 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
     (event: SelectChangeEvent<WorldPermissionType>) => {
       const value = event.target.value as WorldPermissionType;
       if (value === WorldPermissionType.SharedSecret) {
-        setShowPasswordDialog(true);
+        setShowPasswordForm(true);
       } else {
+        setShowPasswordForm(false);
         onChangeAccessType(value);
       }
     },
@@ -88,13 +110,13 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
   const handlePasswordSubmit = useCallback(
     (password: string) => {
       onSetAccessPassword(password);
-      setShowPasswordDialog(false);
+      setShowPasswordForm(false);
     },
     [onSetAccessPassword],
   );
 
-  const handlePasswordDialogClose = useCallback(() => {
-    setShowPasswordDialog(false);
+  const handlePasswordFormClose = useCallback(() => {
+    setShowPasswordForm(false);
   }, []);
 
   const handleShowInviteForm = useCallback(() => {
@@ -119,6 +141,18 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
       : [];
   const walletsCount = wallets.length;
 
+  if (showPasswordForm) {
+    return (
+      <Box className="WorldAccessTab">
+        <WorldPermissionsPasswordForm
+          isChanging={isPasswordProtected}
+          onCancel={handlePasswordFormClose}
+          onSubmit={handlePasswordSubmit}
+        />
+      </Box>
+    );
+  }
+
   return (
     <Box className={cx('WorldAccessTab', { RestrictedAccess: !isPublic })}>
       <Typography variant="h6">{t('modal.world_permissions.access.title')}</Typography>
@@ -128,6 +162,7 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
           className="AccessTypeSelect"
           value={currentAccessType}
           onChange={handleAccessTypeChange}
+          renderValue={renderAccessTypeOption}
         >
           {ACCESS_TYPE_OPTIONS.map(option => (
             <MenuItem
@@ -135,7 +170,7 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
               value={option.value}
               className="AccessTypeMenuItem"
             >
-              {option.label}
+              {renderAccessTypeOption(option.value)}
             </MenuItem>
           ))}
         </Select>
@@ -154,13 +189,6 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
           onSetPassword={onSetAccessPassword}
         />
       )}
-
-      <WorldPermissionsPasswordDialog
-        open={showPasswordDialog}
-        isChanging={false}
-        onClose={handlePasswordDialogClose}
-        onSubmit={handlePasswordSubmit}
-      />
 
       {isInvitationOnly && worldAccessPermissions.type === WorldPermissionType.AllowList && (
         <Box className="AccessFormContainer">

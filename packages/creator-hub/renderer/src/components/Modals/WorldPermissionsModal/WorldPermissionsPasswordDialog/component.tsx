@@ -1,31 +1,24 @@
 import React, { useCallback, useState } from 'react';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
-import {
-  Box,
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  IconButton,
-  TextField,
-  Typography,
-} from 'decentraland-ui2';
+import { Box, IconButton, TextField, Typography } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
 import { Row } from '/@/components/Row';
 import { Button } from '/@/components/Button';
+import { Info } from '../../DeploymentHistory/styled';
 import './styles.css';
 
 const MIN_PASSWORD_LENGTH = 8;
 
 type Props = {
-  open: boolean;
   isChanging: boolean;
-  onClose: () => void;
+  onCancel: () => void;
   onSubmit: (password: string) => void;
 };
 
-const WorldPermissionsPasswordDialogComponent: React.FC<Props> = React.memo(
-  ({ open, isChanging, onClose, onSubmit }) => {
+const WorldPermissionsPasswordFormComponent: React.FC<Props> = React.memo(
+  ({ isChanging, onCancel, onSubmit }) => {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -69,118 +62,111 @@ const WorldPermissionsPasswordDialogComponent: React.FC<Props> = React.memo(
         return;
       }
       onSubmit(password);
-      // Reset state after submit
-      setPassword('');
-      setConfirmPassword('');
-      setError(null);
     }, [password, confirmPassword, onSubmit]);
 
-    const handleClose = useCallback(() => {
-      // Reset state on close
-      setPassword('');
-      setConfirmPassword('');
-      setError(null);
-      setShowPassword(false);
-      setShowConfirmPassword(false);
-      onClose();
-    }, [onClose]);
+    const handleCancel = useCallback(() => {
+      onCancel();
+    }, [onCancel]);
 
     const isValid = password.length >= MIN_PASSWORD_LENGTH && password === confirmPassword;
 
     return (
-      <Dialog
-        open={open}
-        onClose={handleClose}
-        className="WorldPermissionsDialog"
-        maxWidth="xs"
-        fullWidth
-      >
-        <DialogTitle className="DialogTitle">
+      <Box className="PasswordForm">
+        <Typography
+          variant="h6"
+          className="PasswordFormTitle"
+        >
           {isChanging
             ? t('modal.world_permissions.password.dialog.change_title')
             : t('modal.world_permissions.password.dialog.create_title')}
-        </DialogTitle>
-        <DialogContent className="DialogContent">
-          <Box className="DialogField">
-            <Typography
-              variant="body2"
-              className="DialogLabel"
-            >
-              {t('modal.world_permissions.password.dialog.type_password')}
-            </Typography>
-            <TextField
-              type={showPassword ? 'text' : 'password'}
-              value={password}
-              onChange={handlePasswordChange}
-              variant="outlined"
-              size="small"
-              fullWidth
-              autoFocus
-              InputProps={{
-                endAdornment: (
-                  <IconButton
-                    onClick={handleTogglePasswordVisibility}
-                    edge="end"
-                    size="small"
-                  >
-                    {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                  </IconButton>
-                ),
-              }}
-            />
-          </Box>
+        </Typography>
 
-          <Box className="DialogField">
-            <Typography
-              variant="body2"
-              className="DialogLabel"
-            >
-              {t('modal.world_permissions.password.dialog.repeat_password')}
-            </Typography>
-            <TextField
-              type={showConfirmPassword ? 'text' : 'password'}
-              value={confirmPassword}
-              onChange={handleConfirmPasswordChange}
-              variant="outlined"
-              size="small"
-              fullWidth
-              error={!!error}
-              helperText={error}
-              InputProps={{
-                endAdornment: (
-                  <IconButton
-                    onClick={handleToggleConfirmPasswordVisibility}
-                    edge="end"
-                    size="small"
-                  >
-                    {showConfirmPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                  </IconButton>
-                ),
-              }}
-            />
-          </Box>
+        <Box className="PasswordFormField">
+          <Typography
+            variant="body2"
+            className="PasswordFormLabel"
+          >
+            {t('modal.world_permissions.password.dialog.type_password')}
+          </Typography>
+          <TextField
+            type={showPassword ? 'text' : 'password'}
+            value={password}
+            onChange={handlePasswordChange}
+            variant="outlined"
+            size="medium"
+            fullWidth
+            autoFocus
+            InputProps={{
+              endAdornment: (
+                <IconButton
+                  onClick={handleTogglePasswordVisibility}
+                  edge="end"
+                  size="small"
+                >
+                  {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                </IconButton>
+              ),
+            }}
+          />
+        </Box>
 
-          <Row className="DialogActions">
-            <Button
-              onClick={handleClose}
-              color="secondary"
-            >
-              {t('modal.cancel')}
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              color="primary"
-              disabled={!isValid}
-            >
-              {t('modal.confirm')}
-            </Button>
-          </Row>
-        </DialogContent>
-      </Dialog>
+        <Box className="PasswordFormField">
+          <Typography
+            variant="body2"
+            className="PasswordFormLabel"
+          >
+            {t('modal.world_permissions.password.dialog.repeat_password')}
+          </Typography>
+          <TextField
+            type={showConfirmPassword ? 'text' : 'password'}
+            value={confirmPassword}
+            onChange={handleConfirmPasswordChange}
+            variant="outlined"
+            size="medium"
+            fullWidth
+            error={!!error}
+            helperText={error}
+            InputProps={{
+              endAdornment: (
+                <IconButton
+                  onClick={handleToggleConfirmPasswordVisibility}
+                  edge="end"
+                  size="small"
+                >
+                  {showConfirmPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                </IconButton>
+              ),
+            }}
+          />
+        </Box>
+
+        <Info className="PasswordFormInfo">
+          <InfoOutlinedIcon fontSize="small" />
+          <Typography variant="body2">
+            {t('modal.world_permissions.password.dialog.info')}
+          </Typography>
+        </Info>
+
+        <Row className="PasswordFormActions">
+          <Button
+            onClick={handleCancel}
+            color="secondary"
+          >
+            {t('modal.cancel')}
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            color="primary"
+            disabled={!isValid}
+          >
+            {t('modal.confirm')}
+          </Button>
+        </Row>
+      </Box>
     );
   },
 );
 
-WorldPermissionsPasswordDialogComponent.displayName = 'WorldPermissionsPasswordDialog';
+WorldPermissionsPasswordFormComponent.displayName = 'WorldPermissionsPasswordForm';
 
-export const WorldPermissionsPasswordDialog = WorldPermissionsPasswordDialogComponent;
+export const WorldPermissionsPasswordForm = WorldPermissionsPasswordFormComponent;
