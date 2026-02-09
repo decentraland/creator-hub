@@ -56,7 +56,7 @@ const WorldSettingsModal: React.FC<Props> = React.memo(
         await dispatch(
           managementActions.updateWorldSettings({ worldName, worldSettings: settingsUpdates }),
         ).unwrap();
-        setSettingsUpdates({});
+        setSettingsUpdates({}); // Clear updates after successful save
       } catch {
         // Error is handled in the action
       }

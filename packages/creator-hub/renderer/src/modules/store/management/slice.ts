@@ -124,10 +124,19 @@ export const fetchAllManagedProjectsDetails = createAsyncThunk(
 
       // Process Worlds data
       const worldsPromises: Promise<ManagedProject>[] = ensList.map(async ens => {
-        const [worldDeployment, worldScenes] = await Promise.all([
-          WorldsAPI.fetchWorld(ens.subdomain),
+        const [worldSettings, worldScenes] = await Promise.all([
+          WorldsAPI.fetchWorldSettings(ens.subdomain),
           WorldsAPI.fetchWorldScenes(ens.subdomain),
         ]);
+
+        const latestScene = worldScenes?.scenes?.length
+          ? worldScenes?.scenes?.reduce((newestScene, currentScene) => {
+              return new Date(currentScene.createdAt).getTime() >
+                new Date(newestScene.createdAt).getTime()
+                ? currentScene
+                : newestScene;
+            }, worldScenes.scenes[0])
+          : null;
 
         return {
           id: ens.subdomain,
@@ -137,29 +146,30 @@ export const fetchAllManagedProjectsDetails = createAsyncThunk(
             ens.nftOwnerAddress && ens.nftOwnerAddress?.toLowerCase() === address?.toLowerCase()
               ? WorldRoleType.OWNER
               : WorldRoleType.COLLABORATOR,
-          deployment:
-            worldDeployment && worldDeployment[0]
-              ? {
-                  title: worldDeployment[0].metadata.display.title,
-                  description: worldDeployment[0].metadata.display.description,
-                  thumbnail: getThumbnailUrlFromDeployment(worldDeployment[0], $ =>
+          deployment: worldSettings
+            ? {
+                title: worldSettings.title || latestScene?.entity.metadata?.display?.title || '',
+                description:
+                  worldSettings.description ||
+                  latestScene?.entity.metadata?.display?.description ||
+                  '',
+                thumbnail:
+                  worldSettings.thumbnail ||
+                  getThumbnailUrlFromDeployment(latestScene?.entity, $ =>
                     WorldsAPI.getContentSrcUrl($),
-                  ),
-                  lastPublishedAt:
-                    worldScenes?.scenes?.reduce(
-                      (max, scene) => Math.max(max, new Date(scene.createdAt).getTime() ?? 0),
-                      0,
-                    ) ??
-                    worldDeployment[0].timestamp ??
-                    0, // Get latest published scene date.
-                  scenes:
-                    worldScenes?.scenes?.map(scene => ({
-                      id: scene.entityId,
-                      publishedAt: new Date(scene.createdAt).getTime() ?? 0,
-                      parcels: scene.parcels,
-                    })) ?? [],
-                }
-              : undefined,
+                  ) ||
+                  '',
+                lastPublishedAt: latestScene?.createdAt
+                  ? new Date(latestScene.createdAt).getTime()
+                  : 0,
+                scenes:
+                  worldScenes?.scenes?.map(scene => ({
+                    id: scene.entityId,
+                    publishedAt: new Date(scene.createdAt).getTime() ?? 0,
+                    parcels: scene.parcels,
+                  })) ?? [],
+              }
+            : undefined,
         };
       });
 
@@ -250,7 +260,8 @@ export const updateWorldSettings = createAsyncThunk(
       worldSettings,
     );
     if (!success) return rejectWithValue({ message: error });
-    dispatch(fetchWorldSettings({ worldName }));
+    await dispatch(fetchWorldSettings({ worldName })).unwrap();
+    dispatch(fetchAllManagedProjectsDetails({ address: connectedAccount })).unwrap();
   },
 );
 
