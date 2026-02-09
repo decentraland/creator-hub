@@ -108,19 +108,21 @@ tail -f ~/Library/Logs/creator-hub/main.log
 
 Production builds default to the production environment (`decentraland.org` APIs). For testing against development environment (`decentraland.zone`), you can override this behavior using a command-line argument.
 
-**Switch to Development Environment:**
+**macOS:**
 
-Launch the application with the `--env` flag:
+Use the `open` command with `--args` to pass arguments to the app:
 
 ```bash
-# Development environment
-./Decentraland\ Creator\ Hub.app/Contents/MacOS/Decentraland\ Creator\ Hub --env=dev
-
-# Production environment
-./Decentraland\ Creator\ Hub.app/Contents/MacOS/Decentraland\ Creator\ Hub --env=prod
+open ./Decentraland\ Creator\ Hub.app --args --env=dev
 ```
 
-The app will use the specified environment APIs. If no `--env` argument is provided, the app will use the default environment based on the build type (dev builds use development, production builds use production).
+**Windows:**
+
+```bash
+.\Decentraland\ Creator\ Hub.exe --env=dev
+```
+
+The app will use the specified environment APIs. If no `--env` argument is provided, the app will use the default environment based on the build type (dev builds use development, production builds use production). Valid values for `--env` are `dev` and `prod`.
 
 ## Installation Process
 

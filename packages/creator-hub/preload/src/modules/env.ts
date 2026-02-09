@@ -1,22 +1,22 @@
-import path from 'node:path';
+import { ipcRenderer } from 'electron';
 
 /**
- * Returns environment override from --env CLI argument.
- * @returns 'dev', 'prod', or null if no valid override specified
+ * Gets the environment setting synchronously.
+ * Checks main process for CLI argument override (--env=dev or --env=prod),
+ * otherwise falls back to build-time environment.
+ * @returns 'dev' or 'prod'
  */
 export function getEnv(): 'dev' | 'prod' {
-  const isDev = process.defaultApp || /electron(\.exe)?$/i.test(path.basename(process.execPath));
-  const args = isDev ? process.argv.slice(2) : process.argv.slice(1);
-
-  for (const arg of args) {
-    if (arg.startsWith('--env=')) {
-      const envValue = arg.split('=')[1];
-      if (envValue === 'dev' || envValue === 'prod') {
-        return envValue;
-      }
+  try {
+    // Ask main process for the env override from CLI args
+    const envOverride = ipcRenderer.sendSync('get-env-override') as 'dev' | 'prod' | null;
+    if (envOverride) {
+      return envOverride;
     }
+  } catch (err) {
+    console.warn('[env] Failed to get CLI override from main process:', err);
   }
 
-  // No valid override found
+  // Fallback to build-time environment
   return import.meta.env.DEV ? 'dev' : 'prod';
 }
