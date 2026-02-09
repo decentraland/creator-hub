@@ -74,7 +74,8 @@ function setupMainPackageWatcher({ resolvedUrls }) {
           }
 
           /** Spawn new electron process */
-          electronApp = spawn(String(electronPath), ['--inspect', '.'], {
+          const extraArgs = process.argv.slice(2);
+          electronApp = spawn(String(electronPath), ['--inspect', '.', ...extraArgs], {
             stdio: 'inherit',
           });
 
