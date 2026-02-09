@@ -32,7 +32,7 @@ describe('Deep Merge Schemas', () => {
 
     const dbProps = (v1.component.config.jsonSchema as any).properties.database.properties;
 
-    // Debe tener las 3 propiedades: host, port, password
+    // Should have all 3 properties: host, port, password
     expect(dbProps).toHaveProperty('host');
     expect(dbProps).toHaveProperty('port');
     expect(dbProps).toHaveProperty('password');
@@ -177,8 +177,10 @@ describe('Deep Merge Schemas', () => {
     const dbProps = configProps.database.properties;
     const cacheProps = configProps.cache.properties;
 
+    // Database should have both properties
     expect(dbProps).toHaveProperty('host');
     expect(dbProps).toHaveProperty('port');
+    // Cache should have both properties
     expect(cacheProps).toHaveProperty('ttl');
     expect(cacheProps).toHaveProperty('maxSize');
   });
@@ -225,6 +227,7 @@ describe('Deep Merge Schemas', () => {
     const { VERSIONS_REGISTRY } = createComponentFramework(registry);
     const v1 = VERSIONS_REGISTRY['test::Component'][1];
 
+    // Should be a Map now
     expect(v1.component.config.jsonSchema.serializationType).toBe('map');
     const configProps = (v1.component.config.jsonSchema as any).properties;
     expect(configProps).toHaveProperty('value');
@@ -256,8 +259,10 @@ describe('Deep Merge Schemas', () => {
     const { VERSIONS_REGISTRY } = createComponentFramework(registry);
     const v1 = VERSIONS_REGISTRY['test::Component'][1];
 
+    // Should remain Optional
     expect(v1.component.config.jsonSchema.serializationType).toBe('optional');
 
+    // Inner schema should be Map with merged properties
     const innerSchema = (v1.component.config.jsonSchema as any).optionalJsonSchema;
     expect(innerSchema.serializationType).toBe('map');
     expect(innerSchema.properties).toHaveProperty('a');
@@ -278,7 +283,9 @@ describe('Deep Merge Schemas', () => {
     const { VERSIONS_REGISTRY } = createComponentFramework(registry);
     const v1 = VERSIONS_REGISTRY['test::Component'][1];
 
+    // Should still be an array
     expect(v1.component.items.jsonSchema.serializationType).toBe('array');
+    // But item type should be replaced with string
     const itemSchema = (v1.component.items.jsonSchema as any).items;
     expect(itemSchema.serializationType).toBe('utf8-string');
   });
@@ -287,7 +294,7 @@ describe('Deep Merge Schemas', () => {
   // V1: { sections?: Array<{ items: Array<{ label }> }> }
   // V2: { sections?: Array<{ columns }> }
   // Expected: { sections?: Array<{ id, columns, items: Array<{ component, widget, label }> }> }
-  // Note: Este caso es muy complejo (Array dentro de Map dentro de Array)
+  // Note: This case is very complex (Array inside Map inside Array)
   it.skip('should merge complex real-world structure with Arrays', () => {
     const registry = {
       'inspector::Config': [
@@ -340,11 +347,13 @@ describe('Deep Merge Schemas', () => {
     expect(arraySchema.serializationType).toBe('array');
 
     const sectionProps = arraySchema.items.properties;
+    // Should have id from V0 and columns from V2
     expect(sectionProps).toHaveProperty('id');
     expect(sectionProps).toHaveProperty('columns');
     expect(sectionProps).toHaveProperty('items');
 
     const itemProps = sectionProps.items.items.properties;
+    // Should have component and widget from V0, label from V1
     expect(itemProps).toHaveProperty('component');
     expect(itemProps).toHaveProperty('widget');
     expect(itemProps).toHaveProperty('label');
