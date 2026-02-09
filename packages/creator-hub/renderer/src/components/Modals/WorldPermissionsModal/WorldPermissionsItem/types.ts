@@ -8,6 +8,7 @@ export type BaseProps = {
 
 export type AccessItemProps = {
   walletAddress: string;
+  role?: 'owner' | 'collaborator';
   onRemoveAddress: () => void;
 };
 

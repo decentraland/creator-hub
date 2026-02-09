@@ -302,7 +302,7 @@ export const fetchWorldPermissions = createAsyncThunk(
 export const updateWorldPermissions = createAsyncThunk(
   'management/updateWorldPermissions',
   async (
-    { worldName, worldPermissionName, worldPermissionType, secret }: WorldPermissionsPayload,
+    { worldName, worldPermissionName, worldPermissionType, options }: WorldPermissionsPayload,
     { dispatch },
   ) => {
     const connectedAccount = AuthServerProvider.getAccount();
@@ -314,7 +314,7 @@ export const updateWorldPermissions = createAsyncThunk(
       worldName,
       worldPermissionName,
       worldPermissionType,
-      secret ? { secret } : undefined,
+      options,
     );
     if (success) {
       await dispatch(fetchWorldPermissions({ worldName })).unwrap();

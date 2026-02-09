@@ -472,7 +472,7 @@
       "invalid_address": "Dirección inválida",
       "done": "Hecho",
       "access": {
-        "title": "¿Quién puede acceder a este mundo?",
+        "title": "Administra quién puede acceder a tu Mundo",
         "description": "Gestiona quién puede acceder a tu Mundo alternando\nentre <span>\"Privado\"</span> y <span>\"Público\"</span>.",
         "subtitle": "En <span>modo Privado</span>, puedes otorgar acceso a un máximo de 100 direcciones (usuarios de Decentraland). Ten en cuenta que si vuelves al <span>modo Público</span>, tu lista de direcciones aprobadas será borrada.",
         "type": {
@@ -493,8 +493,15 @@
         "approved_addresses": "Direcciones Aprobadas {number}",
         "add_address": "Agregar dirección",
         "new_invite": "Nueva Invitación",
+        "clear_list": "Limpiar Lista",
         "confirm": "Confirmar",
         "cancel": "Cancelar",
+        "wrong_address_format": "Formato de dirección incorrecto",
+        "invite_tabs": {
+          "wallet_address": "Dirección de Wallet",
+          "community": "Comunidad",
+          "import_csv": "Importar CSV"
+        },
         "actions": {
           "remove": "Eliminar"
         }
