@@ -22,6 +22,7 @@ export type IpcError = {
 export interface Ipc {
   'electron.getUserDataPath': () => string;
   'electron.getAppVersion': () => Promise<string>;
+  'electron.getEnvOverride': () => 'dev' | 'prod' | null;
   'updater.getDownloadedVersion': () => string | null;
   'updater.setupUpdaterEvents': () => void;
   'updater.checkForUpdates': (config?: { autoDownload?: boolean }) => Promise<{

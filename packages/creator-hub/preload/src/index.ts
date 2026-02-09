@@ -8,7 +8,6 @@ export const workspace = initializeWorkspace(services);
 
 export * as editor from './modules/editor';
 export * as misc from './modules/misc';
-export * as env from './modules/env';
 export * as fs from './services/fs';
 export * as analytics from './modules/analytics';
 export * as npm from './services/npm';

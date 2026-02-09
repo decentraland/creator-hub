@@ -4,7 +4,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { ChainId } from '@dcl/schemas';
 import { Typography, Checkbox } from 'decentraland-ui2';
 
-import { misc, env } from '#preload';
+import { misc } from '#preload';
 
 import type { File, Info, Status } from '/@/lib/deploy';
 
@@ -35,7 +35,7 @@ import './styles.css';
 const MAX_FILE_PATH_LENGTH = 50;
 
 function getDclEnv() {
-  return env.getEnv() === 'dev' ? 'zone' : 'org';
+  return misc.getEnv() === 'dev' ? 'zone' : 'org';
 }
 
 function getPath(filename: string) {
