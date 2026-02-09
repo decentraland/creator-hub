@@ -1,9 +1,6 @@
 # Decentraland Creator Hub
 
-[![Release](https://img.shields.io/github/v/release/decentraland/creator-hub?include_prereleases)](https://github.com/decentraland/creator-hub/releases)
-[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey.svg)]()
-[![Downloads](https://img.shields.io/github/downloads/decentraland/creator-hub/total.svg)](https://github.com/decentraland/creator-hub/releases)
-[![CI Status](https://github.com/decentraland/creator-hub/workflows/Creator%20Hub/badge.svg)](https://github.com/decentraland/creator-hub/actions/workflows/creator-hub.yml)
+[![Release](https://img.shields.io/github/v/release/decentraland/creator-hub?include_prereleases)](https://github.com/decentraland/creator-hub/releases) [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey.svg)]() [![Downloads](https://img.shields.io/github/downloads/decentraland/creator-hub/total.svg)](https://github.com/decentraland/creator-hub/releases) [![CI Status](https://github.com/decentraland/creator-hub/workflows/Creator%20Hub/badge.svg)](https://github.com/decentraland/creator-hub/actions/workflows/creator-hub.yml)
 
 Decentraland Creator Hub is an Electron-based application designed for creating, editing, and deploying Decentraland scenes. This application is distributed for both Windows and MacOS, supporting both x64 and ARM architectures.
 
@@ -105,6 +102,28 @@ On MacOS:
 
 ```bash
 tail -f ~/Library/Logs/creator-hub/main.log
+```
+
+### Application environment
+
+Production builds default to the production environment (`decentraland.org` APIs). For testing against development environment (`decentraland.zone`), you can override this behavior using a command-line argument:
+
+```bash
+# macOS
+open ./Decentraland\ Creator\ Hub.app --args --env=dev
+
+# Windows
+.\Decentraland\ Creator\ Hub.exe --env=dev
+```
+
+The app will use the specified environment APIs. If no `--env` argument is provided, the app will use the default environment (prod). Valid values for `--env` are `dev` and `prod`.
+
+On development watch mode, you can also pass the `--env` argument when starting the app. In this case, the default environment is `dev`, but you can override it to `prod` if needed:
+
+```bash
+npm start -- -- --env=prod
+# or
+npm run watch -- --env=prod
 ```
 
 ## Installation Process

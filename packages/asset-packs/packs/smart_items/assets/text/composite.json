@@ -7,7 +7,7 @@
         "0": {
           "json": {
             "text": "Text",
-            "font": 2,
+            "font": 0,
             "fontSize": 6,
             "fontAutoSize": true,
             "textAlign": 4
@@ -51,6 +51,16 @@
               {
                 "id": "font-size-settings",
                 "items": [
+                  {
+                    "component": "core::TextShape",
+                    "widget": "Dropdown",
+                    "label": "Font",
+                    "type": "text",
+                    "path": "font",
+                    "dataSource": {
+                      "kind": "fonts"
+                    }
+                  },
                   {
                     "component": "core::TextShape",
                     "widget": "TextField",
