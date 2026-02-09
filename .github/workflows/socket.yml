@@ -72,7 +72,6 @@ jobs:
         run: |
           socketcli \
             --target-path $GITHUB_WORKSPACE \
-            --repo ${{ github.repository }} \
             --scm github \
             --pr-number ${{ github.event.pull_request.number }} \
             ${{ steps.changes.outputs.subpaths }} \
