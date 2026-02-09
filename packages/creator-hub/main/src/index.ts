@@ -35,11 +35,6 @@ if (!isSingleInstance) {
 app.on('second-instance', async (_e: unknown, argv: string[]) => {
   await restoreOrCreateMainWindow();
 
-  const newEnvOverride = parseEnvArgument(argv);
-  if (newEnvOverride) {
-    setEnvOverride(newEnvOverride);
-  }
-
   tryOpenDevToolsOnPort(argv);
 });
 

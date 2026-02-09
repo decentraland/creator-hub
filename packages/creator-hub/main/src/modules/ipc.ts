@@ -1,6 +1,4 @@
-import { ipcMain } from 'electron';
-
-import { handle } from './handle';
+import { handle, handleSync } from './handle';
 import * as electron from './electron';
 import * as updater from './updater';
 import * as inspector from './inspector';
@@ -12,12 +10,8 @@ import * as npm from './npm';
 import * as config from './config';
 
 export function initIpc() {
-  // Synchronous IPC for env override (needed during config initialization)
-  ipcMain.on('electron.getEnvOverride', event => {
-    event.returnValue = electron.getEnvOverride();
-  });
-
   // electron
+  handleSync('electron.getEnvOverride', () => electron.getEnvOverride());
   handle('electron.getAppVersion', () => electron.getAppVersion());
   handle('electron.getUserDataPath', () => electron.getUserDataPath());
   handle('electron.getWorkspaceConfigPath', (_event, path) =>

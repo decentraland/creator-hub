@@ -31,9 +31,6 @@
     "semver": "7.6.3",
     "tree-kill": "1.2.2"
   },
-  "overrides": {
-    "ua-parser-js": "2.0.0"
-  },
   "devDependencies": {
     "@dcl/hooks": "0.0.2",
     "@reduxjs/toolkit": "2.2.6",
@@ -66,6 +63,9 @@
     "unplugin-auto-expose": "0.3.0"
   },
   "main": "main/dist/index.js",
+  "overrides": {
+    "ua-parser-js": "2.0.0"
+  },
   "private": true,
   "repository": "https://github.com/decentraland/creator-hub.git",
   "scripts": {
@@ -76,7 +76,7 @@
     "compile": "cross-env MODE=production npm run build && electron-builder build --config electron-builder.cjs --dir",
     "compile:installer": "cross-env MODE=production npm run build && electron-builder build --config electron-builder.cjs --publish never",
     "postinstall": "cross-env ELECTRON_RUN_AS_NODE=1 electron scripts/update-electron-vendors.js",
-    "start": "npm run watch",
+    "start": "npm run watch --",
     "test": "npm run test:unit",
     "test:e2e": "npm run build && vitest run -r e2e --passWithNoTests",
     "test:main": "vitest run -r main --passWithNoTests",

@@ -1,15 +1,16 @@
 import path from 'path';
 import fs from 'fs/promises';
 import { app, BrowserWindow, clipboard, dialog, type OpenDialogOptions, shell } from 'electron';
+import type { Env } from '/shared/types/env';
 
 // Store environment override from CLI arguments
-let envOverride: 'dev' | 'prod' | null = null;
+let envOverride: Env | null = null;
 
-export function setEnvOverride(value: 'dev' | 'prod' | null) {
+export function setEnvOverride(value: Env | null) {
   envOverride = value;
 }
 
-export function getEnvOverride(): 'dev' | 'prod' | null {
+export function getEnvOverride(): Env | null {
   return envOverride;
 }
 
