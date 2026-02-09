@@ -506,6 +506,12 @@
           "community": "社区",
           "import_csv": "导入CSV"
         },
+        "csv_drop_text": "将CSV文件拖放到此处或",
+        "csv_browse": "浏览您的设备文件",
+        "csv_addresses_count": "{count} 个地址",
+        "csv_communities_count": "{count} 个社区",
+        "csv_invalid_count": "{count} 个无效地址",
+        "csv_replace": "替换",
         "actions": {
           "remove": "移除"
         }

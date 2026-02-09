@@ -95,3 +95,82 @@
   color: var(--text-on-secondary);
   font-size: 12px;
 }
+
+/* CSV import styles */
+.AddUserForm .CsvContainer {
+  display: flex;
+  flex-direction: column;
+}
+
+.AddUserForm .CsvDropZone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 16px;
+  background-color: var(--darker-gray);
+  border: 1px dashed transparent;
+  border-radius: 8px;
+}
+
+.AddUserForm .CsvDropZone.Dragging {
+  border-color: var(--primary);
+}
+
+.AddUserForm .CsvDropZoneText {
+  color: var(--text-on-secondary);
+  text-align: center;
+}
+
+.AddUserForm .CsvDropZoneBrowse {
+  color: var(--primary);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.AddUserForm .CsvFileInfo {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.AddUserForm .CsvFileDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.AddUserForm .CsvFileNameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.AddUserForm .CsvFileNameRow .MuiSvgIcon-root {
+  color: var(--text-on-secondary);
+}
+
+.AddUserForm .CsvFileName {
+  font-weight: 500;
+}
+
+.AddUserForm .CsvFileStat {
+  color: var(--text-on-secondary);
+}
+
+.AddUserForm .CsvFileStatError {
+  color: var(--error);
+}
+
+.AddUserForm .CsvReplaceLink {
+  color: var(--primary);
+  cursor: pointer;
+  font-weight: 600;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.AddUserForm .CsvReplaceLink:hover {
+  text-decoration: underline;
+}
