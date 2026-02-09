@@ -36,3 +36,62 @@
   justify-content: space-between;
   margin-top: 16px;
 }
+
+/* Community search styles */
+.AddUserForm .CommunitySearchContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.AddUserForm .CommunitySearchStatus {
+  color: var(--text-on-secondary);
+  padding: 8px 0;
+}
+
+.AddUserForm .CommunitySearchResults {
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.AddUserForm .CommunitySearchItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.AddUserForm .CommunitySearchItem:hover {
+  background-color: var(--dark-gray);
+}
+
+.AddUserForm .CommunitySearchItem.Selected {
+  background-color: var(--dark-gray);
+}
+
+.AddUserForm .CommunitySearchItem .MuiSvgIcon-root {
+  color: var(--text-on-secondary);
+  flex-shrink: 0;
+}
+
+.AddUserForm .CommunitySearchItemInfo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.AddUserForm .CommunitySearchItemInfo .CommunityName {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.AddUserForm .CommunitySearchItemInfo .CommunityMembers {
+  color: var(--text-on-secondary);
+  font-size: 12px;
+}

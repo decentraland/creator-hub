@@ -497,6 +497,10 @@
         "confirm": "Confirm",
         "cancel": "Cancel",
         "wrong_address_format": "Wrong address format",
+        "community_search_placeholder": "Search for a community...",
+        "community_searching": "Searching...",
+        "community_no_results": "No communities found",
+        "community_members": "{count} Members",
         "invite_tabs": {
           "wallet_address": "Wallet Address",
           "community": "Community",
