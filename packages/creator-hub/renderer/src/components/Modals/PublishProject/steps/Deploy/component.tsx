@@ -299,14 +299,14 @@ export function Deploy(props: Props) {
               />
             ) : (
               <>
-                {deployment.status === 'idle' && (
+                {deployment.status === 'idle' && undeployStatus === 'idle' && (
                   <Idle
                     files={deployment.files}
                     error={deployment.error}
                     onClick={() => (skipWarning ? handlePublish() : setShowWarning(true))}
                   />
                 )}
-                {deployment.status === 'pending' && (
+                {(deployment.status === 'pending' || undeployStatus === 'pending') && (
                   <Deploying
                     deployment={deployment}
                     url={jumpInUrl}
