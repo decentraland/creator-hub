@@ -31,10 +31,9 @@ import {
   SceneCategory,
 } from './SceneMetadata';
 import type { ConfigComponentType } from './Config';
-import { ConfigComponentSchema } from './Config';
 import type { InspectorUIStateType } from './InspectorUIState';
-import { InspectorUIStateSchema } from './InspectorUIState';
 import { EditorComponentNames as BaseEditorComponentNames } from './types';
+import { defineAllComponents as defineAllInspectorComponents } from './versioning/registry';
 
 export { SceneAgeRating, SceneCategory };
 export { CoreComponents, AllComponentsType } from './types';
@@ -232,30 +231,8 @@ export function createComponents(engine: IEngine): SdkComponents {
 
 /* istanbul ignore next */
 export function createEditorComponents(engine: IEngine): EditorComponents {
-  const Selection = engine.defineComponent(EditorComponentNames.Selection, {
-    gizmo: Schemas.Int,
-  });
-
-  // legacy component
-  // we define the schema of the legacy component for retrocompat purposes
-  engine.defineComponent('inspector::Scene', {
-    layout: Schemas.Map({
-      base: Coords,
-      parcels: Schemas.Array(Coords),
-    }),
-  });
-
-  const Scene = defineSceneComponents(engine).pop() as ReturnType<typeof defineSceneComponents>[0];
-
-  const Nodes = engine.defineComponent(EditorComponentNames.Nodes, {
-    value: Schemas.Array(
-      Schemas.Map({
-        entity: Schemas.Entity,
-        open: Schemas.Optional(Schemas.Boolean),
-        children: Schemas.Array(Schemas.Entity),
-      }),
-    ),
-  });
+  // Define all versioned inspector components from registry
+  const inspectorComponents = defineAllInspectorComponents(engine);
 
   const {
     ActionTypes,
@@ -270,40 +247,29 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
     Script,
   } = createAssetPacksComponents(engine as any);
 
-  const TransformConfig = engine.defineComponent(EditorComponentNames.TransformConfig, {
-    porportionalScaling: Schemas.Optional(Schemas.Boolean),
+  // legacy component
+  // we define the schema of the legacy component for retrocompat purposes
+  engine.defineComponent('inspector::Scene', {
+    layout: Schemas.Map({
+      base: Coords,
+      parcels: Schemas.Array(Coords),
+    }),
   });
 
-  const Hide = engine.defineComponent(EditorComponentNames.Hide, {
-    value: Schemas.Boolean,
-  });
-
-  const Lock = engine.defineComponent(EditorComponentNames.Lock, {
-    value: Schemas.Boolean,
-  });
-
-  const Config = engine.defineComponent(EditorComponentNames.Config, ConfigComponentSchema);
-
-  const InspectorUIState = engine.defineComponent(
-    EditorComponentNames.InspectorUIState,
-    InspectorUIStateSchema,
-  );
-
-  const Ground = engine.defineComponent(EditorComponentNames.Ground, {});
-  const Tile = engine.defineComponent(EditorComponentNames.Tile, {});
-  const CustomAsset = engine.defineComponent(EditorComponentNames.CustomAsset, {
-    assetId: Schemas.String,
-  });
+  const Scene = defineSceneComponents(engine).pop() as ReturnType<typeof defineSceneComponents>[0];
 
   return {
-    Selection,
+    Selection: inspectorComponents['inspector::Selection'],
     Scene,
-    Nodes,
-    TransformConfig,
-    Hide,
-    Lock,
-    Config,
-    InspectorUIState,
+    Nodes: inspectorComponents['inspector::Nodes'],
+    TransformConfig: inspectorComponents['inspector::TransformConfig'],
+    Hide: inspectorComponents['inspector::Hide'],
+    Lock: inspectorComponents['inspector::Lock'],
+    Config: inspectorComponents['inspector::Config'],
+    InspectorUIState: inspectorComponents['inspector::UIState'],
+    Ground: inspectorComponents['inspector::Ground'],
+    Tile: inspectorComponents['inspector::Tile'],
+    CustomAsset: inspectorComponents['inspector::CustomAsset'],
     ActionTypes: ActionTypes as unknown as LastWriteWinElementSetComponentDefinition<
       EditorComponentsTypes['ActionTypes']
     >,
@@ -321,15 +287,6 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
     >,
     CounterBar: CounterBar as unknown as LastWriteWinElementSetComponentDefinition<
       EditorComponentsTypes['CounterBar']
-    >,
-    Ground: Ground as unknown as LastWriteWinElementSetComponentDefinition<
-      EditorComponentsTypes['Ground']
-    >,
-    Tile: Tile as unknown as LastWriteWinElementSetComponentDefinition<
-      EditorComponentsTypes['Tile']
-    >,
-    CustomAsset: CustomAsset as unknown as LastWriteWinElementSetComponentDefinition<
-      EditorComponentsTypes['CustomAsset']
     >,
     AdminTools: AdminTools as unknown as LastWriteWinElementSetComponentDefinition<
       EditorComponentsTypes['AdminTools']

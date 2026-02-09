@@ -1,5 +1,6 @@
 import { ComponentName } from '@dcl/asset-packs';
 import { getLatestSceneComponentVersion } from './SceneMetadata';
+import { getLatestVersionName } from './versioning/registry';
 
 export enum CoreComponents {
   ANIMATOR = 'core::Animator',
@@ -27,26 +28,26 @@ export enum CoreComponents {
 }
 
 export const EditorComponentNames = {
-  Selection: 'inspector::Selection',
+  Selection: getLatestVersionName('inspector::Selection'),
   Scene: getLatestSceneComponentVersion().key,
-  Nodes: 'inspector::Nodes',
+  Nodes: getLatestVersionName('inspector::Nodes'),
   ActionTypes: ComponentName.ACTION_TYPES,
   Actions: ComponentName.ACTIONS,
   Counter: ComponentName.COUNTER,
   CounterBar: ComponentName.COUNTER_BAR,
   Triggers: ComponentName.TRIGGERS,
   States: ComponentName.STATES,
-  TransformConfig: 'inspector::TransformConfig',
-  Hide: 'inspector::Hide',
-  Lock: 'inspector::Lock',
-  Config: 'inspector::Config',
-  Ground: 'inspector::Ground',
-  Tile: 'inspector::Tile',
-  CustomAsset: 'inspector::CustomAsset',
+  TransformConfig: getLatestVersionName('inspector::TransformConfig'),
+  Hide: getLatestVersionName('inspector::Hide'),
+  Lock: getLatestVersionName('inspector::Lock'),
+  Config: getLatestVersionName('inspector::Config'),
+  Ground: getLatestVersionName('inspector::Ground'),
+  Tile: getLatestVersionName('inspector::Tile'),
+  CustomAsset: getLatestVersionName('inspector::CustomAsset'),
   AdminTools: ComponentName.ADMIN_TOOLS,
   Rewards: ComponentName.REWARDS,
   VideoScreen: ComponentName.VIDEO_SCREEN,
-  InspectorUIState: 'inspector::UIState',
+  InspectorUIState: getLatestVersionName('inspector::UIState'),
   Script: ComponentName.SCRIPT,
 } as const;
 
