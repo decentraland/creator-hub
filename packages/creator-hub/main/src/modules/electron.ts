@@ -2,6 +2,17 @@ import path from 'path';
 import fs from 'fs/promises';
 import { app, BrowserWindow, clipboard, dialog, type OpenDialogOptions, shell } from 'electron';
 
+// Store environment override from CLI arguments
+let envOverride: 'dev' | 'prod' | null = null;
+
+export function setEnvOverride(value: 'dev' | 'prod' | null) {
+  envOverride = value;
+}
+
+export function getEnvOverride(): 'dev' | 'prod' | null {
+  return envOverride;
+}
+
 export function getHome() {
   return app.getPath('home');
 }

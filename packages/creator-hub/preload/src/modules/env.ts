@@ -9,7 +9,7 @@ import { ipcRenderer } from 'electron';
 export function getEnv(): 'dev' | 'prod' {
   try {
     // Ask main process for the env override from CLI args
-    const envOverride = ipcRenderer.sendSync('get-env-override') as 'dev' | 'prod' | null;
+    const envOverride = ipcRenderer.sendSync('electron.getEnvOverride') as 'dev' | 'prod' | null;
     if (envOverride) {
       return envOverride;
     }

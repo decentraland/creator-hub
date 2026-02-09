@@ -12,17 +12,11 @@ import { runMigrations } from '/@/modules/migrations';
 import { getAnalytics, track } from './modules/analytics';
 import { tryOpenDevToolsOnPort, parseEnvArgument } from './modules/app-args-handle';
 import { addEditorsPathsToConfig } from './modules/code';
+import { setEnvOverride } from './modules/electron';
 
 import '/@/security-restrictions';
 
 log.initialize();
-
-// Store environment override from CLI arguments
-let envOverride: 'dev' | 'prod' | null = null;
-
-export function getEnvOverride() {
-  return envOverride;
-}
 
 if (import.meta.env.PROD) {
   Sentry.init({
@@ -43,7 +37,7 @@ app.on('second-instance', async (_e: unknown, argv: string[]) => {
 
   const newEnvOverride = parseEnvArgument(argv);
   if (newEnvOverride) {
-    envOverride = newEnvOverride;
+    setEnvOverride(newEnvOverride);
   }
 
   tryOpenDevToolsOnPort(argv);
@@ -74,8 +68,10 @@ app
     await runMigrations();
     log.info(`[App] Ready v${app.getVersion()}`);
 
-    envOverride = parseEnvArgument(process.argv); // Parse env before initializing IPC
+    const envOverride = parseEnvArgument(process.argv);
+    setEnvOverride(envOverride);
     log.info(`[App] Environment override: ${envOverride || 'none'}`);
+
     initIpc();
     log.info('[IPC] Ready');
     await restoreOrCreateMainWindow();
