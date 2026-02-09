@@ -1,5 +1,20 @@
 import type { GizmoManager, Nullable, IRotationGizmo } from '@babylonjs/core';
-import { Vector3, TransformNode, Quaternion, Matrix } from '@babylonjs/core';
+import {
+  Vector3,
+  TransformNode,
+  Quaternion,
+  Matrix,
+  Color3,
+  ShaderMaterial,
+  Effect,
+  Mesh,
+  MeshBuilder,
+  VertexBuffer,
+  VertexData,
+  Material,
+  type Scene,
+  type Observer,
+} from '@babylonjs/core';
 import type { Entity } from '@dcl/ecs';
 import type { EcsEntity } from '../EcsEntity';
 import { snapManager } from '../snap-manager';
@@ -7,6 +22,39 @@ import { LEFT_BUTTON } from '../mouse-utils';
 import type { IGizmoTransformer } from './types';
 import { GizmoType } from './types';
 import { configureGizmoButtons } from './utils';
+
+// Depth cues: outward-facing side of each loop brighter, inward-facing duller
+const DEPTH_CUE_VERTEX_SHADER = `
+  precision highp float;
+  attribute vec3 position;
+  uniform mat4 worldViewProjection;
+  uniform mat4 world;
+  varying vec3 vWorldPos;
+  void main() {
+    gl_Position = worldViewProjection * vec4(position, 1.0);
+    vWorldPos = (world * vec4(position, 1.0)).xyz;
+  }
+`;
+
+const DEPTH_CUE_FRAGMENT_SHADER = `
+  precision highp float;
+  varying vec3 vWorldPos;
+  uniform vec3 baseColor;
+  uniform vec3 cameraPosition;
+  uniform vec3 gizmoCenter;
+  uniform float alpha;
+  void main() {
+    vec3 V = normalize(cameraPosition - vWorldPos);
+    vec3 toFragment = vWorldPos - gizmoCenter;
+    float dist = length(toFragment);
+    if (dist < 0.001) { gl_FragColor = vec4(baseColor, alpha); return; }
+    toFragment /= dist;
+    float frontBack = dot(toFragment, V);
+    // Facing goes 0 (far side) -> 1 (near side). We fade alpha rather than darken color.
+    float facing = smoothstep(-0.4, 0.2, frontBack);
+    gl_FragColor = vec4(baseColor, alpha * facing);
+  }
+`;
 
 // Types for better type safety
 type EntityTransformData = {
@@ -20,7 +68,21 @@ type DragState = {
   transformData: Map<Entity, EntityTransformData>;
   multiTransform?: TransformNode;
   lastAppliedSnapAngle?: number; // Track the last applied snap angle for smooth snapping
+  initialGizmoRotation?: Quaternion; // Store initial gizmo rotation for world-aligned drag
 };
+
+type AxisDepthCueData = {
+  rotationMesh: Mesh;
+  coloredMaterial: unknown;
+  hoverMaterial: unknown;
+  disableMaterial: unknown;
+  depthCueColored: ShaderMaterial;
+  depthCueHover: ShaderMaterial;
+  depthCueDisable: ShaderMaterial;
+};
+
+// Visual/picking config: make the rotation rings easier to hit without changing their diameter
+const ROTATION_RING_THICKNESS_MULTIPLIER = 2.25;
 
 // Helper class for entity rotation calculations
 class EntityRotationHelper {
@@ -199,6 +261,13 @@ export class RotationGizmo implements IGizmoTransformer {
   private isWorldAligned = true;
   private sceneContext: any = null;
 
+  // Store original materials for customization
+  private originalMaterials: Map<any, { colored: any; hover: any }> = new Map();
+
+  // Depth-cue: outward-facing side of each loop brighter, inward duller
+  private depthCueAxisData: AxisDepthCueData[] = [];
+  private beforeRenderObserver: Nullable<Observer<Scene>> = null;
+
   constructor(
     private gizmoManager: GizmoManager,
     private snapRotation: (rotation: Quaternion) => Quaternion,
@@ -211,14 +280,358 @@ export class RotationGizmo implements IGizmoTransformer {
     this.rotationGizmo.updateGizmoRotationToMatchAttachedMesh = !this.isWorldAligned;
   }
 
+  private customizeGizmoAppearance(): void {
+    if (!this.rotationGizmo) return;
+
+    // Access axis gizmos (xGizmo, yGizmo, zGizmo) - these are public properties
+    const axisGizmos = [
+      this.rotationGizmo.xGizmo,
+      this.rotationGizmo.yGizmo,
+      this.rotationGizmo.zGizmo,
+    ];
+
+    for (const gizmo of axisGizmos) {
+      if (!gizmo) continue;
+
+      // Access public material properties
+      const coloredMaterial = gizmo.coloredMaterial;
+      const hoverMaterial = gizmo.hoverMaterial;
+
+      if (coloredMaterial && hoverMaterial) {
+        // Store original materials for reference
+        this.originalMaterials.set(gizmo, {
+          colored: coloredMaterial,
+          hover: hoverMaterial,
+        });
+
+        // Customize hover material to be brighter/thicker instead of yellow
+        // Preserve original color but make it brighter and more emissive
+        const originalColor = coloredMaterial.diffuseColor || new Color3(1, 1, 1);
+        const originalEmissive = coloredMaterial.emissiveColor || new Color3(0, 0, 0);
+
+        // Make hover color brighter (1.5x) while preserving the original color
+        hoverMaterial.diffuseColor = new Color3(
+          Math.min(1, originalColor.r * 1.5),
+          Math.min(1, originalColor.g * 1.5),
+          Math.min(1, originalColor.b * 1.5),
+        );
+
+        // Increase emissive to make it appear thicker/brighter
+        hoverMaterial.emissiveColor = new Color3(
+          Math.min(1, originalEmissive.r + originalColor.r * 0.6),
+          Math.min(1, originalEmissive.g + originalColor.g * 0.6),
+          Math.min(1, originalEmissive.b + originalColor.b * 0.6),
+        );
+      }
+    }
+  }
+
+  private thickenRotationLoops(): void {
+    if (!this.rotationGizmo) return;
+
+    const axisGizmos = [
+      this.rotationGizmo.xGizmo,
+      this.rotationGizmo.yGizmo,
+      this.rotationGizmo.zGizmo,
+    ];
+
+    for (const gizmo of axisGizmos) {
+      if (!gizmo) continue;
+
+      const plane = gizmo as { _gizmoMesh?: Mesh };
+      const gizmoMesh = plane._gizmoMesh;
+      if (!gizmoMesh) continue;
+
+      // Babylon's rotation gizmo usually has multiple children (visible ring + optional collider ring).
+      // We detect ring-like (torus-ish) meshes and rebuild their geometry with a thicker tube.
+      const children = gizmoMesh.getChildMeshes(false).filter((m): m is Mesh => m instanceof Mesh);
+      for (const child of children) {
+        if (!child.isVerticesDataPresent(VertexBuffer.PositionKind)) continue;
+
+        child.computeWorldMatrix(true);
+        child.refreshBoundingInfo(true);
+        const ext = child.getBoundingInfo().boundingBox.extendSize;
+        if (!this.isLikelyRotationRing(ext)) continue;
+
+        this.rebuildTorusLikeMeshWithThickerTube(child, ROTATION_RING_THICKNESS_MULTIPLIER);
+      }
+    }
+  }
+
+  private isLikelyRotationRing(ext: Vector3): boolean {
+    // A torus ring (in local space) is "flat": one axis is much smaller than the other two,
+    // and the two large extents are roughly equal.
+    const values = [ext.x, ext.y, ext.z].sort((a, b) => a - b);
+    const [minE, midE, maxE] = values;
+    if (!Number.isFinite(minE) || !Number.isFinite(midE) || !Number.isFinite(maxE)) return false;
+    if (minE <= 0 || midE <= 0 || maxE <= 0) return false;
+
+    const largeSimilar = Math.abs(maxE - midE) / maxE < 0.2;
+    const flatEnough = minE / midE < 0.45;
+    const bigEnough = midE > 0.05;
+    return largeSimilar && flatEnough && bigEnough;
+  }
+
+  private getSmallestExtentAxisIndex(ext: Vector3): 0 | 1 | 2 {
+    if (ext.x <= ext.y && ext.x <= ext.z) return 0;
+    if (ext.y <= ext.x && ext.y <= ext.z) return 1;
+    return 2;
+  }
+
+  private axisVectorFromIndex(index: 0 | 1 | 2): Vector3 {
+    if (index === 0) return Vector3.Right();
+    if (index === 1) return Vector3.Up();
+    return Vector3.Forward();
+  }
+
+  private quaternionFromTo(from: Vector3, to: Vector3): Quaternion {
+    const f = from.clone().normalize();
+    const t = to.clone().normalize();
+    const dot = Vector3.Dot(f, t);
+
+    if (dot > 0.999999) return Quaternion.Identity();
+
+    if (dot < -0.999999) {
+      // 180° rotation; pick an arbitrary orthogonal axis
+      const arbitrary = Math.abs(f.x) < 0.1 ? Vector3.Right() : Vector3.Up();
+      const axis = Vector3.Cross(f, arbitrary).normalize();
+      return Quaternion.RotationAxis(axis, Math.PI);
+    }
+
+    const axis = Vector3.Cross(f, t);
+    const s = Math.sqrt((1 + dot) * 2);
+    const invs = 1 / s;
+    return new Quaternion(axis.x * invs, axis.y * invs, axis.z * invs, s * 0.5);
+  }
+
+  private estimateTessellation(mesh: Mesh): number {
+    // Torus vertex count is roughly (tess+1)^2. This is a heuristic, but good enough here.
+    const vertexCount = Math.max(0, mesh.getTotalVertices());
+    const estimate = Math.round(Math.sqrt(vertexCount)) - 1;
+    return Math.min(128, Math.max(24, estimate || 48));
+  }
+
+  private rebuildTorusLikeMeshWithThickerTube(mesh: Mesh, thicknessMultiplier: number): void {
+    const scene = mesh.getScene();
+    if (!scene) return;
+
+    type OriginalTorusParams = {
+      outerDiameter: number;
+      thickness: number;
+      tessellation: number;
+      axisIndex: 0 | 1 | 2;
+    };
+
+    // IMPORTANT: make this operation idempotent.
+    // Gizmo meshes can be reused across selections/enables; recomputing from already-thickened
+    // geometry will "inflate" rings every time.
+    const meta = (mesh.metadata ??= {}) as Record<string, unknown>;
+    const META_KEY = '__rotationGizmoOriginalTorus';
+
+    let original = meta[META_KEY] as OriginalTorusParams | undefined;
+    if (!original) {
+      mesh.computeWorldMatrix(true);
+      mesh.refreshBoundingInfo(true);
+      const ext = mesh.getBoundingInfo().boundingBox.extendSize;
+
+      const axisIndex = this.getSmallestExtentAxisIndex(ext);
+      const extValues = [ext.x, ext.y, ext.z].sort((a, b) => a - b);
+      const minExtent = extValues[0];
+      const outerRadius = extValues[2]; // max extent in the ring plane
+
+      // Interpret extents as torus parameters in local space:
+      // - minorRadius ~= minExtent
+      // - outerRadius ~= majorRadius + minorRadius
+      const outerDiameter = outerRadius * 2;
+      const thickness = minExtent * 2;
+
+      original = {
+        outerDiameter,
+        thickness,
+        tessellation: this.estimateTessellation(mesh),
+        axisIndex,
+      };
+      meta[META_KEY] = original;
+    }
+
+    const minAxisIdx = original.axisIndex;
+
+    // Keep OUTER diameter stable while thickening the tube.
+    // Cap thickness to avoid turning the torus into a solid disk.
+    const maxThickness = original.outerDiameter * 0.35;
+    const newThickness = Math.min(
+      maxThickness,
+      Math.max(original.thickness * thicknessMultiplier, original.thickness),
+    );
+    const newDiameter = Math.max(0.0001, original.outerDiameter - newThickness);
+
+    const tmp = MeshBuilder.CreateTorus(
+      `${mesh.name}_thickTmp`,
+      { diameter: newDiameter, thickness: newThickness, tessellation: original.tessellation },
+      scene,
+    );
+
+    // Align tmp torus axis to match the existing mesh's symmetry axis
+    tmp.refreshBoundingInfo(true);
+    const tmpExt = tmp.getBoundingInfo().boundingBox.extendSize;
+    const tmpAxisIdx = this.getSmallestExtentAxisIndex(tmpExt);
+
+    const fromAxis = this.axisVectorFromIndex(tmpAxisIdx);
+    const toAxis = this.axisVectorFromIndex(minAxisIdx);
+    tmp.rotationQuaternion = this.quaternionFromTo(fromAxis, toAxis);
+    tmp.bakeCurrentTransformIntoVertices();
+
+    const vd = VertexData.ExtractFromMesh(tmp);
+    vd.applyToMesh(mesh, true);
+    mesh.refreshBoundingInfo(true);
+
+    tmp.dispose();
+  }
+
+  private applyDepthCueToRotationLoops(): void {
+    if (!this.rotationGizmo) return;
+
+    this.removeDepthCueFromRotationLoops();
+
+    Effect.ShadersStore['rotationGizmoDepthCueVertexShader'] = DEPTH_CUE_VERTEX_SHADER;
+    Effect.ShadersStore['rotationGizmoDepthCueFragmentShader'] = DEPTH_CUE_FRAGMENT_SHADER;
+
+    const axisGizmos = [
+      { gizmo: this.rotationGizmo.xGizmo, baseColor: new Color3(0.9, 0.2, 0.2) },
+      { gizmo: this.rotationGizmo.yGizmo, baseColor: new Color3(0.2, 0.9, 0.2) },
+      { gizmo: this.rotationGizmo.zGizmo, baseColor: new Color3(0.2, 0.2, 0.9) },
+    ];
+
+    const planeGizmo = this.rotationGizmo.xGizmo as { _gizmoMesh?: Mesh };
+    const scene = planeGizmo._gizmoMesh?.getScene() as Scene;
+    if (!scene) return;
+
+    for (const { gizmo, baseColor } of axisGizmos) {
+      const plane = gizmo as { _gizmoMesh?: Mesh };
+      const gizmoMesh = plane._gizmoMesh;
+      if (!gizmoMesh) continue;
+
+      const children = gizmoMesh.getChildMeshes();
+      const rotationMesh = children.find(m => m.visibility > 0) ?? children[0];
+      if (!rotationMesh || !(rotationMesh instanceof Mesh)) continue;
+
+      const coloredMaterial = gizmo.coloredMaterial;
+      const hoverMaterial = gizmo.hoverMaterial;
+      const disableMaterial = gizmo.disableMaterial;
+
+      const depthCueColored = this.createDepthCueMaterial(scene, baseColor, 1, 'depthCueColored');
+      const hoverBaseColor = new Color3(
+        Math.min(1, baseColor.r * 1.35 + 0.2),
+        Math.min(1, baseColor.g * 1.35 + 0.2),
+        Math.min(1, baseColor.b * 1.35 + 0.2),
+      );
+      const depthCueHover = this.createDepthCueMaterial(scene, hoverBaseColor, 1, 'depthCueHover');
+      const depthCueDisable = this.createDepthCueMaterial(
+        scene,
+        new Color3(0.5, 0.5, 0.5),
+        0.4,
+        'depthCueDisable',
+      );
+
+      this.depthCueAxisData.push({
+        rotationMesh,
+        coloredMaterial,
+        hoverMaterial,
+        disableMaterial,
+        depthCueColored,
+        depthCueHover,
+        depthCueDisable,
+      });
+    }
+
+    this.beforeRenderObserver = scene.onBeforeRenderObservable.add(() => {
+      const cam = scene.activeCamera;
+      const attachedNode = this.gizmoManager.attachedNode;
+      const gizmoCenter = attachedNode
+        ? (attachedNode as TransformNode).getAbsolutePosition()
+        : Vector3.Zero();
+
+      for (const data of this.depthCueAxisData) {
+        const current = data.rotationMesh.material;
+        if (current === data.coloredMaterial) data.rotationMesh.material = data.depthCueColored;
+        else if (current === data.hoverMaterial) data.rotationMesh.material = data.depthCueHover;
+        else if (current === data.disableMaterial)
+          data.rotationMesh.material = data.depthCueDisable;
+
+        const mat = data.rotationMesh.material;
+        if (
+          cam &&
+          (mat === data.depthCueColored ||
+            mat === data.depthCueHover ||
+            mat === data.depthCueDisable)
+        ) {
+          const shaderMat = mat as ShaderMaterial;
+          shaderMat.setVector3('cameraPosition', cam.globalPosition);
+          shaderMat.setVector3('gizmoCenter', gizmoCenter);
+        }
+      }
+    });
+  }
+
+  private createDepthCueMaterial(
+    scene: Scene,
+    baseColor: Color3,
+    alpha: number,
+    name: string,
+  ): ShaderMaterial {
+    const mat = new ShaderMaterial(
+      name,
+      scene,
+      { vertex: 'rotationGizmoDepthCue', fragment: 'rotationGizmoDepthCue' },
+      {
+        attributes: ['position'],
+        uniforms: [
+          'world',
+          'worldViewProjection',
+          'baseColor',
+          'cameraPosition',
+          'gizmoCenter',
+          'alpha',
+        ],
+      },
+    );
+    mat.setColor3('baseColor', baseColor);
+    mat.setFloat('alpha', alpha);
+    mat.backFaceCulling = false;
+    // IMPORTANT: enable alpha blending so gl_FragColor.a is respected.
+    // Without this, the shader writes alpha but the material is still rendered as opaque.
+    mat.transparencyMode = Material.MATERIAL_ALPHABLEND;
+    mat.needAlphaBlending = () => true;
+    return mat;
+  }
+
+  private removeDepthCueFromRotationLoops(): void {
+    if (this.beforeRenderObserver) {
+      this.beforeRenderObserver.remove();
+      this.beforeRenderObserver = null;
+    }
+    for (const data of this.depthCueAxisData) {
+      data.depthCueColored.dispose();
+      data.depthCueHover.dispose();
+      data.depthCueDisable.dispose();
+    }
+    this.depthCueAxisData = [];
+  }
+
   enable(): void {
     if (!this.gizmoManager.gizmos.rotationGizmo) return;
+    this.rotationGizmo = this.gizmoManager.gizmos.rotationGizmo;
+    // Run customization when rotation gizmo is enabled so first use shows new gizmo
+    this.customizeGizmoAppearance();
+    this.thickenRotationLoops();
+    this.applyDepthCueToRotationLoops();
     this.setupDragObservables();
     // Configure gizmo to only work with left click
     configureGizmoButtons(this.gizmoManager.gizmos.rotationGizmo, [LEFT_BUTTON]);
   }
 
   cleanup(): void {
+    this.removeDepthCueFromRotationLoops();
     this.rotationGizmo = null;
     this.cleanupDragObservables();
     this.clearDragState();
@@ -226,9 +639,29 @@ export class RotationGizmo implements IGizmoTransformer {
   }
 
   setEntities(entities: EcsEntity[]): void {
+    const previousEntityIds = new Set(this.currentEntityIds);
     this.currentEntities = entities;
     this.currentEntityIds = new Set(entities.map(e => e.entityId));
+
+    // Check if entities changed
+    const entitiesChanged =
+      previousEntityIds.size !== this.currentEntityIds.size ||
+      Array.from(this.currentEntityIds).some(id => !previousEntityIds.has(id));
+
+    // Always sync gizmo rotation, especially when world-aligned
+    // This fixes the bug where gizmo doesn't reset when switching entities
     this.syncGizmoRotation();
+
+    // If world-aligned and entities changed, ensure gizmo is reset to identity
+    if (this.isWorldAligned && entitiesChanged) {
+      if (this.gizmoManager.attachedNode) {
+        const gizmoNode = this.gizmoManager.attachedNode as TransformNode;
+        if (gizmoNode.rotationQuaternion) {
+          gizmoNode.rotationQuaternion.set(0, 0, 0, 1);
+          gizmoNode.computeWorldMatrix(true);
+        }
+      }
+    }
   }
 
   setUpdateCallbacks(
@@ -277,6 +710,16 @@ export class RotationGizmo implements IGizmoTransformer {
 
     // Store the initial gizmo rotation for delta calculation
     this.dragState!.startRotation = gizmoNode.rotationQuaternion?.clone() || Quaternion.Identity();
+
+    // For world-aligned mode, allow the gizmo to rotate during drag
+    // Store the initial rotation and temporarily enable rotation matching
+    if (this.isWorldAligned && this.rotationGizmo) {
+      this.dragState!.initialGizmoRotation =
+        gizmoNode.rotationQuaternion?.clone() || Quaternion.Identity();
+      // Temporarily allow the gizmo to rotate with the attached mesh
+      // This makes the whole gimbal rotate during drag
+      this.rotationGizmo.updateGizmoRotationToMatchAttachedMesh = true;
+    }
   }
 
   update(entities: EcsEntity[], gizmoNode: TransformNode): void {
@@ -300,10 +743,15 @@ export class RotationGizmo implements IGizmoTransformer {
       this.updateMultipleEntitiesRotation();
     }
 
-    // Only sync gizmo for world alignment
-    // For local alignment, let the gizmo maintain its current rotation
-    if (this.isWorldAligned) {
+    // Restore world-aligned behavior: disable rotation matching and reset gizmo
+    if (this.isWorldAligned && this.rotationGizmo) {
+      // Disable rotation matching first
+      this.rotationGizmo.updateGizmoRotationToMatchAttachedMesh = false;
+      // Then sync/reset the gizmo rotation back to identity
       this.syncGizmoRotation();
+    } else if (!this.isWorldAligned) {
+      // For local alignment, let the gizmo maintain its current rotation
+      // No sync needed
     }
 
     this.clearDragState();
@@ -670,7 +1118,17 @@ export class RotationGizmo implements IGizmoTransformer {
     if (!this.gizmoManager.attachedNode) return;
 
     const gizmoNode = this.gizmoManager.attachedNode as TransformNode;
-    GizmoSyncHelper.syncGizmoRotation(gizmoNode, this.currentEntities, this.isWorldAligned);
+
+    // Always ensure world-aligned gizmo is reset to identity, regardless of previous state
+    if (this.isWorldAligned) {
+      if (gizmoNode.rotationQuaternion) {
+        gizmoNode.rotationQuaternion.set(0, 0, 0, 1);
+      }
+      gizmoNode.computeWorldMatrix(true);
+    } else {
+      // For local alignment, use the helper
+      GizmoSyncHelper.syncGizmoRotation(gizmoNode, this.currentEntities, this.isWorldAligned);
+    }
   }
 
   private updateMultipleEntitiesRotation(): void {
