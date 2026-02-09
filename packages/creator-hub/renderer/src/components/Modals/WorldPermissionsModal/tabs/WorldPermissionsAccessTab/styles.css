@@ -13,16 +13,32 @@
 
 .WorldAccessTab .AccessTypeRow {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
 }
 
 .WorldAccessTab .AccessTypeSelect {
-  max-width: 280px;
+  border-radius: 12px;
+  border: 1px solid var(--transparent-gray-light);
 }
 
-.WorldAccessTab .AccessTypeSelect .MuiSelect-select {
-  padding: 10px 14px;
+.WorldAccessTab .AccessTypeSelect div[role="combobox"] {
+  padding: 12px 20px 12px 0;
+}
+
+.WorldAccessTab .AccessTypeSelect div[role="combobox"]:focus {
+  background-color: transparent;
+}
+
+.AccessTypeValue {
+  display: flex;
+  align-items: center;
+}
+
+.AccessTypeValue .MuiSvgIcon-root {
+  font-size: 16px;
+  margin-right: 4px;
 }
 
 .WorldAccessTab .AccessTypeDescription {

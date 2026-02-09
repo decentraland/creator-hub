@@ -1,3 +1,51 @@
-@import '../shared/dialog-styles.css';
+.PasswordForm {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  max-width: 320px;
+  margin: 0 auto;
+  padding: 24px;
+  background-color: var(--black);
+  border-radius: 8px;
+}
 
-/* PasswordDialog uses shared WorldPermissionsDialog styles */
+.PasswordForm .PasswordFormTitle {
+  font-size: 16px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.PasswordForm .PasswordFormField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.PasswordForm .PasswordFormLabel {
+  color: var(--text-on-secondary);
+  font-size: 13px;
+}
+
+.PasswordForm .MuiOutlinedInput-root {
+  background-color: var(--black);
+}
+
+.PasswordForm .MuiOutlinedInput-notchedOutline {
+  border-color: var(--transparent-gray-light);
+}
+
+.PasswordForm .PasswordFormInfo {
+  gap: 8px;
+  padding: 12px;
+  color: #BBDEFB;
+}
+
+.PasswordForm .PasswordFormInfo .MuiTypography-root {
+  font-size: 12px;
+}
+
+.PasswordForm .PasswordFormActions {
+  display: flex;
+  justify-content: space-between;
+}

@@ -508,7 +508,8 @@
           "create_title": "Crear Nueva Contraseña",
           "change_title": "Cambiar Contraseña",
           "type_password": "Escribe tu contraseña",
-          "repeat_password": "Repite tu contraseña"
+          "repeat_password": "Repite tu contraseña",
+          "info": "¡Asegúrate de anotar tu contraseña para no perderla!"
         },
         "error": {
           "empty": "La contraseña no puede estar vacía",

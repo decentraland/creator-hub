@@ -37,6 +37,24 @@
   border-color: var(--transparent-gray-light);
 }
 
+.WorldPermissionsDialog .DialogInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background-color: rgba(255, 255, 255, 0.08);
+  color: var(--text-on-secondary);
+}
+
+.WorldPermissionsDialog .DialogInfo .MuiSvgIcon-root {
+  flex-shrink: 0;
+}
+
+.WorldPermissionsDialog .DialogInfo .MuiTypography-root {
+  font-size: 12px;
+}
+
 .WorldPermissionsDialog .DialogActions {
   display: flex;
   justify-content: flex-end;

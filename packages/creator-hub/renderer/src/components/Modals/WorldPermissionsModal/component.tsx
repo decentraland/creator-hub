@@ -59,12 +59,18 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
   }) => {
     const [activeTab, setActiveTab] = useState<WorldPermissionsTab>(WorldPermissionsTab.ACCESS);
     const [activeCollaboratorAddress, setActiveCollaboratorAddress] = useState<string | null>(null);
+    const [updating, setUpdating] = useState(false);
     const dispatch = useDispatch();
 
     const collaboratorUsersList = useMemo(
       () => Object.keys(worldPermissionsSummary || {}),
       [worldPermissionsSummary],
     );
+
+    const withUpdating = useCallback((action: Promise<unknown>) => {
+      setUpdating(true);
+      action.finally(() => setUpdating(false));
+    }, []);
 
     const handleTabClick = useCallback((tab: WorldPermissionsTab) => {
       setActiveTab(tab);
@@ -74,12 +80,14 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
     const handleChangeAccessType = useCallback(
       (accessType: WorldPermissionType) => {
         if (!worldPermissions) return;
-        dispatch(
-          updateWorldPermissions({
-            worldName,
-            worldPermissionName: WorldPermissionName.Access,
-            worldPermissionType: accessType,
-          }),
+        withUpdating(
+          dispatch(
+            updateWorldPermissions({
+              worldName,
+              worldPermissionName: WorldPermissionName.Access,
+              worldPermissionType: accessType,
+            }),
+          ),
         );
       },
       [worldName, worldPermissions],
@@ -87,13 +95,15 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
 
     const handleSetAccessPassword = useCallback(
       (password: string) => {
-        dispatch(
-          updateWorldPermissions({
-            worldName,
-            worldPermissionName: WorldPermissionName.Access,
-            worldPermissionType: WorldPermissionType.SharedSecret,
-            secret: password,
-          }),
+        withUpdating(
+          dispatch(
+            updateWorldPermissions({
+              worldName,
+              worldPermissionName: WorldPermissionName.Access,
+              worldPermissionType: WorldPermissionType.SharedSecret,
+              secret: password,
+            }),
+          ),
         );
       },
       [worldName],
@@ -107,12 +117,14 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
           worldPermissions?.access.type === WorldPermissionType.AllowList &&
           !worldPermissions.access.wallets?.includes(formattedWalletAddress)
         ) {
-          dispatch(
-            addAddressPermission({
-              worldName,
-              permissionName: WorldPermissionName.Access,
-              walletAddress: formattedWalletAddress,
-            }),
+          withUpdating(
+            dispatch(
+              addAddressPermission({
+                worldName,
+                permissionName: WorldPermissionName.Access,
+                walletAddress: formattedWalletAddress,
+              }),
+            ),
           );
         }
       },
@@ -125,12 +137,14 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
           worldPermissions?.access.type === WorldPermissionType.AllowList &&
           worldPermissions.access.wallets?.includes(walletAddress)
         ) {
-          dispatch(
-            removeAddressPermission({
-              worldName,
-              permissionName: WorldPermissionName.Access,
-              walletAddress,
-            }),
+          withUpdating(
+            dispatch(
+              removeAddressPermission({
+                worldName,
+                permissionName: WorldPermissionName.Access,
+                walletAddress,
+              }),
+            ),
           );
         }
       },
@@ -147,12 +161,14 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
           (worldPermissions.streaming.type !== WorldPermissionType.AllowList ||
             !worldPermissions.streaming.wallets?.includes(formattedWalletAddress))
         ) {
-          dispatch(
-            addAddressPermission({
-              worldName,
-              permissionName: WorldPermissionName.Deployment,
-              walletAddress: formattedWalletAddress,
-            }),
+          withUpdating(
+            dispatch(
+              addAddressPermission({
+                worldName,
+                permissionName: WorldPermissionName.Deployment,
+                walletAddress: formattedWalletAddress,
+              }),
+            ),
           );
         }
       },
@@ -161,17 +177,21 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
 
     const handleRemoveCollaborator = useCallback(
       (walletAddress: string) => {
+        const promises: Promise<unknown>[] = [];
+
         // Delete the collaborator's deployment permission
         if (
           worldPermissions?.deployment.type === WorldPermissionType.AllowList &&
           worldPermissions.deployment.wallets?.includes(walletAddress)
         ) {
-          dispatch(
-            removeAddressPermission({
-              worldName,
-              permissionName: WorldPermissionName.Deployment,
-              walletAddress,
-            }),
+          promises.push(
+            dispatch(
+              removeAddressPermission({
+                worldName,
+                permissionName: WorldPermissionName.Deployment,
+                walletAddress,
+              }),
+            ),
           );
         }
 
@@ -180,13 +200,19 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
           worldPermissions?.streaming.type === WorldPermissionType.AllowList &&
           worldPermissions.streaming.wallets?.includes(walletAddress)
         ) {
-          dispatch(
-            removeAddressPermission({
-              worldName,
-              permissionName: WorldPermissionName.Streaming,
-              walletAddress,
-            }),
+          promises.push(
+            dispatch(
+              removeAddressPermission({
+                worldName,
+                permissionName: WorldPermissionName.Streaming,
+                walletAddress,
+              }),
+            ),
           );
+        }
+
+        if (promises.length > 0) {
+          withUpdating(Promise.all(promises));
         }
       },
       [worldName, worldPermissions],
@@ -196,12 +222,14 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
       (walletAddress: string) => {
         // Put deployment permission will remove the parcels associated
         // with the permission and transform it into a world-wide permission.
-        dispatch(
-          addAddressPermission({
-            worldName,
-            permissionName: WorldPermissionName.Deployment,
-            walletAddress: walletAddress.toLowerCase(),
-          }),
+        withUpdating(
+          dispatch(
+            addAddressPermission({
+              worldName,
+              permissionName: WorldPermissionName.Deployment,
+              walletAddress: walletAddress.toLowerCase(),
+            }),
+          ),
         );
       },
       [worldName],
@@ -250,6 +278,7 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
         ) : (
           !!worldPermissions && (
             <>
+              {updating && <Loader overlay />}
               {activeTab === WorldPermissionsTab.ACCESS && (
                 <WorldPermissionsAccessTab
                   worldAccessPermissions={worldPermissions?.access}

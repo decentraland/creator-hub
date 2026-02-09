@@ -1,9 +1,8 @@
 import React, { useCallback, useState } from 'react';
-import { Box, Typography } from 'decentraland-ui2';
+import { Box } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
-import { Row } from '/@/components/Row';
 import { Button } from '/@/components/Button';
-import { WorldPermissionsPasswordDialog } from '../WorldPermissionsPasswordDialog';
+import { WorldPermissionsPasswordForm } from '../WorldPermissionsPasswordDialog';
 import './styles.css';
 
 type Props = {
@@ -14,54 +13,45 @@ type Props = {
 
 export const WorldPermissionsPasswordSection: React.FC<Props> = React.memo(
   ({ hasPassword, isLoading, onSetPassword }) => {
-    const [dialogOpen, setDialogOpen] = useState(false);
+    const [showForm, setShowForm] = useState(false);
 
-    const handleOpenDialog = useCallback(() => {
-      setDialogOpen(true);
+    const handleShowForm = useCallback(() => {
+      setShowForm(true);
     }, []);
 
-    const handleCloseDialog = useCallback(() => {
-      setDialogOpen(false);
+    const handleHideForm = useCallback(() => {
+      setShowForm(false);
     }, []);
 
     const handleSubmitPassword = useCallback(
       (newPassword: string) => {
         onSetPassword(newPassword);
-        setDialogOpen(false);
+        setShowForm(false);
       },
       [onSetPassword],
     );
 
-    return (
-      <Box className="PasswordSection">
-        <Box className="PasswordEmptyState">
-          <Typography
-            variant="body2"
-            className="PasswordEmptyText"
-          >
-            {hasPassword
-              ? t('modal.world_permissions.password.has_password')
-              : t('modal.world_permissions.password.empty_state')}
-          </Typography>
-          <Row className="PasswordActions">
-            <Button
-              onClick={handleOpenDialog}
-              color="primary"
-              disabled={isLoading}
-            >
-              {hasPassword
-                ? t('modal.world_permissions.password.change_password')
-                : t('modal.world_permissions.password.create_new_password')}
-            </Button>
-          </Row>
-        </Box>
-
-        <WorldPermissionsPasswordDialog
-          open={dialogOpen}
+    if (showForm) {
+      return (
+        <WorldPermissionsPasswordForm
           isChanging={hasPassword}
-          onClose={handleCloseDialog}
+          onCancel={handleHideForm}
           onSubmit={handleSubmitPassword}
         />
+      );
+    }
+
+    return (
+      <Box className="PasswordSection">
+        <Button
+          onClick={handleShowForm}
+          color="primary"
+          disabled={isLoading}
+        >
+          {hasPassword
+            ? t('modal.world_permissions.password.change_password')
+            : t('modal.world_permissions.password.create_new_password')}
+        </Button>
       </Box>
     );
   },

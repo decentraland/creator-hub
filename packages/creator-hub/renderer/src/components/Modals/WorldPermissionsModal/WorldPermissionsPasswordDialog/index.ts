@@ -1,1 +1,1 @@
-export { WorldPermissionsPasswordDialog } from './component';
+export { WorldPermissionsPasswordForm } from './component';

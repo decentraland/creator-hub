@@ -508,7 +508,8 @@
           "create_title": "Create New Password",
           "change_title": "Change Password",
           "type_password": "Type your password",
-          "repeat_password": "Repeat your password"
+          "repeat_password": "Repeat your password",
+          "info": "Make sure to write down your password so you don't lose it!"
         },
         "error": {
           "empty": "Password cannot be empty",
