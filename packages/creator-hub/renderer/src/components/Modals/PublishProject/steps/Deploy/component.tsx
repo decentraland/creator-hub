@@ -272,6 +272,7 @@ export function Deploy(props: Props) {
           <ProjectStepWrapper
             isWorld={isWorld}
             project={project}
+            name={project.worldConfiguration?.name}
             className="scene"
           >
             {loadingPublish ? (

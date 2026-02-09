@@ -16,6 +16,7 @@ import './styles.css';
 type Props = {
   children: React.ReactNode;
   isWorld: boolean;
+  name?: string;
   project: Project;
   className?: string;
 };
@@ -25,7 +26,7 @@ enum UserRole {
   COLLABORATOR = 'collaborator',
 }
 
-const ProjectStepWrapper: React.FC<Props> = ({ isWorld, project, children, className }) => {
+const ProjectStepWrapper: React.FC<Props> = ({ isWorld, name, project, children, className }) => {
   const { chainId, wallet, avatar } = useAuth();
   const ensData = useSelector(state => state.ens.data);
   const landData = useSelector(state => state.land.data);
@@ -33,8 +34,8 @@ const ProjectStepWrapper: React.FC<Props> = ({ isWorld, project, children, class
   const userRole: UserRole | null = useMemo(() => {
     if (!wallet) return null;
 
-    if (isWorld && project.worldConfiguration?.name) {
-      const ensEntry = ensData[project.worldConfiguration.name];
+    if (isWorld && name) {
+      const ensEntry = ensData[name];
       if (ensEntry) {
         const isOwner = ensEntry.nftOwnerAddress?.toLowerCase() === wallet.toLowerCase();
         return isOwner ? UserRole.OWNER : UserRole.COLLABORATOR;
@@ -53,7 +54,7 @@ const ProjectStepWrapper: React.FC<Props> = ({ isWorld, project, children, class
     }
 
     return null;
-  }, [wallet, isWorld, project, ensData, landData]);
+  }, [wallet, isWorld, project, name, ensData, landData]);
 
   return (
     <div className="ProjectStepWrapper">

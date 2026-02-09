@@ -31,6 +31,7 @@ import {
   actions as managementActions,
   selectors as managementSelectors,
 } from '/@/modules/store/management';
+import { addBase64ImagePrefix } from '/@/modules/image';
 import { useEditor } from '/@/hooks/useEditor';
 import { useWorkspace } from '/@/hooks/useWorkspace';
 import { useAuth } from '/@/hooks/useAuth';
@@ -178,6 +179,7 @@ export function PublishToWorld(props: Props) {
       {!emptyNames && project ? (
         <ProjectStepWrapper
           isWorld
+          name={name}
           project={project}
         >
           {step === Step.SELECTION && (
@@ -428,7 +430,11 @@ function SelectWorld({
             <div className="WorldInfo">
               <div className="WorldThumbnail">
                 <Image
-                  src={worldSettings.settings?.thumbnailUrl || project.thumbnail || ''}
+                  src={
+                    worldSettings.settings?.thumbnailUrl ||
+                    addBase64ImagePrefix(project.thumbnail) ||
+                    ''
+                  }
                   alt={worldSettings.settings?.title || ''}
                   fallbackSrc="/assets/images/scene-thumbnail-fallback.png"
                 />
