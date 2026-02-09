@@ -1,4 +1,10 @@
-import type { IEngine, ISchema, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
+import type {
+  IEngine,
+  ISchema,
+  JsonSchemaExtended,
+  LastWriteWinElementSetComponentDefinition,
+} from '@dcl/ecs';
+import { Schemas } from '@dcl/ecs';
 import type { MapResult } from '@dcl/ecs/dist/schemas/Map';
 
 export type VersionedComponent = {
@@ -19,13 +25,108 @@ export type VersionedComponents<T extends SchemaRegistry> = {
   [K in keyof T]: LastWriteWinElementSetComponentDefinition<MergedSchema<T[K]>>;
 };
 
+function mergeMapProperties(targetProps: any, sourceProps: any): any {
+  const result = { ...targetProps };
+  for (const [key, sourceProp] of Object.entries(sourceProps)) {
+    const targetProp = targetProps[key];
+    if (
+      targetProp?.serializationType === 'map' &&
+      (sourceProp as any)?.serializationType === 'map'
+    ) {
+      result[key] = {
+        ...(sourceProp as any),
+        properties: mergeMapProperties(
+          targetProp.properties || {},
+          (sourceProp as any).properties || {},
+        ),
+      };
+    } else {
+      result[key] = sourceProp;
+    }
+  }
+  return result;
+}
+
+function deepMergeSchemas(
+  target: Record<string, any>,
+  source: Record<string, any>,
+): Record<string, any> {
+  const result = { ...target };
+
+  for (const [key, sourceValue] of Object.entries(source)) {
+    const targetValue = target[key];
+
+    if (!(key in target)) {
+      result[key] = sourceValue;
+    } else if (
+      targetValue?.jsonSchema?.serializationType === 'map' &&
+      sourceValue?.jsonSchema?.serializationType === 'map'
+    ) {
+      const mergedProps = mergeMapProperties(
+        (targetValue.jsonSchema as any).properties || {},
+        (sourceValue.jsonSchema as any).properties || {},
+      );
+
+      const spec: Record<string, ISchema> = {};
+      for (const [k, v] of Object.entries(mergedProps)) {
+        spec[k] = Schemas.fromJson(v as JsonSchemaExtended);
+      }
+      result[key] = Schemas.Map(spec);
+    } else if (
+      targetValue?.jsonSchema?.serializationType === 'optional' &&
+      sourceValue?.jsonSchema?.serializationType === 'optional'
+    ) {
+      const targetInner = (targetValue.jsonSchema as any).optionalJsonSchema;
+      const sourceInner = (sourceValue.jsonSchema as any).optionalJsonSchema;
+
+      if (targetInner?.serializationType === 'map' && sourceInner?.serializationType === 'map') {
+        const mergedProps = mergeMapProperties(
+          targetInner.properties || {},
+          sourceInner.properties || {},
+        );
+        const spec: Record<string, ISchema> = {};
+        for (const [k, v] of Object.entries(mergedProps)) {
+          spec[k] = Schemas.fromJson(v as JsonSchemaExtended);
+        }
+        result[key] = Schemas.Optional(Schemas.Map(spec));
+      } else if (
+        targetInner?.serializationType === 'array' &&
+        sourceInner?.serializationType === 'array'
+      ) {
+        const targetItems = targetInner.items;
+        const sourceItems = sourceInner.items;
+
+        if (targetItems?.serializationType === 'map' && sourceItems?.serializationType === 'map') {
+          const mergedProps = mergeMapProperties(
+            targetItems.properties || {},
+            sourceItems.properties || {},
+          );
+          const spec: Record<string, ISchema> = {};
+          for (const [k, v] of Object.entries(mergedProps)) {
+            spec[k] = Schemas.fromJson(v as JsonSchemaExtended);
+          }
+          result[key] = Schemas.Optional(Schemas.Array(Schemas.Map(spec)));
+        } else {
+          result[key] = sourceValue;
+        }
+      } else {
+        result[key] = sourceValue;
+      }
+    } else {
+      result[key] = sourceValue;
+    }
+  }
+
+  return result;
+}
+
 export function createComponentFramework<T extends SchemaRegistry>(registry: T) {
   const VERSIONS_REGISTRY: Record<string, VersionedComponent[]> = Object.fromEntries(
     Object.entries(registry).map(([baseName, diffs]) => {
       const versions: VersionedComponent[] = [];
       let merged: Record<string, ISchema> = {};
       for (let i = 0; i < diffs.length; i++) {
-        merged = { ...merged, ...diffs[i] };
+        merged = deepMergeSchemas(merged, diffs[i]);
         versions.push({
           versionName: i === 0 ? baseName : `${baseName}-v${i}`,
           component: { ...merged },
