@@ -121,7 +121,9 @@ The app will use the specified environment APIs. If no `--env` argument is provi
 On development watch mode, you can also pass the `--env` argument when starting the app. In this case, the default environment is `dev`, but you can override it to `prod` if needed:
 
 ```bash
-npm start -- --env=prod
+npm start -- -- --env=prod
+# or
+npm run watch -- --env=prod
 ```
 
 ## Installation Process
