@@ -10,19 +10,12 @@ import { deployServer, killAllPreviews } from '/@/modules/cli';
 import { killInspectorServer } from '/@/modules/inspector';
 import { runMigrations } from '/@/modules/migrations';
 import { getAnalytics, track } from './modules/analytics';
-import { tryOpenDevToolsOnPort, parseEnvArgument } from './modules/app-args-handle';
+import { tryOpenDevToolsOnPort } from './modules/app-args-handle';
 import { addEditorsPathsToConfig } from './modules/code';
 
 import '/@/security-restrictions';
 
 log.initialize();
-
-// Store environment override from CLI arguments
-let envOverride: 'dev' | 'prod' | null = null;
-
-export function getEnvOverride() {
-  return envOverride;
-}
 
 if (import.meta.env.PROD) {
   Sentry.init({
@@ -40,12 +33,6 @@ if (!isSingleInstance) {
 }
 app.on('second-instance', async (_e: unknown, argv: string[]) => {
   await restoreOrCreateMainWindow();
-
-  const newEnvOverride = parseEnvArgument(argv);
-  if (newEnvOverride) {
-    envOverride = newEnvOverride;
-  }
-
   tryOpenDevToolsOnPort(argv);
 });
 
@@ -73,9 +60,6 @@ app
   .then(async () => {
     await runMigrations();
     log.info(`[App] Ready v${app.getVersion()}`);
-
-    envOverride = parseEnvArgument(process.argv);
-
     initIpc();
     log.info('[IPC] Ready');
     await restoreOrCreateMainWindow();

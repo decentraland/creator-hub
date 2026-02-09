@@ -1,7 +1,6 @@
 import path from 'path';
 import fs from 'fs/promises';
 import { app, BrowserWindow, clipboard, dialog, type OpenDialogOptions, shell } from 'electron';
-import { getEnvOverride as getEnvOverrideFromIndex } from '../index';
 
 export function getHome() {
   return app.getPath('home');
@@ -9,10 +8,6 @@ export function getHome() {
 
 export function getUserDataPath() {
   return app.getPath('userData');
-}
-
-export function getEnvOverride(): 'dev' | 'prod' | null {
-  return getEnvOverrideFromIndex();
 }
 
 export function getAppHomeLegacy() {

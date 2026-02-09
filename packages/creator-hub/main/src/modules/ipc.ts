@@ -1,4 +1,3 @@
-import { ipcMain } from 'electron';
 import { handle } from './handle';
 import * as electron from './electron';
 import * as updater from './updater';
@@ -20,16 +19,6 @@ export function initIpc() {
   handle('electron.showOpenDialog', (_event, opts) => electron.showOpenDialog(opts));
   handle('electron.openExternal', (_event, url) => electron.openExternal(url));
   handle('electron.copyToClipboard', (_event, text) => electron.copyToClipboard(text));
-
-  // Synchronous handler for getEnvOverride (needed during config initialization)
-  ipcMain.on('electron.getEnvOverride', event => {
-    try {
-      const value = electron.getEnvOverride();
-      event.returnValue = { success: true, value };
-    } catch (error: any) {
-      event.returnValue = { success: false, error: { message: error.message, name: error.name } };
-    }
-  });
 
   // updater
   handle('updater.checkForUpdates', (_event, config) => updater.checkForUpdates(config));
