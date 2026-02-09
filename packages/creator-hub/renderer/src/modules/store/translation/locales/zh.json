@@ -441,7 +441,7 @@
       "invalid_address": "无效地址",
       "done": "完成",
       "access": {
-        "title": "谁可以访问这个世界？",
+        "title": "管理谁可以访问您的世界",
         "description": "通过在<span>\"私有\"</span>和<span>\"公开\"</span>之间切换\n来管理谁可以访问您的世界。",
         "subtitle": "在<span>私有模式</span>下，您可以授予最多 100 个地址（Decentraland 用户）访问权限。请注意，如果您恢复到<span>公开模式</span>，您的已批准地址列表将被清除。",
         "type": {
@@ -462,8 +462,15 @@
         "approved_addresses": "已批准的地址 {number}",
         "add_address": "添加地址",
         "new_invite": "新邀请",
+        "clear_list": "清除列表",
         "confirm": "确认",
         "cancel": "取消",
+        "wrong_address_format": "地址格式错误",
+        "invite_tabs": {
+          "wallet_address": "钱包地址",
+          "community": "社区",
+          "import_csv": "导入CSV"
+        },
         "actions": {
           "remove": "移除"
         }

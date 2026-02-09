@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from 'react';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckIcon from '@mui/icons-material/Check';
-import { Box, MenuItem } from 'decentraland-ui2';
+import { Box, Chip, MenuItem } from 'decentraland-ui2';
 import { Row } from '/@/components/Row';
 import { t } from '/@/modules/store/translation/utils';
 import { Dropdown } from '/@/components/Dropdown';
@@ -35,20 +35,38 @@ export const WorldPermissionsLoadingItem: React.FC = React.memo(() => {
 });
 
 export const WorldPermissionsAccessItem: React.FC<AccessItemProps> = React.memo(
-  ({ walletAddress, onRemoveAddress }) => {
-    const menuOptions = [
-      {
-        text: t('modal.world_permissions.access.actions.remove'),
-        icon: <DeleteIcon />,
-        handler: onRemoveAddress,
-      },
-    ];
+  ({ walletAddress, role, onRemoveAddress }) => {
+    const menuOptions = role
+      ? undefined
+      : [
+          {
+            text: t('modal.world_permissions.access.actions.remove'),
+            icon: <DeleteIcon />,
+            handler: onRemoveAddress,
+          },
+        ];
+
+    const roleLabel =
+      role === 'owner'
+        ? t('manage.cards.roles.owner')
+        : role === 'collaborator'
+          ? t('manage.cards.roles.collaborator')
+          : undefined;
 
     return (
       <WorldPermissionsItem
         walletAddress={walletAddress}
         menuOptions={menuOptions}
-      />
+      >
+        {roleLabel && (
+          <Chip
+            className="RoleBadge"
+            label={roleLabel}
+            size="small"
+            variant="filled"
+          />
+        )}
+      </WorldPermissionsItem>
     );
   },
 );

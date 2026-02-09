@@ -2,12 +2,16 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  height: 100%;
+}
+
+.WorldAccessTab.CenteredContent {
+  justify-content: center;
 }
 
 .WorldAccessTab > .MuiTypography-h6 {
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 500;
-  color: var(--text-on-secondary);
   margin-bottom: 0;
 }
 
@@ -77,30 +81,49 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  background-color: var(--black);
+  padding: 16px;
 }
 
 .WorldAccessTab .AccessListHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding-bottom: 16px;
+  margin-left: -16px;
+  margin-right: -16px;
+  padding-left: 16px;
+  padding-right: 16px;
+  border-bottom: 1px solid var(--dark-gray);
+}
+
+.WorldAccessTab .AccessListActions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.WorldAccessTab .ClearListLink {
+  cursor: pointer;
+  color: var(--text-on-secondary);
+  text-transform: uppercase;
+  font-weight: 600;
 }
 
 .WorldAccessTab .ApprovedAddressesCount {
-  color: var(--text-on-secondary);
-  font-size: 13px;
-}
-
-.WorldAccessTab .InviteFormContainer {
-  padding: 16px;
-  background-color: var(--black);
-  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
 }
 
 .WorldAccessTab .AccessList {
-  background-color: var(--black);
-  border-radius: 8px;
   max-height: 300px;
   overflow-y: auto;
+  margin-left: -16px;
+  margin-right: -16px;
+}
+
+.WorldAccessTab .AccessList > .WorldPermissionsItem:first-child {
+  border-top: none;
 }
 
 .WorldAccessTab .EmptyList {

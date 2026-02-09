@@ -21,11 +21,14 @@ import './styles.css';
 
 type Props = {
   worldAccessPermissions: WorldPermissions['access'];
+  worldOwnerAddress: string;
+  collaboratorAddresses: string[];
   isLoadingNewUser: boolean;
   isLoadingPassword?: boolean;
   onChangeAccessType: (accessType: WorldPermissionType) => void;
   onAddAccessToAddress: (address: string) => void;
   onRemoveAccessFromAddress: (address: string) => void;
+  onClearAccessList: () => void;
   onSetAccessPassword: (password: string) => void;
 };
 
@@ -78,11 +81,14 @@ const getAccessTypeDescription = (accessType: WorldPermissionType): string => {
 const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
   const {
     worldAccessPermissions,
+    worldOwnerAddress,
+    collaboratorAddresses,
     isLoadingNewUser,
     isLoadingPassword = false,
     onChangeAccessType,
     onAddAccessToAddress,
     onRemoveAccessFromAddress,
+    onClearAccessList,
     onSetAccessPassword,
   } = props;
 
@@ -135,19 +141,46 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
     [onAddAccessToAddress],
   );
 
-  const wallets =
+  const apiWallets =
     worldAccessPermissions.type === WorldPermissionType.AllowList
       ? worldAccessPermissions.wallets
       : [];
+  const ownerLower = worldOwnerAddress.toLowerCase();
+  const collaboratorLowers = collaboratorAddresses.map(c => c.toLowerCase());
+  const allWallets = apiWallets.some(w => w.toLowerCase() === ownerLower)
+    ? apiWallets
+    : [ownerLower, ...apiWallets];
+  const wallets = [...allWallets].sort((a, b) => {
+    const aLower = a.toLowerCase();
+    const bLower = b.toLowerCase();
+    const aIsOwner = aLower === ownerLower;
+    const bIsOwner = bLower === ownerLower;
+    if (aIsOwner !== bIsOwner) return aIsOwner ? -1 : 1;
+    const aIsCollab = collaboratorLowers.includes(aLower);
+    const bIsCollab = collaboratorLowers.includes(bLower);
+    if (aIsCollab !== bIsCollab) return aIsCollab ? -1 : 1;
+    return 0;
+  });
   const walletsCount = wallets.length;
 
   if (showPasswordForm) {
     return (
-      <Box className="WorldAccessTab">
+      <Box className="WorldAccessTab CenteredContent">
         <WorldPermissionsPasswordForm
           isChanging={isPasswordProtected}
           onCancel={handlePasswordFormClose}
           onSubmit={handlePasswordSubmit}
+        />
+      </Box>
+    );
+  }
+
+  if (showInviteForm) {
+    return (
+      <Box className="WorldAccessTab CenteredContent">
+        <WorldPermissionsAddUserForm
+          onSubmitAddress={handleAddAddress}
+          onCancel={handleHideInviteForm}
         />
       </Box>
     );
@@ -201,7 +234,13 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
                 number: `${walletsCount}/100`,
               })}
             </Typography>
-            {!showInviteForm && (
+            <Row className="AccessListActions">
+              <Typography
+                className="ClearListLink"
+                onClick={onClearAccessList}
+              >
+                {t('modal.world_permissions.access.clear_list')}
+              </Typography>
               <Button
                 onClick={handleShowInviteForm}
                 color="primary"
@@ -209,29 +248,26 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
               >
                 {t('modal.world_permissions.access.new_invite')}
               </Button>
-            )}
+            </Row>
           </Row>
-
-          {showInviteForm && (
-            <Box className="InviteFormContainer">
-              <WorldPermissionsAddUserForm
-                addButtonLabel={t('modal.world_permissions.access.confirm')}
-                cancelButtonLabel={t('modal.world_permissions.access.cancel')}
-                onSubmitAddress={handleAddAddress}
-                onCancel={handleHideInviteForm}
-              />
-            </Box>
-          )}
 
           <Box className="AccessList">
             {walletsCount > 0
-              ? wallets.map(wallet => (
-                  <WorldPermissionsAccessItem
-                    key={wallet}
-                    walletAddress={wallet.toLowerCase()}
-                    onRemoveAddress={() => onRemoveAccessFromAddress(wallet)}
-                  />
-                ))
+              ? wallets.map(wallet => {
+                  const lowerWallet = wallet.toLowerCase();
+                  const isOwner = lowerWallet === worldOwnerAddress.toLowerCase();
+                  const isCollaborator =
+                    !isOwner && collaboratorAddresses.some(c => c.toLowerCase() === lowerWallet);
+                  const role = isOwner ? 'owner' : isCollaborator ? 'collaborator' : undefined;
+                  return (
+                    <WorldPermissionsAccessItem
+                      key={wallet}
+                      walletAddress={lowerWallet}
+                      role={role}
+                      onRemoveAddress={() => onRemoveAccessFromAddress(wallet)}
+                    />
+                  );
+                })
               : !isLoadingNewUser && (
                   <Typography className="EmptyList">
                     {t('modal.world_permissions.access.empty_list')}

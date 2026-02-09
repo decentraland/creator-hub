@@ -101,7 +101,7 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
               worldName,
               worldPermissionName: WorldPermissionName.Access,
               worldPermissionType: WorldPermissionType.SharedSecret,
-              secret: password,
+              options: { secret: password },
             }),
           ),
         );
@@ -150,6 +150,26 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
       },
       [worldName, worldPermissions],
     );
+
+    const handleClearAccessList = useCallback(() => {
+      if (worldPermissions?.access.type !== WorldPermissionType.AllowList) return;
+      const ownerLower = worldOwnerAddress.toLowerCase();
+      const collaboratorLowers = collaboratorUsersList.map(c => c.toLowerCase());
+      const walletsToKeep = worldPermissions.access.wallets.filter(wallet => {
+        const lower = wallet.toLowerCase();
+        return lower === ownerLower || collaboratorLowers.includes(lower);
+      });
+      withUpdating(
+        dispatch(
+          updateWorldPermissions({
+            worldName,
+            worldPermissionName: WorldPermissionName.Access,
+            worldPermissionType: WorldPermissionType.AllowList,
+            options: { wallets: walletsToKeep },
+          }),
+        ),
+      );
+    }, [worldName, worldOwnerAddress, collaboratorUsersList, worldPermissions]);
 
     const handleAddCollaborator = useCallback(
       (walletAddress: string) => {
@@ -282,10 +302,13 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
               {activeTab === WorldPermissionsTab.ACCESS && (
                 <WorldPermissionsAccessTab
                   worldAccessPermissions={worldPermissions?.access}
+                  worldOwnerAddress={worldOwnerAddress}
+                  collaboratorAddresses={collaboratorUsersList}
                   isLoadingNewUser={isLoadingNewUser}
                   onChangeAccessType={handleChangeAccessType}
                   onAddAccessToAddress={handleAddAccessToAddress}
                   onRemoveAccessFromAddress={handleRemoveAccessFromAddress}
+                  onClearAccessList={handleClearAccessList}
                   onSetAccessPassword={handleSetAccessPassword}
                 />
               )}
