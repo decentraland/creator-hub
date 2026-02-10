@@ -1,11 +1,19 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { isValid as isValidAddress } from 'decentraland-ui2/dist/components/AddressField/utils';
 import SearchIcon from '@mui/icons-material/Search';
-import PeopleIcon from '@mui/icons-material/People';
 import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
-import { Box, InputAdornment, Tab, Tabs, TextField, Typography } from 'decentraland-ui2';
+import { isValid as isValidAddress } from 'decentraland-ui2/dist/components/AddressField/utils';
+import {
+  Box,
+  CircularProgress,
+  InputAdornment,
+  Tab,
+  Tabs,
+  TextField,
+  Typography,
+} from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
 import { Button } from '/@/components/Button';
+import { useAuth } from '/@/hooks/useAuth';
 import communities, { type CommunityMinimal } from '/@/lib/communities';
 import './styles.css';
 
@@ -66,6 +74,7 @@ type Props = {
 
 export const WorldPermissionsAddUserForm: React.FC<Props> = React.memo(
   ({ onSubmitAddress, onSubmitCommunity, onSubmitCsv, onCancel }) => {
+    const { wallet } = useAuth();
     const [address, setAddress] = useState('');
     const [hasError, setHasError] = useState(false);
     const [activeTab, setActiveTab] = useState<InviteTab>(InviteTab.WalletAddress);
@@ -197,8 +206,16 @@ export const WorldPermissionsAddUserForm: React.FC<Props> = React.memo(
 
       setIsSearching(true);
       debounceRef.current = setTimeout(async () => {
-        const result = await communities.fetchCommunities({ search: searchQuery, limit: 10 });
-        setSearchResults(result?.communities ?? []);
+        if (!wallet) {
+          setIsSearching(false);
+          return;
+        }
+        const result = await communities.fetchCommunities(wallet, {
+          search: searchQuery,
+          minimal: true,
+          limit: 10,
+        });
+        setSearchResults(result?.data?.results ?? []);
         setIsSearching(false);
       }, 300);
 
@@ -268,60 +285,66 @@ export const WorldPermissionsAddUserForm: React.FC<Props> = React.memo(
               variant="outlined"
               size="medium"
               fullWidth
-              value={searchQuery}
+              value={selectedCommunity ? selectedCommunity.name : searchQuery}
               onChange={handleSearchChange}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon fontSize="small" />
+                    {isSearching ? <CircularProgress size={18} /> : <SearchIcon fontSize="small" />}
                   </InputAdornment>
                 ),
               }}
             />
-            {isSearching && (
-              <Typography
-                className="CommunitySearchStatus"
-                variant="body2"
-              >
-                {t('modal.world_permissions.access.community_searching')}
-              </Typography>
-            )}
-            {!isSearching && searchQuery.length >= 3 && searchResults.length === 0 && (
-              <Typography
-                className="CommunitySearchStatus"
-                variant="body2"
-              >
-                {t('modal.world_permissions.access.community_no_results')}
-              </Typography>
-            )}
-            {searchResults.length > 0 && (
-              <Box className="CommunitySearchResults">
+            {!isSearching &&
+              !selectedCommunity &&
+              searchQuery.length >= 3 &&
+              searchResults.length === 0 && (
+                <Typography
+                  className="CommunitySearchStatus"
+                  variant="body2"
+                >
+                  {t('modal.world_permissions.access.community_no_results')}
+                </Typography>
+              )}
+            {searchResults.length > 0 && !selectedCommunity && (
+              <Box className="CommunitySearchDropdown">
                 {searchResults.map(community => (
                   <Box
                     key={community.id}
-                    className={`CommunitySearchItem ${selectedCommunity?.id === community.id ? 'Selected' : ''}`}
+                    className="CommunitySearchDropdownItem"
                     onClick={() => handleSelectCommunity(community)}
                   >
-                    <PeopleIcon fontSize="small" />
-                    <Box className="CommunitySearchItemInfo">
+                    <Typography variant="body2">
+                      {community.name}{' '}
                       <Typography
-                        variant="body2"
-                        className="CommunityName"
-                      >
-                        {community.name}
-                      </Typography>
-                      <Typography
+                        component="span"
                         variant="caption"
-                        className="CommunityMembers"
+                        className="CommunitySearchDropdownMembers"
                       >
+                        (
                         {t('modal.world_permissions.access.community_members', {
                           count: community.membersCount,
                         })}
+                        )
                       </Typography>
-                    </Box>
+                    </Typography>
                   </Box>
                 ))}
               </Box>
+            )}
+            {selectedCommunity && (
+              <Typography
+                className="CommunitySelectedInfo"
+                variant="body2"
+              >
+                {selectedCommunity.privacy === 'public'
+                  ? t('modal.world_permissions.access.community_privacy_public')
+                  : t('modal.world_permissions.access.community_privacy_private')}
+                {' · '}
+                {t('modal.world_permissions.access.community_members', {
+                  count: selectedCommunity.membersCount,
+                })}
+              </Typography>
             )}
           </Box>
         )}

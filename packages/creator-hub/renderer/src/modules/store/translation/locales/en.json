@@ -501,6 +501,8 @@
         "community_searching": "Searching...",
         "community_no_results": "No communities found",
         "community_members": "{count} Members",
+        "community_privacy_public": "Public community",
+        "community_privacy_private": "Private community",
         "invite_tabs": {
           "wallet_address": "Wallet Address",
           "community": "Community",
