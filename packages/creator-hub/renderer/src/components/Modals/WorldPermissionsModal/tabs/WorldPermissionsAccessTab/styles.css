@@ -126,6 +126,47 @@
   border-top: none;
 }
 
+/* Change access type confirmation */
+.WorldAccessTab .ChangeAccessTypeConfirm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 24px;
+  background-color: var(--black);
+  border-radius: 8px;
+}
+
+.WorldAccessTab .ChangeAccessTypeWarning {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 6px;
+  background-color: #4A2B1A;
+}
+
+.WorldAccessTab .ChangeAccessTypeWarning .MuiSvgIcon-root {
+  color: var(--danger);
+  flex-shrink: 0;
+}
+
+.WorldAccessTab .ChangeAccessTypeWarning .MuiTypography-root {
+  color: #FFCF89;
+  font-size: 13px;
+}
+
+.WorldAccessTab .ChangeAccessTypeActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.WorldAccessTab .ChangeAccessTypeActions .MuiButton-root {
+  flex: 1;
+}
+
 .WorldAccessTab .EmptyList {
   color: var(--dcl-silver);
   height: 8rem;
