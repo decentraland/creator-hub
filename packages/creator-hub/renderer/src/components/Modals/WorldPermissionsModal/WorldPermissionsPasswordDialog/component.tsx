@@ -23,17 +23,13 @@ const WorldPermissionsPasswordFormComponent: React.FC<Props> = React.memo(
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
     const handlePasswordChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
       setPassword(event.target.value);
-      setError(null);
     }, []);
 
     const handleConfirmPasswordChange = useCallback(
       (event: React.ChangeEvent<HTMLInputElement>) => {
         setConfirmPassword(event.target.value);
-        setError(null);
       },
       [],
     );
@@ -47,28 +43,16 @@ const WorldPermissionsPasswordFormComponent: React.FC<Props> = React.memo(
     }, []);
 
     const handleSubmit = useCallback(() => {
-      if (!password) {
-        setError(t('modal.world_permissions.password.error.empty'));
-        return;
-      }
-      if (password.length < MIN_PASSWORD_LENGTH) {
-        setError(
-          t('modal.world_permissions.password.error.too_short', { min: MIN_PASSWORD_LENGTH }),
-        );
-        return;
-      }
-      if (password !== confirmPassword) {
-        setError(t('modal.world_permissions.password.error.mismatch'));
-        return;
-      }
       onSubmit(password);
-    }, [password, confirmPassword, onSubmit]);
+    }, [password, onSubmit]);
 
     const handleCancel = useCallback(() => {
       onCancel();
     }, [onCancel]);
 
     const isValid = password.length >= MIN_PASSWORD_LENGTH && password === confirmPassword;
+    const showMismatchError =
+      confirmPassword.length > 0 && password.length > 0 && password !== confirmPassword;
 
     return (
       <Box className="PasswordForm">
@@ -124,8 +108,10 @@ const WorldPermissionsPasswordFormComponent: React.FC<Props> = React.memo(
             variant="outlined"
             size="medium"
             fullWidth
-            error={!!error}
-            helperText={error}
+            error={showMismatchError}
+            helperText={
+              showMismatchError ? t('modal.world_permissions.password.error.mismatch') : undefined
+            }
             InputProps={{
               endAdornment: (
                 <IconButton
