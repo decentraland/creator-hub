@@ -6,7 +6,7 @@
   "DCL_NAME_STATS_URL": "https://dcl-name-stats.decentraland.org",
   "PEER_URL": "https://peer.decentraland.org",
   "WORLDS_CONTENT_SERVER_URL": "https://worlds-content-server.decentraland.org",
-  "SOCIAL_SERVICE_URL": "https://social-service.decentraland.org",
+  "SOCIAL_API_URL": "https://social-api.decentraland.org",
   "PEER_TESTING_URL": "https://peer-testing.decentraland.org",
   "ASSET_BUNDLE_REGISTRY_URL": "https://asset-bundle-registry.decentraland.org",
   "DCL_LISTS_URL": "https://dcl-lists.decentraland.org",

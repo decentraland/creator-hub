@@ -1,5 +1,7 @@
+import type { AuthIdentity } from '@dcl/crypto';
+import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
+import fetch from 'decentraland-crypto-fetch';
 import { config } from '/@/config';
-import { fetch } from '/shared/fetch';
 
 export type CommunityMinimal = {
   id: string;
@@ -8,24 +10,55 @@ export type CommunityMinimal = {
   privacy: string;
 };
 
-export type CommunitiesResponse = {
-  communities: CommunityMinimal[];
-  total: number;
+export type Community = CommunityMinimal & {
+  description: string;
+  ownerAddress: string;
+  ownerName: string;
+  visibility: string;
+  active: boolean;
+  thumbnails: Record<string, string>;
+  role?: string;
 };
 
-const SOCIAL_SERVICE_URL = config.get('SOCIAL_SERVICE_URL');
+export type CommunitiesResponse<T = Community> = {
+  data: {
+    results: T[];
+    total: number;
+    limit: number;
+    offset: number;
+    page: number;
+    pages: number;
+  };
+};
+
+const SOCIAL_API_URL = config.get('SOCIAL_API_URL');
 
 export class Communities {
-  private url = SOCIAL_SERVICE_URL;
+  private url = SOCIAL_API_URL;
 
-  public async fetchCommunities(params?: {
-    search?: string;
-    limit?: number;
-    offset?: number;
-  }): Promise<CommunitiesResponse | null> {
+  private withIdentity(address: string): AuthIdentity {
+    const identity = localStorageGetIdentity(address);
+    if (!identity) {
+      throw new Error('No identity found');
+    }
+    return identity;
+  }
+
+  public async fetchCommunities(
+    address: string,
+    params?: {
+      search?: string;
+      minimal?: boolean;
+      limit?: number;
+      offset?: number;
+    },
+  ): Promise<CommunitiesResponse<CommunityMinimal> | null> {
     try {
-      const urlParams = new URLSearchParams({ minimal: 'true' });
+      const urlParams = new URLSearchParams();
 
+      if (params?.minimal) {
+        urlParams.set('minimal', 'true');
+      }
       if (params?.search) {
         urlParams.set('search', params.search);
       }
@@ -36,11 +69,13 @@ export class Communities {
         urlParams.set('offset', params.offset.toString());
       }
 
-      const response = await fetch(`${this.url}/v1/communities?${urlParams.toString()}`);
+      const response = await fetch(`${this.url}/v1/communities?${urlParams.toString()}`, {
+        identity: this.withIdentity(address),
+      });
 
       if (response.ok) {
         const json = await response.json();
-        return json as CommunitiesResponse;
+        return json as CommunitiesResponse<CommunityMinimal>;
       } else {
         return null;
       }

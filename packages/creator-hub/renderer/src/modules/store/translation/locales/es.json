@@ -470,6 +470,8 @@
         "community_searching": "Buscando...",
         "community_no_results": "No se encontraron comunidades",
         "community_members": "{count} Miembros",
+        "community_privacy_public": "Comunidad pública",
+        "community_privacy_private": "Comunidad privada",
         "invite_tabs": {
           "wallet_address": "Dirección de Wallet",
           "community": "Comunidad",
