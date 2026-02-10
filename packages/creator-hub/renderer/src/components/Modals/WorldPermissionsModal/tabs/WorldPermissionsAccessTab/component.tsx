@@ -317,7 +317,7 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
               className="ApprovedAddressesCount"
             >
               {t('modal.world_permissions.access.approved_addresses', {
-                number: `${walletsCount}/100`,
+                number: `${walletsCount}/200`,
               })}
             </Typography>
             <Row className="AccessListActions">
