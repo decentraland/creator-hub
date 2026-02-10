@@ -162,27 +162,33 @@ const WorldPermissionsParcelsTab: React.FC<Props> = React.memo(
       );
 
       try {
+        const tasks: Promise<void>[] = [];
         setIsSaving(true);
         if (parcelsToAdd.length > 0) {
-          await dispatch(
-            managementActions.addParcelsPermission({
-              worldName,
-              permissionName: WorldPermissionName.Deployment,
-              walletAddress,
-              parcels: parcelsToAdd,
-            }),
-          ).unwrap();
+          tasks.push(
+            dispatch(
+              managementActions.addParcelsPermission({
+                worldName,
+                permissionName: WorldPermissionName.Deployment,
+                walletAddress,
+                parcels: parcelsToAdd,
+              }),
+            ).unwrap(),
+          );
         }
         if (parcelsToRemove.length > 0) {
-          await dispatch(
-            managementActions.removeParcelsPermission({
-              worldName,
-              permissionName: WorldPermissionName.Deployment,
-              walletAddress,
-              parcels: parcelsToRemove,
-            }),
-          ).unwrap();
+          tasks.push(
+            dispatch(
+              managementActions.removeParcelsPermission({
+                worldName,
+                permissionName: WorldPermissionName.Deployment,
+                walletAddress,
+                parcels: parcelsToRemove,
+              }),
+            ).unwrap(),
+          );
         }
+        await Promise.all(tasks);
         onGoBack();
       } finally {
         setIsSaving(false);
