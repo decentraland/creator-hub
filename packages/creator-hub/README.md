@@ -112,8 +112,8 @@ Production builds default to the production environment (`decentraland.org` APIs
 # macOS
 open ./Decentraland\ Creator\ Hub.app --args --env=dev
 
-# Windows
-.\Decentraland\ Creator\ Hub.exe --env=dev
+# Windows (PowerShell)
+& '.\Decentraland Creator Hub.exe' --env=dev
 ```
 
 The app will use the specified environment APIs. If no `--env` argument is provided, the app will use the default environment (prod). Valid values for `--env` are `dev` and `prod`.
