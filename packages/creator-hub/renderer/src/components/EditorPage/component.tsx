@@ -22,12 +22,15 @@ import { ConnectionStatus } from '/@/lib/connection';
 
 import EditorPng from '/assets/images/editor.png';
 
-import { useSelector } from '#store';
+import { useDispatch, useSelector } from '#store';
+import { actions as snackbarActions } from '/@/modules/store/snackbar';
+import { createGenericNotification } from '/@/modules/store/snackbar/utils';
 import { Button } from '../Button';
 import { Header } from '../Header';
 import { Row } from '../Row';
 import { ButtonGroup } from '../Button';
 import { ConnectionStatusIndicator } from '../ConnectionStatusIndicator';
+import { MobileQRCode } from '../Modals/MobileQRCode';
 import { DeployModal } from './DeployModal';
 import { PreviewOptions, PublishOptions } from './MenuOptions';
 import { getPublishButtonText, getPublishOptions } from './utils';
@@ -38,6 +41,7 @@ import type { PreviewOptionsProps } from './MenuOptions';
 import './styles.css';
 
 export function EditorPage() {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const {
     error,
@@ -53,6 +57,7 @@ export function EditorPage() {
     isInstallingProject,
     killPreview,
     publishScene,
+    getMobileQR,
   } = useEditor();
   const { settings, updateAppSettings } = useSettings();
   const { executeDeployment, getDeployment } = useDeploy();
@@ -70,6 +75,7 @@ export function EditorPage() {
   const { status } = useConnectionStatus();
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
   const [modalState, setModalState] = useState<ModalState>({ type: undefined });
+  const [mobileQRData, setMobileQRData] = useState<{ url: string; qr: string } | null>(null);
 
   const isOffline = status === ConnectionStatus.OFFLINE;
 
@@ -162,6 +168,27 @@ export function EditorPage() {
     },
     [settings, updateAppSettings],
   );
+
+  const handleShowMobileQR = useCallback(async () => {
+    if (!project) return;
+
+    try {
+      const data = await getMobileQR(settings.previewOptions);
+      if (data) {
+        setMobileQRData(data);
+      }
+    } catch (error: unknown) {
+      dispatch(
+        snackbarActions.pushSnackbar(
+          createGenericNotification('error', t('snackbar.generic.mobile_qr_failed')),
+        ),
+      );
+    }
+  }, [project, getMobileQR, settings.previewOptions, dispatch]);
+
+  const handleCloseMobileQR = useCallback(() => {
+    setMobileQRData(null);
+  }, []);
 
   const handleOpenPreview = useCallback(async () => {
     await handleActionWithWarningCheck(handleOpenPreviewWithErrorHandling);
@@ -290,6 +317,7 @@ export function EditorPage() {
                   <PreviewOptions
                     options={settings.previewOptions}
                     onChange={handleChangePreviewOptions}
+                    onShowMobileQR={handleShowMobileQR}
                   />
                 }
               >
@@ -339,6 +367,14 @@ export function EditorPage() {
             onClose={handleCloseModal}
             initialStep={modalState.initialStep}
           />
+          {mobileQRData && (
+            <MobileQRCode
+              open={!!mobileQRData}
+              onClose={handleCloseMobileQR}
+              url={mobileQRData.url}
+              qr={mobileQRData.qr}
+            />
+          )}
         </>
       )}
     </main>
