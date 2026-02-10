@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChainId } from '@dcl/schemas';
 import { AuthServerProvider } from 'decentraland-connect';
 import { ManagedProjectType, SortBy } from '../../../../../shared/types/manage';
-import type { AppState } from '../index';
 import { createTestStore } from '../../../../tests/utils/testStore';
 import {
   actions,
@@ -268,7 +267,7 @@ describe('management slice', () => {
     });
 
     it('should set status to failed and error message when rejected', () => {
-      const errorMessage = 'Failed to fetch';
+      const errorMessage = 'Failed to fetch managed projects';
       store.dispatch({
         type: fetchManagedProjects.rejected.type,
         error: { message: errorMessage },
@@ -1123,7 +1122,7 @@ describe('management slice', () => {
         ],
       });
 
-      const projects = selectors.getManagedProjects(store.getState() as AppState);
+      const projects = selectors.getManagedProjects(store.getState().management);
       expect(projects.length).toBe(1);
       expect(projects[0]?.id).toBe('project1');
     });
@@ -1139,7 +1138,7 @@ describe('management slice', () => {
         meta: { arg: { worldName: TEST_WORLD_NAME } },
       });
 
-      const worldSettings = selectors.getWorldSettings(store.getState() as AppState);
+      const worldSettings = selectors.getWorldSettings(store.getState().management);
       expect(worldSettings.worldName).toBe(TEST_WORLD_NAME);
       expect(worldSettings.settings.name).toBe(TEST_WORLD_NAME);
     });
@@ -1147,11 +1146,11 @@ describe('management slice', () => {
     it('should return error message', () => {
       store.dispatch({
         type: fetchManagedProjects.rejected.type,
-        error: { message: 'Test error' },
+        error: { message: 'Failed to fetch managed projects' },
       });
 
-      const error = selectors.getError(store.getState() as AppState);
-      expect(error).toBe('Test error');
+      const error = selectors.getError(store.getState().management);
+      expect(error).toBe('Failed to fetch managed projects');
     });
 
     it('should return worldPermissions object', () => {
@@ -1173,7 +1172,7 @@ describe('management slice', () => {
         meta: { arg: { worldName: TEST_WORLD_NAME } },
       });
 
-      const permissions = selectors.getPermissionsState(store.getState() as AppState);
+      const permissions = selectors.getPermissionsState(store.getState().management);
       expect(permissions.worldName).toBe(TEST_WORLD_NAME);
       expect(permissions.owner).toBe(TEST_ADDRESS);
     });
@@ -1208,7 +1207,7 @@ describe('management slice', () => {
 
       const selectParcelsForAddress = selectors.makeParcelsStateForAddressSelector();
       const parcelsState = selectParcelsForAddress(
-        store.getState() as AppState,
+        store.getState().management,
         TEST_WALLET_ADDRESS,
       );
       expect(parcelsState).toBeDefined();
@@ -1218,7 +1217,7 @@ describe('management slice', () => {
 
     it('should return undefined for non-existent address', () => {
       const selectParcelsForAddress = selectors.makeParcelsStateForAddressSelector();
-      const parcelsState = selectParcelsForAddress(store.getState() as AppState, '0xnonexistent');
+      const parcelsState = selectParcelsForAddress(store.getState().management, '0xnonexistent');
       expect(parcelsState).toBeUndefined();
     });
   });
