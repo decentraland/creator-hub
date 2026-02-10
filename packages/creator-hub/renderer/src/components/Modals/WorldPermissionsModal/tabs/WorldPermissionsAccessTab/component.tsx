@@ -4,6 +4,7 @@ import AddIcon from '@mui/icons-material/AddRounded';
 import LockIcon from '@mui/icons-material/Lock';
 import PeopleIcon from '@mui/icons-material/People';
 import PublicIcon from '@mui/icons-material/Public';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { Box, MenuItem, type SelectChangeEvent, Typography } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
 import { WorldPermissionType, type WorldPermissions } from '/@/lib/worlds';
@@ -98,15 +99,35 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
 
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [pendingAccessType, setPendingAccessType] = useState<WorldPermissionType | null>(null);
 
   const currentAccessType = worldAccessPermissions.type;
   const isPublic = currentAccessType === WorldPermissionType.Unrestricted;
   const isPasswordProtected = currentAccessType === WorldPermissionType.SharedSecret;
   const isInvitationOnly = currentAccessType === WorldPermissionType.AllowList;
 
+  const apiWallets =
+    worldAccessPermissions.type === WorldPermissionType.AllowList
+      ? worldAccessPermissions.wallets
+      : [];
+  const apiCommunities =
+    worldAccessPermissions.type === WorldPermissionType.AllowList
+      ? (worldAccessPermissions.communities ?? [])
+      : [];
+  const ownerLower = worldOwnerAddress.toLowerCase();
+  const collaboratorLowers = collaboratorAddresses.map(c => c.toLowerCase());
+  const nonOwnerWallets = apiWallets.filter(
+    w => w.toLowerCase() !== ownerLower && !collaboratorLowers.includes(w.toLowerCase()),
+  );
+  const hasAccessListEntries = nonOwnerWallets.length > 0 || apiCommunities.length > 0;
+
   const handleAccessTypeChange = useCallback(
     (event: SelectChangeEvent<WorldPermissionType>) => {
       const value = event.target.value as WorldPermissionType;
+      if (isInvitationOnly && hasAccessListEntries && value !== WorldPermissionType.AllowList) {
+        setPendingAccessType(value);
+        return;
+      }
       if (value === WorldPermissionType.SharedSecret) {
         setShowPasswordForm(true);
       } else {
@@ -114,8 +135,22 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
         onChangeAccessType(value);
       }
     },
-    [onChangeAccessType],
+    [onChangeAccessType, isInvitationOnly, hasAccessListEntries],
   );
+
+  const handleConfirmAccessTypeChange = useCallback(() => {
+    if (!pendingAccessType) return;
+    if (pendingAccessType === WorldPermissionType.SharedSecret) {
+      setShowPasswordForm(true);
+    } else {
+      onChangeAccessType(pendingAccessType);
+    }
+    setPendingAccessType(null);
+  }, [pendingAccessType, onChangeAccessType]);
+
+  const handleCancelAccessTypeChange = useCallback(() => {
+    setPendingAccessType(null);
+  }, []);
 
   const handlePasswordSubmit = useCallback(
     (password: string) => {
@@ -161,12 +196,6 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
     [onSubmitCsv],
   );
 
-  const apiWallets =
-    worldAccessPermissions.type === WorldPermissionType.AllowList
-      ? worldAccessPermissions.wallets
-      : [];
-  const ownerLower = worldOwnerAddress.toLowerCase();
-  const collaboratorLowers = collaboratorAddresses.map(c => c.toLowerCase());
   const allWallets = apiWallets.some(w => w.toLowerCase() === ownerLower)
     ? apiWallets
     : [ownerLower, ...apiWallets];
@@ -182,6 +211,41 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
     return 0;
   });
   const walletsCount = wallets.length;
+
+  if (pendingAccessType) {
+    return (
+      <Box className="WorldAccessTab CenteredContent">
+        <Box className="ChangeAccessTypeConfirm">
+          <Typography
+            variant="h5"
+            className="ChangeAccessTypeTitle"
+          >
+            {t('modal.world_permissions.access.change_access_type_title')}
+          </Typography>
+          <Box className="ChangeAccessTypeWarning">
+            <WarningAmberIcon fontSize="small" />
+            <Typography variant="body2">
+              {t('modal.world_permissions.access.change_access_type_warning')}
+            </Typography>
+          </Box>
+          <Box className="ChangeAccessTypeActions">
+            <Button
+              onClick={handleCancelAccessTypeChange}
+              color="secondary"
+            >
+              {t('modal.world_permissions.access.go_back')}
+            </Button>
+            <Button
+              onClick={handleConfirmAccessTypeChange}
+              color="primary"
+            >
+              {t('modal.world_permissions.access.continue')}
+            </Button>
+          </Box>
+        </Box>
+      </Box>
+    );
+  }
 
   if (showPasswordForm) {
     return (
