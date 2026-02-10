@@ -80,9 +80,8 @@
 .WorldAccessTab .AccessFormContainer {
   display: flex;
   flex-direction: column;
-  gap: 16px;
   background-color: var(--black);
-  padding: 16px;
+  padding: 16px 16px 0 16px;
 }
 
 .WorldAccessTab .AccessListHeader {
