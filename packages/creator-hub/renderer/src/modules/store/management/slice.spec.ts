@@ -46,7 +46,6 @@ const WorldRoleType = {
 } as const;
 
 const createMockWorldsAPI = () => ({
-  fetchWorld: vi.fn(),
   fetchWorldScenes: vi.fn(),
   fetchWorldSettings: vi.fn(),
   fetchWalletStats: vi.fn(),
