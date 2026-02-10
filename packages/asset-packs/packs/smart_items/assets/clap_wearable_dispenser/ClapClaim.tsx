@@ -74,14 +74,14 @@ export class ClapClaim {
   private endDateParsed?: Date;
 
   /**
-   * @param campaignId - The campaign ID on the rewards server
-   * @param dispenserKey - The dispenser key on the rewards server
-   * @param wearableURN - The wearable URN displayed floating in the dispenser
-   * @param startDate - The start date of the campaign
-   * @param endDate - The end date of the campaign
+   * @param campaignId - The ID of a campaign on decentraland.org/rewards
+   * @param dispenserKey - The dispenser key of a dispenser in a campaign on decentraland.org/rewards
+   * @param wearableURN - The URN for the wearable to display floating in the dispenser
+   * @param startDate - The start date of the campaign in YYYY-MM-DD format
+   * @param endDate - The end date of the campaign in YYYY-MM-DD format
    * @param emoteDetected - The emote that the player must perform in front of the booth to trigger the claim
-   * @param wearableYOffset - The Y(height) offset of the wearable displayed in 3D space
-   * @param ActivateOnSuccess - Trigger an action from another smart item when the claim is successful, like confetti or balloons.
+   * @param wearableYOffset - How many meters above the ground the wearable should be displayed
+   * @param ActivateOnSuccess - Trigger an action from another smart item when the claim is successful (e.g. confetti or balloons).
    */
   constructor(
     public src: string,
