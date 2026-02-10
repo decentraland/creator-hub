@@ -1,5 +1,5 @@
 import React from 'react';
-import { Address, AvatarFace, Skeleton, Typography } from 'decentraland-ui2';
+import { Address, AvatarFace, type AvatarFaceProps, Skeleton, Typography } from 'decentraland-ui2';
 import { useProfile } from '/@/hooks/useProfile';
 import { Row } from '/@/components/Row';
 import { CopyToClipboard } from '/@/components/CopyToClipboard';
@@ -8,10 +8,11 @@ import './styles.css';
 export type Props = {
   isLoading?: boolean;
   walletAddress: string;
+  size?: AvatarFaceProps['size'];
 };
 
 export const WorldPermissionsAvatarWithInfo: React.FC<Props> = React.memo(
-  ({ walletAddress, isLoading: externalIsLoading }) => {
+  ({ walletAddress, isLoading: externalIsLoading, size = 'small' }) => {
     const { avatar, isLoading: isFetchingProfile } = useProfile(walletAddress);
     const isLoading = !walletAddress || externalIsLoading || isFetchingProfile;
 
@@ -19,7 +20,7 @@ export const WorldPermissionsAvatarWithInfo: React.FC<Props> = React.memo(
       return (
         <Row className="Avatar">
           <AvatarFace
-            size="small"
+            size={size}
             inline
           />
           <Skeleton width="300px" />
@@ -31,7 +32,7 @@ export const WorldPermissionsAvatarWithInfo: React.FC<Props> = React.memo(
       <Row className="Avatar">
         <AvatarFace
           avatar={avatar}
-          size="small"
+          size={size}
           inline
         />
         <CopyToClipboard

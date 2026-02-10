@@ -510,7 +510,11 @@
       "parcels": {
         "title": "Custom Coordinates",
         "description": "Click individual tiles to include/exclude them in the layout.",
-        "parcels_count": "{count} Parcels"
+        "parcels_count": "Selecting {count} {count, plural, one {parcel} other {parcels}}",
+        "actions": {
+          "reset": "Reset",
+          "confirm": "Confirm"
+        }
       }
     },
     "create_project": {
