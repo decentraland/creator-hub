@@ -5,8 +5,8 @@ import { memoize } from '../../logic/once';
 import type { SceneSpawnPoint, SceneSpawnPointCoord } from '../../sdk/components';
 import {
   createAvatarPlaceholderAsync,
-  createOffsetCircle,
-  createCameraTargetArrow,
+  createOffsetArea,
+  createCameraTargetCube,
   setSpawnPointSelected,
   isSpawnPointMesh,
   getSpawnPointIndexFromMesh,
@@ -16,13 +16,12 @@ export interface SpawnPointVisual {
   index: number;
   rootNode: TransformNode;
   avatarMesh: Mesh | null;
-  circleMesh: Mesh | null;
+  areaMesh: Mesh | null;
   cameraTargetMesh: Mesh | null;
 }
 
 type SpawnPointManagerEvents = {
   selectionChange: number | null;
-  visibilityChange: boolean;
   positionChange: { index: number; position: Vector3 };
 };
 
@@ -61,7 +60,6 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
 
   // State
   const visuals: SpawnPointVisual[] = [];
-  let isVisible = true;
   let selectedIndex: number | null = null;
 
   /**
@@ -74,8 +72,8 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
       if (visual.cameraTargetMesh) {
         visual.cameraTargetMesh.dispose(false, true);
       }
-      if (visual.circleMesh) {
-        visual.circleMesh.dispose(false, true);
+      if (visual.areaMesh) {
+        visual.areaMesh.dispose(false, true);
       }
       if (visual.avatarMesh) {
         visual.avatarMesh.dispose(false, true);
@@ -108,61 +106,33 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
     // Create avatar placeholder (async - loads GLB)
     const avatarMesh = await createAvatarPlaceholderAsync(name, scene, rootNode);
 
-    // Create offset circle if random offset is enabled
+    // Create offset area if random offset is enabled
     const offsetX = getOffsetRadius(spawnPoint.position.x);
     const offsetZ = getOffsetRadius(spawnPoint.position.z);
-    const maxOffset = Math.max(offsetX, offsetZ);
-    let circleMesh: Mesh | null = null;
-    if (maxOffset > 0) {
-      circleMesh = createOffsetCircle(name, scene, rootNode, maxOffset);
+    let areaMesh: Mesh | null = null;
+    if (offsetX > 0 || offsetZ > 0) {
+      areaMesh = createOffsetArea(name, scene, rootNode, offsetX, offsetZ);
     }
 
-    // Camera target arrow is only shown when selected
-    const cameraTargetMesh: Mesh | null = null;
-
-    // Set visibility
-    rootNode.setEnabled(isVisible);
-
-    return {
-      index,
-      rootNode,
-      avatarMesh,
-      circleMesh,
-      cameraTargetMesh,
-    };
-  }
-
-  /**
-   * Updates the camera target arrow for a spawn point
-   */
-  function updateCameraTargetArrow(visual: SpawnPointVisual, spawnPoint: SceneSpawnPoint): void {
-    // Remove existing arrow
-    if (visual.cameraTargetMesh) {
-      visual.cameraTargetMesh.dispose(false, true);
-      visual.cameraTargetMesh = null;
-    }
-
-    // Only show arrow when selected
-    if (selectedIndex !== visual.index) {
-      return;
-    }
-
-    // Create arrow if camera target exists
+    // Create camera target cube if camera target exists
+    let cameraTargetMesh: Mesh | null = null;
     if (spawnPoint.cameraTarget) {
-      const spawnPos = visual.rootNode.position;
+      const spawnPos = rootNode.position;
       const targetPos = new Vector3(
         spawnPoint.cameraTarget.x,
         spawnPoint.cameraTarget.y,
         spawnPoint.cameraTarget.z,
       );
-      visual.cameraTargetMesh = createCameraTargetArrow(
-        `spawn_point_${visual.index}`,
-        scene,
-        visual.rootNode,
-        targetPos,
-        spawnPos,
-      );
+      cameraTargetMesh = createCameraTargetCube(name, scene, rootNode, targetPos, spawnPos);
     }
+
+    return {
+      index,
+      rootNode,
+      avatarMesh,
+      areaMesh,
+      cameraTargetMesh,
+    };
   }
 
   /**
@@ -189,38 +159,14 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
   }
 
   /**
-   * Sets visibility of all spawn point visuals
-   */
-  function setVisible(visible: boolean): void {
-    isVisible = visible;
-    spawnPointsNode.setEnabled(visible);
-    visuals.forEach(visual => {
-      visual.rootNode.setEnabled(visible);
-    });
-    events.emit('visibilityChange', visible);
-  }
-
-  /**
-   * Gets current visibility state
-   */
-  function getVisible(): boolean {
-    return isVisible;
-  }
-
-  /**
    * Selects a spawn point by index
    */
-  function selectSpawnPoint(index: number | null, spawnPoints?: readonly SceneSpawnPoint[]): void {
+  function selectSpawnPoint(index: number | null): void {
     // Deselect previous
     if (selectedIndex !== null && selectedIndex < visuals.length) {
       const prevVisual = visuals[selectedIndex];
       if (prevVisual.avatarMesh) {
         setSpawnPointSelected(prevVisual.avatarMesh, false);
-      }
-      // Remove camera target arrow
-      if (prevVisual.cameraTargetMesh) {
-        prevVisual.cameraTargetMesh.dispose(false, true);
-        prevVisual.cameraTargetMesh = null;
       }
     }
 
@@ -231,11 +177,6 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
       const visual = visuals[index];
       if (visual.avatarMesh) {
         setSpawnPointSelected(visual.avatarMesh, true);
-      }
-
-      // Show camera target arrow if spawn points data is available
-      if (spawnPoints && spawnPoints[index]) {
-        updateCameraTargetArrow(visual, spawnPoints[index]);
       }
     }
 
@@ -287,11 +228,6 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
     return () => events.off('selectionChange', cb);
   }
 
-  function onVisibilityChange(cb: (visible: boolean) => void): () => void {
-    events.on('visibilityChange', cb);
-    return () => events.off('visibilityChange', cb);
-  }
-
   function onPositionChange(cb: (data: { index: number; position: Vector3 }) => void): () => void {
     events.on('positionChange', cb);
     return () => events.off('positionChange', cb);
@@ -314,8 +250,6 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
 
   return {
     updateFromSceneComponent,
-    setVisible,
-    getVisible,
     selectSpawnPoint,
     getSelectedIndex,
     isMeshSpawnPoint: isSpawnPointMesh,
@@ -325,7 +259,6 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
     getSpawnPointPosition,
     getCount,
     onSelectionChange,
-    onVisibilityChange,
     onPositionChange,
     dispose,
   };

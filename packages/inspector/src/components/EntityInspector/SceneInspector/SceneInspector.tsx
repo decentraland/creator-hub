@@ -179,8 +179,6 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const [spawnPoints, addSpawnPoint, modifySpawnPoint, removeSpawnPoint] =
     useArrayState<SceneSpawnPoint>(componentValue === null ? [] : componentValue.spawnPoints);
 
-  // Spawn point visibility and selection state
-  const [showSpawnPoints, setShowSpawnPoints] = useState(true);
   const [selectedSpawnPointIndex, setSelectedSpawnPointIndex] = useState<number | null>(null);
 
   // Get spawn point manager from scene context
@@ -205,16 +203,6 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     return unsubscribe;
   }, [spawnPointManager, gizmoManager]);
 
-  // Handle spawn point visibility toggle
-  const handleShowSpawnPointsChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const visible = e.target.checked;
-      setShowSpawnPoints(visible);
-      spawnPointManager.setVisible(visible);
-    },
-    [spawnPointManager],
-  );
-
   // Handle spawn point selection from UI click
   const handleSpawnPointClick = useCallback(
     (index: number) => {
@@ -223,10 +211,10 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
         spawnPointManager.selectSpawnPoint(null);
       } else {
         // Select the spawn point
-        spawnPointManager.selectSpawnPoint(index, spawnPoints);
+        spawnPointManager.selectSpawnPoint(index);
       }
     },
-    [selectedSpawnPointIndex, spawnPointManager, spawnPoints],
+    [selectedSpawnPointIndex, spawnPointManager],
   );
 
   // Handle position change from gizmo drag
@@ -248,11 +236,6 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     },
     [spawnPoints, modifySpawnPoint],
   );
-
-  // Initialize spawn point manager visibility
-  useEffect(() => {
-    spawnPointManager.setVisible(showSpawnPoints);
-  }, []);
 
   const handleDrop = useCallback(async (thumbnail: string) => {
     const { operations } = sdk;
@@ -638,11 +621,6 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
             label="Spawn Settings"
             className="underlined"
           ></Block>
-          <CheckboxField
-            label="Show Spawn Points in 3D View"
-            checked={showSpawnPoints}
-            onChange={handleShowSpawnPointsChange}
-          />
           {spawnPoints.map((spawnPoint, index) => renderSpawnPoint(spawnPoint, index))}
           <AddButton onClick={handleAddSpawnPoint}>Add Spawn Point</AddButton>
           <Block

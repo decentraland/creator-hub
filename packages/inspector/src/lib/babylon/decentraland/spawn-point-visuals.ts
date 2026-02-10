@@ -5,16 +5,11 @@ import spawnIndicatorGlbDataUrl from '../assets/spawn_indicator.glb';
 import { loadAssetContainer } from './sdkComponents/gltf-container';
 
 // Constants for spawn point visual dimensions
-const CIRCLE_SEGMENTS = 48;
-const ARROW_HEIGHT = 0.8;
-const ARROW_RADIUS = 0.08;
-const ARROW_CONE_HEIGHT = 0.2;
-const ARROW_CONE_RADIUS = 0.15;
+const CAMERA_TARGET_CUBE_SIZE = 0.25;
 
 // Material colors
-const SPAWN_COLOR = Color3.FromHexString('#00CED1'); // Cyan for spawn point
+const SPAWN_COLOR = Color3.FromHexString('#A855F7'); // Purple for spawn point
 const SPAWN_SELECTED_COLOR = Color3.FromHexString('#FFD700'); // Gold for selected
-const CAMERA_TARGET_COLOR = Color3.FromHexString('#FFA500'); // Orange for camera target
 
 /**
  * Configures a mesh for spawn point rendering (pickable, rendering group, etc.)
@@ -206,117 +201,59 @@ function createFallbackPlaceholder(name: string, scene: Scene, parent: Transform
 }
 
 /**
- * Creates a circle outline mesh for showing random offset area
+ * Creates a ground plane mesh for showing random offset area.
+ * The offset extends equally in +/- X and +/- Z, forming a rectangular area.
  */
-export function createOffsetCircle(
+export function createOffsetArea(
   name: string,
   scene: Scene,
   parent: TransformNode,
-  radius: number,
+  offsetX: number,
+  offsetZ: number,
 ): Mesh {
-  // Create a torus with very small tube radius to look like a circle outline
-  const circle = MeshBuilder.CreateTorus(
-    `${name}_offset_circle`,
+  const ground = MeshBuilder.CreateGround(
+    `${name}_offset_area`,
     {
-      diameter: radius * 2,
-      thickness: 0.05,
-      tessellation: CIRCLE_SEGMENTS,
+      width: offsetX * 2,
+      height: offsetZ * 2,
     },
     scene,
   );
-  circle.parent = parent;
-  circle.position.y = 0.01; // Slightly above ground to avoid z-fighting
+  ground.parent = parent;
+  ground.position.y = 0.01; // Slightly above ground to avoid z-fighting
 
-  circle.material = createSpawnPointMaterial(`${name}_circle_mat`, scene, SPAWN_COLOR, 0.8);
-  configureSpawnPointMesh(circle, false);
+  ground.material = createSpawnPointMaterial(`${name}_area_mat`, scene, SPAWN_COLOR, 0.5);
+  configureSpawnPointMesh(ground, false);
 
-  return circle;
+  return ground;
 }
 
 /**
- * Creates the camera target arrow mesh
+ * Creates a small cube mesh representing the camera target position
  */
-export function createCameraTargetArrow(
+export function createCameraTargetCube(
   name: string,
   scene: Scene,
   parent: TransformNode,
   targetPosition: Vector3,
   spawnPosition: Vector3,
 ): Mesh {
-  const arrowRoot = new Mesh(`${name}_camera_arrow`, scene);
-  arrowRoot.parent = parent;
-
-  // Calculate direction from spawn to target
-  const direction = targetPosition.subtract(spawnPosition);
-  direction.y = 0; // Keep arrow horizontal
-  const distance = direction.length();
-
-  if (distance < 0.1) {
-    // If too close, just show a small indicator
-    const indicator = MeshBuilder.CreateSphere(
-      `${name}_camera_indicator`,
-      { diameter: 0.2 },
-      scene,
-    );
-    indicator.parent = arrowRoot;
-    indicator.position.y = 1.5;
-    indicator.material = createSpawnPointMaterial(
-      `${name}_indicator_mat`,
-      scene,
-      CAMERA_TARGET_COLOR,
-    );
-    configureSpawnPointMesh(indicator, false);
-    return arrowRoot;
-  }
-
-  // Normalize direction
-  direction.normalize();
-
-  // Create arrow shaft (cylinder)
-  const shaftLength = Math.min(distance * 0.3, ARROW_HEIGHT);
-  const shaft = MeshBuilder.CreateCylinder(
-    `${name}_arrow_shaft`,
-    {
-      height: shaftLength,
-      diameter: ARROW_RADIUS * 2,
-      tessellation: 8,
-    },
+  const cube = MeshBuilder.CreateBox(
+    `${name}_camera_target`,
+    { size: CAMERA_TARGET_CUBE_SIZE },
     scene,
   );
-  shaft.parent = arrowRoot;
-  shaft.rotation.z = Math.PI / 2; // Rotate to horizontal
-  shaft.position.y = 1.5; // Eye level
+  cube.parent = parent;
 
-  // Create arrow head (cone)
-  const cone = MeshBuilder.CreateCylinder(
-    `${name}_arrow_cone`,
-    {
-      height: ARROW_CONE_HEIGHT,
-      diameterTop: 0,
-      diameterBottom: ARROW_CONE_RADIUS * 2,
-      tessellation: 8,
-    },
-    scene,
-  );
-  cone.parent = arrowRoot;
-  cone.rotation.z = -Math.PI / 2; // Point forward
-  cone.position.y = 1.5;
-  cone.position.x = shaftLength / 2 + ARROW_CONE_HEIGHT / 2;
+  // Position relative to parent (spawn point root)
+  cube.position = targetPosition.subtract(spawnPosition);
 
-  // Apply material and configure rendering
-  const material = createSpawnPointMaterial(`${name}_arrow_mat`, scene, CAMERA_TARGET_COLOR, 0.9);
-  [shaft, cone].forEach(mesh => {
-    mesh.material = material;
-    configureSpawnPointMesh(mesh, false);
-  });
+  cube.material = createSpawnPointMaterial(`${name}_camera_target_mat`, scene, SPAWN_COLOR, 0.8);
+  configureSpawnPointMesh(cube, false);
 
-  // Rotate arrow root to point toward target
-  const angle = Math.atan2(direction.x, direction.z);
-  arrowRoot.rotation.y = angle;
+  cube.renderingGroupId = 1;
 
-  arrowRoot.renderingGroupId = 1;
-
-  return arrowRoot;
+  return cube;
 }
 
 /**
@@ -335,15 +272,15 @@ export function setSpawnPointSelected(avatarMesh: Mesh, selected: boolean): void
 }
 
 /**
- * Updates the offset circle radius
+ * Updates the offset area dimensions
  */
-export function updateOffsetCircleRadius(circle: Mesh, scene: Scene, radius: number): Mesh {
-  // Dispose old mesh and create new one with updated radius
-  const parent = circle.parent as TransformNode;
-  const name = circle.name.replace('_offset_circle', '');
-  circle.dispose();
+export function updateOffsetArea(area: Mesh, scene: Scene, offsetX: number, offsetZ: number): Mesh {
+  // Dispose old mesh and create new one with updated dimensions
+  const parent = area.parent as TransformNode;
+  const name = area.name.replace('_offset_area', '');
+  area.dispose();
 
-  return createOffsetCircle(name, scene, parent, radius);
+  return createOffsetArea(name, scene, parent, offsetX, offsetZ);
 }
 
 /**
@@ -352,9 +289,8 @@ export function updateOffsetCircleRadius(circle: Mesh, scene: Scene, radius: num
 export function isSpawnPointMesh(mesh: AbstractMesh): boolean {
   return (
     mesh.name.includes('_avatar') ||
-    mesh.name.includes('_offset_circle') ||
-    mesh.name.includes('_camera_arrow') ||
-    mesh.name.includes('_camera_indicator') ||
+    mesh.name.includes('_offset_area') ||
+    mesh.name.includes('_camera_target') ||
     mesh.name.includes('spawn_point_')
   );
 }

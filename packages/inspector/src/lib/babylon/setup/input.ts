@@ -109,12 +109,9 @@ export function interactWithScene(
         const ecsEntity = scene.transformNodes.find(n => isEcsEntity(n));
         if (ecsEntity) {
           const context = ecsEntity.context.deref()!;
-          const { engine, editorComponents, operations } = context;
-          const sceneValue = editorComponents.Scene.getOrNull(engine.RootEntity);
-          const spawnPoints = sceneValue?.spawnPoints;
-
+          const { engine, operations } = context;
           // Select the spawn point
-          spawnPointManager.selectSpawnPoint(spawnPointIndex, spawnPoints);
+          spawnPointManager.selectSpawnPoint(spawnPointIndex);
 
           // Deselect any selected entities
           operations.updateSelectedEntity(engine.RootEntity);
