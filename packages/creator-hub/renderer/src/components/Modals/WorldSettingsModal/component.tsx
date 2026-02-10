@@ -5,8 +5,6 @@ import { actions as managementActions } from '/@/modules/store/management';
 import { t } from '/@/modules/store/translation/utils';
 import type { WorldScene, WorldSettings } from '/@/lib/worlds';
 import { WorldSettingsTab } from '/shared/types/manage';
-import { useDispatch } from '#store';
-import { actions as managementActions } from '/@/modules/store/management';
 import type { Props as TabsModalProps } from '../TabsModal';
 import { Loader } from '../../Loader';
 import { TabsModal } from '../TabsModal';

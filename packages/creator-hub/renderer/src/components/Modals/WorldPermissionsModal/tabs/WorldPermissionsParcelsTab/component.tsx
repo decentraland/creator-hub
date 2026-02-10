@@ -36,7 +36,9 @@ const WorldPermissionsParcelsTab: React.FC<Props> = React.memo(
       () => managementSelectors.makeParcelsStateForAddressSelector(),
       [],
     );
-    const initialParcelsState = useSelector(state => parcelsStateSelector(state, walletAddress));
+    const initialParcelsState = useSelector(state =>
+      parcelsStateSelector(state.management, walletAddress),
+    );
     const initialParcels = useMemo(
       () => new Set(initialParcelsState?.parcels || []),
       [initialParcelsState],

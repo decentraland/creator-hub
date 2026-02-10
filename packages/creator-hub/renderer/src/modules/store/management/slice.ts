@@ -548,10 +548,7 @@ const getLandItems = createSelector([getManagedProjects], items =>
 
 const getWorldSettings = (state: Async<ManagementState>) => state.worldSettings;
 
-const getPermissionsState = createSelector(
-  getManagementState,
-  managementState => managementState.worldPermissions,
-);
+const getPermissionsState = (state: Async<ManagementState>) => state.worldPermissions;
 
 const getParcelsMap = createSelector(
   getPermissionsState,
@@ -560,7 +557,7 @@ const getParcelsMap = createSelector(
 
 const makeParcelsStateForAddressSelector = () =>
   createSelector(
-    [getParcelsMap, (_state: AppState, walletAddress: string) => walletAddress],
+    [getParcelsMap, (_state: Async<ManagementState>, walletAddress: string) => walletAddress],
     (parcels, walletAddress): ParcelsPermission | undefined => parcels[walletAddress],
   );
 

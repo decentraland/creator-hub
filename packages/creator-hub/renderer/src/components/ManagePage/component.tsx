@@ -15,7 +15,6 @@ import { Row } from '../Row';
 import { Column } from '../Column';
 import { StorageUsed } from './StorageUsed';
 import { ManagedProjectsList } from './ManagedProjectsList';
-import { StorageUsed } from './StorageUsed';
 import { filterProjectsBy, sortProjectsBy } from './utils';
 import './styles.css';
 

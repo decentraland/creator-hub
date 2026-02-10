@@ -34,8 +34,12 @@ const ManagedProjectsList: React.FC<Props> = React.memo(({ projects }) => {
   const [permissionsModal, setPermissionsModal] = useState<PermissionsModalState>({
     isOpen: false,
   });
-  const worldSettings = useSelector(managementSelectors.getWorldSettings);
-  const worldPermissions = useSelector(managementSelectors.getPermissionsState);
+  const worldSettings = useSelector(state =>
+    managementSelectors.getWorldSettings(state.management),
+  );
+  const worldPermissions = useSelector(state =>
+    managementSelectors.getPermissionsState(state.management),
+  );
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
