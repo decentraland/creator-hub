@@ -50,15 +50,17 @@
 .PublishedProjectCard .CardThumbnail .ChipsContainer {
   position: absolute;
   right: 8px;
-  bottom: 8px;
-  display: flex;
+  bottom: 4px;
+  margin: 3px;
   gap: 4px;
+  text-align: right;
 }
 
 .PublishedProjectCard .ChipsContainer .MuiChip-root {
   font-weight: 600;
   background-color: rgba(36, 33, 41, 0.5);
   padding-left: 4px;
+  margin: 3px;
 }
 
 .PublishedProjectCard .ChipsContainer .MuiChip-root .MuiSvgIcon-root {
