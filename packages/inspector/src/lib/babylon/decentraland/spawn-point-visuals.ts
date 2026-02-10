@@ -1,7 +1,7 @@
 import type { Scene, TransformNode, AbstractMesh, AssetContainer, Vector3 } from '@babylonjs/core';
 import { MeshBuilder, StandardMaterial, Color3, Mesh } from '@babylonjs/core';
 
-import spawnIndicatorGlbDataUrl from '../assets/spawn_indicator.glb';
+import spawnPointAvatarGlbDataUrl from '../assets/spawn_point_avatar.glb';
 import { loadAssetContainer } from './sdkComponents/gltf-container';
 
 // Constants for spawn point visual dimensions
@@ -42,9 +42,9 @@ export function createSpawnPointMaterial(
 }
 
 /**
- * Loads the spawn indicator GLB asset (cached)
+ * Loads the spawn point avatar GLB asset (cached)
  */
-async function loadSpawnIndicatorGlb(scene: Scene): Promise<AssetContainer> {
+async function loadSpawnPointAvatarGlb(scene: Scene): Promise<AssetContainer> {
   if (cachedAssetContainer) {
     return cachedAssetContainer;
   }
@@ -54,9 +54,9 @@ async function loadSpawnIndicatorGlb(scene: Scene): Promise<AssetContainer> {
   }
 
   loadingPromise = (async () => {
-    const response = await fetch(spawnIndicatorGlbDataUrl);
+    const response = await fetch(spawnPointAvatarGlbDataUrl);
     const blob = await response.blob();
-    const file = new File([blob], 'spawn_indicator.glb');
+    const file = new File([blob], 'spawn_point_avatar.glb');
 
     return new Promise<AssetContainer>((resolve, reject) => {
       loadAssetContainer(
@@ -71,7 +71,7 @@ async function loadSpawnIndicatorGlb(scene: Scene): Promise<AssetContainer> {
         },
         undefined,
         (_scene, message, exception) => {
-          console.error('Error loading spawn indicator GLB:', message, exception);
+          console.error('Error loading spawn point avatar GLB:', message, exception);
           loadingPromise = null;
           reject(new Error(message));
         },
@@ -79,7 +79,7 @@ async function loadSpawnIndicatorGlb(scene: Scene): Promise<AssetContainer> {
       );
     });
   })().catch(error => {
-    console.error('Error loading spawn indicator:', error);
+    console.error('Error loading spawn point avatar:', error);
     loadingPromise = null;
     throw error;
   });
@@ -131,10 +131,10 @@ export async function createAvatarPlaceholderAsync(
   parent: TransformNode,
 ): Promise<Mesh> {
   try {
-    const assetContainer = await loadSpawnIndicatorGlb(scene);
+    const assetContainer = await loadSpawnPointAvatarGlb(scene);
     return createMeshInstance(assetContainer, name, scene, parent);
   } catch (error) {
-    console.error('Failed to load spawn indicator GLB, falling back to placeholder:', error);
+    console.error('Failed to load spawn point avatar GLB, falling back to placeholder:', error);
     // Fallback to simple placeholder if GLB fails to load
     return createFallbackPlaceholder(name, scene, parent);
   }
