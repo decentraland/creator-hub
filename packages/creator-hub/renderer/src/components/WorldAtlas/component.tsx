@@ -97,6 +97,7 @@ const WorldAtlas: React.FC<Props> = React.memo(
         {/* @ts-expect-error TODO: Update properties in UI2, making the not required `optional` */}
         <Atlas
           {...props}
+          tiles={{}} // Empty to override Genesis City default tiles.
           layers={[emptyParcelLayer, worldLayer, scenesLayer, ...(props.layers ?? [])]}
           isDraggable={isDraggable}
           withZoomControls={withZoomControls}
