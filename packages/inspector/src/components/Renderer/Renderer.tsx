@@ -104,8 +104,12 @@ const Renderer: React.FC = () => {
     const camera = sdk.scene.activeCamera!;
     camera.detachControl();
     const selectedEntitites = sdk.operations.getSelectedEntities();
+    const preferredGizmo =
+      selectedEntitites.length > 0
+        ? sdk.components.Selection.getOrNull(selectedEntitites[0])?.gizmo
+        : undefined;
     sdk.operations.removeSelectedEntities();
-    selectedEntitites.forEach(entity => sdk.operations.duplicateEntity(entity));
+    selectedEntitites.forEach(entity => sdk.operations.duplicateEntity(entity, preferredGizmo));
     void sdk.operations.dispatch();
     setTimeout(() => {
       camera.attachControl(canvasRef.current, true);
@@ -120,8 +124,13 @@ const Renderer: React.FC = () => {
 
   const pasteSelectedEntities = useCallback(() => {
     if (!sdk) return;
+    const selectedEntities = sdk.operations.getSelectedEntities();
+    const preferredGizmo =
+      selectedEntities.length > 0
+        ? sdk.components.Selection.getOrNull(selectedEntities[0])?.gizmo
+        : undefined;
     sdk.operations.removeSelectedEntities();
-    copyEntities.forEach(entity => sdk.operations.duplicateEntity(entity));
+    copyEntities.forEach(entity => sdk.operations.duplicateEntity(entity, preferredGizmo));
     void sdk.operations.dispatch();
   }, [sdk, copyEntities]);
 
