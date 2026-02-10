@@ -380,55 +380,6 @@ export class Worlds {
     } catch (error) {
       return null;
     }
-  }
-
-  public async putWorldSettings(
-    address: string,
-    worldName: string,
-    settings: Partial<WorldSettings>,
-  ) {
-    const formData = new FormData();
-    const formattedSettings = fromCamelToSnake(settings);
-
-    Object.entries(formattedSettings).forEach(([key, value]) => {
-      if (value !== undefined) {
-        if (Array.isArray(value)) {
-          value.forEach(item => formData.append(key, String(item)));
-        } else {
-          formData.append(key, String(value));
-        }
-      }
-    });
-
-    const result = await fetch(`${this.url}/world/${worldName}/settings`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'multipart/form-data' },
-      identity: this.withIdentity(address),
-      body: formData,
-    });
-    return result.status === 204;
-  }
-
-  public async unpublishWorldScene(address: string, worldName: string, sceneCoords: string) {
-    const result = await fetch(`${this.url}/world/${worldName}/scenes/${sceneCoords}`, {
-      method: 'DELETE',
-      identity: this.withIdentity(address),
-    });
-    return result.status === 204;
-  }
-
-  public fetchWalletStats = async (address: string) => {
-    try {
-      const result = await fetch(`${this.url}/wallet/${address}/stats`);
-      if (result.ok) {
-        const json = await result.json();
-        return json as WorldsWalletStats;
-      } else {
-        return null;
-      }
-    } catch (error) {
-      return null;
-    }
   };
 
   public getPermissions = async (worldName: string) => {
