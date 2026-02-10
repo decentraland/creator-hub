@@ -613,10 +613,7 @@ const getWorldScenes = createSelector(
 
 const getError = createSelector(getManagementState, managementState => managementState.error);
 
-const getPermissionsState = createSelector(
-  getManagementState,
-  managementState => managementState.worldPermissions,
-);
+const getPermissionsState = (state: AppState) => state.management.worldPermissions;
 
 const getParcelsMap = createSelector(
   getPermissionsState,
