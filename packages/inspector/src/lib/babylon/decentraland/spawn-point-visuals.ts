@@ -229,14 +229,15 @@ export function createOffsetArea(
 }
 
 /**
- * Creates a small cube mesh representing the camera target position
+ * Creates a small cube mesh representing the camera target position.
+ * The cube is parented to a stable node (not the spawn point root) so it
+ * stays in place when the user drags the avatar with the gizmo.
  */
 export function createCameraTargetCube(
   name: string,
   scene: Scene,
   parent: TransformNode,
   targetPosition: Vector3,
-  spawnPosition: Vector3,
 ): Mesh {
   const cube = MeshBuilder.CreateBox(
     `${name}_camera_target`,
@@ -245,8 +246,8 @@ export function createCameraTargetCube(
   );
   cube.parent = parent;
 
-  // Position relative to parent (spawn point root)
-  cube.position = targetPosition.subtract(spawnPosition);
+  // Position is absolute since the parent is the stable spawn_points root node
+  cube.position = targetPosition.clone();
 
   cube.material = createSpawnPointMaterial(`${name}_camera_target_mat`, scene, SPAWN_COLOR, 0.8);
   configureSpawnPointMesh(cube, false);

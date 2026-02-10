@@ -114,16 +114,16 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
       areaMesh = createOffsetArea(name, scene, rootNode, offsetX, offsetZ);
     }
 
-    // Create camera target cube if camera target exists
+    // Create camera target cube if camera target exists.
+    // Parented to spawnPointsNode (not rootNode) so it stays in place during gizmo drag.
     let cameraTargetMesh: Mesh | null = null;
     if (spawnPoint.cameraTarget) {
-      const spawnPos = rootNode.position;
       const targetPos = new Vector3(
         spawnPoint.cameraTarget.x,
         spawnPoint.cameraTarget.y,
         spawnPoint.cameraTarget.z,
       );
-      cameraTargetMesh = createCameraTargetCube(name, scene, rootNode, targetPos, spawnPos);
+      cameraTargetMesh = createCameraTargetCube(name, scene, spawnPointsNode, targetPos);
     }
 
     return {
@@ -141,6 +141,9 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
   function updateFromSceneComponent(spawnPoints: readonly SceneSpawnPoint[] | undefined): void {
     const points = spawnPoints || [];
 
+    // Save selection state before clearing so we can restore it after rebuild
+    const previousSelectedIndex = selectedIndex;
+
     // Clear existing visuals
     clear();
 
@@ -154,6 +157,11 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
         createdVisuals.forEach(visual => {
           visuals.push(visual);
         });
+
+        // Restore selection after rebuild (e.g., after gizmo drag updates the component)
+        if (previousSelectedIndex !== null && previousSelectedIndex < visuals.length) {
+          selectSpawnPoint(previousSelectedIndex);
+        }
       }
     });
   }

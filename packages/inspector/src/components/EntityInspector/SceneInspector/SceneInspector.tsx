@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { IoIosImage } from 'react-icons/io';
 import cx from 'classnames';
 import type { Vector3 } from '@babylonjs/core';
@@ -185,6 +185,30 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const spawnPointManager = sdk.sceneContext.spawnPoints;
   const gizmoManager = sdk.gizmos;
 
+  // Handle position change from gizmo drag
+  const handleSpawnPointPositionChange = useCallback(
+    (index: number, position: Vector3) => {
+      if (index >= 0 && index < spawnPoints.length) {
+        const spawnPoint = spawnPoints[index];
+        const input = fromSceneSpawnPoint(spawnPoint);
+        const newInput = {
+          ...input,
+          position: {
+            x: position.x,
+            y: position.y,
+            z: position.z,
+          },
+        };
+        modifySpawnPoint(index, toSceneSpawnPoint(spawnPoint.name, newInput));
+      }
+    },
+    [spawnPoints, modifySpawnPoint],
+  );
+
+  // Use a ref to always have the latest callback without re-subscribing
+  const positionChangeRef = useRef(handleSpawnPointPositionChange);
+  positionChangeRef.current = handleSpawnPointPositionChange;
+
   // Subscribe to spawn point manager selection changes
   useEffect(() => {
     const unsubscribe = spawnPointManager.onSelectionChange((index: number | null) => {
@@ -194,7 +218,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       if (index !== null) {
         const node = spawnPointManager.getSpawnPointNode(index);
         if (node) {
-          gizmoManager.attachToSpawnPoint(node, index, handleSpawnPointPositionChange);
+          gizmoManager.attachToSpawnPoint(node, index, (i, p) => positionChangeRef.current(i, p));
         }
       } else {
         gizmoManager.detachFromSpawnPoint();
@@ -215,26 +239,6 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       }
     },
     [selectedSpawnPointIndex, spawnPointManager],
-  );
-
-  // Handle position change from gizmo drag
-  const handleSpawnPointPositionChange = useCallback(
-    (index: number, position: Vector3) => {
-      if (index >= 0 && index < spawnPoints.length) {
-        const spawnPoint = spawnPoints[index];
-        const input = fromSceneSpawnPoint(spawnPoint);
-        const newInput = {
-          ...input,
-          position: {
-            x: position.x,
-            y: position.y,
-            z: position.z,
-          },
-        };
-        modifySpawnPoint(index, toSceneSpawnPoint(spawnPoint.name, newInput));
-      }
-    },
-    [spawnPoints, modifySpawnPoint],
   );
 
   const handleDrop = useCallback(async (thumbnail: string) => {
