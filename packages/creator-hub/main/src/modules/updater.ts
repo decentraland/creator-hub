@@ -82,7 +82,7 @@ function configureUpdater(config: UpdaterConfig) {
   updater.autoUpdater.allowPrerelease = false;
 
   // enable dev app update for local development
-  if (import.meta.env.VITE_ENABLE_DEV_APP_UPDATE) {
+  if (import.meta.env.VITE_ENABLE_DEV_APP_UPDATE === 'true') {
     updater.autoUpdater.forceDevUpdateConfig = true;
     log.info('[AutoUpdater] Dev app update enabled');
   }
