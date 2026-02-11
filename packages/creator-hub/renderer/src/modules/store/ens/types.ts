@@ -47,6 +47,8 @@ export type ENS = {
   //   contentType?: ENSContent {LAND = 'land', (...)}
   landId?: string;
 
+  worldStatus?: WorldStatus | null;
+
   ensAddressRecord?: string;
   userPermissions?: string[];
   size?: string;
@@ -63,6 +65,12 @@ export enum ENSOrigin {
   CONTENT = 'Content',
   ADDRESS = 'Address',
 }
+
+export type WorldStatus = {
+  scene: {
+    entityId: string | undefined;
+  };
+};
 
 export enum USER_PERMISSIONS {
   DEPLOYMENT = 'deployment',

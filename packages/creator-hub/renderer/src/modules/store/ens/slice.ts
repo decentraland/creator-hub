@@ -16,6 +16,20 @@ const REQUESTS_BATCH_SIZE = 25;
 const limit = pLimit(REQUESTS_BATCH_SIZE);
 
 // actions
+export const fetchWorldStatus = async (domain: string) => {
+  const WorldAPI = new Worlds();
+  const world = await WorldAPI.fetchWorld(domain);
+  if (world && world.length > 0) {
+    const [{ id: entityId }] = world;
+    return {
+      scene: {
+        entityId,
+      },
+    };
+  }
+  return null;
+};
+
 export const fetchContributeENSNames = async (address: string) => {
   try {
     const WorldAPI = new Worlds();
@@ -122,6 +136,8 @@ export const fetchDCLNames = createAsyncThunk(
           }
         }
 
+        const worldStatus = await fetchWorldStatus(subdomain);
+
         return {
           name,
           subdomain,
@@ -133,6 +149,7 @@ export const fetchDCLNames = createAsyncThunk(
           content,
           ensAddressRecord,
           landId,
+          worldStatus,
         };
       });
     });
@@ -158,6 +175,8 @@ export const fetchENS = createAsyncThunk(
         const subdomain = data.toLowerCase();
         const name = subdomain.split('.')[0];
 
+        const worldStatus = await fetchWorldStatus(name);
+
         return {
           name,
           subdomain,
@@ -167,6 +186,7 @@ export const fetchENS = createAsyncThunk(
           ensOwnerAddress: '',
           resolver: '',
           tokenId: '',
+          worldStatus,
         };
       });
     });
@@ -204,6 +224,8 @@ export const fetchContributableNames = createAsyncThunk(
         const subdomain = data.name.toLowerCase();
         const name = subdomain.split('.')[0];
 
+        const worldStatus = await fetchWorldStatus(name);
+
         return {
           name,
           subdomain,
@@ -217,6 +239,7 @@ export const fetchContributableNames = createAsyncThunk(
           tokenId: '',
           userPermissions: data.user_permissions,
           size: data.size,
+          worldStatus,
         };
       });
     });
