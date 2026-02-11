@@ -5,7 +5,7 @@ import fetch from 'decentraland-crypto-fetch';
 
 import { config } from '/@/config';
 import type { ContributableDomain } from '/@/modules/store/ens/types';
-import { fromCamelToSnake, fromSnakeToCamel } from '../modules/api';
+import { formatQueryParams, fromCamelToSnake, fromSnakeToCamel } from '../modules/api';
 
 export type WorldDeployment = {
   id: string;
@@ -104,6 +104,25 @@ export type Point = {
 
 export type WorldConfiguration = {
   name: string;
+};
+
+export type WorldData = {
+  title: string;
+  ownerAddress: string;
+  description: string;
+  deployedScenes: number;
+  userPermissions: Permissions[];
+  worldShape: {
+    x1: number;
+    x2: number;
+    y1: number;
+    y2: number;
+  };
+};
+
+export type WorldDataResponse = {
+  worlds: WorldData[];
+  total: number;
 };
 
 export type WorldScene = {
@@ -258,24 +277,40 @@ export class Worlds {
     return `${this.url}/contents/${hash}`;
   }
 
+  public async fetchWorlds(
+    params: {
+      limit?: number;
+      offset?: number;
+      search?: string;
+      sort?: string;
+      order?: 'asc' | 'desc';
+      authorized_deployer?: string;
+    } = { limit: 100, offset: 0 },
+  ): Promise<WorldDataResponse | null> {
+    const queryString = formatQueryParams(params);
+    const result = await fetch(`${this.url}/worlds?${queryString}`);
+    if (result.ok) {
+      const json = await result.json();
+      return fromSnakeToCamel(json) as WorldDataResponse;
+    } else {
+      return null;
+    }
+  }
+
   public async fetchWorldScenes(
     worldName: string,
-    params?: {
+    params: {
       limit?: number;
       offset?: number;
       x1?: number;
       x2?: number;
       y1?: number;
       y2?: number;
-    },
+    } = { limit: 100, offset: 0 },
   ) {
     try {
-      const urlParams = new URLSearchParams(
-        Object.entries(params || {})
-          .filter(([_, value]) => value !== undefined && value !== null)
-          .map(([key, value]) => [key, value?.toString()]),
-      );
-      const result = await fetch(`${this.url}/world/${worldName}/scenes?${urlParams.toString()}`);
+      const queryString = formatQueryParams(params);
+      const result = await fetch(`${this.url}/world/${worldName}/scenes?${queryString}`);
       if (result.ok) {
         const json = await result.json();
         return json as WorldScenes;
@@ -449,15 +484,11 @@ export class Worlds {
       x2?: number;
       y1?: number;
       y2?: number;
-    } = { offset: 0, limit: 100 },
+    } = { limit: 100, offset: 0 },
   ) => {
-    const urlParams = new URLSearchParams(
-      Object.entries(params || {})
-        .filter(([_, value]) => value !== undefined && value !== null)
-        .map(([key, value]) => [key, value?.toString()]),
-    );
+    const queryString = formatQueryParams(params);
     const result = await fetch(
-      `${this.url}/world/${worldName}/permissions/${worldPermissionName}/address/${walletAddress}/parcels?${urlParams.toString()}`,
+      `${this.url}/world/${worldName}/permissions/${worldPermissionName}/address/${walletAddress}/parcels?${queryString}`,
     );
     if (result.ok) {
       const json = await result.json();
