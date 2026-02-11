@@ -494,6 +494,8 @@
         "add_address": "Add address",
         "new_invite": "New Invite",
         "clear_list": "Clear List",
+        "clear_list_title": "Clear List?",
+        "clear_list_warning": "If you continue, your list of approved addresses will be erased.",
         "change_access_type_title": "Change access type?",
         "change_access_type_warning": "If you switch world access type, your list of approved addresses will be erased.",
         "go_back": "Go Back",
