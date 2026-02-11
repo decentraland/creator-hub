@@ -510,7 +510,11 @@
       "parcels": {
         "title": "自定义坐标",
         "description": "点击单个瓷砖以将它们包含/排除在布局中。",
-        "parcels_count": "{count} 个地块"
+        "parcels_count": "正在选择 {count} 个{count, plural, one {地块} other {地块}}",
+        "actions": {
+          "discard": "丢弃",
+          "confirm": "确认"
+        }
       }
     },
     "create_project": {

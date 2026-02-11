@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ArrowBackIcon from '@mui/icons-material/ArrowBackRounded';
-import { Box, Chip, Typography } from 'decentraland-ui2';
+import { Box, Typography } from 'decentraland-ui2';
 import { useDispatch, useSelector } from '#store';
 import { t } from '/@/modules/store/translation/utils';
 import { coordsToId } from '/@/lib/land';
@@ -12,6 +12,8 @@ import {
   selectors as managementSelectors,
 } from '/@/modules/store/management';
 import { WorldAtlas, WorldAtlasColors } from '/@/components/WorldAtlas';
+import { Button } from '/@/components/Button';
+import { Loader } from '/@/components/Loader';
 import { WorldPermissionsAvatarWithInfo } from '../../WorldPermissionsAvatarWithInfo';
 import './styles.css';
 
@@ -32,6 +34,8 @@ const WorldPermissionsParcelsTab: React.FC<Props> = React.memo(
       from: { x: number; y: number } | null;
       to: { x: number; y: number } | null;
     }>({ isSelectingParcels: false, from: null, to: null });
+    const [isSaving, setIsSaving] = useState(false);
+    const hasChangesRef = useRef(false);
     const initialParcelsState = useSelector(state =>
       managementSelectors.getParcelsStateForAddress(state, walletAddress),
     );
@@ -43,6 +47,7 @@ const WorldPermissionsParcelsTab: React.FC<Props> = React.memo(
 
     useEffect(() => {
       setSelectedParcels(initialParcels);
+      hasChangesRef.current = false;
     }, [initialParcels]);
 
     const isWithinWorldBounds = useCallback(
@@ -104,6 +109,7 @@ const WorldPermissionsParcelsTab: React.FC<Props> = React.memo(
           else nextParcels.add(key);
           return nextParcels;
         });
+        hasChangesRef.current = true;
       },
       [isWithinWorldBounds],
     );
@@ -142,11 +148,12 @@ const WorldPermissionsParcelsTab: React.FC<Props> = React.memo(
           }
           return nextParcels;
         });
+        hasChangesRef.current = true;
       }
       setDragStatus({ isSelectingParcels: false, from: null, to: null });
     }, [dragStatus]);
 
-    const handleGoBack = useCallback(() => {
+    const handleSave = useCallback(async () => {
       const parcelsToAdd = Array.from(selectedParcels).filter(
         parcel => !initialParcels.has(parcel),
       );
@@ -154,37 +161,51 @@ const WorldPermissionsParcelsTab: React.FC<Props> = React.memo(
         parcel => !selectedParcels.has(parcel),
       );
 
-      if (parcelsToAdd.length > 0) {
-        dispatch(
-          managementActions.addParcelsPermission({
-            worldName,
-            permissionName: WorldPermissionName.Deployment,
-            walletAddress,
-            parcels: parcelsToAdd,
-          }),
-        );
+      try {
+        const tasks: Promise<void>[] = [];
+        setIsSaving(true);
+        if (parcelsToAdd.length > 0) {
+          tasks.push(
+            dispatch(
+              managementActions.addParcelsPermission({
+                worldName,
+                permissionName: WorldPermissionName.Deployment,
+                walletAddress,
+                parcels: parcelsToAdd,
+              }),
+            ).unwrap(),
+          );
+        }
+        if (parcelsToRemove.length > 0) {
+          tasks.push(
+            dispatch(
+              managementActions.removeParcelsPermission({
+                worldName,
+                permissionName: WorldPermissionName.Deployment,
+                walletAddress,
+                parcels: parcelsToRemove,
+              }),
+            ).unwrap(),
+          );
+        }
+        await Promise.all(tasks);
+        onGoBack();
+      } finally {
+        setIsSaving(false);
       }
-
-      if (parcelsToRemove.length > 0) {
-        dispatch(
-          managementActions.removeParcelsPermission({
-            worldName,
-            permissionName: WorldPermissionName.Deployment,
-            walletAddress,
-            parcels: parcelsToRemove,
-          }),
-        );
-      }
-
-      onGoBack();
     }, [selectedParcels, initialParcels, worldName, walletAddress, onGoBack]);
+
+    const handleReset = useCallback(() => {
+      setSelectedParcels(initialParcels);
+      hasChangesRef.current = false;
+    }, [initialParcels]);
 
     return (
       <Box className="WorldPermissionsParcelsTab">
         <Box className="HeaderTitle">
           <ArrowBackIcon
             role="button"
-            onClick={handleGoBack}
+            onClick={onGoBack}
           />
           <Typography variant="h6">{t('modal.world_permissions.parcels.title')}</Typography>
         </Box>
@@ -194,28 +215,47 @@ const WorldPermissionsParcelsTab: React.FC<Props> = React.memo(
         >
           {t('modal.world_permissions.parcels.description')}
         </Typography>
-        <Box>
-          <Box className="AtlasHeader">
-            <WorldPermissionsAvatarWithInfo walletAddress={walletAddress} />
-            <Chip
-              label={t('modal.world_permissions.parcels.parcels_count', {
-                count: selectedParcels.size,
-              })}
-              className="ParcelsCount"
+        <WorldAtlas
+          height={350}
+          worldScenes={worldScenes}
+          showWorldSize={false}
+          floatingContent={
+            <WorldPermissionsAvatarWithInfo
+              walletAddress={walletAddress}
+              size="tiny"
             />
-          </Box>
-          <WorldAtlas
-            height={350}
-            worldScenes={worldScenes}
-            isDraggable={!dragStatus.isSelectingParcels}
-            layers={[selectedParcelsStrokeLayer, selectedParcelsLayer]}
-            onClick={handleParcelClick}
-            onHover={handleParcelHover}
-            onMouseDownEvent={handleMouseDownClickType}
-            onMouseDown={handleMouseDown}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-          />
+          }
+          isDraggable={!dragStatus.isSelectingParcels}
+          layers={[selectedParcelsStrokeLayer, selectedParcelsLayer]}
+          onClick={handleParcelClick}
+          onHover={handleParcelHover}
+          onMouseDownEvent={handleMouseDownClickType}
+          onMouseDown={handleMouseDown}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+        />
+        <Box className="ActionsContainer">
+          {hasChangesRef.current && (
+            <Button
+              onClick={handleReset}
+              variant="outlined"
+              color="secondary"
+            >
+              {t('modal.world_permissions.parcels.actions.discard')}
+            </Button>
+          )}
+          <Typography>
+            {t('modal.world_permissions.parcels.parcels_count', {
+              count: selectedParcels.size || '',
+            })}
+          </Typography>
+          <Button
+            onClick={handleSave}
+            disabled={!hasChangesRef.current}
+            className="SaveButton"
+          >
+            {isSaving ? <Loader size={24} /> : t('modal.world_permissions.parcels.actions.confirm')}
+          </Button>
         </Box>
       </Box>
     );
