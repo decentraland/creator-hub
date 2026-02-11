@@ -5,9 +5,6 @@ import { snapManager } from '../decentraland/snap-manager';
 import { keyState, Keys } from '../decentraland/keys';
 import { getAncestors, isAncestor, mapNodes } from '../../sdk/nodes';
 import { createSpawnPointManager } from '../decentraland/spawn-point-manager';
-import { store } from '../../../redux/store';
-import { selectSceneInspectorTab } from '../../../redux/ui';
-import { SceneInspectorTab } from '../../../redux/ui/types';
 
 let isSnapEnabled = snapManager.isEnabled();
 let isShiftKeyDown = false;
@@ -118,12 +115,9 @@ export function interactWithScene(
             spawnPointManager.selectSpawnPoint(spawnPointIndex);
           }
 
-          // Deselect any selected entities
-          operations.updateSelectedEntity(engine.RootEntity);
+          // Select the Player entity to show spawn settings in inspector
+          operations.updateSelectedEntity(engine.PlayerEntity);
           void operations.dispatch();
-
-          // Switch to Settings tab
-          store.dispatch(selectSceneInspectorTab({ tab: SceneInspectorTab.SETTINGS }));
         }
       }
     }
