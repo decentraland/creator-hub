@@ -1,6 +1,8 @@
 import { useCallback, useMemo } from 'react';
+import cx from 'classnames';
+import RefreshIcon from '@mui/icons-material/Cached';
 import type { SelectChangeEvent } from 'decentraland-ui2';
-import { Box, MenuItem, Typography } from 'decentraland-ui2';
+import { Box, IconButton, MenuItem, Typography } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
 import { actions as managementActions } from '/@/modules/store/management';
 import { useAuth } from '/@/hooks/useAuth';
@@ -30,11 +32,12 @@ const SORT_OPTIONS: Array<{ label: string; value: SortBy }> = [
 ];
 
 export function ManagePage() {
-  const { isSignedIn, isSigningIn, signIn } = useAuth();
+  const { isSignedIn, isSigningIn, signIn, wallet, chainId } = useAuth();
   const { status, projects, sortBy, searchQuery } = useSelector(state => state.management);
   const dispatch = useDispatch();
 
   const isLoading = status === 'idle' || status === 'loading';
+  const showMainLoader = isLoading && !projects.length;
 
   const projectsToShow = useMemo(() => {
     const filteredProjects = filterProjectsBy(projects, searchQuery);
@@ -55,14 +58,31 @@ export function ManagePage() {
     [dispatch],
   );
 
+  const handleRefreshProjects = useCallback(() => {
+    if (wallet && chainId) {
+      dispatch(managementActions.fetchManagedProjects({ address: wallet, chainId }));
+    }
+  }, [wallet, chainId]);
+
   return (
     <main className="ManagePage">
       <Navbar active={NavbarItem.MANAGE} />
       <Container>
-        <Typography variant="h3">{t('manage.header.title')}</Typography>
+        <Typography variant="h3">
+          {t('manage.header.title')}
+          {isSignedIn && !showMainLoader && (
+            <IconButton
+              onClick={handleRefreshProjects}
+              disabled={isLoading}
+              className={cx('RefreshButton', { Loading: isLoading && !showMainLoader })}
+            >
+              <RefreshIcon />
+            </IconButton>
+          )}
+        </Typography>
         {!isSignedIn && !isSigningIn ? (
           <SignInCard onClickSignIn={signIn} />
-        ) : isLoading ? (
+        ) : showMainLoader ? (
           <Loader size={70} />
         ) : (
           <Row>

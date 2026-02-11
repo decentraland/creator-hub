@@ -4,6 +4,23 @@
   padding-bottom: 32px;
 }
 
+.ManagePage .RefreshButton {
+  margin-left: 16px;
+}
+
+.ManagePage .RefreshButton.Loading {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(360deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
 .ManagePage .Container > .Loader {
   height: 60vh;
 }

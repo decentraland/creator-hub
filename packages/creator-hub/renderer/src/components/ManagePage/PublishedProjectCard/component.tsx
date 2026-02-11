@@ -82,7 +82,9 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
           text: t('manage.cards.menu.copy_url'),
           icon: <ContentCopy />,
           handler: handleCopyURL,
-          divider: true,
+          divider:
+            type === ManagedProjectType.LAND ||
+            (type === ManagedProjectType.WORLD && role === WorldRoleType.OWNER),
           active: type === ManagedProjectType.LAND || !!deployment,
         },
         {
