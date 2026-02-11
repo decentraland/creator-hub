@@ -463,6 +463,8 @@
         "add_address": "Agregar dirección",
         "new_invite": "Nueva Invitación",
         "clear_list": "Limpiar Lista",
+        "clear_list_title": "¿Limpiar Lista?",
+        "clear_list_warning": "Si continúas, tu lista de direcciones aprobadas será borrada.",
         "change_access_type_title": "¿Cambiar tipo de acceso?",
         "change_access_type_warning": "Si cambias el tipo de acceso, tu lista de direcciones aprobadas será borrada.",
         "go_back": "Volver",
