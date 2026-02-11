@@ -202,6 +202,28 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
       [worldName, worldPermissions],
     );
 
+    const handleRemoveAccessFromCommunity = useCallback(
+      (communityId: string) => {
+        if (worldPermissions?.access.type !== WorldPermissionType.AllowList) return;
+        const currentCommunities = worldPermissions.access.communities ?? [];
+        if (!currentCommunities.includes(communityId)) return;
+        withUpdating(
+          dispatch(
+            updateWorldPermissions({
+              worldName,
+              worldPermissionName: WorldPermissionName.Access,
+              worldPermissionType: WorldPermissionType.AllowList,
+              options: {
+                wallets: worldPermissions.access.wallets,
+                communities: currentCommunities.filter(c => c !== communityId),
+              },
+            }),
+          ),
+        );
+      },
+      [worldName, worldPermissions],
+    );
+
     const handleClearAccessList = useCallback(() => {
       if (worldPermissions?.access.type !== WorldPermissionType.AllowList) return;
       const ownerLower = worldOwnerAddress.toLowerCase();
@@ -216,7 +238,7 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
             worldName,
             worldPermissionName: WorldPermissionName.Access,
             worldPermissionType: WorldPermissionType.AllowList,
-            options: { wallets: walletsToKeep },
+            options: { wallets: walletsToKeep, communities: [] },
           }),
         ),
       );
@@ -361,6 +383,7 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
                   onAddAccessToCommunity={handleAddAccessToCommunity}
                   onSubmitCsv={handleSubmitCsvData}
                   onRemoveAccessFromAddress={handleRemoveAccessFromAddress}
+                  onRemoveAccessFromCommunity={handleRemoveAccessFromCommunity}
                   onClearAccessList={handleClearAccessList}
                   onSetAccessPassword={handleSetAccessPassword}
                 />

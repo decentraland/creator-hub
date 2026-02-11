@@ -12,10 +12,15 @@ import { DeploymentOptionValue } from './types';
 import './styles.css';
 
 export const WorldPermissionsItem: React.FC<BaseProps> = React.memo(
-  ({ walletAddress, menuOptions, children = null }) => {
+  ({ walletAddress, icon, name, subtitle, menuOptions, children = null }) => {
     return (
       <Box className="WorldPermissionsItem TableRow">
-        <WorldPermissionsAvatarWithInfo walletAddress={walletAddress} />
+        <WorldPermissionsAvatarWithInfo
+          value={walletAddress}
+          icon={icon}
+          name={name}
+          subtitle={subtitle}
+        />
         <Box>{children}</Box>
         {menuOptions && <Dropdown options={menuOptions} />}
       </Box>
@@ -28,14 +33,14 @@ export const WorldPermissionsLoadingItem: React.FC = React.memo(() => {
     <Row className="WorldPermissionsItem">
       <WorldPermissionsAvatarWithInfo
         isLoading
-        walletAddress=""
+        value=""
       />
     </Row>
   );
 });
 
 export const WorldPermissionsAccessItem: React.FC<AccessItemProps> = React.memo(
-  ({ walletAddress, role, onRemoveAddress }) => {
+  ({ walletAddress, icon, name, subtitle, role, onRemoveAddress }) => {
     const menuOptions = role
       ? undefined
       : [
@@ -56,6 +61,9 @@ export const WorldPermissionsAccessItem: React.FC<AccessItemProps> = React.memo(
     return (
       <WorldPermissionsItem
         walletAddress={walletAddress}
+        icon={icon}
+        name={name}
+        subtitle={subtitle}
         menuOptions={menuOptions}
       >
         {roleLabel && (

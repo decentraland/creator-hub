@@ -490,7 +490,7 @@
         "empty_list": "You haven't approved any addresses yet",
         "public": "Public",
         "private": "Private",
-        "approved_addresses": "Approved Addresses: {number}",
+        "approved_addresses": "Approved: {number}",
         "add_address": "Add address",
         "new_invite": "New Invite",
         "clear_list": "Clear List",

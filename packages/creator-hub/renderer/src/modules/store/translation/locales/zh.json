@@ -490,7 +490,7 @@
         "empty_list": "您还没有批准任何地址",
         "public": "公开",
         "private": "私有",
-        "approved_addresses": "已批准的地址 {number}",
+        "approved_addresses": "已批准: {number}",
         "add_address": "添加地址",
         "new_invite": "新邀请",
         "clear_list": "清除列表",

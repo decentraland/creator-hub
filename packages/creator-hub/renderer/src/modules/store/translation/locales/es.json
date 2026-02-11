@@ -490,7 +490,7 @@
         "empty_list": "Aún no has aprobado ninguna dirección",
         "public": "Público",
         "private": "Privado",
-        "approved_addresses": "Direcciones Aprobadas {number}",
+        "approved_addresses": "Aprobados: {number}",
         "add_address": "Agregar dirección",
         "new_invite": "Nueva Invitación",
         "clear_list": "Limpiar Lista",

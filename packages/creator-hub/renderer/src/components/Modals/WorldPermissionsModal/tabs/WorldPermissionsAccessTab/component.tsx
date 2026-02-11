@@ -7,6 +7,7 @@ import PublicIcon from '@mui/icons-material/Public';
 import { Box, MenuItem, type SelectChangeEvent, Typography } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
 import { WorldPermissionType, type WorldPermissions } from '/@/lib/worlds';
+import { useCommunities } from '/@/hooks/useCommunities';
 import { Row } from '/@/components/Row';
 import { Button } from '/@/components/Button';
 import { Select } from '/@/components/Select';
@@ -20,6 +21,27 @@ import {
 } from '../../WorldPermissionsItem';
 import './styles.css';
 
+const CommunityAccessItem: React.FC<{
+  communityId: string;
+  name?: string;
+  membersCount?: number;
+  onRemove: () => void;
+}> = React.memo(({ communityId, name, membersCount, onRemove }) => {
+  return (
+    <WorldPermissionsAccessItem
+      walletAddress={communityId}
+      icon={<PeopleIcon />}
+      name={name ?? communityId}
+      subtitle={
+        membersCount !== undefined
+          ? t('modal.world_permissions.access.community_members', { count: membersCount })
+          : undefined
+      }
+      onRemoveAddress={onRemove}
+    />
+  );
+});
+
 type Props = {
   worldAccessPermissions: WorldPermissions['access'];
   worldOwnerAddress: string;
@@ -31,6 +53,7 @@ type Props = {
   onAddAccessToCommunity: (communityId: string) => void;
   onSubmitCsv: (data: CsvData) => void;
   onRemoveAccessFromAddress: (address: string) => void;
+  onRemoveAccessFromCommunity: (communityId: string) => void;
   onClearAccessList: () => void;
   onSetAccessPassword: (password: string) => void;
 };
@@ -93,6 +116,7 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
     onAddAccessToCommunity,
     onSubmitCsv,
     onRemoveAccessFromAddress,
+    onRemoveAccessFromCommunity,
     onClearAccessList,
     onSetAccessPassword,
   } = props;
@@ -224,7 +248,8 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
     if (aIsCollab !== bIsCollab) return aIsCollab ? -1 : 1;
     return 0;
   });
-  const walletsCount = wallets.length;
+  const { communities: resolvedCommunities, totalMembersCount } = useCommunities(apiCommunities);
+  const totalInvited = wallets.length + totalMembersCount;
 
   if (pendingAccessType) {
     return (
@@ -326,7 +351,7 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
               className="ApprovedAddressesCount"
             >
               {t('modal.world_permissions.access.approved_addresses', {
-                number: `${walletsCount}/200`,
+                number: totalInvited,
               })}
             </Typography>
             <Row className="AccessListActions">
@@ -347,27 +372,38 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
           </Row>
 
           <Box className="AccessList">
-            {walletsCount > 0
-              ? wallets.map(wallet => {
-                  const lowerWallet = wallet.toLowerCase();
-                  const isOwner = lowerWallet === worldOwnerAddress.toLowerCase();
-                  const isCollaborator =
-                    !isOwner && collaboratorAddresses.some(c => c.toLowerCase() === lowerWallet);
-                  const role = isOwner ? 'owner' : isCollaborator ? 'collaborator' : undefined;
-                  return (
-                    <WorldPermissionsAccessItem
-                      key={wallet}
-                      walletAddress={lowerWallet}
-                      role={role}
-                      onRemoveAddress={() => onRemoveAccessFromAddress(wallet)}
-                    />
-                  );
-                })
-              : !isLoadingNewUser && (
-                  <Typography className="EmptyList">
-                    {t('modal.world_permissions.access.empty_list')}
-                  </Typography>
-                )}
+            {wallets.map(wallet => {
+              const lowerWallet = wallet.toLowerCase();
+              const isOwner = lowerWallet === worldOwnerAddress.toLowerCase();
+              const isCollaborator =
+                !isOwner && collaboratorAddresses.some(c => c.toLowerCase() === lowerWallet);
+              const role = isOwner ? 'owner' : isCollaborator ? 'collaborator' : undefined;
+              return (
+                <WorldPermissionsAccessItem
+                  key={wallet}
+                  walletAddress={lowerWallet}
+                  role={role}
+                  onRemoveAddress={() => onRemoveAccessFromAddress(wallet)}
+                />
+              );
+            })}
+            {apiCommunities.map(communityId => {
+              const community = resolvedCommunities.get(communityId);
+              return (
+                <CommunityAccessItem
+                  key={communityId}
+                  communityId={communityId}
+                  name={community?.name}
+                  membersCount={community?.membersCount}
+                  onRemove={() => onRemoveAccessFromCommunity(communityId)}
+                />
+              );
+            })}
+            {wallets.length === 0 && apiCommunities.length === 0 && !isLoadingNewUser && (
+              <Typography className="EmptyList">
+                {t('modal.world_permissions.access.empty_list')}
+              </Typography>
+            )}
             {isLoadingNewUser && <WorldPermissionsLoadingItem />}
           </Box>
         </Box>
