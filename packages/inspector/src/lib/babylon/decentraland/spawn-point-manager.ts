@@ -8,7 +8,9 @@ import {
   createOffsetArea,
   createCameraTargetCube,
   setSpawnPointSelected,
+  setCameraTargetSelected,
   isSpawnPointMesh,
+  isCameraTargetMesh as isCameraTargetMeshCheck,
   getSpawnPointIndexFromMesh,
 } from './spawn-point-visuals';
 
@@ -20,9 +22,14 @@ export interface SpawnPointVisual {
   cameraTargetMesh: Mesh | null;
 }
 
+export type SpawnPointSelectionTarget = 'position' | 'cameraTarget';
+
+type SelectionData = { index: number | null; target: SpawnPointSelectionTarget };
+
 type SpawnPointManagerEvents = {
-  selectionChange: number | null;
+  selectionChange: SelectionData;
   positionChange: { index: number; position: Vector3 };
+  cameraTargetPositionChange: { index: number; position: Vector3 };
 };
 
 /**
@@ -61,6 +68,7 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
   // State
   const visuals: SpawnPointVisual[] = [];
   let selectedIndex: number | null = null;
+  let selectedTarget: SpawnPointSelectionTarget = 'position';
 
   /**
    * Clears all spawn point visuals
@@ -82,6 +90,7 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
       visual = visuals.pop();
     }
     selectedIndex = null;
+    selectedTarget = 'position';
   }
 
   /**
@@ -143,6 +152,7 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
 
     // Save selection state before clearing so we can restore it after rebuild
     const previousSelectedIndex = selectedIndex;
+    const previousSelectedTarget = selectedTarget;
 
     // Clear existing visuals
     clear();
@@ -160,7 +170,11 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
 
         // Restore selection after rebuild (e.g., after gizmo drag updates the component)
         if (previousSelectedIndex !== null && previousSelectedIndex < visuals.length) {
-          selectSpawnPoint(previousSelectedIndex);
+          if (previousSelectedTarget === 'cameraTarget') {
+            selectCameraTarget(previousSelectedIndex);
+          } else {
+            selectSpawnPoint(previousSelectedIndex);
+          }
         }
       }
     });
@@ -170,17 +184,21 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
    * Selects a spawn point by index
    */
   function selectSpawnPoint(index: number | null): void {
-    // Deselect previous
+    // Deselect previous (including camera target)
     if (selectedIndex !== null && selectedIndex < visuals.length) {
       const prevVisual = visuals[selectedIndex];
       if (prevVisual.avatarMesh) {
         setSpawnPointSelected(prevVisual.avatarMesh, false);
       }
+      if (prevVisual.cameraTargetMesh) {
+        setCameraTargetSelected(prevVisual.cameraTargetMesh, false);
+      }
     }
 
     selectedIndex = index;
+    selectedTarget = 'position';
 
-    // Select new
+    // Select new (avatar only, not camera target)
     if (index !== null && index < visuals.length) {
       const visual = visuals[index];
       if (visual.avatarMesh) {
@@ -188,7 +206,39 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
       }
     }
 
-    events.emit('selectionChange', index);
+    events.emit('selectionChange', { index, target: 'position' });
+  }
+
+  /**
+   * Selects the camera target of a spawn point by index
+   */
+  function selectCameraTarget(index: number): void {
+    // Deselect previous (including camera target)
+    if (selectedIndex !== null && selectedIndex < visuals.length) {
+      const prevVisual = visuals[selectedIndex];
+      if (prevVisual.avatarMesh) {
+        setSpawnPointSelected(prevVisual.avatarMesh, false);
+      }
+      if (prevVisual.cameraTargetMesh) {
+        setCameraTargetSelected(prevVisual.cameraTargetMesh, false);
+      }
+    }
+
+    selectedIndex = index;
+    selectedTarget = 'cameraTarget';
+
+    // Select both avatar and camera target visuals
+    if (index < visuals.length) {
+      const visual = visuals[index];
+      if (visual.avatarMesh) {
+        setSpawnPointSelected(visual.avatarMesh, true);
+      }
+      if (visual.cameraTargetMesh) {
+        setCameraTargetSelected(visual.cameraTargetMesh, true);
+      }
+    }
+
+    events.emit('selectionChange', { index, target: 'cameraTarget' });
   }
 
   /**
@@ -219,6 +269,16 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
   }
 
   /**
+   * Gets the camera target mesh for a spawn point (for gizmo attachment)
+   */
+  function getCameraTargetNode(index: number): TransformNode | null {
+    if (index < visuals.length) {
+      return visuals[index].cameraTargetMesh;
+    }
+    return null;
+  }
+
+  /**
    * Gets the position of a spawn point
    */
   function getSpawnPointPosition(index: number): Vector3 | null {
@@ -229,9 +289,19 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
   }
 
   /**
+   * Updates camera target position (called from gizmo drag)
+   */
+  function updateCameraTargetPosition(index: number, position: Vector3): void {
+    if (index < visuals.length && visuals[index].cameraTargetMesh) {
+      visuals[index].cameraTargetMesh!.position = position.clone();
+      events.emit('cameraTargetPositionChange', { index, position: position.clone() });
+    }
+  }
+
+  /**
    * Subscribes to events
    */
-  function onSelectionChange(cb: (index: number | null) => void): () => void {
+  function onSelectionChange(cb: (data: SelectionData) => void): () => void {
     events.on('selectionChange', cb);
     return () => events.off('selectionChange', cb);
   }
@@ -239,6 +309,13 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
   function onPositionChange(cb: (data: { index: number; position: Vector3 }) => void): () => void {
     events.on('positionChange', cb);
     return () => events.off('positionChange', cb);
+  }
+
+  function onCameraTargetPositionChange(
+    cb: (data: { index: number; position: Vector3 }) => void,
+  ): () => void {
+    events.on('cameraTargetPositionChange', cb);
+    return () => events.off('cameraTargetPositionChange', cb);
   }
 
   /**
@@ -259,15 +336,20 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
   return {
     updateFromSceneComponent,
     selectSpawnPoint,
+    selectCameraTarget,
     getSelectedIndex,
     isMeshSpawnPoint: isSpawnPointMesh,
+    isMeshCameraTarget: isCameraTargetMeshCheck,
     findSpawnPointByMesh: getSpawnPointIndexFromMesh,
     updateSpawnPointPosition,
+    updateCameraTargetPosition,
     getSpawnPointNode,
+    getCameraTargetNode,
     getSpawnPointPosition,
     getCount,
     onSelectionChange,
     onPositionChange,
+    onCameraTargetPositionChange,
     dispose,
   };
 });

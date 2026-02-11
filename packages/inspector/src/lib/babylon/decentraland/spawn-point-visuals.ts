@@ -250,7 +250,7 @@ export function createCameraTargetCube(
   cube.position = targetPosition.clone();
 
   cube.material = createSpawnPointMaterial(`${name}_camera_target_mat`, scene, SPAWN_COLOR, 0.8);
-  configureSpawnPointMesh(cube, false);
+  configureSpawnPointMesh(cube, true);
 
   cube.renderingGroupId = 1;
 
@@ -270,6 +270,24 @@ export function setSpawnPointSelected(avatarMesh: Mesh, selected: boolean): void
       child.material.emissiveColor = color.scale(0.3);
     }
   });
+}
+
+/**
+ * Updates the selection state visual of a camera target cube
+ */
+export function setCameraTargetSelected(cameraTargetMesh: Mesh, selected: boolean): void {
+  const color = selected ? SPAWN_SELECTED_COLOR : SPAWN_COLOR;
+  if (cameraTargetMesh.material instanceof StandardMaterial) {
+    cameraTargetMesh.material.diffuseColor = color;
+    cameraTargetMesh.material.emissiveColor = color.scale(0.3);
+  }
+}
+
+/**
+ * Checks if a mesh is specifically a camera target cube
+ */
+export function isCameraTargetMesh(mesh: AbstractMesh): boolean {
+  return mesh.name.includes('_camera_target');
 }
 
 /**

@@ -96,12 +96,46 @@ const SceneMetadataV2 = {
   creator: Schemas.Optional(Schemas.String),
 };
 
+const SceneMetadataV3 = {
+  ...SceneMetadataV2,
+  spawnPoints: Schemas.Optional(
+    Schemas.Array(
+      Schemas.Map({
+        name: Schemas.String,
+        default: Schemas.Optional(Schemas.Boolean),
+        position: Schemas.Map({
+          x: Schemas.OneOf({
+            single: Schemas.Float,
+            range: Schemas.Array(Schemas.Float),
+          }),
+          y: Schemas.OneOf({
+            single: Schemas.Float,
+            range: Schemas.Array(Schemas.Float),
+          }),
+          z: Schemas.OneOf({
+            single: Schemas.Float,
+            range: Schemas.Array(Schemas.Float),
+          }),
+        }),
+        cameraTarget: Schemas.Optional(
+          Schemas.Map({
+            x: Schemas.Float,
+            y: Schemas.Float,
+            z: Schemas.Float,
+          }),
+        ),
+      }),
+    ),
+  ),
+};
+
 const SceneMetadata = 'inspector::SceneMetadata';
 
 export const VERSIONS = [
   { key: SceneMetadata, value: SceneMetadataV0 },
   { key: `${SceneMetadata}-v1`, value: SceneMetadataV1 },
   { key: `${SceneMetadata}-v2`, value: SceneMetadataV2 },
+  { key: `${SceneMetadata}-v3`, value: SceneMetadataV3 },
 ];
 
 export function getLatestSceneComponentVersion() {
