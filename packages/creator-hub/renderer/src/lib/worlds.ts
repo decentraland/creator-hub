@@ -213,8 +213,8 @@ export type AllowListPermissionSetting = {
 
 export type AddressWorldPermission = {
   permission: 'deployment' | 'streaming';
-  world_wide: boolean; // If world_wide is set, parcels will not be returned
-  parcel_count?: number;
+  worldWide: boolean; // If worldWide is set, parcels will not be returned
+  parcelCount?: number;
 };
 
 export type WorldPermissions = {
@@ -354,8 +354,8 @@ export class Worlds {
   public getPermissions = async (worldName: string) => {
     const result = await fetch(`${this.url}/world/${worldName}/permissions`);
     if (result.ok) {
-      const json: WorldPermissionsResponse = await result.json();
-      return json;
+      const json = await result.json();
+      return fromSnakeToCamel(json) as WorldPermissionsResponse;
     } else {
       return null;
     }

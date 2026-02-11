@@ -46,8 +46,8 @@ const WorldPermissionsCollaboratorsTab: React.FC<Props> = React.memo(props => {
       const walletDeploySummary = worldPermissionsSummary[wallet]?.find(
         $ => $.permission === WorldPermissionName.Deployment,
       );
-      if (!walletDeploySummary || walletDeploySummary.world_wide) return 0;
-      return walletDeploySummary.parcel_count;
+      if (!walletDeploySummary || walletDeploySummary.worldWide) return 0;
+      return walletDeploySummary.parcelCount;
     },
     [worldPermissionsSummary],
   );
