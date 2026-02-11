@@ -512,7 +512,7 @@
         "description": "Haz clic en las celdas individuales para incluirlas/excluirlas del diseño.",
         "parcels_count": "Seleccionando {count} {count, plural, one {parcela} other {parcelas}}",
         "actions": {
-          "reset": "Restablecer",
+          "discard": "Descartar",
           "confirm": "Confirmar"
         }
       }

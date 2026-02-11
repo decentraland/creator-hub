@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ArrowBackIcon from '@mui/icons-material/ArrowBackRounded';
-import { Box, Chip, Typography } from 'decentraland-ui2';
+import { Box, Typography } from 'decentraland-ui2';
 import { useDispatch, useSelector } from '#store';
 import { t } from '/@/modules/store/translation/utils';
 import { coordsToId } from '/@/lib/land';
@@ -241,7 +241,7 @@ const WorldPermissionsParcelsTab: React.FC<Props> = React.memo(
               variant="outlined"
               color="secondary"
             >
-              {t('modal.world_permissions.parcels.actions.reset')}
+              {t('modal.world_permissions.parcels.actions.discard')}
             </Button>
           )}
           <Typography>

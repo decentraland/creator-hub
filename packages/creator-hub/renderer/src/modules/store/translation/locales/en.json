@@ -512,7 +512,7 @@
         "description": "Click individual tiles to include/exclude them in the layout.",
         "parcels_count": "Selecting {count} {count, plural, one {parcel} other {parcels}}",
         "actions": {
-          "reset": "Reset",
+          "discard": "Discard",
           "confirm": "Confirm"
         }
       }
