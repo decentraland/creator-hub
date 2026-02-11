@@ -44,6 +44,26 @@ export class Communities {
     return identity;
   }
 
+  public async fetchCommunity(
+    address: string,
+    communityId: string,
+  ): Promise<CommunityMinimal | null> {
+    try {
+      const response = await fetch(`${this.url}/v1/communities/${communityId}`, {
+        identity: this.withIdentity(address),
+      });
+
+      if (response.ok) {
+        const json: { data: Community } = await response.json();
+        return json.data;
+      } else {
+        return null;
+      }
+    } catch (error) {
+      return null;
+    }
+  }
+
   public async fetchCommunities(
     address: string,
     params?: {

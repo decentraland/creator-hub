@@ -200,7 +200,7 @@ const WorldPermissionsParcelsTab: React.FC<Props> = React.memo(
         </Typography>
         <Box>
           <Box className="AtlasHeader">
-            <WorldPermissionsAvatarWithInfo walletAddress={walletAddress} />
+            <WorldPermissionsAvatarWithInfo value={walletAddress} />
             <Chip
               label={t('modal.world_permissions.parcels.parcels_count', {
                 count: selectedParcels.size,

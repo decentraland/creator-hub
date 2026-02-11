@@ -2,12 +2,18 @@ import type { Option as DropdownOption } from '/@/components/Dropdown';
 
 export type BaseProps = {
   walletAddress: string;
+  icon?: React.ReactNode;
+  name?: string;
+  subtitle?: string;
   menuOptions?: DropdownOption[];
   children?: React.ReactNode;
 };
 
 export type AccessItemProps = {
   walletAddress: string;
+  icon?: React.ReactNode;
+  name?: string;
+  subtitle?: string;
   role?: 'owner' | 'collaborator';
   onRemoveAddress: () => void;
 };
