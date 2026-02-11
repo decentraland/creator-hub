@@ -1,5 +1,5 @@
 import { ComponentName } from '@dcl/asset-packs';
-import { BaseComponentNames, getLatestVersionName } from './versioning/constants';
+import { getLatestVersionName } from './versioning/registry';
 
 export enum CoreComponents {
   ANIMATOR = 'core::Animator',
@@ -27,26 +27,26 @@ export enum CoreComponents {
 }
 
 export const EditorComponentNames = {
-  Selection: getLatestVersionName(BaseComponentNames.SELECTION),
-  Scene: getLatestVersionName(BaseComponentNames.SCENE_METADATA),
-  Nodes: getLatestVersionName(BaseComponentNames.NODES),
+  Selection: getLatestVersionName('inspector::Selection'),
+  Scene: getLatestVersionName('inspector::SceneMetadata'),
+  Nodes: getLatestVersionName('inspector::Nodes'),
   ActionTypes: ComponentName.ACTION_TYPES,
   Actions: ComponentName.ACTIONS,
   Counter: ComponentName.COUNTER,
   CounterBar: ComponentName.COUNTER_BAR,
   Triggers: ComponentName.TRIGGERS,
   States: ComponentName.STATES,
-  TransformConfig: getLatestVersionName(BaseComponentNames.TRANSFORM_CONFIG),
-  Hide: getLatestVersionName(BaseComponentNames.HIDE),
-  Lock: getLatestVersionName(BaseComponentNames.LOCK),
-  Config: getLatestVersionName(BaseComponentNames.CONFIG),
-  Ground: getLatestVersionName(BaseComponentNames.GROUND),
-  Tile: getLatestVersionName(BaseComponentNames.TILE),
-  CustomAsset: getLatestVersionName(BaseComponentNames.CUSTOM_ASSET),
+  TransformConfig: getLatestVersionName('inspector::TransformConfig'),
+  Hide: getLatestVersionName('inspector::Hide'),
+  Lock: getLatestVersionName('inspector::Lock'),
+  Config: getLatestVersionName('inspector::Config'),
+  Ground: getLatestVersionName('inspector::Ground'),
+  Tile: getLatestVersionName('inspector::Tile'),
+  CustomAsset: getLatestVersionName('inspector::CustomAsset'),
   AdminTools: ComponentName.ADMIN_TOOLS,
   Rewards: ComponentName.REWARDS,
   VideoScreen: ComponentName.VIDEO_SCREEN,
-  InspectorUIState: getLatestVersionName(BaseComponentNames.INSPECTOR_UI_STATE),
+  InspectorUIState: getLatestVersionName('inspector::UIState'),
   Script: ComponentName.SCRIPT,
 } as const;
 
