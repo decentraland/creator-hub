@@ -115,6 +115,30 @@ function extractJSDocDescription(
   return undefined;
 }
 
+function extractParamTooltips(
+  comments?: { type: string; value: string }[] | undefined | null,
+): Record<string, string> {
+  const tooltips: Record<string, string> = {};
+  if (!comments) return tooltips;
+
+  for (const comment of comments) {
+    if (comment.type === 'CommentBlock') {
+      const lines = comment.value.split('\n').map(line => line.trim().replace(/^\*\s?/, ''));
+      for (const line of lines) {
+        const match = line.match(/^@param\s+(\w+)\s*[-–—]?\s*(.*)/);
+        if (match) {
+          const [, name, description] = match;
+          if (description.trim().length > 0) {
+            tooltips[name] = description.trim();
+          }
+        }
+      }
+    }
+  }
+
+  return tooltips;
+}
+
 function extractParamsFromFunctionParams(
   params: (FunctionParameter | TSParameterProperty)[],
 ): Record<string, ScriptParamUnion> {
@@ -215,6 +239,14 @@ export function getScriptParams(content: string): ScriptParseResult {
         const restParams = functionDeclaration.params.slice(2);
         params = extractParamsFromFunctionParams(restParams);
 
+        // merge @param tooltips from JSDoc comments
+        const fnTooltips = extractParamTooltips(functionDeclaration.leadingComments);
+        for (const [paramName, tooltip] of Object.entries(fnTooltips)) {
+          if (params[paramName]) {
+            params[paramName].tooltip = tooltip;
+          }
+        }
+
         break;
       }
 
@@ -237,6 +269,14 @@ export function getScriptParams(content: string): ScriptParseResult {
           // skip first two parameters (src and entity) and extract the rest
           const restParams = constructor.params.slice(2);
           params = extractParamsFromFunctionParams(restParams);
+
+          // merge @param tooltips from JSDoc comments
+          const ctorTooltips = extractParamTooltips(constructor.leadingComments);
+          for (const [paramName, tooltip] of Object.entries(ctorTooltips)) {
+            if (params[paramName]) {
+              params[paramName].tooltip = tooltip;
+            }
+          }
         }
 
         // extract @action tagged methods
