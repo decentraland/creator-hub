@@ -18,6 +18,7 @@ import {
   addAddressPermission,
   fetchParcelsPermission,
   unpublishWorldScene,
+  unpublishWorld,
   updateWorldPermissions,
   removeAddressPermission,
   addParcelsPermission,
@@ -51,6 +52,7 @@ const createMockWorldsAPI = () => ({
   fetchWalletStats: vi.fn(),
   getContentSrcUrl: vi.fn((hash: string) => `https://content.com/${hash}`),
   unpublishWorldScene: vi.fn(),
+  unpublishWorld: vi.fn(),
   getPermissions: vi.fn(),
   postPermissionType: vi.fn(),
   putPermissionType: vi.fn(),
@@ -212,13 +214,6 @@ describe('management slice', () => {
       expect(state.searchQuery).toBe(testQuery);
     });
 
-    it('should merge new settings with existing settings', () => {
-      const newSettings = { name: 'Updated World', description: 'Updated description' };
-      store.dispatch(actions.updateWorldSettings(newSettings));
-      const state = store.getState().management;
-      expect(state.worldSettings.settings).toMatchObject(newSettings);
-    });
-
     it('should clear error', () => {
       store.dispatch({
         type: fetchManagedProjects.rejected.type,
@@ -352,7 +347,7 @@ describe('management slice', () => {
               },
             },
           },
-        } as any,
+        },
       ];
 
       mockWorldsAPI.fetchWorldScenes.mockResolvedValue({ scenes: mockScenes });
@@ -426,7 +421,7 @@ describe('management slice', () => {
         meta: { arg: { worldName: TEST_WORLD_NAME } },
       });
 
-      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS as any);
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
       mockWorldsAPI.putPermissionType.mockResolvedValue(true);
       mockWorldsAPI.getPermissions.mockResolvedValue({
         permissions: {
@@ -808,15 +803,16 @@ describe('management slice', () => {
   });
 
   describe('unpublishWorldScene', () => {
-    it('should call unpublishWorldScene API and return true when unpublishing succeeds', async () => {
+    it('should call unpublishWorldScene API and refetch scenes when unpublishing succeeds', async () => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
       mockWorldsAPI.unpublishWorldScene.mockResolvedValueOnce(true);
+      mockWorldsAPI.fetchWorldScenes.mockResolvedValueOnce({ scenes: [] });
 
-      const result = await store
+      await store
         .dispatch(
           unpublishWorldScene({
-            address: TEST_ADDRESS,
             worldName: TEST_WORLD_NAME,
-            sceneCoords: '0,0',
+            sceneCoord: '0,0',
           }),
         )
         .unwrap();
@@ -826,29 +822,104 @@ describe('management slice', () => {
         TEST_WORLD_NAME,
         '0,0',
       );
-      expect(result).toBe(true);
+      expect(mockWorldsAPI.fetchWorldScenes).toHaveBeenCalledWith(TEST_WORLD_NAME);
     });
 
-    it('should return false when unpublishing fails', async () => {
+    it('should throw error when unpublishing fails', async () => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
       mockWorldsAPI.unpublishWorldScene.mockResolvedValueOnce(false);
+
+      await expect(
+        store
+          .dispatch(
+            unpublishWorldScene({
+              worldName: TEST_WORLD_NAME,
+              sceneCoord: '0,0',
+            }),
+          )
+          .unwrap(),
+      ).rejects.toThrow('Failed to unpublish world scene');
+
+      expect(mockWorldsAPI.unpublishWorldScene).toHaveBeenCalledWith(
+        TEST_ADDRESS,
+        TEST_WORLD_NAME,
+        '0,0',
+      );
+    });
+
+    it('should throw error when no connected account is found', async () => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(null);
+
+      await expect(
+        store
+          .dispatch(
+            unpublishWorldScene({
+              worldName: TEST_WORLD_NAME,
+              sceneCoord: '0,0',
+            }),
+          )
+          .unwrap(),
+      ).rejects.toThrow('No connected account found');
+
+      expect(mockWorldsAPI.unpublishWorldScene).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('unpublishWorld', () => {
+    it('should call unpublishWorld API and return true when unpublishing succeeds', async () => {
+      mockWorldsAPI.unpublishWorld.mockResolvedValueOnce(true);
 
       const result = await store
         .dispatch(
-          unpublishWorldScene({
+          unpublishWorld({
             address: TEST_ADDRESS,
             worldName: TEST_WORLD_NAME,
-            sceneCoords: '0,0',
           }),
         )
         .unwrap();
 
+      expect(mockWorldsAPI.unpublishWorld).toHaveBeenCalledWith(TEST_ADDRESS, TEST_WORLD_NAME);
+      expect(result).toBe(true);
+    });
+
+    it('should return false when unpublishing fails', async () => {
+      mockWorldsAPI.unpublishWorld.mockResolvedValueOnce(false);
+
+      const result = await store
+        .dispatch(
+          unpublishWorld({
+            address: TEST_ADDRESS,
+            worldName: TEST_WORLD_NAME,
+          }),
+        )
+        .unwrap();
+
+      expect(mockWorldsAPI.unpublishWorld).toHaveBeenCalledWith(TEST_ADDRESS, TEST_WORLD_NAME);
       expect(result).toBe(false);
+    });
+
+    it('should handle API errors gracefully', async () => {
+      const errorMessage = 'Failed to unpublish world';
+      mockWorldsAPI.unpublishWorld.mockRejectedValueOnce(new Error(errorMessage));
+
+      await expect(
+        store
+          .dispatch(
+            unpublishWorld({
+              address: TEST_ADDRESS,
+              worldName: TEST_WORLD_NAME,
+            }),
+          )
+          .unwrap(),
+      ).rejects.toThrow();
+
+      expect(mockWorldsAPI.unpublishWorld).toHaveBeenCalledWith(TEST_ADDRESS, TEST_WORLD_NAME);
     });
   });
 
   describe('updateWorldPermissions', () => {
     it('should call postPermissionType and refetch permissions when update succeeds', async () => {
-      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS as any);
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
       mockWorldsAPI.postPermissionType.mockResolvedValueOnce(true);
       mockWorldsAPI.getPermissions.mockResolvedValueOnce({
         permissions: { deployment: { type: WorldPermissionType.AllowList } },
@@ -892,7 +963,7 @@ describe('management slice', () => {
     });
 
     it('should throw error when API call fails', async () => {
-      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS as any);
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
       mockWorldsAPI.postPermissionType.mockResolvedValueOnce(false);
 
       await expect(
@@ -911,7 +982,7 @@ describe('management slice', () => {
 
   describe('removeAddressPermission', () => {
     it('should call deletePermissionType and refetch permissions when removal succeeds', async () => {
-      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS as any);
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
       mockWorldsAPI.deletePermissionType.mockResolvedValueOnce(true);
       mockWorldsAPI.getPermissions.mockResolvedValueOnce({
         permissions: { deployment: { type: WorldPermissionType.Unrestricted } },
@@ -955,7 +1026,7 @@ describe('management slice', () => {
     });
 
     it('should throw error when API call fails', async () => {
-      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS as any);
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
       mockWorldsAPI.deletePermissionType.mockResolvedValueOnce(false);
 
       await expect(
@@ -975,7 +1046,7 @@ describe('management slice', () => {
   describe('addParcelsPermission', () => {
     it('should call postParcelsPermission and refetch permissions when adding parcels succeeds', async () => {
       const mockParcels = ['0,0', '1,1', '2,2'];
-      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS as any);
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
       mockWorldsAPI.postParcelsPermission.mockResolvedValueOnce(true);
       mockWorldsAPI.getPermissions.mockResolvedValueOnce({
         permissions: { deployment: { type: WorldPermissionType.NFTOwnership } },
@@ -1022,7 +1093,7 @@ describe('management slice', () => {
     });
 
     it('should throw error when API call fails', async () => {
-      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS as any);
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
       mockWorldsAPI.postParcelsPermission.mockResolvedValueOnce(false);
 
       await expect(
@@ -1043,7 +1114,7 @@ describe('management slice', () => {
   describe('removeParcelsPermission', () => {
     it('should call deleteParcelsPermission and refetch permissions when removing parcels succeeds', async () => {
       const mockParcels = ['0,0', '1,1'];
-      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS as any);
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
       mockWorldsAPI.deleteParcelsPermission.mockResolvedValueOnce(true);
       mockWorldsAPI.getPermissions.mockResolvedValueOnce({
         permissions: { deployment: { type: WorldPermissionType.NFTOwnership } },
@@ -1090,7 +1161,7 @@ describe('management slice', () => {
     });
 
     it('should throw error when API call fails', async () => {
-      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS as any);
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
       mockWorldsAPI.deleteParcelsPermission.mockResolvedValueOnce(false);
 
       await expect(

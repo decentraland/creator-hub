@@ -158,7 +158,7 @@ export const fetchAllManagedProjectsDetails = createAsyncThunk(
                   latestScene?.entity.metadata?.display?.description ||
                   '',
                 thumbnail:
-                  worldSettings.thumbnailUrl ||
+                  worldSettings.thumbnail ||
                   getThumbnailUrlFromDeployment(latestScene?.entity, $ =>
                     WorldsAPI.getContentSrcUrl($),
                   ) ||
@@ -248,6 +248,27 @@ export const fetchWorldSettings = createAsyncThunk(
   },
 );
 
+export const updateWorldSettings = createAsyncThunk(
+  'management/updateWorldSettings',
+  async (
+    { worldName, worldSettings }: { worldName: string; worldSettings: Partial<WorldSettings> },
+    { dispatch, rejectWithValue },
+  ) => {
+    const connectedAccount = AuthServerProvider.getAccount();
+    if (!connectedAccount) throw new Error('No connected account found');
+
+    const WorldsAPI = new Worlds();
+    const { success, error } = await WorldsAPI.putWorldSettings(
+      connectedAccount,
+      worldName,
+      worldSettings,
+    );
+    if (!success) return rejectWithValue({ message: error });
+    await dispatch(fetchWorldSettings({ worldName })).unwrap();
+    dispatch(fetchAllManagedProjectsDetails({ address: connectedAccount })).unwrap();
+  },
+);
+
 export const fetchWorldScenes = createAsyncThunk(
   'management/fetchWorldScenes',
   async ({ worldName }: { worldName: string }) => {
@@ -264,20 +285,28 @@ export const fetchWorldScenes = createAsyncThunk(
   },
 );
 
+export const unpublishWorld = createAsyncThunk(
+  'management/unpublishWorld',
+  async ({ address, worldName }: { address: string; worldName: string }) => {
+    const WorldsAPI = new Worlds();
+    const success = await WorldsAPI.unpublishWorld(address, worldName);
+    return success;
+  },
+);
+
 export const unpublishWorldScene = createAsyncThunk(
   'management/unpublishWorldScene',
-  async ({
-    address,
-    worldName,
-    sceneCoords,
-  }: {
-    address: string;
-    worldName: string;
-    sceneCoords: string;
-  }) => {
+  async ({ worldName, sceneCoord }: { worldName: string; sceneCoord: string }, { dispatch }) => {
+    const connectedAccount = AuthServerProvider.getAccount();
+    if (!connectedAccount) throw new Error('No connected account found');
+
     const WorldsAPI = new Worlds();
-    const success = await WorldsAPI.unpublishWorldScene(address, worldName, sceneCoords);
-    return success;
+    const success = await WorldsAPI.unpublishWorldScene(connectedAccount, worldName, sceneCoord);
+    if (success) {
+      await dispatch(fetchWorldScenes({ worldName })).unwrap();
+    } else {
+      throw new Error('Failed to unpublish world scene');
+    }
   },
 );
 
@@ -461,12 +490,6 @@ const slice = createSlice({
     setSearchQuery: (state, action: PayloadAction<string>) => {
       state.searchQuery = action.payload;
     },
-    updateWorldSettings: (state, action: PayloadAction<Partial<WorldSettings>>) => {
-      state.worldSettings.settings = {
-        ...(state.worldSettings.settings ?? {}),
-        ...action.payload,
-      } as WorldSettings;
-    },
     clearError: state => {
       state.error = null;
     },
@@ -505,8 +528,10 @@ const slice = createSlice({
         state.worldSettings.scenes = action.payload ?? [];
       })
       .addCase(fetchWorldSettings.pending, (state, action) => {
+        if (state.worldSettings.worldName !== action.meta.arg.worldName) {
+          state.worldSettings.settings = {} as WorldSettings;
+        }
         state.worldSettings.worldName = action.meta.arg.worldName;
-        state.worldSettings.settings = {} as WorldSettings;
         state.worldSettings.status = 'loading';
         state.worldSettings.error = null;
       })
@@ -515,6 +540,10 @@ const slice = createSlice({
         state.worldSettings.settings = action.payload ?? {};
         state.worldSettings.status = 'succeeded';
         state.worldSettings.error = null;
+      })
+      .addCase(updateWorldSettings.rejected, (state, action) => {
+        state.worldSettings.status = 'failed';
+        state.worldSettings.error = action.error.message || 'Failed to save world settings';
       })
       .addCase(fetchWorldSettings.rejected, (state, action) => {
         if (action.meta.arg.worldName !== state.worldSettings.worldName) return;
@@ -630,9 +659,12 @@ export const actions = {
   fetchAllManagedProjectsDetails,
   fetchManagedProjects,
   fetchWorldSettings,
+  updateWorldSettings,
   fetchStorageStats,
   fetchAccountHoldings,
   fetchWorldScenes,
+  unpublishWorldScene,
+  unpublishWorld,
   fetchWorldPermissions,
   updateWorldPermissions,
   addAddressPermission,

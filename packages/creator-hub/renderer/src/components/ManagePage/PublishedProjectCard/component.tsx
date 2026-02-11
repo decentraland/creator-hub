@@ -66,10 +66,6 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
       void misc.openExternal(`${BUILDER_URL}/land/${id}`);
     }, [id]);
 
-    const handleUnpublish = useCallback(() => {
-      // TODO: implement unpublish functionality in future PR.
-    }, []);
-
     const dropdownOptions = useMemo(() => {
       const options: Array<Option & { active: boolean }> = [
         {
@@ -104,22 +100,9 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
           handler: onOpenPermissions,
           active: type === ManagedProjectType.WORLD && role === WorldRoleType.OWNER,
         },
-        {
-          text: t('manage.cards.menu.unpublish'),
-          handler: handleUnpublish,
-          active: type === ManagedProjectType.WORLD && role === WorldRoleType.OWNER && !!deployment,
-        },
       ];
       return options.filter(option => option.active) as Option[];
-    }, [
-      project,
-      handleJumpIn,
-      handleCopyURL,
-      handleEditName,
-      handleViewParcel,
-      handleUnpublish,
-      onOpenPermissions,
-    ]);
+    }, [project, handleJumpIn, handleCopyURL, handleEditName, handleViewParcel, onOpenPermissions]);
 
     return (
       <div className="PublishedProjectCard">
