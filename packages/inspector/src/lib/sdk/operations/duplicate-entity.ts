@@ -9,12 +9,13 @@ import type { EditorComponents, Node } from '../components';
 import { EditorComponentNames } from '../components';
 import { createEnumEntityId } from '../enum-entity';
 import { getNodes, pushChildToNodes } from '../nodes';
+import type { GizmoType } from '../../utils/gizmo';
 import updateSelectedEntity from './update-selected-entity';
 import { generateUniqueName } from './add-child';
 
 export function duplicateEntity(engine: IEngine) {
   const enumEntityId = createEnumEntityId(engine);
-  return function duplicateEntity(entity: Entity) {
+  return function duplicateEntity(entity: Entity, preferredGizmo?: GizmoType) {
     const Transform = engine.getComponent(TransformEngine.componentId) as typeof TransformEngine;
     const Nodes = engine.getComponent(EditorComponentNames.Nodes) as EditorComponents['Nodes'];
     const Triggers = engine.getComponent(
@@ -64,7 +65,7 @@ export function duplicateEntity(engine: IEngine) {
     // This creates only ONE undo operation for all node changes, instead of one per entity.
     Nodes.createOrReplace(engine.RootEntity, { value: newNodes as Node[] });
 
-    updateSelectedEntity(engine)(cloned, true);
+    updateSelectedEntity(engine)(cloned, true, preferredGizmo);
     return cloned;
   };
 }
