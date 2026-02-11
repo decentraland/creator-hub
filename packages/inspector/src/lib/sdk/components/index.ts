@@ -23,13 +23,7 @@ import type { Layout } from '../../utils/layout';
 import type { GizmoType } from '../../utils/gizmo';
 import type { TransformConfig } from './TransformConfig';
 import type { TransitionMode } from './SceneMetadata';
-import {
-  Coords,
-  defineSceneComponents,
-  getLatestSceneComponentVersion,
-  SceneAgeRating,
-  SceneCategory,
-} from './SceneMetadata';
+import { Coords, SceneAgeRating, SceneCategory } from './SceneMetadata';
 import type { ConfigComponentType } from './Config';
 import type { InspectorUIStateType } from './InspectorUIState';
 import { EditorComponentNames as BaseEditorComponentNames } from './types';
@@ -41,7 +35,6 @@ export { CoreComponents, AllComponentsType } from './types';
 // Override the Scene property with the dynamic value
 export const EditorComponentNames = {
   ...BaseEditorComponentNames,
-  Scene: getLatestSceneComponentVersion().key,
 } as const;
 
 export type Component<T = unknown> = ComponentDefinition<T>;
@@ -256,11 +249,9 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
     }),
   });
 
-  const Scene = defineSceneComponents(engine).pop() as ReturnType<typeof defineSceneComponents>[0];
-
   return {
     Selection: inspectorComponents['inspector::Selection'],
-    Scene,
+    Scene: inspectorComponents['inspector::SceneMetadata'],
     Nodes: inspectorComponents['inspector::Nodes'],
     TransformConfig: inspectorComponents['inspector::TransformConfig'],
     Hide: inspectorComponents['inspector::Hide'],

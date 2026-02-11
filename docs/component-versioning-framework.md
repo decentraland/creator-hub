@@ -30,6 +30,183 @@ const COMPONENT_REGISTRY = {
 // At runtime, Health V0 = { value }, Health V1 = { value, maxValue }
 ```
 
+### Deep Merge for Nested Schemas
+
+The framework supports **recursive deep merging** for nested `Schemas.Map` structures. When adding fields to nested objects, you only need to specify the new fields — the framework merges them with existing properties automatically.
+
+#### How It Works
+
+When the framework encounters two `Schemas.Map` schemas with the same key:
+1. It extracts the properties from both Maps
+2. Recursively merges the properties (handling nested Maps)
+3. Recreates the Map with the merged properties
+
+This works for:
+- **Direct Maps**: `Schemas.Map({ ... })`
+- **Optional Maps**: `Schemas.Optional(Schemas.Map({ ... }))`
+- **Array of Maps**: `Schemas.Optional(Schemas.Array(Schemas.Map({ ... })))`
+- **Nested Maps**: Maps inside Maps (3+ levels deep)
+
+#### Example: Adding Nested Fields
+
+Instead of repeating the entire structure:
+
+```typescript
+// ❌ Without deep merge — must repeat everything
+const COMPONENT_REGISTRY = {
+  'my-package::Config': [
+    // V0
+    {
+      database: Schemas.Map({
+        host: Schemas.String,
+        port: Schemas.Int,
+      }),
+    },
+    // V1 — must repeat host and port to add password
+    {
+      database: Schemas.Map({
+        host: Schemas.String,
+        port: Schemas.Int,
+        password: Schemas.String, // New field
+      }),
+    },
+  ],
+} as const;
+```
+
+With deep merge, only specify what's new:
+
+```typescript
+// ✅ With deep merge — only new fields
+const COMPONENT_REGISTRY = {
+  'my-package::Config': [
+    // V0
+    {
+      database: Schemas.Map({
+        host: Schemas.String,
+        port: Schemas.Int,
+      }),
+    },
+    // V1 — only the new field!
+    {
+      database: Schemas.Map({
+        password: Schemas.String,
+      }),
+    },
+  ],
+} as const;
+// Result: V1 has { database: { host, port, password } }
+```
+
+#### Deep Nesting Example
+
+Works with multiple levels:
+
+```typescript
+const COMPONENT_REGISTRY = {
+  'my-package::Settings': [
+    // V0
+    {
+      config: Schemas.Map({
+        database: Schemas.Map({
+          primary: Schemas.Map({
+            host: Schemas.String,
+            port: Schemas.Int,
+          }),
+        }),
+      }),
+    },
+    // V1 — add timeout to primary without repeating host/port
+    {
+      config: Schemas.Map({
+        database: Schemas.Map({
+          primary: Schemas.Map({
+            timeout: Schemas.Int,
+          }),
+        }),
+      }),
+    },
+    // V2 — add replica at database level
+    {
+      config: Schemas.Map({
+        database: Schemas.Map({
+          replica: Schemas.Map({
+            host: Schemas.String,
+          }),
+        }),
+      }),
+    },
+  ],
+} as const;
+// V2 Result: { config: { database: { primary: { host, port, timeout }, replica: { host } } } }
+```
+
+#### Optional Wrapping
+
+Deep merge also works through `Optional` and `Array` wrappers:
+
+```typescript
+const COMPONENT_REGISTRY = {
+  'my-package::UserPrefs': [
+    // V0
+    {
+      settings: Schemas.Optional(
+        Schemas.Map({
+          theme: Schemas.String,
+        }),
+      ),
+    },
+    // V1 — add fontSize without repeating theme
+    {
+      settings: Schemas.Optional(
+        Schemas.Map({
+          fontSize: Schemas.Int,
+        }),
+      ),
+    },
+  ],
+} as const;
+// Result: settings is Optional<{ theme: string, fontSize: number }>
+```
+
+#### Non-Mergeable Types
+
+Arrays and primitive types are **not mergeable** — they replace:
+
+```typescript
+const COMPONENT_REGISTRY = {
+  'my-package::Data': [
+    { items: Schemas.Array(Schemas.Int) },
+    { items: Schemas.Array(Schemas.String) }, // Replaces, not merges
+  ],
+} as const;
+// V1 items is string[], not int[]
+```
+
+To replace a nested Map entirely, provide a non-Map schema:
+
+```typescript
+const COMPONENT_REGISTRY = {
+  'my-package::Config': [
+    { setting: Schemas.Map({ a: Schemas.Int }) },
+    { setting: Schemas.String }, // Replaces entire Map with string
+  ],
+} as const;
+```
+
+#### When Deep Merge Applies
+
+Deep merge **only** happens when:
+1. Both source and target have the same key
+2. Both values are `Schemas.Map` (or `Optional(Map)` or `Array(Map)`)
+3. The framework is merging diffs during version resolution
+
+It does **not** apply to:
+- Top-level keys (always merged shallowly)
+- Arrays (always replaced)
+- Primitive schemas (always replaced)
+- Maps at different keys (no conflict, just added)
+
 ### Version Naming Convention
 
 Version names are derived automatically from the array index:
