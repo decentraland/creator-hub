@@ -711,13 +711,17 @@
   },
   "manage": {
     "header": {
-      "title": "Manage"
+      "title": "Manage Worlds"
     },
     "items": "{count} {count, plural, one {item} other {items}}",
     "search": "Search",
     "sort_by": "Sort by",
     "sort": {
       "latest": "Last published"
+    },
+    "sign_in": {
+      "title": "Sign in to manage your worlds",
+      "action": "Sign In"
     },
     "empty_search": {
       "title": "No results found",
