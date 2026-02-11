@@ -1122,7 +1122,7 @@ describe('management slice', () => {
         ],
       });
 
-      const projects = selectors.getManagedProjects(store.getState().management);
+      const projects = selectors.getManagedProjects(store.getState());
       expect(projects.length).toBe(1);
       expect(projects[0]?.id).toBe('project1');
     });
@@ -1138,7 +1138,7 @@ describe('management slice', () => {
         meta: { arg: { worldName: TEST_WORLD_NAME } },
       });
 
-      const worldSettings = selectors.getWorldSettings(store.getState().management);
+      const worldSettings = selectors.getWorldSettings(store.getState());
       expect(worldSettings.worldName).toBe(TEST_WORLD_NAME);
       expect(worldSettings.settings.name).toBe(TEST_WORLD_NAME);
     });
@@ -1149,7 +1149,7 @@ describe('management slice', () => {
         error: { message: 'Failed to fetch managed projects' },
       });
 
-      const error = selectors.getError(store.getState().management);
+      const error = selectors.getError(store.getState());
       expect(error).toBe('Failed to fetch managed projects');
     });
 
@@ -1172,7 +1172,7 @@ describe('management slice', () => {
         meta: { arg: { worldName: TEST_WORLD_NAME } },
       });
 
-      const permissions = selectors.getPermissionsState(store.getState().management);
+      const permissions = selectors.getPermissionsState(store.getState());
       expect(permissions.worldName).toBe(TEST_WORLD_NAME);
       expect(permissions.owner).toBe(TEST_ADDRESS);
     });
@@ -1206,10 +1206,7 @@ describe('management slice', () => {
       });
 
       const selectParcelsForAddress = selectors.makeParcelsStateForAddressSelector();
-      const parcelsState = selectParcelsForAddress(
-        store.getState().management,
-        TEST_WALLET_ADDRESS,
-      );
+      const parcelsState = selectParcelsForAddress(store.getState(), TEST_WALLET_ADDRESS);
       expect(parcelsState).toBeDefined();
       expect(parcelsState?.parcels).toEqual(['0,0', '1,1']);
       expect(parcelsState?.status).toBe('succeeded');
@@ -1217,7 +1214,7 @@ describe('management slice', () => {
 
     it('should return undefined for non-existent address', () => {
       const selectParcelsForAddress = selectors.makeParcelsStateForAddressSelector();
-      const parcelsState = selectParcelsForAddress(store.getState().management, '0xnonexistent');
+      const parcelsState = selectParcelsForAddress(store.getState(), '0xnonexistent');
       expect(parcelsState).toBeUndefined();
     });
   });
