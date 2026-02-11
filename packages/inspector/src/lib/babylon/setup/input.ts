@@ -110,8 +110,13 @@ export function interactWithScene(
         if (ecsEntity) {
           const context = ecsEntity.context.deref()!;
           const { engine, operations } = context;
-          // Select the spawn point
-          spawnPointManager.selectSpawnPoint(spawnPointIndex);
+
+          // Select the spawn point or camera target based on what was clicked
+          if (spawnPointManager.isMeshCameraTarget(mesh)) {
+            spawnPointManager.selectCameraTarget(spawnPointIndex);
+          } else {
+            spawnPointManager.selectSpawnPoint(spawnPointIndex);
+          }
 
           // Deselect any selected entities
           operations.updateSelectedEntity(engine.RootEntity);

@@ -205,20 +205,52 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     [spawnPoints, modifySpawnPoint],
   );
 
-  // Use a ref to always have the latest callback without re-subscribing
+  // Handle camera target position change from gizmo drag
+  const handleCameraTargetPositionChange = useCallback(
+    (index: number, position: Vector3) => {
+      if (index >= 0 && index < spawnPoints.length) {
+        const spawnPoint = spawnPoints[index];
+        const input = fromSceneSpawnPoint(spawnPoint);
+        const newInput = {
+          ...input,
+          cameraTarget: {
+            x: position.x,
+            y: position.y,
+            z: position.z,
+          },
+        };
+        modifySpawnPoint(index, toSceneSpawnPoint(spawnPoint.name, newInput));
+      }
+    },
+    [spawnPoints, modifySpawnPoint],
+  );
+
+  // Use refs to always have the latest callbacks without re-subscribing
   const positionChangeRef = useRef(handleSpawnPointPositionChange);
   positionChangeRef.current = handleSpawnPointPositionChange;
 
+  const cameraTargetPositionChangeRef = useRef(handleCameraTargetPositionChange);
+  cameraTargetPositionChangeRef.current = handleCameraTargetPositionChange;
+
   // Subscribe to spawn point manager selection changes
   useEffect(() => {
-    const unsubscribe = spawnPointManager.onSelectionChange((index: number | null) => {
+    const unsubscribe = spawnPointManager.onSelectionChange(({ index, target }) => {
       setSelectedSpawnPointIndex(index);
 
       // Attach/detach gizmo based on selection
       if (index !== null) {
-        const node = spawnPointManager.getSpawnPointNode(index);
-        if (node) {
-          gizmoManager.attachToSpawnPoint(node, index, (i, p) => positionChangeRef.current(i, p));
+        if (target === 'cameraTarget') {
+          const node = spawnPointManager.getCameraTargetNode(index);
+          if (node) {
+            gizmoManager.attachToSpawnPoint(node, index, (i, p) =>
+              cameraTargetPositionChangeRef.current(i, p),
+            );
+          }
+        } else {
+          const node = spawnPointManager.getSpawnPointNode(index);
+          if (node) {
+            gizmoManager.attachToSpawnPoint(node, index, (i, p) => positionChangeRef.current(i, p));
+          }
         }
       } else {
         gizmoManager.detachFromSpawnPoint();
