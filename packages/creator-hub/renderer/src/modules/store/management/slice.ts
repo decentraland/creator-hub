@@ -24,7 +24,11 @@ import type { LandDeployment } from '/@/lib/land';
 import { Lands, LandType } from '/@/lib/land';
 import type { AccountHoldings } from '/@/lib/account';
 import { Account } from '/@/lib/account';
-import { getThumbnailUrlFromDeployment } from './utils';
+import {
+  getThumbnailUrlFromDeployment,
+  getWorldPermissionsInitialState,
+  getWorldSettingsInitialState,
+} from './utils';
 import type {
   AddressPermissionPayload,
   ParcelsPermissionPayload,
@@ -74,23 +78,8 @@ export const initialState: Async<ManagementState> = {
   accountHoldings: null,
   status: 'idle',
   error: null,
-  worldSettings: {
-    worldName: '',
-    settings: {},
-    scenes: [],
-    status: 'idle',
-    error: null,
-  },
-  worldPermissions: {
-    worldName: '',
-    owner: '',
-    permissions: null,
-    summary: {},
-    parcels: {},
-    loadingNewUser: false,
-    status: 'idle',
-    error: null,
-  },
+  worldSettings: getWorldSettingsInitialState(),
+  worldPermissions: getWorldPermissionsInitialState(),
 };
 
 // thunks
@@ -494,7 +483,7 @@ const slice = createSlice({
       state.error = null;
     },
     clearPermissionsState: state => {
-      state.worldPermissions = initialState.worldPermissions;
+      state.worldPermissions = getWorldPermissionsInitialState();
     },
   },
   extraReducers: builder => {
@@ -554,7 +543,7 @@ const slice = createSlice({
         const prevWorldName = state.worldPermissions.worldName;
         const newWorldName = action.meta.arg.worldName;
         if (prevWorldName && newWorldName !== prevWorldName) {
-          state.worldPermissions = initialState.worldPermissions; // Reset state when switching worlds
+          state.worldPermissions = getWorldPermissionsInitialState(); // Reset state when switching worlds
         }
         state.worldPermissions.worldName = newWorldName;
         state.worldPermissions.status = 'loading';
