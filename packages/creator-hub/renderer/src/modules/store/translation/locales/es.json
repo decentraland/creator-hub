@@ -725,13 +725,17 @@
   },
   "manage": {
     "header": {
-      "title": "Gestionar"
+      "title": "Gestionar Mundos"
     },
     "items": "{count} {count, plural, one {elemento} other {elementos}}",
     "search": "Buscar",
     "sort_by": "Ordenar por",
     "sort": {
       "latest": "Última publicación"
+    },
+    "sign_in": {
+      "title": "Inicia sesión para gestionar tus mundos",
+      "action": "Iniciar sesión"
     },
     "empty_search": {
       "title": "No se encontraron resultados",
