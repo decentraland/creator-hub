@@ -2,10 +2,16 @@ import React, { useCallback, useMemo, useState } from 'react';
 import cx from 'classnames';
 import AddIcon from '@mui/icons-material/AddRounded';
 import LockIcon from '@mui/icons-material/Lock';
-import PeopleIcon from '@mui/icons-material/People';
 import PublicIcon from '@mui/icons-material/Public';
 import InfoIcon from '@mui/icons-material/InfoOutlined';
-import { Box, MenuItem, type SelectChangeEvent, Tooltip, Typography } from 'decentraland-ui2';
+import {
+  AvatarFace,
+  Box,
+  MenuItem,
+  type SelectChangeEvent,
+  Tooltip,
+  Typography,
+} from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
 import { WorldPermissionType, WorldRoleType, type WorldPermissions } from '/@/lib/worlds';
 import { getCommunityThumbnailUrl } from '/@/lib/communities';
@@ -28,7 +34,12 @@ const CommunityThumbnail: React.FC<{ communityId: string }> = React.memo(({ comm
   const url = getCommunityThumbnailUrl(communityId);
 
   if (hasError || !url) {
-    return <PeopleIcon />;
+    return (
+      <AvatarFace
+        size="small"
+        inline
+      />
+    );
   }
 
   return (
@@ -91,7 +102,7 @@ const ACCESS_TYPE_OPTIONS: Array<{
   {
     label: t('modal.world_permissions.access.type.invitation_only'),
     value: WorldPermissionType.AllowList,
-    icon: <PeopleIcon fontSize="small" />,
+    icon: <LockIcon fontSize="small" />,
   },
   {
     label: t('modal.world_permissions.access.type.password_protected'),
