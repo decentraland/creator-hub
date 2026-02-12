@@ -6,12 +6,17 @@
   display: grid;
   gap: 10px;
   align-items: center;
-  justify-items: center;
+  justify-items: start;
   grid-template-columns: 1fr 180px 32px;
 }
 
 .WorldPermissionsItem {
   border-top: 1px solid var(--dark-gray);
+}
+
+.WorldPermissionsItemInfo {
+  align-items: center;
+  gap: 8px;
 }
 
 /* Collaborator item styles */

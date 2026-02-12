@@ -6,6 +6,7 @@ export type BaseProps = {
   icon?: React.ReactNode;
   name?: string;
   subtitle?: string;
+  tag?: React.ReactNode;
   menuOptions?: DropdownOption[];
   children?: React.ReactNode;
 };
