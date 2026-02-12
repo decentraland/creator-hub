@@ -137,6 +137,7 @@ export const fetchWorlds = createAsyncThunk(
       limit: PROJECTS_PAGE_LIMIT,
       search: appState.management.searchQuery,
       sort: appState.management.sortBy,
+      order: appState.management.sortBy === SortBy.LATEST ? 'desc' : 'asc',
       authorized_deployer: address,
       offset: PROJECTS_PAGE_LIMIT * appState.management.page,
     });
