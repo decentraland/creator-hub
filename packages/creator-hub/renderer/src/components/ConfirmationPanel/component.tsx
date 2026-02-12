@@ -2,7 +2,7 @@ import React from 'react';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { Box, Typography } from 'decentraland-ui2';
 import { Button } from '/@/components/Button';
-import './confirmation-panel-styles.css';
+import './styles.css';
 
 type Props = {
   title: string;

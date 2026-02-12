@@ -6,6 +6,7 @@ import { Row } from '/@/components/Row';
 import { t } from '/@/modules/store/translation/utils';
 import { Dropdown } from '/@/components/Dropdown';
 import { Select } from '/@/components/Select';
+import { WorldRoleType } from '/@/lib/worlds';
 import { WorldPermissionsAvatarWithInfo } from '../WorldPermissionsAvatarWithInfo';
 import type { AccessItemProps, BaseProps, CollaboratorsItemProps, DeploymentOption } from './types';
 import { DeploymentOptionValue } from './types';
@@ -41,6 +42,7 @@ export const WorldPermissionsLoadingItem: React.FC = React.memo(() => {
 
 export const WorldPermissionsAccessItem: React.FC<AccessItemProps> = React.memo(
   ({ walletAddress, icon, name, subtitle, role, onRemoveAddress }) => {
+    // owners and collaborators cannot be removed from the access list, so we hide the menu for them.
     const menuOptions = role
       ? undefined
       : [
@@ -52,9 +54,9 @@ export const WorldPermissionsAccessItem: React.FC<AccessItemProps> = React.memo(
         ];
 
     const roleLabel =
-      role === 'owner'
+      role === WorldRoleType.OWNER
         ? t('manage.cards.roles.owner')
-        : role === 'collaborator'
+        : role === WorldRoleType.COLLABORATOR
           ? t('manage.cards.roles.collaborator')
           : undefined;
 

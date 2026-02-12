@@ -1205,16 +1205,20 @@ describe('management slice', () => {
         },
       });
 
-      const selectParcelsForAddress = selectors.makeParcelsStateForAddressSelector();
-      const parcelsState = selectParcelsForAddress(store.getState(), TEST_WALLET_ADDRESS);
+      const parcelsState = selectors.getParcelsStateForAddress(
+        store.getState() as any,
+        TEST_WALLET_ADDRESS,
+      );
       expect(parcelsState).toBeDefined();
       expect(parcelsState?.parcels).toEqual(['0,0', '1,1']);
       expect(parcelsState?.status).toBe('succeeded');
     });
 
     it('should return undefined for non-existent address', () => {
-      const selectParcelsForAddress = selectors.makeParcelsStateForAddressSelector();
-      const parcelsState = selectParcelsForAddress(store.getState(), '0xnonexistent');
+      const parcelsState = selectors.getParcelsStateForAddress(
+        store.getState() as any,
+        '0xnonexistent',
+      );
       expect(parcelsState).toBeUndefined();
     });
   });

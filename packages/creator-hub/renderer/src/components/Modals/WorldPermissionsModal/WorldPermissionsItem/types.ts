@@ -1,4 +1,5 @@
 import type { Option as DropdownOption } from '/@/components/Dropdown';
+import type { WorldRoleType } from '/@/lib/worlds';
 
 export type BaseProps = {
   walletAddress: string;
@@ -14,7 +15,7 @@ export type AccessItemProps = {
   icon?: React.ReactNode;
   name?: string;
   subtitle?: string;
-  role?: 'owner' | 'collaborator';
+  role?: WorldRoleType;
   onRemoveAddress: () => void;
 };
 

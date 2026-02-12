@@ -18,6 +18,8 @@ import {
 } from '../../WorldPermissionsItem';
 import './styles.css';
 
+const MAX_COLLABORATORS = 10;
+
 type Props = {
   worldDeploymentPermissions: AllowListPermissionSetting;
   worldStreamingPermissions: AllowListPermissionSetting | UnrestrictedPermissionSetting;
@@ -90,7 +92,7 @@ const WorldPermissionsCollaboratorsTab: React.FC<Props> = React.memo(props => {
             className="CollaboratorsCount"
           >
             {t('modal.world_permissions.collaborators.column_name_label', {
-              number: `${collaboratorsCount}/10`,
+              number: `${collaboratorsCount}/${MAX_COLLABORATORS}`,
             })}
           </Typography>
           <Button

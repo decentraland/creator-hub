@@ -391,24 +391,10 @@ export class Worlds {
       communities?: string[];
     },
   ) => {
-    const metadata: {
-      type: WorldPermissionType;
-      secret?: string;
-      wallets?: string[];
-      communities?: string[];
-    } = {
+    const metadata = {
       type: worldPermissionType,
+      ...options,
     };
-
-    if (options?.secret !== undefined) {
-      metadata.secret = options.secret;
-    }
-    if (options?.wallets !== undefined) {
-      metadata.wallets = options.wallets;
-    }
-    if (options?.communities !== undefined) {
-      metadata.communities = options.communities;
-    }
 
     const encodedWorldName = encodeURIComponent(worldName);
     const result = await fetch(

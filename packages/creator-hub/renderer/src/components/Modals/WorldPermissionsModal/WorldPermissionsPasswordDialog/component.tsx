@@ -46,10 +46,6 @@ const WorldPermissionsPasswordFormComponent: React.FC<Props> = React.memo(
       onSubmit(password);
     }, [password, onSubmit]);
 
-    const handleCancel = useCallback(() => {
-      onCancel();
-    }, [onCancel]);
-
     const isValid = password.length >= MIN_PASSWORD_LENGTH && password === confirmPassword;
     const showMismatchError =
       confirmPassword.length > 0 && password.length > 0 && password !== confirmPassword;
@@ -135,7 +131,7 @@ const WorldPermissionsPasswordFormComponent: React.FC<Props> = React.memo(
 
         <Row className="PasswordFormActions">
           <Button
-            onClick={handleCancel}
+            onClick={onCancel}
             color="secondary"
           >
             {t('modal.cancel')}

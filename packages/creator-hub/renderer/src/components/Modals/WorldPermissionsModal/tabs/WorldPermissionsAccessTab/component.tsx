@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import cx from 'classnames';
 import AddIcon from '@mui/icons-material/AddRounded';
 import LockIcon from '@mui/icons-material/Lock';
@@ -6,12 +6,12 @@ import PeopleIcon from '@mui/icons-material/People';
 import PublicIcon from '@mui/icons-material/Public';
 import { Box, MenuItem, type SelectChangeEvent, Typography } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
-import { WorldPermissionType, type WorldPermissions } from '/@/lib/worlds';
+import { WorldPermissionType, WorldRoleType, type WorldPermissions } from '/@/lib/worlds';
 import { useCommunities } from '/@/hooks/useCommunities';
 import { Row } from '/@/components/Row';
 import { Button } from '/@/components/Button';
 import { Select } from '/@/components/Select';
-import { ConfirmationPanel } from '../../shared/ConfirmationPanel';
+import { ConfirmationPanel } from '/@/components/ConfirmationPanel';
 import { WorldPermissionsAddUserForm, type CsvData } from '../../WorldPermissionsAddUserForm';
 import { WorldPermissionsPasswordSection } from '../../WorldPermissionsPasswordSection';
 import { WorldPermissionsPasswordForm } from '../../WorldPermissionsPasswordDialog';
@@ -121,10 +121,13 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
     onSetAccessPassword,
   } = props;
 
-  const [showInviteForm, setShowInviteForm] = useState(false);
-  const [showPasswordForm, setShowPasswordForm] = useState(false);
-  const [showClearListConfirm, setShowClearListConfirm] = useState(false);
-  const [pendingAccessType, setPendingAccessType] = useState<WorldPermissionType | null>(null);
+  const [currentView, setCurrentView] = useState<
+    | { type: 'default' }
+    | { type: 'invite_form' }
+    | { type: 'password_form' }
+    | { type: 'clear_list_confirm' }
+    | { type: 'change_access_type_confirm'; pendingAccessType: WorldPermissionType }
+  >({ type: 'default' });
 
   const currentAccessType = worldAccessPermissions.type;
   const isPublic = currentAccessType === WorldPermissionType.Unrestricted;
@@ -140,23 +143,31 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
       ? (worldAccessPermissions.communities ?? [])
       : [];
   const ownerLower = worldOwnerAddress.toLowerCase();
-  const collaboratorLowers = collaboratorAddresses.map(c => c.toLowerCase());
-  const nonOwnerWallets = apiWallets.filter(
-    w => w.toLowerCase() !== ownerLower && !collaboratorLowers.includes(w.toLowerCase()),
+  const collaboratorLowers = useMemo(
+    () => collaboratorAddresses.map(c => c.toLowerCase()),
+    [collaboratorAddresses],
+  );
+  const nonOwnerWallets = useMemo(
+    () =>
+      apiWallets.filter(
+        w => w.toLowerCase() !== ownerLower && !collaboratorLowers.includes(w.toLowerCase()),
+      ),
+    [apiWallets, ownerLower, collaboratorLowers],
   );
   const hasAccessListEntries = nonOwnerWallets.length > 0 || apiCommunities.length > 0;
+
+  const resetView = useCallback(() => setCurrentView({ type: 'default' }), []);
 
   const handleAccessTypeChange = useCallback(
     (event: SelectChangeEvent<WorldPermissionType>) => {
       const value = event.target.value as WorldPermissionType;
       if (isInvitationOnly && hasAccessListEntries && value !== WorldPermissionType.AllowList) {
-        setPendingAccessType(value);
+        setCurrentView({ type: 'change_access_type_confirm', pendingAccessType: value });
         return;
       }
       if (value === WorldPermissionType.SharedSecret) {
-        setShowPasswordForm(true);
+        setCurrentView({ type: 'password_form' });
       } else {
-        setShowPasswordForm(false);
         onChangeAccessType(value);
       }
     },
@@ -164,94 +175,72 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
   );
 
   const handleConfirmAccessTypeChange = useCallback(() => {
-    if (!pendingAccessType) return;
-    if (pendingAccessType === WorldPermissionType.SharedSecret) {
-      setShowPasswordForm(true);
+    if (currentView.type !== 'change_access_type_confirm') return;
+    if (currentView.pendingAccessType === WorldPermissionType.SharedSecret) {
+      setCurrentView({ type: 'password_form' });
     } else {
-      onChangeAccessType(pendingAccessType);
+      onChangeAccessType(currentView.pendingAccessType);
+      resetView();
     }
-    setPendingAccessType(null);
-  }, [pendingAccessType, onChangeAccessType]);
-
-  const handleCancelAccessTypeChange = useCallback(() => {
-    setPendingAccessType(null);
-  }, []);
+  }, [currentView, onChangeAccessType, resetView]);
 
   const handlePasswordSubmit = useCallback(
     (password: string) => {
       onSetAccessPassword(password);
-      setShowPasswordForm(false);
+      resetView();
     },
-    [onSetAccessPassword],
+    [onSetAccessPassword, resetView],
   );
-
-  const handlePasswordFormClose = useCallback(() => {
-    setShowPasswordForm(false);
-  }, []);
-
-  const handleShowClearListConfirm = useCallback(() => {
-    setShowClearListConfirm(true);
-  }, []);
-
-  const handleCancelClearList = useCallback(() => {
-    setShowClearListConfirm(false);
-  }, []);
 
   const handleConfirmClearList = useCallback(() => {
     onClearAccessList();
-    setShowClearListConfirm(false);
-  }, [onClearAccessList]);
-
-  const handleShowInviteForm = useCallback(() => {
-    setShowInviteForm(true);
-  }, []);
-
-  const handleHideInviteForm = useCallback(() => {
-    setShowInviteForm(false);
-  }, []);
+    resetView();
+  }, [onClearAccessList, resetView]);
 
   const handleAddAddress = useCallback(
     (address: string) => {
       onAddAccessToAddress(address);
-      setShowInviteForm(false);
+      resetView();
     },
-    [onAddAccessToAddress],
+    [onAddAccessToAddress, resetView],
   );
 
   const handleAddCommunity = useCallback(
     (communityId: string) => {
       onAddAccessToCommunity(communityId);
-      setShowInviteForm(false);
+      resetView();
     },
-    [onAddAccessToCommunity],
+    [onAddAccessToCommunity, resetView],
   );
 
   const handleSubmitCsv = useCallback(
     (data: CsvData) => {
       onSubmitCsv(data);
-      setShowInviteForm(false);
+      resetView();
     },
-    [onSubmitCsv],
+    [onSubmitCsv, resetView],
   );
 
-  const allWallets = apiWallets.some(w => w.toLowerCase() === ownerLower)
-    ? apiWallets
-    : [ownerLower, ...apiWallets];
-  const wallets = [...allWallets].sort((a, b) => {
-    const aLower = a.toLowerCase();
-    const bLower = b.toLowerCase();
-    const aIsOwner = aLower === ownerLower;
-    const bIsOwner = bLower === ownerLower;
-    if (aIsOwner !== bIsOwner) return aIsOwner ? -1 : 1;
-    const aIsCollab = collaboratorLowers.includes(aLower);
-    const bIsCollab = collaboratorLowers.includes(bLower);
-    if (aIsCollab !== bIsCollab) return aIsCollab ? -1 : 1;
-    return 0;
-  });
+  const wallets = useMemo(() => {
+    const allWallets = apiWallets.some(w => w.toLowerCase() === ownerLower)
+      ? apiWallets
+      : [ownerLower, ...apiWallets];
+    return [...allWallets].sort((a, b) => {
+      const aLower = a.toLowerCase();
+      const bLower = b.toLowerCase();
+      const aIsOwner = aLower === ownerLower;
+      const bIsOwner = bLower === ownerLower;
+      if (aIsOwner !== bIsOwner) return aIsOwner ? -1 : 1;
+      const aIsCollab = collaboratorLowers.includes(aLower);
+      const bIsCollab = collaboratorLowers.includes(bLower);
+      if (aIsCollab !== bIsCollab) return aIsCollab ? -1 : 1;
+      return 0;
+    });
+  }, [apiWallets, ownerLower, collaboratorLowers]);
   const { communities: resolvedCommunities, totalMembersCount } = useCommunities(apiCommunities);
   const totalInvited = wallets.length + totalMembersCount;
 
-  if (pendingAccessType) {
+  if (currentView.type === 'change_access_type_confirm') {
     return (
       <Box className="WorldAccessTab CenteredContent">
         <ConfirmationPanel
@@ -259,14 +248,14 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
           warning={t('modal.world_permissions.access.change_access_type_warning')}
           cancelLabel={t('modal.world_permissions.access.cancel')}
           confirmLabel={t('modal.world_permissions.access.continue')}
-          onCancel={handleCancelAccessTypeChange}
+          onCancel={resetView}
           onConfirm={handleConfirmAccessTypeChange}
         />
       </Box>
     );
   }
 
-  if (showClearListConfirm) {
+  if (currentView.type === 'clear_list_confirm') {
     return (
       <Box className="WorldAccessTab CenteredContent">
         <ConfirmationPanel
@@ -274,33 +263,33 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
           warning={t('modal.world_permissions.access.clear_list_warning')}
           cancelLabel={t('modal.world_permissions.access.cancel')}
           confirmLabel={t('modal.world_permissions.access.confirm')}
-          onCancel={handleCancelClearList}
+          onCancel={resetView}
           onConfirm={handleConfirmClearList}
         />
       </Box>
     );
   }
 
-  if (showPasswordForm) {
+  if (currentView.type === 'password_form') {
     return (
       <Box className="WorldAccessTab CenteredContent">
         <WorldPermissionsPasswordForm
           isChanging={isPasswordProtected}
-          onCancel={handlePasswordFormClose}
+          onCancel={resetView}
           onSubmit={handlePasswordSubmit}
         />
       </Box>
     );
   }
 
-  if (showInviteForm) {
+  if (currentView.type === 'invite_form') {
     return (
       <Box className="WorldAccessTab CenteredContent">
         <WorldPermissionsAddUserForm
           onSubmitAddress={handleAddAddress}
           onSubmitCommunity={handleAddCommunity}
           onSubmitCsv={handleSubmitCsv}
-          onCancel={handleHideInviteForm}
+          onCancel={resetView}
         />
       </Box>
     );
@@ -357,12 +346,12 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
             <Row className="AccessListActions">
               <Typography
                 className="ClearListLink"
-                onClick={handleShowClearListConfirm}
+                onClick={() => setCurrentView({ type: 'clear_list_confirm' })}
               >
                 {t('modal.world_permissions.access.clear_list')}
               </Typography>
               <Button
-                onClick={handleShowInviteForm}
+                onClick={() => setCurrentView({ type: 'invite_form' })}
                 color="primary"
                 startIcon={<AddIcon />}
               >
@@ -377,7 +366,11 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
               const isOwner = lowerWallet === worldOwnerAddress.toLowerCase();
               const isCollaborator =
                 !isOwner && collaboratorAddresses.some(c => c.toLowerCase() === lowerWallet);
-              const role = isOwner ? 'owner' : isCollaborator ? 'collaborator' : undefined;
+              const role = isOwner
+                ? WorldRoleType.OWNER
+                : isCollaborator
+                  ? WorldRoleType.COLLABORATOR
+                  : undefined;
               return (
                 <WorldPermissionsAccessItem
                   key={wallet}

@@ -615,16 +615,12 @@ const getError = createSelector(getManagementState, managementState => managemen
 
 const getPermissionsState = (state: AppState) => state.management.worldPermissions;
 
-const getParcelsMap = createSelector(
-  getPermissionsState,
-  permissionsState => permissionsState.parcels,
-);
-
-const makeParcelsStateForAddressSelector = () =>
-  createSelector(
-    [getParcelsMap, (_state: AppState, walletAddress: string) => walletAddress],
-    (parcels, walletAddress): ParcelsPermission | undefined => parcels[walletAddress],
-  );
+const getParcelsStateForAddress = (
+  state: AppState,
+  walletAddress: string,
+): ParcelsPermission | undefined => {
+  return state.management.worldPermissions.parcels[walletAddress];
+};
 
 // exports
 export const actions = {
@@ -654,5 +650,5 @@ export const selectors = {
   getWorldScenes,
   getError,
   getPermissionsState,
-  makeParcelsStateForAddressSelector,
+  getParcelsStateForAddress,
 };
