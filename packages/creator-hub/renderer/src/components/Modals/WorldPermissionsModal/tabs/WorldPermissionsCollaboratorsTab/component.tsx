@@ -1,4 +1,5 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
+import AddIcon from '@mui/icons-material/AddRounded';
 import InfoIcon from '@mui/icons-material/InfoOutlined';
 import { Box, Tooltip, Typography } from 'decentraland-ui2';
 import { t, T } from '/@/modules/store/translation/utils';
@@ -9,12 +10,15 @@ import type {
   UnrestrictedPermissionSetting,
 } from '/@/lib/worlds';
 import { Row } from '/@/components/Row';
-import { WorldPermissionsAddUserForm } from '../../WorldPermissionsAddUserForm';
+import { Button } from '/@/components/Button';
+import { WorldPermissionsAddCollaboratorDialog } from '../../WorldPermissionsAddCollaboratorDialog';
 import {
   WorldPermissionsLoadingItem,
   WorldPermissionsCollaboratorsItem,
 } from '../../WorldPermissionsItem';
 import './styles.css';
+
+const MAX_COLLABORATORS = 10;
 
 type Props = {
   worldDeploymentPermissions: AllowListPermissionSetting;
@@ -41,6 +45,24 @@ const WorldPermissionsCollaboratorsTab: React.FC<Props> = React.memo(props => {
     onGrantParcelsDeploymentPermission,
   } = props;
 
+  const [showAddDialog, setShowAddDialog] = useState(false);
+
+  const handleOpenAddDialog = useCallback(() => {
+    setShowAddDialog(true);
+  }, []);
+
+  const handleCloseAddDialog = useCallback(() => {
+    setShowAddDialog(false);
+  }, []);
+
+  const handleAddCollaborator = useCallback(
+    (address: string) => {
+      onAddCollaborator(address);
+      setShowAddDialog(false);
+    },
+    [onAddCollaborator],
+  );
+
   const getAllowedParcelsCount = useCallback(
     (wallet: string) => {
       const walletDeploySummary = worldPermissionsSummary[wallet]?.find(
@@ -52,6 +74,8 @@ const WorldPermissionsCollaboratorsTab: React.FC<Props> = React.memo(props => {
     [worldPermissionsSummary],
   );
 
+  const collaboratorsCount = collaboratorUsersList?.length || 0;
+
   return (
     <Box className="WorldCollaboratorsTab">
       <Typography variant="h6">
@@ -62,21 +86,33 @@ const WorldPermissionsCollaboratorsTab: React.FC<Props> = React.memo(props => {
       </Typography>
 
       <Box className="CollaboratorsFormContainer">
-        <WorldPermissionsAddUserForm
-          addButtonLabel={t('modal.world_permissions.collaborators.add_collaborator')}
-          onSubmitAddress={onAddCollaborator}
-        />
+        <Row className="CollaboratorsListHeader">
+          <Typography
+            variant="body2"
+            className="CollaboratorsCount"
+          >
+            {t('modal.world_permissions.collaborators.column_name_label', {
+              number: `${collaboratorsCount}/${MAX_COLLABORATORS}`,
+            })}
+          </Typography>
+          <Button
+            onClick={handleOpenAddDialog}
+            color="primary"
+            startIcon={<AddIcon />}
+          >
+            {t('modal.world_permissions.collaborators.add')}
+          </Button>
+        </Row>
+
         <Box className="CollaboratorsList">
-          {collaboratorUsersList?.length ? (
+          {collaboratorsCount > 0 ? (
             <>
               <Row className="TableRow CollaboratorsHeaderRow">
                 <Typography
                   variant="body2"
                   className="CollaboratorsHeader"
                 >
-                  {t('modal.world_permissions.collaborators.column_name_label', {
-                    number: `${collaboratorUsersList?.length}/10`,
-                  })}
+                  {t('modal.world_permissions.collaborators.column_collaborators')}
                 </Typography>
                 <Typography
                   variant="body2"
@@ -124,6 +160,12 @@ const WorldPermissionsCollaboratorsTab: React.FC<Props> = React.memo(props => {
           {isLoadingNewUser && <WorldPermissionsLoadingItem />}
         </Box>
       </Box>
+
+      <WorldPermissionsAddCollaboratorDialog
+        open={showAddDialog}
+        onClose={handleCloseAddDialog}
+        onSubmit={handleAddCollaborator}
+      />
     </Box>
   );
 });

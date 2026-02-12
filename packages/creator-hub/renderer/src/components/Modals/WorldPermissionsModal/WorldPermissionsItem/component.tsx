@@ -1,21 +1,30 @@
 import React, { useCallback, useMemo } from 'react';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckIcon from '@mui/icons-material/Check';
-import { Box, MenuItem } from 'decentraland-ui2';
+import { Box, Chip, MenuItem } from 'decentraland-ui2';
 import { Row } from '/@/components/Row';
 import { t } from '/@/modules/store/translation/utils';
 import { Dropdown } from '/@/components/Dropdown';
 import { Select } from '/@/components/Select';
+import { WorldRoleType } from '/@/lib/worlds';
 import { WorldPermissionsAvatarWithInfo } from '../WorldPermissionsAvatarWithInfo';
 import type { AccessItemProps, BaseProps, CollaboratorsItemProps, DeploymentOption } from './types';
 import { DeploymentOptionValue } from './types';
 import './styles.css';
 
 export const WorldPermissionsItem: React.FC<BaseProps> = React.memo(
-  ({ walletAddress, menuOptions, children = null }) => {
+  ({ walletAddress, icon, name, subtitle, tag, menuOptions, children = null }) => {
     return (
       <Box className="WorldPermissionsItem TableRow">
-        <WorldPermissionsAvatarWithInfo walletAddress={walletAddress} />
+        <Row className="WorldPermissionsItemInfo">
+          <WorldPermissionsAvatarWithInfo
+            value={walletAddress}
+            icon={icon}
+            name={name}
+            subtitle={subtitle}
+          />
+          {tag}
+        </Row>
         <Box>{children}</Box>
         {menuOptions && <Dropdown options={menuOptions} />}
       </Box>
@@ -28,26 +37,49 @@ export const WorldPermissionsLoadingItem: React.FC = React.memo(() => {
     <Row className="WorldPermissionsItem">
       <WorldPermissionsAvatarWithInfo
         isLoading
-        walletAddress=""
+        value=""
       />
     </Row>
   );
 });
 
 export const WorldPermissionsAccessItem: React.FC<AccessItemProps> = React.memo(
-  ({ walletAddress, onRemoveAddress }) => {
-    const menuOptions = [
-      {
-        text: t('modal.world_permissions.access.actions.remove'),
-        icon: <DeleteIcon />,
-        handler: onRemoveAddress,
-      },
-    ];
+  ({ walletAddress, icon, name, subtitle, role, onRemoveAddress }) => {
+    // owners and collaborators cannot be removed from the access list, so we hide the menu for them.
+    const menuOptions = role
+      ? undefined
+      : [
+          {
+            text: t('modal.world_permissions.access.actions.remove'),
+            icon: <DeleteIcon />,
+            handler: onRemoveAddress,
+          },
+        ];
+
+    const roleLabel =
+      role === WorldRoleType.OWNER
+        ? t('manage.cards.roles.owner')
+        : role === WorldRoleType.COLLABORATOR
+          ? t('manage.cards.roles.collaborator')
+          : undefined;
 
     return (
       <WorldPermissionsItem
         walletAddress={walletAddress}
+        icon={icon}
+        name={name}
+        subtitle={subtitle}
         menuOptions={menuOptions}
+        tag={
+          roleLabel ? (
+            <Chip
+              className="RoleBadge"
+              label={roleLabel}
+              size="small"
+              variant="filled"
+            />
+          ) : undefined
+        }
       />
     );
   },

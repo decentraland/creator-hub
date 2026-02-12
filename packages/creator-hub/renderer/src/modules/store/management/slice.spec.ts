@@ -3,7 +3,6 @@ import { ChainId } from '@dcl/schemas';
 import { AuthServerProvider } from 'decentraland-connect';
 import type { ManagedProject } from '../../../../../shared/types/manage';
 import { SortBy, FilterBy, ManagedProjectType } from '../../../../../shared/types/manage';
-import type { AppState } from '../index';
 import { createTestStore } from '../../../../tests/utils/testStore';
 import {
   actions,
@@ -350,7 +349,7 @@ describe('management slice', () => {
     });
 
     it('should set status to failed and error message when rejected', () => {
-      const errorMessage = 'Failed to fetch';
+      const errorMessage = 'Failed to fetch managed projects';
       store.dispatch({
         type: 'management/fetchAllManagedProjectsData/rejected',
         error: { message: errorMessage },
@@ -1400,6 +1399,7 @@ describe('management slice', () => {
         TEST_WORLD_NAME,
         'deployment',
         WorldPermissionType.AllowList,
+        undefined,
       );
       expect(mockWorldsAPI.getPermissions).toHaveBeenCalledWith(TEST_WORLD_NAME);
     });
@@ -1649,7 +1649,7 @@ describe('management slice', () => {
         meta: { arg: { worldName: TEST_WORLD_NAME } },
       });
 
-      const worldSettings = selectors.getWorldSettings(store.getState() as AppState);
+      const worldSettings = selectors.getWorldSettings(store.getState());
       expect(worldSettings.worldName).toBe(TEST_WORLD_NAME);
       expect(worldSettings.settings.name).toBe(TEST_WORLD_NAME);
     });
@@ -1661,7 +1661,7 @@ describe('management slice', () => {
         meta: { arg: { address: TEST_ADDRESS, chainId: TEST_CHAIN_ID } },
       });
 
-      const error = selectors.getError(store.getState() as AppState);
+      const error = selectors.getError(store.getState());
       expect(error).toBe('Test error');
     });
 
@@ -1684,7 +1684,7 @@ describe('management slice', () => {
         meta: { arg: { worldName: TEST_WORLD_NAME } },
       });
 
-      const permissions = selectors.getPermissionsState(store.getState() as AppState);
+      const permissions = selectors.getPermissionsState(store.getState());
       expect(permissions.worldName).toBe(TEST_WORLD_NAME);
       expect(permissions.owner).toBe(TEST_ADDRESS);
     });
@@ -1718,7 +1718,7 @@ describe('management slice', () => {
       });
 
       const parcelsState = selectors.getParcelsStateForAddress(
-        store.getState() as AppState,
+        store.getState() as any,
         TEST_WALLET_ADDRESS,
       );
       expect(parcelsState).toBeDefined();
@@ -1728,7 +1728,7 @@ describe('management slice', () => {
 
     it('should return undefined for non-existent address', () => {
       const parcelsState = selectors.getParcelsStateForAddress(
-        store.getState() as AppState,
+        store.getState() as any,
         '0xnonexistent',
       );
       expect(parcelsState).toBeUndefined();

@@ -484,8 +484,17 @@
       "invalid_address": "无效地址",
       "done": "完成",
       "access": {
+        "title": "管理谁可以访问您的世界",
         "description": "通过在<span>\"私有\"</span>和<span>\"公开\"</span>之间切换\n来管理谁可以访问您的世界。",
         "subtitle": "在<span>私有模式</span>下，您可以授予最多 100 个地址（Decentraland 用户）访问权限。请注意，如果您恢复到<span>公开模式</span>，您的已批准地址列表将被清除。",
+        "type": {
+          "public": "公开",
+          "invitation_only": "仅限邀请",
+          "password_protected": "密码保护",
+          "public_description": "任何人都可以访问这个世界",
+          "invitation_only_description": "只有已批准的地址才能访问这个世界",
+          "password_protected_description": "只有知道访问密码的用户才能加入"
+        },
         "warning": {
           "title": "警告",
           "description": "如果您恢复到公开模式，您的已批准地址列表将被清除。"
@@ -493,17 +502,66 @@
         "empty_list": "您还没有批准任何地址",
         "public": "公开",
         "private": "私有",
-        "approved_addresses": "已批准的地址 {number}",
+        "approved_addresses": "已批准地址: {number}",
+        "approved_addresses_tooltip": "同一时间最多只能有100名用户加入",
         "add_address": "添加地址",
+        "new_invite": "新邀请",
+        "clear_list": "清除列表",
+        "clear_list_title": "清除列表？",
+        "clear_list_warning": "如果您继续，您的已批准地址列表将被清除。",
+        "change_access_type_title": "更改访问类型？",
+        "change_access_type_warning": "如果您切换访问类型，您的已批准地址列表将被清除。",
+        "go_back": "返回",
+        "continue": "继续",
+        "confirm": "确认",
+        "cancel": "取消",
+        "wrong_address_format": "地址格式错误",
+        "community_search_placeholder": "搜索社区...",
+        "community_searching": "搜索中...",
+        "community_no_results": "未找到社区",
+        "community_members": "{count} {count, plural, one {成员} other {成员}}",
+        "community_privacy_public": "公开社区",
+        "community_privacy_private": "私密社区",
+        "invite_tabs": {
+          "wallet_address": "钱包地址",
+          "community": "社区",
+          "import_csv": "导入CSV"
+        },
+        "csv_drop_text": "将CSV文件拖放到此处或",
+        "csv_browse": "浏览您的设备文件",
+        "csv_addresses_count": "{count} 个地址",
+        "csv_communities_count": "{count} 个社区",
+        "csv_invalid_count": "{count} 个无效地址",
+        "csv_replace": "替换",
         "actions": {
           "remove": "移除"
+        }
+      },
+      "password": {
+        "change_password": "更改密码",
+        "create_new_password": "创建新密码",
+        "empty_state": "此世界的密码尚未设置。",
+        "has_password": "此世界受密码保护。",
+        "dialog": {
+          "create_title": "创建新密码",
+          "change_title": "更改密码",
+          "type_password": "输入您的密码",
+          "repeat_password": "重复您的密码",
+          "info": "请务必记下您的密码，以免丢失！"
+        },
+        "error": {
+          "empty": "密码不能为空",
+          "too_short": "密码必须至少 {min} 个字符",
+          "mismatch": "密码不匹配"
         }
       },
       "collaborators": {
         "description": "<span>添加最多 10 个地址</span>（Decentraland 用户）作为协作者，并管理他们在您世界中的部署或流媒体权限。",
         "empty_list": "您还没有添加任何协作者/地址",
         "add_collaborator": "添加协作者",
+        "add": "添加",
         "column_name_label": "协作者 {number}",
+        "column_collaborators": "协作者",
         "column_stream_label": "流媒体",
         "column_stream_tooltip": "用户将能够向您的世界流式传输内容",
         "column_deploy_label": "位置",
@@ -517,6 +575,10 @@
         "parcels_count": "{count} 个地块",
         "actions": {
           "remove": "移除"
+        },
+        "dialog": {
+          "title": "添加协作者",
+          "label": "输入钱包地址或 ENS"
         }
       },
       "parcels": {

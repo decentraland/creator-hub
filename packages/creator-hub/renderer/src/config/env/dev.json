@@ -6,6 +6,7 @@
   "DCL_NAME_STATS_URL": "https://dcl-name-stats.decentraland.zone",
   "PEER_URL": "https://peer.decentraland.zone",
   "WORLDS_CONTENT_SERVER_URL": "https://worlds-content-server.decentraland.zone",
+  "SOCIAL_API_URL": "https://social-api.decentraland.zone",
   "PEER_TESTING_URL": "https://peer-testing.decentraland.zone",
   "ASSET_BUNDLE_REGISTRY_URL": "https://asset-bundle-registry.decentraland.zone",
   "DCL_LISTS_URL": "https://dcl-lists.decentraland.zone",
@@ -17,6 +18,7 @@
   "LAND_MANAGER_SUBGRAPH": "https://subgraph.decentraland.org/land-manager-sepolia",
   "LAND_REGISTRY_ADDRESS": "0x42f4ba48791e2de32f5fbf553441c2672864bb33",
   "ESTATE_REGISTRY_ADDRESS": "0x369a7fbe718c870c79f99fb423882e8dd8b20486",
+  "ASSETS_CDN_URL": "https://assets-cdn.decentraland.zone",
   "REPORT_ISSUES_URL": "https://decentraland.typeform.com/creatorhub",
   "FEEDBACK_URL": "https://decentraland.typeform.com/creatorhub"
 }
