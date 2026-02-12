@@ -507,7 +507,7 @@
         "community_search_placeholder": "搜索社区...",
         "community_searching": "搜索中...",
         "community_no_results": "未找到社区",
-        "community_members": "{count} 成员",
+        "community_members": "{count} {count, plural, one {成员} other {成员}}",
         "community_privacy_public": "公开社区",
         "community_privacy_private": "私密社区",
         "invite_tabs": {

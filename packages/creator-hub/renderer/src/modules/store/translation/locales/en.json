@@ -507,7 +507,7 @@
         "community_search_placeholder": "Search for a community...",
         "community_searching": "Searching...",
         "community_no_results": "No communities found",
-        "community_members": "{count} Members",
+        "community_members": "{count} {count, plural, one {Member} other {Members}}",
         "community_privacy_public": "Public community",
         "community_privacy_private": "Private community",
         "invite_tabs": {

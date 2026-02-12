@@ -507,7 +507,7 @@
         "community_search_placeholder": "Buscar una comunidad...",
         "community_searching": "Buscando...",
         "community_no_results": "No se encontraron comunidades",
-        "community_members": "{count} Miembros",
+        "community_members": "{count} {count, plural, one {Miembro} other {Miembros}}",
         "community_privacy_public": "Comunidad pública",
         "community_privacy_private": "Comunidad privada",
         "invite_tabs": {
