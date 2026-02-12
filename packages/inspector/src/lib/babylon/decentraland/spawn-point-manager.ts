@@ -32,9 +32,7 @@ type SpawnPointManagerEvents = {
   cameraTargetPositionChange: { index: number; position: Vector3 };
 };
 
-/**
- * Helper to extract position value from spawn point coordinate
- */
+/** Extracts position value from spawn point coordinate (midpoint for ranges) */
 function getPositionValue(coord: SceneSpawnPointCoord): number {
   if (coord.$case === 'range') {
     if (coord.value.length === 1) {
@@ -45,9 +43,7 @@ function getPositionValue(coord: SceneSpawnPointCoord): number {
   return coord.value;
 }
 
-/**
- * Helper to get offset radius from spawn point coordinate
- */
+/** Gets offset radius from spawn point coordinate range */
 function getOffsetRadius(coord: SceneSpawnPointCoord): number {
   if (coord.$case === 'range' && coord.value.length === 2) {
     return Math.abs(coord.value[1] - coord.value[0]) / 2;
@@ -56,8 +52,8 @@ function getOffsetRadius(coord: SceneSpawnPointCoord): number {
 }
 
 /**
- * Creates a SpawnPointManager that handles visual representation of spawn points
- * Follows the layout-manager.ts pattern
+ * Creates a SpawnPointManager that handles visual representation of spawn points.
+ * Follows the layout-manager.ts pattern (memoized per Babylon scene).
  */
 export const createSpawnPointManager = memoize((scene: Scene) => {
   const events = mitt<SpawnPointManagerEvents>();
@@ -70,52 +66,47 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
   let selectedIndex: number | null = null;
   let selectedTarget: SpawnPointSelectionTarget = 'position';
 
-  /**
-   * Clears all spawn point visuals
-   */
-  function clear(): void {
-    let visual = visuals.pop();
-    while (visual) {
-      // Dispose all meshes
-      if (visual.cameraTargetMesh) {
-        visual.cameraTargetMesh.dispose(false, true);
-      }
-      if (visual.areaMesh) {
-        visual.areaMesh.dispose(false, true);
-      }
-      if (visual.avatarMesh) {
-        visual.avatarMesh.dispose(false, true);
-      }
-      visual.rootNode.dispose();
-      visual = visuals.pop();
+  function getVisual(index: number): SpawnPointVisual | null {
+    return index < visuals.length ? visuals[index] : null;
+  }
+
+  function deselectCurrent(): void {
+    const prevVisual = selectedIndex !== null ? getVisual(selectedIndex) : null;
+    if (prevVisual) {
+      if (prevVisual.avatarMesh) setSpawnPointSelected(prevVisual.avatarMesh, false);
+      if (prevVisual.cameraTargetMesh) setCameraTargetSelected(prevVisual.cameraTargetMesh, false);
     }
+  }
+
+  function clear(): void {
+    for (const visual of visuals) {
+      visual.cameraTargetMesh?.dispose(false, true);
+      visual.areaMesh?.dispose(false, true);
+      visual.avatarMesh?.dispose(false, true);
+      visual.rootNode.dispose();
+    }
+    visuals.length = 0;
     selectedIndex = null;
     selectedTarget = 'position';
   }
 
-  /**
-   * Creates visual for a single spawn point (async due to GLB loading)
-   */
+  /** Creates visual for a single spawn point (async due to GLB loading) */
   async function createSpawnPointVisual(
     spawnPoint: SceneSpawnPoint,
     index: number,
   ): Promise<SpawnPointVisual> {
     const name = `spawn_point_${index}`;
 
-    // Create root transform node
     const rootNode = new TransformNode(name, scene);
     rootNode.parent = spawnPointsNode;
 
-    // Calculate position
     const x = getPositionValue(spawnPoint.position.x);
     const y = getPositionValue(spawnPoint.position.y);
     const z = getPositionValue(spawnPoint.position.z);
     rootNode.position = new Vector3(x, y, z);
 
-    // Create avatar placeholder (async - loads GLB)
     const avatarMesh = await createAvatarPlaceholderAsync(name, scene, rootNode);
 
-    // Create offset area if random offset is enabled
     const offsetX = getOffsetRadius(spawnPoint.position.x);
     const offsetZ = getOffsetRadius(spawnPoint.position.z);
     let areaMesh: Mesh | null = null;
@@ -123,8 +114,7 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
       areaMesh = createOffsetArea(name, scene, rootNode, offsetX, offsetZ);
     }
 
-    // Create camera target cube if camera target exists.
-    // Parented to spawnPointsNode (not rootNode) so it stays in place during gizmo drag.
+    // Parented to spawnPointsNode (not rootNode) so it stays in place during gizmo drag
     let cameraTargetMesh: Mesh | null = null;
     if (spawnPoint.cameraTarget) {
       const targetPos = new Vector3(
@@ -135,18 +125,9 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
       cameraTargetMesh = createCameraTargetCube(name, scene, spawnPointsNode, targetPos);
     }
 
-    return {
-      index,
-      rootNode,
-      avatarMesh,
-      areaMesh,
-      cameraTargetMesh,
-    };
+    return { index, rootNode, avatarMesh, areaMesh, cameraTargetMesh };
   }
 
-  /**
-   * Updates visuals from scene component spawn points
-   */
   function updateFromSceneComponent(spawnPoints: readonly SceneSpawnPoint[] | undefined): void {
     const points = spawnPoints || [];
 
@@ -154,19 +135,14 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
     const previousSelectedIndex = selectedIndex;
     const previousSelectedTarget = selectedTarget;
 
-    // Clear existing visuals
     clear();
 
-    // Create new visuals for each spawn point (async)
     const promises = points.map((spawnPoint, index) => createSpawnPointVisual(spawnPoint, index));
 
-    // Handle async creation
     void Promise.all(promises).then(createdVisuals => {
       // Only update if no other update has happened in the meantime
       if (visuals.length === 0) {
-        createdVisuals.forEach(visual => {
-          visuals.push(visual);
-        });
+        visuals.push(...createdVisuals);
 
         // Restore selection after rebuild (e.g., after gizmo drag updates the component)
         if (previousSelectedIndex !== null && previousSelectedIndex < visuals.length) {
@@ -180,127 +156,73 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
     });
   }
 
-  /**
-   * Selects a spawn point by index
-   */
   function selectSpawnPoint(index: number | null): void {
-    // Deselect previous (including camera target)
-    if (selectedIndex !== null && selectedIndex < visuals.length) {
-      const prevVisual = visuals[selectedIndex];
-      if (prevVisual.avatarMesh) {
-        setSpawnPointSelected(prevVisual.avatarMesh, false);
-      }
-      if (prevVisual.cameraTargetMesh) {
-        setCameraTargetSelected(prevVisual.cameraTargetMesh, false);
-      }
-    }
+    deselectCurrent();
 
     selectedIndex = index;
     selectedTarget = 'position';
 
-    // Select new (avatar only, not camera target)
-    if (index !== null && index < visuals.length) {
-      const visual = visuals[index];
-      if (visual.avatarMesh) {
-        setSpawnPointSelected(visual.avatarMesh, true);
-      }
+    // Select avatar only (not camera target)
+    const visual = index !== null ? getVisual(index) : null;
+    if (visual?.avatarMesh) {
+      setSpawnPointSelected(visual.avatarMesh, true);
     }
 
     events.emit('selectionChange', { index, target: 'position' });
   }
 
-  /**
-   * Selects the camera target of a spawn point by index
-   */
   function selectCameraTarget(index: number): void {
-    // Deselect previous (including camera target)
-    if (selectedIndex !== null && selectedIndex < visuals.length) {
-      const prevVisual = visuals[selectedIndex];
-      if (prevVisual.avatarMesh) {
-        setSpawnPointSelected(prevVisual.avatarMesh, false);
-      }
-      if (prevVisual.cameraTargetMesh) {
-        setCameraTargetSelected(prevVisual.cameraTargetMesh, false);
-      }
-    }
+    deselectCurrent();
 
     selectedIndex = index;
     selectedTarget = 'cameraTarget';
 
     // Select both avatar and camera target visuals
-    if (index < visuals.length) {
-      const visual = visuals[index];
-      if (visual.avatarMesh) {
-        setSpawnPointSelected(visual.avatarMesh, true);
-      }
-      if (visual.cameraTargetMesh) {
-        setCameraTargetSelected(visual.cameraTargetMesh, true);
-      }
+    const visual = getVisual(index);
+    if (visual) {
+      if (visual.avatarMesh) setSpawnPointSelected(visual.avatarMesh, true);
+      if (visual.cameraTargetMesh) setCameraTargetSelected(visual.cameraTargetMesh, true);
     }
 
     events.emit('selectionChange', { index, target: 'cameraTarget' });
   }
 
-  /**
-   * Gets currently selected spawn point index
-   */
   function getSelectedIndex(): number | null {
     return selectedIndex;
   }
 
-  /**
-   * Updates spawn point position (called from gizmo drag)
-   */
+  /** Called from gizmo drag to update spawn point position */
   function updateSpawnPointPosition(index: number, position: Vector3): void {
-    if (index < visuals.length) {
-      visuals[index].rootNode.position = position.clone();
+    const visual = getVisual(index);
+    if (visual) {
+      visual.rootNode.position = position.clone();
       events.emit('positionChange', { index, position: position.clone() });
     }
   }
 
-  /**
-   * Gets the transform node for a spawn point (for gizmo attachment)
-   */
+  /** Gets transform node for gizmo attachment */
   function getSpawnPointNode(index: number): TransformNode | null {
-    if (index < visuals.length) {
-      return visuals[index].rootNode;
-    }
-    return null;
+    return getVisual(index)?.rootNode ?? null;
   }
 
-  /**
-   * Gets the camera target mesh for a spawn point (for gizmo attachment)
-   */
+  /** Gets camera target mesh for gizmo attachment */
   function getCameraTargetNode(index: number): TransformNode | null {
-    if (index < visuals.length) {
-      return visuals[index].cameraTargetMesh;
-    }
-    return null;
+    return getVisual(index)?.cameraTargetMesh ?? null;
   }
 
-  /**
-   * Gets the position of a spawn point
-   */
   function getSpawnPointPosition(index: number): Vector3 | null {
-    if (index < visuals.length) {
-      return visuals[index].rootNode.position.clone();
-    }
-    return null;
+    return getVisual(index)?.rootNode.position.clone() ?? null;
   }
 
-  /**
-   * Updates camera target position (called from gizmo drag)
-   */
+  /** Called from gizmo drag to update camera target position */
   function updateCameraTargetPosition(index: number, position: Vector3): void {
-    if (index < visuals.length && visuals[index].cameraTargetMesh) {
-      visuals[index].cameraTargetMesh!.position = position.clone();
+    const visual = getVisual(index);
+    if (visual?.cameraTargetMesh) {
+      visual.cameraTargetMesh.position = position.clone();
       events.emit('cameraTargetPositionChange', { index, position: position.clone() });
     }
   }
 
-  /**
-   * Subscribes to events
-   */
   function onSelectionChange(cb: (data: SelectionData) => void): () => void {
     events.on('selectionChange', cb);
     return () => events.off('selectionChange', cb);
@@ -318,17 +240,11 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
     return () => events.off('cameraTargetPositionChange', cb);
   }
 
-  /**
-   * Disposes the manager
-   */
   function dispose(): void {
     clear();
     spawnPointsNode.dispose();
   }
 
-  /**
-   * Gets the number of spawn point visuals
-   */
   function getCount(): number {
     return visuals.length;
   }
