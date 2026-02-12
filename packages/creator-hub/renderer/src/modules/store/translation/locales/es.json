@@ -429,7 +429,13 @@
         "scenes_title": "Escenas",
         "actions": {
           "edit_scene": "Editar Escena",
-          "unpublish": "Quitar del Mundo"
+          "unpublish": "Quitar del Mundo",
+          "confirm": "Confirmar",
+          "cancel": "Cancelar"
+        },
+        "unpublish_confirmation": {
+          "title": "¿Quitar <b>{name}</b> de este mundo?",
+          "warning_title": "Tu mundo se republicará automáticamente para aplicar estos cambios."
         }
       }
     },
@@ -540,6 +546,8 @@
       "fetch_land_list_failed": "Error al cargar tu lista de Tierras",
       "fetch_world_permissions_failed": "Error al cargar los permisos del mundo. Por favor, inténtalo de nuevo.",
       "fetch_world_scenes_failed": "Error al cargar las escenas del mundo. Por favor, inténtalo de nuevo.",
+      "unpublish_world_scene_failed": "Error al despublicar la escena del mundo. Por favor, inténtalo de nuevo.",
+      "unpublish_world_failed": "Error al despublicar el mundo. Por favor, inténtalo de nuevo.",
       "update_permissions_failed": "Error al actualizar los permisos del mundo. Por favor, inténtalo de nuevo.",
       "add_permission_failed": "Error al agregar el permiso de dirección. Por favor, inténtalo de nuevo.",
       "remove_permission_failed": "Error al eliminar el permiso de dirección. Por favor, inténtalo de nuevo.",

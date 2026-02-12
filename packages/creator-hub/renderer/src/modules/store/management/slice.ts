@@ -281,20 +281,37 @@ export const fetchWorldScenes = createAsyncThunk(
   },
 );
 
+export const unpublishWorld = createAsyncThunk(
+  'management/unpublishWorld',
+  async ({ worldName }: { worldName: string }, { dispatch }) => {
+    const connectedAccount = AuthServerProvider.getAccount();
+    if (!connectedAccount) throw new Error('No connected account found');
+
+    const WorldsAPI = new Worlds();
+    const success = await WorldsAPI.unpublishWorld(connectedAccount, worldName);
+    if (success) {
+      await dispatch(fetchWorldScenes({ worldName })).unwrap();
+      dispatch(fetchAllManagedProjectsDetails({ address: connectedAccount })).unwrap(); // Background refresh. No need to await this.
+    } else {
+      throw new Error('Failed to unpublish world');
+    }
+  },
+);
+
 export const unpublishWorldScene = createAsyncThunk(
   'management/unpublishWorldScene',
-  async ({
-    address,
-    worldName,
-    sceneCoords,
-  }: {
-    address: string;
-    worldName: string;
-    sceneCoords: string;
-  }) => {
+  async ({ worldName, sceneCoord }: { worldName: string; sceneCoord: string }, { dispatch }) => {
+    const connectedAccount = AuthServerProvider.getAccount();
+    if (!connectedAccount) throw new Error('No connected account found');
+
     const WorldsAPI = new Worlds();
-    const success = await WorldsAPI.unpublishWorldScene(address, worldName, sceneCoords);
-    return success;
+    const success = await WorldsAPI.unpublishWorldScene(connectedAccount, worldName, sceneCoord);
+    if (success) {
+      await dispatch(fetchWorldScenes({ worldName })).unwrap();
+      dispatch(fetchAllManagedProjectsDetails({ address: connectedAccount })).unwrap(); // Background refresh. No need to await this.
+    } else {
+      throw new Error('Failed to unpublish world scene');
+    }
   },
 );
 
@@ -598,6 +615,8 @@ export const actions = {
   fetchStorageStats,
   fetchAccountHoldings,
   fetchWorldScenes,
+  unpublishWorldScene,
+  unpublishWorld,
   fetchWorldPermissions,
   updateWorldPermissions,
   addAddressPermission,

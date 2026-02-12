@@ -89,6 +89,7 @@ const WorldSettingsModal: React.FC<Props> = React.memo(
             )}
             {activeTab === WorldSettingsTab.LAYOUT && (
               <LayoutTab
+                worldName={worldName}
                 worldSettings={worldSettings}
                 worldScenes={worldScenes}
               />

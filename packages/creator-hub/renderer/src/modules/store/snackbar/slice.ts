@@ -280,6 +280,26 @@ export const slice = createSlice({
           }),
         );
       })
+      .addCase(managementActions.unpublishWorldScene.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'unpublishWorldScene',
+        );
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.unpublish_world_scene_failed'), {
+            duration: 5000,
+            requestId: 'unpublishWorldScene',
+          }),
+        );
+      })
+      .addCase(managementActions.unpublishWorld.rejected, state => {
+        state.notifications = state.notifications.filter($ => $.requestId !== 'unpublishWorld');
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.unpublish_world_failed'), {
+            duration: 5000,
+            requestId: 'unpublishWorld',
+          }),
+        );
+      })
       .addCase(managementActions.fetchWorldPermissions.rejected, state => {
         state.notifications = state.notifications.filter(
           $ => $.requestId !== 'fetchWorldPermissions',

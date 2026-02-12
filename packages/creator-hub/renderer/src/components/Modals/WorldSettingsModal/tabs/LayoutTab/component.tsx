@@ -4,25 +4,31 @@ import MapIcon from '@mui/icons-material/GridOn';
 import LocationIcon from '@mui/icons-material/LocationOn';
 import ParcelsIcon from '@mui/icons-material/GridViewRounded';
 import ArrowBackIcon from '@mui/icons-material/ArrowBackRounded';
+import WarningIcon from '@mui/icons-material/WarningAmber';
 import { Box, Typography } from 'decentraland-ui2';
+import { useDispatch } from '#store';
 import type { WorldScene, WorldSettings } from '/@/lib/worlds';
 import type { Coords } from '/@/lib/land';
 import { idToCoords } from '/@/lib/land';
 import { t } from '/@/modules/store/translation/utils';
+import { actions as managementActions } from '/@/modules/store/management';
 import { formatWorldSize, getWorldDimensions, MAX_COORDINATE } from '/@/modules/world';
-import type { Option } from '/@/components/Dropdown';
+import { Dropdown, type Option } from '/@/components/Dropdown';
 import { Button } from '/@/components/Button';
 import { Row } from '/@/components/Row';
 import { WorldAtlas } from '/@/components/WorldAtlas';
 import { Image } from '/@/components/Image';
+import { Loader } from '/@/components/Loader';
 import './styles.css';
 
 enum LayoutView {
   SCENES = 'worldScenes',
   LAYOUT = 'worldLayout',
+  UNPUBLISH_CONFIRMATION = 'unpublishConfirmation',
 }
 
 type Props = {
+  worldName: string;
   worldScenes: WorldScene[];
   worldSettings: WorldSettings;
 };
@@ -41,7 +47,8 @@ const WorldScenesView: React.FC<{
   worldSettings: WorldSettings;
   worldScenes: WorldScene[];
   onViewLayout: () => void;
-}> = React.memo(({ worldSettings, worldScenes, onViewLayout }) => {
+  onUnpublish: (scene: WorldScene) => void;
+}> = React.memo(({ worldSettings, worldScenes, onViewLayout, onUnpublish }) => {
   // const [multiSceneEnabled, setMultiSceneEnabled] = useState(true);
   const hasScenes = worldScenes && worldScenes.length > 0;
 
@@ -57,26 +64,14 @@ const WorldScenesView: React.FC<{
     return [baseParcel.x, baseParcel.y];
   }, []);
 
-  const handleEditScene = useCallback((_scene: WorldScene) => {
-    // TODO: Implement edit scene in future PR.
-  }, []);
-
-  const handleUnpublishScene = useCallback((_scene: WorldScene) => {
-    // TODO: Implement unpublish scene in future PR.
-  }, []);
-
-  const _getDropdownOptions = useCallback(
+  const getDropdownOptions = useCallback(
     (scene: WorldScene): Option[] => [
       {
-        text: t('modal.world_settings.layout.actions.edit_scene'),
-        handler: () => handleEditScene(scene),
-      },
-      {
         text: t('modal.world_settings.layout.actions.unpublish'),
-        handler: () => handleUnpublishScene(scene),
+        handler: () => onUnpublish(scene),
       },
     ],
-    [handleEditScene],
+    [onUnpublish],
   );
 
   const worldSize = useMemo(() => {
@@ -187,8 +182,7 @@ const WorldScenesView: React.FC<{
                     />
                   </Box>
                 </Box>
-                {/* TODO: implement functionality on future PR */}
-                {/* <Dropdown options={getDropdownOptions(scene)} /> */}
+                <Dropdown options={getDropdownOptions(scene)} />
               </Box>
             ))}
           </Box>
@@ -218,8 +212,81 @@ const WorldLayoutView: React.FC<{ worldScenes: WorldScene[]; onGoBack: () => voi
   },
 );
 
-const LayoutTab: React.FC<Props> = React.memo(({ worldSettings, worldScenes }) => {
+const UnpublishConfirmationView: React.FC<{
+  sceneTitle: string;
+  onCancel: () => void;
+  onConfirm: () => Promise<void>;
+}> = React.memo(({ sceneTitle, onCancel, onConfirm }) => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleConfirm = async () => {
+    setIsLoading(true);
+    await onConfirm();
+    setIsLoading(false);
+  };
+
+  return (
+    <Box className="UnpublishConfirmationView">
+      <Typography variant="h5">
+        {t('modal.world_settings.layout.unpublish_confirmation.title', {
+          name: sceneTitle,
+          b: (chunks: React.ReactNode) => <b>{chunks}</b>,
+        })}
+      </Typography>
+      <Box className="WarningContainer">
+        <WarningIcon />
+        <Typography variant="body2">
+          {t('modal.world_settings.layout.unpublish_confirmation.warning_title')}
+        </Typography>
+      </Box>
+      <Box className="UnpublishActions">
+        <Button
+          color="secondary"
+          fullWidth
+          onClick={onCancel}
+        >
+          {t('modal.world_settings.layout.actions.cancel')}
+        </Button>
+        <Button
+          fullWidth
+          onClick={handleConfirm}
+        >
+          {isLoading ? <Loader size={24} /> : t('modal.world_settings.layout.actions.confirm')}
+        </Button>
+      </Box>
+    </Box>
+  );
+});
+
+const LayoutTab: React.FC<Props> = React.memo(({ worldName, worldSettings, worldScenes }) => {
   const [activeView, setActiveView] = useState<LayoutView>(LayoutView.SCENES);
+  const [selectedScene, setSelectedScene] = useState<WorldScene | null>(null);
+  const dispatch = useDispatch();
+
+  const handleOpenConfirmation = useCallback((scene: WorldScene) => {
+    setSelectedScene(scene);
+    setActiveView(LayoutView.UNPUBLISH_CONFIRMATION);
+  }, []);
+
+  const handleCloseConfirmation = useCallback(() => {
+    setSelectedScene(null);
+    setActiveView(LayoutView.SCENES);
+  }, []);
+
+  const handleUnpublishScene = useCallback(async () => {
+    if (!selectedScene || !selectedScene.parcels?.length) return;
+    try {
+      await dispatch(
+        managementActions.unpublishWorldScene({
+          worldName,
+          sceneCoord: selectedScene.parcels[0], // we can use any of the scene parcels to unpublish it
+        }),
+      ).unwrap();
+      handleCloseConfirmation();
+    } catch {
+      // Error is handled in the action.
+    }
+  }, [selectedScene]);
 
   return (
     <Box className="LayoutTab">
@@ -228,12 +295,23 @@ const LayoutTab: React.FC<Props> = React.memo(({ worldSettings, worldScenes }) =
           worldSettings={worldSettings}
           worldScenes={worldScenes}
           onViewLayout={() => setActiveView(LayoutView.LAYOUT)}
+          onUnpublish={handleOpenConfirmation}
         />
       )}
       {activeView === LayoutView.LAYOUT && (
         <WorldLayoutView
           worldScenes={worldScenes}
           onGoBack={() => setActiveView(LayoutView.SCENES)}
+        />
+      )}
+      {activeView === LayoutView.UNPUBLISH_CONFIRMATION && (
+        <UnpublishConfirmationView
+          sceneTitle={
+            selectedScene?.entity?.metadata?.display?.title ||
+            t('modal.world_settings.layout.scene_title_placeholder')
+          }
+          onCancel={handleCloseConfirmation}
+          onConfirm={handleUnpublishScene}
         />
       )}
     </Box>
