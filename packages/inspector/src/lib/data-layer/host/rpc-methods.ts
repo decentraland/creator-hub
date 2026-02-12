@@ -5,6 +5,7 @@ import { readPreferencesFromFile, serializeInspectorPreferences } from '../../lo
 import type { AssetData } from '../../logic/catalog';
 import type { InspectorPreferences } from '../../logic/preferences/types';
 import { EditorComponentNames } from '../../sdk/components/types';
+import { getRelativeResourcePath, getResourcesBasePath } from '../../utils/path-utils';
 import {
   DIRECTORY,
   EXTENSIONS,
@@ -222,8 +223,10 @@ export async function initRpcMethods(
         const baseFolder = basePath.length ? basePath + '/' : '';
         const undoAcc: FileOperation[] = [];
 
-        for (const [fileName, fileContent] of content) {
-          const importName = assetPackageName ? `${assetPackageName}/${fileName}` : fileName;
+        for (const [relativePath, fileContent] of content) {
+          const importName = assetPackageName
+            ? `${assetPackageName}/${relativePath}`
+            : relativePath;
           const filePath = (baseFolder + importName).replaceAll('//', '/');
           const prevValue = (await fs.existFile(filePath)) ? await fs.readFile(filePath) : null;
           undoAcc.push({ prevValue, newValue: fileContent, path: filePath });
@@ -351,10 +354,11 @@ export async function initRpcMethods(
           await fs.writeFile(`${customAssetPath}/thumbnail.png`, thumbnailBuffer);
         }
 
+        const resourcesBasePath = getResourcesBasePath(resources);
         const undoAcc: FileOperation[] = [];
         for (const resourcePath of resources) {
-          const fileName = resourcePath.split('/').pop()!;
-          const targetPath = `${customAssetPath}/${fileName}`;
+          const relativePath = getRelativeResourcePath(resourcePath, resourcesBasePath);
+          const targetPath = `${customAssetPath}/${relativePath}`;
           const content = await fs.readFile(resourcePath);
 
           undoAcc.push({
