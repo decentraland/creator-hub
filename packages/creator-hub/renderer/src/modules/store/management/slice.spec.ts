@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChainId } from '@dcl/schemas';
 import { AuthServerProvider } from 'decentraland-connect';
-import { SortBy, FilterBy } from '../../../../../shared/types/manage';
+import type { ManagedProject } from '../../../../../shared/types/manage';
+import { SortBy, FilterBy, ManagedProjectType } from '../../../../../shared/types/manage';
 import type { AppState } from '../index';
 import { createTestStore } from '../../../../tests/utils/testStore';
 import {
@@ -1199,64 +1200,171 @@ describe('management slice', () => {
 
   describe('fetchEmptyWorlds', () => {
     beforeEach(() => {
-      // Set up mock ENS data in state
+      // Set up mock ENS data in state by dispatching an action
+      const ensDataArray = [
+        {
+          subdomain: 'empty-world.dcl.eth',
+          name: 'empty-world',
+          nftOwnerAddress: TEST_ADDRESS,
+          ensOwnerAddress: TEST_ADDRESS,
+          provider: 'dcl',
+          tokenId: '1',
+          resolver: '0xresolver',
+          content: '',
+        },
+        {
+          subdomain: 'published-world.dcl.eth',
+          name: 'published-world',
+          nftOwnerAddress: TEST_ADDRESS,
+          ensOwnerAddress: TEST_ADDRESS,
+          provider: 'dcl',
+          tokenId: '2',
+          resolver: '0xresolver',
+          content: '',
+        },
+        {
+          subdomain: 'another-empty.dcl.eth',
+          name: 'another-empty',
+          nftOwnerAddress: '0xotheraddress',
+          ensOwnerAddress: '0xotheraddress',
+          provider: 'dcl',
+          tokenId: '3',
+          resolver: '0xresolver',
+          content: '',
+        },
+      ];
+      // Simulate ENS data being loaded
       store.dispatch({
         type: 'ens/fetchENSList/fulfilled',
-        payload: [
-          {
-            subdomain: 'empty-world.dcl.eth',
-            nftOwnerAddress: TEST_ADDRESS,
-            worldStatus: { scene: {} }, // No entityId means empty
-          },
-          {
-            subdomain: 'published-world.dcl.eth',
-            nftOwnerAddress: TEST_ADDRESS,
-            worldStatus: { scene: { entityId: 'some-entity-id' } }, // Has entityId
-          },
-          {
-            subdomain: 'another-empty.dcl.eth',
-            nftOwnerAddress: '0xotheraddress',
-            worldStatus: { scene: {} },
-          },
-        ],
+        payload: ensDataArray,
         meta: { arg: { address: TEST_ADDRESS, chainId: TEST_CHAIN_ID } },
       });
     });
 
-    it('should fetch unpublished worlds from ENS list', async () => {
+    it('should fetch unpublished worlds by checking scene counts via API', async () => {
+      // Mock API responses - empty-world has 0 scenes, published-world has 3 scenes, another-empty has 0 scenes
+      mockWorldsAPI.fetchWorldScenes
+        .mockResolvedValueOnce({ scenes: [], total: 0 }) // empty-world.dcl.eth
+        .mockResolvedValueOnce({ scenes: [], total: 3 }) // published-world.dcl.eth (has scenes)
+        .mockResolvedValueOnce({ scenes: [], total: 0 }); // another-empty.dcl.eth
+
       const result = await store.dispatch(fetchEmptyWorlds({ address: TEST_ADDRESS })).unwrap();
 
-      expect(result).toHaveLength(2); // Only 2 worlds without entityId
-      expect(result[0].id).toBe('empty-world.dcl.eth');
-      expect(result[1].id).toBe('another-empty.dcl.eth');
+      expect(result).toHaveLength(2); // Only 2 worlds with 0 scenes
+      expect(result.find((w: ManagedProject) => w.id === 'empty-world.dcl.eth')).toBeDefined();
+      expect(result.find((w: ManagedProject) => w.id === 'another-empty.dcl.eth')).toBeDefined();
+      expect(
+        result.find((w: ManagedProject) => w.id === 'published-world.dcl.eth'),
+      ).toBeUndefined();
+    });
+
+    it('should use cached scenesCount from existing projects when available', async () => {
+      // Add a project with known scenesCount to state by dispatching an action
+      store.dispatch({
+        type: fetchWorlds.fulfilled.type,
+        payload: {
+          worlds: [
+            {
+              id: 'empty-world.dcl.eth',
+              displayName: 'empty-world.dcl.eth',
+              type: ManagedProjectType.WORLD,
+              role: 'owner',
+              deployment: {
+                title: 'Empty World',
+                description: '',
+                thumbnail: '',
+                lastPublishedAt: 0,
+                scenesCount: 0, // Cached value
+              },
+            },
+          ],
+          total: 1,
+        },
+        meta: { arg: { address: TEST_ADDRESS } },
+      });
+
+      // Mock API for the other two worlds only (first one uses cached value)
+      mockWorldsAPI.fetchWorldScenes
+        .mockResolvedValueOnce({ scenes: [], total: 5 }) // published-world.dcl.eth
+        .mockResolvedValueOnce({ scenes: [], total: 0 }); // another-empty.dcl.eth
+
+      const result = await store.dispatch(fetchEmptyWorlds({ address: TEST_ADDRESS })).unwrap();
+
+      // Should use cached value for empty-world, not call API for it
+      expect(mockWorldsAPI.fetchWorldScenes).toHaveBeenCalledTimes(2);
+      expect(result).toHaveLength(2);
+      expect(result.find((w: ManagedProject) => w.id === 'empty-world.dcl.eth')).toBeDefined();
+    });
+
+    it('should handle API errors gracefully and assume 0 scenes', async () => {
+      // Mock API to throw error for first world, return 0 for second, return 5 for third
+      mockWorldsAPI.fetchWorldScenes
+        .mockRejectedValueOnce(new Error('API Error')) // empty-world.dcl.eth - error = 0 scenes
+        .mockResolvedValueOnce({ scenes: [], total: 3 }) // published-world.dcl.eth
+        .mockResolvedValueOnce({ scenes: [], total: 0 }); // another-empty.dcl.eth
+
+      const result = await store.dispatch(fetchEmptyWorlds({ address: TEST_ADDRESS })).unwrap();
+
+      // Even with error, empty-world should be included (defaults to 0 scenes)
+      expect(result).toHaveLength(2);
+      expect(result.find((w: ManagedProject) => w.id === 'empty-world.dcl.eth')).toBeDefined();
+      expect(result.find((w: ManagedProject) => w.id === 'another-empty.dcl.eth')).toBeDefined();
     });
 
     it('should set owner role for ENS owned by the address', async () => {
+      mockWorldsAPI.fetchWorldScenes.mockResolvedValue({ scenes: [], total: 0 });
+
       const result = await store.dispatch(fetchEmptyWorlds({ address: TEST_ADDRESS })).unwrap();
 
-      const ownedWorld = result.find(w => w.id === 'empty-world.dcl.eth');
+      const ownedWorld = result.find((w: ManagedProject) => w.id === 'empty-world.dcl.eth');
       expect(ownedWorld?.role).toBe('owner');
     });
 
     it('should set collaborator role for ENS not owned by the address', async () => {
+      mockWorldsAPI.fetchWorldScenes.mockResolvedValue({ scenes: [], total: 0 });
+
       const result = await store.dispatch(fetchEmptyWorlds({ address: TEST_ADDRESS })).unwrap();
 
-      const collabWorld = result.find(w => w.id === 'another-empty.dcl.eth');
+      const collabWorld = result.find((w: ManagedProject) => w.id === 'another-empty.dcl.eth');
       expect(collabWorld?.role).toBe('collaborator');
     });
 
     it('should set deployment to undefined for unpublished worlds', async () => {
+      mockWorldsAPI.fetchWorldScenes.mockResolvedValue({ scenes: [], total: 0 });
+
       const result = await store.dispatch(fetchEmptyWorlds({ address: TEST_ADDRESS })).unwrap();
 
       expect(result[0].deployment).toBeUndefined();
     });
 
     it('should update state with empty projects and total', async () => {
+      mockWorldsAPI.fetchWorldScenes.mockResolvedValue({ scenes: [], total: 0 });
+
       await store.dispatch(fetchEmptyWorlds({ address: TEST_ADDRESS }));
 
       const state = store.getState().management;
-      expect(state.projects).toHaveLength(2);
-      expect(state.total).toBe(2);
+      expect(state.projects).toHaveLength(3); // All 3 worlds have 0 scenes
+      expect(state.total).toBe(3);
+    });
+
+    it('should filter out all worlds when all have published scenes', async () => {
+      mockWorldsAPI.fetchWorldScenes.mockResolvedValue({ scenes: [], total: 5 });
+
+      const result = await store.dispatch(fetchEmptyWorlds({ address: TEST_ADDRESS })).unwrap();
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('should handle case-insensitive address comparison for role assignment', async () => {
+      mockWorldsAPI.fetchWorldScenes.mockResolvedValue({ scenes: [], total: 0 });
+
+      // Dispatch with uppercase address
+      const result = await store
+        .dispatch(fetchEmptyWorlds({ address: TEST_ADDRESS.toUpperCase() }))
+        .unwrap();
+
+      const ownedWorld = result.find((w: ManagedProject) => w.id === 'empty-world.dcl.eth');
+      expect(ownedWorld?.role).toBe('owner');
     });
   });
 

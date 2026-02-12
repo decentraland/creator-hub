@@ -172,10 +172,24 @@ export const fetchEmptyWorlds = createAsyncThunk(
   async ({ address }: { address: string }, { getState }) => {
     const state = getState() as AppState;
     const ensList = Object.values(state.ens.data);
+    const worldsAPI = new Worlds();
 
-    const emptyProjects: ManagedProject[] = ensList
-      .filter(ens => !ens.worldStatus?.scene.entityId)
-      .map(ens => ({
+    const projectsPromises: Promise<ManagedProject | null>[] = ensList.map(async ens => {
+      const worldProject = state.management.projects.find(project => project.id === ens.subdomain);
+      let scenesCount = worldProject?.deployment ? worldProject.deployment.scenesCount : null;
+
+      if (scenesCount === null) {
+        try {
+          const worldScenes = await worldsAPI.fetchWorldScenes(ens.subdomain, { limit: 1 });
+          scenesCount = worldScenes ? worldScenes.total : 0;
+        } catch {
+          scenesCount = 0; // If there's an error fetching scenes, we assume it's empty.
+        }
+      }
+
+      if (scenesCount > 0) return null;
+
+      return {
         id: ens.subdomain,
         displayName: ens.subdomain,
         role:
@@ -184,9 +198,11 @@ export const fetchEmptyWorlds = createAsyncThunk(
             : WorldRoleType.COLLABORATOR,
         type: ManagedProjectType.WORLD,
         deployment: undefined,
-      }));
+      } as ManagedProject;
+    });
 
-    return emptyProjects;
+    const emptyProjectsList = await Promise.all(projectsPromises);
+    return emptyProjectsList.filter(project => project !== null);
   },
 );
 
@@ -273,6 +289,7 @@ export const unpublishWorldScene = createAsyncThunk(
     const success = await WorldsAPI.unpublishWorldScene(connectedAccount, worldName, sceneCoord);
     if (success) {
       await dispatch(fetchWorldScenes({ worldName })).unwrap();
+      dispatch(fetchManagedProjectsFiltered()); // Background refresh. No need to await.
     } else {
       throw new Error('Failed to unpublish world scene');
     }
