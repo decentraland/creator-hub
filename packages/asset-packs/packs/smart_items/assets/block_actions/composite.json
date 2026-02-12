@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/ban-cube.glb",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "0": {
+          "json": {
+            "value": "Block Actions"
+          }
+        }
+      }
+    },
+    {
+      "name": "core::VisibilityComponent",
+      "data": {
+        "0": {
+          "json": {
+            "visible": false
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/block-actions.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"disableJump\":{\"type\":\"boolean\",\"optional\":true,\"value\":false},\"disableRun\":{\"type\":\"boolean\",\"optional\":true,\"value\":false},\"disableJog\":{\"type\":\"boolean\",\"optional\":true,\"value\":false},\"disableWalk\":{\"type\":\"boolean\",\"optional\":true,\"value\":false},\"disableEmote\":{\"type\":\"boolean\",\"optional\":true,\"value\":false}}}"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}
