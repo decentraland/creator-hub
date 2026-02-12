@@ -13,6 +13,7 @@ import { Edit as EditInput } from './Edit';
 import { DropType, calculateDropType } from './utils';
 import { useSdk } from '../../hooks/sdk/useSdk';
 import { useAppSelector } from '../../redux/hooks';
+import { GizmoType } from '../../lib/utils/gizmo';
 import { getEntitiesOutOfBoundaries } from '../../redux/scene-metrics';
 import { InfoTooltip } from '../ui';
 
@@ -44,7 +45,7 @@ type Props<T> = {
   onRename: (value: T, label: string) => void;
   onAddChild: (value: T, label: string) => void;
   onRemove: (value: T) => void;
-  onDuplicate: (value: T) => void;
+  onDuplicate: (value: T, preferredGizmo?: GizmoType) => void;
   getDragContext?: () => unknown;
   dndType?: string;
   onLastSelectedChange?: (value: T) => void;
@@ -284,15 +285,19 @@ export function Tree<T>() {
       const handleDuplicate = () => {
         if (isEntity && sdk) {
           const selectedEntities = sdk.operations.getSelectedEntities();
+          const preferredGizmo =
+            selectedEntities.length > 0
+              ? sdk.components.Selection.getOrNull(selectedEntities[0])?.gizmo
+              : undefined;
           sdk.operations.removeSelectedEntities();
           if (selectedEntities.length > 1) {
             selectedEntities.forEach(entity => {
               if (typeof entity === typeof value) {
-                onDuplicate(entity as T);
+                onDuplicate(entity as T, preferredGizmo);
               }
             });
           } else {
-            onDuplicate(value);
+            onDuplicate(value, preferredGizmo);
           }
         } else {
           onDuplicate(value);

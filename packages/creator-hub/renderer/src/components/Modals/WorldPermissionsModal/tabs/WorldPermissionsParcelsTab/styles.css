@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-height: 100%;
 }
 
 .WorldPermissionsParcelsTab .HeaderTitle {
@@ -27,18 +28,26 @@
   margin-bottom: 8px;
 }
 
-.WorldPermissionsParcelsTab .AtlasHeader {
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 8px 16px;
-  background-color: var(--black);
-  border-radius: 8px 8px 0 0;
+.WorldPermissionsParcelsTab .Avatar .Paragraph {
+  padding-right: 4px;
 }
 
-.WorldPermissionsParcelsTab .ParcelsCount {
-  border: 1px solid var(--dark-gray);
-  background-color: rgba(36, 33, 41, 0.5);
+.WorldPermissionsParcelsTab .ActionsContainer {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+}
+
+.WorldPermissionsParcelsTab .ActionsContainer .MuiTypography-root {
+  margin-left: auto;
+}
+
+.WorldPermissionsParcelsTab .ActionsContainer .MuiButton-root {
+  height: 40px;
+}
+
+.WorldPermissionsParcelsTab .ActionsContainer .SaveButton {
+  min-width: 8rem;
 }

@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import cx from 'classnames';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import { ChainId } from '@dcl/schemas';
 import { Typography, Checkbox } from 'decentraland-ui2';
 
 import { misc, env } from '#preload';
+import { useDispatch, useSelector } from '#store';
 
 import { type File, type Info, type Status } from '/@/lib/deploy';
 
@@ -17,8 +17,12 @@ import { useCounter } from '/@/hooks/useCounter';
 
 import { type Deployment } from '/@/modules/store/deployment/slice';
 import { getInvalidFiles, MAX_FILE_SIZE_BYTES } from '/@/modules/store/deployment/utils';
+import {
+  actions as managementActions,
+  selectors as managementSelectors,
+} from '/@/modules/store/management/slice';
+
 import { t } from '/@/modules/store/translation/utils';
-import { addBase64ImagePrefix } from '/@/modules/image';
 import { REPORT_ISSUES_URL } from '/@/modules/utils';
 import { formatSize } from '/@/modules/file';
 
@@ -30,6 +34,7 @@ import { ExpandMore } from '/@/components/ExpandMore';
 
 import type { Step } from '/@/components/Step/types';
 import type { Props } from '/@/components/Modals/PublishProject/types';
+import { ProjectStepWrapper } from '/@/components/Modals/PublishProject/ProjectStepWrapper';
 
 import './styles.css';
 
@@ -48,23 +53,58 @@ function getPath(filename: string) {
 }
 
 export function Deploy(props: Props) {
-  const { project, previousStep, onStep, onBack } = props;
-  const { chainId, wallet, avatar, signOut } = useAuth();
+  const { project, previousStep, onStep, onBack, deploymentMetadata } = props;
+  const { signOut, wallet } = useAuth();
+  const dispatch = useDispatch();
   const { updateProjectInfo } = useWorkspace();
   const { loadingPublish, publishError } = useEditor();
   const { getDeployment, executeDeployment } = useDeploy();
   const { pushCustom } = useSnackbar();
+  const worldScenes = useSelector(managementSelectors.getWorldScenes);
   const [showWarning, setShowWarning] = useState(false);
   const [skipWarning, setSkipWarning] = useState(project.info.skipPublishWarning ?? false);
+  const [undeployStatus, setUndeployStatus] = useState<Status>('idle');
   const deployment = getDeployment(project.path);
   const isWorld = previousStep === 'publish-to-world' || !!deployment?.info.isWorld;
   const dclEnv = useMemo(() => getDclEnv(), []);
 
-  const handlePublish = useCallback(() => {
+  const needsUndeploy = useMemo(() => {
+    return isWorld && deploymentMetadata?.isMultiScene === false && worldScenes.length > 0;
+  }, [isWorld, deploymentMetadata?.isMultiScene, worldScenes]);
+
+  /** True if any of the project parcels overlap with any of the existing world scenes parcels */
+  const isReplacingWorldContent: boolean = useMemo(() => {
+    if (!isWorld) return false;
+    const projectParcels = project.scene.parcels;
+    const worldScenesParcels = worldScenes.map(scene => scene.parcels).flat();
+    return projectParcels.some(parcel => worldScenesParcels.includes(parcel));
+  }, [isWorld, worldScenes, project.scene.parcels]);
+
+  const handlePublish = useCallback(async () => {
     setShowWarning(false);
     updateProjectInfo(project.path, { skipPublishWarning: skipWarning }); // write skip warning flag
+
+    if (needsUndeploy && wallet && project.worldConfiguration?.name) {
+      setUndeployStatus('pending');
+      try {
+        await dispatch(
+          managementActions.unpublishEntireWorld({
+            address: wallet,
+            worldName: project.worldConfiguration.name,
+          }),
+        ).unwrap();
+        setUndeployStatus('complete');
+        dispatch(
+          managementActions.fetchWorldScenes({ worldName: project.worldConfiguration.name }),
+        );
+      } catch {
+        setUndeployStatus('failed');
+        return; // Stop here if undeploy fails
+      }
+    }
+
     executeDeployment(project.path);
-  }, [skipWarning, project]);
+  }, [skipWarning, project, needsUndeploy, wallet, executeDeployment, updateProjectInfo]);
 
   const handleBack = useCallback(() => {
     setShowWarning(false);
@@ -136,36 +176,49 @@ export function Deploy(props: Props) {
   }, []);
 
   const steps: Step[] = useMemo(() => {
-    if (!deployment) return [];
+    const stepsList: Step[] = [];
+    let stepNumber = 1;
+
+    if (needsUndeploy || undeployStatus !== 'idle') {
+      stepsList.push({
+        bulletText: stepNumber++,
+        name: t('modal.publish_project.deploy.deploying.step.unpublishing'),
+        description: getStepDescription(undeployStatus),
+        state: undeployStatus,
+      });
+    }
+
+    if (!deployment) return stepsList;
 
     const { catalyst, assetBundle, lods } = deployment.componentsStatus;
-    const baseSteps = [
-      {
-        bulletText: '1',
-        name: t('modal.publish_project.deploy.deploying.step.uploading'),
-        description: getStepDescription(catalyst),
-        state: catalyst,
-      },
-      {
-        bulletText: '2',
-        name: t('modal.publish_project.deploy.deploying.step.converting'),
-        description: getStepDescription(assetBundle),
-        state: assetBundle,
-      },
-    ];
+    stepsList.push({
+      bulletText: stepNumber++,
+      name: t('modal.publish_project.deploy.deploying.step.uploading'),
+      description: getStepDescription(catalyst),
+      state: catalyst,
+    });
+    stepsList.push({
+      bulletText: stepNumber++,
+      name: t('modal.publish_project.deploy.deploying.step.converting'),
+      description: getStepDescription(assetBundle),
+      state: assetBundle,
+    });
 
     // Only add LODs step for non-world deployments
-    if (!deployment.info.isWorld) {
-      baseSteps.push({
-        bulletText: '3',
+    if (!isWorld) {
+      stepsList.push({
+        bulletText: stepNumber++,
         name: t('modal.publish_project.deploy.deploying.step.optimizing'),
         description: getStepDescription(lods),
         state: lods,
       });
     }
 
-    return baseSteps;
-  }, [deployment?.componentsStatus, getStepDescription, deployment?.info.isWorld]);
+    return stepsList;
+  }, [deployment?.componentsStatus, getStepDescription, needsUndeploy, undeployStatus, isWorld]);
+
+  const hasError =
+    publishError || !deployment || deployment.status === 'failed' || undeployStatus === 'failed';
 
   return (
     <PublishModal
@@ -181,10 +234,15 @@ export function Deploy(props: Props) {
             <div className="content">
               <div className="Warning" />
               <div className="message">
-                {t('modal.publish_project.deploy.warning.message', {
-                  ul: (child: string) => <ul>{child}</ul>,
-                  li: (child: string) => <li>{child}</li>,
-                })}
+                {t(
+                  isReplacingWorldContent || needsUndeploy
+                    ? 'modal.publish_project.deploy.warning.message_replacing_world_content'
+                    : 'modal.publish_project.deploy.warning.message_basic',
+                  {
+                    ul: (child: string) => <ul>{child}</ul>,
+                    li: (child: string) => <li>{child}</li>,
+                  },
+                )}
               </div>
             </div>
             <div className="actions">
@@ -214,100 +272,63 @@ export function Deploy(props: Props) {
             </div>
           </div>
         ) : (
-          <>
-            <div className="ethereum">
-              <div className="chip network">
-                {chainId === ChainId.ETHEREUM_MAINNET
-                  ? t('modal.publish_project.deploy.ethereum.mainnet')
-                  : t('modal.publish_project.deploy.ethereum.testnet')}
+          <ProjectStepWrapper
+            isWorld={isWorld}
+            project={project}
+            name={project.worldConfiguration?.name}
+            className="scene"
+          >
+            {loadingPublish ? (
+              <div className="header Loading">
+                <Loader />
+                <Typography variant="h5">
+                  {t('modal.publish_project.deploy.deploying.publish')}
+                </Typography>
               </div>
-              {wallet ? (
-                <div className="chip address">
-                  {wallet.slice(0, 6)}...{wallet.slice(-4)}
-                </div>
-              ) : null}
-              {isWorld ? (
-                avatar ? (
-                  <div className="chip username">
-                    {avatar.name}
-                    {avatar.hasClaimedName ? <i className="verified"></i> : null}
-                  </div>
-                ) : null
-              ) : (
-                <div className="chip parcel">
-                  <i className="pin"></i>
-                  {project.scene.base}
-                </div>
-              )}
-            </div>
-            <div className="scene">
-              <div className="info">
-                <div
-                  className="thumbnail"
-                  style={{ backgroundImage: `url(${addBase64ImagePrefix(project.thumbnail)})` }}
-                />
-                <div className="text">
-                  <Typography variant="body1">{project.title}</Typography>
-                  <Typography
-                    variant="body2"
-                    color="#A09BA8"
-                  >
-                    {project.description}
-                  </Typography>
-                </div>
-              </div>
-              {loadingPublish ? (
-                <div className="header">
-                  <Loader />
-                  <Typography variant="h5">
-                    {t('modal.publish_project.deploy.deploying.publish')}
-                  </Typography>
-                </div>
-              ) : publishError || !deployment || deployment.status === 'failed' ? (
-                <Error
-                  errorMessage={deployment?.error?.message}
-                  errorCause={publishError || deployment?.error?.cause}
-                  errorType={
-                    publishError
-                      ? 'code_error'
-                      : deployment?.error?.name === 'INVALID_IDENTITY'
-                        ? 'identity_error'
-                        : 'deployment_error'
-                  }
-                  steps={steps}
-                  onRetry={handleDeployRetry}
-                  onReportIssue={handleReportIssue}
-                  goToSignIn={handleGoToSignIn}
-                />
-              ) : (
-                <>
-                  {deployment.status === 'idle' && (
-                    <Idle
-                      files={deployment.files}
-                      error={deployment.error}
-                      onClick={() => (skipWarning ? handlePublish() : setShowWarning(true))}
-                    />
-                  )}
-                  {deployment.status === 'pending' && (
-                    <Deploying
-                      deployment={deployment}
-                      url={jumpInUrl}
-                      steps={steps}
-                      onClick={handleJumpIn}
-                      onRetry={handleDeployRetry}
-                    />
-                  )}
-                  {deployment.status === 'complete' && (
-                    <Success
-                      info={deployment.info}
-                      url={jumpInUrl}
-                      onClick={handleJumpIn}
-                    />
-                  )}
-                </>
-              )}
-            </div>
-          </>
+            ) : hasError ? (
+              <Error
+                errorMessage={deployment?.error?.message}
+                errorCause={publishError || deployment?.error?.cause}
+                errorType={
+                  publishError
+                    ? 'code_error'
+                    : deployment?.error?.name === 'INVALID_IDENTITY'
+                      ? 'identity_error'
+                      : 'deployment_error'
+                }
+                steps={steps}
+                onRetry={handleDeployRetry}
+                onReportIssue={handleReportIssue}
+                goToSignIn={handleGoToSignIn}
+              />
+            ) : (
+              <>
+                {deployment.status === 'idle' && undeployStatus === 'idle' && (
+                  <Idle
+                    files={deployment.files}
+                    error={deployment.error}
+                    onClick={() => (skipWarning ? handlePublish() : setShowWarning(true))}
+                  />
+                )}
+                {(deployment.status === 'pending' || undeployStatus === 'pending') && (
+                  <Deploying
+                    deployment={deployment}
+                    url={jumpInUrl}
+                    steps={steps}
+                    onClick={handleJumpIn}
+                    onRetry={handleDeployRetry}
+                  />
+                )}
+                {deployment.status === 'complete' && (
+                  <Success
+                    info={deployment.info}
+                    url={jumpInUrl}
+                    onClick={handleJumpIn}
+                  />
+                )}
+              </>
+            )}
+          </ProjectStepWrapper>
         )}
       </div>
     </PublishModal>

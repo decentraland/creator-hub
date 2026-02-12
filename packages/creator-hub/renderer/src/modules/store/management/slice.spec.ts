@@ -47,7 +47,6 @@ const WorldRoleType = {
 } as const;
 
 const createMockWorldsAPI = () => ({
-  fetchWorld: vi.fn(),
   fetchWorldScenes: vi.fn(),
   fetchWorldSettings: vi.fn(),
   fetchWalletStats: vi.fn(),
@@ -463,23 +462,343 @@ describe('management slice', () => {
   });
 
   describe('fetchParcelsPermission', () => {
-    it('should update parcels array and set status to succeeded', async () => {
-      const mockParcels = { parcels: ['0,0', '1,1', '2,2'] };
+    describe('when total is less than 100', () => {
+      it('should fetch all parcels in single request', async () => {
+        const mockParcels = { parcels: ['0,0', '1,1', '2,2'], total: 3 };
 
-      mockWorldsAPI.fetchParcelsPermission.mockResolvedValue(mockParcels);
-      await store.dispatch(
-        fetchParcelsPermission({
-          worldName: TEST_WORLD_NAME,
-          permissionName: 'deployment',
-          walletAddress: TEST_WALLET_ADDRESS,
-        }),
-      );
+        mockWorldsAPI.fetchParcelsPermission.mockResolvedValue(mockParcels);
+        await store.dispatch(
+          fetchParcelsPermission({
+            worldName: TEST_WORLD_NAME,
+            permissionName: 'deployment',
+            walletAddress: TEST_WALLET_ADDRESS,
+          }),
+        );
 
-      const state = store.getState().management;
-      expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.parcels).toEqual(
-        mockParcels.parcels,
-      );
-      expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.status).toBe('succeeded');
+        const state = store.getState().management;
+        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.parcels).toEqual(
+          mockParcels.parcels,
+        );
+        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.status).toBe('succeeded');
+        expect(mockWorldsAPI.fetchParcelsPermission).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    describe('when total is exactly 100', () => {
+      it('should fetch all parcels in single request', async () => {
+        const mockParcels = {
+          parcels: Array.from({ length: 100 }, (_, i) => `${i},${i}`),
+          total: 100,
+        };
+
+        mockWorldsAPI.fetchParcelsPermission.mockResolvedValue(mockParcels);
+        await store.dispatch(
+          fetchParcelsPermission({
+            worldName: TEST_WORLD_NAME,
+            permissionName: 'deployment',
+            walletAddress: TEST_WALLET_ADDRESS,
+          }),
+        );
+
+        const state = store.getState().management;
+        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.parcels).toHaveLength(100);
+        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.status).toBe('succeeded');
+        expect(mockWorldsAPI.fetchParcelsPermission).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    describe('when total is 101', () => {
+      it('should fetch parcels in parallel across multiple pages', async () => {
+        const firstPageParcels = Array.from({ length: 100 }, (_, i) => `${i},${i}`);
+        const secondPageParcels = ['100,100'];
+
+        mockWorldsAPI.fetchParcelsPermission
+          .mockResolvedValueOnce({
+            parcels: firstPageParcels,
+            total: 101,
+          })
+          .mockResolvedValueOnce({
+            parcels: secondPageParcels,
+            total: 101,
+          });
+
+        await store.dispatch(
+          fetchParcelsPermission({
+            worldName: TEST_WORLD_NAME,
+            permissionName: 'deployment',
+            walletAddress: TEST_WALLET_ADDRESS,
+          }),
+        );
+
+        const state = store.getState().management;
+        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.parcels).toHaveLength(101);
+        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.status).toBe('succeeded');
+        expect(mockWorldsAPI.fetchParcelsPermission).toHaveBeenCalledTimes(2);
+        expect(mockWorldsAPI.fetchParcelsPermission).toHaveBeenNthCalledWith(
+          1,
+          TEST_WORLD_NAME,
+          'deployment',
+          TEST_WALLET_ADDRESS,
+          { limit: 100, offset: 0 },
+        );
+        expect(mockWorldsAPI.fetchParcelsPermission).toHaveBeenNthCalledWith(
+          2,
+          TEST_WORLD_NAME,
+          'deployment',
+          TEST_WALLET_ADDRESS,
+          { limit: 100, offset: 100 },
+        );
+      });
+    });
+
+    describe('when total is 500', () => {
+      it('should fetch all parcels in parallel across 5 pages', async () => {
+        mockWorldsAPI.fetchParcelsPermission.mockImplementation(
+          async (_worldName, _permissionName, _walletAddress, params) => {
+            const offset = params?.offset || 0;
+            const limit = params?.limit || 100;
+            const startIndex = offset;
+            const endIndex = Math.min(offset + limit, 500);
+            const parcels = Array.from(
+              { length: endIndex - startIndex },
+              (_, i) => `${startIndex + i},${startIndex + i}`,
+            );
+            return { parcels, total: 500 };
+          },
+        );
+
+        await store.dispatch(
+          fetchParcelsPermission({
+            worldName: TEST_WORLD_NAME,
+            permissionName: 'deployment',
+            walletAddress: TEST_WALLET_ADDRESS,
+          }),
+        );
+
+        const state = store.getState().management;
+        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.parcels).toHaveLength(500);
+        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.status).toBe('succeeded');
+        expect(mockWorldsAPI.fetchParcelsPermission).toHaveBeenCalledTimes(5);
+        expect(mockWorldsAPI.fetchParcelsPermission).toHaveBeenCalledWith(
+          TEST_WORLD_NAME,
+          'deployment',
+          TEST_WALLET_ADDRESS,
+          { limit: 100, offset: 0 },
+        );
+        expect(mockWorldsAPI.fetchParcelsPermission).toHaveBeenCalledWith(
+          TEST_WORLD_NAME,
+          'deployment',
+          TEST_WALLET_ADDRESS,
+          { limit: 100, offset: 100 },
+        );
+        expect(mockWorldsAPI.fetchParcelsPermission).toHaveBeenCalledWith(
+          TEST_WORLD_NAME,
+          'deployment',
+          TEST_WALLET_ADDRESS,
+          { limit: 100, offset: 200 },
+        );
+        expect(mockWorldsAPI.fetchParcelsPermission).toHaveBeenCalledWith(
+          TEST_WORLD_NAME,
+          'deployment',
+          TEST_WALLET_ADDRESS,
+          { limit: 100, offset: 300 },
+        );
+        expect(mockWorldsAPI.fetchParcelsPermission).toHaveBeenCalledWith(
+          TEST_WORLD_NAME,
+          'deployment',
+          TEST_WALLET_ADDRESS,
+          { limit: 100, offset: 400 },
+        );
+      });
+    });
+
+    describe('when API returns null', () => {
+      it('should handle null response gracefully', async () => {
+        mockWorldsAPI.fetchParcelsPermission.mockResolvedValue(null);
+
+        await store.dispatch(
+          fetchParcelsPermission({
+            worldName: TEST_WORLD_NAME,
+            permissionName: 'deployment',
+            walletAddress: TEST_WALLET_ADDRESS,
+          }),
+        );
+
+        const state = store.getState().management;
+        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.parcels).toEqual([]);
+        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.status).toBe('succeeded');
+      });
+    });
+
+    describe('when some pages fail', () => {
+      it('should collect successful results and skip failed pages', async () => {
+        const firstPageParcels = Array.from({ length: 100 }, (_, i) => `${i},${i}`);
+
+        mockWorldsAPI.fetchParcelsPermission
+          .mockResolvedValueOnce({
+            parcels: firstPageParcels,
+            total: 250,
+          })
+          .mockResolvedValueOnce({
+            parcels: Array.from({ length: 100 }, (_, i) => `${100 + i},${100 + i}`),
+            total: 250,
+          })
+          .mockResolvedValueOnce(null);
+
+        await store.dispatch(
+          fetchParcelsPermission({
+            worldName: TEST_WORLD_NAME,
+            permissionName: 'deployment',
+            walletAddress: TEST_WALLET_ADDRESS,
+          }),
+        );
+
+        const state = store.getState().management;
+        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.parcels).toHaveLength(200);
+        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.status).toBe('succeeded');
+      });
+    });
+
+    describe('worldName validation', () => {
+      it('should update parcels when worldName matches', () => {
+        // Dispatch pending to set the worldName
+        store.dispatch({
+          type: fetchParcelsPermission.pending.type,
+          meta: {
+            arg: {
+              worldName: TEST_WORLD_NAME,
+              permissionName: 'deployment',
+              walletAddress: TEST_WALLET_ADDRESS,
+            },
+          },
+        });
+
+        // Dispatch fulfilled with matching worldName
+        store.dispatch({
+          type: fetchParcelsPermission.fulfilled.type,
+          payload: {
+            walletAddress: TEST_WALLET_ADDRESS,
+            parcels: { parcels: ['0,0', '1,1', '2,2'] },
+          },
+          meta: {
+            arg: {
+              worldName: TEST_WORLD_NAME,
+              permissionName: 'deployment',
+              walletAddress: TEST_WALLET_ADDRESS,
+            },
+          },
+        });
+
+        const state = store.getState().management;
+        expect(state.worldPermissions.worldName).toBe(TEST_WORLD_NAME);
+        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.parcels).toEqual([
+          '0,0',
+          '1,1',
+          '2,2',
+        ]);
+        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.status).toBe('succeeded');
+      });
+
+      it('should not update parcels when worldName does not match on fulfilled', () => {
+        // Set up initial state with one worldName
+        store.dispatch({
+          type: fetchParcelsPermission.pending.type,
+          meta: {
+            arg: {
+              worldName: TEST_WORLD_NAME,
+              permissionName: 'deployment',
+              walletAddress: TEST_WALLET_ADDRESS,
+            },
+          },
+        });
+
+        // Try to dispatch fulfilled with a different worldName
+        store.dispatch({
+          type: fetchParcelsPermission.fulfilled.type,
+          payload: {
+            walletAddress: TEST_WALLET_ADDRESS,
+            parcels: { parcels: ['0,0', '1,1', '2,2'] },
+          },
+          meta: {
+            arg: {
+              worldName: 'different-world',
+              permissionName: 'deployment',
+              walletAddress: TEST_WALLET_ADDRESS,
+            },
+          },
+        });
+
+        const state = store.getState().management;
+        // worldName should still be the original one
+        expect(state.worldPermissions.worldName).toBe(TEST_WORLD_NAME);
+        // Parcels should still be in loading state (from pending action)
+        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.status).toBe('loading');
+        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.parcels).toEqual([]);
+      });
+
+      it('should not update parcels when worldName does not match on rejected', () => {
+        // Set up initial state with one worldName
+        store.dispatch({
+          type: fetchParcelsPermission.pending.type,
+          meta: {
+            arg: {
+              worldName: TEST_WORLD_NAME,
+              permissionName: 'deployment',
+              walletAddress: TEST_WALLET_ADDRESS,
+            },
+          },
+        });
+
+        // Try to dispatch rejected with a different worldName
+        store.dispatch({
+          type: fetchParcelsPermission.rejected.type,
+          error: { message: 'Failed to fetch parcels' },
+          meta: {
+            arg: {
+              worldName: 'different-world',
+              permissionName: 'deployment',
+              walletAddress: TEST_WALLET_ADDRESS,
+            },
+          },
+        });
+
+        const state = store.getState().management;
+        // worldName should still be the original one
+        expect(state.worldPermissions.worldName).toBe(TEST_WORLD_NAME);
+        // Parcels should still be in loading state (should not be set to failed)
+        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.status).toBe('loading');
+      });
+
+      it('should update parcels to failed when worldName matches on rejected', () => {
+        // Set up initial state
+        store.dispatch({
+          type: fetchParcelsPermission.pending.type,
+          meta: {
+            arg: {
+              worldName: TEST_WORLD_NAME,
+              permissionName: 'deployment',
+              walletAddress: TEST_WALLET_ADDRESS,
+            },
+          },
+        });
+
+        // Dispatch rejected with matching worldName
+        store.dispatch({
+          type: fetchParcelsPermission.rejected.type,
+          error: { message: 'Failed to fetch parcels' },
+          meta: {
+            arg: {
+              worldName: TEST_WORLD_NAME,
+              permissionName: 'deployment',
+              walletAddress: TEST_WALLET_ADDRESS,
+            },
+          },
+        });
+
+        const state = store.getState().management;
+        expect(state.worldPermissions.worldName).toBe(TEST_WORLD_NAME);
+        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.status).toBe('failed');
+      });
     });
   });
 
@@ -931,6 +1250,18 @@ describe('management slice', () => {
     });
 
     it('should return parcels state for specific address', () => {
+      // Dispatch pending first to set the worldName
+      store.dispatch({
+        type: fetchParcelsPermission.pending.type,
+        meta: {
+          arg: {
+            worldName: TEST_WORLD_NAME,
+            permissionName: 'deployment',
+            walletAddress: TEST_WALLET_ADDRESS,
+          },
+        },
+      });
+
       store.dispatch({
         type: fetchParcelsPermission.fulfilled.type,
         payload: {

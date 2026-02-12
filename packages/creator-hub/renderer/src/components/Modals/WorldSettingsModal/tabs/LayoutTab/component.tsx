@@ -8,8 +8,7 @@ import WarningIcon from '@mui/icons-material/WarningAmber';
 import { Box, Typography } from 'decentraland-ui2';
 import { useDispatch } from '#store';
 import type { WorldScene, WorldSettings } from '/@/lib/worlds';
-import type { Coords } from '/@/lib/land';
-import { idToCoords } from '/@/lib/land';
+import { type Coords, idToCoords } from '/@/lib/land';
 import { t } from '/@/modules/store/translation/utils';
 import { actions as managementActions } from '/@/modules/store/management';
 import { formatWorldSize, getWorldDimensions, MAX_COORDINATE } from '/@/modules/world';
@@ -123,7 +122,10 @@ const WorldScenesView: React.FC<{
               <Typography className="CurrentWorldLabel">
                 {t('modal.world_settings.layout.current_world')}
               </Typography>
-              <Typography variant="h6">
+              <Typography
+                variant="h6"
+                className="WorldTitle"
+              >
                 {worldSettings.title || t('modal.world_settings.layout.title_placeholder')}
               </Typography>
               <Row className="WorldMetadata">

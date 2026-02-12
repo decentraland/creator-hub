@@ -126,24 +126,52 @@
     "publish_project": {
       "title": "Publish \"{title}\"",
       "select": "Where would you like to deploy your scene to?",
+      "roles": {
+        "owner": "Owner",
+        "collaborator": "Collaborator"
+      },
       "worlds": {
         "title": "Worlds",
         "description": "Your own virtual space, separate from Genesis City. Claim yours when you get a NAME.",
         "action": "Publish to a World",
         "select_world": {
-          "title": "Publish to World",
-          "description": "Select the Decentraland NAME or ENS Domain that will define the URL",
+          "title": "Publish to your World",
+          "description": "Choose the domain where your world will be published.",
           "world_name": "WORLD (NAME)",
           "placeholder": "Select a Name",
           "claim_new_name": "Claim a new NAME",
           "claim_new_ens_domain": "Claim an ENS Domain",
-          "action": "Publish",
+          "actions": {
+            "select_location": "Select Location",
+            "review": "Review",
+            "publish": "Publish",
+            "reset": "Reset",
+            "cancel": "Cancel",
+            "confirm": "Confirm"
+          },
           "ens_providers": {
             "dcl": "NAME",
             "ens": "ENS Domain"
           },
-          "world_has_content": "The existing content in {world} World will be replaced with the new content you're about to publish.",
-          "confirm_world_replace_content": "I understand that this action is irreversible"
+          "multi_scene": {
+            "title": "Multi-Scene World (Advanced)",
+            "description": "Allow your world to contain more than 1 scene. Total world size will depend on your published world layout.",
+            "current_world": "Current World",
+            "settings_button": "Settings",
+            "scenes_count": "{count} {count, plural, one {scene} other {scenes}}"
+          },
+          "location": {
+            "description": "Select where your scene will be published.",
+            "parcels_place": "Placing {count} parcels at",
+            "available_parcels_count": "Available parcels: {count}",
+            "no_parcels_fit_error": "Current scene size doesn’t fit in the available parcels."
+          },
+          "confirm_overwrite": {
+            "title": "Overwrite scenes?",
+            "description": "Publishing your scene here will delete the entire scenes present in the selected parcels.",
+            "scenes_count": "Your parcel selection already contains <b>{count} {count, plural, one {scene} other {scenes}}</b>:",
+            "scene_title_placeholder": "Scene {index}"
+          }
         },
         "empty_names": {
           "title": "You don't have any available World",
@@ -184,10 +212,12 @@
         "world": "Publish to your World",
         "land": "Publish to your Land",
         "server": "Publish to Server",
+        "scene_size": "Scene size: {size}",
         "loading": "Loading...",
         "error": "Error",
         "warning": {
-          "message": "PLEASE READ CAREFULLY:<ul><li>After deployment, your scene will undergo processing before becoming available.</li><li>This process may take 15 minutes on average.</li><li>During this time, your scene will appear empty until it has been updated on the client.</li></ul>",
+          "message_basic": "PLEASE READ CAREFULLY:<ul><li>After deployment, your scene will undergo processing before becoming available.</li><li>This process may take 15 minutes on average.</li><li>During this time, your scene will appear empty until it has been updated on the client.</li></ul>",
+          "message_replacing_world_content": "PLEASE READ CAREFULLY:<ul><li>The existing content in your World will be totally or partially replaced with the new content you're about to publish.</li><li>After deployment, your scene will undergo processing before becoming available.</li><li>This process may take 15 minutes on average.</li><li>During this time, your scene will appear empty until it has been updated on the client.</li></ul>",
           "checkbox": "Don't show again",
           "continue": "Continue",
           "back": "Go back"
@@ -211,6 +241,7 @@
             "uploading": "Uploading",
             "converting": "Converting",
             "optimizing": "Optimizing",
+            "unpublishing": "Unpublishing",
             "loading": "In process...",
             "failed": "Error"
           },
@@ -490,7 +521,11 @@
       "parcels": {
         "title": "Custom Coordinates",
         "description": "Click individual tiles to include/exclude them in the layout.",
-        "parcels_count": "{count} Parcels"
+        "parcels_count": "Selecting {count} {count, plural, one {parcel} other {parcels}}",
+        "actions": {
+          "discard": "Discard",
+          "confirm": "Confirm"
+        }
       }
     },
     "create_project": {
