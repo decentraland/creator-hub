@@ -6,6 +6,7 @@ import { AuthServerProvider } from 'decentraland-connect';
 
 import { editor } from '#preload';
 import { delay } from '/shared/utils';
+import { isFetchError } from '/shared/fetch';
 import type { DeploymentComponentsStatus, Info, Status, File, ErrorName } from '/@/lib/deploy';
 import { DeploymentError, isDeploymentError } from '/@/lib/deploy';
 import { createAsyncThunk } from '/@/modules/store/thunk';
@@ -155,6 +156,10 @@ export const deploy = createAsyncThunk(
           return rejectWithValue(
             new DeploymentError('MAX_POINTER_SIZE_EXCEEDED', componentsStatus, error),
           );
+        }
+
+        if (isFetchError(error, '*')) {
+          return rejectWithValue(new DeploymentError('FETCH_ERROR', componentsStatus, error));
         }
 
         if (retries <= 0) {
