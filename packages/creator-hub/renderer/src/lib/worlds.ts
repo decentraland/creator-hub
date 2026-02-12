@@ -286,27 +286,6 @@ export class Worlds {
     return `${this.url}/contents/${hash}`;
   }
 
-  public async fetchWorld(name: string) {
-    try {
-      const result = await fetch(`${this.url}/entities/active`, {
-        method: 'POST',
-        body: JSON.stringify({
-          pointers: [name],
-        }),
-      });
-      if (result.ok) {
-        const json = await result.json();
-        return json as WorldDeployment[];
-      } else {
-        return null;
-      }
-    } catch (_) {
-      /* empty */
-    }
-
-    return null;
-  }
-
   public async fetchWorlds(
     params: {
       limit?: number;
