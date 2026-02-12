@@ -270,23 +270,6 @@ export const fetchWorldScenes = createAsyncThunk(
   },
 );
 
-export const unpublishWorld = createAsyncThunk(
-  'management/unpublishWorld',
-  async ({ worldName }: { worldName: string }, { dispatch }) => {
-    const connectedAccount = AuthServerProvider.getAccount();
-    if (!connectedAccount) throw new Error('No connected account found');
-
-    const WorldsAPI = new Worlds();
-    const success = await WorldsAPI.unpublishWorld(connectedAccount, worldName);
-    if (success) {
-      await dispatch(fetchWorldScenes({ worldName })).unwrap();
-      dispatch(fetchManagedProjectsFiltered()); // Background refresh. No need to await.
-    } else {
-      throw new Error('Failed to unpublish world');
-    }
-  },
-);
-
 export const unpublishWorldScene = createAsyncThunk(
   'management/unpublishWorldScene',
   async ({ worldName, sceneCoord }: { worldName: string; sceneCoord: string }, { dispatch }) => {
@@ -306,10 +289,18 @@ export const unpublishWorldScene = createAsyncThunk(
 
 export const unpublishEntireWorld = createAsyncThunk(
   'management/unpublishEntireWorld',
-  async ({ address, worldName }: { address: string; worldName: string }) => {
+  async ({ worldName }: { worldName: string }, { dispatch }) => {
+    const connectedAccount = AuthServerProvider.getAccount();
+    if (!connectedAccount) throw new Error('No connected account found');
+
     const WorldsAPI = new Worlds();
-    const success = await WorldsAPI.unpublishEntireWorld(address, worldName);
-    return success;
+    const success = await WorldsAPI.unpublishEntireWorld(connectedAccount, worldName);
+    if (success) {
+      await dispatch(fetchWorldScenes({ worldName })).unwrap();
+      dispatch(fetchManagedProjectsFiltered()); // Background refresh. No need to await.
+    } else {
+      throw new Error('Failed to unpublish world');
+    }
   },
 );
 
@@ -677,7 +668,7 @@ export const actions = {
   fetchAccountHoldings,
   fetchWorldScenes,
   unpublishWorldScene,
-  unpublishWorld,
+  unpublishEntireWorld,
   fetchWorldPermissions,
   updateWorldPermissions,
   addAddressPermission,
@@ -685,7 +676,6 @@ export const actions = {
   fetchParcelsPermission,
   addParcelsPermission,
   removeParcelsPermission,
-  unpublishEntireWorld,
 };
 
 export const reducer = slice.reducer;

@@ -291,12 +291,14 @@ export const slice = createSlice({
           }),
         );
       })
-      .addCase(managementActions.unpublishWorld.rejected, state => {
-        state.notifications = state.notifications.filter($ => $.requestId !== 'unpublishWorld');
+      .addCase(managementActions.unpublishEntireWorld.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'unpublishEntireWorld',
+        );
         state.notifications.push(
           createGenericNotification('error', t('snackbar.generic.unpublish_world_failed'), {
             duration: 5000,
-            requestId: 'unpublishWorld',
+            requestId: 'unpublishEntireWorld',
           }),
         );
       })

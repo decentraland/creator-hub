@@ -382,14 +382,6 @@ export class Worlds {
     return { success: result.status === 200 };
   }
 
-  public async unpublishWorld(address: string, worldName: string) {
-    const result = await fetch(`${this.url}/entities/${worldName}`, {
-      method: 'DELETE',
-      identity: this.withIdentity(address),
-    });
-    return result.status === 200;
-  }
-
   /** Unpublish a single scene from a world given one of the coordinates (any of them) from the scene */
   public async unpublishWorldScene(address: string, worldName: string, sceneCoord: string) {
     const result = await fetch(`${this.url}/world/${worldName}/scenes/${sceneCoord}`, {
@@ -399,12 +391,13 @@ export class Worlds {
     return result.status === 200;
   }
 
+  /** Unpublish all scenes from a given world */
   public async unpublishEntireWorld(address: string, worldName: string) {
     const result = await fetch(`${this.url}/entities/${worldName}`, {
       method: 'DELETE',
       identity: this.withIdentity(address),
     });
-    return result.status === 204;
+    return result.status === 200;
   }
 
   public fetchWalletStats = async (address: string) => {

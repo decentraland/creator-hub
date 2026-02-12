@@ -18,14 +18,13 @@ import {
   addAddressPermission,
   fetchParcelsPermission,
   unpublishWorldScene,
-  unpublishWorld,
+  unpublishEntireWorld,
   updateWorldPermissions,
   removeAddressPermission,
   addParcelsPermission,
   removeParcelsPermission,
   fetchWorlds,
   fetchEmptyWorlds,
-  unpublishEntireWorld,
   updateWorldSettings,
 } from './slice';
 
@@ -54,7 +53,6 @@ const createMockWorldsAPI = () => ({
   fetchWalletStats: vi.fn(),
   getContentSrcUrl: vi.fn((hash: string) => `https://content.com/${hash}`),
   unpublishWorldScene: vi.fn(),
-  unpublishWorld: vi.fn(),
   unpublishEntireWorld: vi.fn(),
   putWorldSettings: vi.fn(),
   getPermissions: vi.fn(),
@@ -955,107 +953,55 @@ describe('management slice', () => {
     });
   });
 
-  describe('unpublishWorld', () => {
-    it('should call unpublishWorld API and return refresh scenes when unpublishing succeeds', async () => {
+  describe('unpublishEntireWorld', () => {
+    it('should call unpublishEntireWorld API and return refresh scenes when unpublishing succeeds', async () => {
       vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
-      mockWorldsAPI.unpublishWorld.mockResolvedValueOnce(true);
+      mockWorldsAPI.unpublishEntireWorld.mockResolvedValueOnce(true);
 
       await store
         .dispatch(
-          unpublishWorld({
+          unpublishEntireWorld({
             worldName: TEST_WORLD_NAME,
           }),
         )
         .unwrap();
 
-      expect(mockWorldsAPI.unpublishWorld).toHaveBeenCalledWith(TEST_ADDRESS, TEST_WORLD_NAME);
+      expect(mockWorldsAPI.unpublishEntireWorld).toHaveBeenCalledWith(
+        TEST_ADDRESS,
+        TEST_WORLD_NAME,
+      );
       expect(mockWorldsAPI.fetchWorldScenes).toHaveBeenCalledWith(TEST_WORLD_NAME);
     });
 
     it('should throw error when unpublishing fails', async () => {
       vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
-      mockWorldsAPI.unpublishWorld.mockResolvedValueOnce(false);
-
-      await expect(
-        store
-          .dispatch(
-            unpublishWorld({
-              worldName: TEST_WORLD_NAME,
-            }),
-          )
-          .unwrap(),
-      ).rejects.toThrow();
-
-      expect(mockWorldsAPI.unpublishWorld).toHaveBeenCalledWith(TEST_ADDRESS, TEST_WORLD_NAME);
-    });
-
-    it('should handle API errors gracefully', async () => {
-      const errorMessage = 'Failed to unpublish world';
-      mockWorldsAPI.unpublishWorld.mockRejectedValueOnce(new Error(errorMessage));
-      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
-
-      await expect(
-        store
-          .dispatch(
-            unpublishWorld({
-              worldName: TEST_WORLD_NAME,
-            }),
-          )
-          .unwrap(),
-      ).rejects.toThrow();
-
-      expect(mockWorldsAPI.unpublishWorld).toHaveBeenCalledWith(TEST_ADDRESS, TEST_WORLD_NAME);
-    });
-  });
-
-  describe('unpublishEntireWorld', () => {
-    it('should call unpublishEntireWorld API and return true when unpublishing succeeds', async () => {
-      mockWorldsAPI.unpublishEntireWorld.mockResolvedValueOnce(true);
-
-      const result = await store
-        .dispatch(
-          unpublishEntireWorld({
-            address: TEST_ADDRESS,
-            worldName: TEST_WORLD_NAME,
-          }),
-        )
-        .unwrap();
-
-      expect(mockWorldsAPI.unpublishEntireWorld).toHaveBeenCalledWith(
-        TEST_ADDRESS,
-        TEST_WORLD_NAME,
-      );
-      expect(result).toBe(true);
-    });
-
-    it('should return false when unpublishing fails', async () => {
       mockWorldsAPI.unpublishEntireWorld.mockResolvedValueOnce(false);
-
-      const result = await store
-        .dispatch(
-          unpublishEntireWorld({
-            address: TEST_ADDRESS,
-            worldName: TEST_WORLD_NAME,
-          }),
-        )
-        .unwrap();
-
-      expect(mockWorldsAPI.unpublishEntireWorld).toHaveBeenCalledWith(
-        TEST_ADDRESS,
-        TEST_WORLD_NAME,
-      );
-      expect(result).toBe(false);
-    });
-
-    it('should handle API errors gracefully', async () => {
-      const errorMessage = 'Failed to unpublish entire world';
-      mockWorldsAPI.unpublishEntireWorld.mockRejectedValueOnce(new Error(errorMessage));
 
       await expect(
         store
           .dispatch(
             unpublishEntireWorld({
-              address: TEST_ADDRESS,
+              worldName: TEST_WORLD_NAME,
+            }),
+          )
+          .unwrap(),
+      ).rejects.toThrow();
+
+      expect(mockWorldsAPI.unpublishEntireWorld).toHaveBeenCalledWith(
+        TEST_ADDRESS,
+        TEST_WORLD_NAME,
+      );
+    });
+
+    it('should handle API errors gracefully', async () => {
+      const errorMessage = 'Failed to unpublish world';
+      mockWorldsAPI.unpublishEntireWorld.mockRejectedValueOnce(new Error(errorMessage));
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
+
+      await expect(
+        store
+          .dispatch(
+            unpublishEntireWorld({
               worldName: TEST_WORLD_NAME,
             }),
           )
