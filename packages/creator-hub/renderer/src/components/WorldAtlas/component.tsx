@@ -9,29 +9,37 @@ import { getWorldDimensions, MAX_COORDINATE, MIN_COORDINATE } from '/@/modules/w
 import { t } from '/@/modules/store/translation/utils';
 import './styles.css';
 
+export type AtlasScene = Pick<WorldScene, 'parcels'>;
+
 type Props = Partial<AtlasProps> & {
-  worldScenes: WorldScene[];
+  worldScenes: AtlasScene[];
   showWorldSize?: boolean;
+  floatingContent?: React.ReactNode;
+  colorsOverride?: Partial<Record<keyof typeof WorldAtlasColors, string>>;
   onMouseDownEvent?: (e: React.MouseEvent<HTMLDivElement>) => void;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
 };
 
 export const WorldAtlasColors = {
-  emptyParcel: '#000000',
-  worldParcel: '#FF2D55',
-  sceneParcel: '#1F87E5',
-  selectedParcel: '#5E5B67',
-  selectedStroke: '#FFFFFF',
+  noPermissionParcel: '#000000CC', // Black semi-transparent overlay
+  unavailableParcel: '#000000', // Black
+  availableParcel: 'transparent', // Default tiles color.
+  worldParcel: '#FF2D55', // Red
+  sceneParcel: '#1F87E5', // Blue
+  selectedParcel: '#FF9990', // Pink
+  selectedStroke: '#FF0044', // Red
 } as const;
 
 const WorldAtlas: React.FC<Props> = React.memo(
   ({
     worldScenes,
+    floatingContent,
     showWorldSize = true,
     isDraggable = true,
     withZoomControls = true,
     height = 480,
+    colorsOverride = {},
     onMouseDownEvent,
     onMouseEnter,
     onMouseLeave,
@@ -40,6 +48,8 @@ const WorldAtlas: React.FC<Props> = React.memo(
     const dimensions = useMemo(() => getWorldDimensions(worldScenes), [worldScenes]);
     const centerX = Math.floor((dimensions.minX + dimensions.maxX) / 2);
     const centerY = Math.floor((dimensions.minY + dimensions.maxY) / 2);
+
+    const colors = useMemo(() => ({ ...WorldAtlasColors, ...colorsOverride }), [colorsOverride]);
 
     const sceneParcelsSet = useMemo(
       () => new Set(worldScenes.flatMap(scene => scene.parcels ?? [])),
@@ -58,9 +68,10 @@ const WorldAtlas: React.FC<Props> = React.memo(
     );
 
     const emptyParcelLayer = useCallback(
-      (x: number, y: number) =>
-        isWithinWorldBounds(x, y) ? { color: WorldAtlasColors.emptyParcel, scale: 1.0 } : null,
-      [isWithinWorldBounds],
+      (x: number, y: number) => ({
+        color: isWithinWorldBounds(x, y) ? colors.availableParcel : colors.unavailableParcel,
+      }),
+      [isWithinWorldBounds, colors],
     );
 
     const worldLayer = useCallback(
@@ -70,20 +81,18 @@ const WorldAtlas: React.FC<Props> = React.memo(
           x <= dimensions.maxX &&
           y >= dimensions.minY &&
           y <= dimensions.maxY
-          ? { color: WorldAtlasColors.worldParcel, scale: 1.0 }
+          ? { color: colors.worldParcel }
           : null;
       },
-      [dimensions],
+      [dimensions, colors],
     );
 
     const scenesLayer = useCallback(
       (x: number, y: number) => {
         const key = coordsToId(x, y);
-        return sceneParcelsSet.has(key)
-          ? { color: WorldAtlasColors.sceneParcel, scale: 1.0 }
-          : null;
+        return sceneParcelsSet.has(key) ? { color: colors.sceneParcel } : null;
       },
-      [sceneParcelsSet],
+      [sceneParcelsSet, colors],
     );
 
     return (
@@ -97,6 +106,7 @@ const WorldAtlas: React.FC<Props> = React.memo(
         {/* @ts-expect-error TODO: Update properties in UI2, making the not required `optional` */}
         <Atlas
           {...props}
+          tiles={{}} // Empty to override Genesis City default tiles.
           layers={[emptyParcelLayer, worldLayer, scenesLayer, ...(props.layers ?? [])]}
           isDraggable={isDraggable}
           withZoomControls={withZoomControls}
@@ -104,12 +114,17 @@ const WorldAtlas: React.FC<Props> = React.memo(
           x={props.x ?? centerX}
           y={props.y ?? centerY}
         />
-        {showWorldSize && worldSize && (
-          <Box className="WorldSizeOverlay">
-            <ParcelsIcon />
-            <Typography variant="body2">
-              {t('modal.world_settings.layout.world_layout.world_size', { size: worldSize })}
-            </Typography>
+        {(floatingContent || (showWorldSize && worldSize)) && (
+          <Box className="TopLeftOverlay">
+            {showWorldSize && worldSize && (
+              <Box className="WorldSize">
+                <ParcelsIcon />
+                <Typography variant="body2">
+                  {t('modal.world_settings.layout.world_layout.world_size', { size: worldSize })}
+                </Typography>
+              </Box>
+            )}
+            {floatingContent}
           </Box>
         )}
       </Box>

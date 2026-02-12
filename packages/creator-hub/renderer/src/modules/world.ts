@@ -1,5 +1,4 @@
-import type { WorldScene } from '/@/lib/worlds';
-import { idToCoords } from '/@/lib/land';
+import { type Coords, idToCoords } from '/@/lib/land';
 
 export const MIN_COORDINATE = -150;
 export const MAX_COORDINATE = 150;
@@ -13,7 +12,19 @@ export type WorldDimensions = {
   height: number;
 };
 
-export function getWorldDimensions(worldScenes: WorldScene[]): WorldDimensions {
+export function getBaseParcel(parcels: string[]): Coords | null {
+  if (!parcels?.length) return null;
+  let baseParcel = { x: MAX_COORDINATE, y: MAX_COORDINATE };
+  parcels.forEach(parcel => {
+    const [x, y] = idToCoords(parcel);
+    if (Number(x) < baseParcel.x || Number(y) < baseParcel.y) {
+      baseParcel = { x: Number(x), y: Number(y) };
+    }
+  });
+  return [baseParcel.x, baseParcel.y];
+}
+
+export function getWorldDimensions(worldScenes: { parcels: string[] }[]): WorldDimensions {
   const parcels = new Set<string>(worldScenes?.flatMap(scene => scene.parcels ?? []) ?? []);
   if (parcels.size === 0) return { minX: 0, maxX: 0, minY: 0, maxY: 0, width: 0, height: 0 };
 

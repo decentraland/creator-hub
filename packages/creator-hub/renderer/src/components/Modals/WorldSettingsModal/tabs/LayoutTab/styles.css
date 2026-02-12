@@ -85,6 +85,7 @@
 .LayoutTab .WorldInfo .WorldInfoContent {
   flex: 1;
   padding: 8px 0;
+  overflow: hidden;
 }
 
 .LayoutTab .WorldInfo .CurrentWorldLabel {
@@ -141,6 +142,7 @@
 .LayoutTab .SceneItem .SceneInfo {
   flex: 1;
   padding: 8px 0;
+  overflow: hidden;
 }
 
 .LayoutTab .SceneTitle {

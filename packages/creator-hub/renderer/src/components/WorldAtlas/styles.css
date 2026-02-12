@@ -3,7 +3,7 @@
   width: 100%;
 }
 
-.WorldSizeOverlay {
+.TopLeftOverlay {
   position: absolute;
   top: 8px;
   left: 8px;
@@ -14,15 +14,25 @@
   color: var(--white);
   display: flex;
   align-items: center;
+  gap: 16px;
+}
+
+.MuiModal-root > .MuiPaper-root .TopLeftOverlay .MuiBox-root:first-child {
+  padding-bottom: 0;
+}
+
+.TopLeftOverlay .WorldSize {
+  display: flex;
+  align-items: center;
   gap: 4px;
 }
 
-.WorldSizeOverlay .MuiTypography-root {
+.TopLeftOverlay .MuiTypography-root {
   font-size: 12px;
   font-weight: 500;
 }
 
-.WorldSizeOverlay .MuiSvgIcon-root {
+.TopLeftOverlay .MuiSvgIcon-root {
   width: 16px;
   height: 16px;
 }

@@ -126,24 +126,52 @@
     "publish_project": {
       "title": "Publicar escena \"{title}\"",
       "select": "Selecciona dónde quieres publicar tu escena",
+      "roles": {
+        "owner": "Propietario",
+        "collaborator": "Colaborador"
+      },
       "worlds": {
         "title": "Worlds",
         "description": "No se puede encontrar en el mapa de Genesis City. \nHasta 100 usuarios pueden unirse simultáneamente.",
         "action": "Publicar Mundo",
         "select_world": {
-          "title": "Publicar Mundo",
-          "description": "Seleccione el NOMBRE de Decentraland o el Dominio ENS que definirá la URL",
+          "title": "Publicar en tu Mundo",
+          "description": "Elige el dominio donde se publicará tu mundo.",
           "world_name": "MUNDO (NOMBRE)",
           "placeholder": "Seleccione un Nombre",
           "claim_new_name": "Solicitar un nuevo Nombre",
           "claim_new_ens_domain": "Solicitar un nuevo dominio ENS",
-          "action": "Publicar",
+          "actions": {
+            "select_location": "Seleccionar Ubicación",
+            "review": "Revisar",
+            "publish": "Publicar",
+            "reset": "Reiniciar",
+            "cancel": "Cancelar",
+            "confirm": "Confirmar"
+          },
           "ens_providers": {
             "dcl": "NOMBRE",
             "ens": "DOMINIO ENS"
           },
-          "world_has_content": "El contenido existente en el mundo {world} será reemplazado por el nuevo contenido que estás a punto de publicar.",
-          "confirm_world_replace_content": "Entiendo que esta acción es irreversible."
+          "multi_scene": {
+            "title": "Mundo Multi-Escena (Avanzado)",
+            "description": "Permite que tu mundo contenga más de 1 escena. El tamaño total del mundo dependerá del diseño de tu mundo publicado.",
+            "current_world": "Mundo Actual",
+            "settings_button": "Configuración",
+            "scenes_count": "{count} {count, plural, one {escena} other {escenas}}"
+          },
+          "location": {
+            "description": "Selecciona dónde se publicará tu escena.",
+            "parcels_place": "Colocando {count} parcelas en",
+            "available_parcels_count": "Parcelas disponibles: {count}",
+            "no_parcels_fit_error": "La escena actual no cabe en las parcelas disponibles."
+          },
+          "confirm_overwrite": {
+            "title": "¿Sobrescribir escenas?",
+            "description": "Publicar tu escena aquí eliminará todas las escenas presentes en las parcelas seleccionadas.",
+            "scenes_count": "Tu selección de parcelas ya contiene <b>{count} {count, plural, one {escena} other {escenas}}</b>:",
+            "scene_title_placeholder": "Escena {index}"
+          }
         },
         "empty_names": {
           "title": "No tienes ningún mundo disponible",
@@ -184,10 +212,12 @@
         "world": "Publicar en tu Mundo",
         "land": "Publicar en tu Tierra",
         "server": "Publicar en Servidor",
+        "scene_size": "Tamaño de escena: {size}",
         "loading": "Cargando...",
         "error": "Error",
         "warning": {
-          "message": "POR FAVOR LEA CUIDADOSAMENTE:<ul><li>Después de la implementación, tu escena pasará por un proceso antes de estar disponible.</li><li>Este proceso puede tardar en promedio 15 minutos.</li><li>Durante este tiempo, tu escena aparecerá vacía hasta que se haya actualizado en el cliente.</li></ul>",
+          "message_basic": "POR FAVOR LEA CUIDADOSAMENTE:<ul><li>Después de la implementación, tu escena pasará por un proceso antes de estar disponible.</li><li>Este proceso puede tardar en promedio 15 minutos.</li><li>Durante este tiempo, tu escena aparecerá vacía hasta que se haya actualizado en el cliente.</li></ul>",
+          "message_replacing_world_content": "POR FAVOR LEA CUIDADOSAMENTE:<ul><li>El contenido existente en tu Mundo será total o parcialmente reemplazado con el nuevo contenido que estás a punto de publicar.</li><li>Después de la implementación, tu escena pasará por un proceso antes de estar disponible.</li><li>Este proceso puede tardar en promedio 15 minutos.</li><li>Durante este tiempo, tu escena aparecerá vacía hasta que se haya actualizado en el cliente.</li></ul>",
           "checkbox": "No mostrar de nuevo",
           "continue": "Continuar",
           "back": "Regresar"
@@ -211,6 +241,7 @@
             "uploading": "Subiendo",
             "converting": "Convirtiendo",
             "optimizing": "Optimizando",
+            "unpublishing": "Despublicando",
             "loading": "En proceso...",
             "failed": "Error"
           },
@@ -479,7 +510,11 @@
       "parcels": {
         "title": "Coordenadas Personalizadas",
         "description": "Haz clic en las celdas individuales para incluirlas/excluirlas del diseño.",
-        "parcels_count": "{count} Parcelas"
+        "parcels_count": "Seleccionando {count} {count, plural, one {parcela} other {parcelas}}",
+        "actions": {
+          "discard": "Descartar",
+          "confirm": "Confirmar"
+        }
       }
     },
     "create_project": {
