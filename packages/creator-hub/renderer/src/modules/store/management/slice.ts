@@ -250,7 +250,7 @@ export const updateWorldSettings = createAsyncThunk(
     );
     if (!success) return rejectWithValue({ message: error });
     await dispatch(fetchWorldSettings({ worldName })).unwrap();
-    dispatch(fetchManagedProjectsFiltered()).unwrap();
+    dispatch(fetchManagedProjectsFiltered()); // Background refresh. No need to await.
   },
 );
 

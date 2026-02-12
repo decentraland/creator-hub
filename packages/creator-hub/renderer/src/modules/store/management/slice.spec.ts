@@ -45,7 +45,6 @@ const WorldPermissionType = {
 } as const;
 
 const createMockWorldsAPI = () => ({
-  fetchWorld: vi.fn(),
   fetchWorlds: vi.fn(),
   fetchEmptyWorlds: vi.fn(),
   fetchWorldScenes: vi.fn(),
