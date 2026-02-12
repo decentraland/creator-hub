@@ -283,10 +283,18 @@ export const fetchWorldScenes = createAsyncThunk(
 
 export const unpublishWorld = createAsyncThunk(
   'management/unpublishWorld',
-  async ({ address, worldName }: { address: string; worldName: string }) => {
+  async ({ worldName }: { worldName: string }, { dispatch }) => {
+    const connectedAccount = AuthServerProvider.getAccount();
+    if (!connectedAccount) throw new Error('No connected account found');
+
     const WorldsAPI = new Worlds();
-    const success = await WorldsAPI.unpublishWorld(address, worldName);
-    return success;
+    const success = await WorldsAPI.unpublishWorld(connectedAccount, worldName);
+    if (success) {
+      await dispatch(fetchWorldScenes({ worldName })).unwrap();
+      dispatch(fetchAllManagedProjectsDetails({ address: connectedAccount })).unwrap(); // Background refresh. No need to await this.
+    } else {
+      throw new Error('Failed to unpublish world');
+    }
   },
 );
 
@@ -300,6 +308,7 @@ export const unpublishWorldScene = createAsyncThunk(
     const success = await WorldsAPI.unpublishWorldScene(connectedAccount, worldName, sceneCoord);
     if (success) {
       await dispatch(fetchWorldScenes({ worldName })).unwrap();
+      dispatch(fetchAllManagedProjectsDetails({ address: connectedAccount })).unwrap(); // Background refresh. No need to await this.
     } else {
       throw new Error('Failed to unpublish world scene');
     }
