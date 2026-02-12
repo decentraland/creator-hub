@@ -7,14 +7,18 @@ import './styles.css';
 
 export type Props = {
   isLoading?: boolean;
-  walletAddress: string;
+  value: string;
   size?: AvatarFaceProps['size'];
+  icon?: React.ReactNode;
+  name?: string;
+  subtitle?: string;
 };
 
 export const WorldPermissionsAvatarWithInfo: React.FC<Props> = React.memo(
-  ({ walletAddress, isLoading: externalIsLoading, size = 'small' }) => {
-    const { avatar, isLoading: isFetchingProfile } = useProfile(walletAddress);
-    const isLoading = !walletAddress || externalIsLoading || isFetchingProfile;
+  ({ value, isLoading: externalIsLoading, size = 'small', icon, name, subtitle }) => {
+    const skipProfile = !!icon;
+    const { avatar, isLoading: isFetchingProfile } = useProfile(skipProfile ? '' : value);
+    const isLoading = !skipProfile && (!value || externalIsLoading || isFetchingProfile);
 
     if (isLoading) {
       return (
@@ -28,6 +32,18 @@ export const WorldPermissionsAvatarWithInfo: React.FC<Props> = React.memo(
       );
     }
 
+    if (icon) {
+      return (
+        <Row className="Avatar">
+          {icon}
+          <Typography className="Paragraph">
+            {name && <span className="Name">{name}</span>}
+            {subtitle && <span>{subtitle}</span>}
+          </Typography>
+        </Row>
+      );
+    }
+
     return (
       <Row className="Avatar">
         <AvatarFace
@@ -36,13 +52,13 @@ export const WorldPermissionsAvatarWithInfo: React.FC<Props> = React.memo(
           inline
         />
         <CopyToClipboard
-          text={walletAddress}
+          text={value}
           showPopup
         >
           <Typography className="Paragraph">
-            {avatar?.name && <span className="Name">{avatar.name}</span>}
+            {(name ?? avatar?.name) && <span className="Name">{name ?? avatar?.name}</span>}
             <Address
-              value={walletAddress}
+              value={value}
               shorten
             />
           </Typography>

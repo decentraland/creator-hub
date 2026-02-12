@@ -1,0 +1,1 @@
+export { ConfirmationPanel } from './component';

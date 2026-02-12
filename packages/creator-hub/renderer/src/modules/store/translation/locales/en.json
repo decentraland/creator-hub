@@ -472,8 +472,17 @@
       "invalid_address": "Invalid address",
       "done": "Done",
       "access": {
+        "title": "Manage who can access your World",
         "description": "Manage who can access your World by toggling\nbetween <span>\"Private\"</span> and <span>\"Public\"</span>.",
         "subtitle": "In <span>Private mode</span>, you can grant access to a max of 100 addresses (Decentraland users). Please note, if you revert to <span>Public mode</span>, your list of approved addresses will be erased.",
+        "type": {
+          "public": "Public",
+          "invitation_only": "Invitation only",
+          "password_protected": "Password protected",
+          "public_description": "Anyone can access this world",
+          "invitation_only_description": "Only addresses and communities included in the whitelist can join.",
+          "password_protected_description": "Only users who know the access password can join"
+        },
         "warning": {
           "title": "Warning",
           "description": "If you revert to Public mode, your list of approved addresses will be erased."
@@ -481,17 +490,66 @@
         "empty_list": "You haven't approved any addresses yet",
         "public": "Public",
         "private": "Private",
-        "approved_addresses": "Approved Addresses {number}",
+        "approved_addresses": "Approved Addresses: {number}",
+        "approved_addresses_tooltip": "Only 100 users will be able to join at the same time",
         "add_address": "Add address",
+        "new_invite": "New Invite",
+        "clear_list": "Clear List",
+        "clear_list_title": "Clear List?",
+        "clear_list_warning": "If you continue, your list of approved addresses will be erased.",
+        "change_access_type_title": "Change access type?",
+        "change_access_type_warning": "If you switch world access type, your list of approved addresses will be erased.",
+        "go_back": "Go Back",
+        "continue": "Continue",
+        "confirm": "Confirm",
+        "cancel": "Cancel",
+        "wrong_address_format": "Wrong address format",
+        "community_search_placeholder": "Search for a community...",
+        "community_searching": "Searching...",
+        "community_no_results": "No communities found",
+        "community_members": "{count} {count, plural, one {Member} other {Members}}",
+        "community_privacy_public": "Public community",
+        "community_privacy_private": "Private community",
+        "invite_tabs": {
+          "wallet_address": "Wallet Address",
+          "community": "Community",
+          "import_csv": "Import CSV"
+        },
+        "csv_drop_text": "Drop your CSV file here or",
+        "csv_browse": "Browse your device files",
+        "csv_addresses_count": "{count} {count, plural, one {address} other {addresses}}",
+        "csv_communities_count": "{count} {count, plural, one {community} other {communities}}",
+        "csv_invalid_count": "{count} invalid {count, plural, one {address} other {addresses}}",
+        "csv_replace": "Replace",
         "actions": {
           "remove": "Remove"
+        }
+      },
+      "password": {
+        "change_password": "Change Password",
+        "create_new_password": "Create New Password",
+        "empty_state": "The password for this world is not defined.",
+        "has_password": "This world is password protected.",
+        "dialog": {
+          "create_title": "Create New Password",
+          "change_title": "Change Password",
+          "type_password": "Type your password",
+          "repeat_password": "Repeat your password",
+          "info": "Make sure to write down your password so you don't lose it!"
+        },
+        "error": {
+          "empty": "Password cannot be empty",
+          "too_short": "Password must be at least {min} characters",
+          "mismatch": "Passwords do not match"
         }
       },
       "collaborators": {
         "description": "<span>Add up to 10 addresses</span> (Decentraland users) as collaborators and manage their permissions to deploy or stream into your World.",
         "empty_list": "You haven't added any collaborators/addresses yet",
         "add_collaborator": "Add collaborator",
+        "add": "Add",
         "column_name_label": "Collaborators {number}",
+        "column_collaborators": "Collaborators",
         "column_stream_label": "Stream",
         "column_stream_tooltip": "User will be able to stream content into your World",
         "column_deploy_label": "Location",
@@ -505,6 +563,10 @@
         "parcels_count": "{count} Parcels",
         "actions": {
           "remove": "Remove"
+        },
+        "dialog": {
+          "title": "Add Collaborator",
+          "label": "Enter wallet address or ENS"
         }
       },
       "parcels": {

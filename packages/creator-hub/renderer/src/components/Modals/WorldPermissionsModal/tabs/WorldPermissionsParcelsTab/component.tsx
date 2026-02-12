@@ -221,7 +221,7 @@ const WorldPermissionsParcelsTab: React.FC<Props> = React.memo(
           showWorldSize={false}
           floatingContent={
             <WorldPermissionsAvatarWithInfo
-              walletAddress={walletAddress}
+              value={walletAddress}
               size="tiny"
             />
           }
