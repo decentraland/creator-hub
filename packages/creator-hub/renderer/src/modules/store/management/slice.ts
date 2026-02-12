@@ -261,7 +261,7 @@ export const updateWorldSettings = createAsyncThunk(
     );
     if (!success) return rejectWithValue({ message: error });
     await dispatch(fetchWorldSettings({ worldName })).unwrap();
-    dispatch(fetchAllManagedProjectsDetails({ address: connectedAccount })).unwrap();
+    dispatch(fetchAllManagedProjectsDetails({ address: connectedAccount })); // Background refresh. No need to await .
   },
 );
 
@@ -291,7 +291,7 @@ export const unpublishWorld = createAsyncThunk(
     const success = await WorldsAPI.unpublishWorld(connectedAccount, worldName);
     if (success) {
       await dispatch(fetchWorldScenes({ worldName })).unwrap();
-      dispatch(fetchAllManagedProjectsDetails({ address: connectedAccount })).unwrap(); // Background refresh. No need to await this.
+      dispatch(fetchAllManagedProjectsDetails({ address: connectedAccount })); // Background refresh. No need to await.
     } else {
       throw new Error('Failed to unpublish world');
     }
@@ -308,7 +308,7 @@ export const unpublishWorldScene = createAsyncThunk(
     const success = await WorldsAPI.unpublishWorldScene(connectedAccount, worldName, sceneCoord);
     if (success) {
       await dispatch(fetchWorldScenes({ worldName })).unwrap();
-      dispatch(fetchAllManagedProjectsDetails({ address: connectedAccount })).unwrap(); // Background refresh. No need to await this.
+      dispatch(fetchAllManagedProjectsDetails({ address: connectedAccount })); // Background refresh. No need to await.
     } else {
       throw new Error('Failed to unpublish world scene');
     }

@@ -103,6 +103,7 @@ const WorldSettingsModal: React.FC<Props> = React.memo(
                   variant="text"
                   color="secondary"
                   onClick={handleDiscard}
+                  disabled={isLoading}
                 >
                   {t('modal.world_settings.actions.discard')}
                 </Button>
@@ -110,6 +111,7 @@ const WorldSettingsModal: React.FC<Props> = React.memo(
                   variant="contained"
                   color="primary"
                   onClick={handleSave}
+                  disabled={isLoading}
                 >
                   {isLoading ? (
                     <Loader
