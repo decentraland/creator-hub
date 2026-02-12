@@ -360,7 +360,7 @@ export class Worlds {
       method: 'DELETE',
       identity: this.withIdentity(address),
     });
-    return result.status === 204;
+    return result.status === 200;
   }
 
   public fetchWalletStats = async (address: string) => {
