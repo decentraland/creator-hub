@@ -32,6 +32,11 @@ export type CommunitiesResponse<T = Community> = {
 };
 
 const SOCIAL_API_URL = config.get('SOCIAL_API_URL');
+const ASSETS_CDN_URL = config.get('ASSETS_CDN_URL');
+
+export function getCommunityThumbnailUrl(communityId: string): string {
+  return `${ASSETS_CDN_URL}/social/communities/${communityId}/raw-thumbnail.png`;
+}
 
 export class Communities {
   private url = SOCIAL_API_URL;

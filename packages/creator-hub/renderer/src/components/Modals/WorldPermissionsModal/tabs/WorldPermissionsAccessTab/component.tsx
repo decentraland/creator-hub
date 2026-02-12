@@ -7,6 +7,7 @@ import PublicIcon from '@mui/icons-material/Public';
 import { Box, MenuItem, type SelectChangeEvent, Typography } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
 import { WorldPermissionType, WorldRoleType, type WorldPermissions } from '/@/lib/worlds';
+import { getCommunityThumbnailUrl } from '/@/lib/communities';
 import { useCommunities } from '/@/hooks/useCommunities';
 import { Row } from '/@/components/Row';
 import { Button } from '/@/components/Button';
@@ -21,6 +22,24 @@ import {
 } from '../../WorldPermissionsItem';
 import './styles.css';
 
+const CommunityThumbnail: React.FC<{ communityId: string }> = React.memo(({ communityId }) => {
+  const [hasError, setHasError] = useState(false);
+  const url = getCommunityThumbnailUrl(communityId);
+
+  if (hasError || !url) {
+    return <PeopleIcon />;
+  }
+
+  return (
+    <img
+      className="CommunityThumbnail"
+      src={url}
+      alt=""
+      onError={() => setHasError(true)}
+    />
+  );
+});
+
 const CommunityAccessItem: React.FC<{
   communityId: string;
   name?: string;
@@ -30,7 +49,7 @@ const CommunityAccessItem: React.FC<{
   return (
     <WorldPermissionsAccessItem
       walletAddress={communityId}
-      icon={<PeopleIcon />}
+      icon={<CommunityThumbnail communityId={communityId} />}
       name={name ?? communityId}
       subtitle={
         membersCount !== undefined
