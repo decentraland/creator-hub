@@ -81,6 +81,22 @@ function findParentEntity<T extends BABYLON.Node & { isDCLEntity?: boolean }>(
   return (parent as any) || null;
 }
 
+function getSceneContext(scene: BABYLON.Scene) {
+  const ecsEntity = scene.transformNodes.find(n => isEcsEntity(n));
+  return ecsEntity ? ecsEntity.context.deref()! : null;
+}
+
+function startDragDetection(): void {
+  clickStartTimer = setTimeout(() => {
+    isDragging = true;
+  }, 150);
+}
+
+function resetDragDetection(): void {
+  clearTimeout(clickStartTimer);
+  isDragging = false;
+}
+
 export function interactWithScene(
   scene: BABYLON.Scene,
   pointerEvent: 'pointerUp' | 'pointerDown',
@@ -96,35 +112,26 @@ export function interactWithScene(
   const spawnPointManager = createSpawnPointManager(scene);
   if (mesh && spawnPointManager.isMeshSpawnPoint(mesh)) {
     if (pointerEvent === 'pointerDown') {
-      clickStartTimer = setTimeout(() => {
-        isDragging = true;
-      }, 150);
-    } else if (pointerEvent === 'pointerUp' && !isDragging) {
-      const spawnPointIndex = spawnPointManager.findSpawnPointByMesh(mesh);
-      if (spawnPointIndex !== null) {
-        // Get spawn points data from the ECS entity context to pass to selectSpawnPoint
-        const ecsEntity = scene.transformNodes.find(n => isEcsEntity(n));
-        if (ecsEntity) {
-          const context = ecsEntity.context.deref()!;
-          const { engine, operations } = context;
+      startDragDetection();
+    } else if (pointerEvent === 'pointerUp') {
+      if (!isDragging) {
+        const spawnPointIndex = spawnPointManager.findSpawnPointByMesh(mesh);
+        if (spawnPointIndex !== null) {
+          const context = getSceneContext(scene);
+          if (context) {
+            if (spawnPointManager.isMeshCameraTarget(mesh)) {
+              spawnPointManager.selectCameraTarget(spawnPointIndex);
+            } else {
+              spawnPointManager.selectSpawnPoint(spawnPointIndex);
+            }
 
-          // Select the spawn point or camera target based on what was clicked
-          if (spawnPointManager.isMeshCameraTarget(mesh)) {
-            spawnPointManager.selectCameraTarget(spawnPointIndex);
-          } else {
-            spawnPointManager.selectSpawnPoint(spawnPointIndex);
+            // Select the Player entity to show spawn settings in inspector
+            context.operations.updateSelectedEntity(context.engine.PlayerEntity);
+            void context.operations.dispatch();
           }
-
-          // Select the Player entity to show spawn settings in inspector
-          operations.updateSelectedEntity(engine.PlayerEntity);
-          void operations.dispatch();
         }
       }
-    }
-    // Clear isDragging flag each pointerUp
-    if (pointerEvent === 'pointerUp') {
-      clearTimeout(clickStartTimer);
-      isDragging = false;
+      resetDragDetection();
     }
     return; // Don't process entity selection
   }
@@ -132,9 +139,7 @@ export function interactWithScene(
   const entity = mesh && findParentEntity(mesh);
 
   if (entity && pointerEvent === 'pointerDown') {
-    clickStartTimer = setTimeout(() => {
-      isDragging = true;
-    }, 150); // 150ms to detect if the user is dragging
+    startDragDetection();
   } else if (
     entity &&
     pointerEvent === 'pointerUp' &&
@@ -157,22 +162,17 @@ export function interactWithScene(
     spawnPointManager.selectSpawnPoint(null);
     void operations.dispatch();
   } else if (!entity && pointerEvent === 'pointerUp' && !isDragging) {
-    // Clicked on sky or grid ground.
-    // Un-select all previous entities by selecting the root entity.
-    const ecsEntity = scene.transformNodes.find(n => isEcsEntity(n));
-    if (ecsEntity) {
-      const context = ecsEntity.context.deref()!;
-      const { operations, engine } = context;
-      operations.updateSelectedEntity(engine.RootEntity);
-      // Deselect any spawn point
+    // Clicked on sky or grid ground - un-select all previous entities
+    const context = getSceneContext(scene);
+    if (context) {
+      context.operations.updateSelectedEntity(context.engine.RootEntity);
       spawnPointManager.selectSpawnPoint(null);
-      void operations.dispatch();
+      void context.operations.dispatch();
     }
   }
 
-  // Clear isDragging flag each pointerUp
+  // Clear drag state on every pointerUp
   if (pointerEvent === 'pointerUp') {
-    clearTimeout(clickStartTimer);
-    isDragging = false;
+    resetDragDetection();
   }
 }

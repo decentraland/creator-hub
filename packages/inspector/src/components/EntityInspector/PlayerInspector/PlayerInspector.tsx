@@ -18,6 +18,40 @@ import type { Props } from './types';
 
 import '../SceneInspector/SceneInspector.css';
 
+type Vec3 = { x: number; y: number; z: number };
+
+function PositionFields({
+  value,
+  onFocus,
+  onBlur,
+  onChange,
+}: {
+  value: Vec3;
+  onFocus: (e: React.FocusEvent<HTMLInputElement>) => void;
+  onBlur: () => void;
+  onChange: (axis: keyof Vec3, val: number) => void;
+}) {
+  return (
+    <>
+      {(['x', 'y', 'z'] as const).map(axis => (
+        <TextField
+          key={axis}
+          leftLabel={axis.toUpperCase()}
+          type="number"
+          value={value[axis]}
+          onFocus={onFocus}
+          onBlur={onBlur}
+          onChange={event => {
+            const parsed = parseFloat(event.target.value);
+            if (!isNaN(parsed)) onChange(axis, parsed);
+          }}
+          autoSelect
+        />
+      ))}
+    </>
+  );
+}
+
 export default withSdk<Props>(({ sdk }) => {
   const { Scene } = sdk.components;
   const rootEntity = sdk.engine.RootEntity;
@@ -34,49 +68,22 @@ export default withSdk<Props>(({ sdk }) => {
   const spawnPointManager = sdk.sceneContext.spawnPoints;
   const gizmoManager = sdk.gizmos;
 
-  const handleSpawnPointPositionChange = useCallback(
-    (index: number, position: Vector3) => {
-      if (index >= 0 && index < spawnPoints.length) {
-        const spawnPoint = spawnPoints[index];
-        const input = fromSceneSpawnPoint(spawnPoint);
-        const newInput = {
-          ...input,
-          position: {
-            x: position.x,
-            y: position.y,
-            z: position.z,
-          },
-        };
-        modifySpawnPoint(index, toSceneSpawnPoint(spawnPoint.name, newInput));
-      }
+  const handleFieldChange = useCallback(
+    (index: number, field: 'position' | 'cameraTarget', position: Vector3) => {
+      if (index < 0 || index >= spawnPoints.length) return;
+      const spawnPoint = spawnPoints[index];
+      const input = fromSceneSpawnPoint(spawnPoint);
+      const newInput = {
+        ...input,
+        [field]: { x: position.x, y: position.y, z: position.z },
+      };
+      modifySpawnPoint(index, toSceneSpawnPoint(spawnPoint.name, newInput));
     },
     [spawnPoints, modifySpawnPoint],
   );
 
-  const handleCameraTargetPositionChange = useCallback(
-    (index: number, position: Vector3) => {
-      if (index >= 0 && index < spawnPoints.length) {
-        const spawnPoint = spawnPoints[index];
-        const input = fromSceneSpawnPoint(spawnPoint);
-        const newInput = {
-          ...input,
-          cameraTarget: {
-            x: position.x,
-            y: position.y,
-            z: position.z,
-          },
-        };
-        modifySpawnPoint(index, toSceneSpawnPoint(spawnPoint.name, newInput));
-      }
-    },
-    [spawnPoints, modifySpawnPoint],
-  );
-
-  const positionChangeRef = useRef(handleSpawnPointPositionChange);
-  positionChangeRef.current = handleSpawnPointPositionChange;
-
-  const cameraTargetPositionChangeRef = useRef(handleCameraTargetPositionChange);
-  cameraTargetPositionChangeRef.current = handleCameraTargetPositionChange;
+  const fieldChangeRef = useRef(handleFieldChange);
+  fieldChangeRef.current = handleFieldChange;
 
   useEffect(() => {
     const unsubscribe = spawnPointManager.onSelectionChange(({ index, target }) => {
@@ -87,13 +94,15 @@ export default withSdk<Props>(({ sdk }) => {
           const node = spawnPointManager.getCameraTargetNode(index);
           if (node) {
             gizmoManager.attachToSpawnPoint(node, index, (i, p) =>
-              cameraTargetPositionChangeRef.current(i, p),
+              fieldChangeRef.current(i, 'cameraTarget', p),
             );
           }
         } else {
           const node = spawnPointManager.getSpawnPointNode(index);
           if (node) {
-            gizmoManager.attachToSpawnPoint(node, index, (i, p) => positionChangeRef.current(i, p));
+            gizmoManager.attachToSpawnPoint(node, index, (i, p) =>
+              fieldChangeRef.current(i, 'position', p),
+            );
           }
         }
       } else {
@@ -140,20 +149,13 @@ export default withSdk<Props>(({ sdk }) => {
     setComponentValue({ ...componentValue, spawnPoints });
   }, [spawnPoints, isFocused, componentValue]);
 
-  const handleFocusInput = useCallback(
-    ({ type }: React.FocusEvent<HTMLInputElement>) => {
-      if (type === 'focus') {
-        setIsFocused(true);
-      } else {
-        setIsFocused(false);
-      }
-    },
-    [setIsFocused],
-  );
+  const handleFocusInput = useCallback(() => {
+    setIsFocused(true);
+  }, []);
 
   const handleBlurInput = useCallback(() => {
     setIsFocused(false);
-  }, [setIsFocused]);
+  }, []);
 
   const renderSpawnPoint = useCallback(
     (spawnPoint: SceneSpawnPoint, index: number) => {
@@ -182,59 +184,25 @@ export default withSdk<Props>(({ sdk }) => {
             </MoreOptionsMenu>
           </Block>
           <Block label="Position">
-            <TextField
-              leftLabel="X"
-              type="number"
-              value={input.position.x}
+            <PositionFields
+              value={input.position}
               onFocus={handleFocusInput}
               onBlur={handleBlurInput}
-              onChange={event => {
-                const value = parseFloat(event.target.value);
-                if (isNaN(value)) return;
-                const newInput = { ...input, position: { ...input.position, x: value } };
+              onChange={(axis, val) => {
+                const newInput = { ...input, position: { ...input.position, [axis]: val } };
                 modifySpawnPoint(index, toSceneSpawnPoint(spawnPoint.name, newInput));
               }}
-              autoSelect
-            />
-            <TextField
-              leftLabel="Y"
-              type="number"
-              value={input.position.y}
-              onFocus={handleFocusInput}
-              onBlur={handleBlurInput}
-              onChange={event => {
-                const value = parseFloat(event.target.value);
-                if (isNaN(value)) return;
-                const newInput = { ...input, position: { ...input.position, y: value } };
-                modifySpawnPoint(index, toSceneSpawnPoint(spawnPoint.name, newInput));
-              }}
-              autoSelect
-            />
-            <TextField
-              leftLabel="Z"
-              type="number"
-              value={input.position.z}
-              onFocus={handleFocusInput}
-              onBlur={handleBlurInput}
-              onChange={event => {
-                const value = parseFloat(event.target.value);
-                if (isNaN(value)) return;
-                const newInput = { ...input, position: { ...input.position, z: value } };
-                modifySpawnPoint(index, toSceneSpawnPoint(spawnPoint.name, newInput));
-              }}
-              autoSelect
             />
           </Block>
           <CheckboxField
             label="Random Offset"
             checked={input.randomOffset}
             onChange={event => {
-              const newInput = { ...input, randomOffset: event.target.checked };
-              if (!event.target.checked) {
-                newInput.maxOffset = 0;
-              } else {
-                newInput.maxOffset = 1.5;
-              }
+              const newInput = {
+                ...input,
+                randomOffset: event.target.checked,
+                maxOffset: event.target.checked ? 1.5 : 0,
+              };
               modifySpawnPoint(index, toSceneSpawnPoint(spawnPoint.name, newInput));
             }}
           />
@@ -255,47 +223,17 @@ export default withSdk<Props>(({ sdk }) => {
             />
           ) : null}
           <Block label="Camera Target">
-            <TextField
-              leftLabel="X"
-              type="number"
-              value={input.cameraTarget.x}
+            <PositionFields
+              value={input.cameraTarget}
               onFocus={handleFocusInput}
               onBlur={handleBlurInput}
-              onChange={event => {
-                const value = parseFloat(event.target.value);
-                if (isNaN(value)) return;
-                const newInput = { ...input, cameraTarget: { ...input.cameraTarget, x: value } };
+              onChange={(axis, val) => {
+                const newInput = {
+                  ...input,
+                  cameraTarget: { ...input.cameraTarget, [axis]: val },
+                };
                 modifySpawnPoint(index, toSceneSpawnPoint(spawnPoint.name, newInput));
               }}
-              autoSelect
-            />
-            <TextField
-              leftLabel="Y"
-              type="number"
-              value={input.cameraTarget.y}
-              onFocus={handleFocusInput}
-              onBlur={handleBlurInput}
-              onChange={event => {
-                const value = parseFloat(event.target.value);
-                if (isNaN(value)) return;
-                const newInput = { ...input, cameraTarget: { ...input.cameraTarget, y: value } };
-                modifySpawnPoint(index, toSceneSpawnPoint(spawnPoint.name, newInput));
-              }}
-              autoSelect
-            />
-            <TextField
-              leftLabel="Z"
-              type="number"
-              value={input.cameraTarget.z}
-              onFocus={handleFocusInput}
-              onBlur={handleBlurInput}
-              onChange={event => {
-                const value = parseFloat(event.target.value);
-                if (isNaN(value)) return;
-                const newInput = { ...input, cameraTarget: { ...input.cameraTarget, z: value } };
-                modifySpawnPoint(index, toSceneSpawnPoint(spawnPoint.name, newInput));
-              }}
-              autoSelect
             />
           </Block>
         </Block>
@@ -306,6 +244,8 @@ export default withSdk<Props>(({ sdk }) => {
       removeSpawnPoint,
       selectedSpawnPointIndex,
       handleSpawnPointClick,
+      handleFocusInput,
+      handleBlurInput,
       spawnPointManager,
     ],
   );
