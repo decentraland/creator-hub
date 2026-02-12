@@ -51,6 +51,13 @@ function getOffsetRadius(coord: SceneSpawnPointCoord): number {
   return 0;
 }
 
+/** Rotates avatar mesh on Y-axis to face a target position (horizontal look-at) */
+function rotateAvatarToFaceTarget(avatarMesh: Mesh, spawnPos: Vector3, targetPos: Vector3): void {
+  const dx = targetPos.x - spawnPos.x;
+  const dz = targetPos.z - spawnPos.z;
+  avatarMesh.rotation.y = Math.atan2(dx, dz);
+}
+
 /**
  * Creates a SpawnPointManager that handles visual representation of spawn points.
  * Follows the layout-manager.ts pattern (memoized per Babylon scene).
@@ -125,6 +132,19 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
       cameraTargetMesh = createCameraTargetCube(name, scene, spawnPointsNode, targetPos);
     }
 
+    // Rotate avatar to face the camera target (Y-axis only)
+    if (avatarMesh && spawnPoint.cameraTarget) {
+      rotateAvatarToFaceTarget(
+        avatarMesh,
+        rootNode.position,
+        new Vector3(
+          spawnPoint.cameraTarget.x,
+          spawnPoint.cameraTarget.y,
+          spawnPoint.cameraTarget.z,
+        ),
+      );
+    }
+
     return { index, rootNode, avatarMesh, areaMesh, cameraTargetMesh };
   }
 
@@ -196,6 +216,10 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
     const visual = getVisual(index);
     if (visual) {
       visual.rootNode.position = position.clone();
+      // Update avatar facing direction since distance/angle to camera target changed
+      if (visual.avatarMesh && visual.cameraTargetMesh) {
+        rotateAvatarToFaceTarget(visual.avatarMesh, position, visual.cameraTargetMesh.position);
+      }
       events.emit('positionChange', { index, position: position.clone() });
     }
   }
@@ -219,6 +243,10 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
     const visual = getVisual(index);
     if (visual?.cameraTargetMesh) {
       visual.cameraTargetMesh.position = position.clone();
+      // Update avatar facing direction to follow the new camera target
+      if (visual.avatarMesh) {
+        rotateAvatarToFaceTarget(visual.avatarMesh, visual.rootNode.position, position);
+      }
       events.emit('cameraTargetPositionChange', { index, position: position.clone() });
     }
   }
