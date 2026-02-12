@@ -247,7 +247,9 @@
           },
           "errors": {
             "details": "详细信息",
+            "code_error": "你的场景代码包含一个或多个错误。\n请修复它们并重试。",
             "fetch_status": "获取发布信息失败。\n请重试。",
+            "fetch_error": "获取发布信息失败。\n请检查您的互联网连接并重试。",
             "catalyst": "发布到Catalyst节点失败。\n请重试或检查您的互联网连接。",
             "max_retries": "重试次数超过限制。\n请稍后再试。",
             "not_found": "出了问题。\n请重试。",
@@ -256,8 +258,7 @@
             "invalid_identity": "身份验证失败。",
             "max_file_size_exceeded": "一个或多个资产超过了允许的限制（{maxFileSizeInMb}MB）。\n优化或移除大文件并重试。",
             "unknown": "出了问题。\n请重试。",
-            "invalid_creator_wallet": "创建者必须是有效的以太坊钱包地址。",
-            "code_error": "你的场景代码包含一个或多个错误。\n请修复它们并重试。"
+            "invalid_creator_wallet": "创建者必须是有效的以太坊钱包地址。"
           },
           "actions": {
             "report_issue": "报告问题",
