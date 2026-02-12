@@ -6,12 +6,13 @@ import ParcelsIcon from '@mui/icons-material/Layers';
 import PermissionsIcon from '@mui/icons-material/Lock';
 import PersonIcon from '@mui/icons-material/Person';
 import { Chip, Typography } from 'decentraland-ui2';
+import { ContentCopy, OpenInNew } from '@mui/icons-material';
 import { useSnackbar } from '/@/hooks/useSnackbar';
 import { t } from '/@/modules/store/translation/utils';
 import { WorldRoleType } from '/@/lib/worlds';
 import { RoleType as LandRoleType } from '/@/lib/land';
+import FallbackThumbnail from '/assets/images/scene-thumbnail-fallback.png';
 import { misc } from '#preload';
-import { ContentCopy, OpenInNew } from '@mui/icons-material';
 import { Image } from '../../Image';
 import { Button } from '../../Button';
 import { Dropdown } from '../../Dropdown';
@@ -132,7 +133,7 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
               <Image
                 src={deployment.thumbnail}
                 alt="Project thumbnail"
-                fallbackSrc="/assets/images/scene-thumbnail-fallback.png"
+                fallbackSrc={FallbackThumbnail}
               />
               <div className="ChipsContainer">
                 {type === 'world' && deployment.scenesCount > 0 && (
