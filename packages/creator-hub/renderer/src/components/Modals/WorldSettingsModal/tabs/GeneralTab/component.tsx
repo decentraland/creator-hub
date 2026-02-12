@@ -51,7 +51,7 @@ const GeneralTab: React.FC<Props> = ({ worldSettings, onChangeSettings }) => {
               value={x}
               onChange={e => {
                 if (validateCoordinate(e.target.value)) {
-                  onChangeSettings({ spawnCoordinates: coordsToId(e.target.value, y) });
+                  onChangeSettings({ spawnCoordinates: coordsToId(parseInt(e.target.value), y) });
                 }
               }}
               startAdornment={<span className="Label">X</span>}
@@ -60,7 +60,7 @@ const GeneralTab: React.FC<Props> = ({ worldSettings, onChangeSettings }) => {
               value={y}
               onChange={e => {
                 if (validateCoordinate(e.target.value)) {
-                  onChangeSettings({ spawnCoordinates: coordsToId(x, e.target.value) });
+                  onChangeSettings({ spawnCoordinates: coordsToId(x, parseInt(e.target.value)) });
                 }
               }}
               startAdornment={<span className="Label">Y</span>}
@@ -91,7 +91,12 @@ const GeneralTab: React.FC<Props> = ({ worldSettings, onChangeSettings }) => {
       <FormGroup>
         <TitleDivider title={t('modal.world_settings.general.general')} />
         <FormControlLabel
-          control={<Checkbox />}
+          control={
+            <Checkbox
+              checked={worldSettings.singlePlayer || false}
+              onChange={e => onChangeSettings({ singlePlayer: e.target.checked })}
+            />
+          }
           label={t('modal.world_settings.general.single_player')}
         />
       </FormGroup>

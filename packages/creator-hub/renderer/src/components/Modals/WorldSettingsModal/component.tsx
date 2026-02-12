@@ -1,5 +1,6 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import WorldSettingsIcon from '@mui/icons-material/SpaceDashboard';
+import { Box, Button, Typography } from 'decentraland-ui2';
 import { useDispatch } from '#store';
 import { actions as managementActions } from '/@/modules/store/management';
 import { t } from '/@/modules/store/translation/utils';
@@ -38,10 +39,28 @@ type Props = Omit<TabsModalProps<WorldSettingsTab>, 'tabs' | 'title' | 'children
 const WorldSettingsModal: React.FC<Props> = React.memo(
   ({ worldName, worldSettings, worldScenes, isLoading, activeTab, ...props }) => {
     const dispatch = useDispatch();
+    const [settingsUpdates, setSettingsUpdates] = useState<Partial<WorldSettings>>({});
+    const worldSettingsForm = { ...worldSettings, ...settingsUpdates };
+    const hasChanges = Object.keys(settingsUpdates).length > 0;
 
     const handleUpdateSettings = useCallback((newSettings: Partial<WorldSettings>) => {
-      dispatch(managementActions.updateWorldSettings(newSettings));
+      setSettingsUpdates(prev => ({ ...prev, ...newSettings }));
     }, []);
+
+    const handleDiscard = useCallback(() => {
+      setSettingsUpdates({});
+    }, []);
+
+    const handleSave = useCallback(async () => {
+      try {
+        await dispatch(
+          managementActions.updateWorldSettings({ worldName, worldSettings: settingsUpdates }),
+        ).unwrap();
+        setSettingsUpdates({}); // Clear updates after successful save
+      } catch {
+        // Error is handled in the action
+      }
+    }, [settingsUpdates, worldName]);
 
     return (
       <TabsModal
@@ -52,28 +71,56 @@ const WorldSettingsModal: React.FC<Props> = React.memo(
         className="WorldSettingsModal"
         icon={<WorldSettingsIcon />}
       >
-        {isLoading ? (
+        {isLoading && !hasChanges ? (
           <Loader size={40} />
         ) : (
           <>
             {activeTab === WorldSettingsTab.GENERAL && (
               <GeneralTab
-                worldSettings={worldSettings}
+                worldSettings={worldSettingsForm}
                 onChangeSettings={handleUpdateSettings}
               />
             )}
             {activeTab === WorldSettingsTab.DETAILS && (
               <DetailsTab
-                worldSettings={worldSettings}
+                worldSettings={worldSettingsForm}
                 onChangeSettings={handleUpdateSettings}
               />
             )}
             {activeTab === WorldSettingsTab.LAYOUT && (
               <LayoutTab
+                worldName={worldName}
                 worldSettings={worldSettings}
                 worldScenes={worldScenes}
-                onChangeSettings={handleUpdateSettings}
               />
+            )}
+            {activeTab !== WorldSettingsTab.LAYOUT && hasChanges && (
+              <Box className="ActionsContainer">
+                <Typography className="UnsavedChangesText">
+                  {t('modal.world_settings.discard_confirmation')}
+                </Typography>
+                <Button
+                  variant="text"
+                  color="secondary"
+                  onClick={handleDiscard}
+                >
+                  {t('modal.world_settings.actions.discard')}
+                </Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleSave}
+                >
+                  {isLoading ? (
+                    <Loader
+                      size={16}
+                      color="secondary"
+                    />
+                  ) : (
+                    t('modal.world_settings.actions.save')
+                  )}
+                </Button>
+              </Box>
             )}
           </>
         )}

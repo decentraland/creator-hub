@@ -238,14 +238,14 @@ export const slice = createSlice({
           }),
         );
       })
-      .addCase(managementActions.fetchManagedProjects.rejected, state => {
+      .addCase(managementActions.fetchManagedProjectsFiltered.rejected, state => {
         state.notifications = state.notifications.filter(
-          $ => $.requestId !== 'fetchManagedProjects',
+          $ => $.requestId !== 'fetchManagedProjectsFiltered',
         );
         state.notifications.push(
           createGenericNotification('error', t('snackbar.generic.fetch_managed_projects_failed'), {
             duration: 5000,
-            requestId: 'fetchManagedProjects',
+            requestId: 'fetchManagedProjectsFiltered',
           }),
         );
       })
@@ -258,12 +258,45 @@ export const slice = createSlice({
           }),
         );
       })
+      .addCase(managementActions.updateWorldSettings.rejected, (state, action) => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'updateWorldSettings',
+        );
+        const errorMessage =
+          (action.payload as any)?.message || t('snackbar.generic.update_world_settings_failed');
+        state.notifications.push(
+          createGenericNotification('error', errorMessage, {
+            duration: 5000,
+            requestId: 'updateWorldSettings',
+          }),
+        );
+      })
       .addCase(managementActions.fetchWorldScenes.rejected, state => {
         state.notifications = state.notifications.filter($ => $.requestId !== 'fetchWorldScenes');
         state.notifications.push(
           createGenericNotification('error', t('snackbar.generic.fetch_world_scenes_failed'), {
             duration: 5000,
             requestId: 'fetchWorldScenes',
+          }),
+        );
+      })
+      .addCase(managementActions.unpublishWorldScene.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'unpublishWorldScene',
+        );
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.unpublish_world_scene_failed'), {
+            duration: 5000,
+            requestId: 'unpublishWorldScene',
+          }),
+        );
+      })
+      .addCase(managementActions.unpublishWorld.rejected, state => {
+        state.notifications = state.notifications.filter($ => $.requestId !== 'unpublishWorld');
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.unpublish_world_failed'), {
+            duration: 5000,
+            requestId: 'unpublishWorld',
           }),
         );
       })

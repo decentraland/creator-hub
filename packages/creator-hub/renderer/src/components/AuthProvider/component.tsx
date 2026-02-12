@@ -7,7 +7,7 @@ import { useDispatch } from '#store';
 import { config } from '/@/config';
 import { Profiles } from '/@/lib/profile';
 import { fetchTiles } from '/@/modules/store/land';
-import { fetchManagedProjects } from '/@/modules/store/management';
+import { fetchAllManagedProjectsData } from '/@/modules/store/management';
 import { identify } from '/@/modules/store/analytics';
 import { AuthContext } from '/@/contexts/AuthContext';
 import { isNavigatorOnline } from '/@/lib/connection';
@@ -145,7 +145,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     if (wallet && chainId) {
-      dispatch(fetchManagedProjects({ address: wallet, chainId }));
+      dispatch(fetchAllManagedProjectsData({ address: wallet, chainId }));
       dispatch(identify({ userId: wallet }));
       dispatch(fetchTiles());
       setUser({ id: wallet });

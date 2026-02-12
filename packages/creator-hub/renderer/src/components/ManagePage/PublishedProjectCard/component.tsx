@@ -66,10 +66,6 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
       void misc.openExternal(`${BUILDER_URL}/land/${id}`);
     }, [id]);
 
-    const handleUnpublish = useCallback(() => {
-      // TODO: implement unpublish functionality in future PR.
-    }, []);
-
     const dropdownOptions = useMemo(() => {
       const options: Array<Option & { active: boolean }> = [
         {
@@ -106,22 +102,9 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
           handler: onOpenPermissions,
           active: type === ManagedProjectType.WORLD && role === WorldRoleType.OWNER,
         },
-        {
-          text: t('manage.cards.menu.unpublish'),
-          handler: handleUnpublish,
-          active: type === ManagedProjectType.WORLD && role === WorldRoleType.OWNER && !!deployment,
-        },
       ];
       return options.filter(option => option.active) as Option[];
-    }, [
-      project,
-      handleJumpIn,
-      handleCopyURL,
-      handleEditName,
-      handleViewParcel,
-      handleUnpublish,
-      onOpenPermissions,
-    ]);
+    }, [project, handleJumpIn, handleCopyURL, handleEditName, handleViewParcel, onOpenPermissions]);
 
     return (
       <div className="PublishedProjectCard">
@@ -152,21 +135,12 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
                 fallbackSrc="/assets/images/scene-thumbnail-fallback.png"
               />
               <div className="ChipsContainer">
-                {type === 'world' && deployment.scenes.length > 1 && (
+                {type === 'world' && deployment.scenesCount > 0 && (
                   <Chip
                     variant="outlined"
                     icon={<ParcelsIcon />}
                     label={t('manage.cards.worlds.scenes_count', {
-                      count: deployment.scenes.length,
-                    })}
-                  />
-                )}
-                {deployment.scenes.length === 1 && (
-                  <Chip
-                    variant="outlined"
-                    icon={<ParcelsIcon />}
-                    label={t('manage.cards.land.parcels_count', {
-                      count: deployment.scenes[0].parcels.length,
+                      count: deployment.scenesCount,
                     })}
                   />
                 )}
