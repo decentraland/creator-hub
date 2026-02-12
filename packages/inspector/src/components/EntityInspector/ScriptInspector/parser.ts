@@ -139,6 +139,16 @@ function extractParamTooltips(
   return tooltips;
 }
 
+function mergeTooltips(
+  params: Record<string, ScriptParamUnion>,
+  comments: { type: string; value: string }[] | undefined | null,
+): void {
+  const tooltips = extractParamTooltips(comments);
+  for (const [name, tooltip] of Object.entries(tooltips)) {
+    if (params[name]) params[name].tooltip = tooltip;
+  }
+}
+
 function extractParamsFromFunctionParams(
   params: (FunctionParameter | TSParameterProperty)[],
 ): Record<string, ScriptParamUnion> {
@@ -239,13 +249,7 @@ export function getScriptParams(content: string): ScriptParseResult {
         const restParams = functionDeclaration.params.slice(2);
         params = extractParamsFromFunctionParams(restParams);
 
-        // merge @param tooltips from JSDoc comments
-        const fnTooltips = extractParamTooltips(functionDeclaration.leadingComments);
-        for (const [paramName, tooltip] of Object.entries(fnTooltips)) {
-          if (params[paramName]) {
-            params[paramName].tooltip = tooltip;
-          }
-        }
+        mergeTooltips(params, functionDeclaration.leadingComments);
 
         break;
       }
@@ -270,13 +274,7 @@ export function getScriptParams(content: string): ScriptParseResult {
           const restParams = constructor.params.slice(2);
           params = extractParamsFromFunctionParams(restParams);
 
-          // merge @param tooltips from JSDoc comments
-          const ctorTooltips = extractParamTooltips(constructor.leadingComments);
-          for (const [paramName, tooltip] of Object.entries(ctorTooltips)) {
-            if (params[paramName]) {
-              params[paramName].tooltip = tooltip;
-            }
-          }
+          mergeTooltips(params, constructor.leadingComments);
         }
 
         // extract @action tagged methods
