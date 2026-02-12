@@ -238,14 +238,14 @@ export const slice = createSlice({
           }),
         );
       })
-      .addCase(managementActions.fetchManagedProjects.rejected, state => {
+      .addCase(managementActions.fetchManagedProjectsFiltered.rejected, state => {
         state.notifications = state.notifications.filter(
-          $ => $.requestId !== 'fetchManagedProjects',
+          $ => $.requestId !== 'fetchManagedProjectsFiltered',
         );
         state.notifications.push(
           createGenericNotification('error', t('snackbar.generic.fetch_managed_projects_failed'), {
             duration: 5000,
-            requestId: 'fetchManagedProjects',
+            requestId: 'fetchManagedProjectsFiltered',
           }),
         );
       })

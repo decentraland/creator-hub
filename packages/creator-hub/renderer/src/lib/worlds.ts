@@ -107,17 +107,26 @@ export type WorldConfiguration = {
 };
 
 export type WorldData = {
-  title: string;
-  ownerAddress: string;
-  description: string;
+  name: string;
+  owner: string;
   deployedScenes: number;
-  userPermissions: Permissions[];
+  title: string | null;
+  description: string | null;
+  contentRating: string | null;
+  spawnCoordinates: string | null;
+  skyboxTime: number | null;
+  singlePlayer: boolean | null;
+  showInPlaces: boolean | null;
+  categories: string[] | null;
+  thumbnailHash: string | null;
+  lastDeployedAt: string | null;
+  blockedSince: string | null;
   worldShape: {
     x1: number;
     x2: number;
     y1: number;
     y2: number;
-  };
+  } | null;
 };
 
 export type WorldDataResponse = {

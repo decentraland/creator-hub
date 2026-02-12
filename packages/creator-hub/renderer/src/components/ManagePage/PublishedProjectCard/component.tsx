@@ -133,21 +133,12 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
                 fallbackSrc="/assets/images/scene-thumbnail-fallback.png"
               />
               <div className="ChipsContainer">
-                {type === 'world' && deployment.scenes.length > 1 && (
+                {type === 'world' && deployment.scenesCount > 0 && (
                   <Chip
                     variant="outlined"
                     icon={<ParcelsIcon />}
                     label={t('manage.cards.worlds.scenes_count', {
-                      count: deployment.scenes.length,
-                    })}
-                  />
-                )}
-                {deployment.scenes.length === 1 && (
-                  <Chip
-                    variant="outlined"
-                    icon={<ParcelsIcon />}
-                    label={t('manage.cards.land.parcels_count', {
-                      count: deployment.scenes[0].parcels.length,
+                      count: deployment.scenesCount,
                     })}
                   />
                 )}

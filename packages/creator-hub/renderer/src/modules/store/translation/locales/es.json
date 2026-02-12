@@ -728,10 +728,17 @@
       "title": "Gestionar Mundos"
     },
     "items": "{count} {count, plural, one {elemento} other {elementos}}",
+    "load_more": "Cargar más",
     "search": "Buscar",
     "sort_by": "Ordenar por",
     "sort": {
-      "latest": "Última publicación"
+      "latest": "Última publicación",
+      "name": "Nombre de dominio"
+    },
+    "filter_by": "Filtrar por",
+    "filters": {
+      "published": "Publicado",
+      "unpublished": "No publicado"
     },
     "sign_in": {
       "title": "Inicia sesión para gestionar tus mundos",

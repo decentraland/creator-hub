@@ -249,6 +249,7 @@
             "details": "Details",
             "code_error": "Your scene code contains one or more errors.\nPlease fix them and try again.",
             "fetch_status": "Failed to fetch deployment information.\nPlease, try again.",
+            "fetch_error": "Failed to fetch deployment information.\nPlease, check your internet connection and try again.",
             "catalyst": "Deployment to the Catalyst nodes failed.\nPlease retry or check your internet connection.",
             "max_retries": "Retry limit exceeded.\nPlease, try again later.",
             "not_found": "Something went wrong.\nPlease, try again.",
@@ -728,10 +729,17 @@
       "title": "Manage Worlds"
     },
     "items": "{count} {count, plural, one {item} other {items}}",
+    "load_more": "Load more",
     "search": "Search",
     "sort_by": "Sort by",
     "sort": {
-      "latest": "Last published"
+      "latest": "Last published",
+      "name": "Domain name"
+    },
+    "filter_by": "Filter by",
+    "filters": {
+      "published": "Published",
+      "unpublished": "Not published"
     },
     "sign_in": {
       "title": "Sign in to manage your worlds",

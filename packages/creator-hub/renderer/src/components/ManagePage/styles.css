@@ -23,6 +23,19 @@
   margin: 0 0 32px 0;
 }
 
+.ManagePage .FilterChipsContainer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 0 auto;
+  text-transform: none;
+}
+
+.ManagePage .FilterChip {
+  font-weight: 600;
+  border: 1px solid var(--dark-gray);
+}
+
 .ManagePage .FiltersBar .Select {
   margin-right: 16px;
 }

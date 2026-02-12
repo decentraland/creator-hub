@@ -728,10 +728,17 @@
       "title": "管理世界"
     },
     "items": "{count} {count, plural, one {项目} other {项目}}",
+    "load_more": "加载更多",
     "search": "搜索",
     "sort_by": "排序方式",
     "sort": {
-      "latest": "最后发布"
+      "latest": "最后发布",
+      "name": "域名"
+    },
+    "filter_by": "筛选",
+    "filters": {
+      "published": "已发布",
+      "unpublished": "未发布"
     },
     "sign_in": {
       "title": "登录以管理您的世界",
