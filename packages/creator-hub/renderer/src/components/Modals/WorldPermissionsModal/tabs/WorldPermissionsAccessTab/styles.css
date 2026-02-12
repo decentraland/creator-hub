@@ -110,8 +110,17 @@
 }
 
 .WorldAccessTab .ApprovedAddressesCount {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 16px;
   font-weight: 500;
+}
+
+.WorldAccessTab .ApprovedAddressesCount .MuiSvgIcon-root {
+  font-size: 14px;
+  color: var(--dcl-silver);
+  cursor: pointer;
 }
 
 .WorldAccessTab .AccessList {

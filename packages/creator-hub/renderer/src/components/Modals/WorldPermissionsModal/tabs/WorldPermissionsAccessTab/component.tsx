@@ -4,7 +4,8 @@ import AddIcon from '@mui/icons-material/AddRounded';
 import LockIcon from '@mui/icons-material/Lock';
 import PeopleIcon from '@mui/icons-material/People';
 import PublicIcon from '@mui/icons-material/Public';
-import { Box, MenuItem, type SelectChangeEvent, Typography } from 'decentraland-ui2';
+import InfoIcon from '@mui/icons-material/InfoOutlined';
+import { Box, MenuItem, type SelectChangeEvent, Tooltip, Typography } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
 import { WorldPermissionType, WorldRoleType, type WorldPermissions } from '/@/lib/worlds';
 import { getCommunityThumbnailUrl } from '/@/lib/communities';
@@ -361,6 +362,15 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
               {t('modal.world_permissions.access.approved_addresses', {
                 number: totalInvited,
               })}
+              {totalInvited > 100 && (
+                <Tooltip
+                  title={t('modal.world_permissions.access.approved_addresses_tooltip')}
+                  placement="top"
+                  arrow
+                >
+                  <InfoIcon />
+                </Tooltip>
+              )}
             </Typography>
             <Row className="AccessListActions">
               <Typography
