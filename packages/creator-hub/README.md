@@ -10,6 +10,7 @@ Decentraland Creator Hub is an Electron-based application designed for creating,
 - [Scripts](#scripts)
 - [Code Architecture](#code-architecture)
 - [Debugging](#debugging)
+- [Application environment](#application-environment)
 - [Installation Process](#installation-process)
   - [Steps](#steps)
   - [Dependency Management](#dependency-management)
@@ -106,14 +107,20 @@ tail -f ~/Library/Logs/creator-hub/main.log
 
 ### Application environment
 
-Production builds default to the production environment (`decentraland.org` APIs). For testing against development environment (`decentraland.zone`), you can override this behavior using a command-line argument:
+Production builds default to the production environment (`decentraland.org` APIs). For testing against development environment (`decentraland.zone`), you can override this behavior using a command-line argument on the installed app:
+
+**On Windows (PowerShell):**
 
 ```bash
-# macOS
-open ./Decentraland\ Creator\ Hub.app --args --env=dev
+& '.\Decentraland Creator Hub.exe' --env=dev
+```
 
-# Windows
-.\Decentraland\ Creator\ Hub.exe --env=dev
+On Windows you can also create a shortcut to the app with the parameter added automatically [following this guide](https://learn.microsoft.com/en-us/windows/msix/psf/psf-launch-apps-with-parameters).
+
+**On MacOS:**
+
+```bash
+open /Applications/Decentraland\ Creator\ Hub.app --args --env=dev
 ```
 
 The app will use the specified environment APIs. If no `--env` argument is provided, the app will use the default environment (prod). Valid values for `--env` are `dev` and `prod`.
