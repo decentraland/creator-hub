@@ -525,24 +525,17 @@ export function createGizmoManager(context: SceneContext) {
       currentTransformer.setup();
       currentTransformer.setEntities([]);
 
-      // Custom update callback for spawn point
+      // setUpdateCallbacks expects two callbacks: update (per-frame during drag) and dispatch (on drag end).
+      // For entities these differ, but spawn points bypass ECS (setEntities([]) above), so Babylon moves
+      // the TransformNode directly. Only the dispatch callback fires in practice; we pass the same
+      // function for both defensively, in case the PositionGizmo invokes the update callback as well.
       if ('setUpdateCallbacks' in currentTransformer) {
-        currentTransformer.setUpdateCallbacks(
-          // Update callback - called during drag
-          () => {
-            if (attachedSpawnPointIndex !== null && onSpawnPointPositionChange) {
-              const newPosition = spawnPointNode.position.clone();
-              onSpawnPointPositionChange(attachedSpawnPointIndex, newPosition);
-            }
-          },
-          // Dispatch callback - called on drag end
-          () => {
-            if (attachedSpawnPointIndex !== null && onSpawnPointPositionChange) {
-              const newPosition = spawnPointNode.position.clone();
-              onSpawnPointPositionChange(attachedSpawnPointIndex, newPosition);
-            }
-          },
-        );
+        const emitPositionChange = () => {
+          if (attachedSpawnPointIndex !== null && onSpawnPointPositionChange) {
+            onSpawnPointPositionChange(attachedSpawnPointIndex, spawnPointNode.position.clone());
+          }
+        };
+        currentTransformer.setUpdateCallbacks(emitPositionChange, emitPositionChange);
       }
 
       // Force world aligned for spawn points
