@@ -19,8 +19,8 @@ import type {
 } from '/@/lib/worlds';
 import { WorldRoleType, Worlds, WorldPermissionType } from '/@/lib/worlds';
 import type { AppState } from '/@/modules/store';
-import { fetchENSList } from '/@/modules/store/ens';
-import { fetchLandList } from '/@/modules/store/land';
+import { fetchENSList, actions as ensActions } from '/@/modules/store/ens';
+import { fetchLandList, actions as landActions } from '/@/modules/store/land';
 import type { AccountHoldings } from '/@/lib/account';
 import { Account } from '/@/lib/account';
 import {
@@ -107,6 +107,15 @@ export const fetchAllManagedProjectsData = createAsyncThunk(
     ]);
 
     return projects;
+  },
+);
+
+export const clearUserManagedProjects = createAsyncThunk(
+  'management/clearUserManagedProjects',
+  async (_, { dispatch }) => {
+    dispatch(actions.clearState());
+    dispatch(ensActions.clearState());
+    dispatch(landActions.clearState());
   },
 );
 
@@ -492,6 +501,7 @@ const slice = createSlice({
     clearPermissionsState: state => {
       state.worldPermissions = getWorldPermissionsInitialState();
     },
+    clearState: () => initialState,
   },
   extraReducers: builder => {
     builder
@@ -658,6 +668,7 @@ const getParcelsStateForAddress = (
 export const actions = {
   ...slice.actions,
   fetchAllManagedProjectsData,
+  clearUserManagedProjects,
   fetchManagedProjectsFiltered,
   fetchWorlds,
   fetchEmptyWorlds,

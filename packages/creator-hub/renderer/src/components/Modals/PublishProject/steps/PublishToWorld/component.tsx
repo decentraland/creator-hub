@@ -69,11 +69,7 @@ export function PublishToWorld(props: Props) {
   const { wallet } = useAuth();
   const dispatch = useDispatch();
   const names = useSelector(state => state.ens.data);
-  const [name, setName] = useState(() => {
-    // Restore the previously selected world name if it exists and it's available on the list.
-    const prevName = project?.worldConfiguration?.name;
-    return prevName && names[prevName] ? prevName : '';
-  });
+  const [name, setName] = useState<string>('');
   const [isMultiSceneEnabled, setIsMultiSceneEnabled] = useState<boolean>(false);
   const worldSettings = useSelector(managementSelectors.getWorldSettings);
   const worldPermissions = useSelector(state =>
@@ -158,7 +154,7 @@ export function PublishToWorld(props: Props) {
   useEffect(() => {
     // Initialize the name and world settings when the project is loaded
     // We use handleChangeName to also fetch the world settings, scenes and permissions
-    if (project?.worldConfiguration?.name) {
+    if (project?.worldConfiguration?.name && names[project.worldConfiguration.name]) {
       handleChangeName(project.worldConfiguration.name);
     }
   }, []);
