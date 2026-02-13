@@ -560,13 +560,10 @@
         "empty_list": "您还没有添加任何协作者/地址",
         "add_collaborator": "添加协作者",
         "add": "添加",
-        "column_name_label": "协作者 {number}",
-        "column_collaborators": "协作者",
-        "column_stream_label": "流媒体",
-        "column_stream_tooltip": "用户将能够向您的世界流式传输内容",
-        "column_deploy_label": "位置",
-        "column_deploy_tooltip": "用户将能够在您的世界中部署新场景",
+        "column_name_label": "协作者：{number}",
         "all_parcels": "所有地块",
+        "clear_list_title": "清空列表？",
+        "clear_list_warning": "如果继续，您的协作者列表将被清除。",
         "deployment": {
           "world_wide": "所有地块",
           "parcels": "自定义坐标",
@@ -574,7 +571,8 @@
         },
         "parcels_count": "{count} 个地块",
         "actions": {
-          "remove": "移除"
+          "remove": "移除",
+          "clear_list": "清空列表"
         },
         "dialog": {
           "title": "添加协作者",

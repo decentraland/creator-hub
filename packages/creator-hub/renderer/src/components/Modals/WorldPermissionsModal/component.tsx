@@ -394,6 +394,7 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
                     worldDeploymentPermissions={worldPermissions.deployment}
                     worldStreamingPermissions={worldPermissions.streaming}
                     worldPermissionsSummary={worldPermissionsSummary || {}}
+                    worldOwnerAddress={worldOwnerAddress}
                     collaboratorUsersList={collaboratorUsersList}
                     isLoadingNewUser={isLoadingNewUser}
                     onAddCollaborator={handleAddCollaborator}

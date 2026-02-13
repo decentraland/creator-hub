@@ -1,9 +1,8 @@
 import React, { useCallback, useState } from 'react';
 import AddIcon from '@mui/icons-material/AddRounded';
-import InfoIcon from '@mui/icons-material/InfoOutlined';
-import { Box, Tooltip, Typography } from 'decentraland-ui2';
-import { t, T } from '/@/modules/store/translation/utils';
-import { WorldPermissionName, WorldPermissionType } from '/@/lib/worlds';
+import { Box, Button as DCLButton, Typography } from 'decentraland-ui2';
+import { t } from '/@/modules/store/translation/utils';
+import { WorldPermissionName, WorldPermissionType, WorldRoleType } from '/@/lib/worlds';
 import type {
   AddressWorldPermission,
   AllowListPermissionSetting,
@@ -11,6 +10,7 @@ import type {
 } from '/@/lib/worlds';
 import { Row } from '/@/components/Row';
 import { Button } from '/@/components/Button';
+import { ConfirmationPanel } from '/@/components/ConfirmationPanel';
 import { WorldPermissionsAddCollaboratorDialog } from '../../WorldPermissionsAddCollaboratorDialog';
 import {
   WorldPermissionsLoadingItem,
@@ -20,10 +20,13 @@ import './styles.css';
 
 const MAX_COLLABORATORS = 10;
 
+function noop() {}
+
 type Props = {
   worldDeploymentPermissions: AllowListPermissionSetting;
   worldStreamingPermissions: AllowListPermissionSetting | UnrestrictedPermissionSetting;
   worldPermissionsSummary: Record<string, AddressWorldPermission[]>;
+  worldOwnerAddress: string;
   collaboratorUsersList: string[];
   isLoadingNewUser: boolean;
   onAddCollaborator: (address: string) => void;
@@ -37,6 +40,7 @@ const WorldPermissionsCollaboratorsTab: React.FC<Props> = React.memo(props => {
     worldDeploymentPermissions,
     worldStreamingPermissions,
     worldPermissionsSummary,
+    worldOwnerAddress,
     collaboratorUsersList,
     isLoadingNewUser,
     onAddCollaborator,
@@ -44,24 +48,24 @@ const WorldPermissionsCollaboratorsTab: React.FC<Props> = React.memo(props => {
     onGrantWorldWideDeploymentPermission,
     onGrantParcelsDeploymentPermission,
   } = props;
+  const [currentForm, setCurrentForm] = useState<'add' | 'clear_confirmation' | null>(null);
 
-  const [showAddDialog, setShowAddDialog] = useState(false);
-
-  const handleOpenAddDialog = useCallback(() => {
-    setShowAddDialog(true);
-  }, []);
-
-  const handleCloseAddDialog = useCallback(() => {
-    setShowAddDialog(false);
+  const handleCloseForm = useCallback(() => {
+    setCurrentForm(null);
   }, []);
 
   const handleAddCollaborator = useCallback(
     (address: string) => {
       onAddCollaborator(address);
-      setShowAddDialog(false);
+      setCurrentForm(null);
     },
     [onAddCollaborator],
   );
+
+  const handleClearList = useCallback(() => {
+    collaboratorUsersList.forEach(wallet => onRemoveCollaborator(wallet));
+    setCurrentForm(null);
+  }, [collaboratorUsersList, onRemoveCollaborator]);
 
   const getAllowedParcelsCount = useCallback(
     (wallet: string) => {
@@ -76,96 +80,114 @@ const WorldPermissionsCollaboratorsTab: React.FC<Props> = React.memo(props => {
 
   const collaboratorsCount = collaboratorUsersList?.length || 0;
 
+  if (currentForm === 'add') {
+    return (
+      <Box className="WorldCollaboratorsTab CenteredContent">
+        <WorldPermissionsAddCollaboratorDialog
+          onCancel={handleCloseForm}
+          onSubmit={handleAddCollaborator}
+        />
+      </Box>
+    );
+  }
+
+  if (currentForm === 'clear_confirmation') {
+    return (
+      <Box className="WorldCollaboratorsTab CenteredContent">
+        <ConfirmationPanel
+          title={t('modal.world_permissions.collaborators.clear_list_title')}
+          warning={t('modal.world_permissions.collaborators.clear_list_warning')}
+          cancelLabel={t('modal.cancel')}
+          confirmLabel={t('modal.confirm')}
+          onCancel={handleCloseForm}
+          onConfirm={handleClearList}
+        />
+      </Box>
+    );
+  }
+
   return (
     <Box className="WorldCollaboratorsTab">
       <Typography variant="h6">
-        <T
-          id="modal.world_permissions.collaborators.description"
-          values={{ span: (chunks: React.ReactNode) => <span>{chunks}</span> }}
-        />
+        {t('modal.world_permissions.collaborators.description', {
+          span: (chunks: React.ReactNode) => <span>{chunks}</span>,
+        })}
       </Typography>
 
-      <Box className="CollaboratorsFormContainer">
-        <Row className="CollaboratorsListHeader">
-          <Typography
-            variant="body2"
-            className="CollaboratorsCount"
-          >
-            {t('modal.world_permissions.collaborators.column_name_label', {
-              number: `${collaboratorsCount}/${MAX_COLLABORATORS}`,
-            })}
-          </Typography>
+      {collaboratorsCount > 0 ? (
+        <Box className="CollaboratorsList">
+          <Row className="CollaboratorsHeaderRow">
+            <Typography variant="h6">
+              {t('modal.world_permissions.collaborators.column_name_label', {
+                number: `${collaboratorsCount}/${MAX_COLLABORATORS}`,
+              })}
+            </Typography>
+            <DCLButton
+              color="secondary"
+              className="ClearListLink"
+              onClick={() => setCurrentForm('clear_confirmation')}
+            >
+              {t('modal.world_permissions.collaborators.actions.clear_list')}
+            </DCLButton>
+            <Button
+              onClick={() => setCurrentForm('add')}
+              color="primary"
+              startIcon={<AddIcon />}
+              disabled={collaboratorsCount >= MAX_COLLABORATORS}
+            >
+              {t('modal.world_permissions.collaborators.add')}
+            </Button>
+          </Row>
+          <WorldPermissionsCollaboratorsItem
+            key={worldOwnerAddress}
+            walletAddress={worldOwnerAddress.toLowerCase()}
+            role={WorldRoleType.OWNER}
+            hasDeploymentPermission
+            hasStreamingPermission
+            onRemoveCollaborator={noop}
+            onGrantWorldWideDeploymentPermission={noop}
+            onGrantParcelsDeploymentPermission={noop}
+          />
+          {collaboratorUsersList.map(wallet => {
+            const lowerWallet = wallet.toLowerCase();
+            if (lowerWallet === worldOwnerAddress.toLowerCase()) return null; // we already render the owner as the first item in the list, so we skip it here to avoid duplicates.
+            return (
+              <WorldPermissionsCollaboratorsItem
+                key={wallet}
+                walletAddress={lowerWallet}
+                role={WorldRoleType.COLLABORATOR}
+                onRemoveCollaborator={() => onRemoveCollaborator(wallet)}
+                hasDeploymentPermission={!!worldDeploymentPermissions.wallets?.includes(wallet)}
+                hasStreamingPermission={
+                  worldStreamingPermissions.type === WorldPermissionType.AllowList &&
+                  !!worldStreamingPermissions.wallets?.includes(wallet)
+                }
+                allowedParcelsCount={getAllowedParcelsCount(wallet)}
+                onGrantWorldWideDeploymentPermission={() =>
+                  onGrantWorldWideDeploymentPermission(wallet)
+                }
+                onGrantParcelsDeploymentPermission={() =>
+                  onGrantParcelsDeploymentPermission(wallet)
+                }
+              />
+            );
+          })}
+
+          {isLoadingNewUser && <WorldPermissionsLoadingItem />}
+        </Box>
+      ) : (
+        <Box className="EmptyStateContainer">
+          <Typography>{t('modal.world_permissions.collaborators.empty_list')}</Typography>
+
           <Button
-            onClick={handleOpenAddDialog}
+            onClick={() => setCurrentForm('add')}
             color="primary"
             startIcon={<AddIcon />}
           >
             {t('modal.world_permissions.collaborators.add')}
           </Button>
-        </Row>
-
-        <Box className="CollaboratorsList">
-          {collaboratorsCount > 0 ? (
-            <>
-              <Row className="TableRow CollaboratorsHeaderRow">
-                <Typography
-                  variant="body2"
-                  className="CollaboratorsHeader"
-                >
-                  {t('modal.world_permissions.collaborators.column_collaborators')}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  className="LocationHeader"
-                >
-                  {t('modal.world_permissions.collaborators.column_deploy_label')}
-                  <Tooltip
-                    title={t('modal.world_permissions.collaborators.column_deploy_tooltip')}
-                    placement="top"
-                    arrow
-                  >
-                    <InfoIcon />
-                  </Tooltip>
-                </Typography>
-              </Row>
-              {collaboratorUsersList.map(wallet => {
-                return (
-                  <WorldPermissionsCollaboratorsItem
-                    key={wallet}
-                    walletAddress={wallet.toLowerCase()}
-                    onRemoveCollaborator={() => onRemoveCollaborator(wallet)}
-                    hasDeploymentPermission={!!worldDeploymentPermissions.wallets?.includes(wallet)}
-                    hasStreamingPermission={
-                      worldStreamingPermissions.type === WorldPermissionType.AllowList &&
-                      !!worldStreamingPermissions.wallets?.includes(wallet)
-                    }
-                    allowedParcelsCount={getAllowedParcelsCount(wallet)}
-                    onGrantWorldWideDeploymentPermission={() =>
-                      onGrantWorldWideDeploymentPermission(wallet)
-                    }
-                    onGrantParcelsDeploymentPermission={() =>
-                      onGrantParcelsDeploymentPermission(wallet)
-                    }
-                  />
-                );
-              })}
-            </>
-          ) : (
-            !isLoadingNewUser && (
-              <Typography className="EmptyList">
-                {t('modal.world_permissions.collaborators.empty_list')}
-              </Typography>
-            )
-          )}
-          {isLoadingNewUser && <WorldPermissionsLoadingItem />}
         </Box>
-      </Box>
-
-      <WorldPermissionsAddCollaboratorDialog
-        open={showAddDialog}
-        onClose={handleCloseAddDialog}
-        onSubmit={handleAddCollaborator}
-      />
+      )}
     </Box>
   );
 });

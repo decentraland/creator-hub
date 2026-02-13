@@ -560,13 +560,10 @@
         "empty_list": "Aún no has agregado ningún colaborador/dirección",
         "add_collaborator": "Agregar colaborador",
         "add": "Agregar",
-        "column_name_label": "Colaboradores {number}",
-        "column_collaborators": "Colaboradores",
-        "column_stream_label": "Transmisión",
-        "column_stream_tooltip": "El usuario podrá transmitir contenido en tu Mundo",
-        "column_deploy_label": "Ubicación",
-        "column_deploy_tooltip": "El usuario podrá publicar nuevas escenas en tu Mundo",
+        "column_name_label": "Colaboradores: {number}",
         "all_parcels": "Todas las Parcelas",
+        "clear_list_title": "¿Limpiar lista?",
+        "clear_list_warning": "Si continúas, tu lista de colaboradores será borrada.",
         "deployment": {
           "world_wide": "Todas las Parcelas",
           "parcels": "Coordenadas Personalizadas",
@@ -574,7 +571,8 @@
         },
         "parcels_count": "{count} Parcelas",
         "actions": {
-          "remove": "Eliminar"
+          "remove": "Eliminar",
+          "clear_list": "Limpiar lista"
         },
         "dialog": {
           "title": "Agregar Colaborador",

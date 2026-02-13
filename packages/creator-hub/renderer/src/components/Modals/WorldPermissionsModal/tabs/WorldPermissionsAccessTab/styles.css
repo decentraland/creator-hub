@@ -5,12 +5,16 @@
   height: 100%;
 }
 
+.WorldAccessTab .MuiButton-root {
+  height: 40px;
+}
+
 .WorldAccessTab.CenteredContent {
   justify-content: center;
 }
 
 .WorldAccessTab > .MuiTypography-h6 {
-  font-size: 18px;
+  color: var(--dcl-silver);
   font-weight: 500;
   margin-bottom: 0;
 }
@@ -23,6 +27,7 @@
 }
 
 .WorldAccessTab .AccessTypeSelect {
+  min-width: 256px;
   border-radius: 12px;
   border: 1px solid var(--transparent-gray-light);
 }
@@ -47,7 +52,6 @@
 
 .WorldAccessTab .AccessTypeDescription {
   color: var(--text-on-secondary);
-  font-size: 13px;
 }
 
 .WorldAccessTab .AccessTypeMenuItem {
@@ -103,18 +107,14 @@
 }
 
 .WorldAccessTab .ClearListLink {
-  cursor: pointer;
-  color: var(--text-on-secondary);
-  text-transform: uppercase;
-  font-weight: 600;
+  color: var(--white) !important;
 }
 
 .WorldAccessTab .ApprovedAddressesCount {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 16px;
-  font-weight: 500;
+  color: var(--dcl-silver);
 }
 
 .WorldAccessTab .ApprovedAddressesCount .MuiSvgIcon-root {
@@ -133,7 +133,6 @@
 .WorldAccessTab .AccessList > .WorldPermissionsItem:first-child {
   border-top: none;
 }
-
 
 .CommunityThumbnail {
   width: 32px;

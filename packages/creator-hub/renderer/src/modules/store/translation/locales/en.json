@@ -560,13 +560,10 @@
         "empty_list": "You haven't added any collaborators/addresses yet",
         "add_collaborator": "Add collaborator",
         "add": "Add",
-        "column_name_label": "Collaborators {number}",
-        "column_collaborators": "Collaborators",
-        "column_stream_label": "Stream",
-        "column_stream_tooltip": "User will be able to stream content into your World",
-        "column_deploy_label": "Location",
-        "column_deploy_tooltip": "User will be able to deploy new scenes to your World",
+        "column_name_label": "Collaborators: {number}",
         "all_parcels": "All Parcels",
+        "clear_list_title": "Clear List?",
+        "clear_list_warning": "If you continue, your list of collaborators will be erased.",
         "deployment": {
           "world_wide": "All Parcels",
           "parcels": "Custom Coordinates",
@@ -574,7 +571,8 @@
         },
         "parcels_count": "{count} Parcels",
         "actions": {
-          "remove": "Remove"
+          "remove": "Remove",
+          "clear_list": "Clear List"
         },
         "dialog": {
           "title": "Add Collaborator",
