@@ -27,6 +27,9 @@ export type SdkContextEvents = {
     operation: CrdtMessageType;
     component?: ComponentDefinition<any>;
     value?: any;
+    /** When true, the value is for UI display only (e.g. live drag preview).
+     *  Hooks should NOT sync it back to the engine or dispatch CRDT updates. */
+    skipEngineSync?: boolean;
   };
   dispose: undefined;
 };
@@ -81,19 +84,22 @@ export async function createSdkContext(
 
   const operations = createOperations(engine);
 
-  // Wire live drag updates: during gizmo drag, update the inspector engine's
-  // Transform component and emit change events so the UI shows live values.
-  // This bypasses the CRDT pipeline, so no undo entries are created during drag.
+  // Wire live drag updates: during gizmo drag, emit change events so the UI
+  // shows live transform values. We intentionally do NOT call
+  // operations.updateValue() here — that would mark the inspector engine's
+  // Transform component as dirty, and subsequent engine.update() calls would
+  // flush intermediate values to the data layer, creating unwanted undo entries.
+  // Instead we emit events with skipEngineSync so hooks update the UI only.
   ctx.gizmos.setLiveDragCallback(entities => {
     for (const entity of entities) {
       const rendererTransform = ctx.Transform.getOrNull(entity.entityId);
       if (!rendererTransform) continue;
-      operations.updateValue(components.Transform, entity.entityId, rendererTransform);
       events.emit('change', {
         entity: entity.entityId,
         operation: CrdtMessageType.PUT_COMPONENT,
         component: components.Transform,
         value: rendererTransform,
+        skipEngineSync: true,
       });
     }
   });
