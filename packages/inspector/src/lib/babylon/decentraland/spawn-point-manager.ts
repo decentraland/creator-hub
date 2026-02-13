@@ -8,9 +8,10 @@ import {
   createOffsetArea,
   createCameraTargetCube,
   setSpawnPointSelected,
+  setOffsetAreaSelected,
   setCameraTargetSelected,
   isSpawnPointMesh,
-  isCameraTargetMesh as isCameraTargetMeshCheck,
+  isCameraTargetMesh,
   getSpawnPointIndexFromMesh,
 } from './spawn-point-visuals';
 
@@ -77,11 +78,16 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
     return index < visuals.length ? visuals[index] : null;
   }
 
+  function setVisualSelected(visual: SpawnPointVisual, selected: boolean): void {
+    if (visual.avatarMesh) setSpawnPointSelected(visual.avatarMesh, selected);
+    if (visual.areaMesh) setOffsetAreaSelected(visual.areaMesh, selected);
+    if (visual.cameraTargetMesh) setCameraTargetSelected(visual.cameraTargetMesh, selected);
+  }
+
   function deselectCurrent(): void {
     const prevVisual = selectedIndex !== null ? getVisual(selectedIndex) : null;
     if (prevVisual) {
-      if (prevVisual.avatarMesh) setSpawnPointSelected(prevVisual.avatarMesh, false);
-      if (prevVisual.cameraTargetMesh) setCameraTargetSelected(prevVisual.cameraTargetMesh, false);
+      setVisualSelected(prevVisual, false);
     }
   }
 
@@ -124,25 +130,13 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
     // Parented to spawnPointsNode (not rootNode) so it stays in place during gizmo drag
     let cameraTargetMesh: Mesh | null = null;
     if (spawnPoint.cameraTarget) {
-      const targetPos = new Vector3(
-        spawnPoint.cameraTarget.x,
-        spawnPoint.cameraTarget.y,
-        spawnPoint.cameraTarget.z,
-      );
+      const { x: cx, y: cy, z: cz } = spawnPoint.cameraTarget;
+      const targetPos = new Vector3(cx, cy, cz);
       cameraTargetMesh = createCameraTargetCube(name, scene, spawnPointsNode, targetPos);
-    }
 
-    // Rotate avatar to face the camera target (Y-axis only)
-    if (avatarMesh && spawnPoint.cameraTarget) {
-      rotateAvatarToFaceTarget(
-        avatarMesh,
-        rootNode.position,
-        new Vector3(
-          spawnPoint.cameraTarget.x,
-          spawnPoint.cameraTarget.y,
-          spawnPoint.cameraTarget.z,
-        ),
-      );
+      if (avatarMesh) {
+        rotateAvatarToFaceTarget(avatarMesh, rootNode.position, targetPos);
+      }
     }
 
     return { index, rootNode, avatarMesh, areaMesh, cameraTargetMesh };
@@ -182,11 +176,8 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
     selectedIndex = index;
     selectedTarget = 'position';
 
-    // Select avatar only (not camera target)
     const visual = index !== null ? getVisual(index) : null;
-    if (visual?.avatarMesh) {
-      setSpawnPointSelected(visual.avatarMesh, true);
-    }
+    if (visual) setVisualSelected(visual, true);
 
     events.emit('selectionChange', { index, target: 'position' });
   }
@@ -197,12 +188,8 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
     selectedIndex = index;
     selectedTarget = 'cameraTarget';
 
-    // Select both avatar and camera target visuals
     const visual = getVisual(index);
-    if (visual) {
-      if (visual.avatarMesh) setSpawnPointSelected(visual.avatarMesh, true);
-      if (visual.cameraTargetMesh) setCameraTargetSelected(visual.cameraTargetMesh, true);
-    }
+    if (visual) setVisualSelected(visual, true);
 
     events.emit('selectionChange', { index, target: 'cameraTarget' });
   }
@@ -283,7 +270,7 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
     selectCameraTarget,
     getSelectedIndex,
     isMeshSpawnPoint: isSpawnPointMesh,
-    isMeshCameraTarget: isCameraTargetMeshCheck,
+    isMeshCameraTarget: isCameraTargetMesh,
     findSpawnPointByMesh: getSpawnPointIndexFromMesh,
     updateSpawnPointPosition,
     updateCameraTargetPosition,
