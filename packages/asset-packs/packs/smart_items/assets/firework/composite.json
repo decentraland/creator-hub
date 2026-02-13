@@ -62,43 +62,43 @@
               {
                 "name": "Shoot",
                 "type": "batch",
-                "jsonPayload": "{\"actions\":[\"Launch Sound\",\"Play Animation\",\"Delayed Explode sound\",\"Visible\",\"Delay Invisible\"]}",
+                "jsonPayload": "{\"actions\":[\"_Launch_Sound\",\"_Play_Animation\",\"_Delayed_Explode_sound\",\"_Visible\",\"_Delay_Invisible\"]}",
                 "allowedInBasicView": true
               },
               {
-                "name": "Launch Sound",
+                "type": "set_visibility",
+                "name": "_Invisible",
+                "jsonPayload": "{\"visible\":false,\"collider\":0}"
+              },
+              {
+                "name": "_Launch_Sound",
                 "type": "play_sound",
                 "jsonPayload": "{\"src\":\"{assetPath}/fireworklaunch.mp3\"}"
               },
               {
-                "name": "Play Animation",
+                "name": "_Play_Animation",
                 "type": "play_animation",
                 "jsonPayload": "{\"animation\":\"Play\"}"
               },
               {
-                "name": "Explode sound",
+                "name": "_Explode_sound",
                 "type": "play_sound",
                 "jsonPayload": "{\"src\":\"{assetPath}/fireworkexplode.mp3\"}"
               },
               {
-                "name": "Delayed Explode sound",
+                "name": "_Delayed_Explode_sound",
                 "type": "start_delay",
-                "jsonPayload": "{\"actions\":[\"Explode sound\"],\"timeout\":1.3}"
+                "jsonPayload": "{\"actions\":[\"_Explode_sound\"],\"timeout\":1.3}"
               },
               {
                 "type": "set_visibility",
-                "name": "Visible",
+                "name": "_Visible",
                 "jsonPayload": "{\"visible\":true,\"collider\":0}"
               },
               {
-                "type": "set_visibility",
-                "name": "Invisible",
-                "jsonPayload": "{\"visible\":false,\"collider\":0}"
-              },
-              {
                 "type": "start_delay",
-                "name": "Delay Invisible",
-                "jsonPayload": "{\"actions\":[\"Invisible\"],\"timeout\":5}"
+                "name": "_Delay_Invisible",
+                "jsonPayload": "{\"actions\":[\"_Invisible\"],\"timeout\":5}"
               }
             ]
           }

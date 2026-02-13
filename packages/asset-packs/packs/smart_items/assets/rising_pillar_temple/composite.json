@@ -80,38 +80,38 @@
               {
                 "name": "Sink",
                 "type": "batch",
-                "jsonPayload": "{ \"actions\": [\"Going to Start\", \"Tween to Start\"] }",
+                "jsonPayload": "{ \"actions\": [\"_Going_to_Start\", \"_Tween_to_Start\"] }",
                 "allowedInBasicView": true
               },
               {
                 "name": "Rise",
                 "type": "batch",
-                "jsonPayload": "{ \"actions\": [\"Going to End\", \"Tween to End\"] }",
+                "jsonPayload": "{ \"actions\": [\"_Going_to_End\", \"_Tween_to_End\"] }",
                 "allowedInBasicView": true
               },
               {
-                "name": "Going to Start",
+                "name": "_Going_to_Start",
                 "type": "set_state",
                 "jsonPayload": "{ \"state\": \"GoingToStart\" }"
               },
               {
-                "name": "Going to End",
+                "name": "_Going_to_End",
                 "type": "set_state",
                 "jsonPayload": "{ \"state\": \"GoingToEnd\" }"
               },
               {
-                "name": "Tween to Start",
+                "name": "_Tween_to_Start",
                 "type": "start_tween",
                 "jsonPayload": "{\"type\":\"move_item\",\"end\":{\"x\":0,\"y\":-6,\"z\":0},\"relative\":true,\"interpolationType\":\"linear\",\"duration\":5}"
               },
               {
-                "name": "Tween to End",
+                "name": "_Tween_to_End",
                 "type": "start_tween",
                 "jsonPayload": "{\"type\":\"move_item\",\"end\":{\"x\":0,\"y\":6,\"z\":0},\"relative\":true,\"interpolationType\":\"linear\",\"duration\":5}"
               },
               {
                 "type": "play_sound",
-                "name": "Play Sound",
+                "name": "_Play_Sound",
                 "jsonPayload": "{\"src\":\"{assetPath}/RisingPillar.mp3\"}"
               }
             ]
@@ -137,7 +137,7 @@
                 "actions": [
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Going to Start"
+                    "name": "_Going_to_Start"
                   }
                 ],
                 "basicViewId": "trigger-when-end-reached"
@@ -154,7 +154,7 @@
                 "actions": [
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Going to End"
+                    "name": "_Going_to_End"
                   }
                 ],
                 "basicViewId": "trigger-when-start-reached"
@@ -164,7 +164,7 @@
                 "actions": [
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Play Sound"
+                    "name": "_Play_Sound"
                   }
                 ],
                 "conditions": []
