@@ -1,5 +1,5 @@
 import type { Scene, TransformNode, AbstractMesh, AssetContainer, Vector3 } from '@babylonjs/core';
-import { MeshBuilder, StandardMaterial, Color3, Mesh } from '@babylonjs/core';
+import { MeshBuilder, StandardMaterial, PBRMaterial, Color3, Mesh } from '@babylonjs/core';
 
 import spawnPointAvatarGlbDataUrl from '../assets/spawn_point_avatar.glb';
 import { loadAssetContainer } from './sdkComponents/gltf-container';
@@ -7,7 +7,12 @@ import { loadAssetContainer } from './sdkComponents/gltf-container';
 const CAMERA_TARGET_CUBE_SIZE = 0.25;
 
 const SPAWN_COLOR = Color3.FromHexString('#A855F7');
-const SPAWN_SELECTED_COLOR = Color3.FromHexString('#FFD700');
+
+const AVATAR_ALPHA_UNSELECTED = 0.35;
+const AREA_ALPHA_UNSELECTED = 0.2;
+const AREA_ALPHA_SELECTED = 0.5;
+const CAMERA_TARGET_ALPHA_UNSELECTED = 0.5;
+const CAMERA_TARGET_ALPHA_SELECTED = 0.9;
 
 let cachedAssetContainer: AssetContainer | null = null;
 let loadingPromise: Promise<AssetContainer> | null = null;
@@ -87,7 +92,24 @@ function createMeshInstance(
       clonedMesh.renderingGroupId = 1;
 
       if (mesh.material) {
-        clonedMesh.material = mesh.material.clone(`${name}_${mesh.material.name}`);
+        const clonedMaterial = mesh.material.clone(`${name}_${mesh.material.name}`);
+        if (clonedMaterial) {
+          // Store original values so we can restore them when selected
+          if (clonedMaterial instanceof PBRMaterial) {
+            clonedMaterial.metadata = {
+              ...clonedMaterial.metadata,
+              originalAlbedoColor: clonedMaterial.albedoColor.clone(),
+              originalEmissiveColor: clonedMaterial.emissiveColor.clone(),
+              originalAlpha: clonedMaterial.alpha,
+              originalTransparencyMode: clonedMaterial.transparencyMode,
+            };
+            clonedMaterial.transparencyMode = PBRMaterial.PBRMATERIAL_ALPHABLEND;
+            clonedMaterial.albedoColor = SPAWN_COLOR;
+            clonedMaterial.emissiveColor = SPAWN_COLOR.scale(0.3);
+          }
+          clonedMaterial.alpha = AVATAR_ALPHA_UNSELECTED;
+        }
+        clonedMesh.material = clonedMaterial;
       }
     }
   });
@@ -153,7 +175,12 @@ function createFallbackPlaceholder(name: string, scene: Scene, parent: Transform
   bottom.parent = avatarRoot;
   bottom.position.y = AVATAR_RADIUS;
 
-  const material = createSpawnPointMaterial(`${name}_avatar_mat`, scene, SPAWN_COLOR);
+  const material = createSpawnPointMaterial(
+    `${name}_avatar_mat`,
+    scene,
+    SPAWN_COLOR,
+    AVATAR_ALPHA_UNSELECTED,
+  );
   [body, head, bottom].forEach(mesh => {
     mesh.material = material;
     mesh.renderingGroupId = 1;
@@ -187,7 +214,12 @@ export function createOffsetArea(
   ground.parent = parent;
   ground.position.y = 0.01; // Slightly above ground to avoid z-fighting
 
-  ground.material = createSpawnPointMaterial(`${name}_area_mat`, scene, SPAWN_COLOR, 0.5);
+  ground.material = createSpawnPointMaterial(
+    `${name}_area_mat`,
+    scene,
+    SPAWN_COLOR,
+    AREA_ALPHA_UNSELECTED,
+  );
   ground.renderingGroupId = 1;
   ground.isPickable = false;
 
@@ -213,29 +245,57 @@ export function createCameraTargetCube(
   cube.parent = parent;
   cube.position = targetPosition.clone();
 
-  cube.material = createSpawnPointMaterial(`${name}_camera_target_mat`, scene, SPAWN_COLOR, 0.8);
+  cube.material = createSpawnPointMaterial(
+    `${name}_camera_target_mat`,
+    scene,
+    SPAWN_COLOR,
+    CAMERA_TARGET_ALPHA_UNSELECTED,
+  );
   cube.renderingGroupId = 1;
   cube.isPickable = true;
+  cube.setEnabled(false);
 
   return cube;
 }
 
 export function setSpawnPointSelected(avatarMesh: Mesh, selected: boolean): void {
-  const color = selected ? SPAWN_SELECTED_COLOR : SPAWN_COLOR;
-
   avatarMesh.getChildMeshes().forEach(child => {
-    if (child.material instanceof StandardMaterial) {
-      child.material.diffuseColor = color;
-      child.material.emissiveColor = color.scale(0.3);
+    if (!child.material) return;
+
+    const isPBR = child.material instanceof PBRMaterial && child.material.metadata;
+    if (!isPBR) {
+      child.material.alpha = selected ? 1 : AVATAR_ALPHA_UNSELECTED;
+      return;
+    }
+
+    const material = child.material as PBRMaterial;
+    if (selected) {
+      const meta = material.metadata;
+      material.albedoColor = meta.originalAlbedoColor;
+      material.emissiveColor = meta.originalEmissiveColor;
+      material.alpha = meta.originalAlpha;
+      material.transparencyMode = meta.originalTransparencyMode;
+    } else {
+      material.transparencyMode = PBRMaterial.PBRMATERIAL_ALPHABLEND;
+      material.albedoColor = SPAWN_COLOR;
+      material.emissiveColor = SPAWN_COLOR.scale(0.3);
+      material.alpha = AVATAR_ALPHA_UNSELECTED;
     }
   });
 }
 
+export function setOffsetAreaSelected(areaMesh: Mesh, selected: boolean): void {
+  const alpha = selected ? AREA_ALPHA_SELECTED : AREA_ALPHA_UNSELECTED;
+  if (areaMesh.material) {
+    areaMesh.material.alpha = alpha;
+  }
+}
+
 export function setCameraTargetSelected(cameraTargetMesh: Mesh, selected: boolean): void {
-  const color = selected ? SPAWN_SELECTED_COLOR : SPAWN_COLOR;
-  if (cameraTargetMesh.material instanceof StandardMaterial) {
-    cameraTargetMesh.material.diffuseColor = color;
-    cameraTargetMesh.material.emissiveColor = color.scale(0.3);
+  cameraTargetMesh.setEnabled(selected);
+  const alpha = selected ? CAMERA_TARGET_ALPHA_SELECTED : CAMERA_TARGET_ALPHA_UNSELECTED;
+  if (cameraTargetMesh.material) {
+    cameraTargetMesh.material.alpha = alpha;
   }
 }
 
