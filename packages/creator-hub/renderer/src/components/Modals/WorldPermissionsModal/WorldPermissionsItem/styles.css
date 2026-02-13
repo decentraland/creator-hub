@@ -49,9 +49,7 @@
 
 /* Role badge styles */
 .WorldPermissionsItem .RoleBadge {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
-  text-transform: uppercase;
   background-color: var(--dark-gray);
-  color: var(--dcl-silver);
 }
