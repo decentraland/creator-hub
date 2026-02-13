@@ -4,6 +4,7 @@ import type { EcsEntity } from '../decentraland/EcsEntity';
 import { snapManager } from '../decentraland/snap-manager';
 import { keyState, Keys } from '../decentraland/keys';
 import { getAncestors, isAncestor, mapNodes } from '../../sdk/nodes';
+import { createSpawnPointManager } from '../decentraland/spawn-point-manager';
 
 let isSnapEnabled = snapManager.isEnabled();
 let isShiftKeyDown = false;
@@ -80,6 +81,22 @@ function findParentEntity<T extends BABYLON.Node & { isDCLEntity?: boolean }>(
   return (parent as any) || null;
 }
 
+function getSceneContext(scene: BABYLON.Scene) {
+  const ecsEntity = scene.transformNodes.find(n => isEcsEntity(n));
+  return ecsEntity ? ecsEntity.context.deref()! : null;
+}
+
+function startDragDetection(): void {
+  clickStartTimer = setTimeout(() => {
+    isDragging = true;
+  }, 150);
+}
+
+function resetDragDetection(): void {
+  clearTimeout(clickStartTimer);
+  isDragging = false;
+}
+
 export function interactWithScene(
   scene: BABYLON.Scene,
   pointerEvent: 'pointerUp' | 'pointerDown',
@@ -91,12 +108,38 @@ export function interactWithScene(
 
   const mesh = pickingResult!.pickedMesh;
 
+  // Check if clicked on a spawn point mesh BEFORE checking for entities
+  const spawnPointManager = createSpawnPointManager(scene);
+  if (mesh && spawnPointManager.isMeshSpawnPoint(mesh)) {
+    if (pointerEvent === 'pointerDown') {
+      startDragDetection();
+    } else if (pointerEvent === 'pointerUp') {
+      if (!isDragging) {
+        const spawnPointIndex = spawnPointManager.findSpawnPointByMesh(mesh);
+        if (spawnPointIndex !== null) {
+          const context = getSceneContext(scene);
+          if (context) {
+            if (spawnPointManager.isMeshCameraTarget(mesh)) {
+              spawnPointManager.selectCameraTarget(spawnPointIndex);
+            } else {
+              spawnPointManager.selectSpawnPoint(spawnPointIndex);
+            }
+
+            // Select the Player entity to show spawn settings in inspector
+            context.operations.updateSelectedEntity(context.engine.PlayerEntity);
+            void context.operations.dispatch();
+          }
+        }
+      }
+      resetDragDetection();
+    }
+    return; // Don't process entity selection
+  }
+
   const entity = mesh && findParentEntity(mesh);
 
   if (entity && pointerEvent === 'pointerDown') {
-    clickStartTimer = setTimeout(() => {
-      isDragging = true;
-    }, 150); // 150ms to detect if the user is dragging
+    startDragDetection();
   } else if (
     entity &&
     pointerEvent === 'pointerUp' &&
@@ -115,22 +158,21 @@ export function interactWithScene(
       entity.entityId,
       !!keyState[Keys.KEY_CTRL] || !!keyState[Keys.KEY_SHIFT],
     );
+    // Deselect any spawn point when selecting an entity
+    spawnPointManager.selectSpawnPoint(null);
     void operations.dispatch();
   } else if (!entity && pointerEvent === 'pointerUp' && !isDragging) {
-    // Clicked on sky or grid ground.
-    // Un-select all previous entities by selecting the root entity.
-    const ecsEntity = scene.transformNodes.find(n => isEcsEntity(n));
-    if (ecsEntity) {
-      const context = ecsEntity.context.deref()!;
-      const { operations, engine } = context;
-      operations.updateSelectedEntity(engine.RootEntity);
-      void operations.dispatch();
+    // Clicked on sky or grid ground - un-select all previous entities
+    const context = getSceneContext(scene);
+    if (context) {
+      context.operations.updateSelectedEntity(context.engine.RootEntity);
+      spawnPointManager.selectSpawnPoint(null);
+      void context.operations.dispatch();
     }
   }
 
-  // Clear isDragging flag each pointerUp
+  // Clear drag state on every pointerUp
   if (pointerEvent === 'pointerUp') {
-    clearTimeout(clickStartTimer);
-    isDragging = false;
+    resetDragDetection();
   }
 }
