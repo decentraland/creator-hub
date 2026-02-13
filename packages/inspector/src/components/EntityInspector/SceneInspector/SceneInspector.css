@@ -37,7 +37,6 @@
   gap: 4px;
 }
 
-
 .Container.Scene .Tabs.SceneTabs .TabIcon {
   width: 16px;
   height: 16px;
@@ -100,7 +99,7 @@
 }
 
 .Container.Scene .SpawnPointContainer.selected > .content {
-  border-color: #00CED1;
+  border-color: #00ced1;
   background: rgba(0, 206, 209, 0.1);
 }
 
@@ -111,11 +110,7 @@
 }
 
 .Container.Scene .SpawnAreaContainer.selected {
-  border-color: #00CED1;
-}
-
-.Container.Scene .SpawnAreaContainer.selected > .title {
-  background: rgba(0, 206, 209, 0.1);
+  border-color: #8860c6;
 }
 
 .Container.Scene .CreatorAddrressContainer > .content {
