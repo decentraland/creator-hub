@@ -1,24 +1,10 @@
 import type { Entity } from '@dcl/ecs';
+import type { SpawnPointInput } from '../PlayerInspector/types';
 
 export interface Props {
   entity: Entity;
   initialOpen?: boolean;
 }
-
-export type SpawnPointInput = {
-  position: {
-    x: number;
-    y: number;
-    z: number;
-  };
-  randomOffset: boolean;
-  maxOffset: number;
-  cameraTarget: {
-    x: number;
-    y: number;
-    z: number;
-  };
-};
 
 export type SceneInput = {
   creator: string;
