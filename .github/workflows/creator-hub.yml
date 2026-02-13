@@ -40,6 +40,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          submodules: true
 
       - uses: actions/setup-node@v4
         with:
