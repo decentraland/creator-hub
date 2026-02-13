@@ -13,7 +13,12 @@ import { AddButton } from '../AddButton';
 import MoreOptionsMenu from '../MoreOptionsMenu';
 import { Button } from '../../Button';
 import type { EditorComponentsTypes, SceneSpawnPoint } from '../../../lib/sdk/components';
-import { fromSceneSpawnPoint, toSceneSpawnPoint } from '../SceneInspector/utils';
+import {
+  fromSceneSpawnPoint,
+  toSceneSpawnPoint,
+  isValidSpawnAreaName,
+  SPAWN_AREA_DEFAULTS,
+} from './utils';
 import type { Props } from './types';
 
 import '../SceneInspector/SceneInspector.css';
@@ -52,6 +57,14 @@ function PositionFields({
   );
 }
 
+function generateSpawnAreaName(existingNames: string[]): string {
+  let counter = 1;
+  while (existingNames.includes(`SpawnArea${counter}`)) {
+    counter++;
+  }
+  return `SpawnArea${counter}`;
+}
+
 export default withSdk<Props>(({ sdk }) => {
   const { Scene } = sdk.components;
   const rootEntity = sdk.engine.RootEntity;
@@ -77,7 +90,7 @@ export default withSdk<Props>(({ sdk }) => {
         ...input,
         [field]: { x: position.x, y: position.y, z: position.z },
       };
-      modifySpawnPoint(index, toSceneSpawnPoint(spawnPoint.name, newInput));
+      modifySpawnPoint(index, toSceneSpawnPoint(newInput));
     },
     [spawnPoints, modifySpawnPoint],
   );
@@ -115,27 +128,19 @@ export default withSdk<Props>(({ sdk }) => {
     };
   }, [spawnPointManager, gizmoManager]);
 
-  const handleSpawnPointClick = useCallback(
-    (index: number) => {
-      if (selectedSpawnPointIndex === index) {
-        spawnPointManager.selectSpawnPoint(null);
-      } else {
-        spawnPointManager.selectSpawnPoint(index);
-      }
-    },
-    [selectedSpawnPointIndex, spawnPointManager],
-  );
-
-  const handleAddSpawnPoint = useCallback(() => {
+  const handleAddSpawnArea = useCallback(() => {
+    const existingNames = spawnPoints.map(sp => sp.name);
+    const name = generateSpawnAreaName(existingNames);
+    const { position, cameraTarget, maxOffset } = SPAWN_AREA_DEFAULTS;
     addSpawnPoint({
-      name: `Spawn Point ${spawnPoints.length + 1}`,
-      default: true,
+      name,
+      default: false,
       position: {
-        x: { $case: 'range', value: [0, 3] },
-        y: { $case: 'range', value: [0, 0] },
-        z: { $case: 'range', value: [0, 3] },
+        x: { $case: 'range', value: [position.x - maxOffset, position.x + maxOffset] },
+        y: { $case: 'range', value: [position.y, position.y] },
+        z: { $case: 'range', value: [position.z - maxOffset, position.z + maxOffset] },
       },
-      cameraTarget: { x: 8, y: 1, z: 8 },
+      cameraTarget: { ...cameraTarget },
     });
   }, [spawnPoints, addSpawnPoint]);
 
@@ -157,96 +162,147 @@ export default withSdk<Props>(({ sdk }) => {
     setIsFocused(false);
   }, []);
 
-  const renderSpawnPoint = useCallback(
+  const renderSpawnArea = useCallback(
     (spawnPoint: SceneSpawnPoint, index: number) => {
       const input = fromSceneSpawnPoint(spawnPoint);
       const isSelected = selectedSpawnPointIndex === index;
+      const isLastSpawnArea = spawnPoints.length <= 1;
+
+      const handleModify = (changes: Partial<typeof input>) => {
+        modifySpawnPoint(index, toSceneSpawnPoint({ ...input, ...changes }));
+      };
+
+      const handleResetToDefaults = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        const { position, cameraTarget, maxOffset } = SPAWN_AREA_DEFAULTS;
+        handleModify({
+          position: { ...position },
+          cameraTarget: { ...cameraTarget },
+          maxOffset,
+          randomOffset: true,
+        });
+      };
+
+      const handleDelete = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (isLastSpawnArea) return;
+        if (isSelected) {
+          spawnPointManager.selectSpawnPoint(null);
+        }
+        removeSpawnPoint(index);
+      };
+
+      const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newName = e.target.value;
+        // Allow updating the name — validation feedback is shown via the error prop
+        handleModify({ name: newName });
+      };
+
       return (
-        <Block
-          className={cx('SpawnPointContainer', { selected: isSelected })}
-          key={spawnPoint.name}
-          onClick={() => handleSpawnPointClick(index)}
-        >
-          <Block className="RightContent">
-            <MoreOptionsMenu>
-              <Button
-                className="RemoveButton"
-                onClick={e => {
-                  e.stopPropagation();
-                  if (isSelected) {
-                    spawnPointManager.selectSpawnPoint(null);
+        <Container
+          className={cx('SpawnAreaContainer', { selected: isSelected })}
+          key={`spawn-area-${index}`}
+          label={input.name}
+          initialOpen={isSelected}
+          rightContent={
+            <div
+              className="SpawnAreaHeaderRight"
+              onClick={e => e.stopPropagation()}
+            >
+              <CheckboxField
+                label="Main Spawn"
+                checked={input.default}
+                onChange={e => handleModify({ default: e.target.checked })}
+              />
+              <MoreOptionsMenu>
+                <Button onClick={handleResetToDefaults}>Reset to defaults</Button>
+                <Button
+                  className="RemoveButton"
+                  disabled={isLastSpawnArea}
+                  onClick={handleDelete}
+                  title={
+                    isLastSpawnArea
+                      ? "This remaining Spawn Area can't be deleted, as at least one spawn area is mandatory."
+                      : undefined
                   }
-                  removeSpawnPoint(index);
-                }}
-              >
-                Delete
-              </Button>
-            </MoreOptionsMenu>
-          </Block>
+                >
+                  Delete Spawn Area
+                </Button>
+              </MoreOptionsMenu>
+            </div>
+          }
+          border
+        >
+          <TextField
+            label="Name"
+            type="text"
+            value={input.name}
+            error={
+              !isValidSpawnAreaName(input.name) && 'Spaces and special characters are not allowed'
+            }
+            onFocus={handleFocusInput}
+            onBlur={handleBlurInput}
+            onChange={handleNameChange}
+          />
           <Block label="Position">
             <PositionFields
               value={input.position}
               onFocus={handleFocusInput}
               onBlur={handleBlurInput}
               onChange={(axis, val) => {
-                const newInput = { ...input, position: { ...input.position, [axis]: val } };
-                modifySpawnPoint(index, toSceneSpawnPoint(spawnPoint.name, newInput));
+                handleModify({ position: { ...input.position, [axis]: val } });
               }}
             />
           </Block>
-          <CheckboxField
-            label="Random Offset"
-            checked={input.randomOffset}
-            onChange={event => {
-              const newInput = {
-                ...input,
-                randomOffset: event.target.checked,
-                maxOffset: event.target.checked ? 1.5 : 0,
-              };
-              modifySpawnPoint(index, toSceneSpawnPoint(spawnPoint.name, newInput));
-            }}
-          />
-          {input.randomOffset ? (
-            <TextField
-              label="Max Offset"
-              type="number"
-              value={input.maxOffset}
-              onFocus={handleFocusInput}
-              onBlur={handleBlurInput}
-              onChange={event => {
-                const value = parseFloat(event.target.value);
-                if (isNaN(value)) return;
-                const newInput = { ...input, maxOffset: value };
-                modifySpawnPoint(index, toSceneSpawnPoint(spawnPoint.name, newInput));
-              }}
-              autoSelect
-            />
-          ) : null}
-          <Block label="Camera Target">
+          <Block label="Spawn Camera Target">
             <PositionFields
               value={input.cameraTarget}
               onFocus={handleFocusInput}
               onBlur={handleBlurInput}
               onChange={(axis, val) => {
-                const newInput = {
-                  ...input,
-                  cameraTarget: { ...input.cameraTarget, [axis]: val },
-                };
-                modifySpawnPoint(index, toSceneSpawnPoint(spawnPoint.name, newInput));
+                handleModify({ cameraTarget: { ...input.cameraTarget, [axis]: val } });
               }}
             />
           </Block>
-        </Block>
+          <Block label="Randomized Area">
+            <TextField
+              type="number"
+              value={input.maxOffset}
+              disabled={!input.randomOffset}
+              onFocus={handleFocusInput}
+              onBlur={handleBlurInput}
+              onChange={event => {
+                const value = parseFloat(event.target.value);
+                if (isNaN(value) || value < 0) return;
+                handleModify({ maxOffset: value });
+              }}
+              autoSelect
+            />
+            <CheckboxField
+              label="Don't randomize"
+              checked={!input.randomOffset}
+              onChange={event => {
+                const enableRandom = !event.target.checked;
+                handleModify({
+                  randomOffset: enableRandom,
+                  ...(enableRandom && input.maxOffset === 0
+                    ? { maxOffset: SPAWN_AREA_DEFAULTS.maxOffset }
+                    : {}),
+                });
+              }}
+            />
+          </Block>
+        </Container>
       );
     },
     [
       modifySpawnPoint,
       removeSpawnPoint,
       selectedSpawnPointIndex,
-      handleSpawnPointClick,
       handleFocusInput,
       handleBlurInput,
       spawnPointManager,
+      spawnPoints.length,
     ],
   );
 
@@ -257,11 +313,11 @@ export default withSdk<Props>(({ sdk }) => {
   return (
     <Container
       className="Scene"
-      label="Spawn Settings"
+      label="Spawn Areas"
       gap
     >
-      {spawnPoints.map((spawnPoint, index) => renderSpawnPoint(spawnPoint, index))}
-      <AddButton onClick={handleAddSpawnPoint}>Add Spawn Point</AddButton>
+      {spawnPoints.map((spawnPoint, index) => renderSpawnArea(spawnPoint, index))}
+      <AddButton onClick={handleAddSpawnArea}>Add New Spawn Area</AddButton>
     </Container>
   );
 });

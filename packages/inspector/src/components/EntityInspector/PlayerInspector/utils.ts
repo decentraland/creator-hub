@@ -1,0 +1,81 @@
+import type { SceneSpawnPoint, SceneSpawnPointCoord } from '../../../lib/sdk/components';
+import type { SpawnPointInput } from './types';
+
+function getValue(coord: SceneSpawnPointCoord) {
+  if (coord.$case === 'range') {
+    if (coord.value.length === 1) {
+      return coord.value[0];
+    }
+    return (coord.value[0] + coord.value[1]) / 2;
+  }
+  return coord.value;
+}
+
+function getOffset(value: number | number[]) {
+  if (Array.isArray(value)) {
+    if (value.length === 1) {
+      return 0;
+    }
+    return (value[1] - value[0]) / 2;
+  }
+  return 0;
+}
+
+function toValue(value: number, offset: number): SceneSpawnPointCoord {
+  if (offset === 0) {
+    return { $case: 'single', value };
+  }
+  return { $case: 'range', value: [value - offset, value + offset] };
+}
+
+export function fromSceneSpawnPoint(spawnPoint: SceneSpawnPoint): SpawnPointInput {
+  const axes = [
+    spawnPoint.position.x.value,
+    spawnPoint.position.y.value,
+    spawnPoint.position.z.value,
+  ];
+  const randomOffset = axes.some(Array.isArray);
+  return {
+    name: spawnPoint.name,
+    default: spawnPoint.default ?? false,
+    position: {
+      x: getValue(spawnPoint.position.x),
+      y: getValue(spawnPoint.position.y),
+      z: getValue(spawnPoint.position.z),
+    },
+    randomOffset,
+    maxOffset: randomOffset
+      ? axes.reduce<number>((offset, axis) => Math.max(offset, getOffset(axis)), 0)
+      : 0,
+    cameraTarget: spawnPoint.cameraTarget || {
+      x: 8,
+      y: 1,
+      z: 8,
+    },
+  };
+}
+
+export function toSceneSpawnPoint(spawnPointInput: SpawnPointInput): SceneSpawnPoint {
+  const offset = spawnPointInput.randomOffset ? spawnPointInput.maxOffset : 0;
+  return {
+    name: spawnPointInput.name,
+    default: spawnPointInput.default,
+    position: {
+      x: toValue(spawnPointInput.position.x, offset),
+      y: toValue(spawnPointInput.position.y, 0),
+      z: toValue(spawnPointInput.position.z, offset),
+    },
+    cameraTarget: spawnPointInput.cameraTarget,
+  };
+}
+
+export const SPAWN_AREA_DEFAULTS = {
+  position: { x: 2, y: 0, z: 2 },
+  cameraTarget: { x: 8, y: 1, z: 8 },
+  maxOffset: 2,
+} as const;
+
+/** Validates spawn area name: only alphanumeric, hyphens, underscores */
+export function isValidSpawnAreaName(name: string): boolean {
+  return /^[a-zA-Z0-9_-]+$/.test(name) && name.length > 0;
+}
