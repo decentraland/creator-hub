@@ -267,6 +267,10 @@ export const ActionSchemas = {
     methodName: Schemas.String,
     params: Schemas.Optional(Schemas.Map({})),
   }),
+  [ActionType.LOG_TO_CONSOLE]: Schemas.Map({
+    message: Schemas.String,
+  }),
+  [ActionType.DELETE]: Schemas.Map({}),
 };
 
 export type ActionPayload<T extends ActionType = any> = T extends keyof typeof ActionSchemas
