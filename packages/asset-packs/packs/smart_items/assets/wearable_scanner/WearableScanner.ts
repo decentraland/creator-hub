@@ -13,7 +13,7 @@ import {
 } from '@dcl/sdk/ecs';
 import { Vector3 } from '@dcl/sdk/math';
 import { getPlayer } from '@dcl/sdk/src/players';
-import { getActionEvents } from '@dcl/asset-packs/dist/events';
+import type { ActionCallback } from '~sdk/script-utils';
 
 export class WearableScanner {
   private scanning: boolean = false;
@@ -31,11 +31,15 @@ export class WearableScanner {
     return match ? match[1] : urn;
   }
 
+  /**
+   * @param wearableId - The URN code for the wearable to be scanned. Player must be wearing this wearable to be granted access.
+   * @param onAccessGranted - Callback function to be called when the player is granted access.
+   */
   constructor(
     public src: string,
     public entity: Entity,
     public wearableId: string,
-    public unlockedEntity: Entity,
+    public onAccessGranted: ActionCallback,
   ) {
     // Trim the wearableId URN in constructor
     this.wearableId = this.trimUrn(wearableId);
@@ -110,7 +114,7 @@ export class WearableScanner {
         metallic: 0,
       });
     } else {
-      console.warn('WearableScanner: Image entity not found, thumbnail will not be displayed');
+      console.log('WearableScanner: Image entity not found, thumbnail will not be displayed');
     }
 
     Animator.playSingleAnimation(this.entity, 'NotAllow_Action', true);
@@ -144,8 +148,8 @@ export class WearableScanner {
             loop: false,
           });
           console.log('Access Granted');
-          if (this.unlockedEntity) {
-            getActionEvents(this.unlockedEntity).emit('Open', {});
+          if (this.onAccessGranted) {
+            this.onAccessGranted();
           }
         } else {
           Animator.playSingleAnimation(this.entity, 'NotAllow_Action', true);

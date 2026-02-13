@@ -11,16 +11,16 @@
               "y": 1.56,
               "z": 0.07
             },
+            "scale": {
+              "x": 0.7,
+              "y": 0.7,
+              "z": 0.7
+            },
             "rotation": {
               "x": 0,
               "y": 0,
               "z": 0,
               "w": 1
-            },
-            "scale": {
-              "x": 0.7,
-              "y": 0.7,
-              "z": 0.7
             },
             "parent": 0
           }
@@ -63,7 +63,7 @@
                   "tex": {
                     "$case": "texture",
                     "texture": {
-                      "src": "{assetPath}/image-logo.png",
+                      "src": "assets/asset-packs/wearable_scanner/image-logo.png",
                       "wrapMode": 0,
                       "filterMode": 0,
                       "offset": {
@@ -176,17 +176,7 @@
         },
         "513": {
           "json": {
-            "value": "Wearable-thumbnail"
-          }
-        }
-      }
-    },
-    {
-      "name": "core-schema::Sync-Components",
-      "data": {
-        "0": {
-          "json": {
-            "componentIds": ["core::Animator", "core::AudioSource"]
+            "value": "Wearable-thumbnail_3"
           }
         }
       }
@@ -199,7 +189,7 @@
             "isBasicViewEnabled": true,
             "componentName": "",
             "fields": [],
-            "assetId": "37460a1e-affc-4f87-b725-118cc11d86fc",
+            "assetId": "b70f285f-804a-40fb-bad2-80e7c34aa4ed",
             "label": "Image",
             "sections": [
               {
@@ -271,6 +261,16 @@
       }
     },
     {
+      "name": "core-schema::Sync-Components",
+      "data": {
+        "0": {
+          "json": {
+            "componentIds": [1042, 1020]
+          }
+        }
+      }
+    },
+    {
       "name": "asset-packs::Script",
       "data": {
         "0": {
@@ -279,7 +279,7 @@
               {
                 "path": "{assetPath}/WearableScanner.ts",
                 "priority": 0,
-                "layout": "{\"params\":{\"imageEntity\":{\"type\":\"entity\",\"optional\":false,\"value\":513},\"wearableId\":{\"type\":\"string\",\"optional\":false,\"value\":\"urn:decentraland:off-chain:base-avatars:thug_life\"},\"unlockedEntity\":{\"type\":\"entity\",\"optional\":true,\"value\":null}}}"
+                "layout": "{\"params\":{\"wearableId\":{\"type\":\"string\",\"optional\":false,\"value\":\"urn:decentraland:off-chain:base-avatars:thug_life\"},\"onAccessGranted\":{\"type\":\"action\",\"optional\":false,\"value\":{\"entity\":515,\"action\":\"Open\"}}}}"
               }
             ]
           }

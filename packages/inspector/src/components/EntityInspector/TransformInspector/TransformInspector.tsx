@@ -108,18 +108,21 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
           leftLabel="X"
           type="number"
           {...getInputProps('scale.x')}
+          debounceTime={config?.porportionalScaling ? 150 : 0}
           autoSelect
         />
         <TextField
           leftLabel="Y"
           type="number"
           {...getInputProps('scale.y')}
+          debounceTime={config?.porportionalScaling ? 150 : 0}
           autoSelect
         />
         <TextField
           leftLabel="Z"
           type="number"
           {...getInputProps('scale.z')}
+          debounceTime={config?.porportionalScaling ? 150 : 0}
           autoSelect
         />
         <Link

@@ -29,6 +29,12 @@ export class ClapMeter {
   private START_ANGLE: number = 350;
   private END_ANGLE: number = 190;
 
+  /**
+   * @param emoteDetected - The URN code for the emote to be detected. Clap by default.
+   * @param max_increment - The maximum increment of the needle rotation per clap. Initial increments are larger.
+   * @param min_increment - The minimum increment of the needle rotation. Increments decrease gradually after the diminishing_threshold.
+   * @param diminishing_threshold - The number of claps before the increment starts to diminish.
+   */
   constructor(
     public src: string,
     public entity: Entity,
@@ -120,6 +126,7 @@ export class ClapMeter {
 
   /**
    * Resets the clap meter to its initial state
+   * @action
    */
   public resetClapMeter(newPlayer: string = '') {
     if (!this.arrow_entity || !this.entity) {
