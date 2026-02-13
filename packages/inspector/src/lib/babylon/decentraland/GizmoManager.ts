@@ -23,6 +23,11 @@ export function createGizmoManager(context: SceneContext) {
   let isEnabled = true;
   let currentTransformer: IGizmoTransformer | null = null;
   let isUpdatingFromGizmo = false;
+  let liveDragCallback: ((entities: EcsEntity[]) => void) | null = null;
+
+  function notifyLiveDrag() {
+    liveDragCallback?.(selectedEntities);
+  }
 
   // Create and initialize Babylon.js gizmo manager
   const gizmoManager = new BabylonGizmoManager(context.scene);
@@ -317,10 +322,14 @@ export function createGizmoManager(context: SceneContext) {
 
           // Set up callbacks for ECS updates
           if ('setUpdateCallbacks' in currentTransformer) {
-            currentTransformer.setUpdateCallbacks(updateEntityPosition, () => {
-              void context.operations.dispatch();
-              isUpdatingFromGizmo = false;
-            });
+            currentTransformer.setUpdateCallbacks(
+              updateEntityPosition,
+              () => {
+                void context.operations.dispatch();
+                isUpdatingFromGizmo = false;
+              },
+              notifyLiveDrag,
+            );
           }
 
           // Set world alignment
@@ -358,6 +367,7 @@ export function createGizmoManager(context: SceneContext) {
                 isUpdatingFromGizmo = false;
               },
               context,
+              notifyLiveDrag,
             );
           }
 
@@ -388,10 +398,14 @@ export function createGizmoManager(context: SceneContext) {
 
           // Set up callbacks for ECS updates
           if ('setUpdateCallbacks' in currentTransformer) {
-            currentTransformer.setUpdateCallbacks(updateEntityScale, () => {
-              void context.operations.dispatch();
-              isUpdatingFromGizmo = false;
-            });
+            currentTransformer.setUpdateCallbacks(
+              updateEntityScale,
+              () => {
+                void context.operations.dispatch();
+                isUpdatingFromGizmo = false;
+              },
+              notifyLiveDrag,
+            );
           }
 
           // Set world alignment
@@ -426,10 +440,14 @@ export function createGizmoManager(context: SceneContext) {
 
           // Set up callbacks for ECS updates
           if ('setUpdateCallbacks' in currentTransformer) {
-            currentTransformer.setUpdateCallbacks(updateEntityPosition, () => {
-              void context.operations.dispatch();
-              isUpdatingFromGizmo = false;
-            });
+            currentTransformer.setUpdateCallbacks(
+              updateEntityPosition,
+              () => {
+                void context.operations.dispatch();
+                isUpdatingFromGizmo = false;
+              },
+              notifyLiveDrag,
+            );
           }
 
           // Set world alignment
@@ -483,6 +501,9 @@ export function createGizmoManager(context: SceneContext) {
       if (selectedEntities.length > 0) {
         updateGizmoTransform();
       }
+    },
+    setLiveDragCallback(cb: (entities: EcsEntity[]) => void) {
+      liveDragCallback = cb;
     },
   };
 }
