@@ -431,7 +431,7 @@ function SelectWorld({
               <div className="WorldThumbnail">
                 <Image
                   src={
-                    worldSettings.settings?.thumbnailUrl ||
+                    worldSettings.settings?.thumbnail ||
                     addBase64ImagePrefix(project.thumbnail) ||
                     ''
                   }

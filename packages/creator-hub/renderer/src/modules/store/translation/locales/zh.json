@@ -394,6 +394,11 @@
           "label": "其他"
         }
       },
+      "discard_confirmation": "您有未保存的更改。离开前保存？",
+      "actions": {
+        "save": "保存更改",
+        "discard": "放弃"
+      },
       "general": {
         "world_spawn_coordinate": "世界生成坐标",
         "position": "位置",
@@ -455,7 +460,13 @@
         "scenes_title": "场景",
         "actions": {
           "edit_scene": "编辑场景",
-          "unpublish": "从世界中移除"
+          "unpublish": "从世界中移除",
+          "confirm": "确认",
+          "cancel": "取消"
+        },
+        "unpublish_confirmation": {
+          "title": "从这个世界中移除 <b>{name}</b>？",
+          "warning_title": "您的世界将自动重新发布以应用这些更改。"
         }
       }
     },
@@ -627,10 +638,13 @@
       "url_copied": "URL已复制到剪贴板",
       "fetch_managed_projects_failed": "获取管理项目失败",
       "fetch_world_settings_failed": "获取世界设置失败。请重试。",
+      "update_world_settings_failed": "更新世界设置失败。请重试。",
       "fetch_ens_list_failed": "获取ENS列表失败",
       "fetch_land_list_failed": "获取土地列表失败",
       "fetch_world_permissions_failed": "获取世界权限失败。请重试。",
       "fetch_world_scenes_failed": "获取世界场景失败。请重试。",
+      "unpublish_world_scene_failed": "从世界取消发布场景失败。请重试。",
+      "unpublish_world_failed": "取消发布世界失败。请重试。",
       "update_permissions_failed": "更新世界权限失败。请重试。",
       "add_permission_failed": "添加地址权限失败。请重试。",
       "remove_permission_failed": "删除地址权限失败。请重试。",
