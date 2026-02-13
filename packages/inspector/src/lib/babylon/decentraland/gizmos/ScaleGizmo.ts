@@ -493,16 +493,16 @@ export class ScaleGizmo implements IGizmoTransformer {
 
     // Replace the default octahedron with an axis-aligned cube (no rotation needed)
     const scene = this.gizmoManager.gizmos.scaleGizmo?._rootMesh?.getScene();
-    if (scene) {
-      const cube = MeshBuilder.CreateBox('uniformScaleCenter', { size: 1 }, scene);
-      cube.scaling.scaleInPlace(0.01); // Match approximate size of original center
-      uniformGizmo.setCustomMesh(cube);
-      const whiteMaterial = new StandardMaterial('uniformScaleCenterMat', scene);
-      whiteMaterial.diffuseColor = Color3.White();
-      // Strong emissive so the center cube reads as white in the utility layer (lighting is often dim)
-      whiteMaterial.emissiveColor = ScaleGizmo.UNIFORM_CUBE_EMISSIVE_DEFAULT.clone();
-      cube.material = whiteMaterial;
-    }
+    if (!scene) return;
+
+    const cube = MeshBuilder.CreateBox('uniformScaleCenter', { size: 1 }, scene);
+    cube.scaling.scaleInPlace(0.01); // Match approximate size of original center
+    uniformGizmo.setCustomMesh(cube);
+    const whiteMaterial = new StandardMaterial('uniformScaleCenterMat', scene);
+    whiteMaterial.diffuseColor = Color3.White();
+    // Strong emissive so the center cube reads as white in the utility layer (lighting is often dim)
+    whiteMaterial.emissiveColor = ScaleGizmo.UNIFORM_CUBE_EMISSIVE_DEFAULT.clone();
+    cube.material = whiteMaterial;
 
     // Create plane cubes (also on first activation)
     this.createPlaneCubes();
