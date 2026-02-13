@@ -50,7 +50,8 @@
           "debugger": "Abrir la ventana de la Consola durante la previsualización",
           "skip_auth_screen": "Omitir la pantalla de autenticación",
           "open_new_instance": "Abrir multiples clientes",
-          "landscape_terrain_enabled": "Habilitar terrenos de vista panorámica"
+          "landscape_terrain_enabled": "Habilitar terrenos de vista panorámica",
+          "mobile_preview": "Mostrar código QR para móvil"
         },
         "publish_options": {
           "publish_scene": "Publicar Escena",
@@ -361,6 +362,11 @@
       "dont_show_again": "No mostrar esta advertencia nuevamente",
       "continue": "Continuar",
       "cancel": "Cancelar"
+    },
+    "mobile_qr": {
+      "title": "Vista previa móvil",
+      "description": "Escanea este código QR con tu dispositivo móvil para previsualizar la escena",
+      "disclaimer": "Tu computadora y dispositivo móvil deben estar en la misma red"
     }
   },
   "snackbar": {
@@ -376,7 +382,8 @@
       "installing_dependencies_failed": "Error al instalar dependencias",
       "invalid_scenes_folder": "Carpeta de escenas inválida. Por favor, ingresa una carpeta de escenas válida en la configuración de la aplicación antes de crear una escena.",
       "create_scene_failed": "Ocurrió un error al crear la escena. Por favor, inténtalo nuevamente.",
-      "run_scene_failed": "Error al cargar el proyecto. Por favor, inténtalo de nuevo."
+      "run_scene_failed": "Error al cargar el proyecto. Por favor, inténtalo de nuevo.",
+      "mobile_qr_failed": "Error al obtener el código QR de vista previa móvil"
     },
     "missing_projects": {
       "title": "{scenes} {scenes, plural, one {escena} other {escenas}} {scenes, plural, one {faltante} other {faltantes}}",

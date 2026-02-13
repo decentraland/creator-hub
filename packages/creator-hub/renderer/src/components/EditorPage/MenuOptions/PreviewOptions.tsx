@@ -1,11 +1,18 @@
 import { useCallback } from 'react';
-import { Checkbox, FormControlLabel, FormGroup } from 'decentraland-ui2';
+import {
+  Checkbox,
+  Divider,
+  FormControlLabel,
+  FormGroup,
+  ListItemButton,
+  ListItemText,
+} from 'decentraland-ui2';
 
 import { t } from '/@/modules/store/translation/utils';
 
 import type { PreviewOptionsProps } from './types';
 
-export function PreviewOptions({ onChange, options }: PreviewOptionsProps) {
+export function PreviewOptions({ onChange, options, onShowMobileQR }: PreviewOptionsProps) {
   const handleChange = useCallback(
     (newOptions: Partial<PreviewOptionsProps['options']>) => () => {
       onChange({ ...options, ...newOptions });
@@ -36,6 +43,10 @@ export function PreviewOptions({ onChange, options }: PreviewOptionsProps) {
           label={t('editor.header.actions.preview_options.landscape_terrain_enabled')}
         />
       </FormGroup>
+      <Divider />
+      <ListItemButton onClick={onShowMobileQR}>
+        <ListItemText primary={t('editor.header.actions.preview_options.mobile_preview')} />
+      </ListItemButton>
     </div>
   );
 }
