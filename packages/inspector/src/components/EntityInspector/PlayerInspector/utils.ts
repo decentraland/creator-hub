@@ -1,4 +1,8 @@
+import { Vector3 } from '@babylonjs/core';
+
 import type { SceneSpawnPoint, SceneSpawnPointCoord } from '../../../lib/sdk/components';
+import { inBounds } from '../../../lib/utils/layout';
+import type { Layout } from '../../../lib/utils/layout';
 import type { SpawnPointInput } from './types';
 
 function getValue(coord: SceneSpawnPointCoord) {
@@ -78,4 +82,25 @@ export const SPAWN_AREA_DEFAULTS = {
 /** Validates spawn area name: only alphanumeric, hyphens, underscores */
 export function isValidSpawnAreaName(name: string): boolean {
   return /^[a-zA-Z0-9_-]+$/.test(name) && name.length > 0;
+}
+
+export function isSpawnAreaInBounds(
+  layout: Layout,
+  position: { x: number; y: number; z: number },
+  maxOffset: number,
+): boolean {
+  const corners = [
+    new Vector3(position.x - maxOffset, position.y, position.z - maxOffset),
+    new Vector3(position.x + maxOffset, position.y, position.z - maxOffset),
+    new Vector3(position.x - maxOffset, position.y, position.z + maxOffset),
+    new Vector3(position.x + maxOffset, position.y, position.z + maxOffset),
+  ];
+  return corners.every(corner => inBounds(layout, corner));
+}
+
+export function isPositionInBounds(
+  layout: Layout,
+  position: { x: number; y: number; z: number },
+): boolean {
+  return inBounds(layout, new Vector3(position.x, position.y, position.z));
 }
