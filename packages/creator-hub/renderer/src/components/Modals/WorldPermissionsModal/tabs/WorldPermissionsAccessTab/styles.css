@@ -2,18 +2,56 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  height: 100%;
 }
 
-.WorldAccessTab > .MuiTypography-root {
-  display: block;
-  white-space: pre-line;
+.WorldAccessTab.CenteredContent {
+  justify-content: center;
+}
+
+.WorldAccessTab > .MuiTypography-h6 {
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 0;
+}
+
+.WorldAccessTab .AccessTypeRow {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+}
+
+.WorldAccessTab .AccessTypeSelect {
+  border-radius: 12px;
+  border: 1px solid var(--transparent-gray-light);
+}
+
+.WorldAccessTab .AccessTypeSelect div[role="combobox"] {
+  padding: 12px 20px 12px 0;
+}
+
+.WorldAccessTab .AccessTypeSelect div[role="combobox"]:focus {
+  background-color: transparent;
+}
+
+.AccessTypeValue {
+  display: flex;
+  align-items: center;
+}
+
+.AccessTypeValue .MuiSvgIcon-root {
+  font-size: 16px;
+  margin-right: 4px;
+}
+
+.WorldAccessTab .AccessTypeDescription {
   color: var(--text-on-secondary);
-  margin-bottom: 8px;
-  transition: color 0.3s linear;
+  font-size: 13px;
 }
 
-.WorldAccessTab.RestrictedAccess > .MuiTypography-root span {
-  color: var(--white);
+.WorldAccessTab .AccessTypeMenuItem {
+  font-size: 14px;
 }
 
 .WorldAccessTab.RestrictedAccess .WarningContainer {
@@ -39,26 +77,69 @@
   margin-bottom: 4px;
 }
 
-.WorldAccessTab .AccessSwitchContainer {
-  display: flex;
-  align-items: center;
-  text-transform: uppercase;
-  gap: 6px;
-  margin-right: auto;
-}
-
-.WorldAccessTab .MuiSwitch-track:not(.Mui-checked) {
-  background: var(--transparent-gray-light);
-}
-
 .WorldAccessTab .AccessFormContainer {
   display: flex;
   flex-direction: column;
+  background-color: var(--black);
+  padding: 16px 16px 0 16px;
+}
+
+.WorldAccessTab .AccessListHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  margin-left: -16px;
+  margin-right: -16px;
+  padding-left: 16px;
+  padding-right: 16px;
+  border-bottom: 1px solid var(--dark-gray);
+}
+
+.WorldAccessTab .AccessListActions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.WorldAccessTab .ClearListLink {
+  cursor: pointer;
+  color: var(--text-on-secondary);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.WorldAccessTab .ApprovedAddressesCount {
+  display: flex;
+  align-items: center;
   gap: 8px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.WorldAccessTab .ApprovedAddressesCount .MuiSvgIcon-root {
+  font-size: 14px;
+  color: var(--dcl-silver);
+  cursor: pointer;
 }
 
 .WorldAccessTab .AccessList {
-  background-color: var(--black);
+  max-height: 300px;
+  overflow-y: auto;
+  margin-left: -16px;
+  margin-right: -16px;
+}
+
+.WorldAccessTab .AccessList > .WorldPermissionsItem:first-child {
+  border-top: none;
+}
+
+
+.CommunityThumbnail {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .WorldAccessTab .EmptyList {

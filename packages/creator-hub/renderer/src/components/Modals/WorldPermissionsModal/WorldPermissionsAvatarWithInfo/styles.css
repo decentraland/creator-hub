@@ -19,3 +19,8 @@
   color: var(--dcl-silver);
   font-family: var(--font-family);
 }
+
+.Avatar > .MuiSvgIcon-root {
+  color: var(--dcl-silver);
+  font-size: 32px;
+}

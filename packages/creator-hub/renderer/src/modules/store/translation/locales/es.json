@@ -483,8 +483,17 @@
       "invalid_address": "Dirección inválida",
       "done": "Hecho",
       "access": {
+        "title": "Administra quién puede acceder a tu Mundo",
         "description": "Gestiona quién puede acceder a tu Mundo alternando\nentre <span>\"Privado\"</span> y <span>\"Público\"</span>.",
         "subtitle": "En <span>modo Privado</span>, puedes otorgar acceso a un máximo de 100 direcciones (usuarios de Decentraland). Ten en cuenta que si vuelves al <span>modo Público</span>, tu lista de direcciones aprobadas será borrada.",
+        "type": {
+          "public": "Público",
+          "invitation_only": "Solo con invitación",
+          "password_protected": "Protegido con contraseña",
+          "public_description": "Cualquiera puede acceder a este mundo",
+          "invitation_only_description": "Solo las direcciones aprobadas pueden acceder a este mundo",
+          "password_protected_description": "Solo los usuarios que conocen la contraseña pueden unirse"
+        },
         "warning": {
           "title": "Advertencia",
           "description": "Si vuelves al modo Público, tu lista de direcciones aprobadas será borrada."
@@ -492,17 +501,66 @@
         "empty_list": "Aún no has aprobado ninguna dirección",
         "public": "Público",
         "private": "Privado",
-        "approved_addresses": "Direcciones Aprobadas {number}",
+        "approved_addresses": "Direcciones Aprobadas: {number}",
+        "approved_addresses_tooltip": "Solo 100 usuarios podrán unirse al mismo tiempo",
         "add_address": "Agregar dirección",
+        "new_invite": "Nueva Invitación",
+        "clear_list": "Limpiar Lista",
+        "clear_list_title": "¿Limpiar Lista?",
+        "clear_list_warning": "Si continúas, tu lista de direcciones aprobadas será borrada.",
+        "change_access_type_title": "¿Cambiar tipo de acceso?",
+        "change_access_type_warning": "Si cambias el tipo de acceso, tu lista de direcciones aprobadas será borrada.",
+        "go_back": "Volver",
+        "continue": "Continuar",
+        "confirm": "Confirmar",
+        "cancel": "Cancelar",
+        "wrong_address_format": "Formato de dirección incorrecto",
+        "community_search_placeholder": "Buscar una comunidad...",
+        "community_searching": "Buscando...",
+        "community_no_results": "No se encontraron comunidades",
+        "community_members": "{count} {count, plural, one {Miembro} other {Miembros}}",
+        "community_privacy_public": "Comunidad pública",
+        "community_privacy_private": "Comunidad privada",
+        "invite_tabs": {
+          "wallet_address": "Dirección de Wallet",
+          "community": "Comunidad",
+          "import_csv": "Importar CSV"
+        },
+        "csv_drop_text": "Arrastra tu archivo CSV aquí o",
+        "csv_browse": "Busca en tus archivos",
+        "csv_addresses_count": "{count} {count, plural, one {dirección} other {direcciones}}",
+        "csv_communities_count": "{count} {count, plural, one {comunidad} other {comunidades}}",
+        "csv_invalid_count": "{count} {count, plural, one {dirección inválida} other {direcciones inválidas}}",
+        "csv_replace": "Reemplazar",
         "actions": {
           "remove": "Eliminar"
+        }
+      },
+      "password": {
+        "change_password": "Cambiar Contraseña",
+        "create_new_password": "Crear Nueva Contraseña",
+        "empty_state": "La contraseña de este mundo no está definida.",
+        "has_password": "Este mundo está protegido por contraseña.",
+        "dialog": {
+          "create_title": "Crear Nueva Contraseña",
+          "change_title": "Cambiar Contraseña",
+          "type_password": "Escribe tu contraseña",
+          "repeat_password": "Repite tu contraseña",
+          "info": "¡Asegúrate de anotar tu contraseña para no perderla!"
+        },
+        "error": {
+          "empty": "La contraseña no puede estar vacía",
+          "too_short": "La contraseña debe tener al menos {min} caracteres",
+          "mismatch": "Las contraseñas no coinciden"
         }
       },
       "collaborators": {
         "description": "<span>Agrega hasta 10 direcciones</span> (usuarios de Decentraland) como colaboradores y gestiona sus permisos para publicar o transmitir en tu Mundo.",
         "empty_list": "Aún no has agregado ningún colaborador/dirección",
         "add_collaborator": "Agregar colaborador",
+        "add": "Agregar",
         "column_name_label": "Colaboradores {number}",
+        "column_collaborators": "Colaboradores",
         "column_stream_label": "Transmisión",
         "column_stream_tooltip": "El usuario podrá transmitir contenido en tu Mundo",
         "column_deploy_label": "Ubicación",
@@ -516,6 +574,10 @@
         "parcels_count": "{count} Parcelas",
         "actions": {
           "remove": "Eliminar"
+        },
+        "dialog": {
+          "title": "Agregar Colaborador",
+          "label": "Ingresa la dirección de billetera o ENS"
         }
       },
       "parcels": {

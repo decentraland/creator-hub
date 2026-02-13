@@ -340,7 +340,7 @@ export const fetchWorldPermissions = createAsyncThunk(
 export const updateWorldPermissions = createAsyncThunk(
   'management/updateWorldPermissions',
   async (
-    { worldName, worldPermissionName, worldPermissionType }: WorldPermissionsPayload,
+    { worldName, worldPermissionName, worldPermissionType, options }: WorldPermissionsPayload,
     { dispatch },
   ) => {
     const connectedAccount = AuthServerProvider.getAccount();
@@ -352,6 +352,7 @@ export const updateWorldPermissions = createAsyncThunk(
       worldName,
       worldPermissionName,
       worldPermissionType,
+      options,
     );
     if (success) {
       await dispatch(fetchWorldPermissions({ worldName })).unwrap();
@@ -650,10 +651,7 @@ const getWorldScenes = createSelector(
 
 const getError = createSelector(getManagementState, managementState => managementState.error);
 
-const getPermissionsState = createSelector(
-  getManagementState,
-  managementState => managementState.worldPermissions,
-);
+const getPermissionsState = (state: AppState) => state.management.worldPermissions;
 
 const getParcelsStateForAddress = (
   state: AppState,

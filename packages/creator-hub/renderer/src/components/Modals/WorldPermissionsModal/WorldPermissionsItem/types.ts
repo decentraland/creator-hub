@@ -1,13 +1,22 @@
 import type { Option as DropdownOption } from '/@/components/Dropdown';
+import type { WorldRoleType } from '/@/lib/worlds';
 
 export type BaseProps = {
   walletAddress: string;
+  icon?: React.ReactNode;
+  name?: string;
+  subtitle?: string;
+  tag?: React.ReactNode;
   menuOptions?: DropdownOption[];
   children?: React.ReactNode;
 };
 
 export type AccessItemProps = {
   walletAddress: string;
+  icon?: React.ReactNode;
+  name?: string;
+  subtitle?: string;
+  role?: WorldRoleType;
   onRemoveAddress: () => void;
 };
 
