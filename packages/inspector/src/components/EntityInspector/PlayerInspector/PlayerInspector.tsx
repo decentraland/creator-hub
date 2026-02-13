@@ -5,6 +5,7 @@ import type { Vector3 } from '@babylonjs/core';
 import { withSdk } from '../../../hoc/withSdk';
 import { useComponentValue } from '../../../hooks/sdk/useComponentValue';
 import { useArrayState } from '../../../hooks/useArrayState';
+import { useSnackbar } from '../../../hooks/useSnackbar';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { TextField } from '../../ui/TextField';
@@ -17,6 +18,8 @@ import {
   fromSceneSpawnPoint,
   toSceneSpawnPoint,
   isValidSpawnAreaName,
+  isSpawnAreaInBounds,
+  isPositionInBounds,
   SPAWN_AREA_DEFAULTS,
 } from './utils';
 import type { Props } from './types';
@@ -78,6 +81,22 @@ export default withSdk<Props>(({ sdk }) => {
 
   const [selectedSpawnPointIndex, setSelectedSpawnPointIndex] = useState<number | null>(null);
 
+  const { pushNotification } = useSnackbar();
+  const activeWarningMessage = useRef<string | null>(null);
+  const showBoundsWarning = useCallback(
+    (message: string) => {
+      if (activeWarningMessage.current === message) return;
+      activeWarningMessage.current = message;
+      void pushNotification('warning', message);
+    },
+    [pushNotification],
+  );
+  const clearBoundsWarning = useCallback(() => {
+    activeWarningMessage.current = null;
+  }, []);
+
+  const layout = componentValue?.layout;
+
   const spawnPointManager = sdk.sceneContext.spawnPoints;
   const gizmoManager = sdk.gizmos;
 
@@ -86,13 +105,46 @@ export default withSdk<Props>(({ sdk }) => {
       if (index < 0 || index >= spawnPoints.length) return;
       const spawnPoint = spawnPoints[index];
       const input = fromSceneSpawnPoint(spawnPoint);
+      const newPos = { x: position.x, y: position.y, z: position.z };
+
+      if (layout) {
+        if (field === 'position') {
+          const effectiveOffset = input.randomOffset ? input.maxOffset : 0;
+          if (!isSpawnAreaInBounds(layout, newPos, effectiveOffset)) {
+            showBoundsWarning('Spawn area must be within scene bounds');
+            const node = spawnPointManager.getSpawnPointNode(index);
+            if (node) {
+              node.position.set(input.position.x, input.position.y, input.position.z);
+            }
+            return;
+          }
+        } else if (field === 'cameraTarget') {
+          if (!isPositionInBounds(layout, newPos)) {
+            showBoundsWarning('Camera target must be within scene bounds');
+            const node = spawnPointManager.getCameraTargetNode(index);
+            if (node) {
+              node.position.set(input.cameraTarget.x, input.cameraTarget.y, input.cameraTarget.z);
+            }
+            return;
+          }
+        }
+      }
+
+      clearBoundsWarning();
       const newInput = {
         ...input,
-        [field]: { x: position.x, y: position.y, z: position.z },
+        [field]: newPos,
       };
       modifySpawnPoint(index, toSceneSpawnPoint(newInput));
     },
-    [spawnPoints, modifySpawnPoint],
+    [
+      spawnPoints,
+      modifySpawnPoint,
+      layout,
+      showBoundsWarning,
+      clearBoundsWarning,
+      spawnPointManager,
+    ],
   );
 
   const fieldChangeRef = useRef(handleFieldChange);
@@ -145,6 +197,7 @@ export default withSdk<Props>(({ sdk }) => {
   }, [spawnPoints, addSpawnPoint]);
 
   const [isFocused, setIsFocused] = useState(false);
+  const [revertKey, setRevertKey] = useState(0);
 
   useEffect(() => {
     if (isComponentEqual({ ...componentValue, spawnPoints }) || isFocused) {
@@ -246,26 +299,46 @@ export default withSdk<Props>(({ sdk }) => {
           />
           <Block label="Position">
             <PositionFields
+              key={`pos-${revertKey}`}
               value={input.position}
               onFocus={handleFocusInput}
               onBlur={handleBlurInput}
               onChange={(axis, val) => {
-                handleModify({ position: { ...input.position, [axis]: val } });
+                const newPosition = { ...input.position, [axis]: val };
+                if (layout) {
+                  const effectiveOffset = input.randomOffset ? input.maxOffset : 0;
+                  if (!isSpawnAreaInBounds(layout, newPosition, effectiveOffset)) {
+                    showBoundsWarning('Spawn area must be within scene bounds');
+                    setRevertKey(k => k + 1);
+                    return;
+                  }
+                }
+                clearBoundsWarning();
+                handleModify({ position: newPosition });
               }}
             />
           </Block>
           <Block label="Spawn Camera Target">
             <PositionFields
+              key={`cam-${revertKey}`}
               value={input.cameraTarget}
               onFocus={handleFocusInput}
               onBlur={handleBlurInput}
               onChange={(axis, val) => {
-                handleModify({ cameraTarget: { ...input.cameraTarget, [axis]: val } });
+                const newCameraTarget = { ...input.cameraTarget, [axis]: val };
+                if (layout && !isPositionInBounds(layout, newCameraTarget)) {
+                  showBoundsWarning('Camera target must be within scene bounds');
+                  setRevertKey(k => k + 1);
+                  return;
+                }
+                clearBoundsWarning();
+                handleModify({ cameraTarget: newCameraTarget });
               }}
             />
           </Block>
           <Block label="Randomized Area">
             <TextField
+              key={`offset-${revertKey}`}
               type="number"
               value={input.maxOffset}
               disabled={!input.randomOffset}
@@ -274,6 +347,12 @@ export default withSdk<Props>(({ sdk }) => {
               onChange={event => {
                 const value = parseFloat(event.target.value);
                 if (isNaN(value) || value < 0) return;
+                if (layout && !isSpawnAreaInBounds(layout, input.position, value)) {
+                  showBoundsWarning('Randomized area extends outside scene bounds');
+                  setRevertKey(k => k + 1);
+                  return;
+                }
+                clearBoundsWarning();
                 handleModify({ maxOffset: value });
               }}
               autoSelect
@@ -303,6 +382,10 @@ export default withSdk<Props>(({ sdk }) => {
       handleBlurInput,
       spawnPointManager,
       spawnPoints.length,
+      layout,
+      showBoundsWarning,
+      clearBoundsWarning,
+      revertKey,
     ],
   );
 
