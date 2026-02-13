@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
+import cx from 'classnames';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckIcon from '@mui/icons-material/Check';
 import { Box, Chip, MenuItem } from 'decentraland-ui2';
@@ -13,9 +14,9 @@ import { DeploymentOptionValue } from './types';
 import './styles.css';
 
 export const WorldPermissionsItem: React.FC<BaseProps> = React.memo(
-  ({ walletAddress, icon, name, subtitle, tag, menuOptions, children = null }) => {
+  ({ walletAddress, icon, name, subtitle, tag, menuOptions, className, children = null }) => {
     return (
-      <Box className="WorldPermissionsItem TableRow">
+      <Box className={cx('WorldPermissionsItem', className)}>
         <Row className="WorldPermissionsItemInfo">
           <WorldPermissionsAvatarWithInfo
             value={walletAddress}
@@ -89,6 +90,7 @@ export const WorldPermissionsCollaboratorsItem: React.FC<CollaboratorsItemProps>
   props => {
     const {
       walletAddress,
+      role,
       hasDeploymentPermission,
       hasStreamingPermission,
       allowedParcelsCount = 0,
@@ -97,13 +99,16 @@ export const WorldPermissionsCollaboratorsItem: React.FC<CollaboratorsItemProps>
       onRemoveCollaborator,
     } = props;
 
-    const menuOptions = [
-      {
-        text: t('modal.world_permissions.access.actions.remove'),
-        icon: <DeleteIcon />,
-        handler: onRemoveCollaborator,
-      },
-    ];
+    const menuOptions =
+      role !== WorldRoleType.OWNER
+        ? [
+            {
+              text: t('modal.world_permissions.access.actions.remove'),
+              icon: <DeleteIcon />,
+              handler: onRemoveCollaborator,
+            },
+          ]
+        : undefined;
 
     const deploymentOptionValue = useMemo(() => {
       if (!hasDeploymentPermission) return DeploymentOptionValue.None;
@@ -174,25 +179,40 @@ export const WorldPermissionsCollaboratorsItem: React.FC<CollaboratorsItemProps>
       <WorldPermissionsItem
         walletAddress={walletAddress}
         menuOptions={menuOptions}
+        className="WorldCollaboratorItem"
+        tag={
+          <Chip
+            className="RoleBadge"
+            label={
+              role === WorldRoleType.OWNER
+                ? t('manage.cards.roles.owner')
+                : t('manage.cards.roles.collaborator')
+            }
+            size="small"
+            variant="filled"
+          />
+        }
       >
-        <Select
-          className="DeploymentOptionSelect"
-          value={deploymentOptionValue}
-          renderValue={renderValue}
-        >
-          {deploymentOptions.map(option => (
-            <MenuItem
-              key={option.value}
-              value={option.value}
-              disabled={option.disabled}
-              className="DeploymentOptionMenuItem"
-              onClick={() => handleChangeDeploymentOption(option.value)}
-            >
-              {option.label}
-              {option.value === deploymentOptionValue && <CheckIcon />}
-            </MenuItem>
-          ))}
-        </Select>
+        {role !== WorldRoleType.OWNER && (
+          <Select
+            className="DeploymentOptionSelect"
+            value={deploymentOptionValue}
+            renderValue={renderValue}
+          >
+            {deploymentOptions.map(option => (
+              <MenuItem
+                key={option.value}
+                value={option.value}
+                disabled={option.disabled}
+                className="DeploymentOptionMenuItem"
+                onClick={() => handleChangeDeploymentOption(option.value)}
+              >
+                {option.label}
+                {option.value === deploymentOptionValue && <CheckIcon />}
+              </MenuItem>
+            ))}
+          </Select>
+        )}
       </WorldPermissionsItem>
     );
   },
