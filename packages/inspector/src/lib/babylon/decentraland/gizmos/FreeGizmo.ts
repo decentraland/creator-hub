@@ -37,6 +37,7 @@ export class FreeGizmo implements IGizmoTransformer {
   private onDragEndCallback: (() => void) | null = null;
   private updateEntityPosition: ((entity: EcsEntity) => void) | null = null;
   private dispatchOperations: (() => void) | null = null;
+  private onLiveDragUpdate: (() => void) | null = null;
 
   private gizmoManager: GizmoManagerInterface | null = null;
 
@@ -69,9 +70,11 @@ export class FreeGizmo implements IGizmoTransformer {
   setUpdateCallbacks(
     updateEntityPosition: (entity: EcsEntity) => void,
     dispatchOperations: () => void,
+    onLiveDragUpdate?: () => void,
   ): void {
     this.updateEntityPosition = updateEntityPosition;
     this.dispatchOperations = dispatchOperations;
+    this.onLiveDragUpdate = onLiveDragUpdate ?? null;
   }
 
   setWorldAligned(value: boolean): void {
@@ -120,6 +123,7 @@ export class FreeGizmo implements IGizmoTransformer {
     this.onDragEndCallback = null;
     this.updateEntityPosition = null;
     this.dispatchOperations = null;
+    this.onLiveDragUpdate = null;
   }
 
   private resetDragState(): void {
@@ -214,6 +218,7 @@ export class FreeGizmo implements IGizmoTransformer {
     }
 
     this.updateEntityPosition && this.selectedEntities.forEach(this.updateEntityPosition);
+    this.onLiveDragUpdate?.();
     this.updateGizmoIndicator();
   }
 

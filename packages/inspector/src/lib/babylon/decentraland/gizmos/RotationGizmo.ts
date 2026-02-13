@@ -256,6 +256,7 @@ export class RotationGizmo implements IGizmoTransformer {
   private updateEntityRotation: ((entity: EcsEntity) => void) | null = null;
   private updateEntityPosition: ((entity: EcsEntity) => void) | null = null;
   private dispatchOperations: (() => void) | null = null;
+  private onLiveDragUpdate: (() => void) | null = null;
 
   // Configuration
   private isWorldAligned = true;
@@ -669,11 +670,13 @@ export class RotationGizmo implements IGizmoTransformer {
     updateEntityPosition: (entity: EcsEntity) => void,
     dispatchOperations: () => void,
     sceneContext?: any,
+    onLiveDragUpdate?: () => void,
   ): void {
     this.updateEntityRotation = updateEntityRotation;
     this.updateEntityPosition = updateEntityPosition;
     this.dispatchOperations = dispatchOperations;
     this.sceneContext = sceneContext;
+    this.onLiveDragUpdate = onLiveDragUpdate ?? null;
   }
 
   setWorldAligned(value: boolean): void {
@@ -776,6 +779,7 @@ export class RotationGizmo implements IGizmoTransformer {
         if (this.updateEntityRotation) {
           this.currentEntities.forEach(this.updateEntityRotation);
         }
+        this.onLiveDragUpdate?.();
       }
     });
 

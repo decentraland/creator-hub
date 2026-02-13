@@ -40,6 +40,7 @@ export class ScaleGizmo implements IGizmoTransformer {
   private currentEntities: EcsEntity[] = [];
   private updateEntityScale: ((entity: EcsEntity) => void) | null = null;
   private dispatchOperations: (() => void) | null = null;
+  private onLiveDragUpdate: (() => void) | null = null;
   private isWorldAligned = true;
 
   // Sensitivity multiplier: higher = model scales more relative to gizmo visual movement
@@ -295,6 +296,7 @@ export class ScaleGizmo implements IGizmoTransformer {
           this.updateEntityScale(entity);
         }
       }
+      this.onLiveDragUpdate?.();
     };
 
     const onPointerUp = (pointerInfo: PointerInfo) => {
@@ -396,6 +398,7 @@ export class ScaleGizmo implements IGizmoTransformer {
           this.updateEntityScale(entity);
         }
       }
+      this.onLiveDragUpdate?.();
     };
 
     const onPointerUp = (pointerInfo: PointerInfo) => {
@@ -531,9 +534,11 @@ export class ScaleGizmo implements IGizmoTransformer {
   setUpdateCallbacks(
     updateEntityScale: (entity: EcsEntity) => void,
     dispatchOperations: () => void,
+    onLiveDragUpdate?: () => void,
   ): void {
     this.updateEntityScale = updateEntityScale;
     this.dispatchOperations = dispatchOperations;
+    this.onLiveDragUpdate = onLiveDragUpdate ?? null;
   }
 
   setWorldAligned(_value: boolean): void {
@@ -582,6 +587,7 @@ export class ScaleGizmo implements IGizmoTransformer {
         if (this.updateEntityScale) {
           this.currentEntities.forEach(this.updateEntityScale);
         }
+        this.onLiveDragUpdate?.();
       }
     });
 

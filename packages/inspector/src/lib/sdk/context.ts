@@ -1,7 +1,8 @@
 import type { Scene } from '@babylonjs/core';
 import type { Emitter } from 'mitt';
 import { MessageTransport } from '@dcl/mini-rpc';
-import type { ComponentDefinition, CrdtMessageType, Entity, IEngine } from '@dcl/ecs';
+import { CrdtMessageType } from '@dcl/ecs';
+import type { ComponentDefinition, Entity, IEngine } from '@dcl/ecs';
 
 import { SceneContext } from '../babylon/decentraland/SceneContext';
 import { initRenderer } from '../babylon/setup/init';
@@ -78,6 +79,25 @@ export async function createSdkContext(
     new SceneMetricsServer(transport, store);
   }
 
+  const operations = createOperations(engine);
+
+  // Wire live drag updates: during gizmo drag, update the inspector engine's
+  // Transform component and emit change events so the UI shows live values.
+  // This bypasses the CRDT pipeline, so no undo entries are created during drag.
+  ctx.gizmos.setLiveDragCallback(entities => {
+    for (const entity of entities) {
+      const rendererTransform = ctx.Transform.getOrNull(entity.entityId);
+      if (!rendererTransform) continue;
+      operations.updateValue(components.Transform, entity.entityId, rendererTransform);
+      events.emit('change', {
+        entity: entity.entityId,
+        operation: CrdtMessageType.PUT_COMPONENT,
+        component: components.Transform,
+        value: rendererTransform,
+      });
+    }
+  });
+
   return {
     engine,
     components,
@@ -85,7 +105,7 @@ export async function createSdkContext(
     scene,
     sceneContext: ctx,
     dispose,
-    operations: createOperations(engine),
+    operations,
     gizmos: ctx.gizmos,
     editorCamera: renderer.editorCamera,
     enumEntity: createEnumEntityId(engine),
