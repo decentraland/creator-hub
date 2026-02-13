@@ -775,15 +775,22 @@ export class RotationGizmo implements IGizmoTransformer {
     this.dragObserver = rotationGizmo.onDragObservable.add(() => {
       if (this.gizmoManager.attachedNode) {
         this.update(this.currentEntities, this.gizmoManager.attachedNode as TransformNode);
-
-        if (this.updateEntityRotation) {
-          this.currentEntities.forEach(this.updateEntityRotation);
-        }
+        // NOTE: we intentionally do NOT call updateEntityRotation here.
+        // Writing to the renderer ECS on every drag frame would cause
+        // intermediate undo entries.  The final ECS sync happens at drag end.
         this.onLiveDragUpdate?.();
       }
     });
 
     this.dragEndObserver = rotationGizmo.onDragEndObservable.add(() => {
+      // For single entity, sync final rotation to renderer ECS before dispatch.
+      // Multi-entity is handled by onDragEnd → updateMultipleEntitiesRotation.
+      if (this.currentEntities.length === 1) {
+        if (this.updateEntityRotation) {
+          this.currentEntities.forEach(this.updateEntityRotation);
+        }
+      }
+
       this.onDragEnd();
 
       if (this.dispatchOperations) {

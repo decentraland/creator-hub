@@ -85,20 +85,34 @@ export async function createSdkContext(
   const operations = createOperations(engine);
 
   // Wire live drag updates: during gizmo drag, emit change events so the UI
-  // shows live transform values. We intentionally do NOT call
-  // operations.updateValue() here — that would mark the inspector engine's
-  // Transform component as dirty, and subsequent engine.update() calls would
-  // flush intermediate values to the data layer, creating unwanted undo entries.
-  // Instead we emit events with skipEngineSync so hooks update the UI only.
+  // shows live transform values.  Neither the renderer ECS nor the inspector
+  // engine are updated during drag — this prevents intermediate undo entries.
+  // We read positions directly from the Babylon entity nodes and emit events
+  // with skipEngineSync so hooks update the UI only.
   ctx.gizmos.setLiveDragCallback(entities => {
     for (const entity of entities) {
-      const rendererTransform = ctx.Transform.getOrNull(entity.entityId);
-      if (!rendererTransform) continue;
+      // Read base transform for fields that don't change during drag (e.g. parent)
+      const baseTransform = ctx.Transform.getOrNull(entity.entityId);
+      if (!baseTransform) continue;
+      // Construct live transform from Babylon entity's current node properties
+      const liveValue = {
+        ...baseTransform,
+        position: { x: entity.position.x, y: entity.position.y, z: entity.position.z },
+        rotation: entity.rotationQuaternion
+          ? {
+              x: entity.rotationQuaternion.x,
+              y: entity.rotationQuaternion.y,
+              z: entity.rotationQuaternion.z,
+              w: entity.rotationQuaternion.w,
+            }
+          : baseTransform.rotation,
+        scale: { x: entity.scaling.x, y: entity.scaling.y, z: entity.scaling.z },
+      };
       events.emit('change', {
         entity: entity.entityId,
         operation: CrdtMessageType.PUT_COMPONENT,
         component: components.Transform,
-        value: rendererTransform,
+        value: liveValue,
         skipEngineSync: true,
       });
     }

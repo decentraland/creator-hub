@@ -186,6 +186,10 @@ export class FreeGizmo implements IGizmoTransformer {
     this.dragPlanePosition = null;
     this.entityOffsets.clear();
     this.updateGizmoIndicator();
+    // Sync final positions to renderer ECS before dispatch (single undo entry)
+    if (this.updateEntityPosition) {
+      this.selectedEntities.forEach(this.updateEntityPosition);
+    }
     this.dispatchOperations?.();
     this.onDragEndCallback?.();
   }
@@ -217,7 +221,11 @@ export class FreeGizmo implements IGizmoTransformer {
       this.applyWorldPositionToEntity(entity, newWorldPosition);
     }
 
-    this.updateEntityPosition && this.selectedEntities.forEach(this.updateEntityPosition);
+    // NOTE: we intentionally do NOT call updateEntityPosition here.
+    // Writing to the renderer ECS on every drag frame would cause the
+    // renderer's engine.update() to flush intermediate values to the data
+    // layer, creating unwanted undo entries.  The final ECS sync happens
+    // in handleDragEnd instead.
     this.onLiveDragUpdate?.();
     this.updateGizmoIndicator();
   }

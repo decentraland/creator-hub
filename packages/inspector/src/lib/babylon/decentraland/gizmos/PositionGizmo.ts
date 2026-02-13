@@ -213,7 +213,11 @@ export class PositionGizmo implements IGizmoTransformer {
       const gizmoNode = this.gizmoManager.attachedNode as TransformNode;
       if (gizmoNode) {
         this.update(this.currentEntities, gizmoNode);
-        this.updateEntitiesInRealTime();
+        // NOTE: we intentionally do NOT call updateEntitiesInRealTime() here.
+        // Writing to the renderer ECS on every drag frame would cause the
+        // renderer's engine.update() to flush intermediate values to the data
+        // layer, creating unwanted undo entries.  The final ECS sync happens
+        // in onDragEndObservable instead.
         this.onLiveDragUpdate?.();
       }
     });
