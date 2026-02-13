@@ -1,8 +1,14 @@
 import type { RoleType as LandRoleType } from '/@/lib/land';
 import type { WorldRoleType } from '/@/lib/worlds';
 
+export enum FilterBy {
+  PUBLISHED = 'published',
+  UNPUBLISHED = 'unpublished',
+}
+
 export enum SortBy {
-  LATEST = 'latest',
+  LATEST = 'last_deployed_at',
+  NAME = 'name',
 }
 
 export enum ManagedProjectType {
@@ -23,7 +29,7 @@ export type ProjectDeployment = {
   description: string;
   thumbnail: string;
   lastPublishedAt: number;
-  scenes: SceneDeployment[];
+  scenesCount: number;
 };
 
 export type SceneDeployment = {

@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Box, Button } from 'decentraland-ui2';
 import { useDispatch, useSelector } from '#store';
 import {
   fetchWorldSettings,
@@ -7,6 +8,7 @@ import {
   fetchWorldPermissions,
   selectors as managementSelectors,
 } from '/@/modules/store/management';
+import { t } from '/@/modules/store/translation/utils';
 import { WorldSettingsTab, type ManagedProject } from '/shared/types/manage';
 import { WorldSettingsModal } from '../../Modals/WorldSettingsModal';
 import { WorldPermissionsModal } from '../../Modals/WorldPermissionsModal';
@@ -24,9 +26,13 @@ type PermissionsModalState = {
 
 type Props = {
   projects: ManagedProject[];
+  total: number;
+  isLoading: boolean;
+  onLoadMore: () => void;
 };
 
-const ManagedProjectsList: React.FC<Props> = React.memo(({ projects }) => {
+const ManagedProjectsList: React.FC<Props> = React.memo(props => {
+  const { projects, total, isLoading, onLoadMore } = props;
   const [settingsModal, setSettingsModal] = useState<SettingsModalState>({
     isOpen: false,
     activeTab: WorldSettingsTab.DETAILS,
@@ -80,6 +86,17 @@ const ManagedProjectsList: React.FC<Props> = React.memo(({ projects }) => {
           onViewScenes={handleViewScenes}
         />
       ))}
+      {projects.length < total && (
+        <Box className="LoadMoreContainer">
+          <Button
+            disabled={isLoading}
+            onClick={onLoadMore}
+            color="secondary"
+          >
+            {t('manage.load_more')}
+          </Button>
+        </Box>
+      )}
 
       <WorldSettingsModal
         open={settingsModal.isOpen}

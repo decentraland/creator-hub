@@ -247,7 +247,9 @@
           },
           "errors": {
             "details": "Detalles",
+            "code_error": "El código de tu escena contiene uno o más errores.\nPor favor corrígelos e inténtalo de nuevo.",
             "fetch_status": "Error al obtener información de la publicación.\nPor favor, inténtalo de nuevo.",
+            "fetch_error": "Error al obtener información de la publicación.\nPor favor, verifica tu conexión a internet e inténtalo de nuevo.",
             "catalyst": "Error al publicar en los nodos de Catalyst.\nPor favor, inténtalo de nuevo o verifica tu conexión a internet.",
             "max_retries": "Límite de reintentos excedido.\nPor favor, inténtalo de nuevo más tarde.",
             "not_found": "Algo salió mal.\nPor favor, inténtalo de nuevo.",
@@ -256,8 +258,7 @@
             "invalid_identity": "No se pudo validar su identidad.",
             "max_file_size_exceeded": "Uno o más activos exceden el límite permitido ({maxFileSizeInMb}MB).\nOptimiza o elimina archivos grandes y vuelve a intentarlo.",
             "unknown": "Algo salió mal.\nPor favor, inténtalo de nuevo.",
-            "invalid_creator_wallet": "El creador debe ser una dirección de billetera Ethereum válida.",
-            "code_error": "El código de tu escena contiene uno o más errores.\nPor favor corrígelos e inténtalo de nuevo."
+            "invalid_creator_wallet": "El creador debe ser una dirección de billetera Ethereum válida."
           },
           "actions": {
             "report_issue": "Informar un problema",
@@ -787,13 +788,28 @@
   },
   "manage": {
     "header": {
-      "title": "Gestionar"
+      "title": "Gestionar Mundos"
     },
     "items": "{count} {count, plural, one {elemento} other {elementos}}",
+    "load_more": "Cargar más",
     "search": "Buscar",
     "sort_by": "Ordenar por",
     "sort": {
-      "latest": "Última publicación"
+      "latest": "Última publicación",
+      "name": "Nombre de dominio"
+    },
+    "filter_by": "Filtrar por",
+    "filters": {
+      "published": "Publicado",
+      "unpublished": "No publicado"
+    },
+    "sign_in": {
+      "title": "Inicia sesión para gestionar tus mundos",
+      "action": "Iniciar sesión"
+    },
+    "sign_in": {
+      "title": "Inicia sesión para gestionar tus mundos",
+      "action": "Iniciar sesión"
     },
     "empty_search": {
       "title": "No se encontraron resultados",

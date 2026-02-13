@@ -4,8 +4,9 @@
   height: 100%;
   margin: 0 auto;
   background: #ffffff0d;
-  padding: 32px;
+  padding: 64px;
   box-shadow: none;
+  margin-top: 20vh;
 }
 
 .ManagePage .Card .CardContent.CenteredContent {
@@ -13,12 +14,17 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  gap: 32px;
+  max-width: 240px;
+  padding: 0;
 }
 
-.ManagePage .Card .CardContent .Title {
+.ManagePage .Card .CardContent .CardTitle {
   text-align: center;
   text-wrap: pretty;
   text-transform: uppercase;
+  line-height: 1.2;
+  font-weight: 600;
 }
 
 .ManagePage .Card.SignInCard .CardContent {
