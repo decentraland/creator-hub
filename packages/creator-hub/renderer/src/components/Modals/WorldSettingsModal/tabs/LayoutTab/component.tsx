@@ -6,6 +6,7 @@ import ParcelsIcon from '@mui/icons-material/GridViewRounded';
 import ArrowBackIcon from '@mui/icons-material/ArrowBackRounded';
 import WarningIcon from '@mui/icons-material/WarningAmber';
 import { Box, Typography } from 'decentraland-ui2';
+import FallbackThumbnail from '/assets/images/scene-thumbnail-fallback.png';
 import { useDispatch } from '#store';
 import type { WorldScene, WorldSettings } from '/@/lib/worlds';
 import { type Coords, idToCoords } from '/@/lib/land';
@@ -115,7 +116,7 @@ const WorldScenesView: React.FC<{
               <Image
                 src={worldSettings.thumbnail || ''}
                 alt={worldSettings.title || ''}
-                fallbackSrc="/assets/images/scene-thumbnail-fallback.png"
+                fallbackSrc={FallbackThumbnail}
               />
             </Box>
             <Box className="WorldInfoContent">
@@ -163,7 +164,7 @@ const WorldScenesView: React.FC<{
                   <Image
                     src={scene.thumbnailUrl || ''}
                     alt={`Scene ${index + 1}`}
-                    fallbackSrc="/assets/images/scene-thumbnail-fallback.png"
+                    fallbackSrc={FallbackThumbnail}
                   />
                 </Box>
                 <Box className="SceneInfo">
