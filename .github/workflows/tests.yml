@@ -22,7 +22,7 @@ jobs:
           cache: 'npm'
 
       - name: install
-        run: make install
+        run: make install-all
 
       - name: protoc
         run: make protoc
@@ -56,7 +56,7 @@ jobs:
           cache: 'npm'
 
       - name: install
-        run: make install
+        run: make install-all
 
       - name: install Playwright browsers
         run: npx playwright install

@@ -59,7 +59,7 @@ jobs:
           cache: 'npm'
 
       - name: install
-        run: make install
+        run: make install && make install-asset-packs
 
       - name: build
         run: make build-asset-packs

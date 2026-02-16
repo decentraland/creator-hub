@@ -419,7 +419,7 @@ creator-hub/
 | Task | Command | Notes |
 | --- | --- | --- |
 | Initial setup | `make init` | Clean, install, protoc, build all |
-| Install dependencies | `make install` | All packages |
+| Install dependencies | `make install-all` | All packages |
 | Build all | `make build` | Builds in correct order |
 | Build asset-packs | `make build-asset-packs` | SDK7 + library + catalog |
 | Build inspector | `make build-inspector` | Requires asset-packs |
