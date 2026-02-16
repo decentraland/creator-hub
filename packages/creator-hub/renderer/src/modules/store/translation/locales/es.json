@@ -412,7 +412,7 @@
       "details": {
         "world_title": "Título del Mundo",
         "description": "Descripción",
-        "age_rating": "Clasificación de Edad",
+        "age_rating": "Clasificación de Contenido",
         "categories": "Categorías",
         "author": "Autor (Opcional)",
         "email": "Correo Electrónico (Opcional)",
@@ -424,7 +424,7 @@
           "everyone": "E (Todos, PG 13+)",
           "teen": "T (Adolescentes, PG 13+)",
           "adult": "A (Adultos, PG 18+)",
-          "restricted": "R (Restringido, PG 18+)"
+          "restricted": "R (Restringido)"
         },
         "categories_options": {
           "art": "🎨 Arte",
