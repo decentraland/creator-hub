@@ -74,6 +74,7 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
   const visuals: SpawnPointVisual[] = [];
   let selectedIndex: number | null = null;
   let selectedTarget: SpawnPointSelectionTarget = 'position';
+  let updateGeneration = 0;
   const hiddenNames = new Set<string>();
 
   function getVisual(index: number): SpawnPointVisual | null {
@@ -93,11 +94,20 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
     }
   }
 
+  function disposeMeshWithMaterial(mesh: Mesh | null): void {
+    if (!mesh) return;
+    mesh.getChildMeshes().forEach(child => {
+      child.material?.dispose();
+    });
+    mesh.material?.dispose();
+    mesh.dispose(false, true);
+  }
+
   function clear(): void {
     for (const visual of visuals) {
-      visual.cameraTargetMesh?.dispose(false, true);
-      visual.areaMesh?.dispose(false, true);
-      visual.avatarMesh?.dispose(false, true);
+      disposeMeshWithMaterial(visual.cameraTargetMesh);
+      disposeMeshWithMaterial(visual.areaMesh);
+      disposeMeshWithMaterial(visual.avatarMesh);
       visual.rootNode.dispose();
     }
     visuals.length = 0;
@@ -151,31 +161,42 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
     const previousSelectedIndex = selectedIndex;
     const previousSelectedTarget = selectedTarget;
 
+    // Increment generation to invalidate any in-flight async rebuilds
+    const thisGeneration = ++updateGeneration;
+
     clear();
 
     const promises = points.map((spawnPoint, index) => createSpawnPointVisual(spawnPoint, index));
 
     void Promise.all(promises).then(createdVisuals => {
-      // Only update if no other update has happened in the meantime
-      if (visuals.length === 0) {
-        visuals.push(...createdVisuals);
-
-        // Re-apply hidden state after rebuild (tracked by name)
+      // Discard results if a newer update has started since this one
+      if (thisGeneration !== updateGeneration) {
         for (const visual of createdVisuals) {
-          const name = points[visual.index]?.name;
-          if (name && hiddenNames.has(name)) {
-            visual.rootNode.setEnabled(false);
-            if (visual.cameraTargetMesh) visual.cameraTargetMesh.setEnabled(false);
-          }
+          disposeMeshWithMaterial(visual.cameraTargetMesh);
+          disposeMeshWithMaterial(visual.areaMesh);
+          disposeMeshWithMaterial(visual.avatarMesh);
+          visual.rootNode.dispose();
         }
+        return;
+      }
 
-        // Restore selection after rebuild (e.g., after gizmo drag updates the component)
-        if (previousSelectedIndex !== null && previousSelectedIndex < visuals.length) {
-          if (previousSelectedTarget === 'cameraTarget') {
-            selectCameraTarget(previousSelectedIndex);
-          } else {
-            selectSpawnPoint(previousSelectedIndex);
-          }
+      visuals.push(...createdVisuals);
+
+      // Re-apply hidden state after rebuild (tracked by name)
+      for (const visual of createdVisuals) {
+        const name = points[visual.index]?.name;
+        if (name && hiddenNames.has(name)) {
+          visual.rootNode.setEnabled(false);
+          if (visual.cameraTargetMesh) visual.cameraTargetMesh.setEnabled(false);
+        }
+      }
+
+      // Restore selection after rebuild (e.g., after gizmo drag updates the component)
+      if (previousSelectedIndex !== null && previousSelectedIndex < visuals.length) {
+        if (previousSelectedTarget === 'cameraTarget') {
+          selectCameraTarget(previousSelectedIndex);
+        } else {
+          selectSpawnPoint(previousSelectedIndex);
         }
       }
     });

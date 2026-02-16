@@ -14,8 +14,20 @@ const AREA_ALPHA_SELECTED = 0.5;
 const CAMERA_TARGET_ALPHA_UNSELECTED = 0.5;
 const CAMERA_TARGET_ALPHA_SELECTED = 0.9;
 
-let cachedAssetContainer: AssetContainer | null = null;
-let loadingPromise: Promise<AssetContainer> | null = null;
+// GLB asset cache scoped per scene to avoid stale references after scene disposal
+const sceneCaches = new WeakMap<
+  Scene,
+  { container: AssetContainer | null; promise: Promise<AssetContainer> | null }
+>();
+
+function getSceneCache(scene: Scene) {
+  let cache = sceneCaches.get(scene);
+  if (!cache) {
+    cache = { container: null, promise: null };
+    sceneCaches.set(scene, cache);
+  }
+  return cache;
+}
 
 export function createSpawnPointMaterial(
   name: string,
@@ -33,15 +45,17 @@ export function createSpawnPointMaterial(
 }
 
 async function loadSpawnPointAvatarGlb(scene: Scene): Promise<AssetContainer> {
-  if (cachedAssetContainer) {
-    return cachedAssetContainer;
+  const cache = getSceneCache(scene);
+
+  if (cache.container) {
+    return cache.container;
   }
 
-  if (loadingPromise) {
-    return loadingPromise;
+  if (cache.promise) {
+    return cache.promise;
   }
 
-  loadingPromise = (async () => {
+  cache.promise = (async () => {
     const response = await fetch(spawnPointAvatarGlbDataUrl);
     const blob = await response.blob();
     const file = new File([blob], 'spawn_point_avatar.glb');
@@ -53,13 +67,13 @@ async function loadSpawnPointAvatarGlb(scene: Scene): Promise<AssetContainer> {
         assetContainer => {
           // Skip processGLTFAssetContainer here because addAllToScene() would make
           // the original meshes visible at the origin. We only need the container for cloning.
-          cachedAssetContainer = assetContainer;
+          cache.container = assetContainer;
           resolve(assetContainer);
         },
         undefined,
         (_scene, message, exception) => {
           console.error('Error loading spawn point avatar GLB:', message, exception);
-          loadingPromise = null;
+          cache.promise = null;
           reject(new Error(message));
         },
         '.glb',
@@ -67,11 +81,11 @@ async function loadSpawnPointAvatarGlb(scene: Scene): Promise<AssetContainer> {
     });
   })().catch(error => {
     console.error('Error loading spawn point avatar:', error);
-    loadingPromise = null;
+    cache.promise = null;
     throw error;
   });
 
-  return loadingPromise;
+  return cache.promise;
 }
 
 function createMeshInstance(

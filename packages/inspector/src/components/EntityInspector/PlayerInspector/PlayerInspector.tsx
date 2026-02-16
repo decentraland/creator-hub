@@ -201,7 +201,7 @@ export default withSdk<Props>(({ sdk }) => {
     }
 
     setComponentValue({ ...componentValue, spawnPoints });
-  }, [spawnPoints, isFocused, componentValue]);
+  }, [spawnPoints, isFocused, componentValue, isComponentEqual, setComponentValue]);
 
   const handleFocusInput = useCallback(() => {
     setIsFocused(true);
@@ -237,6 +237,9 @@ export default withSdk<Props>(({ sdk }) => {
         if (isLastSpawnArea) return;
         if (isSelected) {
           spawnPointManager.selectSpawnPoint(null);
+        } else if (selectedSpawnPointIndex !== null && selectedSpawnPointIndex > index) {
+          // Adjust selection index to account for the array shift after deletion
+          spawnPointManager.selectSpawnPoint(selectedSpawnPointIndex - 1);
         }
         removeSpawnPoint(index);
       };
