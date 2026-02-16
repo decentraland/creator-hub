@@ -6,6 +6,7 @@ import type { DeployOptions } from '/shared/types/deploy';
 
 import type { PreviewOptions, ReleaseNotes } from './settings';
 import type { Config, EditorConfig } from './config';
+import type { Env } from './env';
 
 export type IpcResult<T> = {
   success: true;
@@ -20,6 +21,7 @@ export type IpcError = {
 };
 
 export interface Ipc {
+  'electron.getEnvOverride': () => Env | null;
   'electron.getUserDataPath': () => string;
   'electron.getAppVersion': () => Promise<string>;
   'updater.getDownloadedVersion': () => string | null;

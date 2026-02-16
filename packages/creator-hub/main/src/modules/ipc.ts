@@ -1,4 +1,4 @@
-import { handle } from './handle';
+import { handle, handleSync } from './handle';
 import * as electron from './electron';
 import * as updater from './updater';
 import * as inspector from './inspector';
@@ -11,6 +11,7 @@ import * as config from './config';
 
 export function initIpc() {
   // electron
+  handleSync('electron.getEnvOverride', () => electron.getEnvOverride());
   handle('electron.getAppVersion', () => electron.getAppVersion());
   handle('electron.getUserDataPath', () => electron.getUserDataPath());
   handle('electron.getWorkspaceConfigPath', (_event, path) =>

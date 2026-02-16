@@ -4,7 +4,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { ChainId } from '@dcl/schemas';
 import { Typography, Checkbox } from 'decentraland-ui2';
 
-import { misc } from '#preload';
+import { misc, env } from '#preload';
 
 import type { File, Info, Status } from '/@/lib/deploy';
 
@@ -34,7 +34,9 @@ import './styles.css';
 
 const MAX_FILE_PATH_LENGTH = 50;
 
-const DCL_ENV = import.meta.env.DEV ? 'zone' : 'org';
+function getDclEnv() {
+  return env.getEnv() === 'dev' ? 'zone' : 'org';
+}
 
 function getPath(filename: string) {
   return filename.length > MAX_FILE_PATH_LENGTH
@@ -72,6 +74,7 @@ export function Deploy(props: Props) {
   const [skipWarning, setSkipWarning] = useState(project.info.skipPublishWarning ?? false);
   const deployment = getDeployment(project.path);
   const isWorld = previousStep === 'publish-to-world' || !!deployment?.info.isWorld;
+  const dclEnv = useMemo(() => getDclEnv(), []);
 
   const handlePublish = useCallback(() => {
     setShowWarning(false);
@@ -87,9 +90,9 @@ export function Deploy(props: Props) {
   // jump in
   const jumpInUrl = useMemo(() => {
     if (deployment?.info.isWorld && project.worldConfiguration) {
-      return `decentraland://?realm=${project.worldConfiguration.name}&dclenv=${DCL_ENV}`;
+      return `decentraland://?realm=${project.worldConfiguration.name}&dclenv=${dclEnv}`;
     } else {
-      return `decentraland://?position=${project.scene.base}&dclenv=${DCL_ENV}`;
+      return `decentraland://?position=${project.scene.base}&dclenv=${dclEnv}`;
     }
   }, [deployment, project]);
 
