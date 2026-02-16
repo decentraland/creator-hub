@@ -2,14 +2,22 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  min-height: 100%;
+}
+
+.WorldCollaboratorsTab.CenteredContent {
+  justify-content: center;
+  align-items: center;
+}
+
+.WorldCollaboratorsTab .MuiButton-root {
+  height: 40px;
 }
 
 .WorldCollaboratorsTab > .MuiTypography-h6 {
   display: block;
   white-space: pre-line;
   color: var(--text-on-secondary);
-  font-size: 14px;
-  font-weight: 400;
 }
 
 .WorldCollaboratorsTab > .MuiTypography-h6 span {
@@ -17,65 +25,28 @@
   font-weight: 500;
 }
 
-.WorldCollaboratorsTab .CollaboratorsFormContainer {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.WorldCollaboratorsTab .CollaboratorsListHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.WorldCollaboratorsTab .CollaboratorsCount {
-  color: var(--text-on-secondary);
-  font-size: 13px;
-}
-
-.WorldCollaboratorsTab .CollaboratorsList {
-  background-color: var(--black);
-  border-radius: 8px;
-  height: max-content;
-  flex-shrink: 0;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.WorldCollaboratorsTab .EmptyList {
-  color: var(--dcl-silver);
-  height: 8rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.WorldCollaboratorsTab .TableRow {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: 1fr 180px 32px;
-  align-items: center;
-  justify-items: center;
-  padding: 8px 16px;
-}
+/* Collaborators List */
 
 .WorldCollaboratorsTab .CollaboratorsHeaderRow {
-  color: var(--light-gray);
-  border-bottom: 1px solid var(--dcl-silver);
+  padding: 16px;
+  gap: 10px;
+  color: var(--dcl-silver);
+  background-color: var(--black);
 }
 
-.WorldCollaboratorsTab .CollaboratorsHeaderRow .MuiSvgIcon-root {
-  width: 16px;
-  height: 16px;
+.WorldCollaboratorsTab .ClearListLink {
+  color: var(--white) !important;
+  margin-left: auto;
 }
 
-.WorldCollaboratorsTab .CollaboratorsHeader {
-  justify-self: flex-start;
-}
+/* Empty state */
 
-.WorldCollaboratorsTab .LocationHeader {
+.WorldCollaboratorsTab .EmptyStateContainer {
   display: flex;
+  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  gap: 4px;
+  gap: 24px;
+  flex: 1;
+  color: var(--dcl-silver);
 }

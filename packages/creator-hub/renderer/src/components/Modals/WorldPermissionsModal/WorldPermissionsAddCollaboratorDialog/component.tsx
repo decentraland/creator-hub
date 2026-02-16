@@ -1,19 +1,18 @@
 import React, { useCallback, useState } from 'react';
 import { isValid as isValidAddress } from 'decentraland-ui2/dist/components/AddressField/utils';
-import { Box, Dialog, DialogContent, DialogTitle, TextField, Typography } from 'decentraland-ui2';
+import { Box, TextField, Typography } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
 import { Row } from '/@/components/Row';
 import { Button } from '/@/components/Button';
 import './styles.css';
 
 type Props = {
-  open: boolean;
-  onClose: () => void;
+  onCancel: () => void;
   onSubmit: (address: string) => void;
 };
 
 const WorldPermissionsAddCollaboratorDialogComponent: React.FC<Props> = React.memo(
-  ({ open, onClose, onSubmit }) => {
+  ({ onCancel, onSubmit }) => {
     const [address, setAddress] = useState('');
     const [error, setError] = useState<string | null>(null);
 
@@ -23,11 +22,7 @@ const WorldPermissionsAddCollaboratorDialogComponent: React.FC<Props> = React.me
     }, []);
 
     const handleSubmit = useCallback(() => {
-      if (!address) {
-        setError(t('modal.world_permissions.invalid_address'));
-        return;
-      }
-      if (!isValidAddress(address)) {
+      if (!address || !isValidAddress(address)) {
         setError(t('modal.world_permissions.invalid_address'));
         return;
       }
@@ -36,49 +31,31 @@ const WorldPermissionsAddCollaboratorDialogComponent: React.FC<Props> = React.me
       setError(null);
     }, [address, onSubmit]);
 
-    const handleClose = useCallback(() => {
-      setAddress('');
-      setError(null);
-      onClose();
-    }, [onClose]);
-
     const isValid = address.length > 0 && !error;
 
     return (
-      <Dialog
-        open={open}
-        onClose={handleClose}
-        className="WorldPermissionsDialog"
-        maxWidth="xs"
-        fullWidth
-      >
-        <DialogTitle className="DialogTitle">
-          {t('modal.world_permissions.collaborators.dialog.title')}
-        </DialogTitle>
-        <DialogContent className="DialogContent">
-          <Box className="DialogField">
-            <Typography
-              variant="body2"
-              className="DialogLabel"
-            >
-              {t('modal.world_permissions.collaborators.dialog.label')}
-            </Typography>
-            <TextField
-              placeholder="0x..."
-              value={address}
-              onChange={handleAddressChange}
-              variant="outlined"
-              size="small"
-              fullWidth
-              autoFocus
-              error={!!error}
-              helperText={error}
-            />
-          </Box>
-
-          <Row className="DialogActions">
+      <>
+        <Box className="AddCollaboratorForm">
+          <Typography
+            variant="h5"
+            className="CollaboratorFormTitle"
+          >
+            {t('modal.world_permissions.collaborators.dialog.title')}
+          </Typography>
+          <TextField
+            placeholder="0x..."
+            variant="outlined"
+            size="medium"
+            autoFocus
+            fullWidth
+            value={address}
+            onChange={handleAddressChange}
+            error={!!error}
+            helperText={error}
+          />
+          <Row className="CollaboratorFormActions">
             <Button
-              onClick={handleClose}
+              onClick={onCancel}
               color="secondary"
             >
               {t('modal.cancel')}
@@ -91,8 +68,8 @@ const WorldPermissionsAddCollaboratorDialogComponent: React.FC<Props> = React.me
               {t('modal.confirm')}
             </Button>
           </Row>
-        </DialogContent>
-      </Dialog>
+        </Box>
+      </>
     );
   },
 );

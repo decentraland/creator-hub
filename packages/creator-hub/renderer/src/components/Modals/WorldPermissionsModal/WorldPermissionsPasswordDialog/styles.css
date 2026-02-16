@@ -1,8 +1,8 @@
 .PasswordForm {
   display: flex;
   flex-direction: column;
-  gap: 25px;
-  max-width: 320px;
+  gap: 16px;
+  max-width: 380px;
   margin: 0 auto;
   padding: 24px;
   background-color: var(--black);
@@ -10,10 +10,8 @@
 }
 
 .PasswordForm .PasswordFormTitle {
-  font-size: 16px;
-  font-weight: 600;
   text-transform: uppercase;
-  margin-bottom: 4px;
+  margin-bottom: 32px;
 }
 
 .PasswordForm .PasswordFormField {
@@ -23,8 +21,7 @@
 }
 
 .PasswordForm .PasswordFormLabel {
-  color: var(--text-on-secondary);
-  font-size: 13px;
+  font-size: 16px;
 }
 
 .PasswordForm .MuiOutlinedInput-root {
@@ -37,15 +34,12 @@
 
 .PasswordForm .PasswordFormInfo {
   gap: 8px;
-  padding: 12px;
-  color: #BBDEFB;
-}
-
-.PasswordForm .PasswordFormInfo .MuiTypography-root {
-  font-size: 12px;
+  padding: 10px 16px;
+  color: #bbdefb;
 }
 
 .PasswordForm .PasswordFormActions {
   display: flex;
   justify-content: space-between;
+  margin-top: 32px;
 }
