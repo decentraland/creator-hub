@@ -10,7 +10,7 @@ import { EntityField, Dropdown } from '../../../ui';
 import './ActionField.css';
 
 type Props = {
-  label: string;
+  label: React.ReactNode;
   value: ActionRef;
   onChange: (value: ActionRef) => void;
 };

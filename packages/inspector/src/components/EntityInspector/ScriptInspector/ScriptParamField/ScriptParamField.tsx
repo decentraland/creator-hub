@@ -2,10 +2,20 @@ import type { ActionRef } from '@dcl/asset-packs';
 
 import { TextField, CheckboxField } from '../../../ui';
 import EntityField from '../../../ui/EntityField/EntityField';
+import InfoTooltip from '../../../ui/InfoTooltip/InfoTooltip';
 import ActionField from './ActionField';
 import { fromNumber, toNumber, isValidNumber } from '../utils';
 
 import type { Props } from './types';
+
+function labelWithTooltip(name: string, tooltip?: string) {
+  if (!tooltip) return name;
+  return (
+    <>
+      {name} <InfoTooltip text={tooltip} />
+    </>
+  );
+}
 
 export function ScriptParamField({ name, param, onUpdate }: Props) {
   switch (param.type) {
@@ -13,7 +23,7 @@ export function ScriptParamField({ name, param, onUpdate }: Props) {
       return (
         <TextField
           type="number"
-          label={name}
+          label={labelWithTooltip(name, param.tooltip)}
           value={fromNumber(param.value)}
           onChange={e => onUpdate(toNumber(e.target.value))}
           debounceTime={300}
@@ -24,7 +34,7 @@ export function ScriptParamField({ name, param, onUpdate }: Props) {
     case 'boolean':
       return (
         <CheckboxField
-          label={name}
+          label={labelWithTooltip(name, param.tooltip)}
           checked={param.value}
           onChange={e => onUpdate(e.target.checked)}
         />
@@ -33,7 +43,7 @@ export function ScriptParamField({ name, param, onUpdate }: Props) {
     case 'entity':
       return (
         <EntityField
-          label={name}
+          label={labelWithTooltip(name, param.tooltip)}
           value={param.value}
           onChange={e => onUpdate(Number(e.target.value))}
         />
@@ -42,7 +52,7 @@ export function ScriptParamField({ name, param, onUpdate }: Props) {
     case 'action':
       return (
         <ActionField
-          label={name}
+          label={labelWithTooltip(name, param.tooltip)}
           value={param.value}
           onChange={(value: ActionRef) => onUpdate(value)}
         />
@@ -52,7 +62,7 @@ export function ScriptParamField({ name, param, onUpdate }: Props) {
     default:
       return (
         <TextField
-          label={name}
+          label={labelWithTooltip(name, param.tooltip)}
           value={param.value}
           onChange={e => onUpdate(e.target.value)}
           debounceTime={300}

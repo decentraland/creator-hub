@@ -115,6 +115,40 @@ function extractJSDocDescription(
   return undefined;
 }
 
+function extractParamTooltips(
+  comments?: { type: string; value: string }[] | undefined | null,
+): Record<string, string> {
+  const tooltips: Record<string, string> = {};
+  if (!comments) return tooltips;
+
+  for (const comment of comments) {
+    if (comment.type === 'CommentBlock') {
+      const lines = comment.value.split('\n').map(line => line.trim().replace(/^\*\s?/, ''));
+      for (const line of lines) {
+        const match = line.match(/^@param\s+(\w+)\s*[-–—]?\s*(.*)/);
+        if (match) {
+          const [, name, description] = match;
+          if (description.trim().length > 0) {
+            tooltips[name] = description.trim();
+          }
+        }
+      }
+    }
+  }
+
+  return tooltips;
+}
+
+function mergeTooltips(
+  params: Record<string, ScriptParamUnion>,
+  comments: { type: string; value: string }[] | undefined | null,
+): void {
+  const tooltips = extractParamTooltips(comments);
+  for (const [name, tooltip] of Object.entries(tooltips)) {
+    if (params[name]) params[name].tooltip = tooltip;
+  }
+}
+
 function extractParamsFromFunctionParams(
   params: (FunctionParameter | TSParameterProperty)[],
 ): Record<string, ScriptParamUnion> {
@@ -215,6 +249,8 @@ export function getScriptParams(content: string): ScriptParseResult {
         const restParams = functionDeclaration.params.slice(2);
         params = extractParamsFromFunctionParams(restParams);
 
+        mergeTooltips(params, functionDeclaration.leadingComments);
+
         break;
       }
 
@@ -237,6 +273,8 @@ export function getScriptParams(content: string): ScriptParseResult {
           // skip first two parameters (src and entity) and extract the rest
           const restParams = constructor.params.slice(2);
           params = extractParamsFromFunctionParams(restParams);
+
+          mergeTooltips(params, constructor.leadingComments);
         }
 
         // extract @action tagged methods

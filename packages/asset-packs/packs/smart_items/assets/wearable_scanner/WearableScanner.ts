@@ -31,6 +31,10 @@ export class WearableScanner {
     return match ? match[1] : urn;
   }
 
+  /**
+   * @param wearableId - The URN code for the wearable to be scanned. Player must be wearing this wearable to be granted access.
+   * @param onAccessGranted - Callback function to be called when the player is granted access.
+   */
   constructor(
     public src: string,
     public entity: Entity,
