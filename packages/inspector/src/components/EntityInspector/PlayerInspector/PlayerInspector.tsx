@@ -17,9 +17,9 @@ import type { EditorComponentsTypes, SceneSpawnPoint } from '../../../lib/sdk/co
 import {
   fromSceneSpawnPoint,
   toSceneSpawnPoint,
-  isValidSpawnAreaName,
   isSpawnAreaInBounds,
   isPositionInBounds,
+  generateSpawnAreaName,
   SPAWN_AREA_DEFAULTS,
 } from './utils';
 import type { Props } from './types';
@@ -60,14 +60,6 @@ function PositionFields({
   );
 }
 
-function generateSpawnAreaName(existingNames: string[]): string {
-  let counter = 1;
-  while (existingNames.includes(`SpawnArea${counter}`)) {
-    counter++;
-  }
-  return `SpawnArea${counter}`;
-}
-
 export default withSdk<Props>(({ sdk }) => {
   const { Scene } = sdk.components;
   const rootEntity = sdk.engine.RootEntity;
@@ -77,9 +69,14 @@ export default withSdk<Props>(({ sdk }) => {
   >(rootEntity, Scene);
 
   const [spawnPoints, addSpawnPoint, modifySpawnPoint, removeSpawnPoint] =
-    useArrayState<SceneSpawnPoint>(componentValue === null ? [] : componentValue.spawnPoints);
+    useArrayState<SceneSpawnPoint>(componentValue?.spawnPoints ?? []);
 
-  const [selectedSpawnPointIndex, setSelectedSpawnPointIndex] = useState<number | null>(null);
+  const spawnPointManager = sdk.sceneContext.spawnPoints;
+  const gizmoManager = sdk.gizmos;
+
+  const [selectedSpawnPointIndex, setSelectedSpawnPointIndex] = useState<number | null>(() =>
+    spawnPointManager.getSelectedIndex(),
+  );
 
   const { pushNotification } = useSnackbar();
   const activeWarningMessage = useRef<string | null>(null);
@@ -96,9 +93,6 @@ export default withSdk<Props>(({ sdk }) => {
   }, []);
 
   const layout = componentValue?.layout;
-
-  const spawnPointManager = sdk.sceneContext.spawnPoints;
-  const gizmoManager = sdk.gizmos;
 
   const handleFieldChange = useCallback(
     (index: number, field: 'position' | 'cameraTarget', position: Vector3) => {
@@ -154,24 +148,19 @@ export default withSdk<Props>(({ sdk }) => {
     const unsubscribe = spawnPointManager.onSelectionChange(({ index, target }) => {
       setSelectedSpawnPointIndex(index);
 
-      if (index !== null) {
-        if (target === 'cameraTarget') {
-          const node = spawnPointManager.getCameraTargetNode(index);
-          if (node) {
-            gizmoManager.attachToSpawnPoint(node, index, (i, p) =>
-              fieldChangeRef.current(i, 'cameraTarget', p),
-            );
-          }
-        } else {
-          const node = spawnPointManager.getSpawnPointNode(index);
-          if (node) {
-            gizmoManager.attachToSpawnPoint(node, index, (i, p) =>
-              fieldChangeRef.current(i, 'position', p),
-            );
-          }
-        }
-      } else {
+      if (index === null) {
         gizmoManager.detachFromSpawnPoint();
+        return;
+      }
+
+      const isCameraTarget = target === 'cameraTarget';
+      const node = isCameraTarget
+        ? spawnPointManager.getCameraTargetNode(index)
+        : spawnPointManager.getSpawnPointNode(index);
+      const field = isCameraTarget ? 'cameraTarget' : 'position';
+
+      if (node) {
+        gizmoManager.attachToSpawnPoint(node, index, (i, p) => fieldChangeRef.current(i, field, p));
       }
     });
     return () => {
@@ -183,21 +172,28 @@ export default withSdk<Props>(({ sdk }) => {
   const handleAddSpawnArea = useCallback(() => {
     const existingNames = spawnPoints.map(sp => sp.name);
     const name = generateSpawnAreaName(existingNames);
-    const { position, cameraTarget, maxOffset } = SPAWN_AREA_DEFAULTS;
-    addSpawnPoint({
-      name,
-      default: false,
-      position: {
-        x: { $case: 'range', value: [position.x - maxOffset, position.x + maxOffset] },
-        y: { $case: 'range', value: [position.y, position.y] },
-        z: { $case: 'range', value: [position.z - maxOffset, position.z + maxOffset] },
-      },
-      cameraTarget: { ...cameraTarget },
-    });
+    addSpawnPoint(
+      toSceneSpawnPoint({
+        name,
+        default: false,
+        position: { ...SPAWN_AREA_DEFAULTS.position },
+        cameraTarget: { ...SPAWN_AREA_DEFAULTS.cameraTarget },
+        maxOffset: SPAWN_AREA_DEFAULTS.maxOffset,
+        randomOffset: true,
+      }),
+    );
   }, [spawnPoints, addSpawnPoint]);
 
   const [isFocused, setIsFocused] = useState(false);
   const [revertKey, setRevertKey] = useState(0);
+
+  const revertAndWarn = useCallback(
+    (message: string) => {
+      showBoundsWarning(message);
+      setRevertKey(k => k + 1);
+    },
+    [showBoundsWarning],
+  );
 
   useEffect(() => {
     if (isComponentEqual({ ...componentValue, spawnPoints }) || isFocused) {
@@ -245,16 +241,23 @@ export default withSdk<Props>(({ sdk }) => {
         removeSpawnPoint(index);
       };
 
-      const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newName = e.target.value;
-        // Allow updating the name — validation feedback is shown via the error prop
-        handleModify({ name: newName });
+      const handleDuplicate = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        const existingNames = spawnPoints.map(sp => sp.name);
+        const name = generateSpawnAreaName(existingNames);
+        addSpawnPoint(
+          toSceneSpawnPoint({
+            ...input,
+            name,
+            default: false,
+          }),
+        );
       };
 
       return (
         <Container
           className={cx('SpawnAreaContainer', { selected: isSelected })}
-          key={`spawn-area-${index}`}
+          key={`spawn-area-${index}${isSelected ? '-selected' : ''}`}
           label={input.name}
           initialOpen={isSelected}
           rightContent={
@@ -269,6 +272,7 @@ export default withSdk<Props>(({ sdk }) => {
               />
               <MoreOptionsMenu>
                 <Button onClick={handleResetToDefaults}>Reset to defaults</Button>
+                <Button onClick={handleDuplicate}>Duplicate</Button>
                 <Button
                   className="RemoveButton"
                   disabled={isLastSpawnArea}
@@ -279,24 +283,13 @@ export default withSdk<Props>(({ sdk }) => {
                       : undefined
                   }
                 >
-                  Delete Spawn Area
+                  Delete
                 </Button>
               </MoreOptionsMenu>
             </div>
           }
           border
         >
-          <TextField
-            label="Name"
-            type="text"
-            value={input.name}
-            error={
-              !isValidSpawnAreaName(input.name) && 'Spaces and special characters are not allowed'
-            }
-            onFocus={handleFocusInput}
-            onBlur={handleBlurInput}
-            onChange={handleNameChange}
-          />
           <Block label="Position">
             <PositionFields
               key={`pos-${revertKey}`}
@@ -308,8 +301,7 @@ export default withSdk<Props>(({ sdk }) => {
                 if (layout) {
                   const effectiveOffset = input.randomOffset ? input.maxOffset : 0;
                   if (!isSpawnAreaInBounds(layout, newPosition, effectiveOffset)) {
-                    showBoundsWarning('Spawn area must be within scene bounds');
-                    setRevertKey(k => k + 1);
+                    revertAndWarn('Spawn area must be within scene bounds');
                     return;
                   }
                 }
@@ -327,8 +319,7 @@ export default withSdk<Props>(({ sdk }) => {
               onChange={(axis, val) => {
                 const newCameraTarget = { ...input.cameraTarget, [axis]: val };
                 if (layout && !isPositionInBounds(layout, newCameraTarget)) {
-                  showBoundsWarning('Camera target must be within scene bounds');
-                  setRevertKey(k => k + 1);
+                  revertAndWarn('Camera target must be within scene bounds');
                   return;
                 }
                 clearBoundsWarning();
@@ -348,8 +339,7 @@ export default withSdk<Props>(({ sdk }) => {
                 const value = parseFloat(event.target.value);
                 if (isNaN(value) || value < 0) return;
                 if (layout && !isSpawnAreaInBounds(layout, input.position, value)) {
-                  showBoundsWarning('Randomized area extends outside scene bounds');
-                  setRevertKey(k => k + 1);
+                  revertAndWarn('Randomized area extends outside scene bounds');
                   return;
                 }
                 clearBoundsWarning();
@@ -362,11 +352,10 @@ export default withSdk<Props>(({ sdk }) => {
               checked={!input.randomOffset}
               onChange={event => {
                 const enableRandom = !event.target.checked;
+                const needsDefaultOffset = enableRandom && input.maxOffset === 0;
                 handleModify({
                   randomOffset: enableRandom,
-                  ...(enableRandom && input.maxOffset === 0
-                    ? { maxOffset: SPAWN_AREA_DEFAULTS.maxOffset }
-                    : {}),
+                  ...(needsDefaultOffset ? { maxOffset: SPAWN_AREA_DEFAULTS.maxOffset } : {}),
                 });
               }}
             />
@@ -377,13 +366,14 @@ export default withSdk<Props>(({ sdk }) => {
     [
       modifySpawnPoint,
       removeSpawnPoint,
+      addSpawnPoint,
       selectedSpawnPointIndex,
       handleFocusInput,
       handleBlurInput,
       spawnPointManager,
-      spawnPoints.length,
+      spawnPoints,
       layout,
-      showBoundsWarning,
+      revertAndWarn,
       clearBoundsWarning,
       revertKey,
     ],
