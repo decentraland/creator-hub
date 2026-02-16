@@ -31,6 +31,7 @@ type SpawnPointManagerEvents = {
   selectionChange: SelectionData;
   positionChange: { index: number; position: Vector3 };
   cameraTargetPositionChange: { index: number; position: Vector3 };
+  visibilityChange: { index: number; name: string; visible: boolean };
 };
 
 /** Extracts position value from spawn point coordinate (midpoint for ranges) */
@@ -73,6 +74,7 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
   const visuals: SpawnPointVisual[] = [];
   let selectedIndex: number | null = null;
   let selectedTarget: SpawnPointSelectionTarget = 'position';
+  const hiddenNames = new Set<string>();
 
   function getVisual(index: number): SpawnPointVisual | null {
     return index < visuals.length ? visuals[index] : null;
@@ -157,6 +159,15 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
       // Only update if no other update has happened in the meantime
       if (visuals.length === 0) {
         visuals.push(...createdVisuals);
+
+        // Re-apply hidden state after rebuild (tracked by name)
+        for (const visual of createdVisuals) {
+          const name = points[visual.index]?.name;
+          if (name && hiddenNames.has(name)) {
+            visual.rootNode.setEnabled(false);
+            if (visual.cameraTargetMesh) visual.cameraTargetMesh.setEnabled(false);
+          }
+        }
 
         // Restore selection after rebuild (e.g., after gizmo drag updates the component)
         if (previousSelectedIndex !== null && previousSelectedIndex < visuals.length) {
@@ -255,6 +266,31 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
     return () => events.off('cameraTargetPositionChange', cb);
   }
 
+  function setSpawnPointVisible(index: number, name: string, visible: boolean): void {
+    if (visible) {
+      hiddenNames.delete(name);
+    } else {
+      hiddenNames.add(name);
+    }
+    const visual = getVisual(index);
+    if (visual) {
+      visual.rootNode.setEnabled(visible);
+      if (visual.cameraTargetMesh) visual.cameraTargetMesh.setEnabled(visible);
+    }
+    events.emit('visibilityChange', { index, name, visible });
+  }
+
+  function isSpawnPointHidden(name: string): boolean {
+    return hiddenNames.has(name);
+  }
+
+  function onVisibilityChange(
+    cb: (data: { index: number; name: string; visible: boolean }) => void,
+  ): () => void {
+    events.on('visibilityChange', cb);
+    return () => events.off('visibilityChange', cb);
+  }
+
   function dispose(): void {
     clear();
     spawnPointsNode.dispose();
@@ -269,6 +305,7 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
     selectSpawnPoint,
     selectCameraTarget,
     getSelectedIndex,
+    getSelectedTarget: () => selectedTarget,
     isMeshSpawnPoint: isSpawnPointMesh,
     isMeshCameraTarget: isCameraTargetMesh,
     findSpawnPointByMesh: getSpawnPointIndexFromMesh,
@@ -278,9 +315,12 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
     getCameraTargetNode,
     getSpawnPointPosition,
     getCount,
+    setSpawnPointVisible,
+    isSpawnPointHidden,
     onSelectionChange,
     onPositionChange,
     onCameraTargetPositionChange,
+    onVisibilityChange,
     dispose,
   };
 });

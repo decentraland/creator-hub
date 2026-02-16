@@ -5,21 +5,16 @@ import { inBounds } from '../../../lib/utils/layout';
 import type { Layout } from '../../../lib/utils/layout';
 import type { SpawnPointInput } from './types';
 
-function getValue(coord: SceneSpawnPointCoord) {
+function getValue(coord: SceneSpawnPointCoord): number {
   if (coord.$case === 'range') {
-    if (coord.value.length === 1) {
-      return coord.value[0];
-    }
+    if (coord.value.length === 1) return coord.value[0];
     return (coord.value[0] + coord.value[1]) / 2;
   }
   return coord.value;
 }
 
-function getOffset(value: number | number[]) {
-  if (Array.isArray(value)) {
-    if (value.length === 1) {
-      return 0;
-    }
+function getOffset(value: number | number[]): number {
+  if (Array.isArray(value) && value.length > 1) {
     return (value[1] - value[0]) / 2;
   }
   return 0;
@@ -31,6 +26,12 @@ function toValue(value: number, offset: number): SceneSpawnPointCoord {
   }
   return { $case: 'range', value: [value - offset, value + offset] };
 }
+
+export const SPAWN_AREA_DEFAULTS = {
+  position: { x: 2, y: 0, z: 2 },
+  cameraTarget: { x: 8, y: 1, z: 8 },
+  maxOffset: 2,
+} as const;
 
 export function fromSceneSpawnPoint(spawnPoint: SceneSpawnPoint): SpawnPointInput {
   const axes = [
@@ -51,11 +52,7 @@ export function fromSceneSpawnPoint(spawnPoint: SceneSpawnPoint): SpawnPointInpu
     maxOffset: randomOffset
       ? axes.reduce<number>((offset, axis) => Math.max(offset, getOffset(axis)), 0)
       : 0,
-    cameraTarget: spawnPoint.cameraTarget || {
-      x: 8,
-      y: 1,
-      z: 8,
-    },
+    cameraTarget: spawnPoint.cameraTarget || { ...SPAWN_AREA_DEFAULTS.cameraTarget },
   };
 }
 
@@ -73,15 +70,8 @@ export function toSceneSpawnPoint(spawnPointInput: SpawnPointInput): SceneSpawnP
   };
 }
 
-export const SPAWN_AREA_DEFAULTS = {
-  position: { x: 2, y: 0, z: 2 },
-  cameraTarget: { x: 8, y: 1, z: 8 },
-  maxOffset: 2,
-} as const;
-
-/** Validates spawn area name: only alphanumeric, hyphens, underscores */
 export function isValidSpawnAreaName(name: string): boolean {
-  return /^[a-zA-Z0-9_-]+$/.test(name) && name.length > 0;
+  return /^[a-zA-Z0-9_-]+$/.test(name);
 }
 
 export function isSpawnAreaInBounds(
@@ -103,4 +93,12 @@ export function isPositionInBounds(
   position: { x: number; y: number; z: number },
 ): boolean {
   return inBounds(layout, new Vector3(position.x, position.y, position.z));
+}
+
+export function generateSpawnAreaName(existingNames: string[]): string {
+  let counter = 1;
+  while (existingNames.includes(`SpawnArea${counter}`)) {
+    counter++;
+  }
+  return `SpawnArea${counter}`;
 }

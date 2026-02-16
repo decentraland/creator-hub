@@ -10,6 +10,7 @@ import './Hierarchy.css';
 import { useAppSelector } from '../../redux/hooks';
 import { selectCustomAssets } from '../../redux/app';
 import { ContextMenu } from './ContextMenu';
+import PlayerTree from './PlayerTree';
 
 const HierarchyIcon = withSdk<{ value: Entity }>(({ sdk, value }) => {
   const customAssets = useAppSelector(selectCustomAssets);
@@ -192,10 +193,7 @@ const Hierarchy: React.FC = () => {
       className="Hierarchy"
       onClick={handleBackgroundDeselect}
     >
-      <EntityTree
-        value={PLAYER}
-        {...props}
-      />
+      <PlayerTree onSelect={(entity, multiple) => void select(entity, !!multiple)} />
       <EntityTree
         value={CAMERA}
         {...props}
