@@ -7,7 +7,6 @@ export interface Props {
 
 export type TextShapeInput = {
   text: string;
-  font: string;
   fontSize: string;
   fontAutoSize: boolean;
   textAlign: string;

@@ -3,7 +3,6 @@ import future from 'fp-future';
 import * as BABYLON from '@babylonjs/core';
 import * as GUI from '@babylonjs/gui';
 import type { PBTextShape } from '@dcl/ecs';
-import { Font } from '@dcl/ecs';
 import { ComponentType } from '@dcl/ecs';
 
 import type { ComponentOperation } from '../component-operations';
@@ -18,8 +17,8 @@ import { toHex } from '../../../../components/ui/ColorField/utils';
 export const TEXT_SHAPE_RATIO = 33;
 
 export const putTextShapeComponent: ComponentOperation = async (entity, component) => {
-  // load fonts used by TextShape
-  await loadFonts();
+  // load font
+  await loadFont();
 
   if (component.componentType === ComponentType.LastWriteWinElementSet) {
     const value = component.getOrNull(entity.entityId) as PBTextShape | null;
@@ -32,7 +31,7 @@ export const putTextShapeComponent: ComponentOperation = async (entity, componen
       let tb = createTextBlock(value);
       const canvas = GUI.AdvancedDynamicTexture.CreateFullscreenUI('canvas');
       const ctx = canvas.getContext();
-      ctx.font = `${tb.fontWeight || 'normal'} ${tb.fontSizeInPixels}px ${tb.fontFamily}`;
+      ctx.font = `${tb.fontSizeInPixels}px ${tb.fontFamily}`;
       canvas.dispose();
       const lines = tb.text.split('\n');
       const longest = lines.reduce((a, b) => (a.length > b.length ? a : b));
@@ -103,29 +102,7 @@ function createTextBlock(value: PBTextShape) {
       typeof value.lineCount === 'number' ? (index < value.lineCount ? line : '') : line,
     ) // remove lines if lineCount is set
     .join('\n');
-  const font = value.font ?? Font.F_SANS_SERIF;
-  switch (font) {
-    case Font.F_SERIF: {
-      // Use an actual serif font (Unity screenshot shows clear serifs)
-      tb.fontFamily = '"Liberation Serif", "Noto Serif", Georgia, "Times New Roman", Times, serif';
-      tb.fontWeight = '600';
-      break;
-    }
-    case Font.F_MONOSPACE: {
-      // Prefer a real monospace font for MONOSPACE
-      tb.fontFamily =
-        '"Liberation Mono", "Roboto Mono", "SFMono-Regular", Menlo, Monaco, Consolas, "Courier New", monospace';
-      tb.fontWeight = '400';
-      break;
-    }
-    case Font.F_SANS_SERIF:
-    default: {
-      // Unity maps SANS_SERIF -> LiberationSans
-      tb.fontFamily = '"Liberation Sans", Inter, "Noto Sans", Arial, sans-serif';
-      tb.fontWeight = '400';
-      break;
-    }
-  }
+  tb.fontFamily = 'Noto Sans';
   tb.fontSize = (value.fontSize ?? 0) * 3;
   tb.width = `${value.width ?? 0}px`;
   tb.height = `${value.height ?? 0}px`;
@@ -145,45 +122,16 @@ function createTextBlock(value: PBTextShape) {
 }
 
 let fontFuture: IFuture<void> | null = null;
-async function loadFonts() {
+async function loadFont() {
   if (!fontFuture) {
     fontFuture = future();
-    try {
-      // Load fonts for TextShape mappings:
-      // - Sans Serif: Liberation Sans (Unity-like)
-      // - Serif: Liberation Serif (actual serif)
-      // - Monospace: Liberation Mono (actual monospace)
-      // If a family fails to load for any reason, the renderer will fall back to the next family.
-      const linkId = 'dcl-textshape-fonts';
-      if (!document.getElementById(linkId)) {
-        const link = document.createElement('link');
-        link.id = linkId;
-        link.rel = 'stylesheet';
-        link.href =
-          'https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Liberation+Sans:wght@400;700&family=Liberation+Serif:wght@400;700&family=Liberation+Mono:wght@400;700&family=Roboto+Mono:wght@400&display=swap';
-        document.head.appendChild(link);
-      }
-
-      // Also keep Noto Sans as a reliable fallback (already used historically in the Inspector).
-      const notoSans = new FontFace(
-        'Noto Sans',
-        'url(https://fonts.gstatic.com/s/notosans/v36/o-0bIpQlx3QUlC5A4PNB6Ryti20_6n1iPHjc5a7du3mhPy0.woff2)', // latin
-      );
-      await notoSans.load();
-      document.fonts.add(notoSans);
-
-      // Ask the browser to resolve these faces (best-effort).
-      await Promise.allSettled([
-        document.fonts.load('400 16px Inter'),
-        document.fonts.load('600 16px Inter'),
-        document.fonts.load('400 16px "Liberation Sans"'),
-        document.fonts.load('400 16px "Liberation Serif"'),
-        document.fonts.load('400 16px "Liberation Mono"'),
-        document.fonts.load('400 16px "Roboto Mono"'),
-      ]);
-    } finally {
-      fontFuture.resolve();
-    }
+    const font = new FontFace(
+      'Noto Sans',
+      'url(https://fonts.gstatic.com/s/notosans/v36/o-0bIpQlx3QUlC5A4PNB6Ryti20_6n1iPHjc5a7du3mhPy0.woff2)', // latin
+    );
+    await font.load();
+    document.fonts.add(font);
+    fontFuture.resolve();
   }
   return fontFuture;
 }
