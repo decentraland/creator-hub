@@ -249,6 +249,7 @@
             "details": "Details",
             "code_error": "Your scene code contains one or more errors.\nPlease fix them and try again.",
             "fetch_status": "Failed to fetch deployment information.\nPlease, try again.",
+            "fetch_error": "Failed to fetch deployment information.\nPlease, check your internet connection and try again.",
             "catalyst": "Deployment to the Catalyst nodes failed.\nPlease retry or check your internet connection.",
             "max_retries": "Retry limit exceeded.\nPlease, try again later.",
             "not_found": "Something went wrong.\nPlease, try again.",
@@ -559,13 +560,10 @@
         "empty_list": "You haven't added any collaborators/addresses yet",
         "add_collaborator": "Add collaborator",
         "add": "Add",
-        "column_name_label": "Collaborators {number}",
-        "column_collaborators": "Collaborators",
-        "column_stream_label": "Stream",
-        "column_stream_tooltip": "User will be able to stream content into your World",
-        "column_deploy_label": "Location",
-        "column_deploy_tooltip": "User will be able to deploy new scenes to your World",
+        "column_name_label": "Collaborators: {number}",
         "all_parcels": "All Parcels",
+        "clear_list_title": "Clear List?",
+        "clear_list_warning": "If you continue, your list of collaborators will be erased.",
         "deployment": {
           "world_wide": "All Parcels",
           "parcels": "Custom Coordinates",
@@ -573,7 +571,8 @@
         },
         "parcels_count": "{count} Parcels",
         "actions": {
-          "remove": "Remove"
+          "remove": "Remove",
+          "clear_list": "Clear List"
         },
         "dialog": {
           "title": "Add Collaborator",
@@ -787,13 +786,28 @@
   },
   "manage": {
     "header": {
-      "title": "Manage"
+      "title": "Manage Worlds"
     },
     "items": "{count} {count, plural, one {item} other {items}}",
+    "load_more": "Load more",
     "search": "Search",
     "sort_by": "Sort by",
     "sort": {
-      "latest": "Last published"
+      "latest": "Last published",
+      "name": "Domain name"
+    },
+    "filter_by": "Filter by",
+    "filters": {
+      "published": "Published",
+      "unpublished": "Not published"
+    },
+    "sign_in": {
+      "title": "Sign in to manage your worlds",
+      "action": "Sign In"
+    },
+    "sign_in": {
+      "title": "Sign in to manage your worlds",
+      "action": "Sign In"
     },
     "empty_search": {
       "title": "No results found",

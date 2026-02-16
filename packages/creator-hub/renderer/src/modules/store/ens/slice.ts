@@ -252,7 +252,9 @@ export const initialState: Async<ENSState> = {
 export const slice = createSlice({
   name: 'ens',
   initialState,
-  reducers: {},
+  reducers: {
+    clearState: () => initialState,
+  },
   extraReducers: builder => {
     builder
       .addCase(fetchENSList.pending, state => {

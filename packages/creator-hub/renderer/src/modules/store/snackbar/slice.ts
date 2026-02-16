@@ -238,14 +238,14 @@ export const slice = createSlice({
           }),
         );
       })
-      .addCase(managementActions.fetchManagedProjects.rejected, state => {
+      .addCase(managementActions.fetchManagedProjectsFiltered.rejected, state => {
         state.notifications = state.notifications.filter(
-          $ => $.requestId !== 'fetchManagedProjects',
+          $ => $.requestId !== 'fetchManagedProjectsFiltered',
         );
         state.notifications.push(
           createGenericNotification('error', t('snackbar.generic.fetch_managed_projects_failed'), {
             duration: 5000,
-            requestId: 'fetchManagedProjects',
+            requestId: 'fetchManagedProjectsFiltered',
           }),
         );
       })
@@ -291,12 +291,14 @@ export const slice = createSlice({
           }),
         );
       })
-      .addCase(managementActions.unpublishWorld.rejected, state => {
-        state.notifications = state.notifications.filter($ => $.requestId !== 'unpublishWorld');
+      .addCase(managementActions.unpublishEntireWorld.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'unpublishEntireWorld',
+        );
         state.notifications.push(
           createGenericNotification('error', t('snackbar.generic.unpublish_world_failed'), {
             duration: 5000,
-            requestId: 'unpublishWorld',
+            requestId: 'unpublishEntireWorld',
           }),
         );
       })

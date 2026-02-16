@@ -8,6 +8,7 @@ export type BaseProps = {
   subtitle?: string;
   tag?: React.ReactNode;
   menuOptions?: DropdownOption[];
+  className?: string;
   children?: React.ReactNode;
 };
 
@@ -22,6 +23,7 @@ export type AccessItemProps = {
 
 export type CollaboratorsItemProps = {
   walletAddress: string;
+  role?: WorldRoleType;
   hasDeploymentPermission: boolean;
   hasStreamingPermission: boolean;
   allowedParcelsCount?: number;

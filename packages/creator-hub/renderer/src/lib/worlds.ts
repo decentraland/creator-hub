@@ -5,7 +5,7 @@ import fetch from 'decentraland-crypto-fetch';
 
 import { config } from '/@/config';
 import type { ContributableDomain } from '/@/modules/store/ens/types';
-import { fromCamelToSnake, fromSnakeToCamel } from '../modules/api';
+import { formatQueryParams, fromCamelToSnake, fromSnakeToCamel } from '../modules/api';
 
 export type WorldDeployment = {
   id: string;
@@ -104,6 +104,34 @@ export type Point = {
 
 export type WorldConfiguration = {
   name: string;
+};
+
+export type WorldData = {
+  name: string;
+  owner: string;
+  deployedScenes: number;
+  title: string | null;
+  description: string | null;
+  contentRating: string | null;
+  spawnCoordinates: string | null;
+  skyboxTime: number | null;
+  singlePlayer: boolean | null;
+  showInPlaces: boolean | null;
+  categories: string[] | null;
+  thumbnailHash: string | null;
+  lastDeployedAt: string | null;
+  blockedSince: string | null;
+  worldShape: {
+    x1: number;
+    x2: number;
+    y1: number;
+    y2: number;
+  } | null;
+};
+
+export type WorldDataResponse = {
+  worlds: WorldData[];
+  total: number;
 };
 
 export type WorldScene = {
@@ -266,27 +294,41 @@ export class Worlds {
     return `${this.url}/contents/${hash}`;
   }
 
+  public async fetchWorlds(
+    params: {
+      limit?: number;
+      offset?: number;
+      search?: string;
+      sort?: string;
+      order?: 'asc' | 'desc';
+      authorized_deployer?: string;
+    } = { limit: 100, offset: 0 },
+  ): Promise<WorldDataResponse | null> {
+    const queryString = formatQueryParams(params);
+    const result = await fetch(`${this.url}/worlds?${queryString}`);
+    if (result.ok) {
+      const json = await result.json();
+      return fromSnakeToCamel(json) as WorldDataResponse;
+    } else {
+      return null;
+    }
+  }
+
   public async fetchWorldScenes(
     worldName: string,
-    params?: {
+    params: {
       limit?: number;
       offset?: number;
       x1?: number;
       x2?: number;
       y1?: number;
       y2?: number;
-    },
+    } = { limit: 100, offset: 0 },
   ) {
     try {
-      const urlParams = new URLSearchParams(
-        Object.entries(params || {})
-          .filter(([_, value]) => value !== undefined && value !== null)
-          .map(([key, value]) => [key, value?.toString()]),
-      );
+      const queryString = formatQueryParams(params);
       const encodedWorldName = encodeURIComponent(worldName);
-      const result = await fetch(
-        `${this.url}/world/${encodedWorldName}/scenes?${urlParams.toString()}`,
-      );
+      const result = await fetch(`${this.url}/world/${encodedWorldName}/scenes?${queryString}`);
       if (result.ok) {
         const json = await result.json();
         return json as WorldScenes;
@@ -351,14 +393,6 @@ export class Worlds {
     return { success: result.status === 200 };
   }
 
-  public async unpublishWorld(address: string, worldName: string) {
-    const result = await fetch(`${this.url}/entities/${worldName}`, {
-      method: 'DELETE',
-      identity: this.withIdentity(address),
-    });
-    return result.status === 200;
-  }
-
   /** Unpublish a single scene from a world given one of the coordinates (any of them) from the scene */
   public async unpublishWorldScene(address: string, worldName: string, sceneCoord: string) {
     const encodedWorldName = encodeURIComponent(worldName);
@@ -373,6 +407,7 @@ export class Worlds {
     return result.status === 200;
   }
 
+  /** Unpublish all scenes from a given world */
   public async unpublishEntireWorld(address: string, worldName: string) {
     const result = await fetch(`${this.url}/entities/${worldName}`, {
       method: 'DELETE',
@@ -399,8 +434,8 @@ export class Worlds {
     const encodedWorldName = encodeURIComponent(worldName);
     const result = await fetch(`${this.url}/world/${encodedWorldName}/permissions`);
     if (result.ok) {
-      const json: WorldPermissionsResponse = await result.json();
-      return json;
+      const json = await result.json();
+      return fromSnakeToCamel(json) as WorldPermissionsResponse;
     } else {
       return null;
     }
@@ -481,17 +516,13 @@ export class Worlds {
       x2?: number;
       y1?: number;
       y2?: number;
-    } = { offset: 0, limit: 100 },
+    } = { limit: 100, offset: 0 },
   ) => {
-    const urlParams = new URLSearchParams(
-      Object.entries(params || {})
-        .filter(([_, value]) => value !== undefined && value !== null)
-        .map(([key, value]) => [key, value?.toString()]),
-    );
+    const queryString = formatQueryParams(params);
     const encodedWorldName = encodeURIComponent(worldName);
     const encodedWalletAddress = encodeURIComponent(walletAddress);
     const result = await fetch(
-      `${this.url}/world/${encodedWorldName}/permissions/${worldPermissionName}/address/${encodedWalletAddress}/parcels?${urlParams.toString()}`,
+      `${this.url}/world/${encodedWorldName}/permissions/${worldPermissionName}/address/${encodedWalletAddress}/parcels?${queryString}`,
     );
     if (result.ok) {
       const json = await result.json();

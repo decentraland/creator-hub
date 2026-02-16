@@ -89,7 +89,6 @@ export function Deploy(props: Props) {
       try {
         await dispatch(
           managementActions.unpublishEntireWorld({
-            address: wallet,
             worldName: project.worldConfiguration.name,
           }),
         ).unwrap();

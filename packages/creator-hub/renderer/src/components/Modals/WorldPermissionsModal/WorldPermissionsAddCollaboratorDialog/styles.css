@@ -1,3 +1,23 @@
-@import '../shared/dialog-styles.css';
+.AddCollaboratorForm {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  width: 500px;
+  margin: auto;
+  padding: 24px;
+  background-color: var(--black);
+  border-radius: 8px;
+}
 
-/* AddCollaboratorDialog uses shared WorldPermissionsDialog styles */
+.AddCollaboratorForm .MuiOutlinedInput-notchedOutline {
+  border-color: var(--transparent-gray-light);
+}
+
+.AddCollaboratorForm .CollaboratorFormTitle {
+  text-transform: uppercase;
+}
+
+.AddCollaboratorForm .CollaboratorFormActions {
+  display: flex;
+  justify-content: space-between;
+}

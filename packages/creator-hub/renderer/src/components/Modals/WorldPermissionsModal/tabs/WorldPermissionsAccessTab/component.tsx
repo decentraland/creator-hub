@@ -11,6 +11,7 @@ import {
   type SelectChangeEvent,
   Tooltip,
   Typography,
+  Button as DCLButton,
 } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
 import { WorldPermissionType, WorldRoleType, type WorldPermissions } from '/@/lib/worlds';
@@ -359,7 +360,7 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
         <WorldPermissionsPasswordSection
           hasPassword={isPasswordProtected}
           isLoading={isLoadingPassword}
-          onSetPassword={onSetAccessPassword}
+          onChangePasswordClick={() => setCurrentView({ type: 'password_form' })}
         />
       )}
 
@@ -367,7 +368,7 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
         <Box className="AccessFormContainer">
           <Row className="AccessListHeader">
             <Typography
-              variant="body2"
+              variant="h6"
               className="ApprovedAddressesCount"
             >
               {t('modal.world_permissions.access.approved_addresses', {
@@ -384,12 +385,13 @@ const WorldPermissionsAccessTab: React.FC<Props> = React.memo(props => {
               )}
             </Typography>
             <Row className="AccessListActions">
-              <Typography
+              <DCLButton
+                color="secondary"
                 className="ClearListLink"
                 onClick={() => setCurrentView({ type: 'clear_list_confirm' })}
               >
                 {t('modal.world_permissions.access.clear_list')}
-              </Typography>
+              </DCLButton>
               <Button
                 onClick={() => setCurrentView({ type: 'invite_form' })}
                 color="primary"
