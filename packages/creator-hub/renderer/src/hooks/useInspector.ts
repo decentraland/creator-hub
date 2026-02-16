@@ -6,11 +6,11 @@ import { type SceneRpcClient } from '../modules/rpc/scene/client';
 
 type Screenshot = {
   iframe: HTMLIFrameElement;
-  sceneRPC?: SceneRpcClient;
+  scene?: SceneRpcClient;
 };
 
 export function useInspector() {
-  const generateThumbnail = useCallback(async ({ iframe, sceneRPC }: Screenshot) => {
+  const generateThumbnail = useCallback(async ({ iframe, scene: sceneRPC }: Screenshot) => {
     const screenshot = await takeScreenshotRPC(iframe, sceneRPC);
     if (screenshot) {
       const thumbnail = (await resizeImage(screenshot, 1024, 768)) ?? undefined;

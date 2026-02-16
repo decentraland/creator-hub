@@ -263,7 +263,7 @@ export const WorldPermissionsAddUserForm: React.FC<Props> = React.memo(
     return (
       <Box className="AddUserForm">
         <Typography
-          variant="h6"
+          variant="h5"
           className="AddUserFormTitle"
         >
           {t('modal.world_permissions.access.new_invite')}

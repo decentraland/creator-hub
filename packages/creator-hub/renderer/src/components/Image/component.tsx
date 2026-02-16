@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 import { type Props } from './types';
 
@@ -20,6 +20,13 @@ export function Image({ src, fallbackSrc, alt, className, ...props }: Props) {
       setShowPlaceholder(true);
     }
   }, [hasError, fallbackSrc]);
+
+  // Reset state when src changes
+  useEffect(() => {
+    setImgSrc(src);
+    setHasError(false);
+    setShowPlaceholder(false);
+  }, [src]);
 
   // show placeholder if both sources failed
   if (showPlaceholder) {

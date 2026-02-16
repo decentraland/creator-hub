@@ -1,14 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChainId } from '@dcl/schemas';
 import { AuthServerProvider } from 'decentraland-connect';
-import { ManagedProjectType, SortBy } from '../../../../../shared/types/manage';
+import type { ManagedProject } from '../../../../../shared/types/manage';
+import { SortBy, FilterBy, ManagedProjectType } from '../../../../../shared/types/manage';
 import { createTestStore } from '../../../../tests/utils/testStore';
 import {
   actions,
   initialState,
   selectors,
-  fetchManagedProjects,
-  fetchAllManagedProjectsDetails,
+  fetchManagedProjectsFiltered,
   fetchStorageStats,
   fetchAccountHoldings,
   fetchWorldSettings,
@@ -17,10 +17,14 @@ import {
   addAddressPermission,
   fetchParcelsPermission,
   unpublishWorldScene,
+  unpublishEntireWorld,
   updateWorldPermissions,
   removeAddressPermission,
   addParcelsPermission,
   removeParcelsPermission,
+  fetchWorlds,
+  fetchEmptyWorlds,
+  updateWorldSettings,
 } from './slice';
 
 const TEST_ADDRESS = '0x123abc';
@@ -39,17 +43,16 @@ const WorldPermissionType = {
   NFTOwnership: 'nftownership',
 } as const;
 
-const WorldRoleType = {
-  OWNER: 'owner',
-  COLLABORATOR: 'collaborator',
-} as const;
-
 const createMockWorldsAPI = () => ({
+  fetchWorlds: vi.fn(),
+  fetchEmptyWorlds: vi.fn(),
   fetchWorldScenes: vi.fn(),
   fetchWorldSettings: vi.fn(),
   fetchWalletStats: vi.fn(),
   getContentSrcUrl: vi.fn((hash: string) => `https://content.com/${hash}`),
   unpublishWorldScene: vi.fn(),
+  unpublishEntireWorld: vi.fn(),
+  putWorldSettings: vi.fn(),
   getPermissions: vi.fn(),
   postPermissionType: vi.fn(),
   putPermissionType: vi.fn(),
@@ -146,6 +149,23 @@ vi.mock('./utils', () => ({
     }
     return null;
   }),
+  getWorldSettingsInitialState: vi.fn(() => ({
+    worldName: '',
+    settings: {},
+    scenes: [],
+    status: 'idle',
+    error: null,
+  })),
+  getWorldPermissionsInitialState: vi.fn(() => ({
+    worldName: '',
+    owner: '',
+    permissions: null,
+    summary: {},
+    parcels: {},
+    loadingNewUser: false,
+    status: 'idle',
+    error: null,
+  })),
 }));
 
 describe('management slice', () => {
@@ -165,7 +185,10 @@ describe('management slice', () => {
   describe('initial state', () => {
     it('should have correct initial values', () => {
       expect(initialState.sortBy).toBe(SortBy.LATEST);
+      expect(initialState.publishFilter).toBe(FilterBy.PUBLISHED);
       expect(initialState.searchQuery).toBe('');
+      expect(initialState.page).toBe(0);
+      expect(initialState.total).toBe(0);
       expect(initialState.projects).toEqual([]);
       expect(initialState.storageStats).toBeNull();
       expect(initialState.accountHoldings).toBeNull();
@@ -204,6 +227,34 @@ describe('management slice', () => {
       expect(state.sortBy).toBe(SortBy.LATEST);
     });
 
+    it('should reset page to 0 when sortBy changes', () => {
+      // First set page to something other than 0
+      store.dispatch(actions.setPage(5));
+      expect(store.getState().management.page).toBe(5);
+
+      // Then change sortBy
+      store.dispatch(actions.setSortBy(SortBy.LATEST));
+      const state = store.getState().management;
+      expect(state.page).toBe(0);
+    });
+
+    it('should update publishFilter state', () => {
+      store.dispatch(actions.setPublishFilter(FilterBy.UNPUBLISHED));
+      const state = store.getState().management;
+      expect(state.publishFilter).toBe(FilterBy.UNPUBLISHED);
+    });
+
+    it('should reset page to 0 when publishFilter changes', () => {
+      // First set page to something other than 0
+      store.dispatch(actions.setPage(3));
+      expect(store.getState().management.page).toBe(3);
+
+      // Then change publishFilter
+      store.dispatch(actions.setPublishFilter(FilterBy.UNPUBLISHED));
+      const state = store.getState().management;
+      expect(state.page).toBe(0);
+    });
+
     it('should update searchQuery state', () => {
       const testQuery = 'test search';
       store.dispatch(actions.setSearchQuery(testQuery));
@@ -211,17 +262,28 @@ describe('management slice', () => {
       expect(state.searchQuery).toBe(testQuery);
     });
 
-    it('should merge new settings with existing settings', () => {
-      const newSettings = { name: 'Updated World', description: 'Updated description' };
-      store.dispatch(actions.updateWorldSettings(newSettings));
+    it('should reset page to 0 when searchQuery changes', () => {
+      // First set page to something other than 0
+      store.dispatch(actions.setPage(2));
+      expect(store.getState().management.page).toBe(2);
+
+      // Then change searchQuery
+      store.dispatch(actions.setSearchQuery('test'));
       const state = store.getState().management;
-      expect(state.worldSettings.settings).toMatchObject(newSettings);
+      expect(state.page).toBe(0);
+    });
+
+    it('should update page state', () => {
+      store.dispatch(actions.setPage(10));
+      const state = store.getState().management;
+      expect(state.page).toBe(10);
     });
 
     it('should clear error', () => {
       store.dispatch({
-        type: fetchManagedProjects.rejected.type,
+        type: 'management/fetchAllManagedProjectsData/rejected',
         error: { message: 'Test error' },
+        meta: { arg: { address: TEST_ADDRESS, chainId: TEST_CHAIN_ID } },
       });
       store.dispatch(actions.clearError());
       const state = store.getState().management;
@@ -244,10 +306,30 @@ describe('management slice', () => {
     });
   });
 
-  describe('fetchManagedProjects', () => {
+  describe('fetchManagedProjectsFiltered', () => {
+    it('should dispatch fetchWorlds when publishFilter is PUBLISHED', async () => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
+      mockWorldsAPI.fetchWorlds.mockResolvedValue({ worlds: [], total: 0 });
+
+      store.dispatch(actions.setPublishFilter(FilterBy.PUBLISHED));
+      await store.dispatch(fetchManagedProjectsFiltered());
+
+      expect(mockWorldsAPI.fetchWorlds).toHaveBeenCalled();
+    });
+
+    it('should throw error when no connected account is found', async () => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(null);
+
+      await expect(store.dispatch(fetchManagedProjectsFiltered()).unwrap()).rejects.toThrow(
+        'No connected account found',
+      );
+    });
+  });
+
+  describe('fetchAllManagedProjectsData', () => {
     it('should set status to loading and clear error when pending', () => {
       store.dispatch({
-        type: fetchManagedProjects.pending.type,
+        type: 'management/fetchAllManagedProjectsData/pending',
         meta: { arg: { address: TEST_ADDRESS, chainId: TEST_CHAIN_ID } },
       });
       const state = store.getState().management;
@@ -257,7 +339,7 @@ describe('management slice', () => {
 
     it('should set status to succeeded and clear error when fulfilled', () => {
       store.dispatch({
-        type: fetchManagedProjects.fulfilled.type,
+        type: 'management/fetchAllManagedProjectsData/fulfilled',
         payload: [],
         meta: { arg: { address: TEST_ADDRESS, chainId: TEST_CHAIN_ID } },
       });
@@ -269,7 +351,7 @@ describe('management slice', () => {
     it('should set status to failed and error message when rejected', () => {
       const errorMessage = 'Failed to fetch managed projects';
       store.dispatch({
-        type: fetchManagedProjects.rejected.type,
+        type: 'management/fetchAllManagedProjectsData/rejected',
         error: { message: errorMessage },
         meta: { arg: { address: TEST_ADDRESS, chainId: TEST_CHAIN_ID } },
       });
@@ -351,7 +433,7 @@ describe('management slice', () => {
               },
             },
           },
-        } as any,
+        },
       ];
 
       mockWorldsAPI.fetchWorldScenes.mockResolvedValue({ scenes: mockScenes });
@@ -425,7 +507,7 @@ describe('management slice', () => {
         meta: { arg: { worldName: TEST_WORLD_NAME } },
       });
 
-      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS as any);
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
       mockWorldsAPI.putPermissionType.mockResolvedValue(true);
       mockWorldsAPI.getPermissions.mockResolvedValue({
         permissions: {
@@ -807,15 +889,16 @@ describe('management slice', () => {
   });
 
   describe('unpublishWorldScene', () => {
-    it('should call unpublishWorldScene API and return true when unpublishing succeeds', async () => {
+    it('should call unpublishWorldScene API and refetch scenes when unpublishing succeeds', async () => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
       mockWorldsAPI.unpublishWorldScene.mockResolvedValueOnce(true);
+      mockWorldsAPI.fetchWorldScenes.mockResolvedValueOnce({ scenes: [] });
 
-      const result = await store
+      await store
         .dispatch(
           unpublishWorldScene({
-            address: TEST_ADDRESS,
             worldName: TEST_WORLD_NAME,
-            sceneCoords: '0,0',
+            sceneCoord: '0,0',
           }),
         )
         .unwrap();
@@ -825,29 +908,475 @@ describe('management slice', () => {
         TEST_WORLD_NAME,
         '0,0',
       );
-      expect(result).toBe(true);
+      expect(mockWorldsAPI.fetchWorldScenes).toHaveBeenCalledWith(TEST_WORLD_NAME);
     });
 
-    it('should return false when unpublishing fails', async () => {
+    it('should throw error when unpublishing fails', async () => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
       mockWorldsAPI.unpublishWorldScene.mockResolvedValueOnce(false);
 
-      const result = await store
+      await expect(
+        store
+          .dispatch(
+            unpublishWorldScene({
+              worldName: TEST_WORLD_NAME,
+              sceneCoord: '0,0',
+            }),
+          )
+          .unwrap(),
+      ).rejects.toThrow('Failed to unpublish world scene');
+
+      expect(mockWorldsAPI.unpublishWorldScene).toHaveBeenCalledWith(
+        TEST_ADDRESS,
+        TEST_WORLD_NAME,
+        '0,0',
+      );
+    });
+
+    it('should throw error when no connected account is found', async () => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(null);
+
+      await expect(
+        store
+          .dispatch(
+            unpublishWorldScene({
+              worldName: TEST_WORLD_NAME,
+              sceneCoord: '0,0',
+            }),
+          )
+          .unwrap(),
+      ).rejects.toThrow('No connected account found');
+
+      expect(mockWorldsAPI.unpublishWorldScene).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('unpublishEntireWorld', () => {
+    it('should call unpublishEntireWorld API and return refresh scenes when unpublishing succeeds', async () => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
+      mockWorldsAPI.unpublishEntireWorld.mockResolvedValueOnce(true);
+
+      await store
         .dispatch(
-          unpublishWorldScene({
-            address: TEST_ADDRESS,
+          unpublishEntireWorld({
             worldName: TEST_WORLD_NAME,
-            sceneCoords: '0,0',
           }),
         )
         .unwrap();
 
-      expect(result).toBe(false);
+      expect(mockWorldsAPI.unpublishEntireWorld).toHaveBeenCalledWith(
+        TEST_ADDRESS,
+        TEST_WORLD_NAME,
+      );
+      expect(mockWorldsAPI.fetchWorldScenes).toHaveBeenCalledWith(TEST_WORLD_NAME);
+    });
+
+    it('should throw error when unpublishing fails', async () => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
+      mockWorldsAPI.unpublishEntireWorld.mockResolvedValueOnce(false);
+
+      await expect(
+        store
+          .dispatch(
+            unpublishEntireWorld({
+              worldName: TEST_WORLD_NAME,
+            }),
+          )
+          .unwrap(),
+      ).rejects.toThrow();
+
+      expect(mockWorldsAPI.unpublishEntireWorld).toHaveBeenCalledWith(
+        TEST_ADDRESS,
+        TEST_WORLD_NAME,
+      );
+    });
+
+    it('should handle API errors gracefully', async () => {
+      const errorMessage = 'Failed to unpublish world';
+      mockWorldsAPI.unpublishEntireWorld.mockRejectedValueOnce(new Error(errorMessage));
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
+
+      await expect(
+        store
+          .dispatch(
+            unpublishEntireWorld({
+              worldName: TEST_WORLD_NAME,
+            }),
+          )
+          .unwrap(),
+      ).rejects.toThrow();
+
+      expect(mockWorldsAPI.unpublishEntireWorld).toHaveBeenCalledWith(
+        TEST_ADDRESS,
+        TEST_WORLD_NAME,
+      );
+    });
+  });
+
+  describe('fetchWorlds', () => {
+    it('should fetch and transform worlds successfully on first page', async () => {
+      const mockWorlds = {
+        worlds: [
+          {
+            name: 'test-world.dcl.eth',
+            title: 'Test World',
+            description: 'A test world',
+            thumbnailHash: 'QmTestHash',
+            owner: TEST_ADDRESS,
+            lastDeployedAt: '2024-01-01T00:00:00Z',
+            deployedScenes: 3,
+          },
+        ],
+        total: 1,
+      };
+
+      mockWorldsAPI.fetchWorlds.mockResolvedValueOnce(mockWorlds);
+
+      await store.dispatch(fetchWorlds({ address: TEST_ADDRESS }));
+
+      const state = store.getState().management;
+      expect(state.projects).toHaveLength(1);
+      expect(state.projects[0].id).toBe('test-world.dcl.eth');
+      expect(state.projects[0].displayName).toBe('test-world.dcl.eth');
+      expect(state.projects[0].deployment?.title).toBe('Test World');
+      expect(state.projects[0].deployment?.scenesCount).toBe(3);
+      expect(state.total).toBe(1);
+    });
+
+    it('should append worlds when fetching subsequent pages', async () => {
+      const mockPage1 = {
+        worlds: [
+          {
+            name: 'world-1.dcl.eth',
+            title: 'World 1',
+            description: '',
+            owner: TEST_ADDRESS,
+            lastDeployedAt: '2024-01-01T00:00:00Z',
+            deployedScenes: 1,
+          },
+        ],
+        total: 2,
+      };
+
+      const mockPage2 = {
+        worlds: [
+          {
+            name: 'world-2.dcl.eth',
+            title: 'World 2',
+            description: '',
+            owner: TEST_ADDRESS,
+            lastDeployedAt: '2024-01-02T00:00:00Z',
+            deployedScenes: 2,
+          },
+        ],
+        total: 2,
+      };
+
+      // First page (page = 0)
+      mockWorldsAPI.fetchWorlds.mockResolvedValueOnce(mockPage1);
+      await store.dispatch(fetchWorlds({ address: TEST_ADDRESS }));
+
+      expect(store.getState().management.projects).toHaveLength(1);
+
+      // Second page (page = 1)
+      store.dispatch(actions.setPage(1));
+      mockWorldsAPI.fetchWorlds.mockResolvedValueOnce(mockPage2);
+      await store.dispatch(fetchWorlds({ address: TEST_ADDRESS }));
+
+      const state = store.getState().management;
+      expect(state.projects).toHaveLength(2);
+      expect(state.projects[0].id).toBe('world-1.dcl.eth');
+      expect(state.projects[1].id).toBe('world-2.dcl.eth');
+      expect(state.total).toBe(2);
+    });
+
+    it('should throw error when fetchWorlds returns null', async () => {
+      mockWorldsAPI.fetchWorlds.mockResolvedValueOnce(null);
+
+      await expect(store.dispatch(fetchWorlds({ address: TEST_ADDRESS })).unwrap()).rejects.toThrow(
+        'Failed to fetch worlds',
+      );
+    });
+
+    it('should identify owner role correctly', async () => {
+      const mockWorlds = {
+        worlds: [
+          {
+            name: 'owner-world.dcl.eth',
+            owner: TEST_ADDRESS.toLowerCase(),
+            title: 'Owner World',
+            description: '',
+            lastDeployedAt: '2024-01-01T00:00:00Z',
+            deployedScenes: 1,
+          },
+        ],
+        total: 1,
+      };
+
+      mockWorldsAPI.fetchWorlds.mockResolvedValueOnce(mockWorlds);
+      await store.dispatch(fetchWorlds({ address: TEST_ADDRESS.toUpperCase() }));
+
+      const state = store.getState().management;
+      expect(state.projects[0].role).toBe('owner');
+    });
+
+    it('should identify collaborator role correctly', async () => {
+      const mockWorlds = {
+        worlds: [
+          {
+            name: 'collab-world.dcl.eth',
+            owner: '0xdifferentaddress',
+            title: 'Collaborator World',
+            description: '',
+            lastDeployedAt: '2024-01-01T00:00:00Z',
+            deployedScenes: 1,
+          },
+        ],
+        total: 1,
+      };
+
+      mockWorldsAPI.fetchWorlds.mockResolvedValueOnce(mockWorlds);
+      await store.dispatch(fetchWorlds({ address: TEST_ADDRESS }));
+
+      const state = store.getState().management;
+      expect(state.projects[0].role).toBe('collaborator');
+    });
+  });
+
+  describe('fetchEmptyWorlds', () => {
+    beforeEach(() => {
+      // Set up mock ENS data in state by dispatching an action
+      const ensDataArray = [
+        {
+          subdomain: 'empty-world.dcl.eth',
+          name: 'empty-world',
+          nftOwnerAddress: TEST_ADDRESS,
+          ensOwnerAddress: TEST_ADDRESS,
+          provider: 'dcl',
+          tokenId: '1',
+          resolver: '0xresolver',
+          content: '',
+        },
+        {
+          subdomain: 'published-world.dcl.eth',
+          name: 'published-world',
+          nftOwnerAddress: TEST_ADDRESS,
+          ensOwnerAddress: TEST_ADDRESS,
+          provider: 'dcl',
+          tokenId: '2',
+          resolver: '0xresolver',
+          content: '',
+        },
+        {
+          subdomain: 'another-empty.dcl.eth',
+          name: 'another-empty',
+          nftOwnerAddress: '0xotheraddress',
+          ensOwnerAddress: '0xotheraddress',
+          provider: 'dcl',
+          tokenId: '3',
+          resolver: '0xresolver',
+          content: '',
+        },
+      ];
+      // Simulate ENS data being loaded
+      store.dispatch({
+        type: 'ens/fetchENSList/fulfilled',
+        payload: ensDataArray,
+        meta: { arg: { address: TEST_ADDRESS, chainId: TEST_CHAIN_ID } },
+      });
+    });
+
+    it('should fetch unpublished worlds by checking scene counts via API', async () => {
+      // Mock API responses - empty-world has 0 scenes, published-world has 3 scenes, another-empty has 0 scenes
+      mockWorldsAPI.fetchWorldScenes
+        .mockResolvedValueOnce({ scenes: [], total: 0 }) // empty-world.dcl.eth
+        .mockResolvedValueOnce({ scenes: [], total: 3 }) // published-world.dcl.eth (has scenes)
+        .mockResolvedValueOnce({ scenes: [], total: 0 }); // another-empty.dcl.eth
+
+      const result = await store.dispatch(fetchEmptyWorlds({ address: TEST_ADDRESS })).unwrap();
+
+      expect(result).toHaveLength(2); // Only 2 worlds with 0 scenes
+      expect(result.find((w: ManagedProject) => w.id === 'empty-world.dcl.eth')).toBeDefined();
+      expect(result.find((w: ManagedProject) => w.id === 'another-empty.dcl.eth')).toBeDefined();
+      expect(
+        result.find((w: ManagedProject) => w.id === 'published-world.dcl.eth'),
+      ).toBeUndefined();
+    });
+
+    it('should use cached scenesCount from existing projects when available', async () => {
+      // Add a project with known scenesCount to state by dispatching an action
+      store.dispatch({
+        type: fetchWorlds.fulfilled.type,
+        payload: {
+          worlds: [
+            {
+              id: 'empty-world.dcl.eth',
+              displayName: 'empty-world.dcl.eth',
+              type: ManagedProjectType.WORLD,
+              role: 'owner',
+              deployment: {
+                title: 'Empty World',
+                description: '',
+                thumbnail: '',
+                lastPublishedAt: 0,
+                scenesCount: 0, // Cached value
+              },
+            },
+          ],
+          total: 1,
+        },
+        meta: { arg: { address: TEST_ADDRESS } },
+      });
+
+      // Mock API for the other two worlds only (first one uses cached value)
+      mockWorldsAPI.fetchWorldScenes
+        .mockResolvedValueOnce({ scenes: [], total: 5 }) // published-world.dcl.eth
+        .mockResolvedValueOnce({ scenes: [], total: 0 }); // another-empty.dcl.eth
+
+      const result = await store.dispatch(fetchEmptyWorlds({ address: TEST_ADDRESS })).unwrap();
+
+      // Should use cached value for empty-world, not call API for it
+      expect(mockWorldsAPI.fetchWorldScenes).toHaveBeenCalledTimes(2);
+      expect(result).toHaveLength(2);
+      expect(result.find((w: ManagedProject) => w.id === 'empty-world.dcl.eth')).toBeDefined();
+    });
+
+    it('should handle API errors gracefully and assume 0 scenes', async () => {
+      // Mock API to throw error for first world, return 0 for second, return 5 for third
+      mockWorldsAPI.fetchWorldScenes
+        .mockRejectedValueOnce(new Error('API Error')) // empty-world.dcl.eth - error = 0 scenes
+        .mockResolvedValueOnce({ scenes: [], total: 3 }) // published-world.dcl.eth
+        .mockResolvedValueOnce({ scenes: [], total: 0 }); // another-empty.dcl.eth
+
+      const result = await store.dispatch(fetchEmptyWorlds({ address: TEST_ADDRESS })).unwrap();
+
+      // Even with error, empty-world should be included (defaults to 0 scenes)
+      expect(result).toHaveLength(2);
+      expect(result.find((w: ManagedProject) => w.id === 'empty-world.dcl.eth')).toBeDefined();
+      expect(result.find((w: ManagedProject) => w.id === 'another-empty.dcl.eth')).toBeDefined();
+    });
+
+    it('should set owner role for ENS owned by the address', async () => {
+      mockWorldsAPI.fetchWorldScenes.mockResolvedValue({ scenes: [], total: 0 });
+
+      const result = await store.dispatch(fetchEmptyWorlds({ address: TEST_ADDRESS })).unwrap();
+
+      const ownedWorld = result.find((w: ManagedProject) => w.id === 'empty-world.dcl.eth');
+      expect(ownedWorld?.role).toBe('owner');
+    });
+
+    it('should set collaborator role for ENS not owned by the address', async () => {
+      mockWorldsAPI.fetchWorldScenes.mockResolvedValue({ scenes: [], total: 0 });
+
+      const result = await store.dispatch(fetchEmptyWorlds({ address: TEST_ADDRESS })).unwrap();
+
+      const collabWorld = result.find((w: ManagedProject) => w.id === 'another-empty.dcl.eth');
+      expect(collabWorld?.role).toBe('collaborator');
+    });
+
+    it('should set deployment to undefined for unpublished worlds', async () => {
+      mockWorldsAPI.fetchWorldScenes.mockResolvedValue({ scenes: [], total: 0 });
+
+      const result = await store.dispatch(fetchEmptyWorlds({ address: TEST_ADDRESS })).unwrap();
+
+      expect(result[0].deployment).toBeUndefined();
+    });
+
+    it('should update state with empty projects and total', async () => {
+      mockWorldsAPI.fetchWorldScenes.mockResolvedValue({ scenes: [], total: 0 });
+
+      await store.dispatch(fetchEmptyWorlds({ address: TEST_ADDRESS }));
+
+      const state = store.getState().management;
+      expect(state.projects).toHaveLength(3); // All 3 worlds have 0 scenes
+      expect(state.total).toBe(3);
+    });
+
+    it('should filter out all worlds when all have published scenes', async () => {
+      mockWorldsAPI.fetchWorldScenes.mockResolvedValue({ scenes: [], total: 5 });
+
+      const result = await store.dispatch(fetchEmptyWorlds({ address: TEST_ADDRESS })).unwrap();
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('should handle case-insensitive address comparison for role assignment', async () => {
+      mockWorldsAPI.fetchWorldScenes.mockResolvedValue({ scenes: [], total: 0 });
+
+      // Dispatch with uppercase address
+      const result = await store
+        .dispatch(fetchEmptyWorlds({ address: TEST_ADDRESS.toUpperCase() }))
+        .unwrap();
+
+      const ownedWorld = result.find((w: ManagedProject) => w.id === 'empty-world.dcl.eth');
+      expect(ownedWorld?.role).toBe('owner');
+    });
+  });
+
+  describe('updateWorldSettings', () => {
+    it('should update settings and refetch when update succeeds', async () => {
+      const mockSettings = { name: TEST_WORLD_NAME, description: 'Updated description' };
+
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
+      mockWorldsAPI.putWorldSettings.mockResolvedValueOnce({ success: true });
+      mockWorldsAPI.fetchWorldSettings.mockResolvedValueOnce(mockSettings);
+
+      // Need to mock fetchManagedProjectsFiltered call
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
+      mockWorldsAPI.fetchWorlds.mockResolvedValueOnce({ worlds: [], total: 0 });
+
+      await store
+        .dispatch(
+          updateWorldSettings({
+            worldName: TEST_WORLD_NAME,
+            worldSettings: { description: 'Updated description' },
+          }),
+        )
+        .unwrap();
+
+      expect(mockWorldsAPI.putWorldSettings).toHaveBeenCalledWith(TEST_ADDRESS, TEST_WORLD_NAME, {
+        description: 'Updated description',
+      });
+      expect(mockWorldsAPI.fetchWorldSettings).toHaveBeenCalledWith(TEST_WORLD_NAME);
+    });
+
+    it('should reject when no account is connected', async () => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(null);
+
+      await expect(
+        store
+          .dispatch(
+            updateWorldSettings({
+              worldName: TEST_WORLD_NAME,
+              worldSettings: {},
+            }),
+          )
+          .unwrap(),
+      ).rejects.toThrow('No connected account found');
+    });
+
+    it('should reject when API call fails', async () => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
+      mockWorldsAPI.putWorldSettings.mockResolvedValueOnce({
+        success: false,
+        error: 'Update failed',
+      });
+
+      const result = await store.dispatch(
+        updateWorldSettings({
+          worldName: TEST_WORLD_NAME,
+          worldSettings: {},
+        }),
+      );
+
+      expect(result.meta.requestStatus).toBe('rejected');
+      expect(result.payload).toEqual({ message: 'Update failed' });
     });
   });
 
   describe('updateWorldPermissions', () => {
     it('should call postPermissionType and refetch permissions when update succeeds', async () => {
-      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS as any);
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
       mockWorldsAPI.postPermissionType.mockResolvedValueOnce(true);
       mockWorldsAPI.getPermissions.mockResolvedValueOnce({
         permissions: { deployment: { type: WorldPermissionType.AllowList } },
@@ -892,7 +1421,7 @@ describe('management slice', () => {
     });
 
     it('should throw error when API call fails', async () => {
-      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS as any);
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
       mockWorldsAPI.postPermissionType.mockResolvedValueOnce(false);
 
       await expect(
@@ -911,7 +1440,7 @@ describe('management slice', () => {
 
   describe('removeAddressPermission', () => {
     it('should call deletePermissionType and refetch permissions when removal succeeds', async () => {
-      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS as any);
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
       mockWorldsAPI.deletePermissionType.mockResolvedValueOnce(true);
       mockWorldsAPI.getPermissions.mockResolvedValueOnce({
         permissions: { deployment: { type: WorldPermissionType.Unrestricted } },
@@ -955,7 +1484,7 @@ describe('management slice', () => {
     });
 
     it('should throw error when API call fails', async () => {
-      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS as any);
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
       mockWorldsAPI.deletePermissionType.mockResolvedValueOnce(false);
 
       await expect(
@@ -975,7 +1504,7 @@ describe('management slice', () => {
   describe('addParcelsPermission', () => {
     it('should call postParcelsPermission and refetch permissions when adding parcels succeeds', async () => {
       const mockParcels = ['0,0', '1,1', '2,2'];
-      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS as any);
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
       mockWorldsAPI.postParcelsPermission.mockResolvedValueOnce(true);
       mockWorldsAPI.getPermissions.mockResolvedValueOnce({
         permissions: { deployment: { type: WorldPermissionType.NFTOwnership } },
@@ -1022,7 +1551,7 @@ describe('management slice', () => {
     });
 
     it('should throw error when API call fails', async () => {
-      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS as any);
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
       mockWorldsAPI.postParcelsPermission.mockResolvedValueOnce(false);
 
       await expect(
@@ -1043,7 +1572,7 @@ describe('management slice', () => {
   describe('removeParcelsPermission', () => {
     it('should call deleteParcelsPermission and refetch permissions when removing parcels succeeds', async () => {
       const mockParcels = ['0,0', '1,1'];
-      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS as any);
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
       mockWorldsAPI.deleteParcelsPermission.mockResolvedValueOnce(true);
       mockWorldsAPI.getPermissions.mockResolvedValueOnce({
         permissions: { deployment: { type: WorldPermissionType.NFTOwnership } },
@@ -1090,7 +1619,7 @@ describe('management slice', () => {
     });
 
     it('should throw error when API call fails', async () => {
-      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS as any);
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
       mockWorldsAPI.deleteParcelsPermission.mockResolvedValueOnce(false);
 
       await expect(
@@ -1109,24 +1638,6 @@ describe('management slice', () => {
   });
 
   describe('selectors', () => {
-    it('should return projects array', () => {
-      store.dispatch({
-        type: fetchAllManagedProjectsDetails.fulfilled.type,
-        payload: [
-          {
-            id: 'project1',
-            displayName: 'Project 1',
-            type: ManagedProjectType.WORLD,
-            role: WorldRoleType.OWNER,
-          },
-        ],
-      });
-
-      const projects = selectors.getManagedProjects(store.getState());
-      expect(projects.length).toBe(1);
-      expect(projects[0]?.id).toBe('project1');
-    });
-
     it('should return worldSettings object', () => {
       store.dispatch({
         type: fetchWorldSettings.pending.type,
@@ -1145,12 +1656,13 @@ describe('management slice', () => {
 
     it('should return error message', () => {
       store.dispatch({
-        type: fetchManagedProjects.rejected.type,
-        error: { message: 'Failed to fetch managed projects' },
+        type: 'management/fetchAllManagedProjectsData/rejected',
+        error: { message: 'Test error' },
+        meta: { arg: { address: TEST_ADDRESS, chainId: TEST_CHAIN_ID } },
       });
 
       const error = selectors.getError(store.getState());
-      expect(error).toBe('Failed to fetch managed projects');
+      expect(error).toBe('Test error');
     });
 
     it('should return worldPermissions object', () => {

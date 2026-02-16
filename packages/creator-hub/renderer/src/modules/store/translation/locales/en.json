@@ -249,6 +249,7 @@
             "details": "Details",
             "code_error": "Your scene code contains one or more errors.\nPlease fix them and try again.",
             "fetch_status": "Failed to fetch deployment information.\nPlease, try again.",
+            "fetch_error": "Failed to fetch deployment information.\nPlease, check your internet connection and try again.",
             "catalyst": "Deployment to the Catalyst nodes failed.\nPlease retry or check your internet connection.",
             "max_retries": "Retry limit exceeded.\nPlease, try again later.",
             "not_found": "Something went wrong.\nPlease, try again.",
@@ -394,6 +395,11 @@
           "label": "Misc."
         }
       },
+      "discard_confirmation": "You have unsaved changes. Save before leaving?",
+      "actions": {
+        "save": "Save changes",
+        "discard": "Discard"
+      },
       "general": {
         "world_spawn_coordinate": "World Spawn Coordinate",
         "position": "Position",
@@ -455,7 +461,13 @@
         "scenes_title": "Scenes",
         "actions": {
           "edit_scene": "Edit Scene",
-          "unpublish": "Remove from World"
+          "unpublish": "Remove from World",
+          "confirm": "Confirm",
+          "cancel": "Cancel"
+        },
+        "unpublish_confirmation": {
+          "title": "Remove <b>{name}</b> from this world?",
+          "warning_title": "Your world will be automatically re-published to apply these changes."
         }
       }
     },
@@ -548,13 +560,10 @@
         "empty_list": "You haven't added any collaborators/addresses yet",
         "add_collaborator": "Add collaborator",
         "add": "Add",
-        "column_name_label": "Collaborators {number}",
-        "column_collaborators": "Collaborators",
-        "column_stream_label": "Stream",
-        "column_stream_tooltip": "User will be able to stream content into your World",
-        "column_deploy_label": "Location",
-        "column_deploy_tooltip": "User will be able to deploy new scenes to your World",
+        "column_name_label": "Collaborators: {number}",
         "all_parcels": "All Parcels",
+        "clear_list_title": "Clear List?",
+        "clear_list_warning": "If you continue, your list of collaborators will be erased.",
         "deployment": {
           "world_wide": "All Parcels",
           "parcels": "Custom Coordinates",
@@ -562,7 +571,8 @@
         },
         "parcels_count": "{count} Parcels",
         "actions": {
-          "remove": "Remove"
+          "remove": "Remove",
+          "clear_list": "Clear List"
         },
         "dialog": {
           "title": "Add Collaborator",
@@ -627,10 +637,13 @@
       "url_copied": "URL copied to clipboard",
       "fetch_managed_projects_failed": "Failed to fetch managed projects",
       "fetch_world_settings_failed": "Failed to fetch world settings. Please try again.",
+      "update_world_settings_failed": "Failed to update world settings. Please try again.",
       "fetch_ens_list_failed": "Failed to fetch your NAMEs list",
       "fetch_land_list_failed": "Failed to fetch your LANDs list",
       "fetch_world_permissions_failed": "Failed to fetch world permissions. Please try again.",
       "fetch_world_scenes_failed": "Failed to fetch world scenes. Please try again.",
+      "unpublish_world_scene_failed": "Failed to unpublish scene from world. Please try again.",
+      "unpublish_world_failed": "Failed to unpublish world. Please try again.",
       "update_permissions_failed": "Failed to update world permissions. Please try again.",
       "add_permission_failed": "Failed to add address permission. Please try again.",
       "remove_permission_failed": "Failed to remove address permission. Please try again.",
@@ -773,13 +786,28 @@
   },
   "manage": {
     "header": {
-      "title": "Manage"
+      "title": "Manage Worlds"
     },
     "items": "{count} {count, plural, one {item} other {items}}",
+    "load_more": "Load more",
     "search": "Search",
     "sort_by": "Sort by",
     "sort": {
-      "latest": "Last published"
+      "latest": "Last published",
+      "name": "Domain name"
+    },
+    "filter_by": "Filter by",
+    "filters": {
+      "published": "Published",
+      "unpublished": "Not published"
+    },
+    "sign_in": {
+      "title": "Sign in to manage your worlds",
+      "action": "Sign In"
+    },
+    "sign_in": {
+      "title": "Sign in to manage your worlds",
+      "action": "Sign In"
     },
     "empty_search": {
       "title": "No results found",

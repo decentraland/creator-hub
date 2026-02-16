@@ -1,11 +1,13 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
+import cx from 'classnames';
+import RefreshIcon from '@mui/icons-material/Cached';
 import type { SelectChangeEvent } from 'decentraland-ui2';
-import { Box, MenuItem, Typography } from 'decentraland-ui2';
+import { Box, Chip, IconButton, MenuItem, Typography } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
 import { actions as managementActions } from '/@/modules/store/management';
 import { useAuth } from '/@/hooks/useAuth';
 import { useDispatch, useSelector } from '#store';
-import { SortBy } from '/shared/types/manage';
+import { FilterBy, SortBy } from '/shared/types/manage';
 import { Navbar, NavbarItem } from '../Navbar';
 import { Loader } from '../Loader';
 import { Container } from '../Container';
@@ -17,87 +19,138 @@ import { Column } from '../Column';
 import { ManagedProjectsList } from './ManagedProjectsList';
 import { StorageUsed } from './StorageUsed';
 import { SignInCard } from './SignInCard';
-import { filterProjectsBy, sortProjectsBy } from './utils';
 import './styles.css';
 
-// TODO: update design for not signed in state and add other sort options in future PR.
+const FILTER_OPTIONS: Array<{ label: string; value: FilterBy }> = [
+  {
+    label: t('manage.filters.published'),
+    value: FilterBy.PUBLISHED,
+  },
+  {
+    label: t('manage.filters.unpublished'),
+    value: FilterBy.UNPUBLISHED,
+  },
+];
 
 const SORT_OPTIONS: Array<{ label: string; value: SortBy }> = [
   {
     label: t('manage.sort.latest'),
     value: SortBy.LATEST,
   },
+  {
+    label: t('manage.sort.name'),
+    value: SortBy.NAME,
+  },
 ];
 
 export function ManagePage() {
   const { isSignedIn, isSigningIn, signIn } = useAuth();
-  const { status, projects, sortBy, searchQuery } = useSelector(state => state.management);
+  const { status, projects, total, page, sortBy, searchQuery, publishFilter } = useSelector(
+    state => state.management,
+  );
   const dispatch = useDispatch();
 
   const isLoading = status === 'idle' || status === 'loading';
+  const showMainLoader = isLoading && !projects.length;
 
-  const projectsToShow = useMemo(() => {
-    const filteredProjects = filterProjectsBy(projects, searchQuery);
-    return sortProjectsBy(filteredProjects, sortBy);
-  }, [sortBy, searchQuery, projects]);
+  const handleSortDropdownChange = useCallback((e: SelectChangeEvent<SortBy>) => {
+    dispatch(managementActions.setSortBy(e.target.value as SortBy));
+    dispatch(managementActions.fetchManagedProjectsFiltered());
+  }, []);
 
-  const handleDropdownChange = useCallback(
-    (e: SelectChangeEvent<SortBy>) => {
-      dispatch(managementActions.setSortBy(e.target.value as SortBy));
-    },
-    [dispatch],
-  );
+  const handleSearch = useCallback((value: string) => {
+    dispatch(managementActions.setSearchQuery(value));
+    dispatch(managementActions.fetchManagedProjectsFiltered());
+  }, []);
 
-  const handleSearch = useCallback(
-    (value: string) => {
-      dispatch(managementActions.setSearchQuery(value));
-    },
-    [dispatch],
-  );
+  const handlePublishFilterChange = useCallback((value: FilterBy) => {
+    dispatch(managementActions.setPublishFilter(value));
+    dispatch(managementActions.fetchManagedProjectsFiltered());
+  }, []);
+
+  const handleLoadMoreProjects = useCallback(() => {
+    dispatch(managementActions.setPage(page + 1));
+    dispatch(managementActions.fetchManagedProjectsFiltered());
+  }, [page]);
+
+  const handleRefreshProjects = useCallback(() => {
+    dispatch(managementActions.fetchManagedProjectsFiltered());
+  }, []);
 
   return (
     <main className="ManagePage">
       <Navbar active={NavbarItem.MANAGE} />
       <Container>
-        <Typography variant="h3">{t('manage.header.title')}</Typography>
+        <Typography variant="h3">
+          {t('manage.header.title')}
+          {isSignedIn && !showMainLoader && (
+            <IconButton
+              onClick={handleRefreshProjects}
+              disabled={isLoading}
+              className={cx('RefreshButton', { Loading: isLoading && !showMainLoader })}
+            >
+              <RefreshIcon />
+            </IconButton>
+          )}
+        </Typography>
         {!isSignedIn && !isSigningIn ? (
           <SignInCard onClickSignIn={signIn} />
-        ) : isLoading ? (
+        ) : showMainLoader ? (
           <Loader size={70} />
         ) : (
           <Row>
             <Column className="ContentColumn">
               <FiltersBar className="FiltersBar">
-                <Typography variant="h6">
-                  {t('manage.items', { count: projects.length })}
-                </Typography>
                 <>
-                  <Typography>{t('manage.sort_by')}</Typography>
-                  <Select
-                    variant="standard"
-                    value={sortBy}
-                    onChange={handleDropdownChange}
-                    disabled={!projects?.length}
-                  >
-                    {SORT_OPTIONS.map(option => (
-                      <MenuItem
+                  <Typography variant="h6">
+                    {t('manage.items', { count: projects.length })}
+                  </Typography>
+                  <Box className="FilterChipsContainer">
+                    <Typography>{t('manage.filter_by')}</Typography>
+                    {FILTER_OPTIONS.map(option => (
+                      <Chip
                         key={option.value}
-                        value={option.value}
-                        className="sort-item"
-                      >
-                        {option.label}
-                      </MenuItem>
+                        label={option.label}
+                        variant={option.value === publishFilter ? 'filled' : 'outlined'}
+                        className="FilterChip"
+                        onClick={
+                          option.value !== publishFilter
+                            ? () => handlePublishFilterChange(option.value)
+                            : undefined
+                        }
+                      />
                     ))}
-                  </Select>
-                  <Search
-                    placeholder={t('manage.search')}
-                    defaultValue={searchQuery}
-                    disabled={!projects?.length}
-                    onChange={handleSearch}
-                  />
+                  </Box>
                 </>
+                {publishFilter === FilterBy.PUBLISHED && (
+                  <>
+                    <Typography>{t('manage.sort_by')}</Typography>
+                    <Select
+                      variant="standard"
+                      value={sortBy}
+                      onChange={handleSortDropdownChange}
+                      disabled={!projects?.length || isLoading}
+                    >
+                      {SORT_OPTIONS.map(option => (
+                        <MenuItem
+                          key={option.value}
+                          value={option.value}
+                          className="sort-item"
+                        >
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    <Search
+                      placeholder={t('manage.search')}
+                      defaultValue={searchQuery}
+                      disabled={!searchQuery && !projects.length}
+                      onChange={handleSearch}
+                    />
+                  </>
+                )}
               </FiltersBar>
-              {projectsToShow.length === 0 ? (
+              {projects.length === 0 ? (
                 <Box className="EmptyContainer">
                   <Typography variant="h6">
                     {searchQuery ? t('manage.empty_search.title') : t('manage.no_projects.title')}
@@ -109,7 +162,12 @@ export function ManagePage() {
                   </Typography>
                 </Box>
               ) : (
-                <ManagedProjectsList projects={projectsToShow} />
+                <ManagedProjectsList
+                  projects={projects}
+                  total={total}
+                  isLoading={isLoading}
+                  onLoadMore={handleLoadMoreProjects}
+                />
               )}
             </Column>
             <StorageUsed />

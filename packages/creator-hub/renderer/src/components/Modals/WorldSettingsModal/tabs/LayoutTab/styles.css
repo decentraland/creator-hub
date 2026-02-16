@@ -199,3 +199,41 @@
   align-items: center;
   gap: 8px;
 }
+
+/* Unpublish Confirmation View */
+
+.LayoutTab .UnpublishConfirmationView {
+  width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 32px;
+  background-color: var(--black);
+  border-radius: 8px;
+  margin: auto;
+}
+
+.LayoutTab .UnpublishConfirmationView .WarningContainer {
+  display: flex;
+  gap: 12px;
+  background-color: #ec71223d;
+  padding: 12px 16px;
+  border-radius: 8px;
+  color: #ffcf89;
+}
+
+.LayoutTab .UnpublishConfirmationView .WarningContainer .MuiSvgIcon-root {
+  color: var(--danger);
+  width: 22px;
+  height: 22px;
+}
+
+.LayoutTab .UnpublishConfirmationView .UnpublishActions {
+  margin-top: 16px;
+  display: flex;
+  gap: 8px;
+}
+
+.LayoutTab .UnpublishConfirmationView .UnpublishActions .MuiButton-root {
+  height: 40px;
+}

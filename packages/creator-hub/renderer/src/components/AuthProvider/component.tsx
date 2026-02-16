@@ -7,7 +7,10 @@ import { useDispatch } from '#store';
 import { config } from '/@/config';
 import { Profiles } from '/@/lib/profile';
 import { fetchTiles } from '/@/modules/store/land';
-import { fetchManagedProjects } from '/@/modules/store/management';
+import {
+  fetchAllManagedProjectsData,
+  actions as managementActions,
+} from '/@/modules/store/management';
 import { identify } from '/@/modules/store/analytics';
 import { AuthContext } from '/@/contexts/AuthContext';
 import { isNavigatorOnline } from '/@/lib/connection';
@@ -118,6 +121,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setAvatar(undefined);
     setIsSignedIn(false);
     AuthServerProvider.deactivate();
+    dispatch(managementActions.clearUserManagedProjects());
   }, []);
 
   const changeNetwork = useCallback(async (chainId: ChainId = DEFAULT_CHAIN_ID) => {
@@ -145,7 +149,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     if (wallet && chainId) {
-      dispatch(fetchManagedProjects({ address: wallet, chainId }));
+      dispatch(fetchAllManagedProjectsData({ address: wallet, chainId }));
       dispatch(identify({ userId: wallet }));
       dispatch(fetchTiles());
       setUser({ id: wallet });

@@ -5,7 +5,7 @@ import fetch from 'decentraland-crypto-fetch';
 
 import { config } from '/@/config';
 import type { ContributableDomain } from '/@/modules/store/ens/types';
-import { fromCamelToSnake, fromSnakeToCamel } from '../modules/api';
+import { formatQueryParams, fromCamelToSnake, fromSnakeToCamel } from '../modules/api';
 
 export type WorldDeployment = {
   id: string;
@@ -106,6 +106,34 @@ export type WorldConfiguration = {
   name: string;
 };
 
+export type WorldData = {
+  name: string;
+  owner: string;
+  deployedScenes: number;
+  title: string | null;
+  description: string | null;
+  contentRating: string | null;
+  spawnCoordinates: string | null;
+  skyboxTime: number | null;
+  singlePlayer: boolean | null;
+  showInPlaces: boolean | null;
+  categories: string[] | null;
+  thumbnailHash: string | null;
+  lastDeployedAt: string | null;
+  blockedSince: string | null;
+  worldShape: {
+    x1: number;
+    x2: number;
+    y1: number;
+    y2: number;
+  } | null;
+};
+
+export type WorldDataResponse = {
+  worlds: WorldData[];
+  total: number;
+};
+
 export type WorldScene = {
   worldName: string;
   deployer: string;
@@ -126,9 +154,10 @@ export type WorldScenes = {
 export type WorldSettings = {
   title?: string;
   description?: string;
-  thumbnailUrl?: string;
+  thumbnail?: string;
+  thumbnailHash?: string;
   contentRating?: SceneAgeRating;
-  categories?: SceneCategory[];
+  categories?: SceneCategory[] | null;
   spawnCoordinates?: string;
   skyboxTime?: number | null;
   singlePlayer?: boolean;
@@ -265,10 +294,41 @@ export class Worlds {
     return `${this.url}/contents/${hash}`;
   }
 
-  public async fetchWorldScenes(worldName: string) {
+  public async fetchWorlds(
+    params: {
+      limit?: number;
+      offset?: number;
+      search?: string;
+      sort?: string;
+      order?: 'asc' | 'desc';
+      authorized_deployer?: string;
+    } = { limit: 100, offset: 0 },
+  ): Promise<WorldDataResponse | null> {
+    const queryString = formatQueryParams(params);
+    const result = await fetch(`${this.url}/worlds?${queryString}`);
+    if (result.ok) {
+      const json = await result.json();
+      return fromSnakeToCamel(json) as WorldDataResponse;
+    } else {
+      return null;
+    }
+  }
+
+  public async fetchWorldScenes(
+    worldName: string,
+    params: {
+      limit?: number;
+      offset?: number;
+      x1?: number;
+      x2?: number;
+      y1?: number;
+      y2?: number;
+    } = { limit: 100, offset: 0 },
+  ) {
     try {
+      const queryString = formatQueryParams(params);
       const encodedWorldName = encodeURIComponent(worldName);
-      const result = await fetch(`${this.url}/world/${encodedWorldName}/scenes`);
+      const result = await fetch(`${this.url}/world/${encodedWorldName}/scenes?${queryString}`);
       if (result.ok) {
         const json = await result.json();
         return json as WorldScenes;
@@ -282,24 +342,14 @@ export class Worlds {
     return null;
   }
 
-  public async fetchWorldSettings(
-    worldName: string,
-    limit: number = 100,
-    offset: number = 0,
-    coordinates: string[] = [],
-  ) {
-    const urlParams = new URLSearchParams({
-      limit: limit.toString(),
-      offset: offset.toString(),
-      coordinates: coordinates.toString(),
-    });
-
+  public async fetchWorldSettings(worldName: string) {
     const encodedWorldName = encodeURIComponent(worldName);
-    const result = await fetch(
-      `${this.url}/world/${encodedWorldName}/settings?${urlParams.toString()}`,
-    );
+    const result = await fetch(`${this.url}/world/${encodedWorldName}/settings`);
     if (result.ok) {
       const json = await result.json();
+      if (json.thumbnail_hash) {
+        json.thumbnail = this.getContentSrcUrl(json.thumbnail_hash);
+      }
       return fromSnakeToCamel(json) as WorldSettings;
     } else {
       return null;
@@ -310,33 +360,43 @@ export class Worlds {
     address: string,
     worldName: string,
     settings: Partial<WorldSettings>,
-  ) {
+  ): Promise<{ success: boolean; error?: string }> {
     const formData = new FormData();
     const formattedSettings = fromCamelToSnake(settings);
 
-    Object.entries(formattedSettings).forEach(([key, value]) => {
-      if (value !== undefined) {
-        if (Array.isArray(value)) {
-          value.forEach(item => formData.append(key, String(item)));
-        } else {
-          formData.append(key, String(value));
-        }
+    for (const [key, value] of Object.entries(formattedSettings)) {
+      if (key === 'thumbnail' && typeof value === 'string' && value.startsWith('data:')) {
+        const blob = await fetch(value) // Convert base64 data URL to Blob for file upload
+          .then(res => res.blob())
+          .catch(() => 'null');
+        formData.append(key, blob);
+      } else if (Array.isArray(value)) {
+        value.forEach(item => formData.append(key, String(item)));
+      } else {
+        formData.append(key, String(value));
       }
-    });
+    }
 
     const encodedWorldName = encodeURIComponent(worldName);
     const result = await fetch(`${this.url}/world/${encodedWorldName}/settings`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'multipart/form-data' },
       identity: this.withIdentity(address),
       body: formData,
     });
-    return result.status === 204;
+
+    // Parse error from response body for 400 Bad Request
+    if (result.status === 400) {
+      const { error } = await result.json().catch(() => ({ error: '' }));
+      return { success: false, error };
+    }
+
+    return { success: result.status === 200 };
   }
 
-  public async unpublishWorldScene(address: string, worldName: string, sceneCoords: string) {
+  /** Unpublish a single scene from a world given one of the coordinates (any of them) from the scene */
+  public async unpublishWorldScene(address: string, worldName: string, sceneCoord: string) {
     const encodedWorldName = encodeURIComponent(worldName);
-    const encodedSceneCoords = encodeURIComponent(sceneCoords);
+    const encodedSceneCoords = encodeURIComponent(sceneCoord);
     const result = await fetch(
       `${this.url}/world/${encodedWorldName}/scenes/${encodedSceneCoords}`,
       {
@@ -344,15 +404,16 @@ export class Worlds {
         identity: this.withIdentity(address),
       },
     );
-    return result.status === 204;
+    return result.status === 200;
   }
 
+  /** Unpublish all scenes from a given world */
   public async unpublishEntireWorld(address: string, worldName: string) {
     const result = await fetch(`${this.url}/entities/${worldName}`, {
       method: 'DELETE',
       identity: this.withIdentity(address),
     });
-    return result.status === 204;
+    return result.status === 200;
   }
 
   public fetchWalletStats = async (address: string) => {
@@ -373,8 +434,8 @@ export class Worlds {
     const encodedWorldName = encodeURIComponent(worldName);
     const result = await fetch(`${this.url}/world/${encodedWorldName}/permissions`);
     if (result.ok) {
-      const json: WorldPermissionsResponse = await result.json();
-      return json;
+      const json = await result.json();
+      return fromSnakeToCamel(json) as WorldPermissionsResponse;
     } else {
       return null;
     }
@@ -455,17 +516,13 @@ export class Worlds {
       x2?: number;
       y1?: number;
       y2?: number;
-    } = { offset: 0, limit: 100 },
+    } = { limit: 100, offset: 0 },
   ) => {
-    const urlParams = new URLSearchParams(
-      Object.entries(params || {})
-        .filter(([_, value]) => value !== undefined && value !== null)
-        .map(([key, value]) => [key, value?.toString()]),
-    );
+    const queryString = formatQueryParams(params);
     const encodedWorldName = encodeURIComponent(worldName);
     const encodedWalletAddress = encodeURIComponent(walletAddress);
     const result = await fetch(
-      `${this.url}/world/${encodedWorldName}/permissions/${worldPermissionName}/address/${encodedWalletAddress}/parcels?${urlParams.toString()}`,
+      `${this.url}/world/${encodedWorldName}/permissions/${worldPermissionName}/address/${encodedWalletAddress}/parcels?${queryString}`,
     );
     if (result.ok) {
       const json = await result.json();

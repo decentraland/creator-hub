@@ -1,4 +1,18 @@
 /**
+ * Formats an object into a query string, filtering out undefined and null values.
+ * @param params - The object to format.
+ * @returns The formatted query string.
+ * @example formatQueryParams({ search: 'query', page: 1, filter: undefined }) // 'search=query&page=1'
+ */
+export const formatQueryParams = (params: Record<string, any>): string => {
+  return new URLSearchParams(
+    Object.entries(params || {})
+      .filter(([_, value]) => value !== undefined && value !== null)
+      .map(([key, value]) => [key, value?.toString()]),
+  ).toString();
+};
+
+/**
  * Convert a snake_case object to a camelCase object.
  * @param obj - The object to convert.
  * @returns The converted object.

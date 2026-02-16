@@ -12,17 +12,17 @@ const SignInCard: React.FC<Props> = ({ onClickSignIn }) => {
     <Card className="Card SignInCard">
       <CardContent className="CardContent CenteredContent">
         <Typography
-          className="Title"
-          variant="subtitle1"
+          className="CardTitle"
+          variant="h6"
         >
-          {t('home.cards.sign_in.title')}
+          {t('manage.sign_in.title')}
         </Typography>
         <Button
           className="SignInButton"
           variant="contained"
           onClick={onClickSignIn}
         >
-          {t('home.cards.sign_in.action')}
+          {t('manage.sign_in.action')}
         </Button>
       </CardContent>
     </Card>

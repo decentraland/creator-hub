@@ -53,7 +53,7 @@ const WorldPermissionsPasswordFormComponent: React.FC<Props> = React.memo(
     return (
       <Box className="PasswordForm">
         <Typography
-          variant="h6"
+          variant="h5"
           className="PasswordFormTitle"
         >
           {isChanging
