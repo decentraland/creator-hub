@@ -502,8 +502,11 @@ export function createGizmoManager(context: SceneContext) {
       spawnPointIndex: number,
       onPositionChange: (index: number, position: Vector3) => void,
     ) {
-      // Detach from any entities first
-      selectedEntities = [];
+      // Detach from any entities first, restoring parent relationships
+      if (selectedEntities.length > 0) {
+        restoreParents();
+        selectedEntities = [];
+      }
 
       // Store spawn point state
       attachedSpawnPointIndex = spawnPointIndex;
@@ -532,6 +535,7 @@ export function createGizmoManager(context: SceneContext) {
       if ('setUpdateCallbacks' in currentTransformer) {
         const emitPositionChange = () => {
           if (attachedSpawnPointIndex !== null && onSpawnPointPositionChange) {
+            if (spawnPointNode.isDisposed()) return;
             onSpawnPointPositionChange(attachedSpawnPointIndex, spawnPointNode.position.clone());
           }
         };

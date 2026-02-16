@@ -201,9 +201,16 @@ const PlayerTree: React.FC<WithSdkProps & PlayerTreeProps> = ({ sdk, onSelect })
       setComponentValue({ ...componentValue, spawnPoints: updatedSpawnPoints });
       if (selection.index === index) {
         spawnPointManager.selectSpawnPoint(null);
+      } else if (selection.index !== null && selection.index > index) {
+        // Adjust selection index to account for the array shift after deletion
+        if (selection.target === 'cameraTarget') {
+          spawnPointManager.selectCameraTarget(selection.index - 1);
+        } else {
+          spawnPointManager.selectSpawnPoint(selection.index - 1);
+        }
       }
     },
-    [componentValue, setComponentValue, selection.index, spawnPointManager],
+    [componentValue, setComponentValue, selection.index, selection.target, spawnPointManager],
   );
 
   const isPlayerRowHighlighted = isPlayerSelected && selection.index === null;
