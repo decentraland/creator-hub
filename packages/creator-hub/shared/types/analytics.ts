@@ -34,5 +34,29 @@ export type Events = {
     targetContent: string;
   };
   'Open Code': undefined;
-  'Worlds Your Storage Modal Action': { action: string };
+  'Worlds Your Storage Modal Action': {
+    action: string;
+  };
+  'Add World Permissions': {
+    world_name: string;
+    wallet_address: string;
+    permission_name: string;
+  };
+  'Remove World Permissions': {
+    world_name: string;
+    wallet_address: string;
+    permission_name: string;
+  };
+  'Add Collaborator Parcel Permissions': {
+    world_name: string;
+    wallet_address: string;
+    permission_name: string;
+    parcels_count: number;
+  };
+  'Remove Collaborator Parcel Permissions': {
+    world_name: string;
+    wallet_address: string;
+    permission_name: string;
+    parcels_count: number;
+  };
 };

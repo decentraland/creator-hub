@@ -806,10 +806,6 @@
       "title": "Sign in to manage your worlds",
       "action": "Sign In"
     },
-    "sign_in": {
-      "title": "Sign in to manage your worlds",
-      "action": "Sign In"
-    },
     "empty_search": {
       "title": "No results found",
       "description": "Try adjusting your search to find what you're looking for."

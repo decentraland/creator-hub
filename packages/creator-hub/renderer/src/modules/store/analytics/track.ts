@@ -1,13 +1,22 @@
 import type { Events } from '/shared/types/analytics';
 import type { Project } from '/shared/types/projects';
+import type { DeployOptions } from '/shared/types/deploy';
+import type { AddressPermissionPayload, ParcelsPermissionPayload } from '../management/types';
 import { type GetState } from '#store';
 
 import { actions as workspaceActions } from '../workspace';
 import { actions as editorActions } from '../editor';
+import { actions as managementActions } from '../management';
 
 type ActionWithPayload<P> = {
   type: string;
   payload: P;
+};
+
+type ActionFulfilled<P = void, M = void> = {
+  type: string;
+  payload: P;
+  meta: { arg: M };
 };
 
 type AnalyticsHandler<T, E extends keyof Events = keyof Events> = {
@@ -52,13 +61,74 @@ export const analyticsConfig: Record<string, AnalyticsHandler<any>> = {
   },
   [editorActions.publishScene.fulfilled.type]: {
     eventName: 'Publish Scene',
-    getPayload: (action: any, getState: GetState): Events['Publish Scene'] => {
+    getPayload: (
+      action: ActionFulfilled<void, DeployOptions>,
+      getState: GetState,
+    ): Events['Publish Scene'] => {
       const projectId = getState().editor.project?.id;
       if (!projectId) throw new Error('No project ID found when trying to publish scene');
       return {
         project_id: projectId,
-        target: action.meta.arg.target,
-        targetContent: action.meta.arg.targetContent,
+        target: action.meta.arg.target || 'unknown',
+        targetContent: action.meta.arg.targetContent || 'unknown',
+      };
+    },
+  },
+  [managementActions.addAddressPermission.fulfilled.type]: {
+    eventName: 'Add World Permissions',
+    getPayload: (
+      action: ActionFulfilled<void, AddressPermissionPayload>,
+    ): Events['Add World Permissions'] => {
+      const { worldName, permissionName, walletAddress } = action.meta.arg;
+
+      return {
+        world_name: worldName,
+        wallet_address: walletAddress,
+        permission_name: permissionName,
+      };
+    },
+  },
+  [managementActions.removeAddressPermission.fulfilled.type]: {
+    eventName: 'Remove World Permissions',
+    getPayload: (
+      action: ActionFulfilled<void, AddressPermissionPayload>,
+    ): Events['Remove World Permissions'] => {
+      const { worldName, permissionName, walletAddress } = action.meta.arg;
+
+      return {
+        world_name: worldName,
+        wallet_address: walletAddress,
+        permission_name: permissionName,
+      };
+    },
+  },
+  [managementActions.addParcelsPermission.fulfilled.type]: {
+    eventName: 'Add Collaborator Parcel Permissions',
+    getPayload: (
+      action: ActionFulfilled<void, ParcelsPermissionPayload>,
+    ): Events['Add Collaborator Parcel Permissions'] => {
+      const { worldName, permissionName, walletAddress, parcels } = action.meta.arg;
+
+      return {
+        world_name: worldName,
+        wallet_address: walletAddress,
+        permission_name: permissionName,
+        parcels_count: parcels.length,
+      };
+    },
+  },
+  [managementActions.removeParcelsPermission.fulfilled.type]: {
+    eventName: 'Remove Collaborator Parcel Permissions',
+    getPayload: (
+      action: ActionFulfilled<void, ParcelsPermissionPayload>,
+    ): Events['Remove Collaborator Parcel Permissions'] => {
+      const { worldName, permissionName, walletAddress, parcels } = action.meta.arg;
+
+      return {
+        world_name: worldName,
+        wallet_address: walletAddress,
+        permission_name: permissionName,
+        parcels_count: parcels.length,
       };
     },
   },

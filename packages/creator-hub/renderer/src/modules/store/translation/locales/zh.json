@@ -806,10 +806,6 @@
       "title": "登录以管理您的世界",
       "action": "登录"
     },
-    "sign_in": {
-      "title": "登录以管理您的世界",
-      "action": "登录"
-    },
     "empty_search": {
       "title": "未找到结果",
       "description": "尝试调整搜索以找到您要查找的内容。"
