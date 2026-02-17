@@ -59,4 +59,22 @@ export type Events = {
     permission_name: string;
     parcels_count: number;
   };
+  'Update World Settings': {
+    world_name: string;
+    world_settings: object;
+    changed_fields: {
+      title: boolean;
+      description: boolean;
+      thumbnail: boolean;
+      content_rating: boolean;
+      categories: boolean;
+    };
+    scenes_list: Array<{
+      entityId: string;
+      deployer: string;
+      parcels_count: number;
+      size: string;
+      created_at: string;
+    }>;
+  };
 };

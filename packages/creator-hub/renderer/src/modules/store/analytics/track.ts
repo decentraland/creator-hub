@@ -1,6 +1,7 @@
 import type { Events } from '/shared/types/analytics';
 import type { Project } from '/shared/types/projects';
 import type { DeployOptions } from '/shared/types/deploy';
+import type { WorldSettings } from '/@/lib/worlds';
 import type { AddressPermissionPayload, ParcelsPermissionPayload } from '../management/types';
 import { type GetState } from '#store';
 
@@ -129,6 +130,42 @@ export const analyticsConfig: Record<string, AnalyticsHandler<any>> = {
         wallet_address: walletAddress,
         permission_name: permissionName,
         parcels_count: parcels.length,
+      };
+    },
+  },
+  [managementActions.updateWorldSettings.fulfilled.type]: {
+    eventName: 'Update World Settings',
+    getPayload: (
+      action: ActionFulfilled<void, { worldName: string; worldSettings: Partial<WorldSettings> }>,
+      getState: GetState,
+    ): Events['Update World Settings'] => {
+      const { worldName, worldSettings: changedSettings } = action.meta.arg;
+      const state = getState();
+      const previousSettings =
+        state.management.worldSettings.worldName === worldName
+          ? state.management.worldSettings.settings
+          : {};
+
+      return {
+        world_name: worldName,
+        world_settings: { ...previousSettings, ...changedSettings },
+        changed_fields: {
+          title: changedSettings.title !== undefined,
+          description: changedSettings.description !== undefined,
+          thumbnail: changedSettings.thumbnail !== undefined,
+          content_rating: changedSettings.contentRating !== undefined,
+          categories: changedSettings.categories !== undefined,
+        },
+        scenes_list:
+          state.management.worldSettings.worldName === worldName
+            ? state.management.worldSettings.scenes.map(scene => ({
+                entityId: scene.entityId,
+                deployer: scene.deployer,
+                parcels_count: scene.parcels?.length || 0,
+                size: scene.size,
+                created_at: scene.createdAt,
+              }))
+            : [],
       };
     },
   },
