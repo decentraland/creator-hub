@@ -219,7 +219,7 @@ const SmartItemBasicView = withSdk<Props>(({ sdk, entity }) => {
       if (isActionComponent && item.basicViewId) {
         return (
           <ActionComponentItem
-            key={`${item.component}-${item.path}-${item.widget}-${itemIndex}`}
+            key={`${entity}-${item.component}-${item.path}-${item.widget}-${itemIndex}`}
             item={item}
             entity={entity}
           />
@@ -228,7 +228,7 @@ const SmartItemBasicView = withSdk<Props>(({ sdk, entity }) => {
 
       return (
         <RegularComponentItem
-          key={`${item.component}-${item.path}-${item.widget}-${itemIndex}`}
+          key={`${entity}-${item.component}-${item.path}-${item.widget}-${itemIndex}`}
           item={item}
           entity={entity}
         />
