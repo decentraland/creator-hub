@@ -288,13 +288,13 @@ export function createGizmoManager(context: SceneContext) {
     },
     removeEntity(entity: EcsEntity) {
       selectedEntities = selectedEntities.filter(e => e.entityId !== entity.entityId);
-      if (selectedEntities.length === 0) {
+      if (selectedEntities.length === 0 && attachedSpawnPointIndex === null) {
         gizmoManager.attachToNode(null);
         // Clean up if transformer is scale, needed for disposing custom plane meshes
         if (currentTransformer && currentTransformer.type === TransformerType.SCALE) {
           currentTransformer.cleanup();
         }
-      } else {
+      } else if (selectedEntities.length > 0) {
         updateGizmoPosition();
       }
 
