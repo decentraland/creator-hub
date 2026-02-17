@@ -5,17 +5,21 @@ import { inBounds } from '../../../lib/utils/layout';
 import type { Layout } from '../../../lib/utils/layout';
 import type { SpawnPointInput } from './types';
 
+export function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
 function getValue(coord: SceneSpawnPointCoord): number {
   if (coord.$case === 'range') {
     if (coord.value.length === 1) return coord.value[0];
-    return (coord.value[0] + coord.value[1]) / 2;
+    return round2((coord.value[0] + coord.value[1]) / 2);
   }
   return coord.value;
 }
 
 function getOffset(value: number | number[]): number {
   if (Array.isArray(value) && value.length > 1) {
-    return (value[1] - value[0]) / 2;
+    return round2((value[1] - value[0]) / 2);
   }
   return 0;
 }
@@ -24,7 +28,7 @@ function toValue(value: number, offset: number): SceneSpawnPointCoord {
   if (offset === 0) {
     return { $case: 'single', value };
   }
-  return { $case: 'range', value: [value - offset, value + offset] };
+  return { $case: 'range', value: [round2(value - offset), round2(value + offset)] };
 }
 
 export const SPAWN_AREA_DEFAULTS = {
