@@ -34,4 +34,5 @@ export type Events = {
     targetContent: string;
   };
   'Open Code': undefined;
+  'Worlds Your Storage Modal Action': { action: string };
 };
