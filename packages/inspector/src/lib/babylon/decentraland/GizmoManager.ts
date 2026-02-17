@@ -27,6 +27,9 @@ export function createGizmoManager(context: SceneContext) {
   // Spawn point gizmo state
   let attachedSpawnPointIndex: number | null = null;
   let onSpawnPointPositionChange: ((index: number, position: Vector3) => void) | null = null;
+  let spawnPointDragStartPosition: Vector3 | null = null;
+  let spawnPointAllowedAxes: Set<'x' | 'y' | 'z'> | null = null;
+  const spawnPointSubGizmoObservers: Array<() => void> = [];
 
   // Create and initialize Babylon.js gizmo manager
   const gizmoManager = new BabylonGizmoManager(context.scene);
@@ -511,6 +514,12 @@ export function createGizmoManager(context: SceneContext) {
       // Store spawn point state
       attachedSpawnPointIndex = spawnPointIndex;
       onSpawnPointPositionChange = onPositionChange;
+      spawnPointDragStartPosition = null;
+      spawnPointAllowedAxes = null;
+
+      // Clean up previous sub-gizmo observers
+      for (const cleanup of spawnPointSubGizmoObservers) cleanup();
+      spawnPointSubGizmoObservers.length = 0;
 
       // Disable all gizmos except position
       gizmoManager.positionGizmoEnabled = false;
@@ -528,15 +537,23 @@ export function createGizmoManager(context: SceneContext) {
       currentTransformer.setup();
       currentTransformer.setEntities([]);
 
-      // setUpdateCallbacks expects two callbacks: update (per-frame during drag) and dispatch (on drag end).
-      // For entities these differ, but spawn points bypass ECS (setEntities([]) above), so Babylon moves
-      // the TransformNode directly. Only the dispatch callback fires in practice; we pass the same
-      // function for both defensively, in case the PositionGizmo invokes the update callback as well.
+      // Emit position change filtered to only the axes affected by the active sub-gizmo.
+      // Babylon's planar gizmo can leak movement into the plane-normal axis due to world matrix
+      // decomposition, so we record which axes are allowed at drag start and mask the rest.
       if ('setUpdateCallbacks' in currentTransformer) {
         const emitPositionChange = () => {
           if (attachedSpawnPointIndex !== null && onSpawnPointPositionChange) {
             if (spawnPointNode.isDisposed()) return;
-            onSpawnPointPositionChange(attachedSpawnPointIndex, spawnPointNode.position.clone());
+            const rawPosition = spawnPointNode.position.clone();
+            // Filter position: keep only the axes that should change, restore the rest
+            if (spawnPointDragStartPosition && spawnPointAllowedAxes) {
+              if (!spawnPointAllowedAxes.has('x')) rawPosition.x = spawnPointDragStartPosition.x;
+              if (!spawnPointAllowedAxes.has('y')) rawPosition.y = spawnPointDragStartPosition.y;
+              if (!spawnPointAllowedAxes.has('z')) rawPosition.z = spawnPointDragStartPosition.z;
+              // Also fix the node position to match the filtered result
+              spawnPointNode.position.copyFrom(rawPosition);
+            }
+            onSpawnPointPositionChange(attachedSpawnPointIndex, rawPosition);
           }
         };
         currentTransformer.setUpdateCallbacks(emitPositionChange, emitPositionChange);
@@ -559,6 +576,53 @@ export function createGizmoManager(context: SceneContext) {
         );
       }
 
+      // Subscribe to individual sub-gizmo drag starts to track which axes should change.
+      // Each sub-gizmo constrains movement to specific axes:
+      //   axis gizmos: single axis  |  planar gizmos: two axes (plane normal is locked)
+      const positionGizmo = gizmoManager.gizmos.positionGizmo;
+      if (positionGizmo) {
+        type AxesSet = Set<'x' | 'y' | 'z'>;
+        // Use `any` because Babylon's IAxisDragGizmo/IPlaneDragGizmo interfaces don't
+        // expose onDragStartObservable in their public type, but the concrete classes do.
+        const subGizmoAxes: Array<{ gizmo: any; axes: AxesSet }> = [
+          { gizmo: positionGizmo.xGizmo, axes: new Set(['x']) },
+          { gizmo: positionGizmo.yGizmo, axes: new Set(['y']) },
+          { gizmo: positionGizmo.zGizmo, axes: new Set(['z']) },
+        ];
+
+        if (positionGizmo.xPlaneGizmo) {
+          subGizmoAxes.push({
+            gizmo: positionGizmo.xPlaneGizmo,
+            axes: new Set(['y', 'z']),
+          });
+        }
+        if (positionGizmo.yPlaneGizmo) {
+          subGizmoAxes.push({
+            gizmo: positionGizmo.yPlaneGizmo,
+            axes: new Set(['x', 'z']),
+          });
+        }
+        if (positionGizmo.zPlaneGizmo) {
+          subGizmoAxes.push({
+            gizmo: positionGizmo.zPlaneGizmo,
+            axes: new Set(['x', 'y']),
+          });
+        }
+
+        for (const { gizmo, axes } of subGizmoAxes) {
+          // The onDragStartObservable lives on the dragBehavior, not the gizmo itself
+          const observable = gizmo?.dragBehavior?.onDragStartObservable;
+          if (!observable) continue;
+          const observer = observable.add(() => {
+            spawnPointDragStartPosition = spawnPointNode.position.clone();
+            spawnPointAllowedAxes = axes;
+          });
+          spawnPointSubGizmoObservers.push(() => {
+            observable.remove(observer);
+          });
+        }
+      }
+
       // Attach gizmo to the spawn point node
       gizmoManager.attachToNode(spawnPointNode);
       events.emit('change');
@@ -571,6 +635,12 @@ export function createGizmoManager(context: SceneContext) {
 
       attachedSpawnPointIndex = null;
       onSpawnPointPositionChange = null;
+      spawnPointDragStartPosition = null;
+      spawnPointAllowedAxes = null;
+
+      // Clean up sub-gizmo observers
+      for (const cleanup of spawnPointSubGizmoObservers) cleanup();
+      spawnPointSubGizmoObservers.length = 0;
 
       // Clean up transformer
       if (currentTransformer) {

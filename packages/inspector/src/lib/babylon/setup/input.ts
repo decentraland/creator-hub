@@ -126,25 +126,13 @@ export function interactWithScene(
               spawnPointManager.selectSpawnPoint(spawnPointIndex);
             }
 
-            // Select the Player entity to show spawn settings in inspector
+            // Select the Player entity to show spawn settings in inspector.
+            // Gizmo attachment is handled by PlayerInspector via the selectionChange event
+            // (or on mount if it wasn't rendered yet). We must NOT attach here because
+            // dispatch().then() fires after PlayerInspector's listener, overwriting its
+            // callback that updates React state and scene.json.
             context.operations.updateSelectedEntity(context.engine.PlayerEntity);
-            // Attach gizmo after dispatch so ECS processing (entity deselection/selection)
-            // completes first and doesn't overwrite the spawn point gizmo
-            void context.operations.dispatch().then(() => {
-              const node = isCameraTarget
-                ? spawnPointManager.getCameraTargetNode(spawnPointIndex)
-                : spawnPointManager.getSpawnPointNode(spawnPointIndex);
-              if (node) {
-                const field = isCameraTarget ? 'cameraTarget' : 'position';
-                context.gizmos.attachToSpawnPoint(node, spawnPointIndex, (i, position) => {
-                  if (field === 'position') {
-                    spawnPointManager.updateSpawnPointPosition(i, position);
-                  } else {
-                    spawnPointManager.updateCameraTargetPosition(i, position);
-                  }
-                });
-              }
-            });
+            void context.operations.dispatch();
           }
         }
       }
@@ -155,7 +143,17 @@ export function interactWithScene(
 
   const entity = mesh && findParentEntity(mesh);
 
+  // When a gizmo is attached to a spawn point, clicking on gizmo meshes (which aren't
+  // spawn point meshes or ECS entities) should not deselect the spawn point.
+  // Start drag detection so the gizmo drag works, and skip deselection on pointerUp.
+  const context = getSceneContext(scene);
+  const gizmoAttachedToSpawn = context?.gizmos.isAttachedToSpawnPoint() ?? false;
+
   if (entity && pointerEvent === 'pointerDown') {
+    startDragDetection();
+  } else if (!entity && mesh && gizmoAttachedToSpawn && pointerEvent === 'pointerDown') {
+    // A mesh was picked that isn't a spawn point or entity — likely a gizmo mesh.
+    // Start drag detection so the gizmo drag works.
     startDragDetection();
   } else if (
     entity &&
@@ -164,8 +162,7 @@ export function interactWithScene(
     !entity.isLocked() &&
     !entity.isHidden()
   ) {
-    const context = entity.context.deref()!;
-    const { operations, engine, editorComponents } = context;
+    const { operations, engine, editorComponents } = entity.context.deref()!;
     const ancestors = getAncestors(engine, entity.entityId);
     const nodes = mapNodes(engine, node =>
       isAncestor(ancestors, node.entity) ? { ...node, open: true } : node,
@@ -178,9 +175,15 @@ export function interactWithScene(
     // Deselect any spawn point when selecting an entity
     spawnPointManager.selectSpawnPoint(null);
     void operations.dispatch();
-  } else if (!entity && pointerEvent === 'pointerUp' && !isDragging) {
+  } else if (
+    !entity &&
+    pointerEvent === 'pointerUp' &&
+    !isDragging &&
+    // When a gizmo is attached to a spawn point, only suppress deselection if we actually
+    // picked a mesh (likely a gizmo mesh). If no mesh was picked (sky), deselect normally.
+    !(gizmoAttachedToSpawn && mesh)
+  ) {
     // Clicked on sky or grid ground - un-select all previous entities
-    const context = getSceneContext(scene);
     if (context) {
       context.operations.updateSelectedEntity(context.engine.RootEntity);
       spawnPointManager.selectSpawnPoint(null);
