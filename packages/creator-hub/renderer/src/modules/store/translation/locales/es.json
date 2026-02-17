@@ -218,6 +218,8 @@
           "errors": {
             "details": "Detalles",
             "fetch_status": "Error al obtener información de la publicación.\nPor favor, inténtalo de nuevo.",
+            "fetch_timeout_error": "Error al obtener información de la publicación.\nPor favor, verifica tu conexión a internet e inténtalo de nuevo.",
+            "no_internet_connection": "No hay conexión a internet.\nPor favor, verifica tu conexión e inténtalo de nuevo.",
             "catalyst": "Error al publicar en los nodos de Catalyst.\nPor favor, inténtalo de nuevo o verifica tu conexión a internet.",
             "max_retries": "Límite de reintentos excedido.\nPor favor, inténtalo de nuevo más tarde.",
             "not_found": "Algo salió mal.\nPor favor, inténtalo de nuevo.",

@@ -158,8 +158,16 @@ export const deploy = createAsyncThunk(
           );
         }
 
-        if (isFetchError(error, '*')) {
-          return rejectWithValue(new DeploymentError('FETCH_ERROR', componentsStatus, error));
+        if (isFetchError(error, 'REQUEST_TIMEOUT')) {
+          return rejectWithValue(
+            new DeploymentError('FETCH_TIMEOUT_ERROR', componentsStatus, error),
+          );
+        }
+
+        if (isFetchError(error, 'NO_INTERNET_CONNECTION')) {
+          return rejectWithValue(
+            new DeploymentError('NO_INTERNET_CONNECTION', componentsStatus, error),
+          );
         }
 
         if (retries <= 0) {
