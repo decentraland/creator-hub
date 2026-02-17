@@ -21,6 +21,7 @@ import {
   isPositionInBounds,
   generateSpawnAreaName,
   SPAWN_AREA_DEFAULTS,
+  round2,
 } from './utils';
 import type { Props } from './types';
 
@@ -99,7 +100,7 @@ export default withSdk<Props>(({ sdk }) => {
       if (index < 0 || index >= spawnPoints.length) return;
       const spawnPoint = spawnPoints[index];
       const input = fromSceneSpawnPoint(spawnPoint);
-      const newPos = { x: position.x, y: position.y, z: position.z };
+      const newPos = { x: round2(position.x), y: round2(position.y), z: round2(position.z) };
 
       if (layout) {
         if (field === 'position') {
