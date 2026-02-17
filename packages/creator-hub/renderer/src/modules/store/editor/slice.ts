@@ -44,6 +44,22 @@ export const killPreviewScene = createAsyncThunk(
 export const openTutorial = createAsyncThunk('editor/openTutorial', editor.openTutorial);
 export const openExternalURL = createAsyncThunk('editor/openExternalURL', editor.openExternalURL);
 
+export const getMobileQR = createAsyncThunk(
+  'editor/getMobileQR',
+  async ({ path, opts }: { path: string; opts: PreviewOptions }, { dispatch, getState }) => {
+    const { editor: editorState } = getState();
+
+    // Start preview if not running
+    if (!editorState.isPreviewRunning) {
+      await dispatch(runScene({ path, ...opts })).unwrap();
+    }
+
+    // Fetch mobile QR data
+    const data = await editor.getMobilePreview(path);
+    return data;
+  },
+);
+
 // state
 export type EditorState = {
   version: string | null;
@@ -54,6 +70,7 @@ export type EditorState = {
   publishError: string | null;
   loadingInspector: boolean;
   loadingPreview: boolean;
+  isPreviewRunning: boolean;
   isInstalling: boolean;
   isInstalled: boolean;
   isInstallingProject: boolean;
@@ -70,6 +87,7 @@ const initialState: EditorState = {
   publishError: null,
   loadingInspector: false,
   loadingPreview: false,
+  isPreviewRunning: false,
   isInstalling: false,
   isInstallingProject: false,
   isInstalledProject: false,
@@ -174,9 +192,13 @@ export const slice = createSlice({
     });
     builder.addCase(runScene.fulfilled, state => {
       state.loadingPreview = false;
+      state.isPreviewRunning = true;
     });
     builder.addCase(runScene.rejected, state => {
       state.loadingPreview = false;
+    });
+    builder.addCase(killPreviewScene.fulfilled, state => {
+      state.isPreviewRunning = false;
     });
     builder.addCase(workspaceActions.saveAndGetThumbnail.pending, state => {
       if (state.project) state.project.status = 'loading';
@@ -215,6 +237,7 @@ export const actions = {
   openTutorial,
   killPreviewScene,
   openExternalURL,
+  getMobileQR,
 };
 export const reducer = slice.reducer;
 export const selectors = { ...slice.selectors };

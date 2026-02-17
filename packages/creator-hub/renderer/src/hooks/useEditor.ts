@@ -100,6 +100,15 @@ export const useEditor = () => {
     [workspaceActions.getProject, project],
   );
 
+  const getMobileQR = useCallback(
+    (opts: PreviewOptions) => {
+      if (project) {
+        return dispatch(editorActions.getMobileQR({ path: project.path, opts })).unwrap();
+      }
+    },
+    [project],
+  );
+
   return {
     ...editor,
     startInspector,
@@ -110,5 +119,6 @@ export const useEditor = () => {
     updateScene,
     saveAndGetThumbnail,
     refreshProject,
+    getMobileQR,
   };
 };
