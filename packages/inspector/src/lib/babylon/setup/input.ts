@@ -119,7 +119,8 @@ export function interactWithScene(
         if (spawnPointIndex !== null) {
           const context = getSceneContext(scene);
           if (context) {
-            if (spawnPointManager.isMeshCameraTarget(mesh)) {
+            const isCameraTarget = spawnPointManager.isMeshCameraTarget(mesh);
+            if (isCameraTarget) {
               spawnPointManager.selectCameraTarget(spawnPointIndex);
             } else {
               spawnPointManager.selectSpawnPoint(spawnPointIndex);
@@ -127,7 +128,23 @@ export function interactWithScene(
 
             // Select the Player entity to show spawn settings in inspector
             context.operations.updateSelectedEntity(context.engine.PlayerEntity);
-            void context.operations.dispatch();
+            // Attach gizmo after dispatch so ECS processing (entity deselection/selection)
+            // completes first and doesn't overwrite the spawn point gizmo
+            void context.operations.dispatch().then(() => {
+              const node = isCameraTarget
+                ? spawnPointManager.getCameraTargetNode(spawnPointIndex)
+                : spawnPointManager.getSpawnPointNode(spawnPointIndex);
+              if (node) {
+                const field = isCameraTarget ? 'cameraTarget' : 'position';
+                context.gizmos.attachToSpawnPoint(node, spawnPointIndex, (i, position) => {
+                  if (field === 'position') {
+                    spawnPointManager.updateSpawnPointPosition(i, position);
+                  } else {
+                    spawnPointManager.updateCameraTargetPosition(i, position);
+                  }
+                });
+              }
+            });
           }
         }
       }

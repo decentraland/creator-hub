@@ -145,7 +145,7 @@ export default withSdk<Props>(({ sdk }) => {
   fieldChangeRef.current = handleFieldChange;
 
   useEffect(() => {
-    const unsubscribe = spawnPointManager.onSelectionChange(({ index, target }) => {
+    const attachGizmo = (index: number | null, target: 'position' | 'cameraTarget') => {
       setSelectedSpawnPointIndex(index);
 
       if (index === null) {
@@ -162,6 +162,16 @@ export default withSdk<Props>(({ sdk }) => {
       if (node) {
         gizmoManager.attachToSpawnPoint(node, index, (i, p) => fieldChangeRef.current(i, field, p));
       }
+    };
+
+    // Attach gizmo for any already-selected spawn point
+    const currentIndex = spawnPointManager.getSelectedIndex();
+    if (currentIndex !== null) {
+      attachGizmo(currentIndex, spawnPointManager.getSelectedTarget());
+    }
+
+    const unsubscribe = spawnPointManager.onSelectionChange(({ index, target }) => {
+      attachGizmo(index, target);
     });
     return () => {
       unsubscribe();

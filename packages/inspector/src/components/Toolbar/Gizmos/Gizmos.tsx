@@ -26,6 +26,18 @@ export const Gizmos = withSdk(({ sdk }) => {
 
   const entity = useSelectedEntity();
 
+  const spawnPointManager = sdk.sceneContext.spawnPoints;
+  const [isSpawnAreaSelected, setIsSpawnAreaSelected] = useState(
+    () => spawnPointManager.getSelectedIndex() !== null,
+  );
+
+  useEffect(() => {
+    const unsubscribe = spawnPointManager.onSelectionChange(({ index }) => {
+      setIsSpawnAreaSelected(index !== null);
+    });
+    return () => unsubscribe();
+  }, [spawnPointManager]);
+
   const [selection, setSelection] = useComponentValue(entity || ROOT, sdk.components.Selection);
 
   const handlePositionGizmo = useCallback(
@@ -62,7 +74,7 @@ export const Gizmos = withSdk(({ sdk }) => {
 
   const { isGizmoWorldAligned, setGizmoWorldAligned } = useGizmoAlignment();
 
-  const disableGizmos = !entity;
+  const disableGizmos = !entity || isSpawnAreaSelected;
 
   const SnapToggleIcon = isEnabled ? BiCheckboxChecked : BiCheckbox;
   const WorldAlignmentIcon = isGizmoWorldAligned ? BiCheckboxChecked : BiCheckbox;
