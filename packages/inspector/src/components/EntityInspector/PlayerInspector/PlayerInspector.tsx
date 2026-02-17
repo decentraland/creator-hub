@@ -5,6 +5,7 @@ import type { Vector3 } from '@babylonjs/core';
 import { withSdk } from '../../../hoc/withSdk';
 import { useComponentValue } from '../../../hooks/sdk/useComponentValue';
 import { useArrayState } from '../../../hooks/useArrayState';
+import { recursiveCheck } from '../../../lib/utils/deep-equal';
 import { useSnackbar } from '../../../hooks/useSnackbar';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
@@ -69,8 +70,22 @@ export default withSdk<Props>(({ sdk }) => {
     EditorComponentsTypes['Scene']
   >(rootEntity, Scene);
 
-  const [spawnPoints, addSpawnPoint, modifySpawnPoint, removeSpawnPoint] =
+  const [spawnPoints, addSpawnPoint, modifySpawnPoint, removeSpawnPoint, setSpawnPoints] =
     useArrayState<SceneSpawnPoint>(componentValue?.spawnPoints ?? []);
+
+  // Render-time sync: ensure spawnPoints stays in sync with componentValue.spawnPoints
+  // before effects run. useArrayState defers its sync to a useEffect, which means
+  // downstream effects (like the sync effect below) can see stale spawnPoints and
+  // accidentally push old data back to the engine — causing an infinite update loop
+  // when an external source (e.g. PlayerTree) modifies spawnPoints.
+  const prevCvSpawnPointsRef = useRef(componentValue?.spawnPoints);
+  if (prevCvSpawnPointsRef.current !== componentValue?.spawnPoints) {
+    prevCvSpawnPointsRef.current = componentValue?.spawnPoints;
+    const cvSpawnPoints = componentValue?.spawnPoints ?? [];
+    if (recursiveCheck(cvSpawnPoints, spawnPoints, 2)) {
+      setSpawnPoints([...cvSpawnPoints]);
+    }
+  }
 
   const spawnPointManager = sdk.sceneContext.spawnPoints;
   const gizmoManager = sdk.gizmos;
