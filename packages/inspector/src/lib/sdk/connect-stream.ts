@@ -38,7 +38,13 @@ export function connectCrdtToEngine(
       );
     }
     transport.onmessage!(message);
-    void engine.update(1);
+    // During gizmo drag, skip engine.update() on the renderer engine to prevent
+    // intermediate CRDT messages from creating unwanted undo entries.
+    // Messages are still buffered by the transport and will be processed when
+    // engine.update() runs at drag end (via dispatch).
+    if (!(engine as any).__suppressCrdtUpdate) {
+      void engine.update(1);
+    }
   }
 
   consumeAllMessagesInto(dataLayerStream(outgoingMessagesStream), onMessage).catch(e => {

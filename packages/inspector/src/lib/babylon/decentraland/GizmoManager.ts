@@ -24,9 +24,23 @@ export function createGizmoManager(context: SceneContext) {
   let currentTransformer: IGizmoTransformer | null = null;
   let isUpdatingFromGizmo = false;
   let liveDragCallback: ((entities: EcsEntity[]) => void) | null = null;
+  let isDragInProgress = false;
 
   function notifyLiveDrag() {
+    if (!isDragInProgress) {
+      isDragInProgress = true;
+      // Suppress renderer engine CRDT updates during drag to prevent
+      // intermediate undo entries from async message round-trips.
+      (context.engine as any).__suppressCrdtUpdate = true;
+    }
     liveDragCallback?.(selectedEntities);
+  }
+
+  function endDragSuppression() {
+    if (isDragInProgress) {
+      isDragInProgress = false;
+      (context.engine as any).__suppressCrdtUpdate = false;
+    }
   }
 
   // Create and initialize Babylon.js gizmo manager
@@ -325,6 +339,7 @@ export function createGizmoManager(context: SceneContext) {
             currentTransformer.setUpdateCallbacks(
               updateEntityPosition,
               () => {
+                endDragSuppression();
                 void context.operations.dispatch();
                 isUpdatingFromGizmo = false;
               },
@@ -363,6 +378,7 @@ export function createGizmoManager(context: SceneContext) {
               updateEntityRotation,
               updateEntityPosition,
               () => {
+                endDragSuppression();
                 void context.operations.dispatch();
                 isUpdatingFromGizmo = false;
               },
@@ -401,6 +417,7 @@ export function createGizmoManager(context: SceneContext) {
             currentTransformer.setUpdateCallbacks(
               updateEntityScale,
               () => {
+                endDragSuppression();
                 void context.operations.dispatch();
                 isUpdatingFromGizmo = false;
               },
@@ -443,6 +460,7 @@ export function createGizmoManager(context: SceneContext) {
             currentTransformer.setUpdateCallbacks(
               updateEntityPosition,
               () => {
+                endDragSuppression();
                 void context.operations.dispatch();
                 isUpdatingFromGizmo = false;
               },
