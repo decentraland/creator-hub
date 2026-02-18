@@ -62,6 +62,7 @@ export class ScaleGizmo implements IGizmoTransformer {
   private isDraggingUniformScale = false;
   private initialUniformScaleMousePos: { x: number; y: number } | null = null;
   private uniformScalePointerObservers: Observer<PointerInfo>[] = [];
+  private uniformScaleCenterMesh: Mesh | null = null;
 
   constructor(
     private gizmoManager: GizmoManager,
@@ -323,12 +324,9 @@ export class ScaleGizmo implements IGizmoTransformer {
 
     const onPointerMoveHover = (pointerInfo: PointerInfo) => {
       if (pointerInfo.type !== PointerEventTypes.POINTERMOVE) return;
-      // Resolve current center cube/material each time (mesh may be replaced when configureUniformScaleGizmo runs again)
-      const centerCube = uniformGizmo._rootMesh.getChildMeshes()[0];
+      const centerCube = this.uniformScaleCenterMesh;
       const centerMaterial =
-        centerCube?.material && centerCube.material.getClassName?.() === 'StandardMaterial'
-          ? (centerCube.material as StandardMaterial)
-          : null;
+        centerCube?.material instanceof StandardMaterial ? centerCube.material : null;
       if (!centerMaterial) return;
       const pickInfo = pointerInfo.pickInfo;
       const isHovering = pickInfo?.hit && pickInfo.pickedMesh === centerCube;
@@ -495,6 +493,15 @@ export class ScaleGizmo implements IGizmoTransformer {
     const scene = this.gizmoManager.gizmos.scaleGizmo?._rootMesh?.getScene();
     if (!scene) return;
 
+    // Dispose the previous cube and its material before creating a new one.
+    // configureUniformScaleGizmo runs twice per activation (from setup() and from enable() deferred
+    // via addOnce), so without this, the first cube and material would leak into the scene.
+    if (this.uniformScaleCenterMesh) {
+      this.uniformScaleCenterMesh.material?.dispose();
+      this.uniformScaleCenterMesh.dispose();
+      this.uniformScaleCenterMesh = null;
+    }
+
     const cube = MeshBuilder.CreateBox('uniformScaleCenter', { size: 1 }, scene);
     cube.scaling.scaleInPlace(0.01); // Match approximate size of original center
     uniformGizmo.setCustomMesh(cube);
@@ -503,6 +510,7 @@ export class ScaleGizmo implements IGizmoTransformer {
     // Strong emissive so the center cube reads as white in the utility layer (lighting is often dim)
     whiteMaterial.emissiveColor = ScaleGizmo.UNIFORM_CUBE_EMISSIVE_DEFAULT.clone();
     cube.material = whiteMaterial;
+    this.uniformScaleCenterMesh = cube;
 
     // Create plane cubes (also on first activation)
     this.createPlaneCubes();
@@ -543,6 +551,13 @@ export class ScaleGizmo implements IGizmoTransformer {
       for (const observer of this.uniformScalePointerObservers) {
         scene.onPointerObservable.remove(observer);
       }
+    }
+
+    // Dispose uniform scale center mesh and its material
+    if (this.uniformScaleCenterMesh) {
+      this.uniformScaleCenterMesh.material?.dispose();
+      this.uniformScaleCenterMesh.dispose();
+      this.uniformScaleCenterMesh = null;
     }
 
     // Dispose plane cube meshes
