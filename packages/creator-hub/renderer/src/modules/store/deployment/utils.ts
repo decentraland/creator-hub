@@ -57,11 +57,15 @@ export const deploy = async (
     chainId: ChainId;
   },
 ) => {
-  const resp = await fetch(`${url}/deploy`, {
-    method: 'post',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
+  const resp = await fetch(
+    `${url}/deploy`,
+    {
+      method: 'post',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    },
+    seconds(30),
+  );
 
   if (!resp.ok) {
     const data = await resp.json();
@@ -310,6 +314,10 @@ export function translateError(error: SerializedError) {
       return t('modal.publish_project.deploy.deploying.errors.max_retries');
     case 'FETCH_STATUS':
       return t('modal.publish_project.deploy.deploying.errors.fetch_status');
+    case 'FETCH_TIMEOUT_ERROR':
+      return t('modal.publish_project.deploy.deploying.errors.fetch_timeout_error');
+    case 'NO_INTERNET_CONNECTION':
+      return t('modal.publish_project.deploy.deploying.errors.no_internet_connection');
     case 'CATALYST_SERVERS_EXHAUSTED':
       return t('modal.publish_project.deploy.deploying.errors.catalyst');
     case 'DEPLOYMENT_NOT_FOUND':

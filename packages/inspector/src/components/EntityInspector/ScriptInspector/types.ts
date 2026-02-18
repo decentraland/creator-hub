@@ -35,6 +35,7 @@ export type ScriptParamUnion =
 
 export type ScriptParam = {
   optional?: boolean;
+  tooltip?: string;
 };
 
 export type ScriptParamNumber = ScriptParam & {

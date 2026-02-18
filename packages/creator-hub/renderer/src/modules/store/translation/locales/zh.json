@@ -47,7 +47,8 @@
           "debugger": "在预览期间打开控制台窗口",
           "skip_auth_screen": "跳过认证屏幕",
           "open_new_instance": "打开多个实例",
-          "landscape_terrain_enabled": "启用景观地形"
+          "landscape_terrain_enabled": "启用景观地形",
+          "mobile_preview": "显示移动端二维码"
         },
         "publish_options": {
           "publish_scene": "发布场景",
@@ -214,6 +215,8 @@
           "errors": {
             "details": "详细信息",
             "fetch_status": "获取发布信息失败。\n请重试。",
+            "fetch_timeout_error": "获取发布信息失败。\n请检查您的互联网连接并重试。",
+            "no_internet_connection": "没有互联网连接。\n请检查您的连接并重试。",
             "catalyst": "发布到Catalyst节点失败。\n请重试或检查您的互联网连接。",
             "max_retries": "重试次数超过限制。\n请稍后再试。",
             "not_found": "出了问题。\n请重试。",
@@ -358,6 +361,11 @@
       "dont_show_again": "不再显示此警告",
       "continue": "继续",
       "cancel": "取消"
+    },
+    "mobile_qr": {
+      "title": "移动端预览",
+      "description": "使用移动设备扫描此二维码预览场景",
+      "disclaimer": "您的电脑和移动设备必须在同一网络中"
     }
   },
   "snackbar": {
@@ -373,7 +381,8 @@
       "installing_dependencies_failed": "安装依赖项失败",
       "invalid_scenes_folder": "无效的场景文件夹。请在创建场景之前在设置中配置有效的场景文件夹。",
       "create_scene_failed": "尝试创建场景时发生错误。请重试。",
-      "run_scene_failed": "加载项目失败。请重试。"
+      "run_scene_failed": "加载项目失败。请重试。",
+      "mobile_qr_failed": "获取移动预览二维码失败"
     },
     "missing_projects": {
       "title": "{scenes} 丢失的 {scenes, plural, one {场景} other {场景}} 成立",

@@ -1,12 +1,13 @@
-import type {
-  GizmoManager,
-  IScaleGizmo,
-  Mesh,
-  Observer,
-  PointerInfo,
+import type { GizmoManager, IScaleGizmo, Mesh, Observer, PointerInfo } from '@babylonjs/core';
+import {
+  Vector3,
+  TransformNode,
+  Quaternion,
+  Color3,
+  PointerEventTypes,
+  MeshBuilder,
   StandardMaterial,
 } from '@babylonjs/core';
-import { Vector3, TransformNode, Quaternion, Color3, PointerEventTypes } from '@babylonjs/core';
 import type { Entity } from '@dcl/ecs';
 import type { EcsEntity } from '../EcsEntity';
 import { LEFT_BUTTON } from '../mouse-utils';
@@ -61,10 +62,12 @@ export class ScaleGizmo implements IGizmoTransformer {
   private isDraggingUniformScale = false;
   private initialUniformScaleMousePos: { x: number; y: number } | null = null;
   private uniformScalePointerObservers: Observer<PointerInfo>[] = [];
+  private uniformScaleCenterMesh: Mesh | null = null;
 
   constructor(
     private gizmoManager: GizmoManager,
     private snapScale: (scale: Vector3) => Vector3,
+    private getUniformScaleOnly?: () => boolean,
   ) {}
 
   private clampScaleComponent(value: number): number {
@@ -192,11 +195,21 @@ export class ScaleGizmo implements IGizmoTransformer {
     this.planePointerObservers.push(hoverObserver);
   }
 
-  private addUniformScaleDragBehavior(uniformGizmo: any): void {
-    if (this.uniformScalePointerObservers.length > 0) return;
+  private static readonly UNIFORM_CUBE_EMISSIVE_DEFAULT = new Color3(0.75, 0.75, 0.75);
+  private static readonly UNIFORM_CUBE_EMISSIVE_HOVER = new Color3(1, 1, 1);
 
+  private addUniformScaleDragBehavior(uniformGizmo: any): void {
     const scene = uniformGizmo._rootMesh?.getScene();
     if (!scene) return;
+
+    // Remove any existing observers so we always register for the current cube.
+    // configureUniformScaleGizmo runs twice (from setup() and from enable() next frame) and
+    // replaces the center cube on the second run; without re-registering we'd keep observers
+    // pointing at the disposed cube/material and hover would stop working after switching away and back.
+    for (const obs of this.uniformScalePointerObservers) {
+      scene.onPointerObservable.remove(obs);
+    }
+    this.uniformScalePointerObservers = [];
 
     // Get the mesh of the uniform scale gizmo - try different possible properties
     const uniformMesh = uniformGizmo._rootMesh || uniformGizmo._mesh || uniformGizmo._gizmoMesh;
@@ -309,10 +322,24 @@ export class ScaleGizmo implements IGizmoTransformer {
       }
     };
 
+    const onPointerMoveHover = (pointerInfo: PointerInfo) => {
+      if (pointerInfo.type !== PointerEventTypes.POINTERMOVE) return;
+      const centerCube = this.uniformScaleCenterMesh;
+      const centerMaterial =
+        centerCube?.material instanceof StandardMaterial ? centerCube.material : null;
+      if (!centerMaterial) return;
+      const pickInfo = pointerInfo.pickInfo;
+      const isHovering = pickInfo?.hit && pickInfo.pickedMesh === centerCube;
+      centerMaterial.emissiveColor = isHovering
+        ? ScaleGizmo.UNIFORM_CUBE_EMISSIVE_HOVER
+        : ScaleGizmo.UNIFORM_CUBE_EMISSIVE_DEFAULT;
+    };
+
     const downObserver = scene.onPointerObservable.add(onPointerDown);
     const moveObserver = scene.onPointerObservable.add(onPointerMove);
     const upObserver = scene.onPointerObservable.add(onPointerUp);
-    this.uniformScalePointerObservers.push(downObserver, moveObserver, upObserver);
+    const hoverObserver = scene.onPointerObservable.add(onPointerMoveHover);
+    this.uniformScalePointerObservers.push(downObserver, moveObserver, upObserver, hoverObserver);
   }
 
   private addPlaneDragBehavior(planeMesh: Mesh, planeType: PlaneType): void {
@@ -371,7 +398,8 @@ export class ScaleGizmo implements IGizmoTransformer {
       const dragDistance = deltaX - deltaY;
       const scaleFactor = this.calculateScaleFactor(dragDistance);
 
-      // Apply scaling based on plane type
+      // Apply scaling based on plane type (or uniform when proportional scaling is locked)
+      const uniformOnly = this.getUniformScaleOnly?.() ?? false;
       for (const entity of this.currentEntities) {
         const initialScale = initialEntityScales.get(entity.entityId);
         const offset = this.initialOffsets.get(entity.entityId);
@@ -380,10 +408,10 @@ export class ScaleGizmo implements IGizmoTransformer {
 
         if (!initialScale || !offset || !initialRotation || !initialPosition) continue;
 
-        // Calculate scale change based on plane type
         let scaleChange: Vector3;
-
-        if (planeType === 'XY') {
+        if (uniformOnly) {
+          scaleChange = new Vector3(scaleFactor, scaleFactor, scaleFactor);
+        } else if (planeType === 'XY') {
           scaleChange = new Vector3(scaleFactor, scaleFactor, 1);
         } else if (planeType === 'XZ') {
           scaleChange = new Vector3(scaleFactor, 1, scaleFactor);
@@ -461,9 +489,28 @@ export class ScaleGizmo implements IGizmoTransformer {
     // Make the uniform scale cube 2x bigger for easier selection
     uniformGizmo.scaleRatio = 2;
 
-    // Get the scene to create a new cube mesh
+    // Replace the default octahedron with an axis-aligned cube (no rotation needed)
     const scene = this.gizmoManager.gizmos.scaleGizmo?._rootMesh?.getScene();
     if (!scene) return;
+
+    // Dispose the previous cube and its material before creating a new one.
+    // configureUniformScaleGizmo runs twice per activation (from setup() and from enable() deferred
+    // via addOnce), so without this, the first cube and material would leak into the scene.
+    if (this.uniformScaleCenterMesh) {
+      this.uniformScaleCenterMesh.material?.dispose();
+      this.uniformScaleCenterMesh.dispose();
+      this.uniformScaleCenterMesh = null;
+    }
+
+    const cube = MeshBuilder.CreateBox('uniformScaleCenter', { size: 1 }, scene);
+    cube.scaling.scaleInPlace(0.01); // Match approximate size of original center
+    uniformGizmo.setCustomMesh(cube);
+    const whiteMaterial = new StandardMaterial('uniformScaleCenterMat', scene);
+    whiteMaterial.diffuseColor = Color3.White();
+    // Strong emissive so the center cube reads as white in the utility layer (lighting is often dim)
+    whiteMaterial.emissiveColor = ScaleGizmo.UNIFORM_CUBE_EMISSIVE_DEFAULT.clone();
+    cube.material = whiteMaterial;
+    this.uniformScaleCenterMesh = cube;
 
     // Create plane cubes (also on first activation)
     this.createPlaneCubes();
@@ -504,6 +551,13 @@ export class ScaleGizmo implements IGizmoTransformer {
       for (const observer of this.uniformScalePointerObservers) {
         scene.onPointerObservable.remove(observer);
       }
+    }
+
+    // Dispose uniform scale center mesh and its material
+    if (this.uniformScaleCenterMesh) {
+      this.uniformScaleCenterMesh.material?.dispose();
+      this.uniformScaleCenterMesh.dispose();
+      this.uniformScaleCenterMesh = null;
     }
 
     // Dispose plane cube meshes
@@ -672,6 +726,15 @@ export class ScaleGizmo implements IGizmoTransformer {
       gizmoNode.scaling.y / this.initialGizmoScale.y,
       gizmoNode.scaling.z / this.initialGizmoScale.z,
     );
+
+    // When proportional scaling is locked (Transform scale lock), force uniform scale
+    if (this.getUniformScaleOnly?.()) {
+      const product = scaleChange.x * scaleChange.y * scaleChange.z;
+      const s = product <= 0 ? this.minScaleValue : Math.pow(product, 1 / 3);
+      scaleChange.set(s, s, s);
+      // Keep gizmo node scaling uniform so the gizmo visual matches entity behavior
+      gizmoNode.scaling.copyFrom(this.initialGizmoScale).scaleInPlace(s);
+    }
 
     for (const entity of entities) {
       const offset = this.initialOffsets.get(entity.entityId);

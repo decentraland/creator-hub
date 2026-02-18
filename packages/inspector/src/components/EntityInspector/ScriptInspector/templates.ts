@@ -21,7 +21,7 @@ export class ${className} {
    * Note: After editing this file, click the refresh icon in the Script component UI
    * to see updated inputs.
    *
-   * The `src` and `entity` fields in the constructor are required by internal references.
+   * The \`src\` and \`entity\` fields in the constructor are required by internal references.
    */
   constructor(
     public src: string,     // DO NOT REMOVE

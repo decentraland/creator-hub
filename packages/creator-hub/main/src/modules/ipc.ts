@@ -1,4 +1,4 @@
-import { handle } from './handle';
+import { handle, handleSync } from './handle';
 import * as electron from './electron';
 import * as updater from './updater';
 import * as inspector from './inspector';
@@ -11,6 +11,7 @@ import * as config from './config';
 
 export function initIpc() {
   // electron
+  handleSync('electron.getEnvOverride', () => electron.getEnvOverride());
   handle('electron.getAppVersion', () => electron.getAppVersion());
   handle('electron.getUserDataPath', () => electron.getUserDataPath());
   handle('electron.getWorkspaceConfigPath', (_event, path) =>
@@ -41,6 +42,7 @@ export function initIpc() {
   handle('cli.start', (_event, path, opts) => cli.start(path, opts));
   handle('cli.deploy', (_event, opts) => cli.deploy(opts));
   handle('cli.killPreview', (_event, path) => cli.killPreview(path));
+  handle('cli.getMobilePreview', (_event, path) => cli.getMobilePreview(path));
 
   // config
   handle('config.getConfig', () => config.getConfig());

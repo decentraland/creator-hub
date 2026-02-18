@@ -1,4 +1,5 @@
 import { Env, createConfig } from '@dcl/ui-env';
+import { env } from '#preload';
 import dev from './env/dev.json';
 import prod from './env/prd.json';
 
@@ -9,7 +10,7 @@ export const config = createConfig(
   },
   {
     systemEnvVariables: {
-      REACT_APP_DCL_DEFAULT_ENV: import.meta.env.DEV ? 'dev' : 'prod',
+      REACT_APP_DCL_DEFAULT_ENV: env.getEnv(),
     },
   },
 );

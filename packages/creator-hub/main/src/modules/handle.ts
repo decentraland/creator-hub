@@ -45,3 +45,29 @@ export async function handle<T extends keyof Ipc>(
     }
   });
 }
+
+export function handleSync<T extends keyof Ipc>(
+  channel: T,
+  handler: (event: Electron.IpcMainEvent, ...args: Parameters<Ipc[T]>) => ReturnType<Ipc[T]>,
+) {
+  ipcMain.on(channel, (event, ...args) => {
+    try {
+      log.info(
+        `[IPC-SYNC] channel=${channel} ${args.map((arg, idx) => `args[${idx}]=${JSON.stringify(arg)}`).join(' ')}`.trim(),
+      );
+      const result = handler(event, ...(args as Parameters<Ipc[T]>));
+      event.returnValue = result;
+      return result;
+    } catch (error: any) {
+      const name = error.name || 'Error';
+      log.error(`[IPC-SYNC] channel=${channel} name=${name} error=${error.message}`);
+
+      Sentry.captureException(error, {
+        tags: { source: 'ipc-handleSync' },
+        extra: { channel },
+      });
+      event.returnValue = null;
+      return null;
+    }
+  });
+}

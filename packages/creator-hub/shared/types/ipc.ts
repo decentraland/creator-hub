@@ -6,6 +6,7 @@ import type { DeployOptions } from '/shared/types/deploy';
 
 import type { PreviewOptions, ReleaseNotes } from './settings';
 import type { Config, EditorConfig } from './config';
+import type { Env } from './env';
 
 export type IpcResult<T> = {
   success: true;
@@ -20,6 +21,7 @@ export type IpcError = {
 };
 
 export interface Ipc {
+  'electron.getEnvOverride': () => Env | null;
   'electron.getUserDataPath': () => string;
   'electron.getAppVersion': () => Promise<string>;
   'updater.getDownloadedVersion': () => string | null;
@@ -56,6 +58,7 @@ export interface Ipc {
   'cli.start': (path: string, opts: PreviewOptions) => Promise<string>;
   'cli.deploy': (opts: DeployOptions) => Promise<number>;
   'cli.killPreview': (path: string) => Promise<void>;
+  'cli.getMobilePreview': (path: string) => Promise<{ url: string; qr: string } | null>;
   'analytics.track': <T extends keyof Events>(event: T, data?: Events[T]) => void;
   'analytics.identify': (userId: string, traits?: Record<string, any>) => void;
   'analytics.getAnonymousId': () => Promise<string>;
