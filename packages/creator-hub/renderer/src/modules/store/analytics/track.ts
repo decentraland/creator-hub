@@ -7,6 +7,7 @@ import { type GetState } from '#store';
 
 import { actions as workspaceActions } from '../workspace';
 import { actions as editorActions } from '../editor';
+import { actions as deploymentActions } from '../deployment';
 import { actions as managementActions } from '../management';
 
 type ActionWithPayload<P, M = void> = {
@@ -67,6 +68,37 @@ export const analyticsConfig: Record<string, AnalyticsHandler<any>> = {
         project_id: projectId,
         target: action.meta.arg.target || 'unknown',
         targetContent: action.meta.arg.targetContent || 'unknown',
+      };
+    },
+  },
+  [deploymentActions.executeDeployment.fulfilled.type]: {
+    eventName: 'Execute Scene Deployment',
+    getPayload: (action, getState) => {
+      const state = getState();
+      const deployment = state.deployment.deployments[action.meta.arg.path];
+      const project = state.editor.project;
+      const worldScenes =
+        project?.worldConfiguration?.name === state.management.worldSettings.worldName
+          ? state.management.worldSettings.scenes
+          : [];
+
+      if (!project?.id || !deployment) {
+        throw new Error('Missing project or deployment info when trying to execute deployment');
+      }
+
+      return {
+        project_id: project.id,
+        scene_size: deployment.files.reduce((sum, f) => sum + f.size, 0),
+        file_count: deployment.files.length,
+        base_parcel: deployment.info.baseParcel,
+        parcels: deployment.info.parcels,
+        is_world: deployment.info.isWorld,
+        world_name: deployment.info.isWorld ? project?.worldConfiguration?.name : undefined,
+        existing_world_scenes: worldScenes.map(scene => ({
+          entityId: scene.entityId,
+          parcels: scene.parcels,
+          size: scene.size,
+        })),
       };
     },
   },

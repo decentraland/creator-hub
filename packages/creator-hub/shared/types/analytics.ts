@@ -33,6 +33,20 @@ export type Events = {
     target: string;
     targetContent: string;
   };
+  'Execute Scene Deployment': {
+    project_id: string;
+    scene_size: number;
+    file_count: number;
+    base_parcel: string;
+    parcels: string[];
+    is_world: boolean;
+    world_name?: string;
+    existing_world_scenes: Array<{
+      entityId: string;
+      parcels: string[];
+      size: number;
+    }>;
+  };
   'Open Code': undefined;
   'Worlds Your Storage Modal Action': {
     action: string;
