@@ -83,7 +83,7 @@ function findParentEntity<T extends BABYLON.Node & { isDCLEntity?: boolean }>(
 
 function getSceneContext(scene: BABYLON.Scene) {
   const ecsEntity = scene.transformNodes.find(n => isEcsEntity(n));
-  return ecsEntity ? ecsEntity.context.deref()! : null;
+  return ecsEntity ? (ecsEntity.context.deref() ?? null) : null;
 }
 
 function startDragDetection(): void {

@@ -230,19 +230,6 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
     return selectedIndex;
   }
 
-  /** Called from gizmo drag to update spawn point position */
-  function updateSpawnPointPosition(index: number, position: Vector3): void {
-    const visual = getVisual(index);
-    if (visual) {
-      visual.rootNode.position = position.clone();
-      // Update avatar facing direction since distance/angle to camera target changed
-      if (visual.avatarMesh && visual.cameraTargetMesh) {
-        rotateAvatarToFaceTarget(visual.avatarMesh, position, visual.cameraTargetMesh.position);
-      }
-      events.emit('positionChange', { index, position: position.clone() });
-    }
-  }
-
   /** Gets transform node for gizmo attachment */
   function getSpawnPointNode(index: number): TransformNode | null {
     return getVisual(index)?.rootNode ?? null;
@@ -253,38 +240,9 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
     return getVisual(index)?.cameraTargetMesh ?? null;
   }
 
-  function getSpawnPointPosition(index: number): Vector3 | null {
-    return getVisual(index)?.rootNode.position.clone() ?? null;
-  }
-
-  /** Called from gizmo drag to update camera target position */
-  function updateCameraTargetPosition(index: number, position: Vector3): void {
-    const visual = getVisual(index);
-    if (visual?.cameraTargetMesh) {
-      visual.cameraTargetMesh.position = position.clone();
-      // Update avatar facing direction to follow the new camera target
-      if (visual.avatarMesh) {
-        rotateAvatarToFaceTarget(visual.avatarMesh, visual.rootNode.position, position);
-      }
-      events.emit('cameraTargetPositionChange', { index, position: position.clone() });
-    }
-  }
-
   function onSelectionChange(cb: (data: SelectionData) => void): () => void {
     events.on('selectionChange', cb);
     return () => events.off('selectionChange', cb);
-  }
-
-  function onPositionChange(cb: (data: { index: number; position: Vector3 }) => void): () => void {
-    events.on('positionChange', cb);
-    return () => events.off('positionChange', cb);
-  }
-
-  function onCameraTargetPositionChange(
-    cb: (data: { index: number; position: Vector3 }) => void,
-  ): () => void {
-    events.on('cameraTargetPositionChange', cb);
-    return () => events.off('cameraTargetPositionChange', cb);
   }
 
   function setSpawnPointVisible(index: number, name: string, visible: boolean): void {
@@ -317,10 +275,6 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
     spawnPointsNode.dispose();
   }
 
-  function getCount(): number {
-    return visuals.length;
-  }
-
   return {
     updateFromSceneComponent,
     selectSpawnPoint,
@@ -330,17 +284,11 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
     isMeshSpawnPoint: isSpawnPointMesh,
     isMeshCameraTarget: isCameraTargetMesh,
     findSpawnPointByMesh: getSpawnPointIndexFromMesh,
-    updateSpawnPointPosition,
-    updateCameraTargetPosition,
     getSpawnPointNode,
     getCameraTargetNode,
-    getSpawnPointPosition,
-    getCount,
     setSpawnPointVisible,
     isSpawnPointHidden,
     onSelectionChange,
-    onPositionChange,
-    onCameraTargetPositionChange,
     onVisibilityChange,
     dispose,
   };

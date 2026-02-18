@@ -4,10 +4,17 @@ import { MeshBuilder, StandardMaterial, PBRMaterial, Color3, Mesh } from '@babyl
 import spawnPointAvatarGlbDataUrl from '../assets/spawn_point_avatar.glb';
 import { loadAssetContainer } from './sdkComponents/gltf-container';
 
+/** Metadata stored on cloned PBR materials to restore original appearance on deselect. */
+interface SpawnPointMaterialMetadata {
+  originalAlbedoColor: Color3;
+  originalEmissiveColor: Color3;
+  originalAlpha: number;
+  originalTransparencyMode: number | null;
+}
+
 const CAMERA_TARGET_CUBE_SIZE = 0.25;
-
+const SPAWN_POINT_PREFIX = 'spawn_point_';
 const SPAWN_COLOR = Color3.FromHexString('#A855F7');
-
 const AVATAR_ALPHA_UNSELECTED = 0.35;
 const AREA_ALPHA_UNSELECTED = 0.2;
 const AREA_ALPHA_SELECTED = 0.5;
@@ -110,13 +117,13 @@ function createMeshInstance(
         if (clonedMaterial) {
           // Store original values so we can restore them when selected
           if (clonedMaterial instanceof PBRMaterial) {
-            clonedMaterial.metadata = {
-              ...clonedMaterial.metadata,
+            const spawnMeta: SpawnPointMaterialMetadata = {
               originalAlbedoColor: clonedMaterial.albedoColor.clone(),
               originalEmissiveColor: clonedMaterial.emissiveColor.clone(),
               originalAlpha: clonedMaterial.alpha,
               originalTransparencyMode: clonedMaterial.transparencyMode,
             };
+            clonedMaterial.metadata = { ...clonedMaterial.metadata, ...spawnMeta };
             clonedMaterial.transparencyMode = PBRMaterial.PBRMATERIAL_ALPHABLEND;
             clonedMaterial.albedoColor = SPAWN_COLOR;
             clonedMaterial.emissiveColor = SPAWN_COLOR.scale(0.3);
@@ -276,7 +283,8 @@ export function setSpawnPointSelected(avatarMesh: Mesh, selected: boolean): void
   avatarMesh.getChildMeshes().forEach(child => {
     if (!child.material) return;
 
-    const isPBR = child.material instanceof PBRMaterial && child.material.metadata;
+    const isPBR =
+      child.material instanceof PBRMaterial && child.material.metadata?.originalAlbedoColor;
     if (!isPBR) {
       child.material.alpha = selected ? 1 : AVATAR_ALPHA_UNSELECTED;
       return;
@@ -284,7 +292,7 @@ export function setSpawnPointSelected(avatarMesh: Mesh, selected: boolean): void
 
     const material = child.material as PBRMaterial;
     if (selected) {
-      const meta = material.metadata;
+      const meta = material.metadata as SpawnPointMaterialMetadata;
       material.albedoColor = meta.originalAlbedoColor;
       material.emissiveColor = meta.originalEmissiveColor;
       material.alpha = meta.originalAlpha;
@@ -314,16 +322,18 @@ export function setCameraTargetSelected(cameraTargetMesh: Mesh, selected: boolea
 }
 
 export function isCameraTargetMesh(mesh: AbstractMesh): boolean {
-  return mesh.name.includes('_camera_target');
+  return mesh.name.includes(`${SPAWN_POINT_PREFIX}`) && mesh.name.includes('_camera_target');
 }
 
 export function isSpawnPointMesh(mesh: AbstractMesh): boolean {
-  return (
-    mesh.name.includes('_avatar') ||
-    mesh.name.includes('_offset_area') ||
-    mesh.name.includes('_camera_target') ||
-    mesh.name.includes('spawn_point_')
-  );
+  if (mesh.name.startsWith(SPAWN_POINT_PREFIX)) return true;
+  // Child meshes of spawn points are parented under a spawn_point_ node
+  let parent = mesh.parent;
+  while (parent) {
+    if (parent.name.startsWith(SPAWN_POINT_PREFIX)) return true;
+    parent = parent.parent;
+  }
+  return false;
 }
 
 export function getSpawnPointIndexFromMesh(mesh: AbstractMesh): number | null {
