@@ -355,10 +355,12 @@ export function createCustomAsset(engine: IEngine) {
             processedComponentValue.value = actions.map(action => {
               if (RESOURCE_ACTION_TYPES.includes(action.type)) {
                 const payload = JSON.parse(action.jsonPayload);
-                const originalValue: string = payload.src;
-                const relativePath = getRelativeResourcePath(originalValue, resourcesBasePath);
-                payload.src = `{assetPath}/${relativePath}`;
-                resources.push(originalValue);
+                if (payload.src) {
+                  const originalValue: string = payload.src;
+                  const relativePath = getRelativeResourcePath(originalValue, resourcesBasePath);
+                  payload.src = `{assetPath}/${relativePath}`;
+                  resources.push(originalValue);
+                }
                 action.jsonPayload = JSON.stringify(payload);
               }
               return action;
