@@ -11,10 +11,7 @@ describe('path-utils', () => {
     });
 
     it('should return the common directory prefix for resources in different subfolders', () => {
-      const resources = [
-        'scene/assets/pack/sub1/model.glb',
-        'scene/assets/pack/sub2/texture.png',
-      ];
+      const resources = ['scene/assets/pack/sub1/model.glb', 'scene/assets/pack/sub2/texture.png'];
       expect(getResourcesBasePath(resources)).toBe('scene/assets/pack');
     });
 
@@ -42,9 +39,9 @@ describe('path-utils', () => {
     });
 
     it('should return filename when path is not under base', () => {
-      expect(
-        getRelativeResourcePath('other/path/model.glb', 'scene/assets/pack'),
-      ).toBe('model.glb');
+      expect(getRelativeResourcePath('other/path/model.glb', 'scene/assets/pack')).toBe(
+        'model.glb',
+      );
     });
 
     it('should return filename when base is empty', () => {

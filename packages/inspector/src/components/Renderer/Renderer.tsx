@@ -6,10 +6,7 @@ import { Vector3 } from '@babylonjs/core';
 import type { Entity } from '@dcl/ecs';
 
 import { DIRECTORY, withAssetDir } from '../../lib/data-layer/host/fs-utils';
-import {
-  getRelativeResourcePath,
-  getResourcesBasePath,
-} from '../../lib/utils/path-utils';
+import { getRelativeResourcePath, getResourcesBasePath } from '../../lib/utils/path-utils';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { getDataLayerInterface, getAssetCatalog, saveThumbnail } from '../../redux/data-layer';
 import type {
