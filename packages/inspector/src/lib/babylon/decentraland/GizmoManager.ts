@@ -7,6 +7,7 @@ import {
 } from '@babylonjs/core';
 import { Vector3 as DclVector3 } from '@dcl/ecs-math';
 import { GizmoType } from '../../utils/gizmo';
+import { suppressCrdtUpdates, resumeCrdtUpdates } from '../../sdk/crdt-update-guard';
 import type { SceneContext } from './SceneContext';
 import type { EcsEntity } from './EcsEntity';
 import { GizmoType as TransformerType } from './gizmos/types';
@@ -31,7 +32,7 @@ export function createGizmoManager(context: SceneContext) {
       isDragInProgress = true;
       // Suppress renderer engine CRDT updates during drag to prevent
       // intermediate undo entries from async message round-trips.
-      (context.engine as any).__suppressCrdtUpdate = true;
+      suppressCrdtUpdates(context.engine);
     }
     liveDragCallback?.(selectedEntities);
   }
@@ -39,7 +40,7 @@ export function createGizmoManager(context: SceneContext) {
   function endDragSuppression() {
     if (isDragInProgress) {
       isDragInProgress = false;
-      (context.engine as any).__suppressCrdtUpdate = false;
+      resumeCrdtUpdates(context.engine);
     }
   }
 
