@@ -77,4 +77,11 @@ export type Events = {
       created_at: string;
     }>;
   };
+  'Unpublish World Scene': {
+    world_name: string;
+    scene_coord: string;
+  };
+  'Unpublish Entire World': {
+    world_name: string;
+  };
 };
