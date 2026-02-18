@@ -521,18 +521,15 @@ export function createGizmoManager(context: SceneContext) {
       for (const cleanup of spawnPointSubGizmoObservers) cleanup();
       spawnPointSubGizmoObservers.length = 0;
 
-      // Disable all gizmos except position
       gizmoManager.positionGizmoEnabled = false;
       gizmoManager.rotationGizmoEnabled = false;
       gizmoManager.scaleGizmoEnabled = false;
 
-      // Clean up current transformer
       if (currentTransformer) {
         currentTransformer.cleanup();
         currentTransformer = null;
       }
 
-      // Setup position gizmo for spawn point
       currentTransformer = positionTransformer;
       currentTransformer.setup();
       currentTransformer.setEntities([]);
@@ -623,13 +620,9 @@ export function createGizmoManager(context: SceneContext) {
         }
       }
 
-      // Attach gizmo to the spawn point node
       gizmoManager.attachToNode(spawnPointNode);
       events.emit('change');
     },
-    /**
-     * Detaches gizmo from spawn point
-     */
     detachFromSpawnPoint() {
       if (attachedSpawnPointIndex === null) return;
 
@@ -638,11 +631,9 @@ export function createGizmoManager(context: SceneContext) {
       spawnPointDragStartPosition = null;
       spawnPointAllowedAxes = null;
 
-      // Clean up sub-gizmo observers
       for (const cleanup of spawnPointSubGizmoObservers) cleanup();
       spawnPointSubGizmoObservers.length = 0;
 
-      // Clean up transformer
       if (currentTransformer) {
         currentTransformer.cleanup();
         currentTransformer = null;
@@ -652,17 +643,8 @@ export function createGizmoManager(context: SceneContext) {
       gizmoManager.attachToNode(null);
       events.emit('change');
     },
-    /**
-     * Checks if gizmo is attached to a spawn point
-     */
     isAttachedToSpawnPoint() {
       return attachedSpawnPointIndex !== null;
-    },
-    /**
-     * Gets the attached spawn point index
-     */
-    getAttachedSpawnPointIndex() {
-      return attachedSpawnPointIndex;
     },
   };
 }
