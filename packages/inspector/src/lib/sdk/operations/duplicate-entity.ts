@@ -8,14 +8,18 @@ import { clone } from '@dcl/asset-packs';
 import type { EditorComponents, Node } from '../components';
 import { EditorComponentNames } from '../components';
 import { createEnumEntityId } from '../enum-entity';
-import { getNodes, pushChildToNodes } from '../nodes';
+import { getNodes, pushChildToNodes, insertChildAfterInNodes } from '../nodes';
 import type { GizmoType } from '../../utils/gizmo';
 import updateSelectedEntity from './update-selected-entity';
 import { generateUniqueName } from './add-child';
 
 export function duplicateEntity(engine: IEngine) {
   const enumEntityId = createEnumEntityId(engine);
-  return function duplicateEntity(entity: Entity, preferredGizmo?: GizmoType) {
+  return function duplicateEntity(
+    entity: Entity,
+    preferredGizmo?: GizmoType,
+    insertAfter?: Entity,
+  ) {
     const Transform = engine.getComponent(TransformEngine.componentId) as typeof TransformEngine;
     const Nodes = engine.getComponent(EditorComponentNames.Nodes) as EditorComponents['Nodes'];
     const Triggers = engine.getComponent(
@@ -54,10 +58,17 @@ export function duplicateEntity(engine: IEngine) {
 
       const transform = Transform.getMutableOrNull(duplicate);
       if (transform === null || !transform.parent) {
-        newNodes = pushChildToNodes(newNodes, engine.RootEntity, duplicate);
+        const afterEntity = resolveInsertAfter(newNodes, engine.RootEntity, insertAfter, original);
+        newNodes = insertChildAfterInNodes(newNodes, engine.RootEntity, duplicate, afterEntity);
       } else {
-        const parent = entities.get(transform.parent) || transform.parent;
-        newNodes = pushChildToNodes(newNodes, parent, duplicate);
+        const clonedParent = entities.get(transform.parent);
+        if (clonedParent) {
+          newNodes = pushChildToNodes(newNodes, clonedParent, duplicate);
+        } else {
+          const parent = transform.parent;
+          const afterEntity = resolveInsertAfter(newNodes, parent, insertAfter, original);
+          newNodes = insertChildAfterInNodes(newNodes, parent, duplicate, afterEntity);
+        }
       }
     }
 
@@ -68,6 +79,21 @@ export function duplicateEntity(engine: IEngine) {
     updateSelectedEntity(engine)(cloned, true, preferredGizmo);
     return cloned;
   };
+}
+
+function resolveInsertAfter(
+  nodes: readonly Node[],
+  parent: Entity,
+  insertAfter: Entity | undefined,
+  original: Entity,
+): Entity {
+  if (insertAfter !== undefined) {
+    const parentNode = nodes.find($ => $.entity === parent);
+    if (parentNode?.children.includes(insertAfter)) {
+      return insertAfter;
+    }
+  }
+  return original;
 }
 
 export default duplicateEntity;
