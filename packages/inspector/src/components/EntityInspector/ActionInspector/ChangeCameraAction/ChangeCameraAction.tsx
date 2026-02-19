@@ -61,10 +61,10 @@ const ChangeCameraAction: React.FC<Props & { sdk: any }> = ({ value, onUpdate, s
   );
 
   const currentValue = useMemo(() => {
-    if (value.virtualCameraEntity === undefined) {
-      return '0'; // Default to "None"
-    } else if (value.virtualCameraEntity === engine.RootEntity) {
+    if (value.virtualCameraEntity === engine.RootEntity) {
       return '0'; // "None" option
+    } else if (value.virtualCameraEntity === undefined) {
+      return ''; // "This Entity"
     } else {
       return value.virtualCameraEntity.toString();
     }
