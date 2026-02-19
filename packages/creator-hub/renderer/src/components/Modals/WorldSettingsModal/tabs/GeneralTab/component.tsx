@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Box,
   Checkbox,
@@ -22,6 +22,11 @@ type Props = {
   onChangeSettings: (settings: Partial<WorldSettings>) => void;
 };
 
+type FormState = {
+  x: string;
+  y: string;
+};
+
 const TitleDivider = ({ title }: { title: string }) => (
   <Typography className="TitleDivider">
     <span>{title}</span>
@@ -31,14 +36,36 @@ const TitleDivider = ({ title }: { title: string }) => (
 
 const GeneralTab: React.FC<Props> = ({ worldSettings, onChangeSettings }) => {
   const [x, y] = idToCoords(worldSettings.spawnCoordinates || '');
+  const [form, setForm] = useState<FormState>({ x: x.toString(), y: y.toString() });
   const isSkyboxAuto = worldSettings.skyboxTime === undefined || worldSettings.skyboxTime === null;
-
   const validateCoordinate = useCallback((value: string) => {
-    if (value === '') return true;
     if (!INTEGER_REGEX.test(value)) return false;
     const numValue = parseInt(value, 10);
     return !isNaN(numValue) && numValue >= MIN_COORDINATE && numValue <= MAX_COORDINATE;
   }, []);
+
+  const handleCoordinateChange = useCallback(
+    (value: string, axis: 'x' | 'y') => {
+      if (validateCoordinate(value) || value === '' || value === '-') {
+        setForm(prev => ({ ...prev, [axis]: value }));
+      }
+
+      const newX = axis === 'x' ? value : form.x;
+      const newY = axis === 'y' ? value : form.y;
+      if (validateCoordinate(newX) && validateCoordinate(newY)) {
+        onChangeSettings({ spawnCoordinates: coordsToId(parseInt(newX), parseInt(newY)) });
+      } else {
+        onChangeSettings({ spawnCoordinates: undefined });
+      }
+    },
+    [validateCoordinate, onChangeSettings, form],
+  );
+
+  useEffect(() => {
+    if (x !== '' && y !== '') {
+      setForm({ x: x.toString(), y: y.toString() });
+    }
+  }, [worldSettings.spawnCoordinates]);
 
   return (
     <Box className="GeneralTab">
@@ -48,21 +75,13 @@ const GeneralTab: React.FC<Props> = ({ worldSettings, onChangeSettings }) => {
           <Typography variant="body2">{t('modal.world_settings.general.position')}</Typography>
           <Row>
             <OutlinedInput
-              value={x}
-              onChange={e => {
-                if (validateCoordinate(e.target.value)) {
-                  onChangeSettings({ spawnCoordinates: coordsToId(parseInt(e.target.value), y) });
-                }
-              }}
+              value={form.x}
+              onChange={e => handleCoordinateChange(e.target.value, 'x')}
               startAdornment={<span className="Label">X</span>}
             />
             <OutlinedInput
-              value={y}
-              onChange={e => {
-                if (validateCoordinate(e.target.value)) {
-                  onChangeSettings({ spawnCoordinates: coordsToId(x, parseInt(e.target.value)) });
-                }
-              }}
+              value={form.y}
+              onChange={e => handleCoordinateChange(e.target.value, 'y')}
               startAdornment={<span className="Label">Y</span>}
             />
           </Row>

@@ -372,7 +372,7 @@ export class Worlds {
         formData.append(key, blob);
       } else if (Array.isArray(value)) {
         value.forEach(item => formData.append(key, String(item)));
-      } else {
+      } else if (value !== undefined) {
         formData.append(key, String(value));
       }
     }
