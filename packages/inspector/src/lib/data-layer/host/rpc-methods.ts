@@ -116,6 +116,7 @@ export async function initRpcMethods(
         return undoRedoProvider.redo();
       });
       await compositeProvider.saveComposite(true);
+      await sceneProvider.syncFromEngine(engine);
       return transaction;
     },
 
@@ -124,6 +125,7 @@ export async function initRpcMethods(
         return undoRedoProvider.undo();
       });
       await compositeProvider.saveComposite(true);
+      await sceneProvider.syncFromEngine(engine);
       return transaction;
     },
 
