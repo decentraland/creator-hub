@@ -12,6 +12,7 @@ import {
 import { t } from '/@/modules/store/translation/utils';
 import { WorldSettingsTab, type ManagedProject } from '/shared/types/manage';
 import { Button } from '../../Button';
+import { Loader } from '../../Loader';
 import { Modal } from '../../Modals';
 import { WorldSettingsModal } from '../../Modals/WorldSettingsModal';
 import { WorldPermissionsModal } from '../../Modals/WorldPermissionsModal';
@@ -30,6 +31,7 @@ type PermissionsModalState = {
 type UnpublishConfirmationState = {
   isOpen: boolean;
   worldName: string | null;
+  loading?: boolean;
 };
 
 type Props = {
@@ -51,6 +53,7 @@ const ManagedProjectsList: React.FC<Props> = React.memo(props => {
   const [unpublishConfirmation, setUnpublishConfirmation] = useState<UnpublishConfirmationState>({
     isOpen: false,
     worldName: null,
+    loading: false,
   });
   const worldSettings = useSelector(managementSelectors.getWorldSettings);
   const worldPermissions = useSelector(managementSelectors.getPermissionsState);
@@ -91,11 +94,16 @@ const ManagedProjectsList: React.FC<Props> = React.memo(props => {
     setUnpublishConfirmation({ isOpen: false, worldName: null });
   }, []);
 
-  const handleUnpublishWorld = useCallback(() => {
-    const { worldName } = unpublishConfirmation;
-    if (!worldName) return;
-    dispatch(unpublishEntireWorld({ worldName }));
-  }, [unpublishConfirmation.worldName]);
+  const handleUnpublishWorld = useCallback(async () => {
+    if (!unpublishConfirmation.worldName || unpublishConfirmation.loading) return;
+    try {
+      setUnpublishConfirmation(prevState => ({ ...prevState, loading: true }));
+      await dispatch(unpublishEntireWorld({ worldName: unpublishConfirmation.worldName })).unwrap();
+      setUnpublishConfirmation({ isOpen: false, worldName: null });
+    } finally {
+      setUnpublishConfirmation(prevState => ({ ...prevState, loading: false }));
+    }
+  }, [unpublishConfirmation]);
 
   const handleViewScenes = useCallback(() => {
     navigate('/scenes');
@@ -157,7 +165,12 @@ const ManagedProjectsList: React.FC<Props> = React.memo(props => {
             >
               {t('modal.cancel')}
             </Button>
-            <Button onClick={handleUnpublishWorld}>{t('modal.confirm')}</Button>
+            <Button
+              onClick={handleUnpublishWorld}
+              disabled={unpublishConfirmation.loading}
+            >
+              {unpublishConfirmation.loading ? <Loader size={24} /> : t('modal.confirm')}
+            </Button>
           </>
         }
       >

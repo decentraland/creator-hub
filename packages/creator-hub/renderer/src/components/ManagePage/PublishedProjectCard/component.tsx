@@ -107,7 +107,10 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
         {
           text: t('manage.cards.menu.unpublish'),
           handler: onUnpublishWorld,
-          active: type === ManagedProjectType.WORLD && role === WorldRoleType.OWNER,
+          active:
+            type === ManagedProjectType.WORLD &&
+            role === WorldRoleType.OWNER &&
+            !!deployment?.scenesCount,
         },
       ];
       return options.filter(option => option.active) as Option[];
