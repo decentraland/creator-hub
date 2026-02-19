@@ -24,6 +24,8 @@ import { getUserData } from '~system/UserIdentity';
 import { ActionCallback } from '~sdk/script-utils';
 import { getEntitiesWithParent } from '@dcl/asset-packs/dist/helpers';
 
+const SPINNER_COMPONENT_NAME = 'claim-reward-spinner';
+
 const REWARDS_TESTING_ENABLED = false;
 const REWARDS_SERVER = REWARDS_TESTING_ENABLED
   ? 'https://rewards.decentraland.zone'
@@ -40,7 +42,7 @@ enum UiType {
   SUCCESS,
 }
 
-const SpinnerComponent = engine.defineComponent('claim-reward-spinner', {
+const SpinnerComponent = engine.defineComponent(SPINNER_COMPONENT_NAME, {
   angle: Schemas.Number,
   speed: Schemas.Number,
 });
@@ -169,7 +171,7 @@ export class ClaimRewardButton {
         if (s.angle < 0) s.angle += 360;
       },
       undefined,
-      `claim-reward-spinner-${this.entity}`,
+      `${SPINNER_COMPONENT_NAME}-${this.entity}`,
     );
   }
 

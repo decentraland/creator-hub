@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { EntityType } from '@dcl/schemas';
 import * as components from '@dcl/ecs/dist/components';
 import type { Entity } from '@dcl/ecs';
