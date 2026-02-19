@@ -802,13 +802,27 @@
       "title": "Inicia sesión para gestionar tus mundos",
       "action": "Iniciar sesión"
     },
-    "empty_search": {
-      "title": "No se encontraron resultados",
-      "description": "Intenta ajustar tu búsqueda para encontrar lo que estás buscando."
+    "empty_list": {
+      "search": {
+        "title": "No se encontraron resultados",
+        "description": "Intenta con una palabra clave diferente."
+      },
+      "published": {
+        "title": "No hay lugares publicados para mostrar",
+        "description": "Publica una de tus Escenas o conviértete en colaborador para ver más resultados."
+      },
+      "unpublished": {
+        "title": "No hay lugares para mostrar",
+        "description": "Consigue un NAME o conviértete en colaborador para ver más resultados."
+      },
+      "all": {
+        "title": "No hay lugares para mostrar",
+        "description": "Consigue un NAME o conviértete en colaborador para agregar tu primer Lugar."
+      }
     },
-    "no_projects": {
-      "title": "Aún no tienes ninguna escena",
-      "description": "Crea y gestiona tus escenas para tus Tierras y Mundos. ¡Empieza a construir ahora!"
+    "actions": {
+      "view_scenes": "Ver Escenas",
+      "mint_name": "Conseguir un nuevo NAME"
     },
     "worlds_storage": {
       "used": "Espacio usado",

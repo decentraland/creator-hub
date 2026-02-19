@@ -64,5 +64,10 @@
   justify-content: center;
   height: 60vh;
   text-align: center;
-  gap: 8px;
+  gap: 16px;
+}
+
+.ManagePage .EmptyContainer .MuiButton-root {
+  margin-top: 16px;
+  height: 40px;
 }

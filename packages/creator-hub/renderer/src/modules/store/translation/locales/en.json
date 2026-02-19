@@ -802,13 +802,27 @@
       "title": "Sign in to manage your worlds",
       "action": "Sign In"
     },
-    "empty_search": {
-      "title": "No results found",
-      "description": "Try adjusting your search to find what you're looking for."
+    "empty_list": {
+      "search": {
+        "title": "No results found",
+        "description": "Try a different keyword."
+      },
+      "published": {
+        "title": "No published places to display",
+        "description": "Publish one of your Scenes or become a collaborator to see more results."
+      },
+      "unpublished": {
+        "title": "No places to display",
+        "description": "Mint a NAME or become a collaborator to see more results."
+      },
+      "all": {
+        "title": "No places to display",
+        "description": "Mint a NAME or become a collaborator to add your first Place."
+      }
     },
-    "no_projects": {
-      "title": "You don't have any scenes yet",
-      "description": "Create and manage your scenes for your LANDs and Worlds. Start building now!"
+    "actions": {
+      "view_scenes": "View Scenes",
+      "mint_name": "Mint a new NAME"
     },
     "worlds_storage": {
       "used": "Space used",
