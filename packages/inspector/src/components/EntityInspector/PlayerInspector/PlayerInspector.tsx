@@ -169,14 +169,18 @@ export default withSdk<Props>(({ sdk }) => {
         return;
       }
 
-      const isCameraTarget = target === 'cameraTarget';
-      const node = isCameraTarget
-        ? spawnPointManager.getCameraTargetNode(index)
-        : spawnPointManager.getSpawnPointNode(index);
-      const field = isCameraTarget ? 'cameraTarget' : 'position';
+      const node =
+        target === 'cameraTarget'
+          ? spawnPointManager.getCameraTargetNode(index)
+          : spawnPointManager.getSpawnPointNode(index);
 
       if (node) {
-        gizmoManager.attachToSpawnPoint(node, index, (i, p) => fieldChangeRef.current(i, field, p));
+        gizmoManager.attachToSpawnPoint(
+          node,
+          index,
+          (i, p) => fieldChangeRef.current(i, target, p),
+          target,
+        );
       }
     };
 
@@ -229,13 +233,8 @@ export default withSdk<Props>(({ sdk }) => {
     setComponentValue({ ...componentValue, spawnPoints });
   }, [spawnPoints, isFocused, componentValue, isComponentEqual, setComponentValue]);
 
-  const handleFocusInput = useCallback(() => {
-    setIsFocused(true);
-  }, []);
-
-  const handleBlurInput = useCallback(() => {
-    setIsFocused(false);
-  }, []);
+  const handleFocusInput = useCallback(() => setIsFocused(true), []);
+  const handleBlurInput = useCallback(() => setIsFocused(false), []);
 
   const renderSpawnArea = useCallback(
     (spawnPoint: SceneSpawnPoint, index: number) => {
@@ -381,11 +380,11 @@ export default withSdk<Props>(({ sdk }) => {
               checked={!input.randomOffset}
               onChange={event => {
                 const enableRandom = !event.target.checked;
-                const needsDefaultOffset = enableRandom && input.maxOffset === 0;
-                handleModify({
-                  randomOffset: enableRandom,
-                  ...(needsDefaultOffset ? { maxOffset: SPAWN_AREA_DEFAULTS.maxOffset } : {}),
-                });
+                const maxOffset =
+                  enableRandom && input.maxOffset === 0
+                    ? SPAWN_AREA_DEFAULTS.maxOffset
+                    : input.maxOffset;
+                handleModify({ randomOffset: enableRandom, maxOffset });
               }}
             />
           </Block>
