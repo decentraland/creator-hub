@@ -74,6 +74,8 @@ export function ManagePage() {
   }, [page]);
 
   const handleRefreshProjects = useCallback(() => {
+    dispatch(managementActions.setPage(0));
+    dispatch(managementActions.setSearchQuery(''));
     dispatch(managementActions.fetchManagedProjectsFiltered());
   }, []);
 

@@ -17,3 +17,12 @@
   color: var(--black);
   padding: 8px 22px;
 }
+
+.UnpublishConfirmationModal {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.UnpublishConfirmationModal .MuiButton-root {
+  height: 40px;
+}

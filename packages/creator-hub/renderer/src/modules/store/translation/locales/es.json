@@ -446,7 +446,7 @@
           "title": "Diseño del Mundo",
           "world_size": "Tamaño del mundo: {size}"
         },
-        "multi_scene_title": "Mundo Multi-Escena (Avanzado)",
+        "multi_scene_title": "Mundo Multi-Escena",
         "multi_scene_description": "Permite que tu mundo contenga más de 1 escena.\nEl tamaño total del mundo dependerá del diseño del mundo publicado.",
         "empty_world": {
           "title": "No hay escenas publicadas en este mundo.",
@@ -733,10 +733,6 @@
           "title": "Nombres",
           "description": "Reclama tu nombre único y asígnalo a tu avatar o a tus parcelas."
         },
-        "worlds": {
-          "title": "Mundos",
-          "description": "Crea y gestiona tus propios espacios virtuales."
-        },
         "land": {
           "title": "Tierras",
           "description": "Publica Escenas, crea Estates y gestiona los permisos de tu TIERRA."
@@ -855,22 +851,25 @@
         "land_coords": "{coordX}, {coordY}"
       }
     },
-    "connection": {
-      "offline": {
-        "tooltip": "Sin conexión a internet",
-        "title": "Sin Conexión",
-        "message": "Actualmente estás sin conexión. Algunas funciones pueden no estar disponibles hasta que te reconectes a internet.",
-        "retry": "Reintentar Conexión",
-        "checking": "Verificando..."
-      },
-      "slow": {
-        "tooltip": "Conexión lenta detectada",
-        "message": "Tu conexión a internet parece ser lenta. Algunas funciones pueden tardar más en cargar."
-      },
-      "errors": {
-        "NO_INTERNET_CONNECTION": "No hay conexión a internet disponible",
-        "REQUEST_TIMEOUT": "La solicitud expiró. Por favor verifica tu conexión e intenta nuevamente."
-      }
+    "unpublish_world_confirmation": {
+      "title": "¿Despublicar <b>{worldName}</b>?"
+    }
+  },
+  "connection": {
+    "offline": {
+      "tooltip": "Sin conexión a internet",
+      "title": "Sin Conexión",
+      "message": "Actualmente estás sin conexión. Algunas funciones pueden no estar disponibles hasta que te reconectes a internet.",
+      "retry": "Reintentar Conexión",
+      "checking": "Verificando..."
+    },
+    "slow": {
+      "tooltip": "Conexión lenta detectada",
+      "message": "Tu conexión a internet parece ser lenta. Algunas funciones pueden tardar más en cargar."
+    },
+    "errors": {
+      "NO_INTERNET_CONNECTION": "No hay conexión a internet disponible",
+      "REQUEST_TIMEOUT": "La solicitud expiró. Por favor verifica tu conexión e intenta nuevamente."
     }
   }
 }

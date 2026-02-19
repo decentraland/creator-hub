@@ -446,7 +446,7 @@
           "title": "世界布局",
           "world_size": "世界大小：{size}"
         },
-        "multi_scene_title": "多场景世界（高级）",
+        "multi_scene_title": "多场景世界",
         "multi_scene_description": "允许您的世界包含多个场景。\n总的世界大小将取决于您发布的世界布局。",
         "empty_world": {
           "title": "此世界中未发布场景。",
@@ -733,10 +733,6 @@
           "title": "名字",
           "description": "领取你的独特名字，并将其分配给你的头像或地块。"
         },
-        "worlds": {
-          "title": "世界",
-          "description": "创建和管理你自己的虚拟空间。"
-        },
         "land": {
           "title": "土地",
           "description": "发布场景，创建庄园并管理你的土地权限。"
@@ -855,22 +851,25 @@
         "land_coords": "{coordX}, {coordY}"
       }
     },
-    "connection": {
-      "offline": {
-        "tooltip": "无网络连接",
-        "title": "无连接",
-        "message": "您当前处于离线状态。在您重新连接到互联网之前，某些功能可能无法使用。",
-        "retry": "重试连接",
-        "checking": "检查中..."
-      },
-      "slow": {
-        "tooltip": "检测到慢速连接",
-        "message": "您的互联网连接似乎很慢。某些功能可能需要更长时间才能加载。"
-      },
-      "errors": {
-        "NO_INTERNET_CONNECTION": "无可用的互联网连接",
-        "REQUEST_TIMEOUT": "请求超时。请检查您的连接并重试。"
-      }
+    "unpublish_world_confirmation": {
+      "title": "取消发布 <b>{worldName}</b>？"
+    }
+  },
+  "connection": {
+    "offline": {
+      "tooltip": "无网络连接",
+      "title": "无连接",
+      "message": "您当前处于离线状态。在您重新连接到互联网之前，某些功能可能无法使用。",
+      "retry": "重试连接",
+      "checking": "检查中..."
+    },
+    "slow": {
+      "tooltip": "检测到慢速连接",
+      "message": "您的互联网连接似乎很慢。某些功能可能需要更长时间才能加载。"
+    },
+    "errors": {
+      "NO_INTERNET_CONNECTION": "无可用的互联网连接",
+      "REQUEST_TIMEOUT": "请求超时。请检查您的连接并重试。"
     }
   }
 }

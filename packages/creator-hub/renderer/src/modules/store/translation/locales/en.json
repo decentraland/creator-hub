@@ -446,7 +446,7 @@
           "title": "World Layout",
           "world_size": "World size: {size}"
         },
-        "multi_scene_title": "Multi-Scene World (Advanced)",
+        "multi_scene_title": "Multi-Scene World",
         "multi_scene_description": "Allow your world to contain more than 1 scene.\nTotal world size will depend on your published world layout.",
         "empty_world": {
           "title": "No scene published in this world.",
@@ -733,10 +733,6 @@
           "title": "NAMEs",
           "description": "Claim your unique name and assign it to your avatar or your parcels."
         },
-        "worlds": {
-          "title": "Worlds",
-          "description": "Create and manage your own virtual spaces."
-        },
         "land": {
           "title": "LAND",
           "description": "Publish Scenes, creata Estates and manage permissions of your LAND."
@@ -854,6 +850,9 @@
         "parcels_count": "{count} {count, plural, one {parcel} other {parcels}}",
         "land_coords": "{coordX}, {coordY}"
       }
+    },
+    "unpublish_world_confirmation": {
+      "title": "Unpublish <b>{worldName}</b>?"
     }
   },
   "connection": {
