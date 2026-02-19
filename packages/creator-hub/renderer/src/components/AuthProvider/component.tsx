@@ -11,6 +11,7 @@ import {
   fetchAllManagedProjectsData,
   actions as managementActions,
 } from '/@/modules/store/management';
+import { actions as ensActions } from '/@/modules/store/ens';
 import { identify } from '/@/modules/store/analytics';
 import { AuthContext } from '/@/contexts/AuthContext';
 import { isNavigatorOnline } from '/@/lib/connection';
@@ -22,7 +23,7 @@ import type { AuthSignInProps } from './types';
 AuthServerProvider.setAuthServerUrl(config.get('AUTH_SERVER_URL'));
 AuthServerProvider.setAuthDappUrl(config.get('AUTH_DAPP_URL'));
 
-const DEFAULT_CHAIN_ID: ChainId = (Number(config.get('CHAIN_ID')) ??
+const DEFAULT_CHAIN_ID: ChainId = (Number(config.get('CHAIN_ID')) ||
   ChainId.ETHEREUM_MAINNET) as ChainId;
 
 export const provider = new AuthServerProvider();
@@ -149,7 +150,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     if (wallet && chainId) {
-      dispatch(fetchAllManagedProjectsData({ address: wallet, chainId }));
+      dispatch(ensActions.setChainId(chainId));
+      dispatch(fetchAllManagedProjectsData({ address: wallet }));
       dispatch(identify({ userId: wallet }));
       dispatch(fetchTiles());
       setUser({ id: wallet });

@@ -4,7 +4,6 @@ import {
   createSelector,
   type PayloadAction,
 } from '@reduxjs/toolkit';
-import type { ChainId } from '@dcl/schemas';
 import { AuthServerProvider } from 'decentraland-connect';
 import type { Async } from '/shared/types/async';
 import type { ManagedProject } from '/shared/types/manage';
@@ -93,10 +92,10 @@ const PROJECTS_PAGE_LIMIT = 50;
 /** Gets all user ENS, LANDs, storage stats and filtered managed projects */
 export const fetchAllManagedProjectsData = createAsyncThunk(
   'management/fetchAllManagedProjectsData',
-  async ({ address, chainId }: { address: string; chainId: ChainId }, { dispatch }) => {
+  async ({ address }: { address: string }, { dispatch }) => {
     // Fetch NAMEs and Land parcels/estates in parallel.
     await Promise.all([
-      dispatch(fetchENSList({ address, chainId })).unwrap(),
+      dispatch(fetchENSList({ address })).unwrap(),
       dispatch(fetchLandList({ address })).unwrap(),
     ]);
 
@@ -179,9 +178,10 @@ export const fetchWorlds = createAsyncThunk(
 /** Fetches unpublished worlds (0 published scenes) where the user is an owner or collaborator */
 export const fetchEmptyWorlds = createAsyncThunk(
   'management/fetchEmptyWorlds',
-  async ({ address }: { address: string }, { getState }) => {
+  async ({ address }: { address: string }, { dispatch, getState }) => {
+    const ensList = await dispatch(fetchENSList({ address })).unwrap();
+
     const state = getState() as AppState;
-    const ensList = Object.values(state.ens.data);
     const worldsAPI = new Worlds();
 
     const projectsPromises: Promise<ManagedProject | null>[] = ensList.map(async ens => {

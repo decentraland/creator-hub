@@ -242,12 +242,7 @@ export const executeDeployment = createAsyncThunk(
       if (finalStatus === 'failed') {
         return rejectWithValue(new DeploymentError('DEPLOYMENT_FAILED', componentsStatus));
       } else if (finalStatus === 'complete') {
-        dispatch(
-          managementActions.fetchAllManagedProjectsData({
-            address: wallet,
-            chainId: deployment.chainId,
-          }),
-        );
+        dispatch(managementActions.fetchAllManagedProjectsData({ address: wallet }));
       }
 
       return { info, componentsStatus };
