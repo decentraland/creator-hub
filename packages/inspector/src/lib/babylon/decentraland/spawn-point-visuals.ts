@@ -135,6 +135,7 @@ function createMeshInstance(
             };
             clonedMaterial.metadata = { ...clonedMaterial.metadata, ...spawnMeta };
             clonedMaterial.transparencyMode = PBRMaterial.PBRMATERIAL_ALPHABLEND;
+            clonedMaterial.needDepthPrePass = true;
             clonedMaterial.albedoColor = SPAWN_COLOR;
             clonedMaterial.emissiveColor = SPAWN_COLOR.scale(0.3);
           }
