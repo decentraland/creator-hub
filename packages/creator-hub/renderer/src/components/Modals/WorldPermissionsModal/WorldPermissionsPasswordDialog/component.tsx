@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
@@ -10,6 +10,11 @@ import { Info } from '../../DeploymentHistory/styled';
 import './styles.css';
 
 const MIN_PASSWORD_LENGTH = 8;
+const MIN_NUMBERS = 2;
+
+function countDigits(str: string): number {
+  return (str.match(/\d/g) ?? []).length;
+}
 
 type Props = {
   isChanging: boolean;
@@ -46,9 +51,29 @@ const WorldPermissionsPasswordFormComponent: React.FC<Props> = React.memo(
       onSubmit(password);
     }, [password, onSubmit]);
 
-    const isValid = password.length >= MIN_PASSWORD_LENGTH && password === confirmPassword;
+    const hasMinLength = password.length >= MIN_PASSWORD_LENGTH;
+    const hasMinNumbers = countDigits(password) >= MIN_NUMBERS;
+    const passwordMeetsRequirements = hasMinLength && hasMinNumbers;
+    const isValid = passwordMeetsRequirements && password === confirmPassword;
     const showMismatchError =
       confirmPassword.length > 0 && password.length > 0 && password !== confirmPassword;
+
+    const passwordErrors = useMemo(() => {
+      if (password.length === 0) return null;
+      if (passwordMeetsRequirements) return null;
+      const failedRules: string[] = [];
+      if (!hasMinLength) {
+        failedRules.push(
+          t('modal.world_permissions.password.error.min_length', { min: MIN_PASSWORD_LENGTH }),
+        );
+      }
+      if (!hasMinNumbers) {
+        failedRules.push(
+          t('modal.world_permissions.password.error.min_numbers', { min: MIN_NUMBERS }),
+        );
+      }
+      return failedRules;
+    }, [password, passwordMeetsRequirements, hasMinLength, hasMinNumbers]);
 
     return (
       <Box className="PasswordForm">
@@ -76,6 +101,7 @@ const WorldPermissionsPasswordFormComponent: React.FC<Props> = React.memo(
             size="medium"
             fullWidth
             autoFocus
+            error={!!passwordErrors}
             InputProps={{
               endAdornment: (
                 <IconButton
@@ -88,6 +114,20 @@ const WorldPermissionsPasswordFormComponent: React.FC<Props> = React.memo(
               ),
             }}
           />
+          {passwordErrors && (
+            <Box className="PasswordRequirements">
+              <Typography variant="caption">
+                {t('modal.world_permissions.password.error.requirements_header')}
+              </Typography>
+              <ul>
+                {passwordErrors.map(error => (
+                  <li key={error}>
+                    <Typography variant="caption">{error}</Typography>
+                  </li>
+                ))}
+              </ul>
+            </Box>
+          )}
         </Box>
 
         <Box className="PasswordFormField">
