@@ -121,11 +121,12 @@ export const clearUserManagedProjects = createAsyncThunk(
 /** Fetches managed projects according to current filters in the state */
 export const fetchManagedProjectsFiltered = createAsyncThunk(
   'management/fetchManagedProjectsWithFilters',
-  async (_, { dispatch, getState }) => {
+  async (args: { resetPage?: boolean } | undefined, { dispatch, getState }) => {
     const connectedAccount = AuthServerProvider.getAccount();
     if (!connectedAccount) throw new Error('No connected account found');
 
     const state = getState() as AppState;
+    if (args?.resetPage) dispatch(actions.setPage(0));
     if (state.management.publishFilter === FilterBy.PUBLISHED) {
       await dispatch(fetchWorlds({ address: connectedAccount })).unwrap();
     } else if (state.management.publishFilter === FilterBy.UNPUBLISHED) {
@@ -260,7 +261,7 @@ export const updateWorldSettings = createAsyncThunk(
     );
     if (!success) return rejectWithValue({ message: error });
     await dispatch(fetchWorldSettings({ worldName })).unwrap();
-    dispatch(fetchManagedProjectsFiltered()); // Background refresh. No need to await.
+    dispatch(fetchManagedProjectsFiltered({ resetPage: true })); // Background refresh. No need to await.
   },
 );
 
@@ -290,7 +291,7 @@ export const unpublishWorldScene = createAsyncThunk(
     const success = await WorldsAPI.unpublishWorldScene(connectedAccount, worldName, sceneCoord);
     if (success) {
       await dispatch(fetchWorldScenes({ worldName })).unwrap();
-      dispatch(fetchManagedProjectsFiltered()); // Background refresh. No need to await.
+      dispatch(fetchManagedProjectsFiltered({ resetPage: true })); // Background refresh. No need to await.
     } else {
       throw new Error('Failed to unpublish world scene');
     }
@@ -307,7 +308,7 @@ export const unpublishEntireWorld = createAsyncThunk(
     const success = await WorldsAPI.unpublishEntireWorld(connectedAccount, worldName);
     if (success) {
       await dispatch(fetchWorldScenes({ worldName })).unwrap();
-      dispatch(fetchManagedProjectsFiltered()); // Background refresh. No need to await.
+      dispatch(fetchManagedProjectsFiltered({ resetPage: true })); // Background refresh. No need to await.
     } else {
       throw new Error('Failed to unpublish world');
     }
