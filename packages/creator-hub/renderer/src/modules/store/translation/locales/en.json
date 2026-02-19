@@ -552,7 +552,10 @@
         "error": {
           "empty": "Password cannot be empty",
           "too_short": "Password must be at least {min} characters",
-          "mismatch": "Passwords do not match"
+          "mismatch": "Passwords do not match",
+          "requirements_header": "Password must include:",
+          "min_length": "Minimum length: {min} characters",
+          "min_numbers": "At least {min} numbers"
         }
       },
       "collaborators": {
