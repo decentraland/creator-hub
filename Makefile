@@ -26,9 +26,6 @@ SYNC_PACK = node_modules/.bin/syncpack
 
 install:
 	npm i --silent
-
-install-all:
-	make install
 	make install-protoc
 	make install-asset-packs
 	make install-inspector
@@ -87,7 +84,7 @@ build-creator-hub:
 
 init:
 	make clean
-	make install-all
+	make install
 	make protoc
 	make build
 

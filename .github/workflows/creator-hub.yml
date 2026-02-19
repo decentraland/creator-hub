@@ -48,7 +48,7 @@ jobs:
           cache: 'npm'
 
       - name: install
-        run: make install && make install-creator-hub
+        run: npm i --silent && make install-creator-hub
 
       - name: install inspector
         working-directory: packages/creator-hub

@@ -130,7 +130,7 @@ The project uses a Makefile to manage common development tasks:
 
 | Command                | Description                                                        |
 | ---------------------- | ------------------------------------------------------------------ |
-| `make install-all`     | Install dependencies for all packages                              |
+| `make install`         | Install dependencies for all packages                              |
 | `make install-protoc`  | Download and install Protocol Buffers compiler                     |
 | `make init-submodules` | Initialize git submodules (devtools-frontend)                      |
 | `make protoc`          | Generate TypeScript definitions from `.proto` files                |
