@@ -44,6 +44,8 @@ export type AssetBundleRegistryResponse = {
 export type ErrorName =
   | 'MAX_RETRIES'
   | 'FETCH_STATUS'
+  | 'FETCH_TIMEOUT_ERROR'
+  | 'NO_INTERNET_CONNECTION'
   | 'CATALYST_SERVERS_EXHAUSTED'
   | 'DEPLOYMENT_NOT_FOUND'
   | 'DEPLOYMENT_FAILED'

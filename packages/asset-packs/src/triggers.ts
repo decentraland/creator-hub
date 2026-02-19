@@ -385,12 +385,14 @@ export function createTriggersSystem(
   function initOnPlayerTriggerArea(entity: Entity) {
     TriggerArea.setBox(entity);
 
-    triggerAreaEventsSystem.onTriggerEnter(entity, function (_result) {
+    triggerAreaEventsSystem.onTriggerEnter(entity, function (result) {
+      if (result.trigger?.entity !== engine.PlayerEntity) return;
       const triggerEvents = getTriggerEvents(entity);
       triggerEvents.emit(TriggerType.ON_PLAYER_ENTERS_AREA);
     });
 
-    triggerAreaEventsSystem.onTriggerExit(entity, function (_result) {
+    triggerAreaEventsSystem.onTriggerExit(entity, function (result) {
+      if (result.trigger?.entity !== engine.PlayerEntity) return;
       const triggerEvents = getTriggerEvents(entity);
       triggerEvents.emit(TriggerType.ON_PLAYER_LEAVES_AREA);
     });
