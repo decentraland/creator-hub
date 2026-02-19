@@ -475,6 +475,10 @@ export function createComponents(engine: IEngine) {
     ),
   });
 
+  const Placeholder = engine.defineComponent(ComponentName.PLACEHOLDER, {
+    src: Schemas.String,
+  });
+
   return {
     ActionTypes,
     Actions,
@@ -488,6 +492,7 @@ export function createComponents(engine: IEngine) {
     VideoControlState,
     VideoScreen,
     Script,
+    Placeholder,
   };
 }
 
@@ -653,3 +658,6 @@ export type VideoControlState = ReturnType<VideoControlStateComponent['schema'][
 
 export type ScriptComponent = Components['Script'];
 export type Script = ReturnType<ScriptComponent['schema']['deserialize']>;
+
+export type PlaceholderComponent = Components['Placeholder'];
+export type Placeholder = ReturnType<PlaceholderComponent['schema']['deserialize']>;
