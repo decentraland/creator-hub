@@ -517,6 +517,18 @@ const slice = createSlice({
         state.status = 'failed';
         state.error = action.error.message || 'Failed to fetch managed projects';
       })
+      .addCase(fetchManagedProjectsFiltered.pending, state => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(fetchManagedProjectsFiltered.fulfilled, state => {
+        state.status = 'succeeded';
+        state.error = null;
+      })
+      .addCase(fetchManagedProjectsFiltered.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.error.message || 'Failed to fetch managed projects filtered';
+      })
       .addCase(fetchWorlds.fulfilled, (state, action) => {
         state.projects =
           state.page === 0
