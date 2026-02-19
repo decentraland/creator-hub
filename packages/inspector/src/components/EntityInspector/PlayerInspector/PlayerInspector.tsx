@@ -21,6 +21,7 @@ import {
   isSpawnAreaInBounds,
   isPositionInBounds,
   generateSpawnAreaName,
+  generateDuplicateName,
   SPAWN_AREA_DEFAULTS,
   round2,
 } from './utils';
@@ -263,16 +264,23 @@ export default withSdk<Props>(({ sdk }) => {
         if (isSelected) {
           spawnPointManager.selectSpawnPoint(null);
         } else if (selectedSpawnPointIndex !== null && selectedSpawnPointIndex > index) {
-          // Adjust selection index to account for the array shift after deletion
           spawnPointManager.selectSpawnPoint(selectedSpawnPointIndex - 1);
         }
+        const wasDefault = input.default;
         removeSpawnPoint(index);
+        if (wasDefault) {
+          setSpawnPoints(prev => {
+            if (prev.some(sp => sp.default)) return prev;
+            if (prev.length === 0) return prev;
+            return prev.map((sp, i) => (i === 0 ? { ...sp, default: true } : sp));
+          });
+        }
       };
 
       const handleDuplicate = (e: React.MouseEvent) => {
         e.stopPropagation();
         const existingNames = spawnPoints.map(sp => sp.name);
-        const name = generateSpawnAreaName(existingNames);
+        const name = generateDuplicateName(input.name, existingNames);
         addSpawnPoint(
           toSceneSpawnPoint({
             ...input,

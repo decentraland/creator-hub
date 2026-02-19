@@ -106,3 +106,15 @@ export function generateSpawnAreaName(existingNames: string[]): string {
   }
   return `SpawnArea${counter}`;
 }
+
+export function generateDuplicateName(sourceName: string, existingNames: string[]): string {
+  const match = sourceName.match(/^(.*?)(\d+)$/);
+  const base = match ? match[1] : sourceName;
+  const startCounter = match ? parseInt(match[2], 10) + 1 : 2;
+
+  let counter = startCounter;
+  while (existingNames.includes(`${base}${counter}`)) {
+    counter++;
+  }
+  return `${base}${counter}`;
+}

@@ -22,7 +22,7 @@ import {
   isValidSpawnAreaName,
   fromSceneSpawnPoint,
   toSceneSpawnPoint,
-  generateSpawnAreaName,
+  generateDuplicateName,
 } from '../EntityInspector/PlayerInspector/utils';
 import { ContextMenu as Menu } from '../ContexMenu';
 import { useContextMenu as useContextMenuAction } from '../../hooks/sdk/useContextMenu';
@@ -186,7 +186,7 @@ const PlayerTree: React.FC<WithSdkProps & PlayerTreeProps> = ({ sdk, onSelect })
       if (!sp) return;
       const input = fromSceneSpawnPoint(sp);
       const existingNames = componentValue.spawnPoints.map(s => s.name);
-      const name = generateSpawnAreaName(existingNames);
+      const name = generateDuplicateName(sp.name, existingNames);
       const duplicate = toSceneSpawnPoint({ ...input, name, default: false });
       const updatedSpawnPoints = [...componentValue.spawnPoints, duplicate];
       setComponentValue({ ...componentValue, spawnPoints: updatedSpawnPoints });
@@ -197,7 +197,13 @@ const PlayerTree: React.FC<WithSdkProps & PlayerTreeProps> = ({ sdk, onSelect })
   const handleDelete = useCallback(
     (index: number) => {
       if (!componentValue?.spawnPoints || componentValue.spawnPoints.length <= 1) return;
-      const updatedSpawnPoints = componentValue.spawnPoints.filter((_, i) => i !== index);
+      const deletedWasDefault = componentValue.spawnPoints[index].default;
+      let updatedSpawnPoints = componentValue.spawnPoints.filter((_, i) => i !== index);
+      if (deletedWasDefault && !updatedSpawnPoints.some(sp => sp.default)) {
+        updatedSpawnPoints = updatedSpawnPoints.map((sp, i) =>
+          i === 0 ? { ...sp, default: true } : sp,
+        );
+      }
       setComponentValue({ ...componentValue, spawnPoints: updatedSpawnPoints });
       if (selection.index === index) {
         spawnPointManager.selectSpawnPoint(null);
@@ -212,6 +218,31 @@ const PlayerTree: React.FC<WithSdkProps & PlayerTreeProps> = ({ sdk, onSelect })
     },
     [componentValue, setComponentValue, selection.index, selection.target, spawnPointManager],
   );
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (editingIndex !== null) return;
+      if (selection.index === null) return;
+
+      const isDelete = e.key === 'Delete' || e.key === 'Backspace';
+      const isDuplicate = (e.metaKey || e.ctrlKey) && e.key === 'd';
+
+      if (isDelete) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleDelete(selection.index);
+      } else if (isDuplicate) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleDuplicate(selection.index);
+      }
+    };
+
+    document.body.addEventListener('keydown', handler, true);
+    return () => document.body.removeEventListener('keydown', handler, true);
+  }, [selection.index, editingIndex, handleDelete, handleDuplicate]);
 
   const isPlayerRowHighlighted = isPlayerSelected && selection.index === null;
 
