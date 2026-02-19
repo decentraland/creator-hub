@@ -1,4 +1,4 @@
-import type { Scene, Mesh } from '@babylonjs/core';
+import type { Scene, Mesh, LinesMesh } from '@babylonjs/core';
 import { TransformNode, Vector3 } from '@babylonjs/core';
 import mitt from 'mitt';
 import { memoize } from '../../logic/once';
@@ -7,6 +7,8 @@ import {
   createAvatarPlaceholderAsync,
   createOffsetArea,
   createCameraTargetCube,
+  createOutOfBoundsIndicator,
+  createCameraTargetOutOfBoundsIndicator,
   setSpawnPointSelected,
   setOffsetAreaSelected,
   setCameraTargetSelected,
@@ -21,6 +23,10 @@ export interface SpawnPointVisual {
   avatarMesh: Mesh | null;
   areaMesh: Mesh | null;
   cameraTargetMesh: Mesh | null;
+  outOfBoundsIndicator: LinesMesh | null;
+  cameraTargetOutOfBoundsIndicator: LinesMesh | null;
+  offsetX: number;
+  offsetZ: number;
 }
 
 export type SpawnPointSelectionTarget = 'position' | 'cameraTarget';
@@ -67,10 +73,8 @@ function rotateAvatarToFaceTarget(avatarMesh: Mesh, spawnPos: Vector3, targetPos
 export const createSpawnPointManager = memoize((scene: Scene) => {
   const events = mitt<SpawnPointManagerEvents>();
 
-  // Parent node for all spawn point visuals
   const spawnPointsNode = new TransformNode('spawn_points', scene);
 
-  // State
   const visuals: SpawnPointVisual[] = [];
   let selectedIndex: number | null = null;
   let selectedTarget: SpawnPointSelectionTarget = 'position';
@@ -103,12 +107,18 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
     mesh.dispose(false, true);
   }
 
+  function disposeVisual(visual: SpawnPointVisual): void {
+    visual.cameraTargetOutOfBoundsIndicator?.dispose();
+    disposeMeshWithMaterial(visual.cameraTargetMesh);
+    disposeMeshWithMaterial(visual.areaMesh);
+    disposeMeshWithMaterial(visual.avatarMesh);
+    visual.outOfBoundsIndicator?.dispose();
+    visual.rootNode.dispose();
+  }
+
   function clear(): void {
     for (const visual of visuals) {
-      disposeMeshWithMaterial(visual.cameraTargetMesh);
-      disposeMeshWithMaterial(visual.areaMesh);
-      disposeMeshWithMaterial(visual.avatarMesh);
-      visual.rootNode.dispose();
+      disposeVisual(visual);
     }
     visuals.length = 0;
     selectedIndex = null;
@@ -130,10 +140,19 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
     const z = getPositionValue(spawnPoint.position.z);
     rootNode.position = new Vector3(x, y, z);
 
-    const avatarMesh = await createAvatarPlaceholderAsync(name, scene, rootNode);
-
     const offsetX = getOffsetRadius(spawnPoint.position.x);
     const offsetZ = getOffsetRadius(spawnPoint.position.z);
+
+    const outOfBoundsIndicator = createOutOfBoundsIndicator(
+      name,
+      scene,
+      rootNode,
+      offsetX,
+      offsetZ,
+    );
+
+    const avatarMesh = await createAvatarPlaceholderAsync(name, scene, rootNode);
+
     let areaMesh: Mesh | null = null;
     if (offsetX > 0 || offsetZ > 0) {
       areaMesh = createOffsetArea(name, scene, rootNode, offsetX, offsetZ);
@@ -141,27 +160,40 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
 
     // Parented to spawnPointsNode (not rootNode) so it stays in place during gizmo drag
     let cameraTargetMesh: Mesh | null = null;
+    let cameraTargetOutOfBoundsIndicator: LinesMesh | null = null;
     if (spawnPoint.cameraTarget) {
       const { x: cx, y: cy, z: cz } = spawnPoint.cameraTarget;
       const targetPos = new Vector3(cx, cy, cz);
       cameraTargetMesh = createCameraTargetCube(name, scene, spawnPointsNode, targetPos);
+      cameraTargetOutOfBoundsIndicator = createCameraTargetOutOfBoundsIndicator(
+        name,
+        scene,
+        cameraTargetMesh,
+      );
 
       if (avatarMesh) {
         rotateAvatarToFaceTarget(avatarMesh, rootNode.position, targetPos);
       }
     }
 
-    return { index, rootNode, avatarMesh, areaMesh, cameraTargetMesh };
+    return {
+      index,
+      rootNode,
+      avatarMesh,
+      areaMesh,
+      cameraTargetMesh,
+      outOfBoundsIndicator,
+      cameraTargetOutOfBoundsIndicator,
+      offsetX,
+      offsetZ,
+    };
   }
 
   function updateFromSceneComponent(spawnPoints: readonly SceneSpawnPoint[] | undefined): void {
     const points = spawnPoints || [];
 
-    // Save selection state before clearing so we can restore it after rebuild
     const previousSelectedIndex = selectedIndex;
     const previousSelectedTarget = selectedTarget;
-
-    // Increment generation to invalidate any in-flight async rebuilds
     const thisGeneration = ++updateGeneration;
 
     clear();
@@ -169,20 +201,13 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
     const promises = points.map((spawnPoint, index) => createSpawnPointVisual(spawnPoint, index));
 
     void Promise.all(promises).then(createdVisuals => {
-      // Discard results if a newer update has started since this one
       if (thisGeneration !== updateGeneration) {
-        for (const visual of createdVisuals) {
-          disposeMeshWithMaterial(visual.cameraTargetMesh);
-          disposeMeshWithMaterial(visual.areaMesh);
-          disposeMeshWithMaterial(visual.avatarMesh);
-          visual.rootNode.dispose();
-        }
+        createdVisuals.forEach(disposeVisual);
         return;
       }
 
       visuals.push(...createdVisuals);
 
-      // Re-apply hidden state after rebuild (tracked by name)
       for (const visual of createdVisuals) {
         const name = points[visual.index]?.name;
         if (name && hiddenNames.has(name)) {
@@ -191,7 +216,6 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
         }
       }
 
-      // Restore selection after rebuild (e.g., after gizmo drag updates the component)
       if (previousSelectedIndex !== null && previousSelectedIndex < visuals.length) {
         if (previousSelectedTarget === 'cameraTarget') {
           selectCameraTarget(previousSelectedIndex);
@@ -263,6 +287,26 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
     return hiddenNames.has(name);
   }
 
+  function setSpawnPointOutOfBoundsVisible(index: number, visible: boolean): void {
+    const visual = getVisual(index);
+    if (visual?.outOfBoundsIndicator) {
+      visual.outOfBoundsIndicator.setEnabled(visible);
+    }
+  }
+
+  function setCameraTargetOutOfBoundsVisible(index: number, visible: boolean): void {
+    const visual = getVisual(index);
+    if (visual?.cameraTargetOutOfBoundsIndicator) {
+      visual.cameraTargetOutOfBoundsIndicator.setEnabled(visible);
+    }
+  }
+
+  function getSpawnAreaHalfExtents(index: number): { x: number; z: number } | null {
+    const visual = getVisual(index);
+    if (!visual) return null;
+    return { x: visual.offsetX, z: visual.offsetZ };
+  }
+
   function onVisibilityChange(
     cb: (data: { index: number; name: string; visible: boolean }) => void,
   ): () => void {
@@ -288,6 +332,9 @@ export const createSpawnPointManager = memoize((scene: Scene) => {
     getCameraTargetNode,
     setSpawnPointVisible,
     isSpawnPointHidden,
+    setSpawnPointOutOfBoundsVisible,
+    setCameraTargetOutOfBoundsVisible,
+    getSpawnAreaHalfExtents,
     onSelectionChange,
     onVisibilityChange,
     dispose,

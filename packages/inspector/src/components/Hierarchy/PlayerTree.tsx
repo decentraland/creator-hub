@@ -196,17 +196,17 @@ const PlayerTree: React.FC<WithSdkProps & PlayerTreeProps> = ({ sdk, onSelect })
 
   const handleDelete = useCallback(
     (index: number) => {
-      if (!componentValue?.spawnPoints) return;
+      if (!componentValue?.spawnPoints || componentValue.spawnPoints.length <= 1) return;
       const updatedSpawnPoints = componentValue.spawnPoints.filter((_, i) => i !== index);
       setComponentValue({ ...componentValue, spawnPoints: updatedSpawnPoints });
       if (selection.index === index) {
         spawnPointManager.selectSpawnPoint(null);
       } else if (selection.index !== null && selection.index > index) {
-        // Adjust selection index to account for the array shift after deletion
+        const adjustedIndex = selection.index - 1;
         if (selection.target === 'cameraTarget') {
-          spawnPointManager.selectCameraTarget(selection.index - 1);
+          spawnPointManager.selectCameraTarget(adjustedIndex);
         } else {
-          spawnPointManager.selectSpawnPoint(selection.index - 1);
+          spawnPointManager.selectSpawnPoint(adjustedIndex);
         }
       }
     },
@@ -373,6 +373,7 @@ const PlayerTree: React.FC<WithSdkProps & PlayerTreeProps> = ({ sdk, onSelect })
           <DuplicateIcon /> Duplicate
         </Item>
         <Item
+          disabled={spawnPoints.length <= 1}
           onClick={handleAction(() => {
             if (contextMenuIndex !== null) handleDelete(contextMenuIndex);
           })}

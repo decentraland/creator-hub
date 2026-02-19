@@ -1,5 +1,11 @@
-import type { Scene, TransformNode, AbstractMesh, AssetContainer, Vector3 } from '@babylonjs/core';
-import { MeshBuilder, StandardMaterial, PBRMaterial, Color3, Mesh } from '@babylonjs/core';
+import type {
+  Scene,
+  TransformNode,
+  AbstractMesh,
+  AssetContainer,
+  LinesMesh,
+} from '@babylonjs/core';
+import { MeshBuilder, StandardMaterial, PBRMaterial, Color3, Mesh, Vector3 } from '@babylonjs/core';
 
 import spawnPointAvatarGlbDataUrl from '../assets/spawn_point_avatar.glb';
 import { loadAssetContainer } from './sdkComponents/gltf-container';
@@ -12,14 +18,18 @@ interface SpawnPointMaterialMetadata {
   originalTransparencyMode: number | null;
 }
 
-const CAMERA_TARGET_CUBE_SIZE = 0.25;
 const SPAWN_POINT_PREFIX = 'spawn_point_';
 const SPAWN_COLOR = Color3.FromHexString('#A855F7');
 const AVATAR_ALPHA_UNSELECTED = 0.35;
 const AREA_ALPHA_UNSELECTED = 0.2;
 const AREA_ALPHA_SELECTED = 0.5;
+const CAMERA_TARGET_CUBE_SIZE = 0.25;
 const CAMERA_TARGET_ALPHA_UNSELECTED = 0.5;
 const CAMERA_TARGET_ALPHA_SELECTED = 0.9;
+const OUT_OF_BOUNDS_COLOR = Color3.FromHexString('#FF9500');
+const OUT_OF_BOUNDS_HEIGHT = 2.0;
+const OUT_OF_BOUNDS_MIN_HALF_EXTENT = 0.3;
+const CAMERA_TARGET_OOB_HALF_EXTENT = CAMERA_TARGET_CUBE_SIZE / 2 + 0.1;
 
 // GLB asset cache scoped per scene to avoid stale references after scene disposal
 const sceneCaches = new WeakMap<
@@ -322,7 +332,7 @@ export function setCameraTargetSelected(cameraTargetMesh: Mesh, selected: boolea
 }
 
 export function isCameraTargetMesh(mesh: AbstractMesh): boolean {
-  return mesh.name.includes(`${SPAWN_POINT_PREFIX}`) && mesh.name.includes('_camera_target');
+  return mesh.name.includes(SPAWN_POINT_PREFIX) && mesh.name.includes('_camera_target');
 }
 
 export function isSpawnPointMesh(mesh: AbstractMesh): boolean {
@@ -336,20 +346,84 @@ export function isSpawnPointMesh(mesh: AbstractMesh): boolean {
   return false;
 }
 
+/** Creates a wireframe box as a LinesMesh, used for out-of-bounds indicators */
+function createWireframeBox(
+  meshName: string,
+  scene: Scene,
+  parent: TransformNode,
+  minX: number,
+  minY: number,
+  minZ: number,
+  maxX: number,
+  maxY: number,
+  maxZ: number,
+): LinesMesh {
+  const lines = [
+    // Bottom
+    [new Vector3(minX, minY, minZ), new Vector3(maxX, minY, minZ)],
+    [new Vector3(maxX, minY, minZ), new Vector3(maxX, minY, maxZ)],
+    [new Vector3(maxX, minY, maxZ), new Vector3(minX, minY, maxZ)],
+    [new Vector3(minX, minY, maxZ), new Vector3(minX, minY, minZ)],
+    // Top
+    [new Vector3(minX, maxY, minZ), new Vector3(maxX, maxY, minZ)],
+    [new Vector3(maxX, maxY, minZ), new Vector3(maxX, maxY, maxZ)],
+    [new Vector3(maxX, maxY, maxZ), new Vector3(minX, maxY, maxZ)],
+    [new Vector3(minX, maxY, maxZ), new Vector3(minX, maxY, minZ)],
+    // Verticals
+    [new Vector3(minX, minY, minZ), new Vector3(minX, maxY, minZ)],
+    [new Vector3(maxX, minY, minZ), new Vector3(maxX, maxY, minZ)],
+    [new Vector3(maxX, minY, maxZ), new Vector3(maxX, maxY, maxZ)],
+    [new Vector3(minX, minY, maxZ), new Vector3(minX, maxY, maxZ)],
+  ];
+  const mesh = MeshBuilder.CreateLineSystem(meshName, { lines }, scene);
+  mesh.parent = parent;
+  mesh.color = OUT_OF_BOUNDS_COLOR;
+  mesh.isPickable = false;
+  mesh.renderingGroupId = 1;
+  mesh.setEnabled(false);
+  return mesh;
+}
+
+/** Wireframe cube centered on the parent mesh, shown when camera target exits bounds */
+export function createCameraTargetOutOfBoundsIndicator(
+  name: string,
+  scene: Scene,
+  parent: TransformNode,
+): LinesMesh {
+  const s = CAMERA_TARGET_OOB_HALF_EXTENT;
+  return createWireframeBox(`${name}_camera_target_oob`, scene, parent, -s, -s, -s, s, s, s);
+}
+
 export function getSpawnPointIndexFromMesh(mesh: AbstractMesh): number | null {
-  const match = mesh.name.match(/spawn_point_(\d+)/);
-  if (match) {
-    return parseInt(match[1], 10);
+  const pattern = /spawn_point_(\d+)/;
+  let node: { name: string; parent: any } | null = mesh;
+  while (node) {
+    const match = node.name.match(pattern);
+    if (match) return parseInt(match[1], 10);
+    node = node.parent;
   }
-
-  let parent = mesh.parent;
-  while (parent) {
-    const parentMatch = parent.name.match(/spawn_point_(\d+)/);
-    if (parentMatch) {
-      return parseInt(parentMatch[1], 10);
-    }
-    parent = parent.parent;
-  }
-
   return null;
+}
+
+/** Wireframe box matching the spawn area footprint, shown when spawn point exits bounds */
+export function createOutOfBoundsIndicator(
+  name: string,
+  scene: Scene,
+  parent: TransformNode,
+  halfExtentX: number,
+  halfExtentZ: number,
+): LinesMesh {
+  const wx = Math.max(halfExtentX, OUT_OF_BOUNDS_MIN_HALF_EXTENT);
+  const wz = Math.max(halfExtentZ, OUT_OF_BOUNDS_MIN_HALF_EXTENT);
+  return createWireframeBox(
+    `${name}_out_of_bounds`,
+    scene,
+    parent,
+    -wx,
+    0,
+    -wz,
+    wx,
+    OUT_OF_BOUNDS_HEIGHT,
+    wz,
+  );
 }
