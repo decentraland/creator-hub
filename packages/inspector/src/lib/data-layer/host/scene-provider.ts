@@ -1,5 +1,6 @@
 import { merge } from 'ts-deepmerge';
 import { CrdtMessageType } from '@dcl/ecs';
+import type { IEngine, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
 import type { Scene } from '@dcl/schemas';
 import type { FileSystemInterface } from '../types';
 import type { EditorComponentsTypes } from '../../sdk/components';
@@ -109,6 +110,30 @@ export class SceneProvider implements StateProvider {
       throw error;
     } finally {
       this.savePromise = null;
+    }
+  }
+
+  async syncFromEngine(engine: IEngine): Promise<void> {
+    try {
+      const SceneComponent = engine.getComponent(
+        EditorComponentNames.Scene,
+      ) as LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['Scene']>;
+      const sceneValue = SceneComponent.getOrNull(engine.RootEntity);
+      if (!sceneValue) return;
+
+      const partialScene = fromSceneComponent(sceneValue);
+      const merged = merge.withOptions({ mergeArrays: false }, this.scene, partialScene) as Scene;
+
+      this.scene = SceneProvider.augmentDefaults(merged);
+
+      if (this.savePromise) {
+        await this.savePromise;
+      }
+
+      this.savePromise = this.saveScene();
+      await this.savePromise;
+    } catch (error) {
+      console.error('Failed to sync scene from engine:', error);
     }
   }
 
