@@ -2,13 +2,11 @@
   "version": 1,
   "components": [
     {
-      "name": "core::GltfContainer",
+      "name": "asset-packs::Placeholder",
       "data": {
         "0": {
           "json": {
-            "src": "{assetPath}/sitting_pose_collider.glb",
-            "visibleMeshesCollisionMask": 0,
-            "invisibleMeshesCollisionMask": 3
+            "src": "{assetPath}/sitting_pose_collider.glb"
           }
         }
       }
@@ -50,16 +48,6 @@
         "0": {
           "json": {
             "componentIds": ["asset-packs::States"]
-          }
-        }
-      }
-    },
-    {
-      "name": "core::VisibilityComponent",
-      "data": {
-        "0": {
-          "json": {
-            "visible": false
           }
         }
       }
