@@ -2,9 +2,9 @@ import React, { useCallback, useEffect, useRef, useState, type ReactNode } from 
 import { useNavigate } from 'react-router-dom';
 import { setUser } from '@sentry/electron/renderer';
 import { ChainId, type Avatar } from '@dcl/schemas';
-import { AuthServerProvider } from 'decentraland-connect';
 import { useDispatch } from '#store';
 import { config } from '/@/config';
+import { AuthServerProvider } from '/@/lib/auth';
 import { Profiles } from '/@/lib/profile';
 import { fetchENSList } from '/@/modules/store/ens';
 import { fetchLandList, fetchTiles } from '/@/modules/store/land';
@@ -15,7 +15,6 @@ import { useSnackbar } from '/@/hooks/useSnackbar';
 import { t } from '/@/modules/store/translation/utils';
 import type { AuthSignInProps } from './types';
 
-// Initialize the provider
 AuthServerProvider.setAuthServerUrl(config.get('AUTH_SERVER_URL'));
 AuthServerProvider.setAuthDappUrl(config.get('AUTH_DAPP_URL'));
 
@@ -84,7 +83,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const initSignInResult = await Promise.race([initSignInPromise, timeoutPromise]);
       initSignInResultRef.current = initSignInResult;
 
-      // track this signin session to prevent duplicates
       const sessionId = Date.now().toString();
       activeSignInTabsRef.current.add(sessionId);
 
@@ -153,7 +151,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [wallet, chainId, dispatch]);
 
-  // reset signin attempt counter when coming back online
   useEffect(() => {
     const handleOnline = () => {
       signInAttemptCountRef.current = 0;
@@ -163,7 +160,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => window.removeEventListener('online', handleOnline);
   }, []);
 
-  // reset signin attempt counter after 5 minutes
   useEffect(() => {
     const resetInterval = setInterval(
       () => {

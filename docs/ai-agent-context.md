@@ -90,7 +90,7 @@ The Decentraland Creator Hub Monorepo is a comprehensive ecosystem for creating,
 
 ### Web3 & Blockchain
 
-- **Wallet Connect**: decentraland-connect 7.1.0
+- **Wallet / Auth**: in-app auth library `packages/creator-hub/renderer/src/lib/auth.ts` (ethers, RPC via `getRpcUrls`, AuthServer provider, SSO via @dcl/single-sign-on-client)
 - **Crypto**: ethereum-cryptography 2.1.2
 - **Hashing**: @ethersproject/hash 5.7.0, @dcl/hashing 3.0.4
 
