@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ChainId } from '@dcl/schemas';
 import { AuthServerProvider } from 'decentraland-connect';
 import type { ManagedProject } from '../../../../../shared/types/manage';
 import { SortBy, FilterBy, ManagedProjectType } from '../../../../../shared/types/manage';
@@ -28,7 +27,6 @@ import {
 } from './slice';
 
 const TEST_ADDRESS = '0x123abc';
-const TEST_CHAIN_ID = ChainId.ETHEREUM_MAINNET;
 const TEST_WORLD_NAME = 'test-world';
 const TEST_WALLET_ADDRESS = '0x456def';
 
@@ -116,11 +114,22 @@ vi.mock('/@/modules/store/ens', async importOriginal => {
   const actual: any = await importOriginal();
   return {
     ...actual,
-    fetchENSList: vi.fn().mockImplementation(({ address, chainId }) => ({
-      type: 'ens/fetchENSList/fulfilled',
-      meta: { arg: { address, chainId } },
-      unwrap: () => Promise.resolve([]),
-    })),
+    fetchENSList: vi.fn().mockImplementation(({ address }) => {
+      // Return a thunk that reads from the current store state
+      return (_dispatch: any, getState: any) => {
+        const ensState = getState().ens;
+        const ensArray = Object.values(ensState.data || {});
+        const result = {
+          type: 'ens/fetchENSList/fulfilled',
+          payload: ensArray,
+          meta: { arg: { address } },
+        };
+        // Return promise-like object with unwrap method
+        const promise: any = Promise.resolve(result);
+        promise.unwrap = () => Promise.resolve(ensArray);
+        return promise;
+      };
+    }),
   };
 });
 
@@ -283,7 +292,7 @@ describe('management slice', () => {
       store.dispatch({
         type: 'management/fetchAllManagedProjectsData/rejected',
         error: { message: 'Test error' },
-        meta: { arg: { address: TEST_ADDRESS, chainId: TEST_CHAIN_ID } },
+        meta: { arg: { address: TEST_ADDRESS } },
       });
       store.dispatch(actions.clearError());
       const state = store.getState().management;
@@ -330,7 +339,7 @@ describe('management slice', () => {
     it('should set status to loading and clear error when pending', () => {
       store.dispatch({
         type: 'management/fetchAllManagedProjectsData/pending',
-        meta: { arg: { address: TEST_ADDRESS, chainId: TEST_CHAIN_ID } },
+        meta: { arg: { address: TEST_ADDRESS } },
       });
       const state = store.getState().management;
       expect(state.status).toBe('loading');
@@ -341,7 +350,7 @@ describe('management slice', () => {
       store.dispatch({
         type: 'management/fetchAllManagedProjectsData/fulfilled',
         payload: [],
-        meta: { arg: { address: TEST_ADDRESS, chainId: TEST_CHAIN_ID } },
+        meta: { arg: { address: TEST_ADDRESS } },
       });
       const state = store.getState().management;
       expect(state.status).toBe('succeeded');
@@ -353,7 +362,7 @@ describe('management slice', () => {
       store.dispatch({
         type: 'management/fetchAllManagedProjectsData/rejected',
         error: { message: errorMessage },
-        meta: { arg: { address: TEST_ADDRESS, chainId: TEST_CHAIN_ID } },
+        meta: { arg: { address: TEST_ADDRESS } },
       });
       const state = store.getState().management;
       expect(state.status).toBe('failed');
@@ -1182,7 +1191,7 @@ describe('management slice', () => {
       store.dispatch({
         type: 'ens/fetchENSList/fulfilled',
         payload: ensDataArray,
-        meta: { arg: { address: TEST_ADDRESS, chainId: TEST_CHAIN_ID } },
+        meta: { arg: { address: TEST_ADDRESS } },
       });
     });
 
@@ -1658,7 +1667,7 @@ describe('management slice', () => {
       store.dispatch({
         type: 'management/fetchAllManagedProjectsData/rejected',
         error: { message: 'Test error' },
-        meta: { arg: { address: TEST_ADDRESS, chainId: TEST_CHAIN_ID } },
+        meta: { arg: { address: TEST_ADDRESS } },
       });
 
       const error = selectors.getError(store.getState());
