@@ -73,19 +73,19 @@ export const fetchDCLNames = createAsyncThunk(
       throw new Error(`ENS contract for chainId ${chainId} not found.`);
     }
 
-    const ensImpl = getContract({
+    const ensImplementation = getContract({
       address: ensContract[chainId].address as Address,
       abi: ensAbi,
       client: provider,
     });
 
-    const dclRegistrarImpl = getContract({
+    const dclRegistrarImplementation = getContract({
       address: dclRegistrar[chainId].address as Address,
       abi: dclRegistrarAbi,
       client: provider,
     });
 
-    const resolverImpl = getContract({
+    const resolverImplementation = getContract({
       address: ensResolver[chainId].address as Address,
       abi: ensResolverAbi,
       client: provider,
@@ -106,17 +106,17 @@ export const fetchDCLNames = createAsyncThunk(
         let ensAddressRecord = '';
         const nodehash = namehash(subdomain);
         const [resolverAddress, ownerRaw, tokenIdRaw] = await Promise.all([
-          ensImpl.read.resolver([nodehash]),
-          ensImpl.read.owner([nodehash]),
-          dclRegistrarImpl.read.getTokenId([name]),
+          ensImplementation.read.resolver([nodehash]),
+          ensImplementation.read.owner([nodehash]),
+          dclRegistrarImplementation.read.getTokenId([name]),
         ]);
 
-        const owner = ownerRaw.toLowerCase();
-        const tokenId = String(tokenIdRaw);
-        const resolver = resolverAddress.toLowerCase();
+        const owner = String(ownerRaw).toLowerCase();
+        const tokenId = String(tokenIdRaw).toLowerCase();
+        const resolver = String(resolverAddress).toLowerCase() as Address;
 
         try {
-          const resolvedAddress = (await resolverImpl.read.addr([nodehash])) as Address;
+          const resolvedAddress = (await resolverImplementation.read.addr([nodehash])) as Address;
           ensAddressRecord = resolvedAddress !== zeroAddress ? resolvedAddress : '';
         } catch (_e) {
           console.log('Failed to fetch ens address record');
@@ -125,11 +125,11 @@ export const fetchDCLNames = createAsyncThunk(
         if (resolver !== zeroAddress) {
           try {
             const dynamicResolver = getContract({
-              address: resolverAddress,
+              address: resolver,
               abi: ensResolverAbi,
               client: provider,
             });
-            content = await dynamicResolver.read.contenthash([nodehash]);
+            content = String(await dynamicResolver.read.contenthash([nodehash]));
           } catch (error) {
             console.log('Failed to load ens resolver', error);
           }
