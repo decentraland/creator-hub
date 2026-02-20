@@ -27,9 +27,23 @@ SYNC_PACK = node_modules/.bin/syncpack
 install:
 	npm i --silent
 	make install-protoc
-	cd $(INSPECTOR_PATH); npm i --silent;
-	cd $(CH_PATH); npm i --silent;
-	cd $(ASSET_PACKS_PATH); npm i --silent;
+	make install-asset-packs
+	make install-inspector
+	make install-creator-hub
+
+install-asset-packs:
+	cd $(ASSET_PACKS_PATH); npm i --silent
+
+install-inspector:
+	make install-protoc
+	cd $(INSPECTOR_PATH); npm i --silent
+
+install-creator-hub:
+	cd $(CH_PATH); npm i --silent
+	make init-submodules
+
+init-submodules:
+	git submodule update --init --recursive
 
 install-protoc:
 	mkdir -p node_modules/.bin/protobuf

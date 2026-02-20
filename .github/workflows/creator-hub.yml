@@ -40,6 +40,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          submodules: true
 
       - uses: actions/setup-node@v4
         with:
@@ -47,7 +48,7 @@ jobs:
           cache: 'npm'
 
       - name: install
-        run: make install
+        run: npm i --silent && make install-creator-hub
 
       - name: install inspector
         working-directory: packages/creator-hub
