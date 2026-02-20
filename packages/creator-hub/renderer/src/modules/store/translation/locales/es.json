@@ -553,7 +553,10 @@
         "error": {
           "empty": "La contraseña no puede estar vacía",
           "too_short": "La contraseña debe tener al menos {min} caracteres",
-          "mismatch": "Las contraseñas no coinciden"
+          "mismatch": "Las contraseñas no coinciden",
+          "requirements_header": "La contraseña debe incluir:",
+          "min_length": "Largo mínimo: {min} caracteres",
+          "min_numbers": "Al menos {min} números"
         }
       },
       "collaborators": {
