@@ -42,9 +42,9 @@ if (import.meta.env.PROD) {
       tracesSampleRate: 0.001,
       replaysSessionSampleRate: 0.01,
       replaysOnErrorSampleRate: 0.01,
-      enabled: import.meta.env.PROD,
+      enabled: true,
     },
-    reactInit as any,
+    reactInit,
   );
 }
 
