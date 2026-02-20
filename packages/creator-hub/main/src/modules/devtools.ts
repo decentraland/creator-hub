@@ -1,7 +1,7 @@
 import path from 'path';
 import { app } from 'electron';
 import log from 'electron-log';
-import { createWindow, focusWindow, getWindow } from './window';
+import { createOrRestoreWindow } from './window';
 
 /**
  * DevTools window handler for connecting to external CDP (Chrome DevTools Protocol) processes.
@@ -29,13 +29,8 @@ function getDevToolsFrontendPath(): string {
 export function openDevToolsWindow(port: number): void {
   try {
     const devtoolsPath = `devtools-${port}`;
-    const existingWindow = getWindow(devtoolsPath);
-    if (existingWindow && !existingWindow.isDestroyed()) {
-      focusWindow(existingWindow);
-      return;
-    }
 
-    const win = createWindow(devtoolsPath, {
+    const win = createOrRestoreWindow(devtoolsPath, {
       show: true,
       title: `DevTools - CDP Server (port ${port})`,
       width: 1200,

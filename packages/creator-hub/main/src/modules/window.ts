@@ -32,10 +32,22 @@ export function getWindow(path: string): BrowserWindow | undefined {
 }
 
 export function focusWindow(window: BrowserWindow): void {
-  if (window) {
+  if (window && !window.isDestroyed()) {
     if (window.isMinimized()) window.restore();
     window.focus();
   }
+}
+
+export function createOrRestoreWindow(
+  path: string,
+  options?: BrowserWindowConstructorOptions,
+): BrowserWindow {
+  const existing = getWindow(path);
+  if (existing && !existing.isDestroyed()) {
+    focusWindow(existing);
+    return existing;
+  }
+  return createWindow(path, options);
 }
 
 export function destroyAllWindows(): void {
