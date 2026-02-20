@@ -1,4 +1,5 @@
 import type { Entity } from '@dcl/ecs';
+import type { Vector3 } from '@dcl/sdk/math';
 
 export interface Props {
   entity: Entity;
@@ -7,16 +8,8 @@ export interface Props {
 export type SpawnPointInput = {
   name: string;
   default: boolean;
-  position: {
-    x: number;
-    y: number;
-    z: number;
-  };
+  position: Vector3;
   randomOffset: boolean;
   maxOffset: number;
-  cameraTarget: {
-    x: number;
-    y: number;
-    z: number;
-  };
+  cameraTarget: Vector3;
 };
