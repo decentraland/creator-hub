@@ -446,7 +446,7 @@
           "title": "世界布局",
           "world_size": "世界大小：{size}"
         },
-        "multi_scene_title": "多场景世界（高级）",
+        "multi_scene_title": "多场景世界",
         "multi_scene_description": "允许您的世界包含多个场景。\n总的世界大小将取决于您发布的世界布局。",
         "empty_world": {
           "title": "此世界中未发布场景。",
@@ -736,10 +736,6 @@
           "title": "名字",
           "description": "领取你的独特名字，并将其分配给你的头像或地块。"
         },
-        "worlds": {
-          "title": "世界",
-          "description": "创建和管理你自己的虚拟空间。"
-        },
         "land": {
           "title": "土地",
           "description": "发布场景，创建庄园并管理你的土地权限。"
@@ -809,13 +805,27 @@
       "title": "登录以管理您的世界",
       "action": "登录"
     },
-    "empty_search": {
-      "title": "未找到结果",
-      "description": "尝试调整搜索以找到您要查找的内容。"
+    "empty_list": {
+      "search": {
+        "title": "未找到结果",
+        "description": "尝试使用不同的关键词。"
+      },
+      "published": {
+        "title": "没有已发布的地点可显示",
+        "description": "发布您的一个场景或成为协作者以查看更多结果。"
+      },
+      "unpublished": {
+        "title": "没有地点可显示",
+        "description": "铸造一个NAME或成为协作者以查看更多结果。"
+      },
+      "all": {
+        "title": "没有地点可显示",
+        "description": "铸造一个NAME或成为协作者以添加您的第一个地点。"
+      }
     },
-    "no_projects": {
-      "title": "您还没有任何场景",
-      "description": "为您的土地和世界创建和管理场景。现在开始构建！"
+    "actions": {
+      "view_scenes": "查看场景",
+      "mint_name": "铸造新NAME"
     },
     "worlds_storage": {
       "used": "已使用空间",
@@ -858,22 +868,25 @@
         "land_coords": "{coordX}, {coordY}"
       }
     },
-    "connection": {
-      "offline": {
-        "tooltip": "无网络连接",
-        "title": "无连接",
-        "message": "您当前处于离线状态。在您重新连接到互联网之前，某些功能可能无法使用。",
-        "retry": "重试连接",
-        "checking": "检查中..."
-      },
-      "slow": {
-        "tooltip": "检测到慢速连接",
-        "message": "您的互联网连接似乎很慢。某些功能可能需要更长时间才能加载。"
-      },
-      "errors": {
-        "NO_INTERNET_CONNECTION": "无可用的互联网连接",
-        "REQUEST_TIMEOUT": "请求超时。请检查您的连接并重试。"
-      }
+    "unpublish_world_confirmation": {
+      "title": "取消发布 <b>{worldName}</b>？"
+    }
+  },
+  "connection": {
+    "offline": {
+      "tooltip": "无网络连接",
+      "title": "无连接",
+      "message": "您当前处于离线状态。在您重新连接到互联网之前，某些功能可能无法使用。",
+      "retry": "重试连接",
+      "checking": "检查中..."
+    },
+    "slow": {
+      "tooltip": "检测到慢速连接",
+      "message": "您的互联网连接似乎很慢。某些功能可能需要更长时间才能加载。"
+    },
+    "errors": {
+      "NO_INTERNET_CONNECTION": "无可用的互联网连接",
+      "REQUEST_TIMEOUT": "请求超时。请检查您的连接并重试。"
     }
   }
 }

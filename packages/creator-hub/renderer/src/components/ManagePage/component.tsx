@@ -1,8 +1,10 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import cx from 'classnames';
 import RefreshIcon from '@mui/icons-material/Cached';
 import type { SelectChangeEvent } from 'decentraland-ui2';
 import { Box, Chip, IconButton, MenuItem, Typography } from 'decentraland-ui2';
+import { analytics, misc } from '#preload';
 import { t } from '/@/modules/store/translation/utils';
 import { actions as managementActions } from '/@/modules/store/management';
 import { useAuth } from '/@/hooks/useAuth';
@@ -14,12 +16,15 @@ import { Container } from '../Container';
 import { FiltersBar } from '../FiltersBar';
 import { Select } from '../Select';
 import { Search } from '../Search';
+import { Button } from '../Button';
 import { Row } from '../Row';
 import { Column } from '../Column';
 import { ManagedProjectsList } from './ManagedProjectsList';
 import { StorageUsed } from './StorageUsed';
 import { SignInCard } from './SignInCard';
 import './styles.css';
+
+const CLAIM_NAME_URL = 'https://decentraland.org/marketplace/names/claim';
 
 const FILTER_OPTIONS: Array<{ label: string; value: FilterBy }> = [
   {
@@ -45,10 +50,12 @@ const SORT_OPTIONS: Array<{ label: string; value: SortBy }> = [
 
 export function ManagePage() {
   const { isSignedIn, isSigningIn, signIn } = useAuth();
+  const { data: ens } = useSelector(state => state.ens);
   const { status, projects, total, page, sortBy, searchQuery, publishFilter } = useSelector(
     state => state.management,
   );
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const isLoading = status === 'idle' || status === 'loading';
   const showMainLoader = isLoading && !projects.length;
@@ -74,8 +81,35 @@ export function ManagePage() {
   }, [page]);
 
   const handleRefreshProjects = useCallback(() => {
+    dispatch(managementActions.setPage(0));
+    dispatch(managementActions.setSearchQuery(''));
     dispatch(managementActions.fetchManagedProjectsFiltered());
   }, []);
+
+  const handleMintName = useCallback(() => {
+    analytics.track('Manage Worlds External Action', { action: 'Mint NAME' });
+    misc.openExternal(CLAIM_NAME_URL);
+  }, []);
+
+  const handleViewScenes = useCallback(() => {
+    navigate('/scenes');
+  }, [navigate]);
+
+  const emptyTitle = useMemo(() => {
+    if (projects.length) return '';
+    if (searchQuery) return t('manage.empty_list.search.title');
+    if (!Object.keys(ens).length) return t('manage.empty_list.all.title');
+    if (publishFilter === FilterBy.PUBLISHED) return t('manage.empty_list.published.title');
+    return t('manage.empty_list.unpublished.title');
+  }, [projects.length, searchQuery, publishFilter, ens]);
+
+  const emptySubtitle = useMemo(() => {
+    if (projects.length) return '';
+    if (searchQuery) return t('manage.empty_list.search.description');
+    if (!Object.keys(ens).length) return t('manage.empty_list.all.description');
+    if (publishFilter === FilterBy.PUBLISHED) return t('manage.empty_list.published.description');
+    return t('manage.empty_list.unpublished.description');
+  }, [projects.length, searchQuery, publishFilter, ens]);
 
   return (
     <main className="ManagePage">
@@ -83,7 +117,7 @@ export function ManagePage() {
       <Container>
         <Typography variant="h3">
           {t('manage.header.title')}
-          {isSignedIn && !showMainLoader && (
+          {isSignedIn && (
             <IconButton
               onClick={handleRefreshProjects}
               disabled={isLoading}
@@ -95,8 +129,6 @@ export function ManagePage() {
         </Typography>
         {!isSignedIn && !isSigningIn ? (
           <SignInCard onClickSignIn={signIn} />
-        ) : showMainLoader ? (
-          <Loader size={70} />
         ) : (
           <Row>
             <Column className="ContentColumn">
@@ -114,7 +146,7 @@ export function ManagePage() {
                         variant={option.value === publishFilter ? 'filled' : 'outlined'}
                         className="FilterChip"
                         onClick={
-                          option.value !== publishFilter
+                          option.value !== publishFilter && !isLoading
                             ? () => handlePublishFilterChange(option.value)
                             : undefined
                         }
@@ -150,16 +182,28 @@ export function ManagePage() {
                   </>
                 )}
               </FiltersBar>
-              {projects.length === 0 ? (
+              {showMainLoader ? (
+                <Loader size={70} />
+              ) : projects.length === 0 ? (
                 <Box className="EmptyContainer">
-                  <Typography variant="h6">
-                    {searchQuery ? t('manage.empty_search.title') : t('manage.no_projects.title')}
-                  </Typography>
-                  <Typography variant="body1">
-                    {searchQuery
-                      ? t('manage.empty_search.description')
-                      : t('manage.no_projects.description')}
-                  </Typography>
+                  <Typography variant="h6">{emptyTitle}</Typography>
+                  <Typography variant="body1">{emptySubtitle}</Typography>
+                  {!searchQuery &&
+                    (!Object.keys(ens).length || publishFilter === FilterBy.UNPUBLISHED ? (
+                      <Button
+                        onClick={handleMintName}
+                        color="secondary"
+                      >
+                        {t('manage.actions.mint_name')}
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={handleViewScenes}
+                        color="secondary"
+                      >
+                        {t('manage.actions.view_scenes')}
+                      </Button>
+                    ))}
                 </Box>
               ) : (
                 <ManagedProjectsList

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import WorldSettingsIcon from '@mui/icons-material/SpaceDashboard';
 import { Box, Button, Typography } from 'decentraland-ui2';
 import { useDispatch } from '#store';
@@ -41,7 +41,10 @@ const WorldSettingsModal: React.FC<Props> = React.memo(
     const dispatch = useDispatch();
     const [settingsUpdates, setSettingsUpdates] = useState<Partial<WorldSettings>>({});
     const worldSettingsForm = { ...worldSettings, ...settingsUpdates };
-    const hasChanges = Object.keys(settingsUpdates).length > 0;
+    const hasChanges = useMemo(
+      () => Object.values(settingsUpdates).filter($ => $ !== undefined).length > 0,
+      [settingsUpdates],
+    );
 
     const handleUpdateSettings = useCallback((newSettings: Partial<WorldSettings>) => {
       setSettingsUpdates(prev => ({ ...prev, ...newSettings }));
@@ -61,6 +64,12 @@ const WorldSettingsModal: React.FC<Props> = React.memo(
         // Error is handled in the action
       }
     }, [settingsUpdates, worldName]);
+
+    useEffect(() => {
+      if (!props.open) {
+        handleDiscard();
+      }
+    }, [props.open]);
 
     return (
       <TabsModal

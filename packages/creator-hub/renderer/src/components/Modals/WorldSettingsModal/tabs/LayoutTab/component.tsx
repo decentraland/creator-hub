@@ -155,7 +155,7 @@ const WorldScenesView: React.FC<{
 
           <Box className="ScenesSection">
             <Typography variant="h6">{t('modal.world_settings.layout.scenes_title')}</Typography>
-            {worldScenes.map((scene, index) => (
+            {worldScenes.map(scene => (
               <Box
                 key={scene.entityId}
                 className="SceneItem"
@@ -163,7 +163,7 @@ const WorldScenesView: React.FC<{
                 <Box className="SceneThumbnail">
                   <Image
                     src={scene.thumbnailUrl || ''}
-                    alt={`Scene ${index + 1}`}
+                    alt="Scene Thumbnail"
                     fallbackSrc={FallbackThumbnail}
                   />
                 </Box>

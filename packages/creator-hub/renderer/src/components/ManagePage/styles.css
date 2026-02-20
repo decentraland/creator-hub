@@ -21,10 +21,6 @@
   }
 }
 
-.ManagePage .Container > .Loader {
-  height: 60vh;
-}
-
 .ManagePage .Container > .Row {
   gap: 64px;
   flex-wrap: nowrap;
@@ -34,6 +30,10 @@
 .ManagePage .ContentColumn {
   width: 100%;
   height: max-content;
+}
+
+.ManagePage .ContentColumn > .Loader {
+  height: 500px;
 }
 
 .ManagePage .FiltersBar {
@@ -64,5 +64,10 @@
   justify-content: center;
   height: 60vh;
   text-align: center;
-  gap: 8px;
+  gap: 16px;
+}
+
+.ManagePage .EmptyContainer .MuiButton-root {
+  margin-top: 16px;
+  height: 40px;
 }

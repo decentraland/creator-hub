@@ -1,15 +1,19 @@
 import React, { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Button } from 'decentraland-ui2';
+import { Box, Button as DCLButton, Typography } from 'decentraland-ui2';
 import { useDispatch, useSelector } from '#store';
 import {
   fetchWorldSettings,
   fetchWorldScenes,
   fetchWorldPermissions,
+  unpublishEntireWorld,
   selectors as managementSelectors,
 } from '/@/modules/store/management';
 import { t } from '/@/modules/store/translation/utils';
 import { WorldSettingsTab, type ManagedProject } from '/shared/types/manage';
+import { Button } from '../../Button';
+import { Loader } from '../../Loader';
+import { Modal } from '../../Modals';
 import { WorldSettingsModal } from '../../Modals/WorldSettingsModal';
 import { WorldPermissionsModal } from '../../Modals/WorldPermissionsModal';
 import { PublishedProjectCard } from '../PublishedProjectCard';
@@ -22,6 +26,12 @@ type SettingsModalState = {
 
 type PermissionsModalState = {
   isOpen: boolean;
+};
+
+type UnpublishConfirmationState = {
+  isOpen: boolean;
+  worldName: string | null;
+  loading?: boolean;
 };
 
 type Props = {
@@ -39,6 +49,11 @@ const ManagedProjectsList: React.FC<Props> = React.memo(props => {
   });
   const [permissionsModal, setPermissionsModal] = useState<PermissionsModalState>({
     isOpen: false,
+  });
+  const [unpublishConfirmation, setUnpublishConfirmation] = useState<UnpublishConfirmationState>({
+    isOpen: false,
+    worldName: null,
+    loading: false,
   });
   const worldSettings = useSelector(managementSelectors.getWorldSettings);
   const worldPermissions = useSelector(managementSelectors.getPermissionsState);
@@ -71,6 +86,25 @@ const ManagedProjectsList: React.FC<Props> = React.memo(props => {
     setSettingsModal(prevState => ({ ...prevState, activeTab: tab }));
   }, []);
 
+  const handleShowUnpublishWorldConfirmation = useCallback((worldName: string) => {
+    setUnpublishConfirmation({ isOpen: true, worldName });
+  }, []);
+
+  const handleCloseUnpublishWorldConfirmation = useCallback(() => {
+    setUnpublishConfirmation({ isOpen: false, worldName: null });
+  }, []);
+
+  const handleUnpublishWorld = useCallback(async () => {
+    if (!unpublishConfirmation.worldName || unpublishConfirmation.loading) return;
+    try {
+      setUnpublishConfirmation(prevState => ({ ...prevState, loading: true }));
+      await dispatch(unpublishEntireWorld({ worldName: unpublishConfirmation.worldName })).unwrap();
+      setUnpublishConfirmation({ isOpen: false, worldName: null });
+    } finally {
+      setUnpublishConfirmation(prevState => ({ ...prevState, loading: false }));
+    }
+  }, [unpublishConfirmation]);
+
   const handleViewScenes = useCallback(() => {
     navigate('/scenes');
   }, [navigate]);
@@ -83,18 +117,19 @@ const ManagedProjectsList: React.FC<Props> = React.memo(props => {
           project={project}
           onOpenSettings={activeTab => handleOpenSettingsModal(project.id, activeTab)}
           onOpenPermissions={() => handleOpenPermissionsModal(project.id)}
+          onUnpublishWorld={() => handleShowUnpublishWorldConfirmation(project.id)}
           onViewScenes={handleViewScenes}
         />
       ))}
       {projects.length < total && (
         <Box className="LoadMoreContainer">
-          <Button
+          <DCLButton
             disabled={isLoading}
             onClick={onLoadMore}
             color="secondary"
           >
             {t('manage.load_more')}
-          </Button>
+          </DCLButton>
         </Box>
       )}
 
@@ -119,6 +154,33 @@ const ManagedProjectsList: React.FC<Props> = React.memo(props => {
         isLoadingNewUser={worldPermissions.loadingNewUser}
         onClose={handleClosePermissionsModal}
       />
+      <Modal
+        open={unpublishConfirmation.isOpen}
+        className="UnpublishConfirmationModal"
+        actions={
+          <>
+            <Button
+              color="secondary"
+              onClick={handleCloseUnpublishWorldConfirmation}
+            >
+              {t('modal.cancel')}
+            </Button>
+            <Button
+              onClick={handleUnpublishWorld}
+              disabled={unpublishConfirmation.loading}
+            >
+              {unpublishConfirmation.loading ? <Loader size={24} /> : t('modal.confirm')}
+            </Button>
+          </>
+        }
+      >
+        <Typography variant="h5">
+          {t('manage.unpublish_world_confirmation.title', {
+            worldName: unpublishConfirmation.worldName,
+            b: (chunks: string) => <b>{chunks}</b>,
+          })}
+        </Typography>
+      </Modal>
     </div>
   );
 });

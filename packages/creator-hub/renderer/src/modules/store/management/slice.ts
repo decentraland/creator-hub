@@ -1,10 +1,4 @@
-import {
-  createAsyncThunk,
-  createSlice,
-  createSelector,
-  type PayloadAction,
-} from '@reduxjs/toolkit';
-import type { ChainId } from '@dcl/schemas';
+import { createSlice, createSelector, type PayloadAction } from '@reduxjs/toolkit';
 import { AuthServerProvider } from 'decentraland-connect';
 import type { Async } from '/shared/types/async';
 import type { ManagedProject } from '/shared/types/manage';
@@ -18,6 +12,7 @@ import type {
   WorldPermissions,
 } from '/@/lib/worlds';
 import { WorldRoleType, Worlds, WorldPermissionType } from '/@/lib/worlds';
+import { createAsyncThunk } from '/@/modules/store/thunk';
 import type { AppState } from '/@/modules/store';
 import { fetchENSList, actions as ensActions } from '/@/modules/store/ens';
 import { fetchLandList, actions as landActions } from '/@/modules/store/land';
@@ -93,10 +88,10 @@ const PROJECTS_PAGE_LIMIT = 50;
 /** Gets all user ENS, LANDs, storage stats and filtered managed projects */
 export const fetchAllManagedProjectsData = createAsyncThunk(
   'management/fetchAllManagedProjectsData',
-  async ({ address, chainId }: { address: string; chainId: ChainId }, { dispatch }) => {
+  async ({ address }: { address: string }, { dispatch }) => {
     // Fetch NAMEs and Land parcels/estates in parallel.
     await Promise.all([
-      dispatch(fetchENSList({ address, chainId })).unwrap(),
+      dispatch(fetchENSList({ address })).unwrap(),
       dispatch(fetchLandList({ address })).unwrap(),
     ]);
 
@@ -122,14 +117,15 @@ export const clearUserManagedProjects = createAsyncThunk(
 /** Fetches managed projects according to current filters in the state */
 export const fetchManagedProjectsFiltered = createAsyncThunk(
   'management/fetchManagedProjectsWithFilters',
-  async (_, { dispatch, getState }) => {
+  async (args: { resetPage?: boolean } | undefined, { dispatch, getState }) => {
     const connectedAccount = AuthServerProvider.getAccount();
     if (!connectedAccount) throw new Error('No connected account found');
 
-    const state = getState() as AppState;
-    if (state.management.publishFilter === FilterBy.PUBLISHED) {
+    const { publishFilter } = getState().management;
+    if (args?.resetPage) dispatch(actions.setPage(0));
+    if (publishFilter === FilterBy.PUBLISHED) {
       await dispatch(fetchWorlds({ address: connectedAccount })).unwrap();
-    } else if (state.management.publishFilter === FilterBy.UNPUBLISHED) {
+    } else if (publishFilter === FilterBy.UNPUBLISHED) {
       await dispatch(fetchEmptyWorlds({ address: connectedAccount })).unwrap();
     }
   },
@@ -139,16 +135,16 @@ export const fetchManagedProjectsFiltered = createAsyncThunk(
 export const fetchWorlds = createAsyncThunk(
   'management/fetchWorlds',
   async ({ address }: { address: string }, { getState }) => {
-    const appState = getState() as AppState;
+    const { searchQuery, sortBy, page } = getState().management;
     const WorldsAPI = new Worlds();
 
     const worldsResponse = await WorldsAPI.fetchWorlds({
       limit: PROJECTS_PAGE_LIMIT,
-      search: appState.management.searchQuery,
-      sort: appState.management.sortBy,
-      order: appState.management.sortBy === SortBy.LATEST ? 'desc' : 'asc',
+      search: searchQuery,
+      sort: sortBy,
+      order: sortBy === SortBy.LATEST ? 'desc' : 'asc',
       authorized_deployer: address,
-      offset: PROJECTS_PAGE_LIMIT * appState.management.page,
+      offset: PROJECTS_PAGE_LIMIT * page,
     });
     if (worldsResponse === null) {
       throw new Error('Failed to fetch worlds');
@@ -179,13 +175,14 @@ export const fetchWorlds = createAsyncThunk(
 /** Fetches unpublished worlds (0 published scenes) where the user is an owner or collaborator */
 export const fetchEmptyWorlds = createAsyncThunk(
   'management/fetchEmptyWorlds',
-  async ({ address }: { address: string }, { getState }) => {
-    const state = getState() as AppState;
-    const ensList = Object.values(state.ens.data);
+  async ({ address }: { address: string }, { dispatch, getState }) => {
+    const ensList = await dispatch(fetchENSList({ address })).unwrap();
+
+    const prevProjects = getState().management.projects;
     const worldsAPI = new Worlds();
 
     const projectsPromises: Promise<ManagedProject | null>[] = ensList.map(async ens => {
-      const worldProject = state.management.projects.find(project => project.id === ens.subdomain);
+      const worldProject = prevProjects.find(project => project.id === ens.subdomain);
       let scenesCount = worldProject?.deployment ? worldProject.deployment.scenesCount : null;
 
       if (scenesCount === null) {
@@ -260,7 +257,7 @@ export const updateWorldSettings = createAsyncThunk(
     );
     if (!success) return rejectWithValue({ message: error });
     await dispatch(fetchWorldSettings({ worldName })).unwrap();
-    dispatch(fetchManagedProjectsFiltered()); // Background refresh. No need to await.
+    dispatch(fetchManagedProjectsFiltered({ resetPage: true })); // Background refresh. No need to await.
   },
 );
 
@@ -290,7 +287,7 @@ export const unpublishWorldScene = createAsyncThunk(
     const success = await WorldsAPI.unpublishWorldScene(connectedAccount, worldName, sceneCoord);
     if (success) {
       await dispatch(fetchWorldScenes({ worldName })).unwrap();
-      dispatch(fetchManagedProjectsFiltered()); // Background refresh. No need to await.
+      dispatch(fetchManagedProjectsFiltered({ resetPage: true })); // Background refresh. No need to await.
     } else {
       throw new Error('Failed to unpublish world scene');
     }
@@ -307,7 +304,7 @@ export const unpublishEntireWorld = createAsyncThunk(
     const success = await WorldsAPI.unpublishEntireWorld(connectedAccount, worldName);
     if (success) {
       await dispatch(fetchWorldScenes({ worldName })).unwrap();
-      dispatch(fetchManagedProjectsFiltered()); // Background refresh. No need to await.
+      dispatch(fetchManagedProjectsFiltered({ resetPage: true })); // Background refresh. No need to await.
     } else {
       throw new Error('Failed to unpublish world');
     }
@@ -487,6 +484,7 @@ const slice = createSlice({
     setPublishFilter: (state, action: PayloadAction<FilterBy>) => {
       state.publishFilter = action.payload;
       state.page = 0;
+      state.projects = [];
     },
     setSearchQuery: (state, action: PayloadAction<string>) => {
       state.searchQuery = action.payload;
@@ -516,6 +514,18 @@ const slice = createSlice({
       .addCase(fetchAllManagedProjectsData.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message || 'Failed to fetch managed projects';
+      })
+      .addCase(fetchManagedProjectsFiltered.pending, state => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(fetchManagedProjectsFiltered.fulfilled, state => {
+        state.status = 'succeeded';
+        state.error = null;
+      })
+      .addCase(fetchManagedProjectsFiltered.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.error.message || 'Failed to fetch managed projects filtered';
       })
       .addCase(fetchWorlds.fulfilled, (state, action) => {
         state.projects =

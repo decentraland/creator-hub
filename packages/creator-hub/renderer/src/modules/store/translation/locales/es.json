@@ -446,7 +446,7 @@
           "title": "Diseño del Mundo",
           "world_size": "Tamaño del mundo: {size}"
         },
-        "multi_scene_title": "Mundo Multi-Escena (Avanzado)",
+        "multi_scene_title": "Mundo Multi-Escena",
         "multi_scene_description": "Permite que tu mundo contenga más de 1 escena.\nEl tamaño total del mundo dependerá del diseño del mundo publicado.",
         "empty_world": {
           "title": "No hay escenas publicadas en este mundo.",
@@ -736,10 +736,6 @@
           "title": "Nombres",
           "description": "Reclama tu nombre único y asígnalo a tu avatar o a tus parcelas."
         },
-        "worlds": {
-          "title": "Mundos",
-          "description": "Crea y gestiona tus propios espacios virtuales."
-        },
         "land": {
           "title": "Tierras",
           "description": "Publica Escenas, crea Estates y gestiona los permisos de tu TIERRA."
@@ -809,13 +805,27 @@
       "title": "Inicia sesión para gestionar tus mundos",
       "action": "Iniciar sesión"
     },
-    "empty_search": {
-      "title": "No se encontraron resultados",
-      "description": "Intenta ajustar tu búsqueda para encontrar lo que estás buscando."
+    "empty_list": {
+      "search": {
+        "title": "No se encontraron resultados",
+        "description": "Intenta con una palabra clave diferente."
+      },
+      "published": {
+        "title": "No hay lugares publicados para mostrar",
+        "description": "Publica una de tus Escenas o conviértete en colaborador para ver más resultados."
+      },
+      "unpublished": {
+        "title": "No hay lugares para mostrar",
+        "description": "Consigue un NAME o conviértete en colaborador para ver más resultados."
+      },
+      "all": {
+        "title": "No hay lugares para mostrar",
+        "description": "Consigue un NAME o conviértete en colaborador para agregar tu primer Lugar."
+      }
     },
-    "no_projects": {
-      "title": "Aún no tienes ninguna escena",
-      "description": "Crea y gestiona tus escenas para tus Tierras y Mundos. ¡Empieza a construir ahora!"
+    "actions": {
+      "view_scenes": "Ver Escenas",
+      "mint_name": "Conseguir un nuevo NAME"
     },
     "worlds_storage": {
       "used": "Espacio usado",
@@ -858,22 +868,25 @@
         "land_coords": "{coordX}, {coordY}"
       }
     },
-    "connection": {
-      "offline": {
-        "tooltip": "Sin conexión a internet",
-        "title": "Sin Conexión",
-        "message": "Actualmente estás sin conexión. Algunas funciones pueden no estar disponibles hasta que te reconectes a internet.",
-        "retry": "Reintentar Conexión",
-        "checking": "Verificando..."
-      },
-      "slow": {
-        "tooltip": "Conexión lenta detectada",
-        "message": "Tu conexión a internet parece ser lenta. Algunas funciones pueden tardar más en cargar."
-      },
-      "errors": {
-        "NO_INTERNET_CONNECTION": "No hay conexión a internet disponible",
-        "REQUEST_TIMEOUT": "La solicitud expiró. Por favor verifica tu conexión e intenta nuevamente."
-      }
+    "unpublish_world_confirmation": {
+      "title": "¿Despublicar <b>{worldName}</b>?"
+    }
+  },
+  "connection": {
+    "offline": {
+      "tooltip": "Sin conexión a internet",
+      "title": "Sin Conexión",
+      "message": "Actualmente estás sin conexión. Algunas funciones pueden no estar disponibles hasta que te reconectes a internet.",
+      "retry": "Reintentar Conexión",
+      "checking": "Verificando..."
+    },
+    "slow": {
+      "tooltip": "Conexión lenta detectada",
+      "message": "Tu conexión a internet parece ser lenta. Algunas funciones pueden tardar más en cargar."
+    },
+    "errors": {
+      "NO_INTERNET_CONNECTION": "No hay conexión a internet disponible",
+      "REQUEST_TIMEOUT": "La solicitud expiró. Por favor verifica tu conexión e intenta nuevamente."
     }
   }
 }

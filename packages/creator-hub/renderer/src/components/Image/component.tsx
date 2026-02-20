@@ -23,6 +23,7 @@ export function Image({ src, fallbackSrc, alt, className, ...props }: Props) {
 
   // Reset state when src changes
   useEffect(() => {
+    if (src === imgSrc) return; // No real change in src.
     setImgSrc(src);
     setHasError(false);
     setShowPlaceholder(false);

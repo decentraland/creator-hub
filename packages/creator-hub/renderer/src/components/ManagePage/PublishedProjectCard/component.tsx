@@ -39,10 +39,11 @@ export type Props = {
   onOpenSettings: (tab?: WorldSettingsTab) => void;
   onOpenPermissions: () => void;
   onViewScenes: () => void;
+  onUnpublishWorld: () => void;
 };
 
 const PublishedProjectCard: React.FC<Props> = React.memo(
-  ({ project, onOpenSettings, onOpenPermissions, onViewScenes }) => {
+  ({ project, onOpenSettings, onOpenPermissions, onViewScenes, onUnpublishWorld }) => {
     const { pushGeneric } = useSnackbar();
     const { id, displayName, type, role, deployment } = project;
     const roleLabel = isCollaboratorRole(role) ? COLLABORATOR_ROLES_LABELS[role] : null;
@@ -105,6 +106,14 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
           icon: <PermissionsIcon />,
           handler: onOpenPermissions,
           active: type === ManagedProjectType.WORLD && role === WorldRoleType.OWNER,
+        },
+        {
+          text: t('manage.cards.menu.unpublish'),
+          handler: onUnpublishWorld,
+          active:
+            type === ManagedProjectType.WORLD &&
+            role === WorldRoleType.OWNER &&
+            !!deployment?.scenesCount,
         },
       ];
       return options.filter(option => option.active) as Option[];
