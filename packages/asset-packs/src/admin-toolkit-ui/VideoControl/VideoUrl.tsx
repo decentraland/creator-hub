@@ -14,6 +14,9 @@ const VIDEO_PLAYER_HELP_URL =
   'https://docs.decentraland.org/creator/scene-editor/interactivity/video-screen';
 export const HELP_ICON = `${CONTENT_URL}/admin_toolkit/assets/icons/help.png`;
 
+let videoURLText = '';
+let videoURLInputOverride = '';
+
 export function VideoControlURL({
   engine,
   scaleFactor,
@@ -25,10 +28,13 @@ export function VideoControlURL({
   entity: Entity;
   video: DeepReadonlyObject<PBVideoPlayer> | undefined;
 }) {
-  const [videoURL, setVideoURL] = ReactEcs.useState('');
+  const inputValue = videoURLInputOverride;
+  if (videoURLInputOverride !== '') videoURLInputOverride = '';
+
   ReactEcs.useEffect(() => {
     const url = video?.src === LIVEKIT_STREAM_SRC ? '' : video?.src;
-    setVideoURL(url ?? '');
+    videoURLText = url ?? '';
+    videoURLInputOverride = url || ' ';
   }, [entity]);
   const controls = createVideoPlayerControls(entity, engine);
   const isActive = video && isVideoUrl(video.src);
@@ -69,8 +75,10 @@ export function VideoControlURL({
       />
 
       <Input
-        onChange={setVideoURL}
-        value={videoURL}
+        onChange={value => {
+          videoURLText = value;
+        }}
+        value={inputValue}
         fontSize={16 * scaleFactor}
         textAlign="middle-left"
         placeholder="Paste your video URL"
@@ -110,12 +118,12 @@ export function VideoControlURL({
             }}
           />
         )}
-        {(!videoURL || videoURL !== video?.src) && (
+        {(!videoURLText || videoURLText !== video?.src) && (
           <Button
-            disabled={!isVideoUrl(videoURL)}
+            disabled={!isVideoUrl(videoURLText)}
             id="video_control_share_screen_share"
             value={
-              video?.src && videoURL !== video.src && video.src !== LIVEKIT_STREAM_SRC
+              video?.src && videoURLText !== video.src && video.src !== LIVEKIT_STREAM_SRC
                 ? '<b>Update</b>'
                 : '<b>Activate</b>'
             }
@@ -124,11 +132,11 @@ export function VideoControlURL({
             }}
             fontSize={16 * scaleFactor}
             uiBackground={{
-              color: isVideoUrl(videoURL) ? COLORS.SUCCESS : Color4.fromHexString('#274431'),
+              color: isVideoUrl(videoURLText) ? COLORS.SUCCESS : Color4.fromHexString('#274431'),
             }}
             color={Color4.Black()}
             onMouseDown={() => {
-              controls.setSource(videoURL);
+              controls.setSource(videoURLText);
             }}
           />
         )}
