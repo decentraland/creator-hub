@@ -4,6 +4,9 @@ import cx from 'classnames';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { Box, Button, IconButton } from 'decentraland-ui2';
+import { useDispatch, useSelector } from '#store';
+import type { AppState } from '#store';
+import { misc } from '#preload';
 import logo from '/assets/images/logo-editor.png';
 import { REPORT_ISSUES_URL } from '/@/modules/utils';
 import { t } from '/@/modules/store/translation/utils';
@@ -13,9 +16,6 @@ import { ConnectionStatusIndicator } from '../ConnectionStatusIndicator';
 
 import './styles.css';
 import { AppSettings } from '../Modals/AppSettings';
-import type { AppState } from '#store';
-import { useDispatch, useSelector } from '#store';
-import { misc } from '#preload';
 
 export enum NavbarItem {
   HOME = 'home',

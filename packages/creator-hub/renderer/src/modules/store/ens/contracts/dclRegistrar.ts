@@ -24,4 +24,4 @@ export const dclRegistrar = {
     name: 'DCLRegistrar',
     chainId: ChainId.ETHEREUM_MAINNET,
   },
-} as Record<ChainId, ContractData>;
+} as Partial<Record<ChainId, ContractData>>;

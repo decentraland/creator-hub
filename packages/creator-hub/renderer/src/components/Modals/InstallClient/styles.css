@@ -1,9 +1,8 @@
 .InstallClientModal > .MuiPaper-root:first-child {
   background-color: var(--secondary);
-  
 }
 
-.InstallClientBox  {
+.InstallClientBox {
   display: flex;
   padding: 20px;
   flex-direction: column;
@@ -42,10 +41,9 @@
   font-weight: 500;
 }
 
-
 .Actions button:last-child {
   margin-left: 0 !important;
   background-color: var(--dark-gray);
   color: white;
   border: none;
-} 
+}

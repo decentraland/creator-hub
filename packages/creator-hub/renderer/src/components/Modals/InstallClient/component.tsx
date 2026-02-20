@@ -1,19 +1,19 @@
-import { Box, OperativeSystem, Typography } from 'decentraland-ui2';
+import { useCallback, useMemo } from 'react';
+import { useAdvancedUserAgentData } from '@dcl/hooks';
 import {
   DownloadButtonAppleIcon,
   DownloadButtonWindowsIcon,
 } from 'decentraland-ui2/dist/components/DownloadButton/DownloadButton.styled';
-import { useAdvancedUserAgentData } from '@dcl/hooks';
+import { Box, OperativeSystem, Typography } from 'decentraland-ui2';
 import { actions } from '/@/modules/store/editor';
+import { useDispatch } from '#store';
+import { t } from '/@/modules/store/translation/utils';
 import { Modal } from '..';
 import { Button } from '../../Button';
 import LogoDCLSVG from '/assets/images/logo-dcl.svg';
 import type { Props } from './types';
 
 import './styles.css';
-import { useCallback, useMemo } from 'react';
-import { useDispatch } from '#store';
-import { t } from '/@/modules/store/translation/utils';
 
 export function InstallClient({ open, onClose }: Props) {
   const [_, agent] = useAdvancedUserAgentData();
