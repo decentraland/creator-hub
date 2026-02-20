@@ -374,7 +374,7 @@ export class Worlds {
         value.forEach(item => formData.append(key, String(item)));
       } else if (value !== undefined) {
         formData.append(key, String(value));
-      }
+      } // Ignore undefined values similar to how JSON serialization works.
     }
 
     const encodedWorldName = encodeURIComponent(worldName);
