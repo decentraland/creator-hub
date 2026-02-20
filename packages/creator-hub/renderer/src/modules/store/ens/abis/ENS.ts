@@ -15,6 +15,7 @@ export const ENS = [
       },
     ],
     payable: false,
+    stateMutability: 'view',
     type: 'function',
   },
   {
@@ -33,6 +34,7 @@ export const ENS = [
       },
     ],
     payable: false,
+    stateMutability: 'view',
     type: 'function',
   },
   {
@@ -54,6 +56,7 @@ export const ENS = [
     name: 'setSubnodeOwner',
     outputs: [],
     payable: false,
+    stateMutability: 'nonpayable',
     type: 'function',
   },
   {
@@ -71,6 +74,7 @@ export const ENS = [
     name: 'setTTL',
     outputs: [],
     payable: false,
+    stateMutability: 'nonpayable',
     type: 'function',
   },
   {
@@ -89,6 +93,7 @@ export const ENS = [
       },
     ],
     payable: false,
+    stateMutability: 'view',
     type: 'function',
   },
   {
@@ -106,6 +111,7 @@ export const ENS = [
     name: 'setResolver',
     outputs: [],
     payable: false,
+    stateMutability: 'nonpayable',
     type: 'function',
   },
   {
@@ -123,6 +129,7 @@ export const ENS = [
     name: 'setOwner',
     outputs: [],
     payable: false,
+    stateMutability: 'nonpayable',
     type: 'function',
   },
   {
@@ -198,4 +205,4 @@ export const ENS = [
     name: 'NewTTL',
     type: 'event',
   },
-];
+] as const;
