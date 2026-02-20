@@ -90,9 +90,11 @@ The Decentraland Creator Hub Monorepo is a comprehensive ecosystem for creating,
 
 ### Web3 & Blockchain
 
-- **Wallet / Auth**: in-app auth library `packages/creator-hub/renderer/src/lib/auth.ts` (ethers, RPC via `getRpcUrls`, AuthServer provider, SSO via @dcl/single-sign-on-client)
+- **Ethereum Client**: viem 2.x (lightweight, tree-shakeable TypeScript interface for Ethereum)
+- **Wallet / Auth**: in-app auth library `packages/creator-hub/renderer/src/lib/auth.ts` (viem for ephemeral wallets and RPC, AuthServer provider, SSO via @dcl/single-sign-on-client)
+- **ENS**: viem/ens for name hashing and contract reads (`readContract`)
 - **Crypto**: ethereum-cryptography 2.1.2
-- **Hashing**: @ethersproject/hash 5.7.0, @dcl/hashing 3.0.4
+- **Hashing**: @dcl/hashing 3.0.4
 
 ## External Dependencies
 
@@ -357,12 +359,10 @@ This project does not use a traditional database. Instead, it uses:
 For deeper understanding of design decisions and technical architecture:
 
 - **ADR-280: Binary Management** - https://adr.decentraland.org/adr/ADR-280
-
   - Describes approach for managing Node.js binaries and their execution within Creator Hub
   - Covers cross-platform binary execution, process monitoring, and ASAR unpacking strategy
 
 - **ADR-281: Items in Decentraland tooling** - https://adr.decentraland.org/adr/ADR-281
-
   - Explains the Items abstraction (Static Items, Smart Items, Custom Items)
   - Technical implementation details for asset packs and item behaviors
 
