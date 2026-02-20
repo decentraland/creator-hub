@@ -12,7 +12,7 @@ import { t } from '/@/modules/store/translation/utils';
 import { WorldRoleType } from '/@/lib/worlds';
 import { RoleType as LandRoleType } from '/@/lib/land';
 import FallbackThumbnail from '/assets/images/scene-thumbnail-fallback.png';
-import { misc } from '#preload';
+import { analytics, misc } from '#preload';
 import { Image } from '../../Image';
 import { Button } from '../../Button';
 import { Dropdown } from '../../Dropdown';
@@ -49,6 +49,7 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
 
     const handleJumpIn = useCallback(() => {
       const url = getJumpInUrl(id);
+      analytics.track('Manage Worlds External Action', { action: 'Jump into World' });
       void misc.openExternal(url);
     }, [id]);
 
@@ -60,10 +61,12 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
 
     const handleEditName = useCallback(() => {
       const subdomain = isENSDomain(id) ? id : id.split('.')[0];
+      analytics.track('Manage Worlds External Action', { action: 'Edit Name in Web Builder' });
       void misc.openExternal(`${BUILDER_URL}/names/${subdomain}`);
     }, [id]);
 
     const handleViewParcel = useCallback(() => {
+      analytics.track('Manage Worlds External Action', { action: 'View Parcel in Web Builder' });
       void misc.openExternal(`${BUILDER_URL}/land/${id}`);
     }, [id]);
 

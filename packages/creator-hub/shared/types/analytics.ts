@@ -51,6 +51,9 @@ export type Events = {
   'Worlds Your Storage Modal Action': {
     action: string;
   };
+  'Manage Worlds External Action': {
+    action: string;
+  };
   'Add World Permissions': {
     world_name: string;
     wallet_address: string;
