@@ -2,7 +2,7 @@ import { createSlice, type PayloadAction, isRejectedWithValue } from '@reduxjs/t
 import { Authenticator, type AuthIdentity } from '@dcl/crypto';
 import type { ChainId } from '@dcl/schemas';
 import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
-import { AuthServerProvider } from 'decentraland-connect';
+import { AuthServerProvider } from '/@/lib/auth';
 
 import { editor } from '#preload';
 import { delay } from '/shared/utils';
@@ -205,8 +205,6 @@ export const executeDeployment = createAsyncThunk(
 
     const { info, id: deploymentId, wallet } = deployment;
 
-    // we have to use both packages (decentraland-connect & @dcl/single-sign-on-client)
-    // since there is no way to fetch the full identity from decentraland-connect
     const hasValidIdentity = AuthServerProvider.hasValidIdentity();
     const identity = localStorageGetIdentity(wallet);
 
