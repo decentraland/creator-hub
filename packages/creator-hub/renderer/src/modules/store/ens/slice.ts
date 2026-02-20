@@ -1,4 +1,4 @@
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import { createSlice } from '@reduxjs/toolkit';
 import { ethers, Contract } from 'ethers';
 import { namehash } from '@ethersproject/hash';
 import pLimit from 'p-limit';
@@ -8,7 +8,7 @@ import { config } from '/@/config';
 import { fetch } from '/shared/fetch';
 import { DCLNames, ENS as ENSApi } from '/@/lib/ens';
 import { Worlds } from '/@/lib/worlds';
-import type { AppState } from '#store';
+import { createAsyncThunk } from '/@/modules/store/thunk';
 import { ens as ensContract, ensResolver, dclRegistrar } from './contracts';
 import { getEnsProvider, isValidENSName } from './utils';
 import { USER_PERMISSIONS, type ENS, type ENSError } from './types';
@@ -48,7 +48,7 @@ export const fetchDCLNames = createAsyncThunk(
   async ({ address }: { address: string }, { getState }) => {
     if (!address) return [];
 
-    const chainId = (getState() as AppState).ens.chainId;
+    const chainId = getState().ens.chainId;
     const provider = new ethers.JsonRpcProvider(config.get('RPC_URL'));
 
     // TODO: Implement logic to fetch lands from the builder-server

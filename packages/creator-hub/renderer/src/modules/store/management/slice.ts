@@ -1,9 +1,4 @@
-import {
-  createAsyncThunk,
-  createSlice,
-  createSelector,
-  type PayloadAction,
-} from '@reduxjs/toolkit';
+import { createSlice, createSelector, type PayloadAction } from '@reduxjs/toolkit';
 import { AuthServerProvider } from 'decentraland-connect';
 import type { Async } from '/shared/types/async';
 import type { ManagedProject } from '/shared/types/manage';
@@ -17,6 +12,7 @@ import type {
   WorldPermissions,
 } from '/@/lib/worlds';
 import { WorldRoleType, Worlds, WorldPermissionType } from '/@/lib/worlds';
+import { createAsyncThunk } from '/@/modules/store/thunk';
 import type { AppState } from '/@/modules/store';
 import { fetchENSList, actions as ensActions } from '/@/modules/store/ens';
 import { fetchLandList, actions as landActions } from '/@/modules/store/land';
@@ -125,11 +121,11 @@ export const fetchManagedProjectsFiltered = createAsyncThunk(
     const connectedAccount = AuthServerProvider.getAccount();
     if (!connectedAccount) throw new Error('No connected account found');
 
-    const state = getState() as AppState;
+    const { publishFilter } = getState().management;
     if (args?.resetPage) dispatch(actions.setPage(0));
-    if (state.management.publishFilter === FilterBy.PUBLISHED) {
+    if (publishFilter === FilterBy.PUBLISHED) {
       await dispatch(fetchWorlds({ address: connectedAccount })).unwrap();
-    } else if (state.management.publishFilter === FilterBy.UNPUBLISHED) {
+    } else if (publishFilter === FilterBy.UNPUBLISHED) {
       await dispatch(fetchEmptyWorlds({ address: connectedAccount })).unwrap();
     }
   },
@@ -139,16 +135,16 @@ export const fetchManagedProjectsFiltered = createAsyncThunk(
 export const fetchWorlds = createAsyncThunk(
   'management/fetchWorlds',
   async ({ address }: { address: string }, { getState }) => {
-    const appState = getState() as AppState;
+    const { searchQuery, sortBy, page } = getState().management;
     const WorldsAPI = new Worlds();
 
     const worldsResponse = await WorldsAPI.fetchWorlds({
       limit: PROJECTS_PAGE_LIMIT,
-      search: appState.management.searchQuery,
-      sort: appState.management.sortBy,
-      order: appState.management.sortBy === SortBy.LATEST ? 'desc' : 'asc',
+      search: searchQuery,
+      sort: sortBy,
+      order: sortBy === SortBy.LATEST ? 'desc' : 'asc',
       authorized_deployer: address,
-      offset: PROJECTS_PAGE_LIMIT * appState.management.page,
+      offset: PROJECTS_PAGE_LIMIT * page,
     });
     if (worldsResponse === null) {
       throw new Error('Failed to fetch worlds');
@@ -182,11 +178,11 @@ export const fetchEmptyWorlds = createAsyncThunk(
   async ({ address }: { address: string }, { dispatch, getState }) => {
     const ensList = await dispatch(fetchENSList({ address })).unwrap();
 
-    const state = getState() as AppState;
+    const prevProjects = getState().management.projects;
     const worldsAPI = new Worlds();
 
     const projectsPromises: Promise<ManagedProject | null>[] = ensList.map(async ens => {
-      const worldProject = state.management.projects.find(project => project.id === ens.subdomain);
+      const worldProject = prevProjects.find(project => project.id === ens.subdomain);
       let scenesCount = worldProject?.deployment ? worldProject.deployment.scenesCount : null;
 
       if (scenesCount === null) {

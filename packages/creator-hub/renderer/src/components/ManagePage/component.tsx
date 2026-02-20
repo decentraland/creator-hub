@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import cx from 'classnames';
 import RefreshIcon from '@mui/icons-material/Cached';
@@ -95,19 +95,21 @@ export function ManagePage() {
     navigate('/scenes');
   }, [navigate]);
 
-  const getEmptyTitle = useCallback(() => {
+  const emptyTitle = useMemo(() => {
+    if (projects.length) return '';
     if (searchQuery) return t('manage.empty_list.search.title');
     if (!Object.keys(ens).length) return t('manage.empty_list.all.title');
     if (publishFilter === FilterBy.PUBLISHED) return t('manage.empty_list.published.title');
     return t('manage.empty_list.unpublished.title');
-  }, [searchQuery, publishFilter, ens]);
+  }, [projects.length, searchQuery, publishFilter, ens]);
 
-  const getEmptySubtitle = useCallback(() => {
+  const emptySubtitle = useMemo(() => {
+    if (projects.length) return '';
     if (searchQuery) return t('manage.empty_list.search.description');
     if (!Object.keys(ens).length) return t('manage.empty_list.all.description');
     if (publishFilter === FilterBy.PUBLISHED) return t('manage.empty_list.published.description');
     return t('manage.empty_list.unpublished.description');
-  }, [searchQuery, publishFilter, ens]);
+  }, [projects.length, searchQuery, publishFilter, ens]);
 
   return (
     <main className="ManagePage">
@@ -184,8 +186,8 @@ export function ManagePage() {
                 <Loader size={70} />
               ) : projects.length === 0 ? (
                 <Box className="EmptyContainer">
-                  <Typography variant="h6">{getEmptyTitle()}</Typography>
-                  <Typography variant="body1">{getEmptySubtitle()}</Typography>
+                  <Typography variant="h6">{emptyTitle}</Typography>
+                  <Typography variant="body1">{emptySubtitle}</Typography>
                   {!searchQuery &&
                     (!Object.keys(ens).length || publishFilter === FilterBy.UNPUBLISHED ? (
                       <Button
