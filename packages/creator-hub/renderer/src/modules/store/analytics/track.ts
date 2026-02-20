@@ -71,11 +71,15 @@ export const analyticsConfig: Record<string, AnalyticsHandler<any>> = {
       };
     },
   },
-  [deploymentActions.executeDeployment.fulfilled.type]: {
+  [deploymentActions.executeDeployment.pending.type]: {
     eventName: 'Execute Scene Deployment',
-    getPayload: (action, getState) => {
+    getPayload: (
+      action: ActionWithPayload<void, string>,
+      getState: GetState,
+    ): Events['Execute Scene Deployment'] => {
       const state = getState();
-      const deployment = state.deployment.deployments[action.meta.arg.path];
+      const path = action.meta.arg;
+      const deployment = state.deployment.deployments[path];
       const project = state.editor.project;
       const worldScenes =
         project?.worldConfiguration?.name === state.management.worldSettings.worldName
@@ -95,9 +99,9 @@ export const analyticsConfig: Record<string, AnalyticsHandler<any>> = {
         is_world: deployment.info.isWorld,
         world_name: deployment.info.isWorld ? project?.worldConfiguration?.name : undefined,
         existing_world_scenes: worldScenes.map(scene => ({
-          entityId: scene.entityId,
+          entity_id: scene.entityId,
           parcels: scene.parcels,
-          size: scene.size,
+          size: Number(scene.size),
         })),
       };
     },
@@ -159,7 +163,7 @@ export const analyticsConfig: Record<string, AnalyticsHandler<any>> = {
 
       return {
         world_name: worldName,
-        world_settings: { ...previousSettings, ...changedSettings },
+        world_settings: { ...previousSettings, ...changedSettings, thumbnail: undefined }, // Thumbnail is omitted as it can be a large base64 string
         changed_fields: {
           title: changedSettings.title !== undefined,
           description: changedSettings.description !== undefined,

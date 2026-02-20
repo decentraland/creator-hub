@@ -42,7 +42,7 @@ export type Events = {
     is_world: boolean;
     world_name?: string;
     existing_world_scenes: Array<{
-      entityId: string;
+      entity_id: string;
       parcels: string[];
       size: number;
     }>;
