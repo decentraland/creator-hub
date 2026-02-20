@@ -8,6 +8,14 @@ export function CustomAssetContextMenu() {
     <ContextMenu id={CUSTOM_ASSETS_CONTEXT_MENU_ID}>
       <Item
         onClick={({ props }) => {
+          const { assetId, onAddToFilesystem } = props as CustomAssetContextMenuProps;
+          onAddToFilesystem(assetId);
+        }}
+      >
+        Add to filesystem
+      </Item>
+      <Item
+        onClick={({ props }) => {
           const { assetId, onRename } = props as CustomAssetContextMenuProps;
           onRename(assetId);
         }}
