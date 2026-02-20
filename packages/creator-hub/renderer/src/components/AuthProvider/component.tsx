@@ -6,8 +6,12 @@ import { AuthServerProvider } from 'decentraland-connect';
 import { useDispatch } from '#store';
 import { config } from '/@/config';
 import { Profiles } from '/@/lib/profile';
-import { fetchENSList } from '/@/modules/store/ens';
-import { fetchLandList, fetchTiles } from '/@/modules/store/land';
+import { fetchTiles } from '/@/modules/store/land';
+import {
+  fetchAllManagedProjectsData,
+  actions as managementActions,
+} from '/@/modules/store/management';
+import { actions as ensActions } from '/@/modules/store/ens';
 import { identify } from '/@/modules/store/analytics';
 import { AuthContext } from '/@/contexts/AuthContext';
 import { isNavigatorOnline } from '/@/lib/connection';
@@ -19,7 +23,7 @@ import type { AuthSignInProps } from './types';
 AuthServerProvider.setAuthServerUrl(config.get('AUTH_SERVER_URL'));
 AuthServerProvider.setAuthDappUrl(config.get('AUTH_DAPP_URL'));
 
-const DEFAULT_CHAIN_ID: ChainId = (Number(config.get('CHAIN_ID')) ??
+const DEFAULT_CHAIN_ID: ChainId = (Number(config.get('CHAIN_ID')) ||
   ChainId.ETHEREUM_MAINNET) as ChainId;
 
 export const provider = new AuthServerProvider();
@@ -118,6 +122,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setAvatar(undefined);
     setIsSignedIn(false);
     AuthServerProvider.deactivate();
+    dispatch(managementActions.clearUserManagedProjects());
   }, []);
 
   const changeNetwork = useCallback(async (chainId: ChainId = DEFAULT_CHAIN_ID) => {
@@ -145,10 +150,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     if (wallet && chainId) {
-      dispatch(fetchENSList({ address: wallet, chainId }));
+      dispatch(ensActions.setChainId(chainId));
+      dispatch(fetchAllManagedProjectsData({ address: wallet }));
       dispatch(identify({ userId: wallet }));
       dispatch(fetchTiles());
-      dispatch(fetchLandList({ address: wallet }));
       setUser({ id: wallet });
     }
   }, [wallet, chainId, dispatch]);

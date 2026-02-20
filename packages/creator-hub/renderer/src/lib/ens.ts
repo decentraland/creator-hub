@@ -22,12 +22,15 @@ export type OwnerByENSQueryResult =
 
 export class ENS {
   private subgraph = config.get('ENS_SUBGRAPH');
+  private subgraphTimeout = 10000;
 
   public async fetchNames(address: string) {
-    const response: Response = await fetch(this.subgraph, {
-      method: 'POST',
-      body: JSON.stringify({
-        query: `{
+    const response: Response = await fetch(
+      this.subgraph,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          query: `{
           domains(
             where: {or: [
               { wrappedOwner: "${address.toLowerCase()}" },
@@ -37,8 +40,10 @@ export class ENS {
             name
           }
         }`,
-      }),
-    });
+        }),
+      },
+      this.subgraphTimeout,
+    );
 
     if (!response.ok) {
       throw new Error(response.status.toString());
@@ -58,10 +63,12 @@ export class ENS {
       return {};
     }
 
-    const response: Response = await fetch(this.subgraph, {
-      method: 'POST',
-      body: JSON.stringify({
-        query: `query getOwners($domains: [String]) {
+    const response: Response = await fetch(
+      this.subgraph,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          query: `query getOwners($domains: [String]) {
           domains(where: { name_in: $domains }) {
             name
             wrappedOwner {
@@ -69,9 +76,11 @@ export class ENS {
             }
           }
         }`,
-        variables: { domains },
-      }),
-    });
+          variables: { domains },
+        }),
+      },
+      this.subgraphTimeout,
+    );
 
     if (!response.ok) {
       throw new Error(response.status.toString());
@@ -113,6 +122,7 @@ export type DCLOwnerByNameQueryResult = {
 
 export class DCLNames {
   private subgraph = config.get('MARKETPLACE_SUBGRAPH');
+  private subgraphTimeout = 10000;
 
   public async fetchNames(address: string) {
     let results: string[] = [];
@@ -120,10 +130,12 @@ export class DCLNames {
     let nextPage = true;
 
     while (nextPage) {
-      const response: Response = await fetch(this.subgraph, {
-        method: 'POST',
-        body: JSON.stringify({
-          query: `{
+      const response: Response = await fetch(
+        this.subgraph,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            query: `{
             nfts(
               first: ${BATCH_SIZE},
               skip: ${offset},
@@ -137,8 +149,10 @@ export class DCLNames {
               }
             }
           }`,
-        }),
-      });
+          }),
+        },
+        this.subgraphTimeout,
+      );
 
       if (!response.ok) {
         throw new Error(response.status.toString());
@@ -174,10 +188,12 @@ export class DCLNames {
     let nextPage = true;
 
     while (nextPage) {
-      const response: Response = await fetch(this.subgraph, {
-        method: 'POST',
-        body: JSON.stringify({
-          query: `query getOwners($domains: [String!], $offset: Int) {
+      const response: Response = await fetch(
+        this.subgraph,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            query: `query getOwners($domains: [String!], $offset: Int) {
             nfts(first: ${BATCH_SIZE}, skip: $offset, where: { name_in: $domains, category: ens }) {
               owner {
                 address
@@ -187,9 +203,11 @@ export class DCLNames {
               }
             }
           }`,
-          variables: { domains, offset },
-        }),
-      });
+            variables: { domains, offset },
+          }),
+        },
+        this.subgraphTimeout,
+      );
 
       if (!response.ok) {
         throw new Error(response.status.toString());

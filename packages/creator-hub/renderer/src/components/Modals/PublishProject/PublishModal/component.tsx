@@ -3,7 +3,7 @@ import { type ModalProps } from 'decentraland-ui2/dist/components/Modal/Modal.ty
 import { Modal, onBackNoop } from '../..';
 
 export function PublishModal(props: React.PropsWithChildren<ModalProps>) {
-  const { onBack, onClose, ...rest } = props;
+  const { onBack, onClose, size = 'small', ...rest } = props;
 
   const handleClose = (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -15,10 +15,11 @@ export function PublishModal(props: React.PropsWithChildren<ModalProps>) {
 
   return (
     <Modal
-      size="small"
       {...rest}
+      size={size}
+      sx={size === 'large' ? { '& > .MuiPaper-root': { width: '980px' } } : undefined}
       onBack={onBack || onBackNoop}
-      onClose={handleClose as any} // ui2 is not typing this correctly..."reason" is being provided anyway...
+      onClose={handleClose}
     >
       {props.children}
     </Modal>
