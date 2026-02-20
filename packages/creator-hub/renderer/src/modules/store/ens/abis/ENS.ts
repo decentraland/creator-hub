@@ -1,6 +1,5 @@
 export const ENS = [
   {
-    constant: true,
     inputs: [
       {
         name: 'node',
@@ -14,11 +13,10 @@ export const ENS = [
         type: 'address',
       },
     ],
-    payable: false,
+    stateMutability: 'view',
     type: 'function',
   },
   {
-    constant: true,
     inputs: [
       {
         name: 'node',
@@ -32,11 +30,10 @@ export const ENS = [
         type: 'address',
       },
     ],
-    payable: false,
+    stateMutability: 'view',
     type: 'function',
   },
   {
-    constant: false,
     inputs: [
       {
         name: 'node',
@@ -53,11 +50,10 @@ export const ENS = [
     ],
     name: 'setSubnodeOwner',
     outputs: [],
-    payable: false,
+    stateMutability: 'nonpayable',
     type: 'function',
   },
   {
-    constant: false,
     inputs: [
       {
         name: 'node',
@@ -70,11 +66,10 @@ export const ENS = [
     ],
     name: 'setTTL',
     outputs: [],
-    payable: false,
+    stateMutability: 'nonpayable',
     type: 'function',
   },
   {
-    constant: true,
     inputs: [
       {
         name: 'node',
@@ -88,11 +83,10 @@ export const ENS = [
         type: 'uint64',
       },
     ],
-    payable: false,
+    stateMutability: 'view',
     type: 'function',
   },
   {
-    constant: false,
     inputs: [
       {
         name: 'node',
@@ -105,11 +99,10 @@ export const ENS = [
     ],
     name: 'setResolver',
     outputs: [],
-    payable: false,
+    stateMutability: 'nonpayable',
     type: 'function',
   },
   {
-    constant: false,
     inputs: [
       {
         name: 'node',
@@ -122,7 +115,7 @@ export const ENS = [
     ],
     name: 'setOwner',
     outputs: [],
-    payable: false,
+    stateMutability: 'nonpayable',
     type: 'function',
   },
   {
@@ -198,4 +191,4 @@ export const ENS = [
     name: 'NewTTL',
     type: 'event',
   },
-];
+] as const;
