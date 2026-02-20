@@ -72,7 +72,7 @@ export function VideoControlURL({
         onChange={setVideoURL}
         value={videoURL}
         fontSize={16 * scaleFactor}
-        textAlign="top-left"
+        textAlign="middle-left"
         placeholder="Paste your video URL"
         placeholderColor={Color4.create(160 / 255, 155 / 255, 168 / 255, 1)}
         color={isActive ? Color4.Black() : Color4.fromHexString('#A09BA8')}

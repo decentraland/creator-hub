@@ -14,7 +14,7 @@ import {
   selectCanUndo,
   selectSceneInfo,
 } from '../../redux/data-layer';
-import { selectCanSave } from '../../redux/app';
+import { selectCanSave, selectInspectorPreferences } from '../../redux/app';
 import { useInspectorUIState } from '../../hooks/sdk/useInspectorUIState';
 import { useAppSelector, useAppDispatch } from '../../redux/hooks';
 import {
@@ -36,6 +36,8 @@ import './Toolbar.css';
 
 const Toolbar = withSdk(({ sdk }) => {
   const canSave = useAppSelector(selectCanSave);
+  const preferences = useAppSelector(selectInspectorPreferences);
+  const isAutosaveEnabled = preferences?.autosaveEnabled ?? true;
   const canUndo = useAppSelector(selectCanUndo);
   const canRedo = useAppSelector(selectCanRedo);
   const sceneInfoContent = useAppSelector(selectSceneInfo).content;
@@ -73,13 +75,15 @@ const Toolbar = withSdk(({ sdk }) => {
 
   return (
     <div className="Toolbar">
-      <ToolbarButton
-        className="save"
-        onClick={canSave ? handleSaveClick : undefined}
-        title={canSave ? 'Save changes' : 'All changes saved'}
-      >
-        {canSave ? <BiSave /> : <BiBadgeCheck />}
-      </ToolbarButton>
+      {!isAutosaveEnabled && (
+        <ToolbarButton
+          className="save"
+          onClick={canSave ? handleSaveClick : undefined}
+          title={canSave ? 'Save changes' : 'All changes saved'}
+        >
+          {canSave ? <BiSave /> : <BiBadgeCheck />}
+        </ToolbarButton>
+      )}
       <ToolbarButton
         className="undo"
         title="Undo"

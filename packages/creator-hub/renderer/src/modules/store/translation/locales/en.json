@@ -50,7 +50,8 @@
           "debugger": "Open Debug Console",
           "skip_auth_screen": "Skip Auth Screen",
           "open_new_instance": "Open multiple instances",
-          "landscape_terrain_enabled": "Enable Landscape Terrains"
+          "landscape_terrain_enabled": "Enable Landscape Terrains",
+          "mobile_preview": "Show QR Code for Mobile"
         },
         "publish_options": {
           "publish_scene": "Publish Scene",
@@ -619,6 +620,11 @@
       "dont_show_again": "Don't show this warning again",
       "continue": "Continue",
       "cancel": "Cancel"
+    },
+    "mobile_qr": {
+      "title": "Mobile Preview",
+      "description": "Scan this QR code with your mobile device to preview the scene",
+      "disclaimer": "Both your computer and mobile device must be on the same network"
     }
   },
   "popup": {
@@ -653,7 +659,8 @@
       "remove_permission_failed": "Failed to remove address permission. Please try again.",
       "fetch_parcels_permission_failed": "Failed to fetch parcel permissions. Please try again.",
       "add_parcels_permission_failed": "Failed to update parcel permissions. Please try again.",
-      "remove_parcels_permission_failed": "Failed to update parcel permissions. Please try again."
+      "remove_parcels_permission_failed": "Failed to update parcel permissions. Please try again.",
+      "mobile_qr_failed": "Failed to get mobile preview QR code"
     },
     "missing_projects": {
       "title": "{scenes} {scenes, plural, one {scene} other {scenes}} could not be loaded due to missing files",
