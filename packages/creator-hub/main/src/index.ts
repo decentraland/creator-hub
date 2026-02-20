@@ -10,7 +10,7 @@ import { deployServer, killAllPreviews } from '/@/modules/cli';
 import { killInspectorServer } from '/@/modules/inspector';
 import { runMigrations } from '/@/modules/migrations';
 import { getAnalytics, track } from './modules/analytics';
-import { parseEnvArguments } from './modules/app-args-handle';
+import { handleAppArguments } from './modules/app-args-handle';
 import { addEditorsPathsToConfig } from './modules/code';
 
 import '/@/security-restrictions';
@@ -33,7 +33,7 @@ if (!isSingleInstance) {
 }
 app.on('second-instance', async (_e: unknown, argv: string[]) => {
   await restoreOrCreateMainWindow();
-  parseEnvArguments(argv);
+  handleAppArguments(argv);
 });
 
 /**
@@ -61,7 +61,7 @@ app
     await runMigrations();
     log.info(`[App] Ready v${app.getVersion()}`);
 
-    parseEnvArguments(process.argv);
+    handleAppArguments(process.argv);
 
     initIpc();
     log.info('[IPC] Ready');

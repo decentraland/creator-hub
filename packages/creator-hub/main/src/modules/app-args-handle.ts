@@ -37,13 +37,13 @@ const ARG_HANDLERS: Record<string, (value: string) => Env | null | void> = {
 };
 
 /**
- * Parses app CLI arguments: --env= and --open-devtools-with-port=.
- * Applies env override via setEnvOverride; opens DevTools window when --open-devtools-with-port= is present.
+ * Handles app CLI arguments: --env= and --open-devtools-with-port=.
+ * Invokes the matching handler for each recognized prefix (env override, DevTools window).
  *
  * @param argv - Command line arguments array
  * @returns void
  */
-export function parseEnvArguments(argv: string[]): void {
+export function handleAppArguments(argv: string[]): void {
   const args = getArgs(argv);
 
   log.info(`[Args] Parsing arguments: ${args.join(', ')}`);
