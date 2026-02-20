@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChainId } from '@dcl/schemas';
 import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
-import { AuthServerProvider } from 'decentraland-connect';
+import { AuthServerProvider } from '../../../lib/auth';
 import { createTestStore } from '../../../../tests/utils/testStore';
 import { executeDeployment, initializeDeployment } from './slice';
 
@@ -24,7 +24,7 @@ vi.mock('@dcl/single-sign-on-client', () => ({
   })),
 }));
 
-vi.mock('decentraland-connect', () => ({
+vi.mock('../../../lib/auth', () => ({
   AuthServerProvider: {
     hasValidIdentity: vi.fn(() => true),
     deactivate: vi.fn(),

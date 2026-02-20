@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import { ethers, Contract } from 'ethers';
-import { namehash } from '@ethersproject/hash';
+import { createPublicClient, http, zeroAddress, type Address } from 'viem';
+import { namehash } from 'viem/ens';
 import pLimit from 'p-limit';
 import type { ChainId } from '@dcl/schemas/dist/dapps/chain-id';
 import type { Async } from '/shared/types/async';
@@ -60,7 +60,9 @@ export const fetchDCLNames = createAsyncThunk(
   async ({ address, chainId }: { address: string; chainId: ChainId }) => {
     if (!address) return [];
 
-    const provider = new ethers.JsonRpcProvider(config.get('RPC_URL'));
+    const publicClient = createPublicClient({
+      transport: http(config.get('RPC_URL')),
+    });
 
     // TODO: Implement logic to fetch lands from the builder-server
     // const lands: Land[]
@@ -70,17 +72,12 @@ export const fetchDCLNames = createAsyncThunk(
       throw new Error(`ENS contract for chainId ${chainId} not found.`);
     }
 
-    const ensImplementation = new Contract(
-      ensContract[chainId].address,
-      new ethers.Interface(ensContract[chainId].abi),
-      provider,
-    );
-
-    const dclRegistrarImplementation = new Contract(
-      dclRegistrar[chainId].address,
-      dclRegistrar[chainId].abi,
-      provider,
-    );
+    const ensAbi = ensContract[chainId].abi as any;
+    const ensAddress = ensContract[chainId].address as Address;
+    const dclRegistrarAbi = dclRegistrar[chainId].abi as any;
+    const dclRegistrarAddress = dclRegistrar[chainId].address as Address;
+    const resolverAbi = ensResolver[chainId].abi as any;
+    const resolverContractAddress = ensResolver[chainId].address as Address;
 
     const dclNamesApi = new DCLNames();
     const bannedNames = await fetchBannedNames();
@@ -97,34 +94,53 @@ export const fetchDCLNames = createAsyncThunk(
         let content = '';
         let ensAddressRecord = '';
         const nodehash = namehash(subdomain);
-        const [resolverAddress, owner, tokenId]: [string, string, string] = await Promise.all([
-          ensImplementation.resolver(nodehash),
-          ensImplementation.owner(nodehash).then(owner => owner.toLowerCase()),
-          dclRegistrarImplementation.getTokenId(name).then(name => name.toString()),
+        const [resolverAddress, owner, tokenId] = await Promise.all([
+          publicClient.readContract({
+            address: ensAddress,
+            abi: ensAbi,
+            functionName: 'resolver',
+            args: [nodehash],
+          }) as Promise<Address>,
+          publicClient
+            .readContract({
+              address: ensAddress,
+              abi: ensAbi,
+              functionName: 'owner',
+              args: [nodehash],
+            })
+            .then((owner: any) => (owner as string).toLowerCase()),
+          publicClient
+            .readContract({
+              address: dclRegistrarAddress,
+              abi: dclRegistrarAbi,
+              functionName: 'getTokenId',
+              args: [name],
+            })
+            .then((id: any) => String(id)),
         ]);
 
-        const resolver = resolverAddress.toString();
+        const resolver = resolverAddress as string;
 
         try {
-          const resolverImplementation = new Contract(
-            ensResolver[chainId].address,
-            new ethers.Interface(ensResolver[chainId].abi),
-            provider,
-          );
-          const resolvedAddress = await resolverImplementation['addr(bytes32)'](nodehash);
-          ensAddressRecord = resolvedAddress !== ethers.ZeroAddress ? resolvedAddress : '';
-        } catch (e) {
+          const resolvedAddress = (await publicClient.readContract({
+            address: resolverContractAddress,
+            abi: resolverAbi,
+            functionName: 'addr',
+            args: [nodehash],
+          })) as Address;
+          ensAddressRecord = resolvedAddress !== zeroAddress ? resolvedAddress : '';
+        } catch (_e) {
           console.log('Failed to fetch ens address record');
         }
 
-        if (resolver !== ethers.ZeroAddress) {
+        if (resolver !== zeroAddress) {
           try {
-            const resolverImplementation = new Contract(
-              resolverAddress,
-              new ethers.Interface(ensResolver[chainId].abi),
-              provider,
-            );
-            content = await resolverImplementation.contenthash(nodehash);
+            content = (await publicClient.readContract({
+              address: resolverAddress as Address,
+              abi: resolverAbi,
+              functionName: 'contenthash',
+              args: [nodehash],
+            })) as string;
 
             // TODO: Implement logic to fetch lands from the builder-server
             // const land = landHashes.find(lh => lh.hash === content);
