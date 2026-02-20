@@ -4,7 +4,7 @@ import cx from 'classnames';
 import RefreshIcon from '@mui/icons-material/Cached';
 import type { SelectChangeEvent } from 'decentraland-ui2';
 import { Box, Chip, IconButton, MenuItem, Typography } from 'decentraland-ui2';
-import { misc } from '#preload';
+import { analytics, misc } from '#preload';
 import { t } from '/@/modules/store/translation/utils';
 import { actions as managementActions } from '/@/modules/store/management';
 import { useAuth } from '/@/hooks/useAuth';
@@ -87,6 +87,7 @@ export function ManagePage() {
   }, []);
 
   const handleMintName = useCallback(() => {
+    analytics.track('Manage Worlds External Action', { action: 'Mint NAME' });
     misc.openExternal(CLAIM_NAME_URL);
   }, []);
 
