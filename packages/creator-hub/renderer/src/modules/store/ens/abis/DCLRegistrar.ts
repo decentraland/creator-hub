@@ -806,4 +806,4 @@ export const DCLRegistrar = [
     stateMutability: 'nonpayable',
     type: 'function',
   },
-] as const;
+];

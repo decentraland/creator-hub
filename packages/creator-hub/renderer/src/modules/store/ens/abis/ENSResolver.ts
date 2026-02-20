@@ -839,4 +839,4 @@ export const ENSResolver = [
     name: 'ABIChanged',
     type: 'event',
   },
-] as const;
+];
