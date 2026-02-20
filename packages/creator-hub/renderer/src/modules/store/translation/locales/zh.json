@@ -553,7 +553,10 @@
         "error": {
           "empty": "密码不能为空",
           "too_short": "密码必须至少 {min} 个字符",
-          "mismatch": "密码不匹配"
+          "mismatch": "密码不匹配",
+          "requirements_header": "密码必须包含：",
+          "min_length": "最少长度：{min} 个字符",
+          "min_numbers": "至少 {min} 个数字"
         }
       },
       "collaborators": {

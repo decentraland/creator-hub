@@ -230,6 +230,20 @@ export const WorldPermissionsAddUserForm: React.FC<Props> = React.memo(
     const isCommunityTab = activeTab === InviteTab.Community;
     const isCsvTab = activeTab === InviteTab.ImportCsv;
 
+    // On Windows, Chromium may handle file drops as a navigation before React's
+    // synthetic events can call preventDefault. Attaching native listeners in the
+    // capture phase on the document ensures preventDefault is called early enough.
+    useEffect(() => {
+      if (!isCsvTab) return;
+      const prevent = (e: Event) => e.preventDefault();
+      document.addEventListener('dragover', prevent, true);
+      document.addEventListener('drop', prevent, true);
+      return () => {
+        document.removeEventListener('dragover', prevent, true);
+        document.removeEventListener('drop', prevent, true);
+      };
+    }, [isCsvTab]);
+
     const csvHasData =
       csvResult && (csvResult.addresses.length > 0 || csvResult.communityIds.length > 0);
 
