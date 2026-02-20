@@ -38,7 +38,7 @@ export function focusWindow(window: BrowserWindow): void {
   }
 }
 
-export function createOrRestoreWindow(
+export function restoreOrCreateWindow(
   path: string,
   options?: BrowserWindowConstructorOptions,
 ): BrowserWindow {
