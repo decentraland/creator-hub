@@ -85,7 +85,7 @@ export type ContributableDomain = {
 };
 
 export type ContractData = {
-  abi: object[];
+  abi: readonly object[];
   address: string;
   name: string;
   version: string;

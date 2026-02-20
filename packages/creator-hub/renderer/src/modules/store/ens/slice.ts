@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import { createPublicClient, http, zeroAddress, type Address } from 'viem';
+import { createPublicClient, getContract, http, zeroAddress, type Address } from 'viem';
 import { namehash } from 'viem/ens';
 import pLimit from 'p-limit';
 import type { ChainId } from '@dcl/schemas/dist/dapps/chain-id';
@@ -8,6 +8,11 @@ import { config } from '/@/config';
 import { fetch } from '/shared/fetch';
 import { DCLNames, ENS as ENSApi } from '/@/lib/ens';
 import { Worlds } from '/@/lib/worlds';
+import {
+  ENS as ensAbi,
+  ENSResolver as ensResolverAbi,
+  DCLRegistrar as dclRegistrarAbi,
+} from './abis';
 import { ens as ensContract, ensResolver, dclRegistrar } from './contracts';
 import { getEnsProvider, isValidENSName } from './utils';
 import { USER_PERMISSIONS, type ENS, type ENSError } from './types';
@@ -60,24 +65,31 @@ export const fetchDCLNames = createAsyncThunk(
   async ({ address, chainId }: { address: string; chainId: ChainId }) => {
     if (!address) return [];
 
-    const publicClient = createPublicClient({
+    const provider = createPublicClient({
       transport: http(config.get('RPC_URL')),
     });
-
-    // TODO: Implement logic to fetch lands from the builder-server
-    // const lands: Land[]
-    // const landHashes: { id: string; hash: string }[]
 
     if (!ensContract[chainId]) {
       throw new Error(`ENS contract for chainId ${chainId} not found.`);
     }
 
-    const ensAbi = ensContract[chainId].abi as any;
-    const ensAddress = ensContract[chainId].address as Address;
-    const dclRegistrarAbi = dclRegistrar[chainId].abi as any;
-    const dclRegistrarAddress = dclRegistrar[chainId].address as Address;
-    const resolverAbi = ensResolver[chainId].abi as any;
-    const resolverContractAddress = ensResolver[chainId].address as Address;
+    const ensImpl = getContract({
+      address: ensContract[chainId].address as Address,
+      abi: ensAbi,
+      client: provider,
+    });
+
+    const dclRegistrarImpl = getContract({
+      address: dclRegistrar[chainId].address as Address,
+      abi: dclRegistrarAbi,
+      client: provider,
+    });
+
+    const resolverImpl = getContract({
+      address: ensResolver[chainId].address as Address,
+      abi: ensResolverAbi,
+      client: provider,
+    });
 
     const dclNamesApi = new DCLNames();
     const bannedNames = await fetchBannedNames();
@@ -89,45 +101,22 @@ export const fetchDCLNames = createAsyncThunk(
       return limit(async () => {
         const subdomain = data.toLowerCase();
         const name = subdomain.split('.')[0];
-        // TODO: Implement logic to fetch lands from the builder-server
         const landId: string | undefined = undefined;
         let content = '';
         let ensAddressRecord = '';
         const nodehash = namehash(subdomain);
-        const [resolverAddress, owner, tokenId] = await Promise.all([
-          publicClient.readContract({
-            address: ensAddress,
-            abi: ensAbi,
-            functionName: 'resolver',
-            args: [nodehash],
-          }) as Promise<Address>,
-          publicClient
-            .readContract({
-              address: ensAddress,
-              abi: ensAbi,
-              functionName: 'owner',
-              args: [nodehash],
-            })
-            .then((owner: any) => (owner as string).toLowerCase()),
-          publicClient
-            .readContract({
-              address: dclRegistrarAddress,
-              abi: dclRegistrarAbi,
-              functionName: 'getTokenId',
-              args: [name],
-            })
-            .then((id: any) => String(id)),
+        const [resolverAddress, ownerRaw, tokenIdRaw] = await Promise.all([
+          ensImpl.read.resolver([nodehash]),
+          ensImpl.read.owner([nodehash]),
+          dclRegistrarImpl.read.getTokenId([name]),
         ]);
 
-        const resolver = resolverAddress as string;
+        const owner = ownerRaw.toLowerCase();
+        const tokenId = String(tokenIdRaw);
+        const resolver = resolverAddress.toLowerCase();
 
         try {
-          const resolvedAddress = (await publicClient.readContract({
-            address: resolverContractAddress,
-            abi: resolverAbi,
-            functionName: 'addr',
-            args: [nodehash],
-          })) as Address;
+          const resolvedAddress = (await resolverImpl.read.addr([nodehash])) as Address;
           ensAddressRecord = resolvedAddress !== zeroAddress ? resolvedAddress : '';
         } catch (_e) {
           console.log('Failed to fetch ens address record');
@@ -135,18 +124,12 @@ export const fetchDCLNames = createAsyncThunk(
 
         if (resolver !== zeroAddress) {
           try {
-            content = (await publicClient.readContract({
-              address: resolverAddress as Address,
-              abi: resolverAbi,
-              functionName: 'contenthash',
-              args: [nodehash],
-            })) as string;
-
-            // TODO: Implement logic to fetch lands from the builder-server
-            // const land = landHashes.find(lh => lh.hash === content);
-            // if (land) {
-            //   landId = land.id;
-            // }
+            const dynamicResolver = getContract({
+              address: resolverAddress,
+              abi: ensResolverAbi,
+              client: provider,
+            });
+            content = await dynamicResolver.read.contenthash([nodehash]);
           } catch (error) {
             console.log('Failed to load ens resolver', error);
           }
