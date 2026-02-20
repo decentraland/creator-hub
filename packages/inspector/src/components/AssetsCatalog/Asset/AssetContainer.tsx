@@ -195,7 +195,12 @@ const SmartItemTooltip: React.FC<{
   );
 };
 
-const AssetContainer: React.FC<{ value: AssetType }> = ({ value }) => {
+type AssetContainerProps = {
+  value: AssetType;
+  onAddToFilesystem?: (asset: AssetType) => void;
+};
+
+const AssetContainer: React.FC<AssetContainerProps> = ({ value, onAddToFilesystem }) => {
   const isSmartItem = useMemo(() => isSmart(value), [value]);
   const [isOpen, setIsOpen] = useState(false);
   const assetRef = useRef<HTMLDivElement>(null);
@@ -216,7 +221,6 @@ const AssetContainer: React.FC<{ value: AssetType }> = ({ value }) => {
     setIsOpen(false);
   }, []);
 
-  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
@@ -230,9 +234,10 @@ const AssetContainer: React.FC<{ value: AssetType }> = ({ value }) => {
       <Asset
         ref={assetRef}
         value={value}
+        onAddToFilesystem={onAddToFilesystem}
       />
     ),
-    [value],
+    [value, onAddToFilesystem],
   );
 
   return (

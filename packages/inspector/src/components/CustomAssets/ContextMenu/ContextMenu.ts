@@ -8,6 +8,7 @@ export type CustomAssetContextMenuProps = {
   assetId: string;
   onDelete: (assetId: string) => void;
   onRename: (assetId: string) => void;
+  onAddToFilesystem: (assetId: string) => void;
 };
 
 export function openCustomAssetContextMenu(
@@ -32,6 +33,7 @@ export function openCustomAssetContextMenu(
         });
         props.onRename(assetId);
       },
+      onAddToFilesystem: props.onAddToFilesystem,
     },
   });
 }

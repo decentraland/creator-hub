@@ -5,14 +5,16 @@ type Props = {
   assetId: string;
   onDelete: (assetId: string) => void;
   onRename: (assetId: string) => void;
+  onAddToFilesystem: (assetId: string) => void;
 };
 
-export function CustomAssetItem({ assetId, onDelete, onRename }: Props) {
+export function CustomAssetItem({ assetId, onDelete, onRename, onAddToFilesystem }: Props) {
   const handleContextMenu = (event: React.MouseEvent) => {
     openCustomAssetContextMenu(event, {
       assetId,
       onDelete,
       onRename,
+      onAddToFilesystem,
     });
   };
 
