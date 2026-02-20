@@ -18,6 +18,7 @@ import {
 
 import type { Project } from '/shared/types/projects';
 import { WorldSettingsTab } from '/shared/types/manage';
+import FallbackThumbnail from '/assets/images/scene-thumbnail-fallback.png';
 import { misc } from '#preload';
 import { useDispatch, useSelector } from '#store';
 
@@ -432,7 +433,7 @@ function SelectWorld({
                     ''
                   }
                   alt={worldSettings.settings?.title || ''}
-                  fallbackSrc="/assets/images/scene-thumbnail-fallback.png"
+                  fallbackSrc={FallbackThumbnail}
                 />
               </div>
               <div className="WorldInfoContent">

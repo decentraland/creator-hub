@@ -93,7 +93,7 @@ export function Deploy(props: Props) {
           }),
         ).unwrap();
         setUndeployStatus('complete');
-        dispatch(
+        await dispatch(
           managementActions.fetchWorldScenes({ worldName: project.worldConfiguration.name }),
         );
       } catch {

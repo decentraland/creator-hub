@@ -8,7 +8,7 @@ import { t } from '/@/modules/store/translation/utils';
 import type { WorldsWalletStats } from '/@/lib/worlds';
 import { formatSize } from '/@/modules/file';
 import { getMbsFromAccountHoldings, type AccountHoldings } from '/@/lib/account';
-import { misc } from '#preload';
+import { analytics, misc } from '#preload';
 import { Modal } from '..';
 import { Button } from '../../Button';
 import './styles.css';
@@ -25,10 +25,21 @@ const ACCOUNT_URL = 'https://decentraland.org/account';
 const WORLDS_STORAGE_PROPOSAL_URL =
   'https://governance.decentraland.org/proposal/?id=c3216070-e822-11ed-b8f1-75dbe089d333';
 
-const LinkButton = ({ label, href }: { label: string; href: string }) => (
+const LinkButton = ({
+  label,
+  href,
+  trackingAction,
+}: {
+  label: string;
+  href: string;
+  trackingAction: string;
+}) => (
   <Button
     endIcon={<OpenInNewIcon />}
-    onClick={() => misc.openExternal(href)}
+    onClick={() => {
+      analytics.track('Worlds Your Storage Modal Action', { action: trackingAction });
+      misc.openExternal(href);
+    }}
   >
     {label}
   </Button>
@@ -72,6 +83,7 @@ const WorldsYourStorageModal: React.FC<Props> = React.memo(
           <LinkButton
             href={ACCOUNT_URL}
             label={t('modal.worlds_storage.mana_buy')}
+            trackingAction="Click Buy MANA"
           />
         </div>
         <hr className="Separator" />
@@ -92,6 +104,7 @@ const WorldsYourStorageModal: React.FC<Props> = React.memo(
           <LinkButton
             href={MARKETPLACE_WEB_URL + '/lands'}
             label={t('modal.worlds_storage.lands_buy')}
+            trackingAction="Click Buy LAND"
           />
         </div>
         <hr className="Separator" />
@@ -112,6 +125,7 @@ const WorldsYourStorageModal: React.FC<Props> = React.memo(
           <LinkButton
             href={`${MARKETPLACE_WEB_URL}/names/claim`}
             label={t('modal.worlds_storage.names_buy')}
+            trackingAction="Click Buy NAME"
           />
         </div>
         <Typography className="Proposal">
@@ -119,7 +133,10 @@ const WorldsYourStorageModal: React.FC<Props> = React.memo(
           <span>{t('modal.worlds_storage.proposal')}</span>{' '}
           <ButtonText
             variant="text"
-            onClick={() => misc.openExternal(WORLDS_STORAGE_PROPOSAL_URL)}
+            onClick={() => {
+              analytics.track('Worlds Your Storage Modal Action', { action: 'Click Learn More' });
+              misc.openExternal(WORLDS_STORAGE_PROPOSAL_URL);
+            }}
           >
             {t('modal.worlds_storage.learn_more')}
           </ButtonText>

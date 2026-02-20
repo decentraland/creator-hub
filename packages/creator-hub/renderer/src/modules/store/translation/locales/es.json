@@ -249,7 +249,8 @@
             "details": "Detalles",
             "code_error": "El código de tu escena contiene uno o más errores.\nPor favor corrígelos e inténtalo de nuevo.",
             "fetch_status": "Error al obtener información de la publicación.\nPor favor, inténtalo de nuevo.",
-            "fetch_error": "Error al obtener información de la publicación.\nPor favor, verifica tu conexión a internet e inténtalo de nuevo.",
+            "fetch_timeout_error": "Error al obtener información de la publicación.\nPor favor, verifica tu conexión a internet e inténtalo de nuevo.",
+            "no_internet_connection": "No hay conexión a internet.\nPor favor, verifica tu conexión e inténtalo de nuevo.",
             "catalyst": "Error al publicar en los nodos de Catalyst.\nPor favor, inténtalo de nuevo o verifica tu conexión a internet.",
             "max_retries": "Límite de reintentos excedido.\nPor favor, inténtalo de nuevo más tarde.",
             "not_found": "Algo salió mal.\nPor favor, inténtalo de nuevo.",
@@ -412,7 +413,7 @@
       "details": {
         "world_title": "Título del Mundo",
         "description": "Descripción",
-        "age_rating": "Clasificación de Edad",
+        "age_rating": "Clasificación de Contenido",
         "categories": "Categorías",
         "author": "Autor (Opcional)",
         "email": "Correo Electrónico (Opcional)",
@@ -424,7 +425,7 @@
           "everyone": "E (Todos, PG 13+)",
           "teen": "T (Adolescentes, PG 13+)",
           "adult": "A (Adultos, PG 18+)",
-          "restricted": "R (Restringido, PG 18+)"
+          "restricted": "R (Restringido)"
         },
         "categories_options": {
           "art": "🎨 Arte",
@@ -803,10 +804,6 @@
     "filters": {
       "published": "Publicado",
       "unpublished": "No publicado"
-    },
-    "sign_in": {
-      "title": "Inicia sesión para gestionar tus mundos",
-      "action": "Iniciar sesión"
     },
     "sign_in": {
       "title": "Inicia sesión para gestionar tus mundos",

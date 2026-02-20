@@ -249,7 +249,8 @@
             "details": "Details",
             "code_error": "Your scene code contains one or more errors.\nPlease fix them and try again.",
             "fetch_status": "Failed to fetch deployment information.\nPlease, try again.",
-            "fetch_error": "Failed to fetch deployment information.\nPlease, check your internet connection and try again.",
+            "fetch_timeout_error": "Failed to fetch deployment information.\nPlease, check your internet connection and try again.",
+            "no_internet_connection": "No internet connection.\nPlease, check your connection and try again.",
             "catalyst": "Deployment to the Catalyst nodes failed.\nPlease retry or check your internet connection.",
             "max_retries": "Retry limit exceeded.\nPlease, try again later.",
             "not_found": "Something went wrong.\nPlease, try again.",
@@ -412,7 +413,7 @@
       "details": {
         "world_title": "World Title",
         "description": "Description",
-        "age_rating": "Age Rating",
+        "age_rating": "Content Rating",
         "categories": "Categories",
         "author": "Author (Optional)",
         "email": "Email (Optional)",
@@ -424,7 +425,7 @@
           "everyone": "E (Everyone, PG 13+)",
           "teen": "T (Teens, PG 13+)",
           "adult": "A (Adults, PG 18+)",
-          "restricted": "R (Restricted, PG 18+)"
+          "restricted": "R (Restricted)"
         },
         "categories_options": {
           "art": "🎨 Art",
@@ -803,10 +804,6 @@
     "filters": {
       "published": "Published",
       "unpublished": "Not published"
-    },
-    "sign_in": {
-      "title": "Sign in to manage your worlds",
-      "action": "Sign In"
     },
     "sign_in": {
       "title": "Sign in to manage your worlds",
