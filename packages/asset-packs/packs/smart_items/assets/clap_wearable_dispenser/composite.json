@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/dispenser.glb",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 3
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "0": {
+          "json": {
+            "value": "Clap Wearable Dispenser"
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/ClapClaim.tsx",
+                "priority": 0,
+                "layout": "{\"params\":{\"campaignId\":{\"type\":\"string\",\"optional\":false,\"value\":\"\"},\"dispenserKey\":{\"type\":\"string\",\"optional\":false,\"value\":\"\"},\"wearableURN\":{\"type\":\"string\",\"optional\":true,\"value\":\"urn:decentraland:off-chain:base-avatars:green_hoodie\"},\"startDate\":{\"type\":\"string\",\"optional\":true,\"value\":\"\"},\"endDate\":{\"type\":\"string\",\"optional\":true,\"value\":\"\"},\"emoteDetected\":{\"type\":\"string\",\"optional\":true,\"value\":\"clap\"},\"wearableYOffset\":{\"type\":\"number\",\"optional\":true,\"value\":0.25},\"ActivateOnSuccess\":{\"type\":\"action\",\"optional\":true,\"value\":{\"entity\":0,\"action\":\"\"}}}}"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}
