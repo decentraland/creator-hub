@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import cx from 'classnames';
 import type { Vector3 } from '@babylonjs/core';
-
 import { withSdk } from '../../../hoc/withSdk';
 import { useComponentValue } from '../../../hooks/sdk/useComponentValue';
 import { useArrayState } from '../../../hooks/useArrayState';
@@ -11,6 +10,7 @@ import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { TextField } from '../../ui/TextField';
 import { CheckboxField } from '../../ui/CheckboxField';
+import { Vector3Field } from '../../ui/Vector3Field';
 import { AddButton } from '../AddButton';
 import MoreOptionsMenu from '../MoreOptionsMenu';
 import { Button } from '../../Button';
@@ -28,40 +28,6 @@ import {
 import type { Props } from './types';
 
 import '../SceneInspector/SceneInspector.css';
-
-type Vec3 = { x: number; y: number; z: number };
-
-function PositionFields({
-  value,
-  onFocus,
-  onBlur,
-  onChange,
-}: {
-  value: Vec3;
-  onFocus: (e: React.FocusEvent<HTMLInputElement>) => void;
-  onBlur: () => void;
-  onChange: (axis: keyof Vec3, val: number) => void;
-}) {
-  return (
-    <>
-      {(['x', 'y', 'z'] as const).map(axis => (
-        <TextField
-          key={axis}
-          leftLabel={axis.toUpperCase()}
-          type="number"
-          value={value[axis]}
-          onFocus={onFocus}
-          onBlur={onBlur}
-          onChange={event => {
-            const parsed = parseFloat(event.target.value);
-            if (!isNaN(parsed)) onChange(axis, parsed);
-          }}
-          autoSelect
-        />
-      ))}
-    </>
-  );
-}
 
 export default withSdk<Props>(({ sdk }) => {
   const { Scene } = sdk.components;
@@ -327,7 +293,7 @@ export default withSdk<Props>(({ sdk }) => {
           border
         >
           <Block label="Position">
-            <PositionFields
+            <Vector3Field
               key={`pos-${revertKey}`}
               value={input.position}
               onFocus={handleFocusInput}
@@ -347,7 +313,7 @@ export default withSdk<Props>(({ sdk }) => {
             />
           </Block>
           <Block label="Spawn Camera Target">
-            <PositionFields
+            <Vector3Field
               key={`cam-${revertKey}`}
               value={input.cameraTarget}
               onFocus={handleFocusInput}
