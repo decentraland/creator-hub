@@ -30,10 +30,16 @@ function isAddress(value: string) {
   return value.length > 15;
 }
 
+const inputTexts: Record<string, string> = {};
+const clearInputFlags: Record<string, boolean> = {};
+
 export function AddUserInput({ scaleFactor, type, sceneAdmins }: Props) {
   const [error, setError] = ReactEcs.useState('');
   const [loading, setLoading] = ReactEcs.useState(false);
-  const [inputValue, setInputValue] = ReactEcs.useState('');
+
+  const inputValue = clearInputFlags[type] ? ' ' : '';
+  if (clearInputFlags[type]) clearInputFlags[type] = false;
+
   const styles = getAddUserInputStyles(scaleFactor);
   const colors = getAddUserInputColors();
   const backgrounds = getAddUserInputBackgrounds();
@@ -44,7 +50,7 @@ export function AddUserInput({ scaleFactor, type, sceneAdmins }: Props) {
   const handleSubmit = async () => {
     if (loading) return;
 
-    const submitValue = inputValue.trim();
+    const submitValue = (inputTexts[type] || '').trim();
 
     if (!submitValue || submitValue.length <= 2) {
       setError('Provide a valid address or NAME');
@@ -57,7 +63,8 @@ export function AddUserInput({ scaleFactor, type, sceneAdmins }: Props) {
     }
 
     const clearInput = () => {
-      setInputValue('');
+      inputTexts[type] = '';
+      clearInputFlags[type] = true;
     };
 
     if (type === PermissionType.ADMIN) {
@@ -90,7 +97,7 @@ export function AddUserInput({ scaleFactor, type, sceneAdmins }: Props) {
         <Input
           onChange={value => {
             setError('');
-            setInputValue(value);
+            inputTexts[type] = value;
           }}
           value={inputValue}
           fontSize={14 * scaleFactor}
