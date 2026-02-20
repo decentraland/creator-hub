@@ -472,7 +472,7 @@ export function initializeWorkspace(services: Services) {
     // If the current thumbnail doesn't exist, update the scene.json to point to the new thumbnail
     const currentThumb = scene.display?.navmapThumbnail;
     const currentThumbPath = path.join(scenePath, path.normalize(currentThumb || ''));
-    if (!(await fs.exists(currentThumbPath))) {
+    if (!scene.display?.navmapThumbnail || !(await fs.exists(currentThumbPath))) {
       await updateSceneThumbnail(scenePath, thumbnailPath);
     }
   }
