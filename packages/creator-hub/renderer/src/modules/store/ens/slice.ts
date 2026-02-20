@@ -69,24 +69,28 @@ export const fetchDCLNames = createAsyncThunk(
       transport: http(config.get('RPC_URL')),
     });
 
-    if (!ensContract[chainId]) {
+    const ensData = ensContract[chainId];
+    const dclRegistrarData = dclRegistrar[chainId];
+    const resolverData = ensResolver[chainId];
+
+    if (!ensData || !dclRegistrarData || !resolverData) {
       throw new Error(`ENS contract for chainId ${chainId} not found.`);
     }
 
     const ensImplementation = getContract({
-      address: ensContract[chainId].address as Address,
+      address: ensData.address as Address,
       abi: ensAbi,
       client: provider,
     });
 
     const dclRegistrarImplementation = getContract({
-      address: dclRegistrar[chainId].address as Address,
+      address: dclRegistrarData.address as Address,
       abi: dclRegistrarAbi,
       client: provider,
     });
 
     const resolverImplementation = getContract({
-      address: ensResolver[chainId].address as Address,
+      address: resolverData.address as Address,
       abi: ensResolverAbi,
       client: provider,
     });
