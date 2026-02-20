@@ -111,9 +111,9 @@ export const fetchDCLNames = createAsyncThunk(
           dclRegistrarImplementation.read.getTokenId([name]),
         ]);
 
-        const owner = String(ownerRaw).toLowerCase();
-        const tokenId = String(tokenIdRaw).toLowerCase();
-        const resolver = String(resolverAddress).toLowerCase() as Address;
+        const owner = ownerRaw.toLowerCase();
+        const tokenId = tokenIdRaw.toString().toLowerCase();
+        const resolver = resolverAddress.toLowerCase();
 
         try {
           const resolvedAddress = (await resolverImplementation.read.addr([nodehash])) as Address;
@@ -125,11 +125,11 @@ export const fetchDCLNames = createAsyncThunk(
         if (resolver !== zeroAddress) {
           try {
             const dynamicResolver = getContract({
-              address: resolver,
+              address: resolverAddress,
               abi: ensResolverAbi,
               client: provider,
             });
-            content = String(await dynamicResolver.read.contenthash([nodehash]));
+            content = await dynamicResolver.read.contenthash([nodehash]);
           } catch (error) {
             console.log('Failed to load ens resolver', error);
           }
