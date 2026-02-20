@@ -7,8 +7,8 @@ import { ellipsisAtMiddle } from '/@/modules/project';
 import { Modal } from '..';
 import { Button } from '../../Button';
 
-import type { Props } from './types';
 import { Row } from '../../Row';
+import type { Props } from './types';
 
 import './styles.css';
 

@@ -22,10 +22,10 @@
   border: 1px solid white;
 }
 
- .SceneList .projects-menu .actions .action-button.MuiButton-textSecondary,
- .SceneList .projects-menu .actions .action-button.MuiButton-textSecondary:hover {
-   background-color: transparent !important;
- }
+.SceneList .projects-menu .actions .action-button.MuiButton-textSecondary,
+.SceneList .projects-menu .actions .action-button.MuiButton-textSecondary:hover {
+  background-color: transparent !important;
+}
 
 .SceneList .projects-menu .actions .action-button.MuiButton-textPrimary,
 .SceneList .projects-menu .actions .action-button.MuiButton-textPrimary:hover {
