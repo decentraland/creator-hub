@@ -1,19 +1,18 @@
 import { useCallback } from 'react';
-import { MenuItem, type SelectChangeEvent, Typography } from 'decentraland-ui2';
 import { useNavigate } from 'react-router-dom';
+import { MenuItem, type SelectChangeEvent, Typography } from 'decentraland-ui2';
 
 import { SortBy } from '/shared/types/projects';
 import { t } from '/@/modules/store/translation/utils';
 import { useWorkspace } from '/@/hooks/useWorkspace';
 
-import type { Props } from './types';
-
 import { Button } from '../Button';
 import { Column } from '../Column';
 import { FiltersBar } from '../FiltersBar';
-import { Projects } from './Projects';
 import { Row } from '../Row';
 import { Select } from '../Select';
+import { Projects } from './Projects';
+import type { Props } from './types';
 
 import './styles.css';
 

@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
-import { Menu, MenuItem, Button } from 'decentraland-ui2';
+import type { AvatarFaceProps } from 'decentraland-ui2/dist/components/AvatarFace/AvatarFace.types';
 import { AvatarFace } from 'decentraland-ui2/dist/components/AvatarFace/AvatarFace';
+import { Menu, MenuItem, Button } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
 import type { Props } from './types';
 
@@ -30,7 +31,7 @@ export function UserMenu({ avatar, isSignedIn, onClickSignOut, onClickSignIn }: 
       >
         <AvatarFace
           size="medium"
-          avatar={avatar}
+          avatar={avatar as AvatarFaceProps['avatar']}
         />
       </Button>
       <Menu

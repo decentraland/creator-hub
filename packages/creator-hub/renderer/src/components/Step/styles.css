@@ -67,7 +67,7 @@
 }
 
 .ConnectedSteps .Step:not(:last-child)::after {
-  content: '';
+  content: "";
   background-color: var(--dcl-silver);
   width: 90px;
   height: 1px;
