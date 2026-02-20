@@ -42,13 +42,16 @@ export type Events = {
     is_world: boolean;
     world_name?: string;
     existing_world_scenes: Array<{
-      entityId: string;
+      entity_id: string;
       parcels: string[];
       size: number;
     }>;
   };
   'Open Code': undefined;
   'Worlds Your Storage Modal Action': {
+    action: string;
+  };
+  'Manage Worlds External Action': {
     action: string;
   };
   'Add World Permissions': {
