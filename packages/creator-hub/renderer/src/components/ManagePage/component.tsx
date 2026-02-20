@@ -115,7 +115,7 @@ export function ManagePage() {
       <Container>
         <Typography variant="h3">
           {t('manage.header.title')}
-          {isSignedIn && !showMainLoader && (
+          {isSignedIn && (
             <IconButton
               onClick={handleRefreshProjects}
               disabled={isLoading}
@@ -127,8 +127,6 @@ export function ManagePage() {
         </Typography>
         {!isSignedIn && !isSigningIn ? (
           <SignInCard onClickSignIn={signIn} />
-        ) : showMainLoader ? (
-          <Loader size={70} />
         ) : (
           <Row>
             <Column className="ContentColumn">
@@ -146,7 +144,7 @@ export function ManagePage() {
                         variant={option.value === publishFilter ? 'filled' : 'outlined'}
                         className="FilterChip"
                         onClick={
-                          option.value !== publishFilter
+                          option.value !== publishFilter && !isLoading
                             ? () => handlePublishFilterChange(option.value)
                             : undefined
                         }
@@ -182,7 +180,9 @@ export function ManagePage() {
                   </>
                 )}
               </FiltersBar>
-              {projects.length === 0 ? (
+              {showMainLoader ? (
+                <Loader size={70} />
+              ) : projects.length === 0 ? (
                 <Box className="EmptyContainer">
                   <Typography variant="h6">{getEmptyTitle()}</Typography>
                   <Typography variant="body1">{getEmptySubtitle()}</Typography>

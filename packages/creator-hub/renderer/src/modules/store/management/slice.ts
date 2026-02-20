@@ -488,6 +488,7 @@ const slice = createSlice({
     setPublishFilter: (state, action: PayloadAction<FilterBy>) => {
       state.publishFilter = action.payload;
       state.page = 0;
+      state.projects = [];
     },
     setSearchQuery: (state, action: PayloadAction<string>) => {
       state.searchQuery = action.payload;
