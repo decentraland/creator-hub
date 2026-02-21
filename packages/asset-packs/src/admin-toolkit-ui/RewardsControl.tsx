@@ -1,7 +1,7 @@
 import { Entity, IEngine } from '@dcl/ecs';
 import ReactEcs, { UiEntity, Label, Dropdown } from '@dcl/react-ecs';
 import { Color4 } from '@dcl/sdk/math';
-import { AdminTools, getActionEvents, getComponents, getPayload } from '../definitions';
+import { AdminTools, getActionEvents, getComponents, getPayload, Action } from '../definitions';
 import { getScaleUIFactor } from '../ui';
 import { Button } from './Button';
 import { CONTENT_URL } from './constants';
@@ -84,7 +84,12 @@ export function RewardsControl({ engine, state }: { engine: IEngine; state: Stat
           key="RewardsItemSelector"
           acceptEmpty
           emptyLabel="Select your airdrop"
-          options={[...rewardItems.map(item => item.customName)]}
+          options={[
+            ...rewardItems.map(
+              (item: NonNullable<AdminTools['rewardsControl']['rewardItems']>[0]) =>
+                item.customName,
+            ),
+          ]}
           selectedIndex={state.rewardsControl.selectedRewardItem ?? -1}
           onChange={idx => (state.rewardsControl.selectedRewardItem = idx)}
           textAlign="middle-left"
@@ -153,7 +158,7 @@ function handleRelease(engine: IEngine, state: State) {
   if (!rewardItem) return;
 
   const action = Actions.getOrNull(selectedRewardItem.entity as Entity)?.value.find(
-    $ => $.name === 'Airdrop',
+    ($: Action) => $.name === 'Airdrop',
   );
   if (action) {
     const actionEvents = getActionEvents(selectedRewardItem.entity as Entity);
@@ -169,7 +174,7 @@ function handleClear(engine: IEngine, state: State) {
   if (!rewardItem) return;
 
   const action = Actions.getOrNull(selectedRewardItem.entity as Entity)?.value.find(
-    $ => $.name === 'Invisible',
+    ($: Action) => $.name === 'Invisible',
   );
 
   if (action) {
