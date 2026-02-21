@@ -18,15 +18,17 @@ export const isFetchError = (
   error instanceof FetchError &&
   (Array.isArray(type) ? type.includes(error.name) : type === '*' || error.name === type);
 
-/** Check if there's an internet connection */
+/**
+ * Check if there's an internet connection
+ */
 function isOnline(): boolean {
-  try {
-    // navigator object is partially implemented in nodejs runtime/electron,
-    // in that case navigator.onLine may be undefined, so we fallback to true.
-    return navigator.onLine ?? true;
-  } catch (error) {
-    return true; // On Nodejs process navigator is not defined, just rely on timeout...
+  if (typeof navigator !== 'undefined') {
+    return navigator.onLine;
   }
+
+  // for Nodejs process, just rely on timeout...
+
+  return true;
 }
 
 /**

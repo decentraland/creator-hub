@@ -24,14 +24,12 @@ export class ${className} {
    * The \`src\` and \`entity\` fields in the constructor are required by internal references.
    */
   constructor(
-    public src: string,     // DO NOT REMOVE
-    public entity: Entity,   // DO NOT REMOVE
-    // Add your custom inputs below
+    public src: string,
+    public entity: Entity
   ) {}
 
   /**
-   * start()
-   * Called once when the script is initialized.
+   * Start function - called when the script is initialized
    */
   start() {
     // Script initialization
@@ -39,9 +37,8 @@ export class ${className} {
   }
 
   /**
-   * update(dt)
-   * Called every frame.
-   * @param dt - (optional) Delta time since last frame (in seconds)
+   * Update function - called every frame
+   * @param dt - Delta time since last frame (in seconds)
    */
   update(dt: number) {
     // Called every frame

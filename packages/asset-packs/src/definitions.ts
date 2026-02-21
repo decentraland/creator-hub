@@ -41,19 +41,17 @@ import {
   TweenType,
   InterpolationType,
   ActionType,
-  TriggerType,
   TriggerConditionType,
-  TriggerConditionOperation,
   AlignMode,
   Font,
   Colliders,
   ProximityLayer,
-  AdminPermissions,
-  MediaSource,
   TextureMovementType,
   TeleportMode,
 } from './enums';
 import { getExplorerComponents } from './components';
+import { defineAllComponents, type AssetPacksVersionedComponents } from './versioning/registry';
+import { BaseComponentNames } from './constants';
 
 export const LIVEKIT_STREAM_SRC = 'livekit-video://current-stream';
 export const VIDEO_URL_TYPE = 'https://';
@@ -66,6 +64,7 @@ export * from './states';
 export * from './clone';
 export * from './lww';
 export * from './types';
+export * from './versioning';
 
 export const ActionSchemas = {
   [ActionType.PLAY_ANIMATION]: Schemas.Map({
@@ -305,193 +304,20 @@ export function getComponents(engine: IEngine) {
 }
 
 export function createComponents(engine: IEngine) {
-  const ActionTypes = engine.defineComponent(ComponentName.ACTION_TYPES, {
-    value: Schemas.Array(
-      Schemas.Map({
-        type: Schemas.String,
-        jsonSchema: Schemas.String,
-      }),
-    ),
-  });
-
-  const Actions = engine.defineComponent(ComponentName.ACTIONS, {
-    id: Schemas.Int,
-    value: Schemas.Array(
-      Schemas.Map({
-        name: Schemas.String,
-        type: Schemas.String,
-        jsonPayload: Schemas.String,
-        allowedInBasicView: Schemas.Optional(Schemas.Boolean),
-        basicViewId: Schemas.Optional(Schemas.String),
-        default: Schemas.Optional(Schemas.Boolean),
-      }),
-    ),
-  });
-
-  const Counter = engine.defineComponent(ComponentName.COUNTER, {
-    id: Schemas.Number,
-    value: Schemas.Int,
-  });
-
-  const Triggers = engine.defineComponent(ComponentName.TRIGGERS, {
-    value: Schemas.Array(
-      Schemas.Map({
-        type: Schemas.EnumString<TriggerType>(TriggerType, TriggerType.ON_INPUT_ACTION),
-        conditions: Schemas.Optional(
-          Schemas.Array(
-            Schemas.Map({
-              id: Schemas.Optional(Schemas.Int),
-              type: Schemas.EnumString<TriggerConditionType>(
-                TriggerConditionType,
-                TriggerConditionType.WHEN_STATE_IS,
-              ),
-              value: Schemas.String,
-            }),
-          ),
-        ),
-        operation: Schemas.Optional(
-          Schemas.EnumString<TriggerConditionOperation>(
-            TriggerConditionOperation,
-            TriggerConditionOperation.AND,
-          ),
-        ),
-        actions: Schemas.Array(
-          Schemas.Map({
-            id: Schemas.Optional(Schemas.Int),
-            name: Schemas.Optional(Schemas.String),
-          }),
-        ),
-        basicViewId: Schemas.Optional(Schemas.String),
-      }),
-    ),
-  });
-
-  const States = engine.defineComponent(ComponentName.STATES, {
-    id: Schemas.Number,
-    value: Schemas.Array(Schemas.String),
-    defaultValue: Schemas.Optional(Schemas.String),
-    currentValue: Schemas.Optional(Schemas.String),
-    previousValue: Schemas.Optional(Schemas.String),
-  });
-
-  const CounterBar = engine.defineComponent(ComponentName.COUNTER_BAR, {
-    primaryColor: Schemas.Optional(Schemas.String),
-    secondaryColor: Schemas.Optional(Schemas.String),
-    maxValue: Schemas.Optional(Schemas.Float),
-  });
-
-  const VideoScreen = engine.defineComponent(ComponentName.VIDEO_SCREEN, {
-    thumbnail: Schemas.String,
-    defaultMediaSource: Schemas.EnumNumber<MediaSource>(MediaSource, MediaSource.VideoURL),
-    defaultURL: Schemas.String,
-  });
-
-  const AdminTools = engine.defineComponent(ComponentName.ADMIN_TOOLS, {
-    adminPermissions: Schemas.EnumString<AdminPermissions>(
-      AdminPermissions,
-      AdminPermissions.PUBLIC,
-    ),
-    authorizedAdminUsers: Schemas.Map({
-      me: Schemas.Boolean,
-      sceneOwners: Schemas.Boolean,
-      allowList: Schemas.Boolean,
-      adminAllowList: Schemas.Array(Schemas.String),
-    }),
-    moderationControl: Schemas.Map({
-      isEnabled: Schemas.Boolean,
-      kickCoordinates: Schemas.Map({
-        x: Schemas.Number,
-        y: Schemas.Number,
-        z: Schemas.Number,
-      }),
-      allowNonOwnersManageAdminAllowList: Schemas.Boolean,
-    }),
-    textAnnouncementControl: Schemas.Map({
-      isEnabled: Schemas.Boolean,
-      playSoundOnEachAnnouncement: Schemas.Boolean,
-      showAuthorOnEachAnnouncement: Schemas.Boolean,
-    }),
-    videoControl: Schemas.Map({
-      isEnabled: Schemas.Boolean,
-      disableVideoPlayersSound: Schemas.Boolean,
-      showAuthorOnVideoPlayers: Schemas.Boolean,
-      linkAllVideoPlayers: Schemas.Boolean,
-      videoPlayers: Schemas.Optional(
-        Schemas.Array(
-          Schemas.Map({
-            entity: Schemas.Int,
-            customName: Schemas.String,
-          }),
-        ),
-      ),
-    }),
-    smartItemsControl: Schemas.Map({
-      isEnabled: Schemas.Boolean,
-      linkAllSmartItems: Schemas.Boolean,
-      smartItems: Schemas.Optional(
-        Schemas.Array(
-          Schemas.Map({
-            entity: Schemas.Int,
-            customName: Schemas.String,
-            defaultAction: Schemas.String,
-          }),
-        ),
-      ),
-    }),
-    rewardsControl: Schemas.Map({
-      isEnabled: Schemas.Boolean,
-      rewardItems: Schemas.Optional(
-        Schemas.Array(
-          Schemas.Map({
-            entity: Schemas.Int,
-            customName: Schemas.String,
-          }),
-        ),
-      ),
-    }),
-  });
-
-  const Rewards = engine.defineComponent(ComponentName.REWARDS, {
-    campaignId: Schemas.String,
-    dispenserKey: Schemas.String,
-    testMode: Schemas.Boolean,
-  });
-
-  const TextAnnouncements = engine.defineComponent(ComponentName.TEXT_ANNOUNCEMENTS, {
-    text: Schemas.String,
-    author: Schemas.Optional(Schemas.String),
-    id: Schemas.String,
-  });
-
-  const VideoControlState = engine.defineComponent(ComponentName.VIDEO_CONTROL_STATE, {
-    endsAt: Schemas.Optional(Schemas.Int64),
-    /** @deprecated streamKey is deprecated and will be removed in a future version */
-    streamKey: Schemas.Optional(Schemas.String),
-  });
-
-  const Script = engine.defineComponent(ComponentName.SCRIPT, {
-    value: Schemas.Array(
-      Schemas.Map({
-        path: Schemas.String,
-        priority: Schemas.Number,
-        layout: Schemas.Optional(Schemas.String),
-      }),
-    ),
-  });
-
+  const components = defineAllComponents(engine) as AssetPacksVersionedComponents;
   return {
-    ActionTypes,
-    Actions,
-    Counter,
-    Triggers,
-    States,
-    CounterBar,
-    AdminTools,
-    Rewards,
-    TextAnnouncements,
-    VideoControlState,
-    VideoScreen,
-    Script,
+    ActionTypes: components[BaseComponentNames.ACTION_TYPES],
+    Actions: components[BaseComponentNames.ACTIONS],
+    Counter: components[BaseComponentNames.COUNTER],
+    Triggers: components[BaseComponentNames.TRIGGERS],
+    States: components[BaseComponentNames.STATES],
+    CounterBar: components[BaseComponentNames.COUNTER_BAR],
+    AdminTools: components[BaseComponentNames.ADMIN_TOOLS],
+    Rewards: components[BaseComponentNames.REWARDS],
+    TextAnnouncements: components[BaseComponentNames.TEXT_ANNOUNCEMENTS],
+    VideoControlState: components[BaseComponentNames.VIDEO_CONTROL_STATE],
+    VideoScreen: components[BaseComponentNames.VIDEO_SCREEN],
+    Script: components[BaseComponentNames.SCRIPT],
   };
 }
 

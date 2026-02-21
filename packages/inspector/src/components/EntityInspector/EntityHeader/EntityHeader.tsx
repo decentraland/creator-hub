@@ -105,12 +105,10 @@ export default React.memo(
         label: string,
         config: TooltipConfig,
         rules: ComponentRules = {},
-        value?: any,
       ): ComponentOption => ({
         id: component.componentId,
         value: label,
-        onClick: () =>
-          handleClickAddComponent(component.componentId, component.componentName, value),
+        onClick: () => handleClickAddComponent(component.componentId, component.componentName),
         ...getComponentConfig(
           component.componentId,
           config,
@@ -249,8 +247,6 @@ export default React.memo(
           {
             conflictsWith: [sdk.components.NftShape.componentId],
           },
-          // Default font should be Sans Serif (Font.F_SANS_SERIF = 0)
-          { font: 0 },
         ),
         createOption(sdk.components.PointerEvents, 'Pointer Events', {
           description:

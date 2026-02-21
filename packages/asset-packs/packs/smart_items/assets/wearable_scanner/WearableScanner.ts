@@ -13,7 +13,7 @@ import {
 } from '@dcl/sdk/ecs';
 import { Vector3 } from '@dcl/sdk/math';
 import { getPlayer } from '@dcl/sdk/src/players';
-import type { ActionCallback } from '~sdk/script-utils';
+import { getActionEvents } from '@dcl/asset-packs/dist/events';
 
 export class WearableScanner {
   private scanning: boolean = false;
@@ -39,7 +39,7 @@ export class WearableScanner {
     public src: string,
     public entity: Entity,
     public wearableId: string,
-    public onAccessGranted: ActionCallback,
+    public unlockedEntity: Entity,
   ) {
     // Trim the wearableId URN in constructor
     this.wearableId = this.trimUrn(wearableId);
@@ -114,7 +114,7 @@ export class WearableScanner {
         metallic: 0,
       });
     } else {
-      console.log('WearableScanner: Image entity not found, thumbnail will not be displayed');
+      console.warn('WearableScanner: Image entity not found, thumbnail will not be displayed');
     }
 
     Animator.playSingleAnimation(this.entity, 'NotAllow_Action', true);
@@ -148,8 +148,8 @@ export class WearableScanner {
             loop: false,
           });
           console.log('Access Granted');
-          if (this.onAccessGranted) {
-            this.onAccessGranted();
+          if (this.unlockedEntity) {
+            getActionEvents(this.unlockedEntity).emit('Open', {});
           }
         } else {
           Animator.playSingleAnimation(this.entity, 'NotAllow_Action', true);

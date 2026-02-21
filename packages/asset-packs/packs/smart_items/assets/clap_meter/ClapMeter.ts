@@ -126,7 +126,6 @@ export class ClapMeter {
 
   /**
    * Resets the clap meter to its initial state
-   * @action
    */
   public resetClapMeter(newPlayer: string = '') {
     if (!this.arrow_entity || !this.entity) {

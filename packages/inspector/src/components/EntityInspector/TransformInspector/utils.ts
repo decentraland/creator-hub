@@ -36,10 +36,6 @@ function formatAngle(angle: number) {
   return value === '360.00' ? '0.00' : value;
 }
 
-/**
- * Creates a converter function that transforms TransformInput to TransformType.
- * Handles proportional scaling when enabled in config.
- */
 export function toTransform(currentValue?: TransformType, config?: TransformConfig) {
   return (inputs: TransformInput): TransformType => {
     const quaternion = Quaternion.RotationYawPitchRoll(
@@ -49,13 +45,11 @@ export function toTransform(currentValue?: TransformType, config?: TransformConf
     );
     const scale = mapToNumber(inputs.scale);
 
-    const scaleResult = currentValue
-      ? getScale(currentValue.scale, scale, !!config?.porportionalScaling)
-      : scale;
-
     const result: TransformType = {
       position: mapToNumber(inputs.position),
-      scale: scaleResult,
+      scale: currentValue
+        ? getScale(currentValue.scale, scale, !!config?.porportionalScaling)
+        : scale,
       rotation: {
         x: quaternion.x,
         y: quaternion.y,
@@ -79,33 +73,15 @@ export const mapToNumber = <T extends Record<string, unknown>>(
   return res;
 };
 
-/**
- * Calculates proportionally scaled values when one axis changes.
- *
- * When proportional scaling is enabled and one axis changes, the other axes
- * are scaled by the same ratio to maintain proportions.
- *
- * Formula: newValue[otherAxis] = oldValue[otherAxis] * (newValue[changedAxis] / oldValue[changedAxis])
- *
- * Special handling:
- * - If the changed value is 0 and would zero out all axes, only the changed axis
- *   is set to 0 while others are preserved. This prevents accidental data loss
- *   when typing decimal values like "0.5" (where "0" is an intermediate state).
- * - If the old changed value is 0, we can't calculate a ratio, so values are preserved.
- *
- * @param oldValue - The previous scale values
- * @param value - The new scale values (with one axis changed by the user)
- * @param maintainProportion - Whether proportional scaling is enabled
- * @returns The calculated scale values
- */
 export const getScale = (
   oldValue: Vector3Type,
   value: Vector3Type,
-  maintainProportion: boolean,
-): Vector3Type => {
-  if (!maintainProportion) return value;
+  maintainPorportion: boolean,
+) => {
+  if (!maintainPorportion) return value;
 
   let changedFactor: keyof Vector3Type | undefined = undefined;
+
   for (const factor in value) {
     const key = factor as keyof Vector3Type;
     if (oldValue[key] !== value[key]) {
@@ -116,48 +92,15 @@ export const getScale = (
 
   if (changedFactor === undefined) return value;
 
-  const oldChangedValue = oldValue[changedFactor];
-  const newChangedValue = value[changedFactor];
-
-  // If the new value is 0, don't apply proportional scaling to other axes.
-  // This prevents zeroing out all values when typing decimals like "0.5"
-  // where "0" is just an intermediate typing state.
-  // Users who want all zeros can manually set each axis to 0.
-  if (newChangedValue === 0) {
-    return value;
-  }
-
-  // If oldChangedValue is 0, we can't calculate a ratio directly.
-  // But if the other axes have a consistent value, use that as reference.
-  // This handles the case where user typed "0" then "0.25" - we want 0.25 to scale all axes.
-  if (oldChangedValue === 0) {
-    // Find a non-zero reference value from other axes
-    const otherKeys = (['x', 'y', 'z'] as const).filter(k => k !== changedFactor);
-    const referenceKey = otherKeys.find(k => oldValue[k] !== 0);
-
-    if (referenceKey) {
-      // Use the reference axis to calculate the ratio
-      const ratio = newChangedValue / oldValue[referenceKey];
-      const vector = { ...value };
-      for (const key of otherKeys) {
-        vector[key] = oldValue[key] * ratio;
-      }
-      return vector;
-    }
-    // All axes are 0, can't calculate ratio
-    return value;
-  }
-
-  const ratio = newChangedValue / oldChangedValue;
   const vector = { ...value };
 
   for (const factor in vector) {
     const key = factor as keyof Vector3Type;
     if (changedFactor === key) continue;
-
-    // apply ratio to unchanged axes using their OLD values as the base
-    // Formula: newY = oldY * ratio
-    vector[key] = oldValue[key] * ratio;
+    const div = oldValue[changedFactor] || 1;
+    const sign = Math.sign(value[changedFactor]);
+    vector[key] =
+      Math.abs((value[changedFactor] / div) * (value[key] || value[changedFactor])) * sign;
   }
 
   return vector;

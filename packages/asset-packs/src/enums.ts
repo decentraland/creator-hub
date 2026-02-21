@@ -1,20 +1,26 @@
 import type { YGAlign, YGJustify } from '@dcl/ecs';
+import { getLatestVersionName } from './versioning/registry';
+import { BaseComponentNames } from './constants';
 
-export enum ComponentName {
-  ACTION_TYPES = 'asset-packs::ActionTypes',
-  ACTIONS = 'asset-packs::Actions',
-  COUNTER = 'asset-packs::Counter',
-  TRIGGERS = 'asset-packs::Triggers',
-  STATES = 'asset-packs::States',
-  COUNTER_BAR = 'asset-packs::CounterBar',
-  ADMIN_TOOLS = 'asset-packs::AdminTools',
-  VIDEO_SCREEN = 'asset-packs::VideoScreen',
-  REWARDS = 'asset-packs::Rewards',
-  TEXT_ANNOUNCEMENTS = 'asset-packs::TextAnnouncements',
-  VIDEO_CONTROL_STATE = 'asset-packs::VideoControlState',
-  SCRIPT = 'asset-packs::Script',
-}
+// Re-export for backward compatibility
+export { BaseComponentNames } from './constants';
 
+export const ComponentName = {
+  ACTION_TYPES: getLatestVersionName(BaseComponentNames.ACTION_TYPES),
+  ACTIONS: getLatestVersionName(BaseComponentNames.ACTIONS),
+  COUNTER: getLatestVersionName(BaseComponentNames.COUNTER),
+  TRIGGERS: getLatestVersionName(BaseComponentNames.TRIGGERS),
+  STATES: getLatestVersionName(BaseComponentNames.STATES),
+  COUNTER_BAR: getLatestVersionName(BaseComponentNames.COUNTER_BAR),
+  ADMIN_TOOLS: getLatestVersionName(BaseComponentNames.ADMIN_TOOLS),
+  VIDEO_SCREEN: getLatestVersionName(BaseComponentNames.VIDEO_SCREEN),
+  REWARDS: getLatestVersionName(BaseComponentNames.REWARDS),
+  TEXT_ANNOUNCEMENTS: getLatestVersionName(BaseComponentNames.TEXT_ANNOUNCEMENTS),
+  VIDEO_CONTROL_STATE: getLatestVersionName(BaseComponentNames.VIDEO_CONTROL_STATE),
+  SCRIPT: getLatestVersionName(BaseComponentNames.SCRIPT),
+} as const;
+
+export type ComponentName = (typeof ComponentName)[keyof typeof ComponentName];
 export enum TweenType {
   MOVE_ITEM = 'move_item',
   ROTATE_ITEM = 'rotate_item',
@@ -111,45 +117,8 @@ export enum ActionType {
   DELETE = 'delete',
 }
 
-export enum TriggerType {
-  /** @deprecated use ON_INPUT_ACTION instead */
-  ON_CLICK = 'on_click',
-  ON_INPUT_ACTION = 'on_input_action',
-  ON_STATE_CHANGE = 'on_state_change',
-  ON_SPAWN = 'on_spawn',
-  ON_TWEEN_END = 'on_tween_end',
-  ON_COUNTER_CHANGE = 'on_counter_change',
-  ON_PLAYER_ENTERS_AREA = 'on_player_enters_area',
-  ON_PLAYER_LEAVES_AREA = 'on_player_leaves_area',
-  ON_DELAY = 'on_delay',
-  ON_LOOP = 'on_loop',
-  ON_CLONE = 'on_clone',
-  ON_CLICK_IMAGE = 'on_click_image',
-  ON_DAMAGE = 'on_damage',
-  ON_GLOBAL_CLICK = 'on_global_click',
-  ON_GLOBAL_PRIMARY = 'on_global_primary',
-  ON_GLOBAL_SECONDARY = 'on_global_secondary',
-  ON_TICK = 'on_tick',
-  ON_HEAL_PLAYER = 'on_heal_player',
-  ON_PLAYER_SPAWN = 'on_player_spawn',
-}
-
-export enum TriggerConditionType {
-  WHEN_STATE_IS = 'when_state_is',
-  WHEN_STATE_IS_NOT = 'when_state_is_not',
-  WHEN_COUNTER_EQUALS = 'when_counter_equals',
-  WHEN_COUNTER_IS_GREATER_THAN = 'when_counter_is_greater_than',
-  WHEN_COUNTER_IS_LESS_THAN = 'when_counter_is_less_than',
-  WHEN_DISTANCE_TO_PLAYER_LESS_THAN = 'when_distance_to_player_less_than',
-  WHEN_DISTANCE_TO_PLAYER_GREATER_THAN = 'when_distance_to_player_greater_than',
-  WHEN_PREVIOUS_STATE_IS = 'when_previous_state_is',
-  WHEN_PREVIOUS_STATE_IS_NOT = 'when_previous_state_is_not',
-}
-
-export enum TriggerConditionOperation {
-  AND = 'and',
-  OR = 'or',
-}
+// Re-export trigger enums from versioning (source of truth)
+export { TriggerType, TriggerConditionType, TriggerConditionOperation } from './trigger-enums';
 
 // Defined values instead of using from @dcl/ecs because Schemas doesn't support const enums
 export enum AlignMode {
@@ -213,12 +182,5 @@ export enum ProximityLayer {
   NON_PLAYER = 'non_player',
 }
 
-export enum AdminPermissions {
-  PUBLIC = 'PUBLIC',
-  PRIVATE = 'PRIVATE',
-}
-
-export enum MediaSource {
-  VideoURL,
-  LiveStream,
-}
+// Re-export for backward compatibility
+export { AdminPermissions, MediaSource } from './constants';

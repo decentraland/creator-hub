@@ -13,7 +13,6 @@ import { useAppDispatch, useAppSelector } from '../../../redux/hooks';
 import { getDataLayerInterface, importAsset } from '../../../redux/data-layer';
 import { selectAssetCatalog } from '../../../redux/app';
 import { retry } from '../../../lib/utils/retry';
-import { analytics, Event } from '../../../lib/logic/analytics';
 import { Container } from '../../Container';
 import { ACCEPTED_FILE_TYPES } from '../../ui/FileUploadField/types';
 import { InfoTooltip, FileUploadField } from '../../ui';
@@ -119,24 +118,11 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     await sdk.operations.dispatch();
   }, [sdk, entityId, Script]);
 
-  const getScriptName = useCallback((path: string) => {
-    const fileName = path.split('/').pop() || path;
-    return fileName.replace(/\.(ts|js)$/, '');
-  }, []);
-
   const handleRemoveScript = useCallback(
     (index: number) => {
-      const script = scripts[index];
       removeScript(index);
-
-      if (script) {
-        analytics.track(Event.REMOVE_SCRIPT, {
-          scriptPath: script.path,
-          scriptName: getScriptName(script.path),
-        });
-      }
     },
-    [removeScript, scripts, getScriptName],
+    [removeScript],
   );
 
   const handleScriptModuleMode = useCallback((mode: ScriptModuleMode) => {
@@ -155,16 +141,11 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
         if (!sceneClient) return;
 
         await sceneClient.openFile(script.path);
-
-        analytics.track(Event.EDIT_SCRIPT, {
-          scriptPath: script.path,
-          scriptName: getScriptName(script.path),
-        });
       } catch (error) {
         console.error('Failed to open script:', error);
       }
     },
-    [scripts, getScriptName],
+    [scripts],
   );
 
   // this will reload ALL scripts, not only the current entity ones...
@@ -215,10 +196,6 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
 
       if (firstError) setError(firstError);
       await sdk.operations.dispatch();
-
-      analytics.track(Event.RELOAD_SCRIPTS, {
-        scriptsCount: allEntitiesWithScripts.length,
-      });
     },
     [sdk, Script, setError, scripts],
   );
@@ -253,11 +230,6 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       createScript(scriptPath, 0, template);
       setShowCreateModal(false);
       setError(undefined);
-
-      analytics.track(Event.CREATE_SCRIPT, {
-        scriptPath,
-        scriptName,
-      });
     },
     [createScript, dispatch, isScriptValid, setError],
   );
@@ -301,11 +273,6 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
           });
           setEmptyScriptModuleMode(undefined);
           setError(undefined);
-
-          analytics.track(Event.ADD_SCRIPT, {
-            scriptPath: path,
-            scriptName: getScriptName(path),
-          });
         } else {
           updateScript(index, {
             ...currentScript!,
@@ -321,7 +288,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
         }
       }
     },
-    [scripts, addScript, updateScript, setError, setEmptyScriptModuleMode, getScriptName],
+    [scripts, addScript, updateScript, setError, setEmptyScriptModuleMode],
   );
 
   const handleUpdateDynamicField = useCallback(
@@ -341,6 +308,11 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     },
     [scripts, parsedLayouts, updateScript],
   );
+
+  const getScriptName = useCallback((path: string) => {
+    const fileName = path.split('/').pop() || path;
+    return fileName.replace(/\.(ts|js)$/, '');
+  }, []);
 
   const renderScriptParams = useCallback(
     (layout: ScriptLayout | undefined, index: number) => {

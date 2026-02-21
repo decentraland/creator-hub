@@ -16,11 +16,6 @@ export enum Event {
   RENAME_CUSTOM_ITEM = 'Rename Custom Item',
   CREATE_TAG = 'Create Tags',
   ASSIGN_TAGS = 'Assign Tags to Entity',
-  CREATE_SCRIPT = 'Create Script',
-  ADD_SCRIPT = 'Add Script',
-  REMOVE_SCRIPT = 'Remove Script',
-  RELOAD_SCRIPTS = 'Reload Scripts',
-  EDIT_SCRIPT = 'Edit Script',
 }
 
 export type Events = {
@@ -81,25 +76,6 @@ export type Events = {
     tagsName: string;
     itemId: string;
     itemPath: string;
-  };
-  [Event.CREATE_SCRIPT]: {
-    scriptPath: string;
-    scriptName: string;
-  };
-  [Event.ADD_SCRIPT]: {
-    scriptPath: string;
-    scriptName: string;
-  };
-  [Event.REMOVE_SCRIPT]: {
-    scriptPath: string;
-    scriptName: string;
-  };
-  [Event.RELOAD_SCRIPTS]: {
-    scriptsCount: number;
-  };
-  [Event.EDIT_SCRIPT]: {
-    scriptPath: string;
-    scriptName: string;
   };
 };
 

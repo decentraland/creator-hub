@@ -16,13 +16,20 @@ export function addActionType<T extends ISchema>(engine: IEngine, type: string, 
     type,
     jsonSchema: JSON.stringify(schema?.jsonSchema || Schemas.Map({}).jsonSchema),
   };
-  actionTypes.value = [...actionTypes.value.filter($ => $.type !== actionType.type), actionType];
+  actionTypes.value = [
+    ...actionTypes.value.filter(
+      ($: { type: string; jsonSchema: string }) => $.type !== actionType.type,
+    ),
+    actionType,
+  ];
 }
 
 export function getActionSchema<T = unknown>(engine: IEngine, type: string) {
   const ActionTypes = getComponent<ActionTypes>(ComponentName.ACTION_TYPES, engine);
   const actionTypes = ActionTypes.get(engine.RootEntity);
-  const actionType = actionTypes.value.find($ => $.type === type);
+  const actionType = actionTypes.value.find(
+    ($: { type: string; jsonSchema: string }) => $.type === type,
+  );
   const jsonSchema: JsonSchemaExtended = actionType ? JSON.parse(actionType.jsonSchema) : EMPTY;
   return Schemas.fromJson(jsonSchema) as ISchema<T>;
 }
@@ -30,7 +37,7 @@ export function getActionSchema<T = unknown>(engine: IEngine, type: string) {
 export function getActionTypes(engine: IEngine) {
   const ActionTypes = getComponent<ActionTypes>(ComponentName.ACTION_TYPES, engine);
   const actionTypes = ActionTypes.get(engine.RootEntity);
-  return actionTypes.value.map($ => $.type);
+  return actionTypes.value.map(($: { type: string; jsonSchema: string }) => $.type);
 }
 
 export function getPayload<T extends ActionType>(action: Action) {

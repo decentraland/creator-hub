@@ -1,5 +1,5 @@
 import { DeepReadonlyObject, Entity, IEngine, PBVideoPlayer } from '@dcl/ecs';
-import { getComponents, LIVEKIT_STREAM_SRC, VIDEO_URL_TYPE } from '../../definitions';
+import { getComponents, LIVEKIT_STREAM_SRC, VIDEO_URL_TYPE, AdminTools } from '../../definitions';
 import { getExplorerComponents } from '../../components';
 import { nextTickFunctions, state } from '../index';
 import { DEFAULT_VOLUME } from '.';
@@ -20,7 +20,9 @@ export function getAdminToolkitVideoControl(engine: IEngine) {
   return adminToolkitEntities.length > 0 ? adminToolkitEntities[0][1].videoControl : null;
 }
 
-export function getVideoPlayers(engine: IEngine) {
+export function getVideoPlayers(
+  engine: IEngine,
+): NonNullable<AdminTools['videoControl']['videoPlayers']> {
   const adminToolkitVideoControl = getAdminToolkitVideoControl(engine);
 
   if (
@@ -109,9 +111,12 @@ export function useSelectedVideoPlayer(
 
   if (videoPlayers.length === 0) return null;
 
-  const entity = videoPlayers[state.videoControl.selectedVideoPlayer ?? 0].entity as Entity;
+  const selectedVideoPlayer = videoPlayers[state.videoControl.selectedVideoPlayer ?? 0];
+  if (!selectedVideoPlayer) return null;
+
+  const entity = selectedVideoPlayer.entity as Entity;
   const videoPlayer = VideoPlayer.getOrNull(entity);
-  return [entity, videoPlayer!];
+  return videoPlayer ? [entity, videoPlayer] : null;
 }
 
 export function isDclCast(url: string) {
