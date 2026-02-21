@@ -37,7 +37,14 @@
       "name": "core::VirtualCamera",
       "data": {
         "0": {
-          "json": {}
+          "json": {
+            "defaultTransition": {
+              "transitionMode": {
+                "$case": "time",
+                "time": 1
+              }
+            }
+          }
         }
       }
     },
@@ -92,12 +99,12 @@
               {
                 "name": "Select Camera",
                 "type": "change_camera",
-                "jsonPayload": "{ \"virtualCameraEntity\": \"{self}\" }"
+                "jsonPayload": "{}"
               },
               {
                 "name": "Reset View",
                 "type": "change_camera",
-                "jsonPayload": "{ \"virtualCameraEntity\": 0 }"
+                "jsonPayload": "{\"virtualCameraEntity\":0}"
               }
             ]
           }

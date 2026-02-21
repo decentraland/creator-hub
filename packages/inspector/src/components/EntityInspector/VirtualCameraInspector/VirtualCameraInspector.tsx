@@ -1,17 +1,19 @@
 import React, { useCallback, useMemo } from 'react';
 import cx from 'classnames';
 
+import { engine as CoreEngine } from '@dcl/ecs';
+import type { Entity } from '@dcl/ecs';
 import { withSdk } from '../../../hoc/withSdk';
 import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
-import { getComponentValue, useComponentValue } from '../../../hooks/sdk/useComponentValue';
+import { getComponentValue } from '../../../hooks/sdk/useComponentValue';
+import { useComponentInput } from '../../../hooks/sdk/useComponentInput';
 import { analytics, Event } from '../../../lib/logic/analytics';
 import { getAssetByModel } from '../../../lib/logic/catalog';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { Dropdown, TextField } from '../../ui';
 import { InfoTooltip } from '../../ui/InfoTooltip';
-import { engine as CoreEngine } from '@dcl/ecs';
-import type { Entity } from '@dcl/ecs';
+import { fromVirtualCamera, toVirtualCamera } from './utils';
 
 type Props = {
   entity: Entity;
@@ -34,25 +36,12 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     [],
   );
 
-  const [vcValue] = useComponentValue(entity, VirtualCamera);
-  const currentValue = vcValue ?? null;
+  const { getInputProps } = useComponentInput(entity, VirtualCamera, fromVirtualCamera, input =>
+    toVirtualCamera(input, VirtualCamera),
+  );
 
-  const mode: ModeOptionValue = useMemo(() => {
-    const dt = (currentValue as any)?.defaultTransition;
-    if (dt && typeof dt === 'object') {
-      if (typeof dt.speed === 'number') return 'speed';
-      if (typeof dt.time === 'number') return 'time';
-    }
-    return 'time';
-  }, [currentValue]);
-
-  const numericValue: number | '' = useMemo(() => {
-    const dt = (currentValue as any)?.defaultTransition;
-    if (mode === 'speed') {
-      return typeof dt?.speed === 'number' ? dt.speed : 1;
-    }
-    return typeof dt?.time === 'number' ? dt.time : 1;
-  }, [currentValue, mode]);
+  const transitionModeProps = getInputProps('transitionMode');
+  const transitionValueProps = getInputProps('transitionValue');
 
   const allEntityOptions = useMemo(() => {
     const { Name, Nodes } = sdk.components;
@@ -72,10 +61,14 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     return result;
   }, [sdk]);
 
+  const lookAtEntityProps = getInputProps('lookAtEntity', (e: any) => {
+    const raw = e.target.value as string;
+    return raw === '' ? undefined : raw;
+  });
+
   const lookAtValue: string = useMemo(() => {
-    const v = (currentValue as any)?.lookAtEntity as Entity | undefined;
-    return v !== undefined ? String(v) : '';
-  }, [currentValue]);
+    return (lookAtEntityProps.value as string | undefined) || '';
+  }, [lookAtEntityProps.value]);
 
   const handleRemove = useCallback(async () => {
     sdk.operations.removeComponent(entity, VirtualCamera);
@@ -89,56 +82,9 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     });
   }, [sdk, entity, VirtualCamera, GltfContainer]);
 
-  const handleChangeMode = useCallback(
-    async (e: any) => {
-      const nextMode = e.target.value as ModeOptionValue;
-      const prev = VirtualCamera.getOrNull(entity) ?? {};
-      const prevDt = (prev as any).defaultTransition ?? {};
-      const nextDt =
-        nextMode === 'speed'
-          ? { speed: typeof prevDt.speed === 'number' ? prevDt.speed : 1 }
-          : { time: typeof prevDt.time === 'number' ? prevDt.time : 1 };
-      sdk.operations.updateValue(VirtualCamera, entity, {
-        ...(prev as any),
-        defaultTransition: nextDt,
-      });
-      await sdk.operations.dispatch();
-    },
-    [sdk, entity, VirtualCamera],
-  );
-
-  const handleChangeNumber = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const raw = e.target.value;
-      const nextNumber = parseFloat(raw);
-      if (Number.isNaN(nextNumber)) return;
-      const prev = VirtualCamera.getOrNull(entity) ?? {};
-      const nextDt = mode === 'speed' ? { speed: nextNumber } : { time: nextNumber };
-      sdk.operations.updateValue(VirtualCamera, entity, {
-        ...(prev as any),
-        defaultTransition: nextDt,
-      });
-      await sdk.operations.dispatch();
-    },
-    [sdk, entity, VirtualCamera, mode],
-  );
-
-  const handleChangeLookAt = useCallback(
-    async (e: any) => {
-      const raw = e.target.value as string;
-      const nextEntity: Entity | undefined =
-        raw === '' ? undefined : (parseInt(raw, 10) as unknown as Entity);
-      const prev = VirtualCamera.getOrNull(entity) ?? {};
-      sdk.operations.updateValue(VirtualCamera, entity, {
-        ...(prev as any),
-        lookAtEntity: nextEntity,
-      });
-      await sdk.operations.dispatch();
-    },
-    [sdk, entity, VirtualCamera],
-  );
-
   if (!hasVirtualCamera) return null;
+
+  const currentMode = transitionModeProps.value as ModeOptionValue;
 
   return (
     <Container
@@ -157,16 +103,14 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       <Block label="Default Transition Mode">
         <Dropdown
           options={dropdownOptions}
-          value={mode}
-          onChange={handleChangeMode as any}
+          {...transitionModeProps}
         />
       </Block>
       <Block>
         <TextField
           type="number"
-          label={mode === 'speed' ? 'Speed' : 'Time'}
-          value={numericValue}
-          onChange={handleChangeNumber}
+          label={currentMode === 'speed' ? 'Speed' : 'Time'}
+          {...transitionValueProps}
           autoSelect
         />
       </Block>
@@ -174,7 +118,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
         <Dropdown
           options={allEntityOptions}
           value={lookAtValue}
-          onChange={handleChangeLookAt as any}
+          {...lookAtEntityProps}
           searchable
         />
       </Block>
