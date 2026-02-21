@@ -26,6 +26,18 @@ export const Gizmos = withSdk(({ sdk }) => {
 
   const entity = useSelectedEntity();
 
+  const spawnPointManager = sdk.sceneContext.spawnPoints;
+  const [isSpawnAreaSelected, setIsSpawnAreaSelected] = useState(
+    () => spawnPointManager.getSelectedIndex() !== null,
+  );
+
+  useEffect(() => {
+    const unsubscribe = spawnPointManager.onSelectionChange(({ index }) => {
+      setIsSpawnAreaSelected(index !== null);
+    });
+    return () => unsubscribe();
+  }, [spawnPointManager]);
+
   const [selection, setSelection] = useComponentValue(entity || ROOT, sdk.components.Selection);
 
   const handlePositionGizmo = useCallback(
@@ -62,7 +74,7 @@ export const Gizmos = withSdk(({ sdk }) => {
 
   const { isGizmoWorldAligned, setGizmoWorldAligned } = useGizmoAlignment();
 
-  const disableGizmos = !entity;
+  const disableGizmos = !entity || isSpawnAreaSelected;
 
   const SnapToggleIcon = isEnabled ? BiCheckboxChecked : BiCheckbox;
   const WorldAlignmentIcon = isGizmoWorldAligned ? BiCheckboxChecked : BiCheckbox;
@@ -79,25 +91,33 @@ export const Gizmos = withSdk(({ sdk }) => {
       ref={ref}
     >
       <ToolbarButton
-        className={cx('gizmo free', { active: selection?.gizmo === GizmoType.FREE })}
+        className={cx('gizmo free', {
+          active: selection?.gizmo === GizmoType.FREE && !isSpawnAreaSelected,
+        })}
         disabled={disableGizmos}
         onClick={handleFreeGizmo}
         title="Free movement tool"
       />
       <ToolbarButton
-        className={cx('gizmo position', { active: selection?.gizmo === GizmoType.POSITION })}
+        className={cx('gizmo position', {
+          active: selection?.gizmo === GizmoType.POSITION || isSpawnAreaSelected,
+        })}
         disabled={disableGizmos}
         onClick={handlePositionGizmo}
         title="Translation tool"
       />
       <ToolbarButton
-        className={cx('gizmo rotation', { active: selection?.gizmo === GizmoType.ROTATION })}
+        className={cx('gizmo rotation', {
+          active: selection?.gizmo === GizmoType.ROTATION && !isSpawnAreaSelected,
+        })}
         disabled={disableGizmos}
         onClick={handleRotationGizmo}
         title="Rotation tool"
       />
       <ToolbarButton
-        className={cx('gizmo scale', { active: selection?.gizmo === GizmoType.SCALE })}
+        className={cx('gizmo scale', {
+          active: selection?.gizmo === GizmoType.SCALE && !isSpawnAreaSelected,
+        })}
         disabled={disableGizmos}
         onClick={handleScaleGizmo}
         title="Scaling tool"

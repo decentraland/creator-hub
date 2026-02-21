@@ -12,6 +12,7 @@ import {
 import { GridMaterial } from '@babylonjs/materials';
 import { memoize } from '../../logic/once';
 import type { Layout } from '../../utils/layout';
+import { inBounds } from '../../utils/layout';
 import { PARCEL_SIZE, GROUND_MESH_PREFIX } from '../../utils/scene';
 import { createAxisIndicator } from './axis-indicator';
 
@@ -80,8 +81,8 @@ export const getLayoutManager = memoize((scene: Scene) => {
     return true;
   }
 
-  function fill(layout: Layout) {
-    const { base, parcels } = layout;
+  function fill(_layout: Layout) {
+    const { base, parcels } = _layout;
     for (const parcel of parcels) {
       const x = parcel.x - base.x;
       const y = parcel.y - base.y;
@@ -183,10 +184,16 @@ export const getLayoutManager = memoize((scene: Scene) => {
     return false; // Entity is completely inside the layout bounding box
   }
 
+  function isPositionInBounds(position: Vector3): boolean {
+    if (!layout) return true;
+    return inBounds(layout, position);
+  }
+
   return {
     getLayout,
     setLayout,
     getLayoutBoundingBox,
     isEntityOutsideLayout,
+    isPositionInBounds,
   };
 });

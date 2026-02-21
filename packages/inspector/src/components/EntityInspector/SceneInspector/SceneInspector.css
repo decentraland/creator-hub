@@ -18,6 +18,25 @@
   align-items: stretch;
 }
 
+/* Spawn Area Card */
+.Container.Scene .SpawnAreaContainer {
+  position: relative;
+  transition: border-color 0.2s ease;
+}
+
+.Container.Scene .SpawnAreaContainer > .content {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.Container.Scene .SpawnAreaContainer .SpawnAreaHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .Container.Scene .Tabs.SceneTabs .TabIcon {
   width: 16px;
   height: 16px;
@@ -71,12 +90,27 @@
 
 .Container.Scene .SpawnPointContainer {
   position: relative;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.Container.Scene .SpawnPointContainer:hover > .content {
+  border-color: #505052;
+}
+
+.Container.Scene .SpawnPointContainer.selected > .content {
+  border-color: #00ced1;
+  background: rgba(0, 206, 209, 0.1);
 }
 
 .Container.Scene .SpawnPointContainer .RightContent {
   position: absolute;
   right: 8px;
   top: 4px;
+}
+
+.Container.Scene .SpawnAreaContainer.selected {
+  border-color: #8860c6;
 }
 
 .Container.Scene .CreatorAddrressContainer > .content {

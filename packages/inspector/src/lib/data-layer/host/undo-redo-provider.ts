@@ -390,7 +390,8 @@ export class UndoRedoProvider implements StateProvider {
 
     return (
       operation.type === OperationType.COMPOSITE_UPDATE ||
-      operation.type === OperationType.UNDO_CAPTURE
+      operation.type === OperationType.UNDO_CAPTURE ||
+      operation.type === OperationType.SCENE_UPDATE
     );
   }
 
@@ -404,7 +405,8 @@ export class UndoRedoProvider implements StateProvider {
     }
 
     if (
-      operation.type === OperationType.COMPOSITE_UPDATE &&
+      (operation.type === OperationType.COMPOSITE_UPDATE ||
+        operation.type === OperationType.SCENE_UPDATE) &&
       (operation.operation === CrdtMessageType.PUT_COMPONENT ||
         operation.operation === CrdtMessageType.DELETE_COMPONENT)
     ) {
