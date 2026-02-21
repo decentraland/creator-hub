@@ -2,13 +2,11 @@
   "version": 1,
   "components": [
     {
-      "name": "core::GltfContainer",
+      "name": "asset-packs::Placeholder",
       "data": {
         "0": {
           "json": {
-            "src": "{assetPath}/pointlight.glb",
-            "visibleMeshesCollisionMask": 0,
-            "invisibleMeshesCollisionMask": 0
+            "src": "{assetPath}/pointlight.glb"
           }
         }
       }
@@ -19,16 +17,6 @@
         "0": {
           "json": {
             "value": "point light"
-          }
-        }
-      }
-    },
-    {
-      "name": "core::VisibilityComponent",
-      "data": {
-        "0": {
-          "json": {
-            "visible": false
           }
         }
       }

@@ -19,6 +19,7 @@ import { getLayoutManager } from './layout-manager';
 
 export type EcsComponents = Partial<{
   gltfContainer: PBGltfContainer;
+  placeholder: { src: string };
   material: PBMaterial;
   meshRenderer: PBMeshRenderer;
   pointerEvents: PBPointerEvents;
@@ -32,6 +33,8 @@ export class EcsEntity extends BABYLON.TransformNode {
   usedComponents = new Map<number, ComponentDefinition<unknown>>();
   meshRenderer?: BABYLON.AbstractMesh;
   gltfContainer?: BABYLON.AbstractMesh;
+  placeholderContainer?: BABYLON.AbstractMesh;
+  placeholderAssetContainer?: BABYLON.AssetContainer;
   boundingInfoMesh?: BABYLON.AbstractMesh;
   gltfAssetContainer?: BABYLON.AssetContainer;
   videoPlayerMaterialAssetContainer?: BABYLON.AssetContainer;
@@ -182,6 +185,14 @@ export class EcsEntity extends BABYLON.TransformNode {
   setGltfContainer(mesh: BABYLON.AbstractMesh) {
     this.gltfContainer = mesh;
     this.#assetLoading.resolve(mesh);
+  }
+
+  setPlaceholderContainer(mesh: BABYLON.AbstractMesh) {
+    this.placeholderContainer = mesh;
+  }
+
+  setPlaceholderAssetContainer(assetContainer: BABYLON.AssetContainer) {
+    this.placeholderAssetContainer = assetContainer;
   }
 
   setMeshRenderer(mesh: BABYLON.AbstractMesh) {

@@ -48,6 +48,7 @@ export const EditorComponentNames = {
   VideoScreen: ComponentName.VIDEO_SCREEN,
   InspectorUIState: 'inspector::UIState',
   Script: ComponentName.SCRIPT,
+  Placeholder: ComponentName.PLACEHOLDER,
 } as const;
 
 export type AllComponentsType =

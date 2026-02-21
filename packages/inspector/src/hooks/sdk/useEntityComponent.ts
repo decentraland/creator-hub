@@ -26,7 +26,10 @@ export const SMART_ITEM_COMPONENTS: string[] = [
   ComponentName.COUNTER_BAR,
 ];
 
-export const INSPECTOR_COMPONENTS: string[] = [EditorComponentNames.Script];
+export const INSPECTOR_COMPONENTS: string[] = [
+  EditorComponentNames.Script,
+  EditorComponentNames.Placeholder,
+];
 
 export const ROOT_COMPONENTS: Record<Entity, string[]> = {
   [ROOT]: [],

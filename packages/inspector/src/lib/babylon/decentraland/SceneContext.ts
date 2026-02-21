@@ -28,6 +28,7 @@ import { putVideoPlayerComponent } from './sdkComponents/video-player';
 import { putAvatarAttachComponent } from './sdkComponents/avatar-attach';
 import { putHideComponent } from './editorComponents/hide';
 import { putLockComponent } from './editorComponents/lock';
+import { putPlaceholderComponent } from './sdkComponents/placeholder';
 
 export type LoadableScene = {
   readonly entity: Readonly<Omit<Schemas.Entity, 'id'>>;
@@ -83,6 +84,7 @@ export class SceneContext {
     [this.editorComponents.Scene.componentId]: putSceneComponent,
     [this.editorComponents.Hide.componentId]: putHideComponent,
     [this.editorComponents.Lock.componentId]: putLockComponent,
+    [this.editorComponents.Placeholder.componentId]: putPlaceholderComponent,
   };
 
   readonly componentDeleteOperations: Record<number, ComponentOperation> = {
@@ -99,6 +101,7 @@ export class SceneContext {
     [this.editorComponents.Scene.componentId]: putSceneComponent,
     [this.editorComponents.Hide.componentId]: putHideComponent,
     [this.editorComponents.Lock.componentId]: putLockComponent,
+    [this.editorComponents.Placeholder.componentId]: putPlaceholderComponent,
   };
 
   // this future is resolved when the scene is disposed

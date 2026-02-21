@@ -104,7 +104,8 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
         !mesh.id.startsWith(GROUND_MESH_PREFIX) &&
         !mesh.id.startsWith('BoundingMesh') &&
         !mesh.id.startsWith('axis_') && // Exclude all axis indicator meshes
-        !mesh.id.startsWith('axisHelper'), // Exclude axis helper meshes
+        !mesh.id.startsWith('axisHelper') && // Exclude axis helper meshes
+        !mesh.metadata?.isPlaceholder, // Exclude placeholder meshes (editor-only visualization)
     );
     // Calculate triangle count correctly: getTotalIndices() / 3
     // If a mesh doesn't have indices, it might be using vertices directly, so we fall back to vertices / 3

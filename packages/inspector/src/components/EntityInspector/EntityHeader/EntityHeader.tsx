@@ -133,6 +133,21 @@ export default React.memo(
             conflictsWith: [sdk.components.NftShape.componentId],
           },
         ),
+        createOption(
+          sdk.components.Placeholder,
+          'Placeholder',
+          {
+            description:
+              'Assigns a 3D model to visualize this entity in the editor. Has no effect when the scene runs. Not counted in scene metrics.',
+          },
+          {
+            conflictsWith: [
+              sdk.components.GltfContainer.componentId,
+              sdk.components.NftShape.componentId,
+              sdk.components.MeshRenderer.componentId,
+            ],
+          },
+        ),
         createOption(sdk.components.Material, 'Material', {
           description:
             'Material determines the visual appearance of an object. It defines properties such as color, texture, and transparency',
