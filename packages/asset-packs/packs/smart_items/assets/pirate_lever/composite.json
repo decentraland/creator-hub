@@ -31,17 +31,17 @@
                 "allowedInBasicView": true
               },
               {
-                "name": "Play Sound",
+                "name": "_Play_Sound",
                 "type": "play_sound",
                 "jsonPayload": "{ \"src\": \"{assetPath}/sound.mp3\" }"
               },
               {
-                "name": "Play Activate Animation",
+                "name": "_Play_Activate_Animation",
                 "type": "play_animation",
                 "jsonPayload": "{ \"animation\": \"activate\" }"
               },
               {
-                "name": "Play Deactivate Animation",
+                "name": "_Play_Deactivate_Animation",
                 "type": "play_animation",
                 "jsonPayload": "{ \"animation\": \"deactivate\" }"
               }
@@ -100,11 +100,11 @@
                 "actions": [
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Play Activate Animation"
+                    "name": "_Play_Activate_Animation"
                   },
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Play Sound"
+                    "name": "_Play_Sound"
                   }
                 ],
                 "basicViewId": "trigger-when-activated"
@@ -121,11 +121,11 @@
                 "actions": [
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Play Deactivate Animation"
+                    "name": "_Play_Deactivate_Animation"
                   },
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Play Sound"
+                    "name": "_Play_Sound"
                   }
                 ],
                 "basicViewId": "trigger-when-deactivated"
