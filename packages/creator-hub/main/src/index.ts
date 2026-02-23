@@ -10,9 +10,8 @@ import { deployServer, killAllPreviews } from '/@/modules/cli';
 import { killInspectorServer } from '/@/modules/inspector';
 import { runMigrations } from '/@/modules/migrations';
 import { getAnalytics, track } from './modules/analytics';
-import { tryOpenDevToolsOnPort, parseEnvArgument } from './modules/app-args-handle';
+import { handleAppArguments } from './modules/app-args-handle';
 import { addEditorsPathsToConfig } from './modules/code';
-import { setEnvOverride } from './modules/electron';
 
 import '/@/security-restrictions';
 
@@ -34,7 +33,7 @@ if (!isSingleInstance) {
 }
 app.on('second-instance', async (_e: unknown, argv: string[]) => {
   await restoreOrCreateMainWindow();
-  tryOpenDevToolsOnPort(argv);
+  handleAppArguments(argv);
 });
 
 /**
@@ -62,9 +61,7 @@ app
     await runMigrations();
     log.info(`[App] Ready v${app.getVersion()}`);
 
-    const envOverride = parseEnvArgument(process.argv);
-    setEnvOverride(envOverride);
-    log.info(`[App] Environment override: ${envOverride || 'none'}`);
+    handleAppArguments(process.argv);
 
     initIpc();
     log.info('[IPC] Ready');
@@ -77,8 +74,6 @@ app
     } else {
       log.info('[Analytics] API key not provided, analytics disabled');
     }
-
-    tryOpenDevToolsOnPort(process.argv);
   })
   .catch(e => log.error('Failed create window:', e));
 

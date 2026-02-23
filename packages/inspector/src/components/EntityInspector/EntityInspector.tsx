@@ -44,6 +44,7 @@ import { GltfNodeModifiersInspector } from './GltfNodeModifiersInspector';
 import { ScriptInspector } from './ScriptInspector';
 import { TagsInspector } from './TagsInspector';
 import { VirtualCameraInspector } from './VirtualCameraInspector';
+import { PlaceholderInspector } from './PlaceholderInspector';
 
 import './EntityInspector.css';
 
@@ -121,6 +122,7 @@ const SingleEntityInspector = withSdk<{ entity: Entity | null }>(({ sdk, entity 
   const advancedInspectorComponents = useMemo(
     () => [
       { name: sdk.components.GltfContainer.componentName, component: GltfInspector },
+      { name: sdk.components.Placeholder.componentName, component: PlaceholderInspector },
       {
         name: sdk.components.VisibilityComponent.componentName,
         component: VisibilityComponentInspector,
