@@ -23,6 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          # Full history required for "Detect changed packages" (git diff origin/base_ref...HEAD)
           fetch-depth: 0
 
       - name: Detect changed packages
@@ -62,6 +63,7 @@ jobs:
 
       - name: Install Socket CLI
         if: steps.changes.outputs.has_changes == 'true'
+        # Pinned version for auditable, reproducible builds. Update periodically (e.g. when Socket announces CLI updates).
         run: pip install socketsecurity==2.2.71
 
       - name: Run Socket Security Scan
@@ -76,4 +78,4 @@ jobs:
             --scm github \
             --pr-number ${{ github.event.pull_request.number }} \
             ${{ steps.changes.outputs.subpaths }} \
-
+            --workspace-name creator-hub
