@@ -75,7 +75,7 @@ export class AuthServerProvider {
   private static authServerUrl: string = '';
   private static authDappUrl: string = '';
   private static identityExpirationInMillis: number = 30 * 24 * 60 * 60 * 1000; // 30 days in the future.
-  private static openBrowser: (url: string, targer?: string, features?: string) => void;
+  private static openBrowser: (url: string, target?: string, features?: string) => void;
 
   /**
    * Set the url of the auth server to be consumed by this provider.
@@ -159,10 +159,13 @@ export class AuthServerProvider {
   }) => {
     AuthServerProvider.openAuthDapp(requestResponse);
 
-    const { sender: signer, result: signature } = await AuthServerProvider.awaitOutcomeWithTimeout(
-      socket,
-      requestResponse,
-    );
+    const outcome = await AuthServerProvider.awaitOutcomeWithTimeout(socket, requestResponse);
+
+    if (outcome.error) {
+      throw outcome.error;
+    }
+
+    const { sender: signer, result: signature } = outcome;
 
     const identity: AuthIdentity = {
       expiration,
@@ -228,24 +231,28 @@ export class AuthServerProvider {
    * Waits for an outcome message but times out if the expiration defined in the provided request is reached.
    */
   private static awaitOutcomeWithTimeout = async (socket: Socket, requestResponse: any) => {
-    const timeoutPromise = new Promise<any>((_, reject) => {
-      setTimeout(
-        () => {
-          reject(new Error('Timeout'));
-        },
-        new Date(requestResponse.expiration).getTime() - Date.now(),
-      );
+    const delayMs = new Date(requestResponse.expiration).getTime() - Date.now();
+    const safeDelayMs = Number.isFinite(delayMs) && delayMs > 0 ? delayMs : 0;
+
+    const onMessage = (msg: any) => {
+      if (msg.requestId === requestResponse.requestId) {
+        socket.off('outcome', onMessage);
+        resolve(msg);
+      }
+    };
+
+    let resolve: (value: any) => void;
+    const resultPromise = new Promise<any>(r => {
+      resolve = r;
     });
 
-    const resultPromise = new Promise<any>(resolve => {
-      const onMessage = (msg: any) => {
-        if (msg.requestId === requestResponse.requestId) {
-          socket.off('message', onMessage);
-          resolve(msg);
-        }
-      };
+    socket.on('outcome', onMessage);
 
-      socket.on('outcome', onMessage);
+    const timeoutPromise = new Promise<any>((_, reject) => {
+      setTimeout(() => {
+        socket.off('outcome', onMessage);
+        reject(new Error('Timeout'));
+      }, safeDelayMs);
     });
 
     try {
@@ -314,7 +321,12 @@ export class AuthServerProvider {
       return ChainId.ETHEREUM_MAINNET;
     }
 
-    return Number(chainId) as ChainId;
+    const numericChainId = Number(chainId);
+    if (!Number.isFinite(numericChainId)) {
+      return ChainId.ETHEREUM_MAINNET;
+    }
+
+    return numericChainId as ChainId;
   };
 
   getAccount = () => {
@@ -326,15 +338,24 @@ export class AuthServerProvider {
     // Changing it will only affect the rpc used for eth_calls and other non-transactional calls.
     // It will also affect the result value of the eth_chainId and net_version calls.
     if (method === 'wallet_switchEthereumChain') {
-      const chainId = parseInt(params[0].chainId, 16).toString();
-
+      const chainIdParam = params?.[0]?.chainId;
+      if (typeof chainIdParam !== 'string') {
+        return undefined;
+      }
+      const chainId = parseInt(chainIdParam, 16).toString();
+      if (chainId === 'NaN') {
+        return undefined;
+      }
       localStorage.setItem(STORAGE_KEY_CHAIN_ID, chainId);
-
       return undefined;
     }
 
-    if (['eth_chainId', 'net_version'].includes(method)) {
-      return this.getChainId();
+    if (method === 'eth_chainId') {
+      return '0x' + this.getChainId().toString(16);
+    }
+
+    if (method === 'net_version') {
+      return String(this.getChainId());
     }
 
     if (['eth_accounts', 'eth_requestAccounts'].includes(method)) {
@@ -403,7 +424,7 @@ export class AuthServerProvider {
     payload: Payload,
     callback: (
       err: OutcomeError | null,
-      value: { error: OutcomeError; id: undefined; jsonrpc: '2.0' },
+      value: any | { error: OutcomeError; id: undefined; jsonrpc: '2.0' },
     ) => void,
   ): Promise<void> => {
     try {
