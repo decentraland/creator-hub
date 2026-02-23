@@ -300,6 +300,7 @@ export function getComponents(engine: IEngine) {
     TextAnnouncements: getComponent<TextAnnouncements>(ComponentName.TEXT_ANNOUNCEMENTS, engine),
     VideoControlState: getComponent<VideoControlState>(ComponentName.VIDEO_CONTROL_STATE, engine),
     Script: getComponent<Script>(ComponentName.SCRIPT, engine),
+    Placeholder: getComponent<Placeholder>(ComponentName.PLACEHOLDER, engine),
   };
 }
 
@@ -318,6 +319,7 @@ export function createComponents(engine: IEngine) {
     VideoControlState: components[BaseComponentNames.VIDEO_CONTROL_STATE],
     VideoScreen: components[BaseComponentNames.VIDEO_SCREEN],
     Script: components[BaseComponentNames.SCRIPT],
+    Placeholder: components[BaseComponentNames.PLACEHOLDER],
   };
 }
 

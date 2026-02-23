@@ -18,6 +18,7 @@ export const ComponentName = {
   TEXT_ANNOUNCEMENTS: getLatestVersionName(BaseComponentNames.TEXT_ANNOUNCEMENTS),
   VIDEO_CONTROL_STATE: getLatestVersionName(BaseComponentNames.VIDEO_CONTROL_STATE),
   SCRIPT: getLatestVersionName(BaseComponentNames.SCRIPT),
+  PLACEHOLDER: getLatestVersionName(BaseComponentNames.PLACEHOLDER),
 } as const;
 
 export type ComponentName = (typeof ComponentName)[keyof typeof ComponentName];

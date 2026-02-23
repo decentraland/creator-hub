@@ -11,6 +11,7 @@ export const BaseComponentNames = {
   TEXT_ANNOUNCEMENTS: 'asset-packs::TextAnnouncements',
   VIDEO_CONTROL_STATE: 'asset-packs::VideoControlState',
   SCRIPT: 'asset-packs::Script',
+  PLACEHOLDER: 'asset-packs::Placeholder',
 } as const;
 
 export enum AdminPermissions {

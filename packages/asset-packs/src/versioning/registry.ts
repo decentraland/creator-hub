@@ -190,6 +190,11 @@ const COMPONENT_REGISTRY = {
       ),
     },
   ],
+  'asset-packs::Placeholder': [
+    {
+      src: Schemas.String,
+    },
+  ],
 } as const;
 
 export type AssetPacksVersionedComponents = VersionedComponents<typeof COMPONENT_REGISTRY>;
