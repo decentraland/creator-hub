@@ -528,10 +528,6 @@
       "retry": "Retry Connection",
       "checking": "Checking..."
     },
-    "slow": {
-      "tooltip": "Slow connection detected",
-      "message": "Your internet connection appears to be slow. Some features may take longer to load."
-    },
     "errors": {
       "NO_INTERNET_CONNECTION": "No internet connection available",
       "REQUEST_TIMEOUT": "Request timed out. Please check your connection and try again."
