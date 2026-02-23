@@ -268,6 +268,10 @@ export function addAsset(engine: IEngine) {
               componentValue.src = componentValue.src.replace('{assetPath}', base);
               break;
             }
+            case ComponentName.PLACEHOLDER: {
+              componentValue.src = componentValue.src.replace('{assetPath}', base);
+              break;
+            }
             case CoreComponents.GLTF_NODE_MODIFIERS: {
               componentValue.modifiers = componentValue.modifiers?.map((modifier: any) => ({
                 ...modifier,
