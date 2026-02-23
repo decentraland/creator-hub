@@ -6,7 +6,7 @@ const config = {
     output: 'dist',
     buildResources: 'buildResources',
   },
-  beforePack: './scripts/copy-npm-for-asar.cjs',
+  beforePack: './scripts/copy-npm-for-asar.js',
   // npm must be under app dir for asarUnpack to match (26.4.1+). beforePack runs before file copy.
   files: [
     'package.json',

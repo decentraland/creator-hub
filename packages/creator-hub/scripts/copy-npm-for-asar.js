@@ -3,10 +3,10 @@
  * asarUnpack (which matches paths relative to app dir) sees npm and creates app.asar.unpacked.
  * Used as electron-builder beforePack hook (beforeBuild only runs when npmRebuild !== false).
  */
-const path = require('path');
-const fs = require('fs');
+import path from 'path';
+import fs from 'fs';
 
-async function copyNpmForAsar(context) {
+export default async function copyNpmForAsar(context) {
   const appDir = context.appDir ?? context.packager?.info?.appDir;
   if (!appDir) {
     console.warn('copy-npm-for-asar: no appDir in context');
@@ -27,7 +27,15 @@ async function copyNpmForAsar(context) {
   }
   fs.cpSync(src, dest, { recursive: true });
 
+  const nestedSrc = path.join(rootDir, 'node_modules/npm/node_modules');
+  const nestedDest = path.join(appDir, 'node_modules/npm/node_modules');
+  if (fs.existsSync(nestedSrc)) {
+    fs.mkdirSync(path.dirname(nestedDest), { recursive: true });
+    if (fs.existsSync(nestedDest)) {
+      fs.rmSync(nestedDest, { recursive: true });
+    }
+    fs.cpSync(nestedSrc, nestedDest, { recursive: true });
+  }
+
   console.log('copy-npm-for-asar: copied npm into app dir for asar unpack');
 }
-
-module.exports.default = copyNpmForAsar;
