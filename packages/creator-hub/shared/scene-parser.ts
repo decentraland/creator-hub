@@ -16,7 +16,7 @@ function getScriptCustomCode(content: string): ScriptParseResult {
       plugins: ['typescript'],
     });
 
-    const defaultImports = new Set(['@dcl/sdk/math', '@dcl/sdk/ecs']);
+    const defaultImports = new Set(['@dcl/sdk/math', '@dcl/sdk/ecs', './ui']);
 
     for (const statement of ast.program.body) {
       // Check for non-default imports
