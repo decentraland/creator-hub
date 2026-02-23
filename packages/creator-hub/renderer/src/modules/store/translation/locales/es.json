@@ -527,10 +527,6 @@
         "retry": "Reintentar Conexión",
         "checking": "Verificando..."
       },
-      "slow": {
-        "tooltip": "Conexión lenta detectada",
-        "message": "Tu conexión a internet parece ser lenta. Algunas funciones pueden tardar más en cargar."
-      },
       "errors": {
         "NO_INTERNET_CONNECTION": "No hay conexión a internet disponible",
         "REQUEST_TIMEOUT": "La solicitud expiró. Por favor verifica tu conexión e intenta nuevamente."
