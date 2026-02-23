@@ -37,7 +37,7 @@ const TitleDivider = ({ title }: { title: string }) => (
 const GeneralTab: React.FC<Props> = ({ worldSettings, onChangeSettings }) => {
   const [x, y] = idToCoords(worldSettings.spawnCoordinates || '');
   const [form, setForm] = useState<FormState>({ x: x.toString(), y: y.toString() });
-  const isSkyboxAuto = worldSettings.skyboxTime === undefined || worldSettings.skyboxTime === null;
+  const _isSkyboxAuto = worldSettings.skyboxTime === undefined || worldSettings.skyboxTime === null;
   const validateCoordinate = useCallback((value: string) => {
     if (!INTEGER_REGEX.test(value)) return false;
     const numValue = parseInt(value, 10);
@@ -87,7 +87,7 @@ const GeneralTab: React.FC<Props> = ({ worldSettings, onChangeSettings }) => {
           </Row>
         </Box>
       </FormGroup>
-      <FormGroup>
+      {/* <FormGroup>
         <TitleDivider title={t('modal.world_settings.general.world_skybox')} />
         <FormControlLabel
           control={
@@ -118,7 +118,7 @@ const GeneralTab: React.FC<Props> = ({ worldSettings, onChangeSettings }) => {
           }
           label={t('modal.world_settings.general.single_player')}
         />
-      </FormGroup>
+      </FormGroup> */}
     </Box>
   );
 };
