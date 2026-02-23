@@ -8,7 +8,7 @@ import { CoreComponents } from '../../../lib/sdk/components';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { TextField, CheckboxField, ColorField, Dropdown, TextArea, InfoTooltip } from '../../ui';
-import { fromTextShape, toTextShape, isValidInput, TEXT_ALIGN_MODES, FONTS } from './utils';
+import { fromTextShape, toTextShape, isValidInput, TEXT_ALIGN_MODES } from './utils';
 import type { Props } from './types';
 
 export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
@@ -64,11 +64,6 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
         />
       </Block>
       <Block label="Font Size">
-        <Dropdown
-          label="Font"
-          options={FONTS}
-          {...getInputProps('font')}
-        />
         <TextField
           autoSelect
           type="number"

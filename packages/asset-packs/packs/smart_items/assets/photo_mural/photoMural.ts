@@ -180,7 +180,7 @@ export class PhotoMural {
                 this.targetCoordinates,
               );
             } else {
-              console.log(
+              console.warn(
                 'PhotoMural: No worldConfiguration or base parcel found in scene.json, using empty configuration',
               );
               this.targetCoordinates = [];
@@ -200,7 +200,7 @@ export class PhotoMural {
         this.targetCoordinates = [this.coordinates];
         console.log('PhotoMural: Using provided coordinates:', this.targetCoordinates);
       } else {
-        console.log(
+        console.warn(
           'PhotoMural: use_current_scene is false but no world_id or coordinates provided',
         );
         this.targetCoordinates = [];
@@ -363,42 +363,6 @@ export class PhotoMural {
     if (this.spinnerEntity) {
       VisibilityComponent.getMutable(this.spinnerEntity).visible = false;
     }
-  }
-
-  /**
-   * Resets the photo mural:
-   * - deletes any existing displayed photos (thumbnails + selected photo entities)
-   * - fetches fresh data from the server
-   * - shows the spinner while fetching
-   * @action
-   */
-  public resetPhotos() {
-    // Always show spinner while we reset/refetch
-    this.showSpinner();
-
-    // Stop any in-flight carousel tween and reset basic state
-    Tween.deleteFrom(this.carouselEntity);
-    // Snap carousel back to its initial position (otherwise thumbnails keep the old offset)
-    Transform.getMutable(this.carouselEntity).position = Vector3.create(
-      -1.025,
-      this.thumbHeight / 2 + 0.45,
-      -0.35,
-    );
-    this.scrollIndex = 0;
-    this.selectedPhotoId = '';
-    this.refreshTimer = 0;
-
-    // Remove all existing photo entities safely (copy array since removePhoto mutates)
-    const existingPhotos = [...this.photos];
-    existingPhotos.forEach(photo => this.removePhoto(photo));
-
-    // Clear caches to force fresh reads
-    this.photosBySceneId.clear();
-
-    // Trigger a fresh fetch from the server
-    executeTask(async () => {
-      await this.getCameraReelPhotos();
-    });
   }
 
   /**

@@ -70,7 +70,6 @@ export const getBabylonGUIOffset = (
 export const fromTextShape = (value: PBTextShape): TextShapeInput => {
   return {
     text: value.text,
-    font: toString(value.font, Font.F_SANS_SERIF),
     fontSize: toString(value.fontSize, 10),
     fontAutoSize: !!value.fontAutoSize,
     textAlign: toString(value.textAlign, TextAlignMode.TAM_MIDDLE_CENTER),
@@ -89,7 +88,6 @@ export const fromTextShape = (value: PBTextShape): TextShapeInput => {
 export const toTextShape = (value: TextShapeInput): PBTextShape => {
   return {
     text: value.text,
-    font: value.font ? toNumber(value.font) : undefined,
     fontSize: toNumber(value.fontSize, 0),
     fontAutoSize: !!value.fontAutoSize,
     textAlign: value.textAlign ? toNumber(value.textAlign) : undefined,
