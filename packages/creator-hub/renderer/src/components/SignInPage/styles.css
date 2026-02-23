@@ -26,7 +26,7 @@
   height: 100%;
   width: 100%;
   /* TODO: Update  background image */
-  background: url("../../../../assets/images/genesis_plaza.png") no-repeat center center fixed;
+  background: url("../../../../assets/images/genesis_plaza.webp") no-repeat center center fixed;
   background-size: cover;
   z-index: -1;
 }

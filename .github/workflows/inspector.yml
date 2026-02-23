@@ -86,7 +86,7 @@ jobs:
           cache: 'npm'
 
       - name: install
-        run: make install
+        run: npm i --silent && make install-inspector
 
       - name: install asset-packs
         working-directory: packages/inspector

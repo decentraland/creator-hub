@@ -2,13 +2,11 @@
   "version": 1,
   "components": [
     {
-      "name": "core::GltfContainer",
+      "name": "asset-packs::Placeholder",
       "data": {
         "0": {
           "json": {
-            "src": "{assetPath}/ambient_sound.glb",
-            "visibleMeshesCollisionMask": 1,
-            "invisibleMeshesCollisionMask": 0
+            "src": "{assetPath}/ambient_sound.glb"
           }
         }
       }
@@ -19,16 +17,6 @@
         "0": {
           "json": {
             "value": "Ambient_Crickets"
-          }
-        }
-      }
-    },
-    {
-      "name": "core::VisibilityComponent",
-      "data": {
-        "0": {
-          "json": {
-            "visible": false
           }
         }
       }

@@ -4,10 +4,10 @@ import { styled } from 'decentraland-ui2';
 export function onBackNoop() {}
 
 export const Modal = styled(BaseModal)(props => ({
-  '& > .MuiPaper-root .MuiBox-root:first-child': {
+  '& > .MuiPaper-root .MuiBox-root:first-of-type': {
     paddingBottom: 8,
   },
-  '& > .MuiPaper-root .MuiBox-root:first-child h5': {
+  '& > .MuiPaper-root .MuiBox-root:first-of-type h5': {
     lineHeight: '2em',
   },
   '& > .MuiPaper-root > h6': {

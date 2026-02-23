@@ -13,6 +13,7 @@ export enum ComponentName {
   TEXT_ANNOUNCEMENTS = 'asset-packs::TextAnnouncements',
   VIDEO_CONTROL_STATE = 'asset-packs::VideoControlState',
   SCRIPT = 'asset-packs::Script',
+  PLACEHOLDER = 'asset-packs::Placeholder',
 }
 
 export enum TweenType {
@@ -107,6 +108,8 @@ export enum ActionType {
   CHANGE_SKYBOX = 'change_skybox',
   RESET_SKYBOX = 'reset_skybox',
   CALL_SCRIPT_METHOD = 'call_script_method',
+  LOG_TO_CONSOLE = 'log_to_console',
+  DELETE = 'delete',
 }
 
 export enum TriggerType {
