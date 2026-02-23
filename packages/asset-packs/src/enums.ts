@@ -113,6 +113,8 @@ export enum ActionType {
   CHANGE_SKYBOX = 'change_skybox',
   RESET_SKYBOX = 'reset_skybox',
   CALL_SCRIPT_METHOD = 'call_script_method',
+  LOG_TO_CONSOLE = 'log_to_console',
+  DELETE = 'delete',
 }
 
 // Re-export trigger enums from versioning (source of truth)

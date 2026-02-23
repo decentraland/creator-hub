@@ -27,6 +27,13 @@ const config = {
     },
   ],
   asarUnpack: ['node_modules/npm/**/*'],
+  extraResources: [
+    {
+      from: 'devtools-frontend',
+      to: 'devtools-frontend',
+      filter: ['**/*'],
+    },
+  ],
   linux: {
     target: 'deb',
   },

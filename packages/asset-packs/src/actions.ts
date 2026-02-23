@@ -401,6 +401,14 @@ export function createActionsSystem(
             handleCallScriptMethod(entity, getPayload<ActionType.CALL_SCRIPT_METHOD>(action));
             break;
           }
+          case ActionType.LOG_TO_CONSOLE: {
+            handleLogToConsole(getPayload<ActionType.LOG_TO_CONSOLE>(action));
+            break;
+          }
+          case ActionType.DELETE: {
+            handleDelete(entity);
+            break;
+          }
           default:
             break;
         }
@@ -1606,5 +1614,17 @@ export function createActionsSystem(
     } catch (error) {
       console.error(`[Script Action Error] Failed to call ${methodName} on ${scriptPath}:`, error);
     }
+  }
+
+  // LOG_TO_CONSOLE
+  function handleLogToConsole(payload: ActionPayload<ActionType.LOG_TO_CONSOLE>) {
+    console.log(payload.message);
+  }
+
+  // DELETE
+  function handleDelete(entity: Entity) {
+    stopAllTimeouts(entity);
+    stopAllIntervals(entity);
+    engine.removeEntityWithChildren(entity);
   }
 }

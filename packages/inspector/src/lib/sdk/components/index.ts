@@ -17,6 +17,7 @@ import type {
   Rewards,
   VideoScreen,
   Script,
+  Placeholder,
 } from '@dcl/asset-packs';
 import { createComponents as createAssetPacksComponents } from '@dcl/asset-packs';
 import type { Layout } from '../../utils/layout';
@@ -111,6 +112,7 @@ export type EditorComponentsTypes = {
   Rewards: Rewards;
   InspectorUIState: InspectorUIStateType;
   Script: Script;
+  Placeholder: Placeholder;
 };
 
 export type EditorComponents = {
@@ -139,6 +141,7 @@ export type EditorComponents = {
     EditorComponentsTypes['InspectorUIState']
   >;
   Script: LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['Script']>;
+  Placeholder: LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['Placeholder']>;
 };
 
 export type SdkComponents = {
@@ -238,6 +241,7 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
     Rewards,
     VideoScreen,
     Script,
+    Placeholder,
   } = createAssetPacksComponents(engine as any);
 
   // legacy component
@@ -290,6 +294,9 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
     >,
     Script: Script as unknown as LastWriteWinElementSetComponentDefinition<
       EditorComponentsTypes['Script']
+    >,
+    Placeholder: Placeholder as unknown as LastWriteWinElementSetComponentDefinition<
+      EditorComponentsTypes['Placeholder']
     >,
   };
 }

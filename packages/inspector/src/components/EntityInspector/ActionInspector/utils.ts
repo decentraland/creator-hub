@@ -101,6 +101,11 @@ export function getDefaultPayload(type: string) {
         amount: 1,
       });
     }
+    case ActionType.LOG_TO_CONSOLE: {
+      return getJson<ActionType.LOG_TO_CONSOLE>({
+        message: '',
+      });
+    }
     default: {
       return '{}';
     }
