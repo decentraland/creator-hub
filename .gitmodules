@@ -1,0 +1,3 @@
+[submodule "packages/creator-hub/devtools-frontend"]
+	path = packages/creator-hub/devtools-frontend
+	url = git@github.com:decentraland/devtools-frontend.git
