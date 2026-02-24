@@ -1,5 +1,5 @@
 import type { Entity, PBAvatarBase, PBAvatarEquippedData, TransformType } from '@dcl/ecs';
-import { ComponentName } from './enums';
+import { BaseComponentNames } from './constants';
 
 export type AssetPackData = {
   id: string;
@@ -100,9 +100,8 @@ export function isLegacyAssetData(value: any): value is LegacyAssetData {
 }
 
 export function getTriggerComponent(value: AssetData): TriggerData | undefined {
-  return value.composite.components.find(c => c.name === ComponentName.TRIGGERS)?.data[0]?.json as
-    | TriggerData
-    | undefined;
+  return value.composite.components.find(c => c.name === BaseComponentNames.TRIGGERS)?.data[0]
+    ?.json as TriggerData | undefined;
 }
 
 export function assertValidTriggerComponent(assetName: string, trigger: TriggerData) {
