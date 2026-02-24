@@ -52,7 +52,12 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     const nodes = Nodes.getOrNull(sdk.engine.RootEntity)?.value || [];
     const seen = new Set<Entity>();
     for (const { entity: ent } of nodes) {
-      if (ent === CoreEngine.RootEntity || ent === CoreEngine.CameraEntity) continue;
+      if (
+        ent === CoreEngine.RootEntity ||
+        ent === CoreEngine.CameraEntity ||
+        ent === CoreEngine.PlayerEntity
+      )
+        continue;
       if (seen.has(ent)) continue;
       seen.add(ent);
       const label = Name.getOrNull(ent)?.value ?? ent.toString();
