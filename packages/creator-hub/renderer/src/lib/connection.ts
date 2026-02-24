@@ -3,18 +3,11 @@ import { fetch } from '/shared/fetch';
 export enum ConnectionStatus {
   ONLINE = 'online',
   OFFLINE = 'offline',
-  SLOW = 'slow',
 }
 
 export interface ConnectionInfo {
   status: ConnectionStatus;
-  effectiveType?: string;
-  downlink?: number;
-  rtt?: number;
 }
-
-// threshold for determining slow connection
-const SLOW_CONNECTION_RTT_THRESHOLD_IN_MS = 500;
 
 export function isNavigatorOnline(): boolean {
   return typeof navigator !== 'undefined' ? navigator.onLine : true;
@@ -30,25 +23,7 @@ export function getNetworkInfo(): ConnectionInfo {
     return { status: ConnectionStatus.OFFLINE };
   }
 
-  const connection = (navigator as any).connection;
-
-  if (!connection) {
-    return { status: ConnectionStatus.ONLINE };
-  }
-
-  const { effectiveType, downlink, rtt } = connection;
-
-  const isSlow =
-    effectiveType === 'slow-2g' ||
-    effectiveType === '2g' ||
-    (rtt && rtt > SLOW_CONNECTION_RTT_THRESHOLD_IN_MS);
-
-  return {
-    status: isSlow ? ConnectionStatus.SLOW : ConnectionStatus.ONLINE,
-    effectiveType,
-    downlink,
-    rtt,
-  };
+  return { status: ConnectionStatus.ONLINE };
 }
 
 /**

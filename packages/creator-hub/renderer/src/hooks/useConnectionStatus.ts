@@ -14,7 +14,6 @@ interface UseConnectionStatusOptions {
 
 interface UseConnectionStatusResult extends ConnectionInfo {
   isOnline: boolean;
-  isSlow: boolean;
   checkNow: () => Promise<void>;
 }
 
@@ -29,11 +28,6 @@ export function useConnectionStatus(
 
   const [connectionInfo, setConnectionInfo] = useState<ConnectionInfo>(() => getNetworkInfo());
   const [isChecking, setIsChecking] = useState(false);
-
-  const updateConnectionInfo = useCallback(() => {
-    const info = getNetworkInfo();
-    setConnectionInfo(info);
-  }, []);
 
   const checkNow = useCallback(async () => {
     if (isChecking) return;
@@ -69,22 +63,6 @@ export function useConnectionStatus(
     return cleanup;
   }, [checkNow]);
 
-  // listen to connection changes (Network Information API)
-  useEffect(() => {
-    const connection = (navigator as any).connection;
-    if (!connection) return;
-
-    const handleChange = () => {
-      updateConnectionInfo();
-    };
-
-    connection.addEventListener('change', handleChange);
-
-    return () => {
-      connection.removeEventListener('change', handleChange);
-    };
-  }, [updateConnectionInfo]);
-
   useEffect(() => {
     if (!enablePeriodicCheck) return;
 
@@ -98,7 +76,6 @@ export function useConnectionStatus(
   return {
     ...connectionInfo,
     isOnline: connectionInfo.status === ConnectionStatus.ONLINE,
-    isSlow: connectionInfo.status === ConnectionStatus.SLOW,
     checkNow,
   };
 }

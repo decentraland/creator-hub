@@ -887,10 +887,6 @@
       "retry": "重试连接",
       "checking": "检查中..."
     },
-    "slow": {
-      "tooltip": "检测到慢速连接",
-      "message": "您的互联网连接似乎很慢。某些功能可能需要更长时间才能加载。"
-    },
     "errors": {
       "NO_INTERNET_CONNECTION": "无可用的互联网连接",
       "REQUEST_TIMEOUT": "请求超时。请检查您的连接并重试。"
