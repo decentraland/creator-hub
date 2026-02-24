@@ -1,4 +1,5 @@
 import type { Catalog, AssetPack, Asset, AssetData } from '@dcl/asset-packs';
+import * as _bundledCatalog from '@dcl/asset-packs/catalog.json';
 import { CoreComponents } from '../sdk/components';
 import { getConfig } from './config';
 
@@ -62,9 +63,12 @@ export function fetchLatestCatalog(): Promise<AssetPack[]> {
     })
     .finally(() => clearTimeout(timeoutId))
     .catch(err => {
-      // Clear the cache so a future call can retry after a transient failure.
-      _fetchPromise = null;
-      throw err;
+      // Fall back to the bundled catalog so the app always resolves.
+      // This covers: pre-merge branches (latest/catalog.json not yet on CDN),
+      // offline environments, and e2e CI runs without a contentUrl override.
+      console.warn('Failed to fetch latest catalog, falling back to bundled version:', err);
+      _catalog = (_bundledCatalog as unknown as Catalog).assetPacks;
+      return _catalog;
     });
 
   return _fetchPromise;

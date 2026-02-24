@@ -133,11 +133,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: [version, publish]
     if: ${{ needs.version.outputs.changed == 'true' && github.ref == 'refs/heads/main' }}
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.BUILDER_ITEMS_AWS_ID_PRD }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.BUILDER_ITEMS_AWS_SECRET_PRD }}
-      S3_BUCKET_NAME: ${{ secrets.BUILDER_ITEMS_S3_BUCKET_PRD }}
-      S3_REGION: us-east-1
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -154,23 +149,11 @@ jobs:
       - name: upload assets to S3 prod
         run: make upload-asset-packs
         env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.BUILDER_ITEMS_AWS_ID_PRD }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.BUILDER_ITEMS_AWS_SECRET_PRD }}
+          S3_BUCKET_NAME: ${{ secrets.BUILDER_ITEMS_S3_BUCKET_PRD }}
+          S3_REGION: us-east-1
           S3_UPLOAD_CONCURRENCY: 20
-
-      - name: publish versioned catalog to S3
-        run: |
-          aws s3 cp packages/asset-packs/catalog.json \
-            "s3://${S3_BUCKET_NAME}/asset-packs/${{ needs.version.outputs.version }}/catalog.json" \
-            --region "${S3_REGION}" \
-            --content-type "application/json" \
-            --cache-control "max-age=31536000, immutable"
-
-      - name: update latest catalog pointer on S3
-        run: |
-          aws s3 cp packages/asset-packs/catalog.json \
-            "s3://${S3_BUCKET_NAME}/asset-packs/latest/catalog.json" \
-            --region "${S3_REGION}" \
-            --content-type "application/json" \
-            --cache-control "max-age=0, must-revalidate"
 
   notify:
     needs: [version, publish]

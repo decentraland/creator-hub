@@ -47,38 +47,49 @@ The inspector's asset catalog was a static JSON snapshot baked into the `@dcl/as
 
 ## Solution
 
-### Part 1 — CI/CD: Publish full catalog + latest pointer on every version bump
+### Part 1 — upload.ts: Publish versioned + latest catalog after asset upload
 
-In `.github/workflows/asset-packs.yml`, the `upload` job now:
+`packages/asset-packs/scripts/upload.ts` now owns all three catalog upload responsibilities, replacing the previous separate `aws s3 cp` steps in CI:
 
-1. Moves all AWS credential env vars to **job scope** (shared across steps).
-2. Runs `make upload-asset-packs` as before (content-addressed asset files via `contents/{hash}`).
-3. Publishes a **versioned catalog** (immutable, 1-year cache):
-   ```yaml
-   - name: publish versioned catalog to S3
-     run: |
-       aws s3 cp packages/asset-packs/catalog.json \
-         "s3://${S3_BUCKET_NAME}/asset-packs/${{ needs.version.outputs.version }}/catalog.json" \
-         --region "${S3_REGION}" \
-         --content-type "application/json" \
-         --cache-control "max-age=31536000, immutable"
-   ```
-4. Updates a **latest pointer** (no-cache):
-   ```yaml
-   - name: update latest catalog pointer on S3
-     run: |
-       aws s3 cp packages/asset-packs/catalog.json \
-         "s3://${S3_BUCKET_NAME}/asset-packs/latest/catalog.json" \
-         --region "${S3_REGION}" \
-         --content-type "application/json" \
-         --cache-control "max-age=0, must-revalidate"
-   ```
+```typescript
+import { version } from '../package.json';
 
-Result: `{contentUrl}/asset-packs/latest/catalog.json` always reflects the most recently merged asset-packs version.
+// After all asset pack files are uploaded...
+
+// 1. Versioned copy — immutable, long-cached
+const versionedUpload = new Upload({
+  client,
+  params: {
+    Bucket: bucketName,
+    Key: `asset-packs/${version}/catalog.json`,
+    Body: catalogContent,
+    ContentType: 'application/json',
+    CacheControl: 'max-age=31536000, immutable',
+  },
+});
+await versionedUpload.done();
+
+// 2. Latest pointer — always fresh
+const latestUpload = new Upload({
+  client,
+  params: {
+    Bucket: bucketName,
+    Key: 'asset-packs/latest/catalog.json',
+    Body: catalogContent,
+    ContentType: 'application/json',
+    CacheControl: 'max-age=0, must-revalidate',
+  },
+});
+await latestUpload.done();
+```
+
+This runs in both CI (`make upload-asset-packs` in `.github/workflows/asset-packs.yml`) and local Docker dev (`npm run upload` against MinIO), so both environments are consistent. `tsconfig.scripts.json` requires `resolveJsonModule: true` for the `package.json` import.
+
+Result: `{contentUrl}/asset-packs/latest/catalog.json` always reflects the most recently uploaded asset-packs version, and `{contentUrl}/asset-packs/{version}/catalog.json` provides an immutable pinned copy.
 
 ### Part 2 — Inspector: Replace static import with runtime fetch
 
-**`packages/inspector/src/lib/logic/catalog.ts`** — replace the static import with a cached async fetch:
+**`packages/inspector/src/lib/logic/catalog.ts`** — replace the static import with a cached async fetch with bundled fallback:
 
 ```typescript
 // Before:
@@ -86,6 +97,8 @@ import * as _catalog from '@dcl/asset-packs/catalog.json';
 export const catalog = (_catalog as unknown as Catalog).assetPacks;
 
 // After:
+import * as _bundledCatalog from '@dcl/asset-packs/catalog.json';
+
 const CATALOG_FETCH_TIMEOUT_MS = 10_000;
 let _catalog: AssetPack[] = [];
 let _fetchPromise: Promise<AssetPack[]> | null = null;
@@ -107,8 +120,11 @@ export function fetchLatestCatalog(): Promise<AssetPack[]> {
     })
     .finally(() => clearTimeout(timeoutId))
     .catch(err => {
-      _fetchPromise = null; // allow retry on transient failure
-      throw err;
+      // Fall back to the bundled catalog — covers pre-merge PRs, offline envs, CI without contentUrl.
+      // _fetchPromise is NOT reset: the fallback is a valid result, not a transient error.
+      console.warn('Failed to fetch latest catalog, falling back to bundled version:', err);
+      _catalog = (_bundledCatalog as unknown as Catalog).assetPacks;
+      return _catalog;
     });
 
   return _fetchPromise;
@@ -116,10 +132,10 @@ export function fetchLatestCatalog(): Promise<AssetPack[]> {
 ```
 
 Key design decisions:
+- **Bundled fallback** (`@dcl/asset-packs/catalog.json`): if the CDN fetch fails for any reason (pre-merge PR where `latest/catalog.json` doesn't exist yet, offline, timeout), the app falls back to the catalog bundled in the npm package and always resolves. `_fetchPromise` is kept set because the fallback is a valid terminal result — no retry needed.
 - **Promise-level cache** (`_fetchPromise`): `Assets.tsx` and `useSdkContext.ts` both call `fetchLatestCatalog()` on mount — the cache ensures only one HTTP request is made.
 - **`AbortController` timeout** (not `Promise.race`): cancels at the network level, not just the promise chain. Timer is cleared on success to avoid lingering callbacks.
 - **`_catalog` module ref**: synchronous helpers `getAssetByModel` and `getAssetById` remain usable after load without requiring async callers everywhere.
-- **Cache cleared on failure**: transient errors allow a retry on the next call.
 
 **`packages/inspector/src/components/Assets/Assets.tsx`** — fetch on mount, show error to user:
 
@@ -223,15 +239,24 @@ const importCatalogAsset = async (asset: Asset) => {
 
 1. **Static catalog problem**: The old `import * as _catalog from '@dcl/asset-packs/catalog.json'` resolved at webpack/vite bundle time. No matter what was on S3, the catalog in the running app was frozen at the version bundled into the release. The runtime fetch bypasses this entirely.
 
-2. **Dual-consumer deduplication**: Both `useSdkContext` and `Assets` need the catalog at startup. The promise-level cache (`_fetchPromise`) ensures only one `fetch()` is ever dispatched regardless of how many callers invoke `fetchLatestCatalog()` concurrently.
+2. **Bundled fallback always resolves**: Pre-merge PRs, offline environments, and e2e CI runs (no `contentUrl` override) all hit a 404 or network error on `latest/catalog.json`. Without the fallback, `fetchLatestCatalog()` rejects, `useSdkContext` never gets a catalog, `.App.is-ready` never appears, and e2e tests time out. The fallback ensures the promise always resolves with a usable catalog.
 
-3. **Component versioning interplay**: `framework.ts` registers each schema version as a distinct component name. A composite that was authored against `asset-packs::Actions-v1` will break silently if the engine only knows `asset-packs::Actions`. The compatibility check detects this by attempting the exact versioned name lookup and then falling back to the base name to distinguish "wrong version" from "completely absent".
+3. **`_fetchPromise` not reset on fallback**: Unlike a transient network error, the fallback is a valid terminal result. Resetting `_fetchPromise = null` on fallback would allow a second caller to dispatch a redundant fetch that would also fail and fall back — wasting a round-trip. Keeping `_fetchPromise` set means all callers share the same resolved value.
 
-4. **Abort vs. race**: `AbortController` cancels the actual HTTP request at the browser network layer. `Promise.race` against a timeout only ignores the response — the request still runs to completion and the browser holds the connection open. `AbortController` is the correct primitive for fetch timeouts.
+4. **Dual-consumer deduplication**: Both `useSdkContext` and `Assets` need the catalog at startup. The promise-level cache (`_fetchPromise`) ensures only one `fetch()` is ever dispatched regardless of how many callers invoke `fetchLatestCatalog()` concurrently.
+
+5. **Single source of truth for catalog upload**: `upload.ts` now owns both the versioned and latest catalog uploads. The CI workflow (`asset-packs.yml`) no longer has separate `aws s3 cp` steps — `make upload-asset-packs` handles everything. Local Docker dev and CI are consistent.
+
+6. **Component versioning interplay**: `framework.ts` registers each schema version as a distinct component name. A composite that was authored against `asset-packs::Actions-v1` will break silently if the engine only knows `asset-packs::Actions`. The compatibility check detects this by attempting the exact versioned name lookup and then falling back to the base name to distinguish "wrong version" from "completely absent".
+
+7. **Abort vs. race**: `AbortController` cancels the actual HTTP request at the browser network layer. `Promise.race` against a timeout only ignores the response — the request still runs to completion and the browser holds the connection open. `AbortController` is the correct primitive for fetch timeouts.
 
 ## Prevention
 
 - **Never bake runtime-mutable data into npm packages as static imports.** If data can change between releases of the consuming package, fetch it at runtime.
+- **Always provide a bundled fallback for runtime-fetched data.** Pre-merge PRs and CI runs won't have the latest CDN data. The bundled copy in the npm package is the natural fallback — it's always available and keeps the app functional.
+- **Keep `_fetchPromise` set after a fallback.** A fallback is a terminal result, not a transient failure. Resetting the promise cache on fallback causes redundant fetches from all concurrent callers.
+- **Consolidate upload logic into `upload.ts`, not CI YAML.** Running `make upload-asset-packs` locally and in CI should produce identical S3 state. Splitting catalog uploads into separate CI steps creates drift between local and CI environments.
 - **When adding new components to the versioning registry**, composite files must reference the exact versioned name (`asset-packs::MyComponent-v1`) — the base name alias in the registry always points to the latest, but composites authored against a specific version need to name it explicitly.
 - **Before any `importCatalogAsset` path**, call `checkAssetCompatibility` synchronously. It is cheap (a loop over `engine.getComponent()` calls) and must run before network I/O so the drop can be aborted cleanly.
 - **All fetch calls with no natural timeout** should use `AbortController` + `setTimeout`. Never rely on the browser's default connection timeout for UX-critical data.
