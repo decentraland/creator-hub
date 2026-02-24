@@ -73,6 +73,49 @@ describe('when parsing scene files', () => {
     });
   });
 
+  describe('and the scene matches the new empty template', () => {
+    let sceneContent: string;
+
+    beforeEach(() => {
+      sceneContent = `
+        import {} from '@dcl/sdk/math'
+        import { engine } from '@dcl/sdk/ecs'
+        import { setupUi } from './ui'
+
+        export function main() {
+            // uncomment the line below to initialize UI from ui.tsx
+            //setupUi()
+
+            // your scene code here
+        }
+      `;
+    });
+
+    it('should not detect custom code', () => {
+      expect(hasCustomCode(sceneContent)).toBe(false);
+    });
+  });
+
+  describe('and the scene has the ui import but setupUi is called in main', () => {
+    let sceneContent: string;
+
+    beforeEach(() => {
+      sceneContent = `
+        import {} from '@dcl/sdk/math'
+        import { engine } from '@dcl/sdk/ecs'
+        import { setupUi } from './ui'
+
+        export function main() {
+            setupUi()
+        }
+      `;
+    });
+
+    it('should detect custom code', () => {
+      expect(hasCustomCode(sceneContent)).toBe(true);
+    });
+  });
+
   describe('and the content is null', () => {
     it('should return false', () => {
       expect(hasCustomCode(null)).toBe(false);
