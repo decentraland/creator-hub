@@ -25,11 +25,12 @@ enum WorldPermissionsTab {
   COLLABORATORS = 'collaborators',
 }
 
+// TODO: Uncomment the Access tab below once https://github.com/decentraland/unity-explorer/pull/6983 is merged
 const WORLD_PERMISSIONS_TABS: Array<{ label: string; value: WorldPermissionsTab }> = [
-  {
-    label: t('modal.world_permissions.tabs.access.label'),
-    value: WorldPermissionsTab.ACCESS,
-  },
+  // {
+  //   label: t('modal.world_permissions.tabs.access.label'),
+  //   value: WorldPermissionsTab.ACCESS,
+  // },
   {
     label: t('modal.world_permissions.tabs.collaborators.label'),
     value: WorldPermissionsTab.COLLABORATORS,
@@ -58,7 +59,10 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
     onClose,
     ...props
   }) => {
-    const [activeTab, setActiveTab] = useState<WorldPermissionsTab>(WorldPermissionsTab.ACCESS);
+    // TODO: Revert default tab back to WorldPermissionsTab.ACCESS once https://github.com/decentraland/unity-explorer/pull/6983 is merged
+    const [activeTab, setActiveTab] = useState<WorldPermissionsTab>(
+      WorldPermissionsTab.COLLABORATORS,
+    );
     const [activeCollaboratorAddress, setActiveCollaboratorAddress] = useState<string | null>(null);
     const [updating, setUpdating] = useState(false);
     const dispatch = useDispatch();
@@ -349,7 +353,8 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
 
     const handleClose = useCallback(() => {
       // Reset state when the modal is closed.
-      setActiveTab(WorldPermissionsTab.ACCESS);
+      // TODO: Revert back to WorldPermissionsTab.ACCESS once https://github.com/decentraland/unity-explorer/pull/6983 is merged
+      setActiveTab(WorldPermissionsTab.COLLABORATORS);
       setActiveCollaboratorAddress(null);
       dispatch(managementActions.clearPermissionsState());
       onClose();
@@ -372,7 +377,8 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
           !!worldPermissions && (
             <>
               {updating && <Loader overlay />}
-              {activeTab === WorldPermissionsTab.ACCESS && (
+              {/* TODO: Uncomment the Access tab content below once https://github.com/decentraland/unity-explorer/pull/6983 is merged */}
+              {/* {activeTab === WorldPermissionsTab.ACCESS && (
                 <WorldPermissionsAccessTab
                   worldAccessPermissions={worldPermissions?.access}
                   worldOwnerAddress={worldOwnerAddress}
@@ -387,7 +393,7 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
                   onClearAccessList={handleClearAccessList}
                   onSetAccessPassword={handleSetAccessPassword}
                 />
-              )}
+              )} */}
               {activeTab === WorldPermissionsTab.COLLABORATORS &&
                 (!activeCollaboratorAddress ? (
                   <WorldPermissionsCollaboratorsTab
