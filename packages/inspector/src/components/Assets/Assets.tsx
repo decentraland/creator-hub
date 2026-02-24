@@ -1,10 +1,10 @@
-import React, { useCallback, useState, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
 import { MdImageSearch } from 'react-icons/md';
 import { HiOutlinePlus } from 'react-icons/hi';
 import { HiOutlineRefresh as RefreshIcon } from 'react-icons/hi';
 import { IoIosFolderOpen, IoIosUndo } from 'react-icons/io';
 import cx from 'classnames';
-import { type AssetPack, catalog, isSmart } from '../../lib/logic/catalog';
+import { type AssetPack, fetchLatestCatalog, isSmart } from '../../lib/logic/catalog';
 import { getConfig } from '../../lib/logic/config';
 import { getSceneClient } from '../../lib/rpc/scene';
 import { useSnackbar } from '../../hooks/useSnackbar';
@@ -74,6 +74,20 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
   );
 
   const config = getConfig();
+  const [catalog, setCatalog] = useState<AssetPack[]>([]);
+
+  useEffect(() => {
+    fetchLatestCatalog()
+      .then(setCatalog)
+      .catch(err => {
+        console.error('Failed to load asset catalog:', err);
+        void pushNotification(
+          'error',
+          'Could not load the asset catalog. Please check your connection and try again.',
+        );
+      });
+  }, []);
+
   const filteredCatalog = config.disableSmartItems
     ? catalog.map(removeSmartItems).filter(assetPack => assetPack.assets.length > 0)
     : catalog;
