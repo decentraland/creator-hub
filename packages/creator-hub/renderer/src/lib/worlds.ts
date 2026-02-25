@@ -409,7 +409,8 @@ export class Worlds {
 
   /** Unpublish all scenes from a given world */
   public async unpublishEntireWorld(address: string, worldName: string) {
-    const result = await fetch(`${this.url}/entities/${worldName}`, {
+    const encodedWorldName = encodeURIComponent(worldName);
+    const result = await fetch(`${this.url}/entities/${encodedWorldName}`, {
       method: 'DELETE',
       identity: this.withIdentity(address),
     });
@@ -418,7 +419,8 @@ export class Worlds {
 
   public fetchWalletStats = async (address: string) => {
     try {
-      const result = await fetch(`${this.url}/wallet/${address}/stats`);
+      const encodedAddress = encodeURIComponent(address);
+      const result = await fetch(`${this.url}/wallet/${encodedAddress}/stats`);
       if (result.ok) {
         const json = await result.json();
         return json as WorldsWalletStats;
@@ -458,8 +460,9 @@ export class Worlds {
     };
 
     const encodedWorldName = encodeURIComponent(worldName);
+    const encodedPermissionName = encodeURIComponent(worldPermissionName);
     const result = await fetch(
-      `${this.url}/world/${encodedWorldName}/permissions/${worldPermissionName}`,
+      `${this.url}/world/${encodedWorldName}/permissions/${encodedPermissionName}`,
       {
         method: 'POST',
         identity: this.withIdentity(authenticatedAddress),
@@ -476,9 +479,10 @@ export class Worlds {
     walletAddress: string,
   ) => {
     const encodedWorldName = encodeURIComponent(worldName);
+    const encodedPermissionName = encodeURIComponent(worldPermissionName);
     const encodedWalletAddress = encodeURIComponent(walletAddress);
     const result = await fetch(
-      `${this.url}/world/${encodedWorldName}/permissions/${worldPermissionName}/${encodedWalletAddress}`,
+      `${this.url}/world/${encodedWorldName}/permissions/${encodedPermissionName}/${encodedWalletAddress}`,
       {
         method: 'PUT',
         identity: this.withIdentity(authenticatedAddress),
@@ -494,9 +498,10 @@ export class Worlds {
     walletAddress: string,
   ) => {
     const encodedWorldName = encodeURIComponent(worldName);
+    const encodedPermissionName = encodeURIComponent(worldPermissionName);
     const encodedWalletAddress = encodeURIComponent(walletAddress);
     const result = await fetch(
-      `${this.url}/world/${encodedWorldName}/permissions/${worldPermissionName}/${encodedWalletAddress}`,
+      `${this.url}/world/${encodedWorldName}/permissions/${encodedPermissionName}/${encodedWalletAddress}`,
       {
         method: 'DELETE',
         identity: this.withIdentity(authenticatedAddress),
@@ -520,9 +525,10 @@ export class Worlds {
   ) => {
     const queryString = formatQueryParams(params);
     const encodedWorldName = encodeURIComponent(worldName);
+    const encodedPermissionName = encodeURIComponent(worldPermissionName);
     const encodedWalletAddress = encodeURIComponent(walletAddress);
     const result = await fetch(
-      `${this.url}/world/${encodedWorldName}/permissions/${worldPermissionName}/address/${encodedWalletAddress}/parcels?${queryString}`,
+      `${this.url}/world/${encodedWorldName}/permissions/${encodedPermissionName}/address/${encodedWalletAddress}/parcels?${queryString}`,
     );
     if (result.ok) {
       const json = await result.json();
@@ -540,9 +546,10 @@ export class Worlds {
     parcels: string[],
   ) => {
     const encodedWorldName = encodeURIComponent(worldName);
+    const encodedPermissionName = encodeURIComponent(worldPermissionName);
     const encodedWalletAddress = encodeURIComponent(walletAddress);
     const result = await fetch(
-      `${this.url}/world/${encodedWorldName}/permissions/${worldPermissionName}/address/${encodedWalletAddress}/parcels`,
+      `${this.url}/world/${encodedWorldName}/permissions/${encodedPermissionName}/address/${encodedWalletAddress}/parcels`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -561,9 +568,10 @@ export class Worlds {
     parcels: string[],
   ) => {
     const encodedWorldName = encodeURIComponent(worldName);
+    const encodedPermissionName = encodeURIComponent(worldPermissionName);
     const encodedWalletAddress = encodeURIComponent(walletAddress);
     const result = await fetch(
-      `${this.url}/world/${encodedWorldName}/permissions/${worldPermissionName}/address/${encodedWalletAddress}/parcels`,
+      `${this.url}/world/${encodedWorldName}/permissions/${encodedPermissionName}/address/${encodedWalletAddress}/parcels`,
       {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },

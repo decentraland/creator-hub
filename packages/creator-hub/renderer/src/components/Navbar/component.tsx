@@ -84,7 +84,6 @@ export function Navbar(props: { active: NavbarItem }) {
             item={NavbarItem.LEARN}
             active={props.active}
           />
-
           <MenuItem
             item={NavbarItem.MORE}
             active={props.active}

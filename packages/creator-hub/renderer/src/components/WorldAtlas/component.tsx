@@ -5,7 +5,12 @@ import type { AtlasProps } from 'decentraland-ui2/dist/components/Atlas/Atlas.ty
 import { Box, Typography } from 'decentraland-ui2';
 import type { WorldScene } from '/@/lib/worlds';
 import { coordsToId } from '/@/lib/land';
-import { getWorldDimensions, MAX_COORDINATE, MIN_COORDINATE } from '/@/modules/world';
+import {
+  formatWorldSize,
+  getWorldDimensions,
+  MAX_COORDINATE,
+  MIN_COORDINATE,
+} from '/@/modules/world';
 import { t } from '/@/modules/store/translation/utils';
 import './styles.css';
 
@@ -56,10 +61,7 @@ const WorldAtlas: React.FC<Props> = React.memo(
       [worldScenes],
     );
 
-    const worldSize = useMemo(() => {
-      if (!dimensions.width || !dimensions.height) return '';
-      return `${dimensions.width}x${dimensions.height}`;
-    }, [dimensions]);
+    const worldSize = useMemo(() => formatWorldSize(dimensions), [dimensions]);
 
     const isWithinWorldBounds = useCallback(
       (x: number, y: number) =>
