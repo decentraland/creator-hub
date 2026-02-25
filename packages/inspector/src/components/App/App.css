@@ -61,10 +61,12 @@ code {
 
 .App .horizontal-handle {
   width: 4px;
+  background-color: var(--base-21);
 }
 
 .App .vertical-handle {
   height: 4px;
+  background-color: var(--base-21);
 }
 .App .Box.no-box,
 .App .Box.no-box .content,

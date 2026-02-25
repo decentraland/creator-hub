@@ -9,7 +9,7 @@
   --smart-item-icon-bg-color: #c640cd;
   --list-smart-item-hover-bg-color: #5f326a;
   --ground-icon-bg-color: #828282;
-  --tree-bg-color: var(--vscode-panel-background, #252526);
+  --tree-bg-color: var(--base-20);
   --tree-border-color: var(--vscode-panel-border, #333333);
   --input-border-color: var(--vscode-input-border, #cdcccc);
   --button-color: var(--vscode-button-foreground, var(--black));
@@ -29,6 +29,7 @@
   --background-gray: #3c3c3c;
   --background-dark: #181818;
   --neutral-grey-3: #a09ba8;
+  --neutral-grey-4: #676370;
   --border-gray: #454545;
   --black: #000000;
   --transparent: transparent;
@@ -61,8 +62,8 @@
   --base-16: #333;
   --base-17: #303031;
   --base-18: #292929;
-  --base-19: #252526;
-  --base-20: #1e1e1e;
+  --base-19: #242129;
+  --base-20: #161518;
   --base-21: #000;
 
   /* VS Code Colors */
