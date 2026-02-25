@@ -105,8 +105,7 @@ export class UndoRedoProvider implements StateProvider {
   private readonly fs: FileSystemInterface;
   private readonly engine: IEngine;
   private readonly getComposite: () => CompositeDefinition | null;
-  private readonly options: Required<Omit<UndoRedoOptions, 'shouldCapture'>> &
-    Pick<UndoRedoOptions, 'shouldCapture'>;
+  private readonly options: Required<UndoRedoOptions>;
   private isExecutingUndoRedo = false;
   private deferredFileOperations: FileOperation[] | null = null;
   private deferredTimeout: NodeJS.Timeout | null = null;
@@ -130,7 +129,7 @@ export class UndoRedoProvider implements StateProvider {
       storageKey: options.storageKey ?? 'inspector-undo-redo-history',
       maxStorageSize: options.maxStorageSize ?? 1024 * 1024 * 10, // 10MB limit for localStorage
       ignoredComponents: options.ignoredComponents ?? [], // components to ignore for undo/redo
-      shouldCapture: options.shouldCapture,
+      shouldCapture: options.shouldCapture ?? (() => true),
     };
 
     this.undoList = UndoRedoArray(this.options.maxEntries, this.options.maxSize);
@@ -431,7 +430,7 @@ export class UndoRedoProvider implements StateProvider {
 
     const prevValue = findPrevValue(composite, operation.componentName, operation.entity);
 
-    if (this.options.shouldCapture && !this.options.shouldCapture(operation, prevValue)) {
+    if (!this.options.shouldCapture(operation, prevValue)) {
       return;
     }
 
