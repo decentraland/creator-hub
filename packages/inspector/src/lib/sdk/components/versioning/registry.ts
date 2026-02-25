@@ -204,6 +204,38 @@ const COMPONENT_REGISTRY = {
     {
       creator: Schemas.Optional(Schemas.String),
     },
+    // V3 - Modified spawnPoints to use floats
+    {
+      spawnPoints: Schemas.Optional(
+        Schemas.Array(
+          Schemas.Map({
+            name: Schemas.String,
+            default: Schemas.Optional(Schemas.Boolean),
+            position: Schemas.Map({
+              x: Schemas.OneOf({
+                single: Schemas.Float,
+                range: Schemas.Array(Schemas.Float),
+              }),
+              y: Schemas.OneOf({
+                single: Schemas.Float,
+                range: Schemas.Array(Schemas.Float),
+              }),
+              z: Schemas.OneOf({
+                single: Schemas.Float,
+                range: Schemas.Array(Schemas.Float),
+              }),
+            }),
+            cameraTarget: Schemas.Optional(
+              Schemas.Map({
+                x: Schemas.Float,
+                y: Schemas.Float,
+                z: Schemas.Float,
+              }),
+            ),
+          }),
+        ),
+      ),
+    },
   ],
 } as const;
 

@@ -15,13 +15,30 @@ import {
 import type { FileOperation } from './undo-redo-provider';
 import upsertAsset from './upsert-asset';
 import { installBin } from './utils/install-bin';
-import { StateManager } from './state-manager';
+import { fromSceneComponent } from './utils/component';
+import { StateManager, OperationType } from './state-manager';
+import type { Operation } from './state-manager';
 import { SceneProvider } from './scene-provider';
 import { CompositeProvider, ENTITY_NAMES_PATH } from './composite-provider';
 import { UndoRedoProvider } from './undo-redo-provider';
 import { createStream } from './stream';
 
 const INSPECTOR_PREFERENCES_PATH = 'inspector-preferences.json';
+
+function sceneUpdateShouldCapture(operation: Operation, prevValue: unknown): boolean {
+  if (operation.type !== OperationType.SCENE_UPDATE) return true;
+  try {
+    const prevSpawnPoints = prevValue
+      ? fromSceneComponent(prevValue as Parameters<typeof fromSceneComponent>[0]).spawnPoints
+      : [];
+    const nextSpawnPoints = fromSceneComponent(
+      operation.componentValue as Parameters<typeof fromSceneComponent>[0],
+    ).spawnPoints;
+    return JSON.stringify(prevSpawnPoints ?? []) !== JSON.stringify(nextSpawnPoints ?? []);
+  } catch {
+    return true;
+  }
+}
 
 function getIgnoredUndoRedoComponents() {
   return [
@@ -100,6 +117,7 @@ export async function initRpcMethods(
     enableStateVerification: true,
     persistToStorage: false, // disabled for now
     ignoredComponents: getIgnoredUndoRedoComponents(),
+    shouldCapture: sceneUpdateShouldCapture,
   });
 
   // order here matters!!!!: undo-redo, scene, composite
