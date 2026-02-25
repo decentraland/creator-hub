@@ -1,7 +1,8 @@
 import type { Scene } from '@babylonjs/core';
 import type { Emitter } from 'mitt';
 import { MessageTransport } from '@dcl/mini-rpc';
-import type { ComponentDefinition, CrdtMessageType, Entity, IEngine } from '@dcl/ecs';
+import { CrdtMessageType } from '@dcl/ecs';
+import type { ComponentDefinition, Entity, IEngine } from '@dcl/ecs';
 
 import { SceneContext } from '../babylon/decentraland/SceneContext';
 import { initRenderer } from '../babylon/setup/init';
@@ -26,6 +27,9 @@ export type SdkContextEvents = {
     operation: CrdtMessageType;
     component?: ComponentDefinition<any>;
     value?: any;
+    /** When true, the value is for UI display only (e.g. live drag preview).
+     *  Hooks should NOT sync it back to the engine or dispatch CRDT updates. */
+    skipEngineSync?: boolean;
   };
   dispose: undefined;
 };
@@ -78,6 +82,42 @@ export async function createSdkContext(
     new SceneMetricsServer(transport, store);
   }
 
+  const operations = createOperations(engine);
+
+  // Wire live drag updates: during gizmo drag, emit change events so the UI
+  // shows live transform values.  Neither the renderer ECS nor the inspector
+  // engine are updated during drag — this prevents intermediate undo entries.
+  // We read positions directly from the Babylon entity nodes and emit events
+  // with skipEngineSync so hooks update the UI only.
+  ctx.gizmos.setLiveDragCallback(entities => {
+    for (const entity of entities) {
+      // Read base transform for fields that don't change during drag (e.g. parent)
+      const baseTransform = ctx.Transform.getOrNull(entity.entityId);
+      if (!baseTransform) continue;
+      // Construct live transform from Babylon entity's current node properties
+      const liveValue = {
+        ...baseTransform,
+        position: { x: entity.position.x, y: entity.position.y, z: entity.position.z },
+        rotation: entity.rotationQuaternion
+          ? {
+              x: entity.rotationQuaternion.x,
+              y: entity.rotationQuaternion.y,
+              z: entity.rotationQuaternion.z,
+              w: entity.rotationQuaternion.w,
+            }
+          : baseTransform.rotation,
+        scale: { x: entity.scaling.x, y: entity.scaling.y, z: entity.scaling.z },
+      };
+      events.emit('change', {
+        entity: entity.entityId,
+        operation: CrdtMessageType.PUT_COMPONENT,
+        component: components.Transform,
+        value: liveValue,
+        skipEngineSync: true,
+      });
+    }
+  });
+
   return {
     engine,
     components,
@@ -85,7 +125,7 @@ export async function createSdkContext(
     scene,
     sceneContext: ctx,
     dispose,
-    operations: createOperations(engine),
+    operations,
     gizmos: ctx.gizmos,
     editorCamera: renderer.editorCamera,
     enumEntity: createEnumEntityId(engine),

@@ -7,6 +7,7 @@ import {
 } from '@babylonjs/core';
 import { Vector3 as DclVector3 } from '@dcl/ecs-math';
 import { GizmoType } from '../../utils/gizmo';
+import { suppressCrdtUpdates, resumeCrdtUpdates } from '../../sdk/crdt-update-guard';
 import type { SceneContext } from './SceneContext';
 import type { EcsEntity } from './EcsEntity';
 import { GizmoType as TransformerType } from './gizmos/types';
@@ -23,6 +24,25 @@ export function createGizmoManager(context: SceneContext) {
   let isEnabled = true;
   let currentTransformer: IGizmoTransformer | null = null;
   let isUpdatingFromGizmo = false;
+  let liveDragCallback: ((entities: EcsEntity[]) => void) | null = null;
+  let isDragInProgress = false;
+
+  function notifyLiveDrag() {
+    if (!isDragInProgress) {
+      isDragInProgress = true;
+      // Suppress renderer engine CRDT updates during drag to prevent
+      // intermediate undo entries from async message round-trips.
+      suppressCrdtUpdates(context.engine);
+    }
+    liveDragCallback?.(selectedEntities);
+  }
+
+  function endDragSuppression() {
+    if (isDragInProgress) {
+      isDragInProgress = false;
+      resumeCrdtUpdates(context.engine);
+    }
+  }
 
   // Create and initialize Babylon.js gizmo manager
   const gizmoManager = new BabylonGizmoManager(context.scene);
@@ -323,10 +343,15 @@ export function createGizmoManager(context: SceneContext) {
 
           // Set up callbacks for ECS updates
           if ('setUpdateCallbacks' in currentTransformer) {
-            currentTransformer.setUpdateCallbacks(updateEntityPosition, () => {
-              void context.operations.dispatch();
-              isUpdatingFromGizmo = false;
-            });
+            currentTransformer.setUpdateCallbacks(
+              updateEntityPosition,
+              () => {
+                endDragSuppression();
+                void context.operations.dispatch();
+                isUpdatingFromGizmo = false;
+              },
+              notifyLiveDrag,
+            );
           }
 
           // Set world alignment
@@ -360,10 +385,12 @@ export function createGizmoManager(context: SceneContext) {
               updateEntityRotation,
               updateEntityPosition,
               () => {
+                endDragSuppression();
                 void context.operations.dispatch();
                 isUpdatingFromGizmo = false;
               },
               context,
+              notifyLiveDrag,
             );
           }
 
@@ -394,10 +421,15 @@ export function createGizmoManager(context: SceneContext) {
 
           // Set up callbacks for ECS updates
           if ('setUpdateCallbacks' in currentTransformer) {
-            currentTransformer.setUpdateCallbacks(updateEntityScale, () => {
-              void context.operations.dispatch();
-              isUpdatingFromGizmo = false;
-            });
+            currentTransformer.setUpdateCallbacks(
+              updateEntityScale,
+              () => {
+                endDragSuppression();
+                void context.operations.dispatch();
+                isUpdatingFromGizmo = false;
+              },
+              notifyLiveDrag,
+            );
           }
 
           // Set world alignment
@@ -432,10 +464,15 @@ export function createGizmoManager(context: SceneContext) {
 
           // Set up callbacks for ECS updates
           if ('setUpdateCallbacks' in currentTransformer) {
-            currentTransformer.setUpdateCallbacks(updateEntityPosition, () => {
-              void context.operations.dispatch();
-              isUpdatingFromGizmo = false;
-            });
+            currentTransformer.setUpdateCallbacks(
+              updateEntityPosition,
+              () => {
+                endDragSuppression();
+                void context.operations.dispatch();
+                isUpdatingFromGizmo = false;
+              },
+              notifyLiveDrag,
+            );
           }
 
           // Set world alignment
@@ -489,6 +526,9 @@ export function createGizmoManager(context: SceneContext) {
       if (selectedEntities.length > 0) {
         updateGizmoTransform();
       }
+    },
+    setLiveDragCallback(cb: (entities: EcsEntity[]) => void) {
+      liveDragCallback = cb;
     },
   };
 }

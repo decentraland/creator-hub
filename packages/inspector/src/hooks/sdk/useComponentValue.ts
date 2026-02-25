@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { DeepReadonly, Entity, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
 import { CrdtMessageType } from '@dcl/ecs';
 import { recursiveCheck, deepEqualWithTolerance } from '../../lib/utils/deep-equal';
@@ -27,6 +27,11 @@ export const useComponentValue = <ComponentValueType>(
   const componentValueType = getComponentValue(entity, component);
   const [value, setValue] = useState<ComponentValueType>(componentValueType as ComponentValueType);
   const sdk = useSdk();
+
+  // When a change event carries skipEngineSync (e.g. live drag preview),
+  // we update the UI state but must NOT sync back to the engine.
+  const skipEngineSyncRef = useRef(false);
+
   // sync entity changed
   useEffect(() => {
     setValue(getComponentValue(entity, component) as ComponentValueType);
@@ -34,6 +39,10 @@ export const useComponentValue = <ComponentValueType>(
 
   // sync state -> engine
   useEffect(() => {
+    if (skipEngineSyncRef.current) {
+      skipEngineSyncRef.current = false;
+      return;
+    }
     if (value === null || isComponentEqual(value)) return;
     if (isLastWriteWinComponent(component) && sdk) {
       sdk.operations.updateValue(component, entity, value!);
@@ -52,6 +61,9 @@ export const useComponentValue = <ComponentValueType>(
         !!event.value
       ) {
         if (event.operation === CrdtMessageType.PUT_COMPONENT) {
+          if (event.skipEngineSync) {
+            skipEngineSyncRef.current = true;
+          }
           // TODO: This setValue is generating an isEqual comparission in previous effect.
           // Maybe we have to use two pure functions instead of an effect.
           // Same happens with the input & componentValue.

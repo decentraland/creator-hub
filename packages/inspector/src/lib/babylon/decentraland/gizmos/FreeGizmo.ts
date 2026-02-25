@@ -37,6 +37,7 @@ export class FreeGizmo implements IGizmoTransformer {
   private onDragEndCallback: (() => void) | null = null;
   private updateEntityPosition: ((entity: EcsEntity) => void) | null = null;
   private dispatchOperations: (() => void) | null = null;
+  private onLiveDragUpdate: (() => void) | null = null;
 
   private gizmoManager: GizmoManagerInterface | null = null;
 
@@ -69,9 +70,11 @@ export class FreeGizmo implements IGizmoTransformer {
   setUpdateCallbacks(
     updateEntityPosition: (entity: EcsEntity) => void,
     dispatchOperations: () => void,
+    onLiveDragUpdate?: () => void,
   ): void {
     this.updateEntityPosition = updateEntityPosition;
     this.dispatchOperations = dispatchOperations;
+    this.onLiveDragUpdate = onLiveDragUpdate ?? null;
   }
 
   setWorldAligned(value: boolean): void {
@@ -120,6 +123,7 @@ export class FreeGizmo implements IGizmoTransformer {
     this.onDragEndCallback = null;
     this.updateEntityPosition = null;
     this.dispatchOperations = null;
+    this.onLiveDragUpdate = null;
   }
 
   private resetDragState(): void {
@@ -182,6 +186,10 @@ export class FreeGizmo implements IGizmoTransformer {
     this.dragPlanePosition = null;
     this.entityOffsets.clear();
     this.updateGizmoIndicator();
+    // Sync final positions to renderer ECS before dispatch (single undo entry)
+    if (this.updateEntityPosition) {
+      this.selectedEntities.forEach(this.updateEntityPosition);
+    }
     this.dispatchOperations?.();
     this.onDragEndCallback?.();
   }
@@ -213,7 +221,12 @@ export class FreeGizmo implements IGizmoTransformer {
       this.applyWorldPositionToEntity(entity, newWorldPosition);
     }
 
-    this.updateEntityPosition && this.selectedEntities.forEach(this.updateEntityPosition);
+    // NOTE: we intentionally do NOT call updateEntityPosition here.
+    // Writing to the renderer ECS on every drag frame would cause the
+    // renderer's engine.update() to flush intermediate values to the data
+    // layer, creating unwanted undo entries.  The final ECS sync happens
+    // in handleDragEnd instead.
+    this.onLiveDragUpdate?.();
     this.updateGizmoIndicator();
   }
 
