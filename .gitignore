@@ -3,7 +3,8 @@ node_modules
 dist
 *.local
 thumbs.db
-.cursor
+.cursor/
+!.cursor/skills
 
 .eslintcache
 .browserslistrc
