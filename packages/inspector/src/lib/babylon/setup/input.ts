@@ -4,6 +4,7 @@ import type { EcsEntity } from '../decentraland/EcsEntity';
 import { snapManager } from '../decentraland/snap-manager';
 import { keyState, Keys } from '../decentraland/keys';
 import { getAncestors, isAncestor, mapNodes } from '../../sdk/nodes';
+import { createSpawnPointManager } from '../decentraland/spawn-point-manager';
 
 let isSnapEnabled = snapManager.isEnabled();
 let isShiftKeyDown = false;
@@ -80,6 +81,22 @@ function findParentEntity<T extends BABYLON.Node & { isDCLEntity?: boolean }>(
   return (parent as any) || null;
 }
 
+function getSceneContext(scene: BABYLON.Scene) {
+  const ecsEntity = scene.transformNodes.find(n => isEcsEntity(n));
+  return ecsEntity ? (ecsEntity.context.deref() ?? null) : null;
+}
+
+function startDragDetection(): void {
+  clickStartTimer = setTimeout(() => {
+    isDragging = true;
+  }, 150);
+}
+
+function resetDragDetection(): void {
+  clearTimeout(clickStartTimer);
+  isDragging = false;
+}
+
 export function interactWithScene(
   scene: BABYLON.Scene,
   pointerEvent: 'pointerUp' | 'pointerDown',
@@ -91,12 +108,53 @@ export function interactWithScene(
 
   const mesh = pickingResult!.pickedMesh;
 
+  // Check if clicked on a spawn point mesh BEFORE checking for entities
+  const spawnPointManager = createSpawnPointManager(scene);
+  if (mesh && spawnPointManager.isMeshSpawnPoint(mesh)) {
+    if (pointerEvent === 'pointerDown') {
+      startDragDetection();
+    } else if (pointerEvent === 'pointerUp') {
+      if (!isDragging) {
+        const spawnPointIndex = spawnPointManager.findSpawnPointByMesh(mesh);
+        if (spawnPointIndex !== null) {
+          const context = getSceneContext(scene);
+          if (context) {
+            const isCameraTarget = spawnPointManager.isMeshCameraTarget(mesh);
+            if (isCameraTarget) {
+              spawnPointManager.selectCameraTarget(spawnPointIndex);
+            } else {
+              spawnPointManager.selectSpawnPoint(spawnPointIndex);
+            }
+
+            // Select the Player entity to show spawn settings in inspector.
+            // Gizmo attachment is handled by PlayerInspector via the selectionChange event
+            // (or on mount if it wasn't rendered yet). We must NOT attach here because
+            // dispatch().then() fires after PlayerInspector's listener, overwriting its
+            // callback that updates React state and scene.json.
+            context.operations.updateSelectedEntity(context.engine.PlayerEntity);
+            void context.operations.dispatch();
+          }
+        }
+      }
+      resetDragDetection();
+    }
+    return; // Don't process entity selection
+  }
+
   const entity = mesh && findParentEntity(mesh);
 
+  // When a gizmo is attached to a spawn point, clicking on gizmo meshes (which aren't
+  // spawn point meshes or ECS entities) should not deselect the spawn point.
+  // Start drag detection so the gizmo drag works, and skip deselection on pointerUp.
+  const context = getSceneContext(scene);
+  const gizmoAttachedToSpawn = context?.gizmos.isAttachedToSpawnPoint() ?? false;
+
   if (entity && pointerEvent === 'pointerDown') {
-    clickStartTimer = setTimeout(() => {
-      isDragging = true;
-    }, 150); // 150ms to detect if the user is dragging
+    startDragDetection();
+  } else if (!entity && mesh && gizmoAttachedToSpawn && pointerEvent === 'pointerDown') {
+    // A mesh was picked that isn't a spawn point or entity — likely a gizmo mesh.
+    // Start drag detection so the gizmo drag works.
+    startDragDetection();
   } else if (
     entity &&
     pointerEvent === 'pointerUp' &&
@@ -104,8 +162,7 @@ export function interactWithScene(
     !entity.isLocked() &&
     !entity.isHidden()
   ) {
-    const context = entity.context.deref()!;
-    const { operations, engine, editorComponents } = context;
+    const { operations, engine, editorComponents } = entity.context.deref()!;
     const ancestors = getAncestors(engine, entity.entityId);
     const nodes = mapNodes(engine, node =>
       isAncestor(ancestors, node.entity) ? { ...node, open: true } : node,
@@ -115,22 +172,27 @@ export function interactWithScene(
       entity.entityId,
       !!keyState[Keys.KEY_CTRL] || !!keyState[Keys.KEY_SHIFT],
     );
+    // Deselect any spawn point when selecting an entity
+    spawnPointManager.selectSpawnPoint(null);
     void operations.dispatch();
-  } else if (!entity && pointerEvent === 'pointerUp' && !isDragging) {
-    // Clicked on sky or grid ground.
-    // Un-select all previous entities by selecting the root entity.
-    const ecsEntity = scene.transformNodes.find(n => isEcsEntity(n));
-    if (ecsEntity) {
-      const context = ecsEntity.context.deref()!;
-      const { operations, engine } = context;
-      operations.updateSelectedEntity(engine.RootEntity);
-      void operations.dispatch();
+  } else if (
+    !entity &&
+    pointerEvent === 'pointerUp' &&
+    !isDragging &&
+    // When a gizmo is attached to a spawn point, only suppress deselection if we actually
+    // picked a mesh (likely a gizmo mesh). If no mesh was picked (sky), deselect normally.
+    !(gizmoAttachedToSpawn && mesh)
+  ) {
+    // Clicked on sky or grid ground - un-select all previous entities
+    if (context) {
+      context.operations.updateSelectedEntity(context.engine.RootEntity);
+      spawnPointManager.selectSpawnPoint(null);
+      void context.operations.dispatch();
     }
   }
 
-  // Clear isDragging flag each pointerUp
+  // Clear drag state on every pointerUp
   if (pointerEvent === 'pointerUp') {
-    clearTimeout(clickStartTimer);
-    isDragging = false;
+    resetDragDetection();
   }
 }

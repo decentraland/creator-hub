@@ -147,6 +147,13 @@ export class CompositeProvider implements StateProvider {
   }
 
   canHandle(operation: Operation): boolean {
+    if (
+      operation.type === OperationType.SCENE_UPDATE &&
+      operation.componentName === EditorComponentNames.Scene
+    ) {
+      return true;
+    }
+
     if (operation.type === OperationType.COMPOSITE_UPDATE) {
       if (
         !operation.componentName ||

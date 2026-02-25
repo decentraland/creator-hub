@@ -53,6 +53,7 @@ export interface UndoRedoOptions {
   storageKey?: string;
   maxStorageSize?: number; // max size in bytes for localStorage
   ignoredComponents?: string[]; // components to ignore for undo/redo
+  shouldCapture?: (operation: Operation, prevValue: unknown) => boolean;
 }
 
 interface SerializedUndoRedo {
@@ -128,6 +129,7 @@ export class UndoRedoProvider implements StateProvider {
       storageKey: options.storageKey ?? 'inspector-undo-redo-history',
       maxStorageSize: options.maxStorageSize ?? 1024 * 1024 * 10, // 10MB limit for localStorage
       ignoredComponents: options.ignoredComponents ?? [], // components to ignore for undo/redo
+      shouldCapture: options.shouldCapture ?? (() => true),
     };
 
     this.undoList = UndoRedoArray(this.options.maxEntries, this.options.maxSize);
@@ -390,7 +392,8 @@ export class UndoRedoProvider implements StateProvider {
 
     return (
       operation.type === OperationType.COMPOSITE_UPDATE ||
-      operation.type === OperationType.UNDO_CAPTURE
+      operation.type === OperationType.UNDO_CAPTURE ||
+      operation.type === OperationType.SCENE_UPDATE
     );
   }
 
@@ -404,7 +407,8 @@ export class UndoRedoProvider implements StateProvider {
     }
 
     if (
-      operation.type === OperationType.COMPOSITE_UPDATE &&
+      (operation.type === OperationType.COMPOSITE_UPDATE ||
+        operation.type === OperationType.SCENE_UPDATE) &&
       (operation.operation === CrdtMessageType.PUT_COMPONENT ||
         operation.operation === CrdtMessageType.DELETE_COMPONENT)
     ) {
@@ -425,6 +429,11 @@ export class UndoRedoProvider implements StateProvider {
     }
 
     const prevValue = findPrevValue(composite, operation.componentName, operation.entity);
+
+    if (!this.options.shouldCapture(operation, prevValue)) {
+      return;
+    }
+
     const crdtOperation: CrdtOperation = {
       entity: operation.entity,
       operation: operation.operation,
