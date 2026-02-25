@@ -1,0 +1,52 @@
+.WorldCollaboratorsTab {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-height: 100%;
+}
+
+.WorldCollaboratorsTab.CenteredContent {
+  justify-content: center;
+  align-items: center;
+}
+
+.WorldCollaboratorsTab .MuiButton-root {
+  height: 40px;
+}
+
+.WorldCollaboratorsTab > .MuiTypography-h6 {
+  display: block;
+  white-space: pre-line;
+  color: var(--text-on-secondary);
+}
+
+.WorldCollaboratorsTab > .MuiTypography-h6 span {
+  color: var(--white);
+  font-weight: 500;
+}
+
+/* Collaborators List */
+
+.WorldCollaboratorsTab .CollaboratorsHeaderRow {
+  padding: 16px;
+  gap: 10px;
+  color: var(--dcl-silver);
+  background-color: var(--black);
+}
+
+.WorldCollaboratorsTab .ClearListLink {
+  color: var(--white) !important;
+  margin-left: auto;
+}
+
+/* Empty state */
+
+.WorldCollaboratorsTab .EmptyStateContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+  flex: 1;
+  color: var(--dcl-silver);
+}

@@ -1,0 +1,194 @@
+import React, { useCallback, useMemo, useState } from 'react';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import { Box, IconButton, TextField, Typography } from 'decentraland-ui2';
+import { t } from '/@/modules/store/translation/utils';
+import { Row } from '/@/components/Row';
+import { Button } from '/@/components/Button';
+import { Info } from '../../DeploymentHistory/styled';
+import './styles.css';
+
+const MIN_PASSWORD_LENGTH = 8;
+const MIN_NUMBERS = 2;
+
+function countDigits(str: string): number {
+  return (str.match(/\d/g) ?? []).length;
+}
+
+type Props = {
+  isChanging: boolean;
+  onCancel: () => void;
+  onSubmit: (password: string) => void;
+};
+
+const WorldPermissionsPasswordFormComponent: React.FC<Props> = React.memo(
+  ({ isChanging, onCancel, onSubmit }) => {
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const handlePasswordChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+      setPassword(event.target.value);
+    }, []);
+
+    const handleConfirmPasswordChange = useCallback(
+      (event: React.ChangeEvent<HTMLInputElement>) => {
+        setConfirmPassword(event.target.value);
+      },
+      [],
+    );
+
+    const handleTogglePasswordVisibility = useCallback(() => {
+      setShowPassword(prev => !prev);
+    }, []);
+
+    const handleToggleConfirmPasswordVisibility = useCallback(() => {
+      setShowConfirmPassword(prev => !prev);
+    }, []);
+
+    const handleSubmit = useCallback(() => {
+      onSubmit(password);
+    }, [password, onSubmit]);
+
+    const hasMinLength = password.length >= MIN_PASSWORD_LENGTH;
+    const hasMinNumbers = countDigits(password) >= MIN_NUMBERS;
+    const passwordMeetsRequirements = hasMinLength && hasMinNumbers;
+    const isValid = passwordMeetsRequirements && password === confirmPassword;
+    const showMismatchError =
+      confirmPassword.length > 0 && password.length > 0 && password !== confirmPassword;
+
+    const passwordErrors = useMemo(() => {
+      if (password.length === 0) return null;
+      if (passwordMeetsRequirements) return null;
+      const failedRules: string[] = [];
+      if (!hasMinLength) {
+        failedRules.push(
+          t('modal.world_permissions.password.error.min_length', { min: MIN_PASSWORD_LENGTH }),
+        );
+      }
+      if (!hasMinNumbers) {
+        failedRules.push(
+          t('modal.world_permissions.password.error.min_numbers', { min: MIN_NUMBERS }),
+        );
+      }
+      return failedRules;
+    }, [password, passwordMeetsRequirements, hasMinLength, hasMinNumbers]);
+
+    return (
+      <Box className="PasswordForm">
+        <Typography
+          variant="h5"
+          className="PasswordFormTitle"
+        >
+          {isChanging
+            ? t('modal.world_permissions.password.dialog.change_title')
+            : t('modal.world_permissions.password.dialog.create_title')}
+        </Typography>
+
+        <Box className="PasswordFormField">
+          <Typography
+            variant="body2"
+            className="PasswordFormLabel"
+          >
+            {t('modal.world_permissions.password.dialog.type_password')}
+          </Typography>
+          <TextField
+            type={showPassword ? 'text' : 'password'}
+            value={password}
+            onChange={handlePasswordChange}
+            variant="outlined"
+            size="medium"
+            fullWidth
+            autoFocus
+            error={!!passwordErrors}
+            InputProps={{
+              endAdornment: (
+                <IconButton
+                  onClick={handleTogglePasswordVisibility}
+                  edge="end"
+                  size="small"
+                >
+                  {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                </IconButton>
+              ),
+            }}
+          />
+          {passwordErrors && (
+            <Box className="PasswordRequirements">
+              <Typography variant="caption">
+                {t('modal.world_permissions.password.error.requirements_header')}
+              </Typography>
+              <ul>
+                {passwordErrors.map(error => (
+                  <li key={error}>
+                    <Typography variant="caption">{error}</Typography>
+                  </li>
+                ))}
+              </ul>
+            </Box>
+          )}
+        </Box>
+
+        <Box className="PasswordFormField">
+          <Typography
+            variant="body2"
+            className="PasswordFormLabel"
+          >
+            {t('modal.world_permissions.password.dialog.repeat_password')}
+          </Typography>
+          <TextField
+            type={showConfirmPassword ? 'text' : 'password'}
+            value={confirmPassword}
+            onChange={handleConfirmPasswordChange}
+            variant="outlined"
+            size="medium"
+            fullWidth
+            error={showMismatchError}
+            helperText={
+              showMismatchError ? t('modal.world_permissions.password.error.mismatch') : undefined
+            }
+            InputProps={{
+              endAdornment: (
+                <IconButton
+                  onClick={handleToggleConfirmPasswordVisibility}
+                  edge="end"
+                  size="small"
+                >
+                  {showConfirmPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                </IconButton>
+              ),
+            }}
+          />
+        </Box>
+
+        <Info className="PasswordFormInfo">
+          <InfoOutlinedIcon fontSize="small" />
+          <Typography variant="body2">
+            {t('modal.world_permissions.password.dialog.info')}
+          </Typography>
+        </Info>
+
+        <Row className="PasswordFormActions">
+          <Button
+            onClick={onCancel}
+            color="secondary"
+          >
+            {t('modal.cancel')}
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            color="primary"
+            disabled={!isValid}
+          >
+            {t('modal.confirm')}
+          </Button>
+        </Row>
+      </Box>
+    );
+  },
+);
+
+WorldPermissionsPasswordFormComponent.displayName = 'WorldPermissionsPasswordForm';
+
+export const WorldPermissionsPasswordForm = WorldPermissionsPasswordFormComponent;

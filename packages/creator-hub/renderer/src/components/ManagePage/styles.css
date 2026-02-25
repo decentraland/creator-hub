@@ -1,0 +1,73 @@
+.ManagePage .Container {
+  flex-flow: column;
+  gap: 32px;
+  padding-bottom: 32px;
+}
+
+.ManagePage .RefreshButton {
+  margin-left: 16px;
+}
+
+.ManagePage .RefreshButton.Loading {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(360deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+.ManagePage .Container > .Row {
+  gap: 64px;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+}
+
+.ManagePage .ContentColumn {
+  width: 100%;
+  height: max-content;
+}
+
+.ManagePage .ContentColumn > .Loader {
+  height: 500px;
+}
+
+.ManagePage .FiltersBar {
+  margin: 0 0 32px 0;
+}
+
+.ManagePage .FilterChipsContainer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 0 auto;
+  text-transform: none;
+}
+
+.ManagePage .FilterChip {
+  font-weight: 600;
+  border: 1px solid var(--dark-gray);
+}
+
+.ManagePage .FiltersBar .Select {
+  margin-right: 16px;
+}
+
+.ManagePage .EmptyContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  text-align: center;
+  gap: 16px;
+}
+
+.ManagePage .EmptyContainer .MuiButton-root {
+  margin-top: 16px;
+  height: 40px;
+}

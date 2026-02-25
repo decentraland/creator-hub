@@ -1,35 +1,23 @@
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import { createSlice } from '@reduxjs/toolkit';
 import { ethers, Contract } from 'ethers';
 import { namehash } from '@ethersproject/hash';
 import pLimit from 'p-limit';
-import type { ChainId } from '@dcl/schemas/dist/dapps/chain-id';
+import { ChainId } from '@dcl/schemas/dist/dapps/chain-id';
 import type { Async } from '/shared/types/async';
 import { config } from '/@/config';
 import { fetch } from '/shared/fetch';
 import { DCLNames, ENS as ENSApi } from '/@/lib/ens';
 import { Worlds } from '/@/lib/worlds';
+import { createAsyncThunk } from '/@/modules/store/thunk';
 import { ens as ensContract, ensResolver, dclRegistrar } from './contracts';
 import { getEnsProvider, isValidENSName } from './utils';
 import { USER_PERMISSIONS, type ENS, type ENSError } from './types';
 
+const DEFAULT_CHAIN_ID: ChainId = Number(config.get('CHAIN_ID')) || ChainId.ETHEREUM_MAINNET;
 const REQUESTS_BATCH_SIZE = 25;
 const limit = pLimit(REQUESTS_BATCH_SIZE);
 
 // actions
-export const fetchWorldStatus = async (domain: string) => {
-  const WorldAPI = new Worlds();
-  const world = await WorldAPI.fetchWorld(domain);
-  if (world && world.length > 0) {
-    const [{ id: entityId }] = world;
-    return {
-      scene: {
-        entityId,
-      },
-    };
-  }
-  return null;
-};
-
 export const fetchContributeENSNames = async (address: string) => {
   try {
     const WorldAPI = new Worlds();
@@ -57,9 +45,10 @@ export const fetchBannedNames = async () => {
 
 export const fetchDCLNames = createAsyncThunk(
   'ens/fetchNames',
-  async ({ address, chainId }: { address: string; chainId: ChainId }) => {
+  async ({ address }: { address: string }, { getState }) => {
     if (!address) return [];
 
+    const chainId = getState().ens.chainId;
     const provider = new ethers.JsonRpcProvider(config.get('RPC_URL'));
 
     // TODO: Implement logic to fetch lands from the builder-server
@@ -136,8 +125,6 @@ export const fetchDCLNames = createAsyncThunk(
           }
         }
 
-        const worldStatus = await fetchWorldStatus(subdomain);
-
         return {
           name,
           subdomain,
@@ -149,7 +136,6 @@ export const fetchDCLNames = createAsyncThunk(
           content,
           ensAddressRecord,
           landId,
-          worldStatus,
         };
       });
     });
@@ -175,8 +161,6 @@ export const fetchENS = createAsyncThunk(
         const subdomain = data.toLowerCase();
         const name = subdomain.split('.')[0];
 
-        const worldStatus = await fetchWorldStatus(name);
-
         return {
           name,
           subdomain,
@@ -186,7 +170,6 @@ export const fetchENS = createAsyncThunk(
           ensOwnerAddress: '',
           resolver: '',
           tokenId: '',
-          worldStatus,
         };
       });
     });
@@ -224,8 +207,6 @@ export const fetchContributableNames = createAsyncThunk(
         const subdomain = data.name.toLowerCase();
         const name = subdomain.split('.')[0];
 
-        const worldStatus = await fetchWorldStatus(name);
-
         return {
           name,
           subdomain,
@@ -239,7 +220,6 @@ export const fetchContributableNames = createAsyncThunk(
           tokenId: '',
           userPermissions: data.user_permissions,
           size: data.size,
-          worldStatus,
         };
       });
     });
@@ -250,7 +230,7 @@ export const fetchContributableNames = createAsyncThunk(
 
 export const fetchENSList = createAsyncThunk(
   'ens/fetchENSList',
-  async (payload: { address: string; chainId: ChainId }, thunkApi) => {
+  async (payload: { address: string }, thunkApi) => {
     const dclNames = await thunkApi.dispatch(fetchDCLNames(payload)).unwrap();
     const ensNames = await thunkApi.dispatch(fetchENS(payload)).unwrap();
     const contributableNames = await thunkApi.dispatch(fetchContributableNames(payload)).unwrap();
@@ -261,11 +241,13 @@ export const fetchENSList = createAsyncThunk(
 
 // state
 export type ENSState = {
+  chainId: ChainId;
   data: Record<string, ENS>;
   error: ENSError | null;
 };
 
 export const initialState: Async<ENSState> = {
+  chainId: DEFAULT_CHAIN_ID,
   data: {},
   status: 'idle',
   error: null,
@@ -275,7 +257,12 @@ export const initialState: Async<ENSState> = {
 export const slice = createSlice({
   name: 'ens',
   initialState,
-  reducers: {},
+  reducers: {
+    clearState: () => initialState,
+    setChainId: (state, action: { payload: ChainId }) => {
+      state.chainId = action.payload;
+    },
+  },
   extraReducers: builder => {
     builder
       .addCase(fetchENSList.pending, state => {

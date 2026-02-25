@@ -1,3 +1,11 @@
 .Dropdown ul.MuiMenu-list {
-  width: 200px;
+  min-width: 200px;
+}
+
+.Dropdown li.MuiMenuItem-root {
+  gap: 8px;
+}
+
+.Dropdown li.MuiMenuItem-root svg {
+  color: var(--text-on-secondary);
 }

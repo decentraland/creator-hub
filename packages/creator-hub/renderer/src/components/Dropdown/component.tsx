@@ -38,6 +38,8 @@ function Dropdown(props: Props) {
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
+        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
       >
         {options.map(option => (
           <MenuItem
@@ -45,7 +47,9 @@ function Dropdown(props: Props) {
             selected={option.text === selected}
             onClick={e => handleSelect(e, option)}
             disabled={option.disabled}
+            divider={option.divider}
           >
+            {option.icon}
             {option.text}
           </MenuItem>
         ))}
