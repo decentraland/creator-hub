@@ -27,9 +27,11 @@
 
 .Container .title span {
   margin: 0;
-  color: var(--text);
-  font-size: 14px;
+  text-transform: uppercase;
+  color: var(--neutral-grey-3);
+  font-size: 12px;
   cursor: pointer;
+  letter-spacing: 2px;
 }
 
 .Container .title .indicator {
@@ -47,7 +49,6 @@
 }
 
 .Container.open > .title {
-  border-bottom: 1px solid var(--base-12);
   padding-bottom: 12px;
 }
 
@@ -81,10 +82,6 @@
   display: flex;
   flex-direction: column;
   row-gap: 12px;
-}
-
-.Container .title + .content {
-  margin-top: 16px;
 }
 
 .Container.border {

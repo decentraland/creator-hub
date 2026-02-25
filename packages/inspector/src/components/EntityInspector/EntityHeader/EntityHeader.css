@@ -3,7 +3,6 @@
   padding-bottom: 12px;
   font-weight: 600;
   text-align: left;
-  border-bottom: 1px solid var(--border-gray);
 
   display: flex;
   flex-direction: column;
