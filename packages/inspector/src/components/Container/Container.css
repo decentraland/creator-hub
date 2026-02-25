@@ -23,6 +23,7 @@
 .Container .title svg.icon {
   width: 14px;
   height: 14px;
+  color: var(--neutral-grey-3);
 }
 
 .Container .title span {

@@ -26,6 +26,7 @@
 .EntityHeader .Title > svg {
   margin-left: 5px;
   cursor: pointer;
+  fill: var(--base-06);
 }
 
 .EntityHeader .RightContent {

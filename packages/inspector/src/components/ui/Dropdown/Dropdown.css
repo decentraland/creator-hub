@@ -18,9 +18,9 @@
   align-items: center;
   position: relative;
   height: 24px;
-  background: var(--base-14);
+  background: var(--gray-0);
   border-radius: 4px;
-  border: 1px solid var(--base-14);
+  border: 1px solid var(--gray-0);
   padding: 3px 8px;
   gap: 4px;
   cursor: pointer;

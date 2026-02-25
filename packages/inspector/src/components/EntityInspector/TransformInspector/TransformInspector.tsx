@@ -15,8 +15,6 @@ import { fromTransform, toTransform, fromTransformConfig } from './utils';
 import type { Props } from './types';
 import { Link, type Props as LinkProps } from './Link';
 
-import './TransformInspector.css';
-
 export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
   const { Transform, TransformConfig } = sdk.components;
   const entity = entities.find(entity => Transform.has(entity)) || entities[0];

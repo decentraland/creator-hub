@@ -1,6 +1,6 @@
 .Input {
   border: none;
-  background-color: var(--background-gray);
+  background-color: var(--gray-0);
   outline: var(--input-border-color);
   color: var(--white-gray);
   font-size: 13px;
