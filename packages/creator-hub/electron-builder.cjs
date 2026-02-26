@@ -1,27 +1,26 @@
 const { execSync } = require('child_process');
 const path = require('path');
 
-const projectDir = __dirname;
-const rootDir = path.resolve(projectDir, '../..');
-
 const config = {
   appId: 'com.decentraland.creatorshub',
   directories: {
     output: 'dist',
     buildResources: 'buildResources',
   },
+  beforePack: path.join(__dirname, 'scripts', 'copy-npm-for-asar.js'),
+  // npm must be under app dir for asarUnpack to match (26.4.1+). beforePack runs before file copy.
   files: [
     'package.json',
     'main/dist/**',
     'preload/dist/**',
     'renderer/dist/**',
     {
-      from: path.join(rootDir, 'node_modules/npm'),
+      from: 'node_modules/npm',
       to: 'node_modules/npm',
       filter: ['**/*'],
     },
     {
-      from: path.join(rootDir, 'node_modules/npm/node_modules'),
+      from: 'node_modules/npm/node_modules',
       to: 'node_modules/npm/node_modules',
       filter: ['**/*'],
     },

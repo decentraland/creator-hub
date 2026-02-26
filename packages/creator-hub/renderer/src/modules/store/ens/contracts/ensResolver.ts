@@ -17,4 +17,4 @@ export const ensResolver = {
     name: 'ENSResolver',
     chainId: ChainId.ETHEREUM_MAINNET,
   },
-} as Record<ChainId, ContractData>;
+} as Partial<Record<ChainId, ContractData>>;

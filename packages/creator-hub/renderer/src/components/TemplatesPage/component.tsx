@@ -10,6 +10,7 @@ import { t } from '/@/modules/store/translation/utils';
 
 import NewScenePng from '/assets/images/new-scene.png';
 
+import { misc } from '#preload';
 import { Container } from '../Container';
 import { FiltersBar } from '../FiltersBar';
 import { Navbar, NavbarItem } from '../Navbar';
@@ -20,8 +21,6 @@ import { CreateProject } from '../Modals/CreateProject';
 
 import { SortBy, Difficulty, type ModalType, type CreateProjectValue } from './types';
 import { sortTemplatesBy } from './utils';
-
-import { misc } from '#preload';
 
 import './styles.css';
 

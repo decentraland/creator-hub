@@ -47,7 +47,7 @@ export const WorldPermissionsAvatarWithInfo: React.FC<Props> = React.memo(
     return (
       <Row className="Avatar">
         <AvatarFace
-          avatar={avatar}
+          avatar={avatar as AvatarFaceProps['avatar']}
           size={size}
           inline
         />

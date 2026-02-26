@@ -1,10 +1,10 @@
-import { t } from '/@/modules/store/translation/utils';
-import './styles.css';
-import { useDispatch } from '#store';
 import { useCallback } from 'react';
-import { actions } from '/@/modules/store/editor';
 import { Typography } from 'decentraland-ui2';
+import { useDispatch } from '#store';
+import { t } from '/@/modules/store/translation/utils';
+import { actions } from '/@/modules/store/editor';
 import { Image } from '../Image';
+import './styles.css';
 
 /* TODO: if we wanted to fetch this playlist from YouTube, we could use the their API:
 

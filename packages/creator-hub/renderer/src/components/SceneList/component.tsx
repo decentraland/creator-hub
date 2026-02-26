@@ -11,8 +11,8 @@ import { Column } from '../Column';
 import { FiltersBar } from '../FiltersBar';
 import { Row } from '../Row';
 import { Select } from '../Select';
-import type { Props } from './types';
 import { Projects } from './Projects';
+import type { Props } from './types';
 
 import './styles.css';
 

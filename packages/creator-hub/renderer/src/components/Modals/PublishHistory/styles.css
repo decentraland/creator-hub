@@ -21,7 +21,7 @@
 }
 
 .PublishHistory .Deployment h3::after {
-  content: '';
+  content: "";
   position: absolute;
   left: 100%;
   top: 50%;
@@ -46,5 +46,5 @@
 
 .PublishHistory .Deployment .row > span {
   color: var(--dark-gray);
-  width: 100px
+  width: 100px;
 }

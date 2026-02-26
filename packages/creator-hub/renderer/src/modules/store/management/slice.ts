@@ -1,9 +1,9 @@
 import { createSlice, createSelector, type PayloadAction } from '@reduxjs/toolkit';
-import { AuthServerProvider } from 'decentraland-connect';
 import type { Async } from '/shared/types/async';
 import type { ManagedProject } from '/shared/types/manage';
 import { FilterBy } from '/shared/types/manage';
 import { ManagedProjectType, SortBy } from '/shared/types/manage';
+import { AuthServerProvider } from '/@/lib/auth';
 import type {
   WorldScene,
   WorldSettings,

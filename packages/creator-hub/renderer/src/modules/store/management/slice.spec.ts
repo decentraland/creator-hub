@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AuthServerProvider } from 'decentraland-connect';
+import { AuthServerProvider } from '../../../lib/auth';
 import type { ManagedProject } from '../../../../../shared/types/manage';
 import { SortBy, FilterBy, ManagedProjectType } from '../../../../../shared/types/manage';
 import { createTestStore } from '../../../../tests/utils/testStore';
@@ -145,7 +145,7 @@ vi.mock('/@/modules/store/land', async importOriginal => {
   };
 });
 
-vi.mock('decentraland-connect', () => ({
+vi.mock('../../../lib/auth', () => ({
   AuthServerProvider: {
     getAccount: vi.fn(),
   },

@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 
-import { Box, Checkbox } from 'decentraland-ui2';
+import { Checkbox } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
 
 import { Modal } from '..';
