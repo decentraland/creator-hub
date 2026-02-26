@@ -561,8 +561,8 @@
         }
       },
       "collaborators": {
-        "description": "<span>Agrega hasta 10 direcciones</span> (usuarios de Decentraland) como colaboradores y gestiona sus permisos para publicar o transmitir en tu Mundo.",
-        "empty_list": "Aún no has agregado ningún colaborador/dirección",
+        "description": "<span>Agrega hasta 10 colaboradores</span> y gestiona sus permisos para publicar o transmitir en tu Mundo.",
+        "empty_list": "Aún no has agregado ningún colaborador",
         "add_collaborator": "Agregar colaborador",
         "add": "Agregar",
         "column_name_label": "Colaboradores: {number}",
