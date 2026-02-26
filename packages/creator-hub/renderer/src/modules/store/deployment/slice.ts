@@ -9,6 +9,7 @@ import { delay } from '/shared/utils';
 import { isFetchError } from '/shared/fetch';
 import type { DeploymentComponentsStatus, Info, Status, File, ErrorName } from '/@/lib/deploy';
 import { DeploymentError, isDeploymentError } from '/@/lib/deploy';
+import { actions as managementActions } from '/@/modules/store/management';
 import { createAsyncThunk } from '/@/modules/store/thunk';
 import {
   checkDeploymentStatus,
@@ -235,8 +236,11 @@ export const executeDeployment = createAsyncThunk(
         currentStatus,
       );
 
-      if (deriveOverallStatus(componentsStatus) === 'failed') {
+      const finalStatus = deriveOverallStatus(componentsStatus);
+      if (finalStatus === 'failed') {
         return rejectWithValue(new DeploymentError('DEPLOYMENT_FAILED', componentsStatus));
+      } else if (finalStatus === 'complete') {
+        dispatch(managementActions.fetchAllManagedProjectsData({ address: wallet }));
       }
 
       return { info, componentsStatus };

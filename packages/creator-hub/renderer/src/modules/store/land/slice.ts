@@ -125,7 +125,9 @@ export const initialState: Async<LandState> = {
 export const slice = createSlice({
   name: 'land',
   initialState,
-  reducers: {},
+  reducers: {
+    clearState: () => initialState,
+  },
   extraReducers: builder => {
     builder
       .addCase(fetchLandList.pending, state => {

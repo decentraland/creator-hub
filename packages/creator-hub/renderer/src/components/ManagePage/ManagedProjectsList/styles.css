@@ -1,0 +1,28 @@
+.ManagedProjectsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.ManagedProjectsList .LoadMoreContainer {
+  width: 100%;
+  flex-shrink: 0;
+  text-align: center;
+  margin-top: 16px;
+}
+
+.ManagedProjectsList .LoadMoreContainer .MuiButton-root {
+  height: 40px;
+  background-color: var(--white);
+  color: var(--black);
+  padding: 8px 22px;
+}
+
+.UnpublishConfirmationModal {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.UnpublishConfirmationModal .MuiButton-root {
+  height: 40px;
+}

@@ -9,7 +9,6 @@ import { t } from '/@/modules/store/translation/utils';
 import EditorPng from '/assets/images/editor.png';
 import CollectionsPng from '/assets/images/collections.png';
 import NamesPng from '/assets/images/names.png';
-import WorldPng from '/assets/images/world.png';
 import LandPng from '/assets/images/land.png';
 import NewEventPng from '/assets/images/new-event.png';
 
@@ -138,20 +137,6 @@ export function MorePage() {
               description={t('more.cards.manage.names.description')}
               action={() => misc.openExternal(`${BUILDER_URL}/names`)}
               image={NamesPng}
-            />
-          </Grid>
-          <Grid
-            item
-            xs={12}
-            sm={6}
-            md={6}
-            lg={4}
-          >
-            <HorizontalCardWithImage
-              title={t('more.cards.manage.worlds.title')}
-              description={t('more.cards.manage.worlds.description')}
-              action={() => misc.openExternal(`${BUILDER_URL}/worlds?tab=dcl`)}
-              image={WorldPng}
             />
           </Grid>
           <Grid

@@ -1,0 +1,164 @@
+.AddUserForm {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  width: 500px;
+  min-height: 375px;
+  margin: 0 auto;
+  padding: 24px;
+  background-color: var(--black);
+  border-radius: 8px;
+}
+
+.AddUserForm .AddUserFormTitle {
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.AddUserForm .AddUserFormTabs {
+  min-height: 0;
+}
+
+.AddUserForm .AddUserFormTabs .MuiTab-root {
+  text-transform: uppercase;
+  font-size: 14px;
+  font-weight: 600;
+  min-height: 42px;
+  padding: 9px 16px;
+}
+
+.AddUserForm .AddUserFormTabs .MuiTab-root.Mui-selected {
+  color: var(--dcl);
+}
+
+.AddUserForm .MuiOutlinedInput-notchedOutline {
+  border-color: var(--transparent-gray-light);
+}
+
+.AddUserForm .AddUserFormActions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: auto;
+}
+
+/* Community search styles */
+.AddUserForm .CommunitySearchContainer {
+  position: relative;
+}
+
+.AddUserForm .CommunitySearchStatus {
+  color: var(--text-on-secondary);
+  padding: 8px 0;
+}
+
+.AddUserForm .CommunitySearchDropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  max-height: 144px;
+  overflow-y: auto;
+  background-color: var(--darker-gray);
+  border-radius: 6px;
+  margin-top: 4px;
+}
+
+.AddUserForm .CommunitySearchDropdownItem {
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.AddUserForm .CommunitySearchDropdownItem:hover {
+  background-color: var(--dark-gray);
+}
+
+.AddUserForm .CommunitySearchDropdownMembers {
+  color: var(--text-on-secondary);
+}
+
+.AddUserForm .CommunitySelectedInfo {
+  padding: 4px 0;
+  margin-left: 15px;
+  font-size: 12px;
+  color: var(--light-gray);
+}
+
+/* CSV import styles */
+.AddUserForm .CsvContainer {
+  display: flex;
+  flex-direction: column;
+}
+
+.AddUserForm .CsvDropZone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 16px;
+  background-color: var(--darker-gray);
+  border: 1px dashed transparent;
+  border-radius: 8px;
+}
+
+.AddUserForm .CsvDropZone.Dragging {
+  border-color: var(--primary);
+}
+
+.AddUserForm .CsvDropZoneText {
+  color: var(--text-on-secondary);
+  text-align: center;
+}
+
+.AddUserForm .CsvDropZoneBrowse {
+  color: var(--primary);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.AddUserForm .CsvFileInfo {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.AddUserForm .CsvFileDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.AddUserForm .CsvFileNameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.AddUserForm .CsvFileNameRow .MuiSvgIcon-root {
+  color: var(--text-on-secondary);
+}
+
+.AddUserForm .CsvFileName {
+  font-weight: 500;
+}
+
+.AddUserForm .CsvFileStat {
+  color: var(--text-on-secondary);
+}
+
+.AddUserForm .CsvFileStatError {
+  color: var(--error);
+}
+
+.AddUserForm .CsvReplaceLink {
+  color: var(--primary);
+  cursor: pointer;
+  font-weight: 600;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.AddUserForm .CsvReplaceLink:hover {
+  text-decoration: underline;
+}

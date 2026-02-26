@@ -1,0 +1,108 @@
+.PublishedProjectCard {
+  border-radius: 10px;
+  width: 324px;
+  height: 428px;
+  background-color: var(--transparent-gray-dark);
+  display: flex;
+  flex-direction: column;
+}
+
+.PublishedProjectCard .CardHeader {
+  padding: 8px 8px 8px 16px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.PublishedProjectCard .CardHeader img {
+  width: 20px;
+  height: 20px;
+}
+
+.PublishedProjectCard .CardHeader .HeaderTitle {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.PublishedProjectCard .CardHeader .HeaderTitle .ENS {
+  font-size: 14px;
+  color: var(--light-gray);
+}
+
+.PublishedProjectCard .EmptyScene {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.PublishedProjectCard .CardThumbnail {
+  width: 100%;
+  height: 190px;
+  position: relative;
+}
+
+.PublishedProjectCard .CardThumbnail .ChipsContainer {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  max-width: 100%;
+  display: flex;
+  flex-flow: row wrap;
+  gap: 4px;
+  text-align: right;
+}
+
+.PublishedProjectCard .ChipsContainer .MuiChip-root {
+  font-weight: 600;
+  background-color: rgba(36, 33, 41, 0.5);
+  padding-left: 4px;
+  margin: 3px;
+}
+
+.PublishedProjectCard .ChipsContainer .MuiChip-root .MuiSvgIcon-root {
+  color: rgba(255, 255, 255, 0.5);
+  width: 20px;
+  height: 20px;
+}
+
+.PublishedProjectCard .CardThumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.PublishedProjectCard .CardBody {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.PublishedProjectCard .CardBody .PublishedScene {
+  font-weight: 500;
+  color: var(--dropdown);
+  text-transform: uppercase;
+}
+
+.PublishedProjectCard .CardBody .ProjectTitle {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-clamp: 2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.PublishedProjectCard .WorldSettingsButton {
+  text-transform: uppercase;
+  margin-top: auto;
+  margin-left: auto;
+}

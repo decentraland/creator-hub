@@ -22,6 +22,7 @@ import { putTransformComponent } from './sdkComponents/transform';
 import { putTextShapeComponent } from './sdkComponents/text-shape';
 import { putSceneComponent } from './editorComponents/scene';
 import { createGizmoManager } from './GizmoManager';
+import { createSpawnPointManager } from './spawn-point-manager';
 import { putMaterialComponent } from './sdkComponents/material';
 import { putNftShapeComponent } from './sdkComponents/nft';
 import { putVideoPlayerComponent } from './sdkComponents/video-player';
@@ -54,6 +55,7 @@ export class SceneContext {
 
   operations = createOperations(this.engine);
   gizmos = createGizmoManager(this);
+  spawnPoints = createSpawnPointManager(this.scene);
 
   Billboard = components.Billboard(this.engine);
   Transform = components.Transform(this.engine);
@@ -202,6 +204,7 @@ export class SceneContext {
 
   dispose() {
     this.stopped.resolve();
+    this.spawnPoints.dispose();
     for (const [entityId] of this.#entities) {
       this.removeEntity(entityId);
     }

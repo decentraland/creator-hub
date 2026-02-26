@@ -11,11 +11,10 @@ import logo from '/assets/images/logo-editor.png';
 import { REPORT_ISSUES_URL } from '/@/modules/utils';
 import { t } from '/@/modules/store/translation/utils';
 import { actions } from '/@/modules/store/settings';
+import { AppSettings } from '../Modals/AppSettings';
 import { Header } from '../Header';
 import { ConnectionStatusIndicator } from '../ConnectionStatusIndicator';
-
 import './styles.css';
-import { AppSettings } from '../Modals/AppSettings';
 
 export enum NavbarItem {
   HOME = 'home',
@@ -77,14 +76,12 @@ export function Navbar(props: { active: NavbarItem }) {
             disable={true}
           />
           <MenuItem
-            item={NavbarItem.LEARN}
-            active={props.active}
-          />
-          {/* This page will be added in a future shape */}
-          <MenuItem
             item={NavbarItem.MANAGE}
             active={props.active}
-            disable={true}
+          />
+          <MenuItem
+            item={NavbarItem.LEARN}
+            active={props.active}
           />
           <MenuItem
             item={NavbarItem.MORE}

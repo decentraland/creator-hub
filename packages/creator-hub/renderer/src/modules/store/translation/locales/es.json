@@ -127,24 +127,52 @@
     "publish_project": {
       "title": "Publicar escena \"{title}\"",
       "select": "Selecciona dónde quieres publicar tu escena",
+      "roles": {
+        "owner": "Propietario",
+        "collaborator": "Colaborador"
+      },
       "worlds": {
         "title": "Worlds",
         "description": "No se puede encontrar en el mapa de Genesis City. \nHasta 100 usuarios pueden unirse simultáneamente.",
         "action": "Publicar Mundo",
         "select_world": {
-          "title": "Publicar Mundo",
-          "description": "Seleccione el NOMBRE de Decentraland o el Dominio ENS que definirá la URL",
+          "title": "Publicar en tu Mundo",
+          "description": "Elige el dominio donde se publicará tu mundo.",
           "world_name": "MUNDO (NOMBRE)",
           "placeholder": "Seleccione un Nombre",
           "claim_new_name": "Solicitar un nuevo Nombre",
           "claim_new_ens_domain": "Solicitar un nuevo dominio ENS",
-          "action": "Publicar",
+          "actions": {
+            "select_location": "Seleccionar Ubicación",
+            "review": "Revisar",
+            "publish": "Publicar",
+            "reset": "Reiniciar",
+            "cancel": "Cancelar",
+            "confirm": "Confirmar"
+          },
           "ens_providers": {
             "dcl": "NOMBRE",
             "ens": "DOMINIO ENS"
           },
-          "world_has_content": "El contenido existente en el mundo {world} será reemplazado por el nuevo contenido que estás a punto de publicar.",
-          "confirm_world_replace_content": "Entiendo que esta acción es irreversible."
+          "multi_scene": {
+            "title": "Mundo Multi-Escena (Avanzado)",
+            "description": "Permite que tu mundo contenga más de 1 escena. El tamaño total del mundo dependerá del diseño de tu mundo publicado.",
+            "current_world": "Mundo Actual",
+            "settings_button": "Configuración",
+            "scenes_count": "{count} {count, plural, one {escena} other {escenas}}"
+          },
+          "location": {
+            "description": "Selecciona dónde se publicará tu escena.",
+            "parcels_place": "Colocando {count} parcelas en",
+            "available_parcels_count": "Parcelas disponibles: {count}",
+            "no_parcels_fit_error": "La escena actual no cabe en las parcelas disponibles."
+          },
+          "confirm_overwrite": {
+            "title": "¿Sobrescribir escenas?",
+            "description": "Publicar tu escena aquí eliminará todas las escenas presentes en las parcelas seleccionadas.",
+            "scenes_count": "Tu selección de parcelas ya contiene <b>{count} {count, plural, one {escena} other {escenas}}</b>:",
+            "scene_title_placeholder": "Escena {index}"
+          }
         },
         "empty_names": {
           "title": "No tienes ningún mundo disponible",
@@ -185,10 +213,12 @@
         "world": "Publicar en tu Mundo",
         "land": "Publicar en tu Tierra",
         "server": "Publicar en Servidor",
+        "scene_size": "Tamaño de escena: {size}",
         "loading": "Cargando...",
         "error": "Error",
         "warning": {
-          "message": "POR FAVOR LEA CUIDADOSAMENTE:<ul><li>Después de la implementación, tu escena pasará por un proceso antes de estar disponible.</li><li>Este proceso puede tardar en promedio 15 minutos.</li><li>Durante este tiempo, tu escena aparecerá vacía hasta que se haya actualizado en el cliente.</li></ul>",
+          "message_basic": "POR FAVOR LEA CUIDADOSAMENTE:<ul><li>Después de la implementación, tu escena pasará por un proceso antes de estar disponible.</li><li>Este proceso puede tardar en promedio 15 minutos.</li><li>Durante este tiempo, tu escena aparecerá vacía hasta que se haya actualizado en el cliente.</li></ul>",
+          "message_replacing_world_content": "POR FAVOR LEA CUIDADOSAMENTE:<ul><li>El contenido existente en tu Mundo será total o parcialmente reemplazado con el nuevo contenido que estás a punto de publicar.</li><li>Después de la implementación, tu escena pasará por un proceso antes de estar disponible.</li><li>Este proceso puede tardar en promedio 15 minutos.</li><li>Durante este tiempo, tu escena aparecerá vacía hasta que se haya actualizado en el cliente.</li></ul>",
           "checkbox": "No mostrar de nuevo",
           "continue": "Continuar",
           "back": "Regresar"
@@ -212,11 +242,13 @@
             "uploading": "Subiendo",
             "converting": "Convirtiendo",
             "optimizing": "Optimizando",
+            "unpublishing": "Despublicando",
             "loading": "En proceso...",
             "failed": "Error"
           },
           "errors": {
             "details": "Detalles",
+            "code_error": "El código de tu escena contiene uno o más errores.\nPor favor corrígelos e inténtalo de nuevo.",
             "fetch_status": "Error al obtener información de la publicación.\nPor favor, inténtalo de nuevo.",
             "fetch_timeout_error": "Error al obtener información de la publicación.\nPor favor, verifica tu conexión a internet e inténtalo de nuevo.",
             "no_internet_connection": "No hay conexión a internet.\nPor favor, verifica tu conexión e inténtalo de nuevo.",
@@ -228,8 +260,7 @@
             "invalid_identity": "No se pudo validar su identidad.",
             "max_file_size_exceeded": "Uno o más activos exceden el límite permitido ({maxFileSizeInMb}MB).\nOptimiza o elimina archivos grandes y vuelve a intentarlo.",
             "unknown": "Algo salió mal.\nPor favor, inténtalo de nuevo.",
-            "invalid_creator_wallet": "El creador debe ser una dirección de billetera Ethereum válida.",
-            "code_error": "El código de tu escena contiene uno o más errores.\nPor favor corrígelos e inténtalo de nuevo."
+            "invalid_creator_wallet": "El creador debe ser una dirección de billetera Ethereum válida."
           },
           "actions": {
             "report_issue": "Informar un problema",
@@ -263,16 +294,13 @@
       "title": "Preferencias de la aplicación",
       "tabs": {
         "scenes": {
-          "label": "ESCENAS",
-          "title": "Configuración de las escenas"
+          "label": "ESCENAS"
         },
         "editor": {
-          "label": "EDITOR",
-          "title": "Configuración del editor"
+          "label": "EDITOR"
         },
         "about": {
-          "label": "ACERCA DE",
-          "title": "Acerca de"
+          "label": "ACERCA DE"
         }
       },
       "about": {
@@ -338,6 +366,234 @@
         "timeout": "La búsqueda de actualizaciones expiró.\nPor favor, verifica tu conexión e inténtalo de nuevo."
       }
     },
+    "worlds_storage": {
+      "your_storage": "Su Almacenamiento",
+      "total_available_storage": "ALMACENAMIENTO TOTAL DISPONIBLE",
+      "mana": "MANA",
+      "mana_earn_storage": "Gana 100 Mb de almacenamiento por cada 2,000 tokens (Polygon o Ethereum).",
+      "mana_holdings": "Tienes {mbs} Mb gracias a tener {owned} MANA.",
+      "mana_buy": "COMPRAR MANA",
+      "lands": "LANDs",
+      "lands_earn_storage": "Gana 100 Mb de almacenamiento por cada LAND.",
+      "lands_holdings": "Tienes {mbs} Mb gracias a tener {owned} LANDs.",
+      "lands_buy": "COMPRAR LAND",
+      "names": "NAMEs",
+      "names_earn_storage": "Gana 100 Mb de almacenamiento por cada NAME.",
+      "names_holdings": "Tienes {mbs} Mb gracias a tener {owned} NAMEs de Decentraland.",
+      "names_buy": "COMPRAR NAME",
+      "proposal": "Estas reglas de almacenamiento fueron votadas y aprobadas en una propuesta de la DAO.",
+      "learn_more": "APRENDER MÁS"
+    },
+    "world_settings": {
+      "title": "Configuración del Mundo - {worldName}",
+      "tabs": {
+        "details": {
+          "label": "Detalles"
+        },
+        "layout": {
+          "label": "Diseño"
+        },
+        "general": {
+          "label": "Varios"
+        }
+      },
+      "discard_confirmation": "Tienes cambios sin guardar. ¿Guardar antes de salir?",
+      "actions": {
+        "save": "Guardar",
+        "discard": "Descartar"
+      },
+      "general": {
+        "world_spawn_coordinate": "Coordenada de Aparición del Mundo",
+        "position": "Posición",
+        "world_skybox": "Skybox del Mundo",
+        "auto_skybox": "Auto (hora de Decentraland)",
+        "max_offset": "Desplazamiento Máximo",
+        "general": "General",
+        "single_player": "Un Solo Jugador"
+      },
+      "details": {
+        "world_title": "Título del Mundo",
+        "description": "Descripción",
+        "age_rating": "Clasificación de Contenido",
+        "categories": "Categorías",
+        "author": "Autor (Opcional)",
+        "email": "Correo Electrónico (Opcional)",
+        "thumbnail": "Miniatura",
+        "replace_image": "Reemplazar Imagen",
+        "set_image": "Elegir imagen",
+        "no_image": "No hay imagen",
+        "age_rating_options": {
+          "everyone": "E (Todos, PG 13+)",
+          "teen": "T (Adolescentes, PG 13+)",
+          "adult": "A (Adultos, PG 18+)",
+          "restricted": "R (Restringido)"
+        },
+        "categories_options": {
+          "art": "🎨 Arte",
+          "game": "🕹️ Juego",
+          "casino": "🃏 Casino",
+          "social": "👥 Social",
+          "music": "🎶 Música",
+          "fashion": "👠 Moda",
+          "crypto": "🪙 Cripto",
+          "education": "📚 Educación",
+          "shop": "🛍️ Tienda",
+          "business": "🏢 Negocios",
+          "sports": "🏅 Deportes"
+        }
+      },
+      "layout": {
+        "world_layout": {
+          "title": "Diseño del Mundo",
+          "world_size": "Tamaño del mundo: {size}"
+        },
+        "multi_scene_title": "Mundo Multi-Escena",
+        "multi_scene_description": "Permite que tu mundo contenga más de 1 escena.\nEl tamaño total del mundo dependerá del diseño del mundo publicado.",
+        "empty_world": {
+          "title": "No hay escenas publicadas en este mundo.",
+          "description": "Puedes agregar cualquier escena publicándola dentro de este dominio.",
+          "view_scenes": "Ver Escenas"
+        },
+        "current_world": "Mundo Actual",
+        "title_placeholder": "Título del Mundo",
+        "scene_title_placeholder": "Título de la Escena",
+        "scenes_count": "{count} {count, plural, one {escena} other {escenas}}",
+        "parcels_count": "{count} {count, plural, one {parcela} other {parcelas}}",
+        "world_map": "Mapa del Mundo",
+        "scenes_title": "Escenas",
+        "actions": {
+          "edit_scene": "Editar Escena",
+          "unpublish": "Quitar del Mundo",
+          "confirm": "Confirmar",
+          "cancel": "Cancelar"
+        },
+        "unpublish_confirmation": {
+          "title": "¿Quitar <b>{name}</b> de este mundo?",
+          "warning_title": "Tu mundo se republicará automáticamente para aplicar estos cambios."
+        }
+      }
+    },
+    "world_permissions": {
+      "tabs": {
+        "access": {
+          "label": "Acceso"
+        },
+        "collaborators": {
+          "label": "Colaboradores"
+        }
+      },
+      "title": "Permisos - {worldName}",
+      "invalid_address": "Dirección inválida",
+      "done": "Hecho",
+      "access": {
+        "title": "Administra quién puede acceder a tu Mundo",
+        "description": "Gestiona quién puede acceder a tu Mundo alternando\nentre <span>\"Privado\"</span> y <span>\"Público\"</span>.",
+        "subtitle": "En <span>modo Privado</span>, puedes otorgar acceso a un máximo de 100 direcciones (usuarios de Decentraland). Ten en cuenta que si vuelves al <span>modo Público</span>, tu lista de direcciones aprobadas será borrada.",
+        "type": {
+          "public": "Público",
+          "invitation_only": "Solo con invitación",
+          "password_protected": "Protegido con contraseña",
+          "public_description": "Cualquiera puede acceder a este mundo",
+          "invitation_only_description": "Solo las direcciones aprobadas pueden acceder a este mundo",
+          "password_protected_description": "Solo los usuarios que conocen la contraseña pueden unirse"
+        },
+        "warning": {
+          "title": "Advertencia",
+          "description": "Si vuelves al modo Público, tu lista de direcciones aprobadas será borrada."
+        },
+        "empty_list": "Aún no has aprobado ninguna dirección",
+        "public": "Público",
+        "private": "Privado",
+        "approved_addresses": "Direcciones Aprobadas: {number}",
+        "approved_addresses_tooltip": "Solo 100 usuarios podrán unirse al mismo tiempo",
+        "add_address": "Agregar dirección",
+        "new_invite": "Nueva Invitación",
+        "clear_list": "Limpiar Lista",
+        "clear_list_title": "¿Limpiar Lista?",
+        "clear_list_warning": "Si continúas, tu lista de direcciones aprobadas será borrada.",
+        "change_access_type_title": "¿Cambiar tipo de acceso?",
+        "change_access_type_warning": "Si cambias el tipo de acceso, tu lista de direcciones aprobadas será borrada.",
+        "go_back": "Volver",
+        "continue": "Continuar",
+        "confirm": "Confirmar",
+        "cancel": "Cancelar",
+        "wrong_address_format": "Formato de dirección incorrecto",
+        "community_search_placeholder": "Buscar una comunidad...",
+        "community_searching": "Buscando...",
+        "community_no_results": "No se encontraron comunidades",
+        "community_members": "{count} {count, plural, one {Miembro} other {Miembros}}",
+        "community_privacy_public": "Comunidad pública",
+        "community_privacy_private": "Comunidad privada",
+        "invite_tabs": {
+          "wallet_address": "Dirección de Wallet",
+          "community": "Comunidad",
+          "import_csv": "Importar CSV"
+        },
+        "csv_drop_text": "Arrastra tu archivo CSV aquí o",
+        "csv_browse": "Busca en tus archivos",
+        "csv_addresses_count": "{count} {count, plural, one {dirección} other {direcciones}}",
+        "csv_communities_count": "{count} {count, plural, one {comunidad} other {comunidades}}",
+        "csv_invalid_count": "{count} {count, plural, one {dirección inválida} other {direcciones inválidas}}",
+        "csv_replace": "Reemplazar",
+        "actions": {
+          "remove": "Eliminar"
+        }
+      },
+      "password": {
+        "change_password": "Cambiar Contraseña",
+        "create_new_password": "Crear Nueva Contraseña",
+        "empty_state": "La contraseña de este mundo no está definida.",
+        "has_password": "Este mundo está protegido por contraseña.",
+        "dialog": {
+          "create_title": "Crear Nueva Contraseña",
+          "change_title": "Cambiar Contraseña",
+          "type_password": "Escribe tu contraseña",
+          "repeat_password": "Repite tu contraseña",
+          "info": "¡Asegúrate de anotar tu contraseña para no perderla!"
+        },
+        "error": {
+          "empty": "La contraseña no puede estar vacía",
+          "too_short": "La contraseña debe tener al menos {min} caracteres",
+          "mismatch": "Las contraseñas no coinciden",
+          "requirements_header": "La contraseña debe incluir:",
+          "min_length": "Largo mínimo: {min} caracteres",
+          "min_numbers": "Al menos {min} números"
+        }
+      },
+      "collaborators": {
+        "description": "<span>Agrega hasta 10 colaboradores</span> y gestiona sus permisos para publicar o transmitir en tu Mundo.",
+        "empty_list": "Aún no has agregado ningún colaborador",
+        "add_collaborator": "Agregar colaborador",
+        "add": "Agregar",
+        "column_name_label": "Colaboradores: {number}",
+        "all_parcels": "Todas las Parcelas",
+        "clear_list_title": "¿Limpiar lista?",
+        "clear_list_warning": "Si continúas, tu lista de colaboradores será borrada.",
+        "deployment": {
+          "world_wide": "Todas las Parcelas",
+          "parcels": "Coordenadas Personalizadas",
+          "none": "Ninguna"
+        },
+        "parcels_count": "{count} Parcelas",
+        "actions": {
+          "remove": "Eliminar",
+          "clear_list": "Limpiar lista"
+        },
+        "dialog": {
+          "title": "Agregar Colaborador",
+          "label": "Ingresa la dirección de billetera o ENS"
+        }
+      },
+      "parcels": {
+        "title": "Coordenadas Personalizadas",
+        "description": "Haz clic en las celdas individuales para incluirlas/excluirlas del diseño.",
+        "parcels_count": "Seleccionando {count} {count, plural, one {parcela} other {parcelas}}",
+        "actions": {
+          "discard": "Descartar",
+          "confirm": "Confirmar"
+        }
+      }
+    },
     "create_project": {
       "title": "Crear Proyecto",
       "fields": {
@@ -371,6 +627,9 @@
       "disclaimer": "Tu computadora y dispositivo móvil deben estar en la misma red"
     }
   },
+  "popup": {
+    "copied_to_clipboard": "¡Copiado!"
+  },
   "snackbar": {
     "generic": {
       "import_scene": "Importando escena...",
@@ -385,6 +644,22 @@
       "invalid_scenes_folder": "Carpeta de escenas inválida. Por favor, ingresa una carpeta de escenas válida en la configuración de la aplicación antes de crear una escena.",
       "create_scene_failed": "Ocurrió un error al crear la escena. Por favor, inténtalo nuevamente.",
       "run_scene_failed": "Error al cargar el proyecto. Por favor, inténtalo de nuevo.",
+      "url_copied": "URL copiada al portapapeles",
+      "fetch_managed_projects_failed": "Error al cargar los proyectos gestionados",
+      "fetch_world_settings_failed": "Error al cargar la configuración del mundo. Por favor, inténtalo de nuevo.",
+      "update_world_settings_failed": "Error al actualizar la configuración del mundo. Por favor, inténtalo de nuevo.",
+      "fetch_ens_list_failed": "Error al cargar tu lista de Nombres",
+      "fetch_land_list_failed": "Error al cargar tu lista de Tierras",
+      "fetch_world_permissions_failed": "Error al cargar los permisos del mundo. Por favor, inténtalo de nuevo.",
+      "fetch_world_scenes_failed": "Error al cargar las escenas del mundo. Por favor, inténtalo de nuevo.",
+      "unpublish_world_scene_failed": "Error al despublicar la escena del mundo. Por favor, inténtalo de nuevo.",
+      "unpublish_world_failed": "Error al despublicar el mundo. Por favor, inténtalo de nuevo.",
+      "update_permissions_failed": "Error al actualizar los permisos del mundo. Por favor, inténtalo de nuevo.",
+      "add_permission_failed": "Error al agregar el permiso de dirección. Por favor, inténtalo de nuevo.",
+      "remove_permission_failed": "Error al eliminar el permiso de dirección. Por favor, inténtalo de nuevo.",
+      "fetch_parcels_permission_failed": "Error al cargar los permisos de parcela. Por favor, inténtalo de nuevo.",
+      "add_parcels_permission_failed": "Error al actualizar los permisos de parcela. Por favor, inténtalo de nuevo.",
+      "remove_parcels_permission_failed": "Error al actualizar los permisos de parcela. Por favor, inténtalo de nuevo.",
       "mobile_qr_failed": "Error al obtener el código QR de vista previa móvil"
     },
     "missing_projects": {
@@ -468,10 +743,6 @@
           "title": "Nombres",
           "description": "Reclama tu nombre único y asígnalo a tu avatar o a tus parcelas."
         },
-        "worlds": {
-          "title": "Mundos",
-          "description": "Crea y gestiona tus propios espacios virtuales."
-        },
         "land": {
           "title": "Tierras",
           "description": "Publica Escenas, crea Estates y gestiona los permisos de tu TIERRA."
@@ -503,38 +774,122 @@
       "title": "Ordenar por:",
       "default": "Default",
       "newest": "Más Nuevas"
+    }
+  },
+  "learn": {
+    "header": {
+      "title": "Aprender",
+      "videos": "Videos",
+      "docs": "Documentación",
+      "more": "Más"
     },
-    "learn": {
-      "header": {
-        "title": "Aprender",
-        "videos": "Videos",
-        "docs": "Documentación",
-        "more": "Más"
+    "see_all": "Ver Más",
+    "videos": {
+      "title": "Videos"
+    },
+    "docs": {
+      "title": "Documentación para Creadores"
+    }
+  },
+  "manage": {
+    "header": {
+      "title": "Gestionar Mundos"
+    },
+    "items": "{count} {count, plural, one {elemento} other {elementos}}",
+    "load_more": "Cargar más",
+    "search": "Buscar",
+    "sort_by": "Ordenar por",
+    "sort": {
+      "latest": "Última publicación",
+      "name": "Nombre de dominio"
+    },
+    "filter_by": "Filtrar por",
+    "filters": {
+      "published": "Publicado",
+      "unpublished": "No publicado"
+    },
+    "sign_in": {
+      "title": "Inicia sesión para gestionar tus mundos",
+      "action": "Iniciar sesión"
+    },
+    "empty_list": {
+      "search": {
+        "title": "No se encontraron resultados",
+        "description": "Intenta con una palabra clave diferente."
       },
-      "see_all": "Ver Más",
-      "videos": {
-        "title": "Videos"
+      "published": {
+        "title": "No hay lugares publicados para mostrar",
+        "description": "Publica una de tus Escenas o conviértete en colaborador para ver más resultados."
       },
-      "docs": {
-        "title": "Documentación para Creadores"
+      "unpublished": {
+        "title": "No hay lugares para mostrar",
+        "description": "Consigue un NAME o conviértete en colaborador para ver más resultados."
+      },
+      "all": {
+        "title": "No hay lugares para mostrar",
+        "description": "Consigue un NAME o conviértete en colaborador para agregar tu primer Lugar."
       }
     },
-    "connection": {
-      "offline": {
-        "tooltip": "Sin conexión a internet",
-        "title": "Sin Conexión",
-        "message": "Actualmente estás sin conexión. Algunas funciones pueden no estar disponibles hasta que te reconectes a internet.",
-        "retry": "Reintentar Conexión",
-        "checking": "Verificando..."
+    "actions": {
+      "view_scenes": "Ver Escenas",
+      "mint_name": "Conseguir un nuevo NAME"
+    },
+    "worlds_storage": {
+      "used": "Espacio usado",
+      "for_names": "para Nombres de Decentraland",
+      "description": "El almacenamiento total se calcula en base a las tenencias de MANA, LAND y NAME.",
+      "link": "Ver detalles"
+    },
+    "cards": {
+      "published_scene": "Escena Publicada",
+      "roles": {
+        "owner": "Propietario",
+        "collaborator": "Colaborador",
+        "operator": "Inquilino",
+        "tenant": "Arrendador"
       },
-      "slow": {
-        "tooltip": "Conexión lenta detectada",
-        "message": "Tu conexión a internet parece ser lenta. Algunas funciones pueden tardar más en cargar."
+      "menu": {
+        "jump_in": "Entrar",
+        "copy_url": "Copiar URL",
+        "edit_name": "Editar Nombre",
+        "permissions": "Permisos",
+        "parcel": "Parcela",
+        "unpublish": "Despublicar"
       },
-      "errors": {
-        "NO_INTERNET_CONNECTION": "No hay conexión a internet disponible",
-        "REQUEST_TIMEOUT": "La solicitud expiró. Por favor verifica tu conexión e intenta nuevamente."
+      "no_scene": {
+        "title": "No hay escena publicada",
+        "view_scenes": "VER ESCENAS"
+      },
+      "worlds": {
+        "world": "Mundo",
+        "multi-scene": "Multi-escena",
+        "scenes_count": "{count} {count, plural, one {escena} other {escenas}}",
+        "scene_settings": "Configuración de Escena",
+        "world_settings": "Configuración",
+        "published_world": "Mundo Publicado"
+      },
+      "land": {
+        "land": "Tierra",
+        "land_settings": "Configuración de Tierra",
+        "parcels_count": "{count} {count, plural, one {parcela} other {parcelas}}",
+        "land_coords": "{coordX}, {coordY}"
       }
+    },
+    "unpublish_world_confirmation": {
+      "title": "¿Despublicar <b>{worldName}</b>?"
+    }
+  },
+  "connection": {
+    "offline": {
+      "tooltip": "Sin conexión a internet",
+      "title": "Sin Conexión",
+      "message": "Actualmente estás sin conexión. Algunas funciones pueden no estar disponibles hasta que te reconectes a internet.",
+      "retry": "Reintentar Conexión",
+      "checking": "Verificando..."
+    },
+    "errors": {
+      "NO_INTERNET_CONNECTION": "No hay conexión a internet disponible",
+      "REQUEST_TIMEOUT": "La solicitud expiró. Por favor verifica tu conexión e intenta nuevamente."
     }
   }
 }

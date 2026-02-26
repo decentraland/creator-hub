@@ -1,10 +1,5 @@
 import { areConnected } from '@dcl/ecs';
-import type {
-  EditorComponentsTypes,
-  SceneCategory,
-  SceneSpawnPoint,
-  SceneSpawnPointCoord,
-} from '../../../lib/sdk/components';
+import type { EditorComponentsTypes, SceneCategory } from '../../../lib/sdk/components';
 import { SceneAgeRating } from '../../../lib/sdk/components';
 import type { Coords } from '../../../lib/utils/layout';
 import type { TreeNode } from '../../ProjectAssetExplorer/ProjectView';
@@ -12,72 +7,8 @@ import type { AssetNodeItem } from '../../ProjectAssetExplorer/types';
 import { isAssetNode } from '../../ProjectAssetExplorer/utils';
 import { ACCEPTED_FILE_TYPES } from '../../ui/FileUploadField/types';
 import { TransitionMode } from '../../../lib/sdk/components/SceneMetadata';
-import type { SceneInput, SpawnPointInput } from './types';
-
-function getValue(coord: SceneSpawnPointCoord) {
-  if (coord.$case === 'range') {
-    if (coord.value.length === 1) {
-      return coord.value[0];
-    }
-    return (coord.value[0] + coord.value[1]) / 2;
-  }
-  return coord.value;
-}
-
-function getOffset(value: number | number[]) {
-  if (Array.isArray(value)) {
-    if (value.length === 1) {
-      return 0;
-    }
-    return (value[1] - value[0]) / 2;
-  }
-  return 0;
-}
-
-function toValue(value: number, offset: number): SceneSpawnPointCoord {
-  return {
-    $case: 'range',
-    value: [value - offset, value + offset],
-  };
-}
-
-export function fromSceneSpawnPoint(spawnPoint: SceneSpawnPoint): SpawnPointInput {
-  const axes = [
-    spawnPoint.position.x.value,
-    spawnPoint.position.y.value,
-    spawnPoint.position.z.value,
-  ];
-  const randomOffset = axes.some(Array.isArray);
-  return {
-    position: {
-      x: getValue(spawnPoint.position.x),
-      y: getValue(spawnPoint.position.y),
-      z: getValue(spawnPoint.position.z),
-    },
-    randomOffset,
-    maxOffset: randomOffset
-      ? axes.reduce<number>((offset, axis) => Math.max(offset, getOffset(axis)), 0)
-      : 0,
-    cameraTarget: spawnPoint.cameraTarget || {
-      x: 8,
-      y: 1,
-      z: 8,
-    },
-  };
-}
-
-export function toSceneSpawnPoint(name: string, spawnPointInput: SpawnPointInput): SceneSpawnPoint {
-  return {
-    name,
-    default: true,
-    position: {
-      x: toValue(spawnPointInput.position.x, spawnPointInput.maxOffset),
-      y: toValue(spawnPointInput.position.y, 0),
-      z: toValue(spawnPointInput.position.z, spawnPointInput.maxOffset),
-    },
-    cameraTarget: spawnPointInput.cameraTarget,
-  };
-}
+import { fromSceneSpawnPoint, toSceneSpawnPoint } from '../PlayerInspector/utils';
+import type { SceneInput } from './types';
 
 export function fromScene(value: EditorComponentsTypes['Scene']): SceneInput {
   const parcels = value.layout.parcels.map(parcel => parcel.x + ',' + parcel.y).join(' ');
@@ -127,9 +58,7 @@ export function toScene(inputs: SceneInput): EditorComponentsTypes['Scene'] {
     },
     silenceVoiceChat: inputs.silenceVoiceChat,
     disablePortableExperiences: inputs.disablePortableExperiences,
-    spawnPoints: inputs.spawnPoints.map((spawnPoint, index) =>
-      toSceneSpawnPoint(`Spawn Point ${index + 1}`, spawnPoint),
-    ),
+    spawnPoints: inputs.spawnPoints.map(spawnPoint => toSceneSpawnPoint(spawnPoint)),
     layout: {
       base: parseParcels(inputs.layout.base)[0],
       parcels: parseParcels(inputs.layout.parcels),
