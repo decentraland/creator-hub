@@ -31,13 +31,9 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const hasNftShape = useHasComponent(entity, NftShape);
   const handleInputValidation = useCallback(({ urn }: { urn: string }) => isValidInput(urn), []);
   const [touchedFields, setTouchedFields] = useState({ contract: false, token: false });
-  const { getInputProps } = useComponentInput(
-    entity,
-    NftShape,
-    fromNftShape,
-    toNftShape,
-    handleInputValidation,
-  );
+  const { getInputProps } = useComponentInput(entity, NftShape, fromNftShape, toNftShape, {
+    validateInput: handleInputValidation,
+  });
   const color = getInputProps('color');
   const style = getInputProps('style');
   const urnField = getInputProps('urn');
