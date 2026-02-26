@@ -21,7 +21,7 @@
 }
 
 .ToolbarButton.active {
-  background-color: var(--vscode-accent-blue) !important;
+  background-color: var(--selected-item) !important;
 }
 
 .ToolbarButton svg {

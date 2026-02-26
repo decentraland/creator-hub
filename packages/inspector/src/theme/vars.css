@@ -17,6 +17,7 @@
   --text-primary: #000000de;
   --sub-text: #ffffffcf;
   --border-focused: #127fd4;
+  --selected-item: #731F30;
 
   /* DCL Colors */
   --primary-main: #ff2d55;
@@ -42,6 +43,7 @@
   --violet: #a524b3;
   --purple: #691fa9;
   --gray-0: #43404a;
+
 
   /* Neutrals Colors */
   --base-01: #ffffff;

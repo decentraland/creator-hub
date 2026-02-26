@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AiOutlinePlus as AddIcon } from 'react-icons/ai';
 import { MdOutlineDriveFileRenameOutline as RenameIcon } from 'react-icons/md';
+import { VscChevronDown as ChevronDownIcon } from 'react-icons/vsc';
 
 import { type Entity } from '@dcl/ecs';
 
@@ -15,9 +16,9 @@ import { useAppSelector } from '../../../redux/hooks';
 import { selectCustomAssets } from '../../../redux/app';
 
 import { Edit as EditInput } from '../../Tree/Edit';
+import { Block } from '../../Block';
 import CustomAssetIcon from '../../Icons/CustomAsset';
-import { Container } from '../../Container';
-import { Dropdown } from '../../ui';
+import { Dropdown, Divider } from '../../ui';
 
 import MoreOptionsMenu from '../MoreOptionsMenu';
 import { RemoveButton } from '../RemoveButton';
@@ -53,6 +54,16 @@ export default React.memo(
     const [editMode, setEditMode] = useState(false);
     const [instanceOf, setInstanceOf] = useState<string | null>(null);
     const customAssets = useAppSelector(selectCustomAssets);
+
+    const isSmartItem = useMemo(
+      () =>
+        sdk.components.Actions.has(entity) ||
+        sdk.components.Triggers.has(entity) ||
+        sdk.components.States.has(entity) ||
+        sdk.components.Counter.has(entity) ||
+        sdk.components.CounterBar.has(entity),
+      [sdk, entity],
+    );
 
     useEffect(() => {
       setLabel(getLabel(sdk, entity));
@@ -377,7 +388,12 @@ export default React.memo(
               <Dropdown
                 className="AddComponent"
                 options={componentOptions}
-                trigger={<AddIcon />}
+                trigger={
+                  <div className="AddComponentTrigger">
+                    <AddIcon />
+                    <ChevronDownIcon />
+                  </div>
+                }
               />
             ) : null}
             {!isRoot(entity) ? (
@@ -393,7 +409,7 @@ export default React.memo(
           </div>
         </div>
         {!isRoot(entity) && (
-          <Container className="componentInfo">
+          <Block className="componentInfo">
             {instanceOf && (
               <div className="customItemContainer">
                 <span>Instance of:</span>
@@ -403,8 +419,14 @@ export default React.memo(
                 </span>
               </div>
             )}
+            {isSmartItem && (
+              <div className="customItemContainer">
+                <span>Smart Item</span>
+              </div>
+            )}
+            {(instanceOf || isSmartItem) && <Divider />}
             <TagsInspector entities={[entity]} />
-          </Container>
+          </Block>
         )}
       </div>
     );

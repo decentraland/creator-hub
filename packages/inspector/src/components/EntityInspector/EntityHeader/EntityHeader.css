@@ -24,9 +24,7 @@
 }
 
 .EntityHeader .Title > svg {
-  margin-left: 5px;
   cursor: pointer;
-  fill: var(--base-06);
 }
 
 .EntityHeader .RightContent {
@@ -46,8 +44,33 @@
 }
 
 .EntityHeader .RightContent > .Dropdown.Trigger > .DropdownContainer.AddComponent {
-  background-color: transparent;
-  border-color: transparent;
+  background-color: var(--primary-main);
+  border-color: var(--primary-main);
+  border-radius: 4px;
+  padding: 4px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: auto;
+}
+
+.EntityHeader .RightContent > .Dropdown.Trigger > .DropdownContainer.AddComponent .AddComponentTrigger {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--white);
+}
+
+.EntityHeader .RightContent > .Dropdown.Trigger > .DropdownContainer.AddComponent .AddComponentTrigger svg {
+  width: 16px;
+  height: 16px;
+  color: var(--white);
+}
+
+.EntityHeader .RightContent > .Dropdown.Trigger > .DropdownContainer.AddComponent:hover {
+  background-color: var(--primary-dark);
+  border-color: var(--primary-dark);
 }
 
 .EntityHeader .RightContent > .MoreOptionsMenu > .MoreOptionsContent {

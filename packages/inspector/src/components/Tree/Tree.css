@@ -38,7 +38,7 @@
 
 .Tree .item:hover:not(:has(input)),
 .Tree .selected:not(:has(input)) {
-  background-color: var(--vscode-accent-blue);
+  background-color: var(--selected-item);
 }
 
 .Tree .item.hidden {

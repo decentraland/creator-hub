@@ -48,7 +48,7 @@
   bottom: -6px;
   left: 0;
   height: 1px;
-  background: var(--white-gray);
+  background: var(--primary-main);
 }
 
 .Assets .Assets-buttons > div span {
@@ -83,6 +83,10 @@
 .Assets .Assets-buttons .Assets-buttons-left .import-button svg {
   margin-right: 5px;
   stroke-width: 3;
+}
+
+.Assets .Assets-buttons .Assets-buttons-left .import-button:hover {
+  background-color: var(--base-19);
 }
 
 .Assets .Assets-buttons .Assets-buttons-left .icon-item {
