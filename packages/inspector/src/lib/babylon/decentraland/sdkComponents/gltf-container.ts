@@ -161,11 +161,20 @@ async function tryLoadGltfAsync(sceneId: string, entity: EcsEntity, filePath: st
   const extension = filePath.toLowerCase().endsWith('.gltf') ? '.gltf' : '.glb';
 
   const loadAssetFuture = future<void>();
+  const scene = entity.getScene();
 
   loadAssetContainer(
     file,
-    entity.getScene(),
+    scene,
     assetContainer => {
+      // Guard: entity disposed during async load → clean up and abort
+      if (entity.isDisposed()) {
+        cleanupAssetContainer(scene, assetContainer);
+        entity.resolveGltfPathLoading(filePath);
+        loadAssetFuture.resolve();
+        return;
+      }
+
       processGLTFAssetContainer(assetContainer);
 
       /*
