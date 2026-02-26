@@ -44,24 +44,25 @@ const RegularComponentItemInner = withSdk<{ item: SectionItem; entity: Entity }>
 
         return setValue(input, item.path || '', converted);
       },
-      // Is valid input
-      (input: Record<string, any>) => {
-        const raw = getValue(input, item.path || '');
+      {
+        validateInput: (input: Record<string, any>) => {
+          const raw = getValue(input, item.path || '');
 
-        // Basic type validation
-        if (
-          item.constraints?.format === 'number' ||
-          item.constraints?.min !== undefined ||
-          item.constraints?.max !== undefined
-        ) {
-          return typeof raw === 'number' || !isNaN(parseFloat(String(raw)));
-        }
+          // Basic type validation
+          if (
+            item.constraints?.format === 'number' ||
+            item.constraints?.min !== undefined ||
+            item.constraints?.max !== undefined
+          ) {
+            return typeof raw === 'number' || !isNaN(parseFloat(String(raw)));
+          }
 
-        if (item.constraints?.format === 'boolean') {
-          return isBooleanValue(raw);
-        }
+          if (item.constraints?.format === 'boolean') {
+            return isBooleanValue(raw);
+          }
 
-        return true;
+          return true;
+        },
       },
     );
 
