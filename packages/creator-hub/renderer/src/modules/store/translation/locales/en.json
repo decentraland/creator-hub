@@ -561,8 +561,8 @@
         }
       },
       "collaborators": {
-        "description": "<span>Add up to 10 addresses</span> (Decentraland users) as collaborators and manage their permissions to deploy or stream into your World.",
-        "empty_list": "You haven't added any collaborators/addresses yet",
+        "description": "<span>Add up to 10 collaborators</span> and manage their permission to deploy, or stream into your World.",
+        "empty_list": "You haven't added any collaborators yet",
         "add_collaborator": "Add collaborator",
         "add": "Add",
         "column_name_label": "Collaborators: {number}",

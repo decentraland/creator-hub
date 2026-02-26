@@ -561,8 +561,8 @@
         }
       },
       "collaborators": {
-        "description": "<span>添加最多 10 个地址</span>（Decentraland 用户）作为协作者，并管理他们在您世界中的部署或流媒体权限。",
-        "empty_list": "您还没有添加任何协作者/地址",
+        "description": "<span>添加最多 10 个协作者</span>并管理他们在您世界中的部署或流媒体权限。",
+        "empty_list": "您还没有添加任何协作者",
         "add_collaborator": "添加协作者",
         "add": "添加",
         "column_name_label": "协作者：{number}",
