@@ -82,7 +82,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
 
   return (
     <Container
-      label="PointerEvents"
+      label="Pointer Events"
       className={cx('PointerEvents')}
       initialOpen={initialOpen}
       rightContent={

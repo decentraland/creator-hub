@@ -39,6 +39,7 @@ code {
 
 .composite-renderer {
   flex: 1 1 auto;
+  height: 100%;
 }
 
 .composite-renderer > .content {
