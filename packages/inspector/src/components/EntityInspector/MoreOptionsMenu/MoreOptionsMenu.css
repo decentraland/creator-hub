@@ -18,18 +18,20 @@
 .MoreOptionsMenu .MoreOptionsContent {
   position: absolute;
   right: 0;
-  padding: 8px;
-  border-radius: 2px;
+  padding: 4px 0;
+  border-radius: 4px;
   background-color: var(--gray-0);
   min-width: 140px;
-  z-index: 1;
+  z-index: 5;
+  box-shadow: 0px 3px 5px -1px rgba(0, 0, 0, 0.4);
 }
 
+/* legacy children (Button-based) support */
 .MoreOptionsMenu .MoreOptionsContent .Button {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 4px;
+  padding: 4px 8px;
   width: 100%;
 }
 
@@ -38,5 +40,5 @@
 }
 
 .MoreOptionsMenu .MoreOptionsContent .Button:hover:not(:disabled) {
-  background-color: #454545;
+  background-color: var(--primary-main);
 }

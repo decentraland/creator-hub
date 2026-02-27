@@ -39,16 +39,16 @@
 }
 
 .OptionContainer .Option.Disabled {
-  color: #a09ba8;
+  color: var(--neutral-grey-3);
 }
 
 .OptionContainer:not(.SelectedOption):not(.DropdownPlaceholder):hover {
-  background: var(--base-12);
+  background: var(--primary-main);
 }
 
 .OptionContainer:not(.SelectedOption):not(.DropdownPlaceholder).disabled {
-  background: var(--base-19);
-  color: var(--base-11);
+  background: transparent;
+  color: var(--neutral-grey-3);
   cursor: default;
   pointer-events: none;
 }
@@ -82,7 +82,7 @@
 }
 
 .OptionContainer:not(.selected) .RightContent .SecondaryText {
-  color: var(--base-09);
+  color: #5e5b67;
 }
 
 .OptionContainer .RightContent .RightIcon {
