@@ -1,5 +1,5 @@
 .Snackbar .MuiPaper-root {
-  background-color: var(--black);
+  background-color: var(--card);
   color: var(--white);
   align-items: center;
 }

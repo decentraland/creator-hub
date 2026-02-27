@@ -29,9 +29,9 @@
   font-style: normal;
   font-weight: 500;
   line-height: normal;
-  background-color: var(--background-gray);
+  background-color: var(--gray-0);
   border-radius: 4px;
-  border: 1px solid var(--background-gray);
+  border: 1px solid var(--gray-0);
   outline: none;
 }
 
@@ -40,12 +40,9 @@
 }
 
 .TextArea.Field.disabled textarea {
-  background-color: var(--base-12);
-  border-color: var(--base-12);
-}
-
-.TextArea.Field.disabled textarea {
-  color: var(--base-09);
+  background-color: var(--disabled-bg-color);
+  border-color: var(--disabled-bg-color);
+  color: var(--gray-0);
 }
 
 .TextArea.Field.focused textarea {

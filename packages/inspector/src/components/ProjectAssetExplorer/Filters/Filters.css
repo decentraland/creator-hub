@@ -24,7 +24,7 @@
 
 .ProjectFilters .filter:hover,
 .ProjectFilters .filter.active {
-  background-color: var(--accent-blue-07);
+  background-color: var(--selected-item);
 }
 
 .ProjectFilters .filter svg {

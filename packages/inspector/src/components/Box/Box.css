@@ -3,10 +3,7 @@
 }
 
 .Box {
-  margin: 1.2px;
-  padding: 1.2px;
   border-radius: 2.4px;
-  background: #21262f;
 }
 
 .Box > .content {

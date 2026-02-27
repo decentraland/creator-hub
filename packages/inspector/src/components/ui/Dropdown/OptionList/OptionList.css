@@ -6,7 +6,7 @@
   left: 0;
   width: 100%;
   padding-top: 8px;
-  background: var(--base-14);
+  background: var(--gray-0);
   border-radius: 4px;
   z-index: 5;
   user-select: none;
