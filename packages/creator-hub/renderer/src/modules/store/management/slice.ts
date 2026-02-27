@@ -155,17 +155,19 @@ export const fetchWorlds = createAsyncThunk(
       displayName: world.name,
       type: ManagedProjectType.WORLD,
       role:
-        world.owner.toLowerCase() === address.toLowerCase()
+        world.owner?.toLowerCase() === address.toLowerCase()
           ? WorldRoleType.OWNER
           : WorldRoleType.COLLABORATOR,
-      deployment: {
-        title: world.title || '',
-        description: world.description || '',
-        thumbnail: world.thumbnailHash ? WorldsAPI.getContentSrcUrl(world.thumbnailHash) : '',
+      deployment: world.owner // If world has never been deployed, backend returns null in the owner and every field.
+        ? {
+            title: world.title || world.name,
+            description: world.description || '',
+            thumbnail: world.thumbnailHash ? WorldsAPI.getContentSrcUrl(world.thumbnailHash) : '',
 
-        lastPublishedAt: world.lastDeployedAt ? new Date(world.lastDeployedAt).getTime() : 0,
-        scenesCount: world.deployedScenes || 0,
-      },
+            lastPublishedAt: world.lastDeployedAt ? new Date(world.lastDeployedAt).getTime() : 0,
+            scenesCount: world.deployedScenes || 0,
+          }
+        : undefined,
     }));
 
     return { worlds: worldProjects, total: worldsResponse.total };
