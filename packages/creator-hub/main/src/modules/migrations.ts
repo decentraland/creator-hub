@@ -1,6 +1,5 @@
 import path from 'path';
 import fs from 'fs/promises';
-import * as Sentry from '@sentry/electron/main';
 import log from 'electron-log/main';
 import { future } from 'fp-future';
 
@@ -10,6 +9,7 @@ import { type Config, CURRENT_CONFIG_VERSION, mergeConfig } from '/shared/types/
 
 import { getAppHomeLegacy, getUserDataPath } from './electron';
 import { CONFIG_PATH, getDefaultConfig } from './config';
+import { capture } from './sentry';
 
 const migrationsFuture = future<void>();
 
@@ -26,9 +26,7 @@ export async function runMigrations() {
     log.info('[Migrations] Migrations completed');
     migrationsFuture.resolve();
   } catch (error) {
-    Sentry.captureException(error, {
-      tags: { source: 'migrations' },
-    });
+    capture(error, 'migrations');
     const err = error instanceof Error ? error : new Error(String(error));
     migrationsFuture.reject(err);
     throw error;

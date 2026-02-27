@@ -10,6 +10,7 @@ import { delay } from '/shared/utils';
 import { fetch } from '/shared/fetch';
 
 import { config } from '/@/config';
+import { capture } from '/@/lib/sentry';
 import { t } from '/@/modules/store/translation/utils';
 import {
   type Info,
@@ -68,7 +69,7 @@ export const deploy = async (
   );
 
   if (!resp.ok) {
-    const data = await resp.json();
+    const data = await resp.json().catch(() => ({ message: `HTTP ${resp.status}` }));
     let error = data.message;
     if (/Response was/.test(error)) {
       try {
@@ -77,7 +78,9 @@ export const deploy = async (
         // Keep original error if parsing fails
       }
     }
-    throw new Error(error);
+    const serverError = new Error(error);
+    capture(serverError, 'deployment', 'deploy-request', { status: resp.status, url });
+    throw serverError;
   }
 };
 

@@ -6,6 +6,7 @@ import { fs, npm, scene, settings, workspace } from '#preload';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
+import { capture } from '/@/lib/sentry';
 import { type DependencyState, type Project, ProjectError } from '/shared/types/projects';
 import type { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import { WorkspaceError } from '/shared/types/workspace';
@@ -38,7 +39,12 @@ export const openFolder = createAsyncThunk('workspace/openFolder', workspace.ope
 export const installProject = createAsyncThunk(
   'npm/install',
   async ({ path, packages }: { path: string; packages?: string[] }) => {
-    await npm.install(path, packages);
+    try {
+      await npm.install(path, packages);
+    } catch (error) {
+      capture(error, 'workspace', 'npm-install', { path, packages });
+      throw error;
+    }
     await npm.getContextFiles(path);
   },
 );
@@ -109,6 +115,7 @@ export const runProject = createAsyncThunk(
         'Failed to check for outdated packages, continuing without update check:',
         error,
       );
+      capture(error, 'workspace', 'check-outdated-packages', { path: project.path });
       dependencyAvailableUpdates = {};
     }
 

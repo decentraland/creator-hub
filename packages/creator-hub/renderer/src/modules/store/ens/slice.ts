@@ -6,6 +6,7 @@ import { ChainId } from '@dcl/schemas/dist/dapps/chain-id';
 import type { Async } from '/shared/types/async';
 import { config } from '/@/config';
 import { fetch } from '/shared/fetch';
+import { capture } from '/@/lib/sentry';
 import { DCLNames, ENS as ENSApi } from '/@/lib/ens';
 import { Worlds } from '/@/lib/worlds';
 import { createAsyncThunk } from '/@/modules/store/thunk';
@@ -28,7 +29,8 @@ export const fetchContributeENSNames = async (address: string) => {
     const WorldAPI = new Worlds();
     const domains = await WorldAPI.fetchContributableDomains(address);
     return domains.filter(domain => domain.user_permissions.includes(USER_PERMISSIONS.DEPLOYMENT));
-  } catch (_) {
+  } catch (error) {
+    capture(error, 'ens', 'fetch-contributable-names');
     return [];
   }
 };
@@ -283,6 +285,11 @@ export const slice = createSlice({
           ),
         };
         state.status = 'succeeded';
+      })
+      .addCase(fetchENSList.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = null;
+        capture(action.error, 'ens', 'fetch-ens-list');
       });
   },
 });
