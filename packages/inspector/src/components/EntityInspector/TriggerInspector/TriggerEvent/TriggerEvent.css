@@ -13,13 +13,22 @@
   display: flex;
   flex-direction: row;
   align-items: center;
+  width: calc(100% + 24px);
+  padding: 4px 12px;
+  margin: -4px -12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.TriggerEventContainer > .content > .TriggerEventTitle:hover {
+  background-color: var(--header-hover-bg-color);
 }
 
 .TriggerEventContainer > .content > .TriggerEventTitle span {
   color: var(--text);
   font-size: 11px;
   font-weight: 500;
-  margin-bottom: 6px;
+  padding-bottom: 0;
 }
 
 .TriggerEventContainer .RightContent {
