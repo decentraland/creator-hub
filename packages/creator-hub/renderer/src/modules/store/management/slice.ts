@@ -155,7 +155,7 @@ export const fetchWorlds = createAsyncThunk(
       displayName: world.name,
       type: ManagedProjectType.WORLD,
       role:
-        world.owner.toLowerCase() === address.toLowerCase()
+        world.owner?.toLowerCase() === address.toLowerCase()
           ? WorldRoleType.OWNER
           : WorldRoleType.COLLABORATOR,
       deployment: {
