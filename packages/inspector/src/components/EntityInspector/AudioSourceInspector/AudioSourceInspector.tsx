@@ -35,8 +35,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
     AudioSource,
     fromAudioSource,
     toAudioSource,
-    handleInputValidation,
-    [files],
+    { validateInput: handleInputValidation, deps: [files] },
   );
 
   const handleRemove = useCallback(async () => {

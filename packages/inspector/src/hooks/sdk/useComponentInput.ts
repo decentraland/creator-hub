@@ -34,14 +34,22 @@ export function isValidNumericInput(input: Input[keyof Input]): boolean {
   return input.length > 0 && !isNaN(Number(input));
 }
 
+export type UseComponentInputOptions<InputType extends Input> = {
+  validateInput?: (input: InputType) => boolean;
+  deps?: unknown[];
+  tolerance?: number;
+};
+
 export const useComponentInput = <ComponentValueType extends object, InputType extends Input>(
   entity: Entity,
   component: Component<ComponentValueType>,
   fromComponentValueToInput: (componentValue: ComponentValueType) => InputType,
   fromInputToComponentValue: (input: InputType) => ComponentValueType,
-  validateInput: (input: InputType) => boolean = () => true,
-  deps: unknown[] = [],
-  tolerance: number = 2, // floating-point tolerance for comparisons (default: 2 decimal places)
+  {
+    validateInput = () => true,
+    deps = [],
+    tolerance = 2,
+  }: UseComponentInputOptions<InputType> = {},
 ) => {
   // Create a normalization function that handles the round-trip transformation
   const normalizeForComparison = useCallback(
@@ -219,8 +227,7 @@ export const useMultiComponentInput = <ComponentValueType extends object, InputT
   component: Component<ComponentValueType>,
   fromComponentValueToInput: (componentValue: ComponentValueType) => InputType,
   fromInputToComponentValue: (input: InputType) => ComponentValueType,
-  validateInput: (input: InputType) => boolean = () => true,
-  deps: unknown[] = [],
+  { validateInput = () => true, deps = [] }: UseComponentInputOptions<InputType> = {},
 ) => {
   // If there's only one entity, use the single entity version just to be safe for now
   if (entities.length === 1) {
@@ -229,8 +236,10 @@ export const useMultiComponentInput = <ComponentValueType extends object, InputT
       component,
       fromComponentValueToInput,
       fromInputToComponentValue,
-      validateInput,
-      deps,
+      {
+        validateInput,
+        deps,
+      },
     );
   }
   const sdk = useSdk();

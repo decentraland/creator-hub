@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-
+import { AvatarAnchorPointType } from '@dcl/ecs';
 import { withSdk } from '../../../hoc/withSdk';
 import { useAllEntitiesHaveComponent } from '../../../hooks/sdk/useHasComponent';
 import { useMultiComponentInput } from '../../../hooks/sdk/useComponentInput';
@@ -11,7 +11,6 @@ import { InfoTooltip } from '../../ui/InfoTooltip';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { Dropdown } from '../../ui/Dropdown';
-import { AvatarAnchorPointType } from '@dcl/ecs';
 import { fromAvatarAttach, toAvatarAttach, isValidInput } from './utils';
 import type { Props } from './types';
 
@@ -54,7 +53,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
     AvatarAttach,
     fromAvatarAttach,
     toAvatarAttach,
-    isValidInput,
+    { validateInput: isValidInput },
   );
 
   const handleRemove = useCallback(async () => {

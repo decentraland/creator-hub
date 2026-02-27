@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback } from 'react';
-import { Entity } from '@dcl/ecs';
+import type { Entity } from '@dcl/ecs';
 import { getValue, setValue } from '../../../../../lib/logic/get-set-value';
 import { withSdk } from '../../../../../hoc/withSdk';
 import { useComponentInput } from '../../../../../hooks/sdk/useComponentInput';
@@ -7,7 +7,12 @@ import { Block } from '../../../../Block';
 import { Container } from '../../../../Container';
 import { TextField, CheckboxField, RangeField } from '../../../../ui';
 import { getComponentByType, isBooleanValue, isTrueValue } from '../../utils';
-import { DefaultBasicViewFieldProps, FieldConfig, FieldComponentType, FieldType } from './types';
+import {
+  type DefaultBasicViewFieldProps,
+  type FieldConfig,
+  FieldComponentType,
+  FieldType,
+} from './types';
 
 import './DefaultBasicViewField.css';
 
@@ -97,20 +102,21 @@ function renderField(entity: Entity, component: any, propName: string, config: F
 
       return setValue(input, propName, converted);
     },
-    // Is valid input
-    (input: Record<string, any>) => {
-      const raw = getValue(input, propName);
+    {
+      validateInput: (input: Record<string, any>) => {
+        const raw = getValue(input, propName);
 
-      switch (config.type) {
-        case FieldType.Number:
-        case FieldType.Decimal:
-        case FieldType.Float:
-          return typeof raw === 'number' || !isNaN(parseFloat(String(raw)));
-        case FieldType.Boolean:
-          return isBooleanValue(raw);
-        default:
-          return true;
-      }
+        switch (config.type) {
+          case FieldType.Number:
+          case FieldType.Decimal:
+          case FieldType.Float:
+            return typeof raw === 'number' || !isNaN(parseFloat(String(raw)));
+          case FieldType.Boolean:
+            return isBooleanValue(raw);
+          default:
+            return true;
+        }
+      },
     },
   );
 

@@ -11,7 +11,7 @@ import { withSdk } from '../../../hoc/withSdk';
 import { Container } from '../../Container';
 import { TextField, InfoTooltip } from '../../ui';
 import { fromCounter, isValidInput, toCounter } from './utils';
-import { Props } from './types';
+import type { Props } from './types';
 
 import './CounterInspector.css';
 
@@ -19,13 +19,9 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const { Counter, GltfContainer } = sdk.components;
 
   const hasCounter = useHasComponent(entity, Counter);
-  const { getInputProps } = useComponentInput(
-    entity,
-    Counter,
-    fromCounter,
-    toCounter,
-    isValidInput,
-  );
+  const { getInputProps } = useComponentInput(entity, Counter, fromCounter, toCounter, {
+    validateInput: isValidInput,
+  });
 
   const handleRemove = useCallback(async () => {
     sdk.operations.removeComponent(entity, Counter);

@@ -25,14 +25,10 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     ({ src }: { src: string }) => !!files && isValidInput(files, src),
     [files],
   );
-  const { getInputProps, isValid } = useComponentInput(
-    entity,
-    GltfContainer,
-    fromGltf,
-    toGltf,
-    handleInputValidation,
-    [files],
-  );
+  const { getInputProps, isValid } = useComponentInput(entity, GltfContainer, fromGltf, toGltf, {
+    validateInput: handleInputValidation,
+    deps: [files],
+  });
 
   const handleRemove = useCallback(async () => {
     const { VisibilityComponent, MeshCollider } = sdk.components;

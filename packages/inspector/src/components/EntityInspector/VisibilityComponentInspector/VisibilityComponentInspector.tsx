@@ -1,6 +1,4 @@
 import { useCallback } from 'react';
-import type { Entity } from '@dcl/ecs';
-
 import { withSdk } from '../../../hoc/withSdk';
 import { useAllEntitiesHaveComponent } from '../../../hooks/sdk/useHasComponent';
 import { useMultiComponentInput } from '../../../hooks/sdk/useComponentInput';
@@ -34,7 +32,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
     VisibilityComponent,
     fromVisibility,
     toVisibility,
-    isValidInput,
+    { validateInput: isValidInput },
   );
 
   // Handlers
