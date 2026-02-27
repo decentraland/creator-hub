@@ -20,10 +20,6 @@
   cursor: pointer;
 }
 
-.TriggerEventContainer > .content > .TriggerEventTitle:hover {
-  background-color: var(--header-hover-bg-color);
-}
-
 .TriggerEventContainer > .content > .TriggerEventTitle span {
   color: var(--text);
   font-size: 11px;
