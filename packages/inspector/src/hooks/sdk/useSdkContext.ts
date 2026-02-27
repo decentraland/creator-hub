@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { SdkContextValue } from '../../lib/sdk/context';
 import { createSdkContext } from '../../lib/sdk/context';
-import { catalog } from '../../lib/logic/catalog';
+import { fetchLatestCatalog } from '../../lib/logic/catalog';
+import type { AssetPack } from '../../lib/logic/catalog';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { connect as connectDataLayer } from '../../redux/data-layer';
 import { addEngines } from '../../redux/sdk';
@@ -16,12 +17,21 @@ export const useSdkContext = () => {
   const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
   const [sdk, setSdk] = useState<SdkContextValue | null>(null);
   const [error, setError] = useState<Error | null>(null);
+  const [catalog, setCatalog] = useState<AssetPack[]>([]);
   const dispatch = useAppDispatch();
   let sdkInitialized = false;
 
   useEffect(() => {
     dispatch(connectDataLayer());
   }, [dispatch]);
+
+  useEffect(() => {
+    // fetchLatestCatalog() uses a promise-level cache, so this shares the same
+    // in-flight request as any concurrent call from the Assets panel.
+    fetchLatestCatalog()
+      .then(setCatalog)
+      .catch(e => console.error('Failed to load catalog for SDK context:', e));
+  }, []);
 
   useEffect(() => {
     if (!catalog.length || !canvas || !preferences || sdkInitialized || !!sdk) return;

@@ -109,6 +109,34 @@ To develop the Inspector with local asset-packs integration:
 
 See the [main README](../../README.md) for complete local development setup instructions.
 
+### Testing New Assets Locally
+
+The inspector fetches the asset catalog at runtime from S3. If `latest/catalog.json` is unreachable (e.g. on a pre-merge PR branch, in CI, or offline), it automatically falls back to the `catalog.json` bundled in the `@dcl/asset-packs` npm package — so the inspector always loads.
+
+When you add a **new** asset locally it won't appear in the Asset Packs tab automatically because neither the CDN nor the bundled catalog knows about it yet. Two options are available:
+
+#### Option 1 — Docker (full local stack, recommended)
+
+Follow the asset-packs [Local Development](../asset-packs/README.md#local-development) setup (docker-compose + `npm run upload`). The upload script also publishes `catalog.json` as `asset-packs/latest/catalog.json` to MinIO, mirroring CI. Then open the inspector with:
+
+```
+http://localhost:8000/?contentUrl=http://localhost:9000/asset-packs
+```
+
+Both the catalog and all asset files are served locally — no remote CDN needed.
+
+#### Option 2 — Upload to dev CDN via PR
+
+Push your branch and comment `/upload-assets` on the pull request (org members only). The CI uploads all asset files to the development CDN (`https://builder-items.decentraland.zone`) and posts a confirmation comment.
+
+To test against the dev CDN:
+
+```
+http://localhost:8000/?contentUrl=https://builder-items.decentraland.zone
+```
+
+This gives a complete end-to-end test with real asset files. Note that `latest/catalog.json` on the dev CDN is only updated on merge to `main`, so use the Docker option to see catalog changes before merging.
+
 ## Integration
 
 The Inspector supports two integration approaches:

@@ -115,6 +115,7 @@ validate-asset-packs:
 upload-asset-packs:
 	cd $(ASSET_PACKS_PATH); npm run upload
 
+
 test-e2e:
 	make test-inspector-e2e
 	make test-creator-hub-e2e
