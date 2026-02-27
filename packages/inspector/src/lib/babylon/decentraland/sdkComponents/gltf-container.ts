@@ -16,6 +16,24 @@ let sceneContext: WeakRef<SceneContext>;
 
 export const resourcesByPath = new Map<string, Set<string>>();
 
+/**
+ * Tracks load versions per entity to invalidate stale async GLTF callbacks.
+ * Incremented when a GLTF is removed or a new load starts. If the version at
+ * callback time doesn't match the version captured at load start, the load is
+ * stale and its results should be discarded.
+ */
+const gltfLoadVersion = new WeakMap<EcsEntity, number>();
+
+function getLoadVersion(entity: EcsEntity): number {
+  return gltfLoadVersion.get(entity) ?? 0;
+}
+
+function incrementLoadVersion(entity: EcsEntity): number {
+  const version = getLoadVersion(entity) + 1;
+  gltfLoadVersion.set(entity, version);
+  return version;
+}
+
 BABYLON.SceneLoader.OnPluginActivatedObservable.add(function (plugin) {
   if (plugin instanceof GLTFFileLoader) {
     plugin.animationStartMode = GLTFLoaderAnimationStartMode.NONE;
@@ -124,6 +142,9 @@ export function removeGltf(entity: EcsEntity) {
   const context = entity.context.deref();
   if (!context) return;
 
+  // Invalidate any in-flight async GLTF loads for this entity
+  incrementLoadVersion(entity);
+
   if (entity.gltfContainer) {
     entity.gltfContainer.setEnabled(false);
     entity.gltfContainer.parent = null;
@@ -161,11 +182,21 @@ async function tryLoadGltfAsync(sceneId: string, entity: EcsEntity, filePath: st
   const extension = filePath.toLowerCase().endsWith('.gltf') ? '.gltf' : '.glb';
 
   const loadAssetFuture = future<void>();
+  const scene = entity.getScene();
+  const loadVersion = incrementLoadVersion(entity);
 
   loadAssetContainer(
     file,
-    entity.getScene(),
+    scene,
     assetContainer => {
+      // Guard: entity disposed or GLTF invalidated during async load → clean up and abort
+      if (entity.isDisposed() || getLoadVersion(entity) !== loadVersion) {
+        cleanupAssetContainer(scene, assetContainer);
+        entity.resolveGltfPathLoading(filePath);
+        loadAssetFuture.resolve();
+        return;
+      }
+
       processGLTFAssetContainer(assetContainer);
 
       /*
