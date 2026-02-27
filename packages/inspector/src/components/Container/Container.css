@@ -30,7 +30,7 @@
   margin: 0;
   text-transform: uppercase;
   color: var(--neutral-grey-3);
-  font-size: 12px;
+  font-size: 16px;
   cursor: pointer;
   letter-spacing: 2px;
 }
@@ -92,7 +92,7 @@
 
 .Container.border .title span {
   color: var(--base-09);
-  font-size: 11px;
+  font-size: 14px;
   letter-spacing: 0;
   text-transform: none;
 }

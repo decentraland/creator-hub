@@ -1,13 +1,18 @@
 /* Transform Inspector specific styles */
 .Container.Transform .Block .content {
   display: grid;
-  grid-template-columns: 60px 1fr 1fr 1fr;
+  grid-template-columns: 90px 1fr 1fr 1fr;
   gap: 8px;
   align-items: center;
 }
 
 .Container.Transform .Block > .Label {
   grid-column: 1;
+  margin-bottom: 70px;
+}
+
+.Container.Transform .Block {
+  margin-bottom: 0;
 }
 
 .Container.Transform .Block.scale-container {
@@ -16,18 +21,17 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 4px;
+  justify-content: space-between;
+  width: 100%;
 }
 
 .Container.Transform .Block.scale-container > .Label {
   margin-bottom: 0;
+  margin-right: auto;
 }
 
 .Container.Transform .Block.scale-container .content {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 4px;
+  display: contents;
 }
 
 .Container.Transform .Block.scale-container .Link {

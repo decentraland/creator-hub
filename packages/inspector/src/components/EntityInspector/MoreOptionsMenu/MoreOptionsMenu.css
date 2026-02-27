@@ -20,7 +20,7 @@
   right: 0;
   padding: 8px;
   border-radius: 2px;
-  background: #3c3c3c;
+  background-color: var(--gray-0);
   min-width: 140px;
   z-index: 1;
 }

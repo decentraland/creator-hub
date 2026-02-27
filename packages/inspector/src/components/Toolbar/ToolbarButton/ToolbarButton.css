@@ -3,7 +3,7 @@
   padding: 0px 2px;
   margin: 0 8px;
   color: #fff;
-  background-color: var(--tree-border-color);
+  background-color: var(--gray-0);
   font-size: 16px;
   border-radius: 4px;
   cursor: pointer;
@@ -12,7 +12,7 @@
 }
 
 .ToolbarButton:hover:not(:disabled) {
-  background-color: var(--background-gray);
+  background-color: var(--base-19);
 }
 
 .ToolbarButton:disabled {

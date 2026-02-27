@@ -47,7 +47,7 @@
 }
 
 .OptionContainer:not(.SelectedOption):not(.DropdownPlaceholder).disabled {
-  background: var(--base-14);
+  background: var(--base-19);
   color: var(--base-11);
   cursor: default;
   pointer-events: none;
