@@ -1,18 +1,30 @@
 .IncompatibleAssetModal {
   min-width: 460px;
   max-width: 560px;
+  padding: 32px;
 }
 
 .IncompatibleAssetModalHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
 }
 
 .IncompatibleAssetModalHeader h2 {
   margin: 0;
-  font-size: 16px;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.IncompatibleAssetModalHeader .CloseButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--base-01);
+  height: 32px;
 }
 
 .IncompatibleAssetModalBody {
@@ -20,8 +32,10 @@
 }
 
 .IncompatibleAssetModalBody p {
-  margin: 0 0 12px;
+  margin: 0 0 16px;
+  font-size: 14px;
   line-height: 1.5;
+  color: var(--base-08);
 }
 
 .IncompatibleComponentList {
@@ -33,6 +47,7 @@
 .IncompatibleComponentList li {
   padding: 4px 0;
   font-size: 13px;
+  color: var(--text);
 }
 
 .IncompatibleComponentList code {
@@ -40,12 +55,18 @@
 }
 
 .IncompatibleReason {
-  color: var(--text-secondary-color, #888);
+  color: var(--base-08);
   margin-left: 4px;
 }
 
 .IncompatibleAssetModalFooter {
   display: flex;
   justify-content: flex-end;
-  margin-top: 16px;
+  margin-top: 24px;
+}
+
+.IncompatibleAssetModalFooter button {
+  padding: 8px 22px;
+  height: 40px;
+  font-weight: 600;
 }

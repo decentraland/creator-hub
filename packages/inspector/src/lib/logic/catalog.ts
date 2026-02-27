@@ -42,8 +42,15 @@ const CATALOG_FETCH_TIMEOUT_MS = 10_000;
 // remain usable after the initial load without requiring async callers.
 let _catalog: AssetPack[] = [];
 
+// Whether the catalog was loaded from the remote server or the bundled fallback.
+let _catalogSource: 'remote' | 'bundled' | null = null;
+
 // Promise-level cache so concurrent callers share a single in-flight request.
 let _fetchPromise: Promise<AssetPack[]> | null = null;
+
+export function getCatalogSource(): 'remote' | 'bundled' | null {
+  return _catalogSource;
+}
 
 export function fetchLatestCatalog(): Promise<AssetPack[]> {
   if (_fetchPromise) return _fetchPromise;
@@ -59,6 +66,7 @@ export function fetchLatestCatalog(): Promise<AssetPack[]> {
       if (!response.ok) throw new Error(`Failed to fetch catalog: ${response.status}`);
       const data: Catalog = await response.json();
       _catalog = data.assetPacks;
+      _catalogSource = 'remote';
       return _catalog;
     })
     .finally(() => clearTimeout(timeoutId))
@@ -68,6 +76,7 @@ export function fetchLatestCatalog(): Promise<AssetPack[]> {
       // offline environments, and e2e CI runs without a contentUrl override.
       console.warn('Failed to fetch latest catalog, falling back to bundled version:', err);
       _catalog = (_bundledCatalog as unknown as Catalog).assetPacks;
+      _catalogSource = 'bundled';
       return _catalog;
     });
 
