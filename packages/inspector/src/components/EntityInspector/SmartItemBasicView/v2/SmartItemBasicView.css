@@ -3,10 +3,6 @@
   --right-menu-width: 16px;
 }
 
-.SmartItemBasicViewInspector.Container {
-  background-color: #161518;
-}
-
 .SmartItemBasicViewInspector.Container .indicator {
   align-self: center;
 }
@@ -19,7 +15,6 @@
   padding: 2px;
   width: 16px;
   height: 16px;
-  background-color: var(--smart-item-icon-bg-color);
   color: var(--white);
 }
 

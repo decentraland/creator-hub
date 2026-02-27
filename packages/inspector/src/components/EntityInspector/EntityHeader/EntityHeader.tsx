@@ -54,16 +54,6 @@ export default React.memo(
     const [instanceOf, setInstanceOf] = useState<string | null>(null);
     const customAssets = useAppSelector(selectCustomAssets);
 
-    const isSmartItem = useMemo(
-      () =>
-        sdk.components.Actions.has(entity) ||
-        sdk.components.Triggers.has(entity) ||
-        sdk.components.States.has(entity) ||
-        sdk.components.Counter.has(entity) ||
-        sdk.components.CounterBar.has(entity),
-      [sdk, entity],
-    );
-
     useEffect(() => {
       setLabel(getLabel(sdk, entity));
     }, [sdk, entity]);
@@ -424,12 +414,6 @@ export default React.memo(
                 </span>
               </div>
             )}
-            {isSmartItem && (
-              <div className="customItemContainer">
-                <span>Smart Item</span>
-              </div>
-            )}
-            {(instanceOf || isSmartItem) && <Divider />}
             <TagsInspector entities={[entity]} />
           </Block>
         )}
