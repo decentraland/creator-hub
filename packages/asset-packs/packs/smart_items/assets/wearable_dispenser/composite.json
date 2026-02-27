@@ -1,0 +1,133 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::Transform",
+      "data": {
+        "513": {
+          "json": {
+            "position": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotation": {
+              "x": 0,
+              "y": 0,
+              "z": 0,
+              "w": 1
+            },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
+            "parent": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "core::Animator",
+      "data": {
+        "513": {
+          "json": {
+            "states": [
+              {
+                "clip": "Button",
+                "playing": false,
+                "weight": 1,
+                "speed": 1,
+                "loop": false,
+                "shouldReset": false
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "core::AudioSource",
+      "data": {
+        "513": {
+          "json": {
+            "volume": 0.5,
+            "audioClipUrl": "{assetPath}/button-sound.mp3"
+          }
+        }
+      }
+    },
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Dispenser.glb",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 3
+          }
+        },
+        "513": {
+          "json": {
+            "src": "{assetPath}/Button.glb",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 3
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "0": {
+          "json": {
+            "value": "Dispenser"
+          }
+        },
+        "513": {
+          "json": {
+            "value": "Button"
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Actions",
+      "data": {
+        "513": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "name": "play animation",
+                "type": "play_animation",
+                "jsonPayload": "{\"animation\":\"Button\",\"shouldReset\":true}"
+              },
+              {
+                "name": "Play sound",
+                "type": "play_sound",
+                "jsonPayload": "{\"src\":\"{assetPath}/button-sound.mp3\",\"volume\":0.55}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/ClaimRewardButton.tsx",
+                "priority": 0,
+                "layout": "{\"params\":{\"campaignId\":{\"type\":\"string\",\"optional\":false,\"value\":\"\"},\"dispenserKey\":{\"type\":\"string\",\"optional\":false,\"value\":\"\"},\"wearableURN\":{\"type\":\"string\",\"optional\":true,\"value\":\"urn:decentraland:off-chain:base-avatars:green_hoodie\"},\"startDate\":{\"type\":\"string\",\"optional\":true,\"value\":\"\"},\"endDate\":{\"type\":\"string\",\"optional\":true,\"value\":\"\"},\"wearableYOffset\":{\"type\":\"number\",\"optional\":true,\"value\":0.5},\"hoverText\":{\"type\":\"string\",\"optional\":true,\"value\":\"Claim\"},\"ActivateOnSuccess\":{\"type\":\"action\",\"optional\":true,\"value\":{\"entity\":0,\"action\":\"\"}}}}"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

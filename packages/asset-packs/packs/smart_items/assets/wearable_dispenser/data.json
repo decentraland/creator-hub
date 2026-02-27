@@ -1,0 +1,8 @@
+{
+  "id": "938064c8-65e1-4098-a497-3742337c3382",
+  "name": "Wearable Dispenser",
+  "category": "Rewards",
+  "tags": ["wearable", "dispenser", "reward", "collections", "collectible", "clothing"],
+  "description": "A wearable dispenser that gifts the player a wearable from a Rewards server campaign when the player clickson it.",
+  "author": "Decentraland Foundation"
+}
