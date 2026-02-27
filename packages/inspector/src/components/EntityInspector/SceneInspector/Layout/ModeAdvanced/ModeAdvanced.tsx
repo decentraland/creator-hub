@@ -4,7 +4,7 @@ import { Button } from '../../../../Button';
 import { Block } from '../../../../Block';
 import { TextField } from '../../../../ui';
 
-import { Props } from './types';
+import type { Props } from './types';
 
 export function ModeAdvanced({ value, onSubmit, onGoBack }: Props) {
   const [coords, setCoords] = useState(value.coords);

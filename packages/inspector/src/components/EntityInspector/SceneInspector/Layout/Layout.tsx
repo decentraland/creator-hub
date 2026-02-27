@@ -1,11 +1,12 @@
-import { areConnected } from '@dcl/ecs';
 import { useCallback, useMemo, useState } from 'react';
 import { AiOutlineInfoCircle as InfoIcon } from 'react-icons/ai';
+import { areConnected } from '@dcl/ecs';
 
 import { Dropdown } from '../../../ui';
 import { Block } from '../../../Block';
 import { Button } from '../../../Button';
-import { Grid, Props as GridProps } from './Grid';
+import type { Props as GridProps } from './Grid';
+import { Grid } from './Grid';
 
 import {
   coordToStr,
@@ -23,8 +24,9 @@ import {
 } from './utils';
 import { getAxisLengths } from './Grid/utils';
 import { ModeAdvanced } from './ModeAdvanced';
-import { GridError, MAX_AXIS_PARCELS, Mode, Props, TILE_OPTIONS } from './types';
-import { Value as ModeAdvancedValue } from './ModeAdvanced/types';
+import type { Props } from './types';
+import { GridError, MAX_AXIS_PARCELS, Mode, TILE_OPTIONS } from './types';
+import type { Value as ModeAdvancedValue } from './ModeAdvanced/types';
 
 import './Layout.css';
 
@@ -76,10 +78,13 @@ function Layout({ value, onChange }: Props) {
         x: length.x > MAX_AXIS_PARCELS ? min.x + Math.min(MAX_AXIS_PARCELS, max.x) : max.x,
         y: length.y > MAX_AXIS_PARCELS ? min.y + Math.min(MAX_AXIS_PARCELS, max.y) : max.y,
       };
-      setGrid(generateGridFrom(grid, min, clampMax));
-      setBase(strToCoord(value.base) || min);
+      const newGrid = generateGridFrom(grid, min, clampMax);
+      const newBase = strToCoord(value.base) || min;
+      setGrid(newGrid);
+      setBase(newBase);
+      onChange({ parcels: getEnabledCoords(newGrid), base: newBase });
     },
-    [grid],
+    [grid, onChange],
   );
 
   const applyCurrentState = useCallback(() => {
