@@ -183,8 +183,8 @@ const VideoScreenBasicView = withSdk<Props>(({ sdk, entity }) => {
         ]}
       />
       <Container
-        label="VIDEO"
-        className={cx('PanelSection', { hover: isHover, droppeable: canDrop })}
+        label="Video"
+        className={cx('Container', 'border', { hover: isHover, droppeable: canDrop })}
       >
         <Block
           label="Video Path or Vimeo URL"
@@ -217,8 +217,8 @@ const VideoScreenBasicView = withSdk<Props>(({ sdk, entity }) => {
         </CheckboxGroup>
       </Container>
       <Container
-        label="LIVE STREAM"
-        className="PanelSection LiveStreamSection"
+        label="Live Stream"
+        className="Container border LiveStreamSection"
       >
         <InfoIcon size={16} />
         <Label text="Stream keys are generated from the Admin Tools panel in your scene in-world. Make sure to add the 'Admin Tools' Smart Item to your scene." />
