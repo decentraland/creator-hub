@@ -56,11 +56,16 @@ if (import.meta.env.PROD) {
         replayIntegration({
           mutationLimit: 500,
           blockAllMedia: true,
+          beforeErrorSampling(event) {
+            const source = event.tags?.source;
+            // Only capture replays for UX-critical errors
+            return source === 'deployment' || source === 'editor-page' || source === 'workspace';
+          },
         }),
       ],
       release: import.meta.env.VITE_APP_VERSION,
       tracesSampleRate: 0.001,
-      replaysSessionSampleRate: 0,
+      replaysSessionSampleRate: 0.01,
       replaysOnErrorSampleRate: 0.01,
       enabled: true,
     },
