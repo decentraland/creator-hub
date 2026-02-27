@@ -3,6 +3,7 @@ import { createAsyncThunk, createSlice, createSelector } from '@reduxjs/toolkit'
 import type { AtlasTileProps } from 'decentraland-ui2/dist/components/Atlas/Atlas.types';
 import type { Async } from '/shared/types/async';
 import { config } from '/@/config';
+import { capture } from '/@/lib/sentry';
 import { fetch } from '/shared/fetch';
 import {
   colorByRole,
@@ -143,6 +144,16 @@ export const slice = createSlice({
       .addCase(fetchTiles.fulfilled, (state, action) => {
         state.tiles = { ...action.payload };
         state.status = 'succeeded';
+      })
+      .addCase(fetchLandList.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.error.message || 'Failed to fetch land list';
+        capture(action.error, 'land', 'fetch-land-list');
+      })
+      .addCase(fetchTiles.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.error.message || 'Failed to fetch tiles';
+        capture(action.error, 'land', 'fetch-tiles');
       });
   },
 });
