@@ -19,12 +19,12 @@
             "id": "{self}",
             "value": [
               {
-                "name": "Play Activate Animation",
+                "name": "_Play_Activate_Animation",
                 "type": "play_animation",
                 "jsonPayload": "{ \"animation\": \"trigger\" }"
               },
               {
-                "name": "Play Sound",
+                "name": "_Play_Sound",
                 "type": "play_sound",
                 "jsonPayload": "{ \"src\": \"{assetPath}/sound.mp3\" }"
               }
@@ -44,11 +44,11 @@
                 "actions": [
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Play Activate Animation"
+                    "name": "_Play_Activate_Animation"
                   },
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Play Sound"
+                    "name": "_Play_Sound"
                   }
                 ]
               }

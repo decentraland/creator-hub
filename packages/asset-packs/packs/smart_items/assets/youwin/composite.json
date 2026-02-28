@@ -78,21 +78,6 @@
             "id": "{self}",
             "value": [
               {
-                "name": "Play anim",
-                "type": "play_animation",
-                "jsonPayload": "{\"animation\":\"Play\",\"loop\":true}"
-              },
-              {
-                "name": "Reset",
-                "type": "stop_animation",
-                "jsonPayload": "{}"
-              },
-              {
-                "name": "Show",
-                "type": "set_visibility",
-                "jsonPayload": "{\"visible\":true,\"collider\":0}"
-              },
-              {
                 "name": "Hide",
                 "type": "set_visibility",
                 "jsonPayload": "{\"visible\":false,\"collider\":0}",
@@ -106,11 +91,26 @@
               {
                 "name": "Pop Up",
                 "type": "batch",
-                "jsonPayload": "{\"actions\":[\"Play anim\",\"Show\",\"Sound\"]}",
+                "jsonPayload": "{\"actions\":[\"_Play_anim\",\"_Show\",\"_Sound\"]}",
                 "allowedInBasicView": true
               },
               {
-                "name": "Sound",
+                "name": "_Play_anim",
+                "type": "play_animation",
+                "jsonPayload": "{\"animation\":\"Play\",\"loop\":true}"
+              },
+              {
+                "name": "_Reset",
+                "type": "stop_animation",
+                "jsonPayload": "{}"
+              },
+              {
+                "name": "_Show",
+                "type": "set_visibility",
+                "jsonPayload": "{\"visible\":true,\"collider\":0}"
+              },
+              {
+                "name": "_Sound",
                 "type": "play_sound",
                 "jsonPayload": "{\"src\":\"{assetPath}/wingame.mp3\"}"
               }

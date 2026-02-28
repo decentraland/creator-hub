@@ -37,22 +37,22 @@
                 "allowedInBasicView": true
               },
               {
-                "name": "Play Sound",
+                "name": "_Play_Sound",
                 "type": "play_sound",
                 "jsonPayload": "{ \"src\": \"{assetPath}/sound.mp3\" }"
               },
               {
-                "name": "Play Open Animation",
+                "name": "_Play_Open_Animation",
                 "type": "play_animation",
                 "jsonPayload": "{ \"animation\": \"open\" }"
               },
               {
-                "name": "Play Close Animation",
+                "name": "_Play_Close_Animation",
                 "type": "play_animation",
                 "jsonPayload": "{ \"animation\": \"close\" }"
               },
               {
-                "name": "Play Idle Animation",
+                "name": "_Play_Idle_Animation",
                 "type": "play_animation",
                 "jsonPayload": "{ \"animation\": \"main\" }"
               }
@@ -90,11 +90,11 @@
                 "actions": [
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Play Open Animation"
+                    "name": "_Play_Open_Animation"
                   },
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Play Sound"
+                    "name": "_Play_Sound"
                   }
                 ],
                 "basicViewId": "trigger-when-opened"
@@ -111,11 +111,11 @@
                 "actions": [
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Play Close Animation"
+                    "name": "_Play_Close_Animation"
                   },
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Play Sound"
+                    "name": "_Play_Sound"
                   }
                 ],
                 "basicViewId": "trigger-when-closed"
@@ -125,7 +125,7 @@
                 "actions": [
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Play Idle Animation"
+                    "name": "_Play_Idle_Animation"
                   }
                 ]
               },

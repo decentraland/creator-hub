@@ -21,13 +21,8 @@
               {
                 "name": "Explode",
                 "type": "batch",
-                "jsonPayload": "{ \"actions\": [\"Play Explosion Animation\", \"Explosion Damage\", \"Delay Remove\"] }",
+                "jsonPayload": "{ \"actions\": [\"_Play_Explosion_Animation\", \"Explosion Damage\", \"_Delay_Remove\"] }",
                 "allowedInBasicView": true
-              },
-              {
-                "name": "Play Explosion Animation",
-                "type": "play_animation",
-                "jsonPayload": "{ \"animation\": \"Animation\" }"
               },
               {
                 "name": "Explosion Damage",
@@ -48,7 +43,12 @@
                 "allowedInBasicView": true
               },
               {
-                "name": "Delay Remove",
+                "name": "_Play_Explosion_Animation",
+                "type": "play_animation",
+                "jsonPayload": "{ \"animation\": \"Animation\" }"
+              },
+              {
+                "name": "_Delay_Remove",
                 "type": "start_delay",
                 "jsonPayload": "{ \"actions\": [\"Remove\"], \"timeout\": 1 }"
               }

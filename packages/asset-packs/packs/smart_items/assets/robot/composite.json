@@ -21,7 +21,7 @@
               {
                 "name": "Die",
                 "type": "batch",
-                "jsonPayload": "{ \"actions\": [\"Play Explosion Animation\", \"Stop Attack Loop\", \"Delay Remove\"] }",
+                "jsonPayload": "{ \"actions\": [\"_Play_Explosion_Animation\", \"_Stop_Attack_Loop\", \"_Delay_Remove\"] }",
                 "allowedInBasicView": true
               },
               {
@@ -36,11 +36,6 @@
                 "type": "stop_following_player",
                 "jsonPayload": "{ }",
                 "allowedInBasicView": true
-              },
-              {
-                "name": "Play Attack Animation",
-                "type": "play_animation",
-                "jsonPayload": "{ \"animation\": \"Attack\" }"
               },
               {
                 "name": "Attack",
@@ -66,17 +61,22 @@
                 "jsonPayload": "{ }"
               },
               {
-                "name": "Delay Remove",
+                "name": "_Play_Attack_Animation",
+                "type": "play_animation",
+                "jsonPayload": "{ \"animation\": \"Attack\" }"
+              },
+              {
+                "name": "_Delay_Remove",
                 "type": "start_delay",
                 "jsonPayload": "{ \"actions\": [\"Remove\"], \"timeout\": 0.5 }"
               },
               {
-                "name": "Play Explosion Animation",
+                "name": "_Play_Explosion_Animation",
                 "type": "play_animation",
                 "jsonPayload": "{ \"animation\": \"explode\" }"
               },
               {
-                "name": "Stop Attack Loop",
+                "name": "_Stop_Attack_Loop",
                 "type": "stop_loop",
                 "jsonPayload": "{ \"action\": \"Damage\" }"
               }
@@ -116,7 +116,7 @@
                 "actions": [
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Play Attack Animation"
+                    "name": "_Play_Attack_Animation"
                   }
                 ]
               },
