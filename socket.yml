@@ -1,0 +1,10 @@
+# Socket GitHub App configuration (https://docs.socket.dev/docs/socket-yml)
+# Restricts when the Socket App runs PR alerts to dependency-related paths in this monorepo.
+version: 2
+
+triggerPaths:
+  - 'packages/creator-hub/**'
+  - 'packages/inspector/**'
+  - 'packages/asset-packs/**'
+  - 'package.json'
+  - 'package-lock.json'

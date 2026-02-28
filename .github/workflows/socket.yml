@@ -1,0 +1,81 @@
+# Socket Security GitHub Actions Workflow
+# Runs Socket Security scans on PRs, detecting which monorepo packages changed
+
+name: socket-security-workflow
+run-name: Socket Security Github Action
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+# Prevent concurrent runs for the same commit
+concurrency:
+  group: socket-scan-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  socket-security:
+    permissions:
+      contents: read
+      pull-requests: write
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history required for "Detect changed packages" (git diff origin/base_ref...HEAD)
+          fetch-depth: 0
+
+      - name: Detect changed packages
+        id: changes
+        run: |
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+
+          # Check if root-level files changed (e.g., lockfiles, root package.json)
+          ROOT_CHANGED=0
+          if [ -n "$CHANGED_FILES" ]; then
+            ROOT_CHANGED=$(echo "$CHANGED_FILES" | grep -cvE "^packages/" || true)
+          fi
+
+          SUBPATHS=""
+          if [ "$ROOT_CHANGED" -gt 0 ]; then
+            # Root-level changes may affect all packages
+            SUBPATHS="--sub-path packages/creator-hub --sub-path packages/inspector --sub-path packages/asset-packs"
+          else
+            if echo "$CHANGED_FILES" | grep -q "^packages/creator-hub/"; then
+              SUBPATHS="$SUBPATHS --sub-path packages/creator-hub"
+            fi
+            if echo "$CHANGED_FILES" | grep -q "^packages/inspector/"; then
+              SUBPATHS="$SUBPATHS --sub-path packages/inspector"
+            fi
+            if echo "$CHANGED_FILES" | grep -q "^packages/asset-packs/"; then
+              SUBPATHS="$SUBPATHS --sub-path packages/asset-packs"
+            fi
+          fi
+
+          echo "subpaths=$SUBPATHS" >> $GITHUB_OUTPUT
+          echo "has_changes=$( [ -n "$SUBPATHS" ] && echo true || echo false )" >> $GITHUB_OUTPUT
+
+      - uses: actions/setup-python@v5
+        if: steps.changes.outputs.has_changes == 'true'
+        with:
+          python-version: '3.12'
+
+      - name: Install Socket CLI
+        if: steps.changes.outputs.has_changes == 'true'
+        # Pinned version for auditable, reproducible builds. Update periodically (e.g. when Socket announces CLI updates).
+        run: pip install socketsecurity==2.2.71
+
+      - name: Run Socket Security Scan
+        if: steps.changes.outputs.has_changes == 'true'
+        env:
+          SOCKET_SECURITY_API_KEY: ${{ secrets.SOCKET_SECURITY_API_KEY }}
+          GH_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          socketcli \
+            --target-path $GITHUB_WORKSPACE \
+            --branch ${{ github.head_ref }} \
+            --scm github \
+            --pr-number ${{ github.event.pull_request.number }} \
+            ${{ steps.changes.outputs.subpaths }} \
+            --workspace-name creator-hub
