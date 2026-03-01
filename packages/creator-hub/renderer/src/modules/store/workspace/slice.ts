@@ -22,6 +22,7 @@ const initialState: Async<Workspace> = {
       skipAuthScreen: true,
       enableLandscapeTerrains: true,
       openNewInstance: false,
+      multiInstance: false,
       showWarnings: true,
     },
   },

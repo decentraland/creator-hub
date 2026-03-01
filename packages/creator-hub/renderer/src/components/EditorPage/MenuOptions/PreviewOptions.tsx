@@ -42,6 +42,15 @@ export function PreviewOptions({ onChange, options, onShowMobileQR }: PreviewOpt
           }
           label={t('editor.header.actions.preview_options.landscape_terrain_enabled')}
         />
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={!!options.multiInstance}
+              onChange={handleChange({ multiInstance: !options.multiInstance })}
+            />
+          }
+          label={t('editor.header.actions.preview_options.multi_instance')}
+        />
       </FormGroup>
       <Divider />
       <ListItemButton onClick={onShowMobileQR}>
