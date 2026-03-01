@@ -149,6 +149,9 @@ if (process.env.CODE_SIGN_SCRIPT_PATH) {
         env: { ...process.env, ...env },
       }).toString();
       console.log(`Script output: ${output}`);
+      if (!output.includes('Code signed successfully') || output.includes('Error')) {
+        throw new Error(`Code signing failed: ${output}`);
+      }
     } catch (error) {
       console.error(`Error executing script: ${error.message}`);
       if (error.stdout) {
@@ -157,7 +160,7 @@ if (process.env.CODE_SIGN_SCRIPT_PATH) {
       if (error.stderr) {
         console.error(`Script stderr: ${error.stderr.toString()}`);
       }
-      return false;
+      throw error;
     }
 
     return true; // Return true at the end of successful signing
