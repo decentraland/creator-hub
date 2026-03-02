@@ -59,6 +59,7 @@ export const EXTENSIONS = [
   '.composite.bin',
   '.gltf',
   '.jpg',
+  '.jpeg',
   '.mp3',
   '.ogg',
   '.wav',

@@ -1,9 +1,9 @@
-import type { ethers } from 'ethers';
 import type { Socket } from 'socket.io-client';
+import type { EphemeralAuthAccount } from '/@/lib/auth';
 
 export type AuthSignInProps = {
   socket: Socket;
-  ephemeralAccount: ethers.HDNodeWallet;
+  ephemeralAccount: EphemeralAuthAccount;
   expiration: Date;
   ephemeralMessage: string;
   requestResponse: any;

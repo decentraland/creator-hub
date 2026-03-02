@@ -1,0 +1,1 @@
+export { WorldPermissionsPasswordSection } from './component';

@@ -1,0 +1,59 @@
+.PasswordForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 380px;
+  margin: 0 auto;
+  padding: 24px;
+  background-color: var(--black);
+  border-radius: 8px;
+}
+
+.PasswordForm .PasswordFormTitle {
+  text-transform: uppercase;
+  margin-bottom: 32px;
+}
+
+.PasswordForm .PasswordFormField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.PasswordForm .PasswordFormLabel {
+  font-size: 16px;
+}
+
+.PasswordForm .MuiOutlinedInput-root {
+  background-color: var(--black);
+}
+
+.PasswordForm .MuiOutlinedInput-notchedOutline {
+  border-color: var(--transparent-gray-light);
+}
+
+.PasswordForm .PasswordRequirements {
+  color: var(--primary);
+  font-size: 12px;
+}
+
+.PasswordForm .PasswordRequirements ul {
+  margin: 4px 0 0 0;
+  padding-left: 20px;
+}
+
+.PasswordForm .PasswordRequirements li {
+  margin-bottom: 2px;
+}
+
+.PasswordForm .PasswordFormInfo {
+  gap: 8px;
+  padding: 10px 16px;
+  color: #bbdefb;
+}
+
+.PasswordForm .PasswordFormActions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 32px;
+}

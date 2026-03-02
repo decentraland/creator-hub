@@ -1,6 +1,6 @@
-import type { ButtonOwnProps } from 'decentraland-ui2';
+import type { ButtonProps as DclButtonProps } from 'decentraland-ui2';
 
-export type ButtonProps = ButtonOwnProps & {
+export type ButtonProps = DclButtonProps & {
   className?: string;
   onClick?: React.MouseEventHandler<HTMLButtonElement>;
 };

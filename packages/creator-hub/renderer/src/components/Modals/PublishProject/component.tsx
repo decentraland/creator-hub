@@ -5,7 +5,7 @@ import { PublishToWorld } from './steps/PublishToWorld';
 import { PublishToLand } from './steps/PublishToLand';
 import { Deploy } from './steps/Deploy';
 
-import type { Props, Step } from './types';
+import type { DeploymentMetadata, Props, Step } from './types';
 
 export function PublishProject({
   open,
@@ -13,8 +13,9 @@ export function PublishProject({
   onClose,
   initialStep = 'initial',
   disableGoBack = false,
-}: Omit<Props, 'onStep'>) {
+}: Omit<Props, 'onStep' | 'deploymentMetadata'>) {
   const [history, setHistory] = useState<Step[]>([]);
+  const [deploymentMetadata, setDeploymentMetadata] = useState<DeploymentMetadata>({});
   const step = useMemo<Step>(
     () => (history.length > 0 ? history[history.length - 1] : initialStep),
     [history, initialStep],
@@ -23,17 +24,20 @@ export function PublishProject({
   const handleClose = useCallback(() => {
     setHistory([]);
     onClose();
-  }, [setHistory, onClose]);
+  }, [onClose]);
 
   const handleBack = useCallback(() => {
     setHistory(history => (history.length > 0 ? history.slice(0, -1) : []));
-  }, [history, setHistory]);
+  }, []);
 
-  const handleStep = useCallback(
-    (newStep: Step, { resetHistory = false } = {}) => {
+  const handleStep: Props['onStep'] = useCallback(
+    (newStep, { resetHistory = false, deploymentMetadata } = {}) => {
       setHistory(history => (resetHistory ? [newStep] : [...history, newStep]));
+      if (deploymentMetadata) {
+        setDeploymentMetadata(prev => ({ ...prev, ...deploymentMetadata }));
+      }
     },
-    [setHistory],
+    [],
   );
 
   const previousStep = history.length > 1 ? history[history.length - 2] : undefined;
@@ -43,6 +47,7 @@ export function PublishProject({
     project,
     disableGoBack,
     previousStep,
+    deploymentMetadata,
     onClose: handleClose,
     onBack: disableGoBack ? undefined : handleBack,
     onStep: handleStep,

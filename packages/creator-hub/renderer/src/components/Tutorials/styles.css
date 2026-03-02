@@ -17,7 +17,7 @@
 
 .Tutorial .thumbnail-wrapper {
   width: 252px;
-  border: 2px solid rgba(255, 255, 255, 0.25);
+  border: 2px solid var(--transparent-gray-light);
   border-radius: 16px;
   height: 140px;
   overflow: hidden;

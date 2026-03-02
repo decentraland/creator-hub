@@ -6,6 +6,9 @@ import { t } from '/@/modules/store/translation/utils';
 
 import { actions as workspaceActions } from '../workspace';
 import { actions as deploymentActions } from '../deployment';
+import { actions as managementActions } from '../management';
+import { actions as ensActions } from '../ens';
+import { actions as landActions } from '../land';
 import { shouldNotifyUpdates } from '../workspace/utils';
 import { createCustomNotification, createGenericNotification } from './utils';
 import type { Notification } from './types';
@@ -215,6 +218,173 @@ export const slice = createSlice({
         state.notifications = state.notifications.filter($ => $.requestId !== path);
         state.notifications.push(
           createCustomNotification({ type: 'deploy', path }, { duration: 0, requestId: path }),
+        );
+      })
+      .addCase(ensActions.fetchENSList.rejected, state => {
+        state.notifications = state.notifications.filter($ => $.requestId !== 'fetchENSList');
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.fetch_ens_list_failed'), {
+            duration: 5000,
+            requestId: 'fetchENSList',
+          }),
+        );
+      })
+      .addCase(landActions.fetchLandList.rejected, state => {
+        state.notifications = state.notifications.filter($ => $.requestId !== 'fetchLandList');
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.fetch_land_list_failed'), {
+            duration: 5000,
+            requestId: 'fetchLandList',
+          }),
+        );
+      })
+      .addCase(managementActions.fetchManagedProjectsFiltered.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'fetchManagedProjectsFiltered',
+        );
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.fetch_managed_projects_failed'), {
+            duration: 5000,
+            requestId: 'fetchManagedProjectsFiltered',
+          }),
+        );
+      })
+      .addCase(managementActions.fetchWorldSettings.rejected, state => {
+        state.notifications = state.notifications.filter($ => $.requestId !== 'fetchWorldSettings');
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.fetch_world_settings_failed'), {
+            duration: 5000,
+            requestId: 'fetchWorldSettings',
+          }),
+        );
+      })
+      .addCase(managementActions.updateWorldSettings.rejected, (state, action) => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'updateWorldSettings',
+        );
+        const errorMessage =
+          (action.payload as any)?.message || t('snackbar.generic.update_world_settings_failed');
+        state.notifications.push(
+          createGenericNotification('error', errorMessage, {
+            duration: 5000,
+            requestId: 'updateWorldSettings',
+          }),
+        );
+      })
+      .addCase(managementActions.fetchWorldScenes.rejected, state => {
+        state.notifications = state.notifications.filter($ => $.requestId !== 'fetchWorldScenes');
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.fetch_world_scenes_failed'), {
+            duration: 5000,
+            requestId: 'fetchWorldScenes',
+          }),
+        );
+      })
+      .addCase(managementActions.unpublishWorldScene.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'unpublishWorldScene',
+        );
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.unpublish_world_scene_failed'), {
+            duration: 5000,
+            requestId: 'unpublishWorldScene',
+          }),
+        );
+      })
+      .addCase(managementActions.unpublishEntireWorld.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'unpublishEntireWorld',
+        );
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.unpublish_world_failed'), {
+            duration: 5000,
+            requestId: 'unpublishEntireWorld',
+          }),
+        );
+      })
+      .addCase(managementActions.fetchWorldPermissions.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'fetchWorldPermissions',
+        );
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.fetch_world_permissions_failed'), {
+            duration: 5000,
+            requestId: 'fetchWorldPermissions',
+          }),
+        );
+      })
+      .addCase(managementActions.updateWorldPermissions.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'updateWorldPermissions',
+        );
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.update_permissions_failed'), {
+            duration: 5000,
+            requestId: 'updateWorldPermissions',
+          }),
+        );
+      })
+      .addCase(managementActions.addAddressPermission.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'addAddressPermission',
+        );
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.add_permission_failed'), {
+            duration: 5000,
+            requestId: 'addAddressPermission',
+          }),
+        );
+      })
+      .addCase(managementActions.removeAddressPermission.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'removeAddressPermission',
+        );
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.remove_permission_failed'), {
+            duration: 5000,
+            requestId: 'removeAddressPermission',
+          }),
+        );
+      })
+      .addCase(managementActions.fetchParcelsPermission.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'fetchParcelsPermission',
+        );
+        state.notifications.push(
+          createGenericNotification(
+            'error',
+            t('snackbar.generic.fetch_parcels_permission_failed'),
+            {
+              duration: 5000,
+              requestId: 'fetchParcelsPermission',
+            },
+          ),
+        );
+      })
+      .addCase(managementActions.addParcelsPermission.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'addParcelsPermission',
+        );
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.add_parcels_permission_failed'), {
+            duration: 5000,
+            requestId: 'addParcelsPermission',
+          }),
+        );
+      })
+      .addCase(managementActions.removeParcelsPermission.rejected, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'removeParcelsPermission',
+        );
+        state.notifications.push(
+          createGenericNotification(
+            'error',
+            t('snackbar.generic.remove_parcels_permission_failed'),
+            {
+              duration: 5000,
+              requestId: 'removeParcelsPermission',
+            },
+          ),
         );
       });
   },

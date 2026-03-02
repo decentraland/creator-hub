@@ -1,0 +1,53 @@
+.WorldPermissionsParcelsTab {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 100%;
+}
+
+.WorldPermissionsParcelsTab .HeaderTitle {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.WorldPermissionsParcelsTab .HeaderTitle .MuiSvgIcon-root {
+  color: var(--dcl-silver);
+  width: 24px;
+  height: 24px;
+}
+
+.WorldPermissionsParcelsTab .HeaderTitle .MuiSvgIcon-root:hover {
+  color: var(--white);
+  cursor: pointer;
+}
+
+.WorldPermissionsParcelsTab .Description {
+  color: var(--dcl-silver);
+  margin-bottom: 8px;
+}
+
+.WorldPermissionsParcelsTab .Avatar .Paragraph {
+  padding-right: 4px;
+}
+
+.WorldPermissionsParcelsTab .ActionsContainer {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+}
+
+.WorldPermissionsParcelsTab .ActionsContainer .MuiTypography-root {
+  margin-left: auto;
+}
+
+.WorldPermissionsParcelsTab .ActionsContainer .MuiButton-root {
+  height: 40px;
+}
+
+.WorldPermissionsParcelsTab .ActionsContainer .SaveButton {
+  min-width: 8rem;
+}

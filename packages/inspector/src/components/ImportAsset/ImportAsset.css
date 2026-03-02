@@ -172,6 +172,10 @@
   display: none;
 }
 
+.ImportAssetField .ImportAssetFieldContainer .Dropdown {
+  min-width: 0;
+}
+
 .ImportAssetField .ImportAssetFieldContainer .ImportAssetFieldButton {
   display: flex;
   align-items: center;

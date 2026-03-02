@@ -16,7 +16,7 @@
     "@dcl/gltf-validator-ts": "1.0.14",
     "@dcl/mini-rpc": "^1.0.7",
     "@dcl/rpc": "^1.1.1",
-    "@dcl/schemas": "11.10.4",
+    "@dcl/schemas": "25.0.0",
     "@reduxjs/toolkit": "2.2.6",
     "@segment/analytics-node": "2.1.2",
     "@types/node": "20.14.9",

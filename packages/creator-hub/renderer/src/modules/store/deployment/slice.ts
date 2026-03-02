@@ -2,13 +2,14 @@ import { createSlice, type PayloadAction, isRejectedWithValue } from '@reduxjs/t
 import { Authenticator, type AuthIdentity } from '@dcl/crypto';
 import type { ChainId } from '@dcl/schemas';
 import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
-import { AuthServerProvider } from 'decentraland-connect';
+import { AuthServerProvider } from '/@/lib/auth';
 
 import { editor } from '#preload';
 import { delay } from '/shared/utils';
 import { isFetchError } from '/shared/fetch';
 import type { DeploymentComponentsStatus, Info, Status, File, ErrorName } from '/@/lib/deploy';
 import { DeploymentError, isDeploymentError } from '/@/lib/deploy';
+import { actions as managementActions } from '/@/modules/store/management';
 import { createAsyncThunk } from '/@/modules/store/thunk';
 import {
   checkDeploymentStatus,
@@ -205,8 +206,6 @@ export const executeDeployment = createAsyncThunk(
 
     const { info, id: deploymentId, wallet } = deployment;
 
-    // we have to use both packages (decentraland-connect & @dcl/single-sign-on-client)
-    // since there is no way to fetch the full identity from decentraland-connect
     const hasValidIdentity = AuthServerProvider.hasValidIdentity();
     const identity = localStorageGetIdentity(wallet);
 
@@ -237,8 +236,11 @@ export const executeDeployment = createAsyncThunk(
         currentStatus,
       );
 
-      if (deriveOverallStatus(componentsStatus) === 'failed') {
+      const finalStatus = deriveOverallStatus(componentsStatus);
+      if (finalStatus === 'failed') {
         return rejectWithValue(new DeploymentError('DEPLOYMENT_FAILED', componentsStatus));
+      } else if (finalStatus === 'complete') {
+        dispatch(managementActions.fetchAllManagedProjectsData({ address: wallet }));
       }
 
       return { info, componentsStatus };

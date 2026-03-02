@@ -1,0 +1,38 @@
+.ConfirmationPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 32px;
+  background-color: var(--black);
+  border-radius: 8px;
+}
+
+.ConfirmationPanel .ConfirmationPanelWarning {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background-color: #4a2b1a;
+}
+
+.ConfirmationPanel .ConfirmationPanelWarning .MuiSvgIcon-root {
+  color: var(--danger);
+  flex-shrink: 0;
+}
+
+.ConfirmationPanel .ConfirmationPanelWarning .MuiTypography-root {
+  color: #ffcf89;
+}
+
+.ConfirmationPanel .ConfirmationPanelActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.ConfirmationPanel .ConfirmationPanelActions .MuiButton-root {
+  flex: 1;
+}

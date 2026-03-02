@@ -1,10 +1,11 @@
 import { resolve } from 'path';
-import { createReadStream } from 'fs';
+import { createReadStream, readFileSync } from 'fs';
 import dotenv from 'dotenv';
 import mimeTypes from 'mime-types';
 import type { S3ClientConfigType } from '@aws-sdk/client-s3';
 import { HeadObjectCommand, S3 } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
+import { version } from '../package.json';
 import { LocalFileSystem } from './utils/local';
 
 dotenv.config();
@@ -123,6 +124,35 @@ async function main() {
     await queue.onIdle();
     console.log(`Upload of "${assetPack.name}" is complete ✅`);
   }
+
+  // Upload catalog.json as both a versioned immutable copy and the mutable latest pointer.
+  const catalogContent = readFileSync('./catalog.json');
+
+  const versionedUpload = new Upload({
+    client,
+    params: {
+      Bucket: bucketName,
+      Key: `asset-packs/${version}/catalog.json`,
+      Body: catalogContent,
+      ContentType: 'application/json',
+      CacheControl: 'max-age=31536000, immutable',
+    },
+  });
+  await versionedUpload.done();
+  console.log(`Uploaded catalog.json to asset-packs/${version}/catalog.json ✅`);
+
+  const latestUpload = new Upload({
+    client,
+    params: {
+      Bucket: bucketName,
+      Key: 'asset-packs/latest/catalog.json',
+      Body: catalogContent,
+      ContentType: 'application/json',
+      CacheControl: 'max-age=0, must-revalidate',
+    },
+  });
+  await latestUpload.done();
+  console.log('Uploaded catalog.json to asset-packs/latest/catalog.json ✅');
 }
 
 main().catch(error => {
