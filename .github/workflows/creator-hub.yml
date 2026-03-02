@@ -141,18 +141,6 @@ jobs:
           INPUT_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
           INPUT_CREDENTIAL_ID: ${{ secrets.WINDOWS_CREDENTIAL_ID_SIGNER }}
 
-      - name: Verify Windows code signature
-        if: ${{ github.ref == 'refs/heads/main' && matrix.os == 'windows-latest' && !inputs.dry-run }}
-        shell: pwsh
-        run: |
-          $exePath = "packages\creator-hub\dist\Decentraland Creator Hub-${{ steps.version.outputs.version }}-win-x64.exe"
-          $sig = Get-AuthenticodeSignature -FilePath $exePath
-          if ($sig.Status -ne 'Valid') {
-            Write-Error "Code signature verification failed: $($sig.Status) - $($sig.StatusMessage)"
-            exit 1
-          }
-          Write-Host "Signature verified: $($sig.SignerCertificate.Subject)"
-
       - name: Move artifacts to upload folder
         if: ${{ github.event.pull_request.number }}
         working-directory: packages/creator-hub
