@@ -47,6 +47,9 @@ import {
   FOCUS_SELECTED,
 } from '../../hooks/useHotkey';
 import { analytics, Event } from '../../lib/logic/analytics';
+import { checkAssetCompatibility } from '../../lib/sdk/operations/add-asset/compatibility';
+import type { IncompatibleComponent } from '../../lib/sdk/operations/add-asset/compatibility';
+import { IncompatibleAssetModal } from '../IncompatibleAssetModal';
 import { Warnings } from '../Warnings';
 import { CameraSpeed } from './CameraSpeed';
 import { Shortcuts } from './Shortcuts';
@@ -76,6 +79,10 @@ const Renderer: React.FC = () => {
   const [placeSingleTile, setPlaceSingleTile] = useState(false);
   const [showSingleTileHint, setShowSingleTileHint] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [incompatibleAssetInfo, setIncompatibleAssetInfo] = useState<{
+    assetName: string;
+    incompatibleComponents: IncompatibleComponent[];
+  } | null>(null);
 
   useEffect(() => {
     if (sdk) {
@@ -336,6 +343,17 @@ const Renderer: React.FC = () => {
   );
 
   const importCatalogAsset = async (asset: Asset) => {
+    if (sdk) {
+      const compat = checkAssetCompatibility(asset.composite, sdk.engine);
+      if (!compat.compatible) {
+        setIncompatibleAssetInfo({
+          assetName: asset.name,
+          incompatibleComponents: compat.incompatibleComponents,
+        });
+        return;
+      }
+    }
+
     const position = await getDropPosition();
     const fileContent: Record<string, Uint8Array> = {};
     const destFolder = 'asset-packs';
@@ -470,6 +488,13 @@ const Renderer: React.FC = () => {
           onResetCamera={resetCamera}
           onZoomIn={zoomIn}
           onZoomOut={zoomOut}
+        />
+      )}
+      {incompatibleAssetInfo && (
+        <IncompatibleAssetModal
+          assetName={incompatibleAssetInfo.assetName}
+          incompatibleComponents={incompatibleAssetInfo.incompatibleComponents}
+          onClose={() => setIncompatibleAssetInfo(null)}
         />
       )}
       <canvas
