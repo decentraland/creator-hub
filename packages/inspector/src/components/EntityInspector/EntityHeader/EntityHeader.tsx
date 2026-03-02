@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AiOutlinePlus as AddIcon } from 'react-icons/ai';
 import { MdOutlineDriveFileRenameOutline as RenameIcon } from 'react-icons/md';
+import { VscChevronDown as ChevronDownIcon, VscTrash as TrashIcon } from 'react-icons/vsc';
 
 import { type Entity } from '@dcl/ecs';
 
@@ -15,12 +16,11 @@ import { useAppSelector } from '../../../redux/hooks';
 import { selectCustomAssets } from '../../../redux/app';
 
 import { Edit as EditInput } from '../../Tree/Edit';
+import { Block } from '../../Block';
 import CustomAssetIcon from '../../Icons/CustomAsset';
-import { Container } from '../../Container';
-import { Dropdown } from '../../ui';
+import { Dropdown, Divider } from '../../ui';
 
 import MoreOptionsMenu from '../MoreOptionsMenu';
-import { RemoveButton } from '../RemoveButton';
 import { TagsInspector } from '../TagsInspector';
 
 import { getComponentConfig } from './utils';
@@ -360,16 +360,16 @@ export default React.memo(
           <div className="Title">
             {instanceOf && <CustomAssetIcon />}
             {!editMode ? (
-              <>
-                {label}
-                {!editMode && !isRoot(entity) ? <RenameIcon onClick={enterEditMode} /> : null}
-              </>
+              <>{label}</>
             ) : typeof label === 'string' ? (
-              <EditInput
-                value={label}
-                onCancel={quitEditMode}
-                onSubmit={handleRenameEntity}
-              />
+              <div className="EditTitleWrapper">
+                <EditInput
+                  value={label}
+                  onCancel={quitEditMode}
+                  onSubmit={handleRenameEntity}
+                />
+                <span className="EditHint">Enter to accept, Esc to cancel</span>
+              </div>
             ) : null}
           </div>
           <div className="RightContent">
@@ -377,23 +377,34 @@ export default React.memo(
               <Dropdown
                 className="AddComponent"
                 options={componentOptions}
-                trigger={<AddIcon />}
+                trigger={
+                  <div className="AddComponentTrigger">
+                    <AddIcon />
+                    <ChevronDownIcon />
+                  </div>
+                }
               />
             ) : null}
             {!isRoot(entity) ? (
-              <MoreOptionsMenu>
-                <RemoveButton
-                  className="RemoveButton"
-                  onClick={handleRemoveEntity}
-                >
-                  Delete Entity
-                </RemoveButton>
-              </MoreOptionsMenu>
+              <MoreOptionsMenu
+                options={[
+                  {
+                    label: 'Rename Entity',
+                    leftIcon: <RenameIcon />,
+                    onClick: () => enterEditMode(),
+                  },
+                  {
+                    label: 'Delete Entity',
+                    leftIcon: <TrashIcon />,
+                    onClick: () => void handleRemoveEntity(),
+                  },
+                ]}
+              />
             ) : null}
           </div>
         </div>
         {!isRoot(entity) && (
-          <Container className="componentInfo">
+          <Block className="componentInfo">
             {instanceOf && (
               <div className="customItemContainer">
                 <span>Instance of:</span>
@@ -404,7 +415,7 @@ export default React.memo(
               </div>
             )}
             <TagsInspector entities={[entity]} />
-          </Container>
+          </Block>
         )}
       </div>
     );

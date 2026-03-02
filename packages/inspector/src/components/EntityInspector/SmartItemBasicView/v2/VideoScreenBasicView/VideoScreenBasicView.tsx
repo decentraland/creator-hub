@@ -148,13 +148,10 @@ const VideoScreenBasicView = withSdk<Props>(({ sdk, entity }) => {
         <InfoIcon size={16} />
         <Label text="Add the 'Admin Tools' Smart Item to your scene to modify the content and settings of this screen in-world." />
       </div>
-      <Label
-        className="Title"
-        text="Default Settings"
-      />
-      <Block
-        className="volume"
+      <Container
         label="Volume"
+        border
+        initialOpen={false}
       >
         <RangeField
           value={Math.round((videoPlayerComponent.volume ?? 1) * 100)}
@@ -166,25 +163,28 @@ const VideoScreenBasicView = withSdk<Props>(({ sdk, entity }) => {
           }}
           isValidValue={isValidVolume}
         />
-      </Block>
-      <div className="Divider" />
-      <Label
-        className="Title"
-        text="Media sources"
-      />
-      <Dropdown
-        className="DefaultMediaSourcesDropdown"
-        label="Default Media Sources"
-        value={videoScreenComponent.defaultMediaSource ?? MediaSource.VideoURL}
-        onChange={handleVideoMediaSourceChange}
-        options={[
-          { value: MediaSource.VideoURL, label: 'Video URL' },
-          { value: MediaSource.LiveStream, label: 'Live Stream' },
-        ]}
-      />
+      </Container>
+      <Container
+        label="Media sources"
+        border
+        initialOpen={false}
+      >
+        <Dropdown
+          className="DefaultMediaSourcesDropdown"
+          label="Default Media Sources"
+          value={videoScreenComponent.defaultMediaSource ?? MediaSource.VideoURL}
+          onChange={handleVideoMediaSourceChange}
+          options={[
+            { value: MediaSource.VideoURL, label: 'Video URL' },
+            { value: MediaSource.LiveStream, label: 'Live Stream' },
+          ]}
+        />
+      </Container>
       <Container
         label="Video"
-        className={cx('Container', 'border', { hover: isHover, droppeable: canDrop })}
+        border
+        initialOpen={false}
+        className={cx({ hover: isHover, droppeable: canDrop })}
       >
         <Block
           label="Video Path or Vimeo URL"
@@ -218,10 +218,14 @@ const VideoScreenBasicView = withSdk<Props>(({ sdk, entity }) => {
       </Container>
       <Container
         label="Live Stream"
-        className="Container border LiveStreamSection"
+        border
+        initialOpen={false}
+        className="LiveStreamSection"
       >
-        <InfoIcon size={16} />
-        <Label text="Stream keys are generated from the Admin Tools panel in your scene in-world. Make sure to add the 'Admin Tools' Smart Item to your scene." />
+        <div className="Info">
+          <InfoIcon size={16} />
+          <Label text="Stream keys are generated from the Admin Tools panel in your scene in-world. Make sure to add the 'Admin Tools' Smart Item to your scene." />
+        </div>
       </Container>
     </div>
   );

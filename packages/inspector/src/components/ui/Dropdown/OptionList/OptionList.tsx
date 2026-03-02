@@ -121,7 +121,7 @@ const OptionList: React.FC<Props> = props => {
         <TextField
           className="OptionListSearch"
           placeholder="Search"
-          rightIcon={<SearchIcon />}
+          leftIcon={<SearchIcon />}
           onChange={handleSearchChange}
           onClick={handleSearchClick}
           autoSelect
