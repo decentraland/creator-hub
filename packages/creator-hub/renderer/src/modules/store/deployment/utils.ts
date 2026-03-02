@@ -1,6 +1,7 @@
 import equal from 'fast-deep-equal';
 import { getCatalystServersFromCache } from 'dcl-catalyst-client/dist/contracts-snapshots';
 import { type SerializedError } from '@reduxjs/toolkit';
+import { captureException } from '@sentry/electron/renderer';
 import { type AuthChain, Authenticator } from '@dcl/crypto';
 import { ChainId } from '@dcl/schemas';
 import type { AuthIdentity } from 'decentraland-crypto-fetch';
@@ -10,7 +11,6 @@ import { delay } from '/shared/utils';
 import { fetch } from '/shared/fetch';
 
 import { config } from '/@/config';
-import { capture } from '/@/lib/sentry';
 import { t } from '/@/modules/store/translation/utils';
 import {
   type Info,
@@ -79,7 +79,10 @@ export const deploy = async (
       }
     }
     const serverError = new Error(error);
-    capture(serverError, 'deployment', 'deploy-request', { status: resp.status, url });
+    captureException(serverError, {
+      tags: { source: 'deployment', event: 'deploy-request' },
+      extra: { status: resp.status, url },
+    });
     throw serverError;
   }
 };

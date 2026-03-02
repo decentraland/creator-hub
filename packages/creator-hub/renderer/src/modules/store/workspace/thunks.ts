@@ -1,4 +1,5 @@
 import type { Scene } from '@dcl/schemas';
+import { captureException } from '@sentry/electron/renderer';
 
 import { shouldUpdateDependencies } from './utils';
 import { actions } from './index';
@@ -6,7 +7,6 @@ import { fs, npm, scene, settings, workspace } from '#preload';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
-import { capture } from '/@/lib/sentry';
 import { type DependencyState, type Project, ProjectError } from '/shared/types/projects';
 import type { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import { WorkspaceError } from '/shared/types/workspace';
@@ -42,7 +42,10 @@ export const installProject = createAsyncThunk(
     try {
       await npm.install(path, packages);
     } catch (error) {
-      capture(error, 'workspace', 'npm-install', { path, packages });
+      captureException(error, {
+        tags: { source: 'workspace', event: 'npm-install' },
+        extra: { path, packages },
+      });
       throw error;
     }
     await npm.getContextFiles(path);
@@ -115,7 +118,13 @@ export const runProject = createAsyncThunk(
         'Failed to check for outdated packages, continuing without update check:',
         error,
       );
-      capture(error, 'workspace', 'check-outdated-packages', { path: project.path });
+      captureException(error, {
+        tags: {
+          source: 'workspace',
+          event: 'check-outdated-packages',
+        },
+        extra: { path: project.path },
+      });
       dependencyAvailableUpdates = {};
     }
 

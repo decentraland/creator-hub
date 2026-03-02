@@ -2,6 +2,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import log from 'electron-log/main';
 import { future } from 'fp-future';
+import { captureException } from '@sentry/electron/main';
 
 import { SCENES_DIRECTORY } from '/shared/paths';
 import { FileSystemStorage, type IFileSystemStorage } from '/shared/types/storage';
@@ -9,7 +10,6 @@ import { type Config, CURRENT_CONFIG_VERSION, mergeConfig } from '/shared/types/
 
 import { getAppHomeLegacy, getUserDataPath } from './electron';
 import { CONFIG_PATH, getDefaultConfig } from './config';
-import { capture } from './sentry';
 
 const migrationsFuture = future<void>();
 
@@ -26,7 +26,7 @@ export async function runMigrations() {
     log.info('[Migrations] Migrations completed');
     migrationsFuture.resolve();
   } catch (error) {
-    capture(error, 'migrations');
+    captureException(error, { tags: { source: 'migrations' } });
     const err = error instanceof Error ? error : new Error(String(error));
     migrationsFuture.reject(err);
     throw error;

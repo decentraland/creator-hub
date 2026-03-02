@@ -1,9 +1,9 @@
 import type { Tile } from 'react-tile-map/dist/lib/common';
 import { createAsyncThunk, createSlice, createSelector } from '@reduxjs/toolkit';
+import { captureException } from '@sentry/electron/renderer';
 import type { AtlasTileProps } from 'decentraland-ui2/dist/components/Atlas/Atlas.types';
 import type { Async } from '/shared/types/async';
 import { config } from '/@/config';
-import { capture } from '/@/lib/sentry';
 import { fetch } from '/shared/fetch';
 import {
   colorByRole,
@@ -148,12 +148,16 @@ export const slice = createSlice({
       .addCase(fetchLandList.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message || 'Failed to fetch land list';
-        capture(action.error, 'land', 'fetch-land-list');
+        captureException(action.error, {
+          tags: { source: 'land', event: 'fetch-land-list' },
+        });
       })
       .addCase(fetchTiles.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message || 'Failed to fetch tiles';
-        capture(action.error, 'land', 'fetch-tiles');
+        captureException(action.error, {
+          tags: { source: 'land', event: 'fetch-tiles' },
+        });
       });
   },
 });

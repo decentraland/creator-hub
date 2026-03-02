@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { setUser } from '@sentry/electron/renderer';
+import { captureException, setUser } from '@sentry/electron/renderer';
 import { ChainId, type Avatar } from '@dcl/schemas';
 import { useDispatch } from '#store';
 import { config } from '/@/config';
@@ -13,7 +13,6 @@ import {
 } from '/@/modules/store/management';
 import { actions as ensActions } from '/@/modules/store/ens';
 import { identify } from '/@/modules/store/analytics';
-import { capture } from '/@/lib/sentry';
 import { AuthContext } from '/@/contexts/AuthContext';
 import { isNavigatorOnline } from '/@/lib/connection';
 import { useSnackbar } from '/@/hooks/useSnackbar';
@@ -96,7 +95,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       AuthServerProvider.finishSignIn(initSignInResult)
         .then(finishSignIn)
         .catch(error => {
-          capture(error, 'auth', 'signin-finish');
+          captureException(error, {
+            tags: { source: 'auth', event: 'signin-finish' },
+          });
           console.error('Signin error:', error);
           pushGeneric('error', error?.message || t('sign_in.errors.failed'));
         })
@@ -106,7 +107,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           navigate(-1);
         });
     } catch (error: any) {
-      capture(error, 'auth', 'signin-init');
+      captureException(error, {
+        tags: { source: 'auth', event: 'signin-init' },
+      });
       console.error('Signin initialization error:', error);
       pushGeneric(
         'error',
@@ -134,7 +137,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
       setChainId(chainId);
     } catch (error) {
-      capture(error, 'auth', 'chain-switch');
+      captureException(error, {
+        tags: { source: 'auth', event: 'chain-switch' },
+      });
       setChainId(DEFAULT_CHAIN_ID);
       console.error(error);
     }

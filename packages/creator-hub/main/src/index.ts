@@ -2,6 +2,7 @@ import { platform } from 'node:process';
 import { app } from 'electron';
 import {
   init as sentryInit,
+  captureException,
   electronBreadcrumbsIntegration,
   electronContextIntegration,
   childProcessIntegration,
@@ -21,7 +22,6 @@ import { runMigrations } from '/@/modules/migrations';
 import { getAnalytics, track } from './modules/analytics';
 import { handleAppArguments } from './modules/app-args-handle';
 import { addEditorsPathsToConfig } from './modules/code';
-import { capture } from './modules/sentry';
 
 import '/@/security-restrictions';
 
@@ -121,7 +121,7 @@ app.on('before-quit', async event => {
   try {
     await killAll();
   } catch (error) {
-    capture(error, 'before-quit');
+    captureException(error, { tags: { source: 'before-quit' } });
     log.error('[App] Failed to kill all servers:', error);
   }
   log.info('[App] Quit');

@@ -1,6 +1,5 @@
 import { createSlice, isRejectedWithValue } from '@reduxjs/toolkit';
-
-import { capture } from '/@/lib/sentry';
+import { captureException } from '@sentry/electron/renderer';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
@@ -116,7 +115,9 @@ export const slice = createSlice({
         state.error = action.payload;
       } else {
         state.error = new ProjectError('FAILED_TO_RUN_PROJECT');
-        capture(state.error, 'editor-page', 'run-project');
+        captureException(state.error, {
+          tags: { source: 'editor-page', event: 'run-project' },
+        });
       }
       state.project = undefined;
     });
@@ -144,7 +145,9 @@ export const slice = createSlice({
     builder.addCase(publishScene.rejected, (state, action) => {
       state.publishError = action.error.message || null;
       state.loadingPublish = false;
-      capture(action.error, 'editor-page', 'publish-scene');
+      captureException(action.error, {
+        tags: { source: 'editor-page', event: 'publish-scene' },
+      });
     });
     builder.addCase(workspaceActions.createProject.pending, state => {
       state.project = undefined;
@@ -154,12 +157,19 @@ export const slice = createSlice({
     });
     builder.addCase(workspaceActions.createProject.rejected, state => {
       state.error = new ProjectError('PROJECT_NOT_CREATED');
-      capture(state.error, 'editor-page', 'create-project');
+      captureException(state.error, {
+        tags: { source: 'editor-page', event: 'create-project' },
+      });
       state.project = undefined;
     });
     builder.addCase(workspaceActions.createProjectAndInstall.rejected, state => {
       if (isProjectError(state.error)) state.error = new ProjectError('PROJECT_NOT_CREATED');
-      capture(state.error, 'editor-page', 'create-and-install-project');
+      captureException(state.error, {
+        tags: {
+          source: 'editor-page',
+          event: 'create-and-install-project',
+        },
+      });
       state.project = undefined;
     });
     builder.addCase(workspaceActions.updateProject, (state, action) => {
@@ -196,7 +206,9 @@ export const slice = createSlice({
     });
     builder.addCase(runScene.rejected, (state, action) => {
       state.loadingPreview = false;
-      capture(action.error, 'editor-page', 'run-scene');
+      captureException(action.error, {
+        tags: { source: 'editor-page', event: 'run-scene' },
+      });
     });
     builder.addCase(killPreviewScene.fulfilled, state => {
       state.isPreviewRunning = false;
@@ -213,7 +225,12 @@ export const slice = createSlice({
     });
     builder.addCase(workspaceActions.installProject.rejected, state => {
       state.error = new ProjectError('FAILED_TO_INSTALL_DEPENDENCIES');
-      capture(state.error, 'editor-page', 'install-dependencies');
+      captureException(state.error, {
+        tags: {
+          source: 'editor-page',
+          event: 'install-dependencies',
+        },
+      });
       state.isInstallingProject = false;
     });
     builder.addCase(workspaceActions.saveAndGetThumbnail.fulfilled, (state, action) => {
