@@ -24,7 +24,7 @@
   width: 30px;
   padding: 5px;
   border-radius: 4px;
-  background-color: var(--base-16);
+  background-color: var(--gray-0);
 }
 
 .Shortcuts .Buttons .Button:hover {
@@ -32,11 +32,11 @@
 }
 
 .Shortcuts .Buttons .Button.Active {
-  background-color: var(--base-02);
+  background-color: var(--selected-item);
 }
 
 .Shortcuts .Buttons .Button.Active svg {
-  color: var(--base-21);
+  color: var(--base-02);
 }
 
 .Shortcuts .Buttons .Button svg {
@@ -87,12 +87,11 @@
 .Shortcuts > .Overlay .Item .Description .Key {
   font-size: 11px;
   font-weight: 500;
-  color: var(--base-01);
+ color: var(--base-01);
   margin-bottom: 0;
 }
 
 .Shortcuts > .Overlay h5.SubHeader {
-  color: var(--base-09);
   text-transform: uppercase;
 }
 
@@ -134,7 +133,7 @@
   padding: 0 4px;
   height: 18px;
   border-radius: 4px;
-  background-color: var(--base-13);
+  background-color: var(--gray-0);
 }
 
 .Shortcuts > .Overlay .Item .Description.Vertical {

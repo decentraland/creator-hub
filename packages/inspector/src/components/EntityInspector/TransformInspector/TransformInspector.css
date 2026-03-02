@@ -1,3 +1,40 @@
-.Container.Transform svg {
-  margin-right: 5px;
+/* Transform Inspector specific styles */
+.Container.Transform .Block .content {
+  display: grid;
+  grid-template-columns: 90px 1fr 1fr 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.Container.Transform .Block > .Label {
+  grid-column: 1;
+  margin-bottom: 70px;
+}
+
+.Container.Transform .Block {
+  margin-bottom: 0;
+}
+
+.Container.Transform .Block.scale-container {
+  grid-column: 1;
+  margin: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.Container.Transform .Block.scale-container > .Label {
+  margin-bottom: 0;
+  margin-right: auto;
+}
+
+.Container.Transform .Block.scale-container .content {
+  display: contents;
+}
+
+.Container.Transform .Block.scale-container .Link {
+  height: 15px;
+  width: 15px;
 }
