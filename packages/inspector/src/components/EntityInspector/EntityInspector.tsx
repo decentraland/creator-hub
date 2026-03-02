@@ -8,7 +8,7 @@ type WithEntities = { entities: Entity[]; initialOpen: boolean };
 import { useEntitiesWith } from '../../hooks/sdk/useEntitiesWith';
 import { useAppSelector } from '../../redux/hooks';
 import { getHiddenComponents } from '../../redux/ui';
-import { EDITOR_ENTITIES } from '../../lib/sdk/tree';
+import { EDITOR_ENTITIES, PLAYER } from '../../lib/sdk/tree';
 
 import { Divider } from '../ui';
 
@@ -45,6 +45,7 @@ import { ScriptInspector } from './ScriptInspector';
 import { TagsInspector } from './TagsInspector';
 import { VirtualCameraInspector } from './VirtualCameraInspector';
 import { PlaceholderInspector } from './PlaceholderInspector';
+import { PlayerInspector } from './PlayerInspector';
 
 import './EntityInspector.css';
 
@@ -222,32 +223,38 @@ const SingleEntityInspector = withSdk<{ entity: Entity | null }>(({ sdk, entity 
       {entity !== null ? (
         <>
           <EntityHeader entity={entity} />
-          {inspectors.map(
-            ({ name, component: Inspector }, index) =>
-              !hiddenComponents[name] && (
-                <Inspector
-                  key={`${index}-${entity}`}
-                  entities={[entity]}
-                />
-              ),
-          )}
-          {isBasicViewEnabled ? (
+          {entity === PLAYER ? (
+            <PlayerInspector entity={entity} />
+          ) : (
             <>
-              <SmartItemBasicView entity={entity} />
-              <Divider label="Advanced" />
+              {inspectors.map(
+                ({ name, component: Inspector }, index) =>
+                  !hiddenComponents[name] && (
+                    <Inspector
+                      key={`${index}-${entity}`}
+                      entities={[entity]}
+                    />
+                  ),
+              )}
+              {isBasicViewEnabled ? (
+                <>
+                  <SmartItemBasicView entity={entity} />
+                  <Divider label="Advanced" />
+                </>
+              ) : null}
+              {advancedInspectorComponents.map(
+                ({ name, component: Inspector, multiEntity }, index) =>
+                  !hiddenComponents[name] && (
+                    <Inspector
+                      key={`${index}-${entity}`}
+                      {...((multiEntity
+                        ? { entities: [entity], initialOpen: !isBasicViewEnabled }
+                        : { entity, initialOpen: !isBasicViewEnabled }) as unknown as WithEntity &
+                        WithEntities)}
+                    />
+                  ),
+              )}
             </>
-          ) : null}
-          {advancedInspectorComponents.map(
-            ({ name, component: Inspector, multiEntity }, index) =>
-              !hiddenComponents[name] && (
-                <Inspector
-                  key={`${index}-${entity}`}
-                  {...((multiEntity
-                    ? { entities: [entity], initialOpen: !isBasicViewEnabled }
-                    : { entity, initialOpen: !isBasicViewEnabled }) as unknown as WithEntity &
-                    WithEntities)}
-                />
-              ),
           )}
         </>
       ) : null}

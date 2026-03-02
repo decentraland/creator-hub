@@ -41,3 +41,11 @@
 .Hierarchy .group-icon {
   background-image: url(./icons/group.svg);
 }
+
+.Hierarchy .spawn-area-icon {
+  background-image: url(./icons/spawn-area.svg);
+}
+
+.Hierarchy .camera-target-icon {
+  background-image: url(./icons/camera-target.svg);
+}

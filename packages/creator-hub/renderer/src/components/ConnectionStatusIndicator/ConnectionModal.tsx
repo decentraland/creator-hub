@@ -1,6 +1,5 @@
 import { useCallback, useState, useEffect, useRef } from 'react';
 import SignalWifiOffIcon from '@mui/icons-material/SignalWifiOff';
-import SignalCellular2BarIcon from '@mui/icons-material/SignalCellular2Bar';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import CloseIcon from '@mui/icons-material/Close';
 import { Typography, Button, Box, CircularProgress, IconButton } from 'decentraland-ui2';
@@ -77,27 +76,19 @@ export function ConnectionModal({ open, onClose }: ConnectionModalProps) {
           </IconButton>
         </div>
         <Box className="icon-container">
-          {status === ConnectionStatus.OFFLINE ? (
-            <SignalWifiOffIcon className="icon offline" />
-          ) : (
-            <SignalCellular2BarIcon className="icon slow" />
-          )}
+          <SignalWifiOffIcon className="icon offline" />
         </Box>
         <Typography
           variant="h5"
           className="title"
         >
-          {status === ConnectionStatus.OFFLINE
-            ? t('connection.offline.title')
-            : t('connection.slow.tooltip')}
+          {t('connection.offline.title')}
         </Typography>
         <Typography
           variant="body1"
           className="message"
         >
-          {status === ConnectionStatus.OFFLINE
-            ? t('connection.offline.message')
-            : t('connection.slow.message')}
+          {t('connection.offline.message')}
         </Typography>
         <Box className="actions">
           <Button

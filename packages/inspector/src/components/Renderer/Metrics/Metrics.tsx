@@ -4,7 +4,7 @@ import { IoGridOutline as SquaresGridIcon } from 'react-icons/io5';
 import cx from 'classnames';
 
 import type { Material } from '@babylonjs/core';
-import { Texture, MultiMaterial } from '@babylonjs/core';
+import { MultiMaterial } from '@babylonjs/core';
 import { CrdtMessageType } from '@dcl/ecs';
 
 import type { WithSdkProps } from '../../../hoc/withSdk';
@@ -105,7 +105,8 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
         !mesh.id.startsWith('BoundingMesh') &&
         !mesh.id.startsWith('axis_') && // Exclude all axis indicator meshes
         !mesh.id.startsWith('axisHelper') && // Exclude axis helper meshes
-        !mesh.metadata?.isPlaceholder, // Exclude placeholder meshes (editor-only visualization)
+        !mesh.metadata?.isPlaceholder && // Exclude placeholder meshes (editor-only visualization)
+        !mesh.id.startsWith('spawn_point_'), // Exclude spawn point visual meshes
     );
     // Calculate triangle count correctly: getTotalIndices() / 3
     // If a mesh doesn't have indices, it might be using vertices directly, so we fall back to vertices / 3

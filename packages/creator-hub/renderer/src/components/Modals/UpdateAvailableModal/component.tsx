@@ -1,15 +1,15 @@
-import { Box, Button, IconButton, Typography } from 'decentraland-ui2';
 import CloseIcon from '@mui/icons-material/Close';
+import { Box, Button, IconButton, Typography } from 'decentraland-ui2';
 import { InfoOutlined } from '@mui/icons-material';
 
-import { Modal } from '../index';
 import { t } from '/@/modules/store/translation/utils';
 import InfluencePng from '/assets/images/influence.png';
 
-import './styles.css';
-import { Row } from '../../Row';
 import { actions } from '/@/modules/store/settings';
 import { useDispatch } from '#store';
+import { Modal } from '../index';
+import { Row } from '../../Row';
+import './styles.css';
 
 interface Props {
   open: boolean;

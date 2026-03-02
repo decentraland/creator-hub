@@ -13,7 +13,9 @@
   flex-direction: row;
   align-items: center;
   border-bottom: 1px solid var(--border-gray);
-  padding-bottom: 4px;
+  padding: 4px 8px;
+  margin: 0 -8px;
+  cursor: pointer;
 }
 
 .TriggerActionsContainer > .TriggerActionsTitle span {

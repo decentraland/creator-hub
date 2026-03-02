@@ -49,6 +49,22 @@ export function getAnalytics(): Analytics | null {
   }
 }
 
+/** Recursively serializes arrays of objects to avoid "[object Object]" in analytics properties */
+const serializeProperties = (properties: Record<string, any> | undefined): Record<string, any> => {
+  const serialized: Record<string, any> = {};
+  if (!properties) return serialized;
+  for (const [key, value] of Object.entries(properties || {})) {
+    if (Array.isArray(value) && value.some(item => typeof item === 'object')) {
+      serialized[key] = JSON.stringify(value);
+    } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      serialized[key] = serializeProperties(value);
+    } else {
+      serialized[key] = value;
+    }
+  }
+  return serialized;
+};
+
 export async function track<T extends keyof Events>(
   eventName: T,
   properties: Events[T],
@@ -57,10 +73,13 @@ export async function track<T extends keyof Events>(
     const analytics = getAnalytics();
     if (!analytics) return;
     const anonymousId = await getAnonymousId();
+
+    const serializedProperties = serializeProperties(properties);
+
     const params: TrackParams = {
       event: eventName,
       properties: {
-        ...properties,
+        ...serializedProperties,
         os: process.platform,
         sessionId,
       },

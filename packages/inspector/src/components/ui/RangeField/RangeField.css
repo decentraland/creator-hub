@@ -43,7 +43,7 @@
 
 .Range.Field .RangeContainer .InputContainer .RangeInput::before {
   left: -8px;
-  background: var(--accent-blue-04);
+  background: var(--primary-main);
 }
 
 .Range.Field .RangeContainer.disabled .InputContainer .RangeInput::before {
@@ -64,7 +64,7 @@
   appearance: none;
   background: linear-gradient(
     90deg,
-    var(--accent-blue-04) var(--completionPercentage, 0%),
+    var(--primary-main) var(--completionPercentage, 0%),
     var(--base-10) var(--completionPercentage, 0%)
   );
 }
@@ -79,7 +79,7 @@
   margin-top: -1px;
   background: linear-gradient(
     90deg,
-    var(--accent-blue-04) var(--completionPercentage, 0%),
+    var(--primary-main) var(--completionPercentage, 0%),
     var(--base-10) var(--completionPercentage, 0%)
   );
 }
@@ -107,7 +107,7 @@
   appearance: none;
   width: 20px;
   height: 20px;
-  background: var(--accent-blue-04);
+  background: var(--primary-main);
   border-radius: 50%;
   cursor: pointer;
   top: -6px;
@@ -134,7 +134,7 @@
   appearance: none;
   width: 20px;
   height: 20px;
-  background: var(--accent-blue-04);
+  background: var(--primary-main);
   border-radius: 50%;
   cursor: pointer;
   top: -6px;
@@ -157,7 +157,7 @@
   appearance: none;
   width: 20px;
   height: 20px;
-  background: var(--accent-blue-04);
+  background: var(--primary-main);
   border-radius: 50%;
   cursor: pointer;
   top: -6px;

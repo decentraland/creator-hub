@@ -10,11 +10,10 @@ import { withSdk } from '../../../hoc/withSdk';
 
 import { Block } from '../../Block';
 import { Container } from '../../Container';
-import { TextField, InfoTooltip } from '../../ui';
+import { TextField, InfoTooltip, Label } from '../../ui';
 import { fromTransform, toTransform, fromTransformConfig } from './utils';
 import type { Props } from './types';
 import { Link, type Props as LinkProps } from './Link';
-
 import './TransformInspector.css';
 
 export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
@@ -63,7 +62,8 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
         />
       }
     >
-      <Block label="Position">
+      <Block>
+        <Label text="Position" />
         <TextField
           leftLabel="X"
           type="number"
@@ -83,7 +83,8 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
           autoSelect
         />
       </Block>
-      <Block label="Rotation">
+      <Block>
+        <Label text="Rotation" />
         <TextField
           leftLabel="X"
           type="number"
@@ -103,7 +104,14 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
           autoSelect
         />
       </Block>
-      <Block label="Scale">
+      <Block>
+        <Block className="scale-container">
+          <Label text="Scale" />
+          <Link
+            field="porportionalScaling"
+            getInputProps={_getConfigProps}
+          />
+        </Block>
         <TextField
           leftLabel="X"
           type="number"
@@ -124,10 +132,6 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
           {...getInputProps('scale.z')}
           debounceTime={config?.porportionalScaling ? 150 : 0}
           autoSelect
-        />
-        <Link
-          field="porportionalScaling"
-          getInputProps={_getConfigProps}
         />
       </Block>
     </Container>

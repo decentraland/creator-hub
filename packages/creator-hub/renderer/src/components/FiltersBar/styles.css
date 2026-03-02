@@ -1,6 +1,6 @@
 .Filters {
   border-radius: 32px;
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--transparent-gray-dark);
   margin-top: 48px;
   margin-bottom: 24px;
   padding: 8px 16px 8px 24px;
