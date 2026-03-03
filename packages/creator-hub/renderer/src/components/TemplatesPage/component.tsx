@@ -1,11 +1,12 @@
-import { useCallback, useState } from 'react';
-import { Chip, Typography } from 'decentraland-ui2';
+import { useCallback, useMemo, useState } from 'react';
+import { Typography } from 'decentraland-ui2';
 
 import type { Template } from '/shared/types/workspace';
 
 import { useWorkspace } from '/@/hooks/useWorkspace';
 import { ProjectCard } from '/@/components/ProjectCard';
 import { t } from '/@/modules/store/translation/utils';
+import { PaginationBar } from '../Pagination/component';
 
 import { CreateProject } from '../Modals/CreateProject';
 
@@ -40,11 +41,22 @@ const TemplateCardDropdownIcon = () => (
   </svg>
 );
 
+const ITEMS_PER_PAGE = 8;
+
 export function TemplatesPage() {
   const { createProject, templates: _templates, getAvailableProject } = useWorkspace();
   const [openModal, setOpenModal] = useState<ModalType | undefined>();
   const [templates, setTemplates] = useState(_templates);
   const [sortBy] = useState(SortBy.DEFAULT);
+  const [currentPage, setCurrentPage] = useState(0);
+
+  const sorted = useMemo(() => sortTemplatesBy(templates, sortBy), [templates, sortBy]);
+  const totalPages = Math.max(1, Math.ceil(sorted.length / ITEMS_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages - 1);
+  const paginated = useMemo(
+    () => sorted.slice(safePage * ITEMS_PER_PAGE, (safePage + 1) * ITEMS_PER_PAGE),
+    [sorted, safePage],
+  );
 
   const handleClickTemplate = useCallback(
     (repo?: string) => async () => {
@@ -113,34 +125,31 @@ export function TemplatesPage() {
         <Typography variant="h3">{t('templates.title')}</Typography>
       </div>
 
-      <div className="TemplatesGrid">
-        {sortTemplatesBy(templates, sortBy).map(template => (
-          <ProjectCard
-            key={template.id}
-            title={template.title.replace(/\s+Template$/i, '')}
-            description={template.description}
-            {...getTemplateThumbnailUrl(template)}
-            dropdownOptions={dropdownOptions(template)}
-            dropdownIcon={<TemplateCardDropdownIcon />}
-            dropdownIconTitle={t('templates.actions.code')}
-            dropdownIconClick={handleViewCode(template)}
-            onClick={handleClickTemplate(template.github_link)}
-            content={
-              <span className="TemplateCardTags">
-                {(template.tags || []).map($ => (
-                  <Chip
-                    key={$}
-                    label={$}
-                    color="default"
-                    size="medium"
-                    variant="outlined"
-                  />
-                ))}
-              </span>
-            }
-          />
-        ))}
+      <div className="TemplatesContent">
+        <div className="TemplatesGrid">
+          {paginated.map(template => (
+            <ProjectCard
+              key={template.id}
+              title={template.title.replace(/\s+Template$/i, '')}
+              description={template.description}
+              {...getTemplateThumbnailUrl(template)}
+              dropdownOptions={dropdownOptions(template)}
+              dropdownIcon={<TemplateCardDropdownIcon />}
+              dropdownIconTitle={t('templates.actions.code')}
+              dropdownIconClick={handleViewCode(template)}
+              onClick={handleClickTemplate(template.github_link)}
+            />
+          ))}
+        </div>
       </div>
+
+      <PaginationBar
+        page={safePage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+        className="TemplatesPaginationBar"
+      />
+
       {openModal?.type === 'create-project' && (
         <CreateProject
           open

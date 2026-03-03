@@ -1,31 +1,64 @@
-/* ─── Page (same structure as Learn / Resources) ─── */
+/* ─── Page (same structure as Scenes) ─── */
 .TemplatesPage {
   display: flex;
   flex-direction: column;
-  flex: 1;
+  flex: 1 1 0;
   min-height: 0;
+  height: 0;
+  overflow: hidden;
 }
 
 .TemplatesHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 32px;
+  margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
-/* Same grid as Learn videos: 3 columns, 20px gap */
+.TemplatesContent {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.TemplatesContent::-webkit-scrollbar {
+  display: none;
+}
+
+.TemplatesPaginationBar {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0;
+  flex-shrink: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* 4-column grid, matching Scenes */
 .TemplatesGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
 }
 
-/* ─── Template cards: Art Gallery Template look ─── */
+@media (max-width: 1100px) {
+  .TemplatesGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 800px) {
+  .TemplatesGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ─── Template cards ─── */
 .TemplatesGrid .ProjectCard {
   width: 100% !important;
   height: auto !important;
   min-height: 0;
-  margin-bottom: 8px;
   background-color: #1b1b1b;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
@@ -38,7 +71,7 @@
   background-color: #262626;
 }
 
-/* Thumb: 16:9, rounded top, subtle shadow */
+/* Thumb: 16:9, rounded top */
 .TemplatesGrid .ProjectCard .thumbnail,
 .TemplatesGrid .ProjectCard .video {
   width: 100% !important;
@@ -64,7 +97,7 @@
   transform: scale(1.02);
 }
 
-/* Kebab menu (three dots) – white so it’s visible on dark card */
+/* View Code icon */
 .TemplatesGrid .ProjectCard .options-dropdown .MuiIconButton-root {
   color: rgba(255, 255, 255, 0.85) !important;
   padding: 4px !important;
@@ -75,40 +108,38 @@
   background-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-/* Body: padding and spacing */
+/* Body: compact to match Scenes */
 .TemplatesGrid .ProjectCard .info {
-  min-height: 120px;
-  padding: 20px 24px 24px;
+  min-height: 0;
+  padding: 10px 12px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px;
   flex: none;
 }
 
 .TemplatesGrid .ProjectCard .title {
-  align-items: flex-start;
-  gap: 8px;
+  align-items: center;
+  gap: 4px;
 }
 
 .TemplatesGrid .ProjectCard .title .MuiTypography-root {
   color: #fff;
-  font-weight: 700 !important;
-  font-size: 16px !important;
-  line-height: 24px !important;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  line-height: 18px !important;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
   flex: 1;
   min-width: 0;
 }
 
-/* Description: two lines, lighter grey, ellipsis */
+/* Description: two lines, muted */
 .TemplatesGrid .ProjectCard .description {
   color: #939393 !important;
-  font-size: 14px !important;
+  font-size: 12px !important;
   font-weight: 400 !important;
   line-height: 1.45;
   -webkit-line-clamp: 2;
@@ -117,37 +148,4 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   margin: 0;
-}
-
-/* Content: tags row + SDK below; tags wrap with spacing so none are cropped */
-.TemplatesGrid .ProjectCard .content {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 12px;
-  margin-top: auto;
-  margin-bottom: 0;
-}
-
-.TemplatesGrid .ProjectCard .content .TemplateCardTags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  row-gap: 15px;
-}
-
-/* Tags: RectangularButtonWithIcon spec – fill white 10%, no stroke, radius 8.4px, height 29.4px, text #A09BA8 */
-.TemplatesGrid .ProjectCard .content .MuiChip-root {
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  height: 29px !important;
-  border: none !important;
-  background-color: rgba(255, 255, 255, 0.07) !important;
-  color: rgb(160, 155, 168) !important; /* r:0.627 g:0.607 b:0.658 */
-  border-radius: 8.4px !important;
-}
-
-.TemplatesGrid .ProjectCard .content .MuiChip-label {
-  padding-left: 10px;
-  padding-right: 10px;
 }

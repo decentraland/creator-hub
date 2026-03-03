@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Typography, Button, IconButton, Menu, MenuItem } from 'decentraland-ui2';
 import AddIcon from '@mui/icons-material/Add';
+import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import SettingsIcon from '@mui/icons-material/Settings';
 
@@ -24,7 +25,7 @@ import { sortProjectsBy } from './utils';
 
 import './styles.css';
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 8;
 const VIEW_MODE_KEY = 'creator-hub-scenes-view-mode';
 
 type ViewMode = 'grid' | 'list';
@@ -156,8 +157,16 @@ function SceneRowMenu({ project }: { project: Project }) {
 }
 
 export function ScenesPage() {
-  const { isLoading, projects, sortBy, setSortBy, runProject, getAvailableProject, createProject } =
-    useWorkspace();
+  const {
+    isLoading,
+    projects,
+    sortBy,
+    setSortBy,
+    runProject,
+    getAvailableProject,
+    createProject,
+    importProject,
+  } = useWorkspace();
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [viewMode, setViewMode] = useState<ViewMode>(() => getStoredViewMode());
@@ -280,6 +289,16 @@ export function ScenesPage() {
             value={searchQuery}
             onChange={handleSearchChange}
           />
+          <Button
+            className="ImportSceneButton"
+            variant="outlined"
+            color="secondary"
+            size="small"
+            startIcon={<FolderOpenIcon />}
+            onClick={importProject}
+          >
+            {t('scene_list.import_scene')}
+          </Button>
           <Button
             className="NewSceneButton"
             variant="contained"

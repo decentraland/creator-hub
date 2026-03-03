@@ -32,7 +32,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   gap: 16px;
   flex-wrap: wrap;
   flex-shrink: 0;
@@ -86,11 +86,17 @@
 /* Grid view – same card style as TemplatesGrid; drops to 2 columns on narrow screens */
 .ScenesGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
+  .ScenesGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 800px) {
   .ScenesGrid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -100,7 +106,6 @@
   width: 100% !important;
   height: auto !important;
   min-height: 0;
-  margin-bottom: 8px;
   background-color: #1b1b1b;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
@@ -157,11 +162,11 @@
 /* Body: padding scales down on narrow cards */
 .ScenesGrid .ProjectCard .info {
   min-height: 0;
-  padding: 16px;
+  padding: 10px 12px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
   flex: none;
 }
 
@@ -172,9 +177,9 @@
 
 .ScenesGrid .ProjectCard .title .MuiTypography-root {
   color: #fff;
-  font-weight: 700 !important;
-  font-size: 14px !important;
-  line-height: 20px !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  line-height: 18px !important;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -197,9 +202,9 @@
 .ScenesGrid .ProjectCard .content .SceneCardParcelRow {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   color: #939393;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 400;
   white-space: nowrap;
 }
@@ -211,8 +216,8 @@
 /* Status chip: compact so it fits narrow cards */
 .ScenesGrid .ProjectCard .content .SceneCardStatusChip {
   flex-shrink: 0;
-  padding: 4px 10px;
-  border-radius: 8.4px;
+  padding: 3px 8px;
+  border-radius: 6px;
   border: none;
   background-color: rgba(255, 255, 255, 0.07);
   color: rgb(160, 155, 168);
@@ -224,6 +229,26 @@
 .ScenesGrid .ProjectCard .content .SceneCardStatusChip.published {
   background-color: rgba(52, 206, 119, 0.15);
   color: rgba(255, 255, 255, 0.95);
+}
+
+.ImportSceneButton.MuiButton-root {
+  box-sizing: border-box;
+  border-radius: 10px;
+  text-transform: none;
+  font-weight: 600;
+  white-space: nowrap;
+  height: 40px !important;
+  min-height: 40px !important;
+  padding: 0 20px !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+  background: transparent !important;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.ImportSceneButton.MuiButton-root:hover {
+  border-color: rgba(255, 255, 255, 0.7) !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
 }
 
 .NewSceneButton.MuiButton-root {
