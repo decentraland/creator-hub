@@ -20,6 +20,7 @@ export interface ScenesTabProps extends BaseTabProps {
 export interface EditorTabProps extends BaseTabProps {
   editors: EditorConfig[];
   loading: boolean;
+  supportsMultiInstance: boolean;
   onSetDefaultEditor: (path: string) => void;
   onAddEditor: (path: string) => void;
   onRemoveEditor: (path: string) => void;

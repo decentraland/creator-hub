@@ -1,11 +1,7 @@
 import { useCallback } from 'react';
-import semver from 'semver';
 
 import type { DeployOptions } from '/shared/types/deploy';
-import {
-  MIN_MULTI_INSTANCE_SDK_COMMANDS_VERSION,
-  type PreviewOptions,
-} from '/shared/types/settings';
+import type { PreviewOptions } from '/shared/types/settings';
 
 import { actions as editorActions } from '/@/modules/store/editor';
 import { actions as workspaceActions } from '/@/modules/store/workspace';
@@ -113,13 +109,8 @@ export const useEditor = () => {
     [project],
   );
 
-  const supportsMultiInstance =
-    !!editor.sdkCommandsVersion &&
-    semver.gte(editor.sdkCommandsVersion, MIN_MULTI_INSTANCE_SDK_COMMANDS_VERSION);
-
   return {
     ...editor,
-    supportsMultiInstance,
     startInspector,
     publishScene,
     openPreview,

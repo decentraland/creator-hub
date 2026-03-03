@@ -1,11 +1,15 @@
 import { createSlice, isRejectedWithValue } from '@reduxjs/toolkit';
 import { captureException } from '@sentry/electron/renderer';
+import semver from 'semver';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
 import type { DeployOptions } from '/shared/types/deploy';
 import { isProjectError, ProjectError, type Project } from '/shared/types/projects';
-import type { PreviewOptions } from '/shared/types/settings';
+import {
+  MIN_MULTI_INSTANCE_SDK_COMMANDS_VERSION,
+  type PreviewOptions,
+} from '/shared/types/settings';
 import { isWorkspaceError } from '/shared/types/workspace';
 
 import { editor } from '#preload';
@@ -64,6 +68,7 @@ export const getMobileQR = createAsyncThunk(
 export type EditorState = {
   version: string | null;
   sdkCommandsVersion: string | null;
+  supportsMultiInstance: boolean;
   project?: Project;
   inspectorPort: number;
   publishPort: number;
@@ -83,6 +88,7 @@ export type EditorState = {
 const initialState: EditorState = {
   version: null,
   sdkCommandsVersion: null,
+  supportsMultiInstance: false,
   inspectorPort: 0,
   publishPort: 0,
   loadingPublish: false,
@@ -107,10 +113,13 @@ export const slice = createSlice({
     builder.addCase(workspaceActions.runProject.pending, state => {
       state.project = undefined;
       state.sdkCommandsVersion = null;
+      state.supportsMultiInstance = false;
       state.error = null;
     });
     builder.addCase(workspaceActions.fetchSdkCommandsVersion.fulfilled, (state, action) => {
       state.sdkCommandsVersion = action.payload;
+      state.supportsMultiInstance =
+        !!action.payload && semver.gte(action.payload, MIN_MULTI_INSTANCE_SDK_COMMANDS_VERSION);
     });
     builder.addCase(workspaceActions.runProject.fulfilled, (state, action) => {
       state.project = action.payload;

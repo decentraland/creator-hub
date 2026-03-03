@@ -6,6 +6,7 @@ export enum DEPENDENCY_UPDATE_STRATEGY {
 
 export const DEFAULT_DEPENDENCY_UPDATE_STRATEGY = DEPENDENCY_UPDATE_STRATEGY.NOTIFY;
 
+// @dcl/sdk bundles @dcl/sdk-commands, so they always share the same version number.
 export const MIN_MULTI_INSTANCE_SDK_COMMANDS_VERSION = '7.20.4';
 
 export type PreviewOptions = {

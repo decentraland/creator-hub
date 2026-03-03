@@ -80,11 +80,11 @@ const PREVIEW_OPTIONS_MAP: Record<keyof PreviewArguments, string> = {
 };
 
 function generatePreviewArguments(opts: PreviewOptions) {
-  opts.skipAuthScreen = !opts.multiInstance;
+  const resolved = { ...opts, skipAuthScreen: !opts.multiInstance };
   const args: string[] = [];
-  for (const key in opts) {
+  for (const key in resolved) {
     const typedKey = key as keyof PreviewArguments;
-    if (opts[typedKey] && typedKey in PREVIEW_OPTIONS_MAP) {
+    if (resolved[typedKey] && typedKey in PREVIEW_OPTIONS_MAP) {
       args.push(PREVIEW_OPTIONS_MAP[typedKey]);
     }
   }
