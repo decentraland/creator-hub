@@ -35,11 +35,17 @@ export const unlistProjects = createAsyncThunk(
   workspace.unlistProjects,
 );
 export const openFolder = createAsyncThunk('workspace/openFolder', workspace.openFolder);
+export const fetchSdkCommandsVersion = createAsyncThunk(
+  'npm/fetchSdkCommandsVersion',
+  (path: string) => npm.getSdkCommandsVersion(path),
+);
+
 export const installProject = createAsyncThunk(
   'npm/install',
-  async ({ path, packages }: { path: string; packages?: string[] }) => {
+  async ({ path, packages }: { path: string; packages?: string[] }, { dispatch }) => {
     await npm.install(path, packages);
     await npm.getContextFiles(path);
+    dispatch(fetchSdkCommandsVersion(path));
   },
 );
 export const saveThumbnail = createAsyncThunk('workspace/saveThumbnail', workspace.saveThumbnail);
@@ -114,6 +120,7 @@ export const runProject = createAsyncThunk(
 
     if (shouldUpdateDependencies(strategy, dependencyAvailableUpdates)) {
       await dispatch(updatePackages({ ...project, dependencyAvailableUpdates })).unwrap();
+      // installProject (called inside updatePackages) already dispatches fetchSdkCommandsVersion
       return { ...project, dependencyAvailableUpdates: {} };
     }
 
@@ -121,6 +128,7 @@ export const runProject = createAsyncThunk(
       updateAvailableDependencyUpdates({ project, updates: dependencyAvailableUpdates }),
     ).unwrap();
 
+    dispatch(fetchSdkCommandsVersion(project.path));
     return updatedProject;
   },
 );

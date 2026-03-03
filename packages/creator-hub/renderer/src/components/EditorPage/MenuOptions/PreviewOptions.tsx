@@ -12,7 +12,12 @@ import { t } from '/@/modules/store/translation/utils';
 
 import type { PreviewOptionsProps } from './types';
 
-export function PreviewOptions({ onChange, options, onShowMobileQR }: PreviewOptionsProps) {
+export function PreviewOptions({
+  onChange,
+  options,
+  onShowMobileQR,
+  supportsMultiInstance,
+}: PreviewOptionsProps) {
   const handleChange = useCallback(
     (newOptions: Partial<PreviewOptionsProps['options']>) => () => {
       onChange({ ...options, ...newOptions });
@@ -42,15 +47,17 @@ export function PreviewOptions({ onChange, options, onShowMobileQR }: PreviewOpt
           }
           label={t('editor.header.actions.preview_options.landscape_terrain_enabled')}
         />
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={!!options.multiInstance}
-              onChange={handleChange({ multiInstance: !options.multiInstance })}
-            />
-          }
-          label={t('editor.header.actions.preview_options.multi_instance')}
-        />
+        {supportsMultiInstance && (
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={!!options.multiInstance}
+                onChange={handleChange({ multiInstance: !options.multiInstance })}
+              />
+            }
+            label={t('editor.header.actions.preview_options.multi_instance')}
+          />
+        )}
       </FormGroup>
       <Divider />
       <ListItemButton onClick={onShowMobileQR}>

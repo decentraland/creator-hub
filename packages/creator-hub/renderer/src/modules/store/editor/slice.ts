@@ -63,6 +63,7 @@ export const getMobileQR = createAsyncThunk(
 // state
 export type EditorState = {
   version: string | null;
+  sdkCommandsVersion: string | null;
   project?: Project;
   inspectorPort: number;
   publishPort: number;
@@ -81,6 +82,7 @@ export type EditorState = {
 
 const initialState: EditorState = {
   version: null,
+  sdkCommandsVersion: null,
   inspectorPort: 0,
   publishPort: 0,
   loadingPublish: false,
@@ -104,7 +106,11 @@ export const slice = createSlice({
   extraReducers: builder => {
     builder.addCase(workspaceActions.runProject.pending, state => {
       state.project = undefined;
+      state.sdkCommandsVersion = null;
       state.error = null;
+    });
+    builder.addCase(workspaceActions.fetchSdkCommandsVersion.fulfilled, (state, action) => {
+      state.sdkCommandsVersion = action.payload;
     });
     builder.addCase(workspaceActions.runProject.fulfilled, (state, action) => {
       state.project = action.payload;
