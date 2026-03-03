@@ -1,4 +1,4 @@
-import { Container } from 'decentraland-ui2';
+import { Container } from '../Container';
 import { Navbar, NavbarItem } from '../Navbar';
 
 import './styles.css';

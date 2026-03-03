@@ -1,5 +1,6 @@
 .Container {
   display: flex;
+  flex-direction: column;
   flex: 1 1 auto;
-  margin: 0px 128px;
+  padding: 0 var(--page-horizontal-padding);
 }

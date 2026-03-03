@@ -2,7 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Provider as StoreProvider } from 'react-redux';
 
-import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
+import { MemoryRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { init as reactInit } from '@sentry/react';
 import {
   init as SentryInit,
@@ -14,17 +14,13 @@ import { TranslationProvider } from '/@/components/TranslationProvider';
 
 import { AuthProvider } from '/@/components/AuthProvider';
 
-import { HomePage } from '/@/components/HomePage';
+import { AppLayout } from '/@/components/AppLayout';
 import { ScenesPage } from '/@/components/ScenesPage';
 import { EditorPage } from '/@/components/EditorPage';
-import { CollectionsPage } from '/@/components/CollectionsPage';
-import { ManagePage } from '/@/components/ManagePage';
 import { LearnPage } from '/@/components/LearnPage';
 import { SignInPage } from '/@/components/SignInPage';
 import { TemplatesPage } from '/@/components/TemplatesPage';
 import { MorePage } from '/@/components/MorePage';
-import { VideosPage } from '/@/components/VideosPage';
-import { DocsPage } from '/@/components/DocsPage';
 import { Snackbar } from '/@/components/Snackbar';
 
 import { store } from '#store';
@@ -57,46 +53,7 @@ root.render(
             <Router>
               <AuthProvider>
                 <Routes>
-                  <Route
-                    path="/"
-                    element={<HomePage />}
-                  />
-                  <Route
-                    path="/home"
-                    element={<HomePage />}
-                  />
-                  <Route
-                    path="/scenes"
-                    element={<ScenesPage />}
-                  />
-                  <Route
-                    path="/templates"
-                    element={<TemplatesPage />}
-                  />
-                  <Route
-                    path="/collections"
-                    element={<CollectionsPage />}
-                  />
-                  <Route
-                    path="/manage"
-                    element={<ManagePage />}
-                  />
-                  <Route
-                    path="/learn"
-                    element={<LearnPage />}
-                  />
-                  <Route
-                    path="/learn/videos"
-                    element={<VideosPage />}
-                  />
-                  <Route
-                    path="/learn/docs"
-                    element={<DocsPage />}
-                  />
-                  <Route
-                    path="/more"
-                    element={<MorePage />}
-                  />
+                  {/* Full-screen routes (no sidebar) */}
                   <Route
                     path="/editor"
                     element={<EditorPage />}
@@ -105,6 +62,58 @@ root.render(
                     path="/sign-in"
                     element={<SignInPage />}
                   />
+
+                  {/* Sidebar layout routes */}
+                  <Route element={<AppLayout />}>
+                    <Route
+                      path="/scenes"
+                      element={<ScenesPage />}
+                    />
+                    <Route
+                      path="/templates"
+                      element={<TemplatesPage />}
+                    />
+                    <Route
+                      path="/learn"
+                      element={<LearnPage />}
+                    />
+                    <Route
+                      path="/learn/videos"
+                      element={
+                        <Navigate
+                          to="/learn"
+                          replace
+                        />
+                      }
+                    />
+                    <Route
+                      path="/learn/docs"
+                      element={
+                        <Navigate
+                          to="/learn"
+                          replace
+                        />
+                      }
+                    />
+                    <Route
+                      path="/more"
+                      element={<MorePage />}
+                    />
+                    <Route
+                      path="/resources"
+                      element={<MorePage />}
+                    />
+                    {/* Default: redirect to Scenes */}
+                    <Route
+                      path="*"
+                      element={
+                        <Navigate
+                          to="/scenes"
+                          replace
+                        />
+                      }
+                    />
+                  </Route>
                 </Routes>
                 <Snackbar />
               </AuthProvider>

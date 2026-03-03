@@ -1,62 +1,91 @@
-.MorePage .CardsSection {
-  color: var(--dcl-silver);
-  text-transform: uppercase;
-}
-
-.MorePage .HorizontalCardWithImage.MuiCard-root {
+/* ─── Page ────────────────────────────── */
+.MorePage {
   display: flex;
-  height: 180px;
-  min-width: 368px;
-  background: var(--secondary);
-  cursor: default;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
-.MorePage .HorizontalCardWithImage.MuiCard-root:hover {
-  outline: 2px solid var(--white);
-  outline-offset: -2px;
+/* ─── Header ──────────────────────────── */
+.ResourcesHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
 }
 
-.MorePage .HorizontalCardWithImage .CardImage {
+/* ─── Card grid ───────────────────────── */
+.ResourcesGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+/* ─── Card ────────────────────────────── */
+.ResourceCard {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+
+.ResourceCard:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.ResourceCardBanner {
+  height: 100px;
+  background-color: #141414;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  min-width: 160px;
-  background-image: url("/assets/images/card-image-background.png");
-  background-position: bottom;
 }
 
-.MorePage .HorizontalCardWithImage .CardImage img {
-  height: 140px;
-  width: 140px;
-  object-fit: contain;
+.ResourceCardBannerIcon {
+  color: rgba(255, 255, 255, 0.5) !important;
+  font-size: 48px !important;
+  width: 48px !important;
+  height: 48px !important;
+  transition: color 0.2s ease;
 }
 
-.MorePage .HorizontalCardWithImage.FlipImage .CardImage img {
-  transform: scaleX(-1);
+.ResourceCard:hover .ResourceCardBannerIcon {
+  color: var(--primary) !important;
 }
 
-.MorePage .HorizontalCardWithImage .CardContent {
+.ResourceCardBody {
   display: flex;
-  flex-direction: column;
+  align-items: flex-start;
   justify-content: space-between;
-  width: 100%;
   padding: 16px;
-  box-sizing: border-box;
+  gap: 12px;
 }
 
-.MorePage .HorizontalCardWithImage .CardContent .title {
-  margin-bottom: 8px;
+.ResourceCardText {
+  flex: 1;
+  min-width: 0;
 }
 
-.MorePage .HorizontalCardWithImage .CardContent .CardActions {
-  display: flex;
-  align-items: flex-end;
-  justify-content: flex-end;
+.ResourceCardText .MuiTypography-subtitle1 {
+  margin-bottom: 4px;
 }
 
-@media (max-width: 819px) {
-  .MorePage .MuiGrid-item:has(.HorizontalCardWithImage) {
-    min-width: 100%;
-  }
+.ResourceCardDesc {
+  color: rgba(255, 255, 255, 0.55) !important;
+  line-height: 1.5 !important;
+}
+
+.ResourceCardIcon {
+  flex: none;
+  color: rgba(255, 255, 255, 0.35);
+  margin-top: 2px;
+  transition: color 0.2s;
+}
+
+.ResourceCard:hover .ResourceCardIcon {
+  color: rgba(255, 255, 255, 0.7);
 }

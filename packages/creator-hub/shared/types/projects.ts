@@ -13,8 +13,12 @@ export type Layout = {
 
 export enum SortBy {
   NEWEST = 'newest',
+  OLDEST = 'oldest',
   SIZE = 'size',
   NAME = 'name',
+  NAME_DESC = 'name_desc',
+  STATUS_PUBLISHED_FIRST = 'status_published_first',
+  STATUS_UNPUBLISHED_FIRST = 'status_unpublished_first',
 }
 
 export type DependencyState = { [k in PACKAGES]?: Outdated[keyof Outdated] };

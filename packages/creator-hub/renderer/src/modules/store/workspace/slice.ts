@@ -8,8 +8,14 @@ import type { Async } from '/shared/types/async';
 
 import * as deployment from '../deployment/slice';
 import * as thunks from './thunks';
+import { shouldNotifyUpdates } from './utils';
 
-const initialState: Async<Workspace> = {
+export type WorkspaceState = Async<Workspace> & {
+  /** When set, show "New dependencies version" in the sidebar instead of the bottom snackbar. */
+  dependencyUpdateProject: Project | null;
+};
+
+const initialState: WorkspaceState = {
   sortBy: SortBy.NEWEST,
   projects: [],
   missing: [],
@@ -27,6 +33,7 @@ const initialState: Async<Workspace> = {
   },
   status: 'idle',
   error: null,
+  dependencyUpdateProject: null,
 };
 
 export const slice = createSlice({
@@ -49,6 +56,9 @@ export const slice = createSlice({
         state.projects[idx] = project;
       }
     },
+    clearDependencyUpdateProject: state => {
+      state.dependencyUpdateProject = null;
+    },
   },
   extraReducers: builder => {
     // nth: generic case adder so we don't end up with this mess 👇
@@ -56,11 +66,12 @@ export const slice = createSlice({
       .addCase(thunks.getWorkspace.pending, state => {
         state.status = 'loading';
       })
-      .addCase(thunks.getWorkspace.fulfilled, (_, action) => {
+      .addCase(thunks.getWorkspace.fulfilled, (state, action) => {
         return {
           ...action.payload,
           status: 'succeeded',
           error: null,
+          dependencyUpdateProject: state.dependencyUpdateProject,
         };
       })
       .addCase(thunks.getWorkspace.rejected, (state, action) => {
@@ -149,13 +160,25 @@ export const slice = createSlice({
       })
       .addCase(
         thunks.updateAvailableDependencyUpdates.fulfilled,
-        (state, { payload: { project } }) => {
+        (state, { payload: { project, strategy } }) => {
           const projectIdx = state.projects.findIndex($ => $.path === project.path);
           if (projectIdx !== -1) {
             state.projects[projectIdx] = project;
           }
+          state.dependencyUpdateProject = shouldNotifyUpdates(
+            strategy,
+            project.dependencyAvailableUpdates,
+          )
+            ? project
+            : null;
         },
       )
+      .addCase(thunks.updatePackages.fulfilled, (state, { meta }) => {
+        const path = meta.arg.path;
+        if (state.dependencyUpdateProject?.path === path) {
+          state.dependencyUpdateProject = null;
+        }
+      })
       .addCase(thunks.updateSettings.fulfilled, (state, { meta }) => {
         state.settings = meta.arg;
       })

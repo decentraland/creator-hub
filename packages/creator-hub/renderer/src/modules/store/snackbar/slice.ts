@@ -6,7 +6,6 @@ import { t } from '/@/modules/store/translation/utils';
 
 import { actions as workspaceActions } from '../workspace';
 import { actions as deploymentActions } from '../deployment';
-import { shouldNotifyUpdates } from '../workspace/utils';
 import { createCustomNotification, createGenericNotification } from './utils';
 import type { Notification } from './types';
 
@@ -180,22 +179,10 @@ export const slice = createSlice({
           }),
         );
       })
-      .addCase(
-        workspaceActions.updateAvailableDependencyUpdates.fulfilled,
-        (state, { meta, payload: { project, strategy } }) => {
-          state.notifications = state.notifications.filter(
-            $ => $.type !== 'new-dependency-version',
-          );
-          if (shouldNotifyUpdates(strategy, project.dependencyAvailableUpdates)) {
-            state.notifications.push(
-              createCustomNotification(
-                { type: 'new-dependency-version', project },
-                { duration: 0, requestId: meta.requestId },
-              ),
-            );
-          }
-        },
-      )
+      /* Dependency updates are shown in the sidebar only; do not push to bottom snackbar. */
+      .addCase(workspaceActions.updateAvailableDependencyUpdates.fulfilled, (state, _action) => {
+        state.notifications = state.notifications.filter($ => $.type !== 'new-dependency-version');
+      })
       .addCase(deploymentActions.executeDeployment.pending, (state, action) => {
         const path = action.meta.arg;
         state.notifications = state.notifications.filter($ => $.requestId !== path);

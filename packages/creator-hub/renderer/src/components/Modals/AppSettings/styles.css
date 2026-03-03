@@ -2,20 +2,69 @@
 .AppSettingsModal .FormContainer {
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 28px;
   width: 100%;
   height: max-content;
   overflow-y: auto;
 }
 
-/* Input Styles */
-.AppSettingsModal .MuiInputBase-root .MuiOutlinedInput-notchedOutline {
-  /* TODO: Fix styles in the ui2 library */
-  border-color: #ffffff3b;
+.AppSettingsModal .FormContainer .MuiFormLabel-root {
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 4px;
 }
 
+.AppSettingsModal .FormContainer .MuiTypography-root {
+  font-size: 14px;
+}
+
+/* Input Styles */
+.AppSettingsModal .MuiInputBase-root {
+  background-color: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+}
+
+.AppSettingsModal .MuiInputBase-root .MuiOutlinedInput-notchedOutline {
+  border-color: rgba(255, 255, 255, 0.1);
+  transition: border-color 0.15s ease;
+}
+
+.AppSettingsModal .MuiInputBase-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.AppSettingsModal .MuiInputBase-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: var(--primary);
+}
+
+/* Radio & Checkbox Styles */
+.AppSettingsModal .MuiRadio-root {
+  color: rgba(255, 255, 255, 0.18);
+}
+
+.AppSettingsModal .MuiRadio-root:hover {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.AppSettingsModal .MuiRadio-root .MuiSvgIcon-root {
+  font-size: 20px;
+}
+
+.AppSettingsModal .MuiCheckbox-root {
+  color: rgba(255, 255, 255, 0.18);
+}
+
+.AppSettingsModal .MuiCheckbox-root:hover {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.AppSettingsModal .MuiCheckbox-root .MuiSvgIcon-root {
+  font-size: 20px;
+}
+
+/* Button Styles */
 .AppSettingsModal .ApplyButton.Mui-disabled {
-  /* TODO: Fix styles in the ui2 library */
   background-color: #f8919d;
   color: #fee9ec;
 }

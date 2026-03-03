@@ -1,12 +1,18 @@
 /* Modal Container Styles */
 .MuiBackdrop-root:has(.TabsModal) {
   transition: none !important;
+  background-color: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(4px);
 }
 
 .MuiPaper-root:has(.TabsModal) {
   background-image: none;
   padding: 0;
   width: max-content;
+  background-color: transparent !important;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5) !important;
+  border-radius: 16px !important;
+  overflow: hidden;
 }
 
 .MuiPaper-root .MuiBox-root:has(.TabsModal) {
@@ -14,13 +20,16 @@
 }
 
 .TabsModal {
-  width: 625px;
-  height: 680px;
+  width: 680px;
+  height: 520px;
   max-width: 90vw;
-  max-height: 90vh;
+  max-height: 85vh;
   overflow: hidden;
   display: flex;
   flex-flow: column nowrap;
+  background-color: #1a1a1e;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 /* Header Styles */
@@ -29,25 +38,42 @@
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  padding: 8px;
-  border-bottom: 1px solid var(--light-gray);
+  padding: 14px 16px;
+  background-color: #141416;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .TabsModal .TabsModalHeader .TabsModalTitle {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-left: 8px;
-  color: var(--light-gray);
+  gap: 10px;
+  margin-left: 4px;
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .TabsModal .MuiBox-root.TabsModalHeader .MuiBox-root.TabsModalTitle {
   padding: 0;
 }
 
+.TabsModal .TabsModalTitle .MuiSvgIcon-root {
+  font-size: 20px;
+  opacity: 0.7;
+}
+
 .TabsModal .TabsModalTitle h6 {
-  font-size: 16px;
-  font-weight: 400;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.TabsModal .TabsModalHeader .MuiIconButton-root {
+  color: rgba(255, 255, 255, 0.5);
+  padding: 6px;
+}
+
+.TabsModal .TabsModalHeader .MuiIconButton-root:hover {
+  color: rgba(255, 255, 255, 0.85);
+  background-color: rgba(255, 255, 255, 0.06);
 }
 
 /* Layout Styles */
@@ -64,35 +90,61 @@
   flex-shrink: 0;
   height: 100%;
   min-width: 160px;
-  padding: 16px 0;
+  padding: 12px 8px;
+  background-color: #141416;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.TabsModal .TabsModalSidebar .MuiTabs-indicator {
+  display: none;
 }
 
 .TabsModal .TabsModalTab {
-  text-transform: uppercase;
+  text-transform: none;
   align-items: flex-start;
-  min-height: 42px;
+  min-height: 38px;
   font-family: var(--font-family);
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.55);
+  border-radius: 8px;
+  padding: 8px 14px;
+  margin-bottom: 2px;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .TabsModal .TabsModalTab:hover {
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.85);
+  background-color: rgba(255, 255, 255, 0.04);
 }
 
 .TabsModal .TabsModalTab.Mui-selected {
-  color: var(--dcl);
-  background-color: var(--darker-gray);
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.08);
+  font-weight: 600;
 }
 
 /* Content Area Styles */
 .TabsModal .TabsModalContent {
   flex: 1;
-  padding: 24px 32px 0px;
-  background-color: var(--darker-gray);
+  padding: 24px 28px 0px;
+  background-color: #1a1a1e;
   overflow: auto;
   width: 100%;
   height: 100%;
+}
+
+.TabsModal .TabsModalContent::-webkit-scrollbar {
+  width: 4px;
+}
+
+.TabsModal .TabsModalContent::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.TabsModal .TabsModalContent::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
 }
 
 .TabsModal .TabsModalContent > div:first-of-type {

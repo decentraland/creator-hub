@@ -8,4 +8,5 @@ export type Props = {
   options: Option[];
   className?: string;
   selected?: string;
+  icon?: React.ReactNode;
 };

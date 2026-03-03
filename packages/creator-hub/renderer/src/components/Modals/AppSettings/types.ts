@@ -29,4 +29,5 @@ export interface EditorTabProps extends BaseTabProps {
 export interface AboutTabProps {
   version: string | null;
   onViewChangelog: () => void;
+  onSubmitFeedback: () => void;
 }

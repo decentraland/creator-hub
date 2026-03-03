@@ -17,9 +17,16 @@ export function Image({ src, fallbackSrc, alt, className, ...props }: Props) {
       setHasError(true);
       setImgSrc(fallbackSrc);
     } else {
+      // Debug: log when img fails to load (e.g. blog thumbnails from cms-images)
+      if (
+        typeof imgSrc === 'string' &&
+        (imgSrc.includes('cms-images') || imgSrc.includes('decentraland.org'))
+      ) {
+        console.warn('[Image] Failed to load', { src: imgSrc.slice(0, 100), alt });
+      }
       setShowPlaceholder(true);
     }
-  }, [hasError, fallbackSrc]);
+  }, [hasError, fallbackSrc, imgSrc, alt]);
 
   // show placeholder if both sources failed
   if (showPlaceholder) {

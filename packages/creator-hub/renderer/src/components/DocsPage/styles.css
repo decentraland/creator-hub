@@ -1,4 +1,5 @@
-.DocsPage .Container {
+.DocsPage {
+  display: flex;
   flex-direction: column;
 }
 

@@ -1,0 +1,172 @@
+{
+  "creatorHub": {
+    "playlistId": "PLAcRraQmr_GPrMmQekqbMWhyBxo3lXs8p",
+    "videos": [
+      {
+        "id": "52LiG-4VI9c",
+        "title": "DCL Creator Hub: Making a Scene with the Creator Hub",
+        "published": "2024-10-23T14:17:55+00:00"
+      },
+      {
+        "id": "cNl02PFPdcQ",
+        "title": "DCL Creator Hub: Item Positions with the Creator Hub",
+        "published": "2024-10-23T14:17:57+00:00"
+      },
+      {
+        "id": "UepXpH-k0EI",
+        "title": "DCL Creator Hub: Using Custom 3D Art",
+        "published": "2024-10-23T14:18:00+00:00"
+      },
+      {
+        "id": "z7HF4GR01hE",
+        "title": "DCL Creator Hub: Smart Items, the Basics",
+        "published": "2024-10-23T14:18:04+00:00"
+      },
+      {
+        "id": "m_xWCSDDxpQ",
+        "title": "DCL Creator Hub: Actions And Triggers",
+        "published": "2024-11-04T21:59:59+00:00"
+      },
+      {
+        "id": "wnnEU8GCLjc",
+        "title": "DCL Creator Hub: Making Any Item Smart",
+        "published": "2024-11-04T22:32:25+00:00"
+      },
+      {
+        "id": "wm8ZD2kSyKA",
+        "title": "DCL Creator Hub: Smart Item States and Conditions",
+        "published": "2024-11-04T23:27:08+00:00"
+      },
+      {
+        "id": "55H37rygD7M",
+        "title": "DCL Creator Hub: Customizing Smart Items with Code",
+        "published": "2024-11-05T17:50:45+00:00"
+      },
+      {
+        "id": "7cGLu8P7dso",
+        "title": "DCL Creator Hub: Create Custom Items",
+        "published": "2025-01-09T18:25:19+00:00"
+      },
+      {
+        "id": "efjJN7Jr7Qo",
+        "title": "DCL Creator Hub: Live Admin Tools",
+        "published": "2025-05-06T14:16:51+00:00"
+      },
+      {
+        "id": "uVGSrsnmfTw",
+        "title": "Office Hours: Importing Assets and Creating Custom Components in the Decentraland Creator Hub",
+        "published": "2025-08-11T19:28:22+00:00"
+      }
+    ]
+  },
+  "academyBeginners": {
+    "playlistId": "PLAcRraQmr_GP8ayVOgkmL4rrJuB2T74bg",
+    "videos": [
+      {
+        "id": "uOUZPVycg1I",
+        "title": "Baking Textures in Blender | Creator Academy Tutorial Part 3",
+        "published": "2025-06-03T19:41:22+00:00"
+      },
+      {
+        "id": "9Q_2ZOYYQ2w",
+        "title": "Making Your First Shirt Wearable in Decentraland | Creator Academy Tutorial Part 2",
+        "published": "2025-04-17T15:30:01+00:00"
+      },
+      {
+        "id": "UjHkVZKSWCc",
+        "title": "Making Your First Wearable in Decentraland | Creator Academy Tutorial",
+        "published": "2025-04-15T15:46:49+00:00"
+      }
+    ]
+  },
+  "academyBlender": {
+    "playlistId": "PLAcRraQmr_GPngczAiPczVht2nYejMOQv",
+    "videos": [
+      {
+        "id": "qG0mtikJodg",
+        "title": "Blender for Beginners Part 2: Creating a Hat From Scratch",
+        "published": "2026-02-18T12:00:00+00:00"
+      },
+      {
+        "id": "6Q8FNyjFTxc",
+        "title": "Blender for Beginners Part 1: Making your first hat",
+        "published": "2026-02-11T15:34:00+00:00"
+      }
+    ]
+  },
+  "communityAllHands": {
+    "playlistId": "PLAcRraQmr_GNvJh8epKB4n8KJSg2hkfK4",
+    "videos": [
+      {
+        "id": "KAB24cQ6vm8",
+        "title": "Decentraland All Hands Meeting  8/23/23",
+        "published": "2023-08-24T18:05:05+00:00"
+      },
+      {
+        "id": "8qrlPA-Wx5o",
+        "title": "Decentraland All Hands Meeting 10/11/2023",
+        "published": "2023-10-12T18:13:53+00:00"
+      },
+      {
+        "id": "l5ywDRAoRtw",
+        "title": "Decentraland All Hands Meeting 1/31/2024",
+        "published": "2024-02-02T02:57:29+00:00"
+      },
+      {
+        "id": "dQMmMl3sNbQ",
+        "title": "Decentraland All Hands Session | 3/27/24",
+        "published": "2024-03-27T23:44:06+00:00"
+      },
+      {
+        "id": "iTrhvYUqRsw",
+        "title": "Decentraland Foundation Community All Hands 6",
+        "published": "2024-08-06T14:48:43+00:00"
+      },
+      {
+        "id": "Vy0iVwRz10I",
+        "title": "Decentraland Foundation Community All Hands 7",
+        "published": "2024-08-08T13:16:08+00:00"
+      },
+      {
+        "id": "Q5gqsN4LmGs",
+        "title": "Decentraland Foundation Community All Hands 8",
+        "published": "2024-10-02T23:39:19+00:00"
+      },
+      {
+        "id": "aL0Uix5GqQ0",
+        "title": "Decentraland Foundation Community All Hands 9",
+        "published": "2024-12-18T19:56:33+00:00"
+      },
+      {
+        "id": "DhlQ-PPv50U",
+        "title": "Decentraland Community All Hands 11 | New Features, Creator Tools &amp; What’s Next in 2025",
+        "published": "2025-04-23T18:52:06+00:00"
+      },
+      {
+        "id": "_8ynSkR8Zb8",
+        "title": "Decentraland Community All Hands 12 | Career Quest, Referral Program, Communities",
+        "published": "2025-07-03T15:08:37+00:00"
+      },
+      {
+        "id": "8FEJbc_Vwy0",
+        "title": "Community All Hands 13 | Communities Launch, Communities Voice, Dynamic Lights",
+        "published": "2025-09-12T15:39:45+00:00"
+      },
+      {
+        "id": "SIdAfjneUsE",
+        "title": "Community All Hands 14 | Communities Voice Streams, Marketplace Credits, Saved Outfits",
+        "published": "2025-10-28T20:04:10+00:00"
+      },
+      {
+        "id": "N3ajcMMBtC4",
+        "title": "Community All Hands 15",
+        "published": "2026-02-26T15:48:00+00:00"
+      },
+      {
+        "id": "npOz2bcqvnM",
+        "title": "Community All Hands 16",
+        "published": "2026-02-26T15:47:18+00:00"
+      }
+    ]
+  }
+}

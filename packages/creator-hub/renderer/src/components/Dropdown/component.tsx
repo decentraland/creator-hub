@@ -8,7 +8,7 @@ import type { Option, Props } from './types';
 import './styles.css';
 
 function Dropdown(props: Props) {
-  const { options, className, selected } = props;
+  const { options, className, selected, icon } = props;
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
@@ -30,9 +30,7 @@ function Dropdown(props: Props) {
 
   return (
     <>
-      <IconButton onClick={handleClick}>
-        <ThreeDots />
-      </IconButton>
+      <IconButton onClick={handleClick}>{icon ?? <ThreeDots />}</IconButton>
       <Menu
         classes={{ root: cx('Dropdown', className) }}
         anchorEl={anchorEl}

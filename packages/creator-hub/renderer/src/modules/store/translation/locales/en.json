@@ -11,7 +11,8 @@
   },
   "home": {
     "header": {
-      "title": "Welcome to Creator Hub"
+      "title": "Welcome to Creator Hub",
+      "subtitle": "Create, explore, and publish your scenes to Decentraland"
     },
     "cards": {
       "sign_in": {
@@ -68,7 +69,7 @@
     }
   },
   "scene_list": {
-    "my_scenes": "My Scenes",
+    "my_scenes": "Scenes",
     "import_scene": "Import Scene",
     "templates": "Templates",
     "sort_by": "Sort by",
@@ -80,6 +81,7 @@
     },
     "no_scenes": {
       "title": "Create your first scene",
+      "subtitle": "Start building scenes for your LANDs and Worlds.",
       "description": "Unleash your creativity. Start building scenes for your LANDs and Worlds and share with the community. <a>Learn more about creating Scenes.</a>"
     },
     "sort": {
@@ -90,29 +92,67 @@
     "results": "{count} {count, plural, one {scene} other {scenes}}",
     "parcel_count": "{parcels} {parcels, plural, one {parcel} other {parcels}}",
     "saving": "Saving...",
+    "search_placeholder": "Search Scenes",
+    "new_scene": "New Scene",
+    "no_results": "No scenes match your search.",
     "badges": {
-      "published": "Published"
+      "published": "Published",
+      "in_progress": "In Progress"
+    },
+    "table": {
+      "thumbnail": "Scene",
+      "name": "Name",
+      "modified": "Modified",
+      "status": "Status"
+    },
+    "view_mode": "Display view",
+    "view_grid": "Grid view",
+    "view_list": "List view",
+    "time": {
+      "just_now": "just now"
     }
   },
   "navbar": {
     "menu": {
       "home": "Home",
       "scenes": "Scenes",
+      "templates": "Templates",
       "collections": "Collections",
       "manage": "Manage",
       "learn": "Learn",
-      "more": "More"
+      "more": "More",
+      "resources": "Resources",
+      "settings": "Settings"
     },
     "feedback": "Submit feedback",
-    "report_an_issue": "Report an Issue",
+    "report_an_issue": "Submit Feedback",
     "user_menu": {
       "sign_in": "Sign In",
       "sign_out": "Sign Out"
     }
   },
+  "sidebar": {
+    "update": {
+      "title": "Creator Hub update available",
+      "description": "Creator Hub v{version} is now available and will install after restarting.",
+      "action": "RESTART & UPDATE",
+      "error_title": "Update check failed",
+      "error_description": "We couldn't check for updates. Please try again later."
+    },
+    "dependency_update": {
+      "description": "A new SDK or dependency version is available for this project. Update to get the latest fixes and features."
+    }
+  },
   "modal": {
     "cancel": "Cancel",
     "confirm": "Confirm",
+    "new_scene_choice": {
+      "title": "Choose the best option to build your scene",
+      "start_from_scratch": "Start from scratch",
+      "start_from_scratch_description": "Start building your scenes from the ground up with the online builder in a simple and intuitive way.",
+      "use_templates": "Use predefined templates",
+      "use_templates_description": "Choose one of these polished templates and release an amazing scene with just a few clicks!"
+    },
     "missing_projects": {
       "title": "Scenes missing reference files",
       "find": "Find",
@@ -230,7 +270,7 @@
             "invalid_creator_wallet": "Creator must be a valid Ethereum wallet address."
           },
           "actions": {
-            "report_issue": "Report an issue",
+            "report_issue": "Submit Feedback",
             "retry": "Retry"
           },
           "redirect": {
@@ -258,7 +298,7 @@
       "current": "Current"
     },
     "app_settings": {
-      "title": "App Preferences",
+      "title": "Settings",
       "tabs": {
         "scenes": {
           "label": "SCENES",
@@ -442,7 +482,7 @@
   },
   "more": {
     "header": {
-      "title": "More"
+      "title": "Resources"
     },
     "cards": {
       "create": {
@@ -471,15 +511,15 @@
           "description": "Create and manage your own virtual spaces."
         },
         "land": {
-          "title": "LAND",
-          "description": "Publish Scenes, creata Estates and manage permissions of your LAND."
+          "title": "LAND Management",
+          "description": "Publish Scenes, create Estates and manage permissions of your LAND."
         }
       },
       "open_in_browser": "Open in Browser"
     }
   },
   "templates": {
-    "title": "Choose a Template",
+    "title": "Templates",
     "results": "{count} {count, plural, one {template} other {templates}}",
     "actions": {
       "preview": "Preview Template",
@@ -511,6 +551,15 @@
       "more": "More"
     },
     "see_all": "See All",
+    "search_placeholder": "Search Learn",
+    "visit_docs": "Visit Decentraland Docs",
+    "tabs": {
+      "creator_hub": "Creator Hub",
+      "creator_academy": "Creator Academy",
+      "community_all_hands": "Community All Hands",
+      "docs": "Creator Docs",
+      "news": "News"
+    },
     "videos": {
       "title": "Videos"
     },

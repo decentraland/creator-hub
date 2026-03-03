@@ -13,8 +13,13 @@ export type Props = {
   content?: ReactNode;
   width?: number;
   height?: number;
+  /** When true, do not set a fixed height so the card can size to content (e.g. in grid with thumbnail + info). */
+  autoHeight?: boolean;
   publishedAt?: number;
   dropdownOptions?: Option[];
+  dropdownIcon?: ReactNode;
+  dropdownIconTitle?: string;
+  dropdownIconClick?: () => void;
   titleVariant?: TypographyProps['variant'];
   status?: Status;
   onClick: () => void;

@@ -5,8 +5,14 @@ import { createWindow, focusWindow, getWindow } from './modules/window';
 
 export const MAIN_WINDOW_ID = 'main';
 
+const DEFAULT_WIDTH = 1920;
+const DEFAULT_HEIGHT = 1080;
+
 async function createMainWindow(id: string) {
-  const window = createWindow(id);
+  const window = createWindow(id, {
+    width: DEFAULT_WIDTH,
+    height: DEFAULT_HEIGHT,
+  });
   window.setMenuBarVisibility(false);
   window.maximize();
 

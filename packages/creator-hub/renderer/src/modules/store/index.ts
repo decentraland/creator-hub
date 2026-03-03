@@ -11,6 +11,7 @@ import { createAnalyticsMiddleware } from './analytics/middleware';
 import * as editor from './editor';
 import * as snackbar from './snackbar';
 import * as translations from './translation';
+import { getPreferredLocale } from './translation/utils';
 import * as workspace from './workspace';
 import * as deployment from './deployment';
 import * as analytics from './analytics';
@@ -60,6 +61,12 @@ export const createSelector = createDraftSafeSelector.withTypes<AppState>();
 // dispatch start up actions
 async function start() {
   try {
+    // set locale from browser/OS language if supported (en, es, zh)
+    const preferredLocale = getPreferredLocale();
+    if (preferredLocale && preferredLocale !== store.getState().translation.locale) {
+      store.dispatch(translations.actions.changeLocale(preferredLocale));
+    }
+
     // fetch app version and user id
     await Promise.all([
       store.dispatch(editor.actions.fetchVersion()),

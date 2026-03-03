@@ -1,0 +1,358 @@
+/* ===========================
+   Sidebar Container
+   =========================== */
+.Sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 260px;
+  min-width: 260px;
+  height: 100%;
+  min-height: 0;
+  align-self: stretch;
+  background-color: #18171a;
+  border-right: 0.5px solid rgba(255, 255, 255, 0.07);
+  padding: 24px 8px 0;
+  box-sizing: border-box;
+  transition: width 0.25s ease, min-width 0.25s ease;
+  z-index: 10;
+  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.Sidebar.collapsed {
+  width: 68px;
+  min-width: 68px;
+}
+
+/* ===========================
+   Sidebar Header (Logo + Title)
+   =========================== */
+.SidebarHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  margin-bottom: 28px;
+  min-height: 48px;
+  flex-shrink: 0;
+}
+
+.SidebarLogo {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+
+.SidebarTitle {
+  font-weight: 600 !important;
+  font-size: 22px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  letter-spacing: -0.3px;
+}
+
+/* ===========================
+   Sidebar Scrollable Area
+   =========================== */
+.SidebarScrollable {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Reserve space so nav doesn’t scroll under the fixed footer (update card + divider + settings + brand) */
+  padding-bottom: 280px;
+}
+
+/* Hide scrollbar but keep scroll functionality */
+.SidebarScrollable {
+  scrollbar-width: none;
+}
+
+.SidebarScrollable::-webkit-scrollbar {
+  display: none;
+}
+
+/* ===========================
+   Sidebar Navigation
+   =========================== */
+.SidebarNav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.SidebarNavItemWrapper {
+  display: block;
+  width: 100%;
+}
+
+.SidebarNavItem {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 2px solid transparent;
+  background: none;
+  width: 100%;
+  text-align: left;
+  box-sizing: border-box;
+  opacity: 0.7;
+  transition: background-color 0.15s ease, opacity 0.15s ease, border-color 0.15s ease;
+}
+
+.SidebarNavItem:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+  opacity: 0.95;
+}
+
+.SidebarNavItem.active {
+  background-color: #2b2b2b;
+  border-color: #ff2d55;
+  opacity: 1;
+}
+
+.SidebarNavItem.active:hover {
+  background-color: #323232;
+}
+
+.SidebarNavIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.SidebarNavIcon img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.SidebarNavLabel {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ===========================
+   Sidebar Update Card
+   =========================== */
+.SidebarUpdateCard {
+  position: relative;
+  background-color: #082950;
+  border-radius: 12px;
+  padding: 16px 18px 18px;
+  margin: 12px 4px;
+  top: 24px;
+  opacity: 0;
+  animation: 2s ease 0s SidebarUpdateCardSlideIn;
+  animation-fill-mode: forwards;
+}
+
+.SidebarUpdateCard + .SidebarUpdateCard {
+  animation-delay: 1.5s;
+}
+
+@keyframes SidebarUpdateCardSlideIn {
+  from {
+    top: 24px;
+    opacity: 0;
+  }
+  to {
+    top: 0;
+    opacity: 1;
+  }
+}
+
+.SidebarUpdateCard.error {
+  background-color: #3a1c1c;
+}
+
+.SidebarUpdateHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.SidebarUpdateIcon {
+  width: 24px;
+  height: 24px;
+  opacity: 0.9;
+}
+
+.SidebarUpdateClose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.SidebarUpdateClose img {
+  width: 16px;
+  height: 16px;
+}
+
+.SidebarUpdateClose:hover {
+  opacity: 1;
+}
+
+.SidebarUpdateTitle {
+  color: #fff !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  margin-bottom: 4px !important;
+}
+
+.SidebarUpdateDesc {
+  color: rgba(255, 255, 255, 0.7) !important;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+  margin-bottom: 14px !important;
+}
+
+.SidebarUpdateBtn.MuiButton-root {
+  background-color: #438fff !important;
+  color: #fcfcfc !important;
+  border-radius: 10px !important;
+  text-transform: uppercase !important;
+  font-weight: 600 !important;
+  font-size: 11px !important;
+  letter-spacing: 0.5px;
+  padding: 8px 16px !important;
+}
+
+.SidebarUpdateBtn.MuiButton-root:hover {
+  background-color: #5a9fff !important;
+}
+
+/* ===========================
+   Sidebar Footer (fixed at bottom)
+   =========================== */
+.SidebarFooter {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+  padding: 12px 8px 24px;
+  background-color: #18171a;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.SidebarFooterDivider {
+  padding-top: 16px;
+  border-top: none;
+}
+
+.SidebarDemoPreview {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.SidebarDemoPreviewLabel {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.SidebarDemoPreviewBtn {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.SidebarDemoPreviewBtn:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.SidebarBrand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px 4px;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.SidebarDclLogo {
+  height: 16px;
+  width: auto;
+  opacity: 1;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.SidebarCollapseBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+  opacity: 0.45;
+  transition: opacity 0.15s ease, transform 0.25s ease;
+}
+
+.SidebarCollapseBtn img {
+  width: 20px;
+  height: 20px;
+}
+
+.SidebarCollapseBtn:hover {
+  opacity: 0.85;
+}
+
+.SidebarCollapseBtn.collapsed {
+  transform: rotate(180deg);
+}
+
+/* Collapsed state adjustments */
+.Sidebar.collapsed .SidebarHeader {
+  justify-content: center;
+  padding: 0;
+}
+
+.Sidebar.collapsed .SidebarNavItem {
+  justify-content: center;
+  padding: 14px;
+}
+
+.Sidebar.collapsed .SidebarBrand {
+  justify-content: center;
+}

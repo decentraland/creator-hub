@@ -22,6 +22,7 @@ export function UserMenu({ avatar, isSignedIn, onClickSignOut, onClickSignIn }: 
       <Button
         id="AvatarButton"
         className="AvatarButton"
+        sx={{ minWidth: 0, p: 0.25 }}
         aria-controls={open ? 'UserMenu' : undefined}
         aria-haspopup="true"
         aria-expanded={open ? 'true' : undefined}
@@ -29,7 +30,7 @@ export function UserMenu({ avatar, isSignedIn, onClickSignOut, onClickSignIn }: 
         disableRipple
       >
         <AvatarFace
-          size="medium"
+          size="small"
           avatar={avatar}
         />
       </Button>
@@ -50,6 +51,8 @@ export function UserMenu({ avatar, isSignedIn, onClickSignOut, onClickSignIn }: 
       className="SignInButton"
       onClick={onClickSignIn}
       variant="contained"
+      size="small"
+      sx={{ fontSize: 12, px: 2, py: 0.5, minHeight: 32, borderRadius: '6px' }}
       disableRipple
     >
       {t('navbar.user_menu.sign_in')}

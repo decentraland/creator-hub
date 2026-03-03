@@ -8,7 +8,8 @@
   },
   "home": {
     "header": {
-      "title": "欢迎来到阿尔法编辑器"
+      "title": "欢迎来到阿尔法编辑器",
+      "subtitle": "在 Decentraland 中创建、探索和发布你的场景"
     },
     "cards": {
       "sign_in": {
@@ -65,7 +66,7 @@
     }
   },
   "scene_list": {
-    "my_scenes": "我的场景",
+    "my_scenes": "场景",
     "import_scene": "导入场景",
     "templates": "模板",
     "sort_by": "排序方式",
@@ -77,6 +78,7 @@
     },
     "no_scenes": {
       "title": "创建您的第一个场景",
+      "subtitle": "开始为您的土地和世界建立场景。",
       "description": "释放您的创造力。开始为您的土地和世界建立场景，并与社区分享。<a>了解有关创建场景的更多信息。</a>"
     },
     "sort": {
@@ -87,29 +89,62 @@
     "results": "{count}结果",
     "parcel_count": "{parcels} {包裹, plural, one {包裹} other {包裹}}",
     "saving": "保存...",
+    "search_placeholder": "搜索场景",
+    "new_scene": "新建场景",
+    "no_results": "没有匹配的场景。",
     "badges": {
-      "published": "已发布"
+      "published": "已发布",
+      "in_progress": "进行中"
+    },
+    "table": {
+      "thumbnail": "缩略图",
+      "name": "名称",
+      "modified": "修改时间",
+      "status": "状态"
+    },
+    "view_mode": "显示方式",
+    "view_grid": "网格视图",
+    "view_list": "列表视图",
+    "time": {
+      "just_now": "刚刚"
     }
   },
   "navbar": {
     "menu": {
       "home": "首页",
       "scenes": "场景",
+      "templates": "模板",
       "collections": "收藏",
       "manage": "管理",
       "learn": "学习",
-      "more": "更多"
+      "more": "更多",
+      "resources": "资源",
+      "settings": "设置"
     },
     "feedback": "给我们反馈",
-    "report_an_issue": "报告问题",
+    "report_an_issue": "提交反馈",
     "user_menu": {
       "sign_in": "登录",
       "sign_out": "登出"
     }
   },
+  "sidebar": {
+    "update": {
+      "title": "Creator Hub 更新可用",
+      "description": "Creator Hub v{version} 現已可用，將在重新啟動後安裝。",
+      "action": "重新啟動並更新"
+    }
+  },
   "modal": {
     "cancel": "取消",
     "confirm": "确认",
+    "new_scene_choice": {
+      "title": "选择最适合的方式创建你的场景",
+      "start_from_scratch": "从零开始",
+      "start_from_scratch_description": "使用在线编辑器，以简单直观的方式从零开始构建你的场景。",
+      "use_templates": "使用预设模板",
+      "use_templates_description": "选择这些精选模板之一，只需几步即可发布精彩场景！"
+    },
     "missing_projects": {
       "title": "缺失的场景",
       "find": "寻找",
@@ -227,7 +262,7 @@
             "code_error": "你的场景代码包含一个或多个错误。\n请修复它们并重试。"
           },
           "actions": {
-            "report_issue": "报告问题",
+            "report_issue": "提交反馈",
             "retry": "重试"
           },
           "redirect": {
@@ -439,7 +474,7 @@
   },
   "more": {
     "header": {
-      "title": "更多"
+      "title": "资源"
     },
     "cards": {
       "create": {
@@ -476,7 +511,7 @@
     }
   },
   "templates": {
-    "title": "选择一个模板",
+    "title": "模板",
     "results": "{count} {count, plural, one {模板} other {模板}}",
     "actions": {
       "preview": "预览模板",
@@ -507,6 +542,14 @@
         "more": "更多"
       },
       "see_all": "查看全部",
+      "visit_docs": "访问 Decentraland 文档",
+      "tabs": {
+        "creator_hub": "Creator Hub",
+        "creator_academy": "Creator Academy",
+        "community_all_hands": "Community All Hands",
+        "docs": "创作者文档",
+        "news": "新闻"
+      },
       "videos": {
         "title": "视频"
       },

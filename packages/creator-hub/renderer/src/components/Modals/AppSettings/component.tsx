@@ -12,6 +12,7 @@ import {
 import { debounce } from '/shared/utils';
 import { GITHUB_RELEASES_URL } from '/shared/urls';
 
+import { REPORT_ISSUES_URL } from '/@/modules/utils';
 import { t } from '/@/modules/store/translation/utils';
 import { useSettings } from '/@/hooks/useSettings';
 import { useWorkspace } from '/@/hooks/useWorkspace';
@@ -109,6 +110,10 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
     misc.openExternal(`${GITHUB_RELEASES_URL}/${version}`);
   }, [version]);
 
+  const handleSubmitFeedback = useCallback(() => {
+    misc.openExternal(REPORT_ISSUES_URL);
+  }, []);
+
   const handleSetDefaultEditor = useCallback(
     (path: string) => {
       dispatch(setDefaultEditor(path));
@@ -167,6 +172,7 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
           <AboutTab
             version={version}
             onViewChangelog={handleViewChangelog}
+            onSubmitFeedback={handleSubmitFeedback}
           />
         );
       default:

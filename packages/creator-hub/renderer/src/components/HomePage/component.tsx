@@ -6,15 +6,7 @@ import LayersOutlinedIcon from '@mui/icons-material/LayersOutlined';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 import { CircularProgress as Loader } from 'decentraland-ui2';
-import {
-  Container,
-  Card,
-  CardContent,
-  Typography,
-  CardActions,
-  Button,
-  Grid,
-} from 'decentraland-ui2';
+import { Card, CardContent, Typography, CardActions, Button, Grid } from 'decentraland-ui2';
 
 import { misc } from '#preload';
 
@@ -30,6 +22,7 @@ import { FEEDBACK_URL } from '/@/modules/utils';
 import { actions } from '/@/modules/store/settings';
 import type { AppState } from '../../modules/store';
 import { UpdateAvailableModal } from '../Modals/UpdateAvailableModal';
+import { Container } from '../Container';
 import { Navbar, NavbarItem } from '../Navbar';
 import { Footer } from '../Footer';
 import { type CardBannerProps, type CardItemProps, type SignInCardProps } from './types';
@@ -267,15 +260,18 @@ export function HomePage() {
       <main className="HomePage">
         <Navbar active={NavbarItem.HOME} />
         <Container>
-          <Typography
-            variant="h3"
-            mb="48px"
-          >
-            {t('home.header.title')}
-          </Typography>
+          <div className="WelcomeSection">
+            <Typography variant="h3">{t('home.header.title')}</Typography>
+            <Typography
+              className="Subtitle"
+              variant="body1"
+            >
+              {t('home.header.subtitle')}
+            </Typography>
+          </div>
           <Grid
             container
-            spacing={4}
+            spacing={3}
           >
             {!auth.isSignedIn ? (
               <Grid

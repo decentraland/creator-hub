@@ -8,7 +8,7 @@
 
 :root {
   /* Colors */
-  --bg: #16141a;
+  --bg: #121212;
   --metaverse-gradient: linear-gradient(to bottom, #060d2b, #132d7d 52%, #9763c1);
   --purple-banner: #691ea9;
   --purplish-grey-raw: 115, 110, 125;
@@ -73,6 +73,9 @@
   --mui-palette-action-disabled: #231113;
   --mui-palette-secondary-contrast: #ffffff;
 
+  /* Page layout */
+  --page-horizontal-padding: 48px;
+
   /* Global Scrollbar Styles */
   ::-webkit-scrollbar {
     width: 8px;
@@ -118,15 +121,12 @@ body,
 }
 
 footer {
-  padding: 32px;
+  padding: 32px var(--page-horizontal-padding);
 }
 
 .Main {
-  background: url(../../assets/images/background.png) #242129ff;
-  background-position: center;
-  background-size: cover;
-  background-blend-mode: overlay;
-  background-attachment: fixed;
+  background-color: var(--bg);
+  height: 100%;
   min-height: 100vh;
   display: flex;
   flex-direction: column;

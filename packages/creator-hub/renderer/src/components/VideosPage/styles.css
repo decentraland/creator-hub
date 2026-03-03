@@ -1,4 +1,5 @@
-.VideosPage .Container {
+.VideosPage {
+  display: flex;
   flex-direction: column;
 }
 

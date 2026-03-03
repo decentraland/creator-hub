@@ -6,6 +6,9 @@ const activeWindows = new Map<string, BrowserWindow>();
 export function createWindow(path: string, options?: BrowserWindowConstructorOptions) {
   const window = new BrowserWindow({
     show: false, // Use the 'ready-to-show' event to show the instantiated BrowserWindow.
+    titleBarStyle: 'hiddenInset',
+    trafficLightPosition: { x: 16, y: 18 },
+    ...options,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,

@@ -11,7 +11,8 @@
   },
   "home": {
     "header": {
-      "title": "Bienvenido a Decentraland Creator Hub"
+      "title": "Bienvenido a Decentraland Creator Hub",
+      "subtitle": "Crea, explora y publica tus escenas en Decentraland"
     },
     "cards": {
       "sign_in": {
@@ -68,7 +69,7 @@
     }
   },
   "scene_list": {
-    "my_scenes": "Mis Escenas",
+    "my_scenes": "Escenas",
     "import_scene": "Importar Escena",
     "templates": "Plantillas",
     "sort_by": "Ordenar por",
@@ -80,6 +81,7 @@
     },
     "no_scenes": {
       "title": "Crea tu primera escena",
+      "subtitle": "Comienza a construir escenas para tus tierras y mundos.",
       "description": "Desata tu creatividad. Comienza a construir escenas para tus tierras y mundos y comparta con la comunidad.<a> Aprenda más sobre cómo crear escenas. </a>"
     },
     "sort": {
@@ -90,29 +92,62 @@
     "results": "{count} {count, plural, one {escena} other {escenas}}",
     "parcel_count": "{parcels} {parcels, plural, one {parcela} other {parcelas}}",
     "saving": "Guardando...",
+    "search_placeholder": "Buscar Escenas",
+    "new_scene": "Nueva Escena",
+    "no_results": "No hay escenas que coincidan con tu búsqueda.",
     "badges": {
-      "published": "Publicado"
+      "published": "Publicado",
+      "in_progress": "En Progreso"
+    },
+    "table": {
+      "thumbnail": "Miniatura",
+      "name": "Nombre",
+      "modified": "Modificado",
+      "status": "Estado"
+    },
+    "view_mode": "Vista de visualización",
+    "view_grid": "Vista en cuadrícula",
+    "view_list": "Vista en lista",
+    "time": {
+      "just_now": "ahora"
     }
   },
   "navbar": {
     "menu": {
       "home": "Inicio",
       "scenes": "Escenas",
+      "templates": "Plantillas",
       "collections": "Colecciones",
       "manage": "Gestionar",
       "learn": "Aprender",
-      "more": "Más"
+      "more": "Más",
+      "resources": "Recursos",
+      "settings": "Configuración"
     },
     "feedback": "Darnos feedback",
-    "report_an_issue": "Informar un problema",
+    "report_an_issue": "Enviar comentarios",
     "user_menu": {
       "sign_in": "Iniciar Sesión",
       "sign_out": "Cerrar Sesión"
     }
   },
+  "sidebar": {
+    "update": {
+      "title": "Actualización de Creator Hub disponible",
+      "description": "Creator Hub v{version} ya está disponible y se instalará después de reiniciar.",
+      "action": "REINICIAR Y ACTUALIZAR"
+    }
+  },
   "modal": {
     "cancel": "Cancelar",
     "confirm": "Confirmar",
+    "new_scene_choice": {
+      "title": "Elige la mejor opción para crear tu escena",
+      "start_from_scratch": "Empezar desde cero",
+      "start_from_scratch_description": "Comienza a construir tus escenas desde cero con el constructor en línea de forma sencilla e intuitiva.",
+      "use_templates": "Usar plantillas predefinidas",
+      "use_templates_description": "Elige una de estas plantillas y publica una escena increíble con solo unos clics."
+    },
     "missing_projects": {
       "title": "Escenas perdidas",
       "find": "Buscar",
@@ -230,7 +265,7 @@
             "code_error": "El código de tu escena contiene uno o más errores.\nPor favor corrígelos e inténtalo de nuevo."
           },
           "actions": {
-            "report_issue": "Informar un problema",
+            "report_issue": "Enviar comentarios",
             "retry": "Reintentar"
           },
           "redirect": {
@@ -442,7 +477,7 @@
   },
   "more": {
     "header": {
-      "title": "Más"
+      "title": "Recursos"
     },
     "cards": {
       "create": {
@@ -479,7 +514,7 @@
     }
   },
   "templates": {
-    "title": "Elija una plantilla",
+    "title": "Plantillas",
     "results": "{count} {count, plural, one {plantilla} other {plantillas}}",
     "actions": {
       "preview": "Previsualizar Plantilla",
@@ -510,6 +545,14 @@
         "more": "Más"
       },
       "see_all": "Ver Más",
+      "visit_docs": "Visitar Docs de Decentraland",
+      "tabs": {
+        "creator_hub": "Creator Hub",
+        "creator_academy": "Creator Academy",
+        "community_all_hands": "Community All Hands",
+        "docs": "Documentación para Creadores",
+        "news": "Noticias"
+      },
       "videos": {
         "title": "Videos"
       },

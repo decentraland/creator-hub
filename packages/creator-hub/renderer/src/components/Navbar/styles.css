@@ -1,20 +1,24 @@
 .Navbar {
   margin-bottom: 64px;
-  padding: 32px 32px 0 32px;
+  padding-top: 32px;
 }
 
 .Navbar .menu {
   display: flex;
   margin-left: 32px;
-  gap: 8px;
+  gap: 4px;
 }
 
 .Navbar .logo img {
   width: 64px;
+  transition: transform 0.2s ease;
+}
+
+.Navbar .logo img:hover {
+  transform: scale(1.05);
 }
 
 .Navbar .menu .menu-item {
-  color: var(--text);
   font-size: 24px;
   font-weight: 500;
   cursor: pointer;
@@ -23,10 +27,14 @@
   color: #716b7c;
   text-decoration: none;
   box-sizing: border-box;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .Navbar .menu .menu-item:hover {
-  background: #ffffff0d;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .Navbar .menu .menu-item.active {

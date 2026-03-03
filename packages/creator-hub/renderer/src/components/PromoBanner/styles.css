@@ -1,0 +1,128 @@
+.PromoBanner {
+  position: relative;
+  width: 100%;
+  height: 150px;
+  background-color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 24px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+/* === Slide container (handles carousel movement) === */
+.PromoBannerSlide {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+  transform: translateX(0);
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.PromoBannerSlide.at-left {
+  transform: translateX(-100%);
+}
+
+.PromoBannerSlide.at-right {
+  transform: translateX(100%);
+}
+
+.PromoBannerSlide.no-transition {
+  transition: none;
+}
+
+/* === Video background === */
+.PromoBannerVideo {
+  position: absolute;
+  top: 35%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 100%;
+  min-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+/* === Promo image === */
+.PromoBannerPromo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+/* === Overlay === */
+.PromoBannerOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0.5) 0%,
+    rgba(0, 0, 0, 0.1) 50%,
+    rgba(0, 0, 0, 0.5) 100%
+  );
+  z-index: 1;
+  transition: opacity 0.8s ease;
+}
+
+.PromoBannerOverlay.promo {
+  opacity: 0.3;
+}
+
+/* === CTA Button === */
+.PromoBannerCta {
+  position: absolute !important;
+  right: 32px !important;
+  top: 50% !important;
+  left: auto !important;
+  z-index: 2;
+  border-radius: 12px !important;
+  text-transform: none !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  padding: 10px 28px !important;
+  border: 2px solid transparent !important;
+  opacity: 0;
+  transform: translateY(calc(-50% + 8px));
+  transition: opacity 0.4s ease, transform 0.4s ease, border-color 0.15s ease;
+  pointer-events: none;
+}
+
+.PromoBannerCta.visible {
+  opacity: 1;
+  transform: translateY(-50%);
+  pointer-events: auto;
+}
+
+.PromoBannerCta:hover {
+  background-color: var(--primary) !important;
+  border-color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* === Close button === */
+.PromoBannerClose {
+  position: absolute !important;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  color: rgba(255, 255, 255, 0.7) !important;
+  border-radius: 50% !important;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.PromoBannerClose:hover {
+  color: var(--white) !important;
+}
+
+/* When hovering anywhere on the banner, show close as black circle + white X so it’s clear it can be closed */
+.PromoBanner:hover .PromoBannerClose {
+  background-color: #000 !important;
+  color: #fff !important;
+}

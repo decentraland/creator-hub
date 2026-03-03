@@ -49,6 +49,18 @@
   text-decoration: underline;
 }
 
+.AppSettingsModal .AboutFeedbackSection {
+  margin-top: 20px;
+  margin-bottom: 8px;
+}
+
+.AppSettingsModal .AboutFeedbackButton {
+  border-radius: 20px !important;
+  text-transform: uppercase !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
 .AppSettingsModal .AboutUpdateSection {
   flex: 1;
   display: flex;

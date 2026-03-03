@@ -136,61 +136,45 @@ export const notifyUpdate = createAsyncThunk(
 export const checkForUpdates = createAsyncThunk(
   'settings/checkForUpdates',
   async ({ autoDownload = false }: { autoDownload?: boolean }, { dispatch, getState }) => {
-    try {
-      // add timeout to prevent hanging
-      const checkPromise = settingsPreload.checkForUpdates({ autoDownload });
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new UpdateError('CHECK_TIMEOUT')), 5000); // 5 second timeout
-      });
+    // add timeout to prevent hanging
+    const checkPromise = settingsPreload.checkForUpdates({ autoDownload });
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new UpdateError('CHECK_TIMEOUT')), 5000); // 5 second timeout
+    });
 
-      const result = await Promise.race([checkPromise, timeoutPromise]);
+    const result = await Promise.race([checkPromise, timeoutPromise]);
 
-      // if result is null/undefined or version couldn't be determined, treat as failed check
-      if (!result || result.version === null) {
-        throw new UpdateError('CHECK_FAILED');
-      }
+    // if result is null/undefined or version couldn't be determined, treat as failed check
+    if (!result || result.version === null) {
+      throw new UpdateError('CHECK_FAILED');
+    }
 
-      const { updateAvailable, version } = result;
-      const lastDownloadedVersion = getState().settings.downloadingUpdate.version;
-      dispatch(
-        actions.setUpdateInfo({
-          available: !!updateAvailable,
-          version: version ?? null,
-          isDownloaded: !!lastDownloadedVersion && lastDownloadedVersion === version,
-        }),
-      );
+    const { updateAvailable, version } = result;
+    const lastDownloadedVersion = getState().settings.downloadingUpdate.version;
+    dispatch(
+      actions.setUpdateInfo({
+        available: !!updateAvailable,
+        version: version ?? null,
+        isDownloaded: !!lastDownloadedVersion && lastDownloadedVersion === version,
+      }),
+    );
 
-      if (updateAvailable) {
-        if (version) {
-          const releaseNotes = await settingsPreload.getReleaseNotes(version);
-          if (releaseNotes) {
-            dispatch(actions.setReleaseNotes(releaseNotes));
-          }
+    if (updateAvailable) {
+      if (version) {
+        const releaseNotes = await settingsPreload.getReleaseNotes(version);
+        if (releaseNotes) {
+          dispatch(actions.setReleaseNotes(releaseNotes));
         }
-      } else {
-        dispatch(
-          snackbarActions.pushSnackbar({
-            id: 'check-updates-success',
-            message: t('modal.app_settings.version.up_to_date'),
-            severity: 'success',
-            type: 'generic',
-          }),
-        );
       }
-    } catch (error: any) {
-      const errorMessage = isUpdateError(error, 'CHECK_TIMEOUT')
-        ? t('modal.app_settings.update.timeout')
-        : t('modal.app_settings.update.error');
-
+    } else {
       dispatch(
         snackbarActions.pushSnackbar({
-          id: 'check-updates-error',
-          message: errorMessage,
-          severity: 'error',
+          id: 'check-updates-success',
+          message: t('modal.app_settings.version.up_to_date'),
+          severity: 'success',
           type: 'generic',
         }),
       );
-      throw error;
     }
   },
 );

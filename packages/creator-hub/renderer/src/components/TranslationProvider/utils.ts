@@ -1,19 +1,10 @@
 import type { Locale } from '/shared/types/translation';
+import { getPreferredLocale as getPreferredLocaleFromUtils } from '/@/modules/store/translation/utils';
 
-export function getPreferredLocale(availableLocales: Locale[]): Locale | null {
-  if (!availableLocales) {
-    throw new Error('Failed to get preferred locale: Missing locale list');
-  }
-
-  const { navigator } = window;
-
-  const navigatorLocale = (navigator.languages && navigator.languages[0]) || navigator.language;
-
-  const locale: Locale = navigatorLocale.slice(0, 2) as Locale;
-
-  if (!availableLocales.includes(locale)) {
-    return null;
-  }
-
-  return locale;
+/**
+ * Returns the user's preferred locale based on browser/OS language, or null if not supported.
+ * Re-exported from translation utils for components that need it (e.g. language picker).
+ */
+export function getPreferredLocale(): Locale | null {
+  return getPreferredLocaleFromUtils();
 }

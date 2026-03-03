@@ -1,76 +1,105 @@
+/* ===========================
+   HomePage Layout
+   =========================== */
 .HomePage {
   flex: 1;
 }
 
+.HomePage .WelcomeSection {
+  margin-bottom: 48px;
+}
+
+.HomePage .WelcomeSection .Subtitle {
+  color: #a09ba8;
+  margin-top: 8px;
+}
+
+/* ===========================
+   Cards - Base
+   =========================== */
 .HomePage .Card {
   position: relative;
   height: 100%;
-  background: #ffffff0d;
+  background: rgba(255, 255, 255, 0.04);
   padding: 0px;
   gap: 16px;
   box-shadow: none;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  overflow: hidden;
 }
 
+.HomePage .Card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* ===========================
+   Cards - Centered Content (Sign In, Empty Scenes)
+   =========================== */
 .HomePage .Card .CardContent.CenteredContent {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 32px;
+  gap: 24px;
 }
 
 .HomePage .Card .CardContent .Title {
   text-align: center;
   text-wrap: pretty;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
+/* ===========================
+   Card Banner
+   =========================== */
 .HomePage .Card .CardBanner {
   position: relative;
-  height: 100px;
+  height: 110px;
   display: flex;
   justify-content: flex-end;
-  background: linear-gradient(180deg, #c640cd 0%, #691fa9 100%);
-  border-radius: var(--mui-shape-borderRadius);
+  align-items: flex-end;
+  background: linear-gradient(135deg, #c640cd 0%, #7b2fba 50%, #5a1fa9 100%);
+  border-radius: 12px 12px 0 0;
   overflow: hidden;
   z-index: 1;
   flex: none;
 }
 
+.HomePage .Card .CardBanner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(0, 0, 0, 0.15) 100%);
+  pointer-events: none;
+}
+
 .HomePage .Card .CardBanner .CardBannerImage {
   position: absolute;
-  top: -12px;
-  left: 0;
-  height: 128px;
-  width: 128px;
+  top: -8px;
+  left: 8px;
+  height: 120px;
+  width: 120px;
   object-fit: cover;
   z-index: 0;
+  transition: transform 0.3s ease;
 }
 
 .HomePage .Card .CardBanner.Clickable {
   cursor: pointer;
 }
 
+.HomePage .Card .CardBanner.Clickable:hover .CardBannerImage {
+  transform: scale(1.08);
+}
+
 .HomePage .Card .CardBanner.Clickable:hover {
-  outline: 2px solid var(--white);
+  outline: 2px solid rgba(255, 255, 255, 0.4);
   outline-offset: -2px;
-}
-
-.HomePage .Card:has(.CardBanner + .CardContent) {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  background: none;
-}
-
-.HomePage .Card:has(.CardBanner) .CardContent.EmptyProjects {
-  border-radius: var(--mui-shape-borderRadius);
-  background: #ffffff0d;
-}
-
-.HomePage .Card:has(.CardBanner) .CardContent {
-  padding: 0;
-  flex: 1 0 auto;
 }
 
 .HomePage .Card .CardBanner .CardBannerContent {
@@ -79,41 +108,155 @@
   margin-bottom: 16px;
   color: var(--white);
   font-weight: 700;
-  font-size: 24px;
+  font-size: 22px;
   text-transform: uppercase;
+  letter-spacing: 1px;
+  z-index: 2;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* ===========================
+   Cards with Banner + Content layout
+   =========================== */
+.HomePage .Card:has(.CardBanner + .CardContent) {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: none;
+  border: none;
+  overflow: visible;
+}
+
+.HomePage .Card:has(.CardBanner + .CardContent):hover {
+  transform: none;
+  box-shadow: none;
+  border-color: transparent;
+}
+
+.HomePage .Card:has(.CardBanner) .CardContent.EmptyProjects {
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.HomePage .Card:has(.CardBanner) .CardContent {
+  padding: 0;
+  flex: 1 0 auto;
+}
+
+/* ===========================
+   Card Item (list buttons)
+   =========================== */
+.HomePage .Card .CardContent .CardList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .HomePage .Card .CardContent .CardList .CardItem {
   box-sizing: border-box;
   justify-content: flex-start;
-  padding: 16px;
+  padding: 12px 16px;
   text-align: left;
   text-transform: none;
-  color: var(--white) !important;
+  color: rgba(255, 255, 255, 0.85) !important;
   border-radius: 8px;
   margin-left: 0;
+  transition: background-color 0.2s ease, color 0.2s ease, padding-left 0.2s ease;
 }
 
+.HomePage .Card .CardContent .CardList .CardItem:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: var(--white) !important;
+  padding-left: 20px;
+}
+
+.HomePage .Card .CardContent .CardList .CardItem .MuiButton-startIcon {
+  color: rgba(255, 255, 255, 0.4);
+  transition: color 0.2s ease;
+}
+
+.HomePage .Card .CardContent .CardList .CardItem:hover .MuiButton-startIcon {
+  color: rgba(198, 64, 205, 0.8);
+}
+
+/* ===========================
+   Card Actions / See All
+   =========================== */
 .HomePage .Card .CardActions {
   position: relative;
   bottom: 0;
   width: 100%;
   padding: 0;
   flex: none;
+  margin-top: 8px;
 }
 
-.HomePage .Card.SignInCard .CardContent,
-.HomePage .Card.FeedbackCard .CardContent {
+.HomePage .Card .CardActions > .SeeAllButton {
+  background-color: rgba(255, 255, 255, 0.06);
+  padding: 10px 22px;
+  flex: none;
+  border-radius: 8px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  transition: background-color 0.2s ease;
+}
+
+.HomePage .Card .CardActions > .SeeAllButton:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+/* ===========================
+   Sign In Card
+   =========================== */
+.HomePage .Card.SignInCard {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.HomePage .Card.SignInCard .CardContent {
   height: 100%;
   box-sizing: border-box;
+  gap: 20px;
 }
 
+.HomePage .Card.SignInCard .CardContent .Title {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.HomePage .Card.SignInCard .CardContent > .SignInButton.MuiButton-root {
+  background: linear-gradient(135deg, #ff2d55 0%, #ff6b81 100%) !important;
+  color: var(--white) !important;
+  font-weight: 600;
+  padding: 10px 32px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 16px rgba(255, 45, 85, 0.3);
+}
+
+.HomePage .Card.SignInCard .CardContent > .SignInButton.MuiButton-root:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 24px rgba(255, 45, 85, 0.45);
+  background: linear-gradient(135deg, #ff3d61 0%, #ff7b8f 100%) !important;
+  color: var(--white) !important;
+}
+
+/* ===========================
+   Scenes Card
+   =========================== */
 .HomePage .Card.ScenesCard .CardBanner .CardBannerImage {
   transform: scaleX(-1);
 }
 
+.HomePage .Card.ScenesCard .CardBanner.Clickable:hover .CardBannerImage {
+  transform: scaleX(-1) scale(1.08);
+}
+
 .HomePage .Card.ScenesCard .CardContent.CenteredContent {
-  height: calc(100% - 100px);
+  height: calc(100% - 110px);
   box-sizing: border-box;
 }
 
@@ -121,39 +264,55 @@
   color: #a09ba8;
 }
 
-.HomePage .Card .CardActions > .SeeAllButton {
-  background-color: #ffffff0d;
-  padding: 8px 22px;
-  flex: none;
-}
-
-.HomePage .Card .CardActions > .SeeAllButton:hover {
-  background: var(--secondary-light, #cfcdd4);
-}
-
+/* ===========================
+   Feedback Card
+   =========================== */
 .HomePage .Card.FeedbackCard {
-  background: linear-gradient(180deg, #c640cd 0%, #691fa9 100%);
+  background: linear-gradient(135deg, #c640cd 0%, #7b2fba 50%, #5a1fa9 100%);
+  border: none;
+}
+
+.HomePage .Card.FeedbackCard:hover {
+  border: none;
+  box-shadow: 0 8px 40px rgba(198, 64, 205, 0.3);
+}
+
+.HomePage .Card.FeedbackCard .CardContent {
+  height: 100%;
+  box-sizing: border-box;
+  padding: 32px 24px;
 }
 
 .HomePage .Card.FeedbackCard img {
-  height: 180px;
-  width: 180px;
+  height: 160px;
+  width: 160px;
   object-fit: contain;
+  transition: transform 0.3s ease;
 }
 
-.HomePage .Card.SignInCard .CardContent > .SignInButton.MuiButton-root,
+.HomePage .Card.FeedbackCard:hover img {
+  transform: scale(1.05) rotate(-2deg);
+}
+
+.HomePage .Card.FeedbackCard .CardContent .Title {
+  font-size: 1.1rem;
+  line-height: 1.4;
+}
+
 .HomePage .Card.FeedbackCard .CardContent > .FeedbackButton.MuiButton-root {
-  /* TODO: Fix buttons color mapping in ui2 library */
   background-color: var(--white) !important;
-  color: var(--black);
+  color: #5a1fa9;
+  font-weight: 600;
+  padding: 10px 32px;
+  border-radius: 8px;
+  letter-spacing: 0.5px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
-.HomePage .Card.SignInCard .CardContent > .SignInButton.MuiButton-root:hover,
 .HomePage .Card.FeedbackCard .CardContent > .FeedbackButton.MuiButton-root:hover {
-  background: var(--secondary-light, #cfcdd4);
-}
-
-.HomePage .Card.SignInCard .SignInButton:hover,
-.HomePage .Card.FeedbackCard .FeedbackButton:hover {
-  color: var(--black) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  transform: scale(1.05);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+  color: #5a1fa9 !important;
 }

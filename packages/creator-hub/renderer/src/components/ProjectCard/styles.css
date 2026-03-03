@@ -11,8 +11,13 @@
   border: 2px solid transparent;
   box-sizing: border-box;
   background-color: var(--secondary);
-  color: var(--text);
   flex: 0 0 auto;
+}
+
+.ProjectCard.autoHeight {
+  height: auto;
+  min-height: 0;
+  flex: none;
 }
 
 .ProjectCard .Overlay {
@@ -69,11 +74,19 @@
   display: flex;
   flex-direction: row;
   justify-content: space-between;
+  align-items: center;
   width: 100%;
   line-height: 24px;
   color: var(--text);
   text-decoration: none;
   min-height: 34px;
+}
+
+.ProjectCard .title .title-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .ProjectCard .title .MuiTypography-root {
@@ -92,8 +105,6 @@
 .ProjectCard .description {
   font-size: 14px;
   margin: 0;
-
-  /* weird but it works & it's supported... https: //developer.mozilla.org/en-US/docs/Web/CSS/-webkit-line-clamp */
   display: -webkit-box;
   overflow: hidden;
   -webkit-line-clamp: 3;
