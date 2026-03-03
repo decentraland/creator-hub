@@ -38,11 +38,10 @@ export function LiveStream({
     async function streamKeyFn() {
       setLoading(true);
       const [error, data] = await getStreamKey();
-      const videoControlState = VideoControlState.getMutable(state.adminToolkitUiEntity);
       if (error) {
-        videoControlState.endsAt = undefined;
         setHasStreamKey(false);
       } else {
+        const videoControlState = VideoControlState.getMutable(state.adminToolkitUiEntity);
         videoControlState.endsAt = data?.endsAt;
         setHasStreamKey(true);
       }
