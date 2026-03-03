@@ -1,7 +1,11 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import gte from 'semver/functions/gte';
 
 import { type Project, SortBy } from '/shared/types/projects';
-import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
+import {
+  DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
+  MIN_MULTI_INSTANCE_SDK_COMMANDS_VERSION,
+} from '/shared/types/settings';
 import { type Workspace } from '/shared/types/workspace';
 
 import type { Async } from '/shared/types/async';
@@ -159,6 +163,13 @@ export const slice = createSlice({
       )
       .addCase(thunks.updateSettings.fulfilled, (state, { meta }) => {
         state.settings = meta.arg;
+      })
+      .addCase(thunks.fetchSdkCommandsVersion.fulfilled, (state, action) => {
+        const supportsMultiInstance =
+          !!action.payload && gte(action.payload, MIN_MULTI_INSTANCE_SDK_COMMANDS_VERSION);
+        if (!supportsMultiInstance) {
+          state.settings.previewOptions.multiInstance = false;
+        }
       })
       .addCase(thunks.getProject.pending, (state, { meta }) => {
         const projectIdx = state.projects.findIndex($ => $.path === meta.arg.path);

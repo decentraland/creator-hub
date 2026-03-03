@@ -24,7 +24,6 @@ const EditorTab: React.FC<EditorTabProps> = ({
   updateSettings,
   editors,
   loading,
-  supportsMultiInstance,
   onSetDefaultEditor,
   onAddEditor,
   onRemoveEditor,
@@ -134,19 +133,6 @@ const EditorTab: React.FC<EditorTabProps> = ({
           }
           label={t('editor.header.actions.preview_options.landscape_terrain_enabled')}
         />
-        {supportsMultiInstance && (
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={!!settings.previewOptions.multiInstance}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                  handlePreviewOptionChange('multiInstance', event.target.checked)
-                }
-              />
-            }
-            label={t('editor.header.actions.preview_options.multi_instance')}
-          />
-        )}
       </FormGroup>
       <FormGroup className="AppWarningsFormGroup">
         <Typography variant="body1">{t('modal.app_settings.fields.app_warnings.label')}</Typography>
