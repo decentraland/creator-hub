@@ -43,6 +43,14 @@
   margin-right: 6px;
 }
 
+.Editor .Header .actions .MuiButtonGroup-root {
+  height: 34px;
+}
+
+.Editor .Header .actions .MuiButtonGroup-root .MuiButton-root {
+  height: 34px;
+}
+
 .Editor .inspector {
   flex: 1 0 auto;
   border: none;
