@@ -73,6 +73,19 @@
   gap: 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   margin-bottom: 32px;
+  position: relative;
+}
+
+.LearnTabSlider {
+  position: absolute;
+  bottom: 0;
+  height: 2px;
+  background: var(--primary);
+  border-radius: 1px;
+  transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .LearnTab {
@@ -86,7 +99,7 @@
   padding: 12px 24px;
   cursor: pointer;
   border-bottom: 2px solid transparent;
-  transition: color 0.2s, border-color 0.2s;
+  transition: color 0.2s ease;
   margin-bottom: -1px;
 }
 
@@ -96,7 +109,7 @@
 
 .LearnTab.active {
   color: #fff;
-  border-bottom-color: var(--primary);
+  border-bottom-color: transparent;
 }
 
 /* ─── Tab content ─────────────────────── */
@@ -387,12 +400,11 @@
 }
 
 .LearnVideoBody {
-  height: 140px;
-  padding: 24px 26px;
+  padding: 16px 20px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 8px;
 }
 
 .LearnVideoTitle {
@@ -403,6 +415,18 @@
   height: 44px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.LearnVideoDesc {
+  color: rgba(255, 255, 255, 0.5) !important;
+  font-size: 12px !important;
+  line-height: 18px !important;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -413,20 +437,12 @@
   font-weight: 500 !important;
 }
 
-/* ─── News pagination ───────────────── */
-.LearnPaginationWrap {
-  margin-top: 32px;
-  padding-top: 24px;
-  padding-bottom: 40px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+/* ─── Pagination ───────────────────── */
+.LearnPaginationBar.PaginationRoot {
   display: flex;
   justify-content: center;
-  align-items: center;
-  width: 100%;
-}
-
-.LearnPaginationBar.PaginationRoot {
-  margin: 0;
+  margin: 32px 0 0;
+  padding: 24px 0 40px;
 }
 
 /* ─── Docs / Wearables card grid ─────── */

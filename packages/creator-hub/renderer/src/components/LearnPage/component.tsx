@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Typography, Button } from 'decentraland-ui2';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import RocketLaunchOutlinedIcon from '@mui/icons-material/RocketLaunchOutlined';
@@ -47,10 +47,10 @@ type VideoItem = {
   id: string;
   list: string;
   title: string;
+  description?: string;
 };
 
 type FeaturedVideoItem = VideoItem & {
-  description?: string;
   readMoreUrl?: string;
 };
 
@@ -69,6 +69,7 @@ function sectionToVideos(section: PlaylistSection | null): VideoItem[] {
     id: v.id,
     list: section.playlistId,
     title: v.title,
+    ...(v.description ? { description: v.description } : {}),
   }));
 }
 
@@ -317,7 +318,7 @@ function VideoCard({ video }: { video: VideoItem }) {
     >
       <div className="LearnVideoThumb">
         <Image
-          src={`https://img.youtube.com/vi/${video.id}/mqdefault.jpg`}
+          src={`https://img.youtube.com/vi/${video.id}/hqdefault.jpg`}
           alt={video.title}
         />
       </div>
@@ -328,6 +329,14 @@ function VideoCard({ video }: { video: VideoItem }) {
         >
           {video.title}
         </Typography>
+        {video.description && (
+          <Typography
+            variant="caption"
+            className="LearnVideoDesc"
+          >
+            {video.description}
+          </Typography>
+        )}
       </div>
     </div>
   );
@@ -562,6 +571,33 @@ function BlogCardSkeleton() {
 
 // ─── Tab content ─────────────────────────────────────────────────────────────
 
+const VIDEOS_PER_PAGE = 6;
+
+function PaginatedVideoGrid({ videos }: { videos: VideoItem[] }) {
+  const [page, setPage] = useState(0);
+  const totalPages = Math.max(1, Math.ceil(videos.length / VIDEOS_PER_PAGE));
+  const visible = videos.slice(page * VIDEOS_PER_PAGE, (page + 1) * VIDEOS_PER_PAGE);
+
+  return (
+    <>
+      <div className="LearnVideoGrid">
+        {visible.map(video => (
+          <VideoCard
+            key={video.id}
+            video={video}
+          />
+        ))}
+      </div>
+      <PaginationBar
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        className="LearnPaginationBar"
+      />
+    </>
+  );
+}
+
 function CreatorHubTab() {
   return (
     <div className="LearnTabContent">
@@ -570,14 +606,7 @@ function CreatorHubTab() {
         description={CREATOR_HUB_FEATURED.description}
         readMoreUrl={CREATOR_HUB_FEATURED.readMoreUrl}
       />
-      <div className="LearnVideoGrid">
-        {CREATOR_HUB_VIDEOS.map(video => (
-          <VideoCard
-            key={video.id}
-            video={video}
-          />
-        ))}
-      </div>
+      <PaginatedVideoGrid videos={CREATOR_HUB_VIDEOS} />
     </div>
   );
 }
@@ -585,33 +614,24 @@ function CreatorHubTab() {
 function CreatorAcademyTab() {
   return (
     <div className="LearnTabContent">
-      <div className="LearnVideoGrid">
-        {ACADEMY_VIDEOS.map(video => (
-          <VideoCard
-            key={video.id}
-            video={video}
-          />
-        ))}
-      </div>
+      <PaginatedVideoGrid videos={ACADEMY_VIDEOS} />
     </div>
   );
 }
 
 function CommunityAllHandsTab() {
   const latest = getLatestVideo(ALL_HANDS_VIDEOS);
-  const rest = ALL_HANDS_VIDEOS.slice(0, -1);
+  const rest = ALL_HANDS_VIDEOS.slice(0, -1).reverse();
 
   return (
     <div className="LearnTabContent">
-      {latest && <FeaturedVideo video={latest} />}
-      <div className="LearnVideoGrid">
-        {rest.map(video => (
-          <VideoCard
-            key={video.id}
-            video={video}
-          />
-        ))}
-      </div>
+      {latest && (
+        <FeaturedVideo
+          video={latest}
+          description={latest.description}
+        />
+      )}
+      <PaginatedVideoGrid videos={rest} />
     </div>
   );
 }
@@ -686,16 +706,12 @@ function NewsTab({
           />
         ))}
       </div>
-      {totalPages > 1 && (
-        <div className="LearnPaginationWrap">
-          <PaginationBar
-            page={blogPage}
-            totalPages={totalPages}
-            onPageChange={onPageChange}
-            className="LearnPaginationBar"
-          />
-        </div>
-      )}
+      <PaginationBar
+        page={blogPage}
+        totalPages={totalPages}
+        onPageChange={onPageChange}
+        className="LearnPaginationBar"
+      />
     </div>
   );
 }
@@ -815,6 +831,64 @@ function SearchResults({ query, blogPosts }: { query: string; blogPosts: BlogPos
   );
 }
 
+// ─── Tabs bar with sliding indicator ─────────────────────────────────────────
+
+function LearnTabsBar({
+  activeTab,
+  onTabChange,
+}: {
+  activeTab: TabId;
+  onTabChange: (tab: TabId) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const [slider, setSlider] = useState<{ left: number; width: number } | null>(null);
+  const isFirst = useRef(true);
+
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    const el = tabRefs.current[activeTab];
+    if (!container || !el) {
+      setSlider(null);
+      return;
+    }
+    const cRect = container.getBoundingClientRect();
+    const eRect = el.getBoundingClientRect();
+    setSlider({ left: eRect.left - cRect.left, width: eRect.width });
+    isFirst.current = false;
+  }, [activeTab]);
+
+  return (
+    <div
+      className="LearnTabs"
+      ref={containerRef}
+    >
+      {slider && (
+        <span
+          className="LearnTabSlider"
+          style={{
+            left: slider.left,
+            width: slider.width,
+            transition: isFirst.current ? 'none' : undefined,
+          }}
+        />
+      )}
+      {TABS.map(tab => (
+        <button
+          key={tab.id}
+          ref={el => {
+            tabRefs.current[tab.id] = el;
+          }}
+          className={`LearnTab ${activeTab === tab.id ? 'active' : ''}`}
+          onClick={() => onTabChange(tab.id)}
+        >
+          {t(tab.labelKey as TranslationPath)}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // ─── Main page ───────────────────────────────────────────────────────────────
 
 export function LearnPage() {
@@ -888,17 +962,10 @@ export function LearnPage() {
         />
       ) : (
         <>
-          <div className="LearnTabs">
-            {TABS.map(tab => (
-              <button
-                key={tab.id}
-                className={`LearnTab ${activeTab === tab.id ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                {t(tab.labelKey as TranslationPath)}
-              </button>
-            ))}
-          </div>
+          <LearnTabsBar
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
 
           {activeTab === 'creator_hub' && <CreatorHubTab />}
           {activeTab === 'creator_academy' && <CreatorAcademyTab />}

@@ -19,6 +19,7 @@ import { DeploymentHistory } from '../Modals/DeploymentHistory';
 import layoutGridIcon from '/assets/images/layout-grid.svg';
 import layoutListIcon from '/assets/images/layout-list.svg';
 
+import { PaginationBar } from '../Pagination/component';
 import { sortProjectsBy } from './utils';
 
 import './styles.css';
@@ -158,17 +159,17 @@ export function ScenesPage() {
   const { isLoading, projects, sortBy, setSortBy, runProject, getAvailableProject, createProject } =
     useWorkspace();
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(0);
   const [viewMode, setViewMode] = useState<ViewMode>(() => getStoredViewMode());
 
   const handleSortName = useCallback(() => {
     setSortBy(sortBy === SortBy.NAME ? SortBy.NAME_DESC : SortBy.NAME);
-    setCurrentPage(1);
+    setCurrentPage(0);
   }, [sortBy, setSortBy]);
 
   const handleSortModified = useCallback(() => {
     setSortBy(sortBy === SortBy.NEWEST ? SortBy.OLDEST : SortBy.NEWEST);
-    setCurrentPage(1);
+    setCurrentPage(0);
   }, [sortBy, setSortBy]);
 
   const handleSortStatus = useCallback(() => {
@@ -177,7 +178,7 @@ export function ScenesPage() {
         ? SortBy.STATUS_UNPUBLISHED_FIRST
         : SortBy.STATUS_PUBLISHED_FIRST,
     );
-    setCurrentPage(1);
+    setCurrentPage(0);
   }, [sortBy, setSortBy]);
 
   const setViewModeAndStore = useCallback((mode: ViewMode) => {
@@ -199,13 +200,13 @@ export function ScenesPage() {
 
   const totalPages = Math.max(1, Math.ceil(filteredProjects.length / ITEMS_PER_PAGE));
   const paginatedProjects = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const start = currentPage * ITEMS_PER_PAGE;
     return filteredProjects.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredProjects, currentPage]);
 
   const handleSearchChange = useCallback((value: string) => {
     setSearchQuery(value);
-    setCurrentPage(1);
+    setCurrentPage(0);
   }, []);
 
   const handleNewScene = useCallback(async () => {
@@ -311,141 +312,108 @@ export function ScenesPage() {
         </div>
       ) : (
         <>
-          {viewMode === 'grid' ? (
-            <Projects
-              projects={paginatedProjects}
-              showNewSceneCard={false}
-              cardAutoHeight
-            />
-          ) : (
-            <div className="ScenesTable">
-              <div className="ScenesTableHead">
-                <div className="ScenesTableCell cell-thumbnail">
-                  {t('scene_list.table.thumbnail')}
-                </div>
-                <button
-                  type="button"
-                  className="ScenesTableCell ScenesTableHeadSort cell-name"
-                  onClick={handleSortName}
-                >
-                  {t('scene_list.table.name')}
-                </button>
-                <button
-                  type="button"
-                  className="ScenesTableCell ScenesTableHeadSort cell-modified"
-                  onClick={handleSortModified}
-                >
-                  {t('scene_list.table.modified')}
-                </button>
-                <button
-                  type="button"
-                  className="ScenesTableCell ScenesTableHeadSort cell-status"
-                  onClick={handleSortStatus}
-                >
-                  {t('scene_list.table.status')}
-                </button>
-                <div className="ScenesTableCell cell-actions">
-                  <SettingsIcon sx={{ fontSize: 18, opacity: 0.7 }} />
-                </div>
-              </div>
-              {paginatedProjects.map(project => {
-                const thumbnailUrl = project.thumbnail
-                  ? addBase64ImagePrefix(project.thumbnail)
-                  : undefined;
-                return (
-                  <div
-                    key={project.id}
-                    className="ScenesTableRow"
-                    onClick={() => handleRowClick(project)}
+          <div className="ScenesContent">
+            {viewMode === 'grid' ? (
+              <Projects
+                projects={paginatedProjects}
+                showNewSceneCard={false}
+                cardAutoHeight
+              />
+            ) : (
+              <div className="ScenesTable">
+                <div className="ScenesTableHead">
+                  <div className="ScenesTableCell cell-thumbnail">
+                    {t('scene_list.table.thumbnail')}
+                  </div>
+                  <button
+                    type="button"
+                    className="ScenesTableCell ScenesTableHeadSort cell-name"
+                    onClick={handleSortName}
                   >
-                    <div className="ScenesTableCell cell-thumbnail">
-                      {thumbnailUrl ? (
-                        <img
-                          className="SceneThumbnail"
-                          src={thumbnailUrl}
-                          alt={project.title}
-                        />
-                      ) : (
-                        <div className="SceneThumbnailPlaceholder" />
-                      )}
-                    </div>
-                    <div className="ScenesTableCell cell-name">
-                      <div className="SceneName">
+                    {t('scene_list.table.name')}
+                  </button>
+                  <button
+                    type="button"
+                    className="ScenesTableCell ScenesTableHeadSort cell-modified"
+                    onClick={handleSortModified}
+                  >
+                    {t('scene_list.table.modified')}
+                  </button>
+                  <button
+                    type="button"
+                    className="ScenesTableCell ScenesTableHeadSort cell-status"
+                    onClick={handleSortStatus}
+                  >
+                    {t('scene_list.table.status')}
+                  </button>
+                  <div className="ScenesTableCell cell-actions">
+                    <SettingsIcon sx={{ fontSize: 18, opacity: 0.7 }} />
+                  </div>
+                </div>
+                {paginatedProjects.map(project => {
+                  const thumbnailUrl = project.thumbnail
+                    ? addBase64ImagePrefix(project.thumbnail)
+                    : undefined;
+                  return (
+                    <div
+                      key={project.id}
+                      className="ScenesTableRow"
+                      onClick={() => handleRowClick(project)}
+                    >
+                      <div className="ScenesTableCell cell-thumbnail">
+                        {thumbnailUrl ? (
+                          <img
+                            className="SceneThumbnail"
+                            src={thumbnailUrl}
+                            alt={project.title}
+                          />
+                        ) : (
+                          <div className="SceneThumbnailPlaceholder" />
+                        )}
+                      </div>
+                      <div className="ScenesTableCell cell-name">
+                        <div className="SceneName">
+                          <Typography
+                            variant="body1"
+                            fontWeight={500}
+                          >
+                            {project.title}
+                          </Typography>
+                          <Typography
+                            className="ScenePath"
+                            variant="caption"
+                          >
+                            {project.path}
+                          </Typography>
+                        </div>
+                      </div>
+                      <div className="ScenesTableCell cell-modified">
                         <Typography
-                          variant="body1"
-                          fontWeight={500}
+                          variant="body2"
+                          sx={{ color: 'rgba(255,255,255,0.7)' }}
                         >
-                          {project.title}
-                        </Typography>
-                        <Typography
-                          className="ScenePath"
-                          variant="caption"
-                        >
-                          {project.path}
+                          {formatDate(project.updatedAt)}
                         </Typography>
                       </div>
+                      <div className="ScenesTableCell cell-status">
+                        <StatusBadge project={project} />
+                      </div>
+                      <div className="ScenesTableCell cell-actions">
+                        <SceneRowMenu project={project} />
+                      </div>
                     </div>
-                    <div className="ScenesTableCell cell-modified">
-                      <Typography
-                        variant="body2"
-                        sx={{ color: 'rgba(255,255,255,0.7)' }}
-                      >
-                        {formatDate(project.updatedAt)}
-                      </Typography>
-                    </div>
-                    <div className="ScenesTableCell cell-status">
-                      <StatusBadge project={project} />
-                    </div>
-                    <div className="ScenesTableCell cell-actions">
-                      <SceneRowMenu project={project} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
-          {totalPages > 1 && (
-            <div className="ScenesPagination">
-              <button
-                className="PaginationBtn"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(1)}
-              >
-                {'|<'}
-              </button>
-              <button
-                className="PaginationBtn"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(p => p - 1)}
-              >
-                {'<'}
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                <button
-                  key={page}
-                  className={`PaginationBtn ${page === currentPage ? 'active' : ''}`}
-                  onClick={() => setCurrentPage(page)}
-                >
-                  {page}
-                </button>
-              ))}
-              <button
-                className="PaginationBtn"
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(p => p + 1)}
-              >
-                {'>'}
-              </button>
-              <button
-                className="PaginationBtn"
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(totalPages)}
-              >
-                {'>|'}
-              </button>
-            </div>
-          )}
+          <PaginationBar
+            page={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            className="ScenesPaginationBar"
+          />
         </>
       )}
     </div>
