@@ -87,6 +87,8 @@ export const putTextShapeComponent: ComponentOperation = async (entity, componen
       mesh.position.y -= vertical / TEXT_SHAPE_RATIO;
       entity.ecsComponentValues.textShape = value;
       entity.textShape = mesh;
+      entity.resolveAssetLoaded(mesh);
+      entity.generateBoundingBox();
     }
   }
 };
@@ -97,6 +99,10 @@ function dispose(entity: EcsEntity) {
     entity.textShape.parent = null;
     entity.ecsComponentValues.textShape = undefined;
     delete entity.textShape;
+  }
+  if (entity.boundingInfoMesh) {
+    entity.boundingInfoMesh.dispose();
+    entity.boundingInfoMesh = undefined;
   }
 }
 

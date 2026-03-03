@@ -200,6 +200,10 @@ export class EcsEntity extends BABYLON.TransformNode {
     this.#assetLoading.resolve(mesh);
   }
 
+  resolveAssetLoaded(mesh: BABYLON.AbstractMesh) {
+    this.#assetLoading.resolve(mesh);
+  }
+
   onAssetLoaded() {
     return this.#assetLoading;
   }
