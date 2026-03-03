@@ -8,7 +8,7 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 16px;
-  margin-top: 12px;
+  margin-top: 4px;
 }
 
 .EntityHeader .Title {
