@@ -69,7 +69,7 @@ function sectionToVideos(section: PlaylistSection | null): VideoItem[] {
     id: v.id,
     list: section.playlistId,
     title: v.title,
-    ...(v.description ? { description: v.description } : {}),
+    description: v.description,
   }));
 }
 
@@ -91,6 +91,9 @@ const ACADEMY_VIDEOS: VideoItem[] = [
 ];
 
 const ALL_HANDS_VIDEOS: VideoItem[] = sectionToVideos(communityAllHandsSection);
+const ALL_HANDS_LATEST: VideoItem | null =
+  ALL_HANDS_VIDEOS.length > 0 ? ALL_HANDS_VIDEOS[ALL_HANDS_VIDEOS.length - 1]! : null;
+const ALL_HANDS_REST: VideoItem[] = ALL_HANDS_VIDEOS.slice(0, -1).reverse();
 
 // ─── Featured items ─────────────────────────────────────────────────────────
 
@@ -102,10 +105,6 @@ const CREATOR_HUB_FEATURED: FeaturedVideoItem = {
     'Prebuilt templates are now available in the builder.\n\nCreating your own space has never been easier!\nPick out a template.\nCustomize it to your style.',
   readMoreUrl: 'https://docs.decentraland.org/creator/scene-editor/get-started/about-editor',
 };
-
-function getLatestVideo(videos: VideoItem[]): VideoItem | null {
-  return videos.length > 0 ? videos[videos.length - 1]! : null;
-}
 
 // ─── Docs (merged with Wearables & Emotes) ──────────────────────────────────
 
@@ -342,22 +341,16 @@ function VideoCard({ video }: { video: VideoItem }) {
   );
 }
 
-function FeaturedVideo({
-  video,
-  description,
-  readMoreUrl,
-}: {
-  video: FeaturedVideoItem;
-  description?: string;
-  readMoreUrl?: string;
-}) {
+function FeaturedVideo({ video }: { video: FeaturedVideoItem }) {
   const handlePlay = useCallback(() => {
     misc.openExternal(`https://youtu.be/${video.id}?list=${video.list}`);
   }, [video.id, video.list]);
 
   const handleReadMore = useCallback(() => {
-    if (readMoreUrl) misc.openExternal(readMoreUrl);
-  }, [readMoreUrl]);
+    if (video.readMoreUrl) misc.openExternal(video.readMoreUrl);
+  }, [video.readMoreUrl]);
+
+  const desc = video.description;
 
   return (
     <div className="LearnFeatured">
@@ -377,12 +370,12 @@ function FeaturedVideo({
         >
           {video.title}
         </Typography>
-        {description && (
+        {desc && (
           <Typography
             variant="body2"
             className="LearnFeaturedDesc"
           >
-            {description.split('\n').map((line, i) => (
+            {desc.split('\n').map((line, i) => (
               <span key={i}>
                 {line}
                 <br />
@@ -390,7 +383,7 @@ function FeaturedVideo({
             ))}
           </Typography>
         )}
-        {readMoreUrl && (
+        {video.readMoreUrl && (
           <button
             className="LearnReadMore"
             onClick={handleReadMore}
@@ -601,11 +594,7 @@ function PaginatedVideoGrid({ videos }: { videos: VideoItem[] }) {
 function CreatorHubTab() {
   return (
     <div className="LearnTabContent">
-      <FeaturedVideo
-        video={CREATOR_HUB_FEATURED}
-        description={CREATOR_HUB_FEATURED.description}
-        readMoreUrl={CREATOR_HUB_FEATURED.readMoreUrl}
-      />
+      <FeaturedVideo video={CREATOR_HUB_FEATURED} />
       <PaginatedVideoGrid videos={CREATOR_HUB_VIDEOS} />
     </div>
   );
@@ -620,18 +609,10 @@ function CreatorAcademyTab() {
 }
 
 function CommunityAllHandsTab() {
-  const latest = getLatestVideo(ALL_HANDS_VIDEOS);
-  const rest = ALL_HANDS_VIDEOS.slice(0, -1).reverse();
-
   return (
     <div className="LearnTabContent">
-      {latest && (
-        <FeaturedVideo
-          video={latest}
-          description={latest.description}
-        />
-      )}
-      <PaginatedVideoGrid videos={rest} />
+      {ALL_HANDS_LATEST && <FeaturedVideo video={ALL_HANDS_LATEST} />}
+      <PaginatedVideoGrid videos={ALL_HANDS_REST} />
     </div>
   );
 }

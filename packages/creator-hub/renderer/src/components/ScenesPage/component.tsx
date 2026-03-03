@@ -199,10 +199,12 @@ export function ScenesPage() {
   }, [sortedProjects, searchQuery]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProjects.length / ITEMS_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages - 1);
+
   const paginatedProjects = useMemo(() => {
-    const start = currentPage * ITEMS_PER_PAGE;
+    const start = safePage * ITEMS_PER_PAGE;
     return filteredProjects.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredProjects, currentPage]);
+  }, [filteredProjects, safePage]);
 
   const handleSearchChange = useCallback((value: string) => {
     setSearchQuery(value);
@@ -409,7 +411,7 @@ export function ScenesPage() {
           </div>
 
           <PaginationBar
-            page={currentPage}
+            page={safePage}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
             className="ScenesPaginationBar"
