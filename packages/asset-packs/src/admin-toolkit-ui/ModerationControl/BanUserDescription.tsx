@@ -1,13 +1,9 @@
 import ReactEcs, { UiEntity } from '@dcl/react-ecs';
 import { getAddUserInputStyles, getBanUserTextStyles } from './styles/AddUserInputStyles';
 
-type Props = {
-  scaleFactor: number;
-};
-
-export function BanUserDescription({ scaleFactor }: Props) {
-  const styles = getAddUserInputStyles(scaleFactor);
-  const textStyles = getBanUserTextStyles(scaleFactor);
+export function BanUserDescription() {
+  const styles = getAddUserInputStyles();
+  const textStyles = getBanUserTextStyles();
 
   return (
     <UiEntity uiTransform={styles.bannedInfoContainer}>

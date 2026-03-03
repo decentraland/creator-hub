@@ -17,14 +17,12 @@ const ICONS = {
 };
 
 const DclCastInfo = ({
-  scaleFactor,
   state,
   engine,
   onResetRoomId,
   entity,
   video,
 }: {
-  scaleFactor: number;
   state: State;
   engine: IEngine;
   onResetRoomId: () => Promise<void>;
@@ -32,7 +30,7 @@ const DclCastInfo = ({
   video: DeepReadonlyObject<PBVideoPlayer> | undefined;
 }) => {
   const controls = createVideoPlayerControls(entity, engine);
-  const styles = getDclCastStyles(scaleFactor);
+  const styles = getDclCastStyles();
   const colors = getDclCastColors();
   const backgrounds = getDclCastBackgrounds();
   return (
@@ -42,12 +40,12 @@ const DclCastInfo = ({
           <UiEntity uiTransform={styles.columnFlexStart}>
             <Label
               value={'<b>Room ID</b>'}
-              fontSize={24 * scaleFactor}
+              fontSize={24}
               color={Color4.White()}
             />
             <Label
               value={`Expires in ${state.videoControl.dclCast?.expiresInDays} days`}
-              fontSize={14 * scaleFactor}
+              fontSize={14}
               color={colors.gray}
               uiTransform={styles.marginTopSmall}
             />
@@ -57,7 +55,7 @@ const DclCastInfo = ({
               id="dcl_cast_deactivate"
               value="<b>Deactivate</b>"
               variant="text"
-              fontSize={16 * scaleFactor}
+              fontSize={16}
               color={colors.white}
               uiTransform={styles.activateButton}
               onMouseDown={() => {
@@ -71,7 +69,7 @@ const DclCastInfo = ({
               value="<b>Activate</b>"
               labelTransform={styles.activateButtonLabel}
               uiTransform={styles.activateButton}
-              fontSize={16 * scaleFactor}
+              fontSize={16}
               uiBackground={backgrounds.success}
               color={colors.black}
               onMouseDown={() => {
@@ -91,13 +89,13 @@ const DclCastInfo = ({
             >
               <Label
                 value={'<b>Cast speakers</b>'}
-                fontSize={18 * scaleFactor}
+                fontSize={18}
                 color={colors.white}
               />
               <UiEntity
                 uiText={{
                   value: 'This link grants streaming access.',
-                  fontSize: 14 * scaleFactor,
+                  fontSize: 14,
                   color: colors.gray,
                   textAlign: 'top-left',
                 }}
@@ -107,7 +105,7 @@ const DclCastInfo = ({
               id="dcl_cast_copy_stream_link"
               value="<b>Copy Link</b>"
               variant="text"
-              fontSize={18 * scaleFactor}
+              fontSize={18}
               color={colors.white}
               iconRight={ICONS.COPY_TO_CLIPBOARD_ICON}
               iconRightTransform={styles.iconSmall}
@@ -126,13 +124,13 @@ const DclCastInfo = ({
             <UiEntity uiTransform={styles.textInfoContainer}>
               <Label
                 value={'<b>Viewers</b>'}
-                fontSize={18 * scaleFactor}
+                fontSize={18}
                 color={colors.white}
               />
               <UiEntity
                 uiText={{
                   value: 'This link grants viewing access.',
-                  fontSize: 14 * scaleFactor,
+                  fontSize: 14,
                   color: colors.gray,
                   textAlign: 'top-left',
                 }}
@@ -142,7 +140,7 @@ const DclCastInfo = ({
               id="dcl_cast_copy_watcher_link"
               value="<b>Copy Link</b>"
               variant="text"
-              fontSize={18 * scaleFactor}
+              fontSize={18}
               color={colors.white}
               iconRight={ICONS.COPY_TO_CLIPBOARD_ICON}
               iconRightTransform={styles.iconSmall}
@@ -170,7 +168,7 @@ const DclCastInfo = ({
             id="dcl_cast_reset_room_id"
             value="<b>Reset Room</b>"
             variant="text"
-            fontSize={16 * scaleFactor}
+            fontSize={16}
             color={colors.danger}
             uiTransform={styles.resetButton}
             onMouseDown={onResetRoomId}
