@@ -33,6 +33,13 @@ export function LiveStream({
   const { VideoControlState } = getComponents(engine);
   const videoControlState = VideoControlState.getOrNull(state.adminToolkitUiEntity);
   const streamKeyEndsAt = videoControlState?.endsAt;
+  const [localStreamKeyEndsAt, setLocalStreamKeyEndsAt] = ReactEcs.useState<number | undefined>(
+    streamKeyEndsAt,
+  );
+
+  ReactEcs.useEffect(() => {
+    setLocalStreamKeyEndsAt(streamKeyEndsAt);
+  }, [streamKeyEndsAt]);
 
   ReactEcs.useEffect(() => {
     async function streamKeyFn() {
@@ -41,8 +48,7 @@ export function LiveStream({
       if (error) {
         setHasStreamKey(false);
       } else {
-        const videoControlState = VideoControlState.getMutable(state.adminToolkitUiEntity);
-        videoControlState.endsAt = data?.endsAt;
+        setLocalStreamKeyEndsAt(data?.endsAt);
         setHasStreamKey(true);
       }
       setLoading(false);
@@ -101,7 +107,7 @@ export function LiveStream({
         />
       ) : hasStreamKey ? (
         <ShowStreamKey
-          endsAt={streamKeyEndsAt ?? 0}
+          endsAt={localStreamKeyEndsAt ?? streamKeyEndsAt ?? 0}
           scaleFactor={scaleFactor}
           engine={engine}
           entity={entity}
