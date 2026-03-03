@@ -80,6 +80,7 @@ const PREVIEW_OPTIONS_MAP: Record<keyof PreviewArguments, string> = {
 };
 
 function generatePreviewArguments(opts: PreviewOptions) {
+  // Multi-instance preview requires authentication to differentiate players
   const resolved = { ...opts, skipAuthScreen: !opts.multiInstance };
   const args: string[] = [];
   for (const key in resolved) {
@@ -158,6 +159,7 @@ function updateDeepLinkWithOpts(params: string, newOpts: PreviewOptions): string
       }
     };
 
+    // Multi-instance preview requires authentication to differentiate players
     setOrDeleteParam(PREVIEW_OPTIONS_MAP.skipAuthScreen, !newOpts.multiInstance);
     setOrDeleteParam(PREVIEW_OPTIONS_MAP.enableLandscapeTerrains, newOpts.enableLandscapeTerrains);
     setOrDeleteParam(PREVIEW_OPTIONS_MAP.multiInstance, newOpts.multiInstance);

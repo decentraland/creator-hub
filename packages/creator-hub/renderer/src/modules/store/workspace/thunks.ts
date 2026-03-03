@@ -129,7 +129,10 @@ export const runProject = createAsyncThunk(
       updateAvailableDependencyUpdates({ project, updates: dependencyAvailableUpdates }),
     ).unwrap();
 
-    dispatch(fetchSdkCommandsVersion(project.path));
+    // Only fetch SDK version when installProject was not called (it already dispatches fetchSdkCommandsVersion)
+    if (hasNodeModules) {
+      dispatch(fetchSdkCommandsVersion(project.path));
+    }
     return updatedProject;
   },
 );
