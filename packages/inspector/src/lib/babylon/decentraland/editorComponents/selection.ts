@@ -1,12 +1,11 @@
-import type { AbstractMesh, Mesh } from '@babylonjs/core';
-import { Color3, HighlightLayer } from '@babylonjs/core';
+import { Color3, type HighlightLayer, Mesh, type AbstractMesh } from '@babylonjs/core';
 import { ComponentType } from '@dcl/ecs';
 import type { EditorComponentsTypes } from '../../../sdk/components';
 import { CoreComponents } from '../../../sdk/components';
 import type { EcsEntity } from '../EcsEntity';
 import type { ComponentOperation } from '../component-operations';
 
-const highlightedMeshes = new Map<AbstractMesh, HighlightLayer>();
+const highlightedMeshes = new Set<AbstractMesh>();
 
 export const putEntitySelectedComponent: ComponentOperation = (entity, component) => {
   if (component.componentType === ComponentType.LastWriteWinElementSet) {
@@ -38,19 +37,22 @@ export const deleteEntitySelectedComponent: ComponentOperation = (entity, compon
   }
 };
 
-export function toggleMeshSelection(mesh: AbstractMesh, value: boolean) {
+export function toggleMeshSelection(mesh: AbstractMesh, value: boolean): void {
   mesh.renderOverlay = value;
   mesh.overlayColor = Color3.White();
   mesh.overlayAlpha = 0.2;
-  const hl = highlightedMeshes.get(mesh);
-  if (value && !hl) {
-    const newHl = new HighlightLayer('hl1', mesh.getScene());
-    newHl.addMesh(mesh as Mesh, Color3.Yellow());
-    newHl.blurHorizontalSize = 0.1;
-    newHl.blurVerticalSize = 0.1;
-    highlightedMeshes.set(mesh, newHl);
-  } else if (!value && hl) {
-    hl.removeMesh(mesh as Mesh);
+
+  if (!(mesh instanceof Mesh)) return;
+
+  const highlightLayer = mesh.getScene().effectLayers.find(l => l.name === 'highlight') as
+    | HighlightLayer
+    | undefined;
+
+  if (value && !highlightedMeshes.has(mesh)) {
+    highlightLayer?.addMesh(mesh, Color3.Yellow());
+    highlightedMeshes.add(mesh);
+  } else if (!value && highlightedMeshes.has(mesh)) {
+    highlightLayer?.removeMesh(mesh);
     highlightedMeshes.delete(mesh);
   }
 }

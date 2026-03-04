@@ -50,6 +50,8 @@ export function setupEngine(
 
     highlightLayer.innerGlow = false;
     highlightLayer.outerGlow = true;
+    highlightLayer.blurHorizontalSize = 0.1;
+    highlightLayer.blurVerticalSize = 0.1;
 
     effectLayers.push(highlightLayer);
   }
