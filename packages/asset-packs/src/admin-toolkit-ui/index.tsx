@@ -22,6 +22,8 @@ import { isPreview } from './fetch-utils';
 
 export const nextTickFunctions: (() => void)[] = [];
 export let scaleFactor: number;
+const VIDEO_CONTROL_HYDRATION_GUARD_MS = 3000;
+const VIDEO_CONTROL_HYDRATION_POLL_MS = 100;
 
 export let state: State = {
   adminToolkitUiEntity: 0 as Entity,
@@ -50,6 +52,27 @@ export let state: State = {
 
 let sceneAdminsCache: SceneAdmin[] = [];
 let sceneBansCache: SceneBanUser[] = [];
+
+function sleep(ms: number) {
+  return new Promise<void>(resolve => {
+    setTimeout(resolve, ms);
+  });
+}
+
+async function waitForVideoControlStateHydration(engine: IEngine, timeoutMs: number) {
+  const { VideoControlState } = getComponents(engine);
+  const start = Date.now();
+
+  while (Date.now() - start < timeoutMs) {
+    if (VideoControlState.getOrNull(state.adminToolkitUiEntity)) {
+      return true;
+    }
+
+    await sleep(VIDEO_CONTROL_HYDRATION_POLL_MS);
+  }
+
+  return false;
+}
 
 // const BTN_REWARDS_CONTROL = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-rewards-control-button.png`
 // const BTN_REWARDS_CONTROL_ACTIVE = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-rewards-control-active-button.png`
@@ -150,7 +173,12 @@ export async function initializeAdminData(engine: IEngine, sdkHelpers?: ISDKHelp
     // // Initialize Rewards sync
     // initRewardsSync(engine, sdkHelpers)
 
-    if (!VideoControlState.getOrNull(state.adminToolkitUiEntity)) {
+    // Hydration guard: give replicated state time to arrive before creating defaults.
+    const hydrated = await waitForVideoControlStateHydration(
+      engine,
+      VIDEO_CONTROL_HYDRATION_GUARD_MS,
+    );
+    if (!hydrated && !VideoControlState.getOrNull(state.adminToolkitUiEntity)) {
       VideoControlState.create(state.adminToolkitUiEntity);
     }
 
