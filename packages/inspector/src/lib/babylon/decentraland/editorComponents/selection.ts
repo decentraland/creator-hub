@@ -1,4 +1,4 @@
-import { Color3, type HighlightLayer, Mesh, type AbstractMesh } from '@babylonjs/core';
+import { Color3, type HighlightLayer, Mesh, type AbstractMesh, type Scene } from '@babylonjs/core';
 import { ComponentType } from '@dcl/ecs';
 import type { EditorComponentsTypes } from '../../../sdk/components';
 import { CoreComponents } from '../../../sdk/components';
@@ -6,6 +6,16 @@ import type { EcsEntity } from '../EcsEntity';
 import type { ComponentOperation } from '../component-operations';
 
 const highlightedMeshes = new Set<AbstractMesh>();
+let cachedHighlightLayer: HighlightLayer | undefined;
+
+function getSelectionHighlightLayer(scene: Scene): HighlightLayer | undefined {
+  if (!cachedHighlightLayer) {
+    cachedHighlightLayer = scene.effectLayers.find(l => l.name === 'selection_highlight') as
+      | HighlightLayer
+      | undefined;
+  }
+  return cachedHighlightLayer;
+}
 
 export const putEntitySelectedComponent: ComponentOperation = (entity, component) => {
   if (component.componentType === ComponentType.LastWriteWinElementSet) {
@@ -44,9 +54,7 @@ export function toggleMeshSelection(mesh: AbstractMesh, value: boolean): void {
 
   if (!(mesh instanceof Mesh)) return;
 
-  const highlightLayer = mesh.getScene().effectLayers.find(l => l.name === 'highlight') as
-    | HighlightLayer
-    | undefined;
+  const highlightLayer = getSelectionHighlightLayer(mesh.getScene());
 
   if (value && !highlightedMeshes.has(mesh)) {
     highlightLayer?.addMesh(mesh, Color3.Yellow());
