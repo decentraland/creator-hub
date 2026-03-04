@@ -121,7 +121,6 @@ export const runProject = createAsyncThunk(
 
     if (shouldUpdateDependencies(strategy, dependencyAvailableUpdates)) {
       await dispatch(updatePackages({ ...project, dependencyAvailableUpdates })).unwrap();
-      // installProject (called inside updatePackages) already dispatches fetchSdkCommandsVersion
       return { ...project, dependencyAvailableUpdates: {} };
     }
 
@@ -129,7 +128,7 @@ export const runProject = createAsyncThunk(
       updateAvailableDependencyUpdates({ project, updates: dependencyAvailableUpdates }),
     ).unwrap();
 
-    // Only fetch SDK version when installProject was not called (it already dispatches fetchSdkCommandsVersion)
+    // Only fetch SDK version when installProject was not called
     if (hasNodeModules) {
       dispatch(fetchSdkCommandsVersion(project.path));
     }

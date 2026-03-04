@@ -1,15 +1,11 @@
 import { createSlice, isRejectedWithValue } from '@reduxjs/toolkit';
 import { captureException } from '@sentry/electron/renderer';
-import gte from 'semver/functions/gte';
-
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
+import { supportsMultiInstance } from '/shared/flags';
 import type { DeployOptions } from '/shared/types/deploy';
 import { isProjectError, ProjectError, type Project } from '/shared/types/projects';
-import {
-  MIN_MULTI_INSTANCE_SDK_COMMANDS_VERSION,
-  type PreviewOptions,
-} from '/shared/types/settings';
+import { type PreviewOptions } from '/shared/types/settings';
 import { isWorkspaceError } from '/shared/types/workspace';
 
 import { editor } from '#preload';
@@ -114,8 +110,7 @@ export const slice = createSlice({
       state.error = null;
     });
     builder.addCase(workspaceActions.fetchSdkCommandsVersion.fulfilled, (state, action) => {
-      state.supportsMultiInstance =
-        !!action.payload && gte(action.payload, MIN_MULTI_INSTANCE_SDK_COMMANDS_VERSION);
+      state.supportsMultiInstance = supportsMultiInstance(action.payload);
     });
     builder.addCase(workspaceActions.runProject.fulfilled, (state, action) => {
       state.project = action.payload;
