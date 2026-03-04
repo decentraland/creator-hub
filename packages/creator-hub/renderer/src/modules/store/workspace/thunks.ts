@@ -2,12 +2,13 @@ import type { Scene } from '@dcl/schemas';
 
 import { shouldUpdateDependencies } from './utils';
 import { actions } from './index';
-import { fs, npm, scene, settings, workspace } from '#preload';
+import { fs, npm, pkg, scene, settings, workspace } from '#preload';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
 import { type DependencyState, type Project, ProjectError } from '/shared/types/projects';
 import type { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
+import { PACKAGES } from '/shared/types/pkg';
 import { WorkspaceError } from '/shared/types/workspace';
 
 export const getWorkspace = createAsyncThunk('workspace/getWorkspace', workspace.getWorkspace);
@@ -35,11 +36,17 @@ export const unlistProjects = createAsyncThunk(
   workspace.unlistProjects,
 );
 export const openFolder = createAsyncThunk('workspace/openFolder', workspace.openFolder);
+export const fetchSdkCommandsVersion = createAsyncThunk(
+  'workspace/fetchSdkCommandsVersion',
+  async (path: string) => (await pkg.getPackageVersion(path, PACKAGES.SDK_PACKAGE)) ?? null,
+);
+
 export const installProject = createAsyncThunk(
   'npm/install',
-  async ({ path, packages }: { path: string; packages?: string[] }) => {
+  async ({ path, packages }: { path: string; packages?: string[] }, { dispatch }) => {
     await npm.install(path, packages);
     await npm.getContextFiles(path);
+    dispatch(fetchSdkCommandsVersion(path));
   },
 );
 export const saveThumbnail = createAsyncThunk('workspace/saveThumbnail', workspace.saveThumbnail);
@@ -121,6 +128,10 @@ export const runProject = createAsyncThunk(
       updateAvailableDependencyUpdates({ project, updates: dependencyAvailableUpdates }),
     ).unwrap();
 
+    // Only fetch SDK version when installProject was not called
+    if (hasNodeModules) {
+      dispatch(fetchSdkCommandsVersion(project.path));
+    }
     return updatedProject;
   },
 );

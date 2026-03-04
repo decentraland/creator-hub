@@ -58,6 +58,7 @@ export function EditorPage() {
     killPreview,
     publishScene,
     getMobileQR,
+    supportsMultiInstance,
   } = useEditor();
   const { settings, updateAppSettings } = useSettings();
   const { executeDeployment, getDeployment } = useDeploy();
@@ -318,6 +319,7 @@ export function EditorPage() {
                     options={settings.previewOptions}
                     onChange={handleChangePreviewOptions}
                     onShowMobileQR={handleShowMobileQR}
+                    supportsMultiInstance={supportsMultiInstance}
                   />
                 }
               >
