@@ -239,6 +239,20 @@ export class EcsEntity extends BABYLON.TransformNode {
     this.#isLocked = lock;
   }
 
+  generateBoundingBoxFromLocalBounds(min: BABYLON.Vector3, max: BABYLON.Vector3) {
+    if (this.boundingInfoMesh) return;
+
+    const boundingInfoMesh = new BABYLON.Mesh(`BoundingMesh-${this.id}`, this.getScene());
+    boundingInfoMesh.position = BABYLON.Vector3.Zero();
+    boundingInfoMesh.rotationQuaternion = BABYLON.Quaternion.Identity();
+    boundingInfoMesh.scaling = BABYLON.Vector3.One();
+    boundingInfoMesh.setBoundingInfo(new BABYLON.BoundingInfo(min, max));
+    this.boundingInfoMesh = boundingInfoMesh;
+    this.boundingInfoMesh.parent = this;
+
+    void validateEntityIsOutsideLayout(this);
+  }
+
   generateBoundingBox() {
     if (this.boundingInfoMesh) return;
 

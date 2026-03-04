@@ -35,15 +35,21 @@ export const putTextShapeComponent: ComponentOperation = async (entity, componen
       canvas.dispose();
 
       const lines = tempTb.text.split('\n');
-      const longest = lines.reduce((a, b) => (a.length > b.length ? a : b));
-      const widthMeasure = ctx.measureText(longest);
+      const longest = lines.reduce((a, b) =>
+        ctx.measureText(a).width > ctx.measureText(b).width ? a : b,
+      );
+      const longestLineMetrics = ctx.measureText(longest);
+      const longestLinePixelWidth = Math.max(
+        longestLineMetrics.width,
+        longestLineMetrics.actualBoundingBoxLeft + longestLineMetrics.actualBoundingBoxRight,
+      );
       const lineMetrics = ctx.measureText('Mg') as TextMetrics & {
         fontBoundingBoxAscent?: number;
         fontBoundingBoxDescent?: number;
       };
       const lineHeight =
         lineMetrics.fontBoundingBoxAscent !== undefined
-          ? lineMetrics.fontBoundingBoxAscent + (lineMetrics.fontBoundingBoxDescent ?? 0)
+          ? (lineMetrics.fontBoundingBoxAscent + (lineMetrics.fontBoundingBoxDescent ?? 0)) * 1.2
           : tempTb.fontSizeInPixels * 1.2;
 
       const paddingX =
@@ -54,7 +60,7 @@ export const putTextShapeComponent: ComponentOperation = async (entity, componen
         typeof tempTb.lineSpacing === 'string' ? parseInt(tempTb.lineSpacing) : tempTb.lineSpacing;
       const spaceBetween = (lines.length - 1) * lineSpacingPx;
 
-      const pixelWidth = widthMeasure.width + paddingX;
+      const pixelWidth = longestLinePixelWidth + paddingX;
       const pixelHeight = lineHeight * lines.length + spaceBetween + paddingY;
 
       const worldWidth = pixelWidth / TEXT_SHAPE_RATIO;
@@ -88,7 +94,11 @@ export const putTextShapeComponent: ComponentOperation = async (entity, componen
       entity.ecsComponentValues.textShape = value;
       entity.textShape = mesh;
       entity.resolveAssetLoaded(mesh);
-      entity.generateBoundingBox();
+      const halfW = worldWidth / 2;
+      const halfH = worldHeight / 2;
+      const localMin = new BABYLON.Vector3(-halfW + mesh.position.x, -halfH + mesh.position.y, 0);
+      const localMax = new BABYLON.Vector3(halfW + mesh.position.x, halfH + mesh.position.y, 0);
+      entity.generateBoundingBoxFromLocalBounds(localMin, localMax);
     }
   }
 };
