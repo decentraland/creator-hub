@@ -9,15 +9,7 @@ import { LoadingDots } from '../Loading';
 import { Error } from '../Error';
 import { fetchSceneAdmins } from '..';
 
-export function RemoveAdminConfirmation({
-  scaleFactor,
-  admin,
-  engine,
-}: {
-  scaleFactor: number;
-  admin: SceneAdmin;
-  engine: IEngine;
-}) {
+export function RemoveAdminConfirmation({ admin, engine }: { admin: SceneAdmin; engine: IEngine }) {
   const [isLoading, setIsLoading] = ReactEcs.useState(false);
   const [error, setError] = ReactEcs.useState('');
 
@@ -33,9 +25,9 @@ export function RemoveAdminConfirmation({
     >
       <UiEntity
         uiTransform={{
-          width: 675 * scaleFactor,
-          minHeight: 279 * scaleFactor,
-          padding: 24 * scaleFactor,
+          width: 675,
+          minHeight: 279,
+          padding: 24,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -44,30 +36,30 @@ export function RemoveAdminConfirmation({
         }}
         uiBackground={{ color: Color4.Black() }}
       >
-        <UiEntity uiTransform={{ flexDirection: 'row', maxWidth: 675 * scaleFactor }}>
+        <UiEntity uiTransform={{ flexDirection: 'row', maxWidth: 675 }}>
           <Label
             value={`Are you sure you want to remove `}
-            fontSize={18 * scaleFactor}
+            fontSize={18}
             color={Color4.White()}
           />
           <Label
             value={`<b>${admin.name || (admin.address ? `${admin.address.substring(0, 6)}...${admin.address.substring(admin.address.length - 4)}` : '')}</b>`}
-            fontSize={18 * scaleFactor}
+            fontSize={18}
             color={Color4.fromHexString('#FF2D55')}
           />
           <Label
             value={` from the Admin list?`}
-            fontSize={18 * scaleFactor}
+            fontSize={18}
             color={Color4.White()}
           />
         </UiEntity>
 
         <Label
           value="If you proceed, they will lose access to tehe Admin Tools for this scene."
-          fontSize={14 * scaleFactor}
+          fontSize={14}
           color={Color4.Gray()}
           uiTransform={{
-            margin: { top: 12 * scaleFactor, bottom: 24 * scaleFactor },
+            margin: { top: 12, bottom: 24 },
           }}
         />
 
@@ -85,15 +77,15 @@ export function RemoveAdminConfirmation({
               id="cancel-remove"
               value="<b>Cancel</b>"
               variant="primary"
-              fontSize={16 * scaleFactor}
+              fontSize={16}
               color={Color4.Black()}
               uiTransform={{
-                width: 90 * scaleFactor,
-                height: 40 * scaleFactor,
+                width: 90,
+                height: 40,
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
-                margin: { right: 30 * scaleFactor, left: 30 * scaleFactor },
+                margin: { right: 30, left: 30 },
               }}
               onMouseDown={() => {
                 moderationControlState.adminToRemove = undefined;
@@ -105,11 +97,11 @@ export function RemoveAdminConfirmation({
               id="confirm-remove"
               value={'<b>Remove</b>'}
               variant="primary"
-              fontSize={16 * scaleFactor}
+              fontSize={16}
               color={Color4.White()}
               uiTransform={{
-                width: 160 * scaleFactor,
-                height: 40 * scaleFactor,
+                width: 160,
+                height: 40,
                 justifyContent: 'center',
                 alignItems: 'center',
               }}
@@ -130,16 +122,10 @@ export function RemoveAdminConfirmation({
             />
           )}
         </UiEntity>
-        {isLoading && (
-          <LoadingDots
-            scaleFactor={scaleFactor}
-            engine={engine}
-          />
-        )}
+        {isLoading && <LoadingDots engine={engine} />}
         {error && (
           <Error
-            uiTransform={{ margin: { top: 16 * scaleFactor } }}
-            scaleFactor={scaleFactor}
+            uiTransform={{ margin: { top: 16 } }}
             text={error}
           />
         )}

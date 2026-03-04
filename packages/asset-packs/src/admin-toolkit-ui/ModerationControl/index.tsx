@@ -3,7 +3,6 @@ import { Color4 } from '@dcl/ecs-math';
 import ReactEcs, { UiEntity } from '@dcl/react-ecs';
 
 import { Header } from '../Header';
-import { getScaleUIFactor } from '../../ui';
 import { AddUserInput, PermissionType } from './AddUserInput';
 import { Button } from '../Button';
 import { GetPlayerDataRes } from '../../types';
@@ -48,20 +47,17 @@ export const moderationControlState: State = {
 };
 
 export function ModerationControl({ engine, player, sceneAdmins }: Props) {
-  const scaleFactor = getScaleUIFactor(engine);
-  const styles = getModerationControlStyles(scaleFactor);
+  const styles = getModerationControlStyles();
   const colors = getModerationControlColors();
 
   return (
-    <Card scaleFactor={scaleFactor}>
+    <Card>
       <UiEntity uiTransform={styles.container}>
         <Header
           iconSrc={MODERATION_CONTROL_ICON}
           title="PERMISSIONS & MODERATION"
-          scaleFactor={scaleFactor}
         />
         <AddUserInput
-          scaleFactor={scaleFactor}
           type={PermissionType.ADMIN}
           sceneAdmins={sceneAdmins}
         />
@@ -69,7 +65,7 @@ export function ModerationControl({ engine, player, sceneAdmins }: Props) {
           variant="secondary"
           id="moderation_control_admin_list"
           value="<b>View Admin List</b>"
-          fontSize={18 * scaleFactor}
+          fontSize={18}
           color={colors.white}
           uiTransform={styles.viewListButton}
           icon={VERIFIED_USER_ICON}
@@ -78,7 +74,6 @@ export function ModerationControl({ engine, player, sceneAdmins }: Props) {
         />
         <UiEntity uiTransform={styles.divider} />
         <AddUserInput
-          scaleFactor={scaleFactor}
           type={PermissionType.BAN}
           sceneAdmins={sceneAdmins}
         />
@@ -86,7 +81,7 @@ export function ModerationControl({ engine, player, sceneAdmins }: Props) {
           variant="secondary"
           id="moderation_control_ban_list"
           value="<b>View Ban List</b>"
-          fontSize={18 * scaleFactor}
+          fontSize={18}
           color={colors.white}
           uiTransform={styles.viewListButton}
           icon={BAN_USER_ICON}

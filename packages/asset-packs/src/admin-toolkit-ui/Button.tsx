@@ -6,7 +6,6 @@ import ReactEcs, {
   UiBackgroundProps,
 } from '@dcl/react-ecs';
 import { Color4 } from '@dcl/sdk/math';
-import { scaleFactor } from '.';
 
 export const BTN_BACKGROUND_COLOR = {
   primary: {
@@ -129,8 +128,8 @@ export const Button = (props: CompositeButtonProps) => {
     <UiEntity
       uiTransform={{
         borderColor: buttonState.borderColor(variant),
-        borderWidth: 2 * scaleFactor,
-        borderRadius: 12 * scaleFactor,
+        borderWidth: 2,
+        borderRadius: 12,
         ...uiTransform,
       }}
       uiBackground={{

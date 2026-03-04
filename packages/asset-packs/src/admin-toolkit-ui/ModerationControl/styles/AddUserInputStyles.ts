@@ -4,25 +4,25 @@ import { CONTENT_URL } from '../../constants';
 
 const ERROR_ICON = `${CONTENT_URL}/admin_toolkit/assets/icons/error.png`;
 
-export const getAddUserInputStyles = (scaleFactor: number): Record<string, UiTransformProps> => ({
+export const getAddUserInputStyles = (): Record<string, UiTransformProps> => ({
   container: {
     display: 'flex',
     flexDirection: 'column',
-    margin: { bottom: 8 * scaleFactor },
+    margin: { bottom: 8 },
   },
   title: {
-    margin: { bottom: 8 * scaleFactor },
+    margin: { bottom: 8 },
   },
   input: {
     width: '100%',
-    borderWidth: 4 * scaleFactor,
-    borderRadius: 8 * scaleFactor,
-    height: 48 * scaleFactor,
+    borderWidth: 4,
+    borderRadius: 8,
+    height: 48,
   },
   button: {
-    margin: { left: 10 * scaleFactor },
-    minWidth: 96 * scaleFactor,
-    height: 48 * scaleFactor,
+    margin: { left: 10 },
+    minWidth: 96,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 0,
@@ -33,24 +33,24 @@ export const getAddUserInputStyles = (scaleFactor: number): Record<string, UiTra
     alignItems: 'center',
     justifyContent: 'flex-start',
     height: 'auto',
-    margin: { top: 4 * scaleFactor },
+    margin: { top: 4 },
   },
   errorIcon: {
-    width: 16 * scaleFactor,
-    height: 16 * scaleFactor,
-    margin: { right: 8 * scaleFactor },
+    width: 16,
+    height: 16,
+    margin: { right: 8 },
   },
   bannedInfoContainer: {
     display: 'flex',
     flexDirection: 'column',
-    margin: { bottom: 8 * scaleFactor },
+    margin: { bottom: 8 },
     padding: {
-      top: 4 * scaleFactor,
-      bottom: 8 * scaleFactor,
+      top: 4,
+      bottom: 8,
     },
   },
   marginBottomMedium: {
-    margin: { bottom: 4 * scaleFactor },
+    margin: { bottom: 4 },
   },
 });
 
@@ -71,8 +71,8 @@ export const getAddUserInputBackgrounds = () => ({
   },
 });
 
-export const getBanUserTextStyles = (scaleFactor: number) => ({
-  fontSize: 14 * scaleFactor,
+export const getBanUserTextStyles = () => ({
+  fontSize: 14,
   color: Color4.White(),
   textAlign: 'top-left' as const,
 });

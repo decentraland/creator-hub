@@ -16,7 +16,6 @@ export enum PermissionType {
 }
 
 type Props = {
-  scaleFactor: number;
   type: PermissionType;
   sceneAdmins: SceneAdmin[];
 };
@@ -30,11 +29,11 @@ function isAddress(value: string) {
   return value.length > 15;
 }
 
-export function AddUserInput({ scaleFactor, type, sceneAdmins }: Props) {
+export function AddUserInput({ type, sceneAdmins }: Props) {
   const [error, setError] = ReactEcs.useState('');
   const [loading, setLoading] = ReactEcs.useState(false);
   const [inputValue, setInputValue] = ReactEcs.useState('');
-  const styles = getAddUserInputStyles(scaleFactor);
+  const styles = getAddUserInputStyles();
   const colors = getAddUserInputColors();
   const backgrounds = getAddUserInputBackgrounds();
 
@@ -81,11 +80,11 @@ export function AddUserInput({ scaleFactor, type, sceneAdmins }: Props) {
     <UiEntity uiTransform={styles.container}>
       <Label
         value={type === PermissionType.ADMIN ? '<b>Add an Admin</b>' : '<b>Ban User from Scene</b>'}
-        fontSize={18 * scaleFactor}
+        fontSize={18}
         color={colors.white}
         uiTransform={styles.title}
       />
-      {type === PermissionType.BAN && <BanUserDescription scaleFactor={scaleFactor} />}
+      {type === PermissionType.BAN && <BanUserDescription />}
       <UiEntity>
         <Input
           onChange={value => {
@@ -93,7 +92,7 @@ export function AddUserInput({ scaleFactor, type, sceneAdmins }: Props) {
             setInputValue(value);
           }}
           value={inputValue}
-          fontSize={14 * scaleFactor}
+          fontSize={14}
           placeholder={'Enter a NAME or wallet address'}
           uiBackground={backgrounds.input}
           uiTransform={{
@@ -108,7 +107,7 @@ export function AddUserInput({ scaleFactor, type, sceneAdmins }: Props) {
               : 'moderation_control_ban_user'
           }
           value={type === PermissionType.ADMIN ? '<b>Add</b>' : '<b>Ban</b>'}
-          fontSize={18 * scaleFactor}
+          fontSize={18}
           uiTransform={styles.button}
           color={type === PermissionType.BAN ? colors.white : undefined}
           onMouseDown={handleSubmit}
@@ -127,7 +126,7 @@ export function AddUserInput({ scaleFactor, type, sceneAdmins }: Props) {
           <UiEntity
             uiText={{
               value: error,
-              fontSize: 14 * scaleFactor,
+              fontSize: 14,
               color: colors.red,
               textAlign: 'top-left',
             }}
