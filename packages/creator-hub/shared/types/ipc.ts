@@ -42,8 +42,8 @@ export interface Ipc {
   'electron.openExternal': (url: string) => Promise<void>;
   'electron.copyToClipboard': (text: string) => Promise<void>;
   'inspector.start': () => Promise<number>;
-  'inspector.openSceneDebugger': (path: string) => Promise<string>;
   'inspector.attachSceneDebugger': (path: string, eventName: string) => Promise<boolean>;
+  'inspector.detachSceneDebugger': (path: string) => void;
   'config.getConfig': () => Promise<Config>;
   'config.writeConfig': (config: Config) => Promise<void>;
   'bin.install': () => Promise<void>;

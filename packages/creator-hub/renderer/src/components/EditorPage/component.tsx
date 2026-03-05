@@ -32,6 +32,7 @@ import { ButtonGroup } from '../Button';
 import { ConnectionStatusIndicator } from '../ConnectionStatusIndicator';
 import { MobileQRCode } from '../Modals/MobileQRCode';
 import { DeployModal } from './DeployModal';
+import { DebugConsole } from './DebugConsole';
 import { PreviewOptions, PublishOptions } from './MenuOptions';
 import { getPublishButtonText, getPublishOptions } from './utils';
 
@@ -59,6 +60,7 @@ export function EditorPage() {
     publishScene,
     getMobileQR,
     supportsMultiInstance,
+    isPreviewRunning,
   } = useEditor();
   const { settings, updateAppSettings } = useSettings();
   const { executeDeployment, getDeployment } = useDeploy();
@@ -79,6 +81,8 @@ export function EditorPage() {
   const [mobileQRData, setMobileQRData] = useState<{ url: string; qr: string } | null>(null);
 
   const isOffline = status === ConnectionStatus.OFFLINE;
+  const [isDebugCollapsed, setIsDebugCollapsed] = useState(false);
+  const showDebugPanel = settings.previewOptions.debugger;
 
   const handleIframeRef = useCallback(
     (e: React.SyntheticEvent<HTMLIFrameElement, Event>) => {
@@ -367,10 +371,18 @@ export function EditorPage() {
             </div>
           </Header>
           <iframe
-            className="inspector"
+            className={`inspector${showDebugPanel && isPreviewRunning ? ' with-debug-panel' : ''}`}
             src={iframeUrl}
             onLoad={handleIframeRef}
           ></iframe>
+          {showDebugPanel && isPreviewRunning && project && (
+            <DebugConsole
+              path={project.path}
+              isPreviewRunning={isPreviewRunning}
+              isCollapsed={isDebugCollapsed}
+              onToggleCollapse={() => setIsDebugCollapsed(prev => !prev)}
+            />
+          )}
           <DeployModal
             type={modalState.type}
             project={project}

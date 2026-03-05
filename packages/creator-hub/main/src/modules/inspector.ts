@@ -1,20 +1,18 @@
-import { fileURLToPath } from 'node:url';
-import { join, resolve } from 'node:path';
-import { app, type BrowserWindow } from 'electron';
+import { resolve } from 'node:path';
+import { app } from 'electron';
 import { createServer } from 'http-server';
 import log from 'electron-log';
 
-import { type Child } from './bin';
-import { getAvailablePort } from './port';
-import { createWindow, focusWindow, getWindow } from './window';
+import { MAIN_WINDOW_ID } from '../mainWindow';
+
+import type { Child } from './bin';
 import * as cache from './cache';
+import { getAvailablePort } from './port';
+import { getWindow } from './window';
 
-const debuggers: Map<string, { window: BrowserWindow; preview: Child; listener: number }> =
-  new Map();
+type DebuggerState = { preview: Child; listener: number };
 
-export function getDebugger(path: string) {
-  return debuggers.get(path);
-}
+const debuggers: Map<string, DebuggerState> = new Map();
 
 let inspectorServer: ReturnType<typeof createServer> | null = null;
 
@@ -62,88 +60,60 @@ export async function start() {
   return port;
 }
 
-export async function openSceneDebugger(path: string): Promise<string> {
-  const alreadyOpen = getWindow(path);
-  if (alreadyOpen) {
-    focusWindow(alreadyOpen);
-    return path;
-  }
-
-  const window = createWindow(path);
-  window.setMenuBarVisibility(false);
-  window.on('ready-to-show', () => window.show());
-
-  if (import.meta.env.DEV && import.meta.env.VITE_DEV_SERVER_URL !== undefined) {
-    const url = join(import.meta.env.VITE_DEV_SERVER_URL, `debugger.html?path=${path}`);
-    await window.loadURL(url);
-  } else {
-    await window.loadFile(
-      fileURLToPath(new URL('./../../renderer/dist/debugger.html', import.meta.url)),
-      { query: { path } },
-    );
-  }
-
-  return path;
-}
-
-function assertDebuggerState(path: string) {
-  const window = cache.getWindow(path);
+export async function attachSceneDebugger(path: string, eventName: string): Promise<boolean> {
+  const mainWindow = getWindow(MAIN_WINDOW_ID);
   const preview = cache.getPreview(path);
 
-  if (!window || window.isDestroyed()) {
-    throw new Error(`Window not found for path: ${path}`);
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    throw new Error('Main window not found');
   }
 
   if (!preview || !preview.child.alive()) {
     throw new Error(`Preview not found for path: ${path}`);
   }
-}
 
-function isDebuggerAttached(path: string, window: BrowserWindow, preview: Child): boolean {
-  const _debugger = debuggers.get(path) ?? false;
-  return _debugger && _debugger.window === window && _debugger.preview === preview;
-}
+  const { child } = preview;
 
-export async function attachSceneDebugger(path: string, eventName: string): Promise<boolean> {
-  assertDebuggerState(path);
-
-  const window = cache.getWindow(path)!;
-  const { child: preview } = cache.getPreview(path)!;
-
-  focusWindow(window);
-
-  if (isDebuggerAttached(path, window, preview)) {
-    return false;
+  // Clean up previous attachment if any
+  const existing = debuggers.get(path);
+  if (existing) {
+    existing.preview.off(existing.listener);
+    debuggers.delete(path);
   }
 
-  // Send all the current logs to the debugger window
-  const stdall = preview.stdall({ sanitize: false });
+  // Send all the current logs to the main window
+  const stdall = child.stdall({ sanitize: false });
   if (stdall.length > 0) {
-    window.webContents.send(eventName, stdall);
+    mainWindow.webContents.send(eventName, stdall);
   }
-  // Attach the event listener to preview output to send future logs to debugger window
-  const listener = preview.on(
+
+  // Attach the event listener to preview output to send future logs to main window
+  const listener = child.on(
     /(.*)/i,
     (data?: string) => {
-      if (data) window.webContents.send(eventName, data);
+      if (data && mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send(eventName, data);
+      }
     },
     { sanitize: false },
   );
 
-  debuggers.set(path, { window, preview, listener });
+  debuggers.set(path, { preview: child, listener });
 
-  const cleanup = () => debuggers.delete(path);
-
-  window.on('closed', () => {
-    // Remove the event listener from the preview when the debugger window is closed
-    preview.off(listener);
-    cleanup();
-  });
-  preview.process.on('exit', () => {
-    // Destoy debugger window when the preview process exits
-    window.destroy();
-    cleanup();
+  child.process.once('exit', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send(eventName, '\n--- Process exited ---\n');
+    }
+    detachSceneDebugger(path);
   });
 
   return true;
+}
+
+export function detachSceneDebugger(path: string): void {
+  const existing = debuggers.get(path);
+  if (existing) {
+    existing.preview.off(existing.listener);
+    debuggers.delete(path);
+  }
 }
