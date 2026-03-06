@@ -73,10 +73,8 @@ export const appState = createSlice({
       }
     },
     pushDebugLogs: (state, { payload }: PayloadAction<{ logs: string[] }>) => {
-      state.debugConsoleLogs.push(...payload.logs);
-      if (state.debugConsoleLogs.length > 1000) {
-        state.debugConsoleLogs = state.debugConsoleLogs.slice(-1000);
-      }
+      const combined = state.debugConsoleLogs.concat(payload.logs);
+      state.debugConsoleLogs = combined.length > 1000 ? combined.slice(-1000) : combined;
     },
     clearDebugLogs: state => {
       state.debugConsoleLogs = [];

@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import CodeIcon from '@mui/icons-material/Code';
 import PublicIcon from '@mui/icons-material/Public';
-import Convert from 'ansi-to-html';
 import { CircularProgress as Loader } from 'decentraland-ui2';
 
 import { isClientNotInstalledError } from '/shared/types/client';
@@ -19,6 +18,7 @@ import { useSettings } from '/@/hooks/useSettings';
 import { useSceneCustomCode } from '/@/hooks/useSceneCustomCode';
 import { useDeploy } from '/@/hooks/useDeploy';
 import { useConnectionStatus } from '/@/hooks/useConnectionStatus';
+import { useDebugLogForwarding } from '/@/hooks/useDebugLogForwarding';
 import { ConnectionStatus } from '/@/lib/connection';
 
 import EditorPng from '/assets/images/editor.png';
@@ -26,8 +26,6 @@ import EditorPng from '/assets/images/editor.png';
 import { useDispatch, useSelector } from '#store';
 import { actions as snackbarActions } from '/@/modules/store/snackbar';
 import { createGenericNotification } from '/@/modules/store/snackbar/utils';
-import { editor } from '#preload';
-import type { RPCInfo } from '/@/modules/rpc';
 import { Button } from '../Button';
 import { Header } from '../Header';
 import { Row } from '../Row';
@@ -42,60 +40,6 @@ import type { ModalType, ModalState } from './DeployModal';
 import type { PreviewOptionsProps } from './MenuOptions';
 
 import './styles.css';
-
-const convert = new Convert({ escapeXML: true });
-const LOG_BATCH_INTERVAL = 100;
-
-function useDebugLogForwarding(
-  iframeRef: MutableRefObject<RPCInfo | undefined>,
-  isPreviewRunning: boolean,
-  showDebugPanel: boolean,
-  projectPath: string | undefined,
-) {
-  const logBatchRef = useRef<string[]>([]);
-  const timerRef = useRef<ReturnType<typeof setInterval>>();
-
-  useEffect(() => {
-    if (!isPreviewRunning || !showDebugPanel || !projectPath || !iframeRef.current) return;
-
-    const scene = iframeRef.current.scene;
-    void scene.setDebugConsoleEnabled(true).catch(() => {});
-
-    const flushLogs = () => {
-      if (logBatchRef.current.length > 0) {
-        const batch = logBatchRef.current;
-        logBatchRef.current = [];
-        void scene.pushDebugLogs(batch).catch(() => {});
-      }
-    };
-
-    timerRef.current = setInterval(flushLogs, LOG_BATCH_INTERVAL);
-
-    let aborted = false;
-    let cleanupFn: (() => void) | undefined;
-
-    editor
-      .attachSceneDebugger(projectPath, (data: string) => {
-        logBatchRef.current.push(convert.toHtml(data));
-      })
-      .then(({ cleanup }) => {
-        if (aborted) {
-          cleanup();
-        } else {
-          cleanupFn = cleanup;
-        }
-      })
-      .catch(() => {});
-
-    return () => {
-      aborted = true;
-      cleanupFn?.();
-      if (timerRef.current) clearInterval(timerRef.current);
-      flushLogs();
-      void scene.setDebugConsoleEnabled(false).catch(() => {});
-    };
-  }, [isPreviewRunning, showDebugPanel, projectPath, iframeRef]);
-}
 
 export function EditorPage() {
   const dispatch = useDispatch();

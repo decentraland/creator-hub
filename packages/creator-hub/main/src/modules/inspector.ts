@@ -60,7 +60,11 @@ export async function start() {
   return port;
 }
 
-export async function attachSceneDebugger(path: string, eventName: string): Promise<boolean> {
+function getDebuggerChannel(path: string) {
+  return `debugger://${path}`;
+}
+
+export async function attachSceneDebugger(path: string): Promise<string> {
   const mainWindow = getWindow(MAIN_WINDOW_ID);
   const preview = cache.getPreview(path);
 
@@ -72,6 +76,7 @@ export async function attachSceneDebugger(path: string, eventName: string): Prom
     throw new Error(`Preview not found for path: ${path}`);
   }
 
+  const eventName = getDebuggerChannel(path);
   const { child } = preview;
 
   // Clean up previous attachment if any
@@ -107,7 +112,7 @@ export async function attachSceneDebugger(path: string, eventName: string): Prom
     detachSceneDebugger(path);
   });
 
-  return true;
+  return eventName;
 }
 
 export function detachSceneDebugger(path: string): void {

@@ -1,1 +1,0 @@
-export { DebugConsole } from './component';

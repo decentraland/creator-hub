@@ -31,9 +31,7 @@ export async function attachSceneDebugger(
   // Clean up any previous debugger for this path (handles React StrictMode double-mount)
   activeDebuggers.get(path)?.();
 
-  const eventName = `debugger://${path}`;
-
-  await invoke('inspector.attachSceneDebugger', path, eventName);
+  const eventName = await invoke('inspector.attachSceneDebugger', path);
 
   const handler = (_: IpcRendererEvent, data: string) => cb(data);
   ipcRenderer.on(eventName, handler);

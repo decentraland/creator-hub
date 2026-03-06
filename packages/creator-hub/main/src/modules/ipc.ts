@@ -32,9 +32,7 @@ export function initIpc() {
 
   // inspector
   handle('inspector.start', () => inspector.start());
-  handle('inspector.attachSceneDebugger', (_event, path, eventName) =>
-    inspector.attachSceneDebugger(path, eventName),
-  );
+  handle('inspector.attachSceneDebugger', (_event, path) => inspector.attachSceneDebugger(path));
   handle('inspector.detachSceneDebugger', (_event, path) => inspector.detachSceneDebugger(path));
 
   // cli
