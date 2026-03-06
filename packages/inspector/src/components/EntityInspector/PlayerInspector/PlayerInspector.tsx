@@ -163,6 +163,7 @@ export default withSdk<Props>(({ sdk }) => {
     return () => {
       unsubscribe();
       gizmoManager.detachFromSpawnPoint();
+      spawnPointManager.selectSpawnPoint(null);
     };
   }, [spawnPointManager, gizmoManager]);
 
