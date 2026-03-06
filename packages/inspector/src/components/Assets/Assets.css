@@ -142,3 +142,46 @@
   font-weight: 600;
   color: var(--text);
 }
+
+.Assets-view-toggle {
+  display: flex;
+  align-items: center;
+  position: absolute;
+  right: 12px;
+  gap: 2px;
+  background: var(--base-18);
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.Assets-view-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--base-08);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+  white-space: nowrap;
+}
+
+.Assets-view-toggle-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.Assets-view-toggle-btn:hover {
+  color: var(--base-01);
+}
+
+.Assets-view-toggle-btn.active {
+  background: var(--primary-main);
+  color: var(--base-01);
+}

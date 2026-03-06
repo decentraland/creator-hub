@@ -12,6 +12,8 @@ export interface UiState {
   selectedAssetsTab: AssetsTab;
   selectedSceneInspectorTab: SceneInspectorTab;
   hiddenSceneInspectorTabs: Partial<Record<SceneInspectorTab, boolean>>;
+  debugConsoleEnabled: boolean;
+  debugConsoleLogs: string[];
 }
 
 export const initialState: UiState = {
@@ -22,6 +24,8 @@ export const initialState: UiState = {
   selectedAssetsTab: AssetsTab.AssetsPack,
   selectedSceneInspectorTab: SceneInspectorTab.DETAILS,
   hiddenSceneInspectorTabs: {},
+  debugConsoleEnabled: false,
+  debugConsoleLogs: [],
 };
 
 export const appState = createSlice({
@@ -62,6 +66,21 @@ export const appState = createSlice({
       const { tab, enabled } = payload;
       state.hiddenSceneInspectorTabs[tab] = !enabled;
     },
+    setDebugConsoleEnabled: (state, { payload }: PayloadAction<{ enabled: boolean }>) => {
+      state.debugConsoleEnabled = payload.enabled;
+      if (!payload.enabled) {
+        state.debugConsoleLogs = [];
+      }
+    },
+    pushDebugLogs: (state, { payload }: PayloadAction<{ logs: string[] }>) => {
+      state.debugConsoleLogs.push(...payload.logs);
+      if (state.debugConsoleLogs.length > 1000) {
+        state.debugConsoleLogs = state.debugConsoleLogs.slice(-1000);
+      }
+    },
+    clearDebugLogs: state => {
+      state.debugConsoleLogs = [];
+    },
   },
 });
 
@@ -74,6 +93,9 @@ export const {
   selectAssetsTab,
   selectSceneInspectorTab,
   toggleSceneInspectorTab,
+  setDebugConsoleEnabled,
+  pushDebugLogs,
+  clearDebugLogs,
 } = appState.actions;
 
 // Selectors
@@ -87,6 +109,8 @@ export const getSelectedSceneInspectorTab = (state: RootState) =>
 export const getHiddenSceneInspectorTabs = (state: RootState) => state.ui.hiddenSceneInspectorTabs;
 export const areGizmosDisabled = (state: RootState) => state.ui.disableGizmos;
 export const isGroundGridDisabled = (state: RootState) => state.ui.disableGroundGrid;
+export const getDebugConsoleEnabled = (state: RootState) => state.ui.debugConsoleEnabled;
+export const getDebugConsoleLogs = (state: RootState) => state.ui.debugConsoleLogs;
 
 // Reducer
 export default appState.reducer;

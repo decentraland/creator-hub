@@ -1,0 +1,71 @@
+.DebugConsole {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--tree-bg-color);
+}
+
+.DebugConsole-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--base-18);
+}
+
+.DebugConsole-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--base-08);
+  letter-spacing: 0.5px;
+}
+
+.DebugConsole-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background-color: transparent;
+  color: var(--base-01);
+  cursor: pointer;
+}
+
+.DebugConsole-clear:hover {
+  background-color: var(--background-gray);
+}
+
+.DebugConsole-clear svg {
+  width: 16px;
+  height: 16px;
+}
+
+.DebugConsole-logs {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 12px;
+  font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", "Consolas", monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--base-01);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.DebugConsole-logs span {
+  display: block;
+}
+
+.DebugConsole-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--base-08);
+  font-size: 13px;
+}
