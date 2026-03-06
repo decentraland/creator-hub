@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import cx from 'classnames';
 import WorldSettingsIcon from '@mui/icons-material/SpaceDashboard';
 import { Box, Button, Typography } from 'decentraland-ui2';
 import { useDispatch } from '#store';
@@ -22,7 +23,6 @@ const WORLD_SETTINGS_TABS: Array<{ label: string; value: WorldSettingsTab; publi
   {
     label: t('modal.world_settings.tabs.layout.label'),
     value: WorldSettingsTab.LAYOUT,
-    public: true,
   },
   {
     label: t('modal.world_settings.tabs.general.label'),
@@ -58,11 +58,6 @@ const WorldSettingsModal: React.FC<Props> = React.memo(
       [settingsUpdates],
     );
 
-    const enabledTabs = useMemo(() => {
-      const tabs = isOwner ? WORLD_SETTINGS_TABS : WORLD_SETTINGS_TABS.filter(tab => tab.public);
-      return tabs.map(({ label, value }) => ({ label, value }));
-    }, [isOwner]);
-
     const handleUpdateSettings = useCallback((newSettings: Partial<WorldSettings>) => {
       setSettingsUpdates(prev => ({ ...prev, ...newSettings }));
     }, []);
@@ -92,9 +87,10 @@ const WorldSettingsModal: React.FC<Props> = React.memo(
       <TabsModal
         {...props}
         activeTab={activeTab}
-        tabs={enabledTabs}
+        tabs={WORLD_SETTINGS_TABS}
+        showTabs={isOwner}
         title={t('modal.world_settings.title', { worldName: worldName })}
-        className="WorldSettingsModal"
+        className={cx('WorldSettingsModal', { Collaborator: !isOwner })}
         icon={<WorldSettingsIcon />}
       >
         {isLoading && !hasChanges ? (

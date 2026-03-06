@@ -25,6 +25,7 @@ import './styles.css';
 type SettingsModalState = {
   activeTab: WorldSettingsTab;
   isOpen: boolean;
+  isOwner?: boolean;
 };
 
 type PermissionsModalState = {
@@ -50,6 +51,7 @@ const ManagedProjectsList: React.FC<Props> = React.memo(props => {
   const [settingsModal, setSettingsModal] = useState<SettingsModalState>({
     isOpen: false,
     activeTab: WorldSettingsTab.DETAILS,
+    isOwner: false,
   });
   const [permissionsModal, setPermissionsModal] = useState<PermissionsModalState>({
     isOpen: false,
@@ -77,7 +79,6 @@ const ManagedProjectsList: React.FC<Props> = React.memo(props => {
     (worldName: string, activeTab: WorldSettingsTab, isOwner: boolean) => {
       dispatch(fetchWorldSettings({ worldName }));
       dispatch(fetchWorldScenes({ worldName }));
-      dispatch(fetchWorldPermissions({ worldName }));
       if (!isOwner && wallet) {
         dispatch(
           fetchParcelsPermission({
@@ -87,7 +88,7 @@ const ManagedProjectsList: React.FC<Props> = React.memo(props => {
           }),
         );
       }
-      setSettingsModal({ isOpen: true, activeTab });
+      setSettingsModal({ isOpen: true, activeTab, isOwner });
     },
     [],
   );
@@ -152,7 +153,7 @@ const ManagedProjectsList: React.FC<Props> = React.memo(props => {
       <WorldSettingsModal
         open={settingsModal.isOpen}
         worldName={worldSettings.worldName}
-        isOwner={worldPermissions.owner === wallet}
+        isOwner={!!settingsModal.isOwner}
         worldScenes={worldSettings.scenes}
         worldSettings={worldSettings.settings}
         userParcelsPermissions={wallet ? worldPermissions.parcels[wallet] : undefined}
