@@ -2,9 +2,9 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import WorldSettingsIcon from '@mui/icons-material/SpaceDashboard';
 import { Box, Button, Typography } from 'decentraland-ui2';
 import { useDispatch } from '#store';
-import { actions as managementActions } from '/@/modules/store/management';
+import { actions as managementActions, type ParcelsPermission } from '/@/modules/store/management';
 import { t } from '/@/modules/store/translation/utils';
-import type { WorldScene, WorldSettings } from '/@/lib/worlds';
+import { type WorldScene, type WorldSettings } from '/@/lib/worlds';
 import { WorldSettingsTab } from '/shared/types/manage';
 import type { Props as TabsModalProps } from '../TabsModal';
 import { Loader } from '../../Loader';
@@ -14,7 +14,7 @@ import { DetailsTab } from './tabs/DetailsTab';
 import { LayoutTab } from './tabs/LayoutTab';
 import './styles.css';
 
-const WORLD_SETTINGS_TABS: Array<{ label: string; value: WorldSettingsTab }> = [
+const WORLD_SETTINGS_TABS: Array<{ label: string; value: WorldSettingsTab; public?: boolean }> = [
   {
     label: t('modal.world_settings.tabs.details.label'),
     value: WorldSettingsTab.DETAILS,
@@ -22,6 +22,7 @@ const WORLD_SETTINGS_TABS: Array<{ label: string; value: WorldSettingsTab }> = [
   {
     label: t('modal.world_settings.tabs.layout.label'),
     value: WorldSettingsTab.LAYOUT,
+    public: true,
   },
   {
     label: t('modal.world_settings.tabs.general.label'),
@@ -33,11 +34,22 @@ type Props = Omit<TabsModalProps<WorldSettingsTab>, 'tabs' | 'title' | 'children
   worldName: string;
   worldSettings: WorldSettings;
   worldScenes: WorldScene[];
+  isOwner: boolean;
+  userParcelsPermissions?: ParcelsPermission;
   isLoading: boolean;
 };
 
 const WorldSettingsModal: React.FC<Props> = React.memo(
-  ({ worldName, worldSettings, worldScenes, isLoading, activeTab, ...props }) => {
+  ({
+    worldName,
+    worldSettings,
+    worldScenes,
+    userParcelsPermissions,
+    isOwner,
+    isLoading,
+    activeTab,
+    ...props
+  }) => {
     const dispatch = useDispatch();
     const [settingsUpdates, setSettingsUpdates] = useState<Partial<WorldSettings>>({});
     const worldSettingsForm = { ...worldSettings, ...settingsUpdates };
@@ -45,6 +57,11 @@ const WorldSettingsModal: React.FC<Props> = React.memo(
       () => Object.values(settingsUpdates).filter($ => $ !== undefined).length > 0,
       [settingsUpdates],
     );
+
+    const enabledTabs = useMemo(() => {
+      const tabs = isOwner ? WORLD_SETTINGS_TABS : WORLD_SETTINGS_TABS.filter(tab => tab.public);
+      return tabs.map(({ label, value }) => ({ label, value }));
+    }, [isOwner]);
 
     const handleUpdateSettings = useCallback((newSettings: Partial<WorldSettings>) => {
       setSettingsUpdates(prev => ({ ...prev, ...newSettings }));
@@ -75,7 +92,7 @@ const WorldSettingsModal: React.FC<Props> = React.memo(
       <TabsModal
         {...props}
         activeTab={activeTab}
-        tabs={WORLD_SETTINGS_TABS}
+        tabs={enabledTabs}
         title={t('modal.world_settings.title', { worldName: worldName })}
         className="WorldSettingsModal"
         icon={<WorldSettingsIcon />}
@@ -101,6 +118,8 @@ const WorldSettingsModal: React.FC<Props> = React.memo(
                 worldName={worldName}
                 worldSettings={worldSettings}
                 worldScenes={worldScenes}
+                isOwner={isOwner}
+                userParcelsPermissions={userParcelsPermissions}
               />
             )}
             {activeTab !== WorldSettingsTab.LAYOUT && hasChanges && (

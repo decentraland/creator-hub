@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
-import type { ManagedProject, WorldSettingsTab } from '/shared/types/manage';
+import { type ManagedProject, WorldSettingsTab } from '/shared/types/manage';
 import { ManagedProjectType } from '/shared/types/manage';
 import WorldSettingsIcon from '@mui/icons-material/SpaceDashboard';
 import ParcelsIcon from '@mui/icons-material/Layers';
@@ -36,7 +36,7 @@ function isCollaboratorRole(role: LandRoleType | WorldRoleType): role is Collabo
 
 export type Props = {
   project: ManagedProject;
-  onOpenSettings: (tab?: WorldSettingsTab) => void;
+  onOpenSettings: (tab: WorldSettingsTab) => void;
   onOpenPermissions: () => void;
   onViewScenes: () => void;
   onUnpublishWorld: () => void;
@@ -176,15 +176,23 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
                   : t('manage.cards.worlds.published_world')}
               </Typography>
               <Typography className="ProjectTitle">{deployment.title}</Typography>
-              {type === 'world' && role === WorldRoleType.OWNER && (
+              {type === 'world' && (
                 <Button
                   variant="contained"
                   color="secondary"
                   startIcon={<WorldSettingsIcon />}
                   className="WorldSettingsButton"
-                  onClick={() => onOpenSettings()}
+                  onClick={() =>
+                    onOpenSettings(
+                      role === WorldRoleType.OWNER
+                        ? WorldSettingsTab.DETAILS
+                        : WorldSettingsTab.LAYOUT,
+                    )
+                  }
                 >
-                  {t('manage.cards.worlds.world_settings')}
+                  {role === WorldRoleType.OWNER
+                    ? t('manage.cards.worlds.world_settings')
+                    : t('manage.cards.worlds.layout')}
                 </Button>
               )}
             </div>
