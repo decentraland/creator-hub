@@ -15,7 +15,7 @@ import { DetailsTab } from './tabs/DetailsTab';
 import { LayoutTab } from './tabs/LayoutTab';
 import './styles.css';
 
-const WORLD_SETTINGS_TABS: Array<{ label: string; value: WorldSettingsTab; public?: boolean }> = [
+const WORLD_SETTINGS_TABS: Array<{ label: string; value: WorldSettingsTab }> = [
   {
     label: t('modal.world_settings.tabs.details.label'),
     value: WorldSettingsTab.DETAILS,
