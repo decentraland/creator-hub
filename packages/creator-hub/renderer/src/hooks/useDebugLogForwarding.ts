@@ -39,8 +39,13 @@ export function useDebugLogForwarding(
     let cleanupFn: (() => void) | undefined;
 
     editor
-      .attachSceneDebugger(projectPath, (data: string) => {
-        logBatchRef.current.push(convert.toHtml(data));
+      .attachSceneDebugger(projectPath, (data: string | string[]) => {
+        const lines = Array.isArray(data) ? data : data.split('\n');
+        for (const line of lines) {
+          if (line.trim() !== '') {
+            logBatchRef.current.push(convert.toHtml(line));
+          }
+        }
       })
       .then(({ cleanup }) => {
         if (aborted) {
