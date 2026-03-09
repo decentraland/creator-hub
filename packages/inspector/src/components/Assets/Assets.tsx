@@ -77,9 +77,7 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
   ]);
 
   useEffect(() => {
-    if (!debugConsoleEnabled) {
-      setShowConsole(false);
-    }
+    setShowConsole(debugConsoleEnabled);
   }, [debugConsoleEnabled]);
 
   const handleTabClick = useCallback(
