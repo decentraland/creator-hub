@@ -10,7 +10,7 @@ import * as cache from './cache';
 import { getAvailablePort } from './port';
 import { getWindow } from './window';
 
-type DebuggerState = { preview: Child; listener: number };
+type DebuggerState = { preview: Child; listener: number; exitHandler: () => void };
 
 const debuggers: Map<string, DebuggerState> = new Map();
 
@@ -79,10 +79,10 @@ export async function attachSceneDebugger(path: string): Promise<string> {
   const eventName = getDebuggerChannel(path);
   const { child } = preview;
 
-  // Clean up previous attachment if any
   const existing = debuggers.get(path);
   if (existing) {
     existing.preview.off(existing.listener);
+    existing.preview.process.off('exit', existing.exitHandler);
     debuggers.delete(path);
   }
 
@@ -103,14 +103,15 @@ export async function attachSceneDebugger(path: string): Promise<string> {
     { sanitize: false },
   );
 
-  debuggers.set(path, { preview: child, listener });
-
-  child.process.once('exit', () => {
+  const exitHandler = () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send(eventName, '\n--- Process exited ---\n');
     }
     detachSceneDebugger(path);
-  });
+  };
+
+  debuggers.set(path, { preview: child, listener, exitHandler });
+  child.process.once('exit', exitHandler);
 
   return eventName;
 }
@@ -119,6 +120,7 @@ export function detachSceneDebugger(path: string): void {
   const existing = debuggers.get(path);
   if (existing) {
     existing.preview.off(existing.listener);
+    existing.preview.process.off('exit', existing.exitHandler);
     debuggers.delete(path);
   }
 }

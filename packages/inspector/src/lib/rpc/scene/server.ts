@@ -6,7 +6,8 @@ import { type Store } from '../../../redux/store';
 import { type initRenderer } from '../../babylon/setup/init';
 import type { AssetsTab, PanelName, SceneInspectorTab } from '../../../redux/ui/types';
 import { setHasCustomCode } from '../../../redux/scene-metrics';
-import { setDebugConsoleEnabled, pushDebugLogs, clearDebugLogs } from '../../../redux/ui';
+import { setDebugConsoleEnabled } from '../../../redux/ui';
+import * as debugLogStore from '../../logic/debug-log-store';
 
 enum Method {
   TOGGLE_COMPONENT = 'toggle_component',
@@ -117,11 +118,11 @@ export class SceneServer extends RPC<Method, Params, Result> {
     });
 
     this.handle('push_debug_logs', async ({ logs }) => {
-      store.dispatch(pushDebugLogs({ logs }));
+      debugLogStore.push(logs);
     });
 
     this.handle('clear_debug_logs', async () => {
-      store.dispatch(clearDebugLogs());
+      debugLogStore.clear();
     });
   }
 }

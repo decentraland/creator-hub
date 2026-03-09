@@ -47,10 +47,6 @@ export async function attachSceneDebugger(
   return { cleanup };
 }
 
-export async function detachSceneDebugger(path: string) {
-  return invoke('inspector.detachSceneDebugger', path);
-}
-
 export async function runScene({ path, opts }: { path: string; opts: PreviewOptions }) {
   const port = await invoke('cli.start', path, opts);
   return port;

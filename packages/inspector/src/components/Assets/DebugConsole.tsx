@@ -1,11 +1,14 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useSyncExternalStore } from 'react';
+
+import { subscribe, getSnapshot, clear, type DebugLogEntry } from '../../lib/logic/debug-log-store';
 import { useAppSelector } from '../../redux/hooks';
-import { getDebugConsoleLogs } from '../../redux/ui';
+import { getDebugConsoleEnabled } from '../../redux/ui';
 
 import './DebugConsole.css';
 
 function DebugConsole() {
-  const logs = useAppSelector(getDebugConsoleLogs);
+  const logs = useSyncExternalStore(subscribe, getSnapshot);
+  const enabled = useAppSelector(getDebugConsoleEnabled);
   const logsRef = useRef<HTMLDivElement>(null);
   const prevLogCountRef = useRef(0);
 
@@ -14,7 +17,13 @@ function DebugConsole() {
       logsRef.current.scrollTop = logsRef.current.scrollHeight;
     }
     prevLogCountRef.current = logs.length;
-  }, [logs.length]);
+  }, [logs]);
+
+  useEffect(() => {
+    if (!enabled) {
+      clear();
+    }
+  }, [enabled]);
 
   return (
     <div className="DebugConsole">
@@ -23,10 +32,10 @@ function DebugConsole() {
         ref={logsRef}
       >
         {logs.length > 0 ? (
-          logs.map((line, i) => (
+          logs.map((entry: DebugLogEntry) => (
             <span
-              key={i}
-              dangerouslySetInnerHTML={{ __html: line }}
+              key={entry.id}
+              dangerouslySetInnerHTML={{ __html: entry.html }}
             />
           ))
         ) : (
