@@ -1,6 +1,7 @@
 import equal from 'fast-deep-equal';
 import { getCatalystServersFromCache } from 'dcl-catalyst-client/dist/contracts-snapshots';
 import { type SerializedError } from '@reduxjs/toolkit';
+import { captureException } from '@sentry/electron/renderer';
 import { type AuthChain, Authenticator } from '@dcl/crypto';
 import { ChainId } from '@dcl/schemas';
 import type { AuthIdentity } from 'decentraland-crypto-fetch';
@@ -68,7 +69,7 @@ export const deploy = async (
   );
 
   if (!resp.ok) {
-    const data = await resp.json();
+    const data = await resp.json().catch(() => ({ message: `HTTP ${resp.status}` }));
     let error = data.message;
     console.log('[DEPLOY ERROR] raw data:', JSON.stringify(data));
     console.log('[DEPLOY ERROR] error message:', error);
@@ -79,7 +80,12 @@ export const deploy = async (
         // Keep original error if parsing fails
       }
     }
-    throw new Error(error);
+    const serverError = new Error(error);
+    captureException(serverError, {
+      tags: { source: 'deployment', event: 'deploy-request' },
+      extra: { status: resp.status, url },
+    });
+    throw serverError;
   }
 };
 
