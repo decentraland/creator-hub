@@ -1,14 +1,14 @@
 import { Color4 } from '@dcl/sdk/math';
-import { DeepReadonlyObject, IEngine, PBVideoPlayer, Entity } from '@dcl/ecs';
+import type { DeepReadonlyObject, IEngine, PBVideoPlayer, Entity } from '@dcl/ecs';
 import ReactEcs, { UiEntity, Input, Label } from '@dcl/react-ecs';
-import { COLORS, ICONS } from '.';
-import { createVideoPlayerControls, isVideoUrl } from './utils';
-import { VideoControlVolume } from './VolumeControl';
+import { openExternalUrl } from '~system/RestrictedActions';
 import { Button } from '../Button';
 import { Header } from '../Header';
-import { openExternalUrl } from '~system/RestrictedActions';
 import { LIVEKIT_STREAM_SRC } from '../../definitions';
 import { CONTENT_URL } from '../constants';
+import { VideoControlVolume } from './VolumeControl';
+import { createVideoPlayerControls, isVideoUrl } from './utils';
+import { COLORS, ICONS } from '.';
 
 const VIDEO_PLAYER_HELP_URL =
   'https://docs.decentraland.org/creator/scene-editor/interactivity/video-screen';
