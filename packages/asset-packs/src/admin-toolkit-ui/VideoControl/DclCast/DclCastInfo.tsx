@@ -5,7 +5,7 @@ import ReactEcs, { Label, UiEntity } from '@dcl/react-ecs';
 import { Color4 } from '@dcl/sdk/math';
 import { copyToClipboard } from '~system/RestrictedActions';
 import { Button } from '../../Button';
-import { CONTENT_URL } from '../../constants';
+import { URLS } from '../../constants';
 import { FeedbackButton } from '../../FeedbackButton';
 import type { State } from '../../types';
 import { nextTickFunctions } from '../..';
@@ -19,6 +19,8 @@ import {
 } from '../api';
 import { createVideoPlayerControls, isDclCast } from '../utils';
 import { getDclCastStyles, getDclCastColors, getDclCastBackgrounds } from './styles';
+
+const CONTENT_URL = URLS().CONTENT_URL;
 
 const ICONS = {
   COPY_TO_CLIPBOARD_ICON: `${CONTENT_URL}/admin_toolkit/assets/icons/copy-to-clipboard.png`,

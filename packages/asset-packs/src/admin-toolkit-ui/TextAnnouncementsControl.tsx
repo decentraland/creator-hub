@@ -1,13 +1,14 @@
-import { IEngine } from '@dcl/ecs';
+import { type IEngine } from '@dcl/ecs';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import ReactEcs, { Label, UiEntity, Input } from '@dcl/react-ecs';
 import { Color4 } from '@dcl/sdk/math';
 import { getComponents } from '../definitions';
-import { GetPlayerDataRes } from '../types';
+import { type GetPlayerDataRes } from '../types';
 import { Button } from './Button';
 import { CONTENT_URL } from './constants';
-import { State } from './types';
 import { Header } from './Header';
 import { Card } from './Card';
+import { type State } from './types';
 
 const ICONS = {
   TEXT_ANNOUNCEMENT_CONTROL: `${CONTENT_URL}/admin_toolkit/assets/icons/text-announcement-control.png`,
@@ -177,7 +178,7 @@ function handleSendTextAnnouncement(
   if (textAnnouncement) {
     const author = player?.name;
     // Get current timestamp and ensure uniqueness
-    let timestamp = Date.now();
+    const timestamp = Date.now();
 
     textAnnouncement.author = author;
     textAnnouncement.id = `${timestamp}-${author}`;

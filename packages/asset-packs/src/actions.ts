@@ -74,8 +74,10 @@ import { getExplorerComponents } from './components';
 import { initTriggers, damageTargets, healTargets } from './triggers';
 import { followMap } from './transform';
 import { getEasingFunctionFromInterpolation } from './tweens';
-import { REWARDS_SERVER_URL } from './admin-toolkit-ui/constants';
+import { URLS } from './admin-toolkit-ui/constants';
 import { callScriptMethod } from '~sdk/script-utils';
+
+const REWARDS_SERVER_URL = URLS().REWARDS_SERVER_URL;
 
 const initedEntities = new Set<Entity>();
 const uiStacks = new Map<string, Entity>();
