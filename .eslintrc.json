@@ -86,6 +86,7 @@
           { "pattern": "@mui/*", "group": "internal" },
           { "pattern": "@emotion/*", "group": "internal" },
           { "pattern": "@dcl/schemas/*", "group": "internal" },
+          { "pattern": "~system/*", "group": "internal" },
           { "pattern": "/shared/*", "group": "internal" },
           { "pattern": "#preload", "group": "internal" },
           { "pattern": "#store", "group": "internal" },

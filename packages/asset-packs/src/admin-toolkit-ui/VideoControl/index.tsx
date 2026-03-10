@@ -1,11 +1,13 @@
-import { IEngine } from '@dcl/ecs';
+import { type IEngine } from '@dcl/ecs';
 import ReactEcs, { Label, UiEntity, Dropdown } from '@dcl/react-ecs';
 import { Color4 } from '@dcl/sdk/math';
 import { Button } from '../Button';
 import { CONTENT_URL } from '../constants';
-import { State } from '../types';
+import { type State } from '../types';
 import type { AdminTools } from '../../definitions';
 import { Header } from '../Header';
+import { Active } from '../Active';
+import { Card } from '../Card';
 import {
   getVideoPlayers,
   isDclCast,
@@ -13,10 +15,8 @@ import {
   isVideoUrl,
   useSelectedVideoPlayer,
 } from './utils';
-import { Card } from '../Card';
 import { VideoControlURL } from './VideoUrl';
 import { LiveStream } from './LiveStream';
-import { Active } from '../Active';
 import DclCast from './DclCast';
 
 // Constants

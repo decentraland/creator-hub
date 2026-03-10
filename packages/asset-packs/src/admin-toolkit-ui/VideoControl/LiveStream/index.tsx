@@ -1,17 +1,17 @@
 import { Color4 } from '@dcl/sdk/math';
-import { DeepReadonlyObject, Entity, IEngine, PBVideoPlayer } from '@dcl/ecs';
 import ReactEcs, { UiEntity, Label } from '@dcl/react-ecs';
+import type { DeepReadonlyObject, Entity, IEngine, PBVideoPlayer } from '@dcl/ecs';
+import { openExternalUrl } from '~system/RestrictedActions';
+import { getComponents } from '../../../definitions';
 import { ICONS } from '..';
+import { state } from '../..';
+import { getStreamKey } from '../api';
 import { Header } from '../../Header';
+import { LoadingDots } from '../../Loading';
+import { HELP_ICON } from '../VideoUrl';
 import { ShowStreamKey } from './ShowStreamKey';
 import { GenerateStreamKey } from './GenerateStreamKey';
 import { DeleteStreamKeyConfirmation } from './DeleteStreamKey';
-import { state } from '../..';
-import { getComponents } from '../../../definitions';
-import { getStreamKey } from '../api';
-import { LoadingDots } from '../../Loading';
-import { openExternalUrl } from '~system/RestrictedActions';
-import { HELP_ICON } from '../VideoUrl';
 
 export const LIVEKIT_STREAM_SRC = 'livekit-video://current-stream';
 export const STREAMING_SUPPORT_URL = 'https://docs.decentraland.org//creator/editor/live-streaming';
