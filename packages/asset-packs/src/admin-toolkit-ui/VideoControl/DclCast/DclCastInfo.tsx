@@ -1,19 +1,42 @@
-import { Entity, IEngine } from '@dcl/ecs';
-import { DeepReadonlyObject, PBVideoPlayer } from '@dcl/ecs';
+import type { Entity, IEngine } from '@dcl/ecs';
+import type { DeepReadonlyObject, PBVideoPlayer } from '@dcl/ecs';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- ReactEcs is required for JSX factory
 import ReactEcs, { Label, UiEntity } from '@dcl/react-ecs';
-import { copyToClipboard } from '~system/RestrictedActions';
 import { Color4 } from '@dcl/sdk/math';
+import { copyToClipboard } from '~system/RestrictedActions';
 import { Button } from '../../Button';
-import { FeedbackButton } from '../../FeedbackButton';
-import { State } from '../../types';
-import { VideoControlVolume } from '../VolumeControl';
-import { createVideoPlayerControls, isDclCast } from '../utils';
-import { LIVEKIT_STREAM_SRC } from '../LiveStream';
-import { getDclCastStyles, getDclCastColors, getDclCastBackgrounds } from './styles';
 import { CONTENT_URL } from '../../constants';
+import { FeedbackButton } from '../../FeedbackButton';
+import type { State } from '../../types';
+import { nextTickFunctions } from '../..';
+import { LIVEKIT_STREAM_SRC } from '../LiveStream';
+import { VideoControlVolume } from '../VolumeControl';
+import {
+  getActiveStreams,
+  groupTracksByParticipant,
+  type FlattenedTrack,
+  type Participant,
+} from '../api';
+import { createVideoPlayerControls, isDclCast } from '../utils';
+import { getDclCastStyles, getDclCastColors, getDclCastBackgrounds } from './styles';
 
 const ICONS = {
   COPY_TO_CLIPBOARD_ICON: `${CONTENT_URL}/admin_toolkit/assets/icons/copy-to-clipboard.png`,
+  STAR: `${CONTENT_URL}/admin_toolkit/assets/icons/star.png`,
+};
+
+export const showcaseState: {
+  show: boolean;
+  participants: Participant[];
+  activeTrackSid: string | undefined;
+  onSelectTrack: ((track: FlattenedTrack) => void) | undefined;
+  onClose: (() => void) | undefined;
+} = {
+  show: false,
+  participants: [],
+  activeTrackSid: undefined,
+  onSelectTrack: undefined,
+  onClose: undefined,
 };
 
 const DclCastInfo = ({
@@ -33,6 +56,32 @@ const DclCastInfo = ({
   const styles = getDclCastStyles();
   const colors = getDclCastColors();
   const backgrounds = getDclCastBackgrounds();
+
+  const onShowShowcaseModal = async () => {
+    const latestTracks = await getActiveStreams();
+
+    if (!latestTracks) return;
+
+    const closeModal = () => {
+      showcaseState.show = false;
+    };
+
+    showcaseState.participants = groupTracksByParticipant(latestTracks);
+    showcaseState.activeTrackSid = video?.src;
+
+    showcaseState.onSelectTrack = (track: FlattenedTrack) => {
+      controls.setSource(track.sid);
+      state.videoControl.selectedStream = 'dcl-cast';
+      closeModal();
+    };
+
+    showcaseState.onClose = closeModal;
+
+    nextTickFunctions.push(() => {
+      showcaseState.show = true;
+    });
+  };
+
   return (
     <UiEntity uiTransform={styles.fullContainer}>
       <UiEntity uiTransform={styles.mainBorderedContainer}>
@@ -157,13 +206,27 @@ const DclCastInfo = ({
         </UiEntity>
       </UiEntity>
       <UiEntity uiTransform={styles.columnWithMarginTop}>
-        <VideoControlVolume
-          engine={engine}
-          entity={entity}
-          video={video}
-          label="<b>Cast volume</b>"
-        />
-        <UiEntity>
+        <UiEntity uiTransform={styles.volumeShowcaseRow}>
+          <VideoControlVolume
+            engine={engine}
+            entity={entity}
+            video={video}
+            label="<b>Cast controls</b>"
+          />
+          <Button
+            id="dcl_cast_showcase_list"
+            value="<b>Showcase List</b>"
+            icon={ICONS.STAR}
+            iconTransform={styles.starIcon}
+            variant="secondary"
+            fontSize={16 * scaleFactor}
+            color={colors.white}
+            uiTransform={styles.showcaseButton}
+            onMouseDown={onShowShowcaseModal}
+          />
+        </UiEntity>
+        {}
+        <UiEntity uiTransform={styles.castControlsRow}>
           <Button
             id="dcl_cast_reset_room_id"
             value="<b>Reset Room</b>"
