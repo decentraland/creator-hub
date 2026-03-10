@@ -18,6 +18,7 @@ import * as ens from './ens';
 import * as land from './land';
 import * as settings from './settings';
 import * as defaultEditor from './defaultEditor';
+import * as featureFlags from './featureFlags';
 import * as management from './management';
 import * as profiles from './profiles';
 
@@ -33,6 +34,7 @@ export function createRootReducer() {
     land: land.reducer,
     settings: settings.reducer,
     defaultEditor: defaultEditor.reducer,
+    featureFlags: featureFlags.reducer,
     management: management.reducer,
     profiles: profiles.reducer,
   };
@@ -73,6 +75,9 @@ async function start() {
     // install editor dependencies
     store.dispatch(editor.actions.install());
     // await install.unwrap(); // .unwrap() to make it throw if thunk is rejected
+
+    // fetch feature flags
+    store.dispatch(featureFlags.actions.fetchFeatureFlags());
 
     // start app
     await Promise.all([
