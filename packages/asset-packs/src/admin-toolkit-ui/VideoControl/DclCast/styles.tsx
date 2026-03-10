@@ -139,23 +139,23 @@ export const getDclCastStyles = (): Record<string, UiTransformProps> => ({
     justifyContent: 'flex-end',
     alignItems: 'center',
     width: '100%',
-    margin: { top: 12 * scaleFactor },
+    margin: { top: 12 },
   },
 
   showcaseButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: { left: 12 * scaleFactor, right: 12 * scaleFactor },
-    height: 42 * scaleFactor,
+    padding: { left: 12, right: 12 },
+    height: 42,
     borderWidth: 2,
     borderColor: Color4.fromHexString('#FCFCFC'),
-    borderRadius: 12 * scaleFactor,
+    borderRadius: 12,
   },
 
   starIcon: {
-    width: 20 * scaleFactor,
-    height: 20 * scaleFactor,
-    margin: { right: 4 * scaleFactor },
+    width: 20,
+    height: 20,
+    margin: { right: 4 },
   },
 
   copyLinkButton: {
