@@ -1,17 +1,15 @@
 import ReactEcs, { UiEntity } from '@dcl/react-ecs';
-import { DeepReadonlyObject, Entity, IEngine, PBVideoPlayer } from '@dcl/ecs';
+import type { DeepReadonlyObject, Entity, IEngine, PBVideoPlayer } from '@dcl/ecs';
 import { Color4 } from '@dcl/sdk/math';
-
-import { getDclCastInfo, resetStreamKey } from '../api';
-import { CONTENT_URL } from '../../constants';
-import { State } from '../../types';
-
-import { Header } from '../../Header';
-import DclCastInfo from './DclCastInfo';
-import { LoadingDots } from '../../Loading';
-import { Button } from '../../Button';
-import { getDclCastStyles, getDclCastColors } from './styles';
 import { getComponents } from '../../../definitions';
+import { CONTENT_URL } from '../../constants';
+import type { State } from '../../types';
+import { Button } from '../../Button';
+import { Header } from '../../Header';
+import { LoadingDots } from '../../Loading';
+import { getDclCastInfo, resetStreamKey } from '../api';
+import DclCastInfo from './DclCastInfo';
+import { getDclCastStyles, getDclCastColors } from './styles';
 
 const ICONS = {
   DCL_CAST_ICON: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-dcl-cast.png`,
