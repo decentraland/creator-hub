@@ -22,7 +22,6 @@ const ICONS = {
 };
 
 type SpeakerShowcaseProps = {
-  scaleFactor: number;
   participants: Participant[];
   activeTrackSid: string | undefined;
   onSelectTrack: (track: FlattenedTrack) => void;
@@ -39,14 +38,13 @@ function getActiveIndex(participant: Participant, activeTrackSid: string | undef
 }
 
 export function SpeakerShowcase({
-  scaleFactor,
   participants,
   activeTrackSid,
   onSelectTrack,
   onClose,
 }: SpeakerShowcaseProps) {
   const [page, setPage] = ReactEcs.useState(1);
-  const styles = getModalStyles(scaleFactor);
+  const styles = getModalStyles();
   const backgrounds = getModalBackgrounds();
   const colors = getModalColors();
 
@@ -72,12 +70,12 @@ export function SpeakerShowcase({
             />
             <Label
               value={'<b>SPEAKER SHOWCASE</b>'}
-              fontSize={24 * scaleFactor}
+              fontSize={24}
               color={colors.white}
             />
             <Label
               value={`(${participants.length} Speakers)`}
-              fontSize={16 * scaleFactor}
+              fontSize={16}
               color={colors.gray}
               uiTransform={styles.usersCount}
             />
@@ -86,7 +84,7 @@ export function SpeakerShowcase({
               onlyIcon
               icon={ICONS.CLOSE}
               variant="secondary"
-              fontSize={20 * scaleFactor}
+              fontSize={20}
               uiTransform={styles.closeButton}
               iconTransform={styles.closeIcon}
               onMouseDown={onClose}
@@ -115,7 +113,7 @@ export function SpeakerShowcase({
                       <UiEntity uiTransform={styles.userDetails}>
                         <Label
                           value={`<b>${participant.name}</b>`}
-                          fontSize={14 * scaleFactor}
+                          fontSize={14}
                           color={colors.white}
                         />
                       </UiEntity>
@@ -129,9 +127,9 @@ export function SpeakerShowcase({
                       {isActive && (
                         <UiEntity
                           uiTransform={{
-                            width: 20 * scaleFactor,
-                            height: 20 * scaleFactor,
-                            margin: { right: 4 * scaleFactor },
+                            width: 20,
+                            height: 20,
+                            margin: { right: 4 },
                           }}
                           uiBackground={{
                             textureMode: 'stretch',
@@ -152,10 +150,10 @@ export function SpeakerShowcase({
                           }
                         }}
                         textAlign="middle-center"
-                        fontSize={14 * scaleFactor}
+                        fontSize={14}
                         uiTransform={{
-                          height: 36 * scaleFactor,
-                          width: 180 * scaleFactor,
+                          height: 36,
+                          width: 180,
                         }}
                         uiBackground={{ color: Color4.create(0.2, 0.2, 0.2, 1) }}
                         color={isActive ? Color4.Gray() : Color4.White()}
@@ -179,7 +177,7 @@ export function SpeakerShowcase({
               value="Prev"
               variant="secondary"
               disabled={page <= 1}
-              fontSize={18 * scaleFactor}
+              fontSize={18}
               icon={ICONS.BACK}
               iconTransform={styles.prevIcon}
               iconBackground={{ color: getPaginationColor(page <= 1) }}
@@ -190,14 +188,14 @@ export function SpeakerShowcase({
             />
             <Label
               value={`Page ${page}/${totalPages}`}
-              fontSize={14 * scaleFactor}
+              fontSize={14}
               color={colors.white}
             />
             <Button
               id="showcase-next"
               value="<b>Next</b>"
               variant="secondary"
-              fontSize={18 * scaleFactor}
+              fontSize={18}
               iconRight={ICONS.NEXT}
               iconRightTransform={styles.nextIcon}
               labelTransform={styles.nextLabel}
