@@ -79,12 +79,7 @@ export async function attachSceneDebugger(path: string): Promise<string> {
   const eventName = getDebuggerChannel(path);
   const { child } = preview;
 
-  const existing = debuggers.get(path);
-  if (existing) {
-    existing.preview.off(existing.listener);
-    existing.preview.process.off('exit', existing.exitHandler);
-    debuggers.delete(path);
-  }
+  detachSceneDebugger(path);
 
   // Send all the current logs to the main window
   const stdall = child.stdall({ sanitize: false });
