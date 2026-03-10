@@ -1,8 +1,8 @@
-import { toCamelCase } from './utils';
 import type { SignedFetchRequest } from '~system/SignedFetch';
 import { signedFetch } from '~system/SignedFetch';
 import type { PBRealmInfo } from '~system/Runtime';
 import { getRealm as getRealmRuntime } from '~system/Runtime';
+import { toCamelCase } from './utils';
 
 type Opts = {
   toCamelCase?: boolean;

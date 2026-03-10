@@ -22,6 +22,17 @@ import {
 } from '@dcl/ecs';
 import { Quaternion, Vector3 } from '@dcl/sdk/math';
 import type { TextureMovementType as SdkTextureMovementType } from '@dcl/ecs/dist/components/generated/pb/decentraland/sdk/components/tween.gen';
+import {
+  movePlayerTo,
+  triggerEmote,
+  triggerSceneEmote,
+  openExternalUrl,
+  teleportTo,
+  changeRealm,
+} from '~system/RestrictedActions';
+import type { FlatFetchInit } from '~system/SignedFetch';
+import { getRealm } from '~system/Runtime';
+import { signedFetch } from '~system/SignedFetch';
 import { getEntityParent, getPlayerPosition, getWorldPosition, getWorldRotation } from './helpers';
 import type {
   ActionPayload,
@@ -64,17 +75,6 @@ import { followMap } from './transform';
 import { getEasingFunctionFromInterpolation } from './tweens';
 import { REWARDS_SERVER_URL } from './admin-toolkit-ui/constants';
 import { callScriptMethod } from '~sdk/script-utils';
-import {
-  movePlayerTo,
-  triggerEmote,
-  triggerSceneEmote,
-  openExternalUrl,
-  teleportTo,
-  changeRealm,
-} from '~system/RestrictedActions';
-import type { FlatFetchInit } from '~system/SignedFetch';
-import { getRealm } from '~system/Runtime';
-import { signedFetch } from '~system/SignedFetch';
 
 const initedEntities = new Set<Entity>();
 const uiStacks = new Map<string, Entity>();
