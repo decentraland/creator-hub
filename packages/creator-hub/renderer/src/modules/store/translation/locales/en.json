@@ -51,6 +51,7 @@
           "skip_auth_screen": "Skip Auth Screen",
           "open_new_instance": "Open multiple instances",
           "landscape_terrain_enabled": "Enable Landscape Terrains",
+          "multi_instance": "Multi-Instance Preview",
           "mobile_preview": "Show QR Code for Mobile"
         },
         "publish_options": {
@@ -259,6 +260,7 @@
             "invalid_url": "Something went wrong.\nPlease, try again.",
             "invalid_identity": "Failed to validate your identity.",
             "max_file_size_exceeded": "One or more assets exceed the allowed limit ({maxFileSizeInMb}MB).\nOptimize or remove large files and try again.",
+            "max_scene_size_exceeded": "Your scene exceeds the maximum allowed size.\nReduce the number or size of assets and try again.",
             "unknown": "Something went wrong.\nPlease, try again.",
             "invalid_creator_wallet": "Creator must be a valid Ethereum wallet address."
           },

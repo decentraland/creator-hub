@@ -120,18 +120,23 @@ export function interactWithScene(
           const context = getSceneContext(scene);
           if (context) {
             const isCameraTarget = spawnPointManager.isMeshCameraTarget(mesh);
-            if (isCameraTarget) {
-              spawnPointManager.selectCameraTarget(spawnPointIndex);
-            } else {
-              spawnPointManager.selectSpawnPoint(spawnPointIndex);
-            }
+            const currentIndex = spawnPointManager.getSelectedIndex();
+            const currentTarget = spawnPointManager.getSelectedTarget();
+            const sameSelection =
+              currentIndex === spawnPointIndex &&
+              currentTarget === (isCameraTarget ? 'cameraTarget' : 'position');
 
-            // Select the Player entity to show spawn settings in inspector.
-            // Gizmo attachment is handled by PlayerInspector via the selectionChange event
-            // (or on mount if it wasn't rendered yet). We must NOT attach here because
-            // dispatch().then() fires after PlayerInspector's listener, overwriting its
-            // callback that updates React state and scene.json.
-            context.operations.updateSelectedEntity(context.engine.PlayerEntity);
+            if (sameSelection) {
+              spawnPointManager.selectSpawnPoint(null);
+              context.operations.updateSelectedEntity(context.engine.RootEntity);
+            } else {
+              if (isCameraTarget) {
+                spawnPointManager.selectCameraTarget(spawnPointIndex);
+              } else {
+                spawnPointManager.selectSpawnPoint(spawnPointIndex);
+              }
+              context.operations.updateSelectedEntity(context.engine.PlayerEntity);
+            }
             void context.operations.dispatch();
           }
         }

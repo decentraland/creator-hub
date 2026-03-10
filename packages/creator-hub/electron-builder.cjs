@@ -145,21 +145,14 @@ if (process.env.CODE_SIGN_SCRIPT_PATH) {
         jvm_max_memory: process.env.INPUT_JVM_MAX_MEMORY,
       };
       console.log('env:', JSON.stringify(env, null, 2));
-      const output = execSync(`node "${scriptPath}"`, {
+      // Use stdio 'inherit' so the esigner script output goes directly to the console.
+      // execSync throws automatically on non-zero exit codes, which is sufficient to detect failures.
+      execSync(`node "${scriptPath}"`, {
         env: { ...process.env, ...env },
-      }).toString();
-      console.log(`Script output: ${output}`);
-      if (!output.includes('Code signed successfully') || output.includes('Error')) {
-        throw new Error(`Code signing failed: ${output}`);
-      }
+        stdio: 'inherit',
+      });
     } catch (error) {
-      console.error(`Error executing script: ${error.message}`);
-      if (error.stdout) {
-        console.log(`Script stdout: ${error.stdout.toString()}`);
-      }
-      if (error.stderr) {
-        console.error(`Script stderr: ${error.stderr.toString()}`);
-      }
+      console.error(`Code signing failed: ${error.message}`);
       throw error;
     }
 

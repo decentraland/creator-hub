@@ -76,14 +76,16 @@ const PREVIEW_OPTIONS_MAP: Record<keyof PreviewArguments, string> = {
   enableLandscapeTerrains: '--landscape-terrain-enabled',
   openNewInstance: '-n',
   skipAuthScreen: '--skip-auth-screen',
+  multiInstance: '--multi-instance',
 };
 
 function generatePreviewArguments(opts: PreviewOptions) {
-  opts.skipAuthScreen = true;
+  // Multi-instance preview requires authentication to differentiate players
+  const resolved = { ...opts, skipAuthScreen: !opts.multiInstance };
   const args: string[] = [];
-  for (const key in opts) {
+  for (const key in resolved) {
     const typedKey = key as keyof PreviewArguments;
-    if (opts[typedKey] && typedKey in PREVIEW_OPTIONS_MAP) {
+    if (resolved[typedKey] && typedKey in PREVIEW_OPTIONS_MAP) {
       args.push(PREVIEW_OPTIONS_MAP[typedKey]);
     }
   }
@@ -157,9 +159,10 @@ function updateDeepLinkWithOpts(params: string, newOpts: PreviewOptions): string
       }
     };
 
-    // We always want to skip the auth screen
-    setOrDeleteParam(PREVIEW_OPTIONS_MAP.skipAuthScreen, true);
+    // Multi-instance preview requires authentication to differentiate players
+    setOrDeleteParam(PREVIEW_OPTIONS_MAP.skipAuthScreen, !newOpts.multiInstance);
     setOrDeleteParam(PREVIEW_OPTIONS_MAP.enableLandscapeTerrains, newOpts.enableLandscapeTerrains);
+    setOrDeleteParam(PREVIEW_OPTIONS_MAP.multiInstance, newOpts.multiInstance);
 
     // this param is different from what we recieved from the CLI that the one that the launcher uses.
     setOrDeleteParam('open-deeplink-in-new-instance', newOpts.openNewInstance);

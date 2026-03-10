@@ -1,7 +1,6 @@
 import { IEngine } from '@dcl/ecs';
 import ReactEcs, { Label, UiEntity } from '@dcl/react-ecs';
 import { getComponents } from '../definitions';
-import { getScaleUIFactor } from '../ui';
 import { CONTENT_URL } from './constants';
 import { State } from './types';
 
@@ -15,7 +14,6 @@ let textAnnouncementsHidden: Set<string> = new Set();
 export function TextAnnouncements({ engine, state }: { engine: IEngine; state: State }) {
   const { TextAnnouncements } = getComponents(engine);
   const textAnnouncements = TextAnnouncements.getOrNull(state.adminToolkitUiEntity);
-  const scaleFactor = getScaleUIFactor(engine);
 
   if (!textAnnouncements?.text || textAnnouncementsHidden.has(textAnnouncements.id)) {
     return null;
@@ -37,16 +35,16 @@ export function TextAnnouncements({ engine, state }: { engine: IEngine; state: S
         uiTransform={{
           display: 'flex',
           flexDirection: 'column',
-          height: 150 * scaleFactor,
-          width: 400 * scaleFactor,
+          height: 150,
+          width: 400,
           margin: {
-            bottom: 10 * scaleFactor,
+            bottom: 10,
           },
           padding: {
-            top: 10 * scaleFactor,
-            bottom: 10 * scaleFactor,
-            left: 10 * scaleFactor,
-            right: 10 * scaleFactor,
+            top: 10,
+            bottom: 10,
+            left: 10,
+            right: 10,
           },
         }}
         uiBackground={{ color: { r: 0.15, g: 0.15, b: 0.15, a: 0.95 } }}
@@ -55,8 +53,8 @@ export function TextAnnouncements({ engine, state }: { engine: IEngine; state: S
           uiTransform={{
             alignSelf: 'center',
             justifyContent: 'center',
-            height: 50 * scaleFactor,
-            width: 50 * scaleFactor,
+            height: 50,
+            width: 50,
           }}
           uiBackground={{
             texture: {
@@ -71,7 +69,7 @@ export function TextAnnouncements({ engine, state }: { engine: IEngine; state: S
             alignItems: 'center',
             justifyContent: 'center',
           }}
-          fontSize={18 * scaleFactor}
+          fontSize={18}
           value={textAnnouncements.text}
         />
         {textAnnouncements.author ? (
@@ -80,19 +78,19 @@ export function TextAnnouncements({ engine, state }: { engine: IEngine; state: S
               alignItems: 'flex-end',
               justifyContent: 'flex-end',
             }}
-            fontSize={14 * scaleFactor}
+            fontSize={14}
             color={{ r: 0.7, g: 0.7, b: 0.7, a: 1 }}
             value={`- ${textAnnouncements.author}`}
           />
         ) : null}
         <UiEntity
           uiTransform={{
-            height: 24 * scaleFactor,
-            width: 24 * scaleFactor,
+            height: 24,
+            width: 24,
             positionType: 'absolute',
             position: {
-              top: 5 * scaleFactor,
-              right: 5 * scaleFactor,
+              top: 5,
+              right: 5,
             },
           }}
           uiBackground={{

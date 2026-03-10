@@ -2,8 +2,6 @@ import ReactEcs, { UiEntity } from '@dcl/react-ecs';
 import { DeepReadonlyObject, Entity, IEngine, PBVideoPlayer } from '@dcl/ecs';
 import { Color4 } from '@dcl/sdk/math';
 
-import { getScaleUIFactor } from '../../../ui';
-
 import { getDclCastInfo, resetStreamKey } from '../api';
 import { CONTENT_URL } from '../../constants';
 import { State } from '../../types';
@@ -43,9 +41,8 @@ const DclCast = ({
   entity: Entity;
   video: DeepReadonlyObject<PBVideoPlayer> | undefined;
 }) => {
-  const scaleFactor = getScaleUIFactor(engine);
   const { VideoControlState } = getComponents(engine);
-  const styles = getDclCastStyles(scaleFactor);
+  const styles = getDclCastStyles();
   const colors = getDclCastColors();
   const [isLoading, setIsLoading] = ReactEcs.useState(false);
   const [error, setError] = ReactEcs.useState(false);
@@ -86,14 +83,13 @@ const DclCast = ({
       <Header
         iconSrc={ICONS.DCL_CAST_ICON}
         title="DCL Cast"
-        scaleFactor={scaleFactor}
       />
       <UiEntity uiTransform={styles.fullWidthWithBottomMargin}>
         <UiEntity
           uiText={{
             value:
               'Use a browser-based DCL Cast room to easily stream camera and screen feed to a screen in your scene.',
-            fontSize: 16 * scaleFactor,
+            fontSize: 16,
             color: Color4.fromHexString('#A09BA8'),
 
             textAlign: 'top-left',
@@ -104,8 +100,7 @@ const DclCast = ({
       </UiEntity>
       {isLoading && (
         <LoadingDots
-          uiTransform={{ minHeight: 400 * scaleFactor }}
-          scaleFactor={scaleFactor}
+          uiTransform={{ minHeight: 400 }}
           engine={engine}
         />
       )}
@@ -114,15 +109,15 @@ const DclCast = ({
           <UiEntity
             uiText={{
               value: '<b>Failed to fetch DCL Cast info</b>',
-              fontSize: 16 * scaleFactor,
+              fontSize: 16,
               color: Color4.White(),
             }}
-            uiTransform={{ margin: { bottom: 8 * scaleFactor } }}
+            uiTransform={{ margin: { bottom: 8 } }}
           />
           <UiEntity
             uiText={{
               value: 'Please retry.',
-              fontSize: 16 * scaleFactor,
+              fontSize: 16,
               color: Color4.Gray(),
             }}
           />
@@ -130,7 +125,7 @@ const DclCast = ({
             id="dcl_cast_retry"
             value="<b>Retry</b>"
             variant="secondary"
-            fontSize={16 * scaleFactor}
+            fontSize={16}
             color={colors.white}
             onMouseDown={() => {
               handleGetDclCastInfo(state);
@@ -142,7 +137,6 @@ const DclCast = ({
 
       {!isLoading && !error && (
         <DclCastInfo
-          scaleFactor={scaleFactor}
           state={state}
           entity={entity}
           engine={engine}

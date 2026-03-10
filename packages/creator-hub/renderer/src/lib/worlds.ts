@@ -302,6 +302,7 @@ export class Worlds {
       sort?: string;
       order?: 'asc' | 'desc';
       authorized_deployer?: string;
+      has_deployed_scenes?: boolean;
     } = { limit: 100, offset: 0 },
   ): Promise<WorldDataResponse | null> {
     const queryString = formatQueryParams(params);

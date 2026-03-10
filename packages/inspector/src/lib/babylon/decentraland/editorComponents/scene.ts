@@ -19,10 +19,12 @@ export const putSceneComponent: ComponentOperation = (entity, component) => {
 
     // set layout
     const lm = getLayoutManager(context.scene);
+    const previousLayout = lm.getLayout();
     const didChange = lm.setLayout(value.layout);
 
     // if the layout changed, we might need to update the grounds
-    if (didChange) {
+    // skip on initial load (null → layout) since composite already created the tiles
+    if (didChange && previousLayout !== null) {
       // find the ground entity
       const result = Array.from(context.engine.getEntitiesWith(context.editorComponents.Ground))[0];
       if (result) {

@@ -1,11 +1,11 @@
 import { createSlice, isRejectedWithValue } from '@reduxjs/toolkit';
 import { captureException } from '@sentry/electron/renderer';
-
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
+import { supportsMultiInstance } from '/shared/flags';
 import type { DeployOptions } from '/shared/types/deploy';
 import { isProjectError, ProjectError, type Project } from '/shared/types/projects';
-import type { PreviewOptions } from '/shared/types/settings';
+import { type PreviewOptions } from '/shared/types/settings';
 import { isWorkspaceError } from '/shared/types/workspace';
 
 import { editor } from '#preload';
@@ -63,6 +63,7 @@ export const getMobileQR = createAsyncThunk(
 // state
 export type EditorState = {
   version: string | null;
+  supportsMultiInstance: boolean;
   project?: Project;
   inspectorPort: number;
   publishPort: number;
@@ -81,6 +82,7 @@ export type EditorState = {
 
 const initialState: EditorState = {
   version: null,
+  supportsMultiInstance: false,
   inspectorPort: 0,
   publishPort: 0,
   loadingPublish: false,
@@ -104,7 +106,11 @@ export const slice = createSlice({
   extraReducers: builder => {
     builder.addCase(workspaceActions.runProject.pending, state => {
       state.project = undefined;
+      state.supportsMultiInstance = false;
       state.error = null;
+    });
+    builder.addCase(workspaceActions.fetchSdkCommandsVersion.fulfilled, (state, action) => {
+      state.supportsMultiInstance = supportsMultiInstance(action.payload);
     });
     builder.addCase(workspaceActions.runProject.fulfilled, (state, action) => {
       state.project = action.payload;

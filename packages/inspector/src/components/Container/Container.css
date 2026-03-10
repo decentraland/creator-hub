@@ -104,7 +104,7 @@
 .Container.with-gap > .content {
   display: flex;
   flex-direction: column;
-  row-gap: 12px;
+  row-gap: 8px;
 }
 
 .Container.border {

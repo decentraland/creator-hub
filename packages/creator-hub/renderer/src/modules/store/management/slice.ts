@@ -139,6 +139,7 @@ export const fetchWorlds = createAsyncThunk(
     const WorldsAPI = new Worlds();
 
     const worldsResponse = await WorldsAPI.fetchWorlds({
+      has_deployed_scenes: true,
       limit: PROJECTS_PAGE_LIMIT,
       search: searchQuery,
       sort: sortBy,

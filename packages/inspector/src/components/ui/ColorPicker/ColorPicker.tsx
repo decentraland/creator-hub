@@ -24,7 +24,7 @@ const ColorPicker: React.FC<Props> = ({
       setColor(e.target.value.toUpperCase());
       onChange && onChange(e);
     },
-    [setColor],
+    [setColor, onChange],
   );
 
   const handleClick = useCallback(() => {

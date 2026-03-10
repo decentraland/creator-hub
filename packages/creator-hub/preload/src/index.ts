@@ -12,6 +12,7 @@ export * as env from './modules/env';
 export * as fs from './services/fs';
 export * as analytics from './modules/analytics';
 export * as npm from './services/npm';
+export * as pkg from './services/pkg';
 export * as settings from './modules/settings';
 export * as scene from './modules/scene';
 export * as custom from './modules/custom';

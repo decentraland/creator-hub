@@ -18,10 +18,6 @@ const AGE_RATING_OPTIONS = [
     value: SceneAgeRating.Adult,
     label: t('modal.world_settings.details.age_rating_options.adult'),
   },
-  {
-    value: SceneAgeRating.Restricted,
-    label: t('modal.world_settings.details.age_rating_options.restricted'),
-  },
 ];
 
 const CATEGORIES_OPTIONS = [

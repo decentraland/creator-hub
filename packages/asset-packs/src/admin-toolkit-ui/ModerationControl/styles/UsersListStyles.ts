@@ -8,7 +8,7 @@ const ICONS = {
   BAN: `${CONTENT_URL}/admin_toolkit/assets/icons/ban.png`,
 };
 
-export const getModalStyles = (scaleFactor: number): Record<string, UiTransformProps> => ({
+export const getModalStyles = (): Record<string, UiTransformProps> => ({
   overlay: {
     width: '100%',
     height: '100%',
@@ -19,14 +19,14 @@ export const getModalStyles = (scaleFactor: number): Record<string, UiTransformP
     flexDirection: 'row',
   },
   container: {
-    width: 675 * scaleFactor,
-    maxHeight: 679 * scaleFactor,
-    minHeight: 479 * scaleFactor,
-    padding: 20 * scaleFactor,
+    width: 675,
+    maxHeight: 679,
+    minHeight: 479,
+    padding: 20,
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between',
-    borderRadius: 12 * scaleFactor,
+    borderRadius: 12,
   },
   content: {
     display: 'flex',
@@ -36,15 +36,15 @@ export const getModalStyles = (scaleFactor: number): Record<string, UiTransformP
   header: {
     justifyContent: 'flex-start',
     alignItems: 'center',
-    margin: { bottom: 24 * scaleFactor },
+    margin: { bottom: 24 },
   },
   headerIcon: {
-    width: 30 * scaleFactor,
-    height: 30 * scaleFactor,
-    margin: { right: 10 * scaleFactor },
+    width: 30,
+    height: 30,
+    margin: { right: 10 },
   },
   usersCount: {
-    margin: { left: 8 * scaleFactor },
+    margin: { left: 8 },
   },
   closeButton: {
     position: { right: 0 },
@@ -52,13 +52,13 @@ export const getModalStyles = (scaleFactor: number): Record<string, UiTransformP
     borderColor: Color4.Clear(),
   },
   closeIcon: {
-    width: 32 * scaleFactor,
-    height: 32 * scaleFactor,
+    width: 32,
+    height: 32,
   },
   listContainer: {
     flexDirection: 'column',
     width: '100%',
-    margin: { top: 16 * scaleFactor },
+    margin: { top: 16 },
   },
   userItem: {
     display: 'flex',
@@ -68,9 +68,9 @@ export const getModalStyles = (scaleFactor: number): Record<string, UiTransformP
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    height: 48 * scaleFactor,
-    padding: { left: 8 * scaleFactor, right: 8 * scaleFactor },
-    margin: { top: 4 * scaleFactor, bottom: 4 * scaleFactor },
+    height: 48,
+    padding: { left: 8, right: 8 },
+    margin: { top: 4, bottom: 4 },
   },
   userInfo: {
     display: 'flex',
@@ -81,11 +81,11 @@ export const getModalStyles = (scaleFactor: number): Record<string, UiTransformP
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    margin: { right: 10 * scaleFactor },
+    margin: { right: 10 },
   },
   personIcon: {
-    width: 28 * scaleFactor,
-    height: 28 * scaleFactor,
+    width: 28,
+    height: 28,
   },
   userDetails: {
     display: 'flex',
@@ -97,25 +97,25 @@ export const getModalStyles = (scaleFactor: number): Record<string, UiTransformP
     alignItems: 'center',
   },
   verifiedIcon: {
-    width: 14 * scaleFactor,
-    height: 14 * scaleFactor,
+    width: 14,
+    height: 14,
   },
   roleBadge: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     width: 'auto',
-    height: 20 * scaleFactor,
+    height: 20,
     padding: {
-      left: 4 * scaleFactor,
+      left: 4,
     },
-    margin: { left: 8 * scaleFactor },
-    borderRadius: 4 * scaleFactor,
+    margin: { left: 8 },
+    borderRadius: 4,
   },
   removeButton: {
     margin: {
-      left: 10 * scaleFactor,
-      right: 10 * scaleFactor,
+      left: 10,
+      right: 10,
     },
   },
   divider: {
@@ -126,41 +126,41 @@ export const getModalStyles = (scaleFactor: number): Record<string, UiTransformP
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    margin: { top: 20 * scaleFactor },
-    padding: { left: 10 * scaleFactor, right: 10 * scaleFactor },
+    margin: { top: 20 },
+    padding: { left: 10, right: 10 },
   },
   paginationButton: {
-    height: 42 * scaleFactor,
+    height: 42,
     alignItems: 'center',
   },
   prevIcon: {
-    width: 25 * scaleFactor,
-    height: 25 * scaleFactor,
-    margin: { left: 8 * scaleFactor },
+    width: 25,
+    height: 25,
+    margin: { left: 8 },
   },
   prevLabel: {
-    margin: { right: 10 * scaleFactor },
+    margin: { right: 10 },
   },
   nextIcon: {
-    width: 25 * scaleFactor,
-    height: 25 * scaleFactor,
-    margin: { right: 8 * scaleFactor },
+    width: 25,
+    height: 25,
+    margin: { right: 8 },
   },
   nextLabel: {
-    margin: { left: 10 * scaleFactor },
+    margin: { left: 10 },
   },
   messageContainer: {
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    margin: { top: 16 * scaleFactor },
+    margin: { top: 16 },
   },
   messageLabel: {
     padding: {
-      top: 8 * scaleFactor,
-      bottom: 8 * scaleFactor,
-      left: 16 * scaleFactor,
-      right: 16 * scaleFactor,
+      top: 8,
+      bottom: 8,
+      left: 16,
+      right: 16,
     },
   },
 });

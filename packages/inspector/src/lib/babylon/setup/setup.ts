@@ -41,7 +41,10 @@ export function setupEngine(
   const audioEngine = BABYLON.Engine.audioEngine;
   const effectLayers: BABYLON.EffectLayer[] = [];
 
-  const highlightLayer: BABYLON.HighlightLayer = new BABYLON.HighlightLayer('highlight', scene);
+  const highlightLayer: BABYLON.HighlightLayer = new BABYLON.HighlightLayer(
+    'selection_highlight',
+    scene,
+  );
 
   {
     if (!scene.effectLayers.includes(highlightLayer)) {
@@ -50,6 +53,8 @@ export function setupEngine(
 
     highlightLayer.innerGlow = false;
     highlightLayer.outerGlow = true;
+    highlightLayer.blurHorizontalSize = 0.1;
+    highlightLayer.blurVerticalSize = 0.1;
 
     effectLayers.push(highlightLayer);
   }
