@@ -1,5 +1,5 @@
 import { Color4 } from '@dcl/sdk/math';
-import { UiTransformProps } from '@dcl/react-ecs';
+import type { UiTransformProps } from '@dcl/react-ecs';
 
 export const getDclCastStyles = (): Record<string, UiTransformProps> => ({
   fullContainer: {
@@ -123,6 +123,39 @@ export const getDclCastStyles = (): Record<string, UiTransformProps> => ({
     margin: { right: 8, top: 20 },
     padding: { left: 8, right: 8 },
     height: 42,
+  },
+
+  volumeShowcaseRow: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    width: '100%',
+  },
+
+  castControlsRow: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    width: '100%',
+    margin: { top: 12 * scaleFactor },
+  },
+
+  showcaseButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: { left: 12 * scaleFactor, right: 12 * scaleFactor },
+    height: 42 * scaleFactor,
+    borderWidth: 2,
+    borderColor: Color4.fromHexString('#FCFCFC'),
+    borderRadius: 12 * scaleFactor,
+  },
+
+  starIcon: {
+    width: 20 * scaleFactor,
+    height: 20 * scaleFactor,
+    margin: { right: 4 * scaleFactor },
   },
 
   copyLinkButton: {

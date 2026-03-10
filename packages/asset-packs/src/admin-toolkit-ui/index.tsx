@@ -1,27 +1,41 @@
 import { Color4 } from '@dcl/sdk/math';
-import ReactEcs, { Label, Button as DCLButton, UiEntity, ReactBasedUiSystem } from '@dcl/react-ecs';
-import { Entity, IEngine, PointerEventsSystem } from '@dcl/ecs';
-import { getComponents, GetPlayerDataRes, IPlayersHelper, ISDKHelpers } from '../definitions';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- ReactEcs is required for JSX factory
+import ReactEcs, {
+  Label,
+  Button as DCLButton,
+  UiEntity,
+  type ReactBasedUiSystem,
+} from '@dcl/react-ecs';
+import { type Entity, type IEngine, type PointerEventsSystem } from '@dcl/ecs';
+import {
+  getComponents,
+  type GetPlayerDataRes,
+  type IPlayersHelper,
+  type ISDKHelpers,
+} from '../definitions';
 import { VideoControl } from './VideoControl';
 import { TextAnnouncementsControl } from './TextAnnouncementsControl';
 import { SmartItemsControl } from './SmartItemsControl';
 import { Button } from './Button';
 import { TextAnnouncements } from './TextAnnouncements';
 import { CONTENT_URL } from './constants';
-import { State, TabType, SelectedSmartItem } from './types';
+import { type State, TabType, type SelectedSmartItem } from './types';
 import {
   BTN_MODERATION_CONTROL,
   ModerationControl,
   moderationControlState,
-  SceneAdmin,
+  type SceneAdmin,
 } from './ModerationControl';
-import { getSceneAdmins, getSceneBans, SceneBanUser } from './ModerationControl/api';
+import { getSceneAdmins, getSceneBans, type SceneBanUser } from './ModerationControl/api';
 import { ModalUserList, UserListType } from './ModerationControl/UsersList';
+import { showcaseState } from './VideoControl/DclCast/DclCastInfo';
+import { SpeakerShowcase } from './VideoControl/DclCast/SpeakerShowcase';
 import { isPreview } from './fetch-utils';
 
 export const nextTickFunctions: (() => void)[] = [];
 const ADMIN_TOOLKIT_VIRTUAL_UI_SIZE = { virtualWidth: 1920, virtualHeight: 1080 };
 
+// eslint-disable-next-line prefer-const
 export let state: State = {
   adminToolkitUiEntity: 0 as Entity,
   panelOpen: false,
@@ -118,6 +132,7 @@ export function getSmartItems(engine: IEngine) {
   return Array.from(adminToolkitComponent.smartItemsControl.smartItems ?? []);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getRewards(engine: IEngine) {
   const adminToolkitComponent = getAdminToolkitComponent(engine);
 
@@ -482,6 +497,14 @@ const uiComponent = (
         users={sceneBansCache ?? []}
         engine={engine}
         type={UserListType.BAN}
+      />
+    ),
+    showcaseState.show && showcaseState.onSelectTrack && showcaseState.onClose && (
+      <SpeakerShowcase
+        participants={showcaseState.participants}
+        activeTrackSid={showcaseState.activeTrackSid}
+        onSelectTrack={showcaseState.onSelectTrack}
+        onClose={showcaseState.onClose}
       />
     ),
   ];
