@@ -158,52 +158,45 @@ function initTextAnnouncementSync(engine: IEngine) {
   });
 }
 
-// Initialize admin data before UI rendering
-let adminDataInitialized = false;
-export async function initializeAdminData(engine: IEngine, sdkHelpers?: ISDKHelpers) {
-  if (!adminDataInitialized) {
-    const { TextAnnouncements, VideoControlState } = getComponents(engine);
-
-    // Initialize AdminToolkitUiEntity
-    state.adminToolkitUiEntity = getAdminToolkitEntity(engine) ?? engine.addEntity();
-
-    // Initialize TextAnnouncements sync component
-    initTextAnnouncementSync(engine);
-
-    // // Initialize Rewards sync
-    // initRewardsSync(engine, sdkHelpers)
-
-    // Hydration guard: give replicated state time to arrive before creating defaults.
-    const hydrated = await waitForVideoControlStateHydration(
-      engine,
-      VIDEO_CONTROL_HYDRATION_GUARD_MS,
-    );
-    if (!hydrated && !VideoControlState.getOrNull(state.adminToolkitUiEntity)) {
-      VideoControlState.create(state.adminToolkitUiEntity);
-    }
-
-    sdkHelpers?.syncEntity?.(
-      state.adminToolkitUiEntity,
-      [VideoControlState.componentId, TextAnnouncements.componentId],
-      ADMIN_TOOLS_ENTITY,
-    );
-
-    engine.addSystem(() => {
-      if (nextTickFunctions.length > 0) {
-        const nextTick = nextTickFunctions.shift();
-        if (nextTick) {
-          nextTick();
-        }
-      }
-    }, Number.POSITIVE_INFINITY);
-
-    // Initialize scene data
-    await Promise.all([fetchSceneAdmins(), fetchSceneBans()]);
-
-    adminDataInitialized = true;
-
-    console.log('initializeAdminData - initialized');
+let initPromise: Promise<void> | null = null;
+export function initializeAdminData(engine: IEngine, sdkHelpers?: ISDKHelpers) {
+  if (!initPromise) {
+    initPromise = doInitializeAdminData(engine, sdkHelpers);
   }
+  return initPromise;
+}
+
+async function doInitializeAdminData(engine: IEngine, sdkHelpers?: ISDKHelpers) {
+  const { TextAnnouncements, VideoControlState } = getComponents(engine);
+  state.adminToolkitUiEntity = getAdminToolkitEntity(engine) ?? engine.addEntity();
+  initTextAnnouncementSync(engine);
+
+  sdkHelpers?.syncEntity?.(
+    state.adminToolkitUiEntity,
+    [VideoControlState.componentId, TextAnnouncements.componentId],
+    ADMIN_TOOLS_ENTITY,
+  );
+
+  const hydrated = await waitForVideoControlStateHydration(
+    engine,
+    VIDEO_CONTROL_HYDRATION_GUARD_MS,
+  );
+  if (!hydrated && !VideoControlState.getOrNull(state.adminToolkitUiEntity)) {
+    VideoControlState.create(state.adminToolkitUiEntity);
+  }
+
+  engine.addSystem(() => {
+    if (nextTickFunctions.length > 0) {
+      const nextTick = nextTickFunctions.shift();
+      if (nextTick) {
+        nextTick();
+      }
+    }
+  }, Number.POSITIVE_INFINITY);
+
+  await Promise.all([fetchSceneAdmins(), fetchSceneBans()]);
+
+  console.log('initializeAdminData - initialized');
 }
 
 export function createAdminToolkitUI(
