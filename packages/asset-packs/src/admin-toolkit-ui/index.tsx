@@ -18,10 +18,10 @@ import { TextAnnouncementsControl } from './TextAnnouncementsControl';
 import { SmartItemsControl } from './SmartItemsControl';
 import { Button } from './Button';
 import { TextAnnouncements } from './TextAnnouncements';
-import { CONTENT_URL } from './constants';
+import { getContentUrl } from './constants';
 import { type State, TabType, type SelectedSmartItem } from './types';
 import {
-  BTN_MODERATION_CONTROL,
+  getBtnModerationControl,
   ModerationControl,
   moderationControlState,
   type SceneAdmin,
@@ -67,14 +67,23 @@ let sceneBansCache: SceneBanUser[] = [];
 // const BTN_REWARDS_CONTROL = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-rewards-control-button.png`
 // const BTN_REWARDS_CONTROL_ACTIVE = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-rewards-control-active-button.png`
 
-const BTN_VIDEO_CONTROL = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-video-control-button.png`;
-
-const BTN_SMART_ITEM_CONTROL = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-smart-item-control-button.png`;
-
-const BTN_TEXT_ANNOUNCEMENT_CONTROL = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-text-announcement-control-button.png`;
-
-const BTN_ADMIN_TOOLKIT_CONTROL = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-control-button.png`;
-const BTN_ADMIN_TOOLKIT_BACKGROUND = `${CONTENT_URL}/admin_toolkit/assets/backgrounds/admin-tool-background.png`;
+const ADMIN_ICONS = {
+  get BTN_VIDEO_CONTROL() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/admin-panel-video-control-button.png`;
+  },
+  get BTN_SMART_ITEM_CONTROL() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/admin-panel-smart-item-control-button.png`;
+  },
+  get BTN_TEXT_ANNOUNCEMENT_CONTROL() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/admin-panel-text-announcement-control-button.png`;
+  },
+  get BTN_ADMIN_TOOLKIT_CONTROL() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/admin-panel-control-button.png`;
+  },
+  get BTN_ADMIN_TOOLKIT_BACKGROUND() {
+    return `${getContentUrl()}/admin_toolkit/assets/backgrounds/admin-tool-background.png`;
+  },
+};
 
 export const containerBackgroundColor = Color4.create(0, 0, 0, 0.75);
 
@@ -280,7 +289,7 @@ const uiComponent = (
               <Button
                 id="admin_toolkit_moderation_control"
                 variant={state.activeTab === TabType.MODERATION_CONTROL ? 'primary' : 'text'}
-                icon={BTN_MODERATION_CONTROL}
+                icon={getBtnModerationControl()}
                 onlyIcon
                 uiTransform={{
                   display:
@@ -314,7 +323,7 @@ const uiComponent = (
               <Button
                 id="admin_toolkit_panel_video_control"
                 variant={state.activeTab === TabType.VIDEO_CONTROL ? 'primary' : 'text'}
-                icon={BTN_VIDEO_CONTROL}
+                icon={ADMIN_ICONS.BTN_VIDEO_CONTROL}
                 iconBackground={{
                   color:
                     state.activeTab === TabType.VIDEO_CONTROL ? Color4.Black() : Color4.White(),
@@ -346,7 +355,7 @@ const uiComponent = (
               <Button
                 id="admin_toolkit_panel_smart_items_control"
                 variant={state.activeTab === TabType.SMART_ITEMS_CONTROL ? 'primary' : 'text'}
-                icon={BTN_SMART_ITEM_CONTROL}
+                icon={ADMIN_ICONS.BTN_SMART_ITEM_CONTROL}
                 iconBackground={{
                   color:
                     state.activeTab === TabType.SMART_ITEMS_CONTROL
@@ -380,7 +389,7 @@ const uiComponent = (
               <Button
                 id="admin_toolkit_panel_text_announcement_control"
                 variant={state.activeTab === TabType.TEXT_ANNOUNCEMENT_CONTROL ? 'primary' : 'text'}
-                icon={BTN_TEXT_ANNOUNCEMENT_CONTROL}
+                icon={ADMIN_ICONS.BTN_TEXT_ANNOUNCEMENT_CONTROL}
                 iconBackground={{
                   color:
                     state.activeTab === TabType.TEXT_ANNOUNCEMENT_CONTROL
@@ -451,7 +460,7 @@ const uiComponent = (
             }}
             uiBackground={{
               texture: {
-                src: BTN_ADMIN_TOOLKIT_BACKGROUND,
+                src: ADMIN_ICONS.BTN_ADMIN_TOOLKIT_BACKGROUND,
               },
               textureMode: 'stretch',
               color: Color4.create(1, 1, 1, 1),
@@ -468,7 +477,7 @@ const uiComponent = (
               }}
               uiBackground={{
                 texture: {
-                  src: BTN_ADMIN_TOOLKIT_CONTROL,
+                  src: ADMIN_ICONS.BTN_ADMIN_TOOLKIT_CONTROL,
                 },
                 textureMode: 'stretch',
                 color: Color4.create(1, 1, 1, 1),

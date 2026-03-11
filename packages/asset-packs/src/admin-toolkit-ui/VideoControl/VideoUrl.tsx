@@ -5,14 +5,14 @@ import { openExternalUrl } from '~system/RestrictedActions';
 import { Button } from '../Button';
 import { Header } from '../Header';
 import { LIVEKIT_STREAM_SRC } from '../../definitions';
-import { CONTENT_URL } from '../constants';
+import { getContentUrl } from '../constants';
 import { VideoControlVolume } from './VolumeControl';
 import { createVideoPlayerControls, isVideoUrl } from './utils';
 import { COLORS, ICONS } from '.';
 
 const VIDEO_PLAYER_HELP_URL =
   'https://docs.decentraland.org/creator/scene-editor/interactivity/video-screen';
-export const HELP_ICON = `${CONTENT_URL}/admin_toolkit/assets/icons/help.png`;
+export const getHelpIcon = () => `${getContentUrl()}/admin_toolkit/assets/icons/help.png`;
 
 export function VideoControlURL({
   engine,
@@ -47,7 +47,7 @@ export function VideoControlURL({
           uiBackground={{
             textureMode: 'stretch',
             color: Color4.White(),
-            texture: { src: HELP_ICON },
+            texture: { src: getHelpIcon() },
           }}
         />
       </UiEntity>

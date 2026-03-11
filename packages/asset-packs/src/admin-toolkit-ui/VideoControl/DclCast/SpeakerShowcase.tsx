@@ -1,7 +1,7 @@
 import ReactEcs, { Dropdown, UiEntity, Label } from '@dcl/react-ecs';
 import { Color4 } from '@dcl/sdk/math';
 import { Button } from '../../Button';
-import { CONTENT_URL } from '../../constants';
+import { getContentUrl } from '../../constants';
 import {
   getModalStyles,
   getModalBackgrounds,
@@ -13,12 +13,24 @@ import { getSourceLabel, type FlattenedTrack, type Participant } from '../api';
 const SPEAKERS_PER_PAGE = 10;
 
 const ICONS = {
-  BACK: `${CONTENT_URL}/admin_toolkit/assets/icons/chevron-back.png`,
-  NEXT: `${CONTENT_URL}/admin_toolkit/assets/icons/chevron-forward.png`,
-  CLOSE: `${CONTENT_URL}/admin_toolkit/assets/icons/close.png`,
-  PERSON: `${CONTENT_URL}/admin_toolkit/assets/icons/person-outline.png`,
-  SHOWCASE: `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-verified-user.png`,
-  STAR: `${CONTENT_URL}/admin_toolkit/assets/icons/star.png`,
+  get BACK() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/chevron-back.png`;
+  },
+  get NEXT() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/chevron-forward.png`;
+  },
+  get CLOSE() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/close.png`;
+  },
+  get PERSON() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/person-outline.png`;
+  },
+  get SHOWCASE() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/admin-panel-verified-user.png`;
+  },
+  get STAR() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/star.png`;
+  },
 };
 
 type SpeakerShowcaseProps = {
