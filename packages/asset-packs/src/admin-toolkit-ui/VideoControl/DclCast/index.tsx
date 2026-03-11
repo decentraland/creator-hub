@@ -2,7 +2,7 @@ import ReactEcs, { UiEntity } from '@dcl/react-ecs';
 import type { DeepReadonlyObject, Entity, IEngine, PBVideoPlayer } from '@dcl/ecs';
 import { Color4 } from '@dcl/sdk/math';
 import { getComponents } from '../../../definitions';
-import { CONTENT_URL } from '../../constants';
+import { getContentUrl } from '../../constants';
 import type { State } from '../../types';
 import { Button } from '../../Button';
 import { Header } from '../../Header';
@@ -12,7 +12,9 @@ import DclCastInfo from './DclCastInfo';
 import { getDclCastStyles, getDclCastColors } from './styles';
 
 const ICONS = {
-  DCL_CAST_ICON: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-dcl-cast.png`,
+  get DCL_CAST_ICON() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-dcl-cast.png`;
+  },
 };
 
 export async function handleGetDclCastInfo(state: State) {

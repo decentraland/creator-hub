@@ -73,10 +73,8 @@ import { getExplorerComponents } from './components';
 import { initTriggers, damageTargets, healTargets } from './triggers';
 import { followMap } from './transform';
 import { getEasingFunctionFromInterpolation } from './tweens';
-import { URLS } from './admin-toolkit-ui/constants';
+import { getRewardsServerUrl } from './admin-toolkit-ui/constants';
 import { callScriptMethod } from '~sdk/script-utils';
-
-const REWARDS_SERVER_URL = URLS().REWARDS_SERVER_URL;
 
 const initedEntities = new Set<Entity>();
 const uiStacks = new Map<string, Entity>();
@@ -1492,13 +1490,13 @@ export function createActionsSystem(
   }
 
   async function fetchCampaignsByDispenserKey(dispenserKey: string) {
-    const url = `${REWARDS_SERVER_URL}/api/campaigns/keys?campaign_key=${encodeURIComponent(dispenserKey)}`;
+    const url = `${getRewardsServerUrl()}/api/campaigns/keys?campaign_key=${encodeURIComponent(dispenserKey)}`;
     const response = await request(url);
     return response;
   }
 
   async function fetchCaptcha() {
-    const response = await request(`${REWARDS_SERVER_URL}/api/captcha`, {
+    const response = await request(`${getRewardsServerUrl()}/api/captcha`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1514,7 +1512,7 @@ export function createActionsSystem(
       value: string;
     },
   ) {
-    const url = `${REWARDS_SERVER_URL}/api/rewards`;
+    const url = `${getRewardsServerUrl()}/api/rewards`;
     const realm = await getRealm({});
     const player = playersHelper?.getPlayer();
 

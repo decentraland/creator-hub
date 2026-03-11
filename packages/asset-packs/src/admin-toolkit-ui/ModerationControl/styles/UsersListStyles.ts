@@ -1,11 +1,17 @@
 import { Color4 } from '@dcl/ecs-math';
 import type { UiTransformProps } from '@dcl/react-ecs';
-import { CONTENT_URL } from '../../constants';
+import { getContentUrl } from '../../constants';
 
 const ICONS = {
-  VERIFIED_USER: `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-verified-user.png`,
-  PERSON: `${CONTENT_URL}/admin_toolkit/assets/icons/person-outline.png`,
-  BAN: `${CONTENT_URL}/admin_toolkit/assets/icons/ban.png`,
+  get VERIFIED_USER() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/admin-panel-verified-user.png`;
+  },
+  get PERSON() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/person-outline.png`;
+  },
+  get BAN() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/ban.png`;
+  },
 };
 
 export const getModalStyles = (): Record<string, UiTransformProps> => ({

@@ -2,7 +2,7 @@ import { type IEngine } from '@dcl/ecs';
 import ReactEcs, { Label, UiEntity, Dropdown } from '@dcl/react-ecs';
 import { Color4 } from '@dcl/sdk/math';
 import { Button } from '../Button';
-import { CONTENT_URL } from '../constants';
+import { getContentUrl } from '../constants';
 import { type State } from '../types';
 import type { AdminTools } from '../../definitions';
 import { Header } from '../Header';
@@ -21,19 +21,43 @@ import DclCast from './DclCast';
 
 // Constants
 export const ICONS = {
-  VIDEO_CONTROL: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control.png`,
-  PREVIOUS_BUTTON: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-previous-button.png`,
-  FORWARD_BUTTON: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-forward-button.png`,
-  PLAY_BUTTON: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-play-button.png`,
-  MUTE: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-mute.png`,
-  LOOP: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-loop.png`,
-  VOLUME_MINUS_BUTTON: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-volume-minus-button.png`,
-  VOLUME_PLUS_BUTTON: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-volume-plus-button.png`,
-  VIDEO_SOURCE: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-video-icon.png`,
-  LIVE_SOURCE: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-live.png`,
-  DCL_CAST_SOURCE: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-dcl-cast.png`,
-  INFO: `${CONTENT_URL}/admin_toolkit/assets/icons/info.png`,
-} as const;
+  get VIDEO_CONTROL() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control.png`;
+  },
+  get PREVIOUS_BUTTON() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-previous-button.png`;
+  },
+  get FORWARD_BUTTON() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-forward-button.png`;
+  },
+  get PLAY_BUTTON() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-play-button.png`;
+  },
+  get MUTE() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-mute.png`;
+  },
+  get LOOP() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-loop.png`;
+  },
+  get VOLUME_MINUS_BUTTON() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-volume-minus-button.png`;
+  },
+  get VOLUME_PLUS_BUTTON() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-volume-plus-button.png`;
+  },
+  get VIDEO_SOURCE() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-video-icon.png`;
+  },
+  get LIVE_SOURCE() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-live.png`;
+  },
+  get DCL_CAST_SOURCE() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-dcl-cast.png`;
+  },
+  get INFO() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/info.png`;
+  },
+};
 
 export const VOLUME_STEP = 0.1;
 export const DEFAULT_VOLUME = 1;

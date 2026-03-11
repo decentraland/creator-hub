@@ -8,7 +8,7 @@ import { state } from '../..';
 import { getStreamKey } from '../api';
 import { Header } from '../../Header';
 import { LoadingDots } from '../../Loading';
-import { HELP_ICON } from '../VideoUrl';
+import { getHelpIcon } from '../VideoUrl';
 import { ShowStreamKey } from './ShowStreamKey';
 import { GenerateStreamKey } from './GenerateStreamKey';
 import { DeleteStreamKeyConfirmation } from './DeleteStreamKey';
@@ -79,7 +79,7 @@ export function LiveStream({
             textureMode: 'stretch',
             color: Color4.White(),
             texture: {
-              src: HELP_ICON,
+              src: getHelpIcon(),
             },
           }}
         />
