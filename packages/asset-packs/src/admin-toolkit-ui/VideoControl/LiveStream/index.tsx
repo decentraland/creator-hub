@@ -37,17 +37,27 @@ export function LiveStream({
     streamKeyEndsAt,
   );
 
+  // localStreamKeyEndsAt mirrors streamKeyEndsAt for display purposes.
+  // Two writers: (1) synced state changes propagate via the effect below,
+  // (2) the mount-time API fetch writes directly to avoid mutating shared state.
+  // synced state takes precedence when it changes (i.e., another admin acted).
   ReactEcs.useEffect(() => {
+    console.log(
+      `[livestream] synced state changed — streamKeyEndsAt=${streamKeyEndsAt}, updating local`,
+    );
     setLocalStreamKeyEndsAt(streamKeyEndsAt);
   }, [streamKeyEndsAt]);
 
   ReactEcs.useEffect(() => {
     async function streamKeyFn() {
+      console.log('[livestream] fetching stream key from API...');
       setLoading(true);
       const [error, data] = await getStreamKey();
       if (error) {
+        console.log('[livestream] ❌ API error fetching stream key:', JSON.stringify(error));
         setHasStreamKey(false);
       } else {
+        console.log(`[livestream] ✅ API returned stream key — endsAt=${data?.endsAt}`);
         setLocalStreamKeyEndsAt(data?.endsAt);
         setHasStreamKey(true);
       }

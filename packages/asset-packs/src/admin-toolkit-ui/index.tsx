@@ -167,22 +167,48 @@ export function initializeAdminData(engine: IEngine, sdkHelpers?: ISDKHelpers) {
 }
 
 async function doInitializeAdminData(engine: IEngine, sdkHelpers?: ISDKHelpers) {
+  console.log('🔧 running asset packs local version');
   const { TextAnnouncements, VideoControlState } = getComponents(engine);
   state.adminToolkitUiEntity = getAdminToolkitEntity(engine) ?? engine.addEntity();
+  console.log(`[admin-init] entity=${state.adminToolkitUiEntity}`);
   initTextAnnouncementSync(engine);
 
+  // Register sync BEFORE hydration wait so replicated state can arrive
+  console.log('[admin-init] registering syncEntity...');
   sdkHelpers?.syncEntity?.(
     state.adminToolkitUiEntity,
     [VideoControlState.componentId, TextAnnouncements.componentId],
     ADMIN_TOOLS_ENTITY,
+  );
+  console.log(
+    `[admin-init] syncEntity registered. Waiting up to ${VIDEO_CONTROL_HYDRATION_GUARD_MS}ms for hydration...`,
   );
 
   const hydrated = await waitForVideoControlStateHydration(
     engine,
     VIDEO_CONTROL_HYDRATION_GUARD_MS,
   );
-  if (!hydrated && !VideoControlState.getOrNull(state.adminToolkitUiEntity)) {
+
+  const existingState = VideoControlState.getOrNull(state.adminToolkitUiEntity);
+  if (hydrated) {
+    console.log(
+      `[admin-init] ✅ hydration SUCCESS — VideoControlState received from network:`,
+      JSON.stringify(existingState),
+    );
+  } else if (existingState) {
+    console.log(
+      `[admin-init] ⏱️ hydration timed out but VideoControlState already exists:`,
+      JSON.stringify(existingState),
+    );
+  } else {
+    console.log(
+      '[admin-init] ⚠️ hydration timed out, no VideoControlState found — creating fresh default',
+    );
     VideoControlState.create(state.adminToolkitUiEntity);
+    console.log(
+      '[admin-init] fresh VideoControlState created:',
+      JSON.stringify(VideoControlState.getOrNull(state.adminToolkitUiEntity)),
+    );
   }
 
   engine.addSystem(() => {
@@ -194,9 +220,10 @@ async function doInitializeAdminData(engine: IEngine, sdkHelpers?: ISDKHelpers) 
     }
   }, Number.POSITIVE_INFINITY);
 
+  console.log('[admin-init] fetching scene admins and bans...');
   await Promise.all([fetchSceneAdmins(), fetchSceneBans()]);
 
-  console.log('initializeAdminData - initialized');
+  console.log('[admin-init] ✅ fully initialized');
 }
 
 export function createAdminToolkitUI(
@@ -279,7 +306,7 @@ const uiComponent = (
               uiBackground={{ color: containerBackgroundColor }}
             >
               <Label
-                value="ADMIN TOOLS"
+                value="ADMIN TOOLS (LOCAL)"
                 fontSize={20 * scaleFactor}
                 color={Color4.create(160, 155, 168, 1)}
                 uiTransform={{ flexGrow: 1 }}
