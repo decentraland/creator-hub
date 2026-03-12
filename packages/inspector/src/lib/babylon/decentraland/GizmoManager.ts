@@ -341,15 +341,16 @@ export function createGizmoManager(context: SceneContext) {
       // Setup the new transformer based on type
       switch (type) {
         case GizmoType.POSITION: {
+          gizmoManager.positionGizmoEnabled = true;
           activateTransformer(positionTransformer, snapManager.getPositionSnap());
           // Set up callbacks for ECS updates
           if ('setUpdateCallbacks' in positionTransformer) {
             positionTransformer.setUpdateCallbacks(updateEntityPosition, dispatchAndClearFlag);
           }
-          gizmoManager.positionGizmoEnabled = true;
           break;
         }
         case GizmoType.ROTATION: {
+          gizmoManager.rotationGizmoEnabled = true;
           activateTransformer(rotationTransformer, snapManager.getRotationSnap());
           // Set up callbacks for ECS updates
           if ('setUpdateCallbacks' in rotationTransformer) {
@@ -360,16 +361,15 @@ export function createGizmoManager(context: SceneContext) {
               context,
             );
           }
-          gizmoManager.rotationGizmoEnabled = true;
           break;
         }
         case GizmoType.SCALE: {
+          gizmoManager.scaleGizmoEnabled = true;
           activateTransformer(scaleTransformer, snapManager.getScaleSnap());
           // Set up callbacks for ECS updates
           if ('setUpdateCallbacks' in scaleTransformer) {
             scaleTransformer.setUpdateCallbacks(updateEntityScale, dispatchAndClearFlag);
           }
-          gizmoManager.scaleGizmoEnabled = true;
           break;
         }
         case GizmoType.FREE: {
