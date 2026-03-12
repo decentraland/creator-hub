@@ -8,6 +8,7 @@ import { TextAnnouncementsControl } from './TextAnnouncementsControl';
 import { SmartItemsControl } from './SmartItemsControl';
 import { Button } from './Button';
 import { TextAnnouncements } from './TextAnnouncements';
+import { LogsControl } from './LogsControl';
 import { CONTENT_URL } from './constants';
 import { State, TabType, SelectedSmartItem } from './types';
 import {
@@ -48,6 +49,7 @@ export let state: State = {
   rewardsControl: {
     selectedRewardItem: undefined,
   },
+  logs: [],
 };
 
 let sceneAdminsCache: SceneAdmin[] = [];
@@ -166,21 +168,27 @@ export function initializeAdminData(engine: IEngine, sdkHelpers?: ISDKHelpers) {
   return initPromise;
 }
 
+export function pushLog(...args: any[]) {
+  const msg = args.map(a => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ');
+  state.logs.push(msg);
+  console.log(...args);
+}
+
 async function doInitializeAdminData(engine: IEngine, sdkHelpers?: ISDKHelpers) {
-  console.log('🔧 running asset packs local version');
+  pushLog('🔧 running asset packs local version');
   const { TextAnnouncements, VideoControlState } = getComponents(engine);
   state.adminToolkitUiEntity = getAdminToolkitEntity(engine) ?? engine.addEntity();
-  console.log(`[admin-init] entity=${state.adminToolkitUiEntity}`);
+  pushLog(`[admin-init] entity=${state.adminToolkitUiEntity}`);
   initTextAnnouncementSync(engine);
 
   // Register sync BEFORE hydration wait so replicated state can arrive
-  console.log('[admin-init] registering syncEntity...');
+  pushLog('[admin-init] registering syncEntity...');
   sdkHelpers?.syncEntity?.(
     state.adminToolkitUiEntity,
     [VideoControlState.componentId, TextAnnouncements.componentId],
     ADMIN_TOOLS_ENTITY,
   );
-  console.log(
+  pushLog(
     `[admin-init] syncEntity registered. Waiting up to ${VIDEO_CONTROL_HYDRATION_GUARD_MS}ms for hydration...`,
   );
 
@@ -191,21 +199,21 @@ async function doInitializeAdminData(engine: IEngine, sdkHelpers?: ISDKHelpers) 
 
   const existingState = VideoControlState.getOrNull(state.adminToolkitUiEntity);
   if (hydrated) {
-    console.log(
+    pushLog(
       `[admin-init] ✅ hydration SUCCESS — VideoControlState received from network:`,
       JSON.stringify(existingState),
     );
   } else if (existingState) {
-    console.log(
+    pushLog(
       `[admin-init] ⏱️ hydration timed out but VideoControlState already exists:`,
       JSON.stringify(existingState),
     );
   } else {
-    console.log(
+    pushLog(
       '[admin-init] ⚠️ hydration timed out, no VideoControlState found — creating fresh default',
     );
     VideoControlState.create(state.adminToolkitUiEntity);
-    console.log(
+    pushLog(
       '[admin-init] fresh VideoControlState created:',
       JSON.stringify(VideoControlState.getOrNull(state.adminToolkitUiEntity)),
     );
@@ -220,10 +228,10 @@ async function doInitializeAdminData(engine: IEngine, sdkHelpers?: ISDKHelpers) 
     }
   }, Number.POSITIVE_INFINITY);
 
-  console.log('[admin-init] fetching scene admins and bans...');
+  pushLog('[admin-init] fetching scene admins and bans...');
   await Promise.all([fetchSceneAdmins(), fetchSceneBans()]);
 
-  console.log('[admin-init] ✅ fully initialized');
+  pushLog('[admin-init] ✅ fully initialized');
 }
 
 export function createAdminToolkitUI(
@@ -306,7 +314,7 @@ const uiComponent = (
               uiBackground={{ color: containerBackgroundColor }}
             >
               <Label
-                value="ADMIN TOOLS (LOCAL)"
+                value="ADMIN TOOLS (LOCAL POLA)"
                 fontSize={20 * scaleFactor}
                 color={Color4.create(160, 155, 168, 1)}
                 uiTransform={{ flexGrow: 1 }}
@@ -445,6 +453,32 @@ const uiComponent = (
                   }
                 }}
               />
+              <Button
+                id="admin_toolkit_panel_logs_control"
+                variant={state.activeTab === TabType.LOGS_CONTROL ? 'primary' : 'text'}
+                value="Logs"
+                fontSize={12 * scaleFactor}
+                color={state.activeTab === TabType.LOGS_CONTROL ? Color4.Black() : Color4.White()}
+                onlyIcon={false}
+                uiTransform={{
+                  display: 'flex',
+                  width: 49 * scaleFactor,
+                  height: 42 * scaleFactor,
+                  margin: { right: 8 * scaleFactor },
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                onMouseDown={() => {
+                  if (state.activeTab !== TabType.LOGS_CONTROL) {
+                    state.activeTab = TabType.NONE;
+                    nextTickFunctions.push(() => {
+                      state.activeTab = TabType.LOGS_CONTROL;
+                    });
+                  } else {
+                    state.activeTab = TabType.NONE;
+                  }
+                }}
+              />
             </UiEntity>
             {state.activeTab === TabType.TEXT_ANNOUNCEMENT_CONTROL ? (
               <TextAnnouncementsControl
@@ -470,6 +504,12 @@ const uiComponent = (
                 engine={engine}
                 player={player}
                 sceneAdmins={sceneAdminsCache}
+              />
+            )}
+            {state.activeTab === TabType.LOGS_CONTROL && (
+              <LogsControl
+                engine={engine}
+                state={state}
               />
             )}
           </UiEntity>

@@ -9,6 +9,7 @@ export enum TabType {
   TEXT_ANNOUNCEMENT_CONTROL = 'TextAnnouncementControl',
   MODERATION_CONTROL = 'ModerationControl',
   REWARDS_CONTROL = 'RewardsControl',
+  LOGS_CONTROL = 'LogsControl',
 }
 
 export type SelectedSmartItem = { visible: boolean; selectedAction: string };
@@ -39,4 +40,5 @@ export type State = {
   rewardsControl: {
     selectedRewardItem: number | undefined;
   };
+  logs: string[];
 };
