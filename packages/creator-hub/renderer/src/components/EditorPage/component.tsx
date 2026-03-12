@@ -24,6 +24,7 @@ import { ConnectionStatus } from '/@/lib/connection';
 import EditorPng from '/assets/images/editor.png';
 
 import { useDispatch, useSelector } from '#store';
+import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
 import { actions as snackbarActions } from '/@/modules/store/snackbar';
 import { createGenericNotification } from '/@/modules/store/snackbar/utils';
 import { Button } from '../Button';
@@ -63,6 +64,7 @@ export function EditorPage() {
     isPreviewRunning,
   } = useEditor();
   const { settings, updateAppSettings } = useSettings();
+  const { flags: featureFlags } = useFeatureFlags();
   const { executeDeployment, getDeployment } = useDeploy();
   const deployment = project ? getDeployment(project.path) : undefined;
 
@@ -89,11 +91,18 @@ export function EditorPage() {
     (e: React.SyntheticEvent<HTMLIFrameElement, Event>) => {
       const iframe = e.currentTarget;
       if (project) {
-        iframeRef.current = initRpc(iframe, project, { writeFile: updateScene });
+        iframeRef.current = initRpc(iframe, project, { writeFile: updateScene }, featureFlags);
       }
     },
-    [project, updateScene],
+    [project, updateScene, featureFlags],
   );
+
+  useEffect(() => {
+    const rpc = iframeRef.current;
+    if (rpc) {
+      void rpc.scene.setFeatureFlags(featureFlags).catch(console.error);
+    }
+  }, [featureFlags]);
 
   useEffect(() => {
     if (isWorkspaceError(error, 'PROJECT_NOT_FOUND') || isProjectError(error)) {

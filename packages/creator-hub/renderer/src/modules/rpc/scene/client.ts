@@ -36,6 +36,7 @@ export enum Method {
   SET_DEBUG_CONSOLE_ENABLED = 'set_debug_console_enabled',
   PUSH_DEBUG_LOGS = 'push_debug_logs',
   CLEAR_DEBUG_LOGS = 'clear_debug_logs',
+  SET_FEATURE_FLAGS = 'set_feature_flags',
 }
 
 export type Params = {
@@ -53,6 +54,7 @@ export type Params = {
   [Method.SET_DEBUG_CONSOLE_ENABLED]: { enabled: boolean };
   [Method.PUSH_DEBUG_LOGS]: { logs: string[] };
   [Method.CLEAR_DEBUG_LOGS]: Record<string, never>;
+  [Method.SET_FEATURE_FLAGS]: { flags: Record<string, boolean> };
 };
 
 export type Result = {
@@ -70,6 +72,7 @@ export type Result = {
   [Method.SET_DEBUG_CONSOLE_ENABLED]: void;
   [Method.PUSH_DEBUG_LOGS]: void;
   [Method.CLEAR_DEBUG_LOGS]: void;
+  [Method.SET_FEATURE_FLAGS]: void;
 };
 
 export class SceneRpcClient extends RPC<Method, Params, Result> {
@@ -131,5 +134,9 @@ export class SceneRpcClient extends RPC<Method, Params, Result> {
 
   clearDebugLogs = () => {
     return this.request('clear_debug_logs', {} as Record<string, never>);
+  };
+
+  setFeatureFlags = (flags: Record<string, boolean>) => {
+    return this.request('set_feature_flags', { flags });
   };
 }
