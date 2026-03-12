@@ -55,7 +55,7 @@ export function VideoControlURL({
         />
       </UiEntity>
       <Label
-        value="Play videos from Vimeo by pasting a video URL below."
+        value="Play videos by pasting an .m3u8 video URL below."
         color={Color4.fromHexString('#A09BA8')}
         fontSize={16 * scaleFactor}
       />
