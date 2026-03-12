@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import type { AbstractMesh } from '@babylonjs/core';
 
 import type { WithSdkProps } from '../../../hoc/withSdk';
 import { withSdk } from '../../../hoc/withSdk';
@@ -78,6 +79,7 @@ const SKIP_ENTITIES = new Set([ROOT, PLAYER, CAMERA]);
 const SceneMinimap = withSdk<WithSdkProps>(({ sdk }) => {
   const enabled = useFeatureFlag(InspectorFeatureFlags.SceneMinimap);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const groundMeshesRef = useRef<AbstractMesh[]>([]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -93,6 +95,14 @@ const SceneMinimap = withSdk<WithSdkProps>(({ sdk }) => {
     canvas.height = MINIMAP_SIZE * dpr;
     ctx.scale(dpr, dpr);
 
+    const updateGroundMeshes = () => {
+      groundMeshesRef.current = sdk.scene.meshes.filter(m => m.name.startsWith(GROUND_MESH_PREFIX));
+    };
+    updateGroundMeshes();
+
+    const addObs = sdk.scene.onNewMeshAddedObservable.add(updateGroundMeshes);
+    const removeObs = sdk.scene.onMeshRemovedObservable.add(updateGroundMeshes);
+
     let lastRenderTime = 0;
 
     const renderMinimap = () => {
@@ -100,7 +110,7 @@ const SceneMinimap = withSdk<WithSdkProps>(({ sdk }) => {
       if (now - lastRenderTime < RENDER_INTERVAL_MS) return;
       lastRenderTime = now;
 
-      const planes = sdk.scene.meshes.filter(m => m.name.startsWith(GROUND_MESH_PREFIX));
+      const planes = groundMeshesRef.current;
       const bounds = computeBounds(planes);
 
       ctx.clearRect(0, 0, MINIMAP_SIZE, MINIMAP_SIZE);
@@ -129,7 +139,7 @@ const SceneMinimap = withSdk<WithSdkProps>(({ sdk }) => {
 
       // Entity dots
       const { Transform } = sdk.components;
-      const selectedEntities = sdk.operations.getSelectedEntities();
+      const selectedEntities = new Set(sdk.operations.getSelectedEntities());
 
       for (const [entity] of sdk.engine.getEntitiesWith(Transform)) {
         if (SKIP_ENTITIES.has(entity)) continue;
@@ -138,7 +148,7 @@ const SceneMinimap = withSdk<WithSdkProps>(({ sdk }) => {
 
         const pos = node.absolutePosition;
         const mapped = worldToMinimap(pos.x, pos.z, bounds);
-        const isSelected = selectedEntities.includes(entity);
+        const isSelected = selectedEntities.has(entity);
 
         ctx.beginPath();
         ctx.arc(
@@ -214,6 +224,8 @@ const SceneMinimap = withSdk<WithSdkProps>(({ sdk }) => {
 
     return () => {
       sdk.scene.onAfterRenderObservable.remove(observer);
+      sdk.scene.onNewMeshAddedObservable.remove(addObs);
+      sdk.scene.onMeshRemovedObservable.remove(removeObs);
     };
   }, [enabled, sdk]);
 
@@ -223,9 +235,9 @@ const SceneMinimap = withSdk<WithSdkProps>(({ sdk }) => {
     <canvas
       ref={canvasRef}
       className="SceneMinimap"
-      style={{ width: MINIMAP_SIZE, height: MINIMAP_SIZE, opacity: 0.9 }}
+      style={{ width: MINIMAP_SIZE, height: MINIMAP_SIZE }}
     />
   );
 });
 
-export default React.memo(SceneMinimap);
+export default SceneMinimap;
