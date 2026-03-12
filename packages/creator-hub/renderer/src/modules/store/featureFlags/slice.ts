@@ -31,19 +31,16 @@ const slice = createSlice({
   extraReducers: builder => {
     builder
       .addCase(fetchFeatureFlags.pending, state => {
-        console.log('fetchFeatureFlags.pending');
         state.status = 'loading';
         state.error = null;
       })
       .addCase(fetchFeatureFlags.fulfilled, (state, action) => {
-        console.log('fetchFeatureFlags.fulfilled');
         state.flags = action.payload.flags;
         state.variants = action.payload.variants;
         state.status = 'succeeded';
         state.error = action.payload.error?.message ?? null;
       })
       .addCase(fetchFeatureFlags.rejected, (state, action) => {
-        console.log('fetchFeatureFlags.rejected');
         state.status = 'failed';
         state.error = action.error.message ?? 'Failed to fetch feature flags';
       });
