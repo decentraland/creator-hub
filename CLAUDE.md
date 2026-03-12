@@ -125,4 +125,4 @@ Files matching `*.styled.ts` / `*.styled.tsx` must follow these rules:
 
 ## Skills
 
-For the "beautify-release-changelog" skill, follow [.ai/skills/beautify-release-changelog/SKILL.md](.ai/skills/beautify-release-changelog/SKILL.md).
+Skills live in `.ai/skills/*/SKILL.md`. Read the relevant `SKILL.md` when a task matches a skill's domain.
