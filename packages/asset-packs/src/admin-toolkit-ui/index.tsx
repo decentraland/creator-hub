@@ -65,13 +65,24 @@ async function waitForVideoControlStateHydration(engine: IEngine, timeoutMs: num
   const { VideoControlState } = getComponents(engine);
   const start = Date.now();
 
+  pushLog(
+    `[video-hydration] waiting for VideoControlState (entity=${state.adminToolkitUiEntity}) up to ${timeoutMs}ms`,
+  );
+
   while (Date.now() - start < timeoutMs) {
     if (VideoControlState.getOrNull(state.adminToolkitUiEntity)) {
+      pushLog(
+        `[video-hydration] VideoControlState found after ${Date.now() - start}ms for entity=${state.adminToolkitUiEntity}`,
+      );
       return true;
     }
 
     await sleep(VIDEO_CONTROL_HYDRATION_POLL_MS);
   }
+
+  pushLog(
+    `[video-hydration] timeout after ${Date.now() - start}ms waiting for VideoControlState for entity=${state.adminToolkitUiEntity}`,
+  );
 
   return false;
 }
@@ -177,8 +188,25 @@ export function pushLog(...args: any[]) {
 async function doInitializeAdminData(engine: IEngine, sdkHelpers?: ISDKHelpers) {
   pushLog('🔧 running asset packs local version');
   const { TextAnnouncements, VideoControlState } = getComponents(engine);
-  state.adminToolkitUiEntity = getAdminToolkitEntity(engine) ?? engine.addEntity();
-  pushLog(`[admin-init] entity=${state.adminToolkitUiEntity}`);
+  const existingAdminToolkitEntity = getAdminToolkitEntity(engine);
+  state.adminToolkitUiEntity = existingAdminToolkitEntity ?? engine.addEntity();
+  pushLog(
+    `[admin-init] adminToolkitUiEntity set to ${state.adminToolkitUiEntity} (existing=${existingAdminToolkitEntity}, created=${existingAdminToolkitEntity ? 'no' : 'yes'})`,
+  );
+  pushLog(
+    `[admin-init] sdkHelpers present: ${!!sdkHelpers}, has syncEntity: ${!!sdkHelpers?.syncEntity}`,
+  );
+  if (sdkHelpers) {
+    pushLog(
+      '[admin-init] sdkHelpers snapshot:',
+      JSON.stringify({
+        keys: Object.keys(sdkHelpers),
+        hasSyncEntity: !!sdkHelpers.syncEntity,
+      }),
+    );
+  } else {
+    pushLog('[admin-init] sdkHelpers is null/undefined');
+  }
   initTextAnnouncementSync(engine);
 
   // Register sync BEFORE hydration wait so replicated state can arrive
@@ -314,7 +342,7 @@ const uiComponent = (
               uiBackground={{ color: containerBackgroundColor }}
             >
               <Label
-                value="ADMIN TOOLS (LOCAL POLA)"
+                value="ADMIN TOOLS (LOCAL ALE)"
                 fontSize={20 * scaleFactor}
                 color={Color4.create(160, 155, 168, 1)}
                 uiTransform={{ flexGrow: 1 }}
