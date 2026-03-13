@@ -2,6 +2,7 @@ export enum AssetsTab {
   FileSystem = 'FileSystem',
   CustomAssets = 'CustomAssets',
   AssetsPack = 'AssetsPack',
+  DebugConsole = 'DebugConsole',
   RenameAsset = 'RenameAsset',
   CreateCustomAsset = 'CreateCustomAsset',
 }

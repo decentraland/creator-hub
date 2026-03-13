@@ -18,6 +18,7 @@ import { useSettings } from '/@/hooks/useSettings';
 import { useSceneCustomCode } from '/@/hooks/useSceneCustomCode';
 import { useDeploy } from '/@/hooks/useDeploy';
 import { useConnectionStatus } from '/@/hooks/useConnectionStatus';
+import { useDebugLogForwarding } from '/@/hooks/useDebugLogForwarding';
 import { ConnectionStatus } from '/@/lib/connection';
 
 import EditorPng from '/assets/images/editor.png';
@@ -59,6 +60,7 @@ export function EditorPage() {
     publishScene,
     getMobileQR,
     supportsMultiInstance,
+    isPreviewRunning,
   } = useEditor();
   const { settings, updateAppSettings } = useSettings();
   const { executeDeployment, getDeployment } = useDeploy();
@@ -79,6 +81,9 @@ export function EditorPage() {
   const [mobileQRData, setMobileQRData] = useState<{ url: string; qr: string } | null>(null);
 
   const isOffline = status === ConnectionStatus.OFFLINE;
+  const showDebugPanel = settings.previewOptions.debugger;
+
+  useDebugLogForwarding(iframeRef, isPreviewRunning, showDebugPanel, project?.path);
 
   const handleIframeRef = useCallback(
     (e: React.SyntheticEvent<HTMLIFrameElement, Event>) => {
