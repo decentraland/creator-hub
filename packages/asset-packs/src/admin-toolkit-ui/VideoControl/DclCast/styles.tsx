@@ -218,4 +218,92 @@ export const getDclCastBackgrounds = () => ({
   iconStretch: {
     textureMode: 'stretch' as const,
   },
+  compactBar: { color: Color4.fromHexString('#2D2535') },
+});
+
+export const getCompactBarStyles = (): Record<string, UiTransformProps> => ({
+  container: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    height: 56,
+    padding: { left: 12, right: 12 },
+    borderWidth: 2,
+    borderColor: Color4.fromHexString('#716B7C'),
+    borderRadius: 12,
+  },
+
+  leftSection: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  rightSection: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  icon: {
+    width: 24,
+    height: 24,
+    margin: { right: 8 },
+  },
+
+  chevronButton: {
+    width: 32,
+    height: 32,
+    margin: { left: 8 },
+  },
+
+  chevronIcon: {
+    width: 20,
+    height: 20,
+  },
+
+  controlButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: { left: 8, right: 8 },
+    height: 36,
+    margin: { left: 4 },
+  },
+
+  controlButtonIcon: {
+    width: 16,
+    height: 16,
+    margin: { right: 4 },
+  },
+
+  slideLabel: {
+    margin: { left: 8, right: 8 },
+  },
+
+  showcaseButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: { left: 8, right: 8 },
+    height: 36,
+    margin: { left: 4 },
+    borderWidth: 2,
+    borderRadius: 12,
+  },
+
+  starIcon: {
+    width: 16,
+    height: 16,
+    margin: { right: 4 },
+  },
+
+  activateButton: {
+    height: 36,
+    padding: { left: 12, right: 12 },
+  },
+
+  activateButtonLabel: {
+    margin: { left: 8, right: 8 },
+  },
 });
