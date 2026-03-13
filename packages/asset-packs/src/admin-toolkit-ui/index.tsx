@@ -44,6 +44,7 @@ export let state: State = {
     selectedVideoPlayer: undefined,
     selectedStream: undefined,
     dclCast: undefined,
+    isMinimized: false,
   },
   smartItemsControl: {
     selectedSmartItem: undefined,
