@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { type ActionPayload, type ActionType } from '@dcl/asset-packs';
+import { AlignMode, type ActionPayload, type ActionType } from '@dcl/asset-packs';
 import { recursiveCheck } from '../../../../lib/utils/deep-equal';
 import { addBasePath } from '../../../../lib/logic/add-base-path';
 import { useAppSelector } from '../../../../redux/hooks';
@@ -32,6 +32,7 @@ function isValid(
 const ShowImageAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
   const imageOptions = useAssetOptions(ACCEPTED_FILE_TYPES['image']);
   const [payload, setPayload] = useState<Partial<ActionPayload<ActionType.SHOW_IMAGE>>>({
+    align: AlignMode.TAM_MIDDLE_CENTER, // Default alignment
     ...value,
   });
 
