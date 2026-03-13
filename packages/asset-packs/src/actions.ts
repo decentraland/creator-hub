@@ -22,6 +22,17 @@ import {
 } from '@dcl/ecs';
 import { Quaternion, Vector3 } from '@dcl/sdk/math';
 import type { TextureMovementType as SdkTextureMovementType } from '@dcl/ecs/dist/components/generated/pb/decentraland/sdk/components/tween.gen';
+import {
+  movePlayerTo,
+  triggerEmote,
+  triggerSceneEmote,
+  openExternalUrl,
+  teleportTo,
+  changeRealm,
+} from '~system/RestrictedActions';
+import type { FlatFetchInit } from '~system/SignedFetch';
+import { getRealm } from '~system/Runtime';
+import { signedFetch } from '~system/SignedFetch';
 import { getEntityParent, getPlayerPosition, getWorldPosition, getWorldRotation } from './helpers';
 import type {
   ActionPayload,
@@ -62,19 +73,8 @@ import { getExplorerComponents } from './components';
 import { initTriggers, damageTargets, healTargets } from './triggers';
 import { followMap } from './transform';
 import { getEasingFunctionFromInterpolation } from './tweens';
-import { REWARDS_SERVER_URL } from './admin-toolkit-ui/constants';
+import { getRewardsServerUrl } from './admin-toolkit-ui/constants';
 import { callScriptMethod } from '~sdk/script-utils';
-import {
-  movePlayerTo,
-  triggerEmote,
-  triggerSceneEmote,
-  openExternalUrl,
-  teleportTo,
-  changeRealm,
-} from '~system/RestrictedActions';
-import type { FlatFetchInit } from '~system/SignedFetch';
-import { getRealm } from '~system/Runtime';
-import { signedFetch } from '~system/SignedFetch';
 
 const initedEntities = new Set<Entity>();
 const uiStacks = new Map<string, Entity>();
@@ -1490,13 +1490,13 @@ export function createActionsSystem(
   }
 
   async function fetchCampaignsByDispenserKey(dispenserKey: string) {
-    const url = `${REWARDS_SERVER_URL}/api/campaigns/keys?campaign_key=${encodeURIComponent(dispenserKey)}`;
+    const url = `${getRewardsServerUrl()}/api/campaigns/keys?campaign_key=${encodeURIComponent(dispenserKey)}`;
     const response = await request(url);
     return response;
   }
 
   async function fetchCaptcha() {
-    const response = await request(`${REWARDS_SERVER_URL}/api/captcha`, {
+    const response = await request(`${getRewardsServerUrl()}/api/captcha`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1512,7 +1512,7 @@ export function createActionsSystem(
       value: string;
     },
   ) {
-    const url = `${REWARDS_SERVER_URL}/api/rewards`;
+    const url = `${getRewardsServerUrl()}/api/rewards`;
     const realm = await getRealm({});
     const player = playersHelper?.getPlayer();
 

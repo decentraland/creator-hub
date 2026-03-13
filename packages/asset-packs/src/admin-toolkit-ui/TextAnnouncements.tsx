@@ -1,15 +1,20 @@
-import { IEngine } from '@dcl/ecs';
+import type { IEngine } from '@dcl/ecs';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import ReactEcs, { Label, UiEntity } from '@dcl/react-ecs';
 import { getComponents } from '../definitions';
-import { CONTENT_URL } from './constants';
-import { State } from './types';
+import { getContentUrl } from './constants';
+import type { State } from './types';
 
 const ICONS = {
-  BTN_CLOSE_TEXT_ANNOUNCEMENT: `${CONTENT_URL}/admin_toolkit/assets/icons/text-announcement-close-button.png`,
-  CHAT_MESSAGE_ICON: `${CONTENT_URL}/admin_toolkit/assets/icons/text-announcement-chat-message.png`,
-} as const;
+  get BTN_CLOSE_TEXT_ANNOUNCEMENT() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/text-announcement-close-button.png`;
+  },
+  get CHAT_MESSAGE_ICON() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/text-announcement-chat-message.png`;
+  },
+};
 
-let textAnnouncementsHidden: Set<string> = new Set();
+const textAnnouncementsHidden: Set<string> = new Set();
 
 export function TextAnnouncements({ engine, state }: { engine: IEngine; state: State }) {
   const { TextAnnouncements } = getComponents(engine);

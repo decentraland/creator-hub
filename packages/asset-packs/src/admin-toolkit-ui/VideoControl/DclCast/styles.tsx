@@ -1,5 +1,5 @@
 import { Color4 } from '@dcl/sdk/math';
-import { UiTransformProps } from '@dcl/react-ecs';
+import type { UiTransformProps } from '@dcl/react-ecs';
 
 export const getDclCastStyles = (): Record<string, UiTransformProps> => ({
   fullContainer: {
@@ -125,6 +125,36 @@ export const getDclCastStyles = (): Record<string, UiTransformProps> => ({
     height: 42,
   },
 
+  volumeShowcaseRow: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    width: '100%',
+  },
+
+  castControlsRow: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    width: '100%',
+    margin: { top: 12 },
+  },
+
+  showcaseButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: { left: 12, right: 12 },
+    height: 42,
+  },
+
+  starIcon: {
+    width: 20,
+    height: 20,
+    margin: { right: 4 },
+  },
+
   copyLinkButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -140,6 +170,17 @@ export const getDclCastStyles = (): Record<string, UiTransformProps> => ({
   iconSmall: {
     width: 20,
     height: 20,
+  },
+
+  headerIcon: {
+    width: 30,
+    height: 30,
+  },
+
+  chevronButton: {
+    width: 25,
+    height: 25,
+    alignItems: 'center',
   },
 
   loadingContainer: {
@@ -184,5 +225,100 @@ export const getDclCastBackgrounds = () => ({
   success: { color: Color4.fromHexString('#34CE77') },
   iconStretch: {
     textureMode: 'stretch' as const,
+  },
+});
+
+export const getCompactBarStyles = (): Record<string, UiTransformProps> => ({
+  container: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+
+  leftSection: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  rightSection: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  icon: {
+    width: 30,
+    height: 30,
+    margin: { right: 10 },
+  },
+
+  controlButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: { left: 12, right: 12 },
+    height: 42,
+  },
+
+  controlButtonIcon: {
+    width: 20,
+    height: 20,
+  },
+
+  slideLabel: {
+    margin: { left: 8, right: 8 },
+  },
+
+  showcaseButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: { left: 12, right: 12 },
+    height: 42,
+    margin: { left: 4 },
+  },
+
+  starIcon: {
+    width: 20,
+    height: 20,
+    margin: { right: 4 },
+  },
+
+  outerContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    width: '100%',
+  },
+
+  chevronButton: {
+    width: 25,
+    height: 25,
+    alignItems: 'center',
+    margin: { left: 8 },
+  },
+
+  presentationControlsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    margin: { top: 24 },
+  },
+
+  showcaseRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    margin: { top: 24 },
+  },
+
+  activateButton: {
+    minWidth: 120,
+    height: 42,
+    padding: { left: 8, right: 8 },
+  },
+
+  activateButtonLabel: {
+    margin: { left: 20, right: 20 },
   },
 });
