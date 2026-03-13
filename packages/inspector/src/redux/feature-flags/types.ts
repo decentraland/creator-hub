@@ -1,3 +1,3 @@
 export enum InspectorFeatureFlags {
-  SceneMinimap = 'creator-hub-inspector-scene-minimap',
+  SceneMinimap = 'creatorhub-inspector-scene-minimap',
 }

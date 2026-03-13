@@ -34,12 +34,7 @@ export const getPath = async (filePath: string, project: Project) => {
   return resolvedPath;
 };
 
-export function initRpc(
-  iframe: HTMLIFrameElement,
-  project: Project,
-  cbs: Partial<Callbacks> = {},
-  featureFlags?: Record<string, boolean>,
-) {
+export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partial<Callbacks> = {}) {
   const transport = new MessageTransport(window, iframe.contentWindow!);
   const sceneClient = new SceneRpcClient(transport);
   const sceneServer = new SceneRpcServer(transport, project);
@@ -50,10 +45,6 @@ export function initRpc(
     sceneClient.selectAssetsTab('AssetsPack'),
     sceneClient.selectSceneInspectorTab('details'),
   ]).catch(console.error);
-
-  if (featureFlags) {
-    void sceneClient.setFeatureFlags(featureFlags).catch(console.error);
-  }
 
   void (async () => {
     try {

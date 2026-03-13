@@ -2,12 +2,16 @@ import { createSlice } from '@reduxjs/toolkit';
 import { fetchFlags } from '@dcl/feature-flags';
 import type { FeatureFlagsResult } from '@dcl/feature-flags';
 import type { Status } from '/shared/types/async';
+import { config } from '/@/config';
 import { createAsyncThunk } from '../thunk';
 
-const APPLICATION_NAME = 'creator-hub';
+const APPLICATION_NAME = 'creatorhub';
 
 export const fetchFeatureFlags = createAsyncThunk('featureFlags/fetch', () =>
-  fetchFlags({ applicationName: APPLICATION_NAME }),
+  fetchFlags({
+    applicationName: APPLICATION_NAME,
+    featureFlagsUrl: config.get('FEATURE_FLAGS_URL'),
+  }),
 );
 
 export type FeatureFlagsState = {
@@ -45,14 +49,7 @@ const slice = createSlice({
         state.error = action.error.message ?? 'Failed to fetch feature flags';
       });
   },
-  selectors: {
-    getFlags: state => state.flags,
-    getVariants: state => state.variants,
-    getStatus: state => state.status,
-    isFeatureFlagEnabled: (state, flag: string) => !!state.flags[flag],
-  },
 });
 
 export const actions = { ...slice.actions, fetchFeatureFlags };
 export const reducer = slice.reducer;
-export const selectors = { ...slice.selectors };

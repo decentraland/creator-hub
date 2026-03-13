@@ -91,7 +91,9 @@ export function EditorPage() {
     (e: React.SyntheticEvent<HTMLIFrameElement, Event>) => {
       const iframe = e.currentTarget;
       if (project) {
-        iframeRef.current = initRpc(iframe, project, { writeFile: updateScene }, featureFlags);
+        const rpc = initRpc(iframe, project, { writeFile: updateScene });
+        iframeRef.current = rpc;
+        void rpc.scene.setFeatureFlags(featureFlags).catch(console.error);
       }
     },
     [project, updateScene, featureFlags],
