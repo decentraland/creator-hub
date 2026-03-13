@@ -80,6 +80,7 @@ const initedEntities = new Set<Entity>();
 const uiStacks = new Map<string, Entity>();
 const lastUiEntityClicked = new Map<Entity, Entity>();
 const textEntities = new Map<Entity, Entity>(); // Model Entity, Text Entity
+const imageEntities = new Map<Entity, Entity>(); // Model Entity, Image Entity
 
 let internalInitActions: ((entity: Entity) => void) | null = null;
 
@@ -1171,6 +1172,8 @@ export function createActionsSystem(
 
     // Create a UI entity and a Transform component for the image
     const imageEntity = engine.addEntity();
+    // Store the image entity in the map for later retrieval
+    imageEntities.set(entity, imageEntity);
     const imageTransformComponent = getUITransform(
       UiTransform,
       imageEntity,
@@ -1216,14 +1219,28 @@ export function createActionsSystem(
   function handleHideImage(entity: Entity, payload: ActionPayload<ActionType.HIDE_IMAGE>) {
     const { imageEntity } = payload;
 
+    let entityToRemove: Entity | undefined;
+
     if (imageEntity) {
-      engine.removeEntity(imageEntity as Entity);
+      // If imageEntity is provided in payload (e.g., from timeout), use it
+      entityToRemove = imageEntity as Entity;
     } else {
-      const clickedImage = lastUiEntityClicked.get(entity);
-      if (clickedImage) {
-        engine.removeEntity(clickedImage);
-        lastUiEntityClicked.delete(entity);
+      // Otherwise, try to get the tracked image entity from the map
+      entityToRemove = imageEntities.get(entity);
+      
+      // Fallback to the last clicked image if not found in the map
+      if (!entityToRemove) {
+        entityToRemove = lastUiEntityClicked.get(entity);
       }
+    }
+
+    if (entityToRemove) {
+      engine.removeEntity(entityToRemove);
+      // Clean up all references to the removed entity
+      imageEntities.delete(entity);
+      lastUiEntityClicked.delete(entity);
+      // Clear timeout if it exists
+      stopTimeout(entity, ActionType.HIDE_IMAGE);
     }
   }
 
