@@ -4,7 +4,6 @@ import { HiOutlinePlus } from 'react-icons/hi';
 import { HiOutlineRefresh as RefreshIcon } from 'react-icons/hi';
 import { IoIosFolderOpen, IoIosUndo } from 'react-icons/io';
 import { VscTerminal } from 'react-icons/vsc';
-import { MdWidgets } from 'react-icons/md';
 import cx from 'classnames';
 import {
   type AssetPack,
@@ -59,7 +58,6 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
   const removedAssets = useAppSelector(selectRemovedFiles);
   const hasRecoverableFiles = useAppSelector(selectHasRecoverableFiles);
   const debugConsoleEnabled = useAppSelector(getDebugConsoleEnabled);
-  const [showConsole, setShowConsole] = useState(false);
   const [showCleanAssetsModal, setShowCleanAssetsModal] = useState(false);
   const [selectedCleanAssets, setSelectedCleanAssets] = useState<Set<string>>(new Set());
   const { pushNotification } = useSnackbar();
@@ -77,7 +75,11 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
   ]);
 
   useEffect(() => {
-    setShowConsole(debugConsoleEnabled);
+    if (debugConsoleEnabled) {
+      dispatch(selectAssetsTab({ tab: AssetsTab.DebugConsole }));
+    } else if (tab === AssetsTab.DebugConsole) {
+      dispatch(selectAssetsTab({ tab: AssetsTab.AssetsPack }));
+    }
   }, [debugConsoleEnabled]);
 
   const handleTabClick = useCallback(
@@ -218,7 +220,7 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
   return (
     <div className="Assets">
       <div className="Assets-buttons">
-        {!showConsole && (
+        {tab !== AssetsTab.DebugConsole && (
           <div className="Assets-buttons-left">
             <Button
               className="import-button"
@@ -285,62 +287,50 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
             )}
           </div>
         )}
-        {!showConsole && (
-          <>
-            <div
-              className="tab"
-              onClick={handleTabClick(AssetsTab.FileSystem)}
-              data-test-id={AssetsTab.FileSystem}
-            >
-              <div className={cx({ underlined: tab === AssetsTab.FileSystem })}>
-                <FolderOpen />
-                <span>LOCAL ASSETS</span>
-              </div>
-            </div>
-            <div
-              className="tab"
-              onClick={handleTabClick(AssetsTab.CustomAssets)}
-              data-test-id={AssetsTab.CustomAssets}
-            >
-              <div className={cx({ underlined: tab === AssetsTab.CustomAssets })}>
-                <i className="icon-custom-assets" />
-                <span>CUSTOM ITEMS</span>
-              </div>
-            </div>
-            <div
-              className="tab"
-              onClick={handleTabClick(AssetsTab.AssetsPack)}
-              data-test-id={AssetsTab.AssetsPack}
-            >
-              <div className={cx({ underlined: tab === AssetsTab.AssetsPack })}>
-                <MdImageSearch />
-                <span>ASSET PACKS</span>
-              </div>
-            </div>
-          </>
-        )}
+        <div
+          className="tab"
+          onClick={handleTabClick(AssetsTab.FileSystem)}
+          data-test-id={AssetsTab.FileSystem}
+        >
+          <div className={cx({ underlined: tab === AssetsTab.FileSystem })}>
+            <FolderOpen />
+            <span>LOCAL ASSETS</span>
+          </div>
+        </div>
+        <div
+          className="tab"
+          onClick={handleTabClick(AssetsTab.CustomAssets)}
+          data-test-id={AssetsTab.CustomAssets}
+        >
+          <div className={cx({ underlined: tab === AssetsTab.CustomAssets })}>
+            <i className="icon-custom-assets" />
+            <span>CUSTOM ITEMS</span>
+          </div>
+        </div>
+        <div
+          className="tab"
+          onClick={handleTabClick(AssetsTab.AssetsPack)}
+          data-test-id={AssetsTab.AssetsPack}
+        >
+          <div className={cx({ underlined: tab === AssetsTab.AssetsPack })}>
+            <MdImageSearch />
+            <span>ASSET PACKS</span>
+          </div>
+        </div>
         {debugConsoleEnabled && (
-          <div className="Assets-view-toggle">
-            <button
-              className={cx('Assets-view-toggle-btn', { active: !showConsole })}
-              onClick={() => setShowConsole(false)}
-              title="Assets"
-            >
-              <MdWidgets />
-              <span>Assets</span>
-            </button>
-            <button
-              className={cx('Assets-view-toggle-btn', { active: showConsole })}
-              onClick={() => setShowConsole(true)}
-              title="Console"
-            >
+          <div
+            className="tab"
+            onClick={handleTabClick(AssetsTab.DebugConsole)}
+            data-test-id={AssetsTab.DebugConsole}
+          >
+            <div className={cx({ underlined: tab === AssetsTab.DebugConsole })}>
               <VscTerminal />
-              <span>Console</span>
-            </button>
+              <span>CONSOLE</span>
+            </div>
           </div>
         )}
       </div>
-      {showConsole ? (
+      {tab === AssetsTab.DebugConsole ? (
         <div className={cx('Assets-content', { Hide: isAssetsPanelCollapsed })}>
           <DebugConsole />
         </div>
