@@ -147,9 +147,6 @@ export const getDclCastStyles = (): Record<string, UiTransformProps> => ({
     alignItems: 'center',
     padding: { left: 12, right: 12 },
     height: 42,
-    borderWidth: 2,
-    borderColor: Color4.fromHexString('#FCFCFC'),
-    borderRadius: 12,
   },
 
   starIcon: {
@@ -173,6 +170,17 @@ export const getDclCastStyles = (): Record<string, UiTransformProps> => ({
   iconSmall: {
     width: 20,
     height: 20,
+  },
+
+  headerIcon: {
+    width: 30,
+    height: 30,
+  },
+
+  chevronButton: {
+    width: 25,
+    height: 25,
+    alignItems: 'center',
   },
 
   loadingContainer: {
@@ -218,7 +226,6 @@ export const getDclCastBackgrounds = () => ({
   iconStretch: {
     textureMode: 'stretch' as const,
   },
-  compactBar: { color: Color4.fromHexString('#2D2535') },
 });
 
 export const getCompactBarStyles = (): Record<string, UiTransformProps> => ({
@@ -228,11 +235,6 @@ export const getCompactBarStyles = (): Record<string, UiTransformProps> => ({
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
-    height: 56,
-    padding: { left: 12, right: 12 },
-    borderWidth: 2,
-    borderColor: Color4.fromHexString('#716B7C'),
-    borderRadius: 12,
   },
 
   leftSection: {
@@ -248,34 +250,21 @@ export const getCompactBarStyles = (): Record<string, UiTransformProps> => ({
   },
 
   icon: {
-    width: 24,
-    height: 24,
-    margin: { right: 8 },
-  },
-
-  chevronButton: {
-    width: 32,
-    height: 32,
-    margin: { left: 8 },
-  },
-
-  chevronIcon: {
-    width: 20,
-    height: 20,
+    width: 30,
+    height: 30,
+    margin: { right: 10 },
   },
 
   controlButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: { left: 8, right: 8 },
-    height: 36,
-    margin: { left: 4 },
+    padding: { left: 12, right: 12 },
+    height: 42,
   },
 
   controlButtonIcon: {
-    width: 16,
-    height: 16,
-    margin: { right: 4 },
+    width: 20,
+    height: 20,
   },
 
   slideLabel: {
@@ -285,25 +274,51 @@ export const getCompactBarStyles = (): Record<string, UiTransformProps> => ({
   showcaseButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: { left: 8, right: 8 },
-    height: 36,
+    padding: { left: 12, right: 12 },
+    height: 42,
     margin: { left: 4 },
-    borderWidth: 2,
-    borderRadius: 12,
   },
 
   starIcon: {
-    width: 16,
-    height: 16,
+    width: 20,
+    height: 20,
     margin: { right: 4 },
   },
 
+  outerContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    width: '100%',
+  },
+
+  chevronButton: {
+    width: 25,
+    height: 25,
+    alignItems: 'center',
+    margin: { left: 8 },
+  },
+
+  presentationControlsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    margin: { top: 24 },
+  },
+
+  showcaseRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    margin: { top: 24 },
+  },
+
   activateButton: {
-    height: 36,
-    padding: { left: 12, right: 12 },
+    minWidth: 120,
+    height: 42,
+    padding: { left: 8, right: 8 },
   },
 
   activateButtonLabel: {
-    margin: { left: 8, right: 8 },
+    margin: { left: 20, right: 20 },
   },
 });

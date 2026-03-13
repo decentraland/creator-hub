@@ -1,4 +1,5 @@
-import { DeepReadonlyObject, Entity, IEngine, PBVideoPlayer } from '@dcl/ecs';
+import type { DeepReadonlyObject, Entity, IEngine, PBVideoPlayer } from '@dcl/ecs';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import ReactEcs, { Label, UiEntity } from '@dcl/react-ecs';
 import { Color4 } from '@dcl/ecs-math';
 import { Button } from '../Button';
@@ -145,8 +146,6 @@ export function VideoControlVolume({
             color: video?.volume ? Color4.White() : Color4.Black(),
           }}
           uiTransform={{
-            borderColor: Color4.fromHexString('#FCFCFC'),
-            borderWidth: 2,
             width: 49,
             height: 42,
             alignItems: 'center',
