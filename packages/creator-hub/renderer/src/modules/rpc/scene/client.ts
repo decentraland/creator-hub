@@ -33,6 +33,7 @@ export enum Method {
   SET_CAMERA_TARGET = 'set_camera_target',
   SET_CAMERA_POSITION = 'set_camera_position',
   SET_SCENE_CUSTOM_CODE = 'set_scene_custom_code',
+  SET_FEATURE_FLAGS = 'set_feature_flags',
 }
 
 export type Params = {
@@ -47,6 +48,7 @@ export type Params = {
   [Method.SET_CAMERA_TARGET]: { x: number; y: number; z: number };
   [Method.SET_CAMERA_POSITION]: { x: number; y: number; z: number };
   [Method.SET_SCENE_CUSTOM_CODE]: { hasCustomCode: boolean };
+  [Method.SET_FEATURE_FLAGS]: { flags: Record<string, boolean> };
 };
 
 export type Result = {
@@ -61,6 +63,7 @@ export type Result = {
   [Method.SET_CAMERA_TARGET]: void;
   [Method.SET_CAMERA_POSITION]: void;
   [Method.SET_SCENE_CUSTOM_CODE]: void;
+  [Method.SET_FEATURE_FLAGS]: void;
 };
 
 export class SceneRpcClient extends RPC<Method, Params, Result> {
@@ -110,5 +113,9 @@ export class SceneRpcClient extends RPC<Method, Params, Result> {
 
   setSceneCustomCode = (hasCustomCode: boolean) => {
     return this.request('set_scene_custom_code', { hasCustomCode });
+  };
+
+  setFeatureFlags = (flags: Record<string, boolean>) => {
+    return this.request('set_feature_flags', { flags });
   };
 }
