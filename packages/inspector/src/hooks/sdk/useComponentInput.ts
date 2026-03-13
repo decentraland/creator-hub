@@ -235,6 +235,14 @@ export const useMultiComponentInput = <ComponentValueType extends object, InputT
   }
   const sdk = useSdk();
 
+  // During live drag (skipEngineSync events), the inspector engine is NOT
+  // updated, so getComponentValue() returns stale data.  We accumulate
+  // per-entity overrides in this ref so that when multiple entities are
+  // dragged together (events fire synchronously for each entity), we always
+  // merge with the latest values.  The map is cleared when a normal (non-
+  // skipEngineSync) event arrives, meaning the engine is back in sync.
+  const liveDragOverridesRef = useRef(new Map<Entity, ComponentValueType>());
+
   // Get initial merged value from all entities
   const initialEntityValues = getEntityAndComponentValue(entities, component);
   const initialMergedValue = useMemo(
@@ -319,11 +327,25 @@ export const useMultiComponentInput = <ComponentValueType extends object, InputT
 
       if (!isRelevantUpdate) return;
 
-      const updatedEntityValues = getEntityAndComponentValue(entities, component);
-      const newMergedValue = mergeComponentValues(
-        updatedEntityValues.map(([_, component]) => component),
-        fromComponentValueToInput,
-      );
+      let componentValues: ComponentValueType[];
+
+      if (event.skipEngineSync) {
+        // Live drag: engine was NOT updated, so we can't trust getComponentValue.
+        // Store the override and merge with overrides for all entities.
+        liveDragOverridesRef.current.set(event.entity, event.value as ComponentValueType);
+        const engineValues = getEntityAndComponentValue(entities, component);
+        componentValues = engineValues.map(([entity, compValue]) => {
+          return liveDragOverridesRef.current.get(entity) ?? compValue;
+        });
+      } else {
+        // Normal event: engine is in sync, clear any stale overrides.
+        liveDragOverridesRef.current.clear();
+        componentValues = getEntityAndComponentValue(entities, component).map(
+          ([_, compValue]) => compValue,
+        );
+      }
+
+      const newMergedValue = mergeComponentValues(componentValues, fromComponentValueToInput);
 
       if (!hasDiff(value, newMergedValue, 2) || isFocused) return;
 

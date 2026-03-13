@@ -51,7 +51,6 @@ if (import.meta.env.PROD) {
           enableLongTask: false,
           enableLongAnimationFrame: false,
           enableInp: false,
-          enableElementTiming: false,
         }),
         replayIntegration({
           mutationLimit: 500,
@@ -69,7 +68,7 @@ if (import.meta.env.PROD) {
       replaysOnErrorSampleRate: 0.01,
       enabled: true,
     },
-    reactInit,
+    reactInit as any,
   );
 }
 
