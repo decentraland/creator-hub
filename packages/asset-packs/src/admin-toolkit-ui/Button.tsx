@@ -1,9 +1,9 @@
 import ReactEcs, {
   UiEntity,
   Label,
-  UiButtonProps,
-  UiTransformProps,
-  UiBackgroundProps,
+  type UiButtonProps,
+  type UiTransformProps,
+  type UiBackgroundProps,
 } from '@dcl/react-ecs';
 import { Color4 } from '@dcl/sdk/math';
 
@@ -33,7 +33,7 @@ export const BTN_BORDER_COLOR = {
   },
   secondary: {
     active: Color4.White(),
-    hover: Color4.White(),
+    hover: Color4.fromHexString('#A09BA8'),
     disabled: Color4.fromHexString('#323232'),
   },
   text: {

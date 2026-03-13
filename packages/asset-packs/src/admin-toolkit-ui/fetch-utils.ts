@@ -11,7 +11,6 @@ export async function wrapSignedFetch<T = unknown>(
   signedFetchBody: SignedFetchRequest,
   opts: Opts = {},
 ): Promise<Result<T, string>> {
-  // TODO: uncomment this
   const realm = await getRealm();
 
   if (realm?.isPreview) {
