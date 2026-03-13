@@ -18,12 +18,10 @@ export const STREAMING_SUPPORT_URL = 'https://docs.decentraland.org//creator/edi
 
 export function LiveStream({
   engine,
-  scaleFactor,
   entity,
   video,
 }: {
   engine: IEngine;
-  scaleFactor: number;
   entity: Entity;
   video: DeepReadonlyObject<PBVideoPlayer> | undefined;
 }) {
@@ -54,7 +52,6 @@ export function LiveStream({
   if (showResetStreamKey) {
     return (
       <DeleteStreamKeyConfirmation
-        scaleFactor={scaleFactor}
         engine={engine}
         onCancel={() => setResetStreamKey(false)}
         onReset={() => {
@@ -70,13 +67,12 @@ export function LiveStream({
         <Header
           iconSrc={ICONS.LIVE_SOURCE}
           title="Stream"
-          scaleFactor={scaleFactor}
         />
         <UiEntity
           onMouseDown={() => openExternalUrl({ url: STREAMING_SUPPORT_URL })}
           uiTransform={{
-            width: 25 * scaleFactor,
-            height: 25 * scaleFactor,
+            width: 25,
+            height: 25,
             alignItems: 'center',
           }}
           uiBackground={{
@@ -92,18 +88,16 @@ export function LiveStream({
         textAlign="middle-left"
         value="Use the RTMP server and stream key below in your broadcasting software to start streaming to this screen."
         color={Color4.fromHexString('#A09BA8')}
-        fontSize={16 * scaleFactor}
+        fontSize={16}
       />
       {loading ? (
         <LoadingDots
-          uiTransform={{ minHeight: 400 * scaleFactor }}
-          scaleFactor={scaleFactor}
+          uiTransform={{ minHeight: 400 }}
           engine={engine}
         />
       ) : hasStreamKey ? (
         <ShowStreamKey
           endsAt={streamKeyEndsAt ?? 0}
-          scaleFactor={scaleFactor}
           engine={engine}
           entity={entity}
           video={video}
@@ -111,14 +105,13 @@ export function LiveStream({
         />
       ) : (
         <GenerateStreamKey
-          scaleFactor={scaleFactor}
           engine={engine}
           onGenerate={() => setHasStreamKey(true)}
         />
       )}
       {!hasStreamKey && (
         <Label
-          fontSize={14 * scaleFactor}
+          fontSize={14}
           color={Color4.fromHexString('#FF2D55')}
           value="Do not share your stream key with anyone, and be careful not to display it on screen while streaming."
         />

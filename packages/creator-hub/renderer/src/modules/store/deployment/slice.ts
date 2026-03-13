@@ -1,14 +1,16 @@
 import { createSlice, type PayloadAction, isRejectedWithValue } from '@reduxjs/toolkit';
+import { captureException } from '@sentry/electron/renderer';
 import { Authenticator, type AuthIdentity } from '@dcl/crypto';
 import type { ChainId } from '@dcl/schemas';
 import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
-import { AuthServerProvider } from 'decentraland-connect';
+import { AuthServerProvider } from '/@/lib/auth';
 
 import { editor } from '#preload';
 import { delay } from '/shared/utils';
 import { isFetchError } from '/shared/fetch';
 import type { DeploymentComponentsStatus, Info, Status, File, ErrorName } from '/@/lib/deploy';
 import { DeploymentError, isDeploymentError } from '/@/lib/deploy';
+import { actions as managementActions } from '/@/modules/store/management';
 import { createAsyncThunk } from '/@/modules/store/thunk';
 import {
   checkDeploymentStatus,
@@ -205,14 +207,17 @@ export const executeDeployment = createAsyncThunk(
 
     const { info, id: deploymentId, wallet } = deployment;
 
-    // we have to use both packages (decentraland-connect & @dcl/single-sign-on-client)
-    // since there is no way to fetch the full identity from decentraland-connect
     const hasValidIdentity = AuthServerProvider.hasValidIdentity();
     const identity = localStorageGetIdentity(wallet);
 
     if (!hasValidIdentity || !identity) {
       AuthServerProvider.deactivate();
-      return rejectWithValue(new DeploymentError('INVALID_IDENTITY', getInitialDeploymentStatus()));
+      const error = new DeploymentError('INVALID_IDENTITY', getInitialDeploymentStatus());
+      captureException(error, {
+        tags: { source: 'deployment', event: 'INVALID_IDENTITY', errorType: 'INVALID_IDENTITY' },
+        fingerprint: ['deployment-error', 'INVALID_IDENTITY'],
+      });
+      return rejectWithValue(error);
     }
 
     try {
@@ -237,13 +242,33 @@ export const executeDeployment = createAsyncThunk(
         currentStatus,
       );
 
-      if (deriveOverallStatus(componentsStatus) === 'failed') {
-        return rejectWithValue(new DeploymentError('DEPLOYMENT_FAILED', componentsStatus));
+      const finalStatus = deriveOverallStatus(componentsStatus);
+      if (finalStatus === 'failed') {
+        const error = new DeploymentError('DEPLOYMENT_FAILED', componentsStatus);
+        captureException(error, {
+          tags: {
+            source: 'deployment',
+            event: 'DEPLOYMENT_FAILED',
+            errorType: 'DEPLOYMENT_FAILED',
+          },
+          fingerprint: ['deployment-error', 'DEPLOYMENT_FAILED'],
+        });
+        return rejectWithValue(error);
+      } else if (finalStatus === 'complete') {
+        dispatch(managementActions.fetchAllManagedProjectsData({ address: wallet }));
       }
 
       return { info, componentsStatus };
     } catch (error: any) {
       if (isDeploymentError(error, '*')) {
+        captureException(error.error || error, {
+          tags: {
+            source: 'deployment',
+            event: error.name,
+            errorType: error.name,
+          },
+          fingerprint: ['deployment-error', error.name],
+        });
         dispatch(
           actions.updateDeploymentStatus({
             path,

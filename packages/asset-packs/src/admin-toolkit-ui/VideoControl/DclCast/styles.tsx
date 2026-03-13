@@ -1,7 +1,7 @@
 import { Color4 } from '@dcl/sdk/math';
 import { UiTransformProps } from '@dcl/react-ecs';
 
-export const getDclCastStyles = (scaleFactor: number): Record<string, UiTransformProps> => ({
+export const getDclCastStyles = (): Record<string, UiTransformProps> => ({
   fullContainer: {
     flexDirection: 'column',
     width: '100%',
@@ -10,7 +10,7 @@ export const getDclCastStyles = (scaleFactor: number): Record<string, UiTransfor
 
   fullWidthWithBottomMargin: {
     width: '100%',
-    margin: { bottom: 24 * scaleFactor },
+    margin: { bottom: 24 },
   },
 
   rowSpaceBetween: {
@@ -60,33 +60,33 @@ export const getDclCastStyles = (scaleFactor: number): Record<string, UiTransfor
   columnWithMarginTop: {
     display: 'flex',
     flexDirection: 'column',
-    margin: { top: 8 * scaleFactor },
+    margin: { top: 8 },
   },
 
   marginBottomSmall: {
-    margin: { bottom: 8 * scaleFactor },
+    margin: { bottom: 8 },
   },
 
   marginTopSmall: {
-    margin: { top: -4 * scaleFactor },
+    margin: { top: -4 },
   },
 
   marginRightSmall: {
-    margin: { right: 4 * scaleFactor },
+    margin: { right: 4 },
   },
 
   mainBorderedContainer: {
     width: '100%',
     height: '100%',
-    borderWidth: 2 * scaleFactor,
+    borderWidth: 2,
     borderColor: Color4.fromHexString('#716B7C'),
     flexDirection: 'column',
-    borderRadius: 12 * scaleFactor,
+    borderRadius: 12,
     padding: {
-      left: 16 * scaleFactor,
-      right: 16 * scaleFactor,
-      top: 24 * scaleFactor,
-      bottom: 8 * scaleFactor,
+      left: 16,
+      right: 16,
+      top: 24,
+      bottom: 8,
     },
   },
 
@@ -96,60 +96,60 @@ export const getDclCastStyles = (scaleFactor: number): Record<string, UiTransfor
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    margin: { bottom: 18 * scaleFactor },
+    margin: { bottom: 18 },
   },
 
   activateButton: {
-    minWidth: 120 * scaleFactor,
-    height: 42 * scaleFactor,
-    padding: { left: 8 * scaleFactor, right: 8 * scaleFactor },
+    minWidth: 120,
+    height: 42,
+    padding: { left: 8, right: 8 },
   },
 
   activateButtonLabel: {
-    margin: { left: 20 * scaleFactor, right: 20 * scaleFactor },
+    margin: { left: 20, right: 20 },
   },
 
   retryButton: {
-    margin: { top: 16 * scaleFactor },
+    margin: { top: 16 },
     padding: {
-      top: 8 * scaleFactor,
-      bottom: 8 * scaleFactor,
-      left: 16 * scaleFactor,
-      right: 16 * scaleFactor,
+      top: 8,
+      bottom: 8,
+      left: 16,
+      right: 16,
     },
   },
 
   resetButton: {
-    margin: { right: 8 * scaleFactor, top: 20 * scaleFactor },
-    padding: { left: 8 * scaleFactor, right: 8 * scaleFactor },
-    height: 42 * scaleFactor,
+    margin: { right: 8, top: 20 },
+    padding: { left: 8, right: 8 },
+    height: 42,
   },
 
   copyLinkButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 8 * scaleFactor,
+    borderRadius: 8,
     padding: {
-      top: 4 * scaleFactor,
-      bottom: 4 * scaleFactor,
-      left: 8 * scaleFactor,
-      right: 8 * scaleFactor,
+      top: 4,
+      bottom: 4,
+      left: 8,
+      right: 8,
     },
   },
 
   iconSmall: {
-    width: 20 * scaleFactor,
-    height: 20 * scaleFactor,
+    width: 20,
+    height: 20,
   },
 
   loadingContainer: {
-    minHeight: 400 * scaleFactor,
+    minHeight: 400,
   },
 
   separatorLine: {
-    margin: { top: 16 * scaleFactor, bottom: 16 * scaleFactor },
+    margin: { top: 16, bottom: 16 },
     width: '100%',
-    height: 1 * scaleFactor,
+    height: 1,
     borderWidth: 1,
     borderColor: Color4.fromHexString('#43404A'),
   },
@@ -157,7 +157,7 @@ export const getDclCastStyles = (scaleFactor: number): Record<string, UiTransfor
   textInfoContainer: {
     display: 'flex',
     flexDirection: 'column',
-    margin: { bottom: 4 * scaleFactor },
+    margin: { bottom: 4 },
   },
 
   rowWithBottomMargin: {
@@ -166,7 +166,7 @@ export const getDclCastStyles = (scaleFactor: number): Record<string, UiTransfor
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
-    margin: { bottom: 8 * scaleFactor },
+    margin: { bottom: 8 },
   },
 });
 

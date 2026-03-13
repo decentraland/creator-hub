@@ -53,7 +53,7 @@ jobs:
           cache: 'npm'
 
       - name: install
-        run: make install
+        run: npm i --silent && make install-asset-packs
 
       - name: validate
         run: make validate-asset-packs
@@ -78,7 +78,7 @@ jobs:
           cache: 'npm'
 
       - name: install
-        run: make install
+        run: npm i --silent && make install-asset-packs
 
       - name: build
         run: make build-asset-packs
@@ -141,7 +141,7 @@ jobs:
           cache: 'npm'
 
       - name: install
-        run: make install
+        run: npm i --silent && make install-asset-packs
 
       - name: build
         run: make build-asset-packs

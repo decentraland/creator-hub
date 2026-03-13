@@ -58,6 +58,7 @@ export function EditorPage() {
     killPreview,
     publishScene,
     getMobileQR,
+    supportsMultiInstance,
   } = useEditor();
   const { settings, updateAppSettings } = useSettings();
   const { executeDeployment, getDeployment } = useDeploy();
@@ -204,17 +205,25 @@ export function EditorPage() {
     if (!project) return;
     const rpc = iframeRef.current;
     if (rpc) saveAndGetThumbnail(rpc);
-    await publishScene({ targetContent: config.get('WORLDS_CONTENT_SERVER_URL') });
-    executeDeployment(project.path);
-  }, [project, saveAndGetThumbnail, publishScene, executeDeployment]);
+    try {
+      await publishScene({ targetContent: config.get('WORLDS_CONTENT_SERVER_URL') });
+      executeDeployment(project.path);
+    } catch {
+      openModal('publish', 'deploy');
+    }
+  }, [project, saveAndGetThumbnail, publishScene, executeDeployment, openModal]);
 
   const handleDeployLand = useCallback(async () => {
     if (!project) return;
     const rpc = iframeRef.current;
     if (rpc) saveAndGetThumbnail(rpc);
-    await publishScene({ target: config.get('PEER_URL') });
-    executeDeployment(project.path);
-  }, [project, saveAndGetThumbnail, publishScene, executeDeployment]);
+    try {
+      await publishScene({ target: config.get('PEER_URL') });
+      executeDeployment(project.path);
+    } catch {
+      openModal('publish', 'deploy');
+    }
+  }, [project, saveAndGetThumbnail, publishScene, executeDeployment, openModal]);
 
   const publishOptions = useMemo(
     () =>
@@ -318,6 +327,7 @@ export function EditorPage() {
                     options={settings.previewOptions}
                     onChange={handleChangePreviewOptions}
                     onShowMobileQR={handleShowMobileQR}
+                    supportsMultiInstance={supportsMultiInstance}
                   />
                 }
               >

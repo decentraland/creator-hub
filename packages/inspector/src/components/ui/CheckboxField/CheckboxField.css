@@ -20,8 +20,8 @@
   height: 18px;
   border-radius: 3px;
   margin-right: 8px;
-  border: 1px solid var(--base-14);
-  background-color: var(--base-14);
+  border: 1px solid var(--gray-0);
+  background-color: var(--gray-0);
   cursor: pointer;
 }
 

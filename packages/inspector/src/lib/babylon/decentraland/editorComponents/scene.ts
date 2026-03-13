@@ -1,21 +1,30 @@
 import { ComponentType, getComponentEntityTree } from '@dcl/ecs';
 import type { ComponentOperation } from '../component-operations';
 import type { Layout } from '../../../utils/layout';
+import type { SceneSpawnPoint } from '../../../sdk/components';
 import { getLayoutManager } from '../layout-manager';
 
 export const putSceneComponent: ComponentOperation = (entity, component) => {
   if (component.componentType === ComponentType.LastWriteWinElementSet) {
-    const value = component.getOrNull(entity.entityId) as { layout: Layout } | null;
+    const value = component.getOrNull(entity.entityId) as {
+      layout: Layout;
+      spawnPoints?: SceneSpawnPoint[];
+    } | null;
     if (!value) return;
 
     const context = entity.context.deref()!;
 
+    // Update spawn point visuals
+    context.spawnPoints.updateFromSceneComponent(value.spawnPoints);
+
     // set layout
     const lm = getLayoutManager(context.scene);
+    const previousLayout = lm.getLayout();
     const didChange = lm.setLayout(value.layout);
 
     // if the layout changed, we might need to update the grounds
-    if (didChange) {
+    // skip on initial load (null → layout) since composite already created the tiles
+    if (didChange && previousLayout !== null) {
       // find the ground entity
       const result = Array.from(context.engine.getEntitiesWith(context.editorComponents.Ground))[0];
       if (result) {

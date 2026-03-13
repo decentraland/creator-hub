@@ -1,5 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
+import { supportsMultiInstance } from '/shared/flags';
 import { type Project, SortBy } from '/shared/types/projects';
 import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import { type Workspace } from '/shared/types/workspace';
@@ -22,6 +23,7 @@ const initialState: Async<Workspace> = {
       skipAuthScreen: true,
       enableLandscapeTerrains: true,
       openNewInstance: false,
+      multiInstance: false,
       showWarnings: true,
     },
   },
@@ -158,6 +160,11 @@ export const slice = createSlice({
       )
       .addCase(thunks.updateSettings.fulfilled, (state, { meta }) => {
         state.settings = meta.arg;
+      })
+      .addCase(thunks.fetchSdkCommandsVersion.fulfilled, (state, action) => {
+        if (!supportsMultiInstance(action.payload)) {
+          state.settings.previewOptions.multiInstance = false;
+        }
       })
       .addCase(thunks.getProject.pending, (state, { meta }) => {
         const projectIdx = state.projects.findIndex($ => $.path === meta.arg.path);

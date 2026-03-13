@@ -1,6 +1,7 @@
 **/node_modules
 **/dist
 **/bin
+**/devtools-frontend
 **/*.svg
 
 package.json

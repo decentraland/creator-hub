@@ -1,9 +1,6 @@
 # Decentraland Creator Hub Monorepo
 
-[![CI Status](https://github.com/decentraland/creator-hub/workflows/CI/badge.svg)](https://github.com/decentraland/creator-hub/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Node Version](https://img.shields.io/badge/node-%3E%3D22.x-brightgreen.svg)](https://nodejs.org/)
-[![Made for Decentraland](https://img.shields.io/badge/Made%20for-Decentraland-ff0099.svg)](https://decentraland.org/)
+[![CI Status](https://github.com/decentraland/creator-hub/workflows/CI/badge.svg)](https://github.com/decentraland/creator-hub/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Node Version](https://img.shields.io/badge/node-%3E%3D22.x-brightgreen.svg)](https://nodejs.org/) [![Made for Decentraland](https://img.shields.io/badge/Made%20for-Decentraland-ff0099.svg)](https://decentraland.org/)
 
 ## Table of Contents
 
@@ -78,6 +75,7 @@ creator-hub/
 │       ├── preload/        # Preload scripts
 │       ├── renderer/       # React frontend
 │       ├── shared/         # Shared utilities
+│       ├── devtools-frontend/ # DevTools frontend (git submodule)
 │       └── e2e/            # End-to-end tests
 ├── .github/workflows/       # CI/CD workflows
 ├── Makefile                # Build and development commands
@@ -97,20 +95,30 @@ Before starting, ensure you have the following installed:
 
 ### Initial Setup
 
-1. **Clone the repository:**
+1. **Clone the repository with submodules:**
+
    ```bash
-   git clone https://github.com/decentraland/creator-hub.git
+   git clone --recurse-submodules https://github.com/decentraland/creator-hub.git
    cd creator-hub
    ```
 
+   If you already cloned without submodules, initialize them:
+
+   ```bash
+   git submodule update --init --recursive
+   ```
+
 2. **Install dependencies and initialize the project:**
+
    ```bash
    make init
    ```
 
    This command will:
+
    - Install all dependencies for the monorepo and sub-packages
    - Download and install Protocol Buffers compiler
+   - Initialize git submodules (devtools-frontend)
    - Generate TypeScript definitions from `.proto` files
    - Build all packages
 
@@ -120,47 +128,48 @@ The project uses a Makefile to manage common development tasks:
 
 ### Setup Commands
 
-| Command | Description |
-|---------|-------------|
-| `make install` | Install dependencies for all packages |
-| `make install-protoc` | Download and install Protocol Buffers compiler |
-| `make protoc` | Generate TypeScript definitions from `.proto` files |
-| `make init` | Complete project initialization (clean + install + protoc + build) |
+| Command                | Description                                                        |
+| ---------------------- | ------------------------------------------------------------------ |
+| `make install`         | Install dependencies for all packages                              |
+| `make install-protoc`  | Download and install Protocol Buffers compiler                     |
+| `make init-submodules` | Initialize git submodules (devtools-frontend)                      |
+| `make protoc`          | Generate TypeScript definitions from `.proto` files                |
+| `make init`            | Complete project initialization (clean + install + protoc + build) |
 
 ### Build Commands
 
-| Command | Description |
-|---------|-------------|
-| `make build` | Build all packages (asset-packs, inspector, creator-hub) |
-| `make build-asset-packs` | Build only the asset-packs package |
-| `make build-inspector` | Build only the inspector package |
-| `make build-creator-hub` | Build only the creator-hub package |
-| `make validate-asset-packs` | Validate asset-packs assets |
-| `make upload-asset-packs` | Upload asset-packs to content server |
+| Command                     | Description                                              |
+| --------------------------- | -------------------------------------------------------- |
+| `make build`                | Build all packages (asset-packs, inspector, creator-hub) |
+| `make build-asset-packs`    | Build only the asset-packs package                       |
+| `make build-inspector`      | Build only the inspector package                         |
+| `make build-creator-hub`    | Build only the creator-hub package                       |
+| `make validate-asset-packs` | Validate asset-packs assets                              |
+| `make upload-asset-packs`   | Upload asset-packs to content server                     |
 
 ### Development Commands
 
-| Command | Description |
-|---------|-------------|
-| `make lint` | Run ESLint across all packages |
-| `make lint-fix` | Fix ESLint issues automatically |
-| `make format` | Format code with Prettier |
-| `make typecheck` | Run TypeScript type checking |
-| `make test` | Run unit tests for all packages |
-| `make test-e2e` | Run end-to-end tests for all packages |
+| Command          | Description                           |
+| ---------------- | ------------------------------------- |
+| `make lint`      | Run ESLint across all packages        |
+| `make lint-fix`  | Fix ESLint issues automatically       |
+| `make format`    | Format code with Prettier             |
+| `make typecheck` | Run TypeScript type checking          |
+| `make test`      | Run unit tests for all packages       |
+| `make test-e2e`  | Run end-to-end tests for all packages |
 
 ### Dependency Management
 
-| Command | Description |
-|---------|-------------|
-| `make sync-deps` | Synchronize dependencies across packages using syncpack |
-| `make lint-packages` | Check for dependency mismatches |
+| Command              | Description                                             |
+| -------------------- | ------------------------------------------------------- |
+| `make sync-deps`     | Synchronize dependencies across packages using syncpack |
+| `make lint-packages` | Check for dependency mismatches                         |
 
 ### Cleanup Commands
 
-| Command | Description |
-|---------|-------------|
-| `make clean` | Remove build artifacts and dist folders |
+| Command           | Description                                 |
+| ----------------- | ------------------------------------------- |
+| `make clean`      | Remove build artifacts and dist folders     |
 | `make deep-clean` | Remove all node_modules and generated files |
 
 ## 🔧 Package Scripts
@@ -237,10 +246,12 @@ The project uses GitHub Actions with a sophisticated CI/CD pipeline:
 ### Main CI Workflow (`ci.yml`)
 
 The main workflow orchestrates all CI processes and runs on:
+
 - Push to `main` branch
 - Pull requests
 
 **Workflow Steps:**
+
 1. **Lint** - Code formatting and linting
 2. **Typechecking** - TypeScript type checking
 3. **Tests** - Unit and end-to-end tests
@@ -252,6 +263,7 @@ The main workflow orchestrates all CI processes and runs on:
 ### Test Workflow (`tests.yml`)
 
 Runs comprehensive testing:
+
 - **Unit Tests** - Runs on Ubuntu with Node.js 22
 - **E2E Tests** - Runs on macOS and Windows with Playwright
 - **Cross-platform Testing** - Tests both packages
@@ -259,6 +271,7 @@ Runs comprehensive testing:
 ### Asset Packs Workflow (`asset-packs.yml`)
 
 Handles asset-packs package deployment:
+
 - Validates all assets
 - Builds the asset-packs package
 - Publishes to npm (main branch only)
@@ -268,6 +281,7 @@ Handles asset-packs package deployment:
 ### Inspector Workflow (`inspector.yml`)
 
 Handles inspector package deployment:
+
 - Builds the inspector package (depends on asset-packs)
 - Publishes to S3 for branch previews
 - Deploys to GitHub Pages
@@ -277,6 +291,7 @@ Handles inspector package deployment:
 ### Creator Hub Workflow (`creator-hub.yml`)
 
 Handles desktop application builds:
+
 - **Multi-platform Builds** - macOS and Windows
 - **Code Signing** - Automatic code signing for both platforms
 - **Notarization** - macOS notarization
@@ -305,6 +320,7 @@ The project uses npm workspaces to manage the monorepo:
 ### Protocol Buffers
 
 The Inspector package uses Protocol Buffers for data layer communication:
+
 - `.proto` files are in `packages/inspector/src/lib/data-layer/proto/`
 - Generated TypeScript files are in `packages/inspector/src/lib/data-layer/proto/gen/`
 - Use `make protoc` to regenerate after `.proto` changes
@@ -312,17 +328,20 @@ The Inspector package uses Protocol Buffers for data layer communication:
 ## 🧪 Testing
 
 ### Unit Tests
+
 - **Creator Hub**: Uses Vitest for main, preload, renderer, and shared tests
 - **Inspector**: Uses Vitest for unit tests
 - Run with `make test` or `npm run test` in individual packages
 
 ### End-to-End Tests
+
 - **Creator Hub**: Uses Playwright for Electron app testing
 - **Inspector**: Uses Playwright for web app testing
 - Run with `make test-e2e`
 - Tests automatically build the applications before running
 
 ### Test Structure
+
 ```
 packages/creator-hub/e2e/          # Creator Hub E2E tests
 packages/inspector/test/e2e/       # Inspector E2E tests
@@ -333,6 +352,7 @@ packages/inspector/test/e2e/       # Inspector E2E tests
 ### Typical Development Flow
 
 1. **Start Development:**
+
    ```bash
    make init                    # Initial setup
    cd packages/creator-hub
@@ -340,48 +360,55 @@ packages/inspector/test/e2e/       # Inspector E2E tests
    ```
 
 2. **In another terminal:**
+
    ```bash
    cd packages/inspector
    npm run start               # Start inspector in watch mode
    ```
 
 3. **Before Committing:**
-    - Lint, format & typecheck will be run automatically
+   - Lint, format & typecheck will be run automatically
 
 ### Local Development with Asset Packs
 
 To develop with local asset-packs integration (for testing new assets or Smart Items):
 
 1. **Initial setup:**
+
    ```bash
    make init  # Sets up entire monorepo
    ```
 
 2. **Start asset-packs SDK7 dev server:**
+
    ```bash
    cd packages/asset-packs
    npm run start  # Starts SDK7 server on port 8001
    ```
 
 3. **In another terminal, start docker content server:**
+
    ```bash
    cd packages/asset-packs
    docker-compose up  # Starts content server on port 9000
    ```
 
 4. **In another terminal, upload assets to local content server:**
+
    ```bash
    cd packages/asset-packs
    npm run upload  # Uploads assets to http://localhost:9000
    ```
 
 5. **In another terminal, start inspector dev server:**
+
    ```bash
    cd packages/inspector
    npm start  # Starts on port 8000
    ```
 
 6. **In another terminal, start Creator Hub:**
+
    ```bash
    cd packages/creator-hub
    cp .env.example .env  # First time only
@@ -398,6 +425,7 @@ To develop with local asset-packs integration (for testing new assets or Smart I
    ```
 
 Now Creator Hub will use:
+
 - Local inspector on port 8000
 - Local asset-packs SDK7 runtime on port 8001
 - Local content server for assets on port 9000
@@ -424,6 +452,7 @@ xattr -c /Applications/Decentraland\ Creator\ Hub.app/
 ## 📦 Publishing
 
 ### Asset Packs Package
+
 - Automatically published to npm on main branch
 - Assets uploaded to prod S3 CDN on main branch
 - PR builds available for testing (npm package only)
@@ -431,12 +460,14 @@ xattr -c /Applications/Decentraland\ Creator\ Hub.app/
 - **GitHub Releases**: Always marked as pre-releases to avoid confusion with electron-updater
 
 ### Inspector Package
+
 - Automatically published to npm on main branch
 - PR builds available for testing
 - GitHub Pages deployment for web previews
 - **GitHub Releases**: Always marked as pre-releases to avoid confusion with electron-updater
 
 ### Creator Hub App
+
 - Multi-platform builds (macOS, Windows)
 - Code signed and notarized
 - Distributed via GitHub releases and S3
@@ -456,11 +487,13 @@ The project uses a specific release strategy to ensure electron-updater works co
 Asset Packs follows a controlled deployment model:
 
 **Production CDN:**
+
 - Every merge to `main` automatically uploads assets to prod S3 CDN
 - Prod CDN: `https://builder-items.decentraland.org/contents/:hash`
 - Assets are immediately available after merging, matching the npm package release cycle
 
 **Development CDN:**
+
 - Dev uploads are triggered manually by commenting `/upload-assets` on a PR
 - Only organization members can trigger uploads
 - Dev CDN: `https://builder-items.decentraland.zone/contents/:hash`
@@ -490,11 +523,13 @@ netstat -ano | findstr :8000
 #### Permission Errors
 
 **macOS Gatekeeper Issues**:
+
 ```bash
 xattr -c /Applications/Decentraland\ Creator\ Hub.app/
 ```
 
 **npm Permission Errors**:
+
 ```bash
 # Don't use sudo! Instead, fix npm permissions:
 mkdir ~/.npm-global
@@ -505,23 +540,27 @@ npm config set prefix '~/.npm-global'
 #### Build Failures
 
 **Clean and Rebuild**:
+
 ```bash
 make deep-clean  # Remove all node_modules and build artifacts
 make init        # Fresh install and build
 ```
 
 **Protocol Buffer Issues**:
+
 ```bash
 make install-protoc  # Reinstall protoc
 make protoc          # Regenerate proto files
 ```
 
 **Node Version Mismatch**:
+
 ```bash
 node --version  # Should be 22.x or higher
 ```
 
 Use [nvm](https://github.com/nvm-sh/nvm) to manage Node.js versions:
+
 ```bash
 nvm install 22
 nvm use 22
@@ -530,12 +569,14 @@ nvm use 22
 #### Docker Issues (Asset Packs)
 
 **Docker Not Running**:
+
 ```bash
 # Ensure Docker Desktop is running
 docker ps  # Should list containers without error
 ```
 
 **Port 9000 Already in Use**:
+
 ```bash
 # Change the port in docker-compose.yml or stop the conflicting service
 docker-compose down
@@ -544,16 +585,19 @@ docker-compose down
 #### Development Server Issues
 
 **Inspector Not Loading**:
+
 - Verify WebSocket URL is correct
 - Check browser console for errors
 - Ensure CLI server is running with `--data-layer` flag
 
 **Asset Packs Not Showing**:
+
 - Verify `VITE_ASSET_PACKS_CONTENT_URL` is set correctly
 - Check that assets were uploaded to the content server
 - Clear browser cache
 
 **Hot Reload Not Working**:
+
 ```bash
 # Restart the development server
 # If using multiple terminals, restart all dev servers
@@ -562,12 +606,14 @@ docker-compose down
 #### TypeScript Errors
 
 **Type Errors After Update**:
+
 ```bash
 make typecheck  # Check all packages
 npm run typecheck --workspace=packages/inspector  # Specific package
 ```
 
 **Missing Types**:
+
 ```bash
 npm install --save-dev @types/package-name
 ```
@@ -590,6 +636,7 @@ If you're still experiencing issues:
 For detailed contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 The CI pipeline will automatically:
+
 - Lint, format & typecheck
 - Run all tests
 - Build all packages

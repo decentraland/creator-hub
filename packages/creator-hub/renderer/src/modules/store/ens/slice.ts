@@ -1,41 +1,41 @@
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import { ethers, Contract } from 'ethers';
-import { namehash } from '@ethersproject/hash';
+import { createSlice } from '@reduxjs/toolkit';
+import { createPublicClient, getContract, http, zeroAddress, type Address } from 'viem';
+import { namehash } from 'viem/ens';
 import pLimit from 'p-limit';
-import type { ChainId } from '@dcl/schemas/dist/dapps/chain-id';
+import { captureException } from '@sentry/electron/renderer';
+import { ChainId } from '@dcl/schemas/dist/dapps/chain-id';
 import type { Async } from '/shared/types/async';
 import { config } from '/@/config';
 import { fetch } from '/shared/fetch';
 import { DCLNames, ENS as ENSApi } from '/@/lib/ens';
 import { Worlds } from '/@/lib/worlds';
+import { createAsyncThunk } from '/@/modules/store/thunk';
+import {
+  ENS as ensAbi,
+  ENSResolver as ensResolverAbi,
+  DCLRegistrar as dclRegistrarAbi,
+} from './abis';
 import { ens as ensContract, ensResolver, dclRegistrar } from './contracts';
 import { getEnsProvider, isValidENSName } from './utils';
 import { USER_PERMISSIONS, type ENS, type ENSError } from './types';
 
+const DEFAULT_CHAIN_ID: ChainId = Number(config.get('CHAIN_ID')) || ChainId.ETHEREUM_MAINNET;
 const REQUESTS_BATCH_SIZE = 25;
 const limit = pLimit(REQUESTS_BATCH_SIZE);
 
 // actions
-export const fetchWorldStatus = async (domain: string) => {
-  const WorldAPI = new Worlds();
-  const world = await WorldAPI.fetchWorld(domain);
-  if (world && world.length > 0) {
-    const [{ id: entityId }] = world;
-    return {
-      scene: {
-        entityId,
-      },
-    };
-  }
-  return null;
-};
-
 export const fetchContributeENSNames = async (address: string) => {
   try {
     const WorldAPI = new Worlds();
     const domains = await WorldAPI.fetchContributableDomains(address);
     return domains.filter(domain => domain.user_permissions.includes(USER_PERMISSIONS.DEPLOYMENT));
-  } catch (_) {
+  } catch (error) {
+    captureException(error, {
+      tags: {
+        source: 'ens',
+        event: 'fetch-contributable-names',
+      },
+    });
     return [];
   }
 };
@@ -57,30 +57,39 @@ export const fetchBannedNames = async () => {
 
 export const fetchDCLNames = createAsyncThunk(
   'ens/fetchNames',
-  async ({ address, chainId }: { address: string; chainId: ChainId }) => {
+  async ({ address }: { address: string }, { getState }) => {
     if (!address) return [];
 
-    const provider = new ethers.JsonRpcProvider(config.get('RPC_URL'));
+    const chainId = getState().ens.chainId;
+    const provider = createPublicClient({
+      transport: http(config.get('RPC_URL')),
+    });
 
-    // TODO: Implement logic to fetch lands from the builder-server
-    // const lands: Land[]
-    // const landHashes: { id: string; hash: string }[]
+    const ensData = ensContract[chainId];
+    const dclRegistrarData = dclRegistrar[chainId];
+    const resolverData = ensResolver[chainId];
 
-    if (!ensContract[chainId]) {
+    if (!ensData || !dclRegistrarData || !resolverData) {
       throw new Error(`ENS contract for chainId ${chainId} not found.`);
     }
 
-    const ensImplementation = new Contract(
-      ensContract[chainId].address,
-      new ethers.Interface(ensContract[chainId].abi),
-      provider,
-    );
+    const ensImplementation = getContract({
+      address: ensData.address as Address,
+      abi: ensAbi,
+      client: provider,
+    });
 
-    const dclRegistrarImplementation = new Contract(
-      dclRegistrar[chainId].address,
-      dclRegistrar[chainId].abi,
-      provider,
-    );
+    const dclRegistrarImplementation = getContract({
+      address: dclRegistrarData.address as Address,
+      abi: dclRegistrarAbi,
+      client: provider,
+    });
+
+    const resolverImplementation = getContract({
+      address: resolverData.address as Address,
+      abi: ensResolverAbi,
+      client: provider,
+    });
 
     const dclNamesApi = new DCLNames();
     const bannedNames = await fetchBannedNames();
@@ -92,51 +101,39 @@ export const fetchDCLNames = createAsyncThunk(
       return limit(async () => {
         const subdomain = data.toLowerCase();
         const name = subdomain.split('.')[0];
-        // TODO: Implement logic to fetch lands from the builder-server
         const landId: string | undefined = undefined;
         let content = '';
         let ensAddressRecord = '';
         const nodehash = namehash(subdomain);
-        const [resolverAddress, owner, tokenId]: [string, string, string] = await Promise.all([
-          ensImplementation.resolver(nodehash),
-          ensImplementation.owner(nodehash).then(owner => owner.toLowerCase()),
-          dclRegistrarImplementation.getTokenId(name).then(name => name.toString()),
+        const [resolverAddress, ownerRaw, tokenIdRaw] = await Promise.all([
+          ensImplementation.read.resolver([nodehash]),
+          ensImplementation.read.owner([nodehash]),
+          dclRegistrarImplementation.read.getTokenId([name]),
         ]);
 
-        const resolver = resolverAddress.toString();
+        const owner = ownerRaw.toLowerCase();
+        const tokenId = tokenIdRaw.toString().toLowerCase();
+        const resolver = resolverAddress.toLowerCase();
 
         try {
-          const resolverImplementation = new Contract(
-            ensResolver[chainId].address,
-            new ethers.Interface(ensResolver[chainId].abi),
-            provider,
-          );
-          const resolvedAddress = await resolverImplementation['addr(bytes32)'](nodehash);
-          ensAddressRecord = resolvedAddress !== ethers.ZeroAddress ? resolvedAddress : '';
-        } catch (e) {
+          const resolvedAddress = (await resolverImplementation.read.addr([nodehash])) as Address;
+          ensAddressRecord = resolvedAddress !== zeroAddress ? resolvedAddress : '';
+        } catch (_e) {
           console.log('Failed to fetch ens address record');
         }
 
-        if (resolver !== ethers.ZeroAddress) {
+        if (resolver !== zeroAddress) {
           try {
-            const resolverImplementation = new Contract(
-              resolverAddress,
-              new ethers.Interface(ensResolver[chainId].abi),
-              provider,
-            );
-            content = await resolverImplementation.contenthash(nodehash);
-
-            // TODO: Implement logic to fetch lands from the builder-server
-            // const land = landHashes.find(lh => lh.hash === content);
-            // if (land) {
-            //   landId = land.id;
-            // }
+            const dynamicResolver = getContract({
+              address: resolverAddress,
+              abi: ensResolverAbi,
+              client: provider,
+            });
+            content = await dynamicResolver.read.contenthash([nodehash]);
           } catch (error) {
             console.log('Failed to load ens resolver', error);
           }
         }
-
-        const worldStatus = await fetchWorldStatus(subdomain);
 
         return {
           name,
@@ -149,7 +146,6 @@ export const fetchDCLNames = createAsyncThunk(
           content,
           ensAddressRecord,
           landId,
-          worldStatus,
         };
       });
     });
@@ -175,8 +171,6 @@ export const fetchENS = createAsyncThunk(
         const subdomain = data.toLowerCase();
         const name = subdomain.split('.')[0];
 
-        const worldStatus = await fetchWorldStatus(name);
-
         return {
           name,
           subdomain,
@@ -186,7 +180,6 @@ export const fetchENS = createAsyncThunk(
           ensOwnerAddress: '',
           resolver: '',
           tokenId: '',
-          worldStatus,
         };
       });
     });
@@ -224,8 +217,6 @@ export const fetchContributableNames = createAsyncThunk(
         const subdomain = data.name.toLowerCase();
         const name = subdomain.split('.')[0];
 
-        const worldStatus = await fetchWorldStatus(name);
-
         return {
           name,
           subdomain,
@@ -239,7 +230,6 @@ export const fetchContributableNames = createAsyncThunk(
           tokenId: '',
           userPermissions: data.user_permissions,
           size: data.size,
-          worldStatus,
         };
       });
     });
@@ -250,7 +240,7 @@ export const fetchContributableNames = createAsyncThunk(
 
 export const fetchENSList = createAsyncThunk(
   'ens/fetchENSList',
-  async (payload: { address: string; chainId: ChainId }, thunkApi) => {
+  async (payload: { address: string }, thunkApi) => {
     const dclNames = await thunkApi.dispatch(fetchDCLNames(payload)).unwrap();
     const ensNames = await thunkApi.dispatch(fetchENS(payload)).unwrap();
     const contributableNames = await thunkApi.dispatch(fetchContributableNames(payload)).unwrap();
@@ -261,11 +251,13 @@ export const fetchENSList = createAsyncThunk(
 
 // state
 export type ENSState = {
+  chainId: ChainId;
   data: Record<string, ENS>;
   error: ENSError | null;
 };
 
 export const initialState: Async<ENSState> = {
+  chainId: DEFAULT_CHAIN_ID,
   data: {},
   status: 'idle',
   error: null,
@@ -275,7 +267,12 @@ export const initialState: Async<ENSState> = {
 export const slice = createSlice({
   name: 'ens',
   initialState,
-  reducers: {},
+  reducers: {
+    clearState: () => initialState,
+    setChainId: (state, action: { payload: ChainId }) => {
+      state.chainId = action.payload;
+    },
+  },
   extraReducers: builder => {
     builder
       .addCase(fetchENSList.pending, state => {
@@ -293,6 +290,13 @@ export const slice = createSlice({
           ),
         };
         state.status = 'succeeded';
+      })
+      .addCase(fetchENSList.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = null;
+        captureException(action.error, {
+          tags: { source: 'ens', event: 'fetch-ens-list' },
+        });
       });
   },
 });

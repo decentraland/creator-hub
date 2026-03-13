@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import { IoIosImage } from 'react-icons/io';
 
 import { useComponentInput } from '../../../hooks/sdk/useComponentInput';
@@ -11,7 +11,7 @@ import { FileUploadField } from '../../ui/FileUploadField';
 import { ACCEPTED_FILE_TYPES } from '../../ui/FileUploadField/types';
 
 import './SceneInspector.css';
-import type { EditorComponentsTypes, SceneSpawnPoint } from '../../../lib/sdk/components';
+import type { EditorComponentsTypes } from '../../../lib/sdk/components';
 import { SceneAgeRating, SceneCategory } from '../../../lib/sdk/components';
 import { Dropdown } from '../../ui/Dropdown';
 import { Label, TextArea } from '../../ui';
@@ -20,10 +20,6 @@ import { Tabs } from '../Tabs';
 import { CheckboxField } from '../../ui/CheckboxField';
 import RangeHourField from '../../ui/RangeHourField/RangeHourField';
 import { useComponentValue } from '../../../hooks/sdk/useComponentValue';
-import { useArrayState } from '../../../hooks/useArrayState';
-import { AddButton } from '../AddButton';
-import MoreOptionsMenu from '../MoreOptionsMenu';
-import { Button } from '../../Button';
 import { useAppDispatch, useAppSelector } from '../../../redux/hooks';
 import { useAssetOptions } from '../../../hooks/useAssetOptions';
 import {
@@ -38,15 +34,7 @@ import { selectThumbnails } from '../../../redux/app';
 import { TransitionMode } from '../../../lib/sdk/components/SceneMetadata';
 import { Layout } from './Layout';
 import type { Props } from './types';
-import {
-  fromScene,
-  toScene,
-  isValidInput,
-  isImage,
-  fromSceneSpawnPoint,
-  toSceneSpawnPoint,
-  MIDDAY_SECONDS,
-} from './utils';
+import { fromScene, toScene, isValidInput, isImage, MIDDAY_SECONDS } from './utils';
 import { SceneInfoInput } from './SceneInfoInput';
 
 const AGE_RATING_OPTIONS = [
@@ -127,9 +115,10 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     e => e.target.checked,
   );
 
-  const [componentValue, setComponentValue, isComponentEqual] = useComponentValue<
-    EditorComponentsTypes['Scene']
-  >(entity, Scene);
+  const [componentValue, setComponentValue] = useComponentValue<EditorComponentsTypes['Scene']>(
+    entity,
+    Scene,
+  );
 
   const handleSkyboxAutoChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -174,9 +163,6 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     [componentValue, setComponentValue],
   );
 
-  const [spawnPoints, addSpawnPoint, modifySpawnPoint, removeSpawnPoint] =
-    useArrayState<SceneSpawnPoint>(componentValue === null ? [] : componentValue.spawnPoints);
-
   const handleDrop = useCallback(async (thumbnail: string) => {
     const { operations } = sdk;
     operations.updateValue(Scene, entity, { thumbnail });
@@ -186,185 +172,6 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   if (!hasScene) {
     return null;
   }
-
-  const handleAddSpawnPoint = useCallback(() => {
-    addSpawnPoint({
-      name: `Spawn Point ${spawnPoints.length + 1}`,
-      default: true,
-      position: {
-        x: { $case: 'range', value: [0, 3] },
-        y: { $case: 'range', value: [0, 0] },
-        z: { $case: 'range', value: [0, 3] },
-      },
-      cameraTarget: { x: 8, y: 1, z: 8 },
-    });
-  }, [spawnPoints, addSpawnPoint]);
-
-  const [isFocused, setIsFocused] = useState(false);
-
-  useEffect(() => {
-    if (isComponentEqual({ ...componentValue, spawnPoints }) || isFocused) {
-      return;
-    }
-
-    setComponentValue({ ...componentValue, spawnPoints });
-  }, [spawnPoints, isFocused, componentValue]);
-
-  const handleFocusInput = useCallback(
-    ({ type }: React.FocusEvent<HTMLInputElement>) => {
-      if (type === 'focus') {
-        setIsFocused(true);
-      } else {
-        setIsFocused(false);
-      }
-    },
-    [setIsFocused],
-  );
-
-  const handleBlurInput = useCallback(() => {
-    setIsFocused(false);
-  }, [setIsFocused]);
-
-  const renderSpawnPoint = useCallback(
-    (spawnPoint: SceneSpawnPoint, index: number) => {
-      const input = fromSceneSpawnPoint(spawnPoint);
-      return (
-        <Block
-          className="SpawnPointContainer"
-          key={spawnPoint.name}
-        >
-          <Block className="RightContent">
-            <MoreOptionsMenu>
-              <Button
-                className="RemoveButton"
-                onClick={() => removeSpawnPoint(index)}
-              >
-                Delete
-              </Button>
-            </MoreOptionsMenu>
-          </Block>
-          <Block label="Position">
-            <TextField
-              leftLabel="X"
-              type="number"
-              value={input.position.x}
-              onFocus={handleFocusInput}
-              onBlur={handleBlurInput}
-              onChange={event => {
-                const value = parseFloat(event.target.value);
-                if (isNaN(value)) return;
-                const newInput = { ...input, position: { ...input.position, x: value } };
-                modifySpawnPoint(index, toSceneSpawnPoint(spawnPoint.name, newInput));
-              }}
-              autoSelect
-            />
-            <TextField
-              leftLabel="Y"
-              type="number"
-              value={input.position.y}
-              onFocus={handleFocusInput}
-              onBlur={handleBlurInput}
-              onChange={event => {
-                const value = parseFloat(event.target.value);
-                if (isNaN(value)) return;
-                const newInput = { ...input, position: { ...input.position, y: value } };
-                modifySpawnPoint(index, toSceneSpawnPoint(spawnPoint.name, newInput));
-              }}
-              autoSelect
-            />
-            <TextField
-              leftLabel="Z"
-              type="number"
-              value={input.position.z}
-              onFocus={handleFocusInput}
-              onBlur={handleBlurInput}
-              onChange={event => {
-                const value = parseFloat(event.target.value);
-                if (isNaN(value)) return;
-                const newInput = { ...input, position: { ...input.position, z: value } };
-                modifySpawnPoint(index, toSceneSpawnPoint(spawnPoint.name, newInput));
-              }}
-              autoSelect
-            />
-          </Block>
-          <CheckboxField
-            label="Random Offset"
-            checked={input.randomOffset}
-            onChange={event => {
-              const newInput = { ...input, randomOffset: event.target.checked };
-              if (!event.target.checked) {
-                newInput.maxOffset = 0;
-              } else {
-                newInput.maxOffset = 1.5;
-              }
-              modifySpawnPoint(index, toSceneSpawnPoint(spawnPoint.name, newInput));
-            }}
-          />
-          {input.randomOffset ? (
-            <TextField
-              label="Max Offset"
-              type="number"
-              value={input.maxOffset}
-              onFocus={handleFocusInput}
-              onBlur={handleBlurInput}
-              onChange={event => {
-                const value = parseFloat(event.target.value);
-                if (isNaN(value)) return;
-                const newInput = { ...input, maxOffset: value };
-                modifySpawnPoint(index, toSceneSpawnPoint(spawnPoint.name, newInput));
-              }}
-              autoSelect
-            />
-          ) : null}
-          <Block label="Camera Target">
-            <TextField
-              leftLabel="X"
-              type="number"
-              value={input.cameraTarget.x}
-              onFocus={handleFocusInput}
-              onBlur={handleBlurInput}
-              onChange={event => {
-                const value = parseFloat(event.target.value);
-                if (isNaN(value)) return;
-                const newInput = { ...input, cameraTarget: { ...input.cameraTarget, x: value } };
-                modifySpawnPoint(index, toSceneSpawnPoint(spawnPoint.name, newInput));
-              }}
-              autoSelect
-            />
-            <TextField
-              leftLabel="Y"
-              type="number"
-              value={input.cameraTarget.y}
-              onFocus={handleFocusInput}
-              onBlur={handleBlurInput}
-              onChange={event => {
-                const value = parseFloat(event.target.value);
-                if (isNaN(value)) return;
-                const newInput = { ...input, cameraTarget: { ...input.cameraTarget, y: value } };
-                modifySpawnPoint(index, toSceneSpawnPoint(spawnPoint.name, newInput));
-              }}
-              autoSelect
-            />
-            <TextField
-              leftLabel="Z"
-              type="number"
-              value={input.cameraTarget.z}
-              onFocus={handleFocusInput}
-              onBlur={handleBlurInput}
-              onChange={event => {
-                const value = parseFloat(event.target.value);
-                if (isNaN(value)) return;
-                const newInput = { ...input, cameraTarget: { ...input.cameraTarget, z: value } };
-                modifySpawnPoint(index, toSceneSpawnPoint(spawnPoint.name, newInput));
-              }}
-              autoSelect
-            />
-          </Block>
-        </Block>
-      );
-    },
-    [modifySpawnPoint, removeSpawnPoint],
-  );
 
   const hiddenSceneInspectorTabs = useAppSelector(getHiddenSceneInspectorTabs);
   const selectedSceneInspectorTab = useAppSelector(getSelectedSceneInspectorTab);
@@ -542,12 +349,6 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
             checked={componentValue.disablePortableExperiences}
             {...disablePortableExperiencesProps}
           />
-          <Block
-            label="Spawn Settings"
-            className="underlined"
-          ></Block>
-          {spawnPoints.map((spawnPoint, index) => renderSpawnPoint(spawnPoint, index))}
-          <AddButton onClick={handleAddSpawnPoint}>Add Spawn Point</AddButton>
           <Block
             label="Skybox"
             className="underlined"

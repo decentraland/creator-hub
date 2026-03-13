@@ -22,12 +22,14 @@ import { putTransformComponent } from './sdkComponents/transform';
 import { putTextShapeComponent } from './sdkComponents/text-shape';
 import { putSceneComponent } from './editorComponents/scene';
 import { createGizmoManager } from './GizmoManager';
+import { createSpawnPointManager } from './spawn-point-manager';
 import { putMaterialComponent } from './sdkComponents/material';
 import { putNftShapeComponent } from './sdkComponents/nft';
 import { putVideoPlayerComponent } from './sdkComponents/video-player';
 import { putAvatarAttachComponent } from './sdkComponents/avatar-attach';
 import { putHideComponent } from './editorComponents/hide';
 import { putLockComponent } from './editorComponents/lock';
+import { putPlaceholderComponent } from './sdkComponents/placeholder';
 
 export type LoadableScene = {
   readonly entity: Readonly<Omit<Schemas.Entity, 'id'>>;
@@ -53,6 +55,7 @@ export class SceneContext {
 
   operations = createOperations(this.engine);
   gizmos = createGizmoManager(this);
+  spawnPoints = createSpawnPointManager(this.scene);
 
   Billboard = components.Billboard(this.engine);
   Transform = components.Transform(this.engine);
@@ -83,6 +86,7 @@ export class SceneContext {
     [this.editorComponents.Scene.componentId]: putSceneComponent,
     [this.editorComponents.Hide.componentId]: putHideComponent,
     [this.editorComponents.Lock.componentId]: putLockComponent,
+    [this.editorComponents.Placeholder.componentId]: putPlaceholderComponent,
   };
 
   readonly componentDeleteOperations: Record<number, ComponentOperation> = {
@@ -99,6 +103,7 @@ export class SceneContext {
     [this.editorComponents.Scene.componentId]: putSceneComponent,
     [this.editorComponents.Hide.componentId]: putHideComponent,
     [this.editorComponents.Lock.componentId]: putLockComponent,
+    [this.editorComponents.Placeholder.componentId]: putPlaceholderComponent,
   };
 
   // this future is resolved when the scene is disposed
@@ -199,6 +204,7 @@ export class SceneContext {
 
   dispose() {
     this.stopped.resolve();
+    this.spawnPoints.dispose();
     for (const [entityId] of this.#entities) {
       this.removeEntity(entityId);
     }

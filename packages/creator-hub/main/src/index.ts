@@ -1,6 +1,16 @@
 import { platform } from 'node:process';
 import { app } from 'electron';
-import * as Sentry from '@sentry/electron/main';
+import {
+  init as sentryInit,
+  captureException,
+  electronBreadcrumbsIntegration,
+  electronContextIntegration,
+  childProcessIntegration,
+  onUncaughtExceptionIntegration,
+  onUnhandledRejectionIntegration,
+  linkedErrorsIntegration,
+  normalizePathsIntegration,
+} from '@sentry/electron/main';
 import log from 'electron-log/main';
 
 import { restoreOrCreateMainWindow } from '/@/mainWindow';
@@ -10,17 +20,35 @@ import { deployServer, killAllPreviews } from '/@/modules/cli';
 import { killInspectorServer } from '/@/modules/inspector';
 import { runMigrations } from '/@/modules/migrations';
 import { getAnalytics, track } from './modules/analytics';
-import { tryOpenDevToolsOnPort, parseEnvArgument } from './modules/app-args-handle';
+import { handleAppArguments } from './modules/app-args-handle';
 import { addEditorsPathsToConfig } from './modules/code';
-import { setEnvOverride } from './modules/electron';
 
 import '/@/security-restrictions';
 
 log.initialize();
 
 if (import.meta.env.PROD) {
-  Sentry.init({
+  sentryInit({
     dsn: import.meta.env.VITE_SENTRY_DSN,
+    skipOpenTelemetrySetup: true,
+    defaultIntegrations: false,
+    integrations: [
+      electronBreadcrumbsIntegration(),
+      electronContextIntegration(),
+      childProcessIntegration({
+        events: false,
+      }),
+      onUncaughtExceptionIntegration(),
+      onUnhandledRejectionIntegration(),
+      linkedErrorsIntegration(),
+      normalizePathsIntegration(),
+    ],
+    beforeSend(event) {
+      if (event.message?.includes("process exited with 'abnormal-exit'")) {
+        return null;
+      }
+      return event;
+    },
   });
 }
 
@@ -34,7 +62,7 @@ if (!isSingleInstance) {
 }
 app.on('second-instance', async (_e: unknown, argv: string[]) => {
   await restoreOrCreateMainWindow();
-  tryOpenDevToolsOnPort(argv);
+  handleAppArguments(argv);
 });
 
 /**
@@ -62,9 +90,7 @@ app
     await runMigrations();
     log.info(`[App] Ready v${app.getVersion()}`);
 
-    const envOverride = parseEnvArgument(process.argv);
-    setEnvOverride(envOverride);
-    log.info(`[App] Environment override: ${envOverride || 'none'}`);
+    handleAppArguments(process.argv);
 
     initIpc();
     log.info('[IPC] Ready');
@@ -77,8 +103,6 @@ app
     } else {
       log.info('[Analytics] API key not provided, analytics disabled');
     }
-
-    tryOpenDevToolsOnPort(process.argv);
   })
   .catch(e => log.error('Failed create window:', e));
 
@@ -97,10 +121,7 @@ app.on('before-quit', async event => {
   try {
     await killAll();
   } catch (error) {
-    Sentry.captureException(error, {
-      tags: { source: 'before-quit' },
-      extra: { context: 'Before quit error' },
-    });
+    captureException(error, { tags: { source: 'before-quit' } });
     log.error('[App] Failed to kill all servers:', error);
   }
   log.info('[App] Quit');

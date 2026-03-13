@@ -118,6 +118,42 @@ Go to the `packages/creator-hub` in this monorepo and do this:
 
 Now you are all set, you can start developing the SDK7 scene in this repo, use it from the local Builder and test it by previewing the scene, which should use your local Builder Server serving the development javascript files.
 
+### Testing New Assets in the Inspector
+
+The inspector fetches the asset catalog at runtime from S3. If `latest/catalog.json` is unreachable (e.g. on a pre-merge PR branch, in CI, or offline), it automatically falls back to the `catalog.json` bundled in the `@dcl/asset-packs` npm package — so the inspector always loads.
+
+When you add a **new** asset locally it won't appear in the Asset Packs tab automatically because neither the CDN nor the bundled catalog knows about it yet. There are two options:
+
+#### Option 1 — Docker (full local stack, recommended)
+
+The existing docker-compose setup handles everything. `npm run upload` now also uploads `catalog.json` as `asset-packs/latest/catalog.json` to MinIO, mirroring what CI does on S3.
+
+Follow the steps in [Local Development](#local-development) above, then open the inspector with:
+
+```
+http://localhost:8000/?contentUrl=http://localhost:9000/asset-packs
+```
+
+Both the catalog listing and all asset files are served locally — full end-to-end testing with no remote CDN needed.
+
+#### Option 2 — Upload to dev CDN via PR
+
+Push your branch and comment `/upload-assets` on the pull request (org members only). The CI will upload all asset files from your branch to the development CDN (`https://builder-items.decentraland.zone`) and post a comment confirming the upload.
+
+Then configure the inspector to use the dev CDN:
+
+```
+VITE_ASSET_PACKS_CONTENT_URL=https://builder-items.decentraland.zone
+```
+
+Or when opening the inspector directly:
+
+```
+http://localhost:8000/?contentUrl=https://builder-items.decentraland.zone
+```
+
+The catalog pointer (`latest/catalog.json`) is only updated on merge to `main`, so the Asset Packs tab will still show the currently published catalog — but the asset files themselves will be available for loading.
+
 ### Troubleshooting
 
 #### Missing `@dcl/ecs` dependency

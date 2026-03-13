@@ -84,16 +84,26 @@ export function fromSceneComponent(
     },
     tags,
     spawnPoints: value.spawnPoints
-      ? value.spawnPoints.map(spawnPoint => ({
-          name: spawnPoint.name,
-          default: spawnPoint.default,
-          position: {
-            x: spawnPoint.position.x.value as number[],
-            y: spawnPoint.position.y.value as number[],
-            z: spawnPoint.position.z.value as number[],
-          },
-          cameraTarget: spawnPoint.cameraTarget,
-        }))
+      ? value.spawnPoints.map(spawnPoint => {
+          const { x, y, z } = spawnPoint.position;
+          const hasRange = x.$case === 'range' || y.$case === 'range' || z.$case === 'range';
+          return {
+            name: spawnPoint.name,
+            default: spawnPoint.default,
+            position: hasRange
+              ? {
+                  x: x.$case === 'range' ? x.value : [x.value, x.value],
+                  y: y.$case === 'range' ? y.value : [y.value, y.value],
+                  z: z.$case === 'range' ? z.value : [z.value, z.value],
+                }
+              : {
+                  x: x.value as number,
+                  y: y.value as number,
+                  z: z.value as number,
+                },
+            cameraTarget: spawnPoint.cameraTarget,
+          };
+        })
       : [],
     featureToggles: {
       voiceChat: value.silenceVoiceChat ? 'disabled' : 'enabled',

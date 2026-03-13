@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Collapse, IconButton, Typography, Box } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { Collapse, IconButton, Typography, Box } from '@mui/material';
 
 import type { Props } from './types';
 

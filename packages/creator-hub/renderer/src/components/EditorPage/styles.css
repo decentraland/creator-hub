@@ -7,8 +7,8 @@
 }
 
 .Editor .Header {
-  height: 48px;
-  background-color: var(--black);
+  height: 56px;
+  background-color: var(--bg-inspector);
 }
 
 .Editor .Header .back {
@@ -41,6 +41,14 @@
 
 .Editor .Header .actions > *:not(:last-child) {
   margin-right: 6px;
+}
+
+.Editor .Header .actions .MuiButtonGroup-root {
+  height: 34px;
+}
+
+.Editor .Header .actions .MuiButtonGroup-root .MuiButton-root {
+  height: 34px;
 }
 
 .Editor .inspector {

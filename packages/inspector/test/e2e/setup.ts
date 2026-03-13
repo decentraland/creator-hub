@@ -68,7 +68,8 @@ beforeAll(async () => {
   (global as any).page = page;
   (global as any).E2E_URL = serverUrl;
 
-  await page.goto(serverUrl);
+  const contentUrl = process.env.E2E_CONTENT_URL || 'https://builder-items.decentraland.zone';
+  await page.goto(`${serverUrl}?contentUrl=${encodeURIComponent(contentUrl)}`);
 
   try {
     await page.waitForLoadState('domcontentloaded', { timeout: 5000 });

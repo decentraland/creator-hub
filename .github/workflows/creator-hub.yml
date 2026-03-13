@@ -40,6 +40,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          submodules: true
 
       - uses: actions/setup-node@v4
         with:
@@ -47,7 +48,7 @@ jobs:
           cache: 'npm'
 
       - name: install
-        run: make install
+        run: npm i --silent && make install-creator-hub
 
       - name: install inspector
         working-directory: packages/creator-hub
@@ -126,7 +127,8 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           EP_PRE_RELEASE: true # Publish as pre-release
           # The following are the parameters required by the esigner-codesign action to work, we must explicitly pass in even the optional ones since we're not using the action directly, but from the checked out repo
-          CODE_SIGN_SCRIPT_PATH: ${{ matrix.os == 'windows-latest' && format('{0}\\esigner-codesign\\dist\\index.js', github.workspace) || '' }}
+          # Only set CODE_SIGN_SCRIPT_PATH on main (non-dry-run) to match the esigner-codesign checkout condition above
+          CODE_SIGN_SCRIPT_PATH: ${{ github.ref == 'refs/heads/main' && matrix.os == 'windows-latest' && !inputs.dry-run && format('{0}\\esigner-codesign\\dist\\index.js', github.workspace) || '' }}
           INPUT_COMMAND: "sign"
           INPUT_FILE_PATH: "${{ github.workspace }}\\dist\\Decentraland Creator Hub-${{ steps.version.outputs.version }}-win-x64.exe"
           INPUT_OVERRIDE: "true"
