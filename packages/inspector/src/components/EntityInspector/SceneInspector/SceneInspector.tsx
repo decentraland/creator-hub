@@ -345,7 +345,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
             {...silenceVoiceChatProps}
           />
           <CheckboxField
-            label="Disable Portable Experiences"
+            label="Disable Smart Wearables & Portable Experiences"
             checked={componentValue.disablePortableExperiences}
             {...disablePortableExperiencesProps}
           />
