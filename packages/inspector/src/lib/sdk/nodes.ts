@@ -72,6 +72,39 @@ export function pushChildToNodes(nodes: readonly Node[], parent: Entity, child: 
   return alreadyInNodes ? newValue : [...newValue, { entity: child, children: [] }];
 }
 
+export function insertChildAfterInNodes(
+  nodes: readonly Node[],
+  parent: Entity,
+  child: Entity,
+  afterEntity: Entity,
+): Node[] {
+  const newValue: Node[] = [];
+  let alreadyInNodes = false;
+
+  for (const $ of nodes) {
+    if ($.entity === parent) {
+      const childSet = new Set($.children);
+      if (childSet.has(child)) {
+        newValue.push($);
+      } else {
+        const afterIdx = $.children.indexOf(afterEntity);
+        if (afterIdx >= 0) {
+          const newChildren = [...$.children];
+          newChildren.splice(afterIdx + 1, 0, child);
+          newValue.push({ ...$, children: newChildren });
+        } else {
+          newValue.push({ ...$, children: [...$.children, child] });
+        }
+      }
+    } else {
+      newValue.push($);
+    }
+    alreadyInNodes ||= $.entity === child;
+  }
+
+  return alreadyInNodes ? newValue : [...newValue, { entity: child, children: [] }];
+}
+
 export function removeChild(engine: IEngine, parent: Entity, child: Entity): Node[] {
   const nodes = getNodes(engine);
   const newValue: Node[] = [];
