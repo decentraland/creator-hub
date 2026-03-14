@@ -16,13 +16,9 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
 
   const allEntitiesHaveMaterial = useAllEntitiesHaveComponent(entities, Material);
 
-  const { getInputProps } = useMultiComponentInput(
-    entities,
-    Material,
-    fromMaterial,
-    toMaterial,
-    isValidMaterial,
-  );
+  const { getInputProps } = useMultiComponentInput(entities, Material, fromMaterial, toMaterial, {
+    validateInput: isValidMaterial,
+  });
 
   const handleRemove = useCallback(async () => {
     for (const entity of entities) {

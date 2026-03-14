@@ -28,7 +28,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
     Transform,
     fromTransform,
     toTransform(transform, config),
-    isValidNumericInput,
+    { validateInput: isValidNumericInput },
   );
   const { getInputProps: getConfigProps } = useComponentInput(
     entity,

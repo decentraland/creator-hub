@@ -100,7 +100,9 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
 
   const hasScene = useHasComponent(entity, Scene);
   const imageOptions = useAssetOptions(ACCEPTED_FILE_TYPES['image']);
-  const { getInputProps } = useComponentInput(entity, Scene, fromScene, toScene, isValidInput);
+  const { getInputProps } = useComponentInput(entity, Scene, fromScene, toScene, {
+    validateInput: isValidInput,
+  });
   const nameProps = getInputProps('name');
   const descriptionProps = getInputProps('description');
   const thumbnailProps = getInputProps('thumbnail');
