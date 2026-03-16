@@ -1,14 +1,16 @@
 import ReactEcs, { Dropdown, UiEntity, Label } from '@dcl/react-ecs';
-import { Color4 } from '@dcl/sdk/math';
-import { Button } from '../../Button';
 import { getContentUrl } from '../../constants';
-import {
-  getModalStyles,
-  getModalBackgrounds,
-  getModalColors,
-  getPaginationColor,
-} from '../../ModerationControl/styles/UsersListStyles';
+import { Button } from '../../Button';
 import { getSourceLabel, type FlattenedTrack, type Participant } from '../api';
+import {
+  getSpeakerShowcaseStyles,
+  getShowcaseColors,
+  getShowcaseBackgrounds,
+  getShowcaseIconBackgrounds,
+  getPaginationColor,
+  SHOWCASE_DROPDOWN_COLORS,
+  SHOWCASE_PAGE_INDICATOR_COLOR,
+} from './styles';
 
 const SPEAKERS_PER_PAGE = 10;
 
@@ -21,15 +23,6 @@ const ICONS = {
   },
   get CLOSE() {
     return `${getContentUrl()}/admin_toolkit/assets/icons/close.png`;
-  },
-  get PERSON() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/person-outline.png`;
-  },
-  get SHOWCASE() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/admin-panel-verified-user.png`;
-  },
-  get STAR() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/star.png`;
   },
 };
 
@@ -49,6 +42,105 @@ function getActiveIndex(participant: Participant, activeTrackSid: string | undef
   return participant.tracks.findIndex(t => t.sid === activeTrackSid);
 }
 
+function ParticipantRow({
+  participant,
+  activeTrackSid,
+  isHovered,
+  onSelectTrack,
+  onHoverEnter,
+  onHoverLeave,
+}: {
+  participant: Participant;
+  activeTrackSid: string | undefined;
+  isHovered: boolean;
+  onSelectTrack: (track: FlattenedTrack) => void;
+  onHoverEnter: () => void;
+  onHoverLeave: () => void;
+}) {
+  const styles = getSpeakerShowcaseStyles();
+  const backgrounds = getShowcaseBackgrounds();
+  const colors = getShowcaseColors();
+  const iconBgs = getShowcaseIconBackgrounds();
+
+  const activeIndex = getActiveIndex(participant, activeTrackSid);
+  const isActive = activeIndex !== -1;
+  const options = getDropdownOptions(participant);
+  const displayLabel = isActive
+    ? getSourceLabel(participant.tracks[activeIndex].sourceType)
+    : 'Showcase';
+
+  const dropdownTextColor = isHovered
+    ? SHOWCASE_DROPDOWN_COLORS.hover
+    : isActive
+      ? SHOWCASE_DROPDOWN_COLORS.active
+      : SHOWCASE_DROPDOWN_COLORS.idle;
+
+  const dropdownBgColor = isHovered
+    ? SHOWCASE_DROPDOWN_COLORS.hoverBg
+    : SHOWCASE_DROPDOWN_COLORS.transparentBg;
+
+  return (
+    <UiEntity
+      key={participant.name}
+      uiTransform={styles.userItem}
+    >
+      <UiEntity uiTransform={styles.userRow}>
+        <UiEntity uiTransform={styles.userInfo}>
+          <UiEntity uiTransform={styles.personIconContainer}>
+            <UiEntity
+              uiTransform={styles.personIcon}
+              uiBackground={backgrounds.personIcon}
+            />
+          </UiEntity>
+          <UiEntity uiTransform={styles.userDetails}>
+            <Label
+              value={`<b>${participant.name}</b>`}
+              fontSize={14}
+              color={colors.white}
+            />
+          </UiEntity>
+        </UiEntity>
+        <UiEntity uiTransform={styles.rowCenter}>
+          {isActive && (
+            <UiEntity
+              uiTransform={styles.starIcon}
+              uiBackground={iconBgs.star}
+            />
+          )}
+          <UiEntity
+            uiTransform={styles.dropdownWrapper}
+            onMouseEnter={onHoverEnter}
+            onMouseLeave={onHoverLeave}
+          >
+            <Dropdown
+              key={`showcase-dropdown-${participant.name}`}
+              acceptEmpty
+              emptyLabel={displayLabel}
+              options={options}
+              selectedIndex={-1}
+              onChange={(optionIndex: number) => {
+                const track = participant.tracks[optionIndex];
+                if (track) {
+                  onSelectTrack(track);
+                }
+              }}
+              textAlign="middle-left"
+              fontSize={14}
+              uiTransform={styles.dropdownTransform}
+              uiBackground={{ color: dropdownBgColor }}
+              color={dropdownTextColor}
+            />
+          </UiEntity>
+        </UiEntity>
+      </UiEntity>
+      <UiEntity
+        uiTransform={styles.divider}
+        uiBackground={backgrounds.divider}
+      />
+    </UiEntity>
+  );
+}
+
 export function SpeakerShowcase({
   participants,
   activeTrackSid,
@@ -56,9 +148,12 @@ export function SpeakerShowcase({
   onClose,
 }: SpeakerShowcaseProps) {
   const [page, setPage] = ReactEcs.useState(1);
-  const styles = getModalStyles();
-  const backgrounds = getModalBackgrounds();
-  const colors = getModalColors();
+  const [hoveredDropdown, setHoveredDropdown] = ReactEcs.useState<string | undefined>(undefined);
+
+  const styles = getSpeakerShowcaseStyles();
+  const backgrounds = getShowcaseBackgrounds();
+  const colors = getShowcaseColors();
+  const iconBgs = getShowcaseIconBackgrounds();
 
   const totalPages = Math.ceil(participants.length / SPEAKERS_PER_PAGE);
   const startIndex = (page - 1) * SPEAKERS_PER_PAGE;
@@ -75,19 +170,16 @@ export function SpeakerShowcase({
           <UiEntity uiTransform={styles.header}>
             <UiEntity
               uiTransform={styles.headerIcon}
-              uiBackground={{
-                textureMode: 'stretch',
-                texture: { src: ICONS.SHOWCASE },
-              }}
+              uiBackground={iconBgs.showcase}
             />
             <Label
               value={'<b>SPEAKER SHOWCASE</b>'}
-              fontSize={24}
+              fontSize={20}
               color={colors.white}
             />
             <Label
               value={`(${participants.length} Speakers)`}
-              fontSize={16}
+              fontSize={14}
               color={colors.gray}
               uiTransform={styles.usersCount}
             />
@@ -104,81 +196,25 @@ export function SpeakerShowcase({
           </UiEntity>
 
           <UiEntity uiTransform={styles.listContainer}>
-            {currentPageParticipants.map(participant => {
-              const activeIndex = getActiveIndex(participant, activeTrackSid);
-              const isActive = activeIndex !== -1;
-              const options = getDropdownOptions(participant);
-
-              return (
-                <UiEntity
-                  key={participant.name}
-                  uiTransform={styles.userItem}
-                >
-                  <UiEntity uiTransform={styles.userRow}>
-                    <UiEntity uiTransform={styles.userInfo}>
-                      <UiEntity uiTransform={styles.personIconContainer}>
-                        <UiEntity
-                          uiTransform={styles.personIcon}
-                          uiBackground={backgrounds.personIcon}
-                        />
-                      </UiEntity>
-                      <UiEntity uiTransform={styles.userDetails}>
-                        <Label
-                          value={`<b>${participant.name}</b>`}
-                          fontSize={14}
-                          color={colors.white}
-                        />
-                      </UiEntity>
-                    </UiEntity>
-                    <UiEntity
-                      uiTransform={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                      }}
-                    >
-                      {isActive && (
-                        <UiEntity
-                          uiTransform={{
-                            width: 20,
-                            height: 20,
-                            margin: { right: 4 },
-                          }}
-                          uiBackground={{
-                            textureMode: 'stretch',
-                            texture: { src: ICONS.STAR },
-                          }}
-                        />
-                      )}
-                      <Dropdown
-                        key={`showcase-dropdown-${participant.name}`}
-                        acceptEmpty
-                        emptyLabel="Showcase"
-                        options={options}
-                        selectedIndex={activeIndex}
-                        onChange={(optionIndex: number) => {
-                          const track = participant.tracks[optionIndex];
-                          if (track) {
-                            onSelectTrack(track);
-                          }
-                        }}
-                        textAlign="middle-center"
-                        fontSize={14}
-                        uiTransform={{
-                          height: 36,
-                          width: 180,
-                        }}
-                        uiBackground={{ color: Color4.create(0.2, 0.2, 0.2, 1) }}
-                        color={isActive ? Color4.Gray() : Color4.White()}
-                      />
-                    </UiEntity>
-                  </UiEntity>
-                  <UiEntity
-                    uiTransform={styles.divider}
-                    uiBackground={backgrounds.divider}
-                  />
-                </UiEntity>
-              );
-            })}
+            {participants.length === 0 && (
+              <UiEntity uiTransform={styles.messageContainer}>
+                <Label
+                  value="No current active participants in the Cast"
+                  fontSize={16}
+                  color={colors.gray}
+                />
+              </UiEntity>
+            )}
+            {currentPageParticipants.map(participant => (
+              <ParticipantRow
+                participant={participant}
+                activeTrackSid={activeTrackSid}
+                isHovered={hoveredDropdown === participant.name}
+                onSelectTrack={onSelectTrack}
+                onHoverEnter={() => setHoveredDropdown(participant.name)}
+                onHoverLeave={() => setHoveredDropdown(undefined)}
+              />
+            ))}
           </UiEntity>
         </UiEntity>
 
@@ -201,7 +237,7 @@ export function SpeakerShowcase({
             <Label
               value={`Page ${page}/${totalPages}`}
               fontSize={14}
-              color={colors.white}
+              color={SHOWCASE_PAGE_INDICATOR_COLOR}
             />
             <Button
               id="showcase-next"

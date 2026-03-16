@@ -1,5 +1,12 @@
 import { Color4 } from '@dcl/sdk/math';
 import type { UiTransformProps } from '@dcl/react-ecs';
+import { getContentUrl } from '../../constants';
+import {
+  getModalStyles,
+  getModalBackgrounds,
+  getModalColors,
+  getPaginationColor,
+} from '../../ModerationControl/styles/UsersListStyles';
 
 export const getDclCastStyles = (): Record<string, UiTransformProps> => ({
   fullContainer: {
@@ -322,3 +329,68 @@ export const getCompactBarStyles = (): Record<string, UiTransformProps> => ({
     margin: { left: 20, right: 20 },
   },
 });
+
+// ── Speaker Showcase ───────────────────────────────────────────────────
+
+export const SHOWCASE_DROPDOWN_COLORS = {
+  idle: Color4.fromHexString('#716B7C'),
+  hover: Color4.fromHexString('#FF2D55'),
+  active: Color4.White(),
+  hoverBg: Color4.fromHexString('#242129'),
+  transparentBg: Color4.create(0, 0, 0, 0),
+};
+
+export const SHOWCASE_PAGE_INDICATOR_COLOR = Color4.fromHexString('#A09BA8');
+
+export const getSpeakerShowcaseStyles = (): Record<string, UiTransformProps> => {
+  const base = getModalStyles();
+  return {
+    ...base,
+    container: { ...base.container, width: 650, height: 560, padding: 16 },
+    header: { ...base.header, margin: { bottom: 16 } },
+    headerIcon: { ...base.headerIcon, width: 24, height: 24, margin: { right: 8 } },
+    userRow: { ...base.userRow, height: 36, margin: { top: 2, bottom: 2 } },
+    personIcon: { ...base.personIcon, width: 20, height: 20 },
+    personIconContainer: { ...base.personIconContainer, margin: { right: 8 } },
+    pagination: { ...base.pagination, margin: { top: 12 }, padding: { left: 8, right: 8 } },
+    starIcon: { width: 16, height: 16, margin: { right: 4 } },
+    dropdownWrapper: { width: 200, height: 32 },
+    dropdownTransform: { height: 32, width: 180, borderWidth: 0, borderColor: Color4.Clear() },
+    rowCenter: { flexDirection: 'row', alignItems: 'center' },
+  };
+};
+
+export const getShowcaseColors = () => getModalColors();
+
+// Cache texture backgrounds at module level so object references stay stable
+// across re-renders — prevents the engine from re-downloading/re-processing images.
+let _showcaseIconBackgrounds:
+  | {
+      showcase: { textureMode: 'stretch'; texture: { src: string } };
+      star: { textureMode: 'stretch'; texture: { src: string } };
+    }
+  | undefined;
+
+export function getShowcaseIconBackgrounds() {
+  if (!_showcaseIconBackgrounds) {
+    _showcaseIconBackgrounds = {
+      showcase: {
+        textureMode: 'stretch',
+        texture: {
+          src: `${getContentUrl()}/admin_toolkit/assets/icons/admin-panel-verified-user.png`,
+        },
+      },
+      star: {
+        textureMode: 'stretch',
+        texture: { src: `${getContentUrl()}/admin_toolkit/assets/icons/star.png` },
+      },
+    };
+  }
+  return _showcaseIconBackgrounds;
+}
+
+export function getShowcaseBackgrounds() {
+  return getModalBackgrounds();
+}
+
+export { getPaginationColor };
