@@ -2,7 +2,7 @@
 
 **Issue**: [#1225](https://github.com/decentraland/creator-hub/issues/1225)  
 **Created**: 2026-03-16  
-**Status**: Planning
+**Status**: ✅ **Completed**
 
 ## Problem
 
@@ -288,4 +288,70 @@ const isMultiScene = args.includes('--multi-scene');
 
 ---
 
-**Next Steps**: Begin implementation, starting with type updates.
+## Implementation Summary
+
+### Changes Made
+
+1. **Updated `DeployOptions` type** (`packages/creator-hub/shared/types/deploy.ts`):
+   - Added optional `isMultiScene?: boolean` field with documentation
+   - Defaults to `false` (single-scene mode matches UI default)
+
+2. **Updated `Deployment` interface** (`packages/creator-hub/renderer/src/modules/store/deployment/slice.ts`):
+   - Added `isMultiScene?: boolean` to store the setting throughout deployment lifecycle
+   - Updated `InitializeDeploymentPayload` to accept `isMultiScene`
+   - Modified `initializeDeployment.fulfilled` reducer to store `isMultiScene` with default of `false`
+
+3. **Updated `publishScene` action** (`packages/creator-hub/renderer/src/modules/store/editor/slice.ts`):
+   - Now passes `isMultiScene` from `DeployOptions` to deployment initialization
+   - Ensures the setting flows through the entire deployment chain
+
+4. **Updated `PublishToWorld` component** (`packages/creator-hub/renderer/src/components/Modals/PublishProject/steps/PublishToWorld/component.tsx`):
+   - Passes `isMultiScene` to `publishScene` call
+   - Maintains backward compatibility with `deploymentMetadata`
+
+5. **Updated `Deploy` component** (`packages/creator-hub/renderer/src/components/Modals/PublishProject/steps/Deploy/component.tsx`):
+   - Now reads `isMultiScene` from deployment state (more reliable than metadata)
+   - Falls back to `deploymentMetadata` for backward compatibility
+   - Updated `needsUndeploy` calculation to use `!isMultiScene` instead of `=== false`
+   - Updated `isReplacingWorldContent` to respect `isMultiScene` setting
+
+### Testing Results
+
+- ✅ All typecheck passed (main, preload, renderer)
+- ✅ All unit tests passed (160 tests)
+  - 12 tests in main
+  - 12 tests in preload  
+  - 123 tests in renderer (including deployment slice tests)
+  - 13 tests in shared
+
+### Behavior Changes
+
+**Before**:
+- GUI: Multi-scene checkbox worked correctly
+- CLI/programmatic: Always behaved as multi-scene mode (undefined → no unpublish)
+
+**After**:
+- GUI: Multi-scene checkbox works correctly (unchanged)
+- CLI/programmatic: Defaults to single-scene mode (replaces existing scenes)
+- Setting is now persistent throughout deployment lifecycle
+- More reliable because it's stored in deployment state, not just passed via props
+
+### Notes
+
+The implementation takes a slightly different approach than originally planned. Instead of adding IPC handlers or modifying the main process `cli.deploy()` function, the fix works by:
+
+1. Storing `isMultiScene` in the deployment state at initialization time
+2. Having the Deploy component read from the deployment state (which is more reliable than props)
+3. Defaulting `isMultiScene` to `false` everywhere (single-scene mode)
+
+This approach is:
+- ✅ Simpler - no IPC changes needed
+- ✅ More reliable - stored in state, not just passed through props
+- ✅ Backward compatible - falls back to `deploymentMetadata` if needed
+- ✅ Consistent - the default behavior now matches the GUI default
+
+The existing unpublish logic in the Deploy component already works correctly once it has the right `isMultiScene` value.
+
+---
+
+**Implementation Complete**: All changes tested and ready for review.
