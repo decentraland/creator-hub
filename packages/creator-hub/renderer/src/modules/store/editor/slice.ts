@@ -20,11 +20,7 @@ export const startInspector = createAsyncThunk('editor/startInspector', editor.s
 export const runScene = createAsyncThunk(
   'editor/runScene',
   async ({ path, ...opts }: PreviewOptions & { path: string }) => {
-    const { debugger: openDebugger } = opts;
-    const id = await editor.runScene({ path, opts });
-    if (openDebugger) {
-      await editor.openSceneDebugger(id);
-    }
+    await editor.runScene({ path, opts });
   },
 );
 export const publishScene = createAsyncThunk(

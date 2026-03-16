@@ -21,6 +21,7 @@
   position: relative;
   align-items: center;
   justify-content: center;
+  min-height: 48px;
 }
 
 .Assets .Assets-buttons > div > div {
@@ -112,7 +113,9 @@
 
 .Assets .Assets-content {
   background: var(--tree-bg-color) !important;
-  height: 100%;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
 }
 
 .Assets .Assets-content.Hide {
@@ -142,3 +145,4 @@
   font-weight: 600;
   color: var(--text);
 }
+

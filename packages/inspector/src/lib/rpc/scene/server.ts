@@ -6,6 +6,8 @@ import { type Store } from '../../../redux/store';
 import { type initRenderer } from '../../babylon/setup/init';
 import type { AssetsTab, PanelName, SceneInspectorTab } from '../../../redux/ui/types';
 import { setHasCustomCode } from '../../../redux/scene-metrics';
+import { setDebugConsoleEnabled } from '../../../redux/ui';
+import * as debugLogStore from '../../logic/debug-log-store';
 
 enum Method {
   TOGGLE_COMPONENT = 'toggle_component',
@@ -19,6 +21,9 @@ enum Method {
   SET_CAMERA_TARGET = 'set_camera_target',
   TAKE_SCREENSHOT = 'take_screenshot',
   SET_SCENE_CUSTOM_CODE = 'set_scene_custom_code',
+  SET_DEBUG_CONSOLE_ENABLED = 'set_debug_console_enabled',
+  PUSH_DEBUG_LOGS = 'push_debug_logs',
+  CLEAR_DEBUG_LOGS = 'clear_debug_logs',
 }
 
 type Params = {
@@ -33,6 +38,9 @@ type Params = {
   [Method.SET_CAMERA_TARGET]: { x: number; y: number; z: number };
   [Method.TAKE_SCREENSHOT]: { width: number; height: number; precision?: number };
   [Method.SET_SCENE_CUSTOM_CODE]: { hasCustomCode: boolean };
+  [Method.SET_DEBUG_CONSOLE_ENABLED]: { enabled: boolean };
+  [Method.PUSH_DEBUG_LOGS]: { logs: string[] };
+  [Method.CLEAR_DEBUG_LOGS]: Record<string, never>;
 };
 
 type Result = {
@@ -47,6 +55,9 @@ type Result = {
   [Method.SET_CAMERA_TARGET]: void;
   [Method.TAKE_SCREENSHOT]: string;
   [Method.SET_SCENE_CUSTOM_CODE]: void;
+  [Method.SET_DEBUG_CONSOLE_ENABLED]: void;
+  [Method.PUSH_DEBUG_LOGS]: void;
+  [Method.CLEAR_DEBUG_LOGS]: void;
 };
 
 export class SceneServer extends RPC<Method, Params, Result> {
@@ -100,6 +111,18 @@ export class SceneServer extends RPC<Method, Params, Result> {
 
     this.handle('set_scene_custom_code', async ({ hasCustomCode }) => {
       store.dispatch(setHasCustomCode(hasCustomCode));
+    });
+
+    this.handle('set_debug_console_enabled', async ({ enabled }) => {
+      store.dispatch(setDebugConsoleEnabled({ enabled }));
+    });
+
+    this.handle('push_debug_logs', async ({ logs }) => {
+      debugLogStore.push(logs);
+    });
+
+    this.handle('clear_debug_logs', async () => {
+      debugLogStore.clear();
     });
   }
 }
