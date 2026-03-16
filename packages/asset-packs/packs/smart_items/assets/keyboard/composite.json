@@ -51,12 +51,12 @@
             "value": [
               {
                 "type": "play_sound",
-                "name": "Play sound",
+                "name": "_Play_sound",
                 "jsonPayload": "{\"src\":\"{assetPath}/keyboard.mp3\"}"
               },
               {
                 "type": "play_animation",
-                "name": "Play animation",
+                "name": "_Play_animation",
                 "jsonPayload": "{\"animation\":\"Keyboard\"}"
               }
             ]
@@ -75,11 +75,11 @@
                 "actions": [
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Play sound"
+                    "name": "_Play_sound"
                   },
                   {
                     "id": "{self:asset-packs::Actions}",
-                    "name": "Play animation"
+                    "name": "_Play_animation"
                   }
                 ],
                 "basicViewId": "trigger-when-clicked"
