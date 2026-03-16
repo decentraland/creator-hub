@@ -53,9 +53,9 @@ These are non-obvious design constraints that hold across the codebase. Violatin
 A running Creator Hub instance uses five distinct communication channels:
 
 ```
-┌────────────────────────────────────────────────────────────┐
-│                    Creator Hub Process                     │
-│                                                            │
+┌───────────────────────────────────────────────────────────┐
+│                    Creator Hub Process                    │
+│                                                           │
 │  ┌─────────┐  Electron IPC   ┌──────────┐                 │
 │  │  Main   │◄───────────────►│ Preload  │                 │
 │  │ Process │                 │          │                 │
@@ -73,17 +73,11 @@ A running Creator Hub instance uses five distinct communication channels:
 │       │                      ┌──────────────────────┐     │
 │       └─────────────────────►│     Inspector        │     │
 │         serves static files  │  (iframe, Babylon.js)│     │
-│                              └──────────┬───────────┘     │
-│                                         │                 │
-│  ┌──────────────┐                       │                 │
-│  │ CLI subproc  │  Proto / RPC          │                 │
-│  │ (sdk-commands│  (DataService)        │                 │
-│  │  preview /   │◄──────────────────────┘                 │
-│  │  deploy)     │                                         │
-│  └──────────────┘                                         │
-│                                                            │
+│                              └──────────────────────┘     │
+│                                                           │
+│                                                           │
 │  Asset Packs CDN ◄─── S3 bucket (binary assets)           │
-└────────────────────────────────────────────────────────────┘
+└───────────────────────────────────────────────────────────┘
 ```
 
 ### Electron IPC (creator-hub internal)
