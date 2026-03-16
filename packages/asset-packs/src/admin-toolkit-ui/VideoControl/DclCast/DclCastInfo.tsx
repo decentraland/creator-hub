@@ -217,17 +217,19 @@ const DclCastInfo = ({
             video={video}
             label="<b>Cast controls</b>"
           />
-          <Button
-            id="dcl_cast_showcase_list"
-            value="<b>Showcase List</b>"
-            icon={ICONS.STAR}
-            iconTransform={styles.starIcon}
-            variant="secondary"
-            fontSize={16}
-            color={colors.white}
-            uiTransform={styles.showcaseButton}
-            onMouseDown={onShowShowcaseModal}
-          />
+          {video?.src && isDclCast(video.src) && (
+            <Button
+              id="dcl_cast_showcase_list"
+              value="<b>Showcase List</b>"
+              icon={ICONS.STAR}
+              iconTransform={styles.starIcon}
+              variant="secondary"
+              fontSize={16}
+              color={colors.white}
+              uiTransform={styles.showcaseButton}
+              onMouseDown={onShowShowcaseModal}
+            />
+          )}
         </UiEntity>
         {}
         <UiEntity uiTransform={styles.castControlsRow}>
