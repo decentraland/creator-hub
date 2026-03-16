@@ -69,16 +69,20 @@ export function Deploy(props: Props) {
   const dclEnv = useMemo(() => getDclEnv(), []);
 
   const needsUndeploy = useMemo(() => {
-    return isWorld && deploymentMetadata?.isMultiScene === false && worldScenes.length > 0;
-  }, [isWorld, deploymentMetadata?.isMultiScene, worldScenes]);
+    // Use deployment.isMultiScene if available, fallback to deploymentMetadata
+    const isMultiScene = deployment?.isMultiScene ?? deploymentMetadata?.isMultiScene ?? false;
+    return isWorld && !isMultiScene && worldScenes.length > 0;
+  }, [isWorld, deployment?.isMultiScene, deploymentMetadata?.isMultiScene, worldScenes]);
 
   /** True if any of the project parcels overlap with any of the existing world scenes parcels */
   const isReplacingWorldContent: boolean = useMemo(() => {
     if (!isWorld) return false;
+    const isMultiScene = deployment?.isMultiScene ?? deploymentMetadata?.isMultiScene ?? false;
+    if (isMultiScene) return false;  // In multi-scene mode, we don't replace content
     const projectParcels = project.scene.parcels;
     const worldScenesParcels = worldScenes.map(scene => scene.parcels).flat();
     return projectParcels.some(parcel => worldScenesParcels.includes(parcel));
-  }, [isWorld, worldScenes, project.scene.parcels]);
+  }, [isWorld, deployment?.isMultiScene, deploymentMetadata?.isMultiScene, worldScenes, project.scene.parcels]);
 
   const handlePublish = useCallback(async () => {
     setShowWarning(false);

@@ -130,7 +130,10 @@ export function PublishToWorld(props: Props) {
   const handlePublish = useCallback(
     async (projectUpdates?: Partial<Project>) => {
       if (projectUpdates) await handleUpdateProject(projectUpdates);
-      publishScene({ targetContent: WORLDS_CONTENT_SERVER });
+      publishScene({ 
+        targetContent: WORLDS_CONTENT_SERVER,
+        isMultiScene: isMultiSceneEnabled,
+      });
       props.onStep('deploy', { deploymentMetadata: { isMultiScene: isMultiSceneEnabled } });
     },
     [isMultiSceneEnabled, props.onStep, publishScene, handleUpdateProject],

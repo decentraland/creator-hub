@@ -28,7 +28,13 @@ export const publishScene = createAsyncThunk(
   async (opts: DeployOptions, { dispatch, getState }) => {
     const { translation } = getState();
     const port = await editor.publishScene({ ...opts, language: translation.locale });
-    const deployment = { path: opts.path, port, chainId: opts.chainId, wallet: opts.wallet };
+    const deployment = { 
+      path: opts.path, 
+      port, 
+      chainId: opts.chainId, 
+      wallet: opts.wallet,
+      isMultiScene: opts.isMultiScene,
+    };
     await dispatch(deploymentActions.initializeDeployment(deployment)).unwrap();
     return port;
   },

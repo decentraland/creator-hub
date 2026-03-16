@@ -51,6 +51,7 @@ export interface Deployment {
   status: Status;
   error?: { name: ErrorName; message: string; cause?: string };
   componentsStatus: DeploymentComponentsStatus;
+  isMultiScene?: boolean;  // When false (default), existing world scenes are replaced
   createdAt: number;
   lastUpdated: number;
 }
@@ -65,6 +66,7 @@ interface InitializeDeploymentPayload {
   port: number;
   wallet: string;
   chainId: ChainId;
+  isMultiScene?: boolean;
 }
 
 interface UpdateDeploymentStatusPayload {
@@ -317,7 +319,7 @@ const deploymentSlice = createSlice({
   extraReducers: builder => {
     builder
       .addCase(initializeDeployment.fulfilled, (state, action) => {
-        const { path, url, info, wallet, chainId, files } = action.payload;
+        const { path, url, info, wallet, chainId, files, isMultiScene } = action.payload;
         const existingDeployment = state.deployments[path];
 
         // Always move existing deployment to history before creating new one
@@ -340,6 +342,7 @@ const deploymentSlice = createSlice({
           chainId,
           status: 'idle',
           componentsStatus: getInitialDeploymentStatus(info.isWorld),
+          isMultiScene: isMultiScene ?? false,  // Default to false (single-scene mode)
           createdAt: timestamp,
           lastUpdated: timestamp,
         };

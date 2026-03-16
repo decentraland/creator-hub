@@ -8,4 +8,5 @@ export type DeployOptions = {
   language?: Locale;
   chainId: ChainId;
   wallet: string;
+  isMultiScene?: boolean;  // When false (default), existing world scenes are replaced; when true, scenes accumulate
 };
