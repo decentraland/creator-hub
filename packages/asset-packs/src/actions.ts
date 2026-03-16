@@ -58,6 +58,7 @@ import {
   mapAlignToScreenAlign,
   showCaptchaPrompt,
 } from './ui';
+import { AlignMode } from './enums';
 import { getExplorerComponents } from './components';
 import { initTriggers, damageTargets, healTargets } from './triggers';
 import { followMap } from './transform';
@@ -1159,7 +1160,8 @@ export function createActionsSystem(
     getUITransform(UiTransform, engine.RootEntity);
 
     // Get a UI Stack entity
-    const screenAlign = mapAlignToScreenAlign(align);
+    // Default to center alignment if align is not provided
+    const screenAlign = mapAlignToScreenAlign(align ?? AlignMode.TAM_MIDDLE_CENTER);
     const uiStack = getUiStack(screenAlign);
 
     // TODO: Fix items wrapping
