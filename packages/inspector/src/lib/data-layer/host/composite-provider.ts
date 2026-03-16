@@ -10,6 +10,7 @@ import { getMinimalComposite } from '../client/feeded-local-fs';
 import type { InspectorPreferences } from '../../logic/preferences/types';
 import { buildNodesHierarchyIfNotExists } from './utils/migrations/build-nodes-hierarchy';
 import { removeLegacyEntityNodeComponents } from './utils/migrations/legacy-entity-node';
+import { removeActionTypesComponent } from './utils/migrations/remove-action-types-component';
 import { DIRECTORY, withAssetDir } from './fs-utils';
 import { dumpEngineToComposite, generateEntityNamesType } from './utils/engine-to-composite';
 import type { CompositeManager } from './utils/fs-composite-provider';
@@ -116,6 +117,7 @@ export class CompositeProvider implements StateProvider {
 
   private runMigrations(): void {
     removeLegacyEntityNodeComponents(this.engine);
+    removeActionTypesComponent(this.engine);
     buildNodesHierarchyIfNotExists(this.engine);
     addNodesComponentsToPlayerAndCamera(this.engine);
     fixNetworkEntityValues(this.engine);

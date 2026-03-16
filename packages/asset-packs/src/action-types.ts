@@ -1,7 +1,6 @@
 import type { IEngine, ISchema, JsonSchemaExtended } from '@dcl/ecs';
 import { Schemas } from '@dcl/ecs';
-import type { Action, ActionPayload, ActionType, ActionTypes } from './definitions';
-import { ComponentName, getComponent } from './definitions';
+import type { Action, ActionPayload, ActionType } from './definitions';
 
 export const EMPTY: JsonSchemaExtended = {
   type: 'object',
@@ -9,35 +8,22 @@ export const EMPTY: JsonSchemaExtended = {
   serializationType: 'map',
 };
 
-export function addActionType<T extends ISchema>(engine: IEngine, type: string, schema?: T) {
-  const ActionTypes = getComponent<ActionTypes>(ComponentName.ACTION_TYPES, engine);
-  const actionTypes = ActionTypes.getOrCreateMutable(engine.RootEntity);
-  const actionType = {
-    type,
-    jsonSchema: JSON.stringify(schema?.jsonSchema || Schemas.Map({}).jsonSchema),
-  };
-  actionTypes.value = [
-    ...actionTypes.value.filter(
-      ($: { type: string; jsonSchema: string }) => $.type !== actionType.type,
-    ),
-    actionType,
-  ];
+const actionTypesStore = new Map<string, string>();
+
+export function addActionType<T extends ISchema>(_engine: IEngine, type: string, schema?: T) {
+  const jsonSchema = JSON.stringify(schema?.jsonSchema || Schemas.Map({}).jsonSchema);
+  actionTypesStore.set(type, jsonSchema);
 }
 
-export function getActionSchema<T = unknown>(engine: IEngine, type: string) {
-  const ActionTypes = getComponent<ActionTypes>(ComponentName.ACTION_TYPES, engine);
-  const actionTypes = ActionTypes.get(engine.RootEntity);
-  const actionType = actionTypes.value.find(
-    ($: { type: string; jsonSchema: string }) => $.type === type,
-  );
-  const jsonSchema: JsonSchemaExtended = actionType ? JSON.parse(actionType.jsonSchema) : EMPTY;
+export function getActionSchema<T = unknown>(_engine: IEngine, type: string) {
+  const jsonSchema: JsonSchemaExtended = actionTypesStore.has(type)
+    ? JSON.parse(actionTypesStore.get(type)!)
+    : EMPTY;
   return Schemas.fromJson(jsonSchema) as ISchema<T>;
 }
 
-export function getActionTypes(engine: IEngine) {
-  const ActionTypes = getComponent<ActionTypes>(ComponentName.ACTION_TYPES, engine);
-  const actionTypes = ActionTypes.get(engine.RootEntity);
-  return actionTypes.value.map(($: { type: string; jsonSchema: string }) => $.type);
+export function getActionTypes(_engine: IEngine) {
+  return Array.from(actionTypesStore.keys());
 }
 
 export function getPayload<T extends ActionType>(action: Action) {
