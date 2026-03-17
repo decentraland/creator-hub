@@ -231,8 +231,21 @@ const DclCastInfo = ({
             />
           )}
         </UiEntity>
-        {}
         <UiEntity uiTransform={styles.castControlsRow}>
+          {video?.src && isDclCast(video.src) && video.src !== LIVEKIT_STREAM_SRC && (
+            <Button
+              id="dcl_cast_default_stream"
+              value="<b>Default</b>"
+              variant="secondary"
+              fontSize={16}
+              color={colors.white}
+              uiTransform={styles.defaultButton}
+              onMouseDown={() => {
+                controls.setSource(LIVEKIT_STREAM_SRC);
+                state.videoControl.selectedStream = 'dcl-cast';
+              }}
+            />
+          )}
           <Button
             id="dcl_cast_reset_room_id"
             value="<b>Reset Room</b>"
