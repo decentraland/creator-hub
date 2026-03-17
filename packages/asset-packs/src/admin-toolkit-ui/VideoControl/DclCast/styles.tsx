@@ -67,7 +67,7 @@ export const getDclCastStyles = (): Record<string, UiTransformProps> => ({
   columnWithMarginTop: {
     display: 'flex',
     flexDirection: 'column',
-    margin: { top: 8 },
+    margin: { top: 16 },
   },
 
   marginBottomSmall: {
@@ -84,7 +84,7 @@ export const getDclCastStyles = (): Record<string, UiTransformProps> => ({
 
   mainBorderedContainer: {
     width: '100%',
-    height: '100%',
+    height: 'auto',
     borderWidth: 2,
     borderColor: Color4.fromHexString('#716B7C'),
     flexDirection: 'column',
@@ -143,13 +143,20 @@ export const getDclCastStyles = (): Record<string, UiTransformProps> => ({
   castControlsRow: {
     display: 'flex',
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
     margin: { top: 12 },
   },
 
   showcaseButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: { left: 12, right: 12 },
+    height: 42,
+  },
+
+  defaultButton: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: { left: 12, right: 12 },

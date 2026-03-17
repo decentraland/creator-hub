@@ -25,7 +25,7 @@ export function VideoControlURL({
 }) {
   const [videoURL, setVideoURL] = ReactEcs.useState('');
   ReactEcs.useEffect(() => {
-    const url = video?.src === LIVEKIT_STREAM_SRC ? '' : video?.src;
+    const url = video?.src?.startsWith('livekit-video://') ? '' : video?.src;
     setVideoURL(url ?? '');
   }, [entity]);
   const controls = createVideoPlayerControls(entity, engine);
