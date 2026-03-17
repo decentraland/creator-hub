@@ -39,5 +39,5 @@ describe('Assets', () => {
 
     // There should be an entity in the Hierarchy tree with the name Pebbles
     await expect(Hierarchy.getId('Pebbles')).resolves.toBeGreaterThanOrEqual(152);
-  }, 60_000);
+  }, 30_000);
 });
