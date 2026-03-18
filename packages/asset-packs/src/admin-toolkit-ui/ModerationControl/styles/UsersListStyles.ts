@@ -209,6 +209,8 @@ export const getModalColors = () => ({
   removeRed: Color4.fromHexString('#FF2D55FF'),
   disabledGray: Color4.fromHexString('#323232'),
   black: Color4.Black(),
+  softBlack: Color4.fromHexString('#161518'),
+  transparent: Color4.create(0, 0, 0, 0),
 });
 
 export const getPaginationColor = (isDisabled: boolean) => {

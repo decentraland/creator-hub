@@ -151,6 +151,7 @@ export const Button = (props: CompositeButtonProps) => {
         buttonStates.set(buttonId, disabled ? DISABLED_STATE : ACTIVE_STATE);
       }}
     >
+      {/* TODO: Improve icon hovering state */}
       {icon && (
         <UiEntity
           uiTransform={iconTransform}

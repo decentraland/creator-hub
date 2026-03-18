@@ -4,20 +4,15 @@ import { Color4 } from '@dcl/sdk/math';
 import { getContentUrl } from '../../constants';
 import { Button } from '../../Button';
 import type { State } from '../../types';
-import { nextTickFunctions } from '../..';
 import { LIVEKIT_STREAM_SRC } from '../LiveStream';
 import {
-  getActiveStreams,
   getPresentationInfo,
-  groupTracksByParticipant,
   nextSlide,
   playVideo,
   prevSlide,
   stopVideo,
-  type FlattenedTrack,
 } from '../api';
 import { createVideoPlayerControls, isDclCast } from '../utils';
-import { showcaseState } from './DclCastInfo';
 import { getCompactBarStyles, getDclCastBackgrounds, getDclCastColors } from './styles';
 
 const ICONS = {
@@ -49,11 +44,13 @@ const CompactDclCast = ({
   state,
   entity,
   video,
+  onShowShowcaseModal,
 }: {
   engine: IEngine;
   state: State;
   entity: Entity;
   video: DeepReadonlyObject<PBVideoPlayer> | undefined;
+  onShowShowcaseModal: () => Promise<void>;
 }) => {
   const styles = getCompactBarStyles();
   const colors = getDclCastColors();
@@ -105,30 +102,6 @@ const CompactDclCast = ({
   const handleStopVideo = async () => {
     await stopVideo();
     await fetchPresentationInfo();
-  };
-
-  const onShowShowcaseModal = async () => {
-    const latestTracks = await getActiveStreams();
-    if (!latestTracks) return;
-
-    const closeModal = () => {
-      showcaseState.show = false;
-    };
-
-    showcaseState.participants = groupTracksByParticipant(latestTracks);
-    showcaseState.activeTrackSid = video?.src;
-
-    showcaseState.onSelectTrack = (track: FlattenedTrack) => {
-      controls.setSource(track.sid);
-      state.videoControl.selectedStream = 'dcl-cast';
-      closeModal();
-    };
-
-    showcaseState.onClose = closeModal;
-
-    nextTickFunctions.push(() => {
-      showcaseState.show = true;
-    });
   };
 
   return (

@@ -8,15 +8,8 @@ import { Button } from '../../Button';
 import { getContentUrl } from '../../constants';
 import { FeedbackButton } from '../../FeedbackButton';
 import type { State } from '../../types';
-import { nextTickFunctions } from '../..';
 import { LIVEKIT_STREAM_SRC } from '../LiveStream';
 import { VideoControlVolume } from '../VolumeControl';
-import {
-  getActiveStreams,
-  groupTracksByParticipant,
-  type FlattenedTrack,
-  type Participant,
-} from '../api';
 import { createVideoPlayerControls, isDclCast } from '../utils';
 import { getDclCastStyles, getDclCastColors, getDclCastBackgrounds } from './styles';
 
@@ -29,30 +22,18 @@ const ICONS = {
   },
 };
 
-export const showcaseState: {
-  show: boolean;
-  participants: Participant[];
-  activeTrackSid: string | undefined;
-  onSelectTrack: ((track: FlattenedTrack) => void) | undefined;
-  onClose: (() => void) | undefined;
-} = {
-  show: false,
-  participants: [],
-  activeTrackSid: undefined,
-  onSelectTrack: undefined,
-  onClose: undefined,
-};
-
 const DclCastInfo = ({
   state,
   engine,
   onResetRoomId,
+  onShowShowcaseModal,
   entity,
   video,
 }: {
   state: State;
   engine: IEngine;
   onResetRoomId: () => Promise<void>;
+  onShowShowcaseModal: () => Promise<void>;
   entity: Entity;
   video: DeepReadonlyObject<PBVideoPlayer> | undefined;
 }) => {
@@ -60,31 +41,6 @@ const DclCastInfo = ({
   const styles = getDclCastStyles();
   const colors = getDclCastColors();
   const backgrounds = getDclCastBackgrounds();
-
-  const onShowShowcaseModal = async () => {
-    const latestTracks = await getActiveStreams();
-
-    if (!latestTracks) return;
-
-    const closeModal = () => {
-      showcaseState.show = false;
-    };
-
-    showcaseState.participants = groupTracksByParticipant(latestTracks);
-    showcaseState.activeTrackSid = video?.src;
-
-    showcaseState.onSelectTrack = (track: FlattenedTrack) => {
-      controls.setSource(track.sid);
-      state.videoControl.selectedStream = 'dcl-cast';
-      closeModal();
-    };
-
-    showcaseState.onClose = closeModal;
-
-    nextTickFunctions.push(() => {
-      showcaseState.show = true;
-    });
-  };
 
   return (
     <UiEntity uiTransform={styles.fullContainer}>
@@ -232,20 +188,6 @@ const DclCastInfo = ({
           )}
         </UiEntity>
         <UiEntity uiTransform={styles.castControlsRow}>
-          {video?.src && isDclCast(video.src) && video.src !== LIVEKIT_STREAM_SRC && (
-            <Button
-              id="dcl_cast_default_stream"
-              value="<b>Default</b>"
-              variant="secondary"
-              fontSize={16}
-              color={colors.white}
-              uiTransform={styles.defaultButton}
-              onMouseDown={() => {
-                controls.setSource(LIVEKIT_STREAM_SRC);
-                state.videoControl.selectedStream = 'dcl-cast';
-              }}
-            />
-          )}
           <Button
             id="dcl_cast_reset_room_id"
             value="<b>Reset Room</b>"
