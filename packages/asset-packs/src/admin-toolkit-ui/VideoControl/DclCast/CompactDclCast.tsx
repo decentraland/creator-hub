@@ -5,13 +5,7 @@ import { getContentUrl } from '../../constants';
 import { Button } from '../../Button';
 import type { State } from '../../types';
 import { LIVEKIT_STREAM_SRC } from '../LiveStream';
-import {
-  getPresentationInfo,
-  nextSlide,
-  playVideo,
-  prevSlide,
-  stopVideo,
-} from '../api';
+import { getPresentationInfo, nextSlide, playVideo, prevSlide, stopVideo } from '../api';
 import { createVideoPlayerControls, isDclCast } from '../utils';
 import { getCompactBarStyles, getDclCastBackgrounds, getDclCastColors } from './styles';
 
