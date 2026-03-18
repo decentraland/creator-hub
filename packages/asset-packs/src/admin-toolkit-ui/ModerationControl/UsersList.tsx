@@ -1,20 +1,20 @@
-import { IEngine } from '@dcl/ecs';
+import { type IEngine } from '@dcl/ecs';
 import { Color4 } from '@dcl/ecs-math';
 import ReactEcs, { UiEntity, Label } from '@dcl/react-ecs';
 
+import { getContentUrl } from '../constants';
 import { Button } from '../Button';
+import { clearInterval, setInterval } from '../utils';
 import { RemoveAdminConfirmation } from './RemoveAdminConfirmation';
-import { moderationControlState, SceneAdmin } from '.';
-import { CONTENT_URL } from '../constants';
+import { type SceneBanUser } from './api';
+import { handleUnbanUser } from './utils';
+import { moderationControlState, type SceneAdmin } from './.';
 import {
   getModalStyles,
   getModalBackgrounds,
   getModalColors,
   getPaginationColor,
 } from './styles/UsersListStyles';
-import { handleUnbanUser } from './utils';
-import { SceneBanUser } from './api';
-import { clearInterval, setInterval } from '../utils';
 
 export enum UserListType {
   ADMIN = 'admin',
@@ -29,9 +29,15 @@ type ModalUserListProps = {
 const USERS_PER_PAGE = 5;
 
 const ICONS = {
-  BACK: `${CONTENT_URL}/admin_toolkit/assets/icons/chevron-back.png`,
-  NEXT: `${CONTENT_URL}/admin_toolkit/assets/icons/chevron-forward.png`,
-  CLOSE: `${CONTENT_URL}/admin_toolkit/assets/icons/close.png`,
+  get BACK() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/chevron-back.png`;
+  },
+  get NEXT() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/chevron-forward.png`;
+  },
+  get CLOSE() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/close.png`;
+  },
 };
 
 const getUserKey = (user: SceneAdmin | SceneBanUser): string => {

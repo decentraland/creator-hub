@@ -1,27 +1,41 @@
 import { Color4 } from '@dcl/sdk/math';
-import ReactEcs, { Label, Button as DCLButton, UiEntity, ReactBasedUiSystem } from '@dcl/react-ecs';
-import { Entity, IEngine, PointerEventsSystem } from '@dcl/ecs';
-import { getComponents, GetPlayerDataRes, IPlayersHelper, ISDKHelpers } from '../definitions';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- ReactEcs is required for JSX factory
+import ReactEcs, {
+  Label,
+  Button as DCLButton,
+  UiEntity,
+  type ReactBasedUiSystem,
+} from '@dcl/react-ecs';
+import { type Entity, type IEngine, type PointerEventsSystem } from '@dcl/ecs';
+import {
+  getComponents,
+  type GetPlayerDataRes,
+  type IPlayersHelper,
+  type ISDKHelpers,
+} from '../definitions';
 import { VideoControl } from './VideoControl';
 import { TextAnnouncementsControl } from './TextAnnouncementsControl';
 import { SmartItemsControl } from './SmartItemsControl';
 import { Button } from './Button';
 import { TextAnnouncements } from './TextAnnouncements';
-import { CONTENT_URL } from './constants';
-import { State, TabType, SelectedSmartItem } from './types';
+import { getContentUrl } from './constants';
+import { type State, TabType, type SelectedSmartItem } from './types';
 import {
-  BTN_MODERATION_CONTROL,
+  getBtnModerationControl,
   ModerationControl,
   moderationControlState,
-  SceneAdmin,
+  type SceneAdmin,
 } from './ModerationControl';
-import { getSceneAdmins, getSceneBans, SceneBanUser } from './ModerationControl/api';
+import { getSceneAdmins, getSceneBans, type SceneBanUser } from './ModerationControl/api';
 import { ModalUserList, UserListType } from './ModerationControl/UsersList';
+import { showcaseState } from './VideoControl/DclCast';
+import { SpeakerShowcase } from './VideoControl/DclCast/SpeakerShowcase';
 import { isPreview } from './fetch-utils';
 
 export const nextTickFunctions: (() => void)[] = [];
 const ADMIN_TOOLKIT_VIRTUAL_UI_SIZE = { virtualWidth: 1920, virtualHeight: 1080 };
 
+// eslint-disable-next-line prefer-const
 export let state: State = {
   adminToolkitUiEntity: 0 as Entity,
   panelOpen: false,
@@ -30,6 +44,7 @@ export let state: State = {
     selectedVideoPlayer: undefined,
     selectedStream: undefined,
     dclCast: undefined,
+    isMinimized: false,
   },
   smartItemsControl: {
     selectedSmartItem: undefined,
@@ -53,14 +68,23 @@ let sceneBansCache: SceneBanUser[] = [];
 // const BTN_REWARDS_CONTROL = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-rewards-control-button.png`
 // const BTN_REWARDS_CONTROL_ACTIVE = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-rewards-control-active-button.png`
 
-const BTN_VIDEO_CONTROL = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-video-control-button.png`;
-
-const BTN_SMART_ITEM_CONTROL = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-smart-item-control-button.png`;
-
-const BTN_TEXT_ANNOUNCEMENT_CONTROL = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-text-announcement-control-button.png`;
-
-const BTN_ADMIN_TOOLKIT_CONTROL = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-control-button.png`;
-const BTN_ADMIN_TOOLKIT_BACKGROUND = `${CONTENT_URL}/admin_toolkit/assets/backgrounds/admin-tool-background.png`;
+const ADMIN_ICONS = {
+  get BTN_VIDEO_CONTROL() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/admin-panel-video-control-button.png`;
+  },
+  get BTN_SMART_ITEM_CONTROL() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/admin-panel-smart-item-control-button.png`;
+  },
+  get BTN_TEXT_ANNOUNCEMENT_CONTROL() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/admin-panel-text-announcement-control-button.png`;
+  },
+  get BTN_ADMIN_TOOLKIT_CONTROL() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/admin-panel-control-button.png`;
+  },
+  get BTN_ADMIN_TOOLKIT_BACKGROUND() {
+    return `${getContentUrl()}/admin_toolkit/assets/backgrounds/admin-tool-background.png`;
+  },
+};
 
 export const containerBackgroundColor = Color4.create(0, 0, 0, 0.75);
 
@@ -118,6 +142,7 @@ export function getSmartItems(engine: IEngine) {
   return Array.from(adminToolkitComponent.smartItemsControl.smartItems ?? []);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getRewards(engine: IEngine) {
   const adminToolkitComponent = getAdminToolkitComponent(engine);
 
@@ -265,7 +290,7 @@ const uiComponent = (
               <Button
                 id="admin_toolkit_moderation_control"
                 variant={state.activeTab === TabType.MODERATION_CONTROL ? 'primary' : 'text'}
-                icon={BTN_MODERATION_CONTROL}
+                icon={getBtnModerationControl()}
                 onlyIcon
                 uiTransform={{
                   display:
@@ -299,7 +324,7 @@ const uiComponent = (
               <Button
                 id="admin_toolkit_panel_video_control"
                 variant={state.activeTab === TabType.VIDEO_CONTROL ? 'primary' : 'text'}
-                icon={BTN_VIDEO_CONTROL}
+                icon={ADMIN_ICONS.BTN_VIDEO_CONTROL}
                 iconBackground={{
                   color:
                     state.activeTab === TabType.VIDEO_CONTROL ? Color4.Black() : Color4.White(),
@@ -331,7 +356,7 @@ const uiComponent = (
               <Button
                 id="admin_toolkit_panel_smart_items_control"
                 variant={state.activeTab === TabType.SMART_ITEMS_CONTROL ? 'primary' : 'text'}
-                icon={BTN_SMART_ITEM_CONTROL}
+                icon={ADMIN_ICONS.BTN_SMART_ITEM_CONTROL}
                 iconBackground={{
                   color:
                     state.activeTab === TabType.SMART_ITEMS_CONTROL
@@ -365,7 +390,7 @@ const uiComponent = (
               <Button
                 id="admin_toolkit_panel_text_announcement_control"
                 variant={state.activeTab === TabType.TEXT_ANNOUNCEMENT_CONTROL ? 'primary' : 'text'}
-                icon={BTN_TEXT_ANNOUNCEMENT_CONTROL}
+                icon={ADMIN_ICONS.BTN_TEXT_ANNOUNCEMENT_CONTROL}
                 iconBackground={{
                   color:
                     state.activeTab === TabType.TEXT_ANNOUNCEMENT_CONTROL
@@ -436,7 +461,7 @@ const uiComponent = (
             }}
             uiBackground={{
               texture: {
-                src: BTN_ADMIN_TOOLKIT_BACKGROUND,
+                src: ADMIN_ICONS.BTN_ADMIN_TOOLKIT_BACKGROUND,
               },
               textureMode: 'stretch',
               color: Color4.create(1, 1, 1, 1),
@@ -453,7 +478,7 @@ const uiComponent = (
               }}
               uiBackground={{
                 texture: {
-                  src: BTN_ADMIN_TOOLKIT_CONTROL,
+                  src: ADMIN_ICONS.BTN_ADMIN_TOOLKIT_CONTROL,
                 },
                 textureMode: 'stretch',
                 color: Color4.create(1, 1, 1, 1),
@@ -484,5 +509,17 @@ const uiComponent = (
         type={UserListType.BAN}
       />
     ),
+    showcaseState.show &&
+      showcaseState.onSelectTrack &&
+      showcaseState.onSetDefault &&
+      showcaseState.onClose && (
+        <SpeakerShowcase
+          participants={showcaseState.participants}
+          activeTrackSid={showcaseState.activeTrackSid}
+          onSelectTrack={showcaseState.onSelectTrack}
+          onSetDefault={showcaseState.onSetDefault}
+          onClose={showcaseState.onClose}
+        />
+      ),
   ];
 };

@@ -21,6 +21,7 @@ export type State = {
     selectedVideoPlayer: number | undefined;
     selectedStream: 'live' | 'dcl-cast' | undefined;
     dclCast: DclCastResponse | undefined;
+    isMinimized: boolean;
   };
   smartItemsControl: {
     selectedSmartItem: number | undefined;

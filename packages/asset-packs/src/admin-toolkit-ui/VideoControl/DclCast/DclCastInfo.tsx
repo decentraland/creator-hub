@@ -1,31 +1,39 @@
-import { Entity, IEngine } from '@dcl/ecs';
-import { DeepReadonlyObject, PBVideoPlayer } from '@dcl/ecs';
+import type { Entity, IEngine } from '@dcl/ecs';
+import type { DeepReadonlyObject, PBVideoPlayer } from '@dcl/ecs';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- ReactEcs is required for JSX factory
 import ReactEcs, { Label, UiEntity } from '@dcl/react-ecs';
-import { copyToClipboard } from '~system/RestrictedActions';
 import { Color4 } from '@dcl/sdk/math';
+import { copyToClipboard } from '~system/RestrictedActions';
 import { Button } from '../../Button';
+import { getContentUrl } from '../../constants';
 import { FeedbackButton } from '../../FeedbackButton';
-import { State } from '../../types';
+import type { State } from '../../types';
+import { LIVEKIT_STREAM_SRC } from '../LiveStream';
 import { VideoControlVolume } from '../VolumeControl';
 import { createVideoPlayerControls, isDclCast } from '../utils';
-import { LIVEKIT_STREAM_SRC } from '../LiveStream';
 import { getDclCastStyles, getDclCastColors, getDclCastBackgrounds } from './styles';
-import { CONTENT_URL } from '../../constants';
 
 const ICONS = {
-  COPY_TO_CLIPBOARD_ICON: `${CONTENT_URL}/admin_toolkit/assets/icons/copy-to-clipboard.png`,
+  get COPY_TO_CLIPBOARD_ICON() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/copy-to-clipboard.png`;
+  },
+  get STAR() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/star.png`;
+  },
 };
 
 const DclCastInfo = ({
   state,
   engine,
   onResetRoomId,
+  onShowShowcaseModal,
   entity,
   video,
 }: {
   state: State;
   engine: IEngine;
   onResetRoomId: () => Promise<void>;
+  onShowShowcaseModal: () => Promise<void>;
   entity: Entity;
   video: DeepReadonlyObject<PBVideoPlayer> | undefined;
 }) => {
@@ -33,6 +41,7 @@ const DclCastInfo = ({
   const styles = getDclCastStyles();
   const colors = getDclCastColors();
   const backgrounds = getDclCastBackgrounds();
+
   return (
     <UiEntity uiTransform={styles.fullContainer}>
       <UiEntity uiTransform={styles.mainBorderedContainer}>
@@ -157,13 +166,28 @@ const DclCastInfo = ({
         </UiEntity>
       </UiEntity>
       <UiEntity uiTransform={styles.columnWithMarginTop}>
-        <VideoControlVolume
-          engine={engine}
-          entity={entity}
-          video={video}
-          label="<b>Cast volume</b>"
-        />
-        <UiEntity>
+        <UiEntity uiTransform={styles.volumeShowcaseRow}>
+          <VideoControlVolume
+            engine={engine}
+            entity={entity}
+            video={video}
+            label="<b>Cast controls</b>"
+          />
+          {video?.src && isDclCast(video.src) && (
+            <Button
+              id="dcl_cast_showcase_list"
+              value="<b>Showcase List</b>"
+              icon={ICONS.STAR}
+              iconTransform={styles.starIcon}
+              variant="secondary"
+              fontSize={16}
+              color={colors.white}
+              uiTransform={styles.showcaseButton}
+              onMouseDown={onShowShowcaseModal}
+            />
+          )}
+        </UiEntity>
+        <UiEntity uiTransform={styles.castControlsRow}>
           <Button
             id="dcl_cast_reset_room_id"
             value="<b>Reset Room</b>"
