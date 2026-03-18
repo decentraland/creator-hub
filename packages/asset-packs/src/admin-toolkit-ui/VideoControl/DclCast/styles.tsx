@@ -156,13 +156,6 @@ export const getDclCastStyles = (): Record<string, UiTransformProps> => ({
     height: 42,
   },
 
-  defaultButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: { left: 12, right: 12 },
-    height: 42,
-  },
-
   starIcon: {
     width: 20,
     height: 20,
@@ -353,9 +346,6 @@ export const getSpeakerShowcaseStyles = (): Record<string, UiTransformProps> => 
   const base = getModalStyles();
   return {
     ...base,
-    container: { ...base.container, width: 650, height: 560, padding: 16 },
-    header: { ...base.header, margin: { bottom: 16 } },
-    headerIcon: { ...base.headerIcon, width: 24, height: 24, margin: { right: 8 } },
     userRow: { ...base.userRow, height: 36, margin: { top: 2, bottom: 2 } },
     personIcon: { ...base.personIcon, width: 20, height: 20 },
     personIconContainer: { ...base.personIconContainer, margin: { right: 8 } },
@@ -364,6 +354,24 @@ export const getSpeakerShowcaseStyles = (): Record<string, UiTransformProps> => 
     dropdownWrapper: { width: 200, height: 32 },
     dropdownTransform: { height: 32, width: 180, borderWidth: 0, borderColor: Color4.Clear() },
     rowCenter: { flexDirection: 'row', alignItems: 'center' },
+    toggleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      justifyContent: 'space-between',
+      width: '100%',
+      borderWidth: 1,
+      borderColor: Color4.White(),
+      borderRadius: 8,
+      padding: 8,
+      margin: { bottom: 12 },
+    },
+    toggleButton: {
+      height: 42,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: { left: 12, right: 12 },
+    },
   };
 };
 

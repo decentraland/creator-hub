@@ -28,7 +28,7 @@ import {
 } from './ModerationControl';
 import { getSceneAdmins, getSceneBans, type SceneBanUser } from './ModerationControl/api';
 import { ModalUserList, UserListType } from './ModerationControl/UsersList';
-import { showcaseState } from './VideoControl/DclCast/DclCastInfo';
+import { showcaseState } from './VideoControl/DclCast';
 import { SpeakerShowcase } from './VideoControl/DclCast/SpeakerShowcase';
 import { isPreview } from './fetch-utils';
 
@@ -509,13 +509,17 @@ const uiComponent = (
         type={UserListType.BAN}
       />
     ),
-    showcaseState.show && showcaseState.onSelectTrack && showcaseState.onClose && (
-      <SpeakerShowcase
-        participants={showcaseState.participants}
-        activeTrackSid={showcaseState.activeTrackSid}
-        onSelectTrack={showcaseState.onSelectTrack}
-        onClose={showcaseState.onClose}
-      />
-    ),
+    showcaseState.show &&
+      showcaseState.onSelectTrack &&
+      showcaseState.onSetDefault &&
+      showcaseState.onClose && (
+        <SpeakerShowcase
+          participants={showcaseState.participants}
+          activeTrackSid={showcaseState.activeTrackSid}
+          onSelectTrack={showcaseState.onSelectTrack}
+          onSetDefault={showcaseState.onSetDefault}
+          onClose={showcaseState.onClose}
+        />
+      ),
   ];
 };

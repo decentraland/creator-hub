@@ -1,6 +1,7 @@
 import ReactEcs, { Dropdown, UiEntity, Label } from '@dcl/react-ecs';
 import { getContentUrl } from '../../constants';
 import { Button } from '../../Button';
+import { Modal } from '../../Modal';
 import { getSourceLabel, type FlattenedTrack, type Participant } from '../api';
 import {
   getSpeakerShowcaseStyles,
@@ -21,8 +22,8 @@ const ICONS = {
   get NEXT() {
     return `${getContentUrl()}/admin_toolkit/assets/icons/chevron-forward.png`;
   },
-  get CLOSE() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/close.png`;
+  get STAR() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/star.png`;
   },
 };
 
@@ -30,6 +31,7 @@ type SpeakerShowcaseProps = {
   participants: Participant[];
   activeTrackSid: string | undefined;
   onSelectTrack: (track: FlattenedTrack) => void;
+  onSetDefault: () => void;
   onClose: () => void;
 };
 
@@ -50,6 +52,7 @@ function ParticipantRow({
   onHoverEnter,
   onHoverLeave,
 }: {
+  key?: string;
   participant: Participant;
   activeTrackSid: string | undefined;
   isHovered: boolean;
@@ -80,10 +83,7 @@ function ParticipantRow({
     : SHOWCASE_DROPDOWN_COLORS.transparentBg;
 
   return (
-    <UiEntity
-      key={participant.name}
-      uiTransform={styles.userItem}
-    >
+    <UiEntity uiTransform={styles.userItem}>
       <UiEntity uiTransform={styles.userRow}>
         <UiEntity uiTransform={styles.userInfo}>
           <UiEntity uiTransform={styles.personIconContainer}>
@@ -101,19 +101,17 @@ function ParticipantRow({
           </UiEntity>
         </UiEntity>
         <UiEntity uiTransform={styles.rowCenter}>
-          {isActive && (
-            <UiEntity
-              uiTransform={styles.starIcon}
-              uiBackground={iconBgs.star}
-            />
-          )}
+          <UiEntity
+            uiTransform={{ ...styles.starIcon, display: isActive ? 'flex' : 'none' }}
+            uiBackground={iconBgs.star}
+          />
           <UiEntity
             uiTransform={styles.dropdownWrapper}
             onMouseEnter={onHoverEnter}
             onMouseLeave={onHoverLeave}
           >
             <Dropdown
-              key={`showcase-dropdown-${participant.name}`}
+              key={`showcase-dropdown-${participant.identity}-${activeTrackSid ?? 'none'}`}
               acceptEmpty
               emptyLabel={displayLabel}
               options={options}
@@ -145,13 +143,14 @@ export function SpeakerShowcase({
   participants,
   activeTrackSid,
   onSelectTrack,
+  onSetDefault,
   onClose,
 }: SpeakerShowcaseProps) {
   const [page, setPage] = ReactEcs.useState(1);
   const [hoveredDropdown, setHoveredDropdown] = ReactEcs.useState<string | undefined>(undefined);
+  const isDefaultActive = !activeTrackSid;
 
   const styles = getSpeakerShowcaseStyles();
-  const backgrounds = getShowcaseBackgrounds();
   const colors = getShowcaseColors();
   const iconBgs = getShowcaseIconBackgrounds();
 
@@ -160,104 +159,127 @@ export function SpeakerShowcase({
   const endIndex = Math.min(startIndex + SPEAKERS_PER_PAGE, participants.length);
   const currentPageParticipants = participants.slice(startIndex, endIndex);
 
+  const paginationFooter = participants.length > SPEAKERS_PER_PAGE && (
+    <UiEntity uiTransform={styles.pagination}>
+      <Button
+        id="showcase-prev"
+        value="Prev"
+        variant="secondary"
+        disabled={page <= 1}
+        fontSize={18}
+        icon={ICONS.BACK}
+        iconTransform={styles.prevIcon}
+        iconBackground={{ color: getPaginationColor(page <= 1) }}
+        color={getPaginationColor(page <= 1)}
+        labelTransform={styles.prevLabel}
+        uiTransform={styles.paginationButton}
+        onMouseDown={() => setPage(page - 1)}
+      />
+      <Label
+        value={`Page ${page}/${totalPages}`}
+        fontSize={14}
+        color={SHOWCASE_PAGE_INDICATOR_COLOR}
+      />
+      <Button
+        id="showcase-next"
+        value="<b>Next</b>"
+        variant="secondary"
+        fontSize={18}
+        iconRight={ICONS.NEXT}
+        iconRightTransform={styles.nextIcon}
+        labelTransform={styles.nextLabel}
+        iconRightBackground={{
+          color: getPaginationColor(page >= totalPages),
+        }}
+        color={getPaginationColor(page >= totalPages)}
+        disabled={page >= totalPages}
+        uiTransform={styles.paginationButton}
+        onMouseDown={() => setPage(page + 1)}
+      />
+    </UiEntity>
+  );
+
   return (
-    <UiEntity uiTransform={styles.overlay}>
-      <UiEntity
-        uiTransform={styles.container}
-        uiBackground={backgrounds.container}
-      >
-        <UiEntity uiTransform={styles.content}>
-          <UiEntity uiTransform={styles.header}>
-            <UiEntity
-              uiTransform={styles.headerIcon}
-              uiBackground={iconBgs.showcase}
-            />
+    <Modal
+      id="showcase"
+      title="SPEAKER SHOWCASE"
+      titleFontSize={20}
+      headerIcon={iconBgs.showcase}
+      headerIconSize={24}
+      headerMarginBottom={16}
+      counterText={`(${participants.length} Speakers)`}
+      counterFontSize={14}
+      width={650}
+      height={650}
+      padding={16}
+      onClose={onClose}
+      footer={paginationFooter || undefined}
+    >
+      <UiEntity uiTransform={{ flexDirection: 'column', width: '100%' }}>
+        <UiEntity
+          uiTransform={styles.toggleRow}
+          uiBackground={{ color: colors.softBlack }}
+        >
+          <UiEntity uiTransform={{ flexDirection: 'column' }}>
             <Label
-              value={'<b>SPEAKER SHOWCASE</b>'}
-              fontSize={20}
+              value="Automatic Showcase"
+              fontSize={14}
               color={colors.white}
             />
             <Label
-              value={`(${participants.length} Speakers)`}
-              fontSize={14}
+              value="Speakers will be automatically featured when they speak"
+              fontSize={10}
               color={colors.gray}
-              uiTransform={styles.usersCount}
-            />
-            <Button
-              id="close-showcase-modal"
-              onlyIcon
-              icon={ICONS.CLOSE}
-              variant="secondary"
-              fontSize={20}
-              uiTransform={styles.closeButton}
-              iconTransform={styles.closeIcon}
-              onMouseDown={onClose}
             />
           </UiEntity>
-
-          <UiEntity uiTransform={styles.listContainer}>
-            {participants.length === 0 && (
-              <UiEntity uiTransform={styles.messageContainer}>
-                <Label
-                  value="No current active participants in the Cast"
-                  fontSize={16}
-                  color={colors.gray}
-                />
-              </UiEntity>
-            )}
-            {currentPageParticipants.map(participant => (
-              <ParticipantRow
-                participant={participant}
-                activeTrackSid={activeTrackSid}
-                isHovered={hoveredDropdown === participant.name}
-                onSelectTrack={onSelectTrack}
-                onHoverEnter={() => setHoveredDropdown(participant.name)}
-                onHoverLeave={() => setHoveredDropdown(undefined)}
-              />
-            ))}
-          </UiEntity>
+          <Button
+            id="showcase-default-speaker"
+            value={isDefaultActive ? 'Active' : 'Turn On'}
+            variant="secondary"
+            disabled={isDefaultActive}
+            fontSize={14}
+            color={colors.white}
+            icon={ICONS.STAR}
+            iconTransform={{
+              ...styles.starIcon,
+              display: isDefaultActive ? 'flex' : 'none',
+            }}
+            iconBackground={{ color: colors.white }}
+            uiTransform={{
+              ...styles.toggleButton,
+              ...(isDefaultActive ? { borderColor: colors.transparent } : {}),
+            }}
+            onMouseDown={() => {
+              if (!isDefaultActive) {
+                onSetDefault();
+              }
+            }}
+          />
         </UiEntity>
 
-        {participants.length > SPEAKERS_PER_PAGE && (
-          <UiEntity uiTransform={styles.pagination}>
-            <Button
-              id="showcase-prev"
-              value="Prev"
-              variant="secondary"
-              disabled={page <= 1}
-              fontSize={18}
-              icon={ICONS.BACK}
-              iconTransform={styles.prevIcon}
-              iconBackground={{ color: getPaginationColor(page <= 1) }}
-              color={getPaginationColor(page <= 1)}
-              labelTransform={styles.prevLabel}
-              uiTransform={styles.paginationButton}
-              onMouseDown={() => setPage(page - 1)}
+        <UiEntity uiTransform={styles.listContainer}>
+          {participants.length === 0 && (
+            <UiEntity uiTransform={styles.messageContainer}>
+              <Label
+                value="No current active participants in the Cast"
+                fontSize={16}
+                color={colors.gray}
+              />
+            </UiEntity>
+          )}
+          {currentPageParticipants.map(participant => (
+            <ParticipantRow
+              key={participant.identity}
+              participant={participant}
+              activeTrackSid={activeTrackSid}
+              isHovered={hoveredDropdown === participant.identity}
+              onSelectTrack={onSelectTrack}
+              onHoverEnter={() => setHoveredDropdown(participant.identity)}
+              onHoverLeave={() => setHoveredDropdown(undefined)}
             />
-            <Label
-              value={`Page ${page}/${totalPages}`}
-              fontSize={14}
-              color={SHOWCASE_PAGE_INDICATOR_COLOR}
-            />
-            <Button
-              id="showcase-next"
-              value="<b>Next</b>"
-              variant="secondary"
-              fontSize={18}
-              iconRight={ICONS.NEXT}
-              iconRightTransform={styles.nextIcon}
-              labelTransform={styles.nextLabel}
-              iconRightBackground={{
-                color: getPaginationColor(page >= totalPages),
-              }}
-              color={getPaginationColor(page >= totalPages)}
-              disabled={page >= totalPages}
-              uiTransform={styles.paginationButton}
-              onMouseDown={() => setPage(page + 1)}
-            />
-          </UiEntity>
-        )}
+          ))}
+        </UiEntity>
       </UiEntity>
-    </UiEntity>
+    </Modal>
   );
 }

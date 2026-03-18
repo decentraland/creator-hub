@@ -6,7 +6,17 @@ import { getContentUrl } from '../../constants';
 import type { State } from '../../types';
 import { Button } from '../../Button';
 import { LoadingDots } from '../../Loading';
-import { getDclCastInfo, resetStreamKey } from '../api';
+import { nextTickFunctions } from '../..';
+import { LIVEKIT_STREAM_SRC } from '../LiveStream';
+import {
+  getDclCastInfo,
+  getActiveStreams,
+  groupTracksByParticipant,
+  resetStreamKey,
+  type FlattenedTrack,
+  type Participant,
+} from '../api';
+import { createVideoPlayerControls } from '../utils';
 import DclCastInfo from './DclCastInfo';
 import CompactDclCast from './CompactDclCast';
 import { getDclCastStyles, getDclCastColors } from './styles';
@@ -18,6 +28,22 @@ const ICONS = {
   get CHEVRON_UP() {
     return `${getContentUrl()}/admin_toolkit/assets/icons/chevron-up.png`;
   },
+};
+
+export const showcaseState: {
+  show: boolean;
+  participants: Participant[];
+  activeTrackSid: string | undefined;
+  onSelectTrack: ((track: FlattenedTrack) => void) | undefined;
+  onSetDefault: (() => void) | undefined;
+  onClose: (() => void) | undefined;
+} = {
+  show: false,
+  participants: [],
+  activeTrackSid: undefined,
+  onSelectTrack: undefined,
+  onSetDefault: undefined,
+  onClose: undefined,
 };
 
 export async function handleGetDclCastInfo(state: State) {
@@ -45,13 +71,42 @@ const DclCast = ({
   video: DeepReadonlyObject<PBVideoPlayer> | undefined;
 }) => {
   const { VideoControlState } = getComponents(engine);
+  const controls = createVideoPlayerControls(entity, engine);
   const styles = getDclCastStyles();
   const colors = getDclCastColors();
   const [isLoading, setIsLoading] = ReactEcs.useState(false);
   const [error, setError] = ReactEcs.useState(false);
 
+  const onShowShowcaseModal = async () => {
+    const latestTracks = await getActiveStreams();
+    if (!latestTracks) return;
+
+    const closeModal = () => {
+      showcaseState.show = false;
+    };
+
+    showcaseState.participants = groupTracksByParticipant(latestTracks);
+
+    showcaseState.onSelectTrack = (track: FlattenedTrack) => {
+      controls.setSource(track.sid);
+      showcaseState.activeTrackSid = track.sid;
+      state.videoControl.selectedStream = 'dcl-cast';
+    };
+
+    showcaseState.onSetDefault = () => {
+      controls.setSource(LIVEKIT_STREAM_SRC);
+      showcaseState.activeTrackSid = undefined;
+      state.videoControl.selectedStream = 'dcl-cast';
+    };
+
+    showcaseState.onClose = closeModal;
+
+    nextTickFunctions.push(() => {
+      showcaseState.show = true;
+    });
+  };
+
   const fetchDclCastInfo = async () => {
-    console.log('fetching DCL cast info...');
     setIsLoading(true);
     setError(false);
 
@@ -92,6 +147,7 @@ const DclCast = ({
           state={state}
           entity={entity}
           video={video}
+          onShowShowcaseModal={onShowShowcaseModal}
         />
       </UiEntity>
 
@@ -194,6 +250,7 @@ const DclCast = ({
             engine={engine}
             video={video}
             onResetRoomId={handleResetRoomId}
+            onShowShowcaseModal={onShowShowcaseModal}
           />
         )}
       </UiEntity>
