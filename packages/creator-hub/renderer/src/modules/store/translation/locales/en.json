@@ -646,6 +646,7 @@
       "invalid_scenes_folder": "Invalid Scenes Folder. Please configure a valid Scenes Folder in Settings before creating a scene.",
       "create_scene_failed": "An error occurred while trying to create the scene. Please try again.",
       "run_scene_failed": "Failed to load project. Please try again.",
+      "preview_scene_failed": "Failed to start preview. Check your scene code for errors.",
       "url_copied": "URL copied to clipboard",
       "fetch_managed_projects_failed": "Failed to fetch managed projects",
       "fetch_world_settings_failed": "Failed to fetch world settings. Please try again.",
