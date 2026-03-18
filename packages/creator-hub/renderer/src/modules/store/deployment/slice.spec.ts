@@ -37,15 +37,6 @@ vi.mock('@dcl/crypto', () => ({
   },
 }));
 
-vi.mock('/@/modules/store/editor/slice', () => ({
-  publishScene: vi.fn().mockImplementation(({ path, target }) => ({
-    type: 'editor/publishScene/fulfilled',
-    meta: { arg: { path, target } },
-    payload: { port: 3000 },
-    unwrap: () => Promise.resolve({ port: 3000 }),
-  })),
-}));
-
 vi.mock('./utils', async () => {
   const actual = await vi.importActual('./utils');
   return {
