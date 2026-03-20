@@ -8,6 +8,7 @@
     "url": "https://decentraland.org"
   },
   "dependencies": {
+    "@dcl/feature-flags": "^1.2.0",
     "@dcl/inspector": "file:../inspector",
     "@dcl/mini-rpc": "^1.0.7",
     "@dcl/schemas": "25.0.0",

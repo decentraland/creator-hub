@@ -20,5 +20,6 @@
   "ESTATE_REGISTRY_ADDRESS": "0x369a7fbe718c870c79f99fb423882e8dd8b20486",
   "ASSETS_CDN_URL": "https://assets-cdn.decentraland.zone",
   "REPORT_ISSUES_URL": "https://decentraland.typeform.com/creatorhub",
-  "FEEDBACK_URL": "https://decentraland.typeform.com/creatorhub"
+  "FEEDBACK_URL": "https://decentraland.typeform.com/creatorhub",
+  "FEATURE_FLAGS_URL": "https://feature-flags.decentraland.zone"
 }

@@ -8,6 +8,7 @@ import type { AssetsTab, PanelName, SceneInspectorTab } from '../../../redux/ui/
 import { setHasCustomCode } from '../../../redux/scene-metrics';
 import { setDebugConsoleEnabled } from '../../../redux/ui';
 import * as debugLogStore from '../../logic/debug-log-store';
+import { setFeatureFlags } from '../../../redux/feature-flags';
 
 enum Method {
   TOGGLE_COMPONENT = 'toggle_component',
@@ -24,6 +25,7 @@ enum Method {
   SET_DEBUG_CONSOLE_ENABLED = 'set_debug_console_enabled',
   PUSH_DEBUG_LOGS = 'push_debug_logs',
   CLEAR_DEBUG_LOGS = 'clear_debug_logs',
+  SET_FEATURE_FLAGS = 'set_feature_flags',
 }
 
 type Params = {
@@ -41,6 +43,7 @@ type Params = {
   [Method.SET_DEBUG_CONSOLE_ENABLED]: { enabled: boolean };
   [Method.PUSH_DEBUG_LOGS]: { logs: string[] };
   [Method.CLEAR_DEBUG_LOGS]: Record<string, never>;
+  [Method.SET_FEATURE_FLAGS]: { flags: Record<string, boolean> };
 };
 
 type Result = {
@@ -58,6 +61,7 @@ type Result = {
   [Method.SET_DEBUG_CONSOLE_ENABLED]: void;
   [Method.PUSH_DEBUG_LOGS]: void;
   [Method.CLEAR_DEBUG_LOGS]: void;
+  [Method.SET_FEATURE_FLAGS]: void;
 };
 
 export class SceneServer extends RPC<Method, Params, Result> {
@@ -123,6 +127,10 @@ export class SceneServer extends RPC<Method, Params, Result> {
 
     this.handle('clear_debug_logs', async () => {
       debugLogStore.clear();
+    });
+
+    this.handle('set_feature_flags', async ({ flags }) => {
+      store.dispatch(setFeatureFlags(flags));
     });
   }
 }
