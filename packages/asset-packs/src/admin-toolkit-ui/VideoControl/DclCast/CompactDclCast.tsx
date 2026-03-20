@@ -5,7 +5,13 @@ import { getContentUrl } from '../../constants';
 import { Button } from '../../Button';
 import type { State } from '../../types';
 import { LIVEKIT_STREAM_SRC } from '../LiveStream';
-import { getPresentationInfo, nextSlide, playVideo, prevSlide, stopVideo } from '../api';
+import {
+  nextSlide,
+  prevSlide,
+  playPresentationVideo,
+  pausePresentationVideo,
+  stopPresentation,
+} from '../api';
 import { createVideoPlayerControls, isDclCast } from '../utils';
 import { getCompactBarStyles, getDclCastBackgrounds, getDclCastColors } from './styles';
 
@@ -51,23 +57,9 @@ const CompactDclCast = ({
   const backgrounds = getDclCastBackgrounds();
   const controls = createVideoPlayerControls(entity, engine);
 
-  const [presentationInfo, setPresentationInfo] = ReactEcs.useState<
-    { currentSlide: number; totalSlides: number } | undefined
-  >(undefined);
-
   const isActive = !!(video?.src && isDclCast(video.src));
-  const hasPresentation = isActive && !!presentationInfo;
-
-  const fetchPresentationInfo = async () => {
-    const info = await getPresentationInfo();
-    setPresentationInfo(info);
-  };
-
-  ReactEcs.useEffect(() => {
-    if (isActive) {
-      fetchPresentationInfo();
-    }
-  }, [isActive]);
+  const presentationState = state.videoControl.presentationState;
+  const hasPresentation = isActive && !!presentationState;
 
   const handleExpand = () => {
     state.videoControl.isMinimized = false;
@@ -78,25 +70,11 @@ const CompactDclCast = ({
     state.videoControl.selectedStream = 'dcl-cast';
   };
 
-  const handlePrevSlide = async () => {
-    await prevSlide();
-    await fetchPresentationInfo();
-  };
-
-  const handleNextSlide = async () => {
-    await nextSlide();
-    await fetchPresentationInfo();
-  };
-
-  const handlePlayVideo = async () => {
-    await playVideo();
-    await fetchPresentationInfo();
-  };
-
-  const handleStopVideo = async () => {
-    await stopVideo();
-    await fetchPresentationInfo();
-  };
+  const handlePrevSlide = () => prevSlide();
+  const handleNextSlide = () => nextSlide();
+  const handlePlayVideo = () => playPresentationVideo(0);
+  const handlePauseVideo = () => pausePresentationVideo();
+  const handleStopPresentation = () => stopPresentation();
 
   return (
     <UiEntity uiTransform={styles.outerContainer}>
@@ -111,7 +89,7 @@ const CompactDclCast = ({
             }}
           />
           <Label
-            value="<b>DCL Cast</b>"
+            value={hasPresentation ? `<b>${presentationState.fileName}</b>` : '<b>DCL Cast</b>'}
             fontSize={24}
             color={colors.white}
           />
@@ -134,8 +112,8 @@ const CompactDclCast = ({
           <UiEntity uiTransform={{ display: hasPresentation ? 'flex' : 'none' }}>
             <Label
               value={
-                presentationInfo
-                  ? `Slide ${presentationInfo.currentSlide} / ${presentationInfo.totalSlides}`
+                presentationState
+                  ? `Slide ${presentationState.currentSlide} / ${presentationState.slideCount}`
                   : ''
               }
               fontSize={16}
@@ -199,14 +177,32 @@ const CompactDclCast = ({
           icon={ICONS.STOP}
           iconTransform={styles.controlButtonIcon}
           uiTransform={styles.controlButton}
-          onMouseDown={handleStopVideo}
+          onMouseDown={handlePauseVideo}
         />
       </UiEntity>
 
-      {/* Row 3: Showcase List — visible when active (with or without presentation) */}
+      {/* Row 3: Stop Sharing — visible when presentation active */}
       <UiEntity
         uiTransform={{
-          display: isActive ? 'flex' : 'none',
+          display: hasPresentation ? 'flex' : 'none',
+          ...styles.showcaseRow,
+        }}
+      >
+        <Button
+          id="compact_dcl_cast_stop_sharing"
+          value="<b>Stop Sharing</b>"
+          variant="text"
+          fontSize={16}
+          color={colors.danger}
+          uiTransform={styles.showcaseButton}
+          onMouseDown={handleStopPresentation}
+        />
+      </UiEntity>
+
+      {/* Row 3 (alt): Showcase List — visible when active WITHOUT presentation */}
+      <UiEntity
+        uiTransform={{
+          display: isActive && !hasPresentation ? 'flex' : 'none',
           ...styles.showcaseRow,
         }}
       >
