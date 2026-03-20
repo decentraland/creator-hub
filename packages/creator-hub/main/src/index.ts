@@ -22,6 +22,7 @@ import { runMigrations } from '/@/modules/migrations';
 import { getAnalytics, track } from './modules/analytics';
 import { handleAppArguments } from './modules/app-args-handle';
 import { addEditorsPathsToConfig } from './modules/code';
+import { getIsQuittingForUpdate } from '/@/modules/updater';
 
 import '/@/security-restrictions';
 
@@ -117,6 +118,14 @@ export async function killAll() {
 }
 
 app.on('before-quit', async event => {
+  // Don't prevent quit if we're installing an update
+  // The updater needs to quit the app to install, so let it proceed
+  if (getIsQuittingForUpdate()) {
+    log.info('[App] Quitting for update installation');
+    return;
+  }
+
+  // Normal quit path: cleanup servers first
   event.preventDefault();
   try {
     await killAll();

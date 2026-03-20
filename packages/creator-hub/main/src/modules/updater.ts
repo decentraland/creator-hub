@@ -19,6 +19,17 @@ type InstalledVersionData = {
 
 const VERSION_FILE_PATH = path.join(getUserDataPath(), INSTALLED_VERSION_FILE_NAME);
 
+// Track if we're quitting for an update to prevent quit deadlock
+let isQuittingForUpdate = false;
+
+/**
+ * Returns true if the app is currently quitting to install an update.
+ * Used by the before-quit handler to skip event.preventDefault()
+ */
+export function getIsQuittingForUpdate(): boolean {
+  return isQuittingForUpdate;
+}
+
 export function setupUpdaterEvents(event?: Electron.IpcMainInvokeEvent) {
   updater.autoUpdater.on('checking-for-update', () => {
     log.info('[AutoUpdater] Checking for updates');
@@ -103,11 +114,16 @@ export async function checkForUpdates(config: UpdaterConfig = {}) {
 
 export async function quitAndInstall(version: string) {
   try {
+    // Set flag before quitting to allow the before-quit handler to skip event.preventDefault()
+    isQuittingForUpdate = true;
+    log.info('[AutoUpdater] Quitting to install update');
     await updater.autoUpdater.quitAndInstall();
     if (version) {
       await writeInstalledVersion(version);
     }
   } catch (error: any) {
+    // Reset flag on error so normal quit behavior resumes
+    isQuittingForUpdate = false;
     captureException(error, {
       tags: { source: 'auto-updater', event: 'quit-and-install' },
       extra: { context: 'Electron installation' },
