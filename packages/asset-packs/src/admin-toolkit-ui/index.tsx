@@ -45,6 +45,7 @@ export let state: State = {
     selectedStream: undefined,
     dclCast: undefined,
     isMinimized: false,
+    presentationState: undefined,
   },
   smartItemsControl: {
     selectedSmartItem: undefined,
