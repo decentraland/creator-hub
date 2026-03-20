@@ -1,6 +1,7 @@
-import { getActiveVideoStreams } from '~system/CommsApi';
+import { getActiveVideoStreams, SubscribeToTopic, PublishData, ConsumeMessages } from '~system/CommsApi';
 import { getDomain, wrapSignedFetch } from '../fetch-utils';
 import type { Result } from '../fetch-utils';
+import type { PresentationState } from '../types';
 
 const URLS = () => ({
   STREAM_KEY: `https://comms-gatekeeper.decentraland.${getDomain()}/scene-stream-access`,
@@ -102,6 +103,13 @@ export const SOURCE_TYPE_LABELS: Record<number, string> = {
 };
 
 export const getSourceLabel = (sourceType: number) => SOURCE_TYPE_LABELS[sourceType] ?? 'Unknown';
+
+const PRESENTATION_TOPIC = 'presentation';
+const PRESENTATION_SOURCE_TYPE = 3;
+
+export function hasPresentationTrack(tracks: FlattenedTrack[]): boolean {
+  return tracks.some(track => track.sourceType === PRESENTATION_SOURCE_TYPE);
+}
 
 export function groupTracksByParticipant(tracks: FlattenedTrack[]): Participant[] {
   const map = new Map<string, Participant>();
@@ -214,34 +222,74 @@ export async function getActiveStreams(): Promise<FlattenedTrack[] | undefined> 
   );
 }
 
-// TODO: Remove mock before merging — used for local testing without a live presentation
-const MOCK_PRESENTATION = {
-  currentSlide: 3,
-  totalSlides: 15,
-};
+export function subscribeToPresentationTopic(): void {
+  SubscribeToTopic({ topic: PRESENTATION_TOPIC }).catch(() => {
+    // Subscription failed — ConsumeMessages will return empty until next poll retries
+  });
+}
 
-export async function getPresentationInfo(): Promise<
-  { currentSlide: number; totalSlides: number } | undefined
-> {
-  if (USE_MOCK) {
-    return MOCK_PRESENTATION;
+export async function consumePresentationMessages(): Promise<PresentationState | undefined> {
+  try {
+    const response = await ConsumeMessages({ topic: PRESENTATION_TOPIC });
+    const messages: Array<{ sender: string; data: string }> = JSON.parse(response.messages);
+
+    let latestState: PresentationState | undefined;
+    for (const msg of messages) {
+      try {
+        const parsed = JSON.parse(msg.data);
+        if (parsed.type === 'presentation:state') {
+          latestState = {
+            id: parsed.id,
+            fileName: parsed.fileName,
+            currentSlide: parsed.currentSlide,
+            slideCount: parsed.slideCount,
+            fileType: parsed.fileType,
+            slideVideos: parsed.slideVideos ?? [],
+            videoState: parsed.videoState ?? 'idle',
+          };
+        }
+      } catch {
+        // Skip malformed individual messages
+      }
+    }
+    return latestState;
+  } catch {
+    // ConsumeMessages failed or outer JSON parse failed — return undefined
+    return undefined;
   }
-  // TODO: Wire to real API when available
-  return undefined;
 }
 
-export async function nextSlide(): Promise<void> {
-  // TODO: Wire to real presentation API
+export function nextSlide(): void {
+  PublishData({
+    topic: PRESENTATION_TOPIC,
+    data: JSON.stringify({ type: 'presentation:navigate', action: 'next' }),
+  });
 }
 
-export async function prevSlide(): Promise<void> {
-  // TODO: Wire to real presentation API
+export function prevSlide(): void {
+  PublishData({
+    topic: PRESENTATION_TOPIC,
+    data: JSON.stringify({ type: 'presentation:navigate', action: 'prev' }),
+  });
 }
 
-export async function playVideo(): Promise<void> {
-  // TODO: Wire to real presentation API
+export function playPresentationVideo(videoIndex: number): void {
+  PublishData({
+    topic: PRESENTATION_TOPIC,
+    data: JSON.stringify({ type: 'presentation:video:play', videoIndex }),
+  });
 }
 
-export async function stopVideo(): Promise<void> {
-  // TODO: Wire to real presentation API
+export function pausePresentationVideo(): void {
+  PublishData({
+    topic: PRESENTATION_TOPIC,
+    data: JSON.stringify({ type: 'presentation:video:pause' }),
+  });
+}
+
+export function stopPresentation(): void {
+  PublishData({
+    topic: PRESENTATION_TOPIC,
+    data: JSON.stringify({ type: 'presentation:stop' }),
+  });
 }
