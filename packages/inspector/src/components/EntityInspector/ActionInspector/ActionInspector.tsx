@@ -130,6 +130,8 @@ const ActionMapOption: Record<string, string> = {
   [ActionType.CHANGE_COLLISIONS]: 'Change Collisions',
   [ActionType.CHANGE_SKYBOX]: 'Change Skybox',
   [ActionType.RESET_SKYBOX]: 'Reset Skybox',
+  [ActionType.LOG_TO_CONSOLE]: 'Log to Console',
+  [ActionType.DELETE]: 'Delete',
 };
 
 export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) => {
@@ -319,6 +321,10 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
             !isNaN(payload.position?.z)
           );
         }
+        case ActionType.LOG_TO_CONSOLE: {
+          const payload = getPartialPayload<ActionType.LOG_TO_CONSOLE>(action);
+          return !!payload && typeof payload.message === 'string';
+        }
         case ActionType.LIGHTS_ON:
         case ActionType.LIGHTS_OFF:
         case ActionType.STOP_TWEEN:
@@ -326,6 +332,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
         case ActionType.UNFREEZE_PLAYER:
         case ActionType.MOVE_PLAYER_HERE:
         case ActionType.PLAYER_FACE_ITEM:
+        case ActionType.DELETE:
           return true;
         case ActionType.LIGHTS_MODIFY: {
           const payload = getPartialPayload<ActionType.LIGHTS_MODIFY>(action);
@@ -806,6 +813,18 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     [actions, handleModifyAction],
   );
 
+  const handleChangeLogToConsole = useCallback(
+    ({ target: { value } }: React.ChangeEvent<HTMLInputElement>, idx: number) => {
+      handleModifyAction(idx, {
+        ...actions[idx],
+        jsonPayload: getJson<ActionType.LOG_TO_CONSOLE>({
+          message: value,
+        }),
+      });
+    },
+    [actions, handleModifyAction],
+  );
+
   const handleChangeScriptAction = useCallback(
     (payload: Record<string, any>, idx: number) => {
       handleModifyAction(idx, {
@@ -1231,6 +1250,25 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
           />
         );
       }
+      case ActionType.LOG_TO_CONSOLE: {
+        return (
+          <div className="row">
+            <div className="field">
+              <TextField
+                label="Message"
+                type="text"
+                value={getPartialPayload<ActionType.LOG_TO_CONSOLE>(action)?.message}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  handleChangeLogToConsole(e, idx)
+                }
+                autoSelect
+              />
+            </div>
+          </div>
+        );
+      }
+      case ActionType.DELETE:
+        return null;
       case ActionType.CALL_SCRIPT_METHOD: {
         const payload = getPartialPayload<ActionType.CALL_SCRIPT_METHOD>(action);
         const { scriptPath, methodName, params } = payload;
@@ -1293,14 +1331,18 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
                 label="Select an Action"
                 placeholder="Select an Action"
                 disabled={availableActions.length === 0}
-                options={availableActions.map(availableAction => {
-                  const scriptAction = scriptActions.find(sa => sa.actionType === availableAction);
-                  return {
-                    label: dynamicActionMapOption[availableAction] || availableAction,
-                    value: availableAction,
-                    secondaryText: scriptAction?.secondaryText,
-                  };
-                })}
+                options={availableActions
+                  .map(availableAction => {
+                    const scriptAction = scriptActions.find(
+                      sa => sa.actionType === availableAction,
+                    );
+                    return {
+                      label: dynamicActionMapOption[availableAction] || availableAction,
+                      value: availableAction,
+                      secondaryText: scriptAction?.secondaryText,
+                    };
+                  })
+                  .sort((a, b) => a.label.localeCompare(b.label))}
                 value={getActionTypeForDropdown(action)}
                 searchable
                 onChange={e => handleChangeType(e, idx)}

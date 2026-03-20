@@ -22,28 +22,29 @@ export async function startInspector() {
   return port;
 }
 
-export async function openSceneDebugger(path: string) {
-  return invoke('inspector.openSceneDebugger', path);
-}
+const activeDebuggers = new Map<string, () => void>();
 
 export async function attachSceneDebugger(
   path: string,
   cb: (data: string) => void,
 ): Promise<{ cleanup: () => void }> {
-  // TODO: what happens when there is no window or preview?
-  const eventName = `debugger://${path}`;
+  // Clean up any previous debugger for this path (handles React StrictMode double-mount)
+  activeDebuggers.get(path)?.();
 
-  const attached = await invoke('inspector.attachSceneDebugger', path, eventName);
-  if (!attached) return { cleanup: () => {} };
+  const eventName = await invoke('inspector.attachSceneDebugger', path);
 
   const handler = (_: IpcRendererEvent, data: string) => cb(data);
   ipcRenderer.on(eventName, handler);
 
-  return {
-    cleanup: () => {
-      ipcRenderer.off(eventName, handler);
-    },
+  const cleanup = () => {
+    ipcRenderer.off(eventName, handler);
+    activeDebuggers.delete(path);
+    invoke('inspector.detachSceneDebugger', path);
   };
+
+  activeDebuggers.set(path, cleanup);
+
+  return { cleanup };
 }
 
 export async function runScene({ path, opts }: { path: string; opts: PreviewOptions }) {

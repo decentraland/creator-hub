@@ -2,23 +2,22 @@ import { Color4 } from '@dcl/sdk/math';
 import ReactEcs, { UiEntity, Label } from '@dcl/react-ecs';
 
 type Props = {
-  scaleFactor: number;
   iconSrc: string;
   title: string;
 };
 
-export function Header({ scaleFactor, iconSrc, title }: Props) {
+export function Header({ iconSrc, title }: Props) {
   return (
     <UiEntity
       uiTransform={{
         flexDirection: 'row',
-        margin: { bottom: 10 * scaleFactor },
+        margin: { bottom: 10 },
         alignItems: 'center',
         height: 'auto',
       }}
     >
       <UiEntity
-        uiTransform={{ width: 30 * scaleFactor, height: 30 * scaleFactor }}
+        uiTransform={{ width: 30, height: 30 }}
         uiBackground={{
           textureMode: 'stretch',
           texture: {
@@ -29,13 +28,13 @@ export function Header({ scaleFactor, iconSrc, title }: Props) {
       <UiEntity
         uiText={{
           value: `<b>${title}</b>`,
-          fontSize: 24 * scaleFactor,
+          fontSize: 24,
           color: Color4.White(),
           textAlign: 'top-left' as const,
           textWrap: 'wrap' as const,
         }}
         uiTransform={{
-          margin: { bottom: 2 * scaleFactor, left: 10 * scaleFactor },
+          margin: { bottom: 2, left: 10 },
         }}
       />
     </UiEntity>

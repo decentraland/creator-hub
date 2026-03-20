@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
-import { Alert, Button, IconButton } from 'decentraland-ui2';
 import NotificationImportantIcon from '@mui/icons-material/NotificationImportant';
 import CloseIcon from '@mui/icons-material/Close';
+import { Alert, Button, IconButton } from 'decentraland-ui2';
 
 import { t } from '/@/modules/store/translation/utils';
 import { useEditor } from '/@/hooks/useEditor';

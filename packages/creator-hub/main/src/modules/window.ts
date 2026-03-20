@@ -4,6 +4,7 @@ import { app, BrowserWindow, type BrowserWindowConstructorOptions } from 'electr
 const activeWindows = new Map<string, BrowserWindow>();
 
 export function createWindow(path: string, options?: BrowserWindowConstructorOptions) {
+  const { webPreferences, ...restOptions } = options ?? {};
   const window = new BrowserWindow({
     show: false, // Use the 'ready-to-show' event to show the instantiated BrowserWindow.
     webPreferences: {
@@ -14,8 +15,9 @@ export function createWindow(path: string, options?: BrowserWindowConstructorOpt
       preload: import.meta.env.VITEST
         ? join(app.getAppPath(), '..', '..', 'preload/dist/index.mjs')
         : join(app.getAppPath(), 'preload/dist/index.mjs'),
-      ...options,
+      ...webPreferences,
     },
+    ...restOptions,
   });
 
   // Setup active windows map. We don't want to use window.id because we want to identify the window by the path WE give it
@@ -30,10 +32,22 @@ export function getWindow(path: string): BrowserWindow | undefined {
 }
 
 export function focusWindow(window: BrowserWindow): void {
-  if (window) {
+  if (window && !window.isDestroyed()) {
     if (window.isMinimized()) window.restore();
     window.focus();
   }
+}
+
+export function restoreOrCreateWindow(
+  path: string,
+  options?: BrowserWindowConstructorOptions,
+): BrowserWindow {
+  const existing = getWindow(path);
+  if (existing && !existing.isDestroyed()) {
+    focusWindow(existing);
+    return existing;
+  }
+  return createWindow(path, options);
 }
 
 export function destroyAllWindows(): void {

@@ -12,6 +12,7 @@ export interface UiState {
   selectedAssetsTab: AssetsTab;
   selectedSceneInspectorTab: SceneInspectorTab;
   hiddenSceneInspectorTabs: Partial<Record<SceneInspectorTab, boolean>>;
+  debugConsoleEnabled: boolean;
 }
 
 export const initialState: UiState = {
@@ -22,6 +23,7 @@ export const initialState: UiState = {
   selectedAssetsTab: AssetsTab.AssetsPack,
   selectedSceneInspectorTab: SceneInspectorTab.DETAILS,
   hiddenSceneInspectorTabs: {},
+  debugConsoleEnabled: false,
 };
 
 export const appState = createSlice({
@@ -62,6 +64,9 @@ export const appState = createSlice({
       const { tab, enabled } = payload;
       state.hiddenSceneInspectorTabs[tab] = !enabled;
     },
+    setDebugConsoleEnabled: (state, { payload }: PayloadAction<{ enabled: boolean }>) => {
+      state.debugConsoleEnabled = payload.enabled;
+    },
   },
 });
 
@@ -74,6 +79,7 @@ export const {
   selectAssetsTab,
   selectSceneInspectorTab,
   toggleSceneInspectorTab,
+  setDebugConsoleEnabled,
 } = appState.actions;
 
 // Selectors
@@ -87,6 +93,7 @@ export const getSelectedSceneInspectorTab = (state: RootState) =>
 export const getHiddenSceneInspectorTabs = (state: RootState) => state.ui.hiddenSceneInspectorTabs;
 export const areGizmosDisabled = (state: RootState) => state.ui.disableGizmos;
 export const isGroundGridDisabled = (state: RootState) => state.ui.disableGroundGrid;
+export const getDebugConsoleEnabled = (state: RootState) => state.ui.debugConsoleEnabled;
 
 // Reducer
 export default appState.reducer;

@@ -28,37 +28,57 @@ export const putTextShapeComponent: ComponentOperation = async (entity, componen
     dispose(entity);
 
     if (value?.text) {
-      // create a temp text block to measure the text size
-      let tb = createTextBlock(value);
+      const tempTb = createTextBlock(value);
       const canvas = GUI.AdvancedDynamicTexture.CreateFullscreenUI('canvas');
       const ctx = canvas.getContext();
-      ctx.font = `${tb.fontWeight || 'normal'} ${tb.fontSizeInPixels}px ${tb.fontFamily}`;
+      ctx.font = `${tempTb.fontWeight || 'normal'} ${tempTb.fontSizeInPixels}px ${tempTb.fontFamily}`;
       canvas.dispose();
-      const lines = tb.text.split('\n');
-      const longest = lines.reduce((a, b) => (a.length > b.length ? a : b));
-      const measure = ctx.measureText(longest);
-      const paddingX =
-        parseFloat(tb.paddingLeft.toString()) + parseFloat(tb.paddingRight.toString());
-      const paddingY =
-        parseFloat(tb.paddingTop.toString()) + parseFloat(tb.paddingBottom.toString());
-      const width = measure.width + paddingX;
-      const baseLineSpace = tb.fontSizeInPixels / 2;
-      const lineSpace =
-        (typeof tb.lineSpacing === 'string' ? parseInt(tb.lineSpacing) : tb.lineSpacing) +
-        baseLineSpace;
-      const spaceBetween = (lines.length - 1) * lineSpace;
-      const height = tb.fontSizeInPixels * lines.length + spaceBetween + paddingY;
 
-      // create actual text block usingt the right width and height
-      tb = createTextBlock({ ...value, width, height });
+      const lines = tempTb.text.split('\n');
+      const longest = lines.reduce((a, b) =>
+        ctx.measureText(a).width > ctx.measureText(b).width ? a : b,
+      );
+      const longestLineMetrics = ctx.measureText(longest);
+      const longestLinePixelWidth = Math.max(
+        longestLineMetrics.width,
+        longestLineMetrics.actualBoundingBoxLeft + longestLineMetrics.actualBoundingBoxRight,
+      );
+      const lineMetrics = ctx.measureText('Mg') as TextMetrics & {
+        fontBoundingBoxAscent?: number;
+        fontBoundingBoxDescent?: number;
+      };
+      const lineHeight =
+        lineMetrics.fontBoundingBoxAscent !== undefined
+          ? (lineMetrics.fontBoundingBoxAscent + (lineMetrics.fontBoundingBoxDescent ?? 0)) * 1.2
+          : tempTb.fontSizeInPixels * 1.2;
+
+      const paddingX =
+        parseFloat(tempTb.paddingLeft.toString()) + parseFloat(tempTb.paddingRight.toString());
+      const paddingY =
+        parseFloat(tempTb.paddingTop.toString()) + parseFloat(tempTb.paddingBottom.toString());
+      const lineSpacingPx =
+        typeof tempTb.lineSpacing === 'string' ? parseInt(tempTb.lineSpacing) : tempTb.lineSpacing;
+      const spaceBetween = (lines.length - 1) * lineSpacingPx;
+
+      const pixelWidth = longestLinePixelWidth + paddingX;
+      const pixelHeight = lineHeight * lines.length + spaceBetween + paddingY;
+
+      const worldWidth = pixelWidth / TEXT_SHAPE_RATIO;
+      const worldHeight = pixelHeight / TEXT_SHAPE_RATIO;
+
+      const tb = createTextBlock(value, pixelWidth, pixelHeight);
 
       const mesh = BABYLON.MeshBuilder.CreatePlane(
         entity.entityId.toString(),
-        { width: width / TEXT_SHAPE_RATIO, height: height / TEXT_SHAPE_RATIO },
+        { width: worldWidth, height: worldHeight },
         entity.getScene(),
       );
 
-      const advancedTexture = GUI.AdvancedDynamicTexture.CreateForMesh(mesh, width, height);
+      const advancedTexture = GUI.AdvancedDynamicTexture.CreateForMesh(
+        mesh,
+        pixelWidth,
+        pixelHeight,
+      );
 
       advancedTexture.addControl(tb);
 
@@ -66,13 +86,19 @@ export const putTextShapeComponent: ComponentOperation = async (entity, componen
 
       const [vertical, horizontal] = getBabylonGUIOffset(
         value.textAlign ?? TEXT_ALIGN_MODES[0].value,
-        width,
-        height,
+        pixelWidth,
+        pixelHeight,
       );
       mesh.position.x += horizontal / TEXT_SHAPE_RATIO;
       mesh.position.y -= vertical / TEXT_SHAPE_RATIO;
       entity.ecsComponentValues.textShape = value;
       entity.textShape = mesh;
+      entity.resolveAssetLoaded(mesh);
+      const halfW = worldWidth / 2;
+      const halfH = worldHeight / 2;
+      const localMin = new BABYLON.Vector3(-halfW + mesh.position.x, -halfH + mesh.position.y, 0);
+      const localMax = new BABYLON.Vector3(halfW + mesh.position.x, halfH + mesh.position.y, 0);
+      entity.generateBoundingBoxFromLocalBounds(localMin, localMax);
     }
   }
 };
@@ -84,9 +110,13 @@ function dispose(entity: EcsEntity) {
     entity.ecsComponentValues.textShape = undefined;
     delete entity.textShape;
   }
+  if (entity.boundingInfoMesh) {
+    entity.boundingInfoMesh.dispose();
+    entity.boundingInfoMesh = undefined;
+  }
 }
 
-function createTextBlock(value: PBTextShape) {
+function createTextBlock(value: PBTextShape, pixelWidth?: number, pixelHeight?: number) {
   const tb = new GUI.TextBlock();
   const [horizontalAlignment, verticalAlignment] = toBabylonGUIAlignment(
     value.textAlign ?? TEXT_ALIGN_MODES[0].value,
@@ -127,8 +157,8 @@ function createTextBlock(value: PBTextShape) {
     }
   }
   tb.fontSize = (value.fontSize ?? 0) * 3;
-  tb.width = `${value.width ?? 0}px`;
-  tb.height = `${value.height ?? 0}px`;
+  tb.width = pixelWidth !== undefined ? `${pixelWidth}px` : '100%';
+  tb.height = pixelHeight !== undefined ? `${pixelHeight}px` : '100%';
   tb.textHorizontalAlignment = horizontalAlignment;
   tb.textVerticalAlignment = verticalAlignment;
   tb.textWrapping = true;
@@ -149,22 +179,20 @@ async function loadFonts() {
   if (!fontFuture) {
     fontFuture = future();
     try {
-      // Load fonts for TextShape mappings:
-      // - Sans Serif: Liberation Sans (Unity-like)
-      // - Serif: Liberation Serif (actual serif)
-      // - Monospace: Liberation Mono (actual monospace)
-      // If a family fails to load for any reason, the renderer will fall back to the next family.
       const linkId = 'dcl-textshape-fonts';
       if (!document.getElementById(linkId)) {
-        const link = document.createElement('link');
-        link.id = linkId;
-        link.rel = 'stylesheet';
-        link.href =
-          'https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Liberation+Sans:wght@400;700&family=Liberation+Serif:wght@400;700&family=Liberation+Mono:wght@400;700&family=Roboto+Mono:wght@400&display=swap';
-        document.head.appendChild(link);
+        await new Promise<void>(resolve => {
+          const link = document.createElement('link');
+          link.id = linkId;
+          link.rel = 'stylesheet';
+          link.href =
+            'https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Liberation+Sans:wght@400;700&family=Liberation+Serif:wght@400;700&family=Liberation+Mono:wght@400;700&family=Roboto+Mono:wght@400&display=swap';
+          link.onload = () => resolve();
+          link.onerror = () => resolve();
+          document.head.appendChild(link);
+        });
       }
 
-      // Also keep Noto Sans as a reliable fallback (already used historically in the Inspector).
       const notoSans = new FontFace(
         'Noto Sans',
         'url(https://fonts.gstatic.com/s/notosans/v36/o-0bIpQlx3QUlC5A4PNB6Ryti20_6n1iPHjc5a7du3mhPy0.woff2)', // latin
@@ -172,7 +200,6 @@ async function loadFonts() {
       await notoSans.load();
       document.fonts.add(notoSans);
 
-      // Ask the browser to resolve these faces (best-effort).
       await Promise.allSettled([
         document.fonts.load('400 16px Inter'),
         document.fonts.load('600 16px Inter'),

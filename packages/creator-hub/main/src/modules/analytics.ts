@@ -2,7 +2,7 @@ import path from 'node:path';
 import { randomUUID, type UUID } from 'node:crypto';
 import { Analytics, type TrackParams } from '@segment/analytics-node';
 import log from 'electron-log';
-import * as Sentry from '@sentry/electron/main';
+import { setUser } from '@sentry/electron/main';
 
 import { FileSystemStorage } from '/shared/types/storage';
 import type { ProjectInfo } from '/shared/types/projects';
@@ -49,6 +49,22 @@ export function getAnalytics(): Analytics | null {
   }
 }
 
+/** Recursively serializes arrays of objects to avoid "[object Object]" in analytics properties */
+const serializeProperties = (properties: Record<string, any> | undefined): Record<string, any> => {
+  const serialized: Record<string, any> = {};
+  if (!properties) return serialized;
+  for (const [key, value] of Object.entries(properties || {})) {
+    if (Array.isArray(value) && value.some(item => typeof item === 'object')) {
+      serialized[key] = JSON.stringify(value);
+    } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      serialized[key] = serializeProperties(value);
+    } else {
+      serialized[key] = value;
+    }
+  }
+  return serialized;
+};
+
 export async function track<T extends keyof Events>(
   eventName: T,
   properties: Events[T],
@@ -57,10 +73,13 @@ export async function track<T extends keyof Events>(
     const analytics = getAnalytics();
     if (!analytics) return;
     const anonymousId = await getAnonymousId();
+
+    const serializedProperties = serializeProperties(properties);
+
     const params: TrackParams = {
       event: eventName,
       properties: {
-        ...properties,
+        ...serializedProperties,
         os: process.platform,
         sessionId,
       },
@@ -84,7 +103,7 @@ export async function identify(userId: string, traits: Record<string, any> = {})
     const anonymousId = await getAnonymousId();
     setUserId(userId);
     analytics.identify({ userId, anonymousId, traits });
-    Sentry.setUser({ id: userId });
+    setUser({ id: userId });
   } catch (error) {
     log.error('Error identifying user', userId, error);
     // do nothing

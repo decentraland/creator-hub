@@ -10,12 +10,10 @@ import { getComponents } from '../../../definitions';
 import { state } from '../..';
 
 export function DeleteStreamKeyConfirmation({
-  scaleFactor,
   engine,
   onCancel,
   onReset,
 }: {
-  scaleFactor: number;
   engine: IEngine;
   onCancel(): void;
   onReset(): void;
@@ -27,26 +25,26 @@ export function DeleteStreamKeyConfirmation({
   return (
     <UiEntity
       uiTransform={{
-        minHeight: 479 * scaleFactor,
+        minHeight: 479,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        borderRadius: 12 * scaleFactor,
+        borderRadius: 12,
       }}
     >
       <Label
         value="<b>Are you sure you want to reset your Stream Key?</b>"
-        fontSize={16 * scaleFactor}
+        fontSize={16}
         color={Color4.fromHexString('#FCFCFC')}
       />
 
       <Label
         value="Active streams using this stream key will be disconnected."
-        fontSize={14 * scaleFactor}
+        fontSize={14}
         color={Color4.fromHexString('#FFFFFFB2')}
         uiTransform={{
-          margin: { top: 6 * scaleFactor, bottom: 24 * scaleFactor },
+          margin: { top: 6, bottom: 24 },
         }}
       />
 
@@ -64,15 +62,15 @@ export function DeleteStreamKeyConfirmation({
             id="stream_key_cancel_remove"
             value="<b>Cancel</b>"
             variant="primary"
-            fontSize={18 * scaleFactor}
+            fontSize={18}
             color={Color4.Black()}
             uiTransform={{
-              width: 90 * scaleFactor,
-              height: 40 * scaleFactor,
+              width: 90,
+              height: 40,
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              margin: { right: 30 * scaleFactor, left: 30 * scaleFactor },
+              margin: { right: 30, left: 30 },
             }}
             onMouseDown={() => onCancel()}
           />
@@ -82,11 +80,11 @@ export function DeleteStreamKeyConfirmation({
             id="stream_key_confirm_remove"
             value={'<b>Reset</b>'}
             variant="primary"
-            fontSize={18 * scaleFactor}
+            fontSize={18}
             color={Color4.White()}
             uiTransform={{
-              padding: 8 * scaleFactor,
-              height: 40 * scaleFactor,
+              padding: 8,
+              height: 40,
               justifyContent: 'center',
               alignItems: 'center',
             }}
@@ -107,18 +105,8 @@ export function DeleteStreamKeyConfirmation({
           />
         )}
       </UiEntity>
-      {isLoading && (
-        <LoadingDots
-          scaleFactor={scaleFactor}
-          engine={engine}
-        />
-      )}
-      {error && (
-        <Error
-          scaleFactor={scaleFactor}
-          text={error}
-        />
-      )}
+      {isLoading && <LoadingDots engine={engine} />}
+      {error && <Error text={error} />}
     </UiEntity>
   );
 }

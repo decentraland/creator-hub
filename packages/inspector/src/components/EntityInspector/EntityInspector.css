@@ -6,7 +6,6 @@
   height: 100%;
   padding: 8px;
   background-color: var(--base-20);
-  border-right: 1px solid var(--base-15, #3a3d41);
   overflow-y: auto;
   gap: 12px;
 }

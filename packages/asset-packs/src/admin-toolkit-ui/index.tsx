@@ -2,7 +2,6 @@ import { Color4 } from '@dcl/sdk/math';
 import ReactEcs, { Label, Button as DCLButton, UiEntity, ReactBasedUiSystem } from '@dcl/react-ecs';
 import { Entity, IEngine, PointerEventsSystem } from '@dcl/ecs';
 import { getComponents, GetPlayerDataRes, IPlayersHelper, ISDKHelpers } from '../definitions';
-import { getScaleUIFactor } from '../ui';
 import { VideoControl } from './VideoControl';
 import { TextAnnouncementsControl } from './TextAnnouncementsControl';
 import { SmartItemsControl } from './SmartItemsControl';
@@ -21,7 +20,7 @@ import { ModalUserList, UserListType } from './ModerationControl/UsersList';
 import { isPreview } from './fetch-utils';
 
 export const nextTickFunctions: (() => void)[] = [];
-export let scaleFactor: number;
+const ADMIN_TOOLKIT_VIRTUAL_UI_SIZE = { virtualWidth: 1920, virtualHeight: 1080 };
 
 export let state: State = {
   adminToolkitUiEntity: 0 as Entity,
@@ -188,8 +187,9 @@ export function createAdminToolkitUI(
   // Initialize admin data before setting up the UI
   initializeAdminData(engine, sdkHelpers).then(() => {
     console.log('createAdminToolkitUI - initialized');
-    reactBasedUiSystem.setUiRenderer(() =>
-      uiComponent(engine, pointerEventsSystem, sdkHelpers, playersHelper),
+    reactBasedUiSystem.setUiRenderer(
+      () => uiComponent(engine, pointerEventsSystem, sdkHelpers, playersHelper),
+      ADMIN_TOOLKIT_VIRTUAL_UI_SIZE,
     );
   });
 }
@@ -216,7 +216,6 @@ const uiComponent = (
   const adminToolkitEntity = getAdminToolkitComponent(engine);
   const player = playersHelper?.getPlayer();
   const isPlayerAdmin = isAllowedAdmin(engine, adminToolkitEntity, player);
-  scaleFactor = getScaleUIFactor(engine);
 
   return [
     <UiEntity
@@ -231,35 +230,35 @@ const uiComponent = (
           uiTransform={{
             positionType: 'absolute',
             flexDirection: 'row',
-            position: { top: 120 * scaleFactor, right: 10 * scaleFactor },
+            position: { top: 120, right: 10 },
           }}
         >
           <UiEntity
             uiTransform={{
               display: state.panelOpen ? 'flex' : 'none',
-              width: 500 * scaleFactor,
+              width: 500,
               pointerFilter: 'block',
               flexDirection: 'column',
-              margin: { right: 8 * scaleFactor },
+              margin: { right: 8 },
             }}
           >
             <UiEntity
               uiTransform={{
                 width: '100%',
-                height: 50 * scaleFactor,
+                height: 50,
                 flexDirection: 'row',
                 alignItems: 'center',
-                borderRadius: 12 * scaleFactor,
+                borderRadius: 12,
                 padding: {
-                  left: 12 * scaleFactor,
-                  right: 12 * scaleFactor,
+                  left: 12,
+                  right: 12,
                 },
               }}
               uiBackground={{ color: containerBackgroundColor }}
             >
               <Label
                 value="ADMIN TOOLS"
-                fontSize={20 * scaleFactor}
+                fontSize={20}
                 color={Color4.create(160, 155, 168, 1)}
                 uiTransform={{ flexGrow: 1 }}
               />
@@ -273,9 +272,9 @@ const uiComponent = (
                     adminToolkitEntity.moderationControl.isEnabled && !isPreview()
                       ? 'flex'
                       : 'none',
-                  width: 49 * scaleFactor,
-                  height: 42 * scaleFactor,
-                  margin: { right: 8 * scaleFactor },
+                  width: 49,
+                  height: 42,
+                  margin: { right: 8 },
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
@@ -308,9 +307,9 @@ const uiComponent = (
                 onlyIcon
                 uiTransform={{
                   display: adminToolkitEntity.videoControl.isEnabled ? 'flex' : 'none',
-                  width: 49 * scaleFactor,
-                  height: 42 * scaleFactor,
-                  margin: { right: 8 * scaleFactor },
+                  width: 49,
+                  height: 42,
+                  margin: { right: 8 },
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
@@ -342,9 +341,9 @@ const uiComponent = (
                 onlyIcon
                 uiTransform={{
                   display: adminToolkitEntity.smartItemsControl.isEnabled ? 'flex' : 'none',
-                  width: 49 * scaleFactor,
-                  height: 42 * scaleFactor,
-                  margin: { right: 8 * scaleFactor },
+                  width: 49,
+                  height: 42,
+                  margin: { right: 8 },
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
@@ -376,9 +375,9 @@ const uiComponent = (
                 onlyIcon
                 uiTransform={{
                   display: adminToolkitEntity.textAnnouncementControl.isEnabled ? 'flex' : 'none',
-                  width: 49 * scaleFactor,
-                  height: 42 * scaleFactor,
-                  margin: { right: 8 * scaleFactor },
+                  width: 49,
+                  height: 42,
+                  margin: { right: 8 },
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
@@ -428,8 +427,8 @@ const uiComponent = (
           <UiEntity
             uiTransform={{
               display: 'flex',
-              height: 42 * scaleFactor,
-              width: 42 * scaleFactor,
+              height: 42,
+              width: 42,
               alignItems: 'center',
               alignContent: 'center',
               justifyContent: 'center',
@@ -446,8 +445,8 @@ const uiComponent = (
             <DCLButton
               value=""
               uiTransform={{
-                height: 40 * scaleFactor,
-                width: 40 * scaleFactor,
+                height: 40,
+                width: 40,
                 alignItems: 'center',
                 alignContent: 'center',
                 justifyContent: 'center',
@@ -473,7 +472,6 @@ const uiComponent = (
     </UiEntity>,
     moderationControlState.showModalAdminList && (
       <ModalUserList
-        scaleFactor={scaleFactor}
         users={sceneAdminsCache ?? []}
         engine={engine}
         type={UserListType.ADMIN}
@@ -481,7 +479,6 @@ const uiComponent = (
     ),
     moderationControlState.showModalBanList && (
       <ModalUserList
-        scaleFactor={scaleFactor}
         users={sceneBansCache ?? []}
         engine={engine}
         type={UserListType.BAN}

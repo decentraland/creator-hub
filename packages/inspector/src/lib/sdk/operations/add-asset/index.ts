@@ -268,6 +268,10 @@ export function addAsset(engine: IEngine) {
               componentValue.src = componentValue.src.replace('{assetPath}', base);
               break;
             }
+            case ComponentName.PLACEHOLDER: {
+              componentValue.src = componentValue.src.replace('{assetPath}', base);
+              break;
+            }
             case CoreComponents.GLTF_NODE_MODIFIERS: {
               componentValue.modifiers = componentValue.modifiers?.map((modifier: any) => ({
                 ...modifier,
@@ -282,7 +286,10 @@ export function addAsset(engine: IEngine) {
               break;
             }
             case CoreComponents.AUDIO_SOURCE: {
-              componentValue.src = componentValue.audioClipUrl.replace('{assetPath}', base);
+              componentValue.audioClipUrl = componentValue.audioClipUrl.replace(
+                '{assetPath}',
+                base,
+              );
               break;
             }
             case CoreComponents.VIDEO_PLAYER: {

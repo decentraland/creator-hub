@@ -1,10 +1,10 @@
 import { IEngine } from '@dcl/ecs';
 import ReactEcs, { Label, UiEntity, Dropdown } from '@dcl/react-ecs';
 import { Color4 } from '@dcl/sdk/math';
-import { getScaleUIFactor } from '../../ui';
 import { Button } from '../Button';
 import { CONTENT_URL } from '../constants';
 import { State } from '../types';
+import type { AdminTools } from '../../definitions';
 import { Header } from '../Header';
 import {
   getVideoPlayers,
@@ -47,7 +47,6 @@ export const COLORS = {
 // Main component
 export function VideoControl({ engine, state }: { engine: IEngine; state: State }) {
   const [selectedEntity, selectedVideo] = useSelectedVideoPlayer(engine) ?? [];
-  const scaleFactor = getScaleUIFactor(engine);
   const videoPlayers = getVideoPlayers(engine);
   const [selected, setSelected] = ReactEcs.useState<'video-url' | 'live' | 'dcl-cast' | undefined>(
     undefined,
@@ -66,13 +65,12 @@ export function VideoControl({ engine, state }: { engine: IEngine; state: State 
   return (
     <UiEntity uiTransform={{ flexDirection: 'column', width: '100%', height: '100%' }}>
       <Card
-        scaleFactor={scaleFactor}
         uiTransform={{
           padding: {
-            top: 32 * scaleFactor,
-            right: 32 * scaleFactor,
+            top: 32,
+            right: 32,
             bottom: 0,
-            left: 32 * scaleFactor,
+            left: 32,
           },
         }}
       >
@@ -87,33 +85,35 @@ export function VideoControl({ engine, state }: { engine: IEngine; state: State 
           <Header
             iconSrc={ICONS.VIDEO_CONTROL}
             title="<b>VIDEO SCREENS</b>"
-            scaleFactor={scaleFactor}
           />
           {videoPlayers.length > 1 && (
             <Label
               value="<b>Current Screen</b>"
-              fontSize={16 * scaleFactor}
+              fontSize={16}
               color={Color4.White()}
-              uiTransform={{ margin: { bottom: 16 * scaleFactor } }}
+              uiTransform={{ margin: { bottom: 16 } }}
             />
           )}
 
           <UiEntity
             uiTransform={{
               flexDirection: 'column',
-              margin: { bottom: 16 * scaleFactor },
+              margin: { bottom: 16 },
             }}
           >
             {videoPlayers.length > 1 && (
               <UiEntity uiTransform={{ flexDirection: 'column' }}>
                 <Dropdown
-                  options={videoPlayers.map(player => `<b>${player.customName}</b>`)}
+                  options={videoPlayers.map(
+                    (player: NonNullable<AdminTools['videoControl']['videoPlayers']>[0]) =>
+                      `<b>${player.customName}</b>`,
+                  )}
                   selectedIndex={state.videoControl.selectedVideoPlayer ?? 0}
                   onChange={idx => (state.videoControl.selectedVideoPlayer = idx)}
                   textAlign="middle-left"
-                  fontSize={16 * scaleFactor}
+                  fontSize={16}
                   uiTransform={{
-                    margin: { right: 8 * scaleFactor },
+                    margin: { right: 8 },
                     width: '100%',
                   }}
                   uiBackground={{ color: Color4.White() }}
@@ -121,16 +121,16 @@ export function VideoControl({ engine, state }: { engine: IEngine; state: State 
               </UiEntity>
             )}
             <Label
-              fontSize={16 * scaleFactor}
+              fontSize={16}
               value="<b>Media Source</b>"
               color={Color4.White()}
               uiTransform={{
-                margin: { bottom: 2 * scaleFactor, top: 16 * scaleFactor },
+                margin: { bottom: 2, top: 16 },
               }}
             />
             <UiEntity
               uiTransform={{
-                margin: { top: 10 * scaleFactor },
+                margin: { top: 10 },
                 flexDirection: 'row',
                 width: '100%',
                 justifyContent: 'space-between',
@@ -147,7 +147,6 @@ export function VideoControl({ engine, state }: { engine: IEngine; state: State 
                   value="<b>VIDEO URL</b>"
                   icon={ICONS.VIDEO_SOURCE}
                   onClick={() => setSelected('video-url')}
-                  scaleFactor={scaleFactor}
                   selected={selected === 'video-url'}
                   active={selectedVideo && isVideoUrl(selectedVideo.src)}
                 />
@@ -163,7 +162,6 @@ export function VideoControl({ engine, state }: { engine: IEngine; state: State 
                   value="<b>DCL CAST</b>"
                   icon={ICONS.DCL_CAST_SOURCE}
                   onClick={() => setSelected('dcl-cast')}
-                  scaleFactor={scaleFactor}
                   selected={selected === 'dcl-cast'}
                   active={selectedVideo && isDclCast(selectedVideo.src)}
                 />
@@ -180,7 +178,6 @@ export function VideoControl({ engine, state }: { engine: IEngine; state: State 
                   icon={ICONS.LIVE_SOURCE}
                   onClick={() => setSelected('live')}
                   active={selectedVideo && isLiveStream(selectedVideo.src)}
-                  scaleFactor={scaleFactor}
                   selected={selected === 'live'}
                 />
               </UiEntity>
@@ -189,11 +186,10 @@ export function VideoControl({ engine, state }: { engine: IEngine; state: State 
         </UiEntity>
       </Card>
       {selected && selectedEntity && (
-        <Card scaleFactor={scaleFactor}>
+        <Card>
           {selected === 'video-url' && (
             <VideoControlURL
               engine={engine}
-              scaleFactor={scaleFactor}
               entity={selectedEntity}
               video={selectedVideo}
             />
@@ -201,7 +197,6 @@ export function VideoControl({ engine, state }: { engine: IEngine; state: State 
           {selected === 'live' && (
             <LiveStream
               engine={engine}
-              scaleFactor={scaleFactor}
               entity={selectedEntity}
               video={selectedVideo}
             />
@@ -225,13 +220,12 @@ interface Props {
   value: string;
   onClick(): void;
   selected: boolean;
-  scaleFactor: number;
   icon: string;
   engine: IEngine;
   active?: boolean;
 }
 
-function CustomButton({ active, scaleFactor, value, id, onClick, icon, selected, engine }: Props) {
+function CustomButton({ active, value, id, onClick, icon, selected, engine }: Props) {
   return (
     <UiEntity uiTransform={{ flexDirection: 'column', height: '100%', width: '100%' }}>
       <UiEntity uiTransform={{ width: '100%' }}>
@@ -239,12 +233,12 @@ function CustomButton({ active, scaleFactor, value, id, onClick, icon, selected,
           id={id}
           onMouseDown={onClick}
           value={value}
-          fontSize={14 * scaleFactor}
+          fontSize={14}
           icon={icon}
           iconTransform={{
-            width: 24 * scaleFactor,
-            height: 24 * scaleFactor,
-            margin: { right: 8 * scaleFactor },
+            width: 24,
+            height: 24,
+            margin: { right: 8 },
           }}
           color={selected ? Color4.Black() : Color4.fromHexString('#FCFCFC')}
           iconBackground={{
@@ -255,23 +249,22 @@ function CustomButton({ active, scaleFactor, value, id, onClick, icon, selected,
           }}
           uiTransform={{
             padding: {
-              top: 6 * scaleFactor,
-              bottom: 6 * scaleFactor,
+              top: 6,
+              bottom: 6,
             },
-            borderRadius: 6 * scaleFactor,
+            borderRadius: 6,
             alignItems: 'center',
             justifyContent: 'center',
             width: '100%',
-            height: 36 * scaleFactor,
+            height: 36,
           }}
         />
       </UiEntity>
 
       {active && (
         <Active
-          scaleFactor={scaleFactor}
           engine={engine}
-          uiTransform={{ width: '100%', margin: { top: 6 * scaleFactor } }}
+          uiTransform={{ width: '100%', margin: { top: 6 } }}
         />
       )}
     </UiEntity>

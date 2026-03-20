@@ -26,7 +26,6 @@ const STREAM_KEY_INTERVAL_ACTION = 'video_control_stream_key_interval';
 const RTMP_SERVER_URL = 'rtmps://dcl.rtmp.livekit.cloud/x';
 
 export function ShowStreamKey({
-  scaleFactor,
   engine,
   video,
   entity,
@@ -34,7 +33,6 @@ export function ShowStreamKey({
   endsAt,
 }: {
   endsAt: number;
-  scaleFactor: number;
   engine: IEngine;
   entity: Entity;
   video: DeepReadonlyObject<PBVideoPlayer> | undefined;
@@ -80,17 +78,17 @@ export function ShowStreamKey({
       <Label
         value="<b>RTMP Server</b>"
         color={Color4.White()}
-        fontSize={16 * scaleFactor}
+        fontSize={16}
         uiTransform={{
-          margin: { top: 16 * scaleFactor, bottom: 8 * scaleFactor },
+          margin: { top: 16, bottom: 8 },
         }}
       />
       <UiEntity
         uiTransform={{
           width: '100%',
-          margin: { bottom: 8 * scaleFactor, top: 8 * scaleFactor },
-          height: 42 * scaleFactor,
-          borderRadius: 12 * scaleFactor,
+          margin: { bottom: 8, top: 8 },
+          height: 42,
+          borderRadius: 12,
           flexDirection: 'row',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -98,8 +96,8 @@ export function ShowStreamKey({
         uiBackground={{ color: Color4.White() }}
       >
         <Label
-          uiTransform={{ margin: { left: 16 * scaleFactor } }}
-          fontSize={16 * scaleFactor}
+          uiTransform={{ margin: { left: 16 } }}
+          fontSize={16}
           value={`<b>${RTMP_SERVER_URL}</b>`}
           color={Color4.fromHexString('#A09BA8')}
         />
@@ -107,10 +105,10 @@ export function ShowStreamKey({
           id="video_control_copy_rtmp_server"
           value="<b>Copy</b>"
           variant="primary"
-          fontSize={16 * scaleFactor}
+          fontSize={16}
           uiTransform={{
-            margin: { right: 8 * scaleFactor },
-            padding: { left: 8 * scaleFactor, right: 8 * scaleFactor },
+            margin: { right: 8 },
+            padding: { left: 8, right: 8 },
           }}
           onMouseDown={async () => {
             copyToClipboard({ text: RTMP_SERVER_URL });
@@ -120,17 +118,17 @@ export function ShowStreamKey({
       <Label
         value="<b>Stream Key</b>"
         color={Color4.White()}
-        fontSize={16 * scaleFactor}
+        fontSize={16}
         uiTransform={{
-          margin: { top: 16 * scaleFactor, bottom: 8 * scaleFactor },
+          margin: { top: 16, bottom: 8 },
         }}
       />
       <UiEntity
         uiTransform={{
           width: '100%',
-          margin: { bottom: 8 * scaleFactor, top: 8 * scaleFactor },
-          height: 42 * scaleFactor,
-          borderRadius: 12 * scaleFactor,
+          margin: { bottom: 8, top: 8 },
+          height: 42,
+          borderRadius: 12,
           flexDirection: 'row',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -147,21 +145,18 @@ export function ShowStreamKey({
           {loading ? (
             <UiEntity
               uiTransform={{
-                margin: { left: 16 * scaleFactor },
+                margin: { left: 16 },
               }}
             >
-              <LoadingDots
-                scaleFactor={scaleFactor}
-                engine={engine}
-              />
+              <LoadingDots engine={engine} />
             </UiEntity>
           ) : (
             <Label
               uiTransform={{
-                margin: { left: 16 * scaleFactor },
+                margin: { left: 16 },
                 flexShrink: 1,
               }}
-              fontSize={16 * scaleFactor}
+              fontSize={16}
               value={`<b>${showStreamkey && streamKey ? streamKey : '************'}</b>`}
               color={Color4.fromHexString('#A09BA8')}
             />
@@ -177,9 +172,9 @@ export function ShowStreamKey({
         >
           <UiEntity
             uiTransform={{
-              width: 25 * scaleFactor,
-              height: 25 * scaleFactor,
-              margin: { right: 10 * scaleFactor },
+              width: 25,
+              height: 25,
+              margin: { right: 10 },
             }}
             uiBackground={{
               textureMode: 'stretch',
@@ -206,11 +201,11 @@ export function ShowStreamKey({
             id="video_control_copy_stream_key"
             value="<b>Copy</b>"
             variant="primary"
-            fontSize={16 * scaleFactor}
+            fontSize={16}
             uiTransform={{
-              margin: { right: 8 * scaleFactor },
-              padding: { left: 8 * scaleFactor, right: 8 * scaleFactor },
-              minWidth: 60 * scaleFactor,
+              margin: { right: 8 },
+              padding: { left: 8, right: 8 },
+              minWidth: 60,
             }}
             onMouseDown={async () => {
               if (streamKey) {
@@ -232,8 +227,8 @@ export function ShowStreamKey({
       <UiEntity
         uiTransform={{
           width: '100%',
-          height: 4 * scaleFactor,
-          margin: { top: 8 * scaleFactor },
+          height: 4,
+          margin: { top: 8 },
           display: streamKey && timeRemaining > 0 && showStreamkey ? 'flex' : 'none',
         }}
         uiBackground={{ color: Color4.fromHexString('#FFFFFF1A') }}
@@ -250,10 +245,10 @@ export function ShowStreamKey({
       <UiEntity
         uiTransform={{
           width: '100%',
-          height: 40 * scaleFactor,
+          height: 40,
           flexDirection: 'row',
           justifyContent: 'space-between',
-          margin: { top: 10 * scaleFactor, bottom: 16 * scaleFactor },
+          margin: { top: 10, bottom: 16 },
         }}
       >
         {endsAt > Date.now() ? (
@@ -261,28 +256,28 @@ export function ShowStreamKey({
             <Label
               value="Stream expires in:"
               color={Color4.fromHexString('#FFFFFFB2')}
-              fontSize={14 * scaleFactor}
+              fontSize={14}
             />
             <Label
               value={formatTimeRemaining(endsAt)}
               color={Color4.fromHexString('#FFFFFFB2')}
-              fontSize={14 * scaleFactor}
+              fontSize={14}
             />
           </UiEntity>
         ) : (
           <UiEntity
             uiTransform={{
               flexDirection: 'row',
-              margin: { right: 10 * scaleFactor },
+              margin: { right: 10 },
               borderWidth: 2,
               borderColor: Color4.Green(),
             }}
           >
             <UiEntity
               uiTransform={{
-                width: 15 * scaleFactor,
-                height: 15 * scaleFactor,
-                margin: { right: 4 * scaleFactor, top: 4 * scaleFactor },
+                width: 15,
+                height: 15,
+                margin: { right: 4, top: 4 },
               }}
               uiBackground={{
                 textureMode: 'stretch',
@@ -292,7 +287,7 @@ export function ShowStreamKey({
               }}
             />
             <Label
-              fontSize={14 * scaleFactor}
+              fontSize={14}
               textAlign="middle-left"
               color={Color4.fromHexString('#FF0000')}
               value="Stream timed out. Please restart stream in broadcasting software."
@@ -304,12 +299,12 @@ export function ShowStreamKey({
             id="video_control_share_screen_clear"
             value="<b>Deactivate</b>"
             variant="text"
-            fontSize={16 * scaleFactor}
+            fontSize={16}
             color={Color4.White()}
             uiTransform={{
-              minWidth: 120 * scaleFactor,
-              margin: { right: 8 * scaleFactor },
-              padding: { left: 8 * scaleFactor, right: 8 * scaleFactor },
+              minWidth: 120,
+              margin: { right: 8 },
+              padding: { left: 8, right: 8 },
             }}
             onMouseDown={() => {
               controls.setSource('');
@@ -321,12 +316,12 @@ export function ShowStreamKey({
             id="video_control_share_screen_share"
             value="<b>Activate</b>"
             labelTransform={{
-              margin: { left: 20 * scaleFactor, right: 20 * scaleFactor },
+              margin: { left: 20, right: 20 },
             }}
             uiTransform={{
-              minWidth: 120 * scaleFactor,
+              minWidth: 120,
             }}
-            fontSize={16 * scaleFactor}
+            fontSize={16}
             uiBackground={{ color: COLORS.SUCCESS }}
             color={Color4.Black()}
             onMouseDown={() => {
@@ -347,11 +342,11 @@ export function ShowStreamKey({
           id="video_control_reset_stream_key"
           value="<b>Reset Stream Key</b>"
           variant="text"
-          fontSize={16 * scaleFactor}
+          fontSize={16}
           color={Color4.fromHexString('#FB3B3B')}
           uiTransform={{
-            margin: { right: 8 * scaleFactor, top: 20 * scaleFactor },
-            padding: { left: 8 * scaleFactor, right: 8 * scaleFactor },
+            margin: { right: 8, top: 20 },
+            padding: { left: 8, right: 8 },
           }}
           onMouseDown={() => onReset()}
         />

@@ -1,58 +1,61 @@
-import * as path from 'path';
-import log from 'electron-log/main';
-import { BrowserWindow } from 'electron';
+import path from 'path';
 import { Env } from '/shared/types/env';
-
-// Inlined approach proposed by Nico: https://github.com/decentraland/creator-hub/pull/766#discussion_r2359198135
-// If we will need more structured option refer to the original implementation: https://github.com/decentraland/creator-hub/pull/766#discussion_r2359459892
+import log from 'electron-log';
+import { openDevToolsWindow } from './devtools';
+import { setEnvOverride } from './electron';
 
 function getArgs(argv: string[]): string[] {
   const isDev = process.defaultApp || /electron(\.exe)?$/i.test(path.basename(process.execPath));
   return isDev ? argv.slice(2) : argv.slice(1);
 }
 
-export function tryOpenDevToolsOnPort(argv: string[]): void {
-  const args = getArgs(argv);
-
-  for (const arg of args) {
-    if (arg.startsWith('--open-devtools-with-port=')) {
-      const portStr = arg.split('=')[1];
-      const port = parseInt(portStr);
-
-      if (isNaN(port)) {
-        log.error(`Invalid port: ${portStr}`);
-        continue;
-      }
-
-      log.info(`Opening devtools on port ${port}`);
-      const devtoolsWindow = new BrowserWindow();
-      devtoolsWindow.loadURL(`devtools://devtools/bundled/inspector.html?ws=127.0.0.1:${port}`);
-      break;
-    }
+function handleEnv(value: string): void {
+  const envValue = value as Env;
+  if (Object.values(Env).includes(envValue)) {
+    log.info(`[Args] Environment override: ${envValue}`);
+    setEnvOverride(envValue);
+  } else {
+    log.warn(
+      `[Args] Invalid environment value: ${envValue}. Must be one of: ${Object.values(Env).join('|')}`,
+    );
   }
 }
 
+function handleOpenDevtoolsWithPort(value: string): void {
+  const port = parseInt(value, 10);
+  if (Number.isNaN(port)) {
+    log.error('[DevTools] Invalid port:', value);
+    return;
+  }
+  log.info('[DevTools] Opening DevTools window for port:', port);
+  openDevToolsWindow(port);
+}
+
+const ARG_HANDLERS: Record<string, (value: string) => Env | null | void> = {
+  '--env=': handleEnv,
+  '--open-devtools-with-port=': handleOpenDevtoolsWithPort,
+};
+
 /**
- * Parses the --env CLI argument.
+ * Handles app CLI arguments: --env= and --open-devtools-with-port=.
+ * Invokes the matching handler for each recognized prefix (env override, DevTools window).
+ *
  * @param argv - Command line arguments array
- * @returns 'dev', 'prod', or null if no valid override specified
+ * @returns void
  */
-export function parseEnvArgument(argv: string[]): Env | null {
+export function handleAppArguments(argv: string[]): void {
   const args = getArgs(argv);
 
+  log.info(`[Args] Parsing arguments: ${args.join(', ')}`);
+
   for (const arg of args) {
-    if (arg.startsWith('--env=')) {
-      const envValue = arg.split('=')[1] as Env;
-      if (Object.values(Env).includes(envValue)) {
-        log.info(`[Args] Environment override: ${envValue}`);
-        return envValue;
-      } else {
-        log.warn(
-          `[Args] Invalid environment value: ${envValue}. Must be one of: ${Object.values(Env).join('|')}`,
-        );
-      }
+    for (const [prefix, handler] of Object.entries(ARG_HANDLERS)) {
+      log.info(`[Args] Handling argument: ${arg} with prefix: ${prefix}`);
+      if (!arg.startsWith(prefix)) continue;
+
+      const value = arg.slice(prefix.length);
+      log.info(`[Args] Value: ${value}`);
+      handler(value);
     }
   }
-
-  return null;
 }

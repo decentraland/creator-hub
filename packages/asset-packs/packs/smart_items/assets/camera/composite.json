@@ -2,13 +2,11 @@
   "version": 1,
   "components": [
     {
-      "name": "core::GltfContainer",
+      "name": "asset-packs::Placeholder",
       "data": {
         "0": {
           "json": {
-            "src": "{assetPath}/camera.glb",
-            "visibleMeshesCollisionMask": 0,
-            "invisibleMeshesCollisionMask": 0
+            "src": "{assetPath}/camera.glb"
           }
         }
       }
@@ -24,20 +22,17 @@
       }
     },
     {
-      "name": "core::VisibilityComponent",
-      "data": {
-        "0": {
-          "json": {
-            "visible": false
-          }
-        }
-      }
-    },
-    {
       "name": "core::VirtualCamera",
       "data": {
         "0": {
-          "json": {}
+          "json": {
+            "defaultTransition": {
+              "transitionMode": {
+                "$case": "time",
+                "time": 1
+              }
+            }
+          }
         }
       }
     },
@@ -92,12 +87,12 @@
               {
                 "name": "Select Camera",
                 "type": "change_camera",
-                "jsonPayload": "{ \"virtualCameraEntity\": \"{self}\" }"
+                "jsonPayload": "{}"
               },
               {
                 "name": "Reset View",
                 "type": "change_camera",
-                "jsonPayload": "{ \"virtualCameraEntity\": 0 }"
+                "jsonPayload": "{\"virtualCameraEntity\":0}"
               }
             ]
           }

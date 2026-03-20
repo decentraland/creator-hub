@@ -22,7 +22,6 @@ export enum UserListType {
 }
 
 type ModalUserListProps = {
-  scaleFactor: number;
   users: SceneAdmin[] | SceneBanUser[];
   engine: IEngine;
   type: UserListType;
@@ -75,9 +74,9 @@ const closeModal = (type: UserListType) => {
   }
 };
 
-export function ModalUserList({ scaleFactor, users, engine, type }: ModalUserListProps) {
+export function ModalUserList({ users, engine, type }: ModalUserListProps) {
   const [page, setPage] = ReactEcs.useState(1);
-  const styles = getModalStyles(scaleFactor);
+  const styles = getModalStyles();
   const backgrounds = getModalBackgrounds();
   const colors = getModalColors();
 
@@ -118,7 +117,6 @@ export function ModalUserList({ scaleFactor, users, engine, type }: ModalUserLis
   if (moderationControlState.adminToRemove) {
     return (
       <RemoveAdminConfirmation
-        scaleFactor={scaleFactor}
         admin={moderationControlState.adminToRemove}
         engine={engine}
       />
@@ -144,12 +142,12 @@ export function ModalUserList({ scaleFactor, users, engine, type }: ModalUserLis
             />
             <Label
               value={getModalTitle(type)}
-              fontSize={24 * scaleFactor}
+              fontSize={24}
               color={colors.white}
             />
             <Label
               value={getCounterText(type, users.length)}
-              fontSize={16 * scaleFactor}
+              fontSize={16}
               color={colors.gray}
               uiTransform={styles.usersCount}
             />
@@ -158,7 +156,7 @@ export function ModalUserList({ scaleFactor, users, engine, type }: ModalUserLis
               onlyIcon
               icon={ICONS.CLOSE}
               variant="secondary"
-              fontSize={20 * scaleFactor}
+              fontSize={20}
               uiTransform={styles.closeButton}
               iconTransform={styles.closeIcon}
               onMouseDown={() => closeModal(type)}
@@ -188,7 +186,7 @@ export function ModalUserList({ scaleFactor, users, engine, type }: ModalUserLis
                         <UiEntity uiTransform={styles.nameContainer}>
                           <Label
                             value={`<b>${user.name}</b>`}
-                            fontSize={14 * scaleFactor}
+                            fontSize={14}
                             color={colors.white}
                           />
                           {!user.name.includes('#') && (
@@ -209,7 +207,7 @@ export function ModalUserList({ scaleFactor, users, engine, type }: ModalUserLis
                                       ?.charAt(0)
                                       .toUpperCase() + ('role' in user ? user.role?.slice(1) : '')
                                   }</b>`}
-                                  fontSize={12 * scaleFactor}
+                                  fontSize={12}
                                   color={colors.black}
                                 />
                               </UiEntity>
@@ -217,7 +215,7 @@ export function ModalUserList({ scaleFactor, users, engine, type }: ModalUserLis
                         </UiEntity>
                       )}
                       <Label
-                        fontSize={(user.name ? 12 : 14) * scaleFactor}
+                        fontSize={user.name ? 12 : 14}
                         value={user.name ? getUserAddress(user) : getUserAddress(user)}
                         color={user.name ? colors.addressGray : colors.white}
                       />
@@ -228,7 +226,7 @@ export function ModalUserList({ scaleFactor, users, engine, type }: ModalUserLis
                       id={`${type}-action-${index}`}
                       value={getActionButtonText(type)}
                       variant="text"
-                      fontSize={14 * scaleFactor}
+                      fontSize={14}
                       color={colors.removeRed}
                       labelTransform={styles.removeButton}
                       onMouseDown={() => handleRemoveUser(user)}
@@ -251,7 +249,7 @@ export function ModalUserList({ scaleFactor, users, engine, type }: ModalUserLis
               value="Prev"
               variant="secondary"
               disabled={page <= 1}
-              fontSize={18 * scaleFactor}
+              fontSize={18}
               icon={ICONS.BACK}
               iconTransform={styles.prevIcon}
               iconBackground={{ color: getPaginationColor(page <= 1) }}
@@ -262,14 +260,14 @@ export function ModalUserList({ scaleFactor, users, engine, type }: ModalUserLis
             />
             <Label
               value={`${page} / ${Math.ceil(users.length / USERS_PER_PAGE)}`}
-              fontSize={14 * scaleFactor}
+              fontSize={14}
               color={colors.white}
             />
             <Button
               id="next"
               value="<b>Next</b>"
               variant="secondary"
-              fontSize={18 * scaleFactor}
+              fontSize={18}
               iconRight={ICONS.NEXT}
               iconRightTransform={styles.nextIcon}
               labelTransform={styles.nextLabel}
@@ -288,7 +286,7 @@ export function ModalUserList({ scaleFactor, users, engine, type }: ModalUserLis
           <UiEntity uiTransform={styles.messageContainer}>
             <Label
               value={moderationControlState.unbanMessage}
-              fontSize={14 * scaleFactor}
+              fontSize={14}
               color={Color4.White()}
               uiTransform={styles.messageLabel}
             />

@@ -1,13 +1,17 @@
 import React, { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { setUser } from '@sentry/electron/renderer';
+import { captureException, setUser } from '@sentry/electron/renderer';
 import { ChainId, type Avatar } from '@dcl/schemas';
-import { AuthServerProvider } from 'decentraland-connect';
 import { useDispatch } from '#store';
 import { config } from '/@/config';
+import { AuthServerProvider } from '/@/lib/auth';
 import { Profiles } from '/@/lib/profile';
-import { fetchENSList } from '/@/modules/store/ens';
-import { fetchLandList, fetchTiles } from '/@/modules/store/land';
+import { fetchTiles } from '/@/modules/store/land';
+import {
+  fetchAllManagedProjectsData,
+  actions as managementActions,
+} from '/@/modules/store/management';
+import { actions as ensActions } from '/@/modules/store/ens';
 import { identify } from '/@/modules/store/analytics';
 import { AuthContext } from '/@/contexts/AuthContext';
 import { isNavigatorOnline } from '/@/lib/connection';
@@ -15,11 +19,10 @@ import { useSnackbar } from '/@/hooks/useSnackbar';
 import { t } from '/@/modules/store/translation/utils';
 import type { AuthSignInProps } from './types';
 
-// Initialize the provider
 AuthServerProvider.setAuthServerUrl(config.get('AUTH_SERVER_URL'));
 AuthServerProvider.setAuthDappUrl(config.get('AUTH_DAPP_URL'));
 
-const DEFAULT_CHAIN_ID: ChainId = (Number(config.get('CHAIN_ID')) ??
+const DEFAULT_CHAIN_ID: ChainId = (Number(config.get('CHAIN_ID')) ||
   ChainId.ETHEREUM_MAINNET) as ChainId;
 
 export const provider = new AuthServerProvider();
@@ -84,7 +87,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const initSignInResult = await Promise.race([initSignInPromise, timeoutPromise]);
       initSignInResultRef.current = initSignInResult;
 
-      // track this signin session to prevent duplicates
       const sessionId = Date.now().toString();
       activeSignInTabsRef.current.add(sessionId);
 
@@ -93,6 +95,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       AuthServerProvider.finishSignIn(initSignInResult)
         .then(finishSignIn)
         .catch(error => {
+          captureException(error, {
+            tags: { source: 'auth', event: 'signin-finish' },
+          });
           console.error('Signin error:', error);
           pushGeneric('error', error?.message || t('sign_in.errors.failed'));
         })
@@ -102,6 +107,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           navigate(-1);
         });
     } catch (error: any) {
+      captureException(error, {
+        tags: { source: 'auth', event: 'signin-init' },
+      });
       console.error('Signin initialization error:', error);
       pushGeneric(
         'error',
@@ -118,6 +126,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setAvatar(undefined);
     setIsSignedIn(false);
     AuthServerProvider.deactivate();
+    dispatch(managementActions.clearUserManagedProjects());
   }, []);
 
   const changeNetwork = useCallback(async (chainId: ChainId = DEFAULT_CHAIN_ID) => {
@@ -128,6 +137,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
       setChainId(chainId);
     } catch (error) {
+      captureException(error, {
+        tags: { source: 'auth', event: 'chain-switch' },
+      });
       setChainId(DEFAULT_CHAIN_ID);
       console.error(error);
     }
@@ -145,15 +157,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     if (wallet && chainId) {
-      dispatch(fetchENSList({ address: wallet, chainId }));
+      dispatch(ensActions.setChainId(chainId));
+      dispatch(fetchAllManagedProjectsData({ address: wallet }));
       dispatch(identify({ userId: wallet }));
       dispatch(fetchTiles());
-      dispatch(fetchLandList({ address: wallet }));
       setUser({ id: wallet });
     }
   }, [wallet, chainId, dispatch]);
 
-  // reset signin attempt counter when coming back online
   useEffect(() => {
     const handleOnline = () => {
       signInAttemptCountRef.current = 0;
@@ -163,7 +174,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => window.removeEventListener('online', handleOnline);
   }, []);
 
-  // reset signin attempt counter after 5 minutes
   useEffect(() => {
     const resetInterval = setInterval(
       () => {

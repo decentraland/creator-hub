@@ -1,0 +1,1 @@
+export { WorldPermissionsAddCollaboratorDialog } from './component';

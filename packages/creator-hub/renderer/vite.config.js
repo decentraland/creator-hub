@@ -37,7 +37,7 @@ const config = {
     outDir: 'dist',
     assetsDir: '.',
     rollupOptions: {
-      input: [join(PACKAGE_ROOT, 'index.html'), join(PACKAGE_ROOT, 'debugger.html')],
+      input: [join(PACKAGE_ROOT, 'index.html')],
     },
     emptyOutDir: true,
     reportCompressedSize: false,

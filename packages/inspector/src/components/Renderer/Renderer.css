@@ -21,7 +21,7 @@
 
 .single-tile-hint {
   position: fixed;
-  opacity: 0;
+  display: none;
   transition: opacity 0.3s ease;
   background-color: var(--base-19);
   border: 1px solid var(--base-13);
@@ -40,6 +40,6 @@
 }
 
 .single-tile-hint.is-visible {
-  opacity: 1;
+  display: block;
   z-index: 100;
 }

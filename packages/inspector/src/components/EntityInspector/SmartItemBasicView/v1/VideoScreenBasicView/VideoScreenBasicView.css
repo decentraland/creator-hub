@@ -1,7 +1,7 @@
 .VideoScreenBasicViewInspector {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .VideoScreenBasicViewInspector .Info {
@@ -33,10 +33,6 @@
 
 .VideoScreenBasicViewInspector .DefaultMediaSourcesDropdown .OptionList {
   overflow: hidden;
-}
-
-.VideoScreenBasicViewInspector .PanelSection {
-  background-color: var(--background-dark);
 }
 
 .VideoScreenBasicViewInspector .PanelSection.hover {

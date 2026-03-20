@@ -18,11 +18,13 @@ import { useSettings } from '/@/hooks/useSettings';
 import { useSceneCustomCode } from '/@/hooks/useSceneCustomCode';
 import { useDeploy } from '/@/hooks/useDeploy';
 import { useConnectionStatus } from '/@/hooks/useConnectionStatus';
+import { useDebugLogForwarding } from '/@/hooks/useDebugLogForwarding';
 import { ConnectionStatus } from '/@/lib/connection';
 
 import EditorPng from '/assets/images/editor.png';
 
 import { useDispatch, useSelector } from '#store';
+import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
 import { actions as snackbarActions } from '/@/modules/store/snackbar';
 import { createGenericNotification } from '/@/modules/store/snackbar/utils';
 import { Button } from '../Button';
@@ -58,8 +60,11 @@ export function EditorPage() {
     killPreview,
     publishScene,
     getMobileQR,
+    supportsMultiInstance,
+    isPreviewRunning,
   } = useEditor();
   const { settings, updateAppSettings } = useSettings();
+  const { flags: featureFlags } = useFeatureFlags();
   const { executeDeployment, getDeployment } = useDeploy();
   const deployment = project ? getDeployment(project.path) : undefined;
 
@@ -78,16 +83,28 @@ export function EditorPage() {
   const [mobileQRData, setMobileQRData] = useState<{ url: string; qr: string } | null>(null);
 
   const isOffline = status === ConnectionStatus.OFFLINE;
+  const showDebugPanel = settings.previewOptions.debugger;
+
+  useDebugLogForwarding(iframeRef, isPreviewRunning, showDebugPanel, project?.path);
 
   const handleIframeRef = useCallback(
     (e: React.SyntheticEvent<HTMLIFrameElement, Event>) => {
       const iframe = e.currentTarget;
       if (project) {
-        iframeRef.current = initRpc(iframe, project, { writeFile: updateScene });
+        const rpc = initRpc(iframe, project, { writeFile: updateScene });
+        iframeRef.current = rpc;
+        void rpc.scene.setFeatureFlags(featureFlags).catch(console.error);
       }
     },
-    [project, updateScene],
+    [project, updateScene, featureFlags],
   );
+
+  useEffect(() => {
+    const rpc = iframeRef.current;
+    if (rpc) {
+      void rpc.scene.setFeatureFlags(featureFlags).catch(console.error);
+    }
+  }, [featureFlags]);
 
   useEffect(() => {
     if (isWorkspaceError(error, 'PROJECT_NOT_FOUND') || isProjectError(error)) {
@@ -204,17 +221,25 @@ export function EditorPage() {
     if (!project) return;
     const rpc = iframeRef.current;
     if (rpc) saveAndGetThumbnail(rpc);
-    await publishScene({ targetContent: config.get('WORLDS_CONTENT_SERVER_URL') });
-    executeDeployment(project.path);
-  }, [project, saveAndGetThumbnail, publishScene, executeDeployment]);
+    try {
+      await publishScene({ targetContent: config.get('WORLDS_CONTENT_SERVER_URL') });
+      executeDeployment(project.path);
+    } catch {
+      openModal('publish', 'deploy');
+    }
+  }, [project, saveAndGetThumbnail, publishScene, executeDeployment, openModal]);
 
   const handleDeployLand = useCallback(async () => {
     if (!project) return;
     const rpc = iframeRef.current;
     if (rpc) saveAndGetThumbnail(rpc);
-    await publishScene({ target: config.get('PEER_URL') });
-    executeDeployment(project.path);
-  }, [project, saveAndGetThumbnail, publishScene, executeDeployment]);
+    try {
+      await publishScene({ target: config.get('PEER_URL') });
+      executeDeployment(project.path);
+    } catch {
+      openModal('publish', 'deploy');
+    }
+  }, [project, saveAndGetThumbnail, publishScene, executeDeployment, openModal]);
 
   const publishOptions = useMemo(
     () =>
@@ -318,6 +343,7 @@ export function EditorPage() {
                     options={settings.previewOptions}
                     onChange={handleChangePreviewOptions}
                     onShowMobileQR={handleShowMobileQR}
+                    supportsMultiInstance={supportsMultiInstance}
                   />
                 }
               >

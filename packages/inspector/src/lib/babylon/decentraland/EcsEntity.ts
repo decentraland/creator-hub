@@ -19,6 +19,7 @@ import { getLayoutManager } from './layout-manager';
 
 export type EcsComponents = Partial<{
   gltfContainer: PBGltfContainer;
+  placeholder: { src: string };
   material: PBMaterial;
   meshRenderer: PBMeshRenderer;
   pointerEvents: PBPointerEvents;
@@ -32,6 +33,8 @@ export class EcsEntity extends BABYLON.TransformNode {
   usedComponents = new Map<number, ComponentDefinition<unknown>>();
   meshRenderer?: BABYLON.AbstractMesh;
   gltfContainer?: BABYLON.AbstractMesh;
+  placeholderContainer?: BABYLON.AbstractMesh;
+  placeholderAssetContainer?: BABYLON.AssetContainer;
   boundingInfoMesh?: BABYLON.AbstractMesh;
   gltfAssetContainer?: BABYLON.AssetContainer;
   videoPlayerMaterialAssetContainer?: BABYLON.AssetContainer;
@@ -184,8 +187,20 @@ export class EcsEntity extends BABYLON.TransformNode {
     this.#assetLoading.resolve(mesh);
   }
 
+  setPlaceholderContainer(mesh: BABYLON.AbstractMesh) {
+    this.placeholderContainer = mesh;
+  }
+
+  setPlaceholderAssetContainer(assetContainer: BABYLON.AssetContainer) {
+    this.placeholderAssetContainer = assetContainer;
+  }
+
   setMeshRenderer(mesh: BABYLON.AbstractMesh) {
     this.meshRenderer = mesh;
+    this.#assetLoading.resolve(mesh);
+  }
+
+  resolveAssetLoaded(mesh: BABYLON.AbstractMesh) {
     this.#assetLoading.resolve(mesh);
   }
 
@@ -222,6 +237,20 @@ export class EcsEntity extends BABYLON.TransformNode {
 
   setLock(lock: boolean) {
     this.#isLocked = lock;
+  }
+
+  generateBoundingBoxFromLocalBounds(min: BABYLON.Vector3, max: BABYLON.Vector3) {
+    if (this.boundingInfoMesh) return;
+
+    const boundingInfoMesh = new BABYLON.Mesh(`BoundingMesh-${this.id}`, this.getScene());
+    boundingInfoMesh.position = BABYLON.Vector3.Zero();
+    boundingInfoMesh.rotationQuaternion = BABYLON.Quaternion.Identity();
+    boundingInfoMesh.scaling = BABYLON.Vector3.One();
+    boundingInfoMesh.setBoundingInfo(new BABYLON.BoundingInfo(min, max));
+    this.boundingInfoMesh = boundingInfoMesh;
+    this.boundingInfoMesh.parent = this;
+
+    void validateEntityIsOutsideLayout(this);
   }
 
   generateBoundingBox() {

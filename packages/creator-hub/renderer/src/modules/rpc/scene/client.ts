@@ -33,6 +33,10 @@ export enum Method {
   SET_CAMERA_TARGET = 'set_camera_target',
   SET_CAMERA_POSITION = 'set_camera_position',
   SET_SCENE_CUSTOM_CODE = 'set_scene_custom_code',
+  SET_DEBUG_CONSOLE_ENABLED = 'set_debug_console_enabled',
+  PUSH_DEBUG_LOGS = 'push_debug_logs',
+  CLEAR_DEBUG_LOGS = 'clear_debug_logs',
+  SET_FEATURE_FLAGS = 'set_feature_flags',
 }
 
 export type Params = {
@@ -47,6 +51,10 @@ export type Params = {
   [Method.SET_CAMERA_TARGET]: { x: number; y: number; z: number };
   [Method.SET_CAMERA_POSITION]: { x: number; y: number; z: number };
   [Method.SET_SCENE_CUSTOM_CODE]: { hasCustomCode: boolean };
+  [Method.SET_DEBUG_CONSOLE_ENABLED]: { enabled: boolean };
+  [Method.PUSH_DEBUG_LOGS]: { logs: string[] };
+  [Method.CLEAR_DEBUG_LOGS]: Record<string, never>;
+  [Method.SET_FEATURE_FLAGS]: { flags: Record<string, boolean> };
 };
 
 export type Result = {
@@ -61,6 +69,10 @@ export type Result = {
   [Method.SET_CAMERA_TARGET]: void;
   [Method.SET_CAMERA_POSITION]: void;
   [Method.SET_SCENE_CUSTOM_CODE]: void;
+  [Method.SET_DEBUG_CONSOLE_ENABLED]: void;
+  [Method.PUSH_DEBUG_LOGS]: void;
+  [Method.CLEAR_DEBUG_LOGS]: void;
+  [Method.SET_FEATURE_FLAGS]: void;
 };
 
 export class SceneRpcClient extends RPC<Method, Params, Result> {
@@ -110,5 +122,21 @@ export class SceneRpcClient extends RPC<Method, Params, Result> {
 
   setSceneCustomCode = (hasCustomCode: boolean) => {
     return this.request('set_scene_custom_code', { hasCustomCode });
+  };
+
+  setDebugConsoleEnabled = (enabled: boolean) => {
+    return this.request('set_debug_console_enabled', { enabled });
+  };
+
+  pushDebugLogs = (logs: string[]) => {
+    return this.request('push_debug_logs', { logs });
+  };
+
+  clearDebugLogs = () => {
+    return this.request('clear_debug_logs', {} as Record<string, never>);
+  };
+
+  setFeatureFlags = (flags: Record<string, boolean>) => {
+    return this.request('set_feature_flags', { flags });
   };
 }

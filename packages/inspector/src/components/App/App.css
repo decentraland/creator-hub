@@ -39,6 +39,7 @@ code {
 
 .composite-renderer {
   flex: 1 1 auto;
+  height: 100%;
 }
 
 .composite-renderer > .content {
@@ -60,11 +61,25 @@ code {
 }
 
 .App .horizontal-handle {
-  width: 4px;
+  width: 5px;
+  background-color: var(--base-21);
+  transition: background-color 0.2s ease;
+}
+
+.App .horizontal-handle:hover,
+.App .horizontal-handle[data-resize-handle-active] {
+  background-color: var(--primary-main);
 }
 
 .App .vertical-handle {
-  height: 4px;
+  height: 5px;
+  background-color: var(--base-21);
+  transition: background-color 0.2s ease;
+}
+
+.App .vertical-handle:hover,
+.App .vertical-handle[data-resize-handle-active] {
+  background-color: var(--primary-main);
 }
 .App .Box.no-box,
 .App .Box.no-box .content,

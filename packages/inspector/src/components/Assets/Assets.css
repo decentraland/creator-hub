@@ -8,7 +8,7 @@
 }
 
 .Assets .Assets-buttons span {
-  font-size: 11px;
+  font-size: 14px;
   line-height: 13px;
   font-weight: 500;
 }
@@ -21,6 +21,7 @@
   position: relative;
   align-items: center;
   justify-content: center;
+  min-height: 48px;
 }
 
 .Assets .Assets-buttons > div > div {
@@ -47,18 +48,19 @@
   position: absolute;
   bottom: -6px;
   left: 0;
-  height: 1px;
-  background: var(--white-gray);
+  height: 2px;
+  background: var(--primary-main);
 }
 
 .Assets .Assets-buttons > div span {
   margin-left: 4px;
+  margin-bottom: 4px;
 }
 
 .Assets .Assets-buttons > div {
   display: flex;
   align-items: center;
-  padding: 8px;
+  padding: 8px 12px;
   cursor: pointer;
   user-select: none;
 }
@@ -85,6 +87,10 @@
   stroke-width: 3;
 }
 
+.Assets .Assets-buttons .Assets-buttons-left .import-button:hover {
+  background-color: var(--base-19);
+}
+
 .Assets .Assets-buttons .Assets-buttons-left .icon-item {
   width: 25px;
   height: 25px;
@@ -107,9 +113,36 @@
 
 .Assets .Assets-content {
   background: var(--tree-bg-color) !important;
-  height: 100%;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
 }
 
 .Assets .Assets-content.Hide {
   display: none;
 }
+
+.AssetsCatalogUnavailable {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  text-align: center;
+}
+
+.AssetsCatalogUnavailable p {
+  margin: 0;
+  color: var(--base-08);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.AssetsCatalogUnavailable p:first-child {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+

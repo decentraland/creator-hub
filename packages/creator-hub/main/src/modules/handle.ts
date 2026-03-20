@@ -1,8 +1,8 @@
 import { ipcMain } from 'electron';
 import log from 'electron-log';
-import * as Sentry from '@sentry/electron/main';
 
 import type { Ipc, IpcError, IpcResult } from '/shared/types/ipc';
+import { captureException } from '@sentry/electron/main';
 import { StreamError } from './bin';
 
 // wrapper for ipcMain.handle with types
@@ -30,10 +30,7 @@ export async function handle<T extends keyof Ipc>(
         extra.stderr = error.stderr.toString('utf8');
       }
 
-      Sentry.captureException(error, {
-        tags: { source: 'ipc-handle' },
-        extra,
-      });
+      captureException(error, { tags: { source: 'ipc-handle' }, extra });
       const result: IpcError = {
         success: false,
         error: {
@@ -62,10 +59,7 @@ export function handleSync<T extends keyof Ipc>(
       const name = error.name || 'Error';
       log.error(`[IPC-SYNC] channel=${channel} name=${name} error=${error.message}`);
 
-      Sentry.captureException(error, {
-        tags: { source: 'ipc-handleSync' },
-        extra: { channel },
-      });
+      captureException(error, { tags: { source: 'ipc-handleSync' }, extra: { channel } });
       event.returnValue = null;
       return null;
     }
