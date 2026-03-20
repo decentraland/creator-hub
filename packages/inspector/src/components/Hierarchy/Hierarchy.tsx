@@ -1,67 +1,15 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import type { Entity } from '@dcl/ecs';
 
-import { CAMERA, PLAYER, ROOT } from '../../lib/sdk/tree';
+import { CAMERA, ROOT } from '../../lib/sdk/tree';
 import { useEntitiesWith } from '../../hooks/sdk/useEntitiesWith';
 import { useTree } from '../../hooks/sdk/useTree';
 import { Tree } from '../Tree';
 import { withSdk } from '../../hoc/withSdk';
 import './Hierarchy.css';
-import { useAppSelector } from '../../redux/hooks';
-import { selectCustomAssets } from '../../redux/app';
 import { ContextMenu } from './ContextMenu';
 import PlayerTree from './PlayerTree';
-
-const HierarchyIcon = withSdk<{ value: Entity }>(({ sdk, value }) => {
-  const customAssets = useAppSelector(selectCustomAssets);
-  const isSmart = useMemo(
-    () =>
-      sdk.components.Actions.has(value) ||
-      sdk.components.Triggers.has(value) ||
-      sdk.components.States.has(value) ||
-      sdk.components.TextShape.has(value) ||
-      sdk.components.NftShape.has(value) ||
-      sdk.components.VisibilityComponent.has(value) ||
-      sdk.components.VideoScreen.has(value) ||
-      sdk.components.AdminTools.has(value),
-    [sdk, value],
-  );
-
-  const isCustom = useMemo(() => {
-    if (sdk.components.CustomAsset.has(value)) {
-      const { assetId } = sdk.components.CustomAsset.get(value);
-      const customAsset = customAssets.find(asset => asset.id === assetId);
-      return !!customAsset;
-    }
-    return false;
-  }, [sdk, value, customAssets]);
-
-  const isTile = useMemo(() => sdk.components.Tile.has(value), [sdk, value]);
-
-  const isGroup = useMemo(() => {
-    const nodes = sdk.components.Nodes.getOrNull(ROOT)?.value;
-    const node = nodes?.find(node => node.entity === value);
-    return node && node.children.length > 0;
-  }, [value]);
-
-  if (value === ROOT) {
-    return <span style={{ marginRight: '4px' }}></span>;
-  } else if (value === PLAYER) {
-    return <span className="tree-icon player-icon"></span>;
-  } else if (value === CAMERA) {
-    return <span className="tree-icon camera-icon"></span>;
-  } else if (isCustom) {
-    return <span className="tree-icon custom-icon"></span>;
-  } else if (isGroup) {
-    return <span className="tree-icon group-icon"></span>;
-  } else if (isSmart) {
-    return <span className="tree-icon smart-icon"></span>;
-  } else if (isTile) {
-    return <span className="tree-icon tile-icon"></span>;
-  } else {
-    return <span className="tree-icon entity-icon"></span>;
-  }
-});
+import EntityIcon from './EntityIcon';
 
 const EntityTree = Tree<Entity>();
 
@@ -177,7 +125,7 @@ const Hierarchy = withSdk(({ sdk }) => {
     getChildren: getChildren,
     getLabel: getLabel,
     getSelectedItems: getSelectedItems,
-    getIcon: (val: Entity) => <HierarchyIcon value={val} />,
+    getIcon: (val: Entity) => <EntityIcon value={val} />,
     isOpen: isOpen,
     isSelected: isSelected,
     isHidden: isHidden,
