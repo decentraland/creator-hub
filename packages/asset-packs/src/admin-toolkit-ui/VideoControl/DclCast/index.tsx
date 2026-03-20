@@ -4,6 +4,7 @@ import { Color4 } from '@dcl/sdk/math';
 import { getComponents } from '../../../definitions';
 import { getContentUrl } from '../../constants';
 import type { State } from '../../types';
+import { setInterval, clearInterval } from '../../utils';
 import { Button } from '../../Button';
 import { LoadingDots } from '../../Loading';
 import { nextTickFunctions } from '../..';
@@ -13,10 +14,13 @@ import {
   getActiveStreams,
   groupTracksByParticipant,
   resetStreamKey,
+  hasPresentationTrack,
+  subscribeToPresentationTopic,
+  consumePresentationMessages,
   type FlattenedTrack,
   type Participant,
 } from '../api';
-import { createVideoPlayerControls } from '../utils';
+import { createVideoPlayerControls, isDclCast } from '../utils';
 import DclCastInfo from './DclCastInfo';
 import CompactDclCast from './CompactDclCast';
 import { getDclCastStyles, getDclCastColors } from './styles';
@@ -46,6 +50,11 @@ export const showcaseState: {
   onClose: undefined,
 };
 
+let presentationSubscribed = false;
+let consuming = false;
+let presentationSystem: (() => void) | null = null;
+let participantPollingSystem: ((dt: number) => void) | null = null;
+
 export async function handleGetDclCastInfo(state: State) {
   const [error, data] = await getDclCastInfo();
   if (error) {
@@ -57,6 +66,74 @@ export async function handleGetDclCastInfo(state: State) {
       return data;
     }
   }
+}
+
+function startPresentationSystem(engine: IEngine, state: State): void {
+  if (presentationSystem) return; // Already running
+  presentationSubscribed = true;
+  subscribeToPresentationTopic();
+
+  const system = () => {
+    if (consuming) return; // Prevent concurrent requests
+    consuming = true;
+    consumePresentationMessages()
+      .then(latestState => {
+        if (latestState) {
+          state.videoControl.presentationState = latestState;
+        }
+      })
+      .catch(() => {
+        // Silently ignore — will retry next frame
+      })
+      .finally(() => {
+        consuming = false;
+      });
+  };
+
+  engine.addSystem(system);
+  presentationSystem = system;
+}
+
+function stopPresentationSystem(engine: IEngine, state: State): void {
+  if (presentationSystem) {
+    engine.removeSystem(presentationSystem);
+    presentationSystem = null;
+  }
+  state.videoControl.presentationState = undefined;
+  presentationSubscribed = false;
+}
+
+function startParticipantPolling(engine: IEngine, state: State): void {
+  if (participantPollingSystem) return; // Already polling
+
+  const poll = async () => {
+    const tracks = await getActiveStreams();
+    if (!tracks) return;
+
+    // Keep showcase modal data fresh
+    showcaseState.participants = groupTracksByParticipant(tracks);
+
+    // Check for presentation track
+    const hasPresentation = hasPresentationTrack(tracks);
+
+    if (hasPresentation && !presentationSubscribed) {
+      startPresentationSystem(engine, state);
+    } else if (!hasPresentation && presentationSubscribed) {
+      stopPresentationSystem(engine, state);
+    }
+  };
+
+  // Poll immediately, then every 5 seconds
+  poll();
+  participantPollingSystem = setInterval(engine, poll, 5000);
+}
+
+function stopParticipantPolling(engine: IEngine, state: State): void {
+  if (participantPollingSystem) {
+    clearInterval(engine, participantPollingSystem);
+    participantPollingSystem = null;
+  }
+  stopPresentationSystem(engine, state);
 }
 
 const DclCast = ({
@@ -135,6 +212,16 @@ const DclCast = ({
   ReactEcs.useEffect(() => {
     fetchDclCastInfo();
   }, []);
+
+  const isCastActive = !!(video?.src && isDclCast(video.src));
+
+  ReactEcs.useEffect(() => {
+    if (isCastActive) {
+      startParticipantPolling(engine, state);
+    } else {
+      stopParticipantPolling(engine, state);
+    }
+  }, [isCastActive]);
 
   const isMinimized = state.videoControl.isMinimized;
 
