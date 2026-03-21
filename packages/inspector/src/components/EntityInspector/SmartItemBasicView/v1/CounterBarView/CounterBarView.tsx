@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
-import { Entity } from '@dcl/ecs';
-import { Action, ActionType, getJson } from '@dcl/asset-packs';
-import { withSdk, WithSdkProps } from '../../../../../hoc/withSdk';
+import type { Entity } from '@dcl/ecs';
+import { type Action, type ActionType, getJson } from '@dcl/asset-packs';
+import { withSdk, type WithSdkProps } from '../../../../../hoc/withSdk';
 import { useComponentInput } from '../../../../../hooks/sdk/useComponentInput';
 import { useHasComponent } from '../../../../../hooks/sdk/useHasComponent';
 import { useArrayState } from '../../../../../hooks/useArrayState';
 import { useComponentValue } from '../../../../../hooks/sdk/useComponentValue';
-import { EditorComponentsTypes } from '../../../../../lib/sdk/components';
-import { ConfigComponentType } from '../../../../../lib/sdk/components/Config';
+import type { EditorComponentsTypes } from '../../../../../lib/sdk/components';
+import type { ConfigComponentType } from '../../../../../lib/sdk/components/Config';
 import { Block } from '../../../../Block';
 import { TextField, ColorField } from '../../../../ui';
 import {
@@ -30,14 +30,14 @@ export default React.memo(
         Counter,
         fromCounter,
         toCounter,
-        isValidCounterInput,
+        { validateInput: isValidCounterInput },
       );
       const { getInputProps: getCounterBarInputProps } = useComponentInput(
         entity,
         CounterBar,
         fromCounterBar,
         toCounterBar,
-        isValidCounterBarInput,
+        { validateInput: isValidCounterBarInput },
       );
       const [actionComponent, setActionComponentValue, isActionComponentEqual] = useComponentValue<
         EditorComponentsTypes['Actions']
@@ -73,7 +73,7 @@ export default React.memo(
 
       const handleUpdateHealthResetAction = useCallback(
         (value: number) => {
-          if (!!availableHealthBarActions.get('reset')) {
+          if (availableHealthBarActions.get('reset')) {
             const [resetActionIdx, resetAction] = availableHealthBarActions.get('reset') as [
               number,
               Action,
