@@ -101,19 +101,22 @@ export async function checkForUpdates(config: UpdaterConfig = {}) {
   }
 }
 
-export async function quitAndInstall(version: string) {
+export async function quitAndInstall(version: string, beforeQuitCleanup: () => Promise<void>) {
   try {
-    await updater.autoUpdater.quitAndInstall();
     if (version) {
       await writeInstalledVersion(version);
     }
+    log.info('[AutoUpdater] Cleaning up before quit and install');
+    await beforeQuitCleanup();
+    log.info('[AutoUpdater] Cleanup complete, launching installer');
+    updater.autoUpdater.quitAndInstall();
   } catch (error: any) {
     captureException(error, {
       tags: { source: 'auto-updater', event: 'quit-and-install' },
       extra: { context: 'Electron installation' },
     });
     log.error('[AutoUpdater] Error installing update:', error);
-    return error;
+    throw error;
   }
 }
 
