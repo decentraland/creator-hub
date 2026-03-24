@@ -110,6 +110,9 @@ function startParticipantPolling(engine: IEngine, state: State): void {
     const tracks = await getActiveStreams();
     if (!tracks) return;
 
+    // Debug: log tracks on each poll to review presentation bot metadata
+    console.log('[DclCast] Poll tracks:', JSON.stringify(tracks, null, 2));
+
     // Keep showcase modal data fresh
     showcaseState.participants = groupTracksByParticipant(tracks);
 
@@ -157,6 +160,9 @@ const DclCast = ({
   const onShowShowcaseModal = async () => {
     const latestTracks = await getActiveStreams();
     if (!latestTracks) return;
+
+    // Debug: log all track data to review presentation bot metadata
+    console.log('[DclCast] Active tracks:', JSON.stringify(latestTracks, null, 2));
 
     const closeModal = () => {
       showcaseState.show = false;
