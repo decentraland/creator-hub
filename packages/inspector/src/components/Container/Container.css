@@ -42,7 +42,7 @@
 
 .Container .title .indicator {
   display: flex;
-  align-self: baseline;
+  align-self: center;
   font-size: 16px;
   color: var(--warning-main);
 }

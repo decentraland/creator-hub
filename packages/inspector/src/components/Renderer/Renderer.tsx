@@ -50,6 +50,7 @@ import { analytics, Event } from '../../lib/logic/analytics';
 import { checkAssetCompatibility } from '../../lib/sdk/operations/add-asset/compatibility';
 import type { IncompatibleComponent } from '../../lib/sdk/operations/add-asset/compatibility';
 import { IncompatibleAssetModal } from '../IncompatibleAssetModal';
+import { EntityValidation } from '../EntityValidation';
 import { Warnings } from '../Warnings';
 import { CameraSpeed } from './CameraSpeed';
 import { Shortcuts } from './Shortcuts';
@@ -271,26 +272,6 @@ const Renderer: React.FC = () => {
     const dataLayer = getDataLayerInterface();
     if (!dataLayer) return;
 
-    // Find the common base path from all resources
-    const customAssetBasePath = asset.resources.reduce((basePath, path) => {
-      const pathParts = path.split('/');
-      pathParts.pop(); // Remove filename
-      const currentPath = pathParts.join('/');
-      if (!basePath) return currentPath;
-
-      // Find common prefix between paths
-      const basePathParts = basePath.split('/');
-      const commonParts = [];
-      for (let i = 0; i < basePathParts.length; i++) {
-        if (basePathParts[i] === pathParts[i]) {
-          commonParts.push(basePathParts[i]);
-        } else {
-          break;
-        }
-      }
-      return commonParts.join('/');
-    }, '');
-
     // Read resource files from the custom assets directory and prepare them for copying to the scene
     const files = await Promise.all(
       asset.resources.map(async resourcePath => {
@@ -483,6 +464,7 @@ const Renderer: React.FC = () => {
       <CameraSpeed />
       <AxisHelper />
       {!hiddenPanels[PanelName.METRICS] && <Metrics />}
+      <EntityValidation />
       <SceneMinimap />
       {!hiddenPanels[PanelName.SHORTCUTS] && (
         <Shortcuts
