@@ -6,6 +6,7 @@ import type { TreeNode } from '../../../ProjectAssetExplorer/ProjectView';
 import type { AssetNodeItem } from '../../../ProjectAssetExplorer/types';
 import { isAssetNode } from '../../../ProjectAssetExplorer/utils';
 import type { AssetCatalogResponse } from '../../../../lib/data-layer/remote-data-layer';
+import type { EntityValidator } from '../../../../lib/sdk/validation/types';
 import { isValidInput } from '../../GltfInspector/utils';
 import { isValidHttpsUrl } from '../../../../lib/utils/url';
 import { Texture } from './types';
@@ -106,3 +107,32 @@ export function isValidTexture(value: any, files?: AssetCatalogResponse): boolea
     return isValidHttpsUrl(value) || isValidInput(files, value);
   return false;
 }
+
+function getTextureSources(material: {
+  material?: { $case: string; [key: string]: any };
+}): string[] {
+  const sources: string[] = [];
+  const mat = material.material;
+  if (!mat) return sources;
+
+  const data = mat[mat.$case];
+  if (!data) return sources;
+
+  const textureFields = ['texture', 'alphaTexture', 'bumpTexture', 'emissiveTexture'];
+  for (const field of textureFields) {
+    const src = data[field]?.tex?.texture?.src;
+    if (src) sources.push(src);
+  }
+  return sources;
+}
+
+export const entityValidator: EntityValidator = (sdk, entity, assetCatalog) => {
+  const material = sdk.components.Material.getOrNull(entity);
+  if (material && assetCatalog) {
+    const sources = getTextureSources(material);
+    for (const src of sources) {
+      if (!isValidTexture(src, assetCatalog)) return false;
+    }
+  }
+  return true;
+};

@@ -2,6 +2,7 @@ import type { PBNftShape } from '@dcl/ecs';
 import { NftFrameType } from '@dcl/ecs';
 
 import { toColor3, toHex } from '../../ui/ColorField/utils';
+import type { EntityValidator } from '../../../lib/sdk/validation/types';
 import type { NftShapeInput } from './types';
 
 export const fromNftShape = (value: PBNftShape): NftShapeInput => {
@@ -31,6 +32,12 @@ export function isValidInput(urn: string): boolean {
   if (!urn) return true;
   return isValidUrn(urn);
 }
+
+export const entityValidator: EntityValidator = (sdk, entity) => {
+  const nftShape = sdk.components.NftShape.getOrNull(entity);
+  if (nftShape && !isValidInput(nftShape.urn)) return false;
+  return true;
+};
 
 export const NETWORKS = [
   {
