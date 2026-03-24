@@ -1,4 +1,4 @@
-import type { TextureUnion } from '@dcl/ecs';
+import type { PBMaterial, TextureUnion } from '@dcl/ecs';
 import { TextureFilterMode, TextureWrapMode } from '@dcl/ecs';
 
 import { toNumber, toString } from '../../utils';
@@ -102,37 +102,45 @@ export const isTexture = (value: string): boolean =>
 export const isModel = (node: TreeNode): node is AssetNodeItem =>
   isAssetNode(node) && isTexture(node.name);
 
-export function isValidTexture(value: any, files?: AssetCatalogResponse): boolean {
-  if (typeof value === 'string' && files)
-    return isValidHttpsUrl(value) || isValidInput(files, value);
+export function isValidTexture(value: string, files?: AssetCatalogResponse): boolean {
+  if (files) return isValidHttpsUrl(value) || isValidInput(files, value);
   return false;
 }
 
-function getTextureSources(material: {
-  material?: { $case: string; [key: string]: any };
-}): string[] {
+export function getTextureSources(material: PBMaterial): string[] {
   const sources: string[] = [];
   const mat = material.material;
   if (!mat) return sources;
 
-  const data = mat[mat.$case];
-  if (!data) return sources;
+  const textures: (TextureUnion | undefined)[] = [];
+  if (mat.$case === 'pbr') {
+    textures.push(
+      mat.pbr.texture,
+      mat.pbr.alphaTexture,
+      mat.pbr.bumpTexture,
+      mat.pbr.emissiveTexture,
+    );
+  } else if (mat.$case === 'unlit') {
+    textures.push(mat.unlit.texture, mat.unlit.alphaTexture);
+  }
 
-  const textureFields = ['texture', 'alphaTexture', 'bumpTexture', 'emissiveTexture'];
-  for (const field of textureFields) {
-    const src = data[field]?.tex?.texture?.src;
-    if (src) sources.push(src);
+  for (const tex of textures) {
+    if (tex?.tex?.$case === 'texture') {
+      const src = tex.tex.texture.src;
+      if (src) sources.push(src);
+    }
   }
   return sources;
 }
 
-export const entityValidator: EntityValidator = (sdk, entity, assetCatalog) => {
-  const material = sdk.components.Material.getOrNull(entity);
-  if (material && assetCatalog) {
-    const sources = getTextureSources(material);
-    for (const src of sources) {
-      if (!isValidTexture(src, assetCatalog)) return false;
-    }
-  }
-  return true;
+export const entityValidator: EntityValidator = {
+  componentIds: sdk => [sdk.components.Material.componentId],
+  validate: (sdk, entity, assetCatalog) => {
+    const material = sdk.components.Material.getOrNull(entity);
+    return (
+      !material ||
+      !assetCatalog ||
+      getTextureSources(material).every(src => isValidTexture(src, assetCatalog))
+    );
+  },
 };

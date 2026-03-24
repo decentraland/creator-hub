@@ -53,5 +53,5 @@ function hasValidationErrors(
   entity: Entity,
   assetCatalog: AssetCatalogResponse | undefined,
 ): boolean {
-  return entityValidators.some(validator => !validator(sdk, entity, assetCatalog));
+  return entityValidators.some(validator => !validator.validate(sdk, entity, assetCatalog));
 }

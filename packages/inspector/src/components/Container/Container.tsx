@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { IoIosArrowDown, IoIosArrowForward } from 'react-icons/io';
-import { IoAlertCircleOutline as ErrorIcon } from 'react-icons/io5';
+import { FiAlertTriangle as WarningIcon } from 'react-icons/fi';
 import { VscTrash as RemoveIcon } from 'react-icons/vsc';
 import cx from 'classnames';
 import { Button } from '../Button';
@@ -60,7 +60,7 @@ const Container: React.FC<React.PropsWithChildren<Props>> = props => {
       return (
         <span className="indicator">
           {typeof props.indicator === 'boolean' ? (
-            <ErrorIcon />
+            <WarningIcon />
           ) : typeof props.indicator === 'string' ? (
             <InfoTooltip
               text={props.indicator}

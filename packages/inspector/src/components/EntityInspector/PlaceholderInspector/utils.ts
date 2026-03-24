@@ -18,10 +18,12 @@ export function isValidInput({ assets }: AssetCatalogResponse, src: string): boo
   return !!assets.find($ => src === $.path);
 }
 
-export const entityValidator: EntityValidator = (sdk, entity, assetCatalog) => {
-  const placeholder = sdk.components.Placeholder.getOrNull(entity);
-  if (placeholder && assetCatalog && !isValidInput(assetCatalog, placeholder.src)) return false;
-  return true;
+export const entityValidator: EntityValidator = {
+  componentIds: sdk => [sdk.components.Placeholder.componentId],
+  validate: (sdk, entity, assetCatalog) => {
+    const placeholder = sdk.components.Placeholder.getOrNull(entity);
+    return !placeholder || !assetCatalog || isValidInput(assetCatalog, placeholder.src);
+  },
 };
 
 const isAsset = (value: string): boolean => value.endsWith('.gltf') || value.endsWith('.glb');
