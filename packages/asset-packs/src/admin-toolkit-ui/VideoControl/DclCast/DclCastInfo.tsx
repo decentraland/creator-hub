@@ -9,6 +9,13 @@ import { getContentUrl } from '../../constants';
 import { FeedbackButton } from '../../FeedbackButton';
 import type { State } from '../../types';
 import { LIVEKIT_STREAM_SRC } from '../LiveStream';
+import {
+  nextSlide,
+  prevSlide,
+  playPresentationVideo,
+  pausePresentationVideo,
+  stopPresentation,
+} from '../api';
 import { VideoControlVolume } from '../VolumeControl';
 import { createVideoPlayerControls, isDclCast } from '../utils';
 import { getDclCastStyles, getDclCastColors, getDclCastBackgrounds } from './styles';
@@ -19,6 +26,18 @@ const ICONS = {
   },
   get STAR() {
     return `${getContentUrl()}/admin_toolkit/assets/icons/star.png`;
+  },
+  get PREV() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/arrow-back.png`;
+  },
+  get NEXT() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/arrow-forward.png`;
+  },
+  get STOP() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/stop.png`;
+  },
+  get PLAY() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-play-button.png`;
   },
 };
 
@@ -41,6 +60,9 @@ const DclCastInfo = ({
   const styles = getDclCastStyles();
   const colors = getDclCastColors();
   const backgrounds = getDclCastBackgrounds();
+  const presentationState = state.videoControl.presentationState;
+  const isCastActive = !!(video?.src && isDclCast(video.src));
+  const hasPresentation = isCastActive && !!presentationState;
 
   return (
     <UiEntity uiTransform={styles.fullContainer}>
@@ -186,6 +208,90 @@ const DclCastInfo = ({
               onMouseDown={onShowShowcaseModal}
             />
           )}
+        </UiEntity>
+        {/* Presentation info — visible when presentation track detected */}
+        <UiEntity
+          uiTransform={{
+            display: hasPresentation ? 'flex' : 'none',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            width: '100%',
+            margin: { top: 8, bottom: 4 },
+          }}
+        >
+          <Label
+            value={`<b>${presentationState?.fileName ?? ''}</b>`}
+            fontSize={16}
+            color={colors.white}
+          />
+          <Label
+            value={
+              presentationState
+                ? `Slide ${presentationState.currentSlide} / ${presentationState.slideCount}`
+                : ''
+            }
+            fontSize={14}
+            color={colors.gray}
+          />
+        </UiEntity>
+        {/* Presentation controls — visible when presentation track detected */}
+        <UiEntity
+          uiTransform={{
+            display: hasPresentation ? 'flex' : 'none',
+            flexDirection: 'column',
+            width: '100%',
+          }}
+        >
+          <UiEntity uiTransform={styles.presentationControlsRow}>
+            <Button
+              id="dcl_cast_prev"
+              value="<b>Prev</b>"
+              icon={ICONS.PREV}
+              iconTransform={styles.controlButtonIcon}
+              fontSize={16}
+              color={colors.black}
+              uiTransform={styles.controlButton}
+              onMouseDown={() => prevSlide()}
+            />
+            <Button
+              id="dcl_cast_next"
+              value="<b>Next</b>"
+              iconRight={ICONS.NEXT}
+              iconRightTransform={styles.controlButtonIcon}
+              fontSize={16}
+              color={colors.black}
+              uiTransform={styles.controlButton}
+              onMouseDown={() => nextSlide()}
+            />
+            <Button
+              id="dcl_cast_play"
+              value="<b>Play Video</b>"
+              icon={ICONS.PLAY}
+              iconTransform={styles.controlButtonIcon}
+              fontSize={16}
+              color={colors.black}
+              uiTransform={styles.controlButton}
+              onMouseDown={() => playPresentationVideo(0)}
+            />
+            <Button
+              id="dcl_cast_stop"
+              onlyIcon
+              icon={ICONS.STOP}
+              iconTransform={styles.controlButtonIcon}
+              uiTransform={styles.controlButton}
+              onMouseDown={() => pausePresentationVideo()}
+            />
+          </UiEntity>
+          <Button
+            id="dcl_cast_stop_sharing"
+            value="<b>Stop Sharing</b>"
+            variant="text"
+            fontSize={16}
+            color={colors.danger}
+            uiTransform={styles.resetButton}
+            onMouseDown={() => stopPresentation()}
+          />
         </UiEntity>
         <UiEntity uiTransform={styles.castControlsRow}>
           <Button
