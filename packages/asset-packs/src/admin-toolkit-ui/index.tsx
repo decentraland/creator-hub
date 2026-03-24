@@ -209,33 +209,19 @@ function isAllowedAdmin(
 }
 
 /**
- * Cached platform value resolved from the explorer runtime.
- * Uses `getExplorerInformation` from `~system/Runtime` — the recommended way
- * to detect mobile vs desktop (see Decentraland Building-for-Mobile guide).
+ * Mobile detection using the recommended SDK approach (see Decentraland Building-for-Mobile guide).
+ * Uses `getExplorerInformation` from `~system/Runtime` to query the actual platform
+ * reported by the explorer client ('mobile' | 'desktop' | 'web').
+ * Resolved once at startup and cached — same pattern as `isMobile()` from `@dcl/sdk/platform`.
  */
 let _isMobile: boolean = false;
 void getExplorerInformation({})
-  .then((response) => {
-    _isMobile = response.platform.toLowerCase() === 'mobile';
+  .then((info) => {
+    _isMobile = info.platform?.toLowerCase() === 'mobile';
   })
-  .catch((error) => {
-    console.error('Failed to get explorer information for platform detection:', error);
+  .catch((err) => {
+    console.error('Admin Tools: failed to detect platform:', err);
   });
-
-/**
- * Returns the interactable (safe) area from UiCanvasInformation.
- * The renderer provides this rect to indicate where UI elements can be safely placed,
- * accounting for notches, status bars, and other OS-level overlays.
- * Values are normalized (0–1) representing insets from each edge.
- */
-function getInteractableArea(engine: IEngine): { top: number; bottom: number; left: number; right: number } {
-  const { UiCanvasInformation } = getComponents(engine);
-  const canvasInfo = UiCanvasInformation.getOrNull(engine.RootEntity);
-  if (!canvasInfo || !canvasInfo.interactableArea) {
-    return { top: 0, bottom: 0, left: 0, right: 0 };
-  }
-  return canvasInfo.interactableArea;
-}
 
 const uiComponent = (
   engine: IEngine,
@@ -248,22 +234,37 @@ const uiComponent = (
   const isPlayerAdmin = isAllowedAdmin(engine, adminToolkitEntity, player);
   const isMobile = _isMobile;
 
-  // Use the renderer-provided interactable (safe) area to position UI elements
-  // within the region that is not occluded by notches, status bars, or HUD overlays.
-  // Values are normalized 0–1 representing insets from each edge of the virtual canvas.
-  const safeArea = getInteractableArea(engine);
-  const safeTop = Math.round(safeArea.top * ADMIN_TOOLKIT_VIRTUAL_UI_SIZE.virtualHeight);
-  const safeRight = Math.round(safeArea.right * ADMIN_TOOLKIT_VIRTUAL_UI_SIZE.virtualWidth);
+  // Mobile safe area (from Decentraland Building-for-Mobile guide):
+  //   RED (unsafe) zones:
+  //   - Left 25%  (full height)  → Chat, Search, Profile, Joystick, Emotes
+  //   - Top-right  25% × 23%    → Profile access, camera controllers
+  //   - Bottom-right 25% × 55%  → Interaction buttons
+  //   GREEN (safe) zone = CENTER of screen
+  //
+  // Guide recommendations applied here:
+  //   - "Put all actionable dialogues at center of screen"
+  //   - "Ensure critical UI is inside the safe area"
+  //   - "Scale up UI sizes by 3× for Mobile to improve readability"
+  //
+  // Mobile layout: toggle + panel centered horizontally in the safe zone,
+  // toggle on top, panel expanding downward (column-reverse since toggle is last child).
+  // Desktop layout: completely unchanged — panel + toggle side-by-side at top-right.
 
-  // Mobile: enlarge touch targets for comfortable interaction.
-  const toggleBtnSize = isMobile ? 64 : 42;
-  const tabBtnWidth = isMobile ? 64 : 49;
-  const tabBtnHeight = isMobile ? 56 : 42;
-  const panelWidth = isMobile ? 600 : 500;
+  const toggleBtnSize = isMobile ? 126 : 42;   // 42 × 3 = 126
+  const tabBtnWidth = isMobile ? 147 : 49;     // 49 × 3 = 147
+  const tabBtnHeight = isMobile ? 126 : 42;    // 42 × 3 = 126
+  const panelWidth = isMobile ? 900 : 500;     // fits within center safe zone (~50% of 1920)
+  const headerHeight = isMobile ? 150 : 50;    // 50 × 3 = 150
+  const fontSize = isMobile ? 60 : 20;         // 20 × 3 = 60
 
-  // Both desktop and mobile: anchor panel + toggle at top-right, respecting safe area.
-  // On mobile the safe area insets push elements away from notch/status bar.
-  const outerPosition = { top: Math.max(safeTop, 120), right: Math.max(safeRight, 10) };
+  // Desktop: row layout, anchored top-right (unchanged from original).
+  // Mobile: column-reverse layout, centered horizontally at top of safe zone.
+  //   top: 60 clears the OS status bar / notch.
+  //   left: centers the panel in the 1920-wide virtual canvas.
+  //   column-reverse: toggle (last child) renders on top, panel expands below it.
+  const outerPosition = isMobile
+    ? { top: 60, left: Math.round((ADMIN_TOOLKIT_VIRTUAL_UI_SIZE.virtualWidth - panelWidth) / 2) }
+    : { top: 120, right: 10 };
 
   return [
     <UiEntity
@@ -277,7 +278,8 @@ const uiComponent = (
         <UiEntity
           uiTransform={{
             positionType: 'absolute',
-            flexDirection: 'row',
+            flexDirection: isMobile ? 'column-reverse' : 'row',
+            alignItems: isMobile ? 'center' : undefined,
             position: outerPosition,
           }}
         >
@@ -287,13 +289,13 @@ const uiComponent = (
               width: panelWidth,
               pointerFilter: 'block',
               flexDirection: 'column',
-              margin: { right: 8 },
+              margin: isMobile ? { top: 8 } : { right: 8 },
             }}
           >
             <UiEntity
               uiTransform={{
                 width: '100%',
-                height: isMobile ? 70 : 50,
+                height: headerHeight,
                 flexDirection: 'row',
                 alignItems: 'center',
                 borderRadius: 12,
@@ -306,7 +308,7 @@ const uiComponent = (
             >
               <Label
                 value="ADMIN TOOLS"
-                fontSize={isMobile ? 24 : 20}
+                fontSize={fontSize}
                 color={Color4.create(160, 155, 168, 1)}
                 uiTransform={{ flexGrow: 1 }}
               />
