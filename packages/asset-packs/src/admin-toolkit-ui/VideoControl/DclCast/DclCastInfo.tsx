@@ -15,9 +15,11 @@ import {
   playPresentationVideo,
   pausePresentationVideo,
   stopPresentation,
+  isPresentationBot,
 } from '../api';
 import { VideoControlVolume } from '../VolumeControl';
 import { createVideoPlayerControls, isDclCast } from '../utils';
+import { showcaseState } from '.';
 import { getDclCastStyles, getDclCastColors, getDclCastBackgrounds } from './styles';
 
 const ICONS = {
@@ -62,7 +64,8 @@ const DclCastInfo = ({
   const backgrounds = getDclCastBackgrounds();
   const presentationState = state.videoControl.presentationState;
   const isCastActive = !!(video?.src && isDclCast(video.src));
-  const hasPresentation = isCastActive && !!presentationState;
+  const presentationBotInRoom = showcaseState.participants.some(p => isPresentationBot(p.name));
+  const hasPresentation = isCastActive && (!!presentationState || presentationBotInRoom);
 
   return (
     <UiEntity uiTransform={styles.fullContainer}>

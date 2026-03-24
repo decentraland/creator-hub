@@ -2,7 +2,7 @@ import ReactEcs, { Dropdown, UiEntity, Label } from '@dcl/react-ecs';
 import { getContentUrl } from '../../constants';
 import { Button } from '../../Button';
 import { Modal } from '../../Modal';
-import { getSourceLabel, type FlattenedTrack, type Participant } from '../api';
+import { getSourceLabel, isPresentationBot, type FlattenedTrack, type Participant } from '../api';
 import {
   getSpeakerShowcaseStyles,
   getShowcaseColors,
@@ -65,6 +65,8 @@ function ParticipantRow({
   const colors = getShowcaseColors();
   const iconBgs = getShowcaseIconBackgrounds();
 
+  const isBot = isPresentationBot(participant.name);
+  const displayName = isBot ? 'Presentation' : participant.name;
   const activeIndex = getActiveIndex(participant, activeTrackSid);
   const isActive = activeIndex !== -1;
   const options = getDropdownOptions(participant);
@@ -94,41 +96,61 @@ function ParticipantRow({
           </UiEntity>
           <UiEntity uiTransform={styles.userDetails}>
             <Label
-              value={`<b>${participant.name}</b>`}
+              value={`<b>${displayName}</b>`}
               fontSize={14}
               color={colors.white}
             />
           </UiEntity>
         </UiEntity>
         <UiEntity uiTransform={styles.rowCenter}>
-          <UiEntity
-            uiTransform={{ ...styles.starIcon, display: isActive ? 'flex' : 'none' }}
-            uiBackground={iconBgs.star}
-          />
-          <UiEntity
-            uiTransform={styles.dropdownWrapper}
-            onMouseEnter={onHoverEnter}
-            onMouseLeave={onHoverLeave}
-          >
-            <Dropdown
-              key={`showcase-dropdown-${participant.identity}-${activeTrackSid ?? 'none'}`}
-              acceptEmpty
-              emptyLabel={displayLabel}
-              options={options}
-              selectedIndex={-1}
-              onChange={(optionIndex: number) => {
-                const track = participant.tracks[optionIndex];
+          {isBot ? (
+            <Button
+              id={`showcase-activate-${participant.identity}`}
+              value={isActive ? '<b>Active</b>' : '<b>Activate</b>'}
+              variant={isActive ? 'primary' : 'secondary'}
+              disabled={isActive}
+              fontSize={14}
+              color={colors.white}
+              uiTransform={styles.dropdownTransform}
+              onMouseDown={() => {
+                const track = participant.tracks[0];
                 if (track) {
                   onSelectTrack(track);
                 }
               }}
-              textAlign="middle-left"
-              fontSize={14}
-              uiTransform={styles.dropdownTransform}
-              uiBackground={{ color: dropdownBgColor }}
-              color={dropdownTextColor}
             />
-          </UiEntity>
+          ) : (
+            <UiEntity uiTransform={styles.rowCenter}>
+              <UiEntity
+                uiTransform={{ ...styles.starIcon, display: isActive ? 'flex' : 'none' }}
+                uiBackground={iconBgs.star}
+              />
+              <UiEntity
+                uiTransform={styles.dropdownWrapper}
+                onMouseEnter={onHoverEnter}
+                onMouseLeave={onHoverLeave}
+              >
+                <Dropdown
+                  key={`showcase-dropdown-${participant.identity}-${activeTrackSid ?? 'none'}`}
+                  acceptEmpty
+                  emptyLabel={displayLabel}
+                  options={options}
+                  selectedIndex={-1}
+                  onChange={(optionIndex: number) => {
+                    const track = participant.tracks[optionIndex];
+                    if (track) {
+                      onSelectTrack(track);
+                    }
+                  }}
+                  textAlign="middle-left"
+                  fontSize={14}
+                  uiTransform={styles.dropdownTransform}
+                  uiBackground={{ color: dropdownBgColor }}
+                  color={dropdownTextColor}
+                />
+              </UiEntity>
+            </UiEntity>
+          )}
         </UiEntity>
       </UiEntity>
       <UiEntity

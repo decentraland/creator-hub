@@ -1,11 +1,16 @@
-import { getActiveVideoStreams, SubscribeToTopic, PublishData, ConsumeMessages } from '~system/CommsApi';
+import {
+  getActiveVideoStreams,
+  SubscribeToTopic,
+  PublishData,
+  ConsumeMessages,
+} from '~system/CommsApi';
 import { getDomain, wrapSignedFetch } from '../fetch-utils';
 import type { Result } from '../fetch-utils';
 import type { PresentationState } from '../types';
 
 const URLS = () => ({
-  STREAM_KEY: `https://comms-gatekeeper.decentraland.${getDomain()}/scene-stream-access`,
-  GET_DCL_CAST_INFO: `https://comms-gatekeeper.decentraland.${getDomain()}/cast/generate-stream-link`,
+  STREAM_KEY: `http://localhost:3000/scene-stream-access`,
+  GET_DCL_CAST_INFO: `http://localhost:3000/cast/generate-stream-link`,
 });
 
 type StreamKeyResponse = {
@@ -106,9 +111,16 @@ export const getSourceLabel = (sourceType: number) => SOURCE_TYPE_LABELS[sourceT
 
 const PRESENTATION_TOPIC = 'presentation';
 const PRESENTATION_SOURCE_TYPE = 3;
+const PRESENTATION_BOT_PREFIX = 'presentation-bot';
+
+export function isPresentationBot(name: string): boolean {
+  return name.startsWith(PRESENTATION_BOT_PREFIX);
+}
 
 export function hasPresentationTrack(tracks: FlattenedTrack[]): boolean {
-  return tracks.some(track => track.sourceType === PRESENTATION_SOURCE_TYPE);
+  return tracks.some(
+    track => track.sourceType === PRESENTATION_SOURCE_TYPE || isPresentationBot(track.name),
+  );
 }
 
 export function groupTracksByParticipant(tracks: FlattenedTrack[]): Participant[] {

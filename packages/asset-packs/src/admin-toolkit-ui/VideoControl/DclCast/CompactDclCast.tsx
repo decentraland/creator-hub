@@ -11,8 +11,10 @@ import {
   playPresentationVideo,
   pausePresentationVideo,
   stopPresentation,
+  isPresentationBot,
 } from '../api';
 import { createVideoPlayerControls, isDclCast } from '../utils';
+import { showcaseState } from '.';
 import { getCompactBarStyles, getDclCastBackgrounds, getDclCastColors } from './styles';
 
 const ICONS = {
@@ -59,7 +61,8 @@ const CompactDclCast = ({
 
   const isActive = !!(video?.src && isDclCast(video.src));
   const presentationState = state.videoControl.presentationState;
-  const hasPresentation = isActive && !!presentationState;
+  const presentationBotInRoom = showcaseState.participants.some(p => isPresentationBot(p.name));
+  const hasPresentation = isActive && (!!presentationState || presentationBotInRoom);
 
   const handleExpand = () => {
     state.videoControl.isMinimized = false;
@@ -89,7 +92,7 @@ const CompactDclCast = ({
             }}
           />
           <Label
-            value={hasPresentation ? `<b>${presentationState.fileName}</b>` : '<b>DCL Cast</b>'}
+            value={hasPresentation && presentationState ? `<b>${presentationState.fileName}</b>` : '<b>DCL Cast</b>'}
             fontSize={24}
             color={colors.white}
           />
