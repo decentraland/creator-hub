@@ -33,10 +33,12 @@ export function isValidInput(urn: string): boolean {
   return isValidUrn(urn);
 }
 
-export const entityValidator: EntityValidator = (sdk, entity) => {
-  const nftShape = sdk.components.NftShape.getOrNull(entity);
-  if (nftShape && !isValidInput(nftShape.urn)) return false;
-  return true;
+export const entityValidator: EntityValidator = {
+  componentIds: sdk => [sdk.components.NftShape.componentId],
+  validate: (sdk, entity) => {
+    const nftShape = sdk.components.NftShape.getOrNull(entity);
+    return !nftShape || isValidInput(nftShape.urn);
+  },
 };
 
 export const NETWORKS = [

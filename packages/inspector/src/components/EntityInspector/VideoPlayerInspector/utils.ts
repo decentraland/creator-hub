@@ -44,10 +44,12 @@ export function isValidInput({ basePath, assets }: AssetCatalogResponse, src: st
   );
 }
 
-export const entityValidator: EntityValidator = (sdk, entity, assetCatalog) => {
-  const videoPlayer = sdk.components.VideoPlayer.getOrNull(entity);
-  if (videoPlayer && assetCatalog && !isValidInput(assetCatalog, videoPlayer.src)) return false;
-  return true;
+export const entityValidator: EntityValidator = {
+  componentIds: sdk => [sdk.components.VideoPlayer.componentId],
+  validate: (sdk, entity, assetCatalog) => {
+    const videoPlayer = sdk.components.VideoPlayer.getOrNull(entity);
+    return !videoPlayer || !assetCatalog || isValidInput(assetCatalog, videoPlayer.src);
+  },
 };
 
 export const isVideoFile = (value: string): boolean => value.endsWith('.mp4');

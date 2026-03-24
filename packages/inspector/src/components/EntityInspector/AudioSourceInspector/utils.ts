@@ -44,12 +44,12 @@ export function isValidInput({ assets }: AssetCatalogResponse, src: string): boo
   return !!assets.find($ => src === $.path);
 }
 
-export const entityValidator: EntityValidator = (sdk, entity, assetCatalog) => {
-  const audioSource = sdk.components.AudioSource.getOrNull(entity);
-  if (audioSource && assetCatalog && !isValidInput(assetCatalog, audioSource.audioClipUrl)) {
-    return false;
-  }
-  return true;
+export const entityValidator: EntityValidator = {
+  componentIds: sdk => [sdk.components.AudioSource.componentId],
+  validate: (sdk, entity, assetCatalog) => {
+    const audioSource = sdk.components.AudioSource.getOrNull(entity);
+    return !audioSource || !assetCatalog || isValidInput(assetCatalog, audioSource.audioClipUrl);
+  },
 };
 
 export const isAudioFile = (value: string): boolean =>

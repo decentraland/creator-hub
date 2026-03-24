@@ -34,10 +34,12 @@ export function isValidInput(url: string): boolean {
   return isValidHttpsUrl(url);
 }
 
-export const entityValidator: EntityValidator = (sdk, entity) => {
-  const audioStream = sdk.components.AudioStream.getOrNull(entity);
-  if (audioStream && !isValidInput(audioStream.url)) return false;
-  return true;
+export const entityValidator: EntityValidator = {
+  componentIds: sdk => [sdk.components.AudioStream.componentId],
+  validate: (sdk, entity) => {
+    const audioStream = sdk.components.AudioStream.getOrNull(entity);
+    return !audioStream || isValidInput(audioStream.url);
+  },
 };
 
 export function isValidVolume(volume: string | undefined): boolean {

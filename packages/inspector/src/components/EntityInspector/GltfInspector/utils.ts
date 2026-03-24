@@ -36,10 +36,12 @@ export function isValidInput({ assets }: AssetCatalogResponse, src: string): boo
   return !!assets.find($ => src === $.path);
 }
 
-export const entityValidator: EntityValidator = (sdk, entity, assetCatalog) => {
-  const gltf = sdk.components.GltfContainer.getOrNull(entity);
-  if (gltf && assetCatalog && !isValidInput(assetCatalog, gltf.src)) return false;
-  return true;
+export const entityValidator: EntityValidator = {
+  componentIds: sdk => [sdk.components.GltfContainer.componentId],
+  validate: (sdk, entity, assetCatalog) => {
+    const gltf = sdk.components.GltfContainer.getOrNull(entity);
+    return !gltf || !assetCatalog || isValidInput(assetCatalog, gltf.src);
+  },
 };
 
 export const isAsset = (value: string): boolean =>

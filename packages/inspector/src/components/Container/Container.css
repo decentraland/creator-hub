@@ -44,7 +44,7 @@
   display: flex;
   align-self: center;
   font-size: 16px;
-  color: var(--error-main);
+  color: var(--warning-main);
 }
 
 .Container .title .RightContent {

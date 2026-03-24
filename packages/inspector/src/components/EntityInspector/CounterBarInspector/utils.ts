@@ -18,8 +18,5 @@ export function toCounterBar(input: CounterBarInput): CounterBar {
 }
 
 export function isValidInput(inputs: CounterBarInput): boolean {
-  if (isNaN(parseFloat(inputs.maxValue))) {
-    return false;
-  }
-  return true;
+  return !isNaN(parseFloat(inputs.maxValue));
 }

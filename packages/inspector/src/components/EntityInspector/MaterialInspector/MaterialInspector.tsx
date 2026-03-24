@@ -9,7 +9,7 @@ import { Block } from '../../Block';
 import { Dropdown, InfoTooltip } from '../../ui';
 import { Container } from '../../Container';
 import { fromMaterial, toMaterial, isValidMaterial, MATERIAL_TYPES } from './utils';
-import { isValidTexture } from './Texture/utils';
+import { getTextureSources, isValidTexture } from './Texture/utils';
 import UnlitMaterial from './UnlitMaterial/UnlitMaterial';
 import { PbrMaterial } from './PbrMaterial';
 import { type Props as TextureProps } from './Texture';
@@ -40,15 +40,9 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
     if (!files) return false;
     for (const entity of entities) {
       const material = Material.getOrNull(entity);
-      if (!material?.material) continue;
-      const mat = material.material;
-      const data = mat.$case === 'pbr' ? mat.pbr : mat.$case === 'unlit' ? mat.unlit : undefined;
-      if (!data) continue;
-      const textureFields = ['texture', 'alphaTexture', 'bumpTexture', 'emissiveTexture'] as const;
-      for (const field of textureFields) {
-        const src = (data as Record<string, any>)[field]?.tex?.texture?.src;
-        if (src && !isValidTexture(src, files)) return true;
-      }
+      if (!material) continue;
+      const sources = getTextureSources(material);
+      if (sources.some(src => !isValidTexture(src, files))) return true;
     }
     return false;
   }, [files, entities, Material]);
