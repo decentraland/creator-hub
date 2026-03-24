@@ -1,6 +1,7 @@
 import { Color4 } from '@dcl/sdk/math';
 import ReactEcs, { Label, Button as DCLButton, UiEntity, ReactBasedUiSystem } from '@dcl/react-ecs';
 import { Entity, IEngine, PointerEventsSystem } from '@dcl/ecs';
+import { getExplorerInformation } from '~system/Runtime';
 import { getComponents, GetPlayerDataRes, IPlayersHelper, ISDKHelpers } from '../definitions';
 import { VideoControl } from './VideoControl';
 import { TextAnnouncementsControl } from './TextAnnouncementsControl';
@@ -208,14 +209,32 @@ function isAllowedAdmin(
 }
 
 /**
- * Returns true when the canvas is in portrait orientation (mobile devices).
- * Uses UiCanvasInformation to read the actual screen dimensions.
+ * Cached platform value resolved from the explorer runtime.
+ * Uses `getExplorerInformation` from `~system/Runtime` — the recommended way
+ * to detect mobile vs desktop (see Decentraland Building-for-Mobile guide).
  */
-function getIsMobile(engine: IEngine): boolean {
+let _isMobile: boolean = false;
+void getExplorerInformation({})
+  .then((response) => {
+    _isMobile = response.platform.toLowerCase() === 'mobile';
+  })
+  .catch((error) => {
+    console.error('Failed to get explorer information for platform detection:', error);
+  });
+
+/**
+ * Returns the interactable (safe) area from UiCanvasInformation.
+ * The renderer provides this rect to indicate where UI elements can be safely placed,
+ * accounting for notches, status bars, and other OS-level overlays.
+ * Values are normalized (0–1) representing insets from each edge.
+ */
+function getInteractableArea(engine: IEngine): { top: number; bottom: number; left: number; right: number } {
   const { UiCanvasInformation } = getComponents(engine);
   const canvasInfo = UiCanvasInformation.getOrNull(engine.RootEntity);
-  if (!canvasInfo) return false;
-  return canvasInfo.width < canvasInfo.height;
+  if (!canvasInfo || !canvasInfo.interactableArea) {
+    return { top: 0, bottom: 0, left: 0, right: 0 };
+  }
+  return canvasInfo.interactableArea;
 }
 
 const uiComponent = (
@@ -227,22 +246,24 @@ const uiComponent = (
   const adminToolkitEntity = getAdminToolkitComponent(engine);
   const player = playersHelper?.getPlayer();
   const isPlayerAdmin = isAllowedAdmin(engine, adminToolkitEntity, player);
-  const isMobile = getIsMobile(engine);
+  const isMobile = _isMobile;
 
-  // On mobile the toggle button is placed at the bottom-right of the screen.
-  // The panel expands upward (column-reverse) so it never goes off-screen.
-  // Buttons are made larger for comfortable touch interaction.
+  // Use the renderer-provided interactable (safe) area to position UI elements
+  // within the region that is not occluded by notches, status bars, or HUD overlays.
+  // Values are normalized 0–1 representing insets from each edge of the virtual canvas.
+  const safeArea = getInteractableArea(engine);
+  const safeTop = Math.round(safeArea.top * ADMIN_TOOLKIT_VIRTUAL_UI_SIZE.virtualHeight);
+  const safeRight = Math.round(safeArea.right * ADMIN_TOOLKIT_VIRTUAL_UI_SIZE.virtualWidth);
+
+  // Mobile: enlarge touch targets for comfortable interaction.
   const toggleBtnSize = isMobile ? 64 : 42;
   const tabBtnWidth = isMobile ? 64 : 49;
   const tabBtnHeight = isMobile ? 56 : 42;
   const panelWidth = isMobile ? 600 : 500;
 
-  // Desktop: panel + toggle sit side-by-side (row) anchored to top-right.
-  // Mobile:  toggle is at bottom-right; panel grows upward above it (column-reverse).
-  const outerFlexDirection = isMobile ? 'column-reverse' : 'row';
-  const outerPosition = isMobile
-    ? { bottom: 80, right: 10 }
-    : { top: 120, right: 10 };
+  // Both desktop and mobile: anchor panel + toggle at top-right, respecting safe area.
+  // On mobile the safe area insets push elements away from notch/status bar.
+  const outerPosition = { top: Math.max(safeTop, 120), right: Math.max(safeRight, 10) };
 
   return [
     <UiEntity
@@ -256,7 +277,7 @@ const uiComponent = (
         <UiEntity
           uiTransform={{
             positionType: 'absolute',
-            flexDirection: outerFlexDirection,
+            flexDirection: 'row',
             position: outerPosition,
           }}
         >
@@ -266,7 +287,7 @@ const uiComponent = (
               width: panelWidth,
               pointerFilter: 'block',
               flexDirection: 'column',
-              margin: isMobile ? { bottom: 8 } : { right: 8 },
+              margin: { right: 8 },
             }}
           >
             <UiEntity
