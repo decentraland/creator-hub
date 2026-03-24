@@ -6,6 +6,7 @@ import type { TreeNode } from '../../ProjectAssetExplorer/ProjectView';
 import { isAssetNode } from '../../ProjectAssetExplorer/utils';
 import type { AssetNodeItem } from '../../ProjectAssetExplorer/types';
 import type { AssetCatalogResponse } from '../../../tooling-entrypoint';
+import type { EntityValidator } from '../../../lib/sdk/validation/types';
 import type { GltfContainerInput } from './types';
 
 export const fromGltf = (value: PBGltfContainer): GltfContainerInput => {
@@ -34,6 +35,12 @@ export function isValidInput({ assets }: AssetCatalogResponse, src: string): boo
   if (!src) return true;
   return !!assets.find($ => src === $.path);
 }
+
+export const entityValidator: EntityValidator = (sdk, entity, assetCatalog) => {
+  const gltf = sdk.components.GltfContainer.getOrNull(entity);
+  if (gltf && assetCatalog && !isValidInput(assetCatalog, gltf.src)) return false;
+  return true;
+};
 
 export const isAsset = (value: string): boolean =>
   value.endsWith('.gltf') || value.endsWith('.glb');

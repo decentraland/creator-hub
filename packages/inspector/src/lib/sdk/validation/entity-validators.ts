@@ -2,13 +2,28 @@ import type { Entity } from '@dcl/ecs';
 
 import type { AssetCatalogResponse } from '../../../tooling-entrypoint';
 import type { SdkContextValue } from '../context';
-import { isValidInput as isValidGltfInput } from '../../../components/EntityInspector/GltfInspector/utils';
-import { isValidInput as isValidAudioSourceInput } from '../../../components/EntityInspector/AudioSourceInspector/utils';
-import { isValidInput as isValidAudioStreamInput } from '../../../components/EntityInspector/AudioStreamInspector/utils';
-import { isValidInput as isValidVideoPlayerInput } from '../../../components/EntityInspector/VideoPlayerInspector/utils';
-import { isValidInput as isValidNftShapeInput } from '../../../components/EntityInspector/NftShapeInspector/utils';
-import { isValidInput as isValidPlaceholderInput } from '../../../components/EntityInspector/PlaceholderInspector/utils';
+import { entityValidator as gltfValidator } from '../../../components/EntityInspector/GltfInspector/utils';
+import { entityValidator as audioSourceValidator } from '../../../components/EntityInspector/AudioSourceInspector/utils';
+import { entityValidator as audioStreamValidator } from '../../../components/EntityInspector/AudioStreamInspector/utils';
+import { entityValidator as videoPlayerValidator } from '../../../components/EntityInspector/VideoPlayerInspector/utils';
+import { entityValidator as nftShapeValidator } from '../../../components/EntityInspector/NftShapeInspector/utils';
+import { entityValidator as placeholderValidator } from '../../../components/EntityInspector/PlaceholderInspector/utils';
+import { entityValidator as materialTextureValidator } from '../../../components/EntityInspector/MaterialInspector/Texture/utils';
 import { ROOT } from '../tree';
+import type { EntityValidator } from './types';
+
+// Registry of all entity validators.
+// When adding validation for a new component, export an `entityValidator` from its utils.ts
+// and add it here. A test enforces that all components with an entityValidator are registered.
+export const entityValidators: EntityValidator[] = [
+  gltfValidator,
+  audioSourceValidator,
+  audioStreamValidator,
+  videoPlayerValidator,
+  nftShapeValidator,
+  placeholderValidator,
+  materialTextureValidator,
+];
 
 export function validateAllEntities(
   sdk: SdkContextValue,
@@ -38,48 +53,5 @@ function hasValidationErrors(
   entity: Entity,
   assetCatalog: AssetCatalogResponse | undefined,
 ): boolean {
-  const { GltfContainer, AudioSource, AudioStream, VideoPlayer, NftShape, Placeholder } =
-    sdk.components;
-
-  // GltfContainer: validate src exists in asset catalog
-  const gltf = GltfContainer.getOrNull(entity);
-  if (gltf && assetCatalog && !isValidGltfInput(assetCatalog, gltf.src)) {
-    return true;
-  }
-
-  // AudioSource: validate audioClipUrl exists in asset catalog
-  const audioSource = AudioSource.getOrNull(entity);
-  if (
-    audioSource &&
-    assetCatalog &&
-    !isValidAudioSourceInput(assetCatalog, audioSource.audioClipUrl)
-  ) {
-    return true;
-  }
-
-  // AudioStream: validate url is valid HTTPS
-  const audioStream = AudioStream.getOrNull(entity);
-  if (audioStream && !isValidAudioStreamInput(audioStream.url)) {
-    return true;
-  }
-
-  // VideoPlayer: validate src is valid URL or file in catalog
-  const videoPlayer = VideoPlayer.getOrNull(entity);
-  if (videoPlayer && assetCatalog && !isValidVideoPlayerInput(assetCatalog, videoPlayer.src)) {
-    return true;
-  }
-
-  // NftShape: validate URN format
-  const nftShape = NftShape.getOrNull(entity);
-  if (nftShape && !isValidNftShapeInput(nftShape.urn)) {
-    return true;
-  }
-
-  // Placeholder: validate src exists in asset catalog
-  const placeholder = Placeholder.getOrNull(entity);
-  if (placeholder && assetCatalog && !isValidPlaceholderInput(assetCatalog, placeholder.src)) {
-    return true;
-  }
-
-  return false;
+  return entityValidators.some(validator => !validator(sdk, entity, assetCatalog));
 }
