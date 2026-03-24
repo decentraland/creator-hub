@@ -92,6 +92,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       label="VideoPlayer"
       className={cx('VideoPlayer', { hover: isHover, droppeable: canDrop })}
       initialOpen={initialOpen}
+      indicator={files && !isValid}
       rightContent={
         <InfoTooltip
           text="In case of using an URL, it must be an https URL (http URLs aren't supported), and the source should have CORS policies (Cross Origin Resource Sharing) that permit externally accessing it"

@@ -1,21 +1,23 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { XYCoord, useDrag, useDrop } from 'react-dnd';
+import { type XYCoord, useDrag, useDrop } from 'react-dnd';
 import { IoIosArrowDown, IoIosArrowForward } from 'react-icons/io';
-import cx from 'classnames';
-import { Entity } from '@dcl/ecs';
+import { IoAlertCircleOutline as ErrorIcon } from 'react-icons/io5';
 import { FiAlertTriangle as WarningIcon } from 'react-icons/fi';
+import cx from 'classnames';
+import type { Entity } from '@dcl/ecs';
 
 import { withContextMenu } from '../../hoc/withContextMenu';
 import { Input } from '../Input';
-import { ContextMenu } from './ContextMenu';
-import { ActionArea } from './ActionArea';
-import { Edit as EditInput } from './Edit';
-import { DropType, calculateDropType } from './utils';
 import { useSdk } from '../../hooks/sdk/useSdk';
 import { useAppSelector } from '../../redux/hooks';
-import { GizmoType } from '../../lib/utils/gizmo';
+import type { GizmoType } from '../../lib/utils/gizmo';
 import { getEntitiesOutOfBoundaries } from '../../redux/scene-metrics';
+import { getEntitiesWithErrors } from '../../redux/entity-validation';
 import { InfoTooltip } from '../ui';
+import { Edit as EditInput } from './Edit';
+import { ContextMenu } from './ContextMenu';
+import { ActionArea } from './ActionArea';
+import { type DropType, calculateDropType } from './utils';
 
 import './Tree.css';
 
@@ -239,6 +241,7 @@ export function Tree<T>() {
 
       const sdk = useSdk();
       const entitiesOutOfBoundaries = useAppSelector(getEntitiesOutOfBoundaries);
+      const entitiesWithErrors = useAppSelector(getEntitiesWithErrors);
 
       const [, drag] = useDrag(
         () => ({
@@ -334,6 +337,29 @@ export function Tree<T>() {
         return checkChildrenOutOfBoundaries(value as Entity);
       }, [value, entitiesOutOfBoundaries, getChildren]);
 
+      const isEntityWithErrors = useMemo(() => {
+        if (typeof value === 'string') return false;
+
+        if (entitiesWithErrors.includes(value as Entity)) {
+          return true;
+        }
+
+        const checkChildrenWithErrors = (entity: Entity): boolean => {
+          const children = getChildren(entity as T);
+          for (const child of children) {
+            if (entitiesWithErrors.includes(child as Entity)) {
+              return true;
+            }
+            if (checkChildrenWithErrors(child as Entity)) {
+              return true;
+            }
+          }
+          return false;
+        };
+
+        return checkChildrenWithErrors(value as Entity);
+      }, [value, entitiesWithErrors, getChildren]);
+
       drag(drop(ref));
 
       const controlsProps = {
@@ -390,6 +416,13 @@ export function Tree<T>() {
                   <InfoTooltip
                     text="This entity is out of bounds and might not display correctly in-world."
                     trigger={<WarningIcon className="WarningIcon" />}
+                    position="right center"
+                  />
+                )}
+                {!isRoot?.(value as T) && isEntityWithErrors && (
+                  <InfoTooltip
+                    text="This entity has one or more invalid component values."
+                    trigger={<ErrorIcon className="ErrorIcon" />}
                     position="right center"
                   />
                 )}

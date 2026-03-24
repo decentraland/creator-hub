@@ -51,6 +51,7 @@ import { analytics, Event } from '../../lib/logic/analytics';
 import { checkAssetCompatibility } from '../../lib/sdk/operations/add-asset/compatibility';
 import type { IncompatibleComponent } from '../../lib/sdk/operations/add-asset/compatibility';
 import { IncompatibleAssetModal } from '../IncompatibleAssetModal';
+import { EntityValidation } from '../EntityValidation';
 import { Warnings } from '../Warnings';
 import { CameraSpeed } from './CameraSpeed';
 import { Shortcuts } from './Shortcuts';
@@ -474,6 +475,7 @@ const Renderer: React.FC = () => {
       <CameraSpeed />
       <AxisHelper />
       {!hiddenPanels[PanelName.METRICS] && <Metrics />}
+      <EntityValidation />
       <SceneMinimap />
       {!hiddenPanels[PanelName.SHORTCUTS] && (
         <Shortcuts
