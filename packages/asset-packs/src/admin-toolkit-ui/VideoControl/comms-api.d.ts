@@ -16,7 +16,12 @@ declare module '~system/CommsApi' {
     messages: string;
   }
 
-  export function SubscribeToTopic(body: SubscribeToTopicRequest): Promise<void>;
-  export function PublishData(body: PublishDataRequest): Promise<void>;
-  export function ConsumeMessages(body: ConsumeMessagesRequest): Promise<ConsumeMessagesResponse>;
+  export interface UpdateMetadataRequest {
+    metadata: string;
+  }
+
+  export function subscribeToTopic(body: SubscribeToTopicRequest): Promise<void>;
+  export function publishData(body: PublishDataRequest): Promise<void>;
+  export function consumeMessages(body: ConsumeMessagesRequest): Promise<ConsumeMessagesResponse>;
+  export function updateMetadata(body: UpdateMetadataRequest): Promise<void>;
 }

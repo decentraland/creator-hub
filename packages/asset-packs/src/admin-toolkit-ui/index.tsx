@@ -31,6 +31,7 @@ import { ModalUserList, UserListType } from './ModerationControl/UsersList';
 import { showcaseState } from './VideoControl/DclCast';
 import { SpeakerShowcase } from './VideoControl/DclCast/SpeakerShowcase';
 import { isPreview } from './fetch-utils';
+import { updateMetadata } from '~system/CommsApi';
 
 export const nextTickFunctions: (() => void)[] = [];
 const ADMIN_TOOLKIT_VIRTUAL_UI_SIZE = { virtualWidth: 1920, virtualHeight: 1080 };
@@ -65,6 +66,7 @@ export let state: State = {
 
 let sceneAdminsCache: SceneAdmin[] = [];
 let sceneBansCache: SceneBanUser[] = [];
+let presenterMetadataSet = false;
 
 // const BTN_REWARDS_CONTROL = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-rewards-control-button.png`
 // const BTN_REWARDS_CONTROL_ACTIVE = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-rewards-control-active-button.png`
@@ -242,6 +244,14 @@ const uiComponent = (
   const adminToolkitEntity = getAdminToolkitComponent(engine);
   const player = playersHelper?.getPlayer();
   const isPlayerAdmin = isAllowedAdmin(engine, adminToolkitEntity, player);
+
+  if (isPlayerAdmin && !presenterMetadataSet) {
+    presenterMetadataSet = true;
+    updateMetadata({ metadata: JSON.stringify({ role: 'presenter' }) }).catch(() => {
+      // Failed to set metadata — will not retry
+      presenterMetadataSet = false;
+    });
+  }
 
   return [
     <UiEntity
