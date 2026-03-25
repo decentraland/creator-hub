@@ -1,143 +1,506 @@
-.LearnPage .sections {
+/* ─── Page ────────────────────────────── */
+.LearnPage {
   display: flex;
-  flex-direction: row;
-  justify-content: flex-start;
-  align-items: stretch;
-  gap: 24px;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .LearnPage .Container {
   flex-direction: column;
+  padding: 0 0 40px;
+}
+
+/* ─── Header ──────────────────────────── */
+.LearnHeader {
+  display: flex;
   align-items: center;
-}
-
-.LearnPage .section {
-  width: 330px;
-  flex: none;
-  display: flex;
-  flex-direction: column;
-}
-
-.LearnPage .section .header {
-  background: linear-gradient(180deg, #c640cd 0%, #691fa9 100%);
-  height: 100px;
-  border: 2px solid #691fa9;
-  border-radius: 6px;
-  display: flex;
   justify-content: space-between;
-  align-items: flex-end;
-  position: relative;
-  flex: none;
+  margin-bottom: 24px;
 }
 
-.LearnPage .section .header.clickable:hover {
-  cursor: pointer;
-  border: 2px solid white;
-}
-
-.LearnPage .section .header .image {
-  height: 100%;
-  width: 150px;
-  background-position: center;
-  background-size: contain;
-  background-repeat: no-repeat;
-  position: absolute;
-}
-
-.LearnPage .section.videos .header .image {
-  background-image: url(./images/videos.png);
-}
-
-.LearnPage .section.docs .header .image {
-  background-image: url(./images/docs.png);
-}
-
-.LearnPage .section.more .header .image {
-  background-image: url(./images/more.png);
-}
-
-.LearnPage .section .header .title {
-  font-size: 24px;
-  line-height: 32px;
-  padding: 16px 24px;
-  font-weight: 700;
-  text-transform: uppercase;
-  position: absolute;
-  right: 0px;
-  bottom: 0px;
-}
-
-.LearnPage .section .content {
-  display: flex;
-  flex-direction: column;
-  padding: 16px 0px 32px 0px;
-  flex: auto;
-}
-
-.LearnPage .link {
+.LearnHeaderActions {
   display: flex;
   align-items: center;
+  gap: 12px;
+}
+
+.LearnDocsButton {
+  border-radius: 8px !important;
+  background-color: transparent !important;
+  border: 1px solid white !important;
+  color: white !important;
+  padding-left: 20px !important;
+  padding-right: 20px !important;
+  white-space: nowrap;
+}
+
+.LearnDocsButton:hover {
+  background-color: transparent !important;
+}
+
+.LearnDocsButton .MuiButton-startIcon {
+  color: white;
+}
+
+/* ─── Search results ─────────────────── */
+.LearnSearchResults {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.LearnSearchGroup {
+  display: flex;
+  flex-direction: column;
   gap: 16px;
-  border-radius: 8px;
-  padding: 16px;
+}
+
+.LearnSearchGroupLabel {
+  color: rgba(255, 255, 255, 0.45) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 1.2px !important;
+}
+
+.LearnSearchEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 0;
+  text-align: center;
+}
+
+/* ─── Tabs ────────────────────────────── */
+.LearnTabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 32px;
+  position: relative;
+}
+
+.LearnTabSlider {
+  position: absolute;
+  bottom: 0;
+  height: 2px;
+  background: var(--primary);
+  border-radius: 1px;
+  transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.LearnTab {
+  flex: 1;
+  text-align: center;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 16px;
+  font-weight: 600;
+  padding: 12px 24px;
   cursor: pointer;
-  transition: background-color 0.2s ease-in-out;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s ease;
+  margin-bottom: -1px;
 }
 
-.LearnPage .link .thumbnail-wrapper {
-  flex: none;
-  width: 132px;
-  height: 64px;
+.LearnTab:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.LearnTab.active {
+  color: #fff;
+}
+
+/* ─── Tab content ─────────────────────── */
+.LearnTabContent {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* ─── Featured ────────────────────────── */
+.LearnFeatured {
+  display: flex;
+  gap: 32px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
   overflow: hidden;
-  border-radius: 8px;
-  border: 2px solid var(--transparent-gray-light);
-  box-sizing: border-box;
+  transition: background-color 0.2s ease;
 }
 
-.LearnPage .link img {
+.LearnFeatured:hover {
+  background-color: #262626;
+}
+
+.LearnFeaturedMedia {
+  flex: 0 0 50%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  cursor: pointer;
+  position: relative;
+}
+
+/* Blog thumbnails are 768×384 (2:1) */
+.LearnFeatured--blog .LearnFeaturedMedia {
+  aspect-ratio: 2 / 1;
+}
+
+/* ─── Skeleton loader (shimmer on thumbnails) ─── */
+@keyframes LearnSkeletonLoading {
+  0% {
+    transform: skewX(-10deg) translateX(-100%);
+  }
+  100% {
+    transform: skewX(-10deg) translateX(200%);
+  }
+}
+
+.LearnSkeletonThumb {
+  position: relative;
+  background: #262626;
+  overflow: hidden;
+}
+
+.LearnSkeletonThumb::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.06),
+    transparent
+  );
+  width: 50%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  animation: LearnSkeletonLoading 1.4s ease-in-out infinite;
+}
+
+/* Lazy-loaded blog thumbnail: skeleton visible until image loads */
+.LearnBlogThumb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.LearnBlogThumb .LearnSkeletonThumb {
+  position: absolute;
+  inset: 0;
+}
+
+.LearnBlogThumb-img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.25s ease;
 }
 
-.LearnPage .link .icon {
-  width: 24px;
-  height: 24px;
-  background-position: center;
-  background-size: contain;
-  background-repeat: no-repeat;
+.LearnBlogThumb-img--loaded {
+  opacity: 1;
 }
 
-.LearnPage .section.docs .link .icon {
-  background-image: url(./images/docs-icon.svg);
+.LearnFeaturedMedia .LearnBlogThumb,
+.LearnVideoThumb .LearnBlogThumb {
+  position: absolute;
+  inset: 0;
 }
 
-.LearnPage .section.more .link .icon {
-  background-image: url(./images/link-icon.svg);
+.LearnFeaturedMedia,
+.LearnVideoThumb {
+  position: relative;
 }
 
-.LearnPage .link .title {
-  font-size: 16px;
-  font-weight: 700;
-  flex: 0 1 auto;
+.LearnSkeletonLine {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
 }
 
-.LearnPage .link:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+.LearnFeatured--skeleton .LearnSkeletonMeta {
+  height: 12px;
+  width: 40%;
 }
 
-.LearnPage .see-all {
-  flex: none;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--light-gray);
-  text-align: center;
+.LearnFeatured--skeleton .LearnSkeletonTitle {
+  height: 22px;
+  width: 85%;
+  margin-top: 4px;
+}
+
+.LearnFeatured--skeleton .LearnSkeletonDesc {
+  height: 14px;
   width: 100%;
-  background-color: rgba(255, 255, 255, 0.1);
-  transition: background-color 0.2s ease-in-out;
+  margin-top: 8px;
 }
 
-.LearnPage .see-all:hover {
-  color: var(--light-gray) !important;
-  background-color: var(--secondary-light, #cfcdd4) !important;
+.LearnFeatured--skeleton .LearnSkeletonDesc:nth-of-type(4) {
+  width: 70%;
+}
+
+.LearnFeatured--skeleton .LearnSkeletonCta {
+  height: 14px;
+  width: 88px;
+  margin-top: 12px;
+}
+
+.LearnVideoCard--skeleton .LearnSkeletonCardTitle {
+  height: 20px;
+  width: 100%;
+}
+
+.LearnVideoCard--skeleton .LearnSkeletonCardBadge {
+  height: 12px;
+  width: 55%;
+  margin-top: 8px;
+}
+
+/* When a blog image fails to load, show skeleton shimmer instead of the default icon placeholder */
+.LearnVideoCard .image-fallback-placeholder,
+.LearnFeatured .image-fallback-placeholder {
+  position: relative;
+  background: #262626;
+  overflow: hidden;
+}
+
+.LearnVideoCard .image-fallback-placeholder::before,
+.LearnFeatured .image-fallback-placeholder::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.06),
+    transparent
+  );
+  width: 50%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  animation: LearnSkeletonLoading 1.4s ease-in-out infinite;
+}
+
+.LearnVideoCard .image-fallback-placeholder .placeholder-content,
+.LearnFeatured .image-fallback-placeholder .placeholder-content {
+  position: relative;
+  z-index: 0;
+  opacity: 0.35;
+}
+
+.LearnFeaturedMedia img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.LearnFeaturedMedia:hover img {
+  transform: scale(1.03);
+}
+
+.LearnFeaturedInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 32px 32px 32px 0;
+  gap: 14px;
+  position: relative;
+}
+
+.LearnFeaturedDesc {
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.6;
+}
+
+.LearnReadMore {
+  background: none;
+  border: none;
+  color: #ff2d55;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  transition: opacity 0.2s;
+}
+
+.LearnReadMore:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+.LearnFeaturedBadge {
+  margin-top: auto;
+  align-self: flex-end;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.5px;
+}
+
+.LearnFeaturedMeta {
+  color: rgba(255, 255, 255, 0.45) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+/* ─── Video grid ──────────────────────── */
+.LearnVideoGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.LearnVideoCard {
+  cursor: pointer;
+  border-radius: 15px;
+  overflow: hidden;
+  background-color: #1b1b1b;
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.LearnVideoCard:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+  background-color: #262626;
+}
+
+.LearnVideoThumb {
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 15px 15px 0 0;
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-bottom: none;
+}
+
+/* Blog card thumbnails are 768×384 (2:1) */
+.LearnVideoCard--blog .LearnVideoThumb {
+  aspect-ratio: 2 / 1;
+}
+
+.LearnVideoThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.LearnVideoCard:hover .LearnVideoThumb img {
+  transform: scale(1.03);
+}
+
+.LearnVideoBody {
+  padding: 16px 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.LearnVideoTitle {
+  color: #fff;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  line-height: 22px !important;
+  height: 44px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.LearnVideoDesc {
+  color: rgba(255, 255, 255, 0.5) !important;
+  font-size: 12px !important;
+  line-height: 18px !important;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.LearnVideoBadge {
+  color: #767676 !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+
+/* ─── Pagination ───────────────────── */
+.LearnPaginationBar.PaginationRoot {
+  display: flex;
+  justify-content: center;
+  margin: 32px 0 0;
+  padding: 24px 0 40px;
+}
+
+/* ─── Docs / Wearables card grid ─────── */
+.LearnDocGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+}
+
+.LearnDocCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 32px 24px;
+  background-color: transparent;
+  border-right: 0.5px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.LearnDocCard:nth-child(3n) {
+  border-right: none;
+}
+
+.LearnDocCard:nth-last-child(-n+3) {
+  border-bottom: none;
+}
+
+.LearnDocCard:hover {
+  background-color: #262626;
+}
+
+.LearnDocCardIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  color: #f57506;
+}
+
+.LearnDocCardIcon svg {
+  font-size: 28px;
+}
+
+.LearnDocCardTitle {
+  color: #fff !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  margin-bottom: 6px !important;
+}
+
+.LearnDocCardDesc {
+  color: rgba(255, 255, 255, 0.5) !important;
+  font-size: 13px !important;
 }

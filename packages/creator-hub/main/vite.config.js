@@ -19,6 +19,9 @@ const config = {
       '/shared/': join(PACKAGE_ROOT, '../shared') + '/',
     },
   },
+  ssr: {
+    noExternal: ['@sentry/electron'],
+  },
   build: {
     ssr: true,
     sourcemap: 'inline',
@@ -28,17 +31,30 @@ const config = {
     minify: process.env.MODE !== 'development',
     lib: {
       entry: 'src/index.ts',
-      formats: ['es'],
+      formats: ['cjs'],
     },
     rollupOptions: {
       output: {
-        entryFileNames: '[name].js',
+        entryFileNames: '[name].cjs',
       },
     },
     emptyOutDir: true,
     reportCompressedSize: false,
   },
   plugins: [
+    {
+      name: 'patch-sentry-electron-normalize',
+      transform(code, id) {
+        if (id.includes('@sentry') && id.includes('normalize.js')) {
+          // electron.app is not yet initialized at module load time in Electron 40.
+          // Defer the call until getModuleFromFilename is first used.
+          return code.replace(
+            /const getModuleFromFilename = .*?createGetModuleFromFilename\(electron\.app\.getAppPath\(\)\);/,
+            'let _getModuleFromFilename;\nconst getModuleFromFilename = (...args) => {\n  if (!_getModuleFromFilename) _getModuleFromFilename = node.createGetModuleFromFilename(electron.app.getAppPath());\n  return _getModuleFromFilename(...args);\n};',
+          );
+        }
+      },
+    },
     sentryVitePlugin({
       org: 'decentraland',
       project: 'creator-hub',
