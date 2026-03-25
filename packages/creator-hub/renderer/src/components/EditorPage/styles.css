@@ -70,6 +70,28 @@
   border-top: 1px solid #2a2730;
 }
 
+.metrics-popover-actions {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #2a2730;
+}
+
+.metrics-popover-actions .Button.MuiButton-root {
+  width: 100%;
+  justify-content: flex-start;
+  font-size: 12px;
+  padding: 6px 8px;
+  color: #c4c2ca !important;
+  background-color: transparent !important;
+  border: 1px solid #2a2730 !important;
+  border-radius: 4px !important;
+  text-transform: none;
+}
+
+.metrics-popover-actions .Button.MuiButton-root:hover {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
 .Editor {
   display: flex;
   justify-content: flex-start;
@@ -293,6 +315,85 @@
 
 .Editor.experimental-ui .Header .actions .header-card .MuiButtonGroup-root .MuiButtonGroup-grouped {
   border-color: transparent !important;
+}
+
+.Editor.experimental-ui .Header .actions .header-card .optimization-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.Editor.experimental-ui .Header .actions .header-card .optimization-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--dcl-silver);
+  white-space: nowrap;
+}
+
+.Editor.experimental-ui .Header .actions .header-card .optimization-progress {
+  height: 4px;
+  border-radius: 2px;
+  background-color: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+  width: 100%;
+  min-width: 80px;
+}
+
+.Editor.experimental-ui .Header .actions .header-card .optimization-progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.Editor.experimental-ui .Header .actions .header-card .optimization-progress-fill.progress-red {
+  background-color: #ff4444;
+}
+
+.Editor.experimental-ui .Header .actions .header-card .optimization-progress-fill.progress-orange {
+  background-color: #ff8c00;
+}
+
+.Editor.experimental-ui .Header .actions .header-card .optimization-progress-fill.progress-blue {
+  background-color: #00beff;
+}
+
+.Editor.experimental-ui .Header .actions .header-card .optimization-progress-fill.progress-green {
+  background-color: #00e57a;
+}
+
+.Editor.experimental-ui .Header .actions .header-card.optimization-card {
+  gap: 8px;
+  padding-left: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.Editor.experimental-ui .Header .actions .header-card.optimization-card .Button.MuiButton-root .MuiButton-startIcon {
+  margin: 0;
+}
+
+.Editor.experimental-ui .Header .actions .header-card.optimization-card .Button.MuiButton-root {
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+  min-width: unset !important;
+}
+
+.Editor.experimental-ui .Header .actions .header-card .optimization-button-wrapper {
+  position: relative;
+  display: flex;
+  align-self: stretch;
+}
+
+.Editor.experimental-ui .Header .actions .header-card .optimization-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #ff8c00;
+  pointer-events: none;
+  border: 1.5px solid var(--black);
 }
 
 .Editor .Header .actions {

@@ -102,8 +102,15 @@ export function EditorPage() {
   const [metricsData, setMetricsData] = useState<SceneMetricsData | null>(null);
   const [mobileQRData, setMobileQRData] = useState<{ url: string; qr: string } | null>(null);
   const titleRef = useRef<HTMLSpanElement>(null);
+  const metricsCardRef = useRef<HTMLDivElement>(null);
   const [titleSmall, setTitleSmall] = useState(false);
   const parcelCount = project ? project.layout.rows * project.layout.cols : 0;
+  const hasMetricsWarning =
+    metricsData !== null &&
+    (metricsData.entitiesOutOfBoundaries.length > 0 ||
+      (Object.keys(metricsData.metrics) as (keyof typeof metricsData.metrics)[]).some(
+        key => metricsData.metrics[key] > metricsData.limits[key],
+      ));
 
   useEffect(() => {
     const el = titleRef.current;
@@ -211,23 +218,23 @@ export function EditorPage() {
     iframeRef.current?.scene.editScene().catch(console.error);
   }, []);
 
-  const handleToggleMetrics = useCallback(
-    (e: React.MouseEvent<HTMLButtonElement>) => {
-      if (metricsAnchor) {
-        setMetricsAnchor(null);
-        return;
-      }
-      const anchor = e.currentTarget;
-      iframeRef.current?.metricsClient
-        .fetchAll()
-        .then(data => {
-          setMetricsData(data);
-          setMetricsAnchor(anchor);
-        })
-        .catch(console.error);
-    },
-    [metricsAnchor],
-  );
+  const handleToggleMetrics = useCallback(() => {
+    if (metricsAnchor) {
+      setMetricsAnchor(null);
+      return;
+    }
+    iframeRef.current?.metricsClient
+      .fetchAll()
+      .then(data => {
+        setMetricsData(data);
+        setMetricsAnchor(metricsCardRef.current);
+      })
+      .catch(console.error);
+  }, [metricsAnchor]);
+
+  const handleCleanUnusedAssets = useCallback(() => {
+    // TODO: implement via RPC once the method is available
+  }, []);
 
   const handleOpenMenu = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     setMenuAnchor(e.currentTarget);
@@ -482,14 +489,27 @@ export function EditorPage() {
               )}
             </>
             <div className="actions">
-              <div className="header-card">
-                <Button
-                  color="secondary"
-                  onClick={handleToggleMetrics}
-                  startIcon={<GridViewIcon />}
-                >
-                  Scene Optimization
-                </Button>
+              <div
+                ref={metricsCardRef}
+                className="header-card optimization-card"
+              >
+                <div className="optimization-info">
+                  <span className="optimization-title">Scene Optimization</span>
+                  <div className="optimization-progress">
+                    <div
+                      className="optimization-progress-fill progress-blue"
+                      style={{ width: '70%' }}
+                    />
+                  </div>
+                </div>
+                <div className="optimization-button-wrapper">
+                  <Button
+                    color="secondary"
+                    onClick={handleToggleMetrics}
+                    startIcon={<GridViewIcon />}
+                  />
+                  {hasMetricsWarning && <span className="optimization-badge" />}
+                </div>
               </div>
               <div className="header-card">
                 <Button
@@ -580,6 +600,7 @@ export function EditorPage() {
             onClose={() => setMetricsAnchor(null)}
             anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
             transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+            PaperProps={{ style: { marginTop: '16px' } }}
           >
             {metricsData && (
               <div className="metrics-popover">
@@ -618,6 +639,14 @@ export function EditorPage() {
                     bounds
                   </div>
                 )}
+                <div className="metrics-popover-actions">
+                  <Button
+                    color="secondary"
+                    onClick={handleCleanUnusedAssets}
+                  >
+                    Clean unused Assets
+                  </Button>
+                </div>
               </div>
             )}
           </Popover>
