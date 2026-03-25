@@ -1,8 +1,8 @@
 import {
   getActiveVideoStreams,
-  SubscribeToTopic,
-  PublishData,
-  ConsumeMessages,
+  subscribeToTopic,
+  publishData,
+  consumeMessages,
 } from '~system/CommsApi';
 import { getDomain, wrapSignedFetch } from '../fetch-utils';
 import type { Result } from '../fetch-utils';
@@ -235,20 +235,24 @@ export async function getActiveStreams(): Promise<FlattenedTrack[] | undefined> 
 }
 
 export function subscribeToPresentationTopic(): void {
-  SubscribeToTopic({ topic: PRESENTATION_TOPIC }).catch(() => {
-    // Subscription failed — ConsumeMessages will return empty until next poll retries
+  subscribeToTopic({ topic: PRESENTATION_TOPIC }).catch(() => {
+    // Subscription failed — consumeMessages will return empty until next poll retries
   });
 }
 
 export async function consumePresentationMessages(): Promise<PresentationState | undefined> {
   try {
-    const response = await ConsumeMessages({ topic: PRESENTATION_TOPIC });
+    const response = await consumeMessages({ topic: PRESENTATION_TOPIC });
+    if (response.messages !== "[]") {
+      console.log("[DclCast] ConsumeMessages:", response.messages.substring(0, 500));
+    }
     const messages: Array<{ sender: string; data: string }> = JSON.parse(response.messages);
 
     let latestState: PresentationState | undefined;
     for (const msg of messages) {
       try {
         const parsed = JSON.parse(msg.data);
+        console.log("[DclCast] Parsed msg type:", parsed.type);
         if (parsed.type === 'presentation:state') {
           latestState = {
             id: parsed.id,
@@ -266,41 +270,42 @@ export async function consumePresentationMessages(): Promise<PresentationState |
     }
     return latestState;
   } catch {
-    // ConsumeMessages failed or outer JSON parse failed — return undefined
+    // consumeMessages failed or outer JSON parse failed — return undefined
     return undefined;
   }
 }
 
 export function nextSlide(): void {
-  PublishData({
+  console.log('Publishing next slide message');
+  publishData({
     topic: PRESENTATION_TOPIC,
     data: JSON.stringify({ type: 'presentation:navigate', action: 'next' }),
   });
 }
 
 export function prevSlide(): void {
-  PublishData({
+  publishData({
     topic: PRESENTATION_TOPIC,
     data: JSON.stringify({ type: 'presentation:navigate', action: 'prev' }),
   });
 }
 
 export function playPresentationVideo(videoIndex: number): void {
-  PublishData({
+  publishData({
     topic: PRESENTATION_TOPIC,
     data: JSON.stringify({ type: 'presentation:video:play', videoIndex }),
   });
 }
 
 export function pausePresentationVideo(): void {
-  PublishData({
+  publishData({
     topic: PRESENTATION_TOPIC,
     data: JSON.stringify({ type: 'presentation:video:pause' }),
   });
 }
 
 export function stopPresentation(): void {
-  PublishData({
+  publishData({
     topic: PRESENTATION_TOPIC,
     data: JSON.stringify({ type: 'presentation:stop' }),
   });
