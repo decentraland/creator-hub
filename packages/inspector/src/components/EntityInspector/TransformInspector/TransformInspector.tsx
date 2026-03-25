@@ -65,19 +65,19 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
       <Block>
         <Label text="Position" />
         <TextField
-          leftLabel="X"
+          leftLabel={<span className="axis-x">X</span>}
           type="number"
           {...getInputProps('position.x')}
           autoSelect
         />
         <TextField
-          leftLabel="Y"
+          leftLabel={<span className="axis-y">Y</span>}
           type="number"
           {...getInputProps('position.y')}
           autoSelect
         />
         <TextField
-          leftLabel="Z"
+          leftLabel={<span className="axis-z">Z</span>}
           type="number"
           {...getInputProps('position.z')}
           autoSelect
@@ -86,19 +86,19 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
       <Block>
         <Label text="Rotation" />
         <TextField
-          leftLabel="X"
+          leftLabel={<span className="axis-x">X</span>}
           type="number"
           {...getInputProps('rotation.x')}
           autoSelect
         />
         <TextField
-          leftLabel="Y"
+          leftLabel={<span className="axis-y">Y</span>}
           type="number"
           {...getInputProps('rotation.y')}
           autoSelect
         />
         <TextField
-          leftLabel="Z"
+          leftLabel={<span className="axis-z">Z</span>}
           type="number"
           {...getInputProps('rotation.z')}
           autoSelect
@@ -113,21 +113,21 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
           />
         </Block>
         <TextField
-          leftLabel="X"
+          leftLabel={<span className="axis-x">X</span>}
           type="number"
           {...getInputProps('scale.x')}
           debounceTime={config?.porportionalScaling ? 150 : 0}
           autoSelect
         />
         <TextField
-          leftLabel="Y"
+          leftLabel={<span className="axis-y">Y</span>}
           type="number"
           {...getInputProps('scale.y')}
           debounceTime={config?.porportionalScaling ? 150 : 0}
           autoSelect
         />
         <TextField
-          leftLabel="Z"
+          leftLabel={<span className="axis-z">Z</span>}
           type="number"
           {...getInputProps('scale.z')}
           debounceTime={config?.porportionalScaling ? 150 : 0}

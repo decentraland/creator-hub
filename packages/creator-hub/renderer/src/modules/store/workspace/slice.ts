@@ -26,6 +26,7 @@ const initialState: Async<Workspace> = {
       multiInstance: false,
       showWarnings: true,
     },
+    viewportToolbar: true,
   },
   status: 'idle',
   error: null,

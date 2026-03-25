@@ -148,3 +148,69 @@
   align-items: center;
   gap: 4px;
 }
+
+/* ===== Experimental UI ===== */
+.experimental-ui .Shortcuts .Buttons {
+  gap: 4px;
+}
+
+.experimental-ui .Shortcuts .Buttons .ZoomButtons {
+  background-color: var(--surface-2);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.experimental-ui .Shortcuts .Buttons .ZoomButtons .Button {
+  height: 42px;
+  width: 42px;
+  border-radius: 0;
+  background-color: transparent;
+  border: none;
+}
+
+.experimental-ui .Shortcuts .Buttons .ZoomButtons .Button:hover {
+  background-color: var(--surface-3);
+  border: none;
+}
+
+.experimental-ui .Shortcuts .Buttons .ZoomButtons .Button:first-of-type {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right: 1px solid var(--border-subtle);
+  border-left: none;
+}
+
+.experimental-ui .Shortcuts .Buttons .ZoomButtons .Button:last-of-type {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left: none;
+}
+
+.experimental-ui .Shortcuts .Buttons .ZoomButtons .Button svg {
+  color: var(--text-secondary);
+}
+
+.experimental-ui .Shortcuts .Buttons .InfoTooltipTrigger .Button {
+  height: 42px;
+  width: 42px;
+  border-radius: 6px;
+  background-color: var(--surface-2);
+  border: none;
+}
+
+.experimental-ui .Shortcuts .Buttons .InfoTooltipTrigger .Button:hover {
+  background-color: var(--surface-3);
+  border: none;
+}
+
+.experimental-ui .Shortcuts .Buttons .InfoTooltipTrigger .Button.Active {
+  background-color: var(--accent);
+}
+
+.experimental-ui .Shortcuts .Buttons .InfoTooltipTrigger .Button svg {
+  color: var(--text-secondary);
+}
+
+.experimental-ui .Shortcuts .Buttons .InfoTooltipTrigger .Button.Active svg {
+  color: #fff;
+}

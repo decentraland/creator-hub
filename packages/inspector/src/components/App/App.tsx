@@ -1,19 +1,22 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
 import cx from 'classnames';
 
 import { useSelectedEntity } from '../../hooks/sdk/useSelectedEntity';
 import { useInspectorUIState } from '../../hooks/sdk/useInspectorUIState';
 import { useWindowSize } from '../../hooks/useWindowSize';
-import { useAppSelector } from '../../redux/hooks';
+import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { selectDataLayerError, selectSceneInfo } from '../../redux/data-layer';
 import { selectEngines } from '../../redux/sdk';
 import { getHiddenPanels } from '../../redux/ui';
+import { isFeatureFlagEnabled, setFeatureFlags } from '../../redux/feature-flags';
 import { PanelName } from '../../redux/ui/types';
+import { getConfig } from '../../lib/logic/config';
 
 import { EntityInspector } from '../EntityInspector';
 import { Hierarchy } from '../Hierarchy';
 import { Renderer } from '../Renderer';
+import { Metrics } from '../Renderer/Metrics';
 import { Box } from '../Box';
 import { Toolbar } from '../Toolbar';
 import Assets from '../Assets';
@@ -22,11 +25,20 @@ import { SceneInfoPanel } from '../SceneInfoPanel';
 import './App.css';
 
 const App = () => {
+  const dispatch = useAppDispatch();
   const selectedEntity = useSelectedEntity();
   const { height } = useWindowSize();
 
+  useEffect(() => {
+    const { featureFlags } = getConfig();
+    if (Object.keys(featureFlags).length > 0) {
+      dispatch(setFeatureFlags(featureFlags));
+    }
+  }, []);
+
   const sdkInitialized = useAppSelector(selectEngines).inspector;
   const hiddenPanels = useAppSelector(getHiddenPanels);
+  const experimentalUI = useAppSelector(state => isFeatureFlagEnabled(state, 'viewportToolbar'));
   const sceneInfoContent = useAppSelector(selectSceneInfo).content;
   const disconnected = useAppSelector(selectDataLayerError);
   const [uiState] = useInspectorUIState();
@@ -44,14 +56,17 @@ const App = () => {
 
   return (
     <div
-      className={cx('App', { 'is-ready': !!sdkInitialized })}
+      className={cx('App', { 'is-ready': !!sdkInitialized, 'experimental-ui': experimentalUI })}
       style={{ pointerEvents: disconnected ? 'none' : 'auto' }}
     >
       <PanelGroup
         direction="vertical"
         autoSaveId="vertical"
       >
-        <Panel defaultSize={70}>
+        <Panel
+          defaultSize={70}
+          minSize={30}
+        >
           <PanelGroup
             direction="horizontal"
             autoSaveId="horizontal"
@@ -136,6 +151,7 @@ const App = () => {
           </>
         )}
       </PanelGroup>
+      {!hiddenPanels[PanelName.METRICS] && <Metrics />}
     </div>
   );
 };

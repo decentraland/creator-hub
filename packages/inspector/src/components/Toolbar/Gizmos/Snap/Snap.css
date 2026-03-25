@@ -2,13 +2,17 @@
   display: flex;
 }
 
-.Snap>.label {
+.Snap > .label {
   flex: none;
   margin-right: 8px;
   color: var(--secondary-text);
 }
 
-.Snap>input {
+.Snap .snap-icon {
+  display: none;
+}
+
+.Snap > input {
   flex: 1 1 auto;
   min-width: 0;
   text-align: right;
@@ -18,7 +22,73 @@
   outline: none;
 }
 
-.Snap>input:disabled {
+.Snap > input:disabled {
   user-select: none;
   color: var(--secondary-text);
+}
+
+/* ===== Experimental UI ===== */
+.experimental-ui .Snap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  min-width: 64px;
+  flex: 0 1 auto;
+  align-self: stretch;
+}
+
+
+.experimental-ui .Snap + .Snap {
+  border-left: 1px solid var(--border-subtle);
+}
+
+.experimental-ui .Snap > .label {
+  display: none;
+}
+
+.experimental-ui .Snap .snap-icon {
+  display: block;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.6;
+}
+
+.experimental-ui .Snap .snap-icon.position {
+  background-image: url(../icons/position.svg);
+}
+
+.experimental-ui .Snap .snap-icon.rotation {
+  background-image: url(../icons/rotation.svg);
+}
+
+.experimental-ui .Snap .snap-icon.scale {
+  background-image: url(../icons/scale.svg);
+}
+
+.experimental-ui .Snap > input {
+  width: 32px;
+  max-width: 64px;
+  flex: none;
+  text-align: left;
+  background: none;
+  color: var(--text-primary);
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  outline: none;
+}
+
+.experimental-ui .Snap > input[type='number']::-webkit-inner-spin-button,
+.experimental-ui .Snap > input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.experimental-ui .Snap > input[type='number'] {
+  -moz-appearance: textfield;
 }

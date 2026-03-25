@@ -8,6 +8,7 @@ export interface SceneMetricsState {
   limits: SceneMetrics;
   entitiesOutOfBoundaries: number[];
   hasCustomCode: boolean;
+  metricsVisible: boolean;
 }
 
 export const initialState: SceneMetricsState = {
@@ -27,6 +28,7 @@ export const initialState: SceneMetricsState = {
   },
   entitiesOutOfBoundaries: [],
   hasCustomCode: false,
+  metricsVisible: false,
 };
 
 export const sceneMetrics = createSlice({
@@ -45,12 +47,20 @@ export const sceneMetrics = createSlice({
     setHasCustomCode: (state, { payload }: PayloadAction<boolean>) => {
       state.hasCustomCode = payload;
     },
+    toggleMetricsVisible: state => {
+      state.metricsVisible = !state.metricsVisible;
+    },
   },
 });
 
 // Actions
-export const { setMetrics, setEntitiesOutOfBoundaries, setLimits, setHasCustomCode } =
-  sceneMetrics.actions;
+export const {
+  setMetrics,
+  setEntitiesOutOfBoundaries,
+  setLimits,
+  setHasCustomCode,
+  toggleMetricsVisible,
+} = sceneMetrics.actions;
 
 // Selectors
 export const getMetrics = (state: RootState): SceneMetrics => state.sceneMetrics.metrics;
@@ -58,6 +68,7 @@ export const getLimits = (state: RootState): SceneMetrics => state.sceneMetrics.
 export const getEntitiesOutOfBoundaries = (state: RootState): number[] =>
   state.sceneMetrics.entitiesOutOfBoundaries;
 export const getHasCustomCode = (state: RootState): boolean => state.sceneMetrics.hasCustomCode;
+export const getMetricsVisible = (state: RootState): boolean => state.sceneMetrics.metricsVisible;
 
 // Reducer
 export default sceneMetrics.reducer;

@@ -1,6 +1,7 @@
 import * as BABYLON from '@babylonjs/core';
 import type { InspectorPreferences } from '../../logic/preferences/types';
 import { initKeyboard } from './input';
+import { initHover } from './hover';
 import { setupEngine } from './setup';
 
 /*
@@ -32,6 +33,7 @@ export function initRenderer(canvas: HTMLCanvasElement, preferences: InspectorPr
   }
 
   initKeyboard(canvas, renderer.scene);
+  initHover(renderer.scene);
 
   return { ...renderer, dispose };
 }

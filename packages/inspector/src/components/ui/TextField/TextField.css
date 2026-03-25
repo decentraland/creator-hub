@@ -106,3 +106,44 @@
   border-color: white;
   border-style: dashed;
 }
+
+/* ===== Experimental UI ===== */
+.experimental-ui .TextField {
+  background-color: var(--surface-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+
+.experimental-ui .TextField input,
+.experimental-ui .TextField select {
+  color: var(--text-primary);
+  background-color: transparent;
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+.experimental-ui .TextField input:focus,
+.experimental-ui .TextField select:focus {
+  border-color: var(--border-selection);
+}
+
+.experimental-ui .TextField .unit {
+  color: var(--text-muted);
+}
+
+.experimental-ui .TextField.error {
+  border-color: var(--border-selection);
+  border-style: dashed;
+}
+
+.experimental-ui .axis-x {
+  color: var(--axis-x);
+}
+
+.experimental-ui .axis-y {
+  color: var(--axis-y);
+}
+
+.experimental-ui .axis-z {
+  color: var(--axis-z);
+}

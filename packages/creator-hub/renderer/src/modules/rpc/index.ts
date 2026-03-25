@@ -7,6 +7,7 @@ import { fs, custom, workspace } from '#preload';
 
 import { SceneRpcClient } from './scene/client';
 import { SceneRpcServer } from './scene/server';
+import { SceneMetricsClient } from './scene-metrics';
 import { type Method, type Params, type Result, StorageRPC } from './storage';
 
 export type RPCInfo = {
@@ -38,6 +39,7 @@ export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partia
   const transport = new MessageTransport(window, iframe.contentWindow!);
   const sceneClient = new SceneRpcClient(transport);
   const sceneServer = new SceneRpcServer(transport, project);
+  const metricsClient = new SceneMetricsClient(transport);
   const params = { iframe, project, scene: sceneClient };
   const storage = new StorageRPC(transport, cbs, params);
 
@@ -58,10 +60,12 @@ export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partia
 
   return {
     ...params,
+    metricsClient,
     dispose: () => {
       storage.dispose();
       sceneServer.dispose();
       sceneClient.dispose();
+      metricsClient.dispose();
     },
   };
 }

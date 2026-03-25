@@ -46,3 +46,13 @@
 .Preferences .panel .preference-row label {
   color: var(--secondary-text);
 }
+
+/* ===== Experimental UI ===== */
+.experimental-ui .Preferences .panel {
+  top: calc(100% + 4px);
+  right: 0;
+  background-color: var(--surface-2);
+  border: 1px solid var(--border-default);
+  z-index: 100;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}

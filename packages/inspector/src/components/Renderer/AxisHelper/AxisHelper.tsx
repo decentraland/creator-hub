@@ -1,20 +1,24 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { withSdk } from '../../../hoc/withSdk';
 import { setupAxisHelper } from '../../../lib/babylon/setup/axisHelper';
 
-const AxisHelper = withSdk(({ sdk }) => {
+import './AxisHelper.css';
+
+interface Props {
+  onResetCamera: () => void;
+}
+
+const AxisHelper = withSdk<Props>(({ sdk, onResetCamera }) => {
+  const axisHelperRef = useRef<ReturnType<typeof setupAxisHelper>>();
+  const [isHovered, setIsHovered] = useState(false);
+
   useEffect(() => {
     const getMainCamera = () => {
       if (sdk.editorCamera) {
         const mainCamera = sdk.editorCamera.getCamera();
 
-        // FreeCamera uses position and target, not alpha/beta
-        // Calculate the direction the camera is looking
         const direction = mainCamera.target.subtract(mainCamera.position).normalize();
 
-        // Convert direction to spherical coordinates (alpha and beta)
-        // alpha = horizontal angle around Y axis
-        // beta = vertical angle from Y axis
         const alpha = Math.atan2(direction.x, direction.z);
         const beta = Math.acos(direction.y);
 
@@ -25,13 +29,27 @@ const AxisHelper = withSdk(({ sdk }) => {
     };
 
     const axisHelper = setupAxisHelper(sdk.scene, getMainCamera);
+    axisHelperRef.current = axisHelper;
 
     return () => {
       axisHelper.dispose();
+      axisHelperRef.current = undefined;
     };
   }, [sdk]);
 
-  return null;
+  useEffect(() => {
+    axisHelperRef.current?.setHovered(isHovered);
+  }, [isHovered]);
+
+  return (
+    <button
+      className="AxisHelperOverlay"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onClick={onResetCamera}
+      title="Reset Camera"
+    />
+  );
 });
 
 export default AxisHelper;

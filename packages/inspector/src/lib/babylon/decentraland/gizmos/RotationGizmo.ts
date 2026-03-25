@@ -197,7 +197,7 @@ class GizmoSyncHelper {
 }
 
 // Helper class for smooth snapping calculations
-class SmoothSnapHelper {
+class _SmoothSnapHelper {
   static getRotationAngle(quaternion: Quaternion): number {
     const normalized = quaternion.normalize();
     const { w } = normalized;
@@ -256,6 +256,7 @@ export class RotationGizmo implements IGizmoTransformer {
   private updateEntityRotation: ((entity: EcsEntity) => void) | null = null;
   private updateEntityPosition: ((entity: EcsEntity) => void) | null = null;
   private dispatchOperations: (() => void) | null = null;
+  private dispatchDuringDrag: (() => void) | null = null;
 
   // Configuration
   private isWorldAligned = true;
@@ -676,6 +677,10 @@ export class RotationGizmo implements IGizmoTransformer {
     this.sceneContext = sceneContext;
   }
 
+  setDispatchDuringDragCallback(fn: () => void): void {
+    this.dispatchDuringDrag = fn;
+  }
+
   setWorldAligned(value: boolean): void {
     this.isWorldAligned = value;
 
@@ -686,9 +691,11 @@ export class RotationGizmo implements IGizmoTransformer {
     this.syncGizmoRotation();
   }
 
-  setSnapDistance(_distance: number): void {
-    // We handle the snap distance in the snap manager
-    return;
+  setSnapDistance(distance: number): void {
+    const rotationGizmo = this.gizmoManager.gizmos.rotationGizmo;
+    if (rotationGizmo) {
+      rotationGizmo.snapDistance = distance;
+    }
   }
 
   onDragStart(entities: EcsEntity[], gizmoNode: TransformNode): void {
@@ -776,6 +783,7 @@ export class RotationGizmo implements IGizmoTransformer {
         if (this.updateEntityRotation) {
           this.currentEntities.forEach(this.updateEntityRotation);
         }
+        this.dispatchDuringDrag?.();
       }
     });
 
@@ -905,33 +913,11 @@ export class RotationGizmo implements IGizmoTransformer {
     const hasRotated = !currentGizmoRotation.equals(this.dragState!.startRotation);
 
     if (hasRotated) {
+      // Babylon's snapDistance has already snapped currentGizmoRotation; just apply it.
       const rotationDelta = this.dragState!.startRotation.invert().multiply(currentGizmoRotation);
-
-      // Calculate the accumulated rotation angle since drag start
-      const accumulatedAngle = SmoothSnapHelper.getRotationAngle(rotationDelta);
-      const snapThreshold = SmoothSnapHelper.getSnapThreshold();
-
-      // Check if we should apply the snap based on the accumulated angle
-      const shouldApplySnap = SmoothSnapHelper.shouldApplySnap(
-        accumulatedAngle,
-        this.dragState!.lastAppliedSnapAngle,
-        snapThreshold,
-      );
-
-      if (shouldApplySnap) {
-        // Apply the snapped rotation
-        const snappedRotationDelta = this.snapRotation(rotationDelta);
-        const newWorldRotation = snappedRotationDelta.multiply(data.initialRotation);
-
-        EntityRotationHelper.applyRotationToEntity(entity, newWorldRotation, this.isWorldAligned);
-
-        // Update the last applied snap angle to the accumulated angle
-        this.dragState!.lastAppliedSnapAngle = accumulatedAngle;
-      }
-      // If we shouldn't apply snap, the entity keeps its current rotation
-      // The gizmo continues to move freely until the next threshold
+      const newWorldRotation = rotationDelta.multiply(data.initialRotation);
+      EntityRotationHelper.applyRotationToEntity(entity, newWorldRotation, this.isWorldAligned);
     } else {
-      // Gizmo hasn't rotated, keep the entity's initial rotation
       EntityRotationHelper.applyRotationToEntity(entity, data.initialRotation, this.isWorldAligned);
     }
   }
@@ -946,58 +932,32 @@ export class RotationGizmo implements IGizmoTransformer {
     const hasRotated = !currentGizmoRotation.equals(this.dragState!.startRotation);
 
     if (hasRotated) {
-      // Calculate the rotation delta from the start of the drag
-      const rotationDelta = this.dragState!.startRotation.invert().multiply(currentGizmoRotation);
+      // Babylon's snapDistance has already snapped currentGizmoRotation; just apply it.
+      // For local alignment, the gizmo rotation represents the target world rotation.
+      // Convert it to local rotation for the entity.
+      if (entity.parent && entity.parent instanceof TransformNode) {
+        const parent = entity.parent as TransformNode;
+        const parentWorldRotation =
+          parent.rotationQuaternion || Quaternion.FromRotationMatrix(parent.getWorldMatrix());
+        const localRotation = parentWorldRotation.invert().multiply(currentGizmoRotation);
 
-      // Calculate the accumulated rotation angle since drag start
-      const accumulatedAngle = SmoothSnapHelper.getRotationAngle(rotationDelta);
-      const snapThreshold = SmoothSnapHelper.getSnapThreshold();
-
-      // Check if we should apply the snap based on the accumulated angle
-      const shouldApplySnap = SmoothSnapHelper.shouldApplySnap(
-        accumulatedAngle,
-        this.dragState!.lastAppliedSnapAngle,
-        snapThreshold,
-      );
-
-      if (shouldApplySnap) {
-        // Apply the snapped rotation
-        const snappedGizmoRotation = this.snapRotation(currentGizmoRotation);
-
-        // For local alignment, the gizmo rotation represents the target world rotation
-        // Convert it to local rotation for the entity
-        if (entity.parent && entity.parent instanceof TransformNode) {
-          const parent = entity.parent as TransformNode;
-          const parentWorldRotation =
-            parent.rotationQuaternion || Quaternion.FromRotationMatrix(parent.getWorldMatrix());
-          const localRotation = parentWorldRotation.invert().multiply(snappedGizmoRotation);
-
-          if (!entity.rotationQuaternion) {
-            entity.rotationQuaternion = new Quaternion();
-          }
-          entity.rotationQuaternion.copyFrom(localRotation);
-        } else {
-          // No parent, world rotation is local rotation
-          if (!entity.rotationQuaternion) {
-            entity.rotationQuaternion = new Quaternion();
-          }
-          entity.rotationQuaternion.copyFrom(snappedGizmoRotation);
+        if (!entity.rotationQuaternion) {
+          entity.rotationQuaternion = new Quaternion();
         }
-
-        // Update the last applied snap angle to the accumulated angle
-        this.dragState!.lastAppliedSnapAngle = accumulatedAngle;
+        entity.rotationQuaternion.copyFrom(localRotation);
+      } else {
+        if (!entity.rotationQuaternion) {
+          entity.rotationQuaternion = new Quaternion();
+        }
+        entity.rotationQuaternion.copyFrom(currentGizmoRotation);
       }
-      // If we shouldn't apply snap, the entity keeps its current rotation
-      // The gizmo continues to move freely until the next threshold
     } else {
-      // Gizmo hasn't rotated, keep the entity's initial rotation
       if (!entity.rotationQuaternion) {
         entity.rotationQuaternion = new Quaternion();
       }
       entity.rotationQuaternion.copyFrom(data.initialRotation);
     }
 
-    // Force update world matrix
     entity.computeWorldMatrix(true);
   }
 
@@ -1006,7 +966,6 @@ export class RotationGizmo implements IGizmoTransformer {
 
     // Ensure we have the multiTransform and initial data
     if (!this.dragState.multiTransform || this.dragState.transformData.size === 0) {
-      // If we don't have the data, recreate them
       this.clearDragState();
       this.initializeDragState(entities, gizmoNode);
     }
@@ -1015,30 +974,9 @@ export class RotationGizmo implements IGizmoTransformer {
     const hasRotated = !currentGizmoRotation.equals(this.dragState.startRotation);
 
     if (hasRotated) {
+      // Babylon's snapDistance has already snapped currentGizmoRotation; just apply it.
       const rotationDelta = this.dragState.startRotation.invert().multiply(currentGizmoRotation);
-
-      // Calculate the accumulated rotation angle since drag start
-      const accumulatedAngle = SmoothSnapHelper.getRotationAngle(rotationDelta);
-      const snapThreshold = SmoothSnapHelper.getSnapThreshold();
-
-      // Check if we should apply the snap based on the accumulated angle
-      const shouldApplySnap = SmoothSnapHelper.shouldApplySnap(
-        accumulatedAngle,
-        this.dragState.lastAppliedSnapAngle,
-        snapThreshold,
-      );
-
-      if (shouldApplySnap) {
-        // Apply the snapped rotation
-        const snappedRotationDelta = this.snapRotation(rotationDelta);
-
-        this.applyRotationToMultipleEntities(entities, snappedRotationDelta);
-
-        // Update the last applied snap angle to the accumulated angle
-        this.dragState.lastAppliedSnapAngle = accumulatedAngle;
-      }
-      // If we shouldn't apply snap, the entities keep their current rotation
-      // The gizmo continues to move freely until the next threshold
+      this.applyRotationToMultipleEntities(entities, rotationDelta);
     } else {
       this.resetMultipleEntitiesToInitialState(entities);
     }

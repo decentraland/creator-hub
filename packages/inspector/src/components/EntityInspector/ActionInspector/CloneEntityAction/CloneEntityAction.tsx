@@ -96,21 +96,21 @@ const CloneEntityAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
           <div style={{ flex: 1, display: 'flex', gap: '8px' }}>
             <TextField
-              leftLabel="X"
+              leftLabel={<span className="axis-x">X</span>}
               type="number"
               value={payload.position?.x}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangePositionX(e)}
               autoSelect
             />
             <TextField
-              leftLabel="Y"
+              leftLabel={<span className="axis-y">Y</span>}
               type="number"
               value={payload.position?.y}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangePositionY(e)}
               autoSelect
             />
             <TextField
-              leftLabel="Z"
+              leftLabel={<span className="axis-z">Z</span>}
               type="number"
               value={payload.position?.z}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangePositionZ(e)}

@@ -202,7 +202,7 @@ const TweenAction: React.FC<Props> = ({ tween: tweenProp, onUpdateTween }: Props
         <>
           <Block label={getLabel()}>
             <TextField
-              leftLabel="X"
+              leftLabel={<span className="axis-x">X</span>}
               type="number"
               value={tween.direction?.x ?? 0}
               error={isNaN(parseFloat(tween.direction?.x?.toString() ?? '0'))}
@@ -211,7 +211,7 @@ const TweenAction: React.FC<Props> = ({ tween: tweenProp, onUpdateTween }: Props
               autoSelect
             />
             <TextField
-              leftLabel="Y"
+              leftLabel={<span className="axis-y">Y</span>}
               type="number"
               value={tween.direction?.y ?? 0}
               error={isNaN(parseFloat(tween.direction?.y?.toString() ?? '0'))}
@@ -220,7 +220,7 @@ const TweenAction: React.FC<Props> = ({ tween: tweenProp, onUpdateTween }: Props
               autoSelect
             />
             <TextField
-              leftLabel="Z"
+              leftLabel={<span className="axis-z">Z</span>}
               type="number"
               value={tween.direction?.z ?? 0}
               error={isNaN(parseFloat(tween.direction?.z?.toString() ?? '0'))}
@@ -244,7 +244,7 @@ const TweenAction: React.FC<Props> = ({ tween: tweenProp, onUpdateTween }: Props
         <>
           <Block label={getLabel()}>
             <TextField
-              leftLabel="X"
+              leftLabel={<span className="axis-x">X</span>}
               type="number"
               value={tween.end.x}
               error={isNaN(parseFloat(tween.end.x))}
@@ -253,7 +253,7 @@ const TweenAction: React.FC<Props> = ({ tween: tweenProp, onUpdateTween }: Props
               autoSelect
             />
             <TextField
-              leftLabel="Y"
+              leftLabel={<span className="axis-y">Y</span>}
               type="number"
               value={tween.end.y}
               error={isNaN(parseFloat(tween.end.y))}
@@ -262,7 +262,7 @@ const TweenAction: React.FC<Props> = ({ tween: tweenProp, onUpdateTween }: Props
               autoSelect
             />
             <TextField
-              leftLabel="Z"
+              leftLabel={<span className="axis-z">Z</span>}
               type="number"
               value={tween.end.z}
               error={isNaN(parseFloat(tween.end.z))}

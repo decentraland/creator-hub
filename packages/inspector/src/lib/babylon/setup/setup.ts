@@ -3,6 +3,7 @@ import { GridMaterial } from '@babylonjs/materials';
 import { PARCEL_SIZE } from '../../utils/scene';
 import { CameraManager } from '../decentraland/camera';
 import type { InspectorPreferences } from '../../logic/preferences/types';
+import { setupSkybox } from './skybox';
 
 // if NODE_ENV == development
 require('@babylonjs/inspector');
@@ -13,7 +14,7 @@ const CAMERA_SPEEDS = [...Array(40).keys()]
     return (i + 1) * 0.5;
   })
   .concat([25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100]);
-const CAMERA_DEFAULT_SPEED_INDEX = 20;
+const CAMERA_DEFAULT_SPEED_INDEX = 9;
 const CAMERA_MIN_Y = 1;
 const CAMERA_ZOOM_SENSITIVITY = 1;
 
@@ -119,6 +120,9 @@ export function setupEngine(
   grid.lineColor = BABYLON.Color3.FromHexString('#504E58');
   grid.mainColor = BABYLON.Color3.FromHexString('#36343D');
   editorEnvHelper.ground!.material = grid;
+
+  const { updateSkybox } = setupSkybox(scene, editorEnvHelper);
+  scene.metadata = { ...(scene.metadata ?? {}), updateSkybox };
 
   const cameraManager = new CameraManager(
     scene,

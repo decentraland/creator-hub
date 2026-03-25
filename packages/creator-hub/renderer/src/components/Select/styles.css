@@ -34,6 +34,7 @@
 
 .SelectMenu {
   margin-top: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 .SelectMenu .sort-item.Mui-selected {

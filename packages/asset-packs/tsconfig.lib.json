@@ -31,6 +31,7 @@
     "strictPropertyInitialization": true,
     "resolveJsonModule": true,
     "lib": ["ES2020"],
+    "typeRoots": ["../../node_modules/@dcl/sdk/node_modules", "node_modules"],
     "types": ["@dcl/js-runtime"]
   },
   "include": ["src"],

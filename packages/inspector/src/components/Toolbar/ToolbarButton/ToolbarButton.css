@@ -1,4 +1,5 @@
 .ToolbarButton {
+  position: relative;
   border: none;
   padding: 0px 2px;
   margin: 0 8px;
@@ -9,6 +10,10 @@
   cursor: pointer;
   min-width: 32px;
   height: 30px;
+}
+
+.ToolbarButton .ToolbarButton-tooltip {
+  display: none;
 }
 
 .ToolbarButton:hover:not(:disabled) {
@@ -27,4 +32,64 @@
 .ToolbarButton svg {
   width: 24px;
   height: 24px;
+}
+
+/* ===== Experimental UI ===== */
+.experimental-ui .ToolbarButton {
+  padding: 0;
+  margin: 0 2px;
+  color: var(--text-secondary);
+  background-color: transparent;
+  border: none;
+  outline: none;
+  border-radius: 4px;
+  min-width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.experimental-ui .ToolbarButton:hover:not(:disabled) {
+  background-color: var(--surface-3);
+}
+
+.experimental-ui .ToolbarButton:disabled {
+  opacity: 0.4;
+}
+
+.experimental-ui .ToolbarButton.active {
+  background-color: var(--accent) !important;
+  color: #fff !important;
+}
+
+.experimental-ui .ToolbarButton svg {
+  width: 18px;
+  height: 18px;
+}
+
+.experimental-ui .ToolbarButton:hover:not(:disabled) .ToolbarButton-tooltip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: #1b1a1f;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  z-index: 1000;
+  pointer-events: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  font-size: 12px;
+}
+
+.experimental-ui .ToolbarButton .tooltip-title {
+  color: var(--text-primary);
+}
+
+.experimental-ui .ToolbarButton .tooltip-shortcut {
+  color: var(--text-muted);
 }

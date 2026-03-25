@@ -8,9 +8,26 @@ import type { NestedKey } from '../../lib/logic/get-set-value';
 import { getValue, setValue } from '../../lib/logic/get-set-value';
 import type { Component } from '../../lib/sdk/components';
 import { MIXED_VALUE } from '../../components/ui/utils';
+import { evaluateMathExpression } from '../../lib/utils/math-expression';
 import { getComponentValue, isLastWriteWinComponent, useComponentValue } from './useComponentValue';
 import { useSdk } from './useSdk';
 import { useChange } from './useChange';
+
+function resolveMathExpressions(input: any): any {
+  if (typeof input === 'string') {
+    const evaluated = evaluateMathExpression(input);
+    return evaluated !== null ? String(evaluated) : input;
+  }
+  if (Array.isArray(input)) return input;
+  if (typeof input === 'object' && input !== null) {
+    const result: Record<string, any> = {};
+    for (const [k, v] of Object.entries(input)) {
+      result[k] = resolveMathExpressions(v);
+    }
+    return result;
+  }
+  return input;
+}
 
 type Input = {
   [key: string]:
@@ -31,7 +48,7 @@ export function isValidNumericInput(input: Input[keyof Input]): boolean {
   if (typeof input === 'number') {
     return !isNaN(input);
   }
-  return input.length > 0 && !isNaN(Number(input));
+  return input.length > 0 && (!isNaN(Number(input)) || evaluateMathExpression(input) !== null);
 }
 
 export const useComponentInput = <ComponentValueType extends object, InputType extends Input>(
@@ -96,8 +113,26 @@ export const useComponentInput = <ComponentValueType extends object, InputType e
   const handleBlur = useCallback(() => {
     if (componentValue === null) return;
     setFocusedOn(null);
+
+    // Evaluate any math expression in the focused field before resetting
+    if (focusedOn && input !== null) {
+      const fieldValue = getValue(input, focusedOn as NestedKey<InputType>);
+      if (typeof fieldValue === 'string') {
+        const evaluated = evaluateMathExpression(fieldValue);
+        if (evaluated !== null) {
+          const newInputs = setValue(
+            input,
+            focusedOn as NestedKey<InputType>,
+            String(evaluated) as any,
+          );
+          updateInputs(newInputs, false);
+          return;
+        }
+      }
+    }
+
     updateInputs(fromComponentValueToInput(componentValue));
-  }, [componentValue]);
+  }, [componentValue, focusedOn, input]);
 
   const validate = useCallback(
     (input: InputType | null): input is InputType => input !== null && validateInput(input),
@@ -108,7 +143,8 @@ export const useComponentInput = <ComponentValueType extends object, InputType e
   useEffect(() => {
     if (skipSyncRef.current) return;
     if (validate(input)) {
-      const newComponentValue = { ...componentValue, ...fromInputToComponentValue(input) };
+      const resolvedInput = resolveMathExpressions(input) as InputType;
+      const newComponentValue = { ...componentValue, ...fromInputToComponentValue(resolvedInput) };
       if (isEqual(newComponentValue)) return;
 
       setComponentValue(newComponentValue);

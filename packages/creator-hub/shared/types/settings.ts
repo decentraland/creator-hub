@@ -19,6 +19,7 @@ export type AppSettings = {
   scenesPath: string;
   dependencyUpdateStrategy: DEPENDENCY_UPDATE_STRATEGY;
   previewOptions: PreviewOptions;
+  viewportToolbar: boolean;
 };
 
 export interface ReleaseNotes {

@@ -12,3 +12,19 @@
   height: 100%;
   position: relative;
 }
+
+/* ===== Experimental UI ===== */
+.experimental-ui .Box {
+  height: 100%;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.experimental-ui .Box > .content {
+  background: var(--surface-1);
+}
+
+.experimental-ui .Box:has(.Renderer) {
+  clip-path: inset(0 round var(--radius-md));
+}
+

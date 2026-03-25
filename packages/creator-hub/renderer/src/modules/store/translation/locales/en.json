@@ -341,6 +341,10 @@
         "app_warnings": {
           "label": "App Warnings",
           "show_warnings": "Show a warning message each time you preview or publish a scene that contains custom code"
+        },
+        "editor_header": {
+          "label": "Experimental Settings",
+          "viewport_toolbar": "Enable new editor UI"
         }
       },
       "actions": {

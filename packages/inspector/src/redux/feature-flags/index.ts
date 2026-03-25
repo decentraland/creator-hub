@@ -7,7 +7,7 @@ export interface FeatureFlagsState {
 }
 
 export const initialState: FeatureFlagsState = {
-  flags: {},
+  flags: { viewportToolbar: true },
 };
 
 export const featureFlags = createSlice({

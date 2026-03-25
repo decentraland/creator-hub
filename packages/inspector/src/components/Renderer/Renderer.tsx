@@ -53,7 +53,6 @@ import { IncompatibleAssetModal } from '../IncompatibleAssetModal';
 import { Warnings } from '../Warnings';
 import { CameraSpeed } from './CameraSpeed';
 import { Shortcuts } from './Shortcuts';
-import { Metrics } from './Metrics';
 import { SceneMinimap } from './SceneMinimap';
 import { AxisHelper } from './AxisHelper';
 
@@ -481,13 +480,11 @@ const Renderer: React.FC = () => {
       {isLoading && <Loading />}
       <Warnings />
       <CameraSpeed />
-      <AxisHelper />
-      {!hiddenPanels[PanelName.METRICS] && <Metrics />}
+      <AxisHelper onResetCamera={resetCamera} />
       <SceneMinimap />
       {!hiddenPanels[PanelName.SHORTCUTS] && (
         <Shortcuts
           canvas={canvasRef}
-          onResetCamera={resetCamera}
           onZoomIn={zoomIn}
           onZoomOut={zoomOut}
         />

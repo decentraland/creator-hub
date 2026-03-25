@@ -4,6 +4,10 @@ import {
   Vector3,
   TransformNode,
   Quaternion,
+  UtilityLayerRenderer,
+  MeshBuilder,
+  StandardMaterial,
+  Color3,
 } from '@babylonjs/core';
 import { Vector3 as DclVector3 } from '@dcl/ecs-math';
 import { GizmoType } from '../../utils/gizmo';
@@ -13,6 +17,7 @@ import { GizmoType as TransformerType } from './gizmos/types';
 import type { IGizmoTransformer } from './gizmos';
 import { FreeGizmo, PositionGizmo, RotationGizmo, ScaleGizmo } from './gizmos';
 import { snapManager, snapPosition, snapRotation, snapScale } from './snap-manager';
+import { computeObjectSnap } from './object-snap';
 import { getLayoutManager } from './layout-manager';
 
 export function createGizmoManager(context: SceneContext) {
@@ -53,6 +58,76 @@ export function createGizmoManager(context: SceneContext) {
     );
   });
   const freeTransformer = new FreeGizmo(context.scene);
+
+  // Snap indicators: two small spheres rendered on top of all scene geometry.
+  // - snapTargetIndicator (yellow): the snap point on the destination entity.
+  // - snapOriginIndicator (cyan):   the snap point on the dragged entity.
+  const snapIndicatorLayer = new UtilityLayerRenderer(context.scene);
+
+  function makeSnapSphere(name: string, color: Color3) {
+    const mesh = MeshBuilder.CreateSphere(
+      name,
+      { diameter: 0.18, segments: 6 },
+      snapIndicatorLayer.utilityLayerScene,
+    );
+    const mat = new StandardMaterial(`${name}Mat`, snapIndicatorLayer.utilityLayerScene);
+    mat.diffuseColor = color;
+    mat.emissiveColor = color;
+    mat.disableDepthWrite = true;
+    mesh.material = mat;
+    mesh.renderingGroupId = 1;
+    mesh.isVisible = false;
+    mesh.alwaysSelectAsActiveMesh = true;
+    mesh.doNotSyncBoundingInfo = true;
+    return mesh;
+  }
+
+  // Target (destination entity) — larger yellow ring so it reads as "the anchor"
+  const snapTargetIndicator = makeSnapSphere('objectSnapTarget', new Color3(1, 0.85, 0));
+  snapTargetIndicator.scaling.setAll(1.4);
+  // Origin (dragged entity) — smaller cyan dot on top, identifies the matching point on the mover
+  const snapOriginIndicator = makeSnapSphere('objectSnapOrigin', new Color3(0, 0.85, 1));
+
+  function showSnapIndicators(targetPoint: Vector3, originPoint: Vector3): void {
+    snapTargetIndicator.position.copyFrom(targetPoint);
+    snapTargetIndicator.isVisible = true;
+    snapOriginIndicator.position.copyFrom(originPoint);
+    snapOriginIndicator.isVisible = true;
+  }
+
+  function hideSnapIndicator(): void {
+    snapTargetIndicator.isVisible = false;
+    snapOriginIndicator.isVisible = false;
+  }
+
+  function makeObjectSnapFn() {
+    return (entity: EcsEntity, position: Vector3, currentEntities: EcsEntity[]): Vector3 | null => {
+      if (!snapManager.isObjectSnapEnabled()) {
+        hideSnapIndicator();
+        return null;
+      }
+      const currentIds = new Set(currentEntities.map(e => e.entityId));
+      const targetEntities = context.scene.transformNodes.filter(
+        (n): n is EcsEntity => 'entityId' in n && !currentIds.has((n as EcsEntity).entityId),
+      );
+      const result = computeObjectSnap(entity, position, targetEntities);
+      if (result) {
+        showSnapIndicators(result.snapPoint, result.originPoint);
+      } else {
+        hideSnapIndicator();
+      }
+      return result?.position ?? null;
+    };
+  }
+
+  positionTransformer.setObjectSnapFn(makeObjectSnapFn());
+  freeTransformer.setObjectSnapFn(makeObjectSnapFn());
+
+  // Wire up real-time dispatch for all transformers (set once; dispatchDuringDrag is stable)
+  positionTransformer.setDispatchDuringDragCallback(dispatchDuringDrag);
+  rotationTransformer.setDispatchDuringDragCallback(dispatchDuringDrag);
+  scaleTransformer.setDispatchDuringDragCallback(dispatchDuringDrag);
+  freeTransformer.setDispatchDuringDragCallback(dispatchDuringDrag);
 
   // Add alignment state
   let isGizmoWorldAligned = true;
@@ -116,8 +191,6 @@ export function createGizmoManager(context: SceneContext) {
     if (!currentTransform || !entity.rotationQuaternion) return;
 
     isUpdatingFromGizmo = true;
-    // The RotationGizmo already applies the rotation in local coordinates
-    // We only need to use the Babylon rotation directly
     const { x, y, z, w } = entity.rotationQuaternion;
     context.operations.updateValue(context.Transform, entity.entityId, {
       ...currentTransform,
@@ -261,6 +334,12 @@ export function createGizmoManager(context: SceneContext) {
     isUpdatingFromGizmo = false;
   }
 
+  /** Dispatch without clearing the flag or triggering Redux state updates.
+   *  Runs engine.update so the Inspector sees live values, without re-rendering React every frame. */
+  function dispatchDuringDrag(): void {
+    void context.operations.dispatch({ skipRedux: true });
+  }
+
   function updateSnap() {
     if (currentTransformer && 'setSnapDistance' in currentTransformer) {
       if (gizmoManager.rotationGizmoEnabled) {
@@ -327,6 +406,7 @@ export function createGizmoManager(context: SceneContext) {
       return [GizmoType.FREE, GizmoType.POSITION, GizmoType.ROTATION, GizmoType.SCALE] as const;
     },
     setGizmoType(type: GizmoType) {
+      hideSnapIndicator();
       // Then disable all Babylon gizmos
       gizmoManager.positionGizmoEnabled = false;
       gizmoManager.rotationGizmoEnabled = false;
@@ -345,7 +425,10 @@ export function createGizmoManager(context: SceneContext) {
           activateTransformer(positionTransformer, snapManager.getPositionSnap());
           // Set up callbacks for ECS updates
           if ('setUpdateCallbacks' in positionTransformer) {
-            positionTransformer.setUpdateCallbacks(updateEntityPosition, dispatchAndClearFlag);
+            positionTransformer.setUpdateCallbacks(updateEntityPosition, () => {
+              hideSnapIndicator();
+              dispatchAndClearFlag();
+            });
           }
           break;
         }
@@ -385,7 +468,10 @@ export function createGizmoManager(context: SceneContext) {
           }
           // Set up callback to update gizmo position after drag ends
           if ('setOnDragEndCallback' in freeTransformer) {
-            freeTransformer.setOnDragEndCallback?.(() => updateGizmoPosition());
+            freeTransformer.setOnDragEndCallback?.(() => {
+              hideSnapIndicator();
+              updateGizmoPosition();
+            });
           }
           break;
         }

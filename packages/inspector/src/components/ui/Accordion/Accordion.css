@@ -66,3 +66,42 @@
 .Accordion.disabled {
   opacity: 0.7;
 }
+
+/* ===== Experimental UI ===== */
+.experimental-ui .Accordion {
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  margin-bottom: 0;
+  padding: 0;
+  overflow: hidden;
+  transition: border-color var(--transition-fast);
+}
+
+.experimental-ui .Accordion .header {
+  padding: 9px 10px;
+  transition: background-color var(--transition-fast);
+}
+
+.experimental-ui .Accordion .header:hover {
+  background-color: var(--surface-3);
+}
+
+.experimental-ui .Accordion.open .header {
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 9px;
+}
+
+.experimental-ui .Accordion > .content {
+  padding: 8px 10px 10px;
+}
+
+.experimental-ui .Accordion .label {
+  color: var(--text-secondary);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+.experimental-ui .Accordion.disabled {
+  opacity: 0.5;
+}

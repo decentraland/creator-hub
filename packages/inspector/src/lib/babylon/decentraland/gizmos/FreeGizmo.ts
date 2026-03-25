@@ -1,4 +1,4 @@
-import type { Scene, AbstractMesh } from '@babylonjs/core';
+import type { Scene, AbstractMesh, Matrix } from '@babylonjs/core';
 import {
   Vector3,
   TransformNode,
@@ -12,7 +12,7 @@ import {
 import type { Entity } from '@dcl/ecs';
 import type { EcsEntity } from '../EcsEntity';
 import { LEFT_BUTTON } from '../mouse-utils';
-import { snapVector } from '../snap-manager';
+import { snapPosition, snapVector } from '../snap-manager';
 import type { IGizmoTransformer } from './types';
 import { GizmoType } from './types';
 
@@ -31,14 +31,23 @@ export class FreeGizmo implements IGizmoTransformer {
   private lastSnappedPivotPosition: Vector3 | null = null;
   private entityOffsets = new Map<Entity, Vector3>();
   private dragPlanePosition: Vector3 | null = null; // Cache initial ground plane position
+  private cachedDragPlane: Plane | null = null; // Reused each frame — plane is fixed during drag
+  private parentMatrixCache = new Map<TransformNode, Matrix>(); // Avoids per-entity matrix inversion
+  // Scratch vectors — reused every frame to avoid GC pressure
+  private _scratchHitPoint = new Vector3();
+  private _scratchDelta = new Vector3();
 
   private gizmoIndicator: AbstractMesh | null = null;
 
   private onDragEndCallback: (() => void) | null = null;
   private updateEntityPosition: ((entity: EcsEntity) => void) | null = null;
   private dispatchOperations: (() => void) | null = null;
+  private dispatchDuringDrag: (() => void) | null = null;
 
   private gizmoManager: GizmoManagerInterface | null = null;
+  private objectSnapFn:
+    | ((entity: EcsEntity, position: Vector3, currentEntities: EcsEntity[]) => Vector3 | null)
+    | null = null;
 
   constructor(
     private scene: Scene,
@@ -88,6 +97,16 @@ export class FreeGizmo implements IGizmoTransformer {
 
   setGizmoManager(gizmoManager: GizmoManagerInterface): void {
     this.gizmoManager = gizmoManager;
+  }
+
+  setObjectSnapFn(
+    fn: (entity: EcsEntity, position: Vector3, currentEntities: EcsEntity[]) => Vector3 | null,
+  ): void {
+    this.objectSnapFn = fn;
+  }
+
+  setDispatchDuringDragCallback(fn: () => void): void {
+    this.dispatchDuringDrag = fn;
   }
 
   onDragStart(entities: EcsEntity[], _gizmoNode: TransformNode): void {
@@ -180,6 +199,8 @@ export class FreeGizmo implements IGizmoTransformer {
     this.isDragging = false;
     this.pivotPosition = null;
     this.dragPlanePosition = null;
+    this.cachedDragPlane = null;
+    this.parentMatrixCache.clear();
     this.entityOffsets.clear();
     this.updateGizmoIndicator();
     this.dispatchOperations?.();
@@ -187,9 +208,9 @@ export class FreeGizmo implements IGizmoTransformer {
   }
 
   private updatePivotPosition(delta: Vector3): void {
-    const worldDelta = delta.clone();
-    worldDelta.y = 0; // keep Y position unchanged for free gizmo
-    this.pivotPosition!.addInPlace(worldDelta);
+    // Y is intentionally excluded — FreeGizmo moves on the XZ plane only
+    this.pivotPosition!.x += delta.x;
+    this.pivotPosition!.z += delta.z;
   }
 
   private shouldMoveEntities(): boolean {
@@ -204,6 +225,7 @@ export class FreeGizmo implements IGizmoTransformer {
 
   private moveEntitiesToPivot(): void {
     const finalPivotPosition = this.getSnappedPivotPosition();
+    this.parentMatrixCache.clear();
 
     for (const entity of this.selectedEntities) {
       const offset = this.entityOffsets.get(entity.entityId);
@@ -214,6 +236,7 @@ export class FreeGizmo implements IGizmoTransformer {
     }
 
     this.updateEntityPosition && this.selectedEntities.forEach(this.updateEntityPosition);
+    this.dispatchDuringDrag?.();
     this.updateGizmoIndicator();
   }
 
@@ -248,25 +271,24 @@ export class FreeGizmo implements IGizmoTransformer {
    * providing accurate cursor-to-world position mapping regardless of camera angle.
    */
   private calculateDragDelta(): Vector3 | null {
-    if (!this.pivotPosition || !this.dragPlanePosition) return null;
+    if (!this.pivotPosition || !this.cachedDragPlane) return null;
 
     const camera = this.scene.activeCamera;
     if (!camera) return null;
 
     const ray = this.scene.createPickingRay(this.scene.pointerX, this.scene.pointerY, null, camera);
 
-    const dragPlane = Plane.FromPositionAndNormal(
-      new Vector3(0, this.dragPlanePosition.y, 0),
-      Vector3.Up(),
-    );
+    const distance = ray.intersectsPlane(this.cachedDragPlane);
+    // null  → ray parallel to plane (camera looking sideways)
+    // <= 0  → intersection is behind the camera
+    if (distance === null || distance <= 0) return null;
 
-    const distance = ray.intersectsPlane(dragPlane);
-    if (distance === null) return null;
+    // Reuse scratch vectors: hitPoint = ray.origin + ray.direction * distance
+    ray.direction.scaleToRef(distance, this._scratchHitPoint);
+    this._scratchHitPoint.addInPlace(ray.origin);
+    this._scratchHitPoint.subtractToRef(this.pivotPosition, this._scratchDelta);
 
-    const newPosition = ray.origin.add(ray.direction.scale(distance));
-    const delta = newPosition.subtract(this.pivotPosition);
-
-    return delta;
+    return this._scratchDelta;
   }
 
   /** Custom picking with predicate to only consider selected entities' meshes.
@@ -308,57 +330,41 @@ export class FreeGizmo implements IGizmoTransformer {
     this.initializePivotPosition();
     this.initializeEntityOffsets();
 
-    // Cache the pivot position for raycasting plane intersection during drag.
+    // Cache the pivot position and drag plane for raycasting during drag.
+    // The plane is fixed for the entire drag, so we build it once here.
     if (this.pivotPosition) {
       this.dragPlanePosition = this.pivotPosition.clone();
+      this.cachedDragPlane = Plane.FromPositionAndNormal(
+        new Vector3(0, this.dragPlanePosition.y, 0),
+        Vector3.Up(),
+      );
     }
   }
 
   private applyWorldPositionToEntity(entity: EcsEntity, worldPosition: Vector3): void {
+    const gridSnapped = snapPosition(worldPosition);
+    gridSnapped.y = worldPosition.y; // FreeGizmo moves on XZ plane only — preserve Y
+    const objectSnapped = this.objectSnapFn?.(entity, gridSnapped, this.selectedEntities);
+    const finalWorldPosition = objectSnapped ?? gridSnapped;
+
     const parent = entity.parent instanceof TransformNode ? entity.parent : null;
 
     if (parent) {
-      const parentWorldMatrix = parent.getWorldMatrix();
-      const parentWorldMatrixInverse = parentWorldMatrix.invert();
-      const localPosition = Vector3.TransformCoordinates(worldPosition, parentWorldMatrixInverse);
-      entity.position.copyFrom(localPosition);
+      let parentInverse = this.parentMatrixCache.get(parent);
+      if (!parentInverse) {
+        parentInverse = parent.getWorldMatrix().clone().invert();
+        this.parentMatrixCache.set(parent, parentInverse);
+      }
+      entity.position.copyFrom(Vector3.TransformCoordinates(finalWorldPosition, parentInverse));
     } else {
-      entity.position.copyFrom(worldPosition);
+      entity.position.copyFrom(finalWorldPosition);
     }
 
-    this.updateEntityTransform(entity);
-  }
-
-  private updateEntityTransform(entity: EcsEntity): void {
-    // Force immediate world matrix update
+    // Update the entity's world matrix immediately so getAbsolutePosition() and object
+    // snap are correct within the same frame. Child world matrices are lazy in Babylon —
+    // they update on demand before render or when explicitly accessed, so we don't need
+    // to force them here.
     entity.computeWorldMatrix(true);
-
-    // Update bounding info for the entity
-    if (typeof (entity as any).refreshBoundingInfo === 'function') {
-      (entity as any).refreshBoundingInfo();
-    }
-
-    if (typeof entity.getChildMeshes === 'function') {
-      entity.getChildMeshes().forEach(mesh => {
-        if (typeof mesh.refreshBoundingInfo === 'function') {
-          mesh.refreshBoundingInfo({});
-        }
-        if (typeof mesh.computeWorldMatrix === 'function') {
-          mesh.computeWorldMatrix(true);
-        }
-      });
-    }
-
-    // Update bounding info mesh if it exists
-    if ((entity as any).boundingInfoMesh) {
-      const boundingInfoMesh = (entity as any).boundingInfoMesh;
-      if (typeof boundingInfoMesh.refreshBoundingInfo === 'function') {
-        boundingInfoMesh.refreshBoundingInfo();
-      }
-      if (typeof boundingInfoMesh.computeWorldMatrix === 'function') {
-        boundingInfoMesh.computeWorldMatrix(true);
-      }
-    }
   }
 
   private getCentroid(): Vector3 {

@@ -41,6 +41,7 @@ export class ScaleGizmo implements IGizmoTransformer {
   private currentEntities: EcsEntity[] = [];
   private updateEntityScale: ((entity: EcsEntity) => void) | null = null;
   private dispatchOperations: (() => void) | null = null;
+  private dispatchDuringDrag: (() => void) | null = null;
   private isWorldAligned = true;
 
   // Sensitivity multiplier: higher = model scales more relative to gizmo visual movement
@@ -590,6 +591,10 @@ export class ScaleGizmo implements IGizmoTransformer {
     this.dispatchOperations = dispatchOperations;
   }
 
+  setDispatchDuringDragCallback(fn: () => void): void {
+    this.dispatchDuringDrag = fn;
+  }
+
   setWorldAligned(_value: boolean): void {
     // Scale gizmo should always be locally aligned, regardless of the parameter
     this.isWorldAligned = false;
@@ -632,10 +637,10 @@ export class ScaleGizmo implements IGizmoTransformer {
       if (this.gizmoManager.attachedNode) {
         this.update(this.currentEntities, this.gizmoManager.attachedNode as TransformNode);
 
-        // Update ECS scale on each drag update for real-time feedback
         if (this.updateEntityScale) {
           this.currentEntities.forEach(this.updateEntityScale);
         }
+        this.dispatchDuringDrag?.();
       }
     });
 

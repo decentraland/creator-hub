@@ -1,14 +1,18 @@
 import { ScreenshotTools, Vector3 } from '@babylonjs/core';
+import type { IEngine } from '@dcl/ecs';
 import type { Transport } from '@dcl/mini-rpc';
 import { RPC } from '@dcl/mini-rpc';
 
 import { type Store } from '../../../redux/store';
 import { type initRenderer } from '../../babylon/setup/init';
 import type { AssetsTab, PanelName, SceneInspectorTab } from '../../../redux/ui/types';
-import { setHasCustomCode } from '../../../redux/scene-metrics';
+import { setHasCustomCode, toggleMetricsVisible } from '../../../redux/scene-metrics';
 import { setDebugConsoleEnabled } from '../../../redux/ui';
 import * as debugLogStore from '../../logic/debug-log-store';
 import { setFeatureFlags } from '../../../redux/feature-flags';
+import { undo, redo } from '../../../redux/data-layer';
+import { createOperations } from '../../sdk/operations';
+import type { EditorComponents } from '../../sdk/components';
 
 enum Method {
   TOGGLE_COMPONENT = 'toggle_component',
@@ -26,6 +30,11 @@ enum Method {
   PUSH_DEBUG_LOGS = 'push_debug_logs',
   CLEAR_DEBUG_LOGS = 'clear_debug_logs',
   SET_FEATURE_FLAGS = 'set_feature_flags',
+  UNDO = 'undo',
+  REDO = 'redo',
+  EDIT_SCENE = 'edit_scene',
+  TOGGLE_SCENE_INFO = 'toggle_scene_info',
+  TOGGLE_METRICS = 'toggle_metrics',
 }
 
 type Params = {
@@ -44,6 +53,11 @@ type Params = {
   [Method.PUSH_DEBUG_LOGS]: { logs: string[] };
   [Method.CLEAR_DEBUG_LOGS]: Record<string, never>;
   [Method.SET_FEATURE_FLAGS]: { flags: Record<string, boolean> };
+  [Method.UNDO]: Record<string, never>;
+  [Method.REDO]: Record<string, never>;
+  [Method.EDIT_SCENE]: Record<string, never>;
+  [Method.TOGGLE_SCENE_INFO]: Record<string, never>;
+  [Method.TOGGLE_METRICS]: Record<string, never>;
 };
 
 type Result = {
@@ -62,10 +76,21 @@ type Result = {
   [Method.PUSH_DEBUG_LOGS]: void;
   [Method.CLEAR_DEBUG_LOGS]: void;
   [Method.SET_FEATURE_FLAGS]: void;
+  [Method.UNDO]: void;
+  [Method.REDO]: void;
+  [Method.EDIT_SCENE]: void;
+  [Method.TOGGLE_SCENE_INFO]: void;
+  [Method.TOGGLE_METRICS]: void;
 };
 
 export class SceneServer extends RPC<Method, Params, Result> {
-  constructor(transport: Transport, store: Store, renderer: ReturnType<typeof initRenderer>) {
+  constructor(
+    transport: Transport,
+    store: Store,
+    renderer: ReturnType<typeof initRenderer>,
+    engine: IEngine,
+    components: Pick<EditorComponents, 'InspectorUIState'>,
+  ) {
     super('SceneRpcInbound', transport);
     const camera = renderer.editorCamera.getCamera();
 
@@ -131,6 +156,34 @@ export class SceneServer extends RPC<Method, Params, Result> {
 
     this.handle('set_feature_flags', async ({ flags }) => {
       store.dispatch(setFeatureFlags(flags));
+    });
+
+    this.handle('undo', async () => {
+      store.dispatch(undo());
+    });
+
+    this.handle('redo', async () => {
+      store.dispatch(redo());
+    });
+
+    const operations = createOperations(engine);
+
+    this.handle('edit_scene', async () => {
+      operations.updateSelectedEntity(engine.RootEntity, false);
+      await operations.dispatch();
+    });
+
+    this.handle('toggle_metrics', async () => {
+      store.dispatch(toggleMetricsVisible());
+    });
+
+    this.handle('toggle_scene_info', async () => {
+      const currentState = components.InspectorUIState.getOrNull(engine.RootEntity) || {};
+      components.InspectorUIState.createOrReplace(engine.RootEntity, {
+        ...currentState,
+        sceneInfoPanelVisible: !currentState.sceneInfoPanelVisible,
+      });
+      await operations.dispatch();
     });
   }
 }

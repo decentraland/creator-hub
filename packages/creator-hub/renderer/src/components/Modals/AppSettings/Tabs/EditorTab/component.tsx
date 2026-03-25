@@ -148,6 +148,22 @@ const EditorTab: React.FC<EditorTabProps> = ({
           label={t('modal.app_settings.fields.app_warnings.show_warnings')}
         />
       </FormGroup>
+      <FormGroup className="EditorHeaderFormGroup">
+        <Typography variant="body1">
+          {t('modal.app_settings.fields.editor_header.label')}
+        </Typography>
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={settings.viewportToolbar ?? true}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                updateSettings({ ...settings, viewportToolbar: event.target.checked })
+              }
+            />
+          }
+          label={t('modal.app_settings.fields.editor_header.viewport_toolbar')}
+        />
+      </FormGroup>
     </Box>
   );
 };

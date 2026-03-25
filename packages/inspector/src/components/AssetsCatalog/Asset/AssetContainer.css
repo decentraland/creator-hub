@@ -3,10 +3,9 @@
   height: 130px;
   width: 354px;
   background-color: #161518 !important;
-  border-width: 0.5px 0px 0px 0.5px !important;
-  border-style: solid !important;
-  border-color: #ffffff !important;
-  border-radius: 4px 0px 0px 4px !important;
+  border: none !important;
+  border-radius: 6px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
 }
 
 .SmartItemTooltip::before {

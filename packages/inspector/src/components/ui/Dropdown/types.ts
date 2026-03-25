@@ -21,4 +21,5 @@ export type Props = React.SelectHTMLAttributes<HTMLSelectElement> & {
   multiple?: boolean;
   clearable?: boolean;
   trigger?: React.ReactNode;
+  onClose?: () => void;
 };

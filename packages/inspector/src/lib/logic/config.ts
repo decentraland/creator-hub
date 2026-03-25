@@ -11,6 +11,7 @@ export type InspectorConfig = {
   segmentKey: string | null;
   projectId: string | null;
   catalystBaseUrl: string | null;
+  featureFlags: Record<string, boolean>;
 };
 
 export type GlobalWithConfig = typeof globalThis & {
@@ -42,5 +43,6 @@ export function getConfig(): InspectorConfig {
     segmentKey: params.get('segmentKey') || config?.segmentKey || null,
     projectId: params.get('projectId') || config?.projectId || null,
     catalystBaseUrl: params.get('catalystBaseUrl') || config?.catalystBaseUrl || CATALYST_BASE_URL,
+    featureFlags: JSON.parse(params.get('featureFlags') || 'null') ?? config?.featureFlags ?? {},
   };
 }

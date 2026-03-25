@@ -37,6 +37,11 @@ export enum Method {
   PUSH_DEBUG_LOGS = 'push_debug_logs',
   CLEAR_DEBUG_LOGS = 'clear_debug_logs',
   SET_FEATURE_FLAGS = 'set_feature_flags',
+  UNDO = 'undo',
+  REDO = 'redo',
+  EDIT_SCENE = 'edit_scene',
+  TOGGLE_SCENE_INFO = 'toggle_scene_info',
+  TOGGLE_METRICS = 'toggle_metrics',
 }
 
 export type Params = {
@@ -55,6 +60,11 @@ export type Params = {
   [Method.PUSH_DEBUG_LOGS]: { logs: string[] };
   [Method.CLEAR_DEBUG_LOGS]: Record<string, never>;
   [Method.SET_FEATURE_FLAGS]: { flags: Record<string, boolean> };
+  [Method.UNDO]: Record<string, never>;
+  [Method.REDO]: Record<string, never>;
+  [Method.EDIT_SCENE]: Record<string, never>;
+  [Method.TOGGLE_SCENE_INFO]: Record<string, never>;
+  [Method.TOGGLE_METRICS]: Record<string, never>;
 };
 
 export type Result = {
@@ -73,6 +83,11 @@ export type Result = {
   [Method.PUSH_DEBUG_LOGS]: void;
   [Method.CLEAR_DEBUG_LOGS]: void;
   [Method.SET_FEATURE_FLAGS]: void;
+  [Method.UNDO]: void;
+  [Method.REDO]: void;
+  [Method.EDIT_SCENE]: void;
+  [Method.TOGGLE_SCENE_INFO]: void;
+  [Method.TOGGLE_METRICS]: void;
 };
 
 export class SceneRpcClient extends RPC<Method, Params, Result> {
@@ -138,5 +153,25 @@ export class SceneRpcClient extends RPC<Method, Params, Result> {
 
   setFeatureFlags = (flags: Record<string, boolean>) => {
     return this.request('set_feature_flags', { flags });
+  };
+
+  undo = () => {
+    return this.request('undo', {} as Record<string, never>);
+  };
+
+  redo = () => {
+    return this.request('redo', {} as Record<string, never>);
+  };
+
+  editScene = () => {
+    return this.request('edit_scene', {} as Record<string, never>);
+  };
+
+  toggleSceneInfo = () => {
+    return this.request('toggle_scene_info', {} as Record<string, never>);
+  };
+
+  toggleMetrics = () => {
+    return this.request('toggle_metrics', {} as Record<string, never>);
   };
 }

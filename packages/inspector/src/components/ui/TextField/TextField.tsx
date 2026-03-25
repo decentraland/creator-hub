@@ -87,6 +87,15 @@ const TextField = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
     setHovered(false);
   }, [setHovered]);
 
+  const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = useCallback(
+    event => {
+      if (event.key === 'Enter' && type === 'number') {
+        event.currentTarget.blur();
+      }
+    },
+    [type],
+  );
+
   const handleWheel: React.WheelEventHandler<HTMLInputElement> = useCallback(
     event => {
       if (type === 'number') {
@@ -154,12 +163,13 @@ const TextField = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
         <input
           className="input"
           ref={ref}
-          type={inputValue === '--' ? 'text' : type}
+          type={inputValue === '--' || type === 'number' ? 'text' : type}
           value={inputValue !== '--' ? inputValue : ''}
           placeholder={inputValue === '--' ? '--' : placeholder}
           onChange={handleInputChange}
           onFocus={handleInputFocus}
           onBlur={handleInputBlur}
+          onKeyDown={handleKeyDown}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
           onWheel={handleWheel}

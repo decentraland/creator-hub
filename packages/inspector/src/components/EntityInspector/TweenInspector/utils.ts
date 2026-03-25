@@ -2,24 +2,25 @@ import { Quaternion } from '@babylonjs/core';
 import type { Move, PBTween, PBTweenSequence, Rotate, Scale } from '@dcl/ecs';
 import { TweenType } from '@dcl/asset-packs';
 
+import { formatFloat } from '../utils';
 import type { TweenInput, TweenSequenceInput } from './types';
 
 export const fromTween = (value: PBTween): TweenInput => {
   let type = TweenType.MOVE_ITEM;
-  let start = { x: '0.00', y: '0.00', z: '0.00' };
-  let end = { x: '0.00', y: '0.00', z: '0.00' };
+  let start = { x: '0', y: '0', z: '0' };
+  let end = { x: '0', y: '0', z: '0' };
 
   if (value.mode?.$case === 'move') {
     type = TweenType.MOVE_ITEM;
     start = {
-      x: value.mode.move.start?.x.toFixed(2) ?? '0.00',
-      y: value.mode.move.start?.y.toFixed(2) ?? '0.00',
-      z: value.mode.move.start?.z.toFixed(2) ?? '0.00',
+      x: formatFloat(value.mode.move.start?.x ?? 0),
+      y: formatFloat(value.mode.move.start?.y ?? 0),
+      z: formatFloat(value.mode.move.start?.z ?? 0),
     };
     end = {
-      x: value.mode.move.end?.x.toFixed(2) ?? '0.00',
-      y: value.mode.move.end?.y.toFixed(2) ?? '0.00',
-      z: value.mode.move.end?.z.toFixed(2) ?? '0.00',
+      x: formatFloat(value.mode.move.end?.x ?? 0),
+      y: formatFloat(value.mode.move.end?.y ?? 0),
+      z: formatFloat(value.mode.move.end?.z ?? 0),
     };
   } else if (value.mode?.$case === 'rotate') {
     type = TweenType.ROTATE_ITEM;
@@ -48,14 +49,14 @@ export const fromTween = (value: PBTween): TweenInput => {
   } else if (value.mode?.$case === 'scale') {
     type = TweenType.SCALE_ITEM;
     start = {
-      x: value.mode.scale.start?.x.toFixed(2) ?? '0.00',
-      y: value.mode.scale.start?.y.toFixed(2) ?? '0.00',
-      z: value.mode.scale.start?.z.toFixed(2) ?? '0.00',
+      x: formatFloat(value.mode.scale.start?.x ?? 0),
+      y: formatFloat(value.mode.scale.start?.y ?? 0),
+      z: formatFloat(value.mode.scale.start?.z ?? 0),
     };
     end = {
-      x: value.mode.scale.end?.x.toFixed(2) ?? '0.00',
-      y: value.mode.scale.end?.y.toFixed(2) ?? '0.00',
-      z: value.mode.scale.end?.z.toFixed(2) ?? '0.00',
+      x: formatFloat(value.mode.scale.end?.x ?? 0),
+      y: formatFloat(value.mode.scale.end?.y ?? 0),
+      z: formatFloat(value.mode.scale.end?.z ?? 0),
     };
   }
 
@@ -139,8 +140,11 @@ export const toTween = (value: TweenInput): PBTween => {
 
 function formatAngle(angle: number) {
   const sanitizedAngle = angle < 0 ? 360 + angle : angle;
-  const value = sanitizedAngle.toFixed(2);
-  return value === '360.00' ? '0.00' : value;
+  // Round to 4 decimal places before truncation to eliminate floating point noise
+  // introduced by the quaternion↔Euler round-trip (e.g. 14.99999 → 15)
+  const rounded = Math.round(sanitizedAngle * 10000) / 10000;
+  const value = formatFloat(rounded);
+  return value === '360' ? '0' : value;
 }
 
 export const fromTweenSequence = (value: PBTweenSequence): TweenSequenceInput => {

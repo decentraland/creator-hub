@@ -88,3 +88,42 @@ code {
   margin: 0px;
   padding: 0px;
 }
+
+/* ===== Experimental UI overrides ===== */
+.App.experimental-ui {
+  background: var(--surface-0);
+  padding: 0 8px 8px;
+  box-sizing: border-box;
+}
+
+.experimental-ui .sidebar {
+  background: var(--surface-0);
+}
+
+.experimental-ui .editor {
+  background: var(--surface-0);
+}
+
+.experimental-ui .composite-renderer {
+  position: relative;
+}
+
+.experimental-ui .horizontal-handle {
+  width: 8px;
+  background-color: var(--surface-0);
+}
+
+.experimental-ui .horizontal-handle:hover,
+.experimental-ui .horizontal-handle[data-resize-handle-active] {
+  background-color: var(--accent);
+}
+
+.experimental-ui .vertical-handle {
+  height: 8px;
+  background-color: var(--surface-0);
+}
+
+.experimental-ui .vertical-handle:hover,
+.experimental-ui .vertical-handle[data-resize-handle-active] {
+  background-color: var(--accent);
+}

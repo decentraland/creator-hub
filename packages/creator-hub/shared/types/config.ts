@@ -37,6 +37,7 @@ export const DEFAULT_CONFIG: Config = {
       multiInstance: false,
       showWarnings: true,
     },
+    viewportToolbar: true,
   },
   editors: [],
 };

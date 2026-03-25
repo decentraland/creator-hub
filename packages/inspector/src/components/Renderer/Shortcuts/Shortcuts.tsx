@@ -5,7 +5,6 @@ import {
   MdOutlineZoomOut as ZoomOutIcon,
   MdKeyboard as KeyboardIcon,
 } from 'react-icons/md';
-import { HiOutlineViewfinderCircle as ResetCameraIcon } from 'react-icons/hi2';
 
 import { useContainerSize } from '../../../hooks/useContainerSize';
 import { useOutsideClick } from '../../../hooks/useOutsideClick';
@@ -19,7 +18,7 @@ const ICON_SIZE = 18;
 const isMac = /Mac|iPhone|iPod|iPad/.test(navigator.userAgent);
 const prefixKey = isMac ? '⌘' : 'ctrl';
 
-const Shortcuts: React.FC<Props> = ({ canvas, onResetCamera, onZoomIn, onZoomOut }) => {
+const Shortcuts: React.FC<Props> = ({ canvas, onZoomIn, onZoomOut }) => {
   const [showShortcuts, setShowShortcuts] = React.useState(false);
   const { height } = useContainerSize(canvas);
 
@@ -41,9 +40,6 @@ const Shortcuts: React.FC<Props> = ({ canvas, onResetCamera, onZoomIn, onZoomOut
   return (
     <div className="Shortcuts">
       <div className="Buttons">
-        <Button onClick={onResetCamera}>
-          <ResetCameraIcon size={ICON_SIZE} />
-        </Button>
         <div className="ZoomButtons">
           <Button onClick={onZoomIn}>
             <ZoomInIcon size={ICON_SIZE} />

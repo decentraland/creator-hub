@@ -81,3 +81,29 @@ export const useSnapToggle = () => {
 
   return { isEnabled, setEnabled, toggle };
 };
+
+export const useObjectSnapToggle = () => {
+  const [isEnabled, setEnabledInternal] = useState<boolean>(snapManager.isObjectSnapEnabled());
+  const skipSyncRef = useRef(false);
+  const setEnabled = useCallback((value: boolean, skipSync = false) => {
+    skipSyncRef.current = skipSync;
+    setEnabledInternal(value);
+  }, []);
+  const toggle = useCallback(() => setEnabled(!isEnabled), [isEnabled]);
+
+  // send update to snap manager
+  useEffect(() => {
+    if (skipSyncRef.current) return;
+    snapManager.setObjectSnapEnabled(isEnabled);
+  }, [isEnabled]);
+
+  // receive update from snap manager
+  useEffect(() => {
+    const unsubscribe = snapManager.onChange(() => {
+      setEnabled(snapManager.isObjectSnapEnabled(), true); // skip sync to avoid endless loop
+    });
+    return () => unsubscribe();
+  }, []);
+
+  return { isEnabled, setEnabled, toggle };
+};

@@ -62,3 +62,120 @@
   justify-content: flex-end;
   align-items: center;
 }
+
+/* ===== Experimental UI: floating toolbar ===== */
+.experimental-ui .Toolbar {
+  align-items: stretch;
+  background: transparent;
+  padding: 8px 0 0 8px;
+  gap: 2px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.experimental-ui .Toolbar > *,
+.experimental-ui .Toolbar .RightContent > * {
+  pointer-events: auto;
+}
+
+.experimental-ui .Toolbar .RightContent {
+  pointer-events: none;
+}
+
+.experimental-ui .Toolbar .undo,
+.experimental-ui .Toolbar .redo {
+  background-color: rgba(22, 21, 24, 0.75);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-subtle);
+}
+
+.experimental-ui .Toolbar .undo {
+  margin: 0;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right: none;
+}
+
+.experimental-ui .Toolbar .redo {
+  margin: 0;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.experimental-ui .Toolbar .undo:hover:not(:disabled),
+.experimental-ui .Toolbar .redo:hover:not(:disabled) {
+  background-color: rgba(37, 35, 48, 0.9);
+}
+
+.experimental-ui .Toolbar .save,
+.experimental-ui .Toolbar .babylonjs-inspector {
+  background-color: rgba(22, 21, 24, 0.75);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-subtle);
+}
+
+.experimental-ui .Toolbar .save:hover:not(:disabled),
+.experimental-ui .Toolbar .babylonjs-inspector:hover:not(:disabled) {
+  background-color: rgba(37, 35, 48, 0.9);
+}
+
+.experimental-ui .Toolbar .Preferences,
+.experimental-ui .Toolbar .babylonjs-inspector {
+  margin-left: 4px;
+}
+
+.experimental-ui .Toolbar .save svg,
+.experimental-ui .Toolbar .undo svg,
+.experimental-ui .Toolbar .redo svg {
+  transform: none;
+}
+
+.experimental-ui .Toolbar .RightContent {
+  gap: 2px;
+}
+
+.experimental-ui .Toolbar .edit-scene svg,
+.experimental-ui .Toolbar .scene-info svg {
+  width: 16px;
+  height: 16px;
+}
+
+.experimental-ui .Toolbar .edit-scene {
+  margin: 0;
+  background-color: rgba(22, 21, 24, 0.75);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-subtle);
+}
+
+.experimental-ui .Toolbar .edit-scene:not(:last-child) {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right: none;
+}
+
+.experimental-ui .Toolbar .scene-info:not(:first-child) {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.experimental-ui .Toolbar .scene-info {
+  background-color: rgba(22, 21, 24, 0.75);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-subtle);
+}
+
+.experimental-ui .Toolbar .edit-scene:hover:not(:disabled),
+.experimental-ui .Toolbar .scene-info:not(.active):hover:not(:disabled) {
+  background-color: rgba(37, 35, 48, 0.9);
+}
+
+.experimental-ui .Toolbar .scene-info.active {
+  background-color: var(--accent) !important;
+  color: #fff !important;
+  border-color: var(--accent) !important;
+}

@@ -73,21 +73,21 @@ const SetRotationAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
       <div className="row">
         <Block label="Rotation">
           <TextField
-            leftLabel="X"
+            leftLabel={<span className="axis-x">X</span>}
             type="number"
             value={payload.x}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangeX(e)}
             autoSelect
           />
           <TextField
-            leftLabel="Y"
+            leftLabel={<span className="axis-y">Y</span>}
             type="number"
             value={payload.y}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangeY(e)}
             autoSelect
           />
           <TextField
-            leftLabel="Z"
+            leftLabel={<span className="axis-z">Z</span>}
             type="number"
             value={payload.z}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangeZ(e)}

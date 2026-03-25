@@ -74,7 +74,7 @@ export async function createSdkContext(
   const config = getConfig();
   if (config.dataLayerRpcParentUrl) {
     const transport = new MessageTransport(window, window.parent, config.dataLayerRpcParentUrl);
-    new SceneServer(transport, store, renderer);
+    new SceneServer(transport, store, renderer, engine, components);
     new SceneMetricsServer(transport, store);
   }
 

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FaTag as TagIcon, FaPlus, FaPencilAlt as EditIcon } from 'react-icons/fa';
 import { VscTrash as RemoveIcon } from 'react-icons/vsc';
 import type { Entity } from '@dcl/ecs';
@@ -22,6 +22,9 @@ const TagsInspector = withSdk<Props>(({ entities, sdk }) => {
   const { Tags } = sdk.components;
   const entity = entities[0];
 
+  const [showFull, setShowFull] = useState(false);
+  const dropdownRef = useRef<HTMLInputElement>(null);
+  const shouldAutoOpen = useRef(false);
   const [createEditModal, setCreateEditModal] = useState<{ isOpen: boolean; tag: string | null }>({
     isOpen: false,
     tag: null,
@@ -80,6 +83,14 @@ const TagsInspector = withSdk<Props>(({ entities, sdk }) => {
   const handleCloseCreateEditModal = useCallback(() => {
     setCreateEditModal({ isOpen: false, tag: null });
   }, []);
+
+  // Auto-open dropdown after "Add Tag" click
+  useEffect(() => {
+    if (shouldAutoOpen.current && dropdownRef.current) {
+      shouldAutoOpen.current = false;
+      dropdownRef.current.click();
+    }
+  }, [showFull]);
 
   // Delete handlers (for scene-level tag deletion)
   const handleOpenDeleteModal = useCallback((e: React.MouseEvent<SVGElement>, tag: string) => {
@@ -200,6 +211,11 @@ const TagsInspector = withSdk<Props>(({ entities, sdk }) => {
       removedTags.forEach(tag => {
         handleRemoveTag(tag);
       });
+
+      // Collapse back if all tags were removed
+      if (selectedTags.length === 0) {
+        setShowFull(false);
+      }
     },
     [commonTags, partialTags, handleAddTag, handleRemoveTag],
   );
@@ -252,16 +268,48 @@ const TagsInspector = withSdk<Props>(({ entities, sdk }) => {
   // All visible tag values for dropdown (common tags first, then partial)
   const allVisibleTags = useMemo(() => [...commonTags, ...partialTags], [commonTags, partialTags]);
 
+  // Collapse back to "Add Tag" when dropdown is closed with no tags
+  const handleDropdownClose = useCallback(() => {
+    if (allVisibleTags.length === 0) {
+      setShowFull(false);
+    }
+  }, [allVisibleTags.length]);
+
+  if (allVisibleTags.length === 0 && !showFull) {
+    return (
+      <div className="TagsInspector">
+        <button
+          className="add-tag-btn title"
+          onClick={() => {
+            shouldAutoOpen.current = true;
+            setShowFull(true);
+          }}
+        >
+          <TagIcon /> Add Tag
+        </button>
+        <CreateEditTagModal
+          open={createEditModal.isOpen}
+          onClose={handleCloseCreateEditModal}
+          editingTag={createEditModal.tag}
+          entity={entity}
+          onTagCreated={handleTagCreated}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="TagsInspector">
-      <div className="title">
-        Tags <TagIcon />
-      </div>
+      <button className="add-tag-btn title tags-label">
+        <TagIcon /> Tags
+      </button>
       <div className="tags-selector">
         <Dropdown
+          ref={dropdownRef}
           placeholder="Add or create tags"
           multiple
           onChange={handleDropdownChange}
+          onClose={handleDropdownClose}
           value={allVisibleTags}
           options={tagOptions}
         />

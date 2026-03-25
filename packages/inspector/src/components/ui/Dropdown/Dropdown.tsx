@@ -36,6 +36,7 @@ const Dropdown = React.forwardRef<HTMLInputElement, Props>((props, parentRef) =>
     multiple,
     trigger,
     onChange,
+    onClose,
     placeholder = '',
   } = props;
   const [showOptions, setShowOptions] = useState(false);
@@ -60,7 +61,8 @@ const Dropdown = React.forwardRef<HTMLInputElement, Props>((props, parentRef) =>
   const handleCloseDropdown = useCallback(() => {
     setShowOptions(false);
     setFocus(false);
-  }, [setShowOptions, setFocus]);
+    onClose?.();
+  }, [setShowOptions, setFocus, onClose]);
 
   const ref = useOutsideClick(handleCloseDropdown);
   const containerSize = useContainerSize(ref);
