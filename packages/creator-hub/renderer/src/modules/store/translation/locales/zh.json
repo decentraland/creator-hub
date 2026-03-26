@@ -411,7 +411,8 @@
         "auto_skybox": "自动（Decentraland 时间）",
         "max_offset": "最大偏移",
         "general": "常规",
-        "single_player": "单人游戏"
+        "single_player": "单人游戏",
+        "show_in_places": "在 Places 中显示"
       },
       "details": {
         "world_title": "世界标题",

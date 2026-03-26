@@ -411,7 +411,8 @@
         "auto_skybox": "Auto (decentraland time)",
         "max_offset": "Max Offset",
         "general": "General",
-        "single_player": "Single Player"
+        "single_player": "Single Player",
+        "show_in_places": "Show in Places"
       },
       "details": {
         "world_title": "World Title",
