@@ -181,10 +181,10 @@ export function normalizeTransform(transform: TransformType): TransformType {
   });
 
   const normalizeQuaternion = (q: { x: number; y: number; z: number; w: number }) => ({
-    x: Math.round(q.x * 10000) / 10000,
-    y: Math.round(q.y * 10000) / 10000,
-    z: Math.round(q.z * 10000) / 10000,
-    w: Math.round(q.w * 10000) / 10000,
+    x: Math.round(q.x * 10000000000) / 10000000000,
+    y: Math.round(q.y * 10000000000) / 10000000000,
+    z: Math.round(q.z * 10000000000) / 10000000000,
+    w: Math.round(q.w * 10000000000) / 10000000000,
   });
 
   return {
