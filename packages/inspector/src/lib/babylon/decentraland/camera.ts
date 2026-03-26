@@ -36,6 +36,7 @@ export class CameraManager {
   private speedChangeObservable: Emitter<SpeedChangeEvent>;
   private getAspectRatio: () => number;
   private animation: AnimationData | null;
+  private coastVelocity: BABYLON.Vector3 = BABYLON.Vector3.Zero();
 
   constructor(
     scene: BABYLON.Scene,
@@ -165,16 +166,6 @@ export class CameraManager {
     camera.keysDownward = [Keys.KEY_Q];
     camera.keysUpward = [Keys.KEY_E];
 
-    function isCameraMoving(): boolean {
-      for (const key of camera.keysDown) if (keyState[key]) return true;
-      for (const key of camera.keysUp) if (keyState[key]) return true;
-      for (const key of camera.keysLeft) if (keyState[key]) return true;
-      for (const key of camera.keysRight) if (keyState[key]) return true;
-      for (const key of camera.keysDownward) if (keyState[key]) return true;
-      for (const key of camera.keysUpward) if (keyState[key]) return true;
-      return false;
-    }
-
     scene.onPreKeyboardObservable.add(ev => {
       const oldAltKeyState = isAltKeyDown;
       if (ev.type === BABYLON.KeyboardEventTypes.KEYDOWN && ev.event.inputIndex === Keys.KEY_ALT) {
@@ -242,7 +233,7 @@ export class CameraManager {
       if (ev.type === BABYLON.PointerEventTypes.POINTERWHEEL) {
         const browserEvent = ev.event as BABYLON.IWheelEvent;
 
-        if (holdingRightMouseButton || isCameraMoving()) {
+        if (holdingRightMouseButton || this.isCameraMoving()) {
           if (browserEvent.deltaY < 0) this.changeSpeed(SpeedIncrement.FASTER);
           else if (browserEvent.deltaY > 0) this.changeSpeed(SpeedIncrement.SLOWER);
         } else {
@@ -260,6 +251,17 @@ export class CameraManager {
     return camera;
   }
 
+  private isCameraMoving(): boolean {
+    const camera = this.camera;
+    for (const key of camera.keysDown) if (keyState[key]) return true;
+    for (const key of camera.keysUp) if (keyState[key]) return true;
+    for (const key of camera.keysLeft) if (keyState[key]) return true;
+    for (const key of camera.keysRight) if (keyState[key]) return true;
+    for (const key of camera.keysDownward) if (keyState[key]) return true;
+    for (const key of camera.keysUpward) if (keyState[key]) return true;
+    return false;
+  }
+
   private changeSpeed(increment: SpeedIncrement) {
     if (increment === SpeedIncrement.FASTER) {
       if (this.speedIndex < this.speeds.length - 1) this.speedIndex += 1;
@@ -271,8 +273,9 @@ export class CameraManager {
   }
 
   private onRenderFrame(scene: BABYLON.Scene) {
+    const dt = scene.getEngine().getDeltaTime();
+
     if (this.animation !== null) {
-      const dt = scene.getEngine().getDeltaTime();
       this.animation.timePassed += dt / 1000;
       this.animation.timePassed = Math.min(this.animation.duration, this.animation.timePassed);
       const t = this.animation.timePassed / this.animation.duration;
@@ -287,6 +290,37 @@ export class CameraManager {
       );
 
       if (this.animation.timePassed >= this.animation.duration) this.animation = null;
+    } else {
+      const moving = this.isCameraMoving();
+
+      if (moving) {
+        // Snapshot the current velocity each frame so that when keys are released
+        // coastVelocity holds exactly the speed at the moment of release.
+        const fps = Math.max(1, scene.getEngine().getFps());
+        const frameSpeed = this.camera.speed * Math.sqrt(dt / (fps * 100));
+        const localDir = new BABYLON.Vector3(
+          (keyState[Keys.KEY_D] || keyState[Keys.KEY_RIGHT] ? 1 : 0) -
+            (keyState[Keys.KEY_A] || keyState[Keys.KEY_LEFT] ? 1 : 0),
+          (keyState[Keys.KEY_E] ? 1 : 0) - (keyState[Keys.KEY_Q] ? 1 : 0),
+          (keyState[Keys.KEY_W] || keyState[Keys.KEY_UP] ? 1 : 0) -
+            (keyState[Keys.KEY_S] || keyState[Keys.KEY_DOWN] ? 1 : 0),
+        );
+        if (localDir.lengthSquared() > 0) {
+          localDir.normalize().scaleInPlace(frameSpeed * 0.1);
+          BABYLON.Vector3.TransformNormalToRef(
+            localDir,
+            BABYLON.Matrix.Invert(this.camera.getViewMatrix()),
+            this.coastVelocity,
+          );
+        }
+      } else if (this.coastVelocity.lengthSquared() > 1e-6) {
+        // Subtle deceleration: tiny coast (~3cm) that fades in ~3 frames (≈50 ms).
+        this.camera.position.addInPlace(this.coastVelocity);
+        this.camera.target.addInPlace(this.coastVelocity);
+        const decay = Math.pow(0.7, dt / (1000 / 60));
+        this.coastVelocity.scaleInPlace(decay);
+        if (this.coastVelocity.lengthSquared() < 1e-6) this.coastVelocity.setAll(0);
+      }
     }
 
     if (this.camera.position.y <= this.minY) {

@@ -65,7 +65,7 @@ function isEcsEntity(x: any): x is EcsEntity {
   return 'isDCLEntity' in x;
 }
 
-function findParentEntity<T extends BABYLON.Node & { isDCLEntity?: boolean }>(
+export function findParentEntity<T extends BABYLON.Node & { isDCLEntity?: boolean }>(
   node: T,
 ): EcsEntity | null {
   // Find the next entity parent to dispatch the event

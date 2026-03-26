@@ -119,6 +119,7 @@ body,
   bottom: 0px;
   right: 0px;
   left: 0px;
+  overflow: hidden;
 }
 
 html,
@@ -138,7 +139,8 @@ footer {
   background-size: cover;
   background-blend-mode: overlay;
   background-attachment: fixed;
-  min-height: 100vh;
+  height: 100%;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }

@@ -14,7 +14,16 @@
       "Bash(find c:/Users/ezequ/Documents/GitHub/creator-hub/packages/asset-packs -name *.d.ts)",
       "Bash(find c:/Users/ezequ/Documents/GitHub/creator-hub/packages/asset-packs/src -name script-utils*)",
       "Bash(find c:/Users/ezequ/Documents/GitHub/creator-hub/node_modules/@dcl/sdk -name script-utils*)",
-      "Bash(grep \"callScriptMethod\\\\|script-utils\" c:/Users/ezequ/Documents/GitHub/creator-hub/packages/asset-packs/node_modules/@dcl/js-runtime/*.d.ts)"
+      "Bash(grep \"callScriptMethod\\\\|script-utils\" c:/Users/ezequ/Documents/GitHub/creator-hub/packages/asset-packs/node_modules/@dcl/js-runtime/*.d.ts)",
+      "Bash(grep -r \"button.*2\\\\|button.*3\\\\|rightClick\" c:/Users/ezequ/Documents/GitHub/creator-hub/packages/inspector/src --include=*.ts --include=*.tsx)",
+      "Bash(gh pr:*)",
+      "Bash(where gh:*)",
+      "Read(//mnt/c/**)",
+      "Read(//c/Users/ezequ/Documents/GitHub/creator-hub/$LOCALAPPDATA/Programs/**)",
+      "Read(//mnt/**)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:patch-diff.githubusercontent.com)"
     ]
   }
 }

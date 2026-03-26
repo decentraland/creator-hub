@@ -100,17 +100,12 @@ export function EditorPage() {
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [metricsAnchor, setMetricsAnchor] = useState<null | HTMLElement>(null);
   const [metricsData, setMetricsData] = useState<SceneMetricsData | null>(null);
+  const [hasMetricsWarning, setHasMetricsWarning] = useState(false);
   const [mobileQRData, setMobileQRData] = useState<{ url: string; qr: string } | null>(null);
   const titleRef = useRef<HTMLSpanElement>(null);
   const metricsCardRef = useRef<HTMLDivElement>(null);
   const [titleSmall, setTitleSmall] = useState(false);
   const parcelCount = project ? project.layout.rows * project.layout.cols : 0;
-  const hasMetricsWarning =
-    metricsData !== null &&
-    (metricsData.entitiesOutOfBoundaries.length > 0 ||
-      (Object.keys(metricsData.metrics) as (keyof typeof metricsData.metrics)[]).some(
-        key => metricsData.metrics[key] > metricsData.limits[key],
-      ));
 
   useEffect(() => {
     const el = titleRef.current;
@@ -160,6 +155,16 @@ export function EditorPage() {
       }
     };
   }, [error]);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      iframeRef.current?.metricsClient
+        .hasWarning()
+        .then(setHasMetricsWarning)
+        .catch(() => {});
+    }, 3000);
+    return () => clearInterval(id);
+  }, []);
 
   const isReady = !!project && inspectorPort > 0;
 
