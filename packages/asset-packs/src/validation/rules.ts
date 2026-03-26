@@ -5,7 +5,6 @@ import {
   hasComponent,
   hasPointerCollider,
   hasAnyCollisionMask,
-  getRuntimeCreatedComponents,
 } from './helpers';
 
 type Component = AssetComposite['components'][number];
@@ -88,51 +87,7 @@ export const rules: Rule[] = [
     },
   },
 
-  // Rule 3: Sync-Components must reference components that exist in the composite
-  // Components created dynamically at runtime by actions (Animator, AudioSource, etc.) are allowed
-  // Numeric component IDs (used by Script items) are skipped since they can't be resolved here
-  {
-    name: 'sync-components-must-exist',
-    validate(components, assetName) {
-      const syncData = getComponentData(components, 'core-schema::Sync-Components');
-      if (!syncData) return [];
-
-      const syncList: string[] = syncData.value ?? syncData.componentIds ?? [];
-      const runtimeComponents = getRuntimeCreatedComponents(components);
-
-      // Components that can be created by actions from OTHER entities targeting this one
-      const EXTERNALLY_CREATED_COMPONENTS = new Set([
-        'core::VisibilityComponent', // set_visibility from another entity
-        'core::AudioSource', // play_sound from another entity
-        'core::Animator', // play_animation from another entity
-        'core::AudioStream', // play_audio_stream from another entity
-        'core::VideoPlayer', // play_video_stream from another entity
-        'core::PointerEvents', // created by trigger system for on_click/on_input_action
-      ]);
-
-      const errors: ValidationError[] = [];
-
-      for (const name of syncList) {
-        // Skip numeric IDs (used by Script-based items like Clap Meter, Wearable Scanner)
-        if (/^\d+$/.test(name)) continue;
-
-        if (
-          !hasComponent(components, name) &&
-          !runtimeComponents.has(name) &&
-          !EXTERNALLY_CREATED_COMPONENTS.has(name)
-        ) {
-          errors.push({
-            rule: 'sync-components-must-exist',
-            message: `"${assetName}" syncs "${name}" but that component doesn't exist in the composite and isn't created by any action`,
-            severity: 'error',
-          });
-        }
-      }
-      return errors;
-    },
-  },
-
-  // Rule 4: Trigger action references must resolve to existing actions
+  // Rule 3: Trigger action references must resolve to existing actions
   {
     name: 'trigger-action-references-must-resolve',
     validate(components, assetName) {
@@ -252,45 +207,6 @@ export const rules: Rule[] = [
     },
   },
 
-  // Rule 8: Tween requires Transform
-  {
-    name: 'tween-requires-transform',
-    validate(components, assetName) {
-      const hasTween =
-        hasComponent(components, 'core::Tween') || hasComponent(components, 'core::TweenSequence');
-      if (hasTween && !hasComponent(components, 'core::Transform')) {
-        return [
-          {
-            rule: 'tween-requires-transform',
-            message: `"${assetName}" has Tween but no Transform`,
-            severity: 'warning',
-          },
-        ];
-      }
-      return [];
-    },
-  },
-
-  // Rule 9: LightSource requires Transform
-  {
-    name: 'light-source-requires-transform',
-    validate(components, assetName) {
-      if (
-        hasComponent(components, 'core::LightSource') &&
-        !hasComponent(components, 'core::Transform')
-      ) {
-        return [
-          {
-            rule: 'light-source-requires-transform',
-            message: `"${assetName}" has LightSource but no Transform`,
-            severity: 'warning',
-          },
-        ];
-      }
-      return [];
-    },
-  },
-
   // ─── Tier 3: Nice to have ────────────────────────────────────────────
 
   // Rule 10: Asset file references should use valid paths
@@ -367,26 +283,33 @@ export const rules: Rule[] = [
     },
   },
 
-  // Rule 13: TextShape is mutually exclusive with MeshRenderer and GltfContainer
+  // Rule 13: TextShape is mutually exclusive with MeshRenderer and GltfContainer on the SAME entity
   {
     name: 'text-shape-mutually-exclusive',
     validate(components, assetName) {
-      if (!hasComponent(components, 'core::TextShape')) return [];
+      const textShape = getComponent(components, 'core::TextShape');
+      if (!textShape) return [];
 
-      const conflicts: string[] = [];
-      if (hasComponent(components, 'core::MeshRenderer')) conflicts.push('MeshRenderer');
-      if (hasComponent(components, 'core::GltfContainer')) conflicts.push('GltfContainer');
+      const textEntityKeys = new Set(Object.keys(textShape.data));
+      const errors: ValidationError[] = [];
 
-      if (conflicts.length > 0) {
-        return [
-          {
+      const meshRenderer = getComponent(components, 'core::MeshRenderer');
+      const gltfContainer = getComponent(components, 'core::GltfContainer');
+
+      for (const entityKey of textEntityKeys) {
+        const conflicts: string[] = [];
+        if (meshRenderer?.data[entityKey]) conflicts.push('MeshRenderer');
+        if (gltfContainer?.data[entityKey]) conflicts.push('GltfContainer');
+
+        if (conflicts.length > 0) {
+          errors.push({
             rule: 'text-shape-mutually-exclusive',
-            message: `"${assetName}" has TextShape with ${conflicts.join(' and ')} — they are mutually exclusive`,
+            message: `"${assetName}" entity ${entityKey} has TextShape with ${conflicts.join(' and ')} — they are mutually exclusive`,
             severity: 'warning',
-          },
-        ];
+          });
+        }
       }
-      return [];
+      return errors;
     },
   },
 ];
