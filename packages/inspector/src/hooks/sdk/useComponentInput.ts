@@ -227,7 +227,11 @@ export const useMultiComponentInput = <ComponentValueType extends object, InputT
   component: Component<ComponentValueType>,
   fromComponentValueToInput: (componentValue: ComponentValueType) => InputType,
   fromInputToComponentValue: (input: InputType) => ComponentValueType,
-  { validateInput = () => true, deps = [] }: UseComponentInputOptions<InputType> = {},
+  {
+    validateInput = () => true,
+    deps = [],
+    tolerance = 2,
+  }: UseComponentInputOptions<InputType> = {},
 ) => {
   // If there's only one entity, use the single entity version just to be safe for now
   if (entities.length === 1) {
@@ -239,6 +243,7 @@ export const useMultiComponentInput = <ComponentValueType extends object, InputT
       {
         validateInput,
         deps,
+        tolerance,
       },
     );
   }
