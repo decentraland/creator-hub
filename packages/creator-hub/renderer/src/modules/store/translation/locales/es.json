@@ -105,6 +105,8 @@
     "view_mode": "Vista",
     "view_grid": "Vista de cuadrícula",
     "view_list": "Vista de lista",
+    "grid": "Cuadrícula",
+    "list": "Lista",
     "time": {
       "just_now": "ahora mismo"
     }

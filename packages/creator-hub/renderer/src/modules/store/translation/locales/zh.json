@@ -105,6 +105,8 @@
     "view_mode": "显示视图",
     "view_grid": "网格视图",
     "view_list": "列表视图",
+    "grid": "网格",
+    "list": "列表",
     "time": {
       "just_now": "刚刚"
     }

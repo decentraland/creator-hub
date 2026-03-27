@@ -244,10 +244,10 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
         </Row>
         {projects.length > 0 ? (
           <FiltersBar>
-            <Typography variant="h6">
-              {t('scene_list.results', { count: filteredProjects.length })}
-            </Typography>
-            <>
+            <div className="SceneListLeft">
+              <Typography variant="h6">
+                {t('scene_list.results', { count: filteredProjects.length })}
+              </Typography>
               <div
                 className="SceneViewToggle"
                 role="group"
@@ -266,6 +266,7 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
                     width={18}
                     height={18}
                   />
+                  <span>{t('scene_list.grid')}</span>
                 </button>
                 <button
                   type="button"
@@ -280,8 +281,11 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
                     width={18}
                     height={18}
                   />
+                  <span>{t('scene_list.list')}</span>
                 </button>
               </div>
+            </div>
+            <>
               <p>{t('scene_list.sort_by')}</p>
               {renderSortDropdown()}
               <Search

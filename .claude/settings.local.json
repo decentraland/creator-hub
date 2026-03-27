@@ -15,7 +15,11 @@
       "Bash(git checkout:*)",
       "Bash(npx tsc:*)",
       "Bash(find packages/creator-hub/renderer/src/components/Container -name *.tsx)",
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "Bash(gh pr:*)",
+      "Bash(npm install:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

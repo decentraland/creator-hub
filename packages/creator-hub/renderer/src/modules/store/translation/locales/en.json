@@ -105,6 +105,8 @@
     "view_mode": "Display view",
     "view_grid": "Grid view",
     "view_list": "List view",
+    "grid": "Grid",
+    "list": "List",
     "time": {
       "just_now": "just now"
     }
