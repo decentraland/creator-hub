@@ -47,6 +47,10 @@
   color: var(--warning-main);
 }
 
+.Container .title .indicator.error {
+  color: var(--error-main);
+}
+
 .Container .title .RightContent {
   display: flex;
   flex-grow: 1;
