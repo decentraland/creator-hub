@@ -255,39 +255,75 @@ export async function start(
   }
 }
 
+/**
+ * Updates the `owner` field in the project's scene.json to the given wallet address.
+ * Returns the original owner value so it can be restored after deployment.
+ */
+async function setSceneOwner(path: string, wallet: string): Promise<string | undefined> {
+  const sceneJsonPath = join(path, 'scene.json');
+  const raw = await fs.readFile(sceneJsonPath, 'utf8');
+  const scene = JSON.parse(raw);
+  const originalOwner = scene.owner;
+  scene.owner = wallet;
+  await fs.writeFile(sceneJsonPath, JSON.stringify(scene, null, 2), 'utf8');
+  return originalOwner;
+}
+
+/**
+ * Restores the `owner` field in the project's scene.json to its original value.
+ */
+async function restoreSceneOwner(path: string, originalOwner: string | undefined): Promise<void> {
+  const sceneJsonPath = join(path, 'scene.json');
+  const raw = await fs.readFile(sceneJsonPath, 'utf8');
+  const scene = JSON.parse(raw);
+  if (originalOwner === undefined) {
+    delete scene.owner;
+  } else {
+    scene.owner = originalOwner;
+  }
+  await fs.writeFile(sceneJsonPath, JSON.stringify(scene, null, 2), 'utf8');
+}
+
 // ############################################################################################
 // TODO: Remove this after a couple of months...
 export async function legacyDeploy({
   path,
   target,
   targetContent,
+  wallet,
 }: DeployOptions): Promise<number> {
   if (deployServer) {
     await deployServer.stop();
   }
+
+  const originalOwner = await setSceneOwner(path, wallet);
   const port = await getAvailablePort();
-  const process = run('@dcl/sdk-commands', 'sdk-commands', {
-    args: [
-      'deploy',
-      '--no-browser',
-      '--port',
-      port.toString(),
-      ...(target ? ['--target', target] : []),
-      ...(targetContent ? ['--target-content', targetContent] : []),
-    ],
-    cwd: path,
-    env: await getEnv(path),
-    workspace: path,
-  });
+  try {
+    const process = run('@dcl/sdk-commands', 'sdk-commands', {
+      args: [
+        'deploy',
+        '--no-browser',
+        '--port',
+        port.toString(),
+        ...(target ? ['--target', target] : []),
+        ...(targetContent ? ['--target-content', targetContent] : []),
+      ],
+      cwd: path,
+      env: await getEnv(path),
+      workspace: path,
+    });
 
-  // App ready at
-  await process.waitFor(/listening/i, /error:/i, { reject: 'stderr' });
+    // App ready at
+    await process.waitFor(/listening/i, /error:/i, { reject: 'stderr' });
 
-  process.waitFor(/close the terminal/gi).then(() => process.kill());
+    process.waitFor(/close the terminal/gi).then(() => process.kill());
 
-  process.wait().catch(); // handle rejection of main promise to avoid warnings in console
+    process.wait().catch(); // handle rejection of main promise to avoid warnings in console
 
-  deployServer = { stop: () => process.kill() };
+    deployServer = { stop: () => process.kill() };
+  } finally {
+    await restoreSceneOwner(path, originalOwner);
+  }
 
   return port;
 }
@@ -332,23 +368,28 @@ export async function deploy({
     return legacyDeploy({ path, target, targetContent, chainId, wallet });
   }
 
+  const originalOwner = await setSceneOwner(path, wallet);
   const port = await getAvailablePort();
 
-  const { stop } = await runCommand(path, 'deploy', [
-    '--dir',
-    path,
-    '--no-browser',
-    '--port',
-    port.toString(),
-    ...(target ? ['--target', target] : []),
-    ...(targetContent ? ['--target-content', targetContent] : []),
-    '--programmatic',
-    '--yes',
-    '--multi-scene',
-    ...(language ? ['--language', language] : []),
-  ]);
+  try {
+    const { stop } = await runCommand(path, 'deploy', [
+      '--dir',
+      path,
+      '--no-browser',
+      '--port',
+      port.toString(),
+      ...(target ? ['--target', target] : []),
+      ...(targetContent ? ['--target-content', targetContent] : []),
+      '--programmatic',
+      '--yes',
+      '--multi-scene',
+      ...(language ? ['--language', language] : []),
+    ]);
 
-  deployServer = { stop };
+    deployServer = { stop };
+  } finally {
+    await restoreSceneOwner(path, originalOwner);
+  }
 
   return port;
 }
