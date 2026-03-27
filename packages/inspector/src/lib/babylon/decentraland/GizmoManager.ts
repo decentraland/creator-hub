@@ -132,7 +132,6 @@ export function createGizmoManager(context: SceneContext) {
   // Wire up real-time dispatch for all transformers (set once; dispatchDuringDrag is stable)
   positionTransformer.setDispatchDuringDragCallback(dispatchDuringDrag);
   rotationTransformer.setDispatchDuringDragCallback(dispatchDuringDrag);
-  scaleTransformer.setDispatchDuringDragCallback(dispatchDuringDrag);
   freeTransformer.setDispatchDuringDragCallback(dispatchDuringDrag);
 
   // Add alignment state

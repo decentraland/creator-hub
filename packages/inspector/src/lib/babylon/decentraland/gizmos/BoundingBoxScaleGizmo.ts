@@ -89,7 +89,6 @@ export class BoundingBoxScaleGizmo implements IGizmoTransformer {
 
   private updateEntityScale: ((entity: EcsEntity) => void) | null = null;
   private dispatchOperations: (() => void) | null = null;
-  private dispatchDuringDrag: (() => void) | null = null;
 
   constructor(
     private snapScale: (scale: Vector3) => Vector3,
@@ -140,10 +139,6 @@ export class BoundingBoxScaleGizmo implements IGizmoTransformer {
   ): void {
     this.updateEntityScale = updateEntityScale;
     this.dispatchOperations = dispatchOperations;
-  }
-
-  setDispatchDuringDragCallback(fn: () => void): void {
-    this.dispatchDuringDrag = fn;
   }
 
   setWorldAligned(_value: boolean): void {}
@@ -265,14 +260,13 @@ export class BoundingBoxScaleGizmo implements IGizmoTransformer {
       this.applyPositionDeltaVec(entity, worldDelta, state);
       entity.computeWorldMatrix(true);
 
-      this.updateEntityScale?.(entity);
-      this.dispatchDuringDrag?.();
       this.refreshHandlePositions();
     });
 
     drag.onDragEndObservable.add(() => {
       this.isDragging = false;
       this.dragState = null;
+      this.updateEntityScale?.(entity);
       this.dispatchOperations?.();
     });
 
@@ -443,14 +437,13 @@ export class BoundingBoxScaleGizmo implements IGizmoTransformer {
       this.applyPositionDelta(entity, cfg.axis, worldDeltaAxis, state);
       entity.computeWorldMatrix(true);
 
-      this.updateEntityScale?.(entity);
-      this.dispatchDuringDrag?.();
       this.refreshHandlePositions();
     });
 
     drag.onDragEndObservable.add(() => {
       this.isDragging = false;
       this.dragState = null;
+      this.updateEntityScale?.(entity);
       this.dispatchOperations?.();
     });
 
@@ -527,14 +520,13 @@ export class BoundingBoxScaleGizmo implements IGizmoTransformer {
       this.applyPositionDeltaVec(entity, worldDelta, state);
       entity.computeWorldMatrix(true);
 
-      this.updateEntityScale?.(entity);
-      this.dispatchDuringDrag?.();
       this.refreshHandlePositions();
     });
 
     drag.onDragEndObservable.add(() => {
       this.isDragging = false;
       this.dragState = null;
+      this.updateEntityScale?.(entity);
       this.dispatchOperations?.();
     });
 

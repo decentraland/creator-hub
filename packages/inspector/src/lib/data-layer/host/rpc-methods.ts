@@ -43,6 +43,7 @@ function sceneUpdateShouldCapture(operation: Operation, prevValue: unknown): boo
 function getIgnoredUndoRedoComponents() {
   return [
     EditorComponentNames.Selection,
+    EditorComponentNames.Nodes,
     EditorComponentNames.TransformConfig,
     EditorComponentNames.InspectorUIState,
   ];
