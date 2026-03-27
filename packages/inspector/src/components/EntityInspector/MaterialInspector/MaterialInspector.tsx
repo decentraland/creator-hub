@@ -55,6 +55,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
       className="Material"
       initialOpen={initialOpen}
       indicator={hasInvalidTexture}
+      indicatorSeverity="error"
       rightContent={
         <InfoTooltip
           text="Material determines the visual appearance of an object. It defines properties such as color, texture, and transparency"

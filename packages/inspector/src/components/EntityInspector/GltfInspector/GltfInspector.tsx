@@ -58,6 +58,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       className="GltfInspector"
       initialOpen={initialOpen}
       indicator={files && !isValid}
+      indicatorSeverity="error"
       rightContent={
         <InfoTooltip
           text="The GLTF assigns a 3D model file for the item's visible shape. It also handles collisions, to make an item clickable or block the player from walking through it."

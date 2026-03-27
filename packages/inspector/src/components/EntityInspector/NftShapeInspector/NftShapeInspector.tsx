@@ -85,6 +85,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       className={cx('NftShape')}
       initialOpen={initialOpen}
       indicator={!isValid}
+      indicatorSeverity="error"
       rightContent={
         <InfoTooltip
           text="NftShape displays an image, gif, or video NFT as a framed picture"

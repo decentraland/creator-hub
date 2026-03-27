@@ -66,6 +66,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
       className={cx('AudioSource')}
       initialOpen={initialOpen}
       indicator={files && !isValid}
+      indicatorSeverity="error"
       rightContent={
         <InfoTooltip
           text="Enables the playback of sound in your scene. The item emits sound that originates from its location, from an .mp3 file in your scene project"

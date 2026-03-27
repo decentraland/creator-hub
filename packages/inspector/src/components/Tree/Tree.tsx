@@ -314,51 +314,25 @@ export function Tree<T>() {
         return typeof value !== 'string';
       }, [value]);
 
+      const hasEntityInList = useCallback(
+        (entity: Entity, list: number[]): boolean => {
+          if (list.includes(entity)) {
+            return true;
+          }
+          return getChildren(entity as T).some(child => hasEntityInList(child as Entity, list));
+        },
+        [getChildren],
+      );
+
       const isEntityOutOfBoundaries = useMemo(() => {
         if (typeof value === 'string') return false;
-
-        if (entitiesOutOfBoundaries.includes(value as Entity)) {
-          return true;
-        }
-
-        const checkChildrenOutOfBoundaries = (entity: Entity): boolean => {
-          const children = getChildren(entity as T);
-          for (const child of children) {
-            if (entitiesOutOfBoundaries.includes(child as Entity)) {
-              return true;
-            }
-            if (checkChildrenOutOfBoundaries(child as Entity)) {
-              return true;
-            }
-          }
-          return false;
-        };
-
-        return checkChildrenOutOfBoundaries(value as Entity);
-      }, [value, entitiesOutOfBoundaries, getChildren]);
+        return hasEntityInList(value as Entity, entitiesOutOfBoundaries);
+      }, [value, entitiesOutOfBoundaries, hasEntityInList]);
 
       const isEntityWithErrors = useMemo(() => {
         if (typeof value === 'string') return false;
-
-        if (entitiesWithErrors.includes(value as Entity)) {
-          return true;
-        }
-
-        const checkChildrenWithErrors = (entity: Entity): boolean => {
-          const children = getChildren(entity as T);
-          for (const child of children) {
-            if (entitiesWithErrors.includes(child as Entity)) {
-              return true;
-            }
-            if (checkChildrenWithErrors(child as Entity)) {
-              return true;
-            }
-          }
-          return false;
-        };
-
-        return checkChildrenWithErrors(value as Entity);
-      }, [value, entitiesWithErrors, getChildren]);
+        return hasEntityInList(value as Entity, entitiesWithErrors);
+      }, [value, entitiesWithErrors, hasEntityInList]);
 
       drag(drop(ref));
 

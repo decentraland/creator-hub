@@ -53,6 +53,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
       className={cx('AudioStream')}
       initialOpen={initialOpen}
       indicator={!isValid}
+      indicatorSeverity="error"
       rightContent={
         <InfoTooltip
           text="The audio in the source must be in one of the following formats: .mp3, ogg, or aac. The source must also be an https URL (http URLs aren't supported), and the source should have CORS policies (Cross Origin Resource Sharing) that permit externally accessing it."
