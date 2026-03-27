@@ -1,14 +1,52 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Item, Menu, contextMenu } from 'react-contexify';
+import { Item, Menu, Separator, contextMenu } from 'react-contexify';
 import type { Entity } from '@dcl/ecs';
 import { AiFillDelete as DeleteIcon, AiFillCopy as DuplicateIcon } from 'react-icons/ai';
 
 import { useContextMenu } from '../../../hooks/sdk/useContextMenu';
 import { useTree } from '../../../hooks/sdk/useTree';
 import { useSdk } from '../../../hooks/sdk/useSdk';
+import { ROOT } from '../../../lib/sdk/tree';
 import { ContextMenu as HierarchyContextMenu } from '../../Hierarchy/ContextMenu';
+import './CanvasContextMenu.css';
 
 export const CANVAS_CONTEXT_MENU_ID = 'canvas-entity-context-menu';
+
+function EntityHeader({ entity }: { entity: Entity }) {
+  const sdk = useSdk();
+  if (!sdk) return null;
+
+  const name = sdk.components.Name.getOrNull(entity)?.value ?? String(entity);
+
+  let iconClass = 'entity-icon';
+  if (
+    sdk.components.Actions.has(entity) ||
+    sdk.components.Triggers.has(entity) ||
+    sdk.components.States.has(entity) ||
+    sdk.components.TextShape.has(entity) ||
+    sdk.components.NftShape.has(entity) ||
+    sdk.components.VisibilityComponent.has(entity) ||
+    sdk.components.VideoScreen.has(entity) ||
+    sdk.components.AdminTools.has(entity)
+  ) {
+    iconClass = 'smart-icon';
+  } else if (sdk.components.Tile.has(entity)) {
+    iconClass = 'tile-icon';
+  } else if (sdk.components.CustomAsset.has(entity)) {
+    iconClass = 'custom-icon';
+  } else {
+    const nodes = sdk.components.Nodes.getOrNull(ROOT)?.value;
+    const node = nodes?.find(n => n.entity === entity);
+    if (node && node.children.length > 0) iconClass = 'group-icon';
+  }
+
+  return (
+    <div className="CanvasContextMenu__header">
+      <span className={`CanvasContextMenu__icon ${iconClass}`} />
+      <span className="CanvasContextMenu__entity-name">{name}</span>
+    </div>
+  );
+}
 
 function CanvasContextMenuItems({ entity }: { entity: Entity }) {
   const { handleAction } = useContextMenu();
@@ -90,7 +128,13 @@ export default function CanvasContextMenu({ entity }: { entity: Entity | null })
       onVisibilityChange={setIsVisible}
       animation={{ enter: 'fade', exit: false }}
     >
-      {entity !== null && <CanvasContextMenuItems entity={entity} />}
+      {entity !== null && (
+        <>
+          <EntityHeader entity={entity} />
+          <Separator />
+          <CanvasContextMenuItems entity={entity} />
+        </>
+      )}
     </Menu>
   );
 }

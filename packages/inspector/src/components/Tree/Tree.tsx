@@ -31,6 +31,7 @@ type Props<T> = {
   getSelectedItems?: () => T[];
   isOpen: (value: T) => boolean;
   isSelected: (value: T) => boolean;
+  isHovered?: (value: T) => boolean;
   isHidden: (value: T) => boolean;
   canRename?: (value: T) => boolean;
   canAddChild?: (value: T) => boolean;
@@ -78,6 +79,7 @@ export function Tree<T>() {
         getSelectedItems,
         isOpen,
         isSelected,
+        isHovered,
         onSelect,
         isHidden,
         onDrop,
@@ -103,6 +105,7 @@ export function Tree<T>() {
       const label = getLabel(value);
       const open = isOpen(value);
       const selected = isSelected(value);
+      const hovered = isHovered ? isHovered(value) : false;
       const hidden = isHidden(value);
       const enableRename = canRename ? canRename(value) : true;
       const enableAddChild = canAddChild ? canAddChild(value) : true;
@@ -363,7 +366,7 @@ export function Tree<T>() {
         >
           <div
             style={getLevelStyles(level)}
-            className={cx({ selected, item: true, hidden })}
+            className={cx({ selected, item: true, hidden, 'canvas-hovered': hovered && !selected })}
           >
             <ContextMenu {...controlsProps} />
             <div

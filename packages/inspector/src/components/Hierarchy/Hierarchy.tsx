@@ -1,4 +1,5 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useHoveredEntity } from '../../hooks/sdk/useHoveredEntity';
 import type { Entity } from '@dcl/ecs';
 
 import { CAMERA, PLAYER, ROOT } from '../../lib/sdk/tree';
@@ -91,6 +92,15 @@ const Hierarchy = withSdk(({ sdk }) => {
   } = useTree();
   const selectedEntities = useEntitiesWith(components => components.Selection);
   const [lastSelectedItem, setLastSelectedItem] = useState<Entity | undefined>(undefined);
+  const hoveredEntity = useHoveredEntity();
+  const hierarchyRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!selectedEntities.length) return;
+    const container = hierarchyRef.current;
+    if (!container) return;
+    container.querySelector<HTMLElement>('.item.selected')?.scrollIntoView({ block: 'nearest' });
+  }, [selectedEntities]);
 
   const isSelected = useCallback(
     (entity: Entity) => {
@@ -98,6 +108,8 @@ const Hierarchy = withSdk(({ sdk }) => {
     },
     [selectedEntities],
   );
+
+  const isHovered = useCallback((entity: Entity) => entity === hoveredEntity, [hoveredEntity]);
 
   const getAllVisibleEntities = useCallback(() => {
     const entities: Entity[] = [];
@@ -180,6 +192,7 @@ const Hierarchy = withSdk(({ sdk }) => {
     getIcon: (val: Entity) => <HierarchyIcon value={val} />,
     isOpen: isOpen,
     isSelected: isSelected,
+    isHovered: isHovered,
     isHidden: isHidden,
     canRename: canRename,
     canRemove: canRemove,
@@ -192,6 +205,7 @@ const Hierarchy = withSdk(({ sdk }) => {
 
   return (
     <div
+      ref={hierarchyRef}
       className="Hierarchy"
       onClick={handleBackgroundDeselect}
     >

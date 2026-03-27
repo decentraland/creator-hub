@@ -1,8 +1,21 @@
 import * as BABYLON from '@babylonjs/core';
+import type { Entity } from '@dcl/ecs';
 import type { EcsEntity } from '../decentraland/EcsEntity';
 import type { SceneContext } from '../decentraland/SceneContext';
 import { getLayoutManager } from '../decentraland/layout-manager';
 import { snapManager } from '../decentraland/snap-manager';
+
+type HoverChangeCallback = (entityId: Entity | null) => void;
+const hoverChangeCallbacks = new Set<HoverChangeCallback>();
+
+export function subscribeToHoverChange(cb: HoverChangeCallback): () => void {
+  hoverChangeCallbacks.add(cb);
+  return () => hoverChangeCallbacks.delete(cb);
+}
+
+function notifyHoverChange(entityId: Entity | null): void {
+  for (const cb of hoverChangeCallbacks) cb(entityId);
+}
 
 function isEcsEntity(x: unknown): x is EcsEntity {
   return typeof x === 'object' && x !== null && 'isDCLEntity' in (x as object);
@@ -46,35 +59,39 @@ export function initHover(scene: BABYLON.Scene): void {
   );
 
   // ── Entity hover highlight ───────────────────────────────────────────────
-  const hoverLayer = new BABYLON.HighlightLayer('hover_highlight', scene, {
-    blurHorizontalSize: 0.15,
-    blurVerticalSize: 0.15,
-  });
-  hoverLayer.innerGlow = false;
-  hoverLayer.outerGlow = true;
+  // Using renderOverlay instead of HighlightLayer: no post-processing pass,
+  // no blur artifacts, works reliably on all mesh/material types.
+  const HOVER_COLOR = new BABYLON.Color3(0.5, 0.85, 1.0); // soft cyan
+  const HOVER_ALPHA = 0.22;
 
   let hoveredEntity: EcsEntity | null = null;
-  const hoveredMeshes = new Set<BABYLON.Mesh>();
+  const hoveredMeshes = new Set<BABYLON.AbstractMesh>();
 
   function clearEntityHover(): void {
+    if (hoveredEntity === null) return;
+    notifyHoverChange(null);
+    // renderOverlay (hover) is independent of renderOutline (selection),
+    // so clearing hover never affects the selection outline.
     for (const mesh of hoveredMeshes) {
-      hoverLayer.removeMesh(mesh);
+      mesh.renderOverlay = false;
     }
     hoveredMeshes.clear();
     hoveredEntity = null;
   }
 
   function addToHover(mesh: BABYLON.AbstractMesh): void {
-    if (mesh instanceof BABYLON.Mesh && !mesh.name.includes('collider')) {
-      hoverLayer.addMesh(mesh, BABYLON.Color3.White());
-      hoveredMeshes.add(mesh);
-    }
+    if (mesh.name.includes('collider')) return;
+    mesh.overlayColor = HOVER_COLOR;
+    mesh.overlayAlpha = HOVER_ALPHA;
+    mesh.renderOverlay = true;
+    hoveredMeshes.add(mesh);
   }
 
   function setEntityHover(entity: EcsEntity): void {
     if (entity === hoveredEntity) return;
     clearEntityHover();
     hoveredEntity = entity;
+    notifyHoverChange(entity.entityId);
 
     if (entity.meshRenderer) {
       addToHover(entity.meshRenderer);

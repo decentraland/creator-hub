@@ -6,6 +6,7 @@ import { LEFT_BUTTON } from '../mouse-utils';
 import type { IGizmoTransformer, IPlaneDragGizmoWithMesh, Vector3Axis } from './types';
 import { GizmoType } from './types';
 import { configureGizmoButtons } from './utils';
+import { AXIS_RED, AXIS_GREEN, AXIS_BLUE, YELLOW_HOVER_COLOR, PLANE_CONFIGS } from './constants';
 
 interface EntityState {
   position: Vector3;
@@ -54,8 +55,50 @@ export class PositionGizmo implements IGizmoTransformer {
     if (!positionGizmo) return;
 
     positionGizmo.updateGizmoRotationToMatchAttachedMesh = !this.isWorldAligned;
-
     positionGizmo.planarGizmoEnabled = true;
+
+    // Apply our color palette to the built-in Babylon axis gizmos
+    const axisColors = [
+      { sub: positionGizmo.xGizmo, color: AXIS_RED },
+      { sub: positionGizmo.yGizmo, color: AXIS_GREEN },
+      { sub: positionGizmo.zGizmo, color: AXIS_BLUE },
+    ];
+    for (const { sub, color } of axisColors) {
+      const colored = sub.coloredMaterial as any | null;
+      const hover = sub.hoverMaterial as any | null;
+      if (colored) {
+        colored.emissiveColor = color.clone();
+        colored.diffuseColor = color.clone();
+        colored.disableLighting = true;
+      }
+      if (hover) {
+        hover.emissiveColor = YELLOW_HOVER_COLOR.clone();
+        hover.diffuseColor = YELLOW_HOVER_COLOR.clone();
+        hover.disableLighting = true;
+      }
+    }
+
+    // Apply axis colors to planar gizmos using PLANE_CONFIGS order (XY→blue, XZ→green, YZ→red)
+    const planeGizmos = [
+      positionGizmo.zPlaneGizmo,
+      positionGizmo.yPlaneGizmo,
+      positionGizmo.xPlaneGizmo,
+    ];
+    for (let i = 0; i < planeGizmos.length; i++) {
+      const plane = planeGizmos[i] as any;
+      const cfg = PLANE_CONFIGS[i];
+      if (!cfg || !plane) continue;
+      if (plane.coloredMaterial) {
+        plane.coloredMaterial.emissiveColor = cfg.diffuse.clone();
+        plane.coloredMaterial.diffuseColor = cfg.diffuse.clone();
+        plane.coloredMaterial.disableLighting = true;
+      }
+      if (plane.hoverMaterial) {
+        plane.hoverMaterial.emissiveColor = YELLOW_HOVER_COLOR.clone();
+        plane.hoverMaterial.diffuseColor = YELLOW_HOVER_COLOR.clone();
+        plane.hoverMaterial.disableLighting = true;
+      }
+    }
   }
 
   private applyPlanarGizmoOffsets(): boolean {

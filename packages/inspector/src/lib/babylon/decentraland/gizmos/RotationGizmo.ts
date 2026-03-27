@@ -22,6 +22,7 @@ import { LEFT_BUTTON } from '../mouse-utils';
 import type { IGizmoTransformer } from './types';
 import { GizmoType } from './types';
 import { configureGizmoButtons } from './utils';
+import { AXIS_RED, AXIS_GREEN, AXIS_BLUE, GREY_INACTIVE_COLOR } from './constants';
 
 // Depth cues: outward-facing side of each loop brighter, inward-facing duller
 const DEPTH_CUE_VERTEX_SHADER = `
@@ -498,9 +499,9 @@ export class RotationGizmo implements IGizmoTransformer {
     Effect.ShadersStore['rotationGizmoDepthCueFragmentShader'] = DEPTH_CUE_FRAGMENT_SHADER;
 
     const axisGizmos = [
-      { gizmo: this.rotationGizmo.xGizmo, baseColor: new Color3(0.9, 0.2, 0.2) },
-      { gizmo: this.rotationGizmo.yGizmo, baseColor: new Color3(0.2, 0.9, 0.2) },
-      { gizmo: this.rotationGizmo.zGizmo, baseColor: new Color3(0.2, 0.2, 0.9) },
+      { gizmo: this.rotationGizmo.xGizmo, baseColor: AXIS_RED },
+      { gizmo: this.rotationGizmo.yGizmo, baseColor: AXIS_GREEN },
+      { gizmo: this.rotationGizmo.zGizmo, baseColor: AXIS_BLUE },
     ];
 
     const planeGizmo = this.rotationGizmo.xGizmo as { _gizmoMesh?: Mesh };
@@ -529,7 +530,7 @@ export class RotationGizmo implements IGizmoTransformer {
       const depthCueHover = this.createDepthCueMaterial(scene, hoverBaseColor, 1, 'depthCueHover');
       const depthCueDisable = this.createDepthCueMaterial(
         scene,
-        new Color3(0.5, 0.5, 0.5),
+        GREY_INACTIVE_COLOR,
         0.4,
         'depthCueDisable',
       );
@@ -626,9 +627,26 @@ export class RotationGizmo implements IGizmoTransformer {
     this.customizeGizmoAppearance();
     this.thickenRotationLoops();
     this.applyDepthCueToRotationLoops();
+    this.hideRotationDisplayPlanes();
     this.setupDragObservables();
     // Configure gizmo to only work with left click
     configureGizmoButtons(this.gizmoManager.gizmos.rotationGizmo, [LEFT_BUTTON]);
+  }
+
+  private hideRotationDisplayPlanes(): void {
+    if (!this.rotationGizmo) return;
+    for (const gizmo of [
+      this.rotationGizmo.xGizmo,
+      this.rotationGizmo.yGizmo,
+      this.rotationGizmo.zGizmo,
+    ]) {
+      const plane = (gizmo as any)._rotationDisplayPlane;
+      if (plane) {
+        plane.dispose();
+        // Replace with a stub so Babylon's drag-start handler doesn't throw when it calls setEnabled(true)
+        (gizmo as any)._rotationDisplayPlane = { setEnabled: () => {} };
+      }
+    }
   }
 
   cleanup(): void {

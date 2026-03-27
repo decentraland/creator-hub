@@ -9,7 +9,12 @@ import type { Entity } from '@dcl/ecs';
 
 import { DIRECTORY, withAssetDir } from '../../lib/data-layer/host/fs-utils';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
-import { getDataLayerInterface, getAssetCatalog, saveThumbnail } from '../../redux/data-layer';
+import {
+  getDataLayerInterface,
+  getAssetCatalog,
+  saveThumbnail,
+  setInspectorPreferences,
+} from '../../redux/data-layer';
 import type {
   CatalogAssetDrop,
   IDrop,
@@ -105,6 +110,24 @@ const Renderer: React.FC = () => {
     }
   }, [sdk, groundGridDisabled]);
 
+  useEffect(() => {
+    if (!sdk) return;
+    let lastPos = { x: NaN, y: NaN, z: NaN };
+    const id = setInterval(() => {
+      const camera = sdk.editorCamera.getCamera();
+      const { x, y, z } = camera.position;
+      if (x === lastPos.x && y === lastPos.y && z === lastPos.z) return;
+      lastPos = { x, y, z };
+      dispatch(
+        setInspectorPreferences({
+          cameraPosition: { x, y, z },
+          cameraTarget: { x: camera.target.x, y: camera.target.y, z: camera.target.z },
+        }),
+      );
+    }, 5000);
+    return () => clearInterval(id);
+  }, [sdk, dispatch]);
+
   const deleteSelectedEntities = useCallback(() => {
     if (!sdk) return;
     const selectedEntitites = sdk.operations.getSelectedEntities();
@@ -185,7 +208,10 @@ const Renderer: React.FC = () => {
       if (e.button === 2) isRightDragging.current = false;
     };
     const onPointerMove = (e: PointerEvent) => {
-      if (e.buttons & 2) isRightDragging.current = true;
+      if (e.buttons & 2) {
+        isRightDragging.current = true;
+        contextMenu.hideAll();
+      }
     };
     canvas.addEventListener('pointerdown', onPointerDown);
     canvas.addEventListener('pointermove', onPointerMove);

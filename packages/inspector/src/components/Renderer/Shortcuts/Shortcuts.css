@@ -27,6 +27,12 @@
   background-color: var(--gray-0);
 }
 
+.Shortcuts .Buttons .ZoomButtons .Button {
+  font-size: 20px;
+  font-weight: 300;
+  line-height: 1;
+}
+
 .Shortcuts .Buttons .Button:hover {
   background-color: var(--base-17);
 }
@@ -45,18 +51,19 @@
 
 .Shortcuts .Buttons .ZoomButtons {
   display: flex;
+  flex-direction: column;
 }
 
 .Shortcuts .Buttons .ZoomButtons .Button:first-of-type {
-  border-top-right-radius: 0;
   border-bottom-right-radius: 0;
-  border-right: 1.5px solid var(--base-19);
+  border-bottom-left-radius: 0;
+  border-bottom: 1.5px solid var(--base-19);
 }
 
 .Shortcuts .Buttons .ZoomButtons .Button:last-of-type {
+  border-top-right-radius: 0;
   border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-  border-left: 1.5px solid var(--base-19);
+  border-top: 1.5px solid var(--base-19);
 }
 
 .Shortcuts > .Overlay {
@@ -158,6 +165,7 @@
   background-color: var(--surface-2);
   border-radius: 6px;
   overflow: hidden;
+  flex-direction: column;
 }
 
 .experimental-ui .Shortcuts .Buttons .ZoomButtons .Button {
@@ -174,43 +182,22 @@
 }
 
 .experimental-ui .Shortcuts .Buttons .ZoomButtons .Button:first-of-type {
-  border-top-right-radius: 0;
   border-bottom-right-radius: 0;
-  border-right: 1px solid var(--border-subtle);
-  border-left: none;
+  border-bottom-left-radius: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  border-top: none;
 }
 
 .experimental-ui .Shortcuts .Buttons .ZoomButtons .Button:last-of-type {
+  border-top-right-radius: 0;
   border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-  border-left: none;
+  border-top: none;
 }
 
-.experimental-ui .Shortcuts .Buttons .ZoomButtons .Button svg {
+.experimental-ui .Shortcuts .Buttons .ZoomButtons .Button {
+  font-size: 24px;
+  font-weight: 300;
+  line-height: 1;
   color: var(--text-secondary);
 }
 
-.experimental-ui .Shortcuts .Buttons .InfoTooltipTrigger .Button {
-  height: 42px;
-  width: 42px;
-  border-radius: 6px;
-  background-color: var(--surface-2);
-  border: none;
-}
-
-.experimental-ui .Shortcuts .Buttons .InfoTooltipTrigger .Button:hover {
-  background-color: var(--surface-3);
-  border: none;
-}
-
-.experimental-ui .Shortcuts .Buttons .InfoTooltipTrigger .Button.Active {
-  background-color: var(--accent);
-}
-
-.experimental-ui .Shortcuts .Buttons .InfoTooltipTrigger .Button svg {
-  color: var(--text-secondary);
-}
-
-.experimental-ui .Shortcuts .Buttons .InfoTooltipTrigger .Button.Active svg {
-  color: #fff;
-}

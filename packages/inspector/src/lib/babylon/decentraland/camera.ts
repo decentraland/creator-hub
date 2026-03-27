@@ -37,6 +37,7 @@ export class CameraManager {
   private getAspectRatio: () => number;
   private animation: AnimationData | null;
   private coastVelocity: BABYLON.Vector3 = BABYLON.Vector3.Zero();
+  private isShiftSpeedBoostActive = false;
 
   constructor(
     scene: BABYLON.Scene,
@@ -136,6 +137,11 @@ export class CameraManager {
     this.camera.target = center;
   }
 
+  setPosition(position: BABYLON.Vector3, target: BABYLON.Vector3) {
+    this.camera.position = position.clone();
+    this.camera.target = target.clone();
+  }
+
   private createCamera(scene: BABYLON.Scene) {
     let isAltKeyDown = false;
     let holdingRightMouseButton = false;
@@ -155,6 +161,15 @@ export class CameraManager {
 
     mouseInput.buttons = [RIGHT_BUTTON]; // move camera with right mouse button only
 
+    // Prevent WASD/arrow keys from moving the camera when Ctrl (or Meta on Mac) is held,
+    // so that hotkeys like Ctrl+D, Ctrl+Z etc. don't also trigger camera movement.
+    const keyboardInput = camera.inputs.attached.keyboard as BABYLON.FreeCameraKeyboardMoveInput;
+    const originalCheckInputs = keyboardInput.checkInputs?.bind(keyboardInput);
+    keyboardInput.checkInputs = () => {
+      if (keyState[Keys.KEY_CTRL]) return;
+      originalCheckInputs?.();
+    };
+
     camera.inertia = 0;
     camera.speed = this.speeds[this.speedIndex];
     camera.angularSensibility = CameraManager.ANGULAR_SENSIBILITY;
@@ -165,6 +180,8 @@ export class CameraManager {
     camera.keysRight = [Keys.KEY_D, Keys.KEY_RIGHT];
     camera.keysDownward = [Keys.KEY_Q];
     camera.keysUpward = [Keys.KEY_E];
+
+    const SHIFT_KEY_CODE = 16;
 
     scene.onPreKeyboardObservable.add(ev => {
       const oldAltKeyState = isAltKeyDown;
@@ -184,6 +201,20 @@ export class CameraManager {
           // reattach control to avoid camera sticking to the pointer bug...
           this.reattachControl();
         }
+      }
+
+      if (
+        ev.type === BABYLON.KeyboardEventTypes.KEYDOWN &&
+        ev.event.inputIndex === SHIFT_KEY_CODE &&
+        !this.isShiftSpeedBoostActive
+      ) {
+        this.isShiftSpeedBoostActive = true;
+        camera.speed = this.speeds[this.speedIndex] * 2;
+      }
+
+      if (ev.type === BABYLON.KeyboardEventTypes.KEYUP && ev.event.inputIndex === SHIFT_KEY_CODE) {
+        this.isShiftSpeedBoostActive = false;
+        camera.speed = this.speeds[this.speedIndex];
       }
     });
 
@@ -252,6 +283,7 @@ export class CameraManager {
   }
 
   private isCameraMoving(): boolean {
+    if (keyState[Keys.KEY_CTRL]) return false;
     const camera = this.camera;
     for (const key of camera.keysDown) if (keyState[key]) return true;
     for (const key of camera.keysUp) if (keyState[key]) return true;
@@ -268,8 +300,8 @@ export class CameraManager {
     } else {
       if (this.speedIndex > 0) this.speedIndex -= 1;
     }
-    this.camera.speed = this.speeds[this.speedIndex];
-    this.speedChangeObservable.emit('change', this.camera.speed);
+    this.camera.speed = this.speeds[this.speedIndex] * (this.isShiftSpeedBoostActive ? 2 : 1);
+    this.speedChangeObservable.emit('change', this.speeds[this.speedIndex]);
   }
 
   private onRenderFrame(scene: BABYLON.Scene) {

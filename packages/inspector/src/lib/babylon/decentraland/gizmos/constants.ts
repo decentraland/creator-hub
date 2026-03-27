@@ -1,21 +1,25 @@
 import { Color3, Vector3 } from '@babylonjs/core';
 import type { PlaneConfig } from './types';
 
-// Color constants
-export const GREY_INACTIVE_COLOR = new Color3(0.8, 0.8, 0.8);
-export const YELLOW_HOVER_COLOR = new Color3(1, 1, 0);
-export const YELLOW_HOVER_EMISSIVE = new Color3(0.8, 0.8, 0);
-export const AXIS_RED = new Color3(1, 0, 0);
-export const AXIS_GREEN = new Color3(0, 1, 0);
-export const AXIS_BLUE = new Color3(0, 0, 1);
+// Axis colors — modern palette matching Unity/Blender conventions
+export const AXIS_RED = new Color3(0.93, 0.27, 0.27); // X — warm coral red
+export const AXIS_GREEN = new Color3(0.29, 0.82, 0.44); // Y — fresh lime green
+export const AXIS_BLUE = new Color3(0.24, 0.6, 0.98); // Z — sky blue
 
-// Plane colors (Blender style)
-const PLANE_XY_DIFFUSE = new Color3(0, 0, 1);
-const PLANE_XY_EMISSIVE = new Color3(0, 0, 0.8);
-const PLANE_XZ_DIFFUSE = new Color3(0, 1, 0);
-const PLANE_XZ_EMISSIVE = new Color3(0, 0.8, 0);
-const PLANE_YZ_DIFFUSE = new Color3(1, 0, 0);
-const PLANE_YZ_EMISSIVE = new Color3(0.8, 0, 0);
+// Hover — white reads as universally "active" and avoids color clash with any axis
+export const YELLOW_HOVER_COLOR = new Color3(1, 1, 1);
+export const YELLOW_HOVER_EMISSIVE = new Color3(0.9, 0.9, 0.9);
+
+// Inactive — cool mid-grey with a slight blue tint
+export const GREY_INACTIVE_COLOR = new Color3(0.6, 0.62, 0.68);
+
+// Plane colors — semi-transparent tint matching the constrained axis pair
+const PLANE_XY_DIFFUSE = new Color3(0.24, 0.6, 0.98); // XY plane → blue (Z axis)
+const PLANE_XY_EMISSIVE = new Color3(0.18, 0.48, 0.78);
+const PLANE_XZ_DIFFUSE = new Color3(0.29, 0.82, 0.44); // XZ plane → green (Y axis)
+const PLANE_XZ_EMISSIVE = new Color3(0.22, 0.65, 0.34);
+const PLANE_YZ_DIFFUSE = new Color3(0.93, 0.27, 0.27); // YZ plane → red (X axis)
+const PLANE_YZ_EMISSIVE = new Color3(0.74, 0.2, 0.2);
 
 // Alpha constants
 export const FADE_ALPHA = 0.5;

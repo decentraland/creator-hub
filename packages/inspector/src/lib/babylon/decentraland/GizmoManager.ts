@@ -15,7 +15,7 @@ import type { SceneContext } from './SceneContext';
 import type { EcsEntity } from './EcsEntity';
 import { GizmoType as TransformerType } from './gizmos/types';
 import type { IGizmoTransformer } from './gizmos';
-import { FreeGizmo, PositionGizmo, RotationGizmo, ScaleGizmo } from './gizmos';
+import { FreeGizmo, PositionGizmo, RotationGizmo, BoundingBoxScaleGizmo } from './gizmos';
 import { snapManager, snapPosition, snapRotation, snapScale } from './snap-manager';
 import { computeObjectSnap } from './object-snap';
 import { getLayoutManager } from './layout-manager';
@@ -47,10 +47,16 @@ export function createGizmoManager(context: SceneContext) {
   const gizmoManager = new BabylonGizmoManager(context.scene);
   gizmoManager.usePointerToAttachGizmos = false;
 
+  // Make built-in gizmos (position, rotation) always draw in front of scene geometry.
+  // Both utility layers share the main scene's depth buffer by default; clearing it
+  // before each utility render ensures gizmos are never occluded by scene objects.
+  gizmoManager.utilityLayer.utilityLayerScene.autoClearDepthAndStencil = true;
+  gizmoManager.keepDepthUtilityLayer.utilityLayerScene.autoClearDepthAndStencil = true;
+
   // Create transformers
   const positionTransformer = new PositionGizmo(gizmoManager, snapPosition);
   const rotationTransformer = new RotationGizmo(gizmoManager, snapRotation);
-  const scaleTransformer = new ScaleGizmo(gizmoManager, snapScale, () => {
+  const scaleTransformer = new BoundingBoxScaleGizmo(snapScale, () => {
     if (selectedEntities.length === 0) return false;
     // If any selected entity has proportional scaling locked, force uniform scale for all
     return selectedEntities.some(
@@ -373,12 +379,20 @@ export function createGizmoManager(context: SceneContext) {
     restoreParents,
     addEntity(entity: EcsEntity) {
       if (selectedEntities.includes(entity) || !isEnabled) return;
+      const wasEmpty = selectedEntities.length === 0;
       selectedEntities.push(entity);
       updateGizmoPosition();
       setupTransformListeners();
-      // Update current transformer with new entities
       if (currentTransformer) {
         currentTransformer.setEntities(selectedEntities);
+        // Re-enable the scale gizmo when selecting after a full deselect — handles were cleaned up
+        if (
+          wasEmpty &&
+          currentTransformer.type === TransformerType.SCALE &&
+          'enable' in currentTransformer
+        ) {
+          (currentTransformer as { enable(): void }).enable();
+        }
       }
       events.emit('change');
     },
@@ -447,7 +461,7 @@ export function createGizmoManager(context: SceneContext) {
           break;
         }
         case GizmoType.SCALE: {
-          gizmoManager.scaleGizmoEnabled = true;
+          // BoundingBoxScaleGizmo manages its own handles — no built-in scale gizmo needed
           activateTransformer(scaleTransformer, snapManager.getScaleSnap());
           // Set up callbacks for ECS updates
           if ('setUpdateCallbacks' in scaleTransformer) {

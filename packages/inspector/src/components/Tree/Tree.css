@@ -37,6 +37,7 @@
 }
 
 .Tree .item:hover:not(:has(input)),
+.Tree .item.canvas-hovered:not(:has(input)),
 .Tree .selected:not(:has(input)) {
   background-color: var(--selected-item);
 }
@@ -124,7 +125,8 @@
   border-radius: var(--radius-sm);
 }
 
-.experimental-ui .Tree .item:hover {
+.experimental-ui .Tree .item:hover,
+.experimental-ui .Tree .item.canvas-hovered {
   background-color: var(--surface-3);
   border-radius: var(--radius-sm);
 }
@@ -143,7 +145,8 @@
 }
 
 .experimental-ui .Tree .item.selected .selectable-area div,
-.experimental-ui .Tree .item:hover .selectable-area div {
+.experimental-ui .Tree .item:hover .selectable-area div,
+.experimental-ui .Tree .item.canvas-hovered .selectable-area div {
   color: var(--text-primary);
 }
 
@@ -153,6 +156,7 @@
 }
 
 .experimental-ui .Tree .item:hover svg,
-.experimental-ui .Tree .item.selected svg {
+.experimental-ui .Tree .item.selected svg,
+.experimental-ui .Tree .item.canvas-hovered svg {
   color: var(--text-secondary);
 }

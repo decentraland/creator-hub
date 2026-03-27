@@ -9,7 +9,11 @@ import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { selectDataLayerError, selectSceneInfo } from '../../redux/data-layer';
 import { selectEngines } from '../../redux/sdk';
 import { getHiddenPanels } from '../../redux/ui';
-import { isFeatureFlagEnabled, setFeatureFlags } from '../../redux/feature-flags';
+import {
+  initialState as featureFlagsInitialState,
+  isFeatureFlagEnabled,
+  setFeatureFlags,
+} from '../../redux/feature-flags';
 import { PanelName } from '../../redux/ui/types';
 import { getConfig } from '../../lib/logic/config';
 
@@ -21,6 +25,7 @@ import { Box } from '../Box';
 import { Toolbar } from '../Toolbar';
 import Assets from '../Assets';
 import { SceneInfoPanel } from '../SceneInfoPanel';
+import { DebugPanel } from '../Renderer/DebugPanel';
 
 import './App.css';
 
@@ -32,7 +37,7 @@ const App = () => {
   useEffect(() => {
     const { featureFlags } = getConfig();
     if (Object.keys(featureFlags).length > 0) {
-      dispatch(setFeatureFlags(featureFlags));
+      dispatch(setFeatureFlags({ ...featureFlagsInitialState.flags, ...featureFlags }));
     }
   }, []);
 
@@ -74,8 +79,8 @@ const App = () => {
             {!hiddenPanels[PanelName.ENTITIES] && (
               <>
                 <Panel
-                  defaultSize={15}
-                  minSize={15}
+                  defaultSize={10}
+                  minSize={5}
                   order={1}
                 >
                   <Box className="composite-inspector">
@@ -152,6 +157,7 @@ const App = () => {
         )}
       </PanelGroup>
       {!hiddenPanels[PanelName.METRICS] && <Metrics />}
+      <DebugPanel />
     </div>
   );
 };

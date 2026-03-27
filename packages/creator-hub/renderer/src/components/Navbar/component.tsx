@@ -64,6 +64,7 @@ export function Navbar(props: { active: NavbarItem }) {
           <MenuItem
             item={NavbarItem.HOME}
             active={props.active}
+            disable={true}
           />
           <MenuItem
             item={NavbarItem.SCENES}

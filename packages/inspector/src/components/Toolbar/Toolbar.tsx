@@ -18,7 +18,17 @@ import { selectCanSave, selectInspectorPreferences } from '../../redux/app';
 import { isFeatureFlagEnabled } from '../../redux/feature-flags';
 import { useInspectorUIState } from '../../hooks/sdk/useInspectorUIState';
 import { useAppSelector, useAppDispatch } from '../../redux/hooks';
-import { SAVE, SAVE_ALT, useHotkey } from '../../hooks/useHotkey';
+import {
+  SAVE,
+  SAVE_ALT,
+  UNDO,
+  UNDO_ALT,
+  REDO,
+  REDO_2,
+  REDO_ALT,
+  REDO_ALT_2,
+  useHotkey,
+} from '../../hooks/useHotkey';
 import { Gizmos } from './Gizmos';
 import { Preferences } from './Preferences';
 import { ToolbarButton } from './ToolbarButton';
@@ -62,6 +72,8 @@ const Toolbar = withSdk(({ sdk }) => {
   }, [sdk]);
 
   useHotkey([SAVE, SAVE_ALT], handleSaveClick);
+  useHotkey([UNDO, UNDO_ALT], handleUndo);
+  useHotkey([REDO, REDO_2, REDO_ALT, REDO_ALT_2], handleRedo);
 
   return (
     <div className="Toolbar">
