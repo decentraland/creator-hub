@@ -58,9 +58,10 @@ export const slice = createSlice({
       .addCase(thunks.getWorkspace.pending, state => {
         state.status = 'loading';
       })
-      .addCase(thunks.getWorkspace.fulfilled, (_, action) => {
+      .addCase(thunks.getWorkspace.fulfilled, (state, action) => {
         return {
           ...action.payload,
+          sortBy: state.sortBy,
           status: 'succeeded',
           error: null,
         };

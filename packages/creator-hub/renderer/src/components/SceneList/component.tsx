@@ -8,6 +8,7 @@ import { SortBy } from '/shared/types/projects';
 import { t } from '/@/modules/store/translation/utils';
 import { useWorkspace } from '/@/hooks/useWorkspace';
 import { useDeploy } from '/@/hooks/useDeploy';
+import { formatSize } from '/@/modules/file';
 import { addBase64ImagePrefix } from '/@/modules/image';
 
 import { Button } from '../Button';
@@ -214,6 +215,12 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
         >
           {t('scene_list.sort.size')}
         </MenuItem>
+        <MenuItem
+          className="sort-item"
+          value={SortBy.PARCELS}
+        >
+          {t('scene_list.sort.parcels')}
+        </MenuItem>
       </Select>
     );
   };
@@ -308,6 +315,7 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
             </div>
             <div className="SceneListTableCell cell-name">{t('scene_list.table.name')}</div>
             <div className="SceneListTableCell cell-parcels">{t('scene_list.table.parcels')}</div>
+            <div className="SceneListTableCell cell-filesize">{t('scene_list.table.filesize')}</div>
             <div className="SceneListTableCell cell-modified">{t('scene_list.table.modified')}</div>
             <div className="SceneListTableCell cell-actions" />
           </div>
@@ -354,6 +362,14 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
                     sx={{ color: 'rgba(255,255,255,0.7)' }}
                   >
                     {project.layout.cols * project.layout.rows}
+                  </Typography>
+                </div>
+                <div className="SceneListTableCell cell-filesize">
+                  <Typography
+                    variant="body2"
+                    sx={{ color: 'rgba(255,255,255,0.7)' }}
+                  >
+                    {formatSize(project.size)}
                   </Typography>
                 </div>
                 <div className="SceneListTableCell cell-modified">

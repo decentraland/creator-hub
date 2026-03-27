@@ -86,7 +86,8 @@
     "sort": {
       "name": "Name",
       "newest": "Newest",
-      "size": "Size"
+      "size": "Scene Size",
+      "parcels": "Parcels"
     },
     "search": "Search",
     "results": "{count} {count, plural, one {scene} other {scenes}}",
@@ -100,6 +101,7 @@
       "thumbnail": "Scene",
       "name": "Name",
       "parcels": "Parcels",
+      "filesize": "Scene Size",
       "modified": "Modified"
     },
     "view_mode": "Display view",

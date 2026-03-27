@@ -86,7 +86,8 @@
     "sort": {
       "name": "名称",
       "newest": "最新",
-      "size": "尺寸"
+      "size": "场景大小",
+      "parcels": "地块"
     },
     "search": "搜索",
     "results": "{count}结果",
@@ -100,6 +101,7 @@
       "thumbnail": "场景",
       "name": "名称",
       "parcels": "地块",
+      "filesize": "场景大小",
       "modified": "修改时间"
     },
     "view_mode": "显示视图",

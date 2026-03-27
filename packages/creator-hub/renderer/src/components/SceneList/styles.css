@@ -150,7 +150,7 @@
   background: transparent;
   cursor: pointer;
   transition: background-color 0.15s ease;
-  font-size: 13px;
+  font-size: 15px;
   color: rgba(255, 255, 255, 0.7);
   white-space: nowrap;
 }
@@ -233,6 +233,11 @@
 }
 
 .SceneListTableCell.cell-parcels {
+  width: 100px;
+  flex-shrink: 0;
+}
+
+.SceneListTableCell.cell-filesize {
   width: 100px;
   flex-shrink: 0;
 }

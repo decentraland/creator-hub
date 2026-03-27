@@ -15,6 +15,7 @@ export enum SortBy {
   NEWEST = 'newest',
   SIZE = 'size',
   NAME = 'name',
+  PARCELS = 'parcels',
 }
 
 export type DependencyState = { [k in PACKAGES]?: Outdated[keyof Outdated] };

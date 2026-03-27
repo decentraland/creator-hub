@@ -21,6 +21,31 @@ import { getDefaultScenesPath, getScenesPath } from './settings';
 import { DEFAULT_THUMBNAIL, NEW_SCENE_NAME, EMPTY_SCENE_TEMPLATE_REPO } from './constants';
 import { getProjectId } from './analytics';
 
+async function getDirectorySize(
+  fs: Services['fs'],
+  path: Services['path'],
+  dirPath: string,
+): Promise<number> {
+  let total = 0;
+  try {
+    const entries = await fs.readdir(dirPath);
+    await Promise.all(
+      entries.map(async entry => {
+        const entryPath = path.join(dirPath, entry);
+        if (await fs.isDirectory(entryPath)) {
+          total += await getDirectorySize(fs, path, entryPath);
+        } else {
+          const stat = await fs.stat(entryPath);
+          total += stat.size;
+        }
+      }),
+    );
+  } catch {
+    // Directory doesn't exist or can't be read
+  }
+  return total;
+}
+
 export function initializeWorkspace(services: Services) {
   const { config, fs, ipc, path, pkg, npm } = services;
 
@@ -119,13 +144,16 @@ export function initializeWorkspace(services: Services) {
     opts?: GetProjectsOpts;
   }): Promise<Project> {
     try {
-      const [id, scene, stat, dependencyAvailableUpdates, infoFs] = await Promise.all([
-        getProjectId(_path),
-        getScene(_path),
-        fs.stat(_path),
-        opts?.omitOutdatedPackages ? Promise.resolve({}) : getOutdatedPackages(_path),
-        getProjectInfoFs(_path),
-      ]);
+      const [id, scene, stat, sceneJsonStat, dependencyAvailableUpdates, infoFs, assetsSize] =
+        await Promise.all([
+          getProjectId(_path),
+          getScene(_path),
+          fs.stat(_path),
+          fs.stat(path.join(_path, 'scene.json')).catch(() => null),
+          opts?.omitOutdatedPackages ? Promise.resolve({}) : getOutdatedPackages(_path),
+          getProjectInfoFs(_path),
+          getDirectorySize(fs, path, path.join(_path, 'assets')),
+        ]);
       const thumbnail = await getProjectThumbnailAsBase64(_path, scene);
       const layout = getRowsAndCols(scene.scene.parcels.map($ => parseCoords($)));
       const info = await infoFs.getAll();
@@ -139,9 +167,9 @@ export function initializeWorkspace(services: Services) {
         layout,
         scene: scene.scene,
         createdAt: Number(stat.birthtime),
-        updatedAt: Number(stat.mtime),
+        updatedAt: Number(sceneJsonStat?.mtime ?? stat.mtime),
         publishedAt: 0, // TODO: possible to get publishedAt from catalyst?
-        size: stat.size,
+        size: assetsSize,
         worldConfiguration: scene?.worldConfiguration,
         dependencyAvailableUpdates,
         info,

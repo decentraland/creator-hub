@@ -86,7 +86,8 @@
     "sort": {
       "name": "Nombre",
       "newest": "Más Nuevas",
-      "size": "Tamaño"
+      "size": "Tamaño de escena",
+      "parcels": "Parcelas"
     },
     "search": "Buscar",
     "results": "{count} {count, plural, one {escena} other {escenas}}",
@@ -100,6 +101,7 @@
       "thumbnail": "Escena",
       "name": "Nombre",
       "parcels": "Parcelas",
+      "filesize": "Tamaño de escena",
       "modified": "Modificado"
     },
     "view_mode": "Vista",
