@@ -34,10 +34,12 @@ export function isValidNumericInput(input: Input[keyof Input]): boolean {
   return input.length > 0 && !isNaN(Number(input));
 }
 
-export type UseComponentInputOptions<InputType extends Input> = {
+export type UseComponentInputOptions<ComponentValueType, InputType extends Input> = {
   validateInput?: (input: InputType) => boolean;
   deps?: unknown[];
   tolerance?: number;
+  /** Return preserved input if semantically equivalent, or null to re-derive from component value. */
+  preserveInput?: (componentValue: ComponentValueType, currentInput: InputType) => InputType | null;
 };
 
 export const useComponentInput = <ComponentValueType extends object, InputType extends Input>(
@@ -49,7 +51,8 @@ export const useComponentInput = <ComponentValueType extends object, InputType e
     validateInput = () => true,
     deps = [],
     tolerance = 2,
-  }: UseComponentInputOptions<InputType> = {},
+    preserveInput,
+  }: UseComponentInputOptions<ComponentValueType, InputType> = {},
 ) => {
   // Create a normalization function that handles the round-trip transformation
   const normalizeForComparison = useCallback(
@@ -76,10 +79,12 @@ export const useComponentInput = <ComponentValueType extends object, InputType e
   );
   const [focusedOn, setFocusedOn] = useState<string | null>(null);
   const skipSyncRef = useRef(false);
+  const inputRef = useRef(input);
   const [isValid, setIsValid] = useState(true);
 
   const updateInputs = useCallback((value: InputType | null, skipSync = false) => {
     skipSyncRef.current = skipSync;
+    inputRef.current = value;
     setInput(value);
   }, []);
 
@@ -104,8 +109,16 @@ export const useComponentInput = <ComponentValueType extends object, InputType e
   const handleBlur = useCallback(() => {
     if (componentValue === null) return;
     setFocusedOn(null);
+    const currentInput = inputRef.current;
+    if (currentInput && preserveInput) {
+      const preserved = preserveInput(componentValue, currentInput);
+      if (preserved) {
+        updateInputs(preserved);
+        return;
+      }
+    }
     updateInputs(fromComponentValueToInput(componentValue));
-  }, [componentValue]);
+  }, [componentValue, preserveInput, fromComponentValueToInput, updateInputs]);
 
   const validate = useCallback(
     (input: InputType | null): input is InputType => input !== null && validateInput(input),
@@ -127,10 +140,19 @@ export const useComponentInput = <ComponentValueType extends object, InputType e
   useEffect(() => {
     if (componentValue === null) return;
 
+    const currentInput = inputRef.current;
+    if (currentInput && preserveInput) {
+      const preserved = preserveInput(componentValue, currentInput);
+      if (preserved) {
+        updateInputs(preserved, true);
+        return;
+      }
+    }
+
     let newInputs = fromComponentValueToInput(componentValue) as any;
     if (focusedOn) {
       // skip sync from state while editing, to avoid overriding the user input
-      const current = getValue(input, focusedOn);
+      const current = getValue(currentInput, focusedOn);
       newInputs = setValue(newInputs, focusedOn, current);
     }
     // set "skipSync" to avoid cyclic component value change
@@ -231,7 +253,8 @@ export const useMultiComponentInput = <ComponentValueType extends object, InputT
     validateInput = () => true,
     deps = [],
     tolerance = 2,
-  }: UseComponentInputOptions<InputType> = {},
+    preserveInput,
+  }: UseComponentInputOptions<ComponentValueType, InputType> = {},
 ) => {
   // If there's only one entity, use the single entity version just to be safe for now
   if (entities.length === 1) {
@@ -244,6 +267,7 @@ export const useMultiComponentInput = <ComponentValueType extends object, InputT
         validateInput,
         deps,
         tolerance,
+        preserveInput,
       },
     );
   }

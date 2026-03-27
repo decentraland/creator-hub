@@ -163,6 +163,23 @@ export const getScale = (
   return vector;
 };
 
+/**
+ * Preserves the current Euler rotation input when it produces the same orientation
+ * as the component's quaternion, avoiding lossy round-trip conversions near gimbal lock.
+ */
+export function preserveRotationInput(
+  componentValue: TransformType,
+  currentInput: TransformInput,
+): TransformInput | null {
+  const { rotation: p } = toTransform()(currentInput);
+  const { rotation: q } = componentValue;
+  const dot = q.x * p.x + q.y * p.y + q.z * p.z + q.w * p.w;
+  if (Math.abs(dot) > 0.9999) {
+    return { ...fromTransform(componentValue), rotation: currentInput.rotation };
+  }
+  return null;
+}
+
 export function fromTransformConfig(value: TransformConfig) {
   return {
     porportionalScaling: !!value.porportionalScaling,
@@ -170,8 +187,9 @@ export function fromTransformConfig(value: TransformConfig) {
 }
 
 /**
- * Normalizes a TransformType to ensure consistent precision
- * This helps with equality comparisons by rounding values to 2 decimal places
+ * Normalizes a TransformType to ensure consistent precision.
+ * Position/scale are rounded to 2 decimal places; quaternion components to 10
+ * decimal places to preserve rotation fidelity through Euler round-trips.
  */
 export function normalizeTransform(transform: TransformType): TransformType {
   const normalizeVector3 = (v: Vector3Type): Vector3Type => ({
