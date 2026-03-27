@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(grep -r \"MemoryRouter\\\\|initialEntries\" c:UsersezequDocumentsGitHubcreator-hubpackagescreator-hubrenderersrc --include=*.tsx --include=*.ts)",
+      "Bash(gh api:*)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(curl -s \"https://raw.githubusercontent.com/decentraland/creator-hub/test-new-layout-home/packages/creator-hub/renderer/src/components/LearnPage/index.ts\" -o \"C:/Users/ezequ/AppData/Local/Temp/LearnPage_index.ts\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/decentraland/creator-hub/test-new-layout-home/packages/creator-hub/renderer/src/components/LearnPage/images/docs-icon.svg\" -o \"C:/Users/ezequ/AppData/Local/Temp/LearnPage_docs-icon.svg\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/decentraland/creator-hub/test-new-layout-home/packages/creator-hub/renderer/src/components/LearnPage/images/link-icon.svg\" -o \"C:/Users/ezequ/AppData/Local/Temp/LearnPage_link-icon.svg\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/decentraland/creator-hub/test-new-layout-home/packages/creator-hub/renderer/src/components/LearnPage/component.tsx\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/decentraland/creator-hub/test-new-layout-home/packages/creator-hub/renderer/src/components/LearnPage/styles.css\")",
+      "Bash(git ls-tree:*)",
+      "Bash(git checkout:*)",
+      "Bash(npx tsc:*)",
+      "Bash(find packages/creator-hub/renderer/src/components/Container -name *.tsx)",
+      "Bash(xargs grep:*)",
+      "Bash(gh pr:*)",
+      "Bash(npm install:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}
