@@ -343,6 +343,8 @@ export async function deploy({
     ...(target ? ['--target', target] : []),
     ...(targetContent ? ['--target-content', targetContent] : []),
     '--programmatic',
+    '--yes',
+    '--multi-scene',
     ...(language ? ['--language', language] : []),
   ]);
 

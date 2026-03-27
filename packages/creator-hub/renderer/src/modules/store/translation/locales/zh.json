@@ -425,7 +425,8 @@
         "auto_skybox": "自动（Decentraland 时间）",
         "max_offset": "最大偏移",
         "general": "常规",
-        "single_player": "单人游戏"
+        "single_player": "单人游戏",
+        "show_in_places": "在 Places 中显示"
       },
       "details": {
         "world_title": "世界标题",
@@ -660,6 +661,7 @@
       "invalid_scenes_folder": "无效的场景文件夹。请在创建场景之前在设置中配置有效的场景文件夹。",
       "create_scene_failed": "尝试创建场景时发生错误。请重试。",
       "run_scene_failed": "加载项目失败。请重试。",
+      "preview_scene_failed": "启动预览失败。请检查场景代码是否有错误。",
       "url_copied": "URL已复制到剪贴板",
       "fetch_managed_projects_failed": "获取管理项目失败",
       "fetch_world_settings_failed": "获取世界设置失败。请重试。",
