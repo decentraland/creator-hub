@@ -919,52 +919,52 @@ export function LearnPage() {
     <main className="LearnPage">
       <Navbar active={NavbarItem.LEARN} />
       <Container>
-      <div className="LearnHeader">
-        <Typography variant="h3">{t('learn.header.title')}</Typography>
-        <div className="LearnHeaderActions">
-          <Search
-            placeholder={t('learn.search_placeholder')}
-            defaultValue={searchQuery}
-            onChange={setSearchQuery}
-          />
-          <Button
-            className="LearnDocsButton"
-            color="secondary"
-            startIcon={<OpenInNewIcon />}
-            onClick={handleVisitDocs}
-          >
-            {t('learn.visit_docs')}
-          </Button>
-        </div>
-      </div>
-
-      {isSearching ? (
-        <SearchResults
-          query={searchQuery.trim()}
-          blogPosts={displayBlogPosts}
-        />
-      ) : (
-        <>
-          <LearnTabsBar
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-          />
-
-          {activeTab === 'creator_hub' && <CreatorHubTab />}
-          {activeTab === 'creator_academy' && <CreatorAcademyTab />}
-          {activeTab === 'community_all_hands' && <CommunityAllHandsTab />}
-          {activeTab === 'docs' && <DocsTab />}
-          {activeTab === 'news' && (
-            <NewsTab
-              blogPosts={displayBlogPosts}
-              blogTotal={blogTotal}
-              blogPage={blogPage}
-              isLoading={blogLoading}
-              onPageChange={setBlogPage}
+        <div className="LearnHeader">
+          <Typography variant="h3">{t('learn.header.title')}</Typography>
+          <div className="LearnHeaderActions">
+            <Search
+              placeholder={t('learn.search_placeholder')}
+              defaultValue={searchQuery}
+              onChange={setSearchQuery}
             />
-          )}
-        </>
-      )}
+            <Button
+              className="LearnDocsButton"
+              color="secondary"
+              startIcon={<OpenInNewIcon />}
+              onClick={handleVisitDocs}
+            >
+              {t('learn.visit_docs')}
+            </Button>
+          </div>
+        </div>
+
+        {isSearching ? (
+          <SearchResults
+            query={searchQuery.trim()}
+            blogPosts={displayBlogPosts}
+          />
+        ) : (
+          <>
+            <LearnTabsBar
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+            />
+
+            {activeTab === 'creator_hub' && <CreatorHubTab />}
+            {activeTab === 'creator_academy' && <CreatorAcademyTab />}
+            {activeTab === 'community_all_hands' && <CommunityAllHandsTab />}
+            {activeTab === 'docs' && <DocsTab />}
+            {activeTab === 'news' && (
+              <NewsTab
+                blogPosts={displayBlogPosts}
+                blogTotal={blogTotal}
+                blogPage={blogPage}
+                isLoading={blogLoading}
+                onPageChange={setBlogPage}
+              />
+            )}
+          </>
+        )}
       </Container>
     </main>
   );

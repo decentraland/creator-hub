@@ -60,7 +60,6 @@ function formatDate(timestamp: number): string {
   });
 }
 
-
 function SceneRowMenu({ project }: { project: Project }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
@@ -304,12 +303,8 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
               {t('scene_list.table.thumbnail')}
             </div>
             <div className="SceneListTableCell cell-name">{t('scene_list.table.name')}</div>
-            <div className="SceneListTableCell cell-parcels">
-              {t('scene_list.table.parcels')}
-            </div>
-            <div className="SceneListTableCell cell-modified">
-              {t('scene_list.table.modified')}
-            </div>
+            <div className="SceneListTableCell cell-parcels">{t('scene_list.table.parcels')}</div>
+            <div className="SceneListTableCell cell-modified">{t('scene_list.table.modified')}</div>
             <div className="SceneListTableCell cell-actions" />
           </div>
           {filteredProjects.map(project => {
