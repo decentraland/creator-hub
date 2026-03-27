@@ -492,6 +492,7 @@ function SelectWorld({
         worldName={worldSettings.worldName}
         worldScenes={worldSettings.scenes}
         worldSettings={worldSettings.settings}
+        isOwner={isOwner}
         isLoading={worldSettings.status === 'loading' || worldSettings.status === 'idle'}
         activeTab={settingsModal.activeTab}
         onTabClick={handleSettingsModalTabClick}
