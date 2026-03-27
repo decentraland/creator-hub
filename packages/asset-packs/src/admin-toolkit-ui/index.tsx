@@ -1,6 +1,7 @@
 import { Color4 } from '@dcl/sdk/math';
 import ReactEcs, { Label, Button as DCLButton, UiEntity, ReactBasedUiSystem } from '@dcl/react-ecs';
 import { Entity, IEngine, PointerEventsSystem } from '@dcl/ecs';
+import { getExplorerInformation } from '~system/Runtime';
 import { getComponents, GetPlayerDataRes, IPlayersHelper, ISDKHelpers } from '../definitions';
 import { VideoControl } from './VideoControl';
 import { TextAnnouncementsControl } from './TextAnnouncementsControl';
@@ -207,6 +208,21 @@ function isAllowedAdmin(
   return isAdmin || isPreview();
 }
 
+/**
+ * Mobile detection using the recommended SDK approach (see Decentraland Building-for-Mobile guide).
+ * Uses `getExplorerInformation` from `~system/Runtime` to query the actual platform
+ * reported by the explorer client ('mobile' | 'desktop' | 'web').
+ * Resolved once at startup and cached — same pattern as `isMobile()` from `@dcl/sdk/platform`.
+ */
+let _isMobile: boolean = false;
+void getExplorerInformation({})
+  .then((info) => {
+    _isMobile = info.platform?.toLowerCase() === 'mobile';
+  })
+  .catch((err) => {
+    console.error('Admin Tools: failed to detect platform:', err);
+  });
+
 const uiComponent = (
   engine: IEngine,
   pointerEventsSystem: PointerEventsSystem,
@@ -216,6 +232,39 @@ const uiComponent = (
   const adminToolkitEntity = getAdminToolkitComponent(engine);
   const player = playersHelper?.getPlayer();
   const isPlayerAdmin = isAllowedAdmin(engine, adminToolkitEntity, player);
+  const isMobile = _isMobile;
+
+  // Mobile safe area (from Decentraland Building-for-Mobile guide):
+  //   RED (unsafe) zones:
+  //   - Left 25%  (full height)  → Chat, Search, Profile, Joystick, Emotes
+  //   - Top-right  25% × 23%    → Profile access, camera controllers
+  //   - Bottom-right 25% × 55%  → Interaction buttons
+  //   GREEN (safe) zone = CENTER of screen
+  //
+  // Guide recommendations applied here:
+  //   - "Put all actionable dialogues at center of screen"
+  //   - "Ensure critical UI is inside the safe area"
+  //   - "Scale up UI sizes by 3× for Mobile to improve readability"
+  //
+  // Mobile layout: toggle + panel centered horizontally in the safe zone,
+  // toggle on top, panel expanding downward (column-reverse since toggle is last child).
+  // Desktop layout: completely unchanged — panel + toggle side-by-side at top-right.
+
+  const toggleBtnSize = isMobile ? 126 : 42;   // 42 × 3 = 126
+  const tabBtnWidth = isMobile ? 147 : 49;     // 49 × 3 = 147
+  const tabBtnHeight = isMobile ? 126 : 42;    // 42 × 3 = 126
+  const panelWidth = isMobile ? 900 : 500;     // fits within center safe zone (~50% of 1920)
+  const headerHeight = isMobile ? 150 : 50;    // 50 × 3 = 150
+  const fontSize = isMobile ? 60 : 20;         // 20 × 3 = 60
+
+  // Desktop: row layout, anchored top-right (unchanged from original).
+  // Mobile: column-reverse layout, centered horizontally at top of safe zone.
+  //   top: 60 clears the OS status bar / notch.
+  //   left: centers the panel in the 1920-wide virtual canvas.
+  //   column-reverse: toggle (last child) renders on top, panel expands below it.
+  const outerPosition = isMobile
+    ? { top: 60, left: Math.round((ADMIN_TOOLKIT_VIRTUAL_UI_SIZE.virtualWidth - panelWidth) / 2) }
+    : { top: 120, right: 10 };
 
   return [
     <UiEntity
@@ -229,23 +278,24 @@ const uiComponent = (
         <UiEntity
           uiTransform={{
             positionType: 'absolute',
-            flexDirection: 'row',
-            position: { top: 120, right: 10 },
+            flexDirection: isMobile ? 'column-reverse' : 'row',
+            alignItems: isMobile ? 'center' : undefined,
+            position: outerPosition,
           }}
         >
           <UiEntity
             uiTransform={{
               display: state.panelOpen ? 'flex' : 'none',
-              width: 500,
+              width: panelWidth,
               pointerFilter: 'block',
               flexDirection: 'column',
-              margin: { right: 8 },
+              margin: isMobile ? { top: 8 } : { right: 8 },
             }}
           >
             <UiEntity
               uiTransform={{
                 width: '100%',
-                height: 50,
+                height: headerHeight,
                 flexDirection: 'row',
                 alignItems: 'center',
                 borderRadius: 12,
@@ -258,7 +308,7 @@ const uiComponent = (
             >
               <Label
                 value="ADMIN TOOLS"
-                fontSize={20}
+                fontSize={fontSize}
                 color={Color4.create(160, 155, 168, 1)}
                 uiTransform={{ flexGrow: 1 }}
               />
@@ -272,8 +322,8 @@ const uiComponent = (
                     adminToolkitEntity.moderationControl.isEnabled && !isPreview()
                       ? 'flex'
                       : 'none',
-                  width: 49,
-                  height: 42,
+                  width: tabBtnWidth,
+                  height: tabBtnHeight,
                   margin: { right: 8 },
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -307,8 +357,8 @@ const uiComponent = (
                 onlyIcon
                 uiTransform={{
                   display: adminToolkitEntity.videoControl.isEnabled ? 'flex' : 'none',
-                  width: 49,
-                  height: 42,
+                  width: tabBtnWidth,
+                  height: tabBtnHeight,
                   margin: { right: 8 },
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -341,8 +391,8 @@ const uiComponent = (
                 onlyIcon
                 uiTransform={{
                   display: adminToolkitEntity.smartItemsControl.isEnabled ? 'flex' : 'none',
-                  width: 49,
-                  height: 42,
+                  width: tabBtnWidth,
+                  height: tabBtnHeight,
                   margin: { right: 8 },
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -375,8 +425,8 @@ const uiComponent = (
                 onlyIcon
                 uiTransform={{
                   display: adminToolkitEntity.textAnnouncementControl.isEnabled ? 'flex' : 'none',
-                  width: 49,
-                  height: 42,
+                  width: tabBtnWidth,
+                  height: tabBtnHeight,
                   margin: { right: 8 },
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -427,8 +477,8 @@ const uiComponent = (
           <UiEntity
             uiTransform={{
               display: 'flex',
-              height: 42,
-              width: 42,
+              height: toggleBtnSize,
+              width: toggleBtnSize,
               alignItems: 'center',
               alignContent: 'center',
               justifyContent: 'center',
@@ -445,8 +495,8 @@ const uiComponent = (
             <DCLButton
               value=""
               uiTransform={{
-                height: 40,
-                width: 40,
+                height: toggleBtnSize - 2,
+                width: toggleBtnSize - 2,
                 alignItems: 'center',
                 alignContent: 'center',
                 justifyContent: 'center',
