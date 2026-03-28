@@ -78,38 +78,38 @@
             "id": "{self}",
             "value": [
               {
-                "name": "Play anim",
-                "type": "play_animation",
-                "jsonPayload": "{\"animation\":\"Play\"}"
+                "name": "Explode",
+                "type": "batch",
+                "jsonPayload": "{\"actions\":[\"_Play_anim\",\"_Show\",\"_Delay_hide\",\"_Sound\"]}",
+                "allowedInBasicView": true
               },
               {
-                "name": "Reset",
-                "type": "stop_animation",
-                "jsonPayload": "{}"
-              },
-              {
-                "name": "Show",
-                "type": "set_visibility",
-                "jsonPayload": "{\"visible\":true,\"collider\":0}"
-              },
-              {
-                "name": "Hide",
+                "name": "_Hide",
                 "type": "set_visibility",
                 "jsonPayload": "{\"visible\":false,\"collider\":0}"
               },
               {
-                "name": "Delay hide",
+                "name": "_Play_anim",
+                "type": "play_animation",
+                "jsonPayload": "{\"animation\":\"Play\"}"
+              },
+              {
+                "name": "_Reset",
+                "type": "stop_animation",
+                "jsonPayload": "{}"
+              },
+              {
+                "name": "_Show",
+                "type": "set_visibility",
+                "jsonPayload": "{\"visible\":true,\"collider\":0}"
+              },
+              {
+                "name": "_Delay_hide",
                 "type": "start_delay",
-                "jsonPayload": "{\"actions\":[\"Hide\"],\"timeout\":1.1}"
+                "jsonPayload": "{\"actions\":[\"_Hide\"],\"timeout\":1.1}"
               },
               {
-                "name": "Explode",
-                "type": "batch",
-                "jsonPayload": "{\"actions\":[\"Play anim\",\"Show\",\"Delay hide\",\"Sound\"]}",
-                "allowedInBasicView": true
-              },
-              {
-                "name": "Sound",
+                "name": "_Sound",
                 "type": "play_sound",
                 "jsonPayload": "{\"src\":\"{assetPath}/explosion.mp3\"}"
               }
