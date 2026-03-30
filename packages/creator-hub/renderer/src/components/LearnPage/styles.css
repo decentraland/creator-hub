@@ -473,7 +473,10 @@
   border-right: none;
 }
 
-.LearnDocCard:nth-last-child(-n+3) {
+.LearnDocCard:last-child,
+.LearnDocCard:nth-last-child(2):nth-child(3n+1),
+.LearnDocCard:nth-last-child(2):nth-child(3n+2),
+.LearnDocCard:nth-last-child(3):nth-child(3n+1) {
   border-bottom: none;
 }
 

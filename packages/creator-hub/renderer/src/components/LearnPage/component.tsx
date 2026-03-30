@@ -215,7 +215,7 @@ const DOCS: DocLink[] = [
     title: 'Creating Emotes',
     description: 'Animate and export emotes',
     icon: <AnimationOutlinedIcon />,
-    url: 'https://docs.decentraland.org/creator/emotes/creating-and-exporting-emotes/',
+    url: 'https://docs.decentraland.org/creator/wearables-and-emotes/emotes/creating-emotes',
   },
   {
     category: 'Emotes',
@@ -229,7 +229,7 @@ const DOCS: DocLink[] = [
     title: 'Creating a Collection',
     description: 'Publish to the marketplace',
     icon: <CollectionsBookmarkOutlinedIcon />,
-    url: 'https://docs.decentraland.org/creator/wearables-and-emotes/manage-collections/creating-collection/',
+    url: 'https://docs.decentraland.org/creator/wearables-and-emotes/manage-collections/creating-a-collection',
   },
 ];
 
