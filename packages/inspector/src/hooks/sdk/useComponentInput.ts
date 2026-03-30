@@ -144,7 +144,13 @@ export const useComponentInput = <ComponentValueType extends object, InputType e
     if (currentInput && preserveInput) {
       const preserved = preserveInput(componentValue, currentInput);
       if (preserved) {
-        updateInputs(preserved, true);
+        if (focusedOn) {
+          // Keep the raw value for the field being edited (avoid formatting mid-typing)
+          const current = getValue(currentInput, focusedOn);
+          updateInputs(setValue(preserved, focusedOn, current) as InputType, true);
+        } else {
+          updateInputs(preserved, true);
+        }
         return;
       }
     }

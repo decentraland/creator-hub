@@ -1,5 +1,7 @@
 import { type Page } from 'playwright';
 
+import { sleep } from '../utils/sleep';
+
 declare const page: Page;
 
 class TransformPageObject {
@@ -34,6 +36,8 @@ class TransformPageObject {
     await input.click();
     await page.keyboard.press('ControlOrMeta+a');
     await page.keyboard.type(value);
+    // Allow React to process the input state update before blur
+    await sleep(100);
     await page.keyboard.press('Tab');
   }
 

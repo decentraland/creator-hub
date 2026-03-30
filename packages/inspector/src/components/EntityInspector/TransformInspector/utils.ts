@@ -175,7 +175,14 @@ export function preserveRotationInput(
   const { rotation: q } = componentValue;
   const dot = q.x * p.x + q.y * p.y + q.z * p.z + q.w * p.w;
   if (Math.abs(dot) > 0.9999) {
-    return { ...fromTransform(componentValue), rotation: currentInput.rotation };
+    return {
+      ...fromTransform(componentValue),
+      rotation: {
+        x: formatAngle(Number(currentInput.rotation.x)),
+        y: formatAngle(Number(currentInput.rotation.y)),
+        z: formatAngle(Number(currentInput.rotation.z)),
+      },
+    };
   }
   return null;
 }
