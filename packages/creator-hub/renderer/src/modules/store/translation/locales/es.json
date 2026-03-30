@@ -84,8 +84,9 @@
       "description": "Desata tu creatividad. Comienza a construir escenas para tus tierras y mundos y comparta con la comunidad.<a> Aprenda más sobre cómo crear escenas. </a>"
     },
     "sort": {
+      "created": "Más Recientes",
       "name": "Nombre",
-      "newest": "Más Nuevas",
+      "newest": "Modificado",
       "size": "Tamaño de escena",
       "parcels": "Parcelas"
     },

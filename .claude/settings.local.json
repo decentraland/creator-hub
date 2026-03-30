@@ -19,7 +19,18 @@
       "Bash(gh pr:*)",
       "Bash(npm install:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(grep -E \"\\\\.\\(ts|js\\)$\")",
+      "Bash(find /c/Users/ezequ/Documents/GitHub/creator-hub -type f -name *.ts -path */lib/deploy*)",
+      "Bash(grep -r \"api/files\\\\|/files\" /c/Users/ezequ/Documents/GitHub/creator-hub --include=*.ts --include=*.tsx)",
+      "Bash(find /c/Users/ezequ/Documents/GitHub/creator-hub -type f -name *.ts -path */services/* -o -name *fs* -path */services/*)",
+      "Bash(grep -r \"publishScene\\\\|editor.publish\" /c/Users/ezequ/Documents/GitHub/creator-hub/packages/creator-hub --include=*.ts --include=*.tsx)",
+      "Bash(find /c/Users/ezequ/Documents/GitHub/creator-hub -type f -name *file* -path */modules/*)",
+      "Bash(git log:*)",
+      "Bash(python3 -c \"import json; data=json.load\\(open\\(''packages/creator-hub/renderer/src/modules/store/translation/locales/en.json''\\)\\); print\\(json.dumps\\(data.get\\(''scene_list'', {}\\).get\\(''sort'', {}\\), indent=2\\)\\)\")",
+      "Bash(node -e \"const d=require\\(''./packages/creator-hub/renderer/src/modules/store/translation/locales/en.json''\\); console.log\\(JSON.stringify\\(d.scene_list?.sort, null, 2\\)\\)\")",
+      "Bash(node -e \"const d=require\\(''./packages/creator-hub/renderer/src/modules/store/translation/locales/en.json''\\); console.log\\(JSON.stringify\\(d.scene_list?.table, null, 2\\)\\)\")",
+      "Bash(python3 -c \":*)"
     ]
   }
 }

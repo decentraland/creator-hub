@@ -199,6 +199,12 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
       >
         <MenuItem
           className="sort-item"
+          value={SortBy.CREATED}
+        >
+          {t('scene_list.sort.created')}
+        </MenuItem>
+        <MenuItem
+          className="sort-item"
           value={SortBy.NEWEST}
         >
           {t('scene_list.sort.newest')}
@@ -304,11 +310,17 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
         ) : null}
       </Column>
       {viewMode === 'grid' ? (
-        <div className="list">
+        <div
+          key="view-grid"
+          className="list"
+        >
           <Projects projects={filteredProjects} />
         </div>
       ) : (
-        <div className="SceneListTable">
+        <div
+          key={`view-list-${sortBy}`}
+          className="SceneListTable"
+        >
           <div className="SceneListTableHead">
             <div className="SceneListTableCell cell-thumbnail">
               {t('scene_list.table.thumbnail')}

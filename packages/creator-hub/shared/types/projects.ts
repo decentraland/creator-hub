@@ -12,9 +12,10 @@ export type Layout = {
 };
 
 export enum SortBy {
+  CREATED = 'created',
   NEWEST = 'newest',
-  SIZE = 'size',
   NAME = 'name',
+  SIZE = 'size',
   PARCELS = 'parcels',
 }
 
