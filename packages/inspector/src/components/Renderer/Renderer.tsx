@@ -118,7 +118,12 @@ const Renderer: React.FC = () => {
         ? sdk.components.Selection.getOrNull(selectedEntitites[0])?.gizmo
         : undefined;
     sdk.operations.removeSelectedEntities();
-    selectedEntitites.forEach(entity => sdk.operations.duplicateEntity(entity, preferredGizmo));
+    let insertAfter =
+      selectedEntitites.length > 1 ? selectedEntitites[selectedEntitites.length - 1] : undefined;
+    selectedEntitites.forEach(entity => {
+      const cloned = sdk.operations.duplicateEntity(entity, preferredGizmo, insertAfter);
+      insertAfter = cloned;
+    });
     void sdk.operations.dispatch();
     setTimeout(() => {
       camera.attachControl(canvasRef.current, true);
@@ -139,7 +144,11 @@ const Renderer: React.FC = () => {
         ? sdk.components.Selection.getOrNull(selectedEntities[0])?.gizmo
         : undefined;
     sdk.operations.removeSelectedEntities();
-    copyEntities.forEach(entity => sdk.operations.duplicateEntity(entity, preferredGizmo));
+    let insertAfter = copyEntities.length > 1 ? copyEntities[copyEntities.length - 1] : undefined;
+    copyEntities.forEach(entity => {
+      const cloned = sdk.operations.duplicateEntity(entity, preferredGizmo, insertAfter);
+      insertAfter = cloned;
+    });
     void sdk.operations.dispatch();
   }, [sdk, copyEntities]);
 
