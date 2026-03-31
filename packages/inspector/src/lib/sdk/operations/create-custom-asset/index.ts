@@ -328,6 +328,7 @@ export function createCustomAsset(engine: IEngine) {
               resources.push(originalValue);
             }
           }
+          }
         }
 
         // Handle Actions component resources
