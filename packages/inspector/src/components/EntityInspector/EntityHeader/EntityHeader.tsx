@@ -265,7 +265,7 @@ export default React.memo(
             conflictsWith: [sdk.components.NftShape.componentId],
           },
           // Default font should be Sans Serif (Font.F_SANS_SERIF = 0)
-          { font: 0 },
+          { font: 0, text: '' },
         ),
         createOption(sdk.components.PointerEvents, 'Pointer Events', {
           description:

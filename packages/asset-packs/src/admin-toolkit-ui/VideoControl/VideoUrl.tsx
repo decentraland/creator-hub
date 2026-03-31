@@ -16,12 +16,10 @@ export const HELP_ICON = `${CONTENT_URL}/admin_toolkit/assets/icons/help.png`;
 
 export function VideoControlURL({
   engine,
-  scaleFactor,
   video,
   entity,
 }: {
   engine: IEngine;
-  scaleFactor: number;
   entity: Entity;
   video: DeepReadonlyObject<PBVideoPlayer> | undefined;
 }) {
@@ -38,13 +36,12 @@ export function VideoControlURL({
         <Header
           iconSrc={ICONS.VIDEO_SOURCE}
           title="Video URL"
-          scaleFactor={scaleFactor}
         />
         <UiEntity
           onMouseDown={() => openExternalUrl({ url: VIDEO_PLAYER_HELP_URL })}
           uiTransform={{
-            width: 25 * scaleFactor,
-            height: 25 * scaleFactor,
+            width: 25,
+            height: 25,
             alignItems: 'center',
           }}
           uiBackground={{
@@ -55,23 +52,23 @@ export function VideoControlURL({
         />
       </UiEntity>
       <Label
-        value="Play videos from Vimeo by pasting a video URL below."
+        value="Play videos by pasting an .m3u8 video URL below."
         color={Color4.fromHexString('#A09BA8')}
-        fontSize={16 * scaleFactor}
+        fontSize={16}
       />
       <Label
         value="<b>Video URL<b>"
         color={Color4.White()}
-        fontSize={16 * scaleFactor}
+        fontSize={16}
         uiTransform={{
-          margin: { top: 16 * scaleFactor, bottom: 8 * scaleFactor },
+          margin: { top: 16, bottom: 8 },
         }}
       />
 
       <Input
         onChange={setVideoURL}
         value={videoURL}
-        fontSize={16 * scaleFactor}
+        fontSize={16}
         textAlign="middle-left"
         placeholder="Paste your video URL"
         placeholderColor={Color4.create(160 / 255, 155 / 255, 168 / 255, 1)}
@@ -81,17 +78,17 @@ export function VideoControlURL({
           borderRadius: 12,
           borderColor: Color4.White(),
           width: '100%',
-          height: 80 * scaleFactor,
+          height: 80,
         }}
       />
 
       <UiEntity
         uiTransform={{
           width: '100%',
-          height: 40 * scaleFactor,
+          height: 40,
           flexDirection: 'row',
           justifyContent: 'flex-end',
-          margin: { top: 10 * scaleFactor },
+          margin: { top: 10 },
         }}
       >
         {video?.src && isVideoUrl(video.src) && (
@@ -99,11 +96,11 @@ export function VideoControlURL({
             id="video_control_share_screen_clear"
             value="<b>Deactivate</b>"
             variant="text"
-            fontSize={16 * scaleFactor}
+            fontSize={16}
             color={Color4.White()}
             uiTransform={{
-              margin: { right: 8 * scaleFactor },
-              padding: { left: 8 * scaleFactor, right: 8 * scaleFactor },
+              margin: { right: 8 },
+              padding: { left: 8, right: 8 },
             }}
             onMouseDown={() => {
               controls.setSource('');
@@ -120,9 +117,9 @@ export function VideoControlURL({
                 : '<b>Activate</b>'
             }
             labelTransform={{
-              margin: { left: 6 * scaleFactor, right: 6 * scaleFactor },
+              margin: { left: 6, right: 6 },
             }}
-            fontSize={16 * scaleFactor}
+            fontSize={16}
             uiBackground={{
               color: isVideoUrl(videoURL) ? COLORS.SUCCESS : Color4.fromHexString('#274431'),
             }}
@@ -136,36 +133,36 @@ export function VideoControlURL({
 
       <Label
         value="<b>Video Playback</b>"
-        fontSize={16 * scaleFactor}
+        fontSize={16}
         color={Color4.White()}
-        uiTransform={{ margin: { bottom: 10 * scaleFactor } }}
+        uiTransform={{ margin: { bottom: 10 } }}
       />
 
       <UiEntity
         uiTransform={{
           flexDirection: 'row',
           width: '100%',
-          margin: { bottom: 10 * scaleFactor },
+          margin: { bottom: 10 },
         }}
       >
         <Button
           disabled={!isActive}
           id="video_control_play"
           value="<b>Play</b>"
-          fontSize={18 * scaleFactor}
-          labelTransform={{ margin: { right: 10 * scaleFactor } }}
+          fontSize={18}
+          labelTransform={{ margin: { right: 10 } }}
           uiTransform={{
-            margin: { top: 0, right: 16 * scaleFactor, bottom: 0, left: 0 },
-            height: 42 * scaleFactor,
-            minWidth: 69 * scaleFactor,
+            margin: { top: 0, right: 16, bottom: 0, left: 0 },
+            height: 42,
+            minWidth: 69,
             alignItems: 'center',
             justifyContent: 'center',
             padding: 0,
           }}
           icon={ICONS.PLAY_BUTTON}
           iconTransform={{
-            width: 35 * scaleFactor,
-            height: 35 * scaleFactor,
+            width: 35,
+            height: 35,
           }}
           onMouseDown={() => {
             controls.play();
@@ -175,14 +172,14 @@ export function VideoControlURL({
           disabled={!isActive}
           id="video_control_pause"
           value="<b>Pause</b>"
-          fontSize={18 * scaleFactor}
+          fontSize={18}
           labelTransform={{
-            margin: { left: 6 * scaleFactor, right: 6 * scaleFactor },
+            margin: { left: 6, right: 6 },
           }}
           uiTransform={{
-            margin: { top: 0, right: 16 * scaleFactor, bottom: 0, left: 0 },
-            height: 42 * scaleFactor,
-            minWidth: 78 * scaleFactor,
+            margin: { top: 0, right: 16, bottom: 0, left: 0 },
+            height: 42,
+            minWidth: 78,
             alignItems: 'center',
             justifyContent: 'center',
             padding: 0,
@@ -196,13 +193,13 @@ export function VideoControlURL({
           id="video_control_restart"
           value="<b>Restart</b>"
           labelTransform={{
-            margin: { left: 6 * scaleFactor, right: 6 * scaleFactor },
+            margin: { left: 6, right: 6 },
           }}
-          fontSize={18 * scaleFactor}
+          fontSize={18}
           uiTransform={{
-            margin: { top: 0, right: 16 * scaleFactor, bottom: 0, left: 0 },
-            height: 42 * scaleFactor,
-            minWidth: 88 * scaleFactor,
+            margin: { top: 0, right: 16, bottom: 0, left: 0 },
+            height: 42,
+            minWidth: 88,
             alignItems: 'center',
             justifyContent: 'center',
             padding: 0,
@@ -217,14 +214,14 @@ export function VideoControlURL({
           onlyIcon
           variant={video?.loop ? 'primary' : 'secondary'}
           uiTransform={{
-            height: 42 * scaleFactor,
-            width: 49 * scaleFactor,
+            height: 42,
+            width: 49,
             alignItems: 'center',
             justifyContent: 'center',
             padding: 0,
           }}
           icon={ICONS.LOOP}
-          iconTransform={{ width: 25 * scaleFactor, height: 25 * scaleFactor }}
+          iconTransform={{ width: 25, height: 25 }}
           iconBackground={{
             color: !video?.loop ? Color4.White() : Color4.Black(),
           }}

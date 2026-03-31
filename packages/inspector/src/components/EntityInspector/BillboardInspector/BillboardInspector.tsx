@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-
+import { BillboardMode } from '@dcl/ecs';
 import { withSdk } from '../../../hoc/withSdk';
 import { useAllEntitiesHaveComponent } from '../../../hooks/sdk/useHasComponent';
 import { useMultiComponentInput } from '../../../hooks/sdk/useComponentInput';
@@ -11,7 +11,6 @@ import { InfoTooltip } from '../../ui/InfoTooltip';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { Dropdown } from '../../ui/Dropdown';
-import { BillboardMode } from '@dcl/ecs';
 import { fromBillboard, toBillboard, isValidInput } from './utils';
 import type { Props } from './types';
 
@@ -33,7 +32,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
     Billboard,
     fromBillboard,
     toBillboard,
-    isValidInput,
+    { validateInput: isValidInput },
   );
 
   const handleRemove = useCallback(async () => {

@@ -286,7 +286,10 @@ export function addAsset(engine: IEngine) {
               break;
             }
             case CoreComponents.AUDIO_SOURCE: {
-              componentValue.src = componentValue.audioClipUrl.replace('{assetPath}', base);
+              componentValue.audioClipUrl = componentValue.audioClipUrl.replace(
+                '{assetPath}',
+                base,
+              );
               break;
             }
             case CoreComponents.VIDEO_PLAYER: {

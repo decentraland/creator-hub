@@ -1,0 +1,10 @@
+.SceneMinimap {
+  position: absolute;
+  bottom: 48px;
+  right: 6px;
+  z-index: 1;
+  border-radius: 6px;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  opacity: 0.9;
+}

@@ -10,6 +10,7 @@ import { Container } from '../../Container';
 import { TextField, CheckboxField, ColorField, Dropdown, TextArea, InfoTooltip } from '../../ui';
 import { fromTextShape, toTextShape, isValidInput, TEXT_ALIGN_MODES, FONTS } from './utils';
 import type { Props } from './types';
+import './TextShapeInspector.css';
 
 export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
   const { TextShape } = sdk.components;
@@ -20,7 +21,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
     TextShape,
     fromTextShape,
     toTextShape,
-    isValidInput,
+    { validateInput: isValidInput },
   );
 
   const handleRemove = useCallback(async () => {
@@ -63,13 +64,14 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
           {...getInputProps('textColor')}
         />
       </Block>
-      <Block label="Font Size">
+      <Block className="font-row">
         <Dropdown
           label="Font"
           options={FONTS}
           {...getInputProps('font')}
         />
         <TextField
+          label="Font Size"
           autoSelect
           type="number"
           {...getInputProps('fontSize')}

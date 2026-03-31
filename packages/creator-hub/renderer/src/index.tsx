@@ -6,6 +6,10 @@ import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import { init as reactInit } from '@sentry/react';
 import {
   init as SentryInit,
+  globalHandlersIntegration,
+  linkedErrorsIntegration,
+  dedupeIntegration,
+  scopeToMainIntegration,
   browserTracingIntegration,
   replayIntegration,
 } from '@sentry/electron/renderer';
@@ -37,14 +41,35 @@ const root = createRoot(container);
 if (import.meta.env.PROD) {
   SentryInit(
     {
-      integrations: [browserTracingIntegration(), replayIntegration()],
+      defaultIntegrations: false,
+      integrations: [
+        globalHandlersIntegration(),
+        linkedErrorsIntegration(),
+        dedupeIntegration(),
+        scopeToMainIntegration(),
+        browserTracingIntegration({
+          enableLongTask: false,
+          enableLongAnimationFrame: false,
+          enableInp: false,
+          enableElementTiming: false,
+        }),
+        replayIntegration({
+          mutationLimit: 500,
+          blockAllMedia: true,
+          beforeErrorSampling(event) {
+            const source = event.tags?.source;
+            // Only capture replays for UX-critical errors
+            return source === 'deployment' || source === 'editor-page' || source === 'workspace';
+          },
+        }),
+      ],
       release: import.meta.env.VITE_APP_VERSION,
       tracesSampleRate: 0.001,
       replaysSessionSampleRate: 0.01,
       replaysOnErrorSampleRate: 0.01,
-      enabled: import.meta.env.PROD,
+      enabled: true,
     },
-    reactInit as any,
+    reactInit,
   );
 }
 

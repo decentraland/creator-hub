@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { setUser } from '@sentry/electron/renderer';
+import { captureException, setUser } from '@sentry/electron/renderer';
 import { ChainId, type Avatar } from '@dcl/schemas';
 import { useDispatch } from '#store';
 import { config } from '/@/config';
@@ -95,6 +95,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       AuthServerProvider.finishSignIn(initSignInResult)
         .then(finishSignIn)
         .catch(error => {
+          captureException(error, {
+            tags: { source: 'auth', event: 'signin-finish' },
+          });
           console.error('Signin error:', error);
           pushGeneric('error', error?.message || t('sign_in.errors.failed'));
         })
@@ -104,6 +107,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           navigate(-1);
         });
     } catch (error: any) {
+      captureException(error, {
+        tags: { source: 'auth', event: 'signin-init' },
+      });
       console.error('Signin initialization error:', error);
       pushGeneric(
         'error',
@@ -131,6 +137,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
       setChainId(chainId);
     } catch (error) {
+      captureException(error, {
+        tags: { source: 'auth', event: 'chain-switch' },
+      });
       setChainId(DEFAULT_CHAIN_ID);
       console.error(error);
     }

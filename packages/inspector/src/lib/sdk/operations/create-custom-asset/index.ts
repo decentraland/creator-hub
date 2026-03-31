@@ -37,42 +37,24 @@ const excludeComponents: string[] = [
   CoreComponents.NETWORK_ENTITY,
 ];
 
-const componentsWithResources: Record<string, string[]> = {};
+const componentsWithResources: Record<string, string[][]> = {};
 
-// Modified handleResource function to be strongly typed with array paths
 function handleResource(type: string, keys: string[]): void {
-  componentsWithResources[type] = (keys as string[]).map(String);
+  if (!componentsWithResources[type]) {
+    componentsWithResources[type] = [];
+  }
+  componentsWithResources[type].push(keys);
 }
 
-// Update the handlers to use proper typing with array paths
 handleResource(CoreComponents.GLTF_CONTAINER, ['src']);
 handleResource(CoreComponents.AUDIO_SOURCE, ['audioClipUrl']);
 handleResource(CoreComponents.VIDEO_PLAYER, ['src']);
-handleResource(CoreComponents.MATERIAL, ['material', 'pbr', 'texture', 'tex', 'texture', 'src']);
-handleResource(CoreComponents.MATERIAL, [
-  'material',
-  'pbr',
-  'alphaTexture',
-  'tex',
-  'texture',
-  'src',
-]);
-handleResource(CoreComponents.MATERIAL, [
-  'material',
-  'pbr',
-  'emissiveTexture',
-  'tex',
-  'texture',
-  'src',
-]);
-handleResource(CoreComponents.MATERIAL, [
-  'material',
-  'pbr',
-  'bumpTexture',
-  'tex',
-  'texture',
-  'src',
-]);
+
+const PBR_TEXTURE_SLOTS = ['texture', 'alphaTexture', 'emissiveTexture', 'bumpTexture'];
+for (const slot of PBR_TEXTURE_SLOTS) {
+  handleResource(CoreComponents.MATERIAL, ['material', 'pbr', slot, 'tex', 'texture', 'src']);
+}
+handleResource(CoreComponents.MATERIAL, ['material', 'unlit', 'texture', 'tex', 'texture', 'src']);
 
 // Add these action types at the top with other constants
 const RESOURCE_ACTION_TYPES = [
@@ -326,14 +308,14 @@ export function createCustomAsset(engine: IEngine) {
 
         // Handle special components
         if (componentsWithResources[componentName]) {
-          const propertyKeys = componentsWithResources[componentName];
-          let value = processedComponentValue;
+          for (const propertyKeys of componentsWithResources[componentName]) {
+            let value = processedComponentValue;
 
-          // Navigate through the property chain safely
-          for (let i = 0; i < propertyKeys.length - 1; i++) {
-            if (value === undefined || value === null) break;
-            value = value[propertyKeys[i]];
-          }
+            // Navigate through the property chain safely
+            for (let i = 0; i < propertyKeys.length - 1; i++) {
+              if (value === undefined || value === null) break;
+              value = value[propertyKeys[i]];
+            }
 
           // Only process if we have a valid value and final key
           if (value && propertyKeys.length > 0) {

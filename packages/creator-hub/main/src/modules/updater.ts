@@ -2,7 +2,7 @@ import path from 'path';
 import updater from 'electron-updater';
 import log from 'electron-log/main';
 import semver from 'semver';
-import * as Sentry from '@sentry/electron/main';
+import { captureException } from '@sentry/electron/main';
 import { FileSystemStorage } from '/shared/types/storage';
 import { INSTALLED_VERSION_FILE_NAME } from '/shared/paths';
 import type { ReleaseNotes } from '/shared/types/settings';
@@ -61,16 +61,12 @@ export function setupUpdaterEvents(event?: Electron.IpcMainInvokeEvent) {
         error: err.message,
       });
     }
-    Sentry.captureException(err, {
-      tags: {
-        source: 'auto-updater',
-        event: 'error',
-      },
+    captureException(err, {
+      tags: { source: 'auto-updater', event: 'error' },
       extra: {
         context: 'Electron auto-update process',
         currentVersion: updater.autoUpdater.currentVersion?.version,
       },
-      level: 'error',
     });
   });
 }
@@ -96,40 +92,31 @@ export async function checkForUpdates(config: UpdaterConfig = {}) {
     const currentVersion = updater.autoUpdater.currentVersion?.version;
     return { updateAvailable: !!(version && semver.gt(version, currentVersion)), version };
   } catch (error: any) {
-    Sentry.captureException(error, {
-      tags: {
-        source: 'auto-updater',
-        event: 'check-for-updates',
-      },
-      extra: {
-        context: 'Electron auto-update process main',
-      },
-      level: 'error',
+    captureException(error, {
+      tags: { source: 'auto-updater', event: 'check-for-updates' },
+      extra: { context: 'Electron auto-update process main' },
     });
     log.error('[AutoUpdater] Failed check and install updates:', error.message);
     throw error;
   }
 }
 
-export async function quitAndInstall(version: string) {
+export async function quitAndInstall(version: string, beforeQuitCleanup: () => Promise<void>) {
   try {
-    await updater.autoUpdater.quitAndInstall();
     if (version) {
       await writeInstalledVersion(version);
     }
+    log.info('[AutoUpdater] Cleaning up before quit and install');
+    await beforeQuitCleanup();
+    log.info('[AutoUpdater] Cleanup complete, launching installer');
+    updater.autoUpdater.quitAndInstall();
   } catch (error: any) {
-    Sentry.captureException(error, {
-      tags: {
-        source: 'auto-updater',
-        event: 'quit-and-install',
-      },
-      extra: {
-        context: 'Electron installation',
-      },
-      level: 'error',
+    captureException(error, {
+      tags: { source: 'auto-updater', event: 'quit-and-install' },
+      extra: { context: 'Electron installation' },
     });
     log.error('[AutoUpdater] Error installing update:', error);
-    return error;
+    throw error;
   }
 }
 
@@ -137,12 +124,8 @@ export async function downloadUpdate() {
   try {
     return await updater.autoUpdater.downloadUpdate();
   } catch (error: any) {
-    Sentry.captureException(error, {
-      tags: {
-        source: 'auto-updater',
-        event: 'download-update',
-      },
-      level: 'error',
+    captureException(error, {
+      tags: { source: 'auto-updater', event: 'download-update' },
     });
     log.error('[AutoUpdater] Error downloading update:', error);
     throw error;

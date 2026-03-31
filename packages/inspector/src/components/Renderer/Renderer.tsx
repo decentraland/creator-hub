@@ -55,6 +55,7 @@ import { Warnings } from '../Warnings';
 import { CameraSpeed } from './CameraSpeed';
 import { Shortcuts } from './Shortcuts';
 import { Metrics } from './Metrics';
+import { SceneMinimap } from './SceneMinimap';
 import { AxisHelper } from './AxisHelper';
 
 import './Renderer.css';
@@ -464,6 +465,7 @@ const Renderer: React.FC = () => {
       <CameraSpeed />
       <AxisHelper />
       {!hiddenPanels[PanelName.METRICS] && <Metrics />}
+      <SceneMinimap />
       {!hiddenPanels[PanelName.SHORTCUTS] && (
         <Shortcuts
           canvas={canvasRef}

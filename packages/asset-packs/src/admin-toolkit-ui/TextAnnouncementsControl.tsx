@@ -2,7 +2,6 @@ import { IEngine } from '@dcl/ecs';
 import ReactEcs, { Label, UiEntity, Input } from '@dcl/react-ecs';
 import { Color4 } from '@dcl/sdk/math';
 import { getComponents } from '../definitions';
-import { getScaleUIFactor } from '../ui';
 import { GetPlayerDataRes } from '../types';
 import { Button } from './Button';
 import { CONTENT_URL } from './constants';
@@ -28,10 +27,8 @@ export function TextAnnouncementsControl({
   state: State;
   player?: GetPlayerDataRes | null;
 }) {
-  const scaleFactor = getScaleUIFactor(engine);
-
   return (
-    <Card scaleFactor={scaleFactor}>
+    <Card>
       <UiEntity
         uiTransform={{
           width: '100%',
@@ -42,15 +39,14 @@ export function TextAnnouncementsControl({
         {/* Header */}
         <Header
           iconSrc={ICONS.TEXT_ANNOUNCEMENT_CONTROL}
-          scaleFactor={scaleFactor}
           title="TEXT ANNOUNCEMENTS"
         />
         <UiEntity uiTransform={{ flexDirection: 'column' }}>
           <Label
             value="<b>Message window</b>"
-            fontSize={16 * scaleFactor}
+            fontSize={16}
             color={Color4.White()}
-            uiTransform={{ margin: { bottom: 16 * scaleFactor } }}
+            uiTransform={{ margin: { bottom: 16 } }}
           />
 
           <Input
@@ -60,25 +56,25 @@ export function TextAnnouncementsControl({
             onChange={value => {
               state.textAnnouncementControl.text = value;
             }}
-            fontSize={16 * scaleFactor}
+            fontSize={16}
             placeholder={'Write your announcement here'}
             placeholderColor={Color4.create(160 / 255, 155 / 255, 168 / 255, 1)}
             color={Color4.Black()}
             uiBackground={{ color: Color4.White() }}
             uiTransform={{
               width: '100%',
-              height: 80 * scaleFactor,
-              margin: { bottom: 16 * scaleFactor },
+              height: 80,
+              margin: { bottom: 16 },
             }}
           />
 
           <UiEntity
             uiTransform={{
               width: '100%',
-              height: 40 * scaleFactor,
+              height: 40,
               flexDirection: 'row',
               margin: {
-                bottom: 10 * scaleFactor,
+                bottom: 10,
                 top: 0,
                 right: 0,
                 left: 0,
@@ -87,7 +83,7 @@ export function TextAnnouncementsControl({
           >
             <Label
               value={`${state.textAnnouncementControl.text?.length ?? 0} / 90`}
-              fontSize={14 * scaleFactor}
+              fontSize={14}
               color={Color4.create(187 / 255, 187 / 255, 187 / 255, 1)}
               uiTransform={{ flexGrow: 1 }}
               textAlign="top-left"
@@ -96,11 +92,11 @@ export function TextAnnouncementsControl({
               id="text_announcement_control_clear"
               value="<b>Clear Announcements</b>"
               variant="text"
-              fontSize={16 * scaleFactor}
+              fontSize={16}
               color={Color4.White()}
               uiTransform={{
-                height: 40 * scaleFactor,
-                margin: { right: 8 * scaleFactor },
+                height: 40,
+                margin: { right: 8 },
               }}
               onMouseDown={() => {
                 handleClearTextAnnouncement(engine, state);
@@ -110,11 +106,11 @@ export function TextAnnouncementsControl({
               id="text_announcement_control_share"
               value="<b>Share</b>"
               variant="primary"
-              fontSize={16 * scaleFactor}
+              fontSize={16}
               labelTransform={{
-                margin: { left: 20 * scaleFactor, right: 20 * scaleFactor },
+                margin: { left: 20, right: 20 },
               }}
-              uiTransform={{ height: 40 * scaleFactor }}
+              uiTransform={{ height: 40 }}
               onMouseDown={() => {
                 handleSendTextAnnouncement(
                   engine,
@@ -127,12 +123,12 @@ export function TextAnnouncementsControl({
           </UiEntity>
         </UiEntity>
 
-        <UiEntity uiTransform={{ minHeight: 30 * scaleFactor }}>
+        <UiEntity uiTransform={{ minHeight: 30 }}>
           <UiEntity
             uiTransform={{
               display: ANNOUNCEMENT_STATE !== undefined ? 'flex' : 'none',
-              width: 30 * scaleFactor,
-              height: 30 * scaleFactor,
+              width: 30,
+              height: 30,
             }}
             uiBackground={{
               texture: { src: ICONS.CHECK },
@@ -144,7 +140,7 @@ export function TextAnnouncementsControl({
               display: ANNOUNCEMENT_STATE !== undefined ? 'flex' : 'none',
             }}
             value={`Message ${ANNOUNCEMENT_STATE === 'sent' ? 'sent' : 'cleared'}!`}
-            fontSize={14 * scaleFactor}
+            fontSize={14}
             color={Color4.create(187 / 255, 187 / 255, 187 / 255, 1)}
           />
         </UiEntity>

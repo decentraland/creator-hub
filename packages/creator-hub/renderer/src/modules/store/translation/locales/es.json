@@ -51,6 +51,7 @@
           "skip_auth_screen": "Omitir la pantalla de autenticación",
           "open_new_instance": "Abrir multiples clientes",
           "landscape_terrain_enabled": "Habilitar terrenos de vista panorámica",
+          "multi_instance": "Vista previa multi-instancia",
           "mobile_preview": "Mostrar código QR para móvil"
         },
         "publish_options": {
@@ -259,6 +260,7 @@
             "invalid_url": "Algo salió mal.\nPor favor, inténtalo de nuevo.",
             "invalid_identity": "No se pudo validar su identidad.",
             "max_file_size_exceeded": "Uno o más activos exceden el límite permitido ({maxFileSizeInMb}MB).\nOptimiza o elimina archivos grandes y vuelve a intentarlo.",
+            "max_scene_size_exceeded": "Tu escena excede el tamaño máximo permitido.\nReducí la cantidad o el tamaño de los assets e intentá de nuevo.",
             "unknown": "Algo salió mal.\nPor favor, inténtalo de nuevo.",
             "invalid_creator_wallet": "El creador debe ser una dirección de billetera Ethereum válida."
           },
@@ -409,7 +411,8 @@
         "auto_skybox": "Auto (hora de Decentraland)",
         "max_offset": "Desplazamiento Máximo",
         "general": "General",
-        "single_player": "Un Solo Jugador"
+        "single_player": "Un Solo Jugador",
+        "show_in_places": "Mostrar en Places"
       },
       "details": {
         "world_title": "Título del Mundo",
@@ -644,6 +647,7 @@
       "invalid_scenes_folder": "Carpeta de escenas inválida. Por favor, ingresa una carpeta de escenas válida en la configuración de la aplicación antes de crear una escena.",
       "create_scene_failed": "Ocurrió un error al crear la escena. Por favor, inténtalo nuevamente.",
       "run_scene_failed": "Error al cargar el proyecto. Por favor, inténtalo de nuevo.",
+      "preview_scene_failed": "Error al iniciar la vista previa. Revisá el código de la escena en busca de errores.",
       "url_copied": "URL copiada al portapapeles",
       "fetch_managed_projects_failed": "Error al cargar los proyectos gestionados",
       "fetch_world_settings_failed": "Error al cargar la configuración del mundo. Por favor, inténtalo de nuevo.",

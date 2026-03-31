@@ -76,14 +76,16 @@ const PREVIEW_OPTIONS_MAP: Record<keyof PreviewArguments, string> = {
   enableLandscapeTerrains: '--landscape-terrain-enabled',
   openNewInstance: '-n',
   skipAuthScreen: '--skip-auth-screen',
+  multiInstance: '--multi-instance',
 };
 
 function generatePreviewArguments(opts: PreviewOptions) {
-  opts.skipAuthScreen = true;
+  // Multi-instance preview requires authentication to differentiate players
+  const resolved = { ...opts, skipAuthScreen: !opts.multiInstance };
   const args: string[] = [];
-  for (const key in opts) {
+  for (const key in resolved) {
     const typedKey = key as keyof PreviewArguments;
-    if (opts[typedKey] && typedKey in PREVIEW_OPTIONS_MAP) {
+    if (resolved[typedKey] && typedKey in PREVIEW_OPTIONS_MAP) {
       args.push(PREVIEW_OPTIONS_MAP[typedKey]);
     }
   }
@@ -157,9 +159,10 @@ function updateDeepLinkWithOpts(params: string, newOpts: PreviewOptions): string
       }
     };
 
-    // We always want to skip the auth screen
-    setOrDeleteParam(PREVIEW_OPTIONS_MAP.skipAuthScreen, true);
+    // Multi-instance preview requires authentication to differentiate players
+    setOrDeleteParam(PREVIEW_OPTIONS_MAP.skipAuthScreen, !newOpts.multiInstance);
     setOrDeleteParam(PREVIEW_OPTIONS_MAP.enableLandscapeTerrains, newOpts.enableLandscapeTerrains);
+    setOrDeleteParam(PREVIEW_OPTIONS_MAP.multiInstance, newOpts.multiInstance);
 
     // this param is different from what we recieved from the CLI that the one that the launcher uses.
     setOrDeleteParam('open-deeplink-in-new-instance', newOpts.openNewInstance);
@@ -289,11 +292,21 @@ export async function legacyDeploy({
   return port;
 }
 
-async function shouldRunLegacyDeploy(path: string) {
-  const file = await fs.readFile(
+async function readDeployCommandFile(path: string) {
+  return fs.readFile(
     join(path, 'node_modules', '@dcl/sdk-commands/dist/commands/deploy/index.js'),
+    'utf-8',
   );
+}
+
+async function shouldRunLegacyDeploy(path: string) {
+  const file = await readDeployCommandFile(path);
   return !file.includes('--programmatic');
+}
+
+async function supportsMultiSceneDeploy(path: string) {
+  const file = await readDeployCommandFile(path);
+  return file.includes('--multi-scene');
 }
 // ############################################################################################
 
@@ -330,6 +343,7 @@ export async function deploy({
   }
 
   const port = await getAvailablePort();
+  const multiScene = await supportsMultiSceneDeploy(path);
 
   const { stop } = await runCommand(path, 'deploy', [
     '--dir',
@@ -340,6 +354,8 @@ export async function deploy({
     ...(target ? ['--target', target] : []),
     ...(targetContent ? ['--target-content', targetContent] : []),
     '--programmatic',
+    '--yes',
+    ...(multiScene ? ['--multi-scene'] : []),
     ...(language ? ['--language', language] : []),
   ]);
 

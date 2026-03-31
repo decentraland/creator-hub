@@ -1,4 +1,5 @@
 import { createSlice, type PayloadAction, isRejectedWithValue } from '@reduxjs/toolkit';
+import { captureException } from '@sentry/electron/renderer';
 import { Authenticator, type AuthIdentity } from '@dcl/crypto';
 import type { ChainId } from '@dcl/schemas';
 import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
@@ -211,7 +212,12 @@ export const executeDeployment = createAsyncThunk(
 
     if (!hasValidIdentity || !identity) {
       AuthServerProvider.deactivate();
-      return rejectWithValue(new DeploymentError('INVALID_IDENTITY', getInitialDeploymentStatus()));
+      const error = new DeploymentError('INVALID_IDENTITY', getInitialDeploymentStatus());
+      captureException(error, {
+        tags: { source: 'deployment', event: 'INVALID_IDENTITY', errorType: 'INVALID_IDENTITY' },
+        fingerprint: ['deployment-error', 'INVALID_IDENTITY'],
+      });
+      return rejectWithValue(error);
     }
 
     try {
@@ -238,7 +244,16 @@ export const executeDeployment = createAsyncThunk(
 
       const finalStatus = deriveOverallStatus(componentsStatus);
       if (finalStatus === 'failed') {
-        return rejectWithValue(new DeploymentError('DEPLOYMENT_FAILED', componentsStatus));
+        const error = new DeploymentError('DEPLOYMENT_FAILED', componentsStatus);
+        captureException(error, {
+          tags: {
+            source: 'deployment',
+            event: 'DEPLOYMENT_FAILED',
+            errorType: 'DEPLOYMENT_FAILED',
+          },
+          fingerprint: ['deployment-error', 'DEPLOYMENT_FAILED'],
+        });
+        return rejectWithValue(error);
       } else if (finalStatus === 'complete') {
         dispatch(managementActions.fetchAllManagedProjectsData({ address: wallet }));
       }
@@ -246,6 +261,14 @@ export const executeDeployment = createAsyncThunk(
       return { info, componentsStatus };
     } catch (error: any) {
       if (isDeploymentError(error, '*')) {
+        captureException(error.error || error, {
+          tags: {
+            source: 'deployment',
+            event: error.name,
+            errorType: error.name,
+          },
+          fingerprint: ['deployment-error', error.name],
+        });
         dispatch(
           actions.updateDeploymentStatus({
             path,
