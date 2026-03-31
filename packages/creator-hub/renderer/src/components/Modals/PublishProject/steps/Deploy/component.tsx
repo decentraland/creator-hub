@@ -68,8 +68,16 @@ export function Deploy(props: Props) {
   const isWorld = previousStep === 'publish-to-world' || !!deployment?.info.isWorld;
   const dclEnv = useMemo(() => getDclEnv(), []);
 
+  /** True if the project needs to undeploy existing world scenes before deploying the new one.
+   * True when deploying to a single-scene world and there are existing scenes in the world that do not overlap with the project parcels. */
   const needsUndeploy = useMemo(() => {
-    return isWorld && deploymentMetadata?.isMultiScene === false && worldScenes.length > 0;
+    const projectParcelsSet = new Set(project.scene.parcels);
+    return (
+      isWorld &&
+      deploymentMetadata?.isMultiScene === false &&
+      worldScenes.length > 0 &&
+      worldScenes.some(scene => scene.parcels.every(parcel => !projectParcelsSet.has(parcel)))
+    );
   }, [isWorld, deploymentMetadata?.isMultiScene, worldScenes]);
 
   /** True if any of the project parcels overlap with any of the existing world scenes parcels */
