@@ -6,7 +6,7 @@ import { TextField } from '../../../../ui';
 
 import type { Props } from './types';
 
-export function ModeAdvanced({ value, onSubmit, onGoBack }: Props) {
+export function ModeAdvanced({ value, disabled: isDisabled, onSubmit, onGoBack }: Props) {
   const [coords, setCoords] = useState(value.coords);
   const [base, setBase] = useState(value.base);
 
@@ -15,25 +15,20 @@ export function ModeAdvanced({ value, onSubmit, onGoBack }: Props) {
     setBase(value.base);
   }, [value]);
 
-  const handleCoordsChange: React.ChangeEventHandler<HTMLInputElement> = useCallback(
-    e => {
-      setCoords(e.target.value.trim());
-    },
-    [coords, value],
-  );
+  const handleCoordsChange: React.ChangeEventHandler<HTMLInputElement> = useCallback(e => {
+    setCoords(e.target.value.trim());
+  }, []);
 
-  const handleBaseParcelChange: React.ChangeEventHandler<HTMLInputElement> = useCallback(
-    e => {
-      setBase(e.target.value.trim());
-    },
-    [base, value],
-  );
+  const handleBaseParcelChange: React.ChangeEventHandler<HTMLInputElement> = useCallback(e => {
+    setBase(e.target.value.trim());
+  }, []);
 
   const handleSubmit = useCallback(() => {
     onSubmit({ coords, base });
-  }, [value, coords, base]);
+  }, [onSubmit, coords, base]);
 
-  const disabled = !coords.length || !base.length;
+  const hasNoChanges = coords === value.coords && base === value.base;
+  const disabled = isDisabled || !coords.length || !base.length || hasNoChanges;
 
   return (
     <Block className="advanced">

@@ -22,6 +22,6 @@
     "incremental": true,
     "types": []
   },
-  "exclude": ["**/*.spec.ts"],
+  "exclude": ["**/*.spec.ts", "**/*.spec.tsx"],
   "include": ["src"]
 }
