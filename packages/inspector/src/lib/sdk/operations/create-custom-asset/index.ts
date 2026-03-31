@@ -461,3 +461,5 @@ export function createCustomAsset(engine: IEngine) {
     return { composite, resources };
   };
 }
+
+export default createCustomAsset;
