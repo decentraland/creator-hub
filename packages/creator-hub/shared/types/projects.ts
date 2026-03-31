@@ -26,6 +26,8 @@ export type ProjectInfo = {
   skipPublishWarning: boolean;
 };
 
+export type SizeStatus = 'pending' | 'loading' | 'done' | 'failed';
+
 export type Project = {
   id: string;
   path: string;
@@ -38,6 +40,7 @@ export type Project = {
   updatedAt: number;
   publishedAt: number;
   size: number;
+  sizeStatus?: SizeStatus;
   worldConfiguration?: WorldConfiguration;
   dependencyAvailableUpdates: DependencyState;
   status?: Status;

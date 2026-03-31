@@ -30,7 +30,25 @@
       "Bash(python3 -c \"import json; data=json.load\\(open\\(''packages/creator-hub/renderer/src/modules/store/translation/locales/en.json''\\)\\); print\\(json.dumps\\(data.get\\(''scene_list'', {}\\).get\\(''sort'', {}\\), indent=2\\)\\)\")",
       "Bash(node -e \"const d=require\\(''./packages/creator-hub/renderer/src/modules/store/translation/locales/en.json''\\); console.log\\(JSON.stringify\\(d.scene_list?.sort, null, 2\\)\\)\")",
       "Bash(node -e \"const d=require\\(''./packages/creator-hub/renderer/src/modules/store/translation/locales/en.json''\\); console.log\\(JSON.stringify\\(d.scene_list?.table, null, 2\\)\\)\")",
-      "Bash(python3 -c \":*)"
+      "Bash(python3 -c \":*)",
+      "Bash(grep ^ignore$)",
+      "Bash(du -sh \"/c/Users/ezequ/AppData/Roaming/creator-hub/Scenes/Versus MK/assets/\"*/)",
+      "Bash(du -sh \"/c/Users/ezequ/AppData/Roaming/creator-hub/Scenes/Versus MK/assets/scene/\"*/)",
+      "Bash(xargs stat:*)",
+      "Read(//c/Users/ezequ/Documents/GitHub/creator-hub/{sum+=$1} END {print \"\"\"\"\"\"\"\"Total bytes:\"\"\"\"\"\"\"\", sum, \"\"\"\"\"\"\"\"= MB:\"\"\"\"\"\"\"\", sum/1024/**)",
+      "Bash(find '/c/Users/ezequ/AppData/Roaming/creator-hub/Scenes/Versus MK/assets' -type f -exec wc -c {})",
+      "Bash(2)",
+      "Read(//c/Users/ezequ/Documents/GitHub/creator-hub/{sum+=$1} END {print \"\"\"\"\"\"\"\"Total bytes:\"\"\"\"\"\"\"\", sum, \"\"\"\"\"\"\"\" = MB:\"\"\"\"\"\"\"\", sum/1024/**)",
+      "Bash(while read:*)",
+      "Bash(do node:*)",
+      "Bash(done)",
+      "Read(//c/Users/ezequ/Documents/GitHub/creator-hub/{sum+=$1} END {print \"\"\"\"\"\"\"\"Total:\"\"\"\"\"\"\"\", sum, \"\"\"\"\"\"\"\"bytes =\"\"\"\"\"\"\"\", sum/1024/**)",
+      "Bash(node -e \":*)",
+      "Bash(node -e \"const path=require\\(''path''\\);const fs=require\\(''fs''\\);function s\\(d\\){let t=0;try{const e=fs.readdirSync\\(d\\);for\\(const n of e\\){const f=path.join\\(d,n\\);const st=fs.statSync\\(f\\);if\\(st.isDirectory\\(\\)\\)t+=s\\(f\\);else t+=st.size;}}catch\\(e\\){console.error\\(''err'',d,e.message\\);}return t;}const p=''C:/Users/ezequ/AppData/Roaming/creator-hub/Scenes/Versus MK/assets'';console.log\\(s\\(p\\)/1024/1024,''MB''\\);\")",
+      "Bash(grep -n \"contextBridge\\\\|exposeInMainWorld\" c:/Users/ezequ/Documents/GitHub/creator-hub/packages/creator-hub/preload/src/*.ts)",
+      "Bash(grep -rn \"contextBridge\\\\|exposeInMainWorld\" c:/Users/ezequ/Documents/GitHub/creator-hub/packages/creator-hub/preload/ --include=*.ts)",
+      "Bash(find c:/Users/ezequ/Documents/GitHub/creator-hub/node_modules/@dcl/sdk-commands/dist -name *.js)",
+      "Bash(find c:/Users/ezequ/Documents/GitHub/creator-hub -path */sdk-commands/dist* -name *.js)"
     ]
   }
 }

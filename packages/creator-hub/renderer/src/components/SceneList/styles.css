@@ -188,9 +188,8 @@
   display: flex;
   align-items: center;
   padding: 10px 20px;
-  background-color: rgba(40, 40, 40, 0.5);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.3);
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.4px;
@@ -235,16 +234,19 @@
 .SceneListTableCell.cell-parcels {
   width: 100px;
   flex-shrink: 0;
+  justify-content: center;
 }
 
 .SceneListTableCell.cell-filesize {
   width: 100px;
   flex-shrink: 0;
+  justify-content: center;
 }
 
 .SceneListTableCell.cell-modified {
   width: 140px;
   flex-shrink: 0;
+  justify-content: center;
 }
 
 .SceneListTableCell.cell-actions {
@@ -285,6 +287,18 @@
   font-size: 12px !important;
   line-height: 1.4 !important;
   margin-top: 2px !important;
+}
+
+.SceneSizeCalculating {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 12px;
+}
+
+.SceneSizeCalculating .MuiCircularProgress-root {
+  color: rgba(255, 255, 255, 0.35);
 }
 
 .SceneStatusBadge {

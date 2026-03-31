@@ -1,6 +1,13 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { IconButton, Menu, MenuItem, type SelectChangeEvent, Typography } from 'decentraland-ui2';
+import {
+  CircularProgress,
+  IconButton,
+  Menu,
+  MenuItem,
+  type SelectChangeEvent,
+  Typography,
+} from 'decentraland-ui2';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 
 import type { Project } from '/shared/types/projects';
@@ -151,8 +158,16 @@ function SceneRowMenu({ project }: { project: Project }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function SceneList({ projects, sortBy, onSort }: Props) {
-  const { importProject, runProject } = useWorkspace();
+  const { importProject, runProject, loadProjectSizes } = useWorkspace();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const pendingPaths = projects.filter(p => p.sizeStatus === 'pending').map(p => p.path);
+    if (pendingPaths.length > 0) {
+      loadProjectSizes(pendingPaths);
+    }
+  }, []);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>(() => getStoredViewMode());
 
@@ -325,7 +340,7 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
             <div className="SceneListTableCell cell-thumbnail">
               {t('scene_list.table.thumbnail')}
             </div>
-            <div className="SceneListTableCell cell-name">{t('scene_list.table.name')}</div>
+            <div className="SceneListTableCell cell-name" />
             <div className="SceneListTableCell cell-parcels">{t('scene_list.table.parcels')}</div>
             <div className="SceneListTableCell cell-filesize">{t('scene_list.table.filesize')}</div>
             <div className="SceneListTableCell cell-modified">{t('scene_list.table.modified')}</div>
@@ -377,12 +392,19 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
                   </Typography>
                 </div>
                 <div className="SceneListTableCell cell-filesize">
-                  <Typography
-                    variant="body2"
-                    sx={{ color: 'rgba(255,255,255,0.7)' }}
-                  >
-                    {formatSize(project.size)}
-                  </Typography>
+                  {project.sizeStatus !== 'done' && project.sizeStatus !== 'failed' ? (
+                    <span className="SceneSizeCalculating">
+                      <CircularProgress size={10} />
+                      {t('scene_list.size_calculating')}
+                    </span>
+                  ) : (
+                    <Typography
+                      variant="body2"
+                      sx={{ color: 'rgba(255,255,255,0.7)' }}
+                    >
+                      {project.sizeStatus === 'failed' ? '—' : formatSize(project.size)}
+                    </Typography>
+                  )}
                 </div>
                 <div className="SceneListTableCell cell-modified">
                   <Typography
@@ -392,7 +414,10 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
                     {formatDate(project.updatedAt)}
                   </Typography>
                 </div>
-                <div className="SceneListTableCell cell-actions">
+                <div
+                  className="SceneListTableCell cell-actions"
+                  onClick={e => e.stopPropagation()}
+                >
                   <SceneRowMenu project={project} />
                 </div>
               </div>

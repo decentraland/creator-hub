@@ -185,6 +185,24 @@ export const slice = createSlice({
           state.projects[projectIdx] = { ...state.projects[projectIdx], status: 'failed' };
         }
       })
+      .addCase(thunks.getProjectSize.pending, (state, { meta }) => {
+        const idx = state.projects.findIndex($ => $.path === meta.arg.path);
+        if (idx !== -1) {
+          state.projects[idx] = { ...state.projects[idx], sizeStatus: 'loading' };
+        }
+      })
+      .addCase(thunks.getProjectSize.fulfilled, (state, { payload: { path, size } }) => {
+        const idx = state.projects.findIndex($ => $.path === path);
+        if (idx !== -1) {
+          state.projects[idx] = { ...state.projects[idx], size, sizeStatus: 'done' };
+        }
+      })
+      .addCase(thunks.getProjectSize.rejected, (state, { meta }) => {
+        const idx = state.projects.findIndex($ => $.path === meta.arg.path);
+        if (idx !== -1) {
+          state.projects[idx] = { ...state.projects[idx], sizeStatus: 'failed' };
+        }
+      })
       .addCase(deployment.executeDeployment.fulfilled, (state, payload) => {
         const path = payload.meta.arg;
         const projectIdx = state.projects.findIndex($ => $.path === path);

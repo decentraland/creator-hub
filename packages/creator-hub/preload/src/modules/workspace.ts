@@ -1,4 +1,5 @@
 import { shell } from 'electron';
+import ignore from 'ignore';
 import type { Scene } from '@dcl/schemas';
 
 import {
@@ -21,29 +22,66 @@ import { getDefaultScenesPath, getScenesPath } from './settings';
 import { DEFAULT_THUMBNAIL, NEW_SCENE_NAME, EMPTY_SCENE_TEMPLATE_REPO } from './constants';
 import { getProjectId } from './analytics';
 
+// Mirrors defaultDclIgnore from @dcl/sdk-commands/dist/logic/dcl-ignore.js so that
+// project.size matches the size shown during the publish flow.
+const DEFAULT_ASSET_IGNORE_PATTERNS = [
+  '.*',
+  'package.json',
+  'package-lock.json',
+  'yarn-lock.json',
+  'build.json',
+  'export',
+  'tsconfig.json',
+  'tslint.json',
+  'node_modules',
+  'dclcontext',
+  '**/*.ts',
+  '**/*.tsx',
+  'Dockerfile',
+  'thumbnails',
+  'dist',
+  'README.md',
+  '*.blend',
+  '*.fbx',
+  '*.zip',
+  '*.rar',
+  // Extra patterns always pushed by getDCLIgnorePatterns on top of defaultDclIgnore
+  'node_modules/**',
+  '*.md',
+];
+
 async function getDirectorySize(
   fs: Services['fs'],
   path: Services['path'],
   dirPath: string,
+  ignorePatterns: string[] = [],
 ): Promise<number> {
-  let total = 0;
-  try {
-    const entries = await fs.readdir(dirPath);
-    await Promise.all(
-      entries.map(async entry => {
-        const entryPath = path.join(dirPath, entry);
-        if (await fs.isDirectory(entryPath)) {
-          total += await getDirectorySize(fs, path, entryPath);
-        } else {
-          const stat = await fs.stat(entryPath);
-          total += stat.size;
-        }
-      }),
-    );
-  } catch {
-    // Directory doesn't exist or can't be read
+  const ig = ignore().add(['.git', ...ignorePatterns]);
+
+  async function scan(currentDir: string, relBase: string): Promise<number> {
+    let total = 0;
+    try {
+      const entries = await fs.readdir(currentDir);
+      await Promise.all(
+        entries.map(async entry => {
+          const relPath = relBase ? `${relBase}/${entry}` : entry;
+          if (ig.ignores(relPath)) return;
+          const entryPath = path.join(currentDir, entry);
+          if (await fs.isDirectory(entryPath)) {
+            total += await scan(entryPath, relPath);
+          } else {
+            const stat = await fs.stat(entryPath);
+            total += stat.size;
+          }
+        }),
+      );
+    } catch {
+      // Directory doesn't exist or can't be read
+    }
+    return total;
   }
-  return total;
+
+  return scan(dirPath, '');
 }
 
 export function initializeWorkspace(services: Services) {
@@ -136,6 +174,23 @@ export function initializeWorkspace(services: Services) {
     }
   }
 
+  async function getProjectSize({ path: _path }: { path: string }): Promise<number> {
+    const dclIgnoreContent = await fs.readFile(path.join(_path, '.dclignore')).catch(() => null);
+    const dclIgnorePatterns = dclIgnoreContent
+      ? dclIgnoreContent.toString().split('\n').filter(Boolean)
+      : [];
+
+    // Mirror getDCLIgnorePatterns from @dcl/sdk-commands/dist/logic/dcl-ignore.js:
+    // always merge .dclignore content with defaultDclIgnore (SDK always pushes both).
+    const allPatterns = Array.from(
+      new Set([...dclIgnorePatterns, ...DEFAULT_ASSET_IGNORE_PATTERNS]),
+    );
+
+    // Scan the entire project root — not just assets/ — to include bin/game.js and
+    // other files the SDK packages for deployment.
+    return getDirectorySize(fs, path, _path, allPatterns);
+  }
+
   async function getProject({
     path: _path,
     opts,
@@ -144,7 +199,7 @@ export function initializeWorkspace(services: Services) {
     opts?: GetProjectsOpts;
   }): Promise<Project> {
     try {
-      const [id, scene, stat, sceneJsonStat, dependencyAvailableUpdates, infoFs, assetsSize] =
+      const [id, scene, stat, sceneJsonStat, dependencyAvailableUpdates, infoFs] =
         await Promise.all([
           getProjectId(_path),
           getScene(_path),
@@ -152,8 +207,8 @@ export function initializeWorkspace(services: Services) {
           fs.stat(path.join(_path, 'scene.json')).catch(() => null),
           opts?.omitOutdatedPackages ? Promise.resolve({}) : getOutdatedPackages(_path),
           getProjectInfoFs(_path),
-          getDirectorySize(fs, path, path.join(_path, 'assets')),
         ]);
+      const assetsSize = opts?.skipSize ? 0 : await getProjectSize({ path: _path });
       const thumbnail = await getProjectThumbnailAsBase64(_path, scene);
       const layout = getRowsAndCols(scene.scene.parcels.map($ => parseCoords($)));
       const info = await infoFs.getAll();
@@ -170,6 +225,7 @@ export function initializeWorkspace(services: Services) {
         updatedAt: Number(sceneJsonStat?.mtime ?? stat.mtime),
         publishedAt: 0, // TODO: possible to get publishedAt from catalyst?
         size: assetsSize,
+        sizeStatus: opts?.skipSize ? 'pending' : 'done',
         worldConfiguration: scene?.worldConfiguration,
         dependencyAvailableUpdates,
         info,
@@ -267,7 +323,7 @@ export function initializeWorkspace(services: Services) {
   async function getWorkspace(): Promise<Workspace> {
     const cfg = await config.getConfig();
     const [[projects, missing], templates] = await Promise.all([
-      getProjects(cfg.workspace.paths, { omitOutdatedPackages: true }),
+      getProjects(cfg.workspace.paths, { omitOutdatedPackages: true, skipSize: true }),
       getTemplates(),
     ]);
 
@@ -535,6 +591,7 @@ export function initializeWorkspace(services: Services) {
     getProjectThumbnailAsBase64,
     getOutdatedPackages,
     getProject,
+    getProjectSize,
     getSceneSourceFile,
     getPath,
     getProjects,

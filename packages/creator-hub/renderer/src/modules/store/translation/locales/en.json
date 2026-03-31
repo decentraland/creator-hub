@@ -110,6 +110,7 @@
     "view_list": "List view",
     "grid": "Grid",
     "list": "List",
+    "size_calculating": "Calculating...",
     "time": {
       "just_now": "just now"
     }
