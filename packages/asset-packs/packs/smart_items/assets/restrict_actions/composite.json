@@ -42,7 +42,7 @@
               {
                 "path": "{assetPath}/block-actions.ts",
                 "priority": 0,
-                "layout": "{\"params\":{\"disableJump\":{\"type\":\"boolean\",\"optional\":true,\"value\":false},\"disableRun\":{\"type\":\"boolean\",\"optional\":true,\"value\":false},\"disableJog\":{\"type\":\"boolean\",\"optional\":true,\"value\":false},\"disableWalk\":{\"type\":\"boolean\",\"optional\":true,\"value\":false},\"disableEmote\":{\"type\":\"boolean\",\"optional\":true,\"value\":false}}}"
+                "layout": "{\"params\":{\"disableJump\":{\"type\":\"boolean\",\"optional\":true,\"value\":false},\"disableRun\":{\"type\":\"boolean\",\"optional\":true,\"value\":false},\"disableJog\":{\"type\":\"boolean\",\"optional\":true,\"value\":false},\"disableWalk\":{\"type\":\"boolean\",\"optional\":true,\"value\":false},\"disableEmote\":{\"type\":\"boolean\",\"optional\":true,\"value\":false},\"disableDoubleJump\":{\"type\":\"boolean\",\"optional\":true,\"value\":false},\"disableGliding\":{\"type\":\"boolean\",\"optional\":true,\"value\":false}}}"
               }
             ]
           }
