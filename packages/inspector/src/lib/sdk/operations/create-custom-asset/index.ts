@@ -461,4 +461,4 @@ export function createCustomAsset(engine: IEngine) {
   };
 }
 
-export default createCustomAsset;
+default createCustomAsset;
