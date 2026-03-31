@@ -26,7 +26,7 @@ import {
 } from '../../../redux/scene-metrics';
 import type { SceneMetrics } from '../../../redux/scene-metrics/types';
 import { Button } from '../../Button';
-import { collectTexturesFromMaterial, getSceneLimits } from './utils';
+import { collectTexturesFromMaterial, formatPixels, getSceneLimits } from './utils';
 
 import './Metrics.css';
 
@@ -73,6 +73,21 @@ const IGNORE_MESHES = [
   'axis_z_line',
   'z_cone_axis',
 ];
+
+/** Metrics that should not show a limit comparison in the UI */
+const INFO_ONLY_METRICS = new Set(['textures']);
+
+/** Metrics measured in pixels that should be formatted as megapixels */
+const PIXEL_METRICS = new Set(['texturePixels']);
+
+const METRIC_LABELS: Record<string, string> = {
+  triangles: 'TRIANGLES',
+  entities: 'ENTITIES',
+  bodies: 'BODIES',
+  materials: 'MATERIALS',
+  textures: 'TEXTURES',
+  texturePixels: 'TEXTURE BUDGET',
+};
 
 const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
   const ROOT = sdk.engine.RootEntity;
@@ -123,28 +138,28 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
     // Collect materials and textures only from user-created meshes (not editor meshes)
     // This ensures we don't count editor-only materials/textures
     const materialsFromMeshes = new Set<string>();
-    const texturesFromMaterials = new Set<string>();
+    const allUniqueTextures = new Set<string>();
+    let texturePixels = 0;
+
+    const processMaterial = (mat: Material) => {
+      const materialId = mat.id;
+      if (IGNORE_MATERIALS.includes(materialId)) return;
+      if (materialsFromMeshes.has(materialId)) return;
+      materialsFromMeshes.add(materialId);
+
+      const info = collectTexturesFromMaterial(mat, IGNORE_TEXTURES);
+      info.uniqueTextures.forEach(key => allUniqueTextures.add(key));
+      // Each material's pixel cost = its largest layer (since all layers share UV space)
+      texturePixels += info.maxLayerPixels;
+    };
 
     meshes.forEach(mesh => {
-      // Handle multi-material meshes
       if (mesh.material instanceof MultiMaterial) {
-        const multiMaterial = mesh.material;
-        multiMaterial.subMaterials.forEach((subMaterial: Material | null) => {
-          if (subMaterial) {
-            const materialId = subMaterial.id;
-            if (!IGNORE_MATERIALS.includes(materialId)) {
-              materialsFromMeshes.add(materialId);
-              collectTexturesFromMaterial(subMaterial, texturesFromMaterials, IGNORE_TEXTURES);
-            }
-          }
+        mesh.material.subMaterials.forEach((subMaterial: Material | null) => {
+          if (subMaterial) processMaterial(subMaterial);
         });
       } else if (mesh.material) {
-        // Collect materials from this mesh
-        const materialId = mesh.material.id;
-        if (!IGNORE_MATERIALS.includes(materialId)) {
-          materialsFromMeshes.add(materialId);
-          collectTexturesFromMaterial(mesh.material, texturesFromMaterials, IGNORE_TEXTURES);
-        }
+        processMaterial(mesh.material);
       }
     });
 
@@ -154,7 +169,8 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
         entities: getNodes().length,
         bodies: meshes.length,
         materials: materialsFromMeshes.size,
-        textures: texturesFromMaterials.size,
+        textures: allUniqueTextures.size,
+        texturePixels,
       }),
     );
   }, [sdk, dispatch, getNodes, setMetrics]);
@@ -228,6 +244,7 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
   const limitsExceeded = useMemo<Record<string, boolean>>(() => {
     return Object.fromEntries(
       Object.entries(metrics)
+        .filter(([key]) => !INFO_ONLY_METRICS.has(key))
         .map(([key, value]) => [key, value > limits[key as keyof SceneMetrics]])
         .filter(([, value]) => value),
     );
@@ -252,13 +269,23 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
 
   const overlayRef = useOutsideClick(handleToggleMetricsOverlay);
 
+  const formatValue = (key: string, value: number): string => {
+    if (PIXEL_METRICS.has(key)) return formatPixels(value);
+    return String(value);
+  };
+
   const getWarningMessages = (): string[] => {
-    const baseMessage = 'Your scene contains too many';
     const warnings: string[] = [];
 
+    if (limitsExceeded['texturePixels']) {
+      warnings.push(
+        'Texture budget exceeded. Textures will be automatically compressed when published, resulting in lower quality.',
+      );
+    }
+
     Object.entries(limitsExceeded).forEach(([key, isExceeded]) => {
-      if (isExceeded) {
-        warnings.push(`${baseMessage} ${key}`);
+      if (isExceeded && key !== 'texturePixels') {
+        warnings.push(`Your scene contains too many ${key}`);
       }
     });
 
@@ -306,26 +333,40 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
             </div>
           </div>
           <div className="Items">
-            {Object.entries(metrics).map(([key, value]) => (
-              <div
-                className="Item"
-                key={key}
-              >
-                <div className="Title">{key.toUpperCase()}</div>
-                <div className={cx('Description', { LimitExceeded: limitsExceeded[key] })}>
-                  <span className="primary">{value}</span>
-                  {'/'}
-                  <span className="secondary">{limits[key as keyof SceneMetrics]}</span>
+            {Object.entries(metrics).map(([key, value]) => {
+              const isInfoOnly = INFO_ONLY_METRICS.has(key);
+              const isPixelMetric = PIXEL_METRICS.has(key);
+              const label = METRIC_LABELS[key] ?? key.toUpperCase();
+
+              return (
+                <div
+                  className={cx('Item', { BudgetExceeded: isPixelMetric && limitsExceeded[key] })}
+                  key={key}
+                >
+                  <div className="Title">{label}</div>
+                  <div className={cx('Description', { LimitExceeded: limitsExceeded[key] })}>
+                    <span className="primary">{formatValue(key, value)}</span>
+                    {!isInfoOnly && (
+                      <>
+                        {'/'}
+                        <span className="secondary">
+                          {formatValue(key, limits[key as keyof SceneMetrics])}
+                        </span>
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           {warningMessages.length > 0 && (
             <div className="WarningsContainer">
               <div className="Description">WARNINGS</div>
               {warningMessages.map((message, index) => (
                 <div
-                  className="WarningItem"
+                  className={cx('WarningItem', {
+                    BudgetWarning: index === 0 && limitsExceeded['texturePixels'],
+                  })}
                   key={index}
                 >
                   <WarningIcon className="WarningIcon" />

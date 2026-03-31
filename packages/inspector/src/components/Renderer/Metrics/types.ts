@@ -4,6 +4,7 @@ export interface Metrics {
   bodies: number;
   materials: number;
   textures: number;
+  texturePixels: number;
 }
 
 export enum Limits {
@@ -12,4 +13,5 @@ export enum Limits {
   bodies = 300,
   materials = 20,
   textures = 10,
+  texturePixels = 2048 * 2048,
 }
