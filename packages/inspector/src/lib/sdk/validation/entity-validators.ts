@@ -9,6 +9,7 @@ import { entityValidator as videoPlayerValidator } from '../../../components/Ent
 import { entityValidator as nftShapeValidator } from '../../../components/EntityInspector/NftShapeInspector/utils';
 import { entityValidator as placeholderValidator } from '../../../components/EntityInspector/PlaceholderInspector/utils';
 import { entityValidator as materialTextureValidator } from '../../../components/EntityInspector/MaterialInspector/Texture/utils';
+import { entityValidator as scriptValidator } from '../../../components/EntityInspector/ScriptInspector/utils';
 import { ROOT } from '../tree';
 import type { EntityValidator } from './types';
 
@@ -23,6 +24,7 @@ export const entityValidators: EntityValidator[] = [
   nftShapeValidator,
   placeholderValidator,
   materialTextureValidator,
+  scriptValidator,
 ];
 
 export function validateAllEntities(

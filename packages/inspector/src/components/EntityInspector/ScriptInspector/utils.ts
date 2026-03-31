@@ -1,6 +1,7 @@
 import { DIRECTORY, withAssetDir } from '../../../lib/data-layer/host/fs-utils';
 import type { DataLayerRpcClient } from '../../../lib/data-layer/types';
 import type { AssetCatalogResponse } from '../../../tooling-entrypoint';
+import type { EntityValidator } from '../../../lib/sdk/validation/types';
 import { determineAssetType } from '../../ImportAsset/utils';
 import type { TreeNode } from '../../ProjectAssetExplorer/ProjectView';
 import type { AssetNodeItem } from '../../ProjectAssetExplorer/types';
@@ -64,6 +65,20 @@ export async function readScript(
   const content = new TextDecoder().decode(data);
   return content;
 }
+
+export function isValidScriptInput({ assets }: AssetCatalogResponse, src: string): boolean {
+  if (!src) return true;
+  return !!assets.find($ => src === $.path);
+}
+
+export const entityValidator: EntityValidator = {
+  componentIds: sdk => [sdk.components.Script.componentId],
+  validate: (sdk, entity, assetCatalog) => {
+    const script = sdk.components.Script.getOrNull(entity);
+    if (!script || !assetCatalog) return true;
+    return script.value.every(s => isValidScriptInput(assetCatalog, s.path));
+  },
+};
 
 export function mergeLayout(source: ScriptLayout, target: ScriptLayout): ScriptLayout {
   const layout: ScriptLayout = { params: {}, actions: [] };
