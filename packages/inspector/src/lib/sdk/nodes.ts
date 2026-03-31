@@ -83,8 +83,7 @@ export function insertChildAfterInNodes(
 
   for (const $ of nodes) {
     if ($.entity === parent) {
-      const childSet = new Set($.children);
-      if (childSet.has(child)) {
+      if ($.children.includes(child)) {
         newValue.push($);
       } else {
         const afterIdx = $.children.indexOf(afterEntity);
