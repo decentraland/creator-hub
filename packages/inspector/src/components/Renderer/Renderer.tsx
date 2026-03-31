@@ -183,7 +183,12 @@ const Renderer: React.FC = () => {
   }, [sdk]);
 
   useHotkey([DELETE, BACKSPACE], deleteSelectedEntities, document.body);
-  useHotkey([COPY, COPY_ALT], copySelectedEntities, document.body);
+  useHotkey(
+    [COPY, COPY_ALT],
+    copySelectedEntities,
+    document.body,
+    e => !!(e.target as Element | null)?.closest?.('.DebugConsole-logs'),
+  );
   useHotkey([PASTE, PASTE_ALT], pasteSelectedEntities, document.body);
   useHotkey([ZOOM_IN, ZOOM_IN_ALT], zoomIn, document.body);
   useHotkey([ZOOM_OUT, ZOOM_OUT_ALT], zoomOut, document.body);

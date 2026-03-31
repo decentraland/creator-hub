@@ -35,15 +35,21 @@ export const FOCUS_SELECTED = 'f';
  * @param keys - An array of strings representing the keys to listen for.
  * @param callback - The callback function to be executed when the specified keys are pressed.
  * @param node - The target DOM node to attach the event listener to. If not provided, the listener will be attached to the entire document.
+ * @param shouldSkip - Optional predicate; when it returns `true` the hotkey is ignored and the
+ *   native browser default action is preserved. Evaluated before `event.preventDefault()` so that
+ *   native behaviours (e.g. text copy) are not cancelled.
  */
 export const useHotkey = (
   keys: string | string[],
   callback: KeyHandler | (() => void),
   node: any = undefined,
+  shouldSkip?: (event: KeyboardEvent) => boolean,
 ) => {
   const callbackRef = useRef(callback);
+  const shouldSkipRef = useRef(shouldSkip);
   useLayoutEffect(() => {
     callbackRef.current = callback;
+    shouldSkipRef.current = shouldSkip;
   });
 
   useEffect(() => {
@@ -57,6 +63,7 @@ export const useHotkey = (
           element: targetDocument,
         },
         (event, handler) => {
+          if (shouldSkipRef.current?.(event)) return;
           event.preventDefault();
           callbackRef.current(event, handler);
         },
