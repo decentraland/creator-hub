@@ -7,6 +7,8 @@ export class BlockActions {
   private disableJog: boolean = false;
   private disableWalk: boolean = false;
   private disableEmote: boolean = false;
+  private disableDoubleJump: boolean = false;
+  private disableGliding: boolean = false;
 
   constructor(
     public src: string,
@@ -16,12 +18,16 @@ export class BlockActions {
     disableJog?: boolean,
     disableWalk?: boolean,
     disableEmote?: boolean,
+    disableDoubleJump?: boolean,
+    disableGliding?: boolean,
   ) {
     this.disableJump = disableJump ?? false;
     this.disableRun = disableRun ?? false;
     this.disableJog = disableJog ?? false;
     this.disableWalk = disableWalk ?? false;
     this.disableEmote = disableEmote ?? false;
+    this.disableDoubleJump = disableDoubleJump ?? false;
+    this.disableGliding = disableGliding ?? false;
   }
 
   /**
@@ -53,7 +59,9 @@ export class BlockActions {
         disableJog: this.disableJog,
         disableWalk: this.disableWalk,
         disableEmote: this.disableEmote,
-      }),
+        disableDoubleJump: this.disableDoubleJump,
+        disableGliding: this.disableGliding,
+      } as any),
     });
   }
 
@@ -144,6 +152,42 @@ export class BlockActions {
    */
   disableEmoteAction() {
     this.disableEmote = true;
+    this.applyInputModifier();
+  }
+
+  /**
+   * @Action
+   * Enable double jumping for the player
+   */
+  enableDoubleJump() {
+    this.disableDoubleJump = false;
+    this.applyInputModifier();
+  }
+
+  /**
+   * @Action
+   * Disable double jumping for the player
+   */
+  disableDoubleJumpAction() {
+    this.disableDoubleJump = true;
+    this.applyInputModifier();
+  }
+
+  /**
+   * @Action
+   * Enable gliding for the player
+   */
+  enableGliding() {
+    this.disableGliding = false;
+    this.applyInputModifier();
+  }
+
+  /**
+   * @Action
+   * Disable gliding for the player
+   */
+  disableGlidingAction() {
+    this.disableGliding = true;
     this.applyInputModifier();
   }
 }
