@@ -202,18 +202,19 @@ export function createCustomAsset(engine: IEngine) {
         const value = JSON.parse(JSON.stringify(componentValue)) as Record<string, unknown>;
 
         if (componentsWithResources[componentName]) {
-          const propertyKeys = componentsWithResources[componentName];
-          let nestedValue: unknown = value;
-          for (let i = 0; i < propertyKeys.length - 1; i++) {
-            if (nestedValue === undefined || nestedValue === null) break;
-            nestedValue = (nestedValue as Record<string, unknown>)[propertyKeys[i]];
-          }
-          if (nestedValue && propertyKeys.length > 0) {
-            const originalValue = (nestedValue as Record<string, string>)[
-              propertyKeys[propertyKeys.length - 1]
-            ];
-            if (originalValue && !isValidHttpsUrl(originalValue)) {
-              collectedResources.push(originalValue);
+          for (const propertyKeys of componentsWithResources[componentName]) {
+            let nestedValue: unknown = value;
+            for (let i = 0; i < propertyKeys.length - 1; i++) {
+              if (nestedValue === undefined || nestedValue === null) break;
+              nestedValue = (nestedValue as Record<string, unknown>)[propertyKeys[i]];
+            }
+            if (nestedValue && propertyKeys.length > 0) {
+              const originalValue = (nestedValue as Record<string, string>)[
+                propertyKeys[propertyKeys.length - 1]
+              ];
+              if (originalValue && !isValidHttpsUrl(originalValue)) {
+                collectedResources.push(originalValue);
+              }
             }
           }
         }
