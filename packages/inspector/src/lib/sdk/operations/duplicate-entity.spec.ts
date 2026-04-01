@@ -52,7 +52,7 @@ describe('duplicateEntity', () => {
     }
 
     const nodesAfter = [
-      { entity: ROOT, children: [original, originalChild, duplicate] },
+      { entity: ROOT, children: [original, duplicate, originalChild] },
       { entity: original, children: [originalChild] },
       { entity: originalChild, children: [] },
       { entity: duplicate, children: [duplicateChild] },

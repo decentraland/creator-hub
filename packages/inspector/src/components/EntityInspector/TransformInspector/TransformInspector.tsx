@@ -11,7 +11,7 @@ import { withSdk } from '../../../hoc/withSdk';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { TextField, InfoTooltip, Label } from '../../ui';
-import { fromTransform, toTransform, fromTransformConfig } from './utils';
+import { fromTransform, toTransform, fromTransformConfig, preserveRotationInput } from './utils';
 import type { Props } from './types';
 import { Link, type Props as LinkProps } from './Link';
 import './TransformInspector.css';
@@ -28,7 +28,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
     Transform,
     fromTransform,
     toTransform(transform, config),
-    { validateInput: isValidNumericInput },
+    { validateInput: isValidNumericInput, tolerance: 4, preserveInput: preserveRotationInput },
   );
   const { getInputProps: getConfigProps } = useComponentInput(
     entity,
