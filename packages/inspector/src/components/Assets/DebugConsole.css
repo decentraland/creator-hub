@@ -5,6 +5,37 @@
   background: var(--tree-bg-color);
 }
 
+.DebugConsole-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 2px 8px;
+  border-bottom: 1px solid var(--divider-color, rgba(255, 255, 255, 0.1));
+  flex-shrink: 0;
+}
+
+.DebugConsole-copy-btn {
+  background: transparent;
+  border: 1px solid var(--base-08, rgba(255, 255, 255, 0.3));
+  border-radius: 3px;
+  color: var(--base-08, rgba(255, 255, 255, 0.6));
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  padding: 2px 8px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.DebugConsole-copy-btn:hover:not(:disabled) {
+  border-color: var(--base-01, #fff);
+  color: var(--base-01, #fff);
+}
+
+.DebugConsole-copy-btn:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
 .DebugConsole-logs {
   flex: 1;
   overflow-y: auto;

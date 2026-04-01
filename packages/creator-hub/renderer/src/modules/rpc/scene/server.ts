@@ -1,7 +1,7 @@
 import type { Transport } from '@dcl/mini-rpc';
 import { RPC } from '@dcl/mini-rpc';
 
-import { fs, editor } from '#preload';
+import { fs, editor, misc } from '#preload';
 
 import { type Project } from '/shared/types/projects';
 import { getPath } from '../';
@@ -19,18 +19,21 @@ export enum Method {
   OPEN_FILE = 'open_file',
   OPEN_DIRECTORY = 'open_directory',
   PUSH_NOTIFICATION = 'push_notification',
+  COPY_TO_CLIPBOARD = 'copy_to_clipboard',
 }
 
 export type Params = {
   [Method.OPEN_FILE]: { path: string };
   [Method.OPEN_DIRECTORY]: { path: string; createIfNotExists?: boolean };
   [Method.PUSH_NOTIFICATION]: { notification: NotificationRequest };
+  [Method.COPY_TO_CLIPBOARD]: { text: string };
 };
 
 export type Result = {
   [Method.OPEN_FILE]: void;
   [Method.OPEN_DIRECTORY]: void;
   [Method.PUSH_NOTIFICATION]: void;
+  [Method.COPY_TO_CLIPBOARD]: void;
 };
 
 export class SceneRpcServer extends RPC<Method, Params, Result> {
@@ -65,6 +68,10 @@ export class SceneRpcServer extends RPC<Method, Params, Result> {
           createGenericNotification(notification.severity, notification.message),
         ),
       );
+    });
+
+    this.handle('copy_to_clipboard', async ({ text }) => {
+      await misc.copyToClipboard(text);
     });
   }
 }

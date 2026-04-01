@@ -35,3 +35,17 @@ export function subscribe(listener: () => void): () => void {
   listeners.add(listener);
   return () => listeners.delete(listener);
 }
+
+/**
+ * Returns the current log entries as plain text (HTML stripped, entities decoded).
+ * Uses DOMParser so that HTML entities like &lt; and &amp; are properly unescaped.
+ */
+export function getPlainText(): string {
+  const parser = new DOMParser();
+  return entries
+    .map(entry => {
+      const doc = parser.parseFromString(entry.html, 'text/html');
+      return doc.body.textContent ?? '';
+    })
+    .join('\n');
+}

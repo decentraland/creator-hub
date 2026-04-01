@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'node:url';
-import { type BrowserWindow } from 'electron';
+import { type BrowserWindow, Menu } from 'electron';
 
 import { createWindow, focusWindow, getWindow } from './modules/window';
 
@@ -7,6 +7,18 @@ export const MAIN_WINDOW_ID = 'main';
 
 async function createMainWindow(id: string) {
   const window = createWindow(id);
+  // Register an application menu so that macOS keyboard shortcuts (Cmd+C, Cmd+V,
+  // Cmd+A, etc.) continue to work even when the visible menu bar is hidden.
+  // On macOS these shortcuts are dispatched through the app menu; without it
+  // Cmd+C silently does nothing inside WebContents / iframes.
+  Menu.setApplicationMenu(
+    Menu.buildFromTemplate([
+      { role: 'appMenu' },
+      { role: 'editMenu' },
+      { role: 'viewMenu' },
+      { role: 'windowMenu' },
+    ]),
+  );
   window.setMenuBarVisibility(false);
   window.maximize();
 
