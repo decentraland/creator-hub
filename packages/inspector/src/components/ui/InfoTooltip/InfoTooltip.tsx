@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { VscQuestion as QuestionIcon } from 'react-icons/vsc';
 import { AiOutlineInfoCircle as InfoIcon } from 'react-icons/ai';
 import { FiAlertTriangle as WarningIcon } from 'react-icons/fi';
+import { IoAlertCircleOutline as ErrorIcon } from 'react-icons/io5';
 import cx from 'classnames';
 import { Popup } from 'decentraland-ui/dist/components/Popup/Popup';
 
@@ -44,6 +45,8 @@ const InfoTooltip: React.FC<Props> = ({
         return <InfoIcon size={16} />;
       case 'warning':
         return <WarningIcon size={16} />;
+      case 'error':
+        return <ErrorIcon size={16} />;
       default:
         return <QuestionIcon size={16} />;
     }

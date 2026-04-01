@@ -7,6 +7,7 @@ import dataLayerReducer from './data-layer';
 import sdkReducer from './sdk';
 import uiReducer from './ui';
 import sceneMetricsReducer from './scene-metrics';
+import entityValidationReducer from './entity-validation';
 import featureFlagsReducer from './feature-flags';
 import sagas from './root-saga';
 
@@ -20,6 +21,7 @@ export const store = configureStore({
     cleanAssets: cleanAssetsReducer,
     ui: uiReducer,
     sceneMetrics: sceneMetricsReducer,
+    entityValidation: entityValidationReducer,
     featureFlags: featureFlagsReducer,
   },
   middleware: getDefaultMiddleware => {
