@@ -318,17 +318,17 @@ export function createCustomAsset(engine: IEngine) {
               value = value[propertyKeys[i]];
             }
 
-          // Only process if we have a valid value and final key
-          if (value && propertyKeys.length > 0) {
-            const finalKey = propertyKeys[propertyKeys.length - 1];
-            const originalValue: string = value[finalKey];
-            // Only local asset resources are supported
-            if (originalValue && !isValidHttpsUrl(originalValue)) {
-              const relativePath = getRelativeResourcePath(originalValue, resourcesBasePath);
-              value[finalKey] = `{assetPath}/${relativePath}`;
-              resources.push(originalValue);
+            // Only process if we have a valid value and final key
+            if (value && propertyKeys.length > 0) {
+              const finalKey = propertyKeys[propertyKeys.length - 1];
+              const originalValue: string = value[finalKey];
+              // Only local asset resources are supported
+              if (originalValue && !isValidHttpsUrl(originalValue)) {
+                const relativePath = getRelativeResourcePath(originalValue, resourcesBasePath);
+                value[finalKey] = `{assetPath}/${relativePath}`;
+                resources.push(originalValue);
+              }
             }
-          }
           }
         }
 
