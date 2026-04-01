@@ -1,6 +1,7 @@
 import { validateBytes } from '@dcl/gltf-validator-ts';
 import type { Gltf, BaseAsset, ModelAsset, ValidationError, Asset, AssetType } from './types';
 import { isModelAsset } from './types';
+import { validateTexturesInModel } from './texture-validation';
 
 const sampleIndex = (list: any[]) => Math.floor(Math.random() * list.length);
 
@@ -204,16 +205,16 @@ async function validateModelWithDependencies(model: ModelAsset): Promise<Validat
 }
 
 async function getModel(asset: BaseAsset, fileMap: Map<string, BaseAsset>): Promise<ModelAsset> {
-  const gltf = await getGltf(asset.blob, async (uri: string) => {
+  const getExternalResource = async (uri: string) => {
     const resource = fileMap.get(normalizeFileName(uri));
-
     if (!resource) {
       throw new Error(`Resource "${uri}" is missing`);
     }
-
     const resourceBuffer = await resource.blob.arrayBuffer();
     return new Uint8Array(resourceBuffer);
-  });
+  };
+
+  const gltf = await getGltf(asset.blob, getExternalResource);
 
   const buffers: BaseAsset[] = [];
   const images: BaseAsset[] = [];
@@ -235,7 +236,25 @@ async function getModel(asset: BaseAsset, fileMap: Map<string, BaseAsset>): Prom
   const model = { ...asset, gltf, buffers, images };
   const error = await validateModelWithDependencies(model);
 
-  return { ...model, error };
+  // Run texture validation (non-blocking — issues are warnings, not errors)
+  let textureIssues: ModelAsset['textureIssues'];
+  let textureImages: ModelAsset['textureImages'];
+  try {
+    const fileBuffer = await asset.blob.arrayBuffer();
+    const result = await validateTexturesInModel(
+      fileBuffer,
+      formatFileName(asset),
+      getExternalResource,
+    );
+    if (result.issues.length > 0) {
+      textureIssues = result.issues;
+      textureImages = result.images;
+    }
+  } catch (e) {
+    console.warn('Texture validation failed:', e);
+  }
+
+  return { ...model, error, textureIssues, textureImages };
 }
 
 async function processModels(files: BaseAsset[]): Promise<Asset[]> {

@@ -58,6 +58,13 @@ Two approaches were considered:
 | `components/Renderer/Metrics/Metrics.tsx` | Per-material pixel collection, info-only texture count, prominent budget warnings with specific messaging |
 | `components/Renderer/Metrics/Metrics.css` | `BudgetExceeded` and `BudgetWarning` highlight styles |
 | `lib/rpc/scene-metrics/scene-metrics.spec.ts` | Added `texturePixels` to mock data |
+| `components/ImportAsset/texture-validation.ts` | **NEW** — GLB/GLTF parsing, image dimension extraction, texture constraint validation, auto-resize, GLB reconstruction |
+| `components/ImportAsset/types.ts` | Added `textureIssues`, `textureImages` to `ModelAsset`; added `'texture'` to `ValidationError` type |
+| `components/ImportAsset/utils.ts` | Integrated `validateTexturesInModel` call in `getModel()` |
+| `components/ImportAsset/Slider/Slider.tsx` | Added `TEXTURE_WARNINGS` step, `handleFixTextures` with GLB/external image auto-resize |
+| `components/ImportAsset/Slider/TextureWarnings.tsx` | **NEW** — Warning UI showing per-asset texture issues with Fix/Back actions |
+| `components/ImportAsset/Slider/TextureWarnings.css` | **NEW** — Warning component styles |
+| `components/ImportAsset/texture-validation.spec.ts` | **NEW** — Unit tests for `isPowerOfTwo` and `nextPowerOfTwo` |
 
 ### Code Examples
 
@@ -101,9 +108,30 @@ for (const key in material) {
 
 Budget scales linearly without a ceiling. A 400-parcel scene gets 1,677 MP budget. The team needs to define a max value via profiling. Implementation is a one-liner: `Math.min(parcels * Limits.texturePixels, HARD_CAP)`.
 
+### Import validation (implemented)
+
+Texture validation runs at model import time. When a GLTF/GLB is dropped into the Inspector, we:
+
+1. Parse the GLTF JSON (for GLB: extract JSON+BIN chunks; for GLTF: parse directly)
+2. Extract image dimensions using `createImageBitmap` (works for both embedded and external images)
+3. Validate three constraints:
+   - **Power of two:** width and height must both be powers of 2
+   - **Square:** width must equal height
+   - **Layer consistency:** all texture layers in a material (baseColor, normal, emissive, occlusion, metallicRoughness) must have the same dimensions
+4. Show a `TextureWarnings` screen in the import dialog with three options:
+   - **Back:** return to the upload screen
+   - **Fix & Import:** auto-resize textures to the nearest power-of-2 square dimension
+
+Auto-resize uses `OffscreenCanvas` for image processing. For GLB files, the entire binary is reconstructed with resized embedded images. For GLTF with external images, only the affected image files are replaced.
+
+**Files:**
+
+- `ImportAsset/texture-validation.ts` — validation logic, GLB parsing, image resizing, GLB reconstruction
+- `ImportAsset/Slider/TextureWarnings.tsx` — warning UI component
+- `ImportAsset/Slider/TextureWarnings.css` — warning styles
+
 ### Remaining work from shape document
 
-- **Import validation:** Enforce power-of-2 textures, square dimensions (width === height), same scale across all layers of a material
 - **Publish-time warnings:** Creator Hub deploy flow has no pixel budget awareness yet
 - **Naming conventions:** `_atlas`, `_albedo`, `_normal`, `_emissive`, `_alpha` — handled by Blender plugin, not enforced in Creator Hub
 
@@ -111,7 +139,7 @@ Budget scales linearly without a ceiling. A 400-parcel scene gets 1,677 MP budge
 
 - **When adding new metric types:** Follow the same pattern — add to `SceneMetrics` type, `Limits` enum, initial state, and `getSceneLimits`. Consider whether the metric is "info-only" or has a hard budget.
 - **When modifying texture collection:** The `for...in` iteration on Babylon materials with `as any` is fragile. Consider migrating to `material.getActiveTextures()` API for type safety.
-- **When implementing import validation:** Enforce power-of-2 and same-scale-across-layers at the point models enter the scene, not just at display time. This prevents invalid state from persisting.
+- **When modifying import validation:** The GLB parser in `texture-validation.ts` handles standard GLB chunk layout (JSON + BIN). Non-standard chunk ordering or multiple BIN chunks are not supported. The `rebuildGlb` function reconstructs the entire binary — changes to bufferView layout must keep 4-byte alignment.
 - **Texture size timing:** `texture.getSize()` can return `{width: 0, height: 0}` briefly before textures finish loading. This is a known transient edge case consistent with how all other metrics behave — not worth special-casing.
 
 ## References
