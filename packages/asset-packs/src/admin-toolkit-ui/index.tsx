@@ -1,28 +1,33 @@
 import { Color4 } from '@dcl/sdk/math';
-import ReactEcs, { Label, Button as DCLButton, UiEntity, ReactBasedUiSystem } from '@dcl/react-ecs';
-import { Entity, IEngine, PointerEventsSystem } from '@dcl/ecs';
-import { getComponents, GetPlayerDataRes, IPlayersHelper, ISDKHelpers } from '../definitions';
+import type { ReactBasedUiSystem } from '@dcl/react-ecs';
+import ReactEcs, { Label, Button as DCLButton, UiEntity } from '@dcl/react-ecs';
+import type { Entity, IEngine, PointerEventsSystem } from '@dcl/ecs';
+import type { GetPlayerDataRes, IPlayersHelper, ISDKHelpers } from '../definitions';
+import { getComponents } from '../definitions';
 import { VideoControl } from './VideoControl';
 import { TextAnnouncementsControl } from './TextAnnouncementsControl';
 import { SmartItemsControl } from './SmartItemsControl';
 import { Button } from './Button';
 import { TextAnnouncements } from './TextAnnouncements';
 import { CONTENT_URL } from './constants';
-import { State, TabType, SelectedSmartItem } from './types';
+import type { State, SelectedSmartItem } from './types';
+import { TabType } from './types';
+import type { SceneAdmin } from './ModerationControl';
 import {
   BTN_MODERATION_CONTROL,
   ModerationControl,
   moderationControlState,
-  SceneAdmin,
 } from './ModerationControl';
-import { getSceneAdmins, getSceneBans, SceneBanUser } from './ModerationControl/api';
+import type { SceneBanUser } from './ModerationControl/api';
+import { getSceneAdmins, getSceneBans } from './ModerationControl/api';
 import { ModalUserList, UserListType } from './ModerationControl/UsersList';
 import { isPreview } from './fetch-utils';
+import { initAdminMessageBus, getAdminMessageBus } from './admin-message-bus';
 
 export const nextTickFunctions: (() => void)[] = [];
 const ADMIN_TOOLKIT_VIRTUAL_UI_SIZE = { virtualWidth: 1920, virtualHeight: 1080 };
 
-export let state: State = {
+export const state: State = {
   adminToolkitUiEntity: 0 as Entity,
   panelOpen: false,
   activeTab: TabType.NONE,
@@ -95,6 +100,9 @@ export async function fetchSceneAdmins() {
       canBeRemoved: !!$.canBeRemoved,
     }))
     .sort(a => (a.canBeRemoved ? 1 : -1));
+  if (adminDataInitialized) {
+    getAdminMessageBus().updateAdminList(sceneAdminsCache);
+  }
 }
 
 export async function fetchSceneBans() {
@@ -118,12 +126,6 @@ export function getSmartItems(engine: IEngine) {
   return Array.from(adminToolkitComponent.smartItemsControl.smartItems ?? []);
 }
 
-function getRewards(engine: IEngine) {
-  const adminToolkitComponent = getAdminToolkitComponent(engine);
-
-  return Array.from(adminToolkitComponent?.rewardsControl?.rewardItems ?? []);
-}
-
 function initTextAnnouncementSync(engine: IEngine) {
   const { TextAnnouncements } = getComponents(engine);
 
@@ -138,7 +140,7 @@ function initTextAnnouncementSync(engine: IEngine) {
 let adminDataInitialized = false;
 export async function initializeAdminData(engine: IEngine, sdkHelpers?: ISDKHelpers) {
   if (!adminDataInitialized) {
-    const { TextAnnouncements, VideoControlState } = getComponents(engine);
+    const { VideoControlState, TextAnnouncements } = getComponents(engine);
 
     // Initialize AdminToolkitUiEntity
     state.adminToolkitUiEntity = getAdminToolkitEntity(engine) ?? engine.addEntity();
@@ -170,6 +172,9 @@ export async function initializeAdminData(engine: IEngine, sdkHelpers?: ISDKHelp
 
     // Initialize scene data
     await Promise.all([fetchSceneAdmins(), fetchSceneBans()]);
+
+    // Initialize admin message bus with sender validation
+    initAdminMessageBus(engine, sceneAdminsCache, state.adminToolkitUiEntity);
 
     adminDataInitialized = true;
 
