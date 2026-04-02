@@ -1,4 +1,4 @@
-import type { PBMaterial, TextureUnion } from '@dcl/ecs';
+import type { TextureUnion } from '@dcl/ecs';
 import { TextureFilterMode, TextureWrapMode } from '@dcl/ecs';
 
 import { toNumber, toString } from '../../utils';
@@ -6,7 +6,6 @@ import type { TreeNode } from '../../../ProjectAssetExplorer/ProjectView';
 import type { AssetNodeItem } from '../../../ProjectAssetExplorer/types';
 import { isAssetNode } from '../../../ProjectAssetExplorer/utils';
 import type { AssetCatalogResponse } from '../../../../lib/data-layer/remote-data-layer';
-import type { EntityValidator } from '../../../../lib/sdk/validation/types';
 import { isValidInput } from '../../GltfInspector/utils';
 import { isValidHttpsUrl } from '../../../../lib/utils/url';
 import { Texture } from './types';
@@ -102,45 +101,8 @@ export const isTexture = (value: string): boolean =>
 export const isModel = (node: TreeNode): node is AssetNodeItem =>
   isAssetNode(node) && isTexture(node.name);
 
-export function isValidTexture(value: string, files?: AssetCatalogResponse): boolean {
-  if (files) return isValidHttpsUrl(value) || isValidInput(files, value);
+export function isValidTexture(value: any, files?: AssetCatalogResponse): boolean {
+  if (typeof value === 'string' && files)
+    return isValidHttpsUrl(value) || isValidInput(files, value);
   return false;
 }
-
-export function getTextureSources(material: PBMaterial): string[] {
-  const sources: string[] = [];
-  const mat = material.material;
-  if (!mat) return sources;
-
-  const textures: (TextureUnion | undefined)[] = [];
-  if (mat.$case === 'pbr') {
-    textures.push(
-      mat.pbr.texture,
-      mat.pbr.alphaTexture,
-      mat.pbr.bumpTexture,
-      mat.pbr.emissiveTexture,
-    );
-  } else if (mat.$case === 'unlit') {
-    textures.push(mat.unlit.texture, mat.unlit.alphaTexture);
-  }
-
-  for (const tex of textures) {
-    if (tex?.tex?.$case === 'texture') {
-      const src = tex.tex.texture.src;
-      if (src) sources.push(src);
-    }
-  }
-  return sources;
-}
-
-export const entityValidator: EntityValidator = {
-  componentIds: sdk => [sdk.components.Material.componentId],
-  validate: (sdk, entity, assetCatalog) => {
-    const material = sdk.components.Material.getOrNull(entity);
-    return (
-      !material ||
-      !assetCatalog ||
-      getTextureSources(material).every(src => isValidTexture(src, assetCatalog))
-    );
-  },
-};

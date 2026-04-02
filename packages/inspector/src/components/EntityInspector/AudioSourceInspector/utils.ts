@@ -1,7 +1,5 @@
 import type { PBAudioSource } from '@dcl/ecs';
-
 import type { AssetCatalogResponse } from '../../../tooling-entrypoint';
-import type { EntityValidator } from '../../../lib/sdk/validation/types';
 import type { TreeNode } from '../../ProjectAssetExplorer/ProjectView';
 import { isAssetNode } from '../../ProjectAssetExplorer/utils';
 import type { AssetNodeItem } from '../../ProjectAssetExplorer/types';
@@ -43,14 +41,6 @@ export function isValidInput({ assets }: AssetCatalogResponse, src: string): boo
   // FileUploadField always sends paths with basePath included
   return !!assets.find($ => src === $.path);
 }
-
-export const entityValidator: EntityValidator = {
-  componentIds: sdk => [sdk.components.AudioSource.componentId],
-  validate: (sdk, entity, assetCatalog) => {
-    const audioSource = sdk.components.AudioSource.getOrNull(entity);
-    return !audioSource || !assetCatalog || isValidInput(assetCatalog, audioSource.audioClipUrl);
-  },
-};
 
 export const isAudioFile = (value: string): boolean =>
   value.endsWith('.mp3') || value.endsWith('.ogg') || value.endsWith('.wav');

@@ -42,13 +42,9 @@
 
 .Container .title .indicator {
   display: flex;
-  align-self: center;
+  align-self: baseline;
   font-size: 16px;
   color: var(--warning-main);
-}
-
-.Container .title .indicator.error {
-  color: var(--error-main);
 }
 
 .Container .title .RightContent {

@@ -27,7 +27,6 @@ import { CreateScriptModal } from './CreateScriptModal';
 import { getScriptTemplateClass } from './templates';
 import {
   isValidPath,
-  isValidScriptInput,
   parseLayout,
   isScriptNode,
   isScriptNameAvailable,
@@ -84,11 +83,6 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
   const parsedLayouts = useMemo(() => {
     return scripts.map(script => parseLayout(script.layout));
   }, [scripts]);
-
-  const hasInvalidScripts = useMemo(() => {
-    if (!files) return false;
-    return scripts.some(s => !isValidScriptInput(files, s.path));
-  }, [files, scripts]);
 
   const allScriptsInScene = useMemo(() => {
     return files?.assets.filter($ => isScriptFile($.path)) ?? [];
@@ -383,8 +377,6 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       label="Script"
       className="ScriptInspector"
       initialOpen={initialOpen}
-      indicator={hasInvalidScripts}
-      indicatorSeverity="error"
       onRemoveContainer={handleRemove}
       rightContent={
         <InfoTooltip
@@ -442,13 +434,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
                 onChange={(e: ChangeEvt) => handleScriptSelection(e.target.value, index)}
                 isValidFile={isScriptNode}
                 accept={ACCEPTED_FILE_TYPES['script']}
-                error={
-                  !isValidPath(script.path)
-                    ? 'Invalid script path'
-                    : files && !isValidScriptInput(files, script.path)
-                      ? 'Script file not found'
-                      : undefined
-                }
+                error={!isValidPath(script.path) ? 'Invalid script path' : undefined}
               />
               {/* removed Priority field. Leaving it here just in case we need to restore it... */}
               {/* <TextField

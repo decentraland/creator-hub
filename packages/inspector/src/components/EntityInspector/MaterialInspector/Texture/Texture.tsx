@@ -42,7 +42,7 @@ const TextureInspector = withSdk<Props>(({ sdk, label, texture, files, getInputP
 
   const isValid = useCallback(
     (value: string | number | readonly string[]) => {
-      return typeof value === 'string' && isValidTexture(value, files);
+      return isValidTexture(value, files);
     },
     [files],
   );

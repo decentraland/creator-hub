@@ -1,7 +1,6 @@
 import type { PBVideoPlayer } from '@dcl/ecs';
 
 import type { AssetCatalogResponse } from '../../../tooling-entrypoint';
-import type { EntityValidator } from '../../../lib/sdk/validation/types';
 import type { TreeNode } from '../../ProjectAssetExplorer/ProjectView';
 import { isAssetNode } from '../../ProjectAssetExplorer/utils';
 import type { AssetNodeItem } from '../../ProjectAssetExplorer/types';
@@ -43,14 +42,6 @@ export function isValidInput({ basePath, assets }: AssetCatalogResponse, src: st
     isValidHttpsUrl(src) || !!assets.find($ => (basePath ? basePath + '/' + src : src) === $.path)
   );
 }
-
-export const entityValidator: EntityValidator = {
-  componentIds: sdk => [sdk.components.VideoPlayer.componentId],
-  validate: (sdk, entity, assetCatalog) => {
-    const videoPlayer = sdk.components.VideoPlayer.getOrNull(entity);
-    return !videoPlayer || !assetCatalog || isValidInput(assetCatalog, videoPlayer.src);
-  },
-};
 
 export const isVideoFile = (value: string): boolean => value.endsWith('.mp4');
 export const isVideo = (node: TreeNode): node is AssetNodeItem =>

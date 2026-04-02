@@ -99,15 +99,6 @@
   width: 100%;
 }
 
-.Tree .WarningIcon,
-.Tree .ErrorIcon {
-  margin-right: 4px;
-}
-
 .Tree .WarningIcon {
   color: var(--warning-main);
-}
-
-.Tree .ErrorIcon {
-  color: var(--error-main);
 }

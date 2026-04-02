@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { IoIosArrowDown, IoIosArrowForward } from 'react-icons/io';
 import { FiAlertTriangle as WarningIcon } from 'react-icons/fi';
-import { IoAlertCircleOutline as ErrorIcon } from 'react-icons/io5';
 import { VscTrash as RemoveIcon } from 'react-icons/vsc';
 import cx from 'classnames';
 import { Button } from '../Button';
@@ -56,19 +55,16 @@ const Container: React.FC<React.PropsWithChildren<Props>> = props => {
     };
   }, [props.children]);
 
-  const severity = props.indicatorSeverity ?? 'warning';
-
   const renderIndicator = useCallback(() => {
     if (props.indicator) {
-      const SeverityIcon = severity === 'error' ? ErrorIcon : WarningIcon;
       return (
-        <span className={cx('indicator', severity)}>
+        <span className="indicator">
           {typeof props.indicator === 'boolean' ? (
-            <SeverityIcon />
+            <WarningIcon />
           ) : typeof props.indicator === 'string' ? (
             <InfoTooltip
               text={props.indicator}
-              type={severity}
+              type="warning"
               position="top center"
             />
           ) : (
@@ -79,7 +75,7 @@ const Container: React.FC<React.PropsWithChildren<Props>> = props => {
     }
 
     return null;
-  }, [props.indicator, severity]);
+  }, [props.indicator]);
 
   const finalRightContent = rightContentFromChildren || props.rightContent;
 
