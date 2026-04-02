@@ -1,7 +1,5 @@
 import type { PBAudioStream } from '@dcl/ecs';
-
 import { isValidHttpsUrl } from '../../../lib/utils/url';
-import type { EntityValidator } from '../../../lib/sdk/validation/types';
 import type { AudioStreamInput } from './types';
 
 export const fromAudioStream = (value: PBAudioStream): AudioStreamInput => {
@@ -33,14 +31,6 @@ export function volumeToAudioStream(volume: string | undefined): number {
 export function isValidInput(url: string): boolean {
   return isValidHttpsUrl(url);
 }
-
-export const entityValidator: EntityValidator = {
-  componentIds: sdk => [sdk.components.AudioStream.componentId],
-  validate: (sdk, entity) => {
-    const audioStream = sdk.components.AudioStream.getOrNull(entity);
-    return !audioStream || isValidInput(audioStream.url);
-  },
-};
 
 export function isValidVolume(volume: string | undefined): boolean {
   const value = (volume ?? 0).toString();

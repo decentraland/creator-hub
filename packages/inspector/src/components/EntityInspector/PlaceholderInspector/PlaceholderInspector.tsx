@@ -49,8 +49,6 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       label="Placeholder"
       className="GltfInspector"
       initialOpen={initialOpen}
-      indicator={files && !isValid}
-      indicatorSeverity="error"
       rightContent={
         <InfoTooltip
           text="Assigns a 3D model to visualize this entity in the editor. Has no effect when the scene runs. Not counted in scene metrics."

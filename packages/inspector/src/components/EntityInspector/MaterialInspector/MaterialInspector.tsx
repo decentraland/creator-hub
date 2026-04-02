@@ -1,15 +1,11 @@
-import { useCallback, useMemo } from 'react';
-
+import { useCallback } from 'react';
 import { withSdk } from '../../../hoc/withSdk';
 import { useAllEntitiesHaveComponent } from '../../../hooks/sdk/useHasComponent';
 import { useMultiComponentInput } from '../../../hooks/sdk/useComponentInput';
-import { useAppSelector } from '../../../redux/hooks';
-import { selectAssetCatalog } from '../../../redux/app';
 import { Block } from '../../Block';
 import { Dropdown, InfoTooltip } from '../../ui';
 import { Container } from '../../Container';
 import { fromMaterial, toMaterial, isValidMaterial, MATERIAL_TYPES } from './utils';
-import { getTextureSources, isValidTexture } from './Texture/utils';
 import UnlitMaterial from './UnlitMaterial/UnlitMaterial';
 import { PbrMaterial } from './PbrMaterial';
 import { type Props as TextureProps } from './Texture';
@@ -17,7 +13,6 @@ import { type Props, MaterialType } from './types';
 
 export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
   const { Material } = sdk.components;
-  const files = useAppSelector(selectAssetCatalog);
 
   const allEntitiesHaveMaterial = useAllEntitiesHaveComponent(entities, Material);
 
@@ -32,17 +27,6 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
     await sdk.operations.dispatch();
   }, [sdk, entities, Material]);
 
-  const hasInvalidTexture = useMemo(() => {
-    if (!files) return false;
-    for (const entity of entities) {
-      const material = Material.getOrNull(entity);
-      if (!material) continue;
-      const sources = getTextureSources(material);
-      if (sources.some(src => !isValidTexture(src, files))) return true;
-    }
-    return false;
-  }, [files, entities, Material]);
-
   if (!allEntitiesHaveMaterial) return null;
 
   const materialType = getInputProps('type');
@@ -54,8 +38,6 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
       label="Material"
       className="Material"
       initialOpen={initialOpen}
-      indicator={hasInvalidTexture}
-      indicatorSeverity="error"
       rightContent={
         <InfoTooltip
           text="Material determines the visual appearance of an object. It defines properties such as color, texture, and transparency"
