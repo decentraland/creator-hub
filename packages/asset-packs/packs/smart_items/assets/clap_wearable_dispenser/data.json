@@ -1,0 +1,8 @@
+{
+  "id": "675110d1-7cf3-4927-95ee-bb6e9ec7f7ae",
+  "name": "Clap Wearable Dispenser",
+  "category": "Rewards",
+  "tags": ["clap", "wearable", "dispenser", "reward", "collections", "collectible", "clothing"],
+  "description": "A wearable dispenser that gifts the player a wearable from a Rewards server campaign when the player performs a clap emote in front of it.",
+  "author": "Decentraland Foundation"
+}

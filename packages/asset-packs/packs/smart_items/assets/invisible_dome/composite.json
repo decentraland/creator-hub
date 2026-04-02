@@ -2,11 +2,23 @@
   "version": 1,
   "components": [
     {
-      "name": "asset-packs::Placeholder",
+      "name": "core::GltfContainer",
       "data": {
         "0": {
           "json": {
-            "src": "{assetPath}/invisible_semisphere.glb"
+            "src": "{assetPath}/invisible_semisphere.glb",
+            "visibleMeshesCollisionMask": 2,
+            "invisibleMeshesCollisionMask": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "core::VisibilityComponent",
+      "data": {
+        "0": {
+          "json": {
+            "visible": false
           }
         }
       }

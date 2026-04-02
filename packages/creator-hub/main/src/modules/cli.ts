@@ -292,11 +292,21 @@ export async function legacyDeploy({
   return port;
 }
 
-async function shouldRunLegacyDeploy(path: string) {
-  const file = await fs.readFile(
+async function readDeployCommandFile(path: string) {
+  return fs.readFile(
     join(path, 'node_modules', '@dcl/sdk-commands/dist/commands/deploy/index.js'),
+    'utf-8',
   );
+}
+
+async function shouldRunLegacyDeploy(path: string) {
+  const file = await readDeployCommandFile(path);
   return !file.includes('--programmatic');
+}
+
+async function supportsMultiSceneDeploy(path: string) {
+  const file = await readDeployCommandFile(path);
+  return file.includes('--multi-scene');
 }
 // ############################################################################################
 
@@ -333,6 +343,7 @@ export async function deploy({
   }
 
   const port = await getAvailablePort();
+  const multiScene = await supportsMultiSceneDeploy(path);
 
   const { stop } = await runCommand(path, 'deploy', [
     '--dir',
@@ -343,6 +354,8 @@ export async function deploy({
     ...(target ? ['--target', target] : []),
     ...(targetContent ? ['--target-content', targetContent] : []),
     '--programmatic',
+    '--yes',
+    ...(multiScene ? ['--multi-scene'] : []),
     ...(language ? ['--language', language] : []),
   ]);
 

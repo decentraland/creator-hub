@@ -411,7 +411,8 @@
         "auto_skybox": "Auto (hora de Decentraland)",
         "max_offset": "Desplazamiento Máximo",
         "general": "General",
-        "single_player": "Un Solo Jugador"
+        "single_player": "Un Solo Jugador",
+        "show_in_places": "Mostrar en Places"
       },
       "details": {
         "world_title": "Título del Mundo",
@@ -646,6 +647,7 @@
       "invalid_scenes_folder": "Carpeta de escenas inválida. Por favor, ingresa una carpeta de escenas válida en la configuración de la aplicación antes de crear una escena.",
       "create_scene_failed": "Ocurrió un error al crear la escena. Por favor, inténtalo nuevamente.",
       "run_scene_failed": "Error al cargar el proyecto. Por favor, inténtalo de nuevo.",
+      "preview_scene_failed": "Error al iniciar la vista previa. Revisá el código de la escena en busca de errores.",
       "url_copied": "URL copiada al portapapeles",
       "fetch_managed_projects_failed": "Error al cargar los proyectos gestionados",
       "fetch_world_settings_failed": "Error al cargar la configuración del mundo. Por favor, inténtalo de nuevo.",

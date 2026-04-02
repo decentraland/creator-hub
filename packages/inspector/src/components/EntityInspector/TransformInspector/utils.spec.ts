@@ -61,6 +61,26 @@ describe('TransformInspector utils', () => {
       expect(tranform.rotation.z).toBe(0);
       expect(tranform.rotation.w).toBe(1);
     });
+    it('should preserve rotation values through a round-trip conversion', () => {
+      const testCases = [
+        { axis: 'x' as const, angles: ['0.00', '30.00', '45.00', '90.00'] },
+        { axis: 'y' as const, angles: ['0.00', '30.00', '45.00', '90.00', '180.00', '270.00'] },
+        { axis: 'z' as const, angles: ['0.00', '30.00', '45.00', '90.00'] },
+      ];
+      for (const { axis, angles } of testCases) {
+        for (const angle of angles) {
+          const rotationInput: TransformInput = {
+            position: { x: '0.00', y: '0.00', z: '0.00' },
+            scale: { x: '1.00', y: '1.00', z: '1.00' },
+            rotation: { x: '0.00', y: '0.00', z: '0.00' },
+          };
+          rotationInput.rotation[axis] = angle;
+          const transform = toTransform()(rotationInput);
+          const roundTripped = fromTransform(transform);
+          expect(roundTripped.rotation[axis]).toBe(angle);
+        }
+      }
+    });
     it('should scale values porportionally', () => {
       const newValue = { ...input, scale: { x: '2.00', y: '1.00', z: '1.00' } };
       const config = { porportionalScaling: true };
