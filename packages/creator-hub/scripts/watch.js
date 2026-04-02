@@ -20,7 +20,7 @@ function setupTypeChecker() {
       ['tsc', '-w', '--preserveWatchOutput', '--noEmit', '-p', `${pkg}/tsconfig.json`],
       {
         stdio: 'inherit',
-        shell: process.platform === 'win32',
+        shell: true,
       },
     );
 
