@@ -138,7 +138,11 @@ function initTextAnnouncementSync(engine: IEngine) {
 
 // Initialize admin data before UI rendering
 let adminDataInitialized = false;
-export async function initializeAdminData(engine: IEngine, sdkHelpers?: ISDKHelpers) {
+export async function initializeAdminData(
+  engine: IEngine,
+  sdkHelpers?: ISDKHelpers,
+  playersHelper?: IPlayersHelper,
+) {
   if (!adminDataInitialized) {
     const { VideoControlState, TextAnnouncements } = getComponents(engine);
 
@@ -174,7 +178,7 @@ export async function initializeAdminData(engine: IEngine, sdkHelpers?: ISDKHelp
     await Promise.all([fetchSceneAdmins(), fetchSceneBans()]);
 
     // Initialize admin message bus with sender validation
-    initAdminMessageBus(engine, sceneAdminsCache, state.adminToolkitUiEntity);
+    initAdminMessageBus(engine, sceneAdminsCache, state.adminToolkitUiEntity, playersHelper);
 
     adminDataInitialized = true;
 
@@ -190,7 +194,7 @@ export function createAdminToolkitUI(
   playersHelper?: IPlayersHelper,
 ) {
   // Initialize admin data before setting up the UI
-  initializeAdminData(engine, sdkHelpers).then(() => {
+  initializeAdminData(engine, sdkHelpers, playersHelper).then(() => {
     console.log('createAdminToolkitUI - initialized');
     reactBasedUiSystem.setUiRenderer(
       () => uiComponent(engine, pointerEventsSystem, sdkHelpers, playersHelper),
