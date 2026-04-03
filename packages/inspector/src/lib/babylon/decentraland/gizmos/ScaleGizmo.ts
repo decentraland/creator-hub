@@ -41,6 +41,7 @@ export class ScaleGizmo implements IGizmoTransformer {
   private currentEntities: EcsEntity[] = [];
   private updateEntityScale: ((entity: EcsEntity) => void) | null = null;
   private dispatchOperations: (() => void) | null = null;
+  private onLiveDragUpdate: (() => void) | null = null;
   private isWorldAligned = true;
 
   // Sensitivity multiplier: higher = model scales more relative to gizmo visual movement
@@ -303,11 +304,11 @@ export class ScaleGizmo implements IGizmoTransformer {
         // scaleFactor is already clamped to never be exactly 0 (minScaleValue or -minScaleValue)
         const scaleChange = new Vector3(scaleFactor, scaleFactor, scaleFactor);
         this.applyScaleTransform(entity, scaleChange, offset, initialScale, initialRotation);
-
-        if (this.updateEntityScale) {
-          this.updateEntityScale(entity);
-        }
       }
+      // NOTE: we intentionally do NOT call updateEntityScale here.
+      // Writing to the renderer ECS on every drag frame would cause
+      // intermediate undo entries.  The final ECS sync happens on pointer up.
+      this.onLiveDragUpdate?.();
     };
 
     const onPointerUp = (pointerInfo: PointerInfo) => {
@@ -315,6 +316,11 @@ export class ScaleGizmo implements IGizmoTransformer {
 
       this.isDraggingUniformScale = false;
       this.initialUniformScaleMousePos = null;
+
+      // Sync final scale to renderer ECS before dispatch
+      if (this.updateEntityScale) {
+        this.currentEntities.forEach(this.updateEntityScale);
+      }
       this.onDragEnd();
 
       if (this.dispatchOperations) {
@@ -419,11 +425,11 @@ export class ScaleGizmo implements IGizmoTransformer {
           scaleChange = new Vector3(1, scaleFactor, scaleFactor); // YZ
         }
         this.applyScaleTransform(entity, scaleChange, offset, initialScale, initialRotation);
-
-        if (this.updateEntityScale) {
-          this.updateEntityScale(entity);
-        }
       }
+      // NOTE: we intentionally do NOT call updateEntityScale here.
+      // Writing to the renderer ECS on every drag frame would cause
+      // intermediate undo entries.  The final ECS sync happens on pointer up.
+      this.onLiveDragUpdate?.();
     };
 
     const onPointerUp = (pointerInfo: PointerInfo) => {
@@ -433,6 +439,11 @@ export class ScaleGizmo implements IGizmoTransformer {
       initialMousePos = null;
       initialEntityScales.clear();
       this.activelyDraggingPlane = null;
+
+      // Sync final scale to renderer ECS before dispatch
+      if (this.updateEntityScale) {
+        this.currentEntities.forEach(this.updateEntityScale);
+      }
       this.onDragEnd();
 
       if (this.dispatchOperations) {
@@ -585,9 +596,11 @@ export class ScaleGizmo implements IGizmoTransformer {
   setUpdateCallbacks(
     updateEntityScale: (entity: EcsEntity) => void,
     dispatchOperations: () => void,
+    onLiveDragUpdate?: () => void,
   ): void {
     this.updateEntityScale = updateEntityScale;
     this.dispatchOperations = dispatchOperations;
+    this.onLiveDragUpdate = onLiveDragUpdate ?? null;
   }
 
   setWorldAligned(_value: boolean): void {
@@ -631,16 +644,19 @@ export class ScaleGizmo implements IGizmoTransformer {
     this.dragObserver = scaleGizmo.onDragObservable.add(() => {
       if (this.gizmoManager.attachedNode) {
         this.update(this.currentEntities, this.gizmoManager.attachedNode as TransformNode);
-
-        // Update ECS scale on each drag update for real-time feedback
-        if (this.updateEntityScale) {
-          this.currentEntities.forEach(this.updateEntityScale);
-        }
+        // NOTE: we intentionally do NOT call updateEntityScale here.
+        // Writing to the renderer ECS on every drag frame would cause
+        // intermediate undo entries.  The final ECS sync happens at drag end.
+        this.onLiveDragUpdate?.();
       }
     });
 
     // Setup drag end
     this.dragEndObserver = scaleGizmo.onDragEndObservable.add(() => {
+      // Sync final scale to renderer ECS before dispatch
+      if (this.updateEntityScale) {
+        this.currentEntities.forEach(this.updateEntityScale);
+      }
       this.onDragEnd();
 
       // Only dispatch operations at the end to avoid excessive ECS operations
