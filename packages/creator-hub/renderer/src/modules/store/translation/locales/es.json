@@ -870,6 +870,7 @@
         "scenes_count": "{count} {count, plural, one {escena} other {escenas}}",
         "scene_settings": "Configuración de Escena",
         "world_settings": "Configuración",
+        "layout": "Diseño",
         "published_world": "Mundo Publicado"
       },
       "land": {
