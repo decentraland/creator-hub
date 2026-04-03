@@ -81,6 +81,7 @@ const initedEntities = new Set<Entity>();
 const uiStacks = new Map<string, Entity>();
 const lastUiEntityClicked = new Map<Entity, Entity>();
 const textEntities = new Map<Entity, Entity>(); // Model Entity, Text Entity
+const imageEntities = new Map<Entity, Entity>(); // Model Entity, Image Entity
 
 let internalInitActions: ((entity: Entity) => void) | null = null;
 
@@ -1173,6 +1174,8 @@ export function createActionsSystem(
 
     // Create a UI entity and a Transform component for the image
     const imageEntity = engine.addEntity();
+    // Store the image entity in the map for proper tracking
+    imageEntities.set(entity, imageEntity);
     const imageTransformComponent = getUITransform(
       UiTransform,
       imageEntity,
@@ -1220,12 +1223,26 @@ export function createActionsSystem(
 
     if (imageEntity) {
       engine.removeEntity(imageEntity as Entity);
+      // Clean up maps
+      imageEntities.delete(entity);
+      lastUiEntityClicked.delete(entity);
     } else {
-      const clickedImage = lastUiEntityClicked.get(entity);
-      if (clickedImage) {
-        engine.removeEntity(clickedImage);
+      // First check the tracked image entity
+      const trackedImage = imageEntities.get(entity);
+      if (trackedImage) {
+        engine.removeEntity(trackedImage);
+        imageEntities.delete(entity);
         lastUiEntityClicked.delete(entity);
+      } else {
+        // Fallback to clicked image for backwards compatibility
+        const clickedImage = lastUiEntityClicked.get(entity);
+        if (clickedImage) {
+          engine.removeEntity(clickedImage);
+          lastUiEntityClicked.delete(entity);
+        }
       }
+      // Clear timeout if it exists
+      stopTimeout(entity, ActionType.HIDE_IMAGE);
     }
   }
 
