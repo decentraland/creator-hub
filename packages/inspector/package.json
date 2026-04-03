@@ -13,7 +13,7 @@
     "@babylonjs/loaders": "8.7.0",
     "@babylonjs/materials": "8.7.0",
     "@dcl/ecs-math": "2.1.0",
-    "@dcl/gltf-validator-ts": "^1.0.19",
+    "@dcl/gltf-validator-ts": "https://github.com/decentraland/gltf-validator-ts/releases/download/1.1.0/dcl-gltf-validator-ts-1.1.0-commit-0d8a3cdda6f7cacff58d72b66d936c9c4f6e4b6f.tgz",
     "@dcl/mini-rpc": "^1.0.7",
     "@dcl/rpc": "^1.1.1",
     "@dcl/schemas": "25.0.0",
