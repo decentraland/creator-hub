@@ -84,15 +84,34 @@
       "description": "Desata tu creatividad. Comienza a construir escenas para tus tierras y mundos y comparta con la comunidad.<a> Aprenda más sobre cómo crear escenas. </a>"
     },
     "sort": {
+      "created": "Más Recientes",
       "name": "Nombre",
-      "newest": "Más Nuevas",
-      "size": "Tamaño"
+      "newest": "Modificado",
+      "size": "Tamaño de escena",
+      "parcels": "Parcelas"
     },
+    "search": "Buscar",
     "results": "{count} {count, plural, one {escena} other {escenas}}",
     "parcel_count": "{parcels} {parcels, plural, one {parcela} other {parcelas}}",
     "saving": "Guardando...",
     "badges": {
-      "published": "Publicado"
+      "published": "Publicado",
+      "in_progress": "En Progreso"
+    },
+    "table": {
+      "thumbnail": "Escena",
+      "name": "Nombre",
+      "parcels": "Parcelas",
+      "filesize": "Tamaño de escena",
+      "modified": "Modificado"
+    },
+    "view_mode": "Vista",
+    "view_grid": "Vista de cuadrícula",
+    "view_list": "Vista de lista",
+    "grid": "Cuadrícula",
+    "list": "Lista",
+    "time": {
+      "just_now": "ahora mismo"
     }
   },
   "navbar": {
@@ -788,6 +807,15 @@
       "more": "Más"
     },
     "see_all": "Ver Más",
+    "search_placeholder": "Buscar en Aprender",
+    "visit_docs": "Visitar Docs de Decentraland",
+    "tabs": {
+      "creator_hub": "Creator Hub",
+      "creator_academy": "Creator Academy",
+      "community_all_hands": "Community All Hands",
+      "docs": "Documentación para Creadores",
+      "news": "Noticias"
+    },
     "videos": {
       "title": "Videos"
     },

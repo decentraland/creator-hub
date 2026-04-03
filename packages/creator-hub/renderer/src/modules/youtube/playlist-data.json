@@ -1,0 +1,187 @@
+{
+  "creatorHub": {
+    "playlistId": "PLAcRraQmr_GPrMmQekqbMWhyBxo3lXs8p",
+    "videos": [
+      {
+        "id": "52LiG-4VI9c",
+        "title": "DCL Creator Hub: Making a Scene with the Creator Hub",
+        "description": "Introducing the Decentraland Creator Hub! The go to place for creating scenes in Decentraland.00:32 Download and install 00:46 App overview00:59 Creating a s..."
+      },
+      {
+        "id": "cNl02PFPdcQ",
+        "title": "DCL Creator Hub: Item Positions with the Creator Hub",
+        "description": "Welcome to the Creator Hub: The go to place for creation in Decentraland. Let's learn how to position items with the Creator Hub.00:21 Scene editing overview..."
+      },
+      {
+        "id": "UepXpH-k0EI",
+        "title": "DCL Creator Hub: Using Custom 3D Art",
+        "description": "Welcome to the Creator Hub: the go to place for creating things in Decentraland. Today let's learn about using your own 3D assets in Decentraland.00 :16 Addi..."
+      },
+      {
+        "id": "z7HF4GR01hE",
+        "title": "DCL Creator Hub: Smart Items, the Basics",
+        "description": "Welcome to the Creator Hub: the go to place for creating in Decentraland!Let's discuss smart items and learn some basic functionality.00:21 Smart items overv..."
+      },
+      {
+        "id": "m_xWCSDDxpQ",
+        "title": "DCL Creator Hub: Actions And Triggers",
+        "description": "Let's learn how to use actions and triggers with Smart Items in Decentraland Scenes. 00:44 Advanced Mode intro01:50 Pointer Events03:00 Actions and TriggersC..."
+      },
+      {
+        "id": "wnnEU8GCLjc",
+        "title": "DCL Creator Hub: Making Any Item Smart",
+        "description": "Let's learn how to make any item a Smart Item with the Creator Hub!01:19 Adding Smart components to basic items03:19 Example scenarios06:01 Smart Item cues 0..."
+      },
+      {
+        "id": "wm8ZD2kSyKA",
+        "title": "DCL Creator Hub: Smart Item States and Conditions",
+        "description": "Let's go over the States and Conditions of Smart Items in the Creator Hub!01:12 Introduction to States component03:18 Connecting Smart Items with Conditions0..."
+      },
+      {
+        "id": "55H37rygD7M",
+        "title": "DCL Creator Hub: Customizing Smart Items with Code",
+        "description": "Let's learn how to customize Smart Items in the Creator Hub with code! 00:50 Installing Visual Studio01:06 Overview of documentation01:50 Visual Studio overv..."
+      },
+      {
+        "id": "7cGLu8P7dso",
+        "title": "DCL Creator Hub: Create Custom Items",
+        "description": "Want to build custom interactive items in Decentraland?In this tutorial, you’ll learn how to create your own *Custom Smart Items* using the Creator Hub. Thes..."
+      },
+      {
+        "id": "efjJN7Jr7Qo",
+        "title": "DCL Creator Hub: Live Admin Tools",
+        "description": "Want to stream a live event inside Decentraland? Or run interactive scenes with video, pop-ups, and more?In this tutorial, you'll learn how to use *Live Admi..."
+      },
+      {
+        "id": "uVGSrsnmfTw",
+        "title": "Office Hours: Importing Assets and Creating Custom Components in the Decentraland Creator Hub",
+        "description": "Join Decentraland Foundation’s Dr. Krillo for a live, hands-on session where you’ll learn how to:- Import and use downloaded 3D assets- Assign custom compone..."
+      }
+    ]
+  },
+  "academyBeginners": {
+    "playlistId": "PLAcRraQmr_GP8ayVOgkmL4rrJuB2T74bg",
+    "videos": [
+      {
+        "id": "K8hS5-tmafU",
+        "title": "Creators Academy - Emissions 101",
+        "description": "Join Roustan for a hands-on Creators Academy workshop covering Emissions for Wearables in Decentraland.Learn how to:* Use emissive materials correctly* Add g..."
+      },
+      {
+        "id": "oVsJCoEhBgw",
+        "title": "Creators Academy - Create a scene with AI (part 1)",
+        "description": "In this Creators Academy workshop, we are exploring different AI tools to help create a basic scene in Decentraland.Toolkit:* ChatGPT* MeshyAI* Kaiber* Block..."
+      },
+      {
+        "id": "87CWayjIP8Q",
+        "title": "Making Your First Emote in Decentraland | Creator Academy Tutorial",
+        "description": "Want to create your own animations and Emotes in Decentraland?In this Creator Academy workshop, Isa — 3D Artist at the Decentraland Foundation — walks you th..."
+      },
+      {
+        "id": "uOUZPVycg1I",
+        "title": "Baking Textures in Blender | Creator Academy Tutorial Part 3",
+        "description": "Welcome to Part 3 of the Creator Academy Blender tutorial series! In this video, DOCTORDripp dives into texture baking—a crucial step for optimizing your 3D ..."
+      },
+      {
+        "id": "9Q_2ZOYYQ2w",
+        "title": "Making Your First Shirt Wearable in Decentraland | Creator Academy Tutorial Part 2",
+        "description": "Want to bring your 3D fashion ideas to life in Decentraland?In this in-depth Creator Academy workshop, Roustan walks you through how to model, texture, and t..."
+      },
+      {
+        "id": "UjHkVZKSWCc",
+        "title": "Making Your First Wearable in Decentraland | Creator Academy Tutorial",
+        "description": "Ready to design your very first Wearable for Decentraland? In this Creator Academy Tutorial, legendary digital artist Roustan walks you through the entire pr..."
+      }
+    ]
+  },
+  "academyBlender": {
+    "playlistId": "PLAcRraQmr_GPngczAiPczVht2nYejMOQv",
+    "videos": [
+      {
+        "id": "qG0mtikJodg",
+        "title": "Blender for Beginners Part 2: Modeling a Hat with Loop Cuts & Proportional Editing",
+        "description": "Welcome to Blender for Beginners Part 2, a 6-part tutorial series designed to guide complete beginners through creating their very first wearable for Decentr..."
+      },
+      {
+        "id": "6Q8FNyjFTxc",
+        "title": "Blender for Beginners Part 1: Making your first hat",
+        "description": "Welcome to Blender for Beginners Part 1, a 6-part tutorial series designed to guide complete beginners through creating their very first Wearable for Decentr..."
+      }
+    ]
+  },
+  "communityAllHands": {
+    "playlistId": "PLAcRraQmr_GNvJh8epKB4n8KJSg2hkfK4",
+    "videos": [
+      {
+        "id": "KAB24cQ6vm8",
+        "title": "Decentraland All Hands Meeting  8/23/23",
+        "description": "We hope you all enjoy this recording of our inagural Decentraland All Hands community session. The Decentraland All Hands sessions, is  a revamped format tha..."
+      },
+      {
+        "id": "8qrlPA-Wx5o",
+        "title": "Decentraland All Hands Meeting 10/11/2023",
+        "description": "We hope you all enjoy this recording of our second Decentraland All Hands community session. The Decentraland All Hands sessions are a revamped format that r..."
+      },
+      {
+        "id": "l5ywDRAoRtw",
+        "title": "Decentraland All Hands Meeting 1/31/2024",
+        "description": "We hope you all enjoy this recording of our inagural Decentraland All Hands community session.This sessions started with an overview of the 2024 Decentraland..."
+      },
+      {
+        "id": "dQMmMl3sNbQ",
+        "title": "Decentraland All Hands Session | 3/27/24",
+        "description": "We hope you all enjoy this recording of our Decentraland All Hands community session. There were many great updates across the board in todays session, inclu..."
+      },
+      {
+        "id": "iTrhvYUqRsw",
+        "title": "Decentraland Foundation Community All Hands 6",
+        "description": "The following is a recording of the Decentraland All Hands community session which took place on 6/19/24.00:00 Introduction02:06 Community Summit Update05:40..."
+      },
+      {
+        "id": "Vy0iVwRz10I",
+        "title": "Decentraland Foundation Community All Hands 7",
+        "description": "Enjoy a very technically cursed edition of the Community All Hands! For transparency the chaos will not be edited out. Recommend skipping ahead to 20:06 when..."
+      },
+      {
+        "id": "Q5gqsN4LmGs",
+        "title": "Decentraland Foundation Community All Hands 8",
+        "description": "In this 8th edition of the Community All Hands, Kim and Nico cover new product updates and the upcoming launch of the new client. 00:00 All About Wearables R..."
+      },
+      {
+        "id": "aL0Uix5GqQ0",
+        "title": "Decentraland Foundation Community All Hands 9",
+        "description": "In this edition of the Decentraland All Hands, the Foundation team unveiled the developments of Cycle 9 and the features planned in Cycle 10. Foundation Exec..."
+      },
+      {
+        "id": "DhlQ-PPv50U",
+        "title": "Decentraland Community All Hands 11 | New Features, Creator Tools & What’s Next in 2025",
+        "description": "Get the latest on what’s happening in Decentraland—from new product features and creator tools to upcoming events and major collaborations.In this All Hands ..."
+      },
+      {
+        "id": "_8ynSkR8Zb8",
+        "title": "Decentraland Community All Hands 12 | Career Quest, Referral Program, Communities",
+        "description": "Get the latest on what’s happening in Decentraland from new product features and creator tools to upcoming events and major collaborations.In this All Hands ..."
+      },
+      {
+        "id": "8FEJbc_Vwy0",
+        "title": "Community All Hands 13 | Communities Launch, Communities Voice, Dynamic Lights",
+        "description": "In this edition of the Community All Hands the return of Outfits and Smart Wearables, and the addition of auto translate and scene moderator tools were both ..."
+      },
+      {
+        "id": "SIdAfjneUsE",
+        "title": "Community All Hands 14 | Communities Voice Streams, Marketplace Credits, Saved Outfits",
+        "description": "Community All Hands 14 shared key Decentraland updates spanning social, creator, and product developments. Highlights included Marketplace Credits Season 3, ..."
+      },
+      {
+        "id": "N3ajcMMBtC4",
+        "title": "Community All Hands 15",
+        "description": "Community All Hands 15Join us for the latest updates from the Decentraland ecosystem!In this session, we cover:Social EmotesThe new Genesis PlazaGifts & rewa..."
+      },
+      {
+        "id": "npOz2bcqvnM",
+        "title": "Community All Hands 16",
+        "description": "The 16th edition of the Decentraland All Hands highlights the latest product updates shaping the platform.This session includes a deep dive into the new Disc..."
+      }
+    ]
+  }
+}

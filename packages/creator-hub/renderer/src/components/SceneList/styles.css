@@ -125,6 +125,202 @@
   background-image: url(/assets/images/new-scene-button-hover.svg);
 }
 
+/* ─── View toggle ─────────────────────── */
+.SceneListLeft {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.SceneViewToggle {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.SceneViewToggleBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+}
+
+.SceneViewToggleBtn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.SceneViewToggleBtn.active {
+  background-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 1);
+}
+
+.SceneViewToggleBtn img {
+  display: block;
+  pointer-events: none;
+  filter: brightness(0) invert(1);
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.SceneViewToggleBtn.active img {
+  opacity: 1;
+}
+
+/* ─── List view table ─────────────────── */
+.SceneListTable {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.SceneListTableHead {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.SceneListTableRow {
+  display: flex;
+  align-items: center;
+  padding: 8px 20px;
+  min-height: 100px;
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  background-color: transparent;
+  transition: background-color 0.15s ease;
+}
+
+.SceneListTableRow:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.SceneListTableRow:last-child {
+  border-bottom: none;
+}
+
+.SceneListTableCell {
+  display: flex;
+  align-items: center;
+}
+
+.SceneListTableCell.cell-thumbnail {
+  width: 220px;
+  flex-shrink: 0;
+}
+
+.SceneListTableCell.cell-name {
+  flex: 1;
+  min-width: 0;
+  padding-right: 16px;
+}
+
+.SceneListTableCell.cell-parcels {
+  width: 100px;
+  flex-shrink: 0;
+  justify-content: center;
+}
+
+.SceneListTableCell.cell-filesize {
+  width: 100px;
+  flex-shrink: 0;
+  justify-content: center;
+}
+
+.SceneListTableCell.cell-modified {
+  width: 140px;
+  flex-shrink: 0;
+  justify-content: center;
+}
+
+.SceneListTableCell.cell-actions {
+  width: 48px;
+  flex-shrink: 0;
+  justify-content: center;
+}
+
+.SceneListThumbnail {
+  width: 190px;
+  height: 88px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.SceneListThumbnailPlaceholder {
+  width: 190px;
+  height: 88px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.SceneListName {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.SceneListName .MuiTypography-root {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.SceneListPath {
+  color: rgba(255, 255, 255, 0.35) !important;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+  margin-top: 2px !important;
+}
+
+.SceneSizeCalculating {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 12px;
+}
+
+.SceneSizeCalculating .MuiCircularProgress-root {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.SceneStatusBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid;
+}
+
+.SceneStatusBadge.published {
+  color: #34ce77;
+  border-color: rgba(52, 206, 119, 0.5);
+}
+
+.SceneStatusBadge.in-progress {
+  color: rgba(255, 255, 255, 0.5);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
 .SceneList {
   max-width: 100%;
   padding-bottom: 32px;

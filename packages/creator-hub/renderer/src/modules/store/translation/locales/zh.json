@@ -84,15 +84,34 @@
       "description": "释放您的创造力。开始为您的土地和世界建立场景，并与社区分享。<a>了解有关创建场景的更多信息。</a>"
     },
     "sort": {
+      "created": "最新",
       "name": "名称",
-      "newest": "最新",
-      "size": "尺寸"
+      "newest": "修改时间",
+      "size": "场景大小",
+      "parcels": "地块"
     },
+    "search": "搜索",
     "results": "{count}结果",
     "parcel_count": "{parcels} {包裹, plural, one {包裹} other {包裹}}",
     "saving": "保存...",
     "badges": {
-      "published": "已发布"
+      "published": "已发布",
+      "in_progress": "进行中"
+    },
+    "table": {
+      "thumbnail": "场景",
+      "name": "名称",
+      "parcels": "地块",
+      "filesize": "场景大小",
+      "modified": "修改时间"
+    },
+    "view_mode": "显示视图",
+    "view_grid": "网格视图",
+    "view_list": "列表视图",
+    "grid": "网格",
+    "list": "列表",
+    "time": {
+      "just_now": "刚刚"
     }
   },
   "navbar": {
@@ -788,6 +807,15 @@
       "more": "更多"
     },
     "see_all": "查看全部",
+    "search_placeholder": "搜索学习内容",
+    "visit_docs": "访问 Decentraland 文档",
+    "tabs": {
+      "creator_hub": "Creator Hub",
+      "creator_academy": "Creator Academy",
+      "community_all_hands": "Community All Hands",
+      "docs": "创作者文档",
+      "news": "新闻"
+    },
     "videos": {
       "title": "视频"
     },
