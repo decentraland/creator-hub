@@ -1,13 +1,13 @@
-import { IEngine } from '@dcl/ecs';
+import type { IEngine } from '@dcl/ecs';
 import ReactEcs, { Label, UiEntity, Input } from '@dcl/react-ecs';
 import { Color4 } from '@dcl/sdk/math';
-import { getComponents } from '../definitions';
-import { GetPlayerDataRes } from '../types';
+import type { GetPlayerDataRes } from '../types';
 import { Button } from './Button';
 import { CONTENT_URL } from './constants';
-import { State } from './types';
+import type { State } from './types';
 import { Header } from './Header';
 import { Card } from './Card';
+import { getAdminMessageBus } from './admin-message-bus';
 
 const ICONS = {
   TEXT_ANNOUNCEMENT_CONTROL: `${CONTENT_URL}/admin_toolkit/assets/icons/text-announcement-control.png`,
@@ -149,20 +149,14 @@ export function TextAnnouncementsControl({
   );
 }
 
-function handleClearTextAnnouncement(engine: IEngine, state: State) {
-  const { TextAnnouncements } = getComponents(engine);
-  const textAnnouncement = TextAnnouncements.getMutableOrNull(state.adminToolkitUiEntity);
-  if (textAnnouncement) {
-    textAnnouncement.text = '';
-    textAnnouncement.id = '';
-    textAnnouncement.author = '';
-  }
+function handleClearTextAnnouncement(_engine: IEngine, state: State) {
+  getAdminMessageBus().emitClearAnnouncement();
   state.textAnnouncementControl.announcements = [];
   ANNOUNCEMENT_STATE = 'cleared';
 }
 
 function handleSendTextAnnouncement(
-  engine: IEngine,
+  _engine: IEngine,
   state: State,
   text: string | undefined,
   player?: GetPlayerDataRes | null,
@@ -171,22 +165,10 @@ function handleSendTextAnnouncement(
     return;
   }
 
-  const { TextAnnouncements } = getComponents(engine);
-  const textAnnouncement = TextAnnouncements.getMutableOrNull(state.adminToolkitUiEntity);
-
-  if (textAnnouncement) {
-    const author = player?.name;
-    // Get current timestamp and ensure uniqueness
-    let timestamp = Date.now();
-
-    textAnnouncement.author = author;
-    textAnnouncement.id = `${timestamp}-${author}`;
-    textAnnouncement.text = text.slice(0, 90);
-  }
+  const author = player?.name;
+  const timestamp = Date.now();
+  getAdminMessageBus().emitSetAnnouncement(text.slice(0, 90), author, `${timestamp}-${author}`);
 
   state.textAnnouncementControl.text = '';
-
   ANNOUNCEMENT_STATE = 'sent';
-
-  return;
 }
