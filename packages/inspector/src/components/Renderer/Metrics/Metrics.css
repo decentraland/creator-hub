@@ -185,15 +185,16 @@
 
 .Metrics > .Overlay .Items .Item.BudgetExceeded {
   background-color: rgba(255, 152, 0, 0.08);
-  border-radius: 4px;
-  padding: 8px 6px;
+  margin: 0 -12px;
+  padding: 8px 12px;
+  border-bottom-color: rgba(255, 152, 0, 0.12);
   animation: budgetRowGlow 2s ease-in-out infinite;
 }
 
 .Metrics > .Overlay .WarningItem.BudgetWarning {
   background-color: rgba(255, 152, 0, 0.08);
-  border-radius: 4px;
-  padding: 8px 6px;
+  margin: 0 -12px;
+  padding: 8px 12px;
   animation: budgetWarningGlow 2s ease-in-out infinite;
 }
 
@@ -223,11 +224,9 @@
   0%,
   100% {
     background-color: rgba(255, 152, 0, 0.08);
-    box-shadow: inset 3px 0 0 0 rgba(255, 201, 91, 0.5);
   }
   50% {
     background-color: rgba(255, 152, 0, 0.14);
-    box-shadow: inset 3px 0 0 0 rgba(255, 201, 91, 0.85);
   }
 }
 
@@ -235,15 +234,9 @@
   0%,
   100% {
     background-color: rgba(255, 152, 0, 0.08);
-    box-shadow:
-      inset 3px 0 0 0 rgba(255, 201, 91, 0.5),
-      0 0 6px 0 rgba(255, 152, 0, 0.05);
   }
   50% {
     background-color: rgba(255, 152, 0, 0.14);
-    box-shadow:
-      inset 3px 0 0 0 rgba(255, 201, 91, 0.85),
-      0 0 10px 1px rgba(255, 152, 0, 0.12);
   }
 }
 
@@ -293,14 +286,10 @@
 
   .Metrics > .Overlay .Items .Item.BudgetExceeded {
     animation: none;
-    box-shadow: inset 3px 0 0 0 rgba(255, 201, 91, 0.5);
   }
 
   .Metrics > .Overlay .WarningItem.BudgetWarning {
     animation: none;
-    box-shadow:
-      inset 3px 0 0 0 rgba(255, 201, 91, 0.5),
-      0 0 6px 0 rgba(255, 152, 0, 0.05);
   }
 
   .Metrics .Buttons .Button .WarningDot.TextureBudgetExceeded {

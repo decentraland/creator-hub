@@ -2,11 +2,20 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  max-height: 400px;
+  gap: 12px;
+  max-height: 500px;
+  width: 600px;
 }
 
+/* Icon badge — contained rounded square */
 .TextureWarnings-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background-color: rgba(255, 152, 0, 0.1);
   color: var(--warning-main);
 }
 
@@ -15,69 +24,152 @@
 }
 
 .TextureWarnings-description {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--base-09);
   text-align: center;
   margin: 0;
-  line-height: 18px;
+  line-height: 20px;
 }
 
+/* Scrollable issues list */
 .TextureWarnings-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
   width: 100%;
   overflow-y: auto;
-  max-height: 200px;
+  max-height: 300px;
   padding: 4px 0;
 }
 
+/* Asset card */
 .TextureWarnings-asset {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 8px;
+  gap: 6px;
+  padding: 10px 12px;
   background-color: var(--base-18);
-  border-radius: 4px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .TextureWarnings-asset-name {
   font-size: 12px;
   font-weight: 600;
-  color: var(--base-01);
+  color: var(--base-06);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  text-align: center;
 }
 
-.TextureWarnings-issue {
+/* Asset preview — constrained size within the card */
+.TextureWarnings-asset-preview {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  flex-wrap: wrap;
+  justify-content: center;
+  padding: 8px 0;
 }
 
+.TextureWarnings-asset-preview .assetPreview {
+  width: 140px;
+  height: 140px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.TextureWarnings-asset-preview .assetPreview .loading {
+  width: 140px;
+  height: 140px;
+  margin-bottom: 0;
+  border-radius: 6px;
+  position: relative;
+}
+
+/* Individual issue row — 3-column grid: tags | message | suggestion */
+.TextureWarnings-issue {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 20px;
+}
+
+/* Tags container — keeps multiple tags in a fixed-width first column */
+.TextureWarnings-issue-tags {
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* Issue type tag */
 .TextureWarnings-issue-tag {
-  padding: 1px 6px;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
   border-radius: 3px;
-  background-color: rgba(255, 152, 0, 0.15);
+  background-color: rgba(255, 152, 0, 0.12);
   color: var(--warning-main);
-  font-weight: 500;
-  font-size: 10px;
+  font-weight: 600;
+  font-size: 11px;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+  flex-shrink: 0;
+}
+
+/* Issue description text */
+.TextureWarnings-issue-message {
+  color: var(--base-09);
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.TextureWarnings-issue-message {
-  color: var(--base-09);
+/* Fix badge — green pill showing what the auto-fix will do */
+.TextureWarnings-issue-fix {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 3px;
+  background-color: rgba(76, 175, 80, 0.12);
+  color: #66bb6a;
+  font-weight: 600;
+  font-size: 11px;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+  flex-shrink: 0;
+  justify-self: end;
 }
 
-.TextureWarnings-issue-suggestion {
-  color: var(--base-06);
-  font-weight: 500;
-}
-
+/* Action buttons — matching CleanAssets modal conventions */
 .TextureWarnings-actions {
   display: flex;
-  gap: 8px;
+  gap: 16px;
   width: 100%;
   justify-content: flex-end;
   margin-top: 4px;
+}
+
+.TextureWarnings-actions .Button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 22px;
+  height: 40px;
+  font-weight: 600;
+  border: 1px solid var(--base-09);
+  background-color: transparent;
+  transition: background-color 0.15s ease;
+}
+
+.TextureWarnings-actions .Button:hover:not(:disabled) {
+  background-color: var(--base-18);
+}
+
+.TextureWarnings-actions .Button.danger {
+  border-color: transparent;
+  background-color: var(--primary-main);
+}
+
+.TextureWarnings-actions .Button.danger:hover:not(:disabled) {
+  background-color: var(--primary-dark);
 }
