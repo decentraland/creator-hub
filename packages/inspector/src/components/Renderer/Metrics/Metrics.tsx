@@ -137,15 +137,18 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
 
     // Collect materials and textures only from user-created meshes (not editor meshes)
     // This ensures we don't count editor-only materials/textures
+    const processedMaterials = new Set<number>();
     const materialsFromMeshes = new Set<string>();
     const allUniqueTextures = new Set<string>();
     let texturePixels = 0;
 
     const processMaterial = (mat: Material) => {
-      const materialId = mat.id;
-      if (IGNORE_MATERIALS.includes(materialId)) return;
-      if (materialsFromMeshes.has(materialId)) return;
-      materialsFromMeshes.add(materialId);
+      if (IGNORE_MATERIALS.includes(mat.id)) return;
+      // Use Babylon's uniqueId (per-instance) to avoid skipping materials from
+      // different GLBs that happen to share the same mat.id / mat.name
+      if (processedMaterials.has(mat.uniqueId)) return;
+      processedMaterials.add(mat.uniqueId);
+      materialsFromMeshes.add(mat.id);
 
       const info = collectTexturesFromMaterial(mat, IGNORE_TEXTURES);
       info.uniqueTextures.forEach(key => allUniqueTextures.add(key));
@@ -250,6 +253,8 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
     );
   }, [metrics, limits]);
 
+  const isTextureBudgetExceeded = !!limitsExceeded['texturePixels'];
+
   const isAnyLimitExceeded = (limitsExceeded: Record<string, any>): boolean => {
     return (
       Object.values(limitsExceeded).length > 0 ||
@@ -312,11 +317,19 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
     <div className="Metrics">
       <div className="Buttons">
         <Button
-          className={cx({ Active: showMetrics, LimitExceeded: isAnyLimitExceeded(limitsExceeded) })}
+          className={cx({
+            Active: showMetrics,
+            LimitExceeded: isAnyLimitExceeded(limitsExceeded),
+            TextureBudgetExceeded: isTextureBudgetExceeded,
+          })}
           onClick={handleToggleMetricsOverlay}
         >
           <SquaresGridIcon size={ICON_SIZE} />
-          {isAnyLimitExceeded(limitsExceeded) && <span className="WarningDot" />}
+          {isAnyLimitExceeded(limitsExceeded) && (
+            <span
+              className={cx('WarningDot', { TextureBudgetExceeded: isTextureBudgetExceeded })}
+            />
+          )}
         </Button>
       </div>
       {showMetrics && (
