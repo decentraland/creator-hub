@@ -144,7 +144,7 @@ export async function initializeAdminData(
   playersHelper?: IPlayersHelper,
 ) {
   if (!adminDataInitialized) {
-    const { VideoControlState, TextAnnouncements } = getComponents(engine);
+    const { VideoControlState } = getComponents(engine);
 
     // Initialize AdminToolkitUiEntity
     state.adminToolkitUiEntity = getAdminToolkitEntity(engine) ?? engine.addEntity();
@@ -161,7 +161,7 @@ export async function initializeAdminData(
 
     sdkHelpers?.syncEntity?.(
       state.adminToolkitUiEntity,
-      [VideoControlState.componentId, TextAnnouncements.componentId],
+      [VideoControlState.componentId],
       ADMIN_TOOLS_ENTITY,
     );
 
