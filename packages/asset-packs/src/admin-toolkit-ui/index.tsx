@@ -28,10 +28,10 @@ import {
 } from './ModerationControl';
 import { getSceneAdmins, getSceneBans, type SceneBanUser } from './ModerationControl/api';
 import { ModalUserList, UserListType } from './ModerationControl/UsersList';
-import { showcaseState } from './VideoControl/DclCast';
+import { showcaseState, sharePresentationState } from './VideoControl/DclCast';
 import { SpeakerShowcase } from './VideoControl/DclCast/SpeakerShowcase';
+import SharePresentationModal from './VideoControl/DclCast/SharePresentationModal';
 import { isPreview } from './fetch-utils';
-import { updateMetadata } from '~system/CommsApi';
 
 export const nextTickFunctions: (() => void)[] = [];
 const ADMIN_TOOLKIT_VIRTUAL_UI_SIZE = { virtualWidth: 1920, virtualHeight: 1080 };
@@ -66,7 +66,6 @@ export let state: State = {
 
 let sceneAdminsCache: SceneAdmin[] = [];
 let sceneBansCache: SceneBanUser[] = [];
-let presenterMetadataSet = false;
 
 // const BTN_REWARDS_CONTROL = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-rewards-control-button.png`
 // const BTN_REWARDS_CONTROL_ACTIVE = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-rewards-control-active-button.png`
@@ -245,14 +244,6 @@ const uiComponent = (
   const player = playersHelper?.getPlayer();
   const isPlayerAdmin = isAllowedAdmin(engine, adminToolkitEntity, player);
 
-  if (isPlayerAdmin && !presenterMetadataSet) {
-    presenterMetadataSet = true;
-    updateMetadata({ metadata: JSON.stringify({ role: 'presenter' }) }).catch(() => {
-      // Failed to set metadata — will not retry
-      presenterMetadataSet = false;
-    });
-  }
-
   return [
     <UiEntity
       uiTransform={{
@@ -266,7 +257,7 @@ const uiComponent = (
           uiTransform={{
             positionType: 'absolute',
             flexDirection: 'row',
-            position: { top: 120, right: 10 },
+            position: { top: 120, right: 14 },
           }}
         >
           <UiEntity
@@ -444,6 +435,7 @@ const uiComponent = (
               <VideoControl
                 engine={engine}
                 state={state}
+                playerAddress={player?.userId}
               />
             ) : null}
             {state.activeTab === TabType.SMART_ITEMS_CONTROL ? (
@@ -532,5 +524,11 @@ const uiComponent = (
           onClose={showcaseState.onClose}
         />
       ),
+    sharePresentationState.show && sharePresentationState.onClose && (
+      <SharePresentationModal
+        onClose={sharePresentationState.onClose}
+        streamingKey={state.videoControl.dclCast?.streamingKey ?? ''}
+      />
+    ),
   ];
 };

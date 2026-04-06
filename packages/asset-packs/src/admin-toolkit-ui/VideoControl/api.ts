@@ -1,3 +1,4 @@
+import TextEncodingPolyfill from 'text-encoding';
 import {
   getActiveVideoStreams,
   subscribeToTopic,
@@ -9,8 +10,11 @@ import type { Result } from '../fetch-utils';
 import type { PresentationState } from '../types';
 
 const URLS = () => ({
-  STREAM_KEY: `http://localhost:3000/scene-stream-access`,
-  GET_DCL_CAST_INFO: `http://localhost:3000/cast/generate-stream-link`,
+  STREAM_KEY: `https://comms-gatekeeper.${getDomain()}/scene-stream-access`,
+  GET_DCL_CAST_INFO: `https://comms-gatekeeper.${getDomain()}/cast/generate-stream-link`,
+  PRESENTERS: `https://comms-gatekeeper.${getDomain()}/cast/presenters`,
+  PRESENTATION_BOT_TOKEN: `https://comms-gatekeeper.${getDomain()}/cast/presentation-bot-token`,
+  PRESENTATION_SERVER: `https://cast-presenter-service.${getDomain()}/presentations`,
 });
 
 type StreamKeyResponse = {
@@ -67,24 +71,84 @@ export type DclCastTracksResponse = {
   }[];
 };
 
-const USE_MOCK = false;
+export async function getDclCastInfo(): Promise<Result<DclCastResponse, string>> {
+  return wrapSignedFetch<DclCastResponse>({ url: URLS().GET_DCL_CAST_INFO }, { toCamelCase: true });
+}
 
-// TODO: Remove mock before merging — used for local testing without a live DCL Cast room
-const MOCK_DCL_CAST_RESPONSE: DclCastResponse = {
-  streamLink: 'https://cast.decentraland.org/room/mock-room-id?token=speaker',
-  watcherLink: 'https://cast.decentraland.org/room/mock-room-id?token=watcher',
-  streamingKey: 'mock-streaming-key',
-  placeId: 'mock-place-id',
-  placeName: 'Mock Place',
-  expiresAt: Date.now() + 4 * 24 * 60 * 60 * 1000,
-  expiresInDays: 4,
+export async function getPresenters(): Promise<Result<string[], string>> {
+  return wrapSignedFetch<string[]>({ url: URLS().PRESENTERS });
+}
+
+export async function promotePresenter(address: string): Promise<Result<void, string>> {
+  return wrapSignedFetch<void>({
+    url: `${URLS().PRESENTERS}/${address}`,
+    init: { method: 'PUT', headers: {} },
+  });
+}
+
+export async function ensurePresenterRole(playerAddress: string): Promise<void> {
+  const [error, presenters] = await getPresenters();
+  console.log(
+    '[DclCast] ensurePresenterRole - error:',
+    error,
+    'presenters:',
+    JSON.stringify(presenters),
+    'playerAddress:',
+    playerAddress,
+  );
+  if (error || !presenters) return;
+
+  const addr = playerAddress.toLowerCase();
+  const isPresenter = Array.isArray(presenters) ? presenters.includes(addr) : false;
+  console.log('[DclCast] isPresenter:', isPresenter, 'addr:', addr);
+
+  if (!isPresenter) {
+    const [promoteError] = await promotePresenter(addr);
+    console.log('[DclCast] promotePresenter result - error:', promoteError);
+  }
+}
+
+type PresentationBotTokenResponse = {
+  url: string;
+  token: string;
+  roomId: string;
 };
 
-export async function getDclCastInfo(): Promise<Result<DclCastResponse, string>> {
-  if (USE_MOCK) {
-    return [null, MOCK_DCL_CAST_RESPONSE];
+export async function getPresentationBotToken(
+  streamingKey: string,
+): Promise<Result<PresentationBotTokenResponse, string>> {
+  return wrapSignedFetch<PresentationBotTokenResponse>(
+    {
+      url: URLS().PRESENTATION_BOT_TOKEN,
+      init: {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ streamingKey }),
+      },
+    },
+    { toCamelCase: true },
+  );
+}
+
+export async function startPresentation(
+  url: string,
+  livekitToken: string,
+  livekitUrl: string,
+): Promise<Result<void, string>> {
+  try {
+    const response = await fetch(URLS().PRESENTATION_SERVER, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, livekitToken, livekitUrl }),
+    });
+    if (!response.ok) {
+      const body = await response.text();
+      return [body || 'Failed to start presentation', null];
+    }
+    return [null, undefined as unknown as void];
+  } catch (error) {
+    return [(error as Error).message ?? 'Failed to start presentation', null];
   }
-  return wrapSignedFetch<DclCastResponse>({ url: URLS().GET_DCL_CAST_INFO }, { toCamelCase: true });
 }
 
 export type FlattenedTrack = {
@@ -136,123 +200,59 @@ export function groupTracksByParticipant(tracks: FlattenedTrack[]): Participant[
   return Array.from(map.values());
 }
 
-// TODO: Remove mock before merging — used for local testing without a live DCL Cast room
-const MOCK_STREAMS = {
-  streams: [
-    {
-      identity: 'stream:f357950a:1',
-      trackSid: 'livekit-video://stream:f357950a/TR_VCDh3g4vjSTgNm',
-      sourceType: 1,
-      name: 'Yemel',
-    },
-    {
-      identity: 'stream:f357950a:1',
-      trackSid: 'livekit-video://stream:f357950a/TR_VSMiFKuE2pV6YK',
-      sourceType: 2,
-      name: 'Yemel',
-    },
-    {
-      identity: 'stream:a1b2c3d4:2',
-      trackSid: 'livekit-video://stream:a1b2c3d4/TR_ABC123',
-      sourceType: 1,
-      name: 'Laia',
-    },
-    {
-      identity: 'stream:b2c3d4e5:3',
-      trackSid: 'livekit-video://stream:b2c3d4e5/TR_DEF456',
-      sourceType: 1,
-      name: 'Aida',
-    },
-    {
-      identity: 'stream:c3d4e5f6:4',
-      trackSid: 'livekit-video://stream:c3d4e5f6/TR_GHI789',
-      sourceType: 1,
-      name: 'Aitor',
-    },
-    {
-      identity: 'stream:d4e5f6g7:5',
-      trackSid: 'livekit-video://stream:d4e5f6g7/TR_JKL012',
-      sourceType: 1,
-      name: 'Alain',
-    },
-    {
-      identity: 'stream:e5f6g7h8:6',
-      trackSid: 'livekit-video://stream:e5f6g7h8/TR_MNO345',
-      sourceType: 1,
-      name: 'Jair',
-    },
-    {
-      identity: 'stream:f6g7h8i9:7',
-      trackSid: 'livekit-video://stream:f6g7h8i9/TR_PQR678',
-      sourceType: 1,
-      name: 'Isaiah',
-    },
-    {
-      identity: 'stream:g7h8i9j0:8',
-      trackSid: 'livekit-video://stream:g7h8i9j0/TR_STU901',
-      sourceType: 1,
-      name: 'Maite',
-    },
-    {
-      identity: 'stream:h8i9j0k1:9',
-      trackSid: 'livekit-video://stream:h8i9j0k1/TR_VWX234',
-      sourceType: 1,
-      name: 'Said',
-    },
-    {
-      identity: 'stream:i9j0k1l2:10',
-      trackSid: 'livekit-video://stream:i9j0k1l2/TR_YZA567',
-      sourceType: 1,
-      name: 'Nora',
-    },
-    {
-      identity: 'stream:j0k1l2m3:11',
-      trackSid: 'livekit-video://stream:j0k1l2m3/TR_BCD890',
-      sourceType: 2,
-      name: 'Nora',
-    },
-    {
-      identity: 'stream:k1l2m3n4:12',
-      trackSid: 'livekit-video://stream:k1l2m3n4/TR_EFG123',
-      sourceType: 1,
-      name: 'Iker',
-    },
-  ],
-};
+function getDisplayName(name: string): string {
+  if (isPresentationBot(name)) return 'Presentation';
+  return name;
+}
 
 export async function getActiveStreams(): Promise<FlattenedTrack[] | undefined> {
-  const runtimeStreams = USE_MOCK ? MOCK_STREAMS : await getActiveVideoStreams({});
+  const runtimeStreams = await getActiveVideoStreams({});
   if (!runtimeStreams) return;
   return runtimeStreams.streams.map(
-    (stream: { trackSid: string; identity: string; sourceType: number; name?: string }) => ({
-      sid: stream.trackSid,
-      identity: stream.identity,
-      sourceType: stream.sourceType,
-      name: stream.name ?? stream.identity,
-      customName: `${stream.name ?? stream.identity} - ${getSourceLabel(stream.sourceType)}`,
-    }),
+    (stream: { trackSid: string; identity: string; sourceType: number; name?: string }) => {
+      const rawName = stream.name ?? stream.identity;
+      const displayName = getDisplayName(rawName);
+      return {
+        sid: stream.trackSid,
+        identity: stream.identity,
+        sourceType: stream.sourceType,
+        name: rawName,
+        customName: `${displayName} - ${getSourceLabel(stream.sourceType)}`,
+      };
+    },
   );
 }
 
 export function subscribeToPresentationTopic(): void {
-  subscribeToTopic({ topic: PRESENTATION_TOPIC }).catch(() => {
-    // Subscription failed — consumeMessages will return empty until next poll retries
+  subscribeToTopic({ topic: PRESENTATION_TOPIC })
+    .then(() => {
+      // Request current state from bot so late joiners get the presentation state
+      requestPresentationState();
+    })
+    .catch(() => {
+      console.log('[DclCast] Failed to subscribe to presentation topic');
+    });
+}
+
+export function requestPresentationState(): void {
+  const encoder = new TextEncodingPolyfill.TextEncoder();
+
+  publishData({
+    topic: PRESENTATION_TOPIC,
+    data: encoder.encode(JSON.stringify({ type: 'presentation:get-state' })),
   });
 }
 
-export async function consumePresentationMessages(): Promise<PresentationState | undefined> {
+export async function consumePresentationMessages(): Promise<
+  PresentationState | 'stopped' | undefined
+> {
   try {
     const response = await consumeMessages({ topic: PRESENTATION_TOPIC });
-    if (response.messages !== "[]") {
-      console.log("[DclCast] ConsumeMessages:", response.messages.substring(0, 500));
-    }
-    const messages: Array<{ sender: string; data: string }> = JSON.parse(response.messages);
 
-    let latestState: PresentationState | undefined;
-    for (const msg of messages) {
+    let latestState: PresentationState | 'stopped' | undefined;
+    for (const msg of response) {
       try {
         const parsed = JSON.parse(msg.data);
-        console.log("[DclCast] Parsed msg type:", parsed.type);
         if (parsed.type === 'presentation:state') {
           latestState = {
             id: parsed.id,
@@ -263,50 +263,61 @@ export async function consumePresentationMessages(): Promise<PresentationState |
             slideVideos: parsed.slideVideos ?? [],
             videoState: parsed.videoState ?? 'idle',
           };
+        } else if (parsed.type === 'presentation:stopped') {
+          latestState = 'stopped';
         }
       } catch {
         // Skip malformed individual messages
       }
     }
     return latestState;
-  } catch {
+  } catch (error) {
     // consumeMessages failed or outer JSON parse failed — return undefined
     return undefined;
   }
 }
 
 export function nextSlide(): void {
-  console.log('Publishing next slide message');
+  const encoder = new TextEncodingPolyfill.TextEncoder();
+
   publishData({
     topic: PRESENTATION_TOPIC,
-    data: JSON.stringify({ type: 'presentation:navigate', action: 'next' }),
+    data: encoder.encode(JSON.stringify({ type: 'presentation:navigate', action: 'next' })),
   });
 }
 
 export function prevSlide(): void {
+  const encoder = new TextEncodingPolyfill.TextEncoder();
+
   publishData({
     topic: PRESENTATION_TOPIC,
-    data: JSON.stringify({ type: 'presentation:navigate', action: 'prev' }),
+    data: encoder.encode(JSON.stringify({ type: 'presentation:navigate', action: 'prev' })),
   });
 }
 
 export function playPresentationVideo(videoIndex: number): void {
+  const encoder = new TextEncodingPolyfill.TextEncoder();
+
   publishData({
     topic: PRESENTATION_TOPIC,
-    data: JSON.stringify({ type: 'presentation:video:play', videoIndex }),
+    data: encoder.encode(JSON.stringify({ type: 'presentation:video:play', videoIndex })),
   });
 }
 
 export function pausePresentationVideo(): void {
+  const encoder = new TextEncodingPolyfill.TextEncoder();
+
   publishData({
     topic: PRESENTATION_TOPIC,
-    data: JSON.stringify({ type: 'presentation:video:pause' }),
+    data: encoder.encode(JSON.stringify({ type: 'presentation:video:pause' })),
   });
 }
 
 export function stopPresentation(): void {
+  const encoder = new TextEncodingPolyfill.TextEncoder();
+
   publishData({
     topic: PRESENTATION_TOPIC,
-    data: JSON.stringify({ type: 'presentation:stop' }),
+    data: encoder.encode(JSON.stringify({ type: 'presentation:stop' })),
   });
 }

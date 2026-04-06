@@ -17,6 +17,7 @@ import {
   hasPresentationTrack,
   subscribeToPresentationTopic,
   consumePresentationMessages,
+  ensurePresenterRole,
   type FlattenedTrack,
   type Participant,
 } from '../api';
@@ -50,6 +51,14 @@ export const showcaseState: {
   onClose: undefined,
 };
 
+export const sharePresentationState: {
+  show: boolean;
+  onClose: (() => void) | undefined;
+} = {
+  show: false,
+  onClose: undefined,
+};
+
 let presentationSubscribed = false;
 let consuming = false;
 let presentationSystem: (() => void) | null = null;
@@ -78,12 +87,15 @@ function startPresentationSystem(engine: IEngine, state: State): void {
     consuming = true;
     consumePresentationMessages()
       .then(latestState => {
-        if (latestState) {
+        if (latestState === 'stopped') {
+          state.videoControl.presentationState = undefined;
+        } else if (latestState) {
           state.videoControl.presentationState = latestState;
         }
       })
       .catch(() => {
         // Silently ignore — will retry next frame
+        console.log('[DclCast] Failed to consume presentation messages');
       })
       .finally(() => {
         consuming = false;
@@ -111,13 +123,15 @@ function startParticipantPolling(engine: IEngine, state: State): void {
     if (!tracks) return;
 
     // Debug: log tracks on each poll to review presentation bot metadata
-    console.log('[DclCast] Poll tracks:', JSON.stringify(tracks, null, 2));
+    // console.log('[DclCast] Poll tracks:', JSON.stringify(tracks, null, 2));
 
     // Keep showcase modal data fresh
     showcaseState.participants = groupTracksByParticipant(tracks);
 
     // Check for presentation track
     const hasPresentation = hasPresentationTrack(tracks);
+
+    // console.log(`[DclCast] Presentation track ${hasPresentation ? 'found' : 'not found'} in poll`);
 
     if (hasPresentation && !presentationSubscribed) {
       startPresentationSystem(engine, state);
@@ -144,11 +158,13 @@ const DclCast = ({
   state,
   entity,
   video,
+  playerAddress,
 }: {
   engine: IEngine;
   state: State;
   entity: Entity;
   video: DeepReadonlyObject<PBVideoPlayer> | undefined;
+  playerAddress: string | undefined;
 }) => {
   const { VideoControlState } = getComponents(engine);
   const controls = createVideoPlayerControls(entity, engine);
@@ -202,6 +218,15 @@ const DclCast = ({
     setIsLoading(false);
   };
 
+  const onSharePresentation = () => {
+    sharePresentationState.onClose = () => {
+      sharePresentationState.show = false;
+    };
+    nextTickFunctions.push(() => {
+      sharePresentationState.show = true;
+    });
+  };
+
   const handleResetRoomId = async () => {
     setIsLoading(true);
     const [error, data] = await resetStreamKey();
@@ -217,6 +242,9 @@ const DclCast = ({
 
   ReactEcs.useEffect(() => {
     fetchDclCastInfo();
+    if (playerAddress) {
+      ensurePresenterRole(playerAddress);
+    }
   }, []);
 
   const isCastActive = !!(video?.src && isDclCast(video.src));
@@ -344,6 +372,7 @@ const DclCast = ({
             video={video}
             onResetRoomId={handleResetRoomId}
             onShowShowcaseModal={onShowShowcaseModal}
+            onSharePresentation={onSharePresentation}
           />
         )}
       </UiEntity>
