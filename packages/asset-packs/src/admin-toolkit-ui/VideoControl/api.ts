@@ -10,11 +10,11 @@ import type { Result } from '../fetch-utils';
 import type { PresentationState } from '../types';
 
 const URLS = () => ({
-  STREAM_KEY: `https://comms-gatekeeper.${getDomain()}/scene-stream-access`,
-  GET_DCL_CAST_INFO: `https://comms-gatekeeper.${getDomain()}/cast/generate-stream-link`,
-  PRESENTERS: `https://comms-gatekeeper.${getDomain()}/cast/presenters`,
-  PRESENTATION_BOT_TOKEN: `https://comms-gatekeeper.${getDomain()}/cast/presentation-bot-token`,
-  PRESENTATION_SERVER: `https://cast-presenter-service.${getDomain()}/presentations`,
+  STREAM_KEY: `https://comms-gatekeeper.decentraland.${getDomain()}/scene-stream-access`,
+  GET_DCL_CAST_INFO: `https://comms-gatekeeper.decentraland.${getDomain()}/cast/generate-stream-link`,
+  PRESENTERS: `https://comms-gatekeeper.decentraland.${getDomain()}/cast/presenters`,
+  PRESENTATION_BOT_TOKEN: `https://comms-gatekeeper.decentraland.${getDomain()}/cast/presentation-bot-token`,
+  PRESENTATION_SERVER: `https://cast-presenter-service.decentraland.${getDomain()}/presentations`,
 });
 
 type StreamKeyResponse = {
