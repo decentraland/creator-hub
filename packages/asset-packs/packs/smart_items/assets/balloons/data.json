@@ -1,0 +1,8 @@
+{
+  "id": "42895f40-6ec9-49c4-863c-d916aaf5ae69",
+  "name": "Balloons",
+  "category": "party",
+  "tags": ["balloons", "burst", "party", "celebration", "birthday"],
+  "description": "Invisible until triggered by another smart item, it creates the visual effect of a burst of balloons popping.",
+  "author": "Decentraland Foundation"
+}

@@ -92,7 +92,17 @@ app
 
     handleAppArguments(process.argv);
 
-    initIpc();
+    initIpc({
+      beforeQuitCleanup: async () => {
+        setSkipBeforeQuitCleanup();
+        try {
+          await killAll();
+        } catch (error) {
+          skipBeforeQuitCleanup = false;
+          throw error;
+        }
+      },
+    });
     log.info('[IPC] Ready');
     await restoreOrCreateMainWindow();
     log.info('[BrowserWindow] Ready');
@@ -106,6 +116,12 @@ app
   })
   .catch(e => log.error('Failed create window:', e));
 
+let skipBeforeQuitCleanup = false;
+
+export function setSkipBeforeQuitCleanup() {
+  skipBeforeQuitCleanup = true;
+}
+
 export async function killAll() {
   const promises: Promise<unknown>[] = [killAllPreviews()];
   if (deployServer) {
@@ -117,6 +133,9 @@ export async function killAll() {
 }
 
 app.on('before-quit', async event => {
+  if (skipBeforeQuitCleanup) {
+    return;
+  }
   event.preventDefault();
   try {
     await killAll();

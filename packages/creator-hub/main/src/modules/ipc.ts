@@ -9,7 +9,11 @@ import * as analytics from './analytics';
 import * as npm from './npm';
 import * as config from './config';
 
-export function initIpc() {
+interface InitIpcOptions {
+  beforeQuitCleanup: () => Promise<void>;
+}
+
+export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   // electron
   handleSync('electron.getEnvOverride', () => electron.getEnvOverride());
   handle('electron.getAppVersion', () => electron.getAppVersion());
@@ -23,7 +27,9 @@ export function initIpc() {
 
   // updater
   handle('updater.checkForUpdates', (_event, config) => updater.checkForUpdates(config));
-  handle('updater.quitAndInstall', (_event, version) => updater.quitAndInstall(version));
+  handle('updater.quitAndInstall', (_event, version) =>
+    updater.quitAndInstall(version, beforeQuitCleanup),
+  );
   handle('updater.downloadUpdate', () => updater.downloadUpdate());
   handle('updater.setupUpdaterEvents', event => updater.setupUpdaterEvents(event));
   handle('updater.getInstalledVersion', () => updater.getInstalledVersion());
