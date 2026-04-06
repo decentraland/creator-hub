@@ -216,6 +216,18 @@ export const getDclCastStyles = (): Record<string, UiTransformProps> => ({
     width: '100%',
     margin: { bottom: 8 },
   },
+
+  controlButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: { left: 12, right: 12 },
+    height: 42,
+  },
+
+  controlButtonIcon: {
+    width: 20,
+    height: 20,
+  },
 });
 
 export const getDclCastColors = () => ({

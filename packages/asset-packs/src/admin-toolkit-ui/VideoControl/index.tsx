@@ -18,6 +18,7 @@ import {
 import { VideoControlURL } from './VideoUrl';
 import { LiveStream } from './LiveStream';
 import DclCast from './DclCast';
+import PresentationPanel from './DclCast/PresentationPanel';
 
 // Constants
 export const ICONS = {
@@ -69,7 +70,15 @@ export const COLORS = {
 } as const;
 
 // Main component
-export function VideoControl({ engine, state }: { engine: IEngine; state: State }) {
+export function VideoControl({
+  engine,
+  state,
+  playerAddress,
+}: {
+  engine: IEngine;
+  state: State;
+  playerAddress: string | undefined;
+}) {
   const [selectedEntity, selectedVideo] = useSelectedVideoPlayer(engine) ?? [];
   const videoPlayers = getVideoPlayers(engine);
   const [selected, setSelected] = ReactEcs.useState<'video-url' | 'live' | 'dcl-cast' | undefined>(
@@ -210,30 +219,50 @@ export function VideoControl({ engine, state }: { engine: IEngine; state: State 
         </UiEntity>
       </Card>
       {selected && selectedEntity && (
-        <Card>
-          {selected === 'video-url' && (
-            <VideoControlURL
-              engine={engine}
-              entity={selectedEntity}
-              video={selectedVideo}
+        <UiEntity uiTransform={{ flexDirection: 'column', width: '100%' }}>
+          <Card>
+            {selected === 'video-url' && (
+              <VideoControlURL
+                engine={engine}
+                entity={selectedEntity}
+                video={selectedVideo}
+              />
+            )}
+            {selected === 'live' && (
+              <LiveStream
+                engine={engine}
+                entity={selectedEntity}
+                video={selectedVideo}
+              />
+            )}
+            {selected === 'dcl-cast' && (
+              <DclCast
+                engine={engine}
+                state={state}
+                entity={selectedEntity}
+                video={selectedVideo}
+                playerAddress={playerAddress}
+              />
+            )}
+          </Card>
+          <Card
+            uiTransform={{
+              display:
+                selected === 'dcl-cast' &&
+                !!state.videoControl.presentationState &&
+                !state.videoControl.isMinimized
+                  ? 'flex'
+                  : 'none',
+            }}
+          >
+            <PresentationPanel
+              presentationState={state.videoControl.presentationState}
+              onStopSharing={() => {
+                state.videoControl.presentationState = undefined;
+              }}
             />
-          )}
-          {selected === 'live' && (
-            <LiveStream
-              engine={engine}
-              entity={selectedEntity}
-              video={selectedVideo}
-            />
-          )}
-          {selected === 'dcl-cast' && (
-            <DclCast
-              engine={engine}
-              state={state}
-              entity={selectedEntity}
-              video={selectedVideo}
-            />
-          )}
-        </Card>
+          </Card>
+        </UiEntity>
       )}
     </UiEntity>
   );
