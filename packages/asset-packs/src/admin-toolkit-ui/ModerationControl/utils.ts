@@ -1,4 +1,4 @@
-import { fetchSceneAdmins, fetchSceneBans } from '..';
+import { fetchAndSyncSceneAdmins, fetchSceneBans } from '..';
 import { postSceneAdmin, postSceneBan, deleteSceneBan } from './api';
 
 export const handleAddAdmin = async (
@@ -14,7 +14,7 @@ export const handleAddAdmin = async (
   } else {
     setError('');
     clearInput();
-    await fetchSceneAdmins();
+    await fetchAndSyncSceneAdmins();
   }
   setLoading(false);
 };

@@ -13,7 +13,8 @@
  *
  *   2. Admin commands flow via the TEXT comms channel (MessageBus), which is a
  *      separate transport from the binary CRDT channel. All participants
- *      receive and apply admin commands through this channel.
+ *      receive admin commands through this channel and validate the sender's
+ *      wallet address against the scene admin list before applying.
  *
  *   3. On load, each client seeds authoritative state from
  *      VideoScreen.defaultURL (deploy-time value, not writable via CRDT).
@@ -31,12 +32,13 @@
 
 import type { Entity, IEngine, PBVideoPlayer } from '@dcl/ecs';
 import { MessageBus } from '@dcl/sdk/message-bus';
+import { send as commsSend } from '~system/CommunicationsController';
 import { getExplorerComponents } from '../components';
 import { getComponents } from '../definitions';
 import type { IPlayersHelper } from '../types';
+import { isPreview } from './fetch-utils';
 import type { SceneAdmin } from './ModerationControl';
 import { getVideoPlayers } from './VideoControl/utils';
-import { send as commsSend } from '~system/CommunicationsController';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -63,6 +65,7 @@ const MSG = {
   CLEAR_ANNOUNCEMENT: 'admin:clear-announcement',
   REQUEST_STATE: 'admin:request-state',
   SYNC_STATE: 'admin:sync-state',
+  SYNC_ADMINS: 'admin:sync-admins',
 } as const;
 
 // ── Public interface ─────────────────────────────────────────────────────────
@@ -71,6 +74,7 @@ export interface AdminMessageBusInstance {
   emitSetVideo(entity: Entity, props: Partial<PBVideoPlayer>): void;
   emitSetAnnouncement(text: string, author?: string, id?: string): void;
   emitClearAnnouncement(): void;
+  emitSyncAdmins(): void;
   updateAdminList(admins: SceneAdmin[]): void;
 }
 
@@ -85,16 +89,25 @@ export function getAdminMessageBus(): AdminMessageBusInstance {
 
 export function initAdminMessageBus(
   engine: IEngine,
-  _admins: SceneAdmin[],
+  admins: SceneAdmin[],
   adminToolkitUiEntity: Entity,
   playersHelper?: IPlayersHelper,
+  onRefetchAdmins?: () => void,
 ): AdminMessageBusInstance {
+  let sceneAdmins = admins;
+
   const { VideoPlayer, SyncComponents } = getExplorerComponents(engine);
   const { TextAnnouncements, VideoScreen } = getComponents(engine);
 
   const authoritativeVideo = new Map<Entity, VideoState>();
   let authoritativeAnnouncement: AnnouncementState | null = null;
   let adminHasActed = false;
+
+  function isAdminWallet(sender: string): boolean {
+    if (isPreview()) return true;
+    if (sender === 'self') return true;
+    return sceneAdmins.some(admin => admin.address.toLowerCase() === sender.toLowerCase());
+  }
 
   // ── Messaging layer ────────────────────────────────────────────────────────
   //
@@ -108,6 +121,13 @@ export function initAdminMessageBus(
   function onMessage(type: string, handler: MessageHandler) {
     handlers.set(type, handler);
     receiver.on(type, handler);
+  }
+
+  function onAdminMessage(type: string, handler: MessageHandler) {
+    onMessage(type, (payload, sender) => {
+      if (!isAdminWallet(sender)) return;
+      handler(payload, sender);
+    });
   }
 
   function emitMessage(type: string, payload: Record<string, unknown>) {
@@ -158,7 +178,7 @@ export function initAdminMessageBus(
 
   // ── 3. Register command handlers ───────────────────────────────────────────
 
-  onMessage(MSG.SET_VIDEO, (payload, _sender) => {
+  onAdminMessage(MSG.SET_VIDEO, (payload, _sender) => {
     const entity = payload.entity as Entity;
     const current = VideoPlayer.getOrNull(entity);
     if (!current) return;
@@ -181,7 +201,7 @@ export function initAdminMessageBus(
     adminHasActed = true;
   });
 
-  onMessage(MSG.SET_ANNOUNCEMENT, (payload, _sender) => {
+  onAdminMessage(MSG.SET_ANNOUNCEMENT, (payload, _sender) => {
     authoritativeAnnouncement = {
       text: payload.text,
       author: payload.author,
@@ -195,7 +215,7 @@ export function initAdminMessageBus(
     adminHasActed = true;
   });
 
-  onMessage(MSG.CLEAR_ANNOUNCEMENT, (_payload, _sender) => {
+  onAdminMessage(MSG.CLEAR_ANNOUNCEMENT, (_payload, _sender) => {
     authoritativeAnnouncement = { text: '', author: '', id: '' };
     const ta = TextAnnouncements.getMutableOrNull(adminToolkitUiEntity);
     if (!ta) return;
@@ -226,7 +246,7 @@ export function initAdminMessageBus(
     emitMessage(MSG.SYNC_STATE, { video, announcement });
   }
 
-  onMessage(MSG.SYNC_STATE, (payload: SyncStatePayload, _sender) => {
+  onAdminMessage(MSG.SYNC_STATE, (payload: SyncStatePayload, _sender) => {
     for (const vs of payload.video) {
       const entity = vs.entity as Entity;
       authoritativeVideo.set(entity, {
@@ -262,6 +282,11 @@ export function initAdminMessageBus(
 
   playersHelper?.onEnterScene(() => {
     if (adminHasActed) broadcastCurrentState();
+  });
+
+  // When an admin signals that the admin list changed, all participants refetch
+  onAdminMessage(MSG.SYNC_ADMINS, (_payload, _sender) => {
+    onRefetchAdmins?.();
   });
 
   // Request state from any existing participant that has admin state
@@ -314,9 +339,12 @@ export function initAdminMessageBus(
       emitMessage(MSG.CLEAR_ANNOUNCEMENT, {});
     },
 
-    updateAdminList(_admins: SceneAdmin[]) {
-      // Reserved for future sender validation when the admin list endpoint
-      // is made accessible to all scene participants.
+    emitSyncAdmins() {
+      emitMessage(MSG.SYNC_ADMINS, {});
+    },
+
+    updateAdminList(admins: SceneAdmin[]) {
+      sceneAdmins = admins;
     },
   };
 
