@@ -86,7 +86,6 @@ export async function fetchSceneAdmins() {
   const [error, response] = await getSceneAdmins();
 
   if (error) {
-    // user doesnt have permissions
     console.log(JSON.stringify({ error }));
     sceneAdminsCache = [];
     return;
@@ -102,6 +101,13 @@ export async function fetchSceneAdmins() {
     .sort(a => (a.canBeRemoved ? 1 : -1));
   if (adminDataInitialized) {
     getAdminMessageBus().updateAdminList(sceneAdminsCache);
+  }
+}
+
+export async function fetchAndSyncSceneAdmins() {
+  await fetchSceneAdmins();
+  if (adminDataInitialized) {
+    getAdminMessageBus().emitSyncAdmins();
   }
 }
 
@@ -178,7 +184,13 @@ export async function initializeAdminData(
     await Promise.all([fetchSceneAdmins(), fetchSceneBans()]);
 
     // Initialize admin message bus with sender validation
-    initAdminMessageBus(engine, sceneAdminsCache, state.adminToolkitUiEntity, playersHelper);
+    initAdminMessageBus(
+      engine,
+      sceneAdminsCache,
+      state.adminToolkitUiEntity,
+      playersHelper,
+      fetchSceneAdmins,
+    );
 
     adminDataInitialized = true;
 
