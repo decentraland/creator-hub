@@ -18,6 +18,10 @@ import { Box } from '../Box';
 import { Toolbar } from '../Toolbar';
 import Assets from '../Assets';
 import { SceneInfoPanel } from '../SceneInfoPanel';
+import { selectIsUiEditorActive } from '../../redux/ui-editor';
+import UiCanvas from '../UiEditor/UiCanvas/UiCanvas';
+import UiPropertyPanel from '../UiEditor/UiPropertyPanel/UiPropertyPanel';
+import UiElementPalette from '../UiEditor/UiElementPalette/UiElementPalette';
 
 import './App.css';
 
@@ -30,6 +34,7 @@ const App = () => {
   const sceneInfoContent = useAppSelector(selectSceneInfo).content;
   const disconnected = useAppSelector(selectDataLayerError);
   const [uiState] = useInspectorUIState();
+  const isUiEditorActive = useAppSelector(selectIsUiEditorActive);
 
   const [isAssetsPanelCollapsed, setIsAssetsPanelCollapsed] = useState(false);
 
@@ -83,8 +88,8 @@ const App = () => {
                     !!hiddenPanels[PanelName.COMPONENTS],
                 })}
               >
-                {!hiddenPanels[PanelName.TOOLBAR] && <Toolbar />}
-                <Renderer />
+                {!hiddenPanels[PanelName.TOOLBAR] && !isUiEditorActive && <Toolbar />}
+                {isUiEditorActive ? <UiCanvas /> : <Renderer />}
               </Box>
             </Panel>
             {uiState?.sceneInfoPanelVisible && !!sceneInfoContent && (
@@ -101,7 +106,21 @@ const App = () => {
                 </Panel>
               </>
             )}
-            {!hiddenPanels[PanelName.COMPONENTS] && selectedEntity !== null && (
+            {isUiEditorActive && (
+              <>
+                <PanelResizeHandle className="horizontal-handle" />
+                <Panel
+                  defaultSize={25.5}
+                  minSize={20}
+                  order={4}
+                >
+                  <Box className="entity-inspector">
+                    <UiPropertyPanel />
+                  </Box>
+                </Panel>
+              </>
+            )}
+            {!isUiEditorActive && !hiddenPanels[PanelName.COMPONENTS] && selectedEntity !== null && (
               <>
                 <PanelResizeHandle className="horizontal-handle" />
                 <Panel
@@ -130,7 +149,7 @@ const App = () => {
               onExpand={() => handleToggleAssetsPanel(false)}
             >
               <Box className="composite-renderer">
-                <Assets isAssetsPanelCollapsed={isAssetsPanelCollapsed} />
+                {isUiEditorActive ? <UiElementPalette /> : <Assets isAssetsPanelCollapsed={isAssetsPanelCollapsed} />}
               </Box>
             </Panel>
           </>

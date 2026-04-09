@@ -15,6 +15,14 @@ import {
   selectSceneInfo,
 } from '../../redux/data-layer';
 import { selectCanSave, selectInspectorPreferences } from '../../redux/app';
+import {
+  selectIsUiEditorActive,
+  selectCanUiEditorUndo,
+  selectCanUiEditorRedo,
+  selectIsUiEditorDirty,
+  undo as uiEditorUndo,
+  redo as uiEditorRedo,
+} from '../../redux/ui-editor';
 import { useInspectorUIState } from '../../hooks/sdk/useInspectorUIState';
 import { useAppSelector, useAppDispatch } from '../../redux/hooks';
 import {
@@ -38,11 +46,19 @@ const Toolbar = withSdk(({ sdk }) => {
   const canSave = useAppSelector(selectCanSave);
   const preferences = useAppSelector(selectInspectorPreferences);
   const isAutosaveEnabled = preferences?.autosaveEnabled ?? true;
-  const canUndo = useAppSelector(selectCanUndo);
-  const canRedo = useAppSelector(selectCanRedo);
+  const dataLayerCanUndo = useAppSelector(selectCanUndo);
+  const dataLayerCanRedo = useAppSelector(selectCanRedo);
   const sceneInfoContent = useAppSelector(selectSceneInfo).content;
   const dispatch = useAppDispatch();
   const [uiState, updateUIState] = useInspectorUIState();
+
+  const isUiEditorActive = useAppSelector(selectIsUiEditorActive);
+  const uiEditorCanUndo = useAppSelector(selectCanUiEditorUndo);
+  const uiEditorCanRedo = useAppSelector(selectCanUiEditorRedo);
+  const uiEditorIsDirty = useAppSelector(selectIsUiEditorDirty);
+
+  const canUndo = isUiEditorActive ? uiEditorCanUndo : dataLayerCanUndo;
+  const canRedo = isUiEditorActive ? uiEditorCanRedo : dataLayerCanRedo;
 
   const showSceneInfoButton = !!sceneInfoContent;
   const isSceneInfoPanelOpen = !!uiState?.sceneInfoPanelVisible;
@@ -58,8 +74,20 @@ const Toolbar = withSdk(({ sdk }) => {
   }, [sdk]);
 
   const handleSaveClick = useCallback(() => dispatch(save()), []);
-  const handleUndo = useCallback(() => dispatch(undo()), []);
-  const handleRedo = useCallback(() => dispatch(redo()), []);
+  const handleUndo = useCallback(() => {
+    if (isUiEditorActive) {
+      dispatch(uiEditorUndo());
+    } else {
+      dispatch(undo());
+    }
+  }, [isUiEditorActive]);
+  const handleRedo = useCallback(() => {
+    if (isUiEditorActive) {
+      dispatch(uiEditorRedo());
+    } else {
+      dispatch(redo());
+    }
+  }, [isUiEditorActive]);
   const handleToggleSceneInfo = useCallback(() => {
     updateUIState({ sceneInfoPanelVisible: !isSceneInfoPanelOpen });
   }, [isSceneInfoPanelOpen, updateUIState]);

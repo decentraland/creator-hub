@@ -7,10 +7,12 @@ import { useTree } from '../../hooks/sdk/useTree';
 import { Tree } from '../Tree';
 import { withSdk } from '../../hoc/withSdk';
 import './Hierarchy.css';
-import { useAppSelector } from '../../redux/hooks';
+import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { selectCustomAssets } from '../../redux/app';
+import { setActiveDocument } from '../../redux/ui-editor';
 import { ContextMenu } from './ContextMenu';
 import PlayerTree from './PlayerTree';
+import UiHierarchySection from './UiHierarchySection';
 
 const HierarchyIcon = withSdk<{ value: Entity }>(({ sdk, value }) => {
   const customAssets = useAppSelector(selectCustomAssets);
@@ -66,6 +68,7 @@ const HierarchyIcon = withSdk<{ value: Entity }>(({ sdk, value }) => {
 const EntityTree = Tree<Entity>();
 
 const Hierarchy: React.FC = () => {
+  const uiDispatch = useAppDispatch();
   const {
     addChild,
     setParent,
@@ -135,6 +138,7 @@ const Hierarchy: React.FC = () => {
 
   const handleSelect = useCallback(
     (entity: Entity, clickType?: 'single' | 'ctrl' | 'shift') => {
+      uiDispatch(setActiveDocument(null));
       if (clickType === 'shift' && lastSelectedItem) {
         handleRangeSelection(lastSelectedItem, entity);
       } else {
@@ -142,7 +146,7 @@ const Hierarchy: React.FC = () => {
         void select(entity, isMultipleSelection);
       }
     },
-    [select, lastSelectedItem, handleRangeSelection],
+    [select, lastSelectedItem, handleRangeSelection, uiDispatch],
   );
 
   const handleLastSelectedChange = useCallback(
@@ -202,6 +206,7 @@ const Hierarchy: React.FC = () => {
         value={ROOT}
         {...props}
       />
+      <UiHierarchySection />
     </div>
   );
 };

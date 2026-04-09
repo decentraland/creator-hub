@@ -17,6 +17,8 @@ export enum DropTypesEnum {
   LocalAsset = 'local-asset',
   CatalogAsset = 'catalog-asset',
   CustomAsset = 'custom-asset',
+  UiElement = 'ui-element',
+  UiElementRearrange = 'ui-element-rearrange',
 }
 
 export type DropTypes = `${DropTypesEnum}`;

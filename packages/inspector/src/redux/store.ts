@@ -7,6 +7,7 @@ import dataLayerReducer from './data-layer';
 import sdkReducer from './sdk';
 import uiReducer from './ui';
 import sceneMetricsReducer from './scene-metrics';
+import uiEditorReducer from './ui-editor';
 import sagas from './root-saga';
 
 const sagaMiddleware = createSagaMiddleware();
@@ -19,6 +20,7 @@ export const store = configureStore({
     cleanAssets: cleanAssetsReducer,
     ui: uiReducer,
     sceneMetrics: sceneMetricsReducer,
+    uiEditor: uiEditorReducer,
   },
   middleware: getDefaultMiddleware => {
     return getDefaultMiddleware({ thunk: false, serializableCheck: false }).concat(sagaMiddleware);
