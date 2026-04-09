@@ -22,6 +22,7 @@ export type SceneInput = {
   email: string;
   silenceVoiceChat: boolean;
   disablePortableExperiences: boolean;
+  disableNearbyVoiceChat: boolean;
   spawnPoints: SpawnPointInput[];
   layout: {
     base: string;

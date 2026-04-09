@@ -236,6 +236,10 @@ const COMPONENT_REGISTRY = {
         ),
       ),
     },
+    // V4 - Added disableNearbyVoiceChat
+    {
+      disableNearbyVoiceChat: Schemas.Optional(Schemas.Boolean),
+    },
   ],
 } as const;
 

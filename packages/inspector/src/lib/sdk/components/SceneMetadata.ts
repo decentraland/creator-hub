@@ -129,6 +129,11 @@ const SceneMetadataV3 = {
   ),
 };
 
+const SceneMetadataV4 = {
+  ...SceneMetadataV3,
+  disableNearbyVoiceChat: Schemas.Optional(Schemas.Boolean),
+};
+
 const SceneMetadata = 'inspector::SceneMetadata';
 
 export const VERSIONS = [
@@ -136,6 +141,7 @@ export const VERSIONS = [
   { key: `${SceneMetadata}-v1`, value: SceneMetadataV1 },
   { key: `${SceneMetadata}-v2`, value: SceneMetadataV2 },
   { key: `${SceneMetadata}-v3`, value: SceneMetadataV3 },
+  { key: `${SceneMetadata}-v4`, value: SceneMetadataV4 },
 ];
 
 export function getLatestSceneComponentVersion() {

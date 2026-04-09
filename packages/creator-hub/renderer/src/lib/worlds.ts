@@ -77,6 +77,7 @@ export type SpawnPoint = {
 export type FeatureToggles = {
   voiceChat?: string;
   portableExperiences?: string;
+  nearbyVoiceChat?: string;
 };
 
 export type SkyboxConfig = {
