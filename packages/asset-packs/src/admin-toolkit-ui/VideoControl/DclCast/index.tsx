@@ -213,6 +213,8 @@ const DclCast = ({
 
     if (!result) {
       setError(true);
+    } else if (video?.src?.startsWith('livekit-video://') && !state.videoControl.selectedStream) {
+      state.videoControl.selectedStream = 'dcl-cast';
     }
 
     setIsLoading(false);
@@ -246,6 +248,14 @@ const DclCast = ({
       ensurePresenterRole(playerAddress);
     }
   }, []);
+
+  // Sync selectedStream when video.src arrives after mount (late-joiner fix)
+  const videoSrc = video?.src;
+  ReactEcs.useEffect(() => {
+    if (videoSrc?.startsWith('livekit-video://') && !state.videoControl.selectedStream) {
+      state.videoControl.selectedStream = 'dcl-cast';
+    }
+  }, [videoSrc]);
 
   const isCastActive = !!(video?.src && isDclCast(video.src));
 

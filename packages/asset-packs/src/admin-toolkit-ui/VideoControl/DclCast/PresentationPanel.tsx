@@ -25,6 +25,9 @@ const ICONS = {
   get PLAY() {
     return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-play-button.png`;
   },
+  get PAUSE() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-pause-button.png`;
+  },
 };
 
 const MAX_TITLE_LENGTH = 30;
@@ -47,6 +50,10 @@ const PresentationPanel = ({
 }) => {
   const styles = getDclCastStyles();
   const colors = getDclCastColors();
+
+  const isVideoPlaying =
+    presentationState?.videoState === 'playing' || presentationState?.videoState === 'loading';
+  const hasSlideVideo = (presentationState?.slideVideos?.length ?? 0) > 0;
 
   return (
     <UiEntity
@@ -128,13 +135,14 @@ const PresentationPanel = ({
         />
         <Button
           id={`${idPrefix}_play`}
-          value="<b>Play Video</b>"
-          icon={ICONS.PLAY}
+          value={isVideoPlaying ? '<b>Pause Video</b>' : '<b>Play Video</b>'}
+          icon={isVideoPlaying ? ICONS.PAUSE : ICONS.PLAY}
           iconTransform={styles.controlButtonIcon}
           fontSize={16}
           color={colors.black}
+          disabled={!hasSlideVideo}
           uiTransform={{ ...styles.controlButton, margin: { right: 8 } }}
-          onMouseDown={() => playPresentationVideo(0)}
+          onMouseDown={() => (isVideoPlaying ? pausePresentationVideo() : playPresentationVideo(0))}
         />
         <Button
           id={`${idPrefix}_stop`}
@@ -143,6 +151,7 @@ const PresentationPanel = ({
           onlyIcon={true}
           icon={ICONS.STOP}
           iconTransform={styles.controlButtonIcon}
+          disabled={!hasSlideVideo}
           uiTransform={styles.controlButton}
           onMouseDown={() => pausePresentationVideo()}
         />
