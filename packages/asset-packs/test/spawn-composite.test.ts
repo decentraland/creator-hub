@@ -49,13 +49,25 @@ describe('spawnComposite', () => {
           {
             name: 'core::Transform',
             data: {
-              '0': { json: { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0, w: 1 }, scale: { x: 1, y: 1, z: 1 } } },
+              '0': {
+                json: {
+                  position: { x: 0, y: 0, z: 0 },
+                  rotation: { x: 0, y: 0, z: 0, w: 1 },
+                  scale: { x: 1, y: 1, z: 1 },
+                },
+              },
             },
           },
           {
             name: 'core::GltfContainer',
             data: {
-              '0': { json: { src: '{assetPath}/models/monster.glb', visibleMeshesCollisionMask: 0, invisibleMeshesCollisionMask: 3 } },
+              '0': {
+                json: {
+                  src: '{assetPath}/models/monster.glb',
+                  visibleMeshesCollisionMask: 0,
+                  invisibleMeshesCollisionMask: 3,
+                },
+              },
             },
           },
         ],
@@ -79,7 +91,13 @@ describe('spawnComposite', () => {
           {
             name: 'core::Transform',
             data: {
-              '0': { json: { position: { x: 10, y: 10, z: 10 }, rotation: { x: 0, y: 0, z: 0, w: 1 }, scale: { x: 1, y: 1, z: 1 } } },
+              '0': {
+                json: {
+                  position: { x: 10, y: 10, z: 10 },
+                  rotation: { x: 0, y: 0, z: 0, w: 1 },
+                  scale: { x: 1, y: 1, z: 1 },
+                },
+              },
             },
           },
         ],
@@ -130,9 +148,22 @@ describe('spawnComposite', () => {
             name: 'core::Transform',
             data: {
               // Entity 512 = root
-              '512': { json: { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0, w: 1 }, scale: { x: 1, y: 1, z: 1 } } },
+              '512': {
+                json: {
+                  position: { x: 0, y: 0, z: 0 },
+                  rotation: { x: 0, y: 0, z: 0, w: 1 },
+                  scale: { x: 1, y: 1, z: 1 },
+                },
+              },
               // Entity 513 = child of 512
-              '513': { json: { position: { x: 1, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0, w: 1 }, scale: { x: 1, y: 1, z: 1 }, parent: 512 } },
+              '513': {
+                json: {
+                  position: { x: 1, y: 0, z: 0 },
+                  rotation: { x: 0, y: 0, z: 0, w: 1 },
+                  scale: { x: 1, y: 1, z: 1 },
+                  parent: 512,
+                },
+              },
             },
           },
           {
@@ -168,8 +199,20 @@ describe('spawnComposite', () => {
             name: 'core::Transform',
             data: {
               // Two roots — no parent
-              '512': { json: { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0, w: 1 }, scale: { x: 1, y: 1, z: 1 } } },
-              '513': { json: { position: { x: 2, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0, w: 1 }, scale: { x: 1, y: 1, z: 1 } } },
+              '512': {
+                json: {
+                  position: { x: 0, y: 0, z: 0 },
+                  rotation: { x: 0, y: 0, z: 0, w: 1 },
+                  scale: { x: 1, y: 1, z: 1 },
+                },
+              },
+              '513': {
+                json: {
+                  position: { x: 2, y: 0, z: 0 },
+                  rotation: { x: 0, y: 0, z: 0, w: 1 },
+                  scale: { x: 1, y: 1, z: 1 },
+                },
+              },
             },
           },
         ],
@@ -238,7 +281,12 @@ describe('spawnComposite', () => {
           {
             name: 'asset-packs::Actions',
             data: {
-              '513': { json: { id: '{self}', value: [{ name: 'die', type: 'SET_STATE', jsonPayload: '{"state":"dead"}' }] } },
+              '513': {
+                json: {
+                  id: '{self}',
+                  value: [{ name: 'die', type: 'SET_STATE', jsonPayload: '{"state":"dead"}' }],
+                },
+              },
             },
           },
           {
@@ -249,9 +297,7 @@ describe('spawnComposite', () => {
                   value: [
                     {
                       type: 'ON_POINTER_DOWN',
-                      actions: [
-                        { id: '{513:asset-packs::Actions}', name: 'die' },
-                      ],
+                      actions: [{ id: '{513:asset-packs::Actions}', name: 'die' }],
                       conditions: [],
                     },
                   ],
@@ -363,9 +409,7 @@ describe('spawnComposite', () => {
       expect(root).toBeDefined();
 
       // Unknown component should have been logged
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('some-unknown::Component'),
-      );
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('some-unknown::Component'));
 
       // GltfContainer should still be applied despite the unknown component
       const GltfContainer = engine.getComponent('core::GltfContainer') as any;

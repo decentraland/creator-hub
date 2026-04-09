@@ -1,4 +1,10 @@
-import type { Entity, IEngine, LastWriteWinElementSetComponentDefinition, QuaternionType, Vector3Type } from '@dcl/ecs';
+import type {
+  Entity,
+  IEngine,
+  LastWriteWinElementSetComponentDefinition,
+  QuaternionType,
+  Vector3Type,
+} from '@dcl/ecs';
 import { getNextId, COMPONENTS_WITH_ID } from './id';
 import { getPayload, getJson } from './action-types';
 import { ActionType } from './enums';
@@ -49,7 +55,11 @@ export type SpawnCompositeOptions = {
 };
 
 function shouldSkipComponent(componentName: string): boolean {
-  if (SPAWN_EXCLUDE_COMPONENTS.some(excluded => componentName === excluded || componentName.startsWith(excluded))) {
+  if (
+    SPAWN_EXCLUDE_COMPONENTS.some(
+      excluded => componentName === excluded || componentName.startsWith(excluded),
+    )
+  ) {
     return true;
   }
   for (const prefix of SPAWN_EXCLUDE_COMPONENT_PREFIXES) {
@@ -162,7 +172,9 @@ export function spawnComposite(
     scale = { x: 1, y: 1, z: 1 },
   } = options ?? {};
 
-  const Transform = engine.getComponent(CORE_TRANSFORM) as LastWriteWinElementSetComponentDefinition<{
+  const Transform = engine.getComponent(
+    CORE_TRANSFORM,
+  ) as LastWriteWinElementSetComponentDefinition<{
     position: Vector3Type;
     rotation: QuaternionType;
     scale: Vector3Type;
@@ -175,7 +187,10 @@ export function spawnComposite(
 
   const entityIds = new Set<number>();
   const parentOf = new Map<number, number>();
-  const transformValues = new Map<number, { position?: Vector3Type; rotation?: QuaternionType; scale?: Vector3Type }>();
+  const transformValues = new Map<
+    number,
+    { position?: Vector3Type; rotation?: QuaternionType; scale?: Vector3Type }
+  >();
 
   const transformComponent = composite.components.find(c => c.name === CORE_TRANSFORM);
   if (transformComponent) {
@@ -265,8 +280,8 @@ export function spawnComposite(
       const parentEntity = isRoot
         ? defaultParent
         : typeof intendedParentId === 'number'
-        ? entities.get(intendedParentId)
-        : undefined;
+          ? entities.get(intendedParentId)
+          : undefined;
 
       if (!isRoot && typeof intendedParentId === 'number' && parentEntity === undefined) {
         // Parent hasn't been created yet; we'll reparent after all entities exist
@@ -398,7 +413,10 @@ export function spawnComposite(
         };
       } else if (componentName === CORE_MATERIAL) {
         componentValue = parseMaterial(basePath, componentValue);
-      } else if (componentName === ASSET_PACKS_ACTIONS_BASE || componentName.startsWith(ASSET_PACKS_ACTIONS_BASE + '-v')) {
+      } else if (
+        componentName === ASSET_PACKS_ACTIONS_BASE ||
+        componentName.startsWith(ASSET_PACKS_ACTIONS_BASE + '-v')
+      ) {
         // Remap {assetPath} in action payloads for sound/image/emote actions,
         // and remap action IDs from the pre-allocated pool
         const newValue = (componentValue.value ?? []).map((action: any) => {
@@ -427,7 +445,10 @@ export function spawnComposite(
           }
         });
         componentValue = { ...componentValue, value: newValue };
-      } else if (componentName === ASSET_PACKS_TRIGGERS_BASE || componentName.startsWith(ASSET_PACKS_TRIGGERS_BASE + '-v')) {
+      } else if (
+        componentName === ASSET_PACKS_TRIGGERS_BASE ||
+        componentName.startsWith(ASSET_PACKS_TRIGGERS_BASE + '-v')
+      ) {
         // Remap trigger action and condition IDs
         const newValue = (componentValue.value ?? []).map((trigger: any) => ({
           ...trigger,
