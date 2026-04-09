@@ -104,6 +104,21 @@ message RenameCustomAssetRequest {
   string new_name = 2;
 }
 
+// Request to import a custom item's assets into the scene and return the data
+// needed to spawn it as an entity tree via the SDK `spawnCustomItem` operation.
+// `path` may be just the folder name (e.g. "my_monster") or the full custom
+// item path (e.g. "custom/my_monster").
+message SpawnCustomItemRequest {
+  string path = 1;
+}
+
+message SpawnCustomItemResponse {
+  bytes composite = 1;
+  string base_path = 2;
+  string name = 3;
+  string asset_id = 4;
+}
+
 message UndoRedoStateResponse {
   bool can_undo = 1;
   bool can_redo = 2;
@@ -156,4 +171,7 @@ service DataService {
   rpc GetCustomAssets(Empty) returns (GetCustomAssetsResponse) {}
   rpc DeleteCustomAsset(DeleteCustomAssetRequest) returns (Empty) {}
   rpc RenameCustomAsset(RenameCustomAssetRequest) returns (Empty) {}
+  // Imports a custom item's assets into the scene and returns the composite +
+  // metadata required to spawn it as an entity tree via the SDK operation.
+  rpc SpawnCustomItem(SpawnCustomItemRequest) returns (SpawnCustomItemResponse) {}
 }

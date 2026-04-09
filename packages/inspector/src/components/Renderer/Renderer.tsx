@@ -273,6 +273,9 @@ const Renderer: React.FC = () => {
   };
 
   const importCustomAsset = async (asset: CustomAsset) => {
+    if (!sdk) return;
+    const { operations } = sdk;
+
     const destFolder = 'custom';
     const assetPackageName = asset.name.trim().replaceAll(' ', '_').toLowerCase();
     const position = await getDropPosition();
@@ -307,18 +310,22 @@ const Renderer: React.FC = () => {
       content.set('composite.json', compositeJson);
     }
 
-    const model: AssetNodeItem = {
-      type: 'asset',
-      name: asset.name,
-      parent: null,
-      asset: { type: 'gltf', src: '', id: asset.id },
-      composite: asset.composite,
-    };
     const basePath = withAssetDir(`${destFolder}/${assetPackageName}`);
 
     await dataLayer.importAsset({ content, basePath, assetPackageName: '' });
     dispatch(getAssetCatalog()); // Refresh catalog after import
-    await addAsset(model, position, basePath, true);
+
+    if (!asset.composite) return;
+    operations.spawnCustomItem(asset.composite, basePath, asset.name, position, asset.id, sdk.enumEntity);
+    await operations.dispatch();
+    analytics.track(Event.ADD_ITEM, {
+      itemId: asset.id,
+      itemName: asset.name,
+      itemPath: '',
+      isSmart: isSmart(asset),
+      isCustom: true,
+    });
+    canvasRef.current?.focus();
   };
 
   /**

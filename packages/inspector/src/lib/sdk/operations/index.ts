@@ -19,6 +19,7 @@ import setGround from './set-ground';
 import lock from './lock';
 import hide from './hide';
 import createCustomAsset from './create-custom-asset';
+import spawnCustomItem from './spawn-custom-item';
 
 export interface Dispatch {
   dirty?: boolean;
@@ -38,6 +39,7 @@ export function createOperations(engine: IEngine) {
     removeSelectedEntities: removeSelectedEntities(engine),
     duplicateEntity: duplicateEntity(engine),
     createCustomAsset: createCustomAsset(engine),
+    spawnCustomItem: spawnCustomItem(engine),
     dispatch: async ({ dirty = true }: Dispatch = {}) => {
       store.dispatch(updateCanSave({ dirty }));
       await engine.update(1);

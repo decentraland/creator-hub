@@ -543,5 +543,90 @@ export async function initRpcMethods(
         throw new Error(`Custom asset with id ${assetId} not found`);
       });
     },
+
+    /**
+     * Imports a custom item's assets into the scene's asset directory and
+     * returns the composite + metadata needed to spawn it as an entity tree
+     * via the `spawnCustomItem` SDK operation.
+     *
+     * `req.path` may be either the folder name alone (e.g. "my_monster") or
+     * the full custom-item path (e.g. "custom/my_monster").
+     */
+    async spawnCustomItem(req: { path: string }) {
+      const { path } = req;
+
+      // Normalise: accept "my_monster" or "custom/my_monster"
+      const folderName = path.startsWith(`${DIRECTORY.CUSTOM}/`)
+        ? path.slice(DIRECTORY.CUSTOM.length + 1)
+        : path;
+      const customItemPath = `${DIRECTORY.CUSTOM}/${folderName}`;
+
+      // Read manifest and composite from the custom item directory
+      const [dataContent, compositeContent] = await Promise.all([
+        fs.readFile(`${customItemPath}/data.json`),
+        fs.readFile(`${customItemPath}/composite.json`),
+      ]);
+
+      const data = JSON.parse(new TextDecoder().decode(dataContent)) as {
+        id: string;
+        name: string;
+      };
+      const composite = JSON.parse(new TextDecoder().decode(compositeContent));
+
+      // Collect non-metadata resource files
+      const allFiles = await getFilesInDirectory(fs, customItemPath, [], true);
+      const resourceFiles = allFiles.filter(
+        f =>
+          !f.endsWith('/data.json') &&
+          !f.endsWith('/composite.json') &&
+          !f.endsWith('/thumbnail.png'),
+      );
+
+      // Destination path inside the scene's asset directory
+      const assetPackageName = data.name.trim().replaceAll(' ', '_').toLowerCase();
+      const basePath = withAssetDir(`custom/${assetPackageName}`);
+
+      // Build content map: relative paths → file bytes
+      const content: Map<string, Uint8Array> = new Map();
+
+      if (resourceFiles.length > 0) {
+        const assetRoot = getResourcesBasePath(resourceFiles);
+        await Promise.all(
+          resourceFiles.map(async resourcePath => {
+            const fileContent = await fs.readFile(resourcePath);
+            const relativePath = getRelativeResourcePath(resourcePath, assetRoot);
+            content.set(relativePath, fileContent);
+          }),
+        );
+      }
+
+      // Always include the composite so the folder is created even when there
+      // are no additional resource files.
+      content.set('composite.json', compositeContent);
+
+      // Copy files into the scene assets directory (with undo support)
+      return stateManager.executeTransaction('external', async () => {
+        const baseFolder = basePath ? `${basePath}/` : '';
+        const undoAcc: FileOperation[] = [];
+
+        for (const [relativePath, fileContent] of content) {
+          const filePath = `${baseFolder}${relativePath}`.replaceAll('//', '/');
+          const prevValue = (await fs.existFile(filePath)) ? await fs.readFile(filePath) : null;
+          undoAcc.push({ prevValue, newValue: fileContent, path: filePath });
+          await upsertAsset(fs, filePath, fileContent);
+        }
+
+        if (undoAcc.length > 0) {
+          undoRedoProvider.addUndoFile(undoAcc);
+        }
+
+        return {
+          composite: Buffer.from(JSON.stringify(composite)),
+          basePath,
+          name: data.name,
+          assetId: data.id,
+        };
+      });
+    },
   };
 }

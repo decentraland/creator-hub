@@ -35,6 +35,7 @@ describe('createOperations', () => {
     expect(operations.removeSelectedEntities).toBeDefined();
     expect(operations.duplicateEntity).toBeDefined();
     expect(operations.createCustomAsset).toBeDefined();
+    expect(operations.spawnCustomItem).toBeDefined();
     expect(operations.getSelectedEntities).toBeDefined();
     expect(operations.setGround).toBeDefined();
     expect(operations.lock).toBeDefined();
