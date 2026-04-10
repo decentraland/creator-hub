@@ -12,6 +12,7 @@ import { buildNodesHierarchyIfNotExists } from './utils/migrations/build-nodes-h
 import { removeLegacyEntityNodeComponents } from './utils/migrations/legacy-entity-node';
 import { DIRECTORY, withAssetDir } from './fs-utils';
 import { dumpEngineToComposite, generateEntityNamesType } from './utils/engine-to-composite';
+import { generateCustomItemsFile } from './utils/generate-custom-items';
 import type { CompositeManager } from './utils/fs-composite-provider';
 import { createFsCompositeProvider } from './utils/fs-composite-provider';
 import { toSceneComponent } from './utils/component';
@@ -235,6 +236,8 @@ export class CompositeProvider implements StateProvider {
         'EntityNames',
         this.fs,
       );
+
+      await generateCustomItemsFile(this.fs);
 
       this.dirtyState = DirtyState.Clean;
       return this.composite;

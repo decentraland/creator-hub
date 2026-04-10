@@ -16,6 +16,7 @@ import {
 import type { FileOperation } from './undo-redo-provider';
 import upsertAsset from './upsert-asset';
 import { installBin } from './utils/install-bin';
+import { generateCustomItemsFile } from './utils/generate-custom-items';
 import { fromSceneComponent } from './utils/component';
 import { StateManager, OperationType } from './state-manager';
 import type { Operation } from './state-manager';
@@ -406,6 +407,8 @@ export async function initRpcMethods(
           composite: JSON.parse(new TextDecoder().decode(composite)),
         };
 
+        await generateCustomItemsFile(fs);
+
         return { asset: { data: Buffer.from(JSON.stringify(asset)) } };
       });
     },
@@ -492,6 +495,7 @@ export async function initRpcMethods(
                 }
 
                 undoRedoProvider.addUndoFile(undoAcc);
+                await generateCustomItemsFile(fs);
                 return {};
               }
             } catch (err) {
@@ -532,6 +536,7 @@ export async function initRpcMethods(
 
                 await fs.writeFile(dataPath, newContent);
                 undoRedoProvider.addUndoFile(undoAcc);
+                await generateCustomItemsFile(fs);
                 return {};
               }
             } catch (err) {
