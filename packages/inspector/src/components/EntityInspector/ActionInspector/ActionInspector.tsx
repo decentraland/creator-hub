@@ -66,6 +66,7 @@ import { ChangeTextAction } from './ChangeTextAction';
 import { ChangeCollisionsAction } from './ChangeCollisionsAction';
 import { ChangeSkyboxAction } from './ChangeSkyboxAction';
 import { SlideTextureAction } from './SlideTextureAction';
+import { SpawnItemAction } from './SpawnItemAction';
 import type { Props } from './types';
 
 import './ActionInspector.css';
@@ -132,6 +133,7 @@ const ActionMapOption: Record<string, string> = {
   [ActionType.RESET_SKYBOX]: 'Reset Skybox',
   [ActionType.LOG_TO_CONSOLE]: 'Log to Console',
   [ActionType.DELETE]: 'Delete',
+  [ActionType.SPAWN_ITEM]: 'Spawn Custom Item',
 };
 
 export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) => {
@@ -313,6 +315,20 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
           const payload = getPartialPayload<ActionType.CLONE_ENTITY>(action);
           return (
             !!payload &&
+            typeof payload.position?.x === 'number' &&
+            !isNaN(payload.position?.x) &&
+            typeof payload.position?.y === 'number' &&
+            !isNaN(payload.position?.y) &&
+            typeof payload.position?.z === 'number' &&
+            !isNaN(payload.position?.z)
+          );
+        }
+        case ActionType.SPAWN_ITEM: {
+          const payload = getPartialPayload<ActionType.SPAWN_ITEM>(action);
+          return (
+            !!payload &&
+            typeof payload.src === 'string' &&
+            payload.src.length > 0 &&
             typeof payload.position?.x === 'number' &&
             !isNaN(payload.position?.x) &&
             typeof payload.position?.y === 'number' &&
@@ -620,6 +636,16 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       handleModifyAction(idx, {
         ...actions[idx],
         jsonPayload: getJson<ActionType.CLONE_ENTITY>(value),
+      });
+    },
+    [actions, handleModifyAction],
+  );
+
+  const handleChangeSpawnItem = useCallback(
+    (value: ActionPayload<ActionType.SPAWN_ITEM>, idx: number) => {
+      handleModifyAction(idx, {
+        ...actions[idx],
+        jsonPayload: getJson<ActionType.SPAWN_ITEM>(value),
       });
     },
     [actions, handleModifyAction],
@@ -1095,6 +1121,14 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
           <CloneEntityAction
             value={getPartialPayload<ActionType.CLONE_ENTITY>(action)}
             onUpdate={e => handleChangeCloneEntity(e, idx)}
+          />
+        );
+      }
+      case ActionType.SPAWN_ITEM: {
+        return (
+          <SpawnItemAction
+            value={getPartialPayload<ActionType.SPAWN_ITEM>(action)}
+            onUpdate={e => handleChangeSpawnItem(e, idx)}
           />
         );
       }
