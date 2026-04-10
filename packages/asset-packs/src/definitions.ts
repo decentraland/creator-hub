@@ -62,6 +62,7 @@ export * from './events';
 export * from './id';
 export * from './states';
 export * from './clone';
+export * from './composite';
 export * from './lww';
 export * from './types';
 export * from './versioning';
