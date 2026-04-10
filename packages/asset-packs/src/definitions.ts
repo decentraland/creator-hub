@@ -65,6 +65,8 @@ export * from './clone';
 export * from './lww';
 export * from './types';
 export * from './versioning';
+export { spawnCustomItem } from './spawn-custom-item';
+export type { SpawnCustomItemOptions } from './spawn-custom-item';
 
 export const ActionSchemas = {
   [ActionType.PLAY_ANIMATION]: Schemas.Map({
