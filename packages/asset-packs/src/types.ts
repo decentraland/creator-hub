@@ -1,4 +1,4 @@
-import type { Entity, PBAvatarBase, PBAvatarEquippedData, TransformType } from '@dcl/ecs';
+import type { Composite, Entity, PBAvatarBase, PBAvatarEquippedData, TransformType } from '@dcl/ecs';
 import { BaseComponentNames } from './constants';
 
 export type AssetPackData = {
@@ -130,6 +130,8 @@ export type Component = {
 export type ISDKHelpers = {
   // SyncEntity helper to create network entities at runtime.
   syncEntity?: SyncEntitySDK;
+  // Composite provider — resolves a composite resource by src path for SPAWN_ITEM.
+  getComposite?: (src: string) => Composite.Resource | null;
 };
 
 export type SyncEntitySDK = (

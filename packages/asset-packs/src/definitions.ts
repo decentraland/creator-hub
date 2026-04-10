@@ -270,6 +270,10 @@ export const ActionSchemas = {
     message: Schemas.String,
   }),
   [ActionType.DELETE]: Schemas.Map({}),
+  [ActionType.SPAWN_ITEM]: Schemas.Map({
+    src: Schemas.String,
+    position: Schemas.Vector3,
+  }),
 };
 
 export type ActionPayload<T extends ActionType = any> = T extends keyof typeof ActionSchemas

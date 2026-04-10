@@ -10,6 +10,8 @@ import type {
   PointerEventsSystem,
 } from '@dcl/ecs';
 import {
+  Composite,
+  EntityMappingMode,
   Material,
   AudioStream,
   YGUnit,
@@ -280,6 +282,10 @@ export function createActionsSystem(
           }
           case ActionType.CLONE_ENTITY: {
             handleCloneEntity(entity, getPayload<ActionType.CLONE_ENTITY>(action));
+            break;
+          }
+          case ActionType.SPAWN_ITEM: {
+            handleSpawnItem(getPayload<ActionType.SPAWN_ITEM>(action));
             break;
           }
           case ActionType.REMOVE_ENTITY: {
@@ -1128,6 +1134,79 @@ export function createActionsSystem(
 
     const transform = Transform.getOrCreateMutable(cloned);
     transform.position = position;
+  }
+
+  // SPAWN_ITEM
+  function handleSpawnItem(payload: ActionPayload<ActionType.SPAWN_ITEM>) {
+    const { src, position } = payload;
+
+    if (!sdkHelpers?.getComposite) {
+      console.warn('[SPAWN_ITEM] No getComposite helper provided in sdkHelpers — cannot spawn item.');
+      return;
+    }
+
+    const resource = sdkHelpers.getComposite(src);
+    if (!resource) {
+      console.warn(`[SPAWN_ITEM] Composite not found for src="${src}"`);
+      return;
+    }
+
+    // Collect the unique entity indices from the composite components
+    const entityIndices = new Set<number>();
+    for (const component of resource.composite.components) {
+      for (const key of Object.keys(component.data)) {
+        entityIndices.add(parseInt(key, 10));
+      }
+    }
+
+    // Allocate a fresh engine entity for each composite entity index
+    const entityMapping = new Map<number, Entity>();
+    Array.from(entityIndices).forEach(idx => {
+      entityMapping.set(idx, engine.addEntity());
+    });
+
+    try {
+      Composite.instance(engine, resource, { getCompositeOrNull: () => null }, {
+        entityMapping: {
+          type: EntityMappingMode.EMM_DIRECT_MAPPING,
+          getCompositeEntity: (compositeEntity: number | Entity) =>
+            entityMapping.get(compositeEntity as number) ?? (compositeEntity as Entity),
+        },
+      });
+    } catch (err) {
+      console.error(`[SPAWN_ITEM] Failed to instance composite src="${src}": ${(err as Error).message}`);
+      return;
+    }
+
+    // Find the root entity (the entity with no parent inside the composite, i.e. the one
+    // that maps from the smallest composite entity index that has a Transform)
+    const spawnedEntities = Array.from(entityMapping.values());
+
+    // Set position on the first spawned entity that has a Transform
+    for (const spawnedEntity of spawnedEntities) {
+      if (Transform.has(spawnedEntity)) {
+        const transform = Transform.getMutable(spawnedEntity);
+        if (!transform.parent || !entityMapping.has(transform.parent as number)) {
+          // This is the root entity (no parent within the composite)
+          transform.position = position;
+          break;
+        }
+      }
+    }
+
+    // Initialize actions, triggers and sync for all spawned entities
+    const { NetworkEntity, SyncComponents } = getExplorerComponents(engine);
+    for (const spawnedEntity of spawnedEntities) {
+      initActions(spawnedEntity);
+      initTriggers(spawnedEntity);
+
+      if (NetworkEntity.has(spawnedEntity)) {
+        const syncComponent = SyncComponents.getOrNull(spawnedEntity);
+        if (syncComponent && sdkHelpers?.syncEntity) {
+          sdkHelpers.syncEntity(spawnedEntity, syncComponent.componentIds);
+        }
+      }
+    }
   }
 
   // REMOVE_ENTITY
