@@ -260,6 +260,52 @@ export class CompositeProvider implements StateProvider {
     await this.initialize();
   }
 
+  /**
+   * Bundle a custom item's composite into the scene assets so it can be used by SPAWN_ITEM.
+   *
+   * The composite JSON is read from `custom/{slug}/composite.json`, `{assetPath}` tokens
+   * are resolved to `custom/{slug}/`, and the result is written as a `.composite` file
+   * at `assets/custom/{slug}.composite`. The composite is then registered in memory so
+   * SPAWN_ITEM actions can find it via getCompositeOrNull without a filesystem rescan.
+   *
+   * This operation is idempotent: if the target file already exists with identical content
+   * the write and registration are skipped.
+   *
+   * @param slug    The custom item directory slug (e.g. "padlock" for `custom/padlock/`)
+   * @returns       The path of the bundled composite file
+   */
+  async bundleCustomItem(slug: string): Promise<string> {
+    if (!this.compositeManager) throw new Error('Composite manager not initialized');
+
+    const sourcePath = `${DIRECTORY.CUSTOM}/${slug}/composite.json`;
+    const targetPath = `assets/custom/${slug}.composite`;
+
+    // Read and parse the source composite
+    const sourceBytes = await this.fs.readFile(sourcePath);
+    const sourceText = new TextDecoder().decode(sourceBytes);
+    // Resolve {assetPath} tokens to the relative resource directory
+    const assetPath = `${DIRECTORY.CUSTOM}/${slug}`;
+    const resolved = sourceText.replace(/\{assetPath\}/g, assetPath);
+
+    // Check idempotency: skip if target already exists with same content
+    if (await this.fs.existFile(targetPath)) {
+      const existingBytes = await this.fs.readFile(targetPath);
+      const existingText = new TextDecoder().decode(existingBytes);
+      if (existingText === resolved) {
+        return targetPath;
+      }
+    }
+
+    // Write the resolved composite to scene assets
+    await this.fs.writeFile(targetPath, Buffer.from(resolved, 'utf-8'));
+
+    // Parse and register in memory
+    const compositeDefinition = Composite.fromJson(JSON.parse(resolved));
+    this.compositeManager.register({ src: targetPath, composite: compositeDefinition });
+
+    return targetPath;
+  }
+
   async dispose(): Promise<void> {
     if (this.savePromise) {
       await this.savePromise;

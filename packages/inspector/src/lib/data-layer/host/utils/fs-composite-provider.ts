@@ -4,6 +4,12 @@ import type { FileSystemInterface } from '../../types';
 
 export type CompositeManager = Composite.Provider & {
   save: (composite: Composite.Resource, type: 'json' | 'binary') => Promise<void>;
+  /**
+   * Register a composite resource in memory without re-scanning the filesystem.
+   * Used to add dynamically-bundled composites (e.g. Custom Items) at authoring time.
+   * If a resource with the same src already exists, it will be replaced.
+   */
+  register: (resource: Composite.Resource) => void;
 };
 
 export async function createFsCompositeProvider(
@@ -84,6 +90,19 @@ export async function createFsCompositeProvider(
       const existingComposite = composites.find(item => item.src === composite.src);
       if (existingComposite) {
         existingComposite.composite = compositeDefinition;
+      }
+    },
+    register(resource: Composite.Resource) {
+      function normalizePath(val: string) {
+        return val.replace(/\\/g, '/').toLocaleLowerCase();
+      }
+      const existingIdx = composites.findIndex(
+        item => normalizePath(item.src) === normalizePath(resource.src),
+      );
+      if (existingIdx >= 0) {
+        composites[existingIdx] = resource;
+      } else {
+        composites.push(resource);
       }
     },
   };
