@@ -83,6 +83,49 @@ async function removeEmptyDirectoryRecursive(
   }
 }
 
+const CUSTOM_REGISTRY_PATH = `${DIRECTORY.CUSTOM}/registry.json`;
+
+/**
+ * Regenerates `custom/registry.json` from the current set of custom assets on
+ * disk.  The registry maps each asset's UUID to its folder path and display
+ * name so that the runtime SDK (`spawnCustomItem`) can look up composites
+ * without performing a directory scan.
+ *
+ * This is a best-effort operation — failures are logged but never thrown.
+ */
+async function updateCustomItemRegistry(fs: FileSystemInterface): Promise<void> {
+  try {
+    const paths = await getFilesInDirectory(fs, DIRECTORY.CUSTOM, [], true);
+    const folders = [...new Set(paths.map(path => path.split('/')[1]).filter(Boolean))];
+
+    type RegistryEntry = { path: string; name: string };
+    const registry: Record<string, RegistryEntry> = {};
+
+    await Promise.all(
+      folders.map(async folder => {
+        const dataPath = `${DIRECTORY.CUSTOM}/${folder}/data.json`;
+        if (!(await fs.existFile(dataPath))) return;
+        try {
+          const raw = await fs.readFile(dataPath);
+          const data = JSON.parse(new TextDecoder().decode(raw));
+          if (data.id && data.name) {
+            registry[data.id] = { path: `${DIRECTORY.CUSTOM}/${folder}`, name: data.name };
+          }
+        } catch {
+          // Malformed data.json — skip this folder.
+        }
+      }),
+    );
+
+    await fs.writeFile(
+      CUSTOM_REGISTRY_PATH,
+      Buffer.from(JSON.stringify(registry, null, 2)) as Buffer,
+    );
+  } catch (e) {
+    console.warn('[rpc-methods] updateCustomItemRegistry failed:', e);
+  }
+}
+
 export async function initRpcMethods(
   fs: FileSystemInterface,
   engine: IEngine,
@@ -406,6 +449,9 @@ export async function initRpcMethods(
           composite: JSON.parse(new TextDecoder().decode(composite)),
         };
 
+        // Keep the runtime registry in sync.
+        void updateCustomItemRegistry(fs);
+
         return { asset: { data: Buffer.from(JSON.stringify(asset)) } };
       });
     },
@@ -492,6 +538,8 @@ export async function initRpcMethods(
                 }
 
                 undoRedoProvider.addUndoFile(undoAcc);
+                // Keep the runtime registry in sync.
+                void updateCustomItemRegistry(fs);
                 return {};
               }
             } catch (err) {
@@ -532,6 +580,8 @@ export async function initRpcMethods(
 
                 await fs.writeFile(dataPath, newContent);
                 undoRedoProvider.addUndoFile(undoAcc);
+                // Keep the runtime registry in sync.
+                void updateCustomItemRegistry(fs);
                 return {};
               }
             } catch (err) {

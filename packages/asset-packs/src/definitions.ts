@@ -65,6 +65,7 @@ export * from './clone';
 export * from './lww';
 export * from './types';
 export * from './versioning';
+export * from './spawn';
 
 export const ActionSchemas = {
   [ActionType.PLAY_ANIMATION]: Schemas.Map({
