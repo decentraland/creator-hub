@@ -1,6 +1,8 @@
 {
   "id": "7d8b7e64-fd3e-476b-b033-a1d32cfb0d88",
   "name": "Wind Area",
-  "category": "custom",
-  "tags": []
+  "category": "utils",
+  "tags": ["wind", "force", "gravity", "push", "kick", "float"],
+  "description": "Applies a continuous upwards force while a player is inside the area. Change direction by rotating the item.",
+  "author": "Decentraland Foundation"
 }

@@ -1,6 +1,8 @@
 {
   "id": "93198303-7ec7-46aa-89ac-1feb4bfb60d5",
   "name": "Impulse Area",
-  "category": "custom",
-  "tags": []
+  "category": "utils",
+  "tags": ["bounce", "force", "jump", "jump pad", "bouncy", "push", "kick", "hit"],
+  "description": "Applies a one-time upwards impulse as soon as the player enters the area. Change direction by rotating the item.",
+  "author": "Decentraland Foundation"
 }
