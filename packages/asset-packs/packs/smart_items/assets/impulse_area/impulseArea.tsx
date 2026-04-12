@@ -44,32 +44,19 @@ export class Bounce {
    * Called once when the script is initialized.
    */
   start() {
-    // Script initialization
-    console.log('Bounce initialized for entity:', this.entity);
-
-    const direction = Vector3.rotate(Vector3.create(0, 1, 0), Transform.get(this.entity).rotation);
-
     TriggerArea.setBox(this.entity, ColliderLayer.CL_PLAYER);
 
     triggerAreaEventsSystem.onTriggerEnter(this.entity, () => {
-      console.log('ENTERED TIGGER AREA');
+      const direction = Vector3.rotate(
+        Vector3.create(0, 1, 0),
+        Transform.get(this.entity).rotation,
+      );
 
       Physics.applyImpulseToPlayer(direction, this.strength);
-
-      // Physics.applyForceToPlayer(this.entity, Vector3.create(10, 0, 0))
     });
 
     if (this.debug) {
       GltfContainer.create(this.entity, { src: this.src + '/impulse-area.glb' });
     }
-  }
-
-  /**
-   * update(dt)
-   * Called every frame.
-   * @param dt - (optional) Delta time since last frame (in seconds)
-   */
-  update(dt: number) {
-    // Called every frame
   }
 }
