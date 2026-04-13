@@ -1,0 +1,102 @@
+.SceneInspectorPage {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.SceneInspectorPage-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 32px;
+}
+
+.SceneInspectorPage-loading,
+.SceneInspectorPage-error {
+  text-align: center;
+  padding: 48px;
+}
+
+.SceneInspectorPage-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+
+.SceneInspectorPage-qrSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+
+.SceneInspectorPage-qrContainer {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.SceneInspectorPage-qrImage {
+  width: 256px;
+  height: 256px;
+  display: block;
+}
+
+.SceneInspectorPage-url {
+  font-family: monospace;
+  font-size: 11px;
+  word-break: break-all;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  max-width: 400px;
+}
+
+.SceneInspectorPage-sessionsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+
+.SceneInspectorPage-waiting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px;
+  gap: 8px;
+}
+
+.SceneInspectorPage-sessionList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.SceneInspectorPage-sessionItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(46, 204, 113, 0.08);
+  border: 1px solid rgba(46, 204, 113, 0.2);
+  border-radius: 6px;
+}
+
+.SceneInspectorPage-sessionBadge {
+  font-weight: 600;
+  color: #2ecc71;
+  font-size: 13px;
+}
+
+.SceneInspectorPage-sessionMessages {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  margin-left: auto;
+}

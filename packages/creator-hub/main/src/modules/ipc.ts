@@ -8,6 +8,7 @@ import * as code from './code';
 import * as analytics from './analytics';
 import * as npm from './npm';
 import * as config from './config';
+import * as sceneLog from './scene-log-server';
 
 interface InitIpcOptions {
   beforeQuitCleanup: () => Promise<void>;
@@ -47,6 +48,42 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('cli.deploy', (_event, opts) => cli.deploy(opts));
   handle('cli.killPreview', (_event, path) => cli.killPreview(path));
   handle('cli.getMobilePreview', (_event, path) => cli.getMobilePreview(path));
+
+  // scene log
+  handle('sceneLog.getSessions', async () =>
+    sceneLog.getSceneLogSessions().map(s => ({
+      id: s.id,
+      sessionId: s.sessionId,
+      deviceName: s.deviceName,
+      connectedAt: s.connectedAt.toISOString(),
+      disconnectedAt: s.disconnectedAt?.toISOString() ?? null,
+      status: s.status,
+      messageCount: s.messageCount,
+    })),
+  );
+  handle('sceneLog.getConsoleEntries', async (_event, afterIndex: number) =>
+    sceneLog.getConsoleEntries(afterIndex),
+  );
+  handle('sceneLog.getMonitorStats', async () => sceneLog.getMonitorStats());
+  handle('sceneLog.getRawEntries', async (_event, afterIndex: number) =>
+    sceneLog.getRawEntries(afterIndex),
+  );
+  handle('sceneLog.clear', async () => sceneLog.clearSceneLogData());
+  handle(
+    'sceneLog.sendCommand',
+    async (_event, sessionId: number, cmd: string, args: Record<string, unknown>) =>
+      sceneLog.sendCommand(sessionId, cmd, args),
+  );
+  handle('sceneLog.broadcastCommand', async (_event, cmd: string, args: Record<string, unknown>) =>
+    sceneLog.broadcastCommand(cmd, args),
+  );
+  handle('sceneLog.startServer', async () => {
+    const serverPort = await sceneLog.startSceneLogServer();
+    return { port: serverPort };
+  });
+  handle('sceneLog.stopServer', async () => sceneLog.stopSceneLogServer());
+  handle('sceneLog.getServerStatus', async () => sceneLog.getSceneLogServerStatus());
+  handle('sceneLog.getStandaloneDeeplink', async () => sceneLog.getStandaloneDeeplink());
 
   // config
   handle('config.getConfig', () => config.getConfig());

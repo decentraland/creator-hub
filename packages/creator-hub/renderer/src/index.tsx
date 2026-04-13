@@ -29,6 +29,7 @@ import { TemplatesPage } from '/@/components/TemplatesPage';
 import { MorePage } from '/@/components/MorePage';
 import { VideosPage } from '/@/components/VideosPage';
 import { DocsPage } from '/@/components/DocsPage';
+import { SceneInspectorPage } from '/@/components/SceneInspectorPage';
 import { Snackbar } from '/@/components/Snackbar';
 
 import { store } from '#store';
@@ -121,6 +122,10 @@ root.render(
                   <Route
                     path="/more"
                     element={<MorePage />}
+                  />
+                  <Route
+                    path="/scene-inspector"
+                    element={<SceneInspectorPage />}
                   />
                   <Route
                     path="/editor"

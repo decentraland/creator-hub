@@ -18,6 +18,7 @@ import { getAvailablePort } from './port';
 import { getProjectId, track } from './analytics';
 import { install } from './npm';
 import { downloadGithubRepo } from './download-github-folder';
+import { startSceneLogServer } from './scene-log-server';
 
 export type Preview = { child: Child; url: string; opts: PreviewOptions };
 
@@ -130,7 +131,47 @@ export async function getMobilePreview(path: string): Promise<{ url: string; qr:
     }
     const json = await response.json();
     if (json.ok && json.data) {
-      return { url: json.data.url, qr: json.data.qr };
+      let { url, qr } = json.data as { url: string; qr: string };
+
+      // Start scene log WebSocket server and inject the parameter into the URL.
+      // The WS host must match the preview host so mobile devices can reach it.
+      log.info('[CLI] getMobilePreview: got URL from SDK, attempting scene log server setup...', {
+        url: url.substring(0, 80),
+        serverUrl,
+      });
+      try {
+        const wsPort = await startSceneLogServer();
+        // Extract the host from the mobile preview URL (not serverUrl which may be 127.0.0.1)
+        // The mobile URL has the LAN IP that the phone can reach
+        const mobilePreviewParam = new URL(
+          url.replace('decentraland://', 'https://dummy/'),
+        ).searchParams.get('preview');
+        const previewHost = mobilePreviewParam
+          ? new URL(mobilePreviewParam).hostname
+          : new URL(serverUrl).hostname;
+        const sceneLoggingTarget = `ws://${previewHost}:${wsPort}`;
+
+        // Append scene-logging param to the mobile URL
+        if (url.includes('?')) {
+          url = `${url}&scene-logging=${encodeURIComponent(sceneLoggingTarget)}`;
+        } else {
+          url = `${url}?scene-logging=${encodeURIComponent(sceneLoggingTarget)}`;
+        }
+
+        // Regenerate QR with the modified URL
+        const QRCode = await import('qrcode');
+        qr = await QRCode.toDataURL(url, { width: 512, margin: 2 });
+
+        log.info(`[CLI] Scene logging WS at ws://0.0.0.0:${wsPort}, mobile URL updated`);
+      } catch (wsError: any) {
+        log.error(
+          '[CLI] Could not start scene log server:',
+          wsError?.message ?? wsError,
+          wsError?.stack,
+        );
+      }
+
+      return { url, qr };
     }
     return null;
   } catch (error) {

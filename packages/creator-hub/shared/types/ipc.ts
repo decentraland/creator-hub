@@ -66,4 +66,52 @@ export interface Ipc {
   'npm.install': (path: string, packages?: string[]) => Promise<void>;
   'npm.getOutdatedDeps': (path: string, packages?: string[]) => Promise<Outdated>;
   'npm.getContextFiles': (path: string) => Promise<void>;
+  'sceneLog.getSessions': () => Promise<
+    {
+      id: number;
+      sessionId: string | null;
+      deviceName: string | null;
+      connectedAt: string;
+      disconnectedAt: string | null;
+      status: 'active' | 'ended';
+      messageCount: number;
+    }[]
+  >;
+  'sceneLog.getConsoleEntries': (afterIndex: number) => Promise<{
+    entries: { sessionId: number; timestamp: number; level: 'log' | 'error'; message: string }[];
+    nextIndex: number;
+  }>;
+  'sceneLog.getRawEntries': (
+    afterIndex: number,
+  ) => Promise<{ entries: unknown[]; nextIndex: number }>;
+  'sceneLog.getMonitorStats': () => Promise<{
+    totalEntries: number;
+    totalCrdt: number;
+    totalOpCalls: number;
+    totalConsoleLogs: number;
+    activeSessions: number;
+    entriesPerSecond: number;
+  }>;
+  'sceneLog.clear': () => Promise<void>;
+  'sceneLog.sendCommand': (
+    sessionId: number,
+    cmd: string,
+    args: Record<string, unknown>,
+  ) => Promise<{ ok: boolean; data: unknown }>;
+  'sceneLog.broadcastCommand': (
+    cmd: string,
+    args: Record<string, unknown>,
+  ) => Promise<{ ok: boolean; data: unknown }>;
+  'sceneLog.startServer': () => Promise<{ port: number }>;
+  'sceneLog.stopServer': () => Promise<void>;
+  'sceneLog.getServerStatus': () => Promise<{
+    running: boolean;
+    port: number | null;
+    sessions: number;
+  }>;
+  'sceneLog.getStandaloneDeeplink': () => Promise<{
+    url: string;
+    qr: string;
+    port: number;
+  }>;
 }

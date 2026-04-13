@@ -3,6 +3,7 @@ export enum AssetsTab {
   CustomAssets = 'CustomAssets',
   AssetsPack = 'AssetsPack',
   DebugConsole = 'DebugConsole',
+  MobileSession = 'MobileSession',
   RenameAsset = 'RenameAsset',
   CreateCustomAsset = 'CreateCustomAsset',
 }

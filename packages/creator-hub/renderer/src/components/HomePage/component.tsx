@@ -1,10 +1,11 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import cx from 'classnames';
 import LayersOutlinedIcon from '@mui/icons-material/LayersOutlined';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
+import PhoneAndroidIcon from '@mui/icons-material/PhoneAndroid';
 import { CircularProgress as Loader } from 'decentraland-ui2';
 import {
   Container,
@@ -115,6 +116,14 @@ const ScenesCard: React.FC = React.memo(() => {
   const navigate = useNavigate();
   const { projects, isLoading, runProject } = useWorkspace();
   const emptyProjects = projects.length === 0;
+
+  // DEV: Auto-open a specific project on startup
+  useEffect(() => {
+    if (!isLoading && projects.length > 0) {
+      const target = projects.find(p => p.path.includes('MannakiaWorld'));
+      if (target) runProject(target);
+    }
+  }, [isLoading]);
 
   const handleStartBuildingClick = useCallback(() => {
     navigate('/templates');
@@ -230,6 +239,41 @@ const LearnCard: React.FC = React.memo(() => {
   );
 });
 
+const SceneInspectorCard: React.FC = React.memo(() => {
+  const navigate = useNavigate();
+  const handleClick = useCallback(() => {
+    navigate('/scene-inspector');
+  }, [navigate]);
+
+  return (
+    <Card className="Card SceneInspectorCard">
+      <CardContent className="CardContent CenteredContent">
+        <PhoneAndroidIcon sx={{ fontSize: 48, color: '#4fc3f7' }} />
+        <Typography
+          className="Title"
+          variant="subtitle1"
+        >
+          Scene Inspector
+        </Typography>
+        <Typography
+          variant="body2"
+          color="textSecondary"
+        >
+          Connect to a running Decentraland client and inspect scene data in real-time.
+        </Typography>
+        <Button
+          variant="outlined"
+          color="secondary"
+          size="small"
+          onClick={handleClick}
+        >
+          Open Inspector
+        </Button>
+      </CardContent>
+    </Card>
+  );
+});
+
 const FeedbackCard: React.FC = React.memo(() => {
   const handleClickFeedback = useCallback(() => misc.openExternal(FEEDBACK_URL), []);
 
@@ -296,6 +340,12 @@ export function HomePage() {
               xs
             >
               <LearnCard />
+            </Grid>
+            <Grid
+              item
+              xs
+            >
+              <SceneInspectorCard />
             </Grid>
             <Grid
               item

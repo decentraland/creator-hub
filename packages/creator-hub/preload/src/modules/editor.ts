@@ -80,3 +80,120 @@ export async function openExternalURL(url: string) {
 export async function getMobilePreview(path: string) {
   return invoke('cli.getMobilePreview', path);
 }
+
+export interface SceneLogSessionInfo {
+  id: number;
+  sessionId: string | null;
+  deviceName: string | null;
+  connectedAt: string;
+  disconnectedAt: string | null;
+  status: 'active' | 'ended';
+  messageCount: number;
+}
+
+export interface ConsoleEntry {
+  sessionId: number;
+  timestamp: number;
+  level: 'log' | 'error';
+  message: string;
+}
+
+export interface MonitorStats {
+  totalEntries: number;
+  totalCrdt: number;
+  totalOpCalls: number;
+  totalConsoleLogs: number;
+  activeSessions: number;
+  entriesPerSecond: number;
+}
+
+export async function getSceneLogSessions(): Promise<SceneLogSessionInfo[]> {
+  return invoke('sceneLog.getSessions') as Promise<SceneLogSessionInfo[]>;
+}
+
+export async function getConsoleEntries(
+  afterIndex: number,
+): Promise<{ entries: ConsoleEntry[]; nextIndex: number }> {
+  return invoke('sceneLog.getConsoleEntries', afterIndex) as Promise<{
+    entries: ConsoleEntry[];
+    nextIndex: number;
+  }>;
+}
+
+export async function getMonitorStats(): Promise<MonitorStats> {
+  return invoke('sceneLog.getMonitorStats') as Promise<MonitorStats>;
+}
+
+export async function getRawEntries(
+  afterIndex: number,
+): Promise<{ entries: unknown[]; nextIndex: number }> {
+  return invoke('sceneLog.getRawEntries', afterIndex) as Promise<{
+    entries: unknown[];
+    nextIndex: number;
+  }>;
+}
+
+export async function clearSceneLogData(): Promise<void> {
+  return invoke('sceneLog.clear') as Promise<void>;
+}
+
+export async function sendSceneLogCommand(
+  sessionId: number,
+  cmd: string,
+  args: Record<string, unknown> = {},
+): Promise<{ ok: boolean; data: unknown }> {
+  return invoke('sceneLog.sendCommand', sessionId, cmd, args) as Promise<{
+    ok: boolean;
+    data: unknown;
+  }>;
+}
+
+export async function broadcastSceneLogCommand(
+  cmd: string,
+  args: Record<string, unknown> = {},
+): Promise<{ ok: boolean; data: unknown }> {
+  return invoke('sceneLog.broadcastCommand', cmd, args) as Promise<{
+    ok: boolean;
+    data: unknown;
+  }>;
+}
+
+export async function startSceneLogServer(): Promise<{ port: number }> {
+  return invoke('sceneLog.startServer') as Promise<{ port: number }>;
+}
+
+export async function stopSceneLogServer(): Promise<void> {
+  return invoke('sceneLog.stopServer') as Promise<void>;
+}
+
+export async function getSceneLogServerStatus(): Promise<{
+  running: boolean;
+  port: number | null;
+  sessions: number;
+}> {
+  return invoke('sceneLog.getServerStatus') as Promise<{
+    running: boolean;
+    port: number | null;
+    sessions: number;
+  }>;
+}
+
+export async function getStandaloneDeeplink(): Promise<{ url: string; qr: string; port: number }> {
+  return invoke('sceneLog.getStandaloneDeeplink') as Promise<{
+    url: string;
+    qr: string;
+    port: number;
+  }>;
+}
+
+/** Subscribe to pushed scene log entries (real-time, no polling). */
+export function onSceneLogEntries(
+  callback: (data: { sessionId: number; entries: unknown[] }) => void,
+): () => void {
+  const handler = (_event: IpcRendererEvent, data: { sessionId: number; entries: unknown[] }) =>
+    callback(data);
+  ipcRenderer.on('sceneLog:entries', handler);
+  return () => {
+    ipcRenderer.removeListener('sceneLog:entries', handler);
+  };
+}

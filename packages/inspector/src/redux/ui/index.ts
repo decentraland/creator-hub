@@ -13,6 +13,7 @@ export interface UiState {
   selectedSceneInspectorTab: SceneInspectorTab;
   hiddenSceneInspectorTabs: Partial<Record<SceneInspectorTab, boolean>>;
   debugConsoleEnabled: boolean;
+  mobileSessionEnabled: boolean;
 }
 
 export const initialState: UiState = {
@@ -24,6 +25,7 @@ export const initialState: UiState = {
   selectedSceneInspectorTab: SceneInspectorTab.DETAILS,
   hiddenSceneInspectorTabs: {},
   debugConsoleEnabled: false,
+  mobileSessionEnabled: true,
 };
 
 export const appState = createSlice({
@@ -67,6 +69,12 @@ export const appState = createSlice({
     setDebugConsoleEnabled: (state, { payload }: PayloadAction<{ enabled: boolean }>) => {
       state.debugConsoleEnabled = payload.enabled;
     },
+    setMobileSessionEnabled: (state, { payload }: PayloadAction<{ enabled: boolean }>) => {
+      // Once enabled, stay enabled (freeze the tab). New sessions auto-activate it.
+      if (payload.enabled) {
+        state.mobileSessionEnabled = true;
+      }
+    },
   },
 });
 
@@ -80,6 +88,7 @@ export const {
   selectSceneInspectorTab,
   toggleSceneInspectorTab,
   setDebugConsoleEnabled,
+  setMobileSessionEnabled,
 } = appState.actions;
 
 // Selectors
@@ -94,6 +103,7 @@ export const getHiddenSceneInspectorTabs = (state: RootState) => state.ui.hidden
 export const areGizmosDisabled = (state: RootState) => state.ui.disableGizmos;
 export const isGroundGridDisabled = (state: RootState) => state.ui.disableGroundGrid;
 export const getDebugConsoleEnabled = (state: RootState) => state.ui.debugConsoleEnabled;
+export const getMobileSessionEnabled = (state: RootState) => state.ui.mobileSessionEnabled;
 
 // Reducer
 export default appState.reducer;
