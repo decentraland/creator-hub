@@ -32,7 +32,7 @@
       "data": {
         "0": {
           "json": {
-            "src": "assets/scene/Models/impulse-area/impulse-area.glb"
+            "src": "{assetPath}/impulse-area.glb"
           }
         }
       }

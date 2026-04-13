@@ -32,7 +32,7 @@
       "data": {
         "0": {
           "json": {
-            "src": "assets/custom/wind_tunnel_area/wind-tunnel-area.glb"
+            "src": "{assetPath}/wind-tunnel-area.glb"
           }
         }
       }
