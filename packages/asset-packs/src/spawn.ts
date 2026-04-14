@@ -183,7 +183,7 @@ export function spawnCustomItem(
   // -------------------------------------------------------------------------
   // Step 1: Parse Transform tree to build parent relationships
   // -------------------------------------------------------------------------
-  const transformComponent = composite.components.find((c) => c.name === CORE_TRANSFORM);
+  const transformComponent = composite.components.find(c => c.name === CORE_TRANSFORM);
   const entityIds = new Set<Entity>();
 
   if (transformComponent) {
@@ -215,7 +215,7 @@ export function spawnCustomItem(
   // Step 3: Parse entity names
   // -------------------------------------------------------------------------
   const names = new Map<Entity, string>();
-  const nameComponent = composite.components.find((c) => c.name === CORE_NAME);
+  const nameComponent = composite.components.find(c => c.name === CORE_NAME);
   if (nameComponent) {
     for (const [entityIdStr, nameData] of Object.entries(nameComponent.data)) {
       names.set(Number(entityIdStr) as Entity, (nameData as any).json.value as string);
@@ -395,14 +395,20 @@ export function spawnCustomItem(
             ...componentValue,
           };
           if (basePath && componentValue.src?.includes('{assetPath}')) {
-            componentValue = { ...componentValue, src: replaceAssetPath(componentValue.src, basePath) };
+            componentValue = {
+              ...componentValue,
+              src: replaceAssetPath(componentValue.src, basePath),
+            };
           }
           break;
         }
 
         case ComponentName.PLACEHOLDER: {
           if (basePath && componentValue.src?.includes('{assetPath}')) {
-            componentValue = { ...componentValue, src: replaceAssetPath(componentValue.src, basePath) };
+            componentValue = {
+              ...componentValue,
+              src: replaceAssetPath(componentValue.src, basePath),
+            };
           }
           break;
         }
@@ -432,7 +438,10 @@ export function spawnCustomItem(
 
         case CORE_VIDEO_PLAYER: {
           if (basePath && componentValue.src?.includes('{assetPath}')) {
-            componentValue = { ...componentValue, src: replaceAssetPath(componentValue.src, basePath) };
+            componentValue = {
+              ...componentValue,
+              src: replaceAssetPath(componentValue.src, basePath),
+            };
           }
           break;
         }
@@ -519,7 +528,8 @@ export function spawnCustomItem(
         }
 
         case CORE_SYNC_COMPONENTS: {
-          const componentNames: string[] = componentValue.value ?? componentValue.componentIds ?? [];
+          const componentNames: string[] =
+            componentValue.value ?? componentValue.componentIds ?? [];
           const componentIds = componentNames.reduce((acc: number[], name: string) => {
             try {
               return [...acc, engine.getComponent(name).componentId];
@@ -545,10 +555,9 @@ export function spawnCustomItem(
           if (basePath) {
             const newScripts = (componentValue.value ?? []).map((scriptItem: any) => ({
               ...scriptItem,
-              path:
-                scriptItem.path?.includes('{assetPath}')
-                  ? replaceAssetPath(scriptItem.path, basePath)
-                  : scriptItem.path,
+              path: scriptItem.path?.includes('{assetPath}')
+                ? replaceAssetPath(scriptItem.path, basePath)
+                : scriptItem.path,
             }));
             componentValue = { ...componentValue, value: newScripts };
           }

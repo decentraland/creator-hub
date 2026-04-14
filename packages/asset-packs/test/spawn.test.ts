@@ -20,7 +20,7 @@ const CORE_SYNC_COMPONENTS = 'core-schema::Sync-Components';
 function buildEngine(): IEngine {
   const engine = Engine();
   getExplorerComponents(engine); // registers core components
-  defineAllComponents(engine);   // registers asset-packs components
+  defineAllComponents(engine); // registers asset-packs components
   return engine;
 }
 
@@ -46,7 +46,11 @@ function singleEntityComposite(): AssetComposite {
         name: CORE_TRANSFORM,
         data: {
           '0': {
-            json: { position: { x: 1, y: 2, z: 3 }, rotation: { x: 0, y: 0, z: 0, w: 1 }, scale: { x: 1, y: 1, z: 1 } },
+            json: {
+              position: { x: 1, y: 2, z: 3 },
+              rotation: { x: 0, y: 0, z: 0, w: 1 },
+              scale: { x: 1, y: 1, z: 1 },
+            },
           },
         },
       },
@@ -68,7 +72,11 @@ function multiEntityComposite(): AssetComposite {
         name: CORE_TRANSFORM,
         data: {
           '0': {
-            json: { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0, w: 1 }, scale: { x: 1, y: 1, z: 1 } },
+            json: {
+              position: { x: 0, y: 0, z: 0 },
+              rotation: { x: 0, y: 0, z: 0, w: 1 },
+              scale: { x: 1, y: 1, z: 1 },
+            },
           },
           '512': {
             json: {
@@ -99,10 +107,18 @@ function multiRootComposite(): AssetComposite {
         name: CORE_TRANSFORM,
         data: {
           '0': {
-            json: { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0, w: 1 }, scale: { x: 1, y: 1, z: 1 } },
+            json: {
+              position: { x: 0, y: 0, z: 0 },
+              rotation: { x: 0, y: 0, z: 0, w: 1 },
+              scale: { x: 1, y: 1, z: 1 },
+            },
           },
           '512': {
-            json: { position: { x: 2, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0, w: 1 }, scale: { x: 1, y: 1, z: 1 } },
+            json: {
+              position: { x: 2, y: 0, z: 0 },
+              rotation: { x: 0, y: 0, z: 0, w: 1 },
+              scale: { x: 1, y: 1, z: 1 },
+            },
           },
         },
       },
@@ -225,7 +241,15 @@ describe('spawnCustomItem', () => {
         components: [
           {
             name: CORE_TRANSFORM,
-            data: { '0': { json: { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0, w: 1 }, scale: { x: 1, y: 1, z: 1 } } } },
+            data: {
+              '0': {
+                json: {
+                  position: { x: 0, y: 0, z: 0 },
+                  rotation: { x: 0, y: 0, z: 0, w: 1 },
+                  scale: { x: 1, y: 1, z: 1 },
+                },
+              },
+            },
           },
           {
             name: ComponentName.ACTIONS,
@@ -237,7 +261,11 @@ describe('spawnCustomItem', () => {
                     {
                       name: 'play',
                       type: 'play_sound',
-                      jsonPayload: JSON.stringify({ src: '{assetPath}/sound.mp3', loop: false, volume: 1 }),
+                      jsonPayload: JSON.stringify({
+                        src: '{assetPath}/sound.mp3',
+                        loop: false,
+                        volume: 1,
+                      }),
                     },
                   ],
                 },
@@ -248,14 +276,9 @@ describe('spawnCustomItem', () => {
       };
 
       const Actions = engine.getComponent(ComponentName.ACTIONS) as any;
-      const root = spawnCustomItem(
-        engine,
-        actionComposite,
-        Transform_,
-        Triggers_,
-        undefined,
-        { basePath: 'assets/custom/my-item' },
-      );
+      const root = spawnCustomItem(engine, actionComposite, Transform_, Triggers_, undefined, {
+        basePath: 'assets/custom/my-item',
+      });
       const actions = Actions.getOrNull(root);
       expect(actions).not.toBeNull();
       const payload = JSON.parse(actions!.value[0].jsonPayload);
@@ -271,7 +294,15 @@ describe('spawnCustomItem', () => {
         components: [
           {
             name: CORE_TRANSFORM,
-            data: { '0': { json: { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0, w: 1 }, scale: { x: 1, y: 1, z: 1 } } } },
+            data: {
+              '0': {
+                json: {
+                  position: { x: 0, y: 0, z: 0 },
+                  rotation: { x: 0, y: 0, z: 0, w: 1 },
+                  scale: { x: 1, y: 1, z: 1 },
+                },
+              },
+            },
           },
           {
             name: ComponentName.ACTIONS,
@@ -320,7 +351,15 @@ describe('spawnCustomItem', () => {
         components: [
           {
             name: CORE_TRANSFORM,
-            data: { '0': { json: { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0, w: 1 }, scale: { x: 1, y: 1, z: 1 } } } },
+            data: {
+              '0': {
+                json: {
+                  position: { x: 0, y: 0, z: 0 },
+                  rotation: { x: 0, y: 0, z: 0, w: 1 },
+                  scale: { x: 1, y: 1, z: 1 },
+                },
+              },
+            },
           },
           {
             name: CORE_SYNC_COMPONENTS,
@@ -331,9 +370,7 @@ describe('spawnCustomItem', () => {
         ],
       };
 
-      expect(() =>
-        spawnCustomItem(engine, syncComposite, Transform_, Triggers_),
-      ).not.toThrow();
+      expect(() => spawnCustomItem(engine, syncComposite, Transform_, Triggers_)).not.toThrow();
     });
 
     it('should call sdkHelpers.syncEntity when sdkHelpers is provided', () => {
@@ -343,7 +380,15 @@ describe('spawnCustomItem', () => {
         components: [
           {
             name: CORE_TRANSFORM,
-            data: { '0': { json: { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0, w: 1 }, scale: { x: 1, y: 1, z: 1 } } } },
+            data: {
+              '0': {
+                json: {
+                  position: { x: 0, y: 0, z: 0 },
+                  rotation: { x: 0, y: 0, z: 0, w: 1 },
+                  scale: { x: 1, y: 1, z: 1 },
+                },
+              },
+            },
           },
           {
             name: CORE_SYNC_COMPONENTS,
@@ -366,7 +411,15 @@ describe('spawnCustomItem', () => {
         components: [
           {
             name: CORE_TRANSFORM,
-            data: { '0': { json: { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0, w: 1 }, scale: { x: 1, y: 1, z: 1 } } } },
+            data: {
+              '0': {
+                json: {
+                  position: { x: 0, y: 0, z: 0 },
+                  rotation: { x: 0, y: 0, z: 0, w: 1 },
+                  scale: { x: 1, y: 1, z: 1 },
+                },
+              },
+            },
           },
           {
             name: 'non-existent::UnknownComponent-v99',
@@ -386,9 +439,9 @@ describe('spawnCustomItem', () => {
   describe('when composite is empty', () => {
     it('should throw an error', () => {
       const empty: AssetComposite = { version: 1, components: [] };
-      expect(() =>
-        spawnCustomItem(engine, empty, Transform_, Triggers_),
-      ).toThrow('[spawnCustomItem] Composite contains no entities');
+      expect(() => spawnCustomItem(engine, empty, Transform_, Triggers_)).toThrow(
+        '[spawnCustomItem] Composite contains no entities',
+      );
     });
   });
 });
