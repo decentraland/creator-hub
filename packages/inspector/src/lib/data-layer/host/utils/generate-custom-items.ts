@@ -1,5 +1,5 @@
 import type { FileSystemInterface } from '../../types';
-import { DIRECTORY, getFilesInDirectory, withAssetDir } from '../fs-utils';
+import { DIRECTORY, getFilesInDirectory } from '../fs-utils';
 
 export const CUSTOM_ITEMS_GEN_PATH = 'src/custom-items.gen.ts';
 
@@ -35,7 +35,15 @@ async function readCustomItems(
 ): Promise<CustomItemEntry[]> {
   const allPaths = await getFilesInDirectory(fs, customDir, [], true);
   // Collect unique top-level folder names (e.g. "monster_1", "chest_2")
-  const slugs = [...new Set(allPaths.map(p => p.split('/')[1]).filter(Boolean))];
+  // Strip the customDir prefix, then take the first path segment
+  const prefix = customDir.endsWith('/') ? customDir : `${customDir}/`;
+  const slugs = [
+    ...new Set(
+      allPaths
+        .map(p => (p.startsWith(prefix) ? p.slice(prefix.length).split('/')[0] : null))
+        .filter((s): s is string => !!s),
+    ),
+  ];
 
   const entries: CustomItemEntry[] = [];
 
@@ -57,7 +65,7 @@ async function readCustomItems(
       };
 
       // Pre-resolve {assetPath} → the actual relative path of this item's folder
-      const assetFolderPath = `${withAssetDir(DIRECTORY.CUSTOM)}/${slug}`;
+      const assetFolderPath = `${customDir}/${slug}`;
       const compositeJson = new TextDecoder()
         .decode(compositeRaw)
         .replace(/\{assetPath\}/g, assetFolderPath);
@@ -71,7 +79,7 @@ async function readCustomItems(
         composite,
       });
     } catch (err) {
-      console.warn(`generateCustomItemsFile: failed to read custom item "${slug}":`, err);
+      console.error(`generateCustomItemsFile: failed to read custom item "${slug}":`, err);
     }
   }
 
@@ -213,7 +221,7 @@ function buildFileContent(entries: CustomItemEntry[]): string {
  */
 export async function generateCustomItemsFile(
   fs: FileSystemInterface,
-  customDir: string = withAssetDir(DIRECTORY.CUSTOM),
+  customDir: string = DIRECTORY.CUSTOM,
 ): Promise<void> {
   try {
     const entries = await readCustomItems(fs, customDir);

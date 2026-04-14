@@ -5,14 +5,14 @@ import type { ISDKHelpers } from './definitions';
 import { ComponentName } from './enums';
 import type { AssetComposite } from './types';
 
-const EDITOR_COMPONENT_PREFIXES = ['inspector::', 'editor::']
+const EDITOR_COMPONENT_PREFIXES = ['inspector::', 'editor::'];
 
 function isEditorComponent(componentName: string): boolean {
-  return EDITOR_COMPONENT_PREFIXES.some(prefix => componentName.startsWith(prefix))
+  return EDITOR_COMPONENT_PREFIXES.some(prefix => componentName.startsWith(prefix));
 }
 
 function isSelfRef(value: unknown): boolean {
-  return `${value}` === '{self}'
+  return `${value}` === '{self}';
 }
 
 function mapIdRef(
@@ -22,29 +22,29 @@ function mapIdRef(
 ): string | number {
   if (typeof id === 'string') {
     // Handle {self:ComponentName} references
-    const selfMatch = id.match(/^\{self:(.+)\}$/)
+    const selfMatch = id.match(/^\{self:(.+)\}$/);
     if (selfMatch) {
-      const componentName = selfMatch[1]
-      const key = `${componentName}:${entityId}`
-      return ids.get(key) ?? id
+      const componentName = selfMatch[1];
+      const key = `${componentName}:${entityId}`;
+      return ids.get(key) ?? id;
     }
     // Handle {entityId:ComponentName} cross-entity references
-    const crossEntityMatch = id.match(/^\{(\d+):(.+)\}$/)
+    const crossEntityMatch = id.match(/^\{(\d+):(.+)\}$/);
     if (crossEntityMatch) {
-      const [, refEntityId, componentName] = crossEntityMatch
-      const key = `${componentName}:${refEntityId}`
-      return ids.get(key) ?? id
+      const [, refEntityId, componentName] = crossEntityMatch;
+      const key = `${componentName}:${refEntityId}`;
+      return ids.get(key) ?? id;
     }
   }
-  return id
+  return id;
 }
 
 function parseMaterialSrc(material: any, basePath: string): any {
-  if (!material || !basePath) return material
-  const replaceAssetPath = (src: string) => src.replace('{assetPath}', basePath)
+  if (!material || !basePath) return material;
+  const replaceAssetPath = (src: string) => src.replace('{assetPath}', basePath);
 
-  const m = material.material
-  if (!m) return material
+  const m = material.material;
+  if (!m) return material;
   if (m.$case === 'unlit' && m.unlit?.texture?.tex?.$case === 'texture') {
     return {
       ...material,
@@ -61,15 +61,15 @@ function parseMaterialSrc(material: any, basePath: string): any {
           },
         },
       },
-    }
+    };
   }
   if (m.$case === 'pbr') {
     const mapTex = (tex: any) => {
       if (tex?.tex?.$case === 'texture') {
-        return { ...tex, tex: { ...tex.tex, texture: { ...tex.tex.texture, src: replaceAssetPath(tex.tex.texture.src) } } }
+        return { ...tex, tex: { ...tex.tex, texture: { ...tex.tex.texture, src: replaceAssetPath(tex.tex.texture.src) } } };
       }
-      return tex
-    }
+      return tex;
+    };
     return {
       ...material,
       material: {
@@ -82,28 +82,28 @@ function parseMaterialSrc(material: any, basePath: string): any {
           emissiveTexture: mapTex(m.pbr?.emissiveTexture),
         },
       },
-    }
+    };
   }
-  return material
+  return material;
 }
 
 export interface SpawnFromCompositeOptions {
   /** Entity to attach the spawned tree to. Defaults to engine.RootEntity. */
-  parent?: Entity
+  parent?: Entity;
   /** Position override for the root entity. */
-  position?: { x: number; y: number; z: number }
+  position?: { x: number; y: number; z: number };
   /** Rotation override for the root entity. */
-  rotation?: { x: number; y: number; z: number; w: number }
+  rotation?: { x: number; y: number; z: number; w: number };
   /** Scale override for the root entity. */
-  scale?: { x: number; y: number; z: number }
+  scale?: { x: number; y: number; z: number };
   /**
    * Base path for resolving `{assetPath}` placeholders in the composite.
    * When using the auto-generated `spawnCustomItem()` helper, this is
    * already pre-resolved and you do not need to provide it.
    */
-  basePath?: string
+  basePath?: string;
   /** SDK helpers for multiplayer scenes (NetworkEntity/SyncComponents support). */
-  sdkHelpers?: ISDKHelpers
+  sdkHelpers?: ISDKHelpers;
 }
 
 /**
@@ -128,216 +128,216 @@ export function spawnFromComposite(
   composite: AssetComposite,
   options: SpawnFromCompositeOptions = {},
 ): Entity {
-  const { parent, position, rotation, scale, basePath = '', sdkHelpers } = options
-  const parentEntity = parent ?? engine.RootEntity
+  const { parent, position, rotation, scale, basePath = '', sdkHelpers } = options;
+  const parentEntity = parent ?? engine.RootEntity;
 
-  const Transform = engine.getComponent(TransformEngine.componentId) as typeof TransformEngine
-  const NameComponent = engine.getComponentOrNull(Name.componentId) as typeof Name | null
+  const Transform = engine.getComponent(TransformEngine.componentId) as typeof TransformEngine;
+  const NameComponent = engine.getComponentOrNull(Name.componentId) as typeof Name | null;
 
   // ── Step 1: collect all entity IDs from composite ───────────────────────
-  const entityIds = new Set<number>()
-  const parentOf = new Map<number, number>()
-  const transformValues = new Map<number, any>()
-  const entityNames = new Map<number, string>()
+  const entityIds = new Set<number>();
+  const parentOf = new Map<number, number>();
+  const transformValues = new Map<number, any>();
+  const entityNames = new Map<number, string>();
 
-  const transformComp = composite.components.find(c => c.name === 'core::Transform')
+  const transformComp = composite.components.find(c => c.name === 'core::Transform');
   if (transformComp) {
     for (const [idStr, data] of Object.entries(transformComp.data)) {
-      const id = Number(idStr)
-      entityIds.add(id)
-      const t = data.json
-      transformValues.set(id, t)
+      const id = Number(idStr);
+      entityIds.add(id);
+      const t = data.json;
+      transformValues.set(id, t);
       if (typeof t?.parent === 'number') {
-        parentOf.set(id, t.parent)
-        entityIds.add(t.parent)
+        parentOf.set(id, t.parent);
+        entityIds.add(t.parent);
       }
     }
   }
 
   const nameComp = composite.components.find(
     c => c.name === Name.componentName || c.name === 'core::Name',
-  )
+  );
   if (nameComp) {
     for (const [idStr, data] of Object.entries(nameComp.data)) {
-      entityNames.set(Number(idStr), data.json?.value ?? '')
+      entityNames.set(Number(idStr), data.json?.value ?? '');
     }
   }
 
   for (const comp of composite.components) {
     for (const idStr of Object.keys(comp.data)) {
-      entityIds.add(Number(idStr))
+      entityIds.add(Number(idStr));
     }
   }
 
   // ── Step 2: find roots (entities with no parent in the composite) ────────
-  const roots = new Set<number>()
+  const roots = new Set<number>();
   for (const id of entityIds) {
-    if (!parentOf.has(id)) roots.add(id)
+    if (!parentOf.has(id)) roots.add(id);
   }
 
   if (entityIds.size === 0) {
     // Empty composite: create a placeholder entity
-    const emptyEntity = engine.addEntity()
+    const emptyEntity = engine.addEntity();
     Transform.createOrReplace(emptyEntity, {
       parent: parentEntity,
       position: position ?? { x: 0, y: 0, z: 0 },
       rotation: rotation ?? { x: 0, y: 0, z: 0, w: 1 },
       scale: scale ?? { x: 1, y: 1, z: 1 },
-    })
-    return emptyEntity
+    });
+    return emptyEntity;
   }
 
   // ── Step 3: determine composite root name ────────────────────────────────
-  const compositeRootId = roots.size === 1 ? Array.from(roots)[0] : null
+  const compositeRootId = roots.size === 1 ? Array.from(roots)[0] : null;
   const rootName = compositeRootId != null
     ? (entityNames.get(compositeRootId) ?? 'Custom_Item')
-    : 'Custom_Item'
+    : 'Custom_Item';
 
   // ── Step 4: pre-generate IDs for COMPONENTS_WITH_ID ─────────────────────
-  const ids = new Map<string, number>() // key: `ComponentName:entityId`
-  const values = new Map<string, any>() // key: `ComponentName:entityId`
+  const ids = new Map<string, number>(); // key: `ComponentName:entityId`
+  const values = new Map<string, any>(); // key: `ComponentName:entityId`
 
   for (const comp of composite.components) {
-    if (isEditorComponent(comp.name)) continue
+    if (isEditorComponent(comp.name)) continue;
     for (const [idStr, data] of Object.entries(comp.data)) {
-      const key = `${comp.name}:${idStr}`
-      const val = { ...data.json }
+      const key = `${comp.name}:${idStr}`;
+      const val = { ...data.json };
       if (COMPONENTS_WITH_ID.includes(comp.name) && isSelfRef(val.id)) {
-        const newId = getNextId(engine)
-        ids.set(key, newId)
-        val.id = newId
+        const newId = getNextId(engine);
+        ids.set(key, newId);
+        val.id = newId;
       }
-      values.set(key, val)
+      values.set(key, val);
     }
   }
 
   // ── Step 5: create entities ──────────────────────────────────────────────
-  const entities = new Map<number, Entity>() // composite ID → live entity
+  const entities = new Map<number, Entity>(); // composite ID → live entity
 
-  let mainEntity: Entity | null = null
-  let defaultParent = parentEntity
+  let mainEntity: Entity | null = null;
+  let defaultParent = parentEntity;
 
   // If multiple roots, create a wrapper entity
   if (roots.size > 1) {
-    const wrapperEntity = engine.addEntity()
+    const wrapperEntity = engine.addEntity();
     Transform.createOrReplace(wrapperEntity, {
       parent: parentEntity,
       position: position ?? { x: 0, y: 0, z: 0 },
       rotation: rotation ?? { x: 0, y: 0, z: 0, w: 1 },
       scale: scale ?? { x: 1, y: 1, z: 1 },
-    })
+    });
     if (NameComponent) {
-      NameComponent.createOrReplace(wrapperEntity, { value: rootName })
+      NameComponent.createOrReplace(wrapperEntity, { value: rootName });
     }
-    mainEntity = wrapperEntity
-    defaultParent = wrapperEntity
+    mainEntity = wrapperEntity;
+    defaultParent = wrapperEntity;
   }
 
   // Single entity: just create it directly
   if (entityIds.size === 1) {
-    const id = entityIds.values().next().value as number
-    const entity = engine.addEntity()
+    const id = entityIds.values().next().value as number;
+    const entity = engine.addEntity();
     Transform.createOrReplace(entity, {
       parent: parentEntity,
       position: position ?? { x: 0, y: 0, z: 0 },
       rotation: rotation ?? { x: 0, y: 0, z: 0, w: 1 },
       scale: scale ?? { x: 1, y: 1, z: 1 },
-    })
+    });
     if (NameComponent) {
-      NameComponent.createOrReplace(entity, { value: rootName })
+      NameComponent.createOrReplace(entity, { value: rootName });
     }
-    entities.set(id, entity)
-    mainEntity = entity
+    entities.set(id, entity);
+    mainEntity = entity;
   } else {
     // Multiple entities: need two passes to resolve parents
-    const orphaned = new Map<number, number>() // entityId → intended parentId
+    const orphaned = new Map<number, number>(); // entityId → intended parentId
 
     for (const id of entityIds) {
-      const isRoot = roots.has(id)
-      const intendedParentId = parentOf.get(id)
+      const isRoot = roots.has(id);
+      const intendedParentId = parentOf.get(id);
       const resolvedParent =
-        isRoot ? defaultParent : (typeof intendedParentId === 'number' ? entities.get(intendedParentId) : undefined)
+        isRoot ? defaultParent : (typeof intendedParentId === 'number' ? entities.get(intendedParentId) : undefined);
 
       if (!isRoot && typeof intendedParentId === 'number' && resolvedParent === undefined) {
-        orphaned.set(id, intendedParentId)
+        orphaned.set(id, intendedParentId);
       }
 
-      const entity = engine.addEntity()
-      const tval = transformValues.get(id)
-      const entityParent = resolvedParent ?? defaultParent
+      const entity = engine.addEntity();
+      const tval = transformValues.get(id);
+      const entityParent = resolvedParent ?? defaultParent;
 
       Transform.createOrReplace(entity, {
         parent: entityParent,
         position: tval?.position ?? { x: 0, y: 0, z: 0 },
         rotation: tval?.rotation ?? { x: 0, y: 0, z: 0, w: 1 },
         scale: tval?.scale ?? { x: 1, y: 1, z: 1 },
-      })
+      });
 
-      const entityNameValue = entityNames.get(id) ?? `entity_${id}`
+      const entityNameValue = entityNames.get(id) ?? `entity_${id}`;
       if (NameComponent) {
-        NameComponent.createOrReplace(entity, { value: entityNameValue })
+        NameComponent.createOrReplace(entity, { value: entityNameValue });
       }
 
-      entities.set(id, entity)
+      entities.set(id, entity);
     }
 
     // Fix orphaned entities
     for (const [id, intendedParentId] of orphaned) {
-      const entity = entities.get(id)!
-      const resolvedParent = entities.get(intendedParentId)
+      const entity = entities.get(id)!;
+      const resolvedParent = entities.get(intendedParentId);
       if (entity && resolvedParent) {
-        const tval = transformValues.get(id)
+        const tval = transformValues.get(id);
         Transform.createOrReplace(entity, {
           parent: resolvedParent,
           position: tval?.position ?? { x: 0, y: 0, z: 0 },
           rotation: tval?.rotation ?? { x: 0, y: 0, z: 0, w: 1 },
           scale: tval?.scale ?? { x: 1, y: 1, z: 1 },
-        })
+        });
       }
     }
 
     // Override root entity transform with caller's options
     if (compositeRootId != null) {
-      const rootEntity = entities.get(compositeRootId)
+      const rootEntity = entities.get(compositeRootId);
       if (rootEntity) {
-        const tval = transformValues.get(compositeRootId)
+        const tval = transformValues.get(compositeRootId);
         Transform.createOrReplace(rootEntity, {
           parent: parentEntity,
           position: position ?? tval?.position ?? { x: 0, y: 0, z: 0 },
           rotation: rotation ?? tval?.rotation ?? { x: 0, y: 0, z: 0, w: 1 },
           scale: scale ?? tval?.scale ?? { x: 1, y: 1, z: 1 },
-        })
-        mainEntity = rootEntity
+        });
+        mainEntity = rootEntity;
       }
     }
   }
 
   if (!mainEntity) {
-    throw new Error('spawnFromComposite: failed to create main entity')
+    throw new Error('spawnFromComposite: failed to create main entity');
   }
 
   // ── Step 6: apply all components ─────────────────────────────────────────
   for (const comp of composite.components) {
-    const componentName = comp.name
+    const componentName = comp.name;
 
     // Skip editor-only components
-    if (isEditorComponent(componentName)) continue
+    if (isEditorComponent(componentName)) continue;
     // Skip Transform and Name (already handled above)
-    if (componentName === 'core::Transform' || componentName === Name.componentName || componentName === 'core::Name') continue
+    if (componentName === 'core::Transform' || componentName === Name.componentName || componentName === 'core::Name') continue;
 
     for (const [idStr] of Object.entries(comp.data)) {
-      const entityId = Number(idStr)
-      const targetEntity = entities.get(entityId)
-      if (!targetEntity) continue
+      const entityId = Number(idStr);
+      const targetEntity = entities.get(entityId);
+      if (!targetEntity) continue;
 
-      const key = `${componentName}:${idStr}`
-      let compValue = values.get(key) ?? comp.data[idStr].json
+      const key = `${componentName}:${idStr}`;
+      let compValue = values.get(key) ?? comp.data[idStr].json;
 
       // Apply {assetPath} replacement
       if (basePath) {
         compValue = JSON.parse(
           JSON.stringify(compValue).replace(/\{assetPath\}/g, basePath),
-        )
+        );
       }
 
       switch (componentName) {
@@ -350,9 +350,9 @@ export function spawnFromComposite(
                 ...action,
                 id: typeof action.id === 'number' ? action.id : mapIdRef(action.id, idStr, ids),
               })),
-            }
+            };
           }
-          break
+          break;
         }
         case ComponentName.TRIGGERS: {
           if (Array.isArray(compValue?.value)) {
@@ -369,33 +369,33 @@ export function spawnFromComposite(
                   id: mapIdRef(action.id, idStr, ids),
                 })),
               })),
-            }
+            };
           }
-          break
+          break;
         }
         case 'core::Material': {
-          compValue = parseMaterialSrc(compValue, basePath)
-          break
+          compValue = parseMaterialSrc(compValue, basePath);
+          break;
         }
         case 'core::SyncComponents': {
           if (sdkHelpers?.syncEntity) {
             const componentIds: number[] = (compValue.value ?? compValue.componentIds ?? []).reduce(
               (acc: number[], name: string) => {
                 try {
-                  const c = engine.getComponent(name)
-                  return [...acc, c.componentId]
+                  const c = engine.getComponent(name);
+                  return [...acc, c.componentId];
                 } catch {
-                  console.warn(`spawnFromComposite: component "${name}" not found, skipping SyncComponents entry`)
-                  return acc
+                  console.error(`spawnFromComposite: component "${name}" not found, skipping SyncComponents entry`);
+                  return acc;
                 }
               },
               [],
-            )
+            );
             if (componentIds.length > 0) {
-              sdkHelpers.syncEntity(targetEntity, componentIds)
+              sdkHelpers.syncEntity(targetEntity, componentIds);
             }
           }
-          continue
+          continue;
         }
       }
 
@@ -403,16 +403,16 @@ export function spawnFromComposite(
       try {
         const Component = engine.getComponent(
           componentName,
-        ) as LastWriteWinElementSetComponentDefinition<unknown>
-        Component.createOrReplace(targetEntity, compValue)
+        ) as LastWriteWinElementSetComponentDefinition<unknown>;
+        Component.createOrReplace(targetEntity, compValue);
       } catch {
-        console.warn(
+        console.error(
           `spawnFromComposite: component "${componentName}" not found in engine — skipping. ` +
           `If this is a Smart Item component, ensure initAssetPacks() was called first.`,
-        )
+        );
       }
     }
   }
 
-  return mainEntity
+  return mainEntity;
 }
