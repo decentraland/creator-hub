@@ -65,6 +65,7 @@ export * from './clone';
 export * from './lww';
 export * from './types';
 export * from './versioning';
+export * from './custom-item';
 
 export const ActionSchemas = {
   [ActionType.PLAY_ANIMATION]: Schemas.Map({
@@ -166,6 +167,10 @@ export const ActionSchemas = {
     position: Schemas.Vector3,
   }),
   [ActionType.REMOVE_ENTITY]: Schemas.Map({}),
+  [ActionType.SPAWN_CUSTOM_ITEM]: Schemas.Map({
+    assetId: Schemas.String,
+    position: Schemas.Vector3,
+  }),
   [ActionType.SHOW_IMAGE]: Schemas.Map({
     src: Schemas.String,
     align: Schemas.EnumNumber(AlignMode, AlignMode.TAM_MIDDLE_CENTER),

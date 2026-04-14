@@ -62,6 +62,7 @@ import { AlignMode } from './enums';
 import { getExplorerComponents } from './components';
 import { initTriggers, damageTargets, healTargets } from './triggers';
 import { followMap } from './transform';
+import { spawnCustomItem } from './custom-item';
 import { getEasingFunctionFromInterpolation } from './tweens';
 import { REWARDS_SERVER_URL } from './admin-toolkit-ui/constants';
 import { callScriptMethod } from '~sdk/script-utils';
@@ -284,6 +285,10 @@ export function createActionsSystem(
           }
           case ActionType.REMOVE_ENTITY: {
             handleRemoveEntity(entity, getPayload<ActionType.REMOVE_ENTITY>(action));
+            break;
+          }
+          case ActionType.SPAWN_CUSTOM_ITEM: {
+            handleSpawnCustomItem(getPayload<ActionType.SPAWN_CUSTOM_ITEM>(action));
             break;
           }
           case ActionType.SHOW_IMAGE: {
@@ -1140,6 +1145,19 @@ export function createActionsSystem(
     for (const entityToRemove of tree) {
       engine.removeEntity(entityToRemove);
     }
+  }
+
+  // SPAWN_CUSTOM_ITEM
+  function handleSpawnCustomItem(payload: ActionPayload<ActionType.SPAWN_CUSTOM_ITEM>) {
+    const { assetId, position } = payload;
+    spawnCustomItem(engine, assetId, position, {
+      onEntitySpawned: entity => {
+        initActions(entity);
+        initTriggers(entity);
+        const triggerEvents = getTriggerEvents(entity);
+        triggerEvents.emit(TriggerType.ON_SPAWN);
+      },
+    });
   }
 
   function getUiStack(align: ScreenAlignMode) {

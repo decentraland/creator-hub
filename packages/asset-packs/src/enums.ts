@@ -116,6 +116,7 @@ export enum ActionType {
   CALL_SCRIPT_METHOD = 'call_script_method',
   LOG_TO_CONSOLE = 'log_to_console',
   DELETE = 'delete',
+  SPAWN_CUSTOM_ITEM = 'spawn_custom_item',
 }
 
 // Re-export trigger enums from versioning (source of truth)
