@@ -126,6 +126,10 @@ let componentUpdateTimes: Record<string, number> = {};
 // Full CRDT log for reconstruction
 let allCrdtEntries: CrdtEntry[] = [];
 
+// One-shot diagnostics
+const seenUnknownOps: Set<string> = new Set();
+const seenUnknownTypes: Set<string> = new Set();
+
 const listeners = new Set<() => void>();
 
 function notify() {
@@ -193,22 +197,33 @@ export function pushEntries(raw: unknown[]) {
       changed = true;
     } else if (type === 'op_call_start') {
       totalOps++;
-      const opName = e.op_name as string;
-      if (opName === 'op_log' || opName === 'op_error') {
+      const opName = (e.op_name as string) ?? '';
+      const lc = opName.toLowerCase();
+      const isError = lc.includes('error') || lc.includes('warn');
+      const isLog = lc.includes('log') || lc.includes('print');
+      if (isLog || isError) {
         totalConsole++;
         const message = formatArgs(e.args);
         const tsRaw = e.timestamp_ms;
         const sceneId = latestSceneIdInBatch;
         const sceneTick = sceneId != null ? (perSceneTicks.get(sceneId)?.maxTick ?? null) : null;
-        consoleEntries.push({
-          timestamp: typeof tsRaw === 'number' ? tsRaw : Date.now(),
-          tick: sceneTick,
-          sceneId,
-          level: opName === 'op_error' ? 'error' : 'log',
-          message,
-        });
-        if (consoleEntries.length > MAX_CONSOLE) consoleEntries.shift();
+        consoleEntries = [
+          ...consoleEntries,
+          {
+            timestamp: typeof tsRaw === 'number' ? tsRaw : Date.now(),
+            tick: sceneTick,
+            sceneId,
+            level: isError ? 'error' : 'log',
+            message,
+          },
+        ];
+        if (consoleEntries.length > MAX_CONSOLE)
+          consoleEntries = consoleEntries.slice(-MAX_CONSOLE);
         changed = true;
+      } else if (!seenUnknownOps.has(opName)) {
+        seenUnknownOps.add(opName);
+        // eslint-disable-next-line no-console
+        console.debug('[mobile-debug-store] unknown op_call_start op_name:', opName);
       }
     } else if (type === 'scene_lifecycle') {
       // Extract scene info from SceneInit events
@@ -220,6 +235,10 @@ export function pushEntries(raw: unknown[]) {
         knownScenes.set(sceneId, { sceneId, title, baseParcel });
         changed = true;
       }
+    } else if (type && !seenUnknownTypes.has(type)) {
+      seenUnknownTypes.add(type);
+      // eslint-disable-next-line no-console
+      console.debug('[mobile-debug-store] unknown entry type:', type, e);
     }
   }
 

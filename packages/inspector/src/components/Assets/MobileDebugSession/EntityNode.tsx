@@ -20,7 +20,7 @@ function EntityNode({
   onSelect,
   matchesFilter,
 }: EntityNodeProps) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(depth === 0);
   if (!matchesFilter(eid)) return null;
 
   const ent = entities[eid];
