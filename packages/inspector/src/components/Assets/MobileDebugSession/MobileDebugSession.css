@@ -125,3 +125,6 @@
 .SceneMonitor-sparkline { display: flex; align-items: flex-end; gap: 1px; height: 40px; }
 .SceneMonitor-bar { flex: 1; background: var(--mobile-debug-accent); border-radius: 1px 1px 0 0; min-width: 2px; transition: height 0.2s ease; }
 .SceneMonitor-footer { display: flex; justify-content: space-around; padding: 6px; font-size: 10px; color: #666; border-top: 1px solid rgba(255,255,255,0.06); }
+
+/* Truncation banner */
+.MobileDebugSession-truncated { margin: 4px 8px; padding: 6px 10px; background: rgba(255,170,0,0.08); border: 1px solid rgba(255,170,0,0.25); color: #ffcc66; font-size: 11px; border-radius: 4px; }

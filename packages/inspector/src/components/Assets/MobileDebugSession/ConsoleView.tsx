@@ -55,7 +55,7 @@ function ConsoleView({ entries }: { entries: ConsoleEntry[] }) {
               <span className="SceneConsole-time">
                 {new Date(e.timestamp).toLocaleTimeString()}
               </span>
-              <span className="SceneConsole-tick">[{e.tick}]</span>
+              <span className="SceneConsole-tick">[{e.tick ?? '—'}]</span>
               <span className="SceneConsole-msg">{e.message}</span>
             </div>
           ))

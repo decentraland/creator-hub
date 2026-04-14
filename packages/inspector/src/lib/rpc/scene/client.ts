@@ -20,7 +20,10 @@ type Result = {
   [Method.OPEN_FILE]: void;
   [Method.OPEN_DIRECTORY]: void;
   [Method.PUSH_NOTIFICATION]: void;
-  [Method.BROADCAST_MOBILE_DEBUG_COMMAND]: { ok: boolean; data: unknown };
+  [Method.BROADCAST_MOBILE_DEBUG_COMMAND]: {
+    ok: boolean;
+    results: { sessionId: number; ok: boolean; data: unknown }[];
+  };
 };
 
 export class SceneClient extends RPC<Method, Params, Result> {

@@ -1,9 +1,11 @@
 import { useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import cx from 'classnames';
+import BugReportIcon from '@mui/icons-material/BugReport';
+import PhoneAndroidIcon from '@mui/icons-material/PhoneAndroid';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { Box, Button, IconButton } from 'decentraland-ui2';
+import { Box, Button, IconButton, Tooltip } from 'decentraland-ui2';
 import { useDispatch, useSelector } from '#store';
 import type { AppState } from '#store';
 import { misc } from '#preload';
@@ -39,6 +41,7 @@ function MenuItem(props: { item: NavbarItem; active: NavbarItem; disable?: boole
 export function Navbar(props: { active: NavbarItem }) {
   const openAppSettings = useSelector((state: AppState) => state.settings.openAppSettingsModal);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const handleClickReportIssue = useCallback(() => misc.openExternal(REPORT_ISSUES_URL), []);
 
@@ -46,6 +49,10 @@ export function Navbar(props: { active: NavbarItem }) {
     () => misc.openExternal('https://decentraland.org/help/'),
     [],
   );
+
+  const handleClickMobileDebug = useCallback(() => {
+    navigate('/mobile-debug');
+  }, [navigate]);
 
   const handleClickSettings = useCallback(() => {
     dispatch(actions.setOpenAppSettingsModal(true));
@@ -106,6 +113,27 @@ export function Navbar(props: { active: NavbarItem }) {
           >
             <QuestionMarkIcon />
           </IconButton>
+          <Tooltip title="Mobile Debug Session">
+            <IconButton
+              aria-label="mobile-debug-session"
+              onClick={handleClickMobileDebug}
+            >
+              <Box sx={{ position: 'relative', display: 'inline-flex', lineHeight: 0 }}>
+                <BugReportIcon />
+                <PhoneAndroidIcon
+                  sx={{
+                    position: 'absolute',
+                    right: -4,
+                    bottom: -4,
+                    fontSize: 12,
+                    background: 'rgba(0,0,0,0.6)',
+                    borderRadius: '2px',
+                    padding: '1px',
+                  }}
+                />
+              </Box>
+            </IconButton>
+          </Tooltip>
           <IconButton
             aria-label="settings"
             onClick={handleClickSettings}

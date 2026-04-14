@@ -5,7 +5,6 @@ import cx from 'classnames';
 import LayersOutlinedIcon from '@mui/icons-material/LayersOutlined';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
-import PhoneAndroidIcon from '@mui/icons-material/PhoneAndroid';
 import { CircularProgress as Loader } from 'decentraland-ui2';
 import {
   Container,
@@ -231,41 +230,6 @@ const LearnCard: React.FC = React.memo(() => {
   );
 });
 
-const MobileDebugSessionCard: React.FC = React.memo(() => {
-  const navigate = useNavigate();
-  const handleClick = useCallback(() => {
-    navigate('/mobile-debug');
-  }, [navigate]);
-
-  return (
-    <Card className="Card MobileDebugSessionCard">
-      <CardContent className="CardContent CenteredContent">
-        <PhoneAndroidIcon sx={{ fontSize: 48, color: '#4fc3f7' }} />
-        <Typography
-          className="Title"
-          variant="subtitle1"
-        >
-          Mobile Debug Session
-        </Typography>
-        <Typography
-          variant="body2"
-          color="textSecondary"
-        >
-          Connect to a running Decentraland client and inspect scene data in real-time.
-        </Typography>
-        <Button
-          variant="outlined"
-          color="secondary"
-          size="small"
-          onClick={handleClick}
-        >
-          Open Mobile Debug Session
-        </Button>
-      </CardContent>
-    </Card>
-  );
-});
-
 const FeedbackCard: React.FC = React.memo(() => {
   const handleClickFeedback = useCallback(() => misc.openExternal(FEEDBACK_URL), []);
 
@@ -332,12 +296,6 @@ export function HomePage() {
               xs
             >
               <LearnCard />
-            </Grid>
-            <Grid
-              item
-              xs
-            >
-              <MobileDebugSessionCard />
             </Grid>
             <Grid
               item

@@ -22,9 +22,21 @@ export interface CrdtEntry {
 
 export interface ConsoleEntry {
   timestamp: number;
-  tick: number;
+  tick: number | null;
+  sceneId: number | null;
   level: 'log' | 'error';
   message: string;
+}
+
+export interface ReconstructResult {
+  state: Record<number, EntityState>;
+  truncated: boolean;
+  oldestAvailableTick: number | null;
+}
+
+export interface SceneTickInfo {
+  maxTick: number;
+  tickCount: number;
 }
 
 export interface PerfSnapshot {
@@ -99,9 +111,12 @@ let remoteStatus: RemoteStatus | null = null;
 // Scene tracking
 let knownScenes: Map<number, SceneInfo> = new Map();
 
-// Tick tracking
-let maxTick = 0;
-let tickSet: Set<number> = new Set();
+// Per-scene tick tracking
+interface PerSceneTicks {
+  maxTick: number;
+  tickSet: Set<number>;
+}
+let perSceneTicks: Map<number, PerSceneTicks> = new Map();
 
 // Update highlighting: entity_id → timestamp of last update
 let entityUpdateTimes: Record<number, number> = {};
@@ -123,6 +138,7 @@ function notify() {
 export function pushEntries(raw: unknown[]) {
   let changed = false;
   const now = Date.now();
+  let latestSceneIdInBatch: number | null = null;
 
   for (const entry of raw) {
     if (!entry || typeof entry !== 'object') continue;
@@ -134,15 +150,21 @@ export function pushEntries(raw: unknown[]) {
       const crdt = e as unknown as CrdtEntry;
       applyCrdtEntry(crdt);
 
-      // Track tick
-      if (crdt.tk > maxTick) maxTick = crdt.tk;
-      if (!tickSet.has(crdt.tk)) {
-        tickSet.add(crdt.tk);
-        if (tickSet.size > MAX_TICK_SET) {
-          const oldest = tickSet.values().next().value;
-          if (oldest !== undefined) tickSet.delete(oldest);
+      // Track tick per scene
+      let sceneTicks = perSceneTicks.get(crdt.sid);
+      if (!sceneTicks) {
+        sceneTicks = { maxTick: 0, tickSet: new Set() };
+        perSceneTicks.set(crdt.sid, sceneTicks);
+      }
+      if (crdt.tk > sceneTicks.maxTick) sceneTicks.maxTick = crdt.tk;
+      if (!sceneTicks.tickSet.has(crdt.tk)) {
+        sceneTicks.tickSet.add(crdt.tk);
+        if (sceneTicks.tickSet.size > MAX_TICK_SET) {
+          const oldest = sceneTicks.tickSet.values().next().value;
+          if (oldest !== undefined) sceneTicks.tickSet.delete(oldest);
         }
       }
+      if (crdt.sid) latestSceneIdInBatch = crdt.sid;
 
       // Track scene from sid
       if (crdt.sid && !knownScenes.has(crdt.sid)) {
@@ -174,11 +196,14 @@ export function pushEntries(raw: unknown[]) {
       const opName = e.op_name as string;
       if (opName === 'op_log' || opName === 'op_error') {
         totalConsole++;
-        const args = e.args as unknown;
-        const message = formatArgs(args);
+        const message = formatArgs(e.args);
+        const tsRaw = e.timestamp_ms;
+        const sceneId = latestSceneIdInBatch;
+        const sceneTick = sceneId != null ? (perSceneTicks.get(sceneId)?.maxTick ?? null) : null;
         consoleEntries.push({
-          timestamp: (e.timestamp_ms as number) || Date.now(),
-          tick: maxTick,
+          timestamp: typeof tsRaw === 'number' ? tsRaw : Date.now(),
+          tick: sceneTick,
+          sceneId,
           level: opName === 'op_error' ? 'error' : 'log',
           message,
         });
@@ -229,13 +254,14 @@ export function clear() {
   isPaused = false;
   remoteStatus = null;
   knownScenes = new Map();
-  maxTick = 0;
-  tickSet = new Set();
+  perSceneTicks = new Map();
   entityUpdateTimes = {};
   componentUpdateTimes = {};
   allCrdtEntries = [];
   notify();
 }
+
+export const reset = clear;
 
 // ── Selectors ─────────────────────────────────────────────────────
 
@@ -266,11 +292,19 @@ export function getRemoteStatus(): RemoteStatus | null {
 export function getKnownScenes(): SceneInfo[] {
   return Array.from(knownScenes.values());
 }
-export function getMaxTick(): number {
-  return maxTick;
+export function getSceneTickInfo(sceneId: number): SceneTickInfo {
+  const info = perSceneTicks.get(sceneId);
+  return {
+    maxTick: info?.maxTick ?? 0,
+    tickCount: info?.tickSet.size ?? 0,
+  };
 }
-export function getTickCount(): number {
-  return tickSet.size;
+export function getAllSceneTickInfo(): Record<number, SceneTickInfo> {
+  const out: Record<number, SceneTickInfo> = {};
+  for (const [sid, info] of perSceneTicks) {
+    out[sid] = { maxTick: info.maxTick, tickCount: info.tickSet.size };
+  }
+  return out;
 }
 export function getEntityUpdateTime(eid: number): number {
   return entityUpdateTimes[eid] ?? 0;
@@ -278,33 +312,47 @@ export function getEntityUpdateTime(eid: number): number {
 export function getComponentUpdateTime(eid: number, comp: string): number {
   return componentUpdateTimes[`${eid}:${comp}`] ?? 0;
 }
-export function getStats() {
-  return { totalCrdt, totalOps, totalConsole, sessions: sessions.length, tickCount: tickSet.size };
+export function getStats(sceneId?: number) {
+  let tickCount = 0;
+  if (sceneId != null) {
+    tickCount = perSceneTicks.get(sceneId)?.tickSet.size ?? 0;
+  } else {
+    for (const info of perSceneTicks.values()) tickCount += info.tickSet.size;
+  }
+  return { totalCrdt, totalOps, totalConsole, sessions: sessions.length, tickCount };
 }
 
 /**
- * Get CRDT entries at a specific tick (for tick inspection).
+ * Get CRDT entries at a specific tick for a given scene.
  */
-export function getEntriesAtTick(tick: number): CrdtEntry[] {
-  return allCrdtEntries.filter(e => e.tk === tick);
+export function getEntriesAtTick(tick: number, sceneId: number): CrdtEntry[] {
+  return allCrdtEntries.filter(e => e.tk === tick && e.sid === sceneId);
 }
 
 /**
- * Reconstruct the full entity state by replaying all CRDT operations up to targetTick.
+ * Reconstruct the full entity state by replaying all CRDT operations up to targetTick
+ * for the given scene. Returns `truncated: true` when targetTick is older than the
+ * oldest buffered tick (meaning some history has been evicted and the state is partial).
  */
-export function reconstructStateAtTick(targetTick: number): Record<number, EntityState> {
+export function reconstructStateAtTick(targetTick: number, sceneId: number): ReconstructResult {
   const state: Record<number, EntityState> = {};
+  let oldestAvailableTick: number | null = null;
   for (const entry of allCrdtEntries) {
+    if (entry.sid !== sceneId) continue;
+    if (oldestAvailableTick === null || entry.tk < oldestAvailableTick) {
+      oldestAvailableTick = entry.tk;
+    }
     if (entry.tk > targetTick) continue;
     applyToState(state, entry);
   }
-  return state;
+  const truncated = oldestAvailableTick !== null && targetTick < oldestAvailableTick;
+  return { state, truncated, oldestAvailableTick };
 }
 
 // ── Snapshot ─────────────────────────────────────────────────────
 
 // useSyncExternalStore compatible — cached to maintain referential equality
-let cachedSnapshot: {
+interface MobileDebugSnapshot {
   entities: Record<number, EntityState>;
   consoleEntries: ConsoleEntry[];
   sessions: MobileDebugSessionInfo[];
@@ -316,9 +364,10 @@ let cachedSnapshot: {
   isPaused: boolean;
   remoteStatus: RemoteStatus | null;
   knownScenes: SceneInfo[];
-  maxTick: number;
-  tickCount: number;
-} = {
+  sceneTicks: Record<number, SceneTickInfo>;
+}
+
+let cachedSnapshot: MobileDebugSnapshot = {
   entities,
   consoleEntries,
   sessions,
@@ -330,8 +379,7 @@ let cachedSnapshot: {
   isPaused,
   remoteStatus,
   knownScenes: [],
-  maxTick,
-  tickCount: 0,
+  sceneTicks: {},
 };
 
 function updateSnapshot() {
@@ -347,8 +395,7 @@ function updateSnapshot() {
     isPaused,
     remoteStatus,
     knownScenes: Array.from(knownScenes.values()),
-    maxTick,
-    tickCount: tickSet.size,
+    sceneTicks: getAllSceneTickInfo(),
   };
 }
 

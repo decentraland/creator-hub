@@ -87,7 +87,7 @@ export function EditorPage() {
   const showDebugPanel = settings.previewOptions.debugger;
 
   useDebugLogForwarding(iframeRef, isPreviewRunning, showDebugPanel, project?.path);
-  useMobileDebugForwarding(iframeRef, isPreviewRunning);
+  useMobileDebugForwarding(iframeRef, isPreviewRunning, project?.path);
 
   const handleIframeRef = useCallback(
     (e: React.SyntheticEvent<HTMLIFrameElement, Event>) => {

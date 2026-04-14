@@ -6,10 +6,16 @@ import EntityDetail from './EntityDetail';
 interface EntityTreeViewProps {
   entities: Record<number, { components: Record<string, unknown>; parent: number }>;
   selectedTick: number | null;
+  selectedSceneId: number | null;
   isReconstructed: boolean;
 }
 
-function EntityTreeView({ entities, selectedTick, isReconstructed }: EntityTreeViewProps) {
+function EntityTreeView({
+  entities,
+  selectedTick,
+  selectedSceneId,
+  isReconstructed,
+}: EntityTreeViewProps) {
   const [selectedEid, setSelectedEid] = useState<number | null>(null);
   const [filter, setFilter] = useState('');
   const [, setRenderTick] = useState(0);
@@ -44,9 +50,9 @@ function EntityTreeView({ entities, selectedTick, isReconstructed }: EntityTreeV
   }, [entities]);
 
   const tickEntries = useMemo(() => {
-    if (selectedTick == null || isReconstructed) return null;
-    return mobileDebugStore.getEntriesAtTick(selectedTick);
-  }, [selectedTick, isReconstructed]);
+    if (selectedTick == null || isReconstructed || selectedSceneId == null) return null;
+    return mobileDebugStore.getEntriesAtTick(selectedTick, selectedSceneId);
+  }, [selectedTick, isReconstructed, selectedSceneId]);
 
   const tickEntityIds = useMemo(() => {
     if (!tickEntries) return null;

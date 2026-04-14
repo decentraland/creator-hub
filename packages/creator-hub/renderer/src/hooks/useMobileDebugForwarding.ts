@@ -9,8 +9,14 @@ const SESSION_POLL_INTERVAL = 2000;
 export function useMobileDebugForwarding(
   iframeRef: MutableRefObject<RPCInfo | undefined>,
   isPreviewRunning: boolean,
+  projectKey?: string,
 ) {
   const wasEnabledRef = useRef(false);
+
+  useEffect(() => {
+    void editor.clearMobileDebugData().catch(() => {});
+    wasEnabledRef.current = false;
+  }, [projectKey]);
 
   useEffect(() => {
     if (!isPreviewRunning || !iframeRef.current) return;

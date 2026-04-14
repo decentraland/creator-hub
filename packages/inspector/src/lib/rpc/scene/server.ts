@@ -155,7 +155,11 @@ export class SceneServer extends RPC<Method, Params, Result> {
 
     this.handle('set_mobile_debug_session_enabled', async ({ enabled, sessions }) => {
       store.dispatch(setMobileDebugSessionEnabled({ enabled }));
-      mobileDebugStore.updateSessions(sessions);
+      if (!enabled) {
+        mobileDebugStore.reset();
+      } else {
+        mobileDebugStore.updateSessions(sessions);
+      }
     });
   }
 }

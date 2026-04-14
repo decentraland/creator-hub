@@ -106,10 +106,12 @@ export async function getMobileDebugSessions(): Promise<MobileDebugSessionInfo[]
 
 export async function getConsoleEntries(
   afterIndex: number,
-): Promise<{ entries: ConsoleEntry[]; nextIndex: number }> {
-  return invoke('mobileDebug.getConsoleEntries', afterIndex) as Promise<{
+  limit?: number,
+): Promise<{ entries: ConsoleEntry[]; nextIndex: number; hasMore: boolean }> {
+  return invoke('mobileDebug.getConsoleEntries', afterIndex, limit) as Promise<{
     entries: ConsoleEntry[];
     nextIndex: number;
+    hasMore: boolean;
   }>;
 }
 
@@ -119,10 +121,12 @@ export async function getMonitorStats(): Promise<MonitorStats> {
 
 export async function getRawEntries(
   afterIndex: number,
-): Promise<{ entries: unknown[]; nextIndex: number }> {
-  return invoke('mobileDebug.getRawEntries', afterIndex) as Promise<{
+  limit?: number,
+): Promise<{ entries: unknown[]; nextIndex: number; hasMore: boolean }> {
+  return invoke('mobileDebug.getRawEntries', afterIndex, limit) as Promise<{
     entries: unknown[];
     nextIndex: number;
+    hasMore: boolean;
   }>;
 }
 
@@ -141,14 +145,16 @@ export async function sendMobileDebugCommand(
   }>;
 }
 
+export interface BroadcastMobileDebugResult {
+  ok: boolean;
+  results: { sessionId: number; ok: boolean; data: unknown }[];
+}
+
 export async function broadcastMobileDebugCommand(
   cmd: string,
   args: Record<string, unknown> = {},
-): Promise<{ ok: boolean; data: unknown }> {
-  return invoke('mobileDebug.broadcastCommand', cmd, args) as Promise<{
-    ok: boolean;
-    data: unknown;
-  }>;
+): Promise<BroadcastMobileDebugResult> {
+  return invoke('mobileDebug.broadcastCommand', cmd, args) as Promise<BroadcastMobileDebugResult>;
 }
 
 export async function startMobileDebugServer(): Promise<{ port: number }> {
@@ -185,7 +191,9 @@ export function onMobileDebugEntries(
   const handler = (_event: IpcRendererEvent, data: { sessionId: number; entries: unknown[] }) =>
     callback(data);
   ipcRenderer.on('mobileDebug:entries', handler);
+  void invoke('mobileDebug.subscribeEntries');
   return () => {
     ipcRenderer.removeListener('mobileDebug:entries', handler);
+    void invoke('mobileDebug.unsubscribeEntries');
   };
 }

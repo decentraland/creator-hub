@@ -20,10 +20,9 @@ function MobileDebugSession() {
   const snapshot = useSyncExternalStore(mobileDebugStore.subscribe, mobileDebugStore.getSnapshot);
   const [selectedSceneId, setSelectedSceneId] = useState<number | null>(null);
   const [selectedTick, setSelectedTick] = useState<number | null>(null);
-  const [reconstructedEntities, setReconstructedEntities] = useState<Record<
-    number,
-    { components: Record<string, unknown>; parent: number }
-  > | null>(null);
+  const [reconstruction, setReconstruction] = useState<mobileDebugStore.ReconstructResult | null>(
+    null,
+  );
 
   useEffect(() => {
     if (selectedSceneId == null && snapshot.knownScenes.length > 0) {
@@ -32,21 +31,23 @@ function MobileDebugSession() {
   }, [snapshot.knownScenes, selectedSceneId]);
 
   const handleReconstruct = useCallback(() => {
-    if (selectedTick != null) {
-      setReconstructedEntities(mobileDebugStore.reconstructStateAtTick(selectedTick));
+    if (selectedTick != null && selectedSceneId != null) {
+      setReconstruction(mobileDebugStore.reconstructStateAtTick(selectedTick, selectedSceneId));
     }
-  }, [selectedTick]);
+  }, [selectedTick, selectedSceneId]);
 
   const handleSelectTick = useCallback((tick: number | null) => {
     setSelectedTick(tick);
-    if (tick == null) setReconstructedEntities(null);
+    if (tick == null) setReconstruction(null);
   }, []);
 
   const displayEntities = useMemo(() => {
-    return reconstructedEntities ?? snapshot.entities;
-  }, [reconstructedEntities, snapshot.entities]);
+    return reconstruction?.state ?? snapshot.entities;
+  }, [reconstruction, snapshot.entities]);
 
-  const stats = mobileDebugStore.getStats();
+  const sceneTickInfo = selectedSceneId != null ? snapshot.sceneTicks[selectedSceneId] : undefined;
+  const sceneMaxTick = sceneTickInfo?.maxTick ?? 0;
+  const stats = mobileDebugStore.getStats(selectedSceneId ?? undefined);
   const hasActiveSession = snapshot.sessions.some(s => s.status === 'active');
 
   return (
@@ -98,12 +99,20 @@ function MobileDebugSession() {
 
       {subTab === SubTab.EntityTree && (
         <TickBar
-          maxTick={snapshot.maxTick}
+          maxTick={sceneMaxTick}
           selectedTick={selectedTick}
           onSelectTick={handleSelectTick}
           onReconstruct={handleReconstruct}
-          isReconstructed={reconstructedEntities != null}
+          isReconstructed={reconstruction != null}
         />
+      )}
+
+      {reconstruction?.truncated && (
+        <div className="MobileDebugSession-truncated">
+          Showing partial scene — ticks before{' '}
+          {reconstruction.oldestAvailableTick?.toLocaleString() ?? '?'} were dropped from the
+          buffer.
+        </div>
       )}
 
       <div className="MobileDebugSession-content">
@@ -111,7 +120,8 @@ function MobileDebugSession() {
           <EntityTreeView
             entities={displayEntities}
             selectedTick={selectedTick}
-            isReconstructed={reconstructedEntities != null}
+            selectedSceneId={selectedSceneId}
+            isReconstructed={reconstruction != null}
           />
         )}
         {subTab === SubTab.Console && <ConsoleView entries={snapshot.consoleEntries} />}
