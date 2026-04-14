@@ -29,7 +29,6 @@ import { TemplatesPage } from '/@/components/TemplatesPage';
 import { MorePage } from '/@/components/MorePage';
 import { VideosPage } from '/@/components/VideosPage';
 import { DocsPage } from '/@/components/DocsPage';
-import { MobileDebugPage } from '/@/components/MobileDebugPage';
 import { Snackbar } from '/@/components/Snackbar';
 
 import { store } from '#store';
@@ -122,10 +121,6 @@ root.render(
                   <Route
                     path="/more"
                     element={<MorePage />}
-                  />
-                  <Route
-                    path="/mobile-debug"
-                    element={<MobileDebugPage />}
                   />
                   <Route
                     path="/editor"
