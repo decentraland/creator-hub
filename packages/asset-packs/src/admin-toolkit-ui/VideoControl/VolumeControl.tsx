@@ -11,11 +11,13 @@ export function VideoControlVolume({
   label,
   entity,
   video,
+  idPrefix = 'video_control_volume',
 }: {
   engine: IEngine;
   label: string;
   entity: Entity;
   video: DeepReadonlyObject<PBVideoPlayer> | undefined;
+  idPrefix?: string;
 }) {
   const controls = createVideoPlayerControls(entity, engine);
   const videoControl = getAdminToolkitVideoControl(engine);
@@ -84,7 +86,7 @@ export function VideoControlVolume({
         }}
       >
         <Button
-          id="video_control_volume_minus"
+          id={`${idPrefix}_minus`}
           value="Minus"
           fontSize={14}
           uiTransform={{
@@ -101,7 +103,7 @@ export function VideoControlVolume({
             height: 25,
           }}
           onMouseDown={() => controls.setVolume(-VOLUME_STEP)}
-          disabled={isSoundDisabled || !video?.volume}
+          disabled={isSoundDisabled || video?.volume === 0}
         />
         <Label
           value={volumePercentage}
@@ -116,7 +118,7 @@ export function VideoControlVolume({
           }}
         />
         <Button
-          id="video_control_volume_plus"
+          id={`${idPrefix}_plus`}
           value="Plus"
           fontSize={14}
           icon={ICONS.VOLUME_PLUS_BUTTON}
@@ -136,14 +138,14 @@ export function VideoControlVolume({
           disabled={isSoundDisabled || video?.volume === 1}
         />
         <Button
-          id="video_control_volume_mute"
-          variant={!video?.volume ? 'primary' : 'secondary'}
+          id={`${idPrefix}_mute`}
+          variant={video?.volume === 0 ? 'primary' : 'secondary'}
           fontSize={18}
           iconTransform={{ width: 24, height: 24 }}
           onlyIcon
           icon={ICONS.MUTE}
           iconBackground={{
-            color: video?.volume ? Color4.White() : Color4.Black(),
+            color: video?.volume === 0 ? Color4.Black() : Color4.White(),
           }}
           uiTransform={{
             width: 49,
@@ -153,7 +155,7 @@ export function VideoControlVolume({
             padding: 0,
           }}
           onMouseDown={() => {
-            controls.setVolume(!video?.volume ? 100 : 0);
+            controls.setVolume(video?.volume === 0 ? 100 : 0);
           }}
           disabled={isSoundDisabled}
         />
