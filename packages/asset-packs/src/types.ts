@@ -127,6 +127,13 @@ export type Component = {
   };
 };
 
+export type CustomItemEntry = {
+  composite: AssetComposite;
+  base: string;
+};
+
+export type CustomItemRegistry = Record<string, CustomItemEntry>;
+
 export type ISDKHelpers = {
   // SyncEntity helper to create network entities at runtime.
   syncEntity?: SyncEntitySDK;

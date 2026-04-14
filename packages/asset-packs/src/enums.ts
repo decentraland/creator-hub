@@ -82,6 +82,7 @@ export enum ActionType {
   START_LOOP = 'start_loop',
   STOP_LOOP = 'stop_loop',
   CLONE_ENTITY = 'clone_entity',
+  SPAWN_CUSTOM_ITEM = 'spawn_custom_item',
   REMOVE_ENTITY = 'remove_entity',
   SHOW_IMAGE = 'show_image',
   HIDE_IMAGE = 'hide_image',

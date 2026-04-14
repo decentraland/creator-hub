@@ -40,6 +40,7 @@ import {
   getComponents,
   initVideoPlayerComponentMaterial,
 } from './definitions';
+import { spawnCustomItem } from './spawn-custom-item';
 import { getDefaultValue, isValidState } from './states';
 import { getActionEvents, getTriggerEvents } from './events';
 import {
@@ -280,6 +281,10 @@ export function createActionsSystem(
           }
           case ActionType.CLONE_ENTITY: {
             handleCloneEntity(entity, getPayload<ActionType.CLONE_ENTITY>(action));
+            break;
+          }
+          case ActionType.SPAWN_CUSTOM_ITEM: {
+            handleSpawnCustomItem(getPayload<ActionType.SPAWN_CUSTOM_ITEM>(action));
             break;
           }
           case ActionType.REMOVE_ENTITY: {
@@ -1128,6 +1133,12 @@ export function createActionsSystem(
 
     const transform = Transform.getOrCreateMutable(cloned);
     transform.position = position;
+  }
+
+  // SPAWN_CUSTOM_ITEM
+  function handleSpawnCustomItem(payload: ActionPayload<ActionType.SPAWN_CUSTOM_ITEM>) {
+    const { assetId, position } = payload;
+    spawnCustomItem(assetId, { position });
   }
 
   // REMOVE_ENTITY

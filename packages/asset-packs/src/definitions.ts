@@ -65,6 +65,7 @@ export * from './clone';
 export * from './lww';
 export * from './types';
 export * from './versioning';
+export * from './spawn-custom-item';
 
 export const ActionSchemas = {
   [ActionType.PLAY_ANIMATION]: Schemas.Map({
@@ -163,6 +164,10 @@ export const ActionSchemas = {
     action: Schemas.String,
   }),
   [ActionType.CLONE_ENTITY]: Schemas.Map({
+    position: Schemas.Vector3,
+  }),
+  [ActionType.SPAWN_CUSTOM_ITEM]: Schemas.Map({
+    assetId: Schemas.String,
     position: Schemas.Vector3,
   }),
   [ActionType.REMOVE_ENTITY]: Schemas.Map({}),
