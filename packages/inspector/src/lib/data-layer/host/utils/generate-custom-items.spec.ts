@@ -71,9 +71,7 @@ describe('generateCustomItemsFile', () => {
         'assets/custom/monster_1/data.json': Buffer.from(
           JSON.stringify({ id: 'abc-123', name: 'Monster', category: 'custom', tags: [] }),
         ),
-        'assets/custom/monster_1/composite.json': Buffer.from(
-          JSON.stringify(SIMPLE_COMPOSITE),
-        ),
+        'assets/custom/monster_1/composite.json': Buffer.from(JSON.stringify(SIMPLE_COMPOSITE)),
       });
     });
 
@@ -111,15 +109,11 @@ describe('generateCustomItemsFile', () => {
         'assets/custom/monster_1/data.json': Buffer.from(
           JSON.stringify({ id: 'id-1', name: 'Monster', category: 'custom', tags: [] }),
         ),
-        'assets/custom/monster_1/composite.json': Buffer.from(
-          JSON.stringify(SIMPLE_COMPOSITE),
-        ),
+        'assets/custom/monster_1/composite.json': Buffer.from(JSON.stringify(SIMPLE_COMPOSITE)),
         'assets/custom/chest_2/data.json': Buffer.from(
           JSON.stringify({ id: 'id-2', name: 'Chest', category: 'custom', tags: [] }),
         ),
-        'assets/custom/chest_2/composite.json': Buffer.from(
-          JSON.stringify(SIMPLE_COMPOSITE),
-        ),
+        'assets/custom/chest_2/composite.json': Buffer.from(JSON.stringify(SIMPLE_COMPOSITE)),
       });
     });
 

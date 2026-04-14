@@ -56,7 +56,10 @@ function parseMaterialSrc(material: any, basePath: string): any {
             ...m.unlit.texture,
             tex: {
               ...m.unlit.texture.tex,
-              texture: { ...m.unlit.texture.tex.texture, src: replaceAssetPath(m.unlit.texture.tex.texture.src) },
+              texture: {
+                ...m.unlit.texture.tex.texture,
+                src: replaceAssetPath(m.unlit.texture.tex.texture.src),
+              },
             },
           },
         },
@@ -66,7 +69,13 @@ function parseMaterialSrc(material: any, basePath: string): any {
   if (m.$case === 'pbr') {
     const mapTex = (tex: any) => {
       if (tex?.tex?.$case === 'texture') {
-        return { ...tex, tex: { ...tex.tex, texture: { ...tex.tex.texture, src: replaceAssetPath(tex.tex.texture.src) } } };
+        return {
+          ...tex,
+          tex: {
+            ...tex.tex,
+            texture: { ...tex.tex.texture, src: replaceAssetPath(tex.tex.texture.src) },
+          },
+        };
       }
       return tex;
     };
@@ -189,9 +198,8 @@ export function spawnFromComposite(
 
   // ── Step 3: determine composite root name ────────────────────────────────
   const compositeRootId = roots.size === 1 ? Array.from(roots)[0] : null;
-  const rootName = compositeRootId != null
-    ? (entityNames.get(compositeRootId) ?? 'Custom_Item')
-    : 'Custom_Item';
+  const rootName =
+    compositeRootId != null ? (entityNames.get(compositeRootId) ?? 'Custom_Item') : 'Custom_Item';
 
   // ── Step 4: pre-generate IDs for COMPONENTS_WITH_ID ─────────────────────
   const ids = new Map<string, number>(); // key: `ComponentName:entityId`
@@ -255,8 +263,11 @@ export function spawnFromComposite(
     for (const id of entityIds) {
       const isRoot = roots.has(id);
       const intendedParentId = parentOf.get(id);
-      const resolvedParent =
-        isRoot ? defaultParent : (typeof intendedParentId === 'number' ? entities.get(intendedParentId) : undefined);
+      const resolvedParent = isRoot
+        ? defaultParent
+        : typeof intendedParentId === 'number'
+          ? entities.get(intendedParentId)
+          : undefined;
 
       if (!isRoot && typeof intendedParentId === 'number' && resolvedParent === undefined) {
         orphaned.set(id, intendedParentId);
@@ -323,7 +334,12 @@ export function spawnFromComposite(
     // Skip editor-only components
     if (isEditorComponent(componentName)) continue;
     // Skip Transform and Name (already handled above)
-    if (componentName === 'core::Transform' || componentName === Name.componentName || componentName === 'core::Name') continue;
+    if (
+      componentName === 'core::Transform' ||
+      componentName === Name.componentName ||
+      componentName === 'core::Name'
+    )
+      continue;
 
     for (const [idStr] of Object.entries(comp.data)) {
       const entityId = Number(idStr);
@@ -335,9 +351,7 @@ export function spawnFromComposite(
 
       // Apply {assetPath} replacement
       if (basePath) {
-        compValue = JSON.parse(
-          JSON.stringify(compValue).replace(/\{assetPath\}/g, basePath),
-        );
+        compValue = JSON.parse(JSON.stringify(compValue).replace(/\{assetPath\}/g, basePath));
       }
 
       switch (componentName) {
@@ -385,7 +399,9 @@ export function spawnFromComposite(
                   const c = engine.getComponent(name);
                   return [...acc, c.componentId];
                 } catch {
-                  console.error(`spawnFromComposite: component "${name}" not found, skipping SyncComponents entry`);
+                  console.error(
+                    `spawnFromComposite: component "${name}" not found, skipping SyncComponents entry`,
+                  );
                   return acc;
                 }
               },
@@ -408,7 +424,7 @@ export function spawnFromComposite(
       } catch {
         console.error(
           `spawnFromComposite: component "${componentName}" not found in engine — skipping. ` +
-          `If this is a Smart Item component, ensure initAssetPacks() was called first.`,
+            `If this is a Smart Item component, ensure initAssetPacks() was called first.`,
         );
       }
     }

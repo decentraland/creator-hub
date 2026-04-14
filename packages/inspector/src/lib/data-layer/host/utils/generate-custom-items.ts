@@ -20,9 +20,7 @@ interface CustomItemEntry {
  * prepends an underscore when the name starts with a digit.
  */
 function toIdentifier(name: string): string {
-  return name
-    .replace(/[^a-zA-Z0-9_]/g, '_')
-    .replace(/^([0-9])/, '_$1');
+  return name.replace(/[^a-zA-Z0-9_]/g, '_').replace(/^([0-9])/, '_$1');
 }
 
 /**
