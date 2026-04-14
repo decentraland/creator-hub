@@ -19,7 +19,7 @@ import { getAvailablePort } from './port';
 import { getProjectId, track } from './analytics';
 import { install } from './npm';
 import { downloadGithubRepo } from './download-github-folder';
-import { startSceneLogServer } from './scene-log-server';
+import { startMobileDebugServer } from './mobile-debug-server';
 
 export type Preview = { child: Child; url: string; opts: PreviewOptions };
 
@@ -156,14 +156,15 @@ export async function getMobilePreview(path: string): Promise<{ url: string; qr:
     if (json.ok && json.data) {
       let { url, qr } = json.data as { url: string; qr: string };
 
-      // Start scene log WebSocket server and inject the parameter into the URL.
-      // The WS host must match the preview host so mobile devices can reach it.
-      log.info('[CLI] getMobilePreview: got URL from SDK, attempting scene log server setup...', {
-        url: url.substring(0, 80),
-        serverUrl,
-      });
+      log.info(
+        '[CLI] getMobilePreview: got URL from SDK, attempting mobile debug server setup...',
+        {
+          url: url.substring(0, 80),
+          serverUrl,
+        },
+      );
       try {
-        const wsPort = await startSceneLogServer();
+        const wsPort = await startMobileDebugServer();
         // Extract the host from the mobile preview URL (not serverUrl which may be 127.0.0.1)
         // The mobile URL has the LAN IP that the phone can reach
         const mobilePreviewParam = parseDecentralandUrl(url)?.searchParams.get('preview');
@@ -186,10 +187,10 @@ export async function getMobilePreview(path: string): Promise<{ url: string; qr:
         const QRCode = await import('qrcode');
         qr = await QRCode.toDataURL(url, { width: 512, margin: 2 });
 
-        log.info(`[CLI] Scene logging WS at ws://0.0.0.0:${wsPort}, mobile URL updated`);
+        log.info(`[mobile-debug] WS at ws://0.0.0.0:${wsPort}, mobile URL updated`);
       } catch (wsError: any) {
         log.error(
-          '[CLI] Could not start scene log server:',
+          '[CLI] Could not start mobile debug server:',
           wsError?.message ?? wsError,
           wsError?.stack,
         );

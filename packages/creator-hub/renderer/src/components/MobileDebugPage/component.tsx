@@ -5,7 +5,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PhoneAndroidIcon from '@mui/icons-material/PhoneAndroid';
 
 import { editor } from '#preload';
-import type { SceneLogSessionInfo } from '/shared/types/ipc';
+import type { MobileDebugSessionInfo } from '/shared/types/ipc';
 
 import { Navbar, NavbarItem } from '../Navbar';
 import { Footer } from '../Footer';
@@ -13,16 +13,15 @@ import { useEditor } from '/@/hooks/useEditor';
 
 import './styles.css';
 
-export function SceneInspectorPage() {
+export function MobileDebugPage() {
   const navigate = useNavigate();
   const { version } = useEditor();
   const [deeplink, setDeeplink] = useState<{ url: string; qr: string; port: number } | null>(null);
-  const [sessions, setSessions] = useState<SceneLogSessionInfo[]>([]);
+  const [sessions, setSessions] = useState<MobileDebugSessionInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const activeRef = useRef(true);
 
-  // Start server and get deeplink on mount
   useEffect(() => {
     activeRef.current = true;
     setLoading(true);
@@ -36,27 +35,26 @@ export function SceneInspectorPage() {
       })
       .catch((err: Error) => {
         if (activeRef.current) {
-          setError(err.message || 'Failed to start scene log server');
+          setError(err.message || 'Failed to start mobile debug server');
           setLoading(false);
         }
       });
 
     return () => {
       activeRef.current = false;
-      void editor.stopSceneLogServer().catch(err => {
-        console.warn('[SceneInspectorPage] stopSceneLogServer failed:', err);
+      void editor.stopMobileDebugServer().catch(err => {
+        console.warn('[MobileDebugPage] stopMobileDebugServer failed:', err);
       });
     };
   }, []);
 
-  // Poll sessions
   useEffect(() => {
     if (!deeplink) return;
 
     let active = true;
     const poll = async () => {
       try {
-        const result = await editor.getSceneLogSessions();
+        const result = await editor.getMobileDebugSessions();
         if (active) setSessions(result);
       } catch {
         // ignore
@@ -71,11 +69,10 @@ export function SceneInspectorPage() {
     };
   }, [deeplink]);
 
-  // Forward entries to console (push-based)
   const [entryCount, setEntryCount] = useState(0);
   useEffect(() => {
     if (!deeplink) return;
-    const unsubscribe = editor.onSceneLogEntries(({ entries }) => {
+    const unsubscribe = editor.onMobileDebugEntries(({ entries }) => {
       setEntryCount(prev => prev + entries.length);
     });
     return unsubscribe;
@@ -88,17 +85,17 @@ export function SceneInspectorPage() {
   const handleCopyUrl = useCallback(() => {
     if (deeplink) {
       navigator.clipboard.writeText(deeplink.url).catch(err => {
-        console.warn('[SceneInspectorPage] clipboard write failed:', err);
+        console.warn('[MobileDebugPage] clipboard write failed:', err);
       });
     }
   }, [deeplink]);
 
   return (
     <>
-      <main className="SceneInspectorPage">
+      <main className="MobileDebugPage">
         <Navbar active={NavbarItem.HOME} />
         <Container>
-          <Box className="SceneInspectorPage-header">
+          <Box className="MobileDebugPage-header">
             <Button
               variant="text"
               color="secondary"
@@ -107,7 +104,7 @@ export function SceneInspectorPage() {
             >
               Back
             </Button>
-            <Typography variant="h4">Scene Inspector</Typography>
+            <Typography variant="h4">Mobile Debug Session</Typography>
             <Typography
               variant="body2"
               color="textSecondary"
@@ -118,13 +115,13 @@ export function SceneInspectorPage() {
           </Box>
 
           {loading && (
-            <Box className="SceneInspectorPage-loading">
-              <Typography variant="body1">Starting scene log server...</Typography>
+            <Box className="MobileDebugPage-loading">
+              <Typography variant="body1">Starting mobile debug server...</Typography>
             </Box>
           )}
 
           {error && (
-            <Box className="SceneInspectorPage-error">
+            <Box className="MobileDebugPage-error">
               <Typography
                 variant="body1"
                 color="error"
@@ -135,18 +132,18 @@ export function SceneInspectorPage() {
           )}
 
           {deeplink && (
-            <Box className="SceneInspectorPage-content">
-              <Box className="SceneInspectorPage-qrSection">
-                <Box className="SceneInspectorPage-qrContainer">
+            <Box className="MobileDebugPage-content">
+              <Box className="MobileDebugPage-qrSection">
+                <Box className="MobileDebugPage-qrContainer">
                   <img
                     src={deeplink.qr}
                     alt="QR Code"
-                    className="SceneInspectorPage-qrImage"
+                    className="MobileDebugPage-qrImage"
                   />
                 </Box>
                 <Typography
                   variant="body2"
-                  className="SceneInspectorPage-url"
+                  className="MobileDebugPage-url"
                 >
                   {deeplink.url}
                 </Typography>
@@ -162,17 +159,17 @@ export function SceneInspectorPage() {
                   variant="caption"
                   color="textSecondary"
                 >
-                  Scan the QR code with your mobile device running the Decentraland app. The scene
-                  logging connection will be established automatically.
+                  Scan the QR code with your mobile device running the Decentraland app. The mobile
+                  debug session will be established automatically.
                 </Typography>
               </Box>
 
-              <Box className="SceneInspectorPage-sessionsSection">
+              <Box className="MobileDebugPage-sessionsSection">
                 <Typography variant="h6">
                   <PhoneAndroidIcon fontSize="small" /> Connected Sessions
                 </Typography>
                 {sessions.length === 0 ? (
-                  <Box className="SceneInspectorPage-waiting">
+                  <Box className="MobileDebugPage-waiting">
                     <Typography
                       variant="body2"
                       color="textSecondary"
@@ -187,14 +184,14 @@ export function SceneInspectorPage() {
                     </Typography>
                   </Box>
                 ) : (
-                  <Box className="SceneInspectorPage-sessionList">
+                  <Box className="MobileDebugPage-sessionList">
                     {sessions.map(s => (
                       <Box
                         key={s.id}
-                        className="SceneInspectorPage-sessionItem"
+                        className="MobileDebugPage-sessionItem"
                       >
-                        <span className="SceneInspectorPage-sessionBadge">Session #{s.id}</span>
-                        <span className="SceneInspectorPage-sessionMessages">
+                        <span className="MobileDebugPage-sessionBadge">Session #{s.id}</span>
+                        <span className="MobileDebugPage-sessionMessages">
                           {s.messageCount.toLocaleString()} entries
                         </span>
                       </Box>

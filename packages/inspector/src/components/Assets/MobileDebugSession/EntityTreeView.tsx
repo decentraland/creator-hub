@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import * as sceneLogStore from '../../../lib/logic/scene-log-store';
+import * as mobileDebugStore from '../../../lib/logic/mobile-debug-store';
 import EntityNode from './EntityNode';
 import EntityDetail from './EntityDetail';
 
@@ -19,7 +19,7 @@ function EntityTreeView({ entities, selectedTick, isReconstructed }: EntityTreeV
     const anyRecent = () => {
       const now = Date.now();
       for (const key of Object.keys(entities)) {
-        const t = sceneLogStore.getEntityUpdateTime(Number(key));
+        const t = mobileDebugStore.getEntityUpdateTime(Number(key));
         if (t > 0 && now - t < 1000) return true;
       }
       return false;
@@ -45,7 +45,7 @@ function EntityTreeView({ entities, selectedTick, isReconstructed }: EntityTreeV
 
   const tickEntries = useMemo(() => {
     if (selectedTick == null || isReconstructed) return null;
-    return sceneLogStore.getEntriesAtTick(selectedTick);
+    return mobileDebugStore.getEntriesAtTick(selectedTick);
   }, [selectedTick, isReconstructed]);
 
   const tickEntityIds = useMemo(() => {

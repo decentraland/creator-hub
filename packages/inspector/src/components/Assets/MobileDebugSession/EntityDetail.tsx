@@ -1,5 +1,5 @@
 import React from 'react';
-import * as sceneLogStore from '../../../lib/logic/scene-log-store';
+import * as mobileDebugStore from '../../../lib/logic/mobile-debug-store';
 
 function EntityDetail({
   eid,
@@ -8,7 +8,7 @@ function EntityDetail({
   eid: number;
   entity: { components: Record<string, unknown>; parent: number };
 }) {
-  const changes = sceneLogStore.getEntityChanges(eid);
+  const changes = mobileDebugStore.getEntityChanges(eid);
   const compNames = Object.keys(entity.components).sort();
 
   return (
@@ -25,7 +25,7 @@ function EntityDetail({
               ? JSON.stringify(value).slice(0, 200)
               : String(value);
 
-          const lastUpdate = sceneLogStore.getComponentUpdateTime(eid, name);
+          const lastUpdate = mobileDebugStore.getComponentUpdateTime(eid, name);
           const elapsed = Date.now() - lastUpdate;
           const isRecent = lastUpdate > 0 && elapsed < 1000;
           const highlightOpacity = isRecent ? Math.max(0, 1 - elapsed / 1000) : 0;

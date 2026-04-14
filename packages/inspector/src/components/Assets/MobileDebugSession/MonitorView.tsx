@@ -1,6 +1,6 @@
 import React from 'react';
-import type { PerfSnapshot } from '../../../lib/logic/scene-log-store';
-import * as sceneLogStore from '../../../lib/logic/scene-log-store';
+import type { PerfSnapshot } from '../../../lib/logic/mobile-debug-store';
+import * as mobileDebugStore from '../../../lib/logic/mobile-debug-store';
 import MetricRow from './MetricRow';
 import FpsSparkline from './FpsSparkline';
 import { fmt } from './utils';
@@ -8,7 +8,7 @@ import { fmt } from './utils';
 interface MonitorViewProps {
   perf: PerfSnapshot | null;
   perfHistory: PerfSnapshot[];
-  stats: ReturnType<typeof sceneLogStore.getStats>;
+  stats: ReturnType<typeof mobileDebugStore.getStats>;
 }
 
 function MonitorView({ perf, perfHistory, stats }: MonitorViewProps) {

@@ -1,29 +1,29 @@
-.SceneInspectorPage {
+.MobileDebugPage {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 }
 
-.SceneInspectorPage-header {
+.MobileDebugPage-header {
   display: flex;
   flex-direction: column;
   gap: 8px;
   margin-bottom: 32px;
 }
 
-.SceneInspectorPage-loading,
-.SceneInspectorPage-error {
+.MobileDebugPage-loading,
+.MobileDebugPage-error {
   text-align: center;
   padding: 48px;
 }
 
-.SceneInspectorPage-content {
+.MobileDebugPage-content {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 32px;
 }
 
-.SceneInspectorPage-qrSection {
+.MobileDebugPage-qrSection {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -34,19 +34,19 @@
   border-radius: 12px;
 }
 
-.SceneInspectorPage-qrContainer {
+.MobileDebugPage-qrContainer {
   background: white;
   padding: 16px;
   border-radius: 8px;
 }
 
-.SceneInspectorPage-qrImage {
+.MobileDebugPage-qrImage {
   width: 256px;
   height: 256px;
   display: block;
 }
 
-.SceneInspectorPage-url {
+.MobileDebugPage-url {
   font-family: monospace;
   font-size: 11px;
   word-break: break-all;
@@ -55,7 +55,7 @@
   max-width: 400px;
 }
 
-.SceneInspectorPage-sessionsSection {
+.MobileDebugPage-sessionsSection {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -65,7 +65,7 @@
   border-radius: 12px;
 }
 
-.SceneInspectorPage-waiting {
+.MobileDebugPage-waiting {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -73,13 +73,13 @@
   gap: 8px;
 }
 
-.SceneInspectorPage-sessionList {
+.MobileDebugPage-sessionList {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.SceneInspectorPage-sessionItem {
+.MobileDebugPage-sessionItem {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -89,13 +89,13 @@
   border-radius: 6px;
 }
 
-.SceneInspectorPage-sessionBadge {
+.MobileDebugPage-sessionBadge {
   font-weight: 600;
   color: #2ecc71;
   font-size: 13px;
 }
 
-.SceneInspectorPage-sessionMessages {
+.MobileDebugPage-sessionMessages {
   color: rgba(255, 255, 255, 0.6);
   font-size: 12px;
   margin-left: auto;

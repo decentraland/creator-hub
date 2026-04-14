@@ -20,7 +20,7 @@ export type IpcError = {
   };
 };
 
-export interface SceneLogSessionInfo {
+export interface MobileDebugSessionInfo {
   id: number;
   sessionId: string | null;
   deviceName: string | null;
@@ -76,15 +76,15 @@ export interface Ipc {
   'npm.install': (path: string, packages?: string[]) => Promise<void>;
   'npm.getOutdatedDeps': (path: string, packages?: string[]) => Promise<Outdated>;
   'npm.getContextFiles': (path: string) => Promise<void>;
-  'sceneLog.getSessions': () => Promise<SceneLogSessionInfo[]>;
-  'sceneLog.getConsoleEntries': (afterIndex: number) => Promise<{
+  'mobileDebug.getSessions': () => Promise<MobileDebugSessionInfo[]>;
+  'mobileDebug.getConsoleEntries': (afterIndex: number) => Promise<{
     entries: { sessionId: number; timestamp: number; level: 'log' | 'error'; message: string }[];
     nextIndex: number;
   }>;
-  'sceneLog.getRawEntries': (
+  'mobileDebug.getRawEntries': (
     afterIndex: number,
   ) => Promise<{ entries: unknown[]; nextIndex: number }>;
-  'sceneLog.getMonitorStats': () => Promise<{
+  'mobileDebug.getMonitorStats': () => Promise<{
     totalEntries: number;
     totalCrdt: number;
     totalOpCalls: number;
@@ -92,24 +92,24 @@ export interface Ipc {
     activeSessions: number;
     entriesPerSecond: number;
   }>;
-  'sceneLog.clear': () => Promise<void>;
-  'sceneLog.sendCommand': (
+  'mobileDebug.clear': () => Promise<void>;
+  'mobileDebug.sendCommand': (
     sessionId: number,
     cmd: string,
     args: Record<string, unknown>,
   ) => Promise<{ ok: boolean; data: unknown }>;
-  'sceneLog.broadcastCommand': (
+  'mobileDebug.broadcastCommand': (
     cmd: string,
     args: Record<string, unknown>,
   ) => Promise<{ ok: boolean; data: unknown }>;
-  'sceneLog.startServer': () => Promise<{ port: number }>;
-  'sceneLog.stopServer': () => Promise<void>;
-  'sceneLog.getServerStatus': () => Promise<{
+  'mobileDebug.startServer': () => Promise<{ port: number }>;
+  'mobileDebug.stopServer': () => Promise<void>;
+  'mobileDebug.getServerStatus': () => Promise<{
     running: boolean;
     port: number | null;
     sessions: number;
   }>;
-  'sceneLog.getStandaloneDeeplink': () => Promise<{
+  'mobileDebug.getStandaloneDeeplink': () => Promise<{
     url: string;
     qr: string;
     port: number;

@@ -1,5 +1,5 @@
 /**
- * External store for scene log entries received from mobile sessions.
+ * External store for entries received from a Mobile Debug Session.
  * Follows the same pattern as debug-log-store.ts — useSyncExternalStore compatible.
  */
 
@@ -46,7 +46,7 @@ export interface PerfSnapshot {
   scene_count: number;
 }
 
-export interface SessionInfo {
+export interface MobileDebugSessionInfo {
   id: number;
   sessionId: string | null;
   deviceName: string | null;
@@ -87,7 +87,7 @@ const UPDATE_TIME_TTL_MS = 5 * 60_000;
 let entities: Record<number, EntityState> = {};
 let entityChanges: Record<number, CrdtEntry[]> = {};
 let consoleEntries: ConsoleEntry[] = [];
-let sessions: SessionInfo[] = [];
+let sessions: MobileDebugSessionInfo[] = [];
 let latestPerf: PerfSnapshot | null = null;
 let perfHistory: PerfSnapshot[] = [];
 let totalCrdt = 0;
@@ -201,7 +201,7 @@ export function pushEntries(raw: unknown[]) {
   if (changed) notify();
 }
 
-export function updateSessions(s: SessionInfo[]) {
+export function updateSessions(s: MobileDebugSessionInfo[]) {
   sessions = s;
   notify();
 }
@@ -248,7 +248,7 @@ export function getEntityChanges(eid: number): CrdtEntry[] {
 export function getConsoleEntries(): ConsoleEntry[] {
   return consoleEntries;
 }
-export function getSessions(): SessionInfo[] {
+export function getSessions(): MobileDebugSessionInfo[] {
   return sessions;
 }
 export function getLatestPerf(): PerfSnapshot | null {
@@ -307,7 +307,7 @@ export function reconstructStateAtTick(targetTick: number): Record<number, Entit
 let cachedSnapshot: {
   entities: Record<number, EntityState>;
   consoleEntries: ConsoleEntry[];
-  sessions: SessionInfo[];
+  sessions: MobileDebugSessionInfo[];
   latestPerf: PerfSnapshot | null;
   perfHistory: PerfSnapshot[];
   totalCrdt: number;

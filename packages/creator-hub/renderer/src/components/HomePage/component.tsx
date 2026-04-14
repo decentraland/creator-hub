@@ -231,21 +231,21 @@ const LearnCard: React.FC = React.memo(() => {
   );
 });
 
-const SceneInspectorCard: React.FC = React.memo(() => {
+const MobileDebugSessionCard: React.FC = React.memo(() => {
   const navigate = useNavigate();
   const handleClick = useCallback(() => {
-    navigate('/scene-inspector');
+    navigate('/mobile-debug');
   }, [navigate]);
 
   return (
-    <Card className="Card SceneInspectorCard">
+    <Card className="Card MobileDebugSessionCard">
       <CardContent className="CardContent CenteredContent">
         <PhoneAndroidIcon sx={{ fontSize: 48, color: '#4fc3f7' }} />
         <Typography
           className="Title"
           variant="subtitle1"
         >
-          Scene Inspector
+          Mobile Debug Session
         </Typography>
         <Typography
           variant="body2"
@@ -259,7 +259,7 @@ const SceneInspectorCard: React.FC = React.memo(() => {
           size="small"
           onClick={handleClick}
         >
-          Open Inspector
+          Open Mobile Debug Session
         </Button>
       </CardContent>
     </Card>
@@ -337,7 +337,7 @@ export function HomePage() {
               item
               xs
             >
-              <SceneInspectorCard />
+              <MobileDebugSessionCard />
             </Grid>
             <Grid
               item

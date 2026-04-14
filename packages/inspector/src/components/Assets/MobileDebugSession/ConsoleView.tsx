@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import type { ConsoleEntry } from '../../../lib/logic/scene-log-store';
+import type { ConsoleEntry } from '../../../lib/logic/mobile-debug-store';
 
 function ConsoleView({ entries }: { entries: ConsoleEntry[] }) {
   const [textFilter, setTextFilter] = useState('');

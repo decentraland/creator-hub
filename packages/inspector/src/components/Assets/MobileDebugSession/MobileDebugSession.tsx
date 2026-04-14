@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
-import * as sceneLogStore from '../../../lib/logic/scene-log-store';
+import * as mobileDebugStore from '../../../lib/logic/mobile-debug-store';
 import CommandToolbar from './CommandToolbar';
 import TickBar from './TickBar';
 import SessionBadge from './SessionBadge';
@@ -7,7 +7,7 @@ import EntityTreeView from './EntityTreeView';
 import ConsoleView from './ConsoleView';
 import MonitorView from './MonitorView';
 
-import './MobileSession.css';
+import './MobileDebugSession.css';
 
 enum SubTab {
   EntityTree = 'EntityTree',
@@ -15,9 +15,9 @@ enum SubTab {
   Monitor = 'Monitor',
 }
 
-function MobileSession() {
+function MobileDebugSession() {
   const [subTab, setSubTab] = useState(SubTab.EntityTree);
-  const snapshot = useSyncExternalStore(sceneLogStore.subscribe, sceneLogStore.getSnapshot);
+  const snapshot = useSyncExternalStore(mobileDebugStore.subscribe, mobileDebugStore.getSnapshot);
   const [selectedSceneId, setSelectedSceneId] = useState<number | null>(null);
   const [selectedTick, setSelectedTick] = useState<number | null>(null);
   const [reconstructedEntities, setReconstructedEntities] = useState<Record<
@@ -33,7 +33,7 @@ function MobileSession() {
 
   const handleReconstruct = useCallback(() => {
     if (selectedTick != null) {
-      setReconstructedEntities(sceneLogStore.reconstructStateAtTick(selectedTick));
+      setReconstructedEntities(mobileDebugStore.reconstructStateAtTick(selectedTick));
     }
   }, [selectedTick]);
 
@@ -46,16 +46,16 @@ function MobileSession() {
     return reconstructedEntities ?? snapshot.entities;
   }, [reconstructedEntities, snapshot.entities]);
 
-  const stats = sceneLogStore.getStats();
+  const stats = mobileDebugStore.getStats();
   const hasActiveSession = snapshot.sessions.some(s => s.status === 'active');
 
   return (
-    <div className="MobileSession">
-      <div className="MobileSession-tabs">
+    <div className="MobileDebugSession">
+      <div className="MobileDebugSession-tabs">
         {Object.values(SubTab).map(t => (
           <div
             key={t}
-            className={`MobileSession-tab ${subTab === t ? 'active' : ''}`}
+            className={`MobileDebugSession-tab ${subTab === t ? 'active' : ''}`}
             onClick={() => setSubTab(t)}
           >
             {t === SubTab.EntityTree ? 'ENTITY TREE' : t === SubTab.Console ? 'CONSOLE' : 'MONITOR'}
@@ -65,14 +65,14 @@ function MobileSession() {
           isPaused={snapshot.isPaused}
           hasSession={hasActiveSession}
         />
-        <div className="MobileSession-right">
-          <div className="MobileSession-stats">
+        <div className="MobileDebugSession-right">
+          <div className="MobileDebugSession-stats">
             <span>{snapshot.totalCrdt.toLocaleString()} CRDT</span>
             <span>{stats.tickCount.toLocaleString()} ticks</span>
           </div>
           {snapshot.knownScenes.length > 1 ? (
             <select
-              className="MobileSession-sceneSelect"
+              className="MobileDebugSession-sceneSelect"
               value={selectedSceneId ?? ''}
               onChange={e => setSelectedSceneId(e.target.value ? Number(e.target.value) : null)}
             >
@@ -87,7 +87,7 @@ function MobileSession() {
               ))}
             </select>
           ) : snapshot.knownScenes.length === 1 ? (
-            <span className="MobileSession-sceneLabel">
+            <span className="MobileDebugSession-sceneLabel">
               {snapshot.knownScenes[0].baseParcel ? `${snapshot.knownScenes[0].baseParcel} ` : ''}
               {snapshot.knownScenes[0].title}
             </span>
@@ -106,7 +106,7 @@ function MobileSession() {
         />
       )}
 
-      <div className="MobileSession-content">
+      <div className="MobileDebugSession-content">
         {subTab === SubTab.EntityTree && (
           <EntityTreeView
             entities={displayEntities}
@@ -127,4 +127,4 @@ function MobileSession() {
   );
 }
 
-export default React.memo(MobileSession);
+export default React.memo(MobileDebugSession);

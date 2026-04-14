@@ -8,7 +8,7 @@ import * as code from './code';
 import * as analytics from './analytics';
 import * as npm from './npm';
 import * as config from './config';
-import * as sceneLog from './scene-log-server';
+import * as mobileDebug from './mobile-debug-server';
 
 interface InitIpcOptions {
   beforeQuitCleanup: () => Promise<void>;
@@ -49,9 +49,9 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('cli.killPreview', (_event, path) => cli.killPreview(path));
   handle('cli.getMobilePreview', (_event, path) => cli.getMobilePreview(path));
 
-  // scene log
-  handle('sceneLog.getSessions', async () =>
-    sceneLog.getSceneLogSessions().map(s => ({
+  // mobile debug session
+  handle('mobileDebug.getSessions', async () =>
+    mobileDebug.getMobileDebugSessions().map(s => ({
       id: s.id,
       sessionId: s.sessionId,
       deviceName: s.deviceName,
@@ -61,29 +61,31 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
       messageCount: s.messageCount,
     })),
   );
-  handle('sceneLog.getConsoleEntries', async (_event, afterIndex: number) =>
-    sceneLog.getConsoleEntries(afterIndex),
+  handle('mobileDebug.getConsoleEntries', async (_event, afterIndex: number) =>
+    mobileDebug.getConsoleEntries(afterIndex),
   );
-  handle('sceneLog.getMonitorStats', async () => sceneLog.getMonitorStats());
-  handle('sceneLog.getRawEntries', async (_event, afterIndex: number) =>
-    sceneLog.getRawEntries(afterIndex),
+  handle('mobileDebug.getMonitorStats', async () => mobileDebug.getMonitorStats());
+  handle('mobileDebug.getRawEntries', async (_event, afterIndex: number) =>
+    mobileDebug.getRawEntries(afterIndex),
   );
-  handle('sceneLog.clear', async () => sceneLog.clearSceneLogData());
+  handle('mobileDebug.clear', async () => mobileDebug.clearMobileDebugData());
   handle(
-    'sceneLog.sendCommand',
+    'mobileDebug.sendCommand',
     async (_event, sessionId: number, cmd: string, args: Record<string, unknown>) =>
-      sceneLog.sendCommand(sessionId, cmd, args),
+      mobileDebug.sendCommand(sessionId, cmd, args),
   );
-  handle('sceneLog.broadcastCommand', async (_event, cmd: string, args: Record<string, unknown>) =>
-    sceneLog.broadcastCommand(cmd, args),
+  handle(
+    'mobileDebug.broadcastCommand',
+    async (_event, cmd: string, args: Record<string, unknown>) =>
+      mobileDebug.broadcastCommand(cmd, args),
   );
-  handle('sceneLog.startServer', async () => {
-    const serverPort = await sceneLog.startSceneLogServer();
+  handle('mobileDebug.startServer', async () => {
+    const serverPort = await mobileDebug.startMobileDebugServer();
     return { port: serverPort };
   });
-  handle('sceneLog.stopServer', async () => sceneLog.stopSceneLogServer());
-  handle('sceneLog.getServerStatus', async () => sceneLog.getSceneLogServerStatus());
-  handle('sceneLog.getStandaloneDeeplink', async () => sceneLog.getStandaloneDeeplink());
+  handle('mobileDebug.stopServer', async () => mobileDebug.stopMobileDebugServer());
+  handle('mobileDebug.getServerStatus', async () => mobileDebug.getMobileDebugServerStatus());
+  handle('mobileDebug.getStandaloneDeeplink', async () => mobileDebug.getStandaloneDeeplink());
 
   // config
   handle('config.getConfig', () => config.getConfig());

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Box } from 'decentraland-ui2';
 import { editor } from '#preload';
-import type { SceneLogSessionInfo } from '/shared/types/ipc';
+import type { MobileDebugSessionInfo } from '/shared/types/ipc';
 
 import { t } from '/@/modules/store/translation/utils';
 import { Modal, onBackNoop } from '..';
@@ -10,7 +10,7 @@ import type { Props } from './types';
 import './styles.css';
 
 export function MobileQRCode({ open, onClose, url, qr }: Props) {
-  const [sessions, setSessions] = useState<SceneLogSessionInfo[]>([]);
+  const [sessions, setSessions] = useState<MobileDebugSessionInfo[]>([]);
 
   useEffect(() => {
     if (!open) {
@@ -21,10 +21,10 @@ export function MobileQRCode({ open, onClose, url, qr }: Props) {
     let active = true;
     const poll = async () => {
       try {
-        const result = await editor.getSceneLogSessions();
+        const result = await editor.getMobileDebugSessions();
         if (active) setSessions(result);
       } catch (err) {
-        console.warn('[MobileQRCode] getSceneLogSessions failed:', err);
+        console.warn('[MobileQRCode] getMobileDebugSessions failed:', err);
       }
     };
 

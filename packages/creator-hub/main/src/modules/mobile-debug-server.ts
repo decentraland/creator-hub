@@ -6,7 +6,7 @@ import { BrowserWindow } from 'electron';
 import log from 'electron-log/main';
 import { getAvailablePort } from './port';
 
-export interface SceneLogSession {
+export interface MobileDebugSession {
   id: number;
   ws: WebSocket | null;
   sessionId: string | null;
@@ -33,21 +33,19 @@ export interface MonitorStats {
   entriesPerSecond: number;
 }
 
-export type SceneLogListener = (session: SceneLogSession, entries: unknown[]) => void;
+export type MobileDebugListener = (session: MobileDebugSession, entries: unknown[]) => void;
 
 const MAX_CONSOLE_ENTRIES = 1000;
 
 let wss: WebSocketServer | null = null;
 let port: number | null = null;
 let sessionCounter = 0;
-const sessions: Map<number, SceneLogSession> = new Map();
-const listeners: Set<SceneLogListener> = new Set();
+const sessions: Map<number, MobileDebugSession> = new Map();
+const listeners: Set<MobileDebugListener> = new Set();
 
-// Console log buffer — ring buffer of recent console entries
 const consoleBuffer: ConsoleEntry[] = [];
 let consoleTotalCount = 0;
 
-// Monitor stats
 let totalEntries = 0;
 let totalCrdt = 0;
 let totalOpCalls = 0;
@@ -59,7 +57,7 @@ let throughputIntervalHandle: NodeJS.Timeout | null = null;
 
 const SESSION_RETENTION_MS = 60_000;
 
-export async function startSceneLogServer(): Promise<number> {
+export async function startMobileDebugServer(): Promise<number> {
   if (wss && port) {
     return port;
   }
@@ -69,7 +67,7 @@ export async function startSceneLogServer(): Promise<number> {
 
   wss.on('connection', (ws: WebSocket) => {
     sessionCounter++;
-    const session: SceneLogSession = {
+    const session: MobileDebugSession = {
       id: sessionCounter,
       ws,
       sessionId: null,
@@ -80,13 +78,12 @@ export async function startSceneLogServer(): Promise<number> {
       messageCount: 0,
     };
     sessions.set(session.id, session);
-    log.info(`[SceneLogServer] Session #${session.id} connected (port ${port})`);
+    log.info(`[mobile-debug] Session #${session.id} connected (port ${port})`);
 
     ws.on('message', (raw: Buffer) => {
       try {
         const msg = JSON.parse(raw.toString());
         if (msg.type === 'SCENE_LOG_CMD_ACK') {
-          // Resolve pending command promise
           const resolver = pendingCommands.get(msg.id);
           if (resolver) {
             pendingCommands.delete(msg.id);
@@ -103,14 +100,12 @@ export async function startSceneLogServer(): Promise<number> {
           totalEntries += entries.length;
           entriesLastSecond += entries.length;
 
-          // Buffer raw entries for renderer polling
           rawEntryBuffer.push(...entries);
           rawTotalCount += entries.length;
           if (rawEntryBuffer.length > MAX_RAW_ENTRIES) {
             rawEntryBuffer.splice(0, rawEntryBuffer.length - MAX_RAW_ENTRIES);
           }
 
-          // Categorize entries
           for (const entry of entries) {
             const type = entry.type as string;
             if (type === 'session_start') {
@@ -121,7 +116,6 @@ export async function startSceneLogServer(): Promise<number> {
             } else if (type === 'op_call_start') {
               totalOpCalls++;
               const opName = entry.op_name as string;
-              // Capture console.log and console.error
               if (opName === 'op_log' || opName === 'op_error') {
                 totalConsoleLogs++;
                 const args = entry.args as unknown;
@@ -141,17 +135,15 @@ export async function startSceneLogServer(): Promise<number> {
             }
           }
 
-          // Push to renderer windows immediately (no polling needed)
           for (const win of BrowserWindow.getAllWindows()) {
-            win.webContents.send('sceneLog:entries', { sessionId: session.id, entries });
+            win.webContents.send('mobileDebug:entries', { sessionId: session.id, entries });
           }
 
-          // Notify listeners
           for (const listener of listeners) {
             try {
               listener(session, entries);
             } catch (e) {
-              log.warn('[SceneLogServer] Listener error:', e);
+              log.warn('[mobile-debug] Listener error:', e);
             }
           }
         }
@@ -162,7 +154,7 @@ export async function startSceneLogServer(): Promise<number> {
 
     ws.on('close', () => {
       log.info(
-        `[SceneLogServer] Session #${session.id} disconnected (${session.messageCount} messages)`,
+        `[mobile-debug] Session #${session.id} disconnected (${session.messageCount} messages)`,
       );
       session.status = 'ended';
       session.disconnectedAt = new Date();
@@ -173,11 +165,10 @@ export async function startSceneLogServer(): Promise<number> {
     });
 
     ws.on('error', (err: Error) => {
-      log.warn(`[SceneLogServer] Session #${session.id} error:`, err.message);
+      log.warn(`[mobile-debug] Session #${session.id} error:`, err.message);
     });
   });
 
-  // Update entries/second every second
   if (!throughputIntervalHandle) {
     throughputIntervalHandle = setInterval(() => {
       const now = Date.now();
@@ -189,14 +180,14 @@ export async function startSceneLogServer(): Promise<number> {
   }
 
   wss.on('error', (err: Error) => {
-    log.error('[SceneLogServer] Server error:', err.message);
+    log.error('[mobile-debug] Server error:', err.message);
   });
 
-  log.info(`[SceneLogServer] Listening on ws://0.0.0.0:${port}`);
+  log.info(`[mobile-debug] Listening on ws://0.0.0.0:${port}`);
   return port;
 }
 
-export function stopSceneLogServer(): void {
+export function stopMobileDebugServer(): void {
   if (wss) {
     for (const session of sessions.values()) {
       if (session.ws) session.ws.close();
@@ -211,19 +202,19 @@ export function stopSceneLogServer(): void {
       clearInterval(throughputIntervalHandle);
       throughputIntervalHandle = null;
     }
-    log.info('[SceneLogServer] Stopped');
+    log.info('[mobile-debug] Stopped');
   }
 }
 
-export function getSceneLogServerPort(): number | null {
+export function getMobileDebugServerPort(): number | null {
   return port;
 }
 
-export function isSceneLogServerRunning(): boolean {
+export function isMobileDebugServerRunning(): boolean {
   return wss !== null && port !== null;
 }
 
-export function getSceneLogServerStatus(): {
+export function getMobileDebugServerStatus(): {
   running: boolean;
   port: number | null;
   sessions: number;
@@ -235,26 +226,20 @@ export function getSceneLogServerStatus(): {
   };
 }
 
-export function getSceneLogSessions(): SceneLogSession[] {
+export function getMobileDebugSessions(): MobileDebugSession[] {
   return Array.from(sessions.values());
 }
 
-/**
- * Get console entries added after `afterIndex`.
- * Returns { entries, nextIndex } for cursor-based polling.
- */
 export function getConsoleEntries(afterIndex: number): {
   entries: ConsoleEntry[];
   nextIndex: number;
 } {
-  // afterIndex is relative to consoleTotalCount
   const bufferStart = consoleTotalCount - consoleBuffer.length;
   const startOffset = Math.max(0, afterIndex - bufferStart);
   const entries = consoleBuffer.slice(startOffset);
   return { entries, nextIndex: consoleTotalCount };
 }
 
-/** Get current monitor stats snapshot. */
 export function getMonitorStats(): MonitorStats {
   return {
     totalEntries,
@@ -266,14 +251,10 @@ export function getMonitorStats(): MonitorStats {
   };
 }
 
-// Raw entry buffer for forwarding all entries to renderer
 const MAX_RAW_ENTRIES = 5000;
 const rawEntryBuffer: unknown[] = [];
 let rawTotalCount = 0;
 
-/**
- * Get raw entries added after `afterIndex` (all types, not just console).
- */
 export function getRawEntries(afterIndex: number): { entries: unknown[]; nextIndex: number } {
   const bufferStart = rawTotalCount - rawEntryBuffer.length;
   const startOffset = Math.max(0, afterIndex - bufferStart);
@@ -281,8 +262,7 @@ export function getRawEntries(afterIndex: number): { entries: unknown[]; nextInd
   return { entries, nextIndex: rawTotalCount };
 }
 
-/** Clear all buffered data. */
-export function clearSceneLogData(): void {
+export function clearMobileDebugData(): void {
   consoleBuffer.length = 0;
   consoleTotalCount = 0;
   rawEntryBuffer.length = 0;
@@ -293,15 +273,13 @@ export function clearSceneLogData(): void {
   totalConsoleLogs = 0;
 }
 
-export function addSceneLogListener(listener: SceneLogListener): void {
+export function addMobileDebugListener(listener: MobileDebugListener): void {
   listeners.add(listener);
 }
 
-export function removeSceneLogListener(listener: SceneLogListener): void {
+export function removeMobileDebugListener(listener: MobileDebugListener): void {
   listeners.delete(listener);
 }
-
-// ── Bidirectional Commands ─────────────────────────────────────────
 
 interface PendingCommand {
   resolve: (value: { ok: boolean; data: unknown }) => void;
@@ -312,9 +290,6 @@ const pendingCommands: Map<string, PendingCommand> = new Map();
 
 const COMMAND_TIMEOUT_MS = 5000;
 
-/**
- * Send a command to a specific session and wait for its ACK.
- */
 export async function sendCommand(
   sessionId: number,
   cmd: string,
@@ -339,9 +314,6 @@ export async function sendCommand(
   });
 }
 
-/**
- * Send a command to all connected sessions. Returns the first ACK received.
- */
 export async function broadcastCommand(
   cmd: string,
   args: Record<string, unknown> = {},
@@ -351,17 +323,12 @@ export async function broadcastCommand(
     return { ok: false, data: { error: 'no sessions connected' } };
   }
 
-  // Send to all, return first response
   const results = await Promise.all(sessionIds.map(sid => sendCommand(sid, cmd, args)));
   return results.find(r => r.ok) ?? results[0];
 }
 
-/**
- * Get the deeplink URL and QR code for standalone scene inspection.
- * Starts the WS server if not already running.
- */
 export async function getStandaloneDeeplink(): Promise<{ url: string; qr: string; port: number }> {
-  const wsPort = await startSceneLogServer();
+  const wsPort = await startMobileDebugServer();
   const lanIp = getLanIp();
   const sceneLoggingTarget = `ws://${lanIp}:${wsPort}`;
   const url = `decentraland://?scene-logging=${encodeURIComponent(sceneLoggingTarget)}`;
@@ -387,7 +354,6 @@ function getLanIp(): string {
 function formatConsoleArgs(args: unknown): string {
   if (args == null) return '';
   if (Array.isArray(args)) {
-    // op_log/op_error args are typically [level, message] or [message]
     return args.map(a => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ');
   }
   if (typeof args === 'string') return args;

@@ -1,5 +1,5 @@
 import React from 'react';
-import type { PerfSnapshot } from '../../../lib/logic/scene-log-store';
+import type { PerfSnapshot } from '../../../lib/logic/mobile-debug-store';
 
 function FpsSparkline({ history }: { history: PerfSnapshot[] }) {
   if (history.length < 2) return null;

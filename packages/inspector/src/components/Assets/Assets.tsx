@@ -30,7 +30,7 @@ import {
   getSelectedAssetsTab,
   selectAssetsTab,
   getDebugConsoleEnabled,
-  getMobileSessionEnabled,
+  getMobileDebugSessionEnabled,
 } from '../../redux/ui';
 import { AssetsTab } from '../../redux/ui/types';
 import { useScanAssets } from '../../hooks/useScanAssets';
@@ -47,7 +47,7 @@ import type { InputRef } from '../FileInput/FileInput';
 import { Button } from '../Button';
 import { InfoTooltip } from '../ui';
 import DebugConsole from './DebugConsole';
-import MobileSession from './MobileSession/MobileSession';
+import MobileDebugSession from './MobileDebugSession/MobileDebugSession';
 
 import './Assets.css';
 
@@ -64,7 +64,7 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
   const removedAssets = useAppSelector(selectRemovedFiles);
   const hasRecoverableFiles = useAppSelector(selectHasRecoverableFiles);
   const debugConsoleEnabled = useAppSelector(getDebugConsoleEnabled);
-  const mobileSessionEnabled = useAppSelector(getMobileSessionEnabled);
+  const mobileDebugSessionEnabled = useAppSelector(getMobileDebugSessionEnabled);
   const [showCleanAssetsModal, setShowCleanAssetsModal] = useState(false);
   const [selectedCleanAssets, setSelectedCleanAssets] = useState<Set<string>>(new Set());
   const { pushNotification } = useSnackbar();
@@ -336,22 +336,22 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
             </div>
           </div>
         )}
-        {mobileSessionEnabled && (
+        {mobileDebugSessionEnabled && (
           <div
             className="tab"
-            onClick={handleTabClick(AssetsTab.MobileSession)}
-            data-test-id={AssetsTab.MobileSession}
+            onClick={handleTabClick(AssetsTab.MobileDebugSession)}
+            data-test-id={AssetsTab.MobileDebugSession}
           >
-            <div className={cx({ underlined: tab === AssetsTab.MobileSession })}>
+            <div className={cx({ underlined: tab === AssetsTab.MobileDebugSession })}>
               <VscTerminal />
-              <span>MOBILE SESSION</span>
+              <span>MOBILE DEBUG SESSION</span>
             </div>
           </div>
         )}
       </div>
-      {tab === AssetsTab.MobileSession ? (
+      {tab === AssetsTab.MobileDebugSession ? (
         <div className={cx('Assets-content', { Hide: isAssetsPanelCollapsed })}>
-          <MobileSession />
+          <MobileDebugSession />
         </div>
       ) : tab === AssetsTab.DebugConsole ? (
         <div className={cx('Assets-content', { Hide: isAssetsPanelCollapsed })}>

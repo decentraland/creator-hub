@@ -19,21 +19,21 @@ export enum Method {
   OPEN_FILE = 'open_file',
   OPEN_DIRECTORY = 'open_directory',
   PUSH_NOTIFICATION = 'push_notification',
-  BROADCAST_SCENE_LOG_COMMAND = 'broadcast_scene_log_command',
+  BROADCAST_MOBILE_DEBUG_COMMAND = 'broadcast_mobile_debug_command',
 }
 
 export type Params = {
   [Method.OPEN_FILE]: { path: string };
   [Method.OPEN_DIRECTORY]: { path: string; createIfNotExists?: boolean };
   [Method.PUSH_NOTIFICATION]: { notification: NotificationRequest };
-  [Method.BROADCAST_SCENE_LOG_COMMAND]: { cmd: string; args: Record<string, unknown> };
+  [Method.BROADCAST_MOBILE_DEBUG_COMMAND]: { cmd: string; args: Record<string, unknown> };
 };
 
 export type Result = {
   [Method.OPEN_FILE]: void;
   [Method.OPEN_DIRECTORY]: void;
   [Method.PUSH_NOTIFICATION]: void;
-  [Method.BROADCAST_SCENE_LOG_COMMAND]: { ok: boolean; data: unknown };
+  [Method.BROADCAST_MOBILE_DEBUG_COMMAND]: { ok: boolean; data: unknown };
 };
 
 export class SceneRpcServer extends RPC<Method, Params, Result> {
@@ -70,8 +70,8 @@ export class SceneRpcServer extends RPC<Method, Params, Result> {
       );
     });
 
-    this.handle('broadcast_scene_log_command', async ({ cmd, args }) => {
-      return editor.broadcastSceneLogCommand(cmd, args);
+    this.handle('broadcast_mobile_debug_command', async ({ cmd, args }) => {
+      return editor.broadcastMobileDebugCommand(cmd, args);
     });
   }
 }

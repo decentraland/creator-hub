@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import * as sceneLogStore from '../../../lib/logic/scene-log-store';
+import * as mobileDebugStore from '../../../lib/logic/mobile-debug-store';
 
 interface EntityNodeProps {
   eid: number;
@@ -28,7 +28,7 @@ function EntityNode({
   const compNames = Object.keys(ent.components).sort().join(', ');
   const hasChildren = children.length > 0;
 
-  const lastUpdate = sceneLogStore.getEntityUpdateTime(eid);
+  const lastUpdate = mobileDebugStore.getEntityUpdateTime(eid);
   const elapsed = Date.now() - lastUpdate;
   const isRecent = lastUpdate > 0 && elapsed < 1000;
   const highlightOpacity = isRecent ? Math.max(0, 1 - elapsed / 1000) : 0;

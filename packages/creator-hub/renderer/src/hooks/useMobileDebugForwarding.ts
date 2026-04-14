@@ -6,12 +6,7 @@ import type { RPCInfo } from '/@/modules/rpc';
 
 const SESSION_POLL_INTERVAL = 2000;
 
-/**
- * Forwards scene log entries from the main process to the inspector iframe.
- *
- * Uses push-based IPC for entries (real-time) and polling only for session status.
- */
-export function useSceneLogForwarding(
+export function useMobileDebugForwarding(
   iframeRef: MutableRefObject<RPCInfo | undefined>,
   isPreviewRunning: boolean,
 ) {
@@ -22,29 +17,27 @@ export function useSceneLogForwarding(
 
     const scene = iframeRef.current.scene;
 
-    // Push-based: subscribe to entries from main process
-    const unsubscribe = editor.onSceneLogEntries(({ entries }) => {
+    const unsubscribe = editor.onMobileDebugEntries(({ entries }) => {
       if (!wasEnabledRef.current) {
         wasEnabledRef.current = true;
         void scene
-          .setMobileSessionEnabled(true, [])
-          .catch(err => console.warn('[scene-log-forwarding]', err));
+          .setMobileDebugSessionEnabled(true, [])
+          .catch(err => console.warn('[mobile-debug-forwarding]', err));
         void scene
-          .selectAssetsTab('MobileSession')
-          .catch(err => console.warn('[scene-log-forwarding]', err));
+          .selectAssetsTab('MobileDebugSession')
+          .catch(err => console.warn('[mobile-debug-forwarding]', err));
       }
       void scene
-        .pushSceneLogEntries(entries)
-        .catch(err => console.warn('[scene-log-forwarding]', err));
+        .pushMobileDebugEntries(entries)
+        .catch(err => console.warn('[mobile-debug-forwarding]', err));
     });
 
-    // Poll-based: session status only (low frequency)
     const pollSessions = async () => {
       try {
-        const sessions = await editor.getSceneLogSessions();
+        const sessions = await editor.getMobileDebugSessions();
         const enabled = sessions.some(s => s.status === 'active');
         void scene
-          .setMobileSessionEnabled(
+          .setMobileDebugSessionEnabled(
             enabled || sessions.length > 0,
             sessions.map(s => ({
               id: s.id,
@@ -54,9 +47,9 @@ export function useSceneLogForwarding(
               messageCount: s.messageCount,
             })),
           )
-          .catch(err => console.warn('[scene-log-forwarding]', err));
+          .catch(err => console.warn('[mobile-debug-forwarding]', err));
       } catch (err) {
-        console.warn('[scene-log-forwarding]', err);
+        console.warn('[mobile-debug-forwarding]', err);
       }
     };
     const interval = setInterval(pollSessions, SESSION_POLL_INTERVAL);

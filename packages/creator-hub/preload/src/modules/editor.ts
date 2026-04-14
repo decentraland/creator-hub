@@ -1,12 +1,12 @@
 import { ipcRenderer, type IpcRendererEvent } from 'electron';
 
 import type { DeployOptions } from '/shared/types/deploy';
-import type { SceneLogSessionInfo } from '/shared/types/ipc';
+import type { MobileDebugSessionInfo } from '/shared/types/ipc';
 
 import { invoke } from '../services/ipc';
 import type { PreviewOptions } from '/shared/types/settings';
 
-export type { SceneLogSessionInfo };
+export type { MobileDebugSessionInfo };
 
 export async function getVersion() {
   return invoke('electron.getAppVersion');
@@ -100,71 +100,71 @@ export interface MonitorStats {
   entriesPerSecond: number;
 }
 
-export async function getSceneLogSessions(): Promise<SceneLogSessionInfo[]> {
-  return invoke('sceneLog.getSessions') as Promise<SceneLogSessionInfo[]>;
+export async function getMobileDebugSessions(): Promise<MobileDebugSessionInfo[]> {
+  return invoke('mobileDebug.getSessions') as Promise<MobileDebugSessionInfo[]>;
 }
 
 export async function getConsoleEntries(
   afterIndex: number,
 ): Promise<{ entries: ConsoleEntry[]; nextIndex: number }> {
-  return invoke('sceneLog.getConsoleEntries', afterIndex) as Promise<{
+  return invoke('mobileDebug.getConsoleEntries', afterIndex) as Promise<{
     entries: ConsoleEntry[];
     nextIndex: number;
   }>;
 }
 
 export async function getMonitorStats(): Promise<MonitorStats> {
-  return invoke('sceneLog.getMonitorStats') as Promise<MonitorStats>;
+  return invoke('mobileDebug.getMonitorStats') as Promise<MonitorStats>;
 }
 
 export async function getRawEntries(
   afterIndex: number,
 ): Promise<{ entries: unknown[]; nextIndex: number }> {
-  return invoke('sceneLog.getRawEntries', afterIndex) as Promise<{
+  return invoke('mobileDebug.getRawEntries', afterIndex) as Promise<{
     entries: unknown[];
     nextIndex: number;
   }>;
 }
 
-export async function clearSceneLogData(): Promise<void> {
-  return invoke('sceneLog.clear') as Promise<void>;
+export async function clearMobileDebugData(): Promise<void> {
+  return invoke('mobileDebug.clear') as Promise<void>;
 }
 
-export async function sendSceneLogCommand(
+export async function sendMobileDebugCommand(
   sessionId: number,
   cmd: string,
   args: Record<string, unknown> = {},
 ): Promise<{ ok: boolean; data: unknown }> {
-  return invoke('sceneLog.sendCommand', sessionId, cmd, args) as Promise<{
+  return invoke('mobileDebug.sendCommand', sessionId, cmd, args) as Promise<{
     ok: boolean;
     data: unknown;
   }>;
 }
 
-export async function broadcastSceneLogCommand(
+export async function broadcastMobileDebugCommand(
   cmd: string,
   args: Record<string, unknown> = {},
 ): Promise<{ ok: boolean; data: unknown }> {
-  return invoke('sceneLog.broadcastCommand', cmd, args) as Promise<{
+  return invoke('mobileDebug.broadcastCommand', cmd, args) as Promise<{
     ok: boolean;
     data: unknown;
   }>;
 }
 
-export async function startSceneLogServer(): Promise<{ port: number }> {
-  return invoke('sceneLog.startServer') as Promise<{ port: number }>;
+export async function startMobileDebugServer(): Promise<{ port: number }> {
+  return invoke('mobileDebug.startServer') as Promise<{ port: number }>;
 }
 
-export async function stopSceneLogServer(): Promise<void> {
-  return invoke('sceneLog.stopServer') as Promise<void>;
+export async function stopMobileDebugServer(): Promise<void> {
+  return invoke('mobileDebug.stopServer') as Promise<void>;
 }
 
-export async function getSceneLogServerStatus(): Promise<{
+export async function getMobileDebugServerStatus(): Promise<{
   running: boolean;
   port: number | null;
   sessions: number;
 }> {
-  return invoke('sceneLog.getServerStatus') as Promise<{
+  return invoke('mobileDebug.getServerStatus') as Promise<{
     running: boolean;
     port: number | null;
     sessions: number;
@@ -172,21 +172,20 @@ export async function getSceneLogServerStatus(): Promise<{
 }
 
 export async function getStandaloneDeeplink(): Promise<{ url: string; qr: string; port: number }> {
-  return invoke('sceneLog.getStandaloneDeeplink') as Promise<{
+  return invoke('mobileDebug.getStandaloneDeeplink') as Promise<{
     url: string;
     qr: string;
     port: number;
   }>;
 }
 
-/** Subscribe to pushed scene log entries (real-time, no polling). */
-export function onSceneLogEntries(
+export function onMobileDebugEntries(
   callback: (data: { sessionId: number; entries: unknown[] }) => void,
 ): () => void {
   const handler = (_event: IpcRendererEvent, data: { sessionId: number; entries: unknown[] }) =>
     callback(data);
-  ipcRenderer.on('sceneLog:entries', handler);
+  ipcRenderer.on('mobileDebug:entries', handler);
   return () => {
-    ipcRenderer.removeListener('sceneLog:entries', handler);
+    ipcRenderer.removeListener('mobileDebug:entries', handler);
   };
 }
