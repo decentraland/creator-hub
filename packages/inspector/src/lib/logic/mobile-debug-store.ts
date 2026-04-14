@@ -63,7 +63,7 @@ export interface SceneInfo {
 export interface RemoteStatus {
   paused: boolean;
   session_id: string;
-  scene_logging_active: boolean;
+  scene_inspector_active: boolean;
   file_logging: boolean;
   entry_count: number;
   perf_interval: number;

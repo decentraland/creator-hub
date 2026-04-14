@@ -83,14 +83,14 @@ export async function startMobileDebugServer(): Promise<number> {
     ws.on('message', (raw: Buffer) => {
       try {
         const msg = JSON.parse(raw.toString());
-        if (msg.type === 'SCENE_LOG_CMD_ACK') {
+        if (msg.type === 'SCENE_INSPECTOR_CMD_ACK') {
           const resolver = pendingCommands.get(msg.id);
           if (resolver) {
             pendingCommands.delete(msg.id);
             resolver.resolve({ ok: msg.ok ?? false, data: msg.data ?? {} });
             clearTimeout(resolver.timeout);
           }
-        } else if (msg.type === 'SCENE_LOG' && msg.payload) {
+        } else if (msg.type === 'SCENE_INSPECTOR' && msg.payload) {
           const payload = msg.payload;
           if (payload.sessionId && !session.sessionId) {
             session.sessionId = payload.sessionId;
@@ -301,7 +301,7 @@ export async function sendCommand(
   }
 
   const id = `cmd-${randomUUID()}`;
-  const msg = JSON.stringify({ type: 'SCENE_LOG_CMD', id, cmd, args });
+  const msg = JSON.stringify({ type: 'SCENE_INSPECTOR_CMD', id, cmd, args });
 
   return new Promise(resolve => {
     const timeout = setTimeout(() => {
@@ -330,8 +330,8 @@ export async function broadcastCommand(
 export async function getStandaloneDeeplink(): Promise<{ url: string; qr: string; port: number }> {
   const wsPort = await startMobileDebugServer();
   const lanIp = getLanIp();
-  const sceneLoggingTarget = `ws://${lanIp}:${wsPort}`;
-  const url = `decentraland://?scene-logging=${encodeURIComponent(sceneLoggingTarget)}`;
+  const sceneInspectorTarget = `ws://${lanIp}:${wsPort}`;
+  const url = `decentraland://?scene-inspector=${encodeURIComponent(sceneInspectorTarget)}`;
 
   const QRCode = await import('qrcode');
   const qr = await QRCode.toDataURL(url, { width: 512, margin: 2 });

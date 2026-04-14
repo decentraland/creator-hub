@@ -174,13 +174,13 @@ export async function getMobilePreview(path: string): Promise<{ url: string; qr:
         if (previewHost === '127.0.0.1' || previewHost === 'localhost') {
           previewHost = getLanIp();
         }
-        const sceneLoggingTarget = `ws://${previewHost}:${wsPort}`;
+        const sceneInspectorTarget = `ws://${previewHost}:${wsPort}`;
 
-        // Append scene-logging param to the mobile URL
+        // Append scene-inspector param to the mobile URL
         if (url.includes('?')) {
-          url = `${url}&scene-logging=${encodeURIComponent(sceneLoggingTarget)}`;
+          url = `${url}&scene-inspector=${encodeURIComponent(sceneInspectorTarget)}`;
         } else {
-          url = `${url}?scene-logging=${encodeURIComponent(sceneLoggingTarget)}`;
+          url = `${url}?scene-inspector=${encodeURIComponent(sceneInspectorTarget)}`;
         }
 
         // Regenerate QR with the modified URL
