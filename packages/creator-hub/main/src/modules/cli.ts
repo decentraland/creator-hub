@@ -1,6 +1,7 @@
 import { join } from 'path';
 import fs from 'fs/promises';
 import { realpathSync } from 'fs';
+import os from 'os';
 import log from 'electron-log/main';
 import { app } from 'electron';
 
@@ -97,6 +98,28 @@ function isPreviewRunning(preview?: Preview): preview is Preview {
   return !!(preview?.child.alive() && preview.url);
 }
 
+function parseDecentralandUrl(raw: string): URL | null {
+  const match = /^decentraland:\/\/(.*)$/i.exec(raw);
+  if (!match) return null;
+  try {
+    return new URL(`https://dummy/${match[1].replace(/^\/+/, '')}`);
+  } catch {
+    return null;
+  }
+}
+
+function getLanIp(): string {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name] ?? []) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return '127.0.0.1';
+}
+
 function getPreviewServerUrl(deepLinkUrl: string): string | null {
   try {
     const params = new URLSearchParams(deepLinkUrl);
@@ -143,12 +166,13 @@ export async function getMobilePreview(path: string): Promise<{ url: string; qr:
         const wsPort = await startSceneLogServer();
         // Extract the host from the mobile preview URL (not serverUrl which may be 127.0.0.1)
         // The mobile URL has the LAN IP that the phone can reach
-        const mobilePreviewParam = new URL(
-          url.replace('decentraland://', 'https://dummy/'),
-        ).searchParams.get('preview');
-        const previewHost = mobilePreviewParam
+        const mobilePreviewParam = parseDecentralandUrl(url)?.searchParams.get('preview');
+        let previewHost = mobilePreviewParam
           ? new URL(mobilePreviewParam).hostname
           : new URL(serverUrl).hostname;
+        if (previewHost === '127.0.0.1' || previewHost === 'localhost') {
+          previewHost = getLanIp();
+        }
         const sceneLoggingTarget = `ws://${previewHost}:${wsPort}`;
 
         // Append scene-logging param to the mobile URL

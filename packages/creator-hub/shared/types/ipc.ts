@@ -20,6 +20,16 @@ export type IpcError = {
   };
 };
 
+export interface SceneLogSessionInfo {
+  id: number;
+  sessionId: string | null;
+  deviceName: string | null;
+  connectedAt: string;
+  disconnectedAt: string | null;
+  status: 'active' | 'ended';
+  messageCount: number;
+}
+
 export interface Ipc {
   'electron.getEnvOverride': () => Env | null;
   'electron.getUserDataPath': () => string;
@@ -66,17 +76,7 @@ export interface Ipc {
   'npm.install': (path: string, packages?: string[]) => Promise<void>;
   'npm.getOutdatedDeps': (path: string, packages?: string[]) => Promise<Outdated>;
   'npm.getContextFiles': (path: string) => Promise<void>;
-  'sceneLog.getSessions': () => Promise<
-    {
-      id: number;
-      sessionId: string | null;
-      deviceName: string | null;
-      connectedAt: string;
-      disconnectedAt: string | null;
-      status: 'active' | 'ended';
-      messageCount: number;
-    }[]
-  >;
+  'sceneLog.getSessions': () => Promise<SceneLogSessionInfo[]>;
   'sceneLog.getConsoleEntries': (afterIndex: number) => Promise<{
     entries: { sessionId: number; timestamp: number; level: 'log' | 'error'; message: string }[];
     nextIndex: number;

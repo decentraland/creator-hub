@@ -1,4 +1,5 @@
 import os from 'os';
+import { randomUUID } from 'node:crypto';
 
 import { WebSocketServer, type WebSocket } from 'ws';
 import { BrowserWindow } from 'electron';
@@ -44,8 +45,6 @@ const listeners: Set<SceneLogListener> = new Set();
 
 // Console log buffer — ring buffer of recent console entries
 const consoleBuffer: ConsoleEntry[] = [];
-// eslint-disable-next-line prefer-const -- used as monotonic cursor for polling
-let _consoleReadCursor = 0;
 let consoleTotalCount = 0;
 
 // Monitor stats
@@ -56,6 +55,9 @@ let totalConsoleLogs = 0;
 let entriesLastSecond = 0;
 let entriesPerSecond = 0;
 let lastSecondTimestamp = Date.now();
+let throughputIntervalHandle: NodeJS.Timeout | null = null;
+
+const SESSION_RETENTION_MS = 60_000;
 
 export async function startSceneLogServer(): Promise<number> {
   if (wss && port) {
@@ -165,6 +167,9 @@ export async function startSceneLogServer(): Promise<number> {
       session.status = 'ended';
       session.disconnectedAt = new Date();
       session.ws = null;
+      setTimeout(() => {
+        sessions.delete(session.id);
+      }, SESSION_RETENTION_MS).unref?.();
     });
 
     ws.on('error', (err: Error) => {
@@ -173,13 +178,15 @@ export async function startSceneLogServer(): Promise<number> {
   });
 
   // Update entries/second every second
-  setInterval(() => {
-    const now = Date.now();
-    const elapsed = (now - lastSecondTimestamp) / 1000;
-    entriesPerSecond = elapsed > 0 ? Math.round(entriesLastSecond / elapsed) : 0;
-    entriesLastSecond = 0;
-    lastSecondTimestamp = now;
-  }, 1000);
+  if (!throughputIntervalHandle) {
+    throughputIntervalHandle = setInterval(() => {
+      const now = Date.now();
+      const elapsed = (now - lastSecondTimestamp) / 1000;
+      entriesPerSecond = elapsed > 0 ? Math.round(entriesLastSecond / elapsed) : 0;
+      entriesLastSecond = 0;
+      lastSecondTimestamp = now;
+    }, 1000);
+  }
 
   wss.on('error', (err: Error) => {
     log.error('[SceneLogServer] Server error:', err.message);
@@ -200,6 +207,10 @@ export function stopSceneLogServer(): void {
     wss.close();
     wss = null;
     port = null;
+    if (throughputIntervalHandle) {
+      clearInterval(throughputIntervalHandle);
+      throughputIntervalHandle = null;
+    }
     log.info('[SceneLogServer] Stopped');
   }
 }
@@ -298,7 +309,6 @@ interface PendingCommand {
 }
 
 const pendingCommands: Map<string, PendingCommand> = new Map();
-let commandCounter = 0;
 
 const COMMAND_TIMEOUT_MS = 5000;
 
@@ -315,7 +325,7 @@ export async function sendCommand(
     return { ok: false, data: { error: 'session not connected' } };
   }
 
-  const id = `cmd-${++commandCounter}`;
+  const id = `cmd-${randomUUID()}`;
   const msg = JSON.stringify({ type: 'SCENE_LOG_CMD', id, cmd, args });
 
   return new Promise(resolve => {

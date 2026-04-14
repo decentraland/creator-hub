@@ -26,10 +26,16 @@ export function useSceneLogForwarding(
     const unsubscribe = editor.onSceneLogEntries(({ entries }) => {
       if (!wasEnabledRef.current) {
         wasEnabledRef.current = true;
-        void scene.setMobileSessionEnabled(true, []).catch(() => {});
-        void scene.selectAssetsTab('MobileSession').catch(() => {});
+        void scene
+          .setMobileSessionEnabled(true, [])
+          .catch(err => console.warn('[scene-log-forwarding]', err));
+        void scene
+          .selectAssetsTab('MobileSession')
+          .catch(err => console.warn('[scene-log-forwarding]', err));
       }
-      void scene.pushSceneLogEntries(entries).catch(() => {});
+      void scene
+        .pushSceneLogEntries(entries)
+        .catch(err => console.warn('[scene-log-forwarding]', err));
     });
 
     // Poll-based: session status only (low frequency)
@@ -48,9 +54,9 @@ export function useSceneLogForwarding(
               messageCount: s.messageCount,
             })),
           )
-          .catch(() => {});
-      } catch {
-        // ignore
+          .catch(err => console.warn('[scene-log-forwarding]', err));
+      } catch (err) {
+        console.warn('[scene-log-forwarding]', err);
       }
     };
     const interval = setInterval(pollSessions, SESSION_POLL_INTERVAL);
@@ -60,5 +66,5 @@ export function useSceneLogForwarding(
       unsubscribe();
       clearInterval(interval);
     };
-  }, [isPreviewRunning, iframeRef]);
+  }, [isPreviewRunning]);
 }

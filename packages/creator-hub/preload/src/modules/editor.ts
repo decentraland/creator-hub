@@ -1,9 +1,12 @@
 import { ipcRenderer, type IpcRendererEvent } from 'electron';
 
 import type { DeployOptions } from '/shared/types/deploy';
+import type { SceneLogSessionInfo } from '/shared/types/ipc';
 
 import { invoke } from '../services/ipc';
 import type { PreviewOptions } from '/shared/types/settings';
+
+export type { SceneLogSessionInfo };
 
 export async function getVersion() {
   return invoke('electron.getAppVersion');
@@ -79,16 +82,6 @@ export async function openExternalURL(url: string) {
 
 export async function getMobilePreview(path: string) {
   return invoke('cli.getMobilePreview', path);
-}
-
-export interface SceneLogSessionInfo {
-  id: number;
-  sessionId: string | null;
-  deviceName: string | null;
-  connectedAt: string;
-  disconnectedAt: string | null;
-  status: 'active' | 'ended';
-  messageCount: number;
 }
 
 export interface ConsoleEntry {

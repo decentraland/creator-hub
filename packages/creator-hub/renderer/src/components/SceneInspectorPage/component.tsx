@@ -5,6 +5,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PhoneAndroidIcon from '@mui/icons-material/PhoneAndroid';
 
 import { editor } from '#preload';
+import type { SceneLogSessionInfo } from '/shared/types/ipc';
 
 import { Navbar, NavbarItem } from '../Navbar';
 import { Footer } from '../Footer';
@@ -12,18 +13,11 @@ import { useEditor } from '/@/hooks/useEditor';
 
 import './styles.css';
 
-interface SessionInfo {
-  id: number;
-  sessionId: string | null;
-  connectedAt: string;
-  messageCount: number;
-}
-
 export function SceneInspectorPage() {
   const navigate = useNavigate();
   const { version } = useEditor();
   const [deeplink, setDeeplink] = useState<{ url: string; qr: string; port: number } | null>(null);
-  const [sessions, setSessions] = useState<SessionInfo[]>([]);
+  const [sessions, setSessions] = useState<SceneLogSessionInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const activeRef = useRef(true);
@@ -49,6 +43,9 @@ export function SceneInspectorPage() {
 
     return () => {
       activeRef.current = false;
+      void editor.stopSceneLogServer().catch(err => {
+        console.warn('[SceneInspectorPage] stopSceneLogServer failed:', err);
+      });
     };
   }, []);
 
@@ -90,8 +87,9 @@ export function SceneInspectorPage() {
 
   const handleCopyUrl = useCallback(() => {
     if (deeplink) {
-      void editor.broadcastSceneLogCommand('get_status', {});
-      navigator.clipboard.writeText(deeplink.url).catch(() => {});
+      navigator.clipboard.writeText(deeplink.url).catch(err => {
+        console.warn('[SceneInspectorPage] clipboard write failed:', err);
+      });
     }
   }, [deeplink]);
 

@@ -25,7 +25,7 @@ export const initialState: UiState = {
   selectedSceneInspectorTab: SceneInspectorTab.DETAILS,
   hiddenSceneInspectorTabs: {},
   debugConsoleEnabled: false,
-  mobileSessionEnabled: true,
+  mobileSessionEnabled: false,
 };
 
 export const appState = createSlice({

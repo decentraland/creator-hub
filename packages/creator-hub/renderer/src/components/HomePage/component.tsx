@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import cx from 'classnames';
@@ -116,14 +116,6 @@ const ScenesCard: React.FC = React.memo(() => {
   const navigate = useNavigate();
   const { projects, isLoading, runProject } = useWorkspace();
   const emptyProjects = projects.length === 0;
-
-  // DEV: Auto-open a specific project on startup
-  useEffect(() => {
-    if (!isLoading && projects.length > 0) {
-      const target = projects.find(p => p.path.includes('MannakiaWorld'));
-      if (target) runProject(target);
-    }
-  }, [isLoading]);
 
   const handleStartBuildingClick = useCallback(() => {
     navigate('/templates');

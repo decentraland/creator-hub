@@ -81,6 +81,8 @@ const MAX_CONSOLE = 1000;
 const MAX_CHANGES_PER_ENTITY = 200;
 const MAX_PERF_HISTORY = 60; // ~2 min at 2s interval
 const MAX_ALL_CRDT = 50_000; // buffer for tick reconstruction
+const MAX_TICK_SET = MAX_ALL_CRDT;
+const UPDATE_TIME_TTL_MS = 5 * 60_000;
 
 let entities: Record<number, EntityState> = {};
 let entityChanges: Record<number, CrdtEntry[]> = {};
@@ -134,7 +136,13 @@ export function pushEntries(raw: unknown[]) {
 
       // Track tick
       if (crdt.tk > maxTick) maxTick = crdt.tk;
-      tickSet.add(crdt.tk);
+      if (!tickSet.has(crdt.tk)) {
+        tickSet.add(crdt.tk);
+        if (tickSet.size > MAX_TICK_SET) {
+          const oldest = tickSet.values().next().value;
+          if (oldest !== undefined) tickSet.delete(oldest);
+        }
+      }
 
       // Track scene from sid
       if (crdt.sid && !knownScenes.has(crdt.sid)) {
@@ -287,7 +295,7 @@ export function getEntriesAtTick(tick: number): CrdtEntry[] {
 export function reconstructStateAtTick(targetTick: number): Record<number, EntityState> {
   const state: Record<number, EntityState> = {};
   for (const entry of allCrdtEntries) {
-    if (entry.tk > targetTick) break;
+    if (entry.tk > targetTick) continue;
     applyToState(state, entry);
   }
   return state;
@@ -395,10 +403,34 @@ function applyToState(state: Record<number, EntityState>, entry: CrdtEntry) {
 }
 
 function applyCrdtEntry(entry: CrdtEntry) {
-  applyToState(entities, entry);
+  const eid = entry.e;
+  const comp = entry.c;
+
+  // Shallow clone entities and the mutated entity so previous snapshots keep
+  // referencing the prior state (useSyncExternalStore relies on referential
+  // inequality to detect changes).
+  entities = { ...entities };
+  if (entry.op === 'de') {
+    delete entities[eid];
+    // Clean update-time entries for the deleted entity.
+    delete entityUpdateTimes[eid];
+    const prefix = `${eid}:`;
+    for (const key of Object.keys(componentUpdateTimes)) {
+      if (key.startsWith(prefix)) delete componentUpdateTimes[key];
+    }
+  } else {
+    const existing = entities[eid];
+    const cloned: EntityState = existing
+      ? { components: { ...existing.components }, parent: existing.parent }
+      : { components: {}, parent: 0 };
+    entities[eid] = cloned;
+    applyToState(entities, entry);
+    if (entry.op === 'd') {
+      delete componentUpdateTimes[`${eid}:${comp}`];
+    }
+  }
 
   // Track changes
-  const eid = entry.e;
   if (entry.op !== 'de') {
     if (!entityChanges[eid]) entityChanges[eid] = [];
     const changes = entityChanges[eid];
@@ -406,6 +438,22 @@ function applyCrdtEntry(entry: CrdtEntry) {
     if (changes.length > MAX_CHANGES_PER_ENTITY) changes.shift();
   } else {
     delete entityChanges[eid];
+  }
+
+  maybePruneUpdateTimes();
+}
+
+let updateTimesTicker = 0;
+function maybePruneUpdateTimes() {
+  updateTimesTicker++;
+  if (updateTimesTicker < 1024) return;
+  updateTimesTicker = 0;
+  const cutoff = Date.now() - UPDATE_TIME_TTL_MS;
+  for (const key of Object.keys(entityUpdateTimes)) {
+    if (entityUpdateTimes[Number(key)] < cutoff) delete entityUpdateTimes[Number(key)];
+  }
+  for (const key of Object.keys(componentUpdateTimes)) {
+    if (componentUpdateTimes[key] < cutoff) delete componentUpdateTimes[key];
   }
 }
 
