@@ -159,12 +159,13 @@ describe('generateCustomItemsFile', () => {
     it('should generate unique composite constants', async () => {
       await generateCustomItemsFile(fs, 'assets/custom');
       const content = (await fs.readFile(CUSTOM_ITEMS_GEN_PATH)).toString('utf-8');
-      // Should not have two identically named constants
-      const constMatches = content.match(/const _COMPOSITE_My_Monster/g) ?? [];
-      // One will be My_Monster and the other My_Monster_1
+      // One will be _COMPOSITE_My_Monster and the other _COMPOSITE_My_Monster_1
       expect(content).toContain('_COMPOSITE_My_Monster');
-      // They must be distinct (no repeated definition for the same identifier)
-      expect(constMatches.length).toBe(1);
+      expect(content).toContain('_COMPOSITE_My_Monster_1');
+      // They must be distinct (no repeated definition for the same identifier).
+      // Use " =" suffix to avoid matching _COMPOSITE_My_Monster_1 as a false positive.
+      const exactConstMatches = content.match(/const _COMPOSITE_My_Monster =/g) ?? [];
+      expect(exactConstMatches.length).toBe(1);
     });
   });
 
