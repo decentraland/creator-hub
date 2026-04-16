@@ -1,9 +1,15 @@
+.asset-catalog-themes-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .asset-catalog-themes {
   display: grid;
   margin: 0 auto;
   max-width: 1440px;
   width: 100%;
-  height: 100%;
   grid-template-columns: repeat(6, 1fr);
   grid-template-rows: max-content;
   gap: 12px;
@@ -13,6 +19,30 @@
   .asset-catalog-themes {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   }
+}
+
+.asset-catalog-section-divider {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 0 0;
+  border-top: 1px solid var(--base-09, #333);
+}
+
+.asset-catalog-section-divider .section-title {
+  margin: 0;
+  color: var(--base-01);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: normal;
+  white-space: nowrap;
+}
+
+.asset-catalog-section-divider .section-subtitle {
+  color: var(--base-06);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: normal;
 }
 
 .asset-catalog-themes .theme {

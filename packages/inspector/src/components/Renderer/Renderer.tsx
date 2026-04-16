@@ -327,6 +327,9 @@ const Renderer: React.FC = () => {
    */
   const getContentFetchUrl = useCallback(
     (path: string, contentHash: string) => {
+      if (contentHash.startsWith('http://') || contentHash.startsWith('https://')) {
+        return contentHash;
+      }
       let url = `${config.contentUrl}/contents/${contentHash}`;
       if (path.endsWith(THUMBNAIL_PATH)) url += '?resize';
       return url;

@@ -12,7 +12,7 @@ import { Props } from './types';
 
 import './AssetsCatalog.css';
 
-const AssetsCatalog: React.FC<Props> = ({ catalog }) => {
+const AssetsCatalog: React.FC<Props> = ({ catalog, externalCatalog = [] }) => {
   const [selectedTheme, setSelectedTheme] = useState<AssetPack>();
   const [search, setSearch] = useState<string>('');
 
@@ -28,12 +28,16 @@ const AssetsCatalog: React.FC<Props> = ({ catalog }) => {
     [setSearch],
   );
 
+  const allCatalogs = useMemo(() => [...catalog, ...externalCatalog], [catalog, externalCatalog]);
+
   const filteredCatalog = useMemo(() => {
     const trimmedSearch = search.trim();
     if (!trimmedSearch) return [];
 
     const searchLower = trimmedSearch.toLowerCase();
-    const assets = selectedTheme ? selectedTheme.assets : catalog.flatMap(theme => theme.assets);
+    const assets = selectedTheme
+      ? selectedTheme.assets
+      : allCatalogs.flatMap(theme => theme.assets);
 
     const starts: AssetPack['assets'] = [];
     const includes: AssetPack['assets'] = [];
@@ -63,7 +67,7 @@ const AssetsCatalog: React.FC<Props> = ({ catalog }) => {
 
     // Return high-priority matches first, then lower-priority matches
     return [...starts, ...includes];
-  }, [catalog, selectedTheme, search]);
+  }, [allCatalogs, selectedTheme, search]);
 
   useEffect(() => {
     if (search) {
@@ -128,6 +132,7 @@ const AssetsCatalog: React.FC<Props> = ({ catalog }) => {
         <div className="assets-catalog-theme-container">
           <Themes
             catalog={catalog}
+            externalCatalog={externalCatalog}
             onClick={handleThemeChange}
           />
         </div>

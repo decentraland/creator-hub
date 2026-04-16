@@ -1,4 +1,16 @@
 {
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(curl -s -L \"https://studio.dclregenesislabs.xyz/\")",
+      "Bash(xargs ls:*)",
+      "Bash(curl -s -L \"https://studio.dclregenesislabs.xyz/assets\")",
+      "Bash(curl -s -L \"https://studio.dclregenesislabs.xyz/api/assets\")",
+      "Bash(curl -sL https://raw.githubusercontent.com/decentraland/sdk-skills/main/add-3d-models/SKILL.md)",
+      "Bash(curl -sL https://raw.githubusercontent.com/decentraland/sdk-skills/main/add-3d-models/references/model-catalog.md)",
+      "WebFetch(domain:studio.dclregenesislabs.xyz)"
+    ]
+  },
   "hooks": {
     "PostToolUse": [
       {
