@@ -50,7 +50,11 @@ const ALLOWED_EXTERNAL_ORIGINS = new Set<AllowedOrigins<typeof IS_DEV>>([
 
 app.on('ready', () => {
   const filter = {
-    urls: ['https://studios.decentraland.org/*'],
+    urls: [
+      'https://studios.decentraland.org/*',
+      'https://studio-api.dclregenesislabs.xyz/*',
+      'https://models.dclregenesislabs.xyz/*',
+    ],
   };
 
   session.defaultSession.webRequest.onBeforeSendHeaders(filter, (details, callback) => {

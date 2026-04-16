@@ -40,9 +40,9 @@ const Themes: React.FC<Props> = ({ catalog, externalCatalog, onClick }) => {
       {externalCatalog && externalCatalog.length > 0 && (
         <>
           <div className="asset-catalog-section-divider">
-            <h3 className="section-title">Free 3D Models</h3>
+            <h3 className="section-title">Additional Catalogs</h3>
             <span className="section-subtitle">
-              {externalCatalog.reduce((sum, pack) => sum + pack.assets.length, 0)} models
+              {externalCatalog.reduce((sum, pack) => sum + pack.assets.length, 0)} items
             </span>
           </div>
           <div className="asset-catalog-themes">

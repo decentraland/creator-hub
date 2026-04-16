@@ -363,6 +363,9 @@ const Renderer: React.FC = () => {
         try {
           const url = getContentFetchUrl(path, contentHash);
           const response = await fetch(url);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status} ${response.statusText}`);
+          }
           const content = new Uint8Array(await response.arrayBuffer());
           if (path.endsWith(THUMBNAIL_PATH)) {
             thumbnail = content;
@@ -371,13 +374,14 @@ const Renderer: React.FC = () => {
           }
         } catch (err) {
           // eslint-disable-next-line no-console
-          console.error('Error fetching an asset import ' + path);
+          console.error('Error fetching an asset import ' + path, err);
         }
       }),
     );
 
     // Use direct data layer interface to ensure proper sequencing with undo system
     const content = new Map(Object.entries(fileContent));
+    let importSucceeded = false;
     if (content.size > 0) {
       const dataLayer = getDataLayerInterface();
       if (dataLayer) {
@@ -387,6 +391,7 @@ const Renderer: React.FC = () => {
           assetPackageName,
         });
         dispatch(getAssetCatalog()); // Refresh catalog after import
+        importSucceeded = true;
       }
     }
 
@@ -401,6 +406,12 @@ const Renderer: React.FC = () => {
 
     if (!isMounted()) return;
     setIsLoading(false);
+
+    if (!importSucceeded) {
+      // eslint-disable-next-line no-console
+      console.error('Asset import failed: no files were downloaded for', asset.name);
+      return;
+    }
 
     const model: AssetNodeItem = {
       type: 'asset',
