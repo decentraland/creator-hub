@@ -23,10 +23,28 @@
 
 .asset-catalog-section-divider {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
-  padding: 8px 0 0;
+  margin-top: 12px;
+  padding: 12px 0 0;
   border-top: 1px solid var(--base-09, #333);
+  cursor: pointer;
+  user-select: none;
+}
+
+.asset-catalog-section-divider .section-chevron {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 6px solid var(--base-06, #999);
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.asset-catalog-section-divider .section-chevron.expanded {
+  transform: rotate(90deg);
 }
 
 .asset-catalog-section-divider .section-title {
