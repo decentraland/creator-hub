@@ -267,6 +267,14 @@ const DclCast = ({
     }
   }, [isCastActive]);
 
+  // Auto-minimize when a presentation starts so the compact view
+  // (with presentation controls) is immediately visible
+  ReactEcs.useEffect(() => {
+    if (state.videoControl.presentationState) {
+      state.videoControl.isMinimized = true;
+    }
+  }, [!!state.videoControl.presentationState]);
+
   const isMinimized = state.videoControl.isMinimized;
 
   return (

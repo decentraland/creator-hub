@@ -36,7 +36,7 @@ type SpeakerShowcaseProps = {
 };
 
 function getDropdownOptions(participant: Participant): string[] {
-  return participant.tracks.map(track => `Showcase ${getSourceLabel(track.sourceType)}`);
+  return participant.tracks.map(track => `${getSourceLabel(track.sourceType)}`);
 }
 
 function getActiveIndex(participant: Participant, activeTrackSid: string | undefined): number {

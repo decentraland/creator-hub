@@ -8,6 +8,7 @@ import {
   prevSlide,
   playPresentationVideo,
   pausePresentationVideo,
+  stopPresentationVideo,
   stopPresentation,
 } from '../api';
 import { getDclCastStyles, getDclCastColors } from './styles';
@@ -42,11 +43,13 @@ const PresentationPanel = ({
   compact,
   idPrefix = 'presentation_panel',
   onStopSharing,
+  hideStopSharing,
 }: {
   presentationState: PresentationState | undefined;
   compact?: boolean;
   idPrefix?: string;
   onStopSharing?: () => void;
+  hideStopSharing?: boolean;
 }) => {
   const styles = getDclCastStyles();
   const colors = getDclCastColors();
@@ -153,22 +156,24 @@ const PresentationPanel = ({
           iconTransform={styles.controlButtonIcon}
           disabled={!hasSlideVideo}
           uiTransform={styles.controlButton}
-          onMouseDown={() => pausePresentationVideo()}
+          onMouseDown={() => stopPresentationVideo()}
         />
       </UiEntity>
 
-      <Button
-        id={`${idPrefix}_stop_sharing`}
-        value="<b>Stop Sharing</b>"
-        variant="text"
-        fontSize={16}
-        color={colors.danger}
-        uiTransform={{ ...styles.resetButton, margin: { top: 16 } }}
-        onMouseDown={() => {
-          stopPresentation();
-          onStopSharing?.();
-        }}
-      />
+      {!hideStopSharing && (
+        <Button
+          id={`${idPrefix}_stop_sharing`}
+          value="<b>Stop Sharing</b>"
+          variant="text"
+          fontSize={16}
+          color={colors.danger}
+          uiTransform={{ ...styles.resetButton, margin: { top: 16 } }}
+          onMouseDown={() => {
+            stopPresentation();
+            onStopSharing?.();
+          }}
+        />
+      )}
     </UiEntity>
   );
 };

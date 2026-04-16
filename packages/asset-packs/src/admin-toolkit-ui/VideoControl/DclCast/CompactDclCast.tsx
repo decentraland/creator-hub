@@ -5,7 +5,8 @@ import { getContentUrl } from '../../constants';
 import { Button } from '../../Button';
 import type { State } from '../../types';
 import { LIVEKIT_STREAM_SRC } from '../LiveStream';
-import { isPresentationBot } from '../api';
+import { isPresentationBot, stopPresentation } from '../api';
+import { VideoControlVolume } from '../VolumeControl';
 import { createVideoPlayerControls, isDclCast } from '../utils';
 import { showcaseState } from '.';
 import PresentationPanel from './PresentationPanel';
@@ -125,6 +126,7 @@ const CompactDclCast = ({
         <PresentationPanel
           presentationState={presentationState}
           compact
+          hideStopSharing
           idPrefix="compact_dcl_cast"
           onStopSharing={() => {
             state.videoControl.presentationState = undefined;
@@ -149,6 +151,44 @@ const CompactDclCast = ({
           color={colors.white}
           uiTransform={styles.showcaseButton}
           onMouseDown={onShowShowcaseModal}
+        />
+      </UiEntity>
+
+      {/* Row 4: Volume — visible when active */}
+      <UiEntity
+        uiTransform={{
+          display: isActive ? 'flex' : 'none',
+          width: '100%',
+        }}
+      >
+        <VideoControlVolume
+          engine={engine}
+          entity={entity}
+          video={video}
+          label="<b>Volume</b>"
+          idPrefix="compact_video_control_volume"
+        />
+      </UiEntity>
+
+      {/* Row 5: Stop Sharing — visible when presentation active, placed last to avoid misclicks */}
+      <UiEntity
+        uiTransform={{
+          display: hasPresentation ? 'flex' : 'none',
+          width: '100%',
+          margin: { top: 16 },
+        }}
+      >
+        <Button
+          id="compact_dcl_cast_stop_sharing"
+          value="<b>Stop Sharing</b>"
+          variant="text"
+          fontSize={16}
+          color={colors.danger}
+          uiTransform={{ height: 42, padding: { left: 8, right: 8 } }}
+          onMouseDown={() => {
+            stopPresentation();
+            state.videoControl.presentationState = undefined;
+          }}
         />
       </UiEntity>
     </UiEntity>
