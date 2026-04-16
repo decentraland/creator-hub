@@ -38,7 +38,7 @@ const CATEGORY_DISPLAY_NAMES: Record<string, string> = {
   signage: 'Signage',
   nature: 'Nature',
   appliance: 'Appliances',
-  ground: 'Ground',
+  ground: 'Ground & Terrain',
   fixture: 'Fixtures',
   lighting: 'Lighting',
   vehicle: 'Vehicles',
@@ -50,7 +50,7 @@ function transformAsset(external: ExternalAsset): Asset {
   return {
     id: external.id,
     name: external.name,
-    category: external.category || 'uncategorized',
+    category: external.category === 'ground' ? 'terrain' : external.category || 'uncategorized',
     tags: external.tags || [],
     description: external.description,
     composite: {
