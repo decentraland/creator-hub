@@ -1,4 +1,3 @@
-import TextEncodingPolyfill from 'text-encoding';
 import {
   getActiveVideoStreams,
   subscribeToTopic,
@@ -235,11 +234,9 @@ export function subscribeToPresentationTopic(): void {
 }
 
 export function requestPresentationState(): void {
-  const encoder = new TextEncodingPolyfill.TextEncoder();
-
   publishData({
     topic: PRESENTATION_TOPIC,
-    data: encoder.encode(JSON.stringify({ type: 'presentation:get-state' })),
+    data: JSON.stringify({ type: 'presentation:get-state' }),
   });
 }
 
@@ -278,46 +275,43 @@ export async function consumePresentationMessages(): Promise<
 }
 
 export function nextSlide(): void {
-  const encoder = new TextEncodingPolyfill.TextEncoder();
-
   publishData({
     topic: PRESENTATION_TOPIC,
-    data: encoder.encode(JSON.stringify({ type: 'presentation:navigate', action: 'next' })),
+    data: JSON.stringify({ type: 'presentation:navigate', action: 'next' }),
   });
 }
 
 export function prevSlide(): void {
-  const encoder = new TextEncodingPolyfill.TextEncoder();
-
   publishData({
     topic: PRESENTATION_TOPIC,
-    data: encoder.encode(JSON.stringify({ type: 'presentation:navigate', action: 'prev' })),
+    data: JSON.stringify({ type: 'presentation:navigate', action: 'prev' }),
   });
 }
 
 export function playPresentationVideo(videoIndex: number): void {
-  const encoder = new TextEncodingPolyfill.TextEncoder();
-
   publishData({
     topic: PRESENTATION_TOPIC,
-    data: encoder.encode(JSON.stringify({ type: 'presentation:video:play', videoIndex })),
+    data: JSON.stringify({ type: 'presentation:video:play', videoIndex }),
   });
 }
 
 export function pausePresentationVideo(): void {
-  const encoder = new TextEncodingPolyfill.TextEncoder();
-
   publishData({
     topic: PRESENTATION_TOPIC,
-    data: encoder.encode(JSON.stringify({ type: 'presentation:video:pause' })),
+    data: JSON.stringify({ type: 'presentation:video:pause' }),
+  });
+}
+
+export function stopPresentationVideo(): void {
+  publishData({
+    topic: PRESENTATION_TOPIC,
+    data: JSON.stringify({ type: 'presentation:video:stop' }),
   });
 }
 
 export function stopPresentation(): void {
-  const encoder = new TextEncodingPolyfill.TextEncoder();
-
   publishData({
     topic: PRESENTATION_TOPIC,
-    data: encoder.encode(JSON.stringify({ type: 'presentation:stop' })),
+    data: JSON.stringify({ type: 'presentation:stop' }),
   });
 }

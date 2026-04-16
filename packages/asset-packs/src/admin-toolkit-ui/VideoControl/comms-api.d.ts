@@ -5,7 +5,7 @@ declare module '~system/CommsApi' {
 
   export interface PublishDataRequest {
     topic: string;
-    data: Uint8Array;
+    data: string;
   }
 
   export interface ConsumeMessagesRequest {
