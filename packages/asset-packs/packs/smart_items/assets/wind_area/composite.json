@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "0": {
+          "json": {
+            "value": "Wind Area"
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/Wind tunnel.tsx",
+                "priority": 0,
+                "layout": "{\"params\":{\"strength\":{\"type\":\"number\",\"optional\":true,\"value\":40},\"debug\":{\"type\":\"boolean\",\"optional\":false,\"value\":true}},\"actions\":[]}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Placeholder",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/wind-tunnel-area.glb"
+          }
+        }
+      }
+    }
+  ]
+}

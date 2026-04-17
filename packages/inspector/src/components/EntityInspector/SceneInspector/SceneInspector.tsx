@@ -116,6 +116,10 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     'disablePortableExperiences',
     e => e.target.checked,
   );
+  const disableNearbyVoiceChatProps = getInputProps(
+    'disableNearbyVoiceChat',
+    e => e.target.checked,
+  );
 
   const [componentValue, setComponentValue] = useComponentValue<EditorComponentsTypes['Scene']>(
     entity,
@@ -350,6 +354,11 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
             label="Disable Smart Wearables & Portable Experiences"
             checked={componentValue.disablePortableExperiences}
             {...disablePortableExperiencesProps}
+          />
+          <CheckboxField
+            label="Disable Nearby Voice Chat"
+            checked={componentValue.disableNearbyVoiceChat}
+            {...disableNearbyVoiceChatProps}
           />
           <Block
             label="Skybox"
