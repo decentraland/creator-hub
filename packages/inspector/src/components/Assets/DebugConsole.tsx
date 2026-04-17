@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useSyncExternalStore } from 'react';
+import React, { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
 
 import { subscribe, getSnapshot, clear, type DebugLogEntry } from '../../lib/logic/debug-log-store';
 import { useAppSelector } from '../../redux/hooks';
@@ -6,17 +6,24 @@ import { getDebugConsoleEnabled } from '../../redux/ui';
 
 import './DebugConsole.css';
 
+const SCROLL_THRESHOLD = 10;
+
 function DebugConsole() {
   const logs = useSyncExternalStore(subscribe, getSnapshot);
   const enabled = useAppSelector(getDebugConsoleEnabled);
   const logsRef = useRef<HTMLDivElement>(null);
-  const prevLogCountRef = useRef(0);
+  const isAtBottomRef = useRef(true);
+
+  const handleScroll = useCallback(() => {
+    const el = logsRef.current;
+    if (!el) return;
+    isAtBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight <= SCROLL_THRESHOLD;
+  }, []);
 
   useEffect(() => {
-    if (logs.length > prevLogCountRef.current && logsRef.current) {
+    if (isAtBottomRef.current && logsRef.current) {
       logsRef.current.scrollTop = logsRef.current.scrollHeight;
     }
-    prevLogCountRef.current = logs.length;
   }, [logs]);
 
   useEffect(() => {
@@ -30,6 +37,7 @@ function DebugConsole() {
       <div
         className="DebugConsole-logs"
         ref={logsRef}
+        onScroll={handleScroll}
       >
         {logs.length > 0 ? (
           logs.map((entry: DebugLogEntry) => (
