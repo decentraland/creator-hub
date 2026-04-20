@@ -4,8 +4,6 @@ import { editor } from '#preload';
 
 import type { RPCInfo } from '/@/modules/rpc';
 
-const SESSION_POLL_INTERVAL = 2000;
-
 export function useMobileDebugForwarding(
   iframeRef: MutableRefObject<RPCInfo | undefined>,
   isPreviewRunning: boolean,
@@ -22,7 +20,7 @@ export function useMobileDebugForwarding(
 
     const getScene = () => iframeRef.current?.scene;
 
-    const unsubscribe = editor.onMobileDebugEntries(({ entries }) => {
+    const unsubscribeEntries = editor.onMobileDebugEntries(({ entries }) => {
       const scene = getScene();
       if (!scene) return;
       if (!wasEnabledRef.current) {
@@ -39,34 +37,27 @@ export function useMobileDebugForwarding(
         .catch(err => console.warn('[mobile-debug-forwarding]', err));
     });
 
-    const pollSessions = async () => {
+    const unsubscribeSessions = editor.onMobileDebugSessions(sessions => {
       const scene = getScene();
       if (!scene) return;
-      try {
-        const sessions = await editor.getMobileDebugSessions();
-        const enabled = sessions.some(s => s.status === 'active');
-        void scene
-          .setMobileDebugSessionEnabled(
-            enabled || sessions.length > 0,
-            sessions.map(s => ({
-              id: s.id,
-              sessionId: s.sessionId ?? null,
-              deviceName: s.deviceName ?? null,
-              status: s.status,
-              messageCount: s.messageCount,
-            })),
-          )
-          .catch(err => console.warn('[mobile-debug-forwarding]', err));
-      } catch (err) {
-        console.warn('[mobile-debug-forwarding]', err);
-      }
-    };
-    const interval = setInterval(pollSessions, SESSION_POLL_INTERVAL);
-    pollSessions();
+      const enabled = sessions.some(s => s.status === 'active') || sessions.length > 0;
+      void scene
+        .setMobileDebugSessionEnabled(
+          enabled,
+          sessions.map(s => ({
+            id: s.id,
+            sessionId: s.sessionId ?? null,
+            deviceName: s.deviceName ?? null,
+            status: s.status,
+            messageCount: s.messageCount,
+          })),
+        )
+        .catch(err => console.warn('[mobile-debug-forwarding]', err));
+    });
 
     return () => {
-      unsubscribe();
-      clearInterval(interval);
+      unsubscribeEntries();
+      unsubscribeSessions();
     };
   }, [isPreviewRunning]);
 }

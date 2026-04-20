@@ -151,3 +151,16 @@ export function onMobileDebugEntries(
     void invoke('mobileDebug.unsubscribeEntries');
   };
 }
+
+export function onMobileDebugSessions(
+  callback: (sessions: MobileDebugSessionInfo[]) => void,
+): () => void {
+  const handler = (_event: IpcRendererEvent, sessions: MobileDebugSessionInfo[]) =>
+    callback(sessions);
+  ipcRenderer.on('mobileDebug:sessions', handler);
+  void invoke('mobileDebug.subscribeSessions');
+  return () => {
+    ipcRenderer.removeListener('mobileDebug:sessions', handler);
+    void invoke('mobileDebug.unsubscribeSessions');
+  };
+}

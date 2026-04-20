@@ -79,6 +79,8 @@ export interface Ipc {
   'mobileDebug.getSessions': () => Promise<MobileDebugSessionInfo[]>;
   'mobileDebug.subscribeEntries': () => Promise<void>;
   'mobileDebug.unsubscribeEntries': () => Promise<void>;
+  'mobileDebug.subscribeSessions': () => Promise<void>;
+  'mobileDebug.unsubscribeSessions': () => Promise<void>;
   'mobileDebug.sendCommand': (
     sessionId: number,
     cmd: string,

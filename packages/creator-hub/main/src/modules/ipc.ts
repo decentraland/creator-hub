@@ -50,22 +50,18 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('cli.getMobilePreview', (_event, path) => cli.getMobilePreview(path));
 
   // mobile debug session
-  handle('mobileDebug.getSessions', async () =>
-    mobileDebug.getMobileDebugSessions().map(s => ({
-      id: s.id,
-      sessionId: s.sessionId,
-      deviceName: s.deviceName,
-      connectedAt: s.connectedAt.toISOString(),
-      disconnectedAt: s.disconnectedAt?.toISOString() ?? null,
-      status: s.status,
-      messageCount: s.messageCount,
-    })),
-  );
+  handle('mobileDebug.getSessions', async () => mobileDebug.getMobileDebugSessionInfos());
   handle('mobileDebug.subscribeEntries', async event => {
     mobileDebug.subscribeEntries(event.sender);
   });
   handle('mobileDebug.unsubscribeEntries', async event => {
     mobileDebug.unsubscribeEntries(event.sender);
+  });
+  handle('mobileDebug.subscribeSessions', async event => {
+    mobileDebug.subscribeSessions(event.sender);
+  });
+  handle('mobileDebug.unsubscribeSessions', async event => {
+    mobileDebug.unsubscribeSessions(event.sender);
   });
   handle(
     'mobileDebug.sendCommand',

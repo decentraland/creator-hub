@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { WebSocketServer, WebSocket } from 'ws';
 import type { WebContents } from 'electron';
 import log from 'electron-log/main';
+import type { MobileDebugSessionInfo } from '/shared/types/ipc';
 import { getAvailablePort } from './port';
 import { getLanIp } from './network';
 
@@ -27,6 +28,7 @@ export type MobileDebugListener = (session: MobileDebugSession, entries: unknown
 const SESSION_RETENTION_MS = 60_000;
 const COMMAND_TIMEOUT_MS = 5000;
 const MAX_WS_PAYLOAD = 256 * 1024 * 1024;
+const SESSION_BROADCAST_THROTTLE_MS = 500;
 
 let wss: WebSocketServer | null = null;
 let port: number | null = null;
@@ -34,6 +36,7 @@ let sessionCounter = 0;
 const sessions: Map<number, MobileDebugSession> = new Map();
 const listeners: Set<MobileDebugListener> = new Set();
 const entrySubscribers: Set<WebContents> = new Set();
+const sessionSubscribers: Set<WebContents> = new Set();
 
 interface PendingCommand {
   resolve: (value: { ok: boolean; data: unknown }) => void;
@@ -71,6 +74,7 @@ export async function startMobileDebugServer(): Promise<number> {
     };
     sessions.set(session.id, session);
     log.info(`[mobile-debug] Session #${session.id} connected (port ${port})`);
+    broadcastSessions();
 
     ws.on('message', (raw: Buffer) => {
       let msg: Record<string, unknown>;
@@ -93,8 +97,10 @@ export async function startMobileDebugServer(): Promise<number> {
       session.status = 'ended';
       session.disconnectedAt = new Date();
       session.ws = null;
+      broadcastSessions();
       setTimeout(() => {
         sessions.delete(session.id);
+        broadcastSessions();
       }, SESSION_RETENTION_MS).unref?.();
     });
 
@@ -127,23 +133,33 @@ function handleMessage(session: MobileDebugSession, msg: Record<string, unknown>
   if (!msg.payload || typeof msg.payload !== 'object') return;
 
   const payload = msg.payload as Record<string, unknown>;
+  let metadataChanged = false;
   if (typeof payload.sessionId === 'string' && !session.sessionId) {
     session.sessionId = payload.sessionId;
+    metadataChanged = true;
   }
   const rawEntries = payload.entries;
   if (!Array.isArray(rawEntries)) return;
   const entries = rawEntries.filter(
     (e): e is Record<string, unknown> => !!e && typeof e === 'object',
   );
-  if (entries.length === 0) return;
+  if (entries.length === 0) {
+    if (metadataChanged) broadcastSessions();
+    return;
+  }
   session.messageCount += entries.length;
 
   for (const entry of entries) {
     if (entry.type === 'session_start') {
       const deviceName = typeof entry.device_name === 'string' ? entry.device_name : undefined;
-      if (deviceName) session.deviceName = deviceName;
+      if (deviceName && deviceName !== session.deviceName) {
+        session.deviceName = deviceName;
+        metadataChanged = true;
+      }
     }
   }
+  if (metadataChanged) broadcastSessions();
+  else scheduleSessionBroadcast();
 
   for (const wc of entrySubscribers) {
     if (wc.isDestroyed()) {
@@ -173,6 +189,11 @@ export function stopMobileDebugServer(): void {
     wss.close();
     wss = null;
     port = null;
+    if (throttledBroadcastHandle) {
+      clearTimeout(throttledBroadcastHandle);
+      throttledBroadcastHandle = null;
+    }
+    broadcastSessions();
     log.info('[mobile-debug] Stopped');
   }
 }
@@ -201,6 +222,48 @@ export function getMobileDebugSessions(): MobileDebugSession[] {
   return Array.from(sessions.values());
 }
 
+function serializeSession(s: MobileDebugSession): MobileDebugSessionInfo {
+  return {
+    id: s.id,
+    sessionId: s.sessionId,
+    deviceName: s.deviceName,
+    connectedAt: s.connectedAt.toISOString(),
+    disconnectedAt: s.disconnectedAt?.toISOString() ?? null,
+    status: s.status,
+    messageCount: s.messageCount,
+  };
+}
+
+export function getMobileDebugSessionInfos(): MobileDebugSessionInfo[] {
+  return Array.from(sessions.values()).map(serializeSession);
+}
+
+function broadcastSessions(): void {
+  if (sessionSubscribers.size === 0) return;
+  if (throttledBroadcastHandle) {
+    clearTimeout(throttledBroadcastHandle);
+    throttledBroadcastHandle = null;
+  }
+  const snapshot = getMobileDebugSessionInfos();
+  for (const wc of sessionSubscribers) {
+    if (wc.isDestroyed()) {
+      sessionSubscribers.delete(wc);
+      continue;
+    }
+    wc.send('mobileDebug:sessions', snapshot);
+  }
+}
+
+let throttledBroadcastHandle: NodeJS.Timeout | null = null;
+function scheduleSessionBroadcast(): void {
+  if (throttledBroadcastHandle || sessionSubscribers.size === 0) return;
+  throttledBroadcastHandle = setTimeout(() => {
+    throttledBroadcastHandle = null;
+    broadcastSessions();
+  }, SESSION_BROADCAST_THROTTLE_MS);
+  throttledBroadcastHandle.unref?.();
+}
+
 export function subscribeEntries(wc: WebContents): void {
   if (entrySubscribers.has(wc)) return;
   entrySubscribers.add(wc);
@@ -209,6 +272,17 @@ export function subscribeEntries(wc: WebContents): void {
 
 export function unsubscribeEntries(wc: WebContents): void {
   entrySubscribers.delete(wc);
+}
+
+export function subscribeSessions(wc: WebContents): void {
+  if (sessionSubscribers.has(wc)) return;
+  sessionSubscribers.add(wc);
+  wc.once('destroyed', () => sessionSubscribers.delete(wc));
+  wc.send('mobileDebug:sessions', getMobileDebugSessionInfos());
+}
+
+export function unsubscribeSessions(wc: WebContents): void {
+  sessionSubscribers.delete(wc);
 }
 
 export function addMobileDebugListener(listener: MobileDebugListener): void {

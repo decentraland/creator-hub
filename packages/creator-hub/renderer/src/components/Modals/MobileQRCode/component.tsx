@@ -17,23 +17,8 @@ export function MobileQRCode({ open, onClose, url, qr }: Props) {
       setSessions([]);
       return;
     }
-
-    let active = true;
-    const poll = async () => {
-      try {
-        const result = await editor.getMobileDebugSessions();
-        if (active) setSessions(result);
-      } catch (err) {
-        console.warn('[MobileQRCode] getMobileDebugSessions failed:', err);
-      }
-    };
-
-    poll();
-    const interval = setInterval(poll, 2000);
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
+    const unsubscribe = editor.onMobileDebugSessions(setSessions);
+    return unsubscribe;
   }, [open]);
 
   const handleClose = (
