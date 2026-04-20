@@ -118,6 +118,16 @@ const GeneralTab: React.FC<Props> = ({ worldSettings, onChangeSettings }) => {
           }
           label={t('modal.world_settings.general.single_player')}
         />
+        <FormControlLabel
+          className="ShowInPlaces"
+          control={
+            <Checkbox
+              checked={worldSettings.showInPlaces || false}
+              onChange={e => onChangeSettings({ showInPlaces: e.target.checked })}
+            />
+          }
+          label={t('modal.world_settings.general.show_in_places')}
+        />
       </FormGroup>
     </Box>
   );
