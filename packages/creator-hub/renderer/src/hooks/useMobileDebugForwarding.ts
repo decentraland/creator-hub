@@ -19,11 +19,13 @@ export function useMobileDebugForwarding(
   }, [projectKey]);
 
   useEffect(() => {
-    if (!isPreviewRunning || !iframeRef.current) return;
+    if (!isPreviewRunning) return;
 
-    const scene = iframeRef.current.scene;
+    const getScene = () => iframeRef.current?.scene;
 
     const unsubscribe = editor.onMobileDebugEntries(({ entries }) => {
+      const scene = getScene();
+      if (!scene) return;
       if (!wasEnabledRef.current) {
         wasEnabledRef.current = true;
         void scene
@@ -39,6 +41,8 @@ export function useMobileDebugForwarding(
     });
 
     const pollSessions = async () => {
+      const scene = getScene();
+      if (!scene) return;
       try {
         const sessions = await editor.getMobileDebugSessions();
         const enabled = sessions.some(s => s.status === 'active');

@@ -1,10 +1,10 @@
-import os from 'os';
 import { randomUUID } from 'node:crypto';
 
 import { WebSocketServer, WebSocket } from 'ws';
 import type { WebContents } from 'electron';
 import log from 'electron-log/main';
 import { getAvailablePort } from './port';
+import { getLanIp } from './network';
 
 export interface MobileDebugSession {
   id: number;
@@ -46,6 +46,7 @@ const SESSION_RETENTION_MS = 60_000;
 const COMMAND_TIMEOUT_MS = 5000;
 const DEFAULT_PAGE_LIMIT = 256;
 const MAX_PAGE_LIMIT = 1024;
+const MAX_WS_PAYLOAD = 256 * 1024 * 1024;
 const RAW_SID_KEY = '__sessionId';
 
 let wss: WebSocketServer | null = null;
@@ -82,7 +83,15 @@ export async function startMobileDebugServer(): Promise<number> {
   }
 
   port = await getAvailablePort();
-  wss = new WebSocketServer({ port, host: '0.0.0.0' });
+  // Dev-only tool: the server binds to LAN so a phone paired via QR can reach it.
+  // There is no auth yet — acceptable because pairing is developer-initiated,
+  // the QR is transient, and the wire protocol carries no secrets. The WS is
+  // only reachable from devices already on the same LAN as the developer.
+  // TODO: add a per-session token embedded in the QR URL + verifyClient check
+  //       before this ships to non-dev contexts.
+  // A generous maxPayload protects the Electron process from a single oversized
+  // frame without constraining legit phone telemetry (CRDT batches, perf, etc).
+  wss = new WebSocketServer({ port, host: '0.0.0.0', maxPayload: MAX_WS_PAYLOAD });
 
   wss.on('connection', (ws: WebSocket) => {
     sessionCounter++;
@@ -426,18 +435,6 @@ export async function getStandaloneDeeplink(): Promise<{ url: string; qr: string
   const qr = await QRCode.toDataURL(url, { width: 512, margin: 2 });
 
   return { url, qr, port: wsPort };
-}
-
-function getLanIp(): string {
-  const interfaces = os.networkInterfaces();
-  for (const name of Object.keys(interfaces)) {
-    for (const iface of interfaces[name] ?? []) {
-      if (iface.family === 'IPv4' && !iface.internal) {
-        return iface.address;
-      }
-    }
-  }
-  return '127.0.0.1';
 }
 
 function formatConsoleArgs(args: unknown): string {

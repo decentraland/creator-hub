@@ -387,7 +387,7 @@ interface MobileDebugSnapshot {
 }
 
 let cachedSnapshot: MobileDebugSnapshot = {
-  entities,
+  entities: { ...entities },
   consoleEntries,
   sessions,
   latestPerf,
@@ -403,7 +403,7 @@ let cachedSnapshot: MobileDebugSnapshot = {
 
 function updateSnapshot() {
   cachedSnapshot = {
-    entities,
+    entities: { ...entities },
     consoleEntries,
     sessions,
     latestPerf,
@@ -472,31 +472,33 @@ function applyCrdtEntry(entry: CrdtEntry) {
   const eid = entry.e;
   const comp = entry.c;
 
-  // Shallow clone entities and the mutated entity so previous snapshots keep
-  // referencing the prior state (useSyncExternalStore relies on referential
-  // inequality to detect changes).
-  entities = { ...entities };
+  // Detach the touched entity from the published snapshot once per batch.
+  // `cachedSnapshot.entities` is the last shallow-cloned outer map exposed to
+  // React; if the entity we are about to mutate still shares its reference with
+  // that snapshot, clone it so the previous snapshot stays frozen. Subsequent
+  // mutations to the same entity within the same batch hit the already-detached
+  // copy and skip the clone. The outer map is cloned exactly once per batch in
+  // `updateSnapshot()` when `notify()` fires at the end of `pushEntries()`.
+  const existing = entities[eid];
+  if (existing && existing === cachedSnapshot.entities[eid]) {
+    entities[eid] = { components: { ...existing.components }, parent: existing.parent };
+  }
+
   if (entry.op === 'de') {
     delete entities[eid];
-    // Clean update-time entries for the deleted entity.
     delete entityUpdateTimes[eid];
     const prefix = `${eid}:`;
     for (const key of Object.keys(componentUpdateTimes)) {
       if (key.startsWith(prefix)) delete componentUpdateTimes[key];
     }
   } else {
-    const existing = entities[eid];
-    const cloned: EntityState = existing
-      ? { components: { ...existing.components }, parent: existing.parent }
-      : { components: {}, parent: 0 };
-    entities[eid] = cloned;
+    if (!entities[eid]) entities[eid] = { components: {}, parent: 0 };
     applyToState(entities, entry);
     if (entry.op === 'd') {
       delete componentUpdateTimes[`${eid}:${comp}`];
     }
   }
 
-  // Track changes
   if (entry.op !== 'de') {
     if (!entityChanges[eid]) entityChanges[eid] = [];
     const changes = entityChanges[eid];

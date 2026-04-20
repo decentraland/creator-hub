@@ -1,7 +1,6 @@
 import { join } from 'path';
 import fs from 'fs/promises';
 import { realpathSync } from 'fs';
-import os from 'os';
 import log from 'electron-log/main';
 import { app } from 'electron';
 
@@ -20,6 +19,7 @@ import { getProjectId, track } from './analytics';
 import { install } from './npm';
 import { downloadGithubRepo } from './download-github-folder';
 import { startMobileDebugServer } from './mobile-debug-server';
+import { getLanIp } from './network';
 
 export type Preview = { child: Child; url: string; opts: PreviewOptions };
 
@@ -106,18 +106,6 @@ function parseDecentralandUrl(raw: string): URL | null {
   } catch {
     return null;
   }
-}
-
-function getLanIp(): string {
-  const interfaces = os.networkInterfaces();
-  for (const name of Object.keys(interfaces)) {
-    for (const iface of interfaces[name] ?? []) {
-      if (iface.family === 'IPv4' && !iface.internal) {
-        return iface.address;
-      }
-    }
-  }
-  return '127.0.0.1';
 }
 
 function getPreviewServerUrl(deepLinkUrl: string): string | null {
