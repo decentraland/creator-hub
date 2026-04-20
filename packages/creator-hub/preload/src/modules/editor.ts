@@ -84,54 +84,8 @@ export async function getMobilePreview(path: string) {
   return invoke('cli.getMobilePreview', path);
 }
 
-export interface ConsoleEntry {
-  sessionId: number;
-  timestamp: number;
-  level: 'log' | 'error';
-  message: string;
-}
-
-export interface MonitorStats {
-  totalEntries: number;
-  totalCrdt: number;
-  totalOpCalls: number;
-  totalConsoleLogs: number;
-  activeSessions: number;
-  entriesPerSecond: number;
-}
-
 export async function getMobileDebugSessions(): Promise<MobileDebugSessionInfo[]> {
   return invoke('mobileDebug.getSessions') as Promise<MobileDebugSessionInfo[]>;
-}
-
-export async function getConsoleEntries(
-  afterIndex: number,
-  limit?: number,
-): Promise<{ entries: ConsoleEntry[]; nextIndex: number; hasMore: boolean }> {
-  return invoke('mobileDebug.getConsoleEntries', afterIndex, limit) as Promise<{
-    entries: ConsoleEntry[];
-    nextIndex: number;
-    hasMore: boolean;
-  }>;
-}
-
-export async function getMonitorStats(): Promise<MonitorStats> {
-  return invoke('mobileDebug.getMonitorStats') as Promise<MonitorStats>;
-}
-
-export async function getRawEntries(
-  afterIndex: number,
-  limit?: number,
-): Promise<{ entries: unknown[]; nextIndex: number; hasMore: boolean }> {
-  return invoke('mobileDebug.getRawEntries', afterIndex, limit) as Promise<{
-    entries: unknown[];
-    nextIndex: number;
-    hasMore: boolean;
-  }>;
-}
-
-export async function clearMobileDebugData(): Promise<void> {
-  return invoke('mobileDebug.clear') as Promise<void>;
 }
 
 export async function sendMobileDebugCommand(

@@ -17,22 +17,6 @@ export interface MobileDebugSession {
   messageCount: number;
 }
 
-export interface ConsoleEntry {
-  sessionId: number;
-  timestamp: number;
-  level: 'log' | 'error';
-  message: string;
-}
-
-export interface MonitorStats {
-  totalEntries: number;
-  totalCrdt: number;
-  totalOpCalls: number;
-  totalConsoleLogs: number;
-  activeSessions: number;
-  entriesPerSecond: number;
-}
-
 export interface BroadcastResult {
   ok: boolean;
   results: { sessionId: number; ok: boolean; data: unknown }[];
@@ -40,14 +24,9 @@ export interface BroadcastResult {
 
 export type MobileDebugListener = (session: MobileDebugSession, entries: unknown[]) => void;
 
-const MAX_CONSOLE_ENTRIES = 1000;
-const MAX_RAW_ENTRIES = 5000;
 const SESSION_RETENTION_MS = 60_000;
 const COMMAND_TIMEOUT_MS = 5000;
-const DEFAULT_PAGE_LIMIT = 256;
-const MAX_PAGE_LIMIT = 1024;
 const MAX_WS_PAYLOAD = 256 * 1024 * 1024;
-const RAW_SID_KEY = '__sessionId';
 
 let wss: WebSocketServer | null = null;
 let port: number | null = null;
@@ -55,21 +34,6 @@ let sessionCounter = 0;
 const sessions: Map<number, MobileDebugSession> = new Map();
 const listeners: Set<MobileDebugListener> = new Set();
 const entrySubscribers: Set<WebContents> = new Set();
-
-const consoleBuffer: ConsoleEntry[] = [];
-let consoleTotalCount = 0;
-
-const rawEntryBuffer: Record<string, unknown>[] = [];
-let rawTotalCount = 0;
-
-let totalEntries = 0;
-let totalCrdt = 0;
-let totalOpCalls = 0;
-let totalConsoleLogs = 0;
-let entriesLastSecond = 0;
-let entriesPerSecond = 0;
-let lastSecondTimestamp = Date.now();
-let throughputIntervalHandle: NodeJS.Timeout | null = null;
 
 interface PendingCommand {
   resolve: (value: { ok: boolean; data: unknown }) => void;
@@ -131,7 +95,6 @@ export async function startMobileDebugServer(): Promise<number> {
       session.ws = null;
       setTimeout(() => {
         sessions.delete(session.id);
-        pruneBuffersForSession(session.id);
       }, SESSION_RETENTION_MS).unref?.();
     });
 
@@ -139,16 +102,6 @@ export async function startMobileDebugServer(): Promise<number> {
       log.warn(`[mobile-debug] Session #${session.id} error:`, err.message);
     });
   });
-
-  if (!throughputIntervalHandle) {
-    throughputIntervalHandle = setInterval(() => {
-      const now = Date.now();
-      const elapsed = (now - lastSecondTimestamp) / 1000;
-      entriesPerSecond = elapsed > 0 ? Math.round(entriesLastSecond / elapsed) : 0;
-      entriesLastSecond = 0;
-      lastSecondTimestamp = now;
-    }, 1000);
-  }
 
   wss.on('error', (err: Error) => {
     log.error('[mobile-debug] Server error:', err.message);
@@ -159,68 +112,36 @@ export async function startMobileDebugServer(): Promise<number> {
 }
 
 function handleMessage(session: MobileDebugSession, msg: Record<string, unknown>): void {
-  const type = msg.type as string | undefined;
+  const type = typeof msg.type === 'string' ? msg.type : undefined;
   if (type === 'SCENE_INSPECTOR_CMD_ACK') {
-    const id = msg.id as string;
-    const resolver = pendingCommands.get(id);
+    if (typeof msg.id !== 'string') return;
+    const resolver = pendingCommands.get(msg.id);
     if (resolver) {
-      pendingCommands.delete(id);
-      resolver.resolve({ ok: (msg.ok as boolean) ?? false, data: msg.data ?? {} });
+      pendingCommands.delete(msg.id);
+      resolver.resolve({ ok: msg.ok === true, data: msg.data ?? {} });
       clearTimeout(resolver.timeout);
     }
     return;
   }
-  if (type !== 'SCENE_INSPECTOR' || !msg.payload) return;
+  if (type !== 'SCENE_INSPECTOR') return;
+  if (!msg.payload || typeof msg.payload !== 'object') return;
 
   const payload = msg.payload as Record<string, unknown>;
   if (typeof payload.sessionId === 'string' && !session.sessionId) {
     session.sessionId = payload.sessionId;
   }
-  const entries = (payload.entries ?? []) as Record<string, unknown>[];
+  const rawEntries = payload.entries;
+  if (!Array.isArray(rawEntries)) return;
+  const entries = rawEntries.filter(
+    (e): e is Record<string, unknown> => !!e && typeof e === 'object',
+  );
+  if (entries.length === 0) return;
   session.messageCount += entries.length;
-  totalEntries += entries.length;
-  entriesLastSecond += entries.length;
 
   for (const entry of entries) {
-    Object.defineProperty(entry, RAW_SID_KEY, {
-      value: session.id,
-      enumerable: false,
-      configurable: true,
-      writable: true,
-    });
-    rawEntryBuffer.push(entry);
-  }
-  rawTotalCount += entries.length;
-  if (rawEntryBuffer.length > MAX_RAW_ENTRIES) {
-    rawEntryBuffer.splice(0, rawEntryBuffer.length - MAX_RAW_ENTRIES);
-  }
-
-  for (const entry of entries) {
-    const entryType = entry.type as string;
-    if (entryType === 'session_start') {
-      const deviceName = entry.device_name as string | undefined;
+    if (entry.type === 'session_start') {
+      const deviceName = typeof entry.device_name === 'string' ? entry.device_name : undefined;
       if (deviceName) session.deviceName = deviceName;
-    } else if (entryType === 'crdt') {
-      totalCrdt++;
-    } else if (entryType === 'op_call_start') {
-      totalOpCalls++;
-      const opName = entry.op_name as string;
-      if (opName === 'op_log' || opName === 'op_error') {
-        totalConsoleLogs++;
-        const message = formatConsoleArgs(entry.args);
-        const tsRaw = entry.timestamp_ms;
-        const consoleEntry: ConsoleEntry = {
-          sessionId: session.id,
-          timestamp: typeof tsRaw === 'number' ? tsRaw : Date.now(),
-          level: opName === 'op_error' ? 'error' : 'log',
-          message,
-        };
-        consoleBuffer.push(consoleEntry);
-        consoleTotalCount++;
-        if (consoleBuffer.length > MAX_CONSOLE_ENTRIES) {
-          consoleBuffer.shift();
-        }
-      }
     }
   }
 
@@ -241,26 +162,6 @@ function handleMessage(session: MobileDebugSession, msg: Record<string, unknown>
   }
 }
 
-function pruneBuffersForSession(sessionId: number): void {
-  let write = 0;
-  for (let read = 0; read < consoleBuffer.length; read++) {
-    const e = consoleBuffer[read];
-    if (e.sessionId !== sessionId) {
-      consoleBuffer[write++] = e;
-    }
-  }
-  consoleBuffer.length = write;
-
-  let rwrite = 0;
-  for (let read = 0; read < rawEntryBuffer.length; read++) {
-    const e = rawEntryBuffer[read];
-    if ((e as Record<string, unknown>)[RAW_SID_KEY] !== sessionId) {
-      rawEntryBuffer[rwrite++] = e;
-    }
-  }
-  rawEntryBuffer.length = rwrite;
-}
-
 export function stopMobileDebugServer(): void {
   if (wss) {
     for (const session of sessions.values()) {
@@ -272,10 +173,6 @@ export function stopMobileDebugServer(): void {
     wss.close();
     wss = null;
     port = null;
-    if (throughputIntervalHandle) {
-      clearInterval(throughputIntervalHandle);
-      throughputIntervalHandle = null;
-    }
     log.info('[mobile-debug] Stopped');
   }
 }
@@ -304,62 +201,6 @@ export function getMobileDebugSessions(): MobileDebugSession[] {
   return Array.from(sessions.values());
 }
 
-function clampLimit(limit: number | undefined): number {
-  const l = typeof limit === 'number' && Number.isFinite(limit) ? limit : DEFAULT_PAGE_LIMIT;
-  return Math.min(Math.max(Math.floor(l), 1), MAX_PAGE_LIMIT);
-}
-
-export function getConsoleEntries(
-  afterIndex: number,
-  limit?: number,
-): { entries: ConsoleEntry[]; nextIndex: number; hasMore: boolean } {
-  const cap = clampLimit(limit);
-  const bufferStart = consoleTotalCount - consoleBuffer.length;
-  const effectiveStart = Math.max(afterIndex, bufferStart);
-  const startOffset = effectiveStart - bufferStart;
-  const entries = consoleBuffer.slice(startOffset, startOffset + cap);
-  const nextIndex = effectiveStart + entries.length;
-  return { entries, nextIndex, hasMore: nextIndex < consoleTotalCount };
-}
-
-export function getMonitorStats(): MonitorStats {
-  return {
-    totalEntries,
-    totalCrdt,
-    totalOpCalls,
-    totalConsoleLogs,
-    activeSessions: Array.from(sessions.values()).filter(s => s.status === 'active').length,
-    entriesPerSecond,
-  };
-}
-
-export function getRawEntries(
-  afterIndex: number,
-  limit?: number,
-): { entries: unknown[]; nextIndex: number; hasMore: boolean } {
-  const cap = clampLimit(limit);
-  const bufferStart = rawTotalCount - rawEntryBuffer.length;
-  const effectiveStart = Math.max(afterIndex, bufferStart);
-  const startOffset = effectiveStart - bufferStart;
-  const entries = rawEntryBuffer.slice(startOffset, startOffset + cap);
-  const nextIndex = effectiveStart + entries.length;
-  return { entries, nextIndex, hasMore: nextIndex < rawTotalCount };
-}
-
-export function clearMobileDebugData(): void {
-  consoleBuffer.length = 0;
-  consoleTotalCount = 0;
-  rawEntryBuffer.length = 0;
-  rawTotalCount = 0;
-  totalEntries = 0;
-  totalCrdt = 0;
-  totalOpCalls = 0;
-  totalConsoleLogs = 0;
-  entriesLastSecond = 0;
-  entriesPerSecond = 0;
-  lastSecondTimestamp = Date.now();
-}
-
 export function subscribeEntries(wc: WebContents): void {
   if (entrySubscribers.has(wc)) return;
   entrySubscribers.add(wc);
@@ -384,12 +225,10 @@ export async function sendCommand(
   args: Record<string, unknown> = {},
 ): Promise<{ ok: boolean; data: unknown }> {
   const session = sessions.get(sessionId);
-  if (
-    !session ||
-    session.status !== 'active' ||
-    !session.ws ||
-    session.ws.readyState !== WebSocket.OPEN
-  ) {
+  // Capture ws locally so the async `send` below cannot race with the `close`
+  // handler nulling `session.ws` between the guard and the write.
+  const ws = session?.ws;
+  if (!session || session.status !== 'active' || !ws || ws.readyState !== WebSocket.OPEN) {
     return { ok: false, data: { error: 'session not connected' } };
   }
 
@@ -403,7 +242,7 @@ export async function sendCommand(
     }, COMMAND_TIMEOUT_MS);
 
     pendingCommands.set(id, { resolve, timeout });
-    session.ws!.send(msg);
+    ws.send(msg);
   });
 }
 
@@ -435,13 +274,4 @@ export async function getStandaloneDeeplink(): Promise<{ url: string; qr: string
   const qr = await QRCode.toDataURL(url, { width: 512, margin: 2 });
 
   return { url, qr, port: wsPort };
-}
-
-function formatConsoleArgs(args: unknown): string {
-  if (args == null) return '';
-  if (Array.isArray(args)) {
-    return args.map(a => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ');
-  }
-  if (typeof args === 'string') return args;
-  return JSON.stringify(args);
 }

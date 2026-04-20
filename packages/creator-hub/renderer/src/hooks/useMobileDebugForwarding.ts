@@ -14,7 +14,6 @@ export function useMobileDebugForwarding(
   const wasEnabledRef = useRef(false);
 
   useEffect(() => {
-    void editor.clearMobileDebugData().catch(() => {});
     wasEnabledRef.current = false;
   }, [projectKey]);
 

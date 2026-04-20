@@ -147,9 +147,18 @@ export function pushEntries(raw: unknown[]) {
   for (const entry of raw) {
     if (!entry || typeof entry !== 'object') continue;
     const e = entry as Record<string, unknown>;
-    const type = e.type as string;
+    const type = typeof e.type === 'string' ? e.type : '';
 
     if (type === 'crdt') {
+      if (
+        typeof e.sid !== 'number' ||
+        typeof e.tk !== 'number' ||
+        typeof e.e !== 'number' ||
+        typeof e.c !== 'string' ||
+        typeof e.op !== 'string'
+      ) {
+        continue;
+      }
       totalCrdt++;
       const crdt = e as unknown as CrdtEntry;
       applyCrdtEntry(crdt);
@@ -197,7 +206,7 @@ export function pushEntries(raw: unknown[]) {
       changed = true;
     } else if (type === 'op_call_start') {
       totalOps++;
-      const opName = (e.op_name as string) ?? '';
+      const opName = typeof e.op_name === 'string' ? e.op_name : '';
       const lc = opName.toLowerCase();
       const isError = lc.includes('error') || lc.includes('warn');
       const isLog = lc.includes('log') || lc.includes('print');
@@ -226,12 +235,11 @@ export function pushEntries(raw: unknown[]) {
         console.debug('[mobile-debug-store] unknown op_call_start op_name:', opName);
       }
     } else if (type === 'scene_lifecycle') {
-      // Extract scene info from SceneInit events
-      const event = e.event as string;
-      const sceneId = e.scene_id as number;
+      const event = typeof e.event === 'string' ? e.event : '';
+      const sceneId = typeof e.scene_id === 'number' ? e.scene_id : null;
       if (event === 'scene_init' && sceneId != null) {
-        const title = (e.title as string) || `Scene ${sceneId}`;
-        const baseParcel = (e.base_parcel as string) || '';
+        const title = typeof e.title === 'string' ? e.title : `Scene ${sceneId}`;
+        const baseParcel = typeof e.base_parcel === 'string' ? e.base_parcel : '';
         knownScenes.set(sceneId, { sceneId, title, baseParcel });
         changed = true;
       }
@@ -438,6 +446,10 @@ function applyToState(state: Record<number, EntityState>, entry: CrdtEntry) {
     delete state[eid];
     return;
   }
+
+  // `comp` comes from untrusted CRDT payload — block keys that would otherwise
+  // pollute the prototype chain when written into `ent.components[comp]`.
+  if (comp === '__proto__' || comp === 'constructor' || comp === 'prototype') return;
 
   if (!state[eid]) {
     state[eid] = { components: {}, parent: 0 };

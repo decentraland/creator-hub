@@ -176,12 +176,12 @@ export async function getMobilePreview(path: string): Promise<{ url: string; qr:
         qr = await QRCode.toDataURL(url, { width: 512, margin: 2 });
 
         log.info(`[mobile-debug] WS at ws://0.0.0.0:${wsPort}, mobile URL updated`);
-      } catch (wsError: any) {
-        log.error(
-          '[CLI] Could not start mobile debug server:',
-          wsError?.message ?? wsError,
-          wsError?.stack,
-        );
+      } catch (wsError: unknown) {
+        if (wsError instanceof Error) {
+          log.error('[CLI] Could not start mobile debug server:', wsError.message, wsError.stack);
+        } else {
+          log.error('[CLI] Could not start mobile debug server:', wsError);
+        }
       }
 
       return { url, qr };

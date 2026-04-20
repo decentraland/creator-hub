@@ -61,20 +61,12 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
       messageCount: s.messageCount,
     })),
   );
-  handle('mobileDebug.getConsoleEntries', async (_event, afterIndex: number, limit?: number) =>
-    mobileDebug.getConsoleEntries(afterIndex, limit),
-  );
-  handle('mobileDebug.getMonitorStats', async () => mobileDebug.getMonitorStats());
-  handle('mobileDebug.getRawEntries', async (_event, afterIndex: number, limit?: number) =>
-    mobileDebug.getRawEntries(afterIndex, limit),
-  );
   handle('mobileDebug.subscribeEntries', async event => {
     mobileDebug.subscribeEntries(event.sender);
   });
   handle('mobileDebug.unsubscribeEntries', async event => {
     mobileDebug.unsubscribeEntries(event.sender);
   });
-  handle('mobileDebug.clear', async () => mobileDebug.clearMobileDebugData());
   handle(
     'mobileDebug.sendCommand',
     async (_event, sessionId: number, cmd: string, args: Record<string, unknown>) =>

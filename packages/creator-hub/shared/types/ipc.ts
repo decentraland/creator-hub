@@ -77,29 +77,8 @@ export interface Ipc {
   'npm.getOutdatedDeps': (path: string, packages?: string[]) => Promise<Outdated>;
   'npm.getContextFiles': (path: string) => Promise<void>;
   'mobileDebug.getSessions': () => Promise<MobileDebugSessionInfo[]>;
-  'mobileDebug.getConsoleEntries': (
-    afterIndex: number,
-    limit?: number,
-  ) => Promise<{
-    entries: { sessionId: number; timestamp: number; level: 'log' | 'error'; message: string }[];
-    nextIndex: number;
-    hasMore: boolean;
-  }>;
-  'mobileDebug.getRawEntries': (
-    afterIndex: number,
-    limit?: number,
-  ) => Promise<{ entries: unknown[]; nextIndex: number; hasMore: boolean }>;
   'mobileDebug.subscribeEntries': () => Promise<void>;
   'mobileDebug.unsubscribeEntries': () => Promise<void>;
-  'mobileDebug.getMonitorStats': () => Promise<{
-    totalEntries: number;
-    totalCrdt: number;
-    totalOpCalls: number;
-    totalConsoleLogs: number;
-    activeSessions: number;
-    entriesPerSecond: number;
-  }>;
-  'mobileDebug.clear': () => Promise<void>;
   'mobileDebug.sendCommand': (
     sessionId: number,
     cmd: string,
