@@ -82,3 +82,27 @@
   width: 16px;
   height: 16px;
 }
+
+/* ===== Experimental UI ===== */
+.experimental-ui .Button {
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  background-color: var(--surface-2);
+  border-radius: var(--radius-sm);
+}
+
+.experimental-ui .Button:hover:not(:disabled) {
+  background-color: var(--surface-3);
+  border-color: var(--border-strong);
+}
+
+.experimental-ui .Button.text {
+  color: var(--text-secondary);
+  border: none;
+  background: none;
+  padding: 4px;
+}
+
+.experimental-ui .Button.text:has(svg) {
+  gap: 6px;
+}

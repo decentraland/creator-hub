@@ -102,14 +102,14 @@ const TeleportPlayerAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
       {isCoordinatesMode ? (
         <Block label="Coordinates">
           <TextField
-            leftLabel="X"
+            leftLabel={<span className="axis-x">X</span>}
             type="number"
             value={payload.x}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangeX(e)}
             autoSelect
           />
           <TextField
-            leftLabel="Y"
+            leftLabel={<span className="axis-y">Y</span>}
             type="number"
             value={payload.y}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangeY(e)}

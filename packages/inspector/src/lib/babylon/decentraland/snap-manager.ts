@@ -7,6 +7,7 @@ const getSnapManager = () => {
   let rotationSnap = 15 * (Math.PI / 180);
   let scaleSnap = 0.1;
   let enabled = true;
+  let objectSnapEnabled = false;
 
   // events
   const events = mitt<{ change: void }>();
@@ -54,6 +55,21 @@ const getSnapManager = () => {
     return value;
   }
 
+  function isObjectSnapEnabled() {
+    return objectSnapEnabled;
+  }
+
+  function setObjectSnapEnabled(value: boolean) {
+    objectSnapEnabled = value;
+    events.emit('change');
+  }
+
+  function toggleObjectSnap() {
+    const value = !objectSnapEnabled;
+    setObjectSnapEnabled(value);
+    return value;
+  }
+
   // handlers
   function onChange(
     cb: (values: {
@@ -61,9 +77,10 @@ const getSnapManager = () => {
       rotationSnap: number;
       scaleSnap: number;
       enabled: boolean;
+      objectSnapEnabled: boolean;
     }) => void,
   ) {
-    const handler = () => cb({ positionSnap, rotationSnap, scaleSnap, enabled });
+    const handler = () => cb({ positionSnap, rotationSnap, scaleSnap, enabled, objectSnapEnabled });
     events.on('change', handler);
     return () => events.off('change', handler);
   }
@@ -79,6 +96,9 @@ const getSnapManager = () => {
     setEnabled,
     onChange,
     toggle,
+    isObjectSnapEnabled,
+    setObjectSnapEnabled,
+    toggleObjectSnap,
   };
 };
 

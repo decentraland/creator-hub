@@ -1,0 +1,31 @@
+.CanvasContextMenu__header {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  gap: 6px;
+  pointer-events: none;
+  max-width: 200px;
+}
+
+.CanvasContextMenu__icon {
+  width: 16px;
+  height: 14px;
+  flex-shrink: 0;
+  background-size: 16px 16px;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.CanvasContextMenu__icon.entity-icon { background-image: url(../../Hierarchy/icons/entity.svg); }
+.CanvasContextMenu__icon.smart-icon  { background-image: url(../../Hierarchy/icons/smart.svg); }
+.CanvasContextMenu__icon.custom-icon { background-image: url(../../Hierarchy/icons/custom.svg); }
+.CanvasContextMenu__icon.group-icon  { background-image: url(../../Hierarchy/icons/group.svg); }
+.CanvasContextMenu__icon.tile-icon   { background-image: url(../../Hierarchy/icons/tile.svg); }
+
+.CanvasContextMenu__entity-name {
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

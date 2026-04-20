@@ -28,10 +28,20 @@ const shellSchema = {
     data: { properties: {}, additionalProperties: true },
   },
 };
+const vec3Schema = {
+  properties: {
+    x: { type: 'float64' },
+    y: { type: 'float64' },
+    z: { type: 'float64' },
+  },
+} as const;
+
 const v1Schema = {
   optionalProperties: {
     freeCameraInvertRotation: { type: 'boolean' },
     autosaveEnabled: { type: 'boolean' },
+    cameraPosition: vec3Schema,
+    cameraTarget: vec3Schema,
   },
 } as const;
 type JsonPreferencesV1 = JTDDataType<typeof v1Schema>;

@@ -1,14 +1,21 @@
 /* eslint-disable no-console */
 import React, { useCallback, useEffect, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { useDrop } from 'react-dnd';
 import cx from 'classnames';
+import { contextMenu } from 'react-contexify';
 import { Vector3 } from '@babylonjs/core';
 import type { Entity } from '@dcl/ecs';
 
 import { DIRECTORY, withAssetDir } from '../../lib/data-layer/host/fs-utils';
 import { getRelativeResourcePath, getResourcesBasePath } from '../../lib/utils/path-utils';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
-import { getDataLayerInterface, getAssetCatalog, saveThumbnail } from '../../redux/data-layer';
+import {
+  getDataLayerInterface,
+  getAssetCatalog,
+  saveThumbnail,
+  setInspectorPreferences,
+} from '../../redux/data-layer';
 import type {
   CatalogAssetDrop,
   IDrop,
@@ -52,9 +59,10 @@ import { checkAssetCompatibility } from '../../lib/sdk/operations/add-asset/comp
 import type { IncompatibleComponent } from '../../lib/sdk/operations/add-asset/compatibility';
 import { IncompatibleAssetModal } from '../IncompatibleAssetModal';
 import { Warnings } from '../Warnings';
+import { findParentEntity } from '../../lib/babylon/setup/input';
 import { CameraSpeed } from './CameraSpeed';
+import CanvasContextMenu, { CANVAS_CONTEXT_MENU_ID } from './ContextMenu/CanvasContextMenu';
 import { Shortcuts } from './Shortcuts';
-import { Metrics } from './Metrics';
 import { SceneMinimap } from './SceneMinimap';
 import { AxisHelper } from './AxisHelper';
 
@@ -77,6 +85,8 @@ const Renderer: React.FC = () => {
   const groundGridDisabled = useAppSelector(isGroundGridDisabled);
   const config = getConfig();
   const [copyEntities, setCopyEntities] = useState<Entity[]>([]);
+  const [canvasContextEntity, setCanvasContextEntity] = useState<Entity | null>(null);
+  const isRightDragging = React.useRef(false);
   const hiddenPanels = useAppSelector(getHiddenPanels);
   const [placeSingleTile, setPlaceSingleTile] = useState(false);
   const [showSingleTileHint, setShowSingleTileHint] = useState(false);
@@ -100,6 +110,24 @@ const Renderer: React.FC = () => {
       }
     }
   }, [sdk, groundGridDisabled]);
+
+  useEffect(() => {
+    if (!sdk) return;
+    let lastPos = { x: NaN, y: NaN, z: NaN };
+    const id = setInterval(() => {
+      const camera = sdk.editorCamera.getCamera();
+      const { x, y, z } = camera.position;
+      if (x === lastPos.x && y === lastPos.y && z === lastPos.z) return;
+      lastPos = { x, y, z };
+      dispatch(
+        setInspectorPreferences({
+          cameraPosition: { x, y, z },
+          cameraTarget: { x: camera.target.x, y: camera.target.y, z: camera.target.z },
+        }),
+      );
+    }, 5000);
+    return () => clearInterval(id);
+  }, [sdk, dispatch]);
 
   const deleteSelectedEntities = useCallback(() => {
     if (!sdk) return;
@@ -182,6 +210,64 @@ const Renderer: React.FC = () => {
       }
     }
   }, [sdk]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (e.button === 2) isRightDragging.current = false;
+    };
+    const onPointerMove = (e: PointerEvent) => {
+      if (e.buttons & 2) {
+        isRightDragging.current = true;
+        contextMenu.hideAll();
+      }
+    };
+    canvas.addEventListener('pointerdown', onPointerDown);
+    canvas.addEventListener('pointermove', onPointerMove);
+    return () => {
+      canvas.removeEventListener('pointerdown', onPointerDown);
+      canvas.removeEventListener('pointermove', onPointerMove);
+    };
+  }, []);
+
+  const handleCanvasContextMenu = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
+      e.preventDefault();
+      if (isRightDragging.current) return;
+
+      if (!sdk || !canvasRef.current) return;
+
+      const rect = canvasRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const pickResult = sdk.scene.pick(x, y);
+      const mesh = pickResult?.pickedMesh;
+      const pickedEcsEntity = mesh ? findParentEntity(mesh) : null;
+
+      let contextEntity: Entity | null = null;
+
+      if (pickedEcsEntity && !pickedEcsEntity.isLocked() && !pickedEcsEntity.isHidden()) {
+        contextEntity = pickedEcsEntity.entityId;
+        const selectedEntities = sdk.operations.getSelectedEntities();
+        if (!selectedEntities.includes(contextEntity)) {
+          sdk.operations.updateSelectedEntity(contextEntity, false);
+          void sdk.operations.dispatch();
+        }
+      } else {
+        const selectedEntities = sdk.operations.getSelectedEntities();
+        if (selectedEntities.length > 0) {
+          contextEntity = selectedEntities[0];
+        }
+      }
+
+      if (!contextEntity) return;
+
+      flushSync(() => setCanvasContextEntity(contextEntity));
+      contextMenu.show({ id: CANVAS_CONTEXT_MENU_ID, event: e });
+    },
+    [sdk],
+  );
 
   useHotkey([DELETE, BACKSPACE], deleteSelectedEntities, document.body);
   useHotkey([COPY, COPY_ALT], copySelectedEntities, document.body);
@@ -472,13 +558,11 @@ const Renderer: React.FC = () => {
       {isLoading && <Loading />}
       <Warnings />
       <CameraSpeed />
-      <AxisHelper />
-      {!hiddenPanels[PanelName.METRICS] && <Metrics />}
+      <AxisHelper onResetCamera={resetCamera} />
       <SceneMinimap />
       {!hiddenPanels[PanelName.SHORTCUTS] && (
         <Shortcuts
           canvas={canvasRef}
-          onResetCamera={resetCamera}
           onZoomIn={zoomIn}
           onZoomOut={zoomOut}
         />
@@ -494,7 +578,9 @@ const Renderer: React.FC = () => {
         ref={canvasRef}
         id="canvas"
         touch-action="none"
+        onContextMenu={handleCanvasContextMenu}
       />
+      <CanvasContextMenu entity={canvasContextEntity} />
       <div
         style={{
           top: mousePosition.y + SINGLE_TILE_HINT_OFFSET,

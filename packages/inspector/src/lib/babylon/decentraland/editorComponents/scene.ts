@@ -1,14 +1,17 @@
 import { ComponentType, getComponentEntityTree } from '@dcl/ecs';
 import type { ComponentOperation } from '../component-operations';
 import type { Layout } from '../../../utils/layout';
+import { PARCEL_SIZE } from '../../../utils/scene';
 import type { SceneSpawnPoint } from '../../../sdk/components';
 import { getLayoutManager } from '../layout-manager';
+import type { SkyboxSetup } from '../../setup/skybox';
 
 export const putSceneComponent: ComponentOperation = (entity, component) => {
   if (component.componentType === ComponentType.LastWriteWinElementSet) {
     const value = component.getOrNull(entity.entityId) as {
       layout: Layout;
       spawnPoints?: SceneSpawnPoint[];
+      skyboxConfig?: { fixedTime?: number };
     } | null;
     if (!value) return;
 
@@ -21,6 +24,22 @@ export const putSceneComponent: ComponentOperation = (entity, component) => {
     const lm = getLayoutManager(context.scene);
     const previousLayout = lm.getLayout();
     const didChange = lm.setLayout(value.layout);
+
+    // Update the visual sun position whenever scene metadata changes
+    const meta = context.scene.metadata as SkyboxSetup | null;
+    meta?.updateSkybox?.(value.skyboxConfig?.fixedTime);
+
+    // Update scene bounds so the ground shader can distinguish scene parcels from outer terrain
+    if (meta?.setSceneBounds && value.layout.parcels.length > 0) {
+      const { base, parcels } = value.layout;
+      const pxs = parcels.map(p => p.x);
+      const pys = parcels.map(p => p.y);
+      const minX = (Math.min(...pxs) - base.x) * PARCEL_SIZE;
+      const maxX = (Math.max(...pxs) - base.x + 1) * PARCEL_SIZE;
+      const minZ = (Math.min(...pys) - base.y) * PARCEL_SIZE;
+      const maxZ = (Math.max(...pys) - base.y + 1) * PARCEL_SIZE;
+      meta.setSceneBounds(minX, minZ, maxX, maxZ);
+    }
 
     // if the layout changed, we might need to update the grounds
     // skip on initial load (null → layout) since composite already created the tiles

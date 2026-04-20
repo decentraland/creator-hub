@@ -29,3 +29,67 @@ input[type="number"] {
   max-height: calc(30vh);
   overflow-y: auto;
 }
+
+/* Hide scrollbar arrow buttons globally */
+::-webkit-scrollbar-button {
+  width: 0;
+  height: 0;
+  background: transparent;
+}
+
+/* ===== Experimental UI: scrollbar styling ===== */
+.experimental-ui * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-default) transparent;
+}
+
+.experimental-ui *::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.experimental-ui *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.experimental-ui *::-webkit-scrollbar-thumb {
+  background-color: var(--border-default);
+  border-radius: 2px;
+}
+
+.experimental-ui *::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.experimental-ui *::-webkit-scrollbar-button {
+  width: 0;
+  height: 0;
+  background: transparent;
+}
+
+.experimental-ui .Preferences,
+.experimental-ui .babylonjs-inspector {
+  display: none;
+}
+
+.experimental-ui .ui.popup {
+  border: none !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+}
+
+.experimental-ui [data-tooltip]::after {
+  border: none !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+  transition: none !important;
+  animation: none !important;
+  margin: 0 0 0 10px !important;
+  padding: 4px 8px !important;
+}
+
+.experimental-ui [data-tooltip]::before {
+  display: none !important;
+}
+
+.experimental-ui [data-tooltip][data-shortcut]::after {
+  display: none !important;
+}

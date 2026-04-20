@@ -13,3 +13,10 @@
 .EntityInspector > .with-context-menu:empty {
   display: none;
 }
+
+/* ===== Experimental UI ===== */
+.experimental-ui .EntityInspector {
+  background-color: var(--surface-1);
+  gap: 6px;
+  box-sizing: border-box;
+}

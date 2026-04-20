@@ -37,13 +37,17 @@
   background-image: url(./icons/scale.svg);
 }
 
-.Gizmos .open-panel {
+.SnapToggle {
+  position: relative;
+}
+
+.SnapToggle .open-panel {
   cursor: pointer;
   height: 100%;
   margin-right: 10px;
 }
 
-.Gizmos .panel {
+.SnapToggle .panel {
   display: none;
   position: absolute;
   top: calc(100% - 5px);
@@ -56,11 +60,11 @@
   user-select: none;
 }
 
-.Gizmos .panel.visible {
+.SnapToggle .panel.visible {
   display: block;
 }
 
-.Gizmos .panel .title {
+.SnapToggle .panel .title {
   position: relative;
   color: var(--text);
   font-weight: bold;
@@ -70,7 +74,7 @@
   justify-content: space-between;
 }
 
-.Gizmos .panel .icon {
+.SnapToggle .panel .icon {
   cursor: pointer;
   width: 24px;
   height: 24px;
@@ -79,19 +83,212 @@
   top: -5px;
 }
 
-.Gizmos .panel .snaps {
-  margin-bottom: 10px;
-}
-
-.Gizmos .panel .alignment {
+.SnapToggle .panel .alignment {
   position: relative;
 }
 
-.Gizmos .panel .alignment label {
+.SnapToggle .panel .alignment label {
   color: var(--secondary-text);
 }
 
-.Gizmos .panel .alignment.disabled .icon {
+.SnapToggle .panel .alignment.disabled .icon {
   cursor: not-allowed;
   opacity: 0.5;
+}
+
+/* ===== Experimental UI ===== */
+.experimental-ui .Gizmos {
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.experimental-ui .Gizmos .gizmo {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  border-radius: 50% !important;
+  margin: 0 !important;
+  background-size: 18px 18px;
+  background-position: center;
+  background-color: var(--surface-2) !important;
+}
+
+.experimental-ui .Gizmos .gizmo:hover:not(:disabled) {
+  background-color: var(--surface-3) !important;
+}
+
+.experimental-ui .Gizmos .gizmo:disabled {
+  background-color: var(--surface-2) !important;
+  cursor: not-allowed;
+}
+
+.experimental-ui .Gizmos .gizmo.active:not(:disabled) {
+  background-color: var(--accent) !important;
+}
+
+.experimental-ui .Gizmos .gizmo.active:hover:not(:disabled) {
+  background-color: var(--accent-dark) !important;
+}
+
+.experimental-ui .SnapToggle {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 8px;
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+}
+
+.experimental-ui .SnapToggle .snap-toggle-btn {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  border-radius: 6px 0 0 6px !important;
+  margin: 0 !important;
+  background-color: var(--surface-2) !important;
+  transition: border-radius 150ms ease-out, background-color var(--transition-fast) !important;
+}
+
+.experimental-ui .SnapToggle .snap-toggle-btn:hover:not(:disabled) {
+  background-color: var(--surface-3) !important;
+}
+
+.experimental-ui .SnapToggle .snap-toggle-btn.active {
+  background-color: var(--accent) !important;
+}
+
+.experimental-ui .SnapToggle .snap-toggle-btn.active:hover:not(:disabled) {
+  background-color: var(--accent-dark) !important;
+}
+
+.experimental-ui .SnapToggle .open-panel {
+  width: 24px;
+  height: 42px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--surface-3);
+  border-radius: 0 6px 6px 0;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.experimental-ui .SnapToggle .open-panel:hover {
+  background-color: var(--surface-3);
+}
+
+.experimental-ui .SnapToggle .open-panel svg {
+  width: 12px;
+  height: 12px;
+}
+
+.experimental-ui .SnapToggle .open-panel.active svg {
+  width: 16px;
+  height: 16px;
+}
+
+.experimental-ui .SnapToggle .open-panel.active {
+  color: var(--text-primary);
+  background-color: #2e2b38;
+}
+
+.experimental-ui .SnapToggle .snap-toggle-btn.panel-open {
+  border-radius: 0 !important;
+}
+
+.experimental-ui .SnapToggle .panel {
+  position: static;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: 42px;
+  box-sizing: border-box;
+  background-color: var(--surface-2);
+  border: 1px solid var(--border-default);
+  border-right: none;
+  border-radius: 6px 0 0 6px;
+  padding: 0;
+  width: auto;
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: max-width 150ms ease-out, opacity 100ms ease-out;
+}
+
+.experimental-ui .SnapToggle .panel.visible {
+  max-width: 400px;
+  opacity: 1;
+  pointer-events: auto;
+  overflow: visible;
+}
+
+.experimental-ui .SnapToggle .world-align-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 100%;
+  cursor: pointer;
+  color: var(--text-primary);
+  border-left: 1px solid var(--border-subtle);
+}
+
+.experimental-ui .SnapToggle .world-align-btn:hover {
+  background-color: var(--surface-3);
+  color: var(--text-primary);
+}
+
+.experimental-ui .SnapToggle .world-align-btn.active {
+  color: var(--accent);
+}
+
+.experimental-ui .SnapToggle .world-align-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.experimental-ui .SnapToggle .snap-to-floor-btn {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  border-radius: 6px !important;
+  margin-left: 4px !important;
+  background-color: var(--surface-2) !important;
+}
+
+.experimental-ui .SnapToggle .snap-to-floor-btn:hover:not(:disabled) {
+  background-color: var(--surface-3) !important;
+}
+
+.experimental-ui .SnapToggle .world-align-btn[data-tooltip]::after {
+  margin: 9px 0 0 0 !important;
+}
+
+.experimental-ui .SnapToggle [data-tooltip]::after {
+  margin: 9px 0 0 0 !important;
+}
+
+.experimental-ui .SnapToggle .object-snap-btn {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  border-radius: 6px !important;
+  margin-left: 8px !important;
+  background-color: var(--surface-2) !important;
+}
+
+.experimental-ui .SnapToggle .object-snap-btn:hover:not(:disabled) {
+  background-color: var(--surface-3) !important;
+}
+
+.experimental-ui .SnapToggle .object-snap-btn.active {
+  background-color: var(--accent) !important;
+}
+
+.experimental-ui .SnapToggle .object-snap-btn.active:hover:not(:disabled) {
+  background-color: var(--accent-dark) !important;
 }

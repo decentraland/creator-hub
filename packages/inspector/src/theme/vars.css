@@ -99,7 +99,7 @@
   --contexify-menu-padding: 6px;
   --contexify-menu-radius: 2px;
   --contexify-menu-bgColor: var(--dropdown-bg-color);
-  --contexify-menu-shadow: 2px 2px 10px 0px rgba(0, 0, 0, 0.5);
+  --contexify-menu-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   --contexify-menu-negatePadding: var(--contexify-menu-padding);
 
   --contexify-separator-color: rgba(0, 0, 0, 0.2);
@@ -128,4 +128,55 @@
     "Inter", system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-monospace:
     "Inconsolata", "Consolas", "Droid Sans Mono", "Monaco", "Courier New", monospace;
+}
+
+/* ====================================================
+   EXPERIMENTAL UI — only active when .experimental-ui
+   class is present on the .App root
+   ==================================================== */
+.experimental-ui {
+  /* Surfaces */
+  --surface-0: #0c0b0f;
+  --surface-1: #161518;
+  --surface-2: #1e1c23;
+  --surface-3: #262430;
+
+  /* Borders */
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.10);
+  --border-strong: rgba(255, 255, 255, 0.16);
+
+  /* Text */
+  --text-primary: #eeeeef;
+  --text-secondary: rgba(238, 238, 239, 0.60);
+  --text-muted: rgba(238, 238, 239, 0.35);
+
+  /* Accent */
+  --accent: #FF2D55;
+  --accent-dark: #f70038;
+  --surface-selection: rgba(255, 45, 85, 0.12);
+  --border-selection: #FF2D55;
+
+  /* Spacing (4px grid) */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 12px;
+
+  /* Axis colors */
+  --axis-x: #ff6b6b;
+  --axis-y: #69db7c;
+  --axis-z: #5580ff;
+
+  /* Motion */
+  --transition-fast: 120ms ease-out;
+  --transition-normal: 180ms ease-out;
+  --transition-slow: 280ms ease-out;
 }

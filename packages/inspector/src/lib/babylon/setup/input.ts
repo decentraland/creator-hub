@@ -14,10 +14,10 @@ let isDragging = false;
 export function initKeyboard(canvas: HTMLCanvasElement, scene: BABYLON.Scene) {
   canvas.addEventListener('keydown', e => {
     keyState[Keys.KEY_SHIFT] = e.shiftKey;
-    keyState[Keys.KEY_CTRL] = e.ctrlKey;
+    keyState[Keys.KEY_CTRL] = e.ctrlKey || e.metaKey;
     keyState[Keys.KEY_ALT] = e.altKey;
     keyState[e.keyCode] = true;
-    if (e.shiftKey) {
+    if (e.shiftKey && !isShiftKeyDown) {
       isSnapEnabled = snapManager.toggle();
       isShiftKeyDown = true;
     }
@@ -30,7 +30,7 @@ export function initKeyboard(canvas: HTMLCanvasElement, scene: BABYLON.Scene) {
     }
 
     keyState[Keys.KEY_SHIFT] = e.shiftKey;
-    keyState[Keys.KEY_CTRL] = e.ctrlKey;
+    keyState[Keys.KEY_CTRL] = e.ctrlKey || e.metaKey;
     keyState[Keys.KEY_ALT] = e.altKey;
     keyState[e.keyCode] = false;
   });
@@ -65,7 +65,7 @@ function isEcsEntity(x: any): x is EcsEntity {
   return 'isDCLEntity' in x;
 }
 
-function findParentEntity<T extends BABYLON.Node & { isDCLEntity?: boolean }>(
+export function findParentEntity<T extends BABYLON.Node & { isDCLEntity?: boolean }>(
   node: T,
 ): EcsEntity | null {
   // Find the next entity parent to dispatch the event

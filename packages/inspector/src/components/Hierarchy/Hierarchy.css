@@ -49,3 +49,10 @@
 .Hierarchy .camera-target-icon {
   background-image: url(./icons/camera-target.svg);
 }
+
+/* ===== Experimental UI ===== */
+.experimental-ui .Hierarchy {
+  background: var(--surface-1);
+  padding: 4px;
+  box-sizing: border-box;
+}

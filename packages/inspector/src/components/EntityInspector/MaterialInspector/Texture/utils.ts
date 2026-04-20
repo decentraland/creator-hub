@@ -1,7 +1,7 @@
 import type { TextureUnion } from '@dcl/ecs';
 import { TextureFilterMode, TextureWrapMode } from '@dcl/ecs';
 
-import { toNumber, toString } from '../../utils';
+import { formatFloat, toNumber, toString } from '../../utils';
 import type { TreeNode } from '../../../ProjectAssetExplorer/ProjectView';
 import type { AssetNodeItem } from '../../../ProjectAssetExplorer/types';
 import { isAssetNode } from '../../../ProjectAssetExplorer/utils';
@@ -36,12 +36,12 @@ export const fromTexture = (value: TextureUnion): TextureInput => {
         wrapMode: toString(value?.tex?.texture.wrapMode),
         filterMode: toString(value?.tex?.texture.filterMode),
         offset: {
-          x: value?.tex?.texture.offset?.x?.toFixed(2) ?? '0',
-          y: value?.tex?.texture.offset?.y?.toFixed(2) ?? '0',
+          x: formatFloat(value?.tex?.texture.offset?.x ?? 0),
+          y: formatFloat(value?.tex?.texture.offset?.y ?? 0),
         },
         tiling: {
-          x: value?.tex?.texture.tiling?.x?.toFixed(2) ?? '1',
-          y: value?.tex?.texture.tiling?.y?.toFixed(2) ?? '1',
+          x: formatFloat(value?.tex?.texture.tiling?.x ?? 1),
+          y: formatFloat(value?.tex?.texture.tiling?.y ?? 1),
         },
       };
     }

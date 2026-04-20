@@ -1,15 +1,8 @@
 .Metrics {
-  --metrics-bottom: 8px;
-  --metrics-left: 8px;
-  --metrics-button-height: 30px;
-  --metrics-button-width: 30px;
-
-  display: flex;
-  align-items: center;
-  position: absolute;
-  bottom: var(--metrics-bottom);
-  left: var(--metrics-left);
-  z-index: 1;
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 1000;
 }
 
 .Metrics .Buttons {
@@ -61,8 +54,8 @@
   width: 300px;
   position: absolute;
   overflow-y: auto;
-  left: 0;
-  bottom: calc(var(--metrics-bottom) + var(--metrics-button-height) + 8px);
+  top: 8px;
+  right: 0;
   background-color: var(--base-19);
   padding: 13px 12px;
   border-radius: 4px;

@@ -261,7 +261,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
             onClick={() => handleSelectTab(SceneInspectorTab.SETTINGS)}
           >
             <i className="TabIcon cog-icon" />
-            &nbsp;Settings
+            &nbsp;Misc.
           </Tab>
         )}
       </Tabs>

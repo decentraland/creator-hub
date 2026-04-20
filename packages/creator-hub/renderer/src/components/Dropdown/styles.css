@@ -1,3 +1,7 @@
+.Dropdown .MuiPaper-root {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
 .Dropdown ul.MuiMenu-list {
   min-width: 200px;
 }

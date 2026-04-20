@@ -133,19 +133,19 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       <Block label="Start">
         <TextField
           autoSelect
-          leftLabel="X"
+          leftLabel={<span className="axis-x">X</span>}
           type="number"
           {...getTweenInputProps('start.x')}
         />
         <TextField
           autoSelect
-          leftLabel="Y"
+          leftLabel={<span className="axis-y">Y</span>}
           type="number"
           {...getTweenInputProps('start.y')}
         />
         <TextField
           autoSelect
-          leftLabel="Z"
+          leftLabel={<span className="axis-z">Z</span>}
           type="number"
           {...getTweenInputProps('start.z')}
         />
@@ -153,19 +153,19 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       <Block label="End">
         <TextField
           autoSelect
-          leftLabel="X"
+          leftLabel={<span className="axis-x">X</span>}
           type="number"
           {...getTweenInputProps('end.x')}
         />
         <TextField
           autoSelect
-          leftLabel="Y"
+          leftLabel={<span className="axis-y">Y</span>}
           type="number"
           {...getTweenInputProps('end.y')}
         />
         <TextField
           autoSelect
-          leftLabel="Z"
+          leftLabel={<span className="axis-z">Z</span>}
           type="number"
           {...getTweenInputProps('end.z')}
         />

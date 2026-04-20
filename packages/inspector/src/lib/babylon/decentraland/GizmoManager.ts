@@ -4,6 +4,10 @@ import {
   Vector3,
   TransformNode,
   Quaternion,
+  UtilityLayerRenderer,
+  MeshBuilder,
+  StandardMaterial,
+  Color3,
 } from '@babylonjs/core';
 import { Vector3 as DclVector3 } from '@dcl/ecs-math';
 import { GizmoType } from '../../utils/gizmo';
@@ -11,8 +15,9 @@ import type { SceneContext } from './SceneContext';
 import type { EcsEntity } from './EcsEntity';
 import { GizmoType as TransformerType } from './gizmos/types';
 import type { IGizmoTransformer } from './gizmos';
-import { FreeGizmo, PositionGizmo, RotationGizmo, ScaleGizmo } from './gizmos';
+import { FreeGizmo, PositionGizmo, RotationGizmo, BoundingBoxScaleGizmo } from './gizmos';
 import { snapManager, snapPosition, snapRotation, snapScale } from './snap-manager';
+import { computeObjectSnap } from './object-snap';
 import { getLayoutManager } from './layout-manager';
 
 export function createGizmoManager(context: SceneContext) {
@@ -42,10 +47,16 @@ export function createGizmoManager(context: SceneContext) {
   const gizmoManager = new BabylonGizmoManager(context.scene);
   gizmoManager.usePointerToAttachGizmos = false;
 
+  // Make built-in gizmos (position, rotation) always draw in front of scene geometry.
+  // Both utility layers share the main scene's depth buffer by default; clearing it
+  // before each utility render ensures gizmos are never occluded by scene objects.
+  gizmoManager.utilityLayer.utilityLayerScene.autoClearDepthAndStencil = true;
+  gizmoManager.keepDepthUtilityLayer.utilityLayerScene.autoClearDepthAndStencil = true;
+
   // Create transformers
   const positionTransformer = new PositionGizmo(gizmoManager, snapPosition);
   const rotationTransformer = new RotationGizmo(gizmoManager, snapRotation);
-  const scaleTransformer = new ScaleGizmo(gizmoManager, snapScale, () => {
+  const scaleTransformer = new BoundingBoxScaleGizmo(snapScale, () => {
     if (selectedEntities.length === 0) return false;
     // If any selected entity has proportional scaling locked, force uniform scale for all
     return selectedEntities.some(
@@ -53,6 +64,75 @@ export function createGizmoManager(context: SceneContext) {
     );
   });
   const freeTransformer = new FreeGizmo(context.scene);
+
+  // Snap indicators: two small spheres rendered on top of all scene geometry.
+  // - snapTargetIndicator (yellow): the snap point on the destination entity.
+  // - snapOriginIndicator (cyan):   the snap point on the dragged entity.
+  const snapIndicatorLayer = new UtilityLayerRenderer(context.scene);
+
+  function makeSnapSphere(name: string, color: Color3) {
+    const mesh = MeshBuilder.CreateSphere(
+      name,
+      { diameter: 0.18, segments: 6 },
+      snapIndicatorLayer.utilityLayerScene,
+    );
+    const mat = new StandardMaterial(`${name}Mat`, snapIndicatorLayer.utilityLayerScene);
+    mat.diffuseColor = color;
+    mat.emissiveColor = color;
+    mat.disableDepthWrite = true;
+    mesh.material = mat;
+    mesh.renderingGroupId = 1;
+    mesh.isVisible = false;
+    mesh.alwaysSelectAsActiveMesh = true;
+    mesh.doNotSyncBoundingInfo = true;
+    return mesh;
+  }
+
+  // Target (destination entity) — larger yellow ring so it reads as "the anchor"
+  const snapTargetIndicator = makeSnapSphere('objectSnapTarget', new Color3(1, 0.85, 0));
+  snapTargetIndicator.scaling.setAll(1.4);
+  // Origin (dragged entity) — smaller cyan dot on top, identifies the matching point on the mover
+  const snapOriginIndicator = makeSnapSphere('objectSnapOrigin', new Color3(0, 0.85, 1));
+
+  function showSnapIndicators(targetPoint: Vector3, originPoint: Vector3): void {
+    snapTargetIndicator.position.copyFrom(targetPoint);
+    snapTargetIndicator.isVisible = true;
+    snapOriginIndicator.position.copyFrom(originPoint);
+    snapOriginIndicator.isVisible = true;
+  }
+
+  function hideSnapIndicator(): void {
+    snapTargetIndicator.isVisible = false;
+    snapOriginIndicator.isVisible = false;
+  }
+
+  function makeObjectSnapFn() {
+    return (entity: EcsEntity, position: Vector3, currentEntities: EcsEntity[]): Vector3 | null => {
+      if (!snapManager.isObjectSnapEnabled()) {
+        hideSnapIndicator();
+        return null;
+      }
+      const currentIds = new Set(currentEntities.map(e => e.entityId));
+      const targetEntities = context.scene.transformNodes.filter(
+        (n): n is EcsEntity => 'entityId' in n && !currentIds.has((n as EcsEntity).entityId),
+      );
+      const result = computeObjectSnap(entity, position, targetEntities);
+      if (result) {
+        showSnapIndicators(result.snapPoint, result.originPoint);
+      } else {
+        hideSnapIndicator();
+      }
+      return result?.position ?? null;
+    };
+  }
+
+  positionTransformer.setObjectSnapFn(makeObjectSnapFn());
+  freeTransformer.setObjectSnapFn(makeObjectSnapFn());
+
+  // Wire up real-time dispatch for all transformers (set once; dispatchDuringDrag is stable)
+  positionTransformer.setDispatchDuringDragCallback(dispatchDuringDrag);
+  rotationTransformer.setDispatchDuringDragCallback(dispatchDuringDrag);
+  freeTransformer.setDispatchDuringDragCallback(dispatchDuringDrag);
 
   // Add alignment state
   let isGizmoWorldAligned = true;
@@ -116,8 +196,6 @@ export function createGizmoManager(context: SceneContext) {
     if (!currentTransform || !entity.rotationQuaternion) return;
 
     isUpdatingFromGizmo = true;
-    // The RotationGizmo already applies the rotation in local coordinates
-    // We only need to use the Babylon rotation directly
     const { x, y, z, w } = entity.rotationQuaternion;
     context.operations.updateValue(context.Transform, entity.entityId, {
       ...currentTransform,
@@ -261,6 +339,12 @@ export function createGizmoManager(context: SceneContext) {
     isUpdatingFromGizmo = false;
   }
 
+  /** Dispatch without clearing the flag or triggering Redux state updates.
+   *  Runs engine.update so the Inspector sees live values, without re-rendering React every frame. */
+  function dispatchDuringDrag(): void {
+    void context.operations.dispatch({ skipRedux: true });
+  }
+
   function updateSnap() {
     if (currentTransformer && 'setSnapDistance' in currentTransformer) {
       if (gizmoManager.rotationGizmoEnabled) {
@@ -294,12 +378,20 @@ export function createGizmoManager(context: SceneContext) {
     restoreParents,
     addEntity(entity: EcsEntity) {
       if (selectedEntities.includes(entity) || !isEnabled) return;
+      const wasEmpty = selectedEntities.length === 0;
       selectedEntities.push(entity);
       updateGizmoPosition();
       setupTransformListeners();
-      // Update current transformer with new entities
       if (currentTransformer) {
         currentTransformer.setEntities(selectedEntities);
+        // Re-enable the scale gizmo when selecting after a full deselect — handles were cleaned up
+        if (
+          wasEmpty &&
+          currentTransformer.type === TransformerType.SCALE &&
+          'enable' in currentTransformer
+        ) {
+          (currentTransformer as { enable(): void }).enable();
+        }
       }
       events.emit('change');
     },
@@ -327,6 +419,7 @@ export function createGizmoManager(context: SceneContext) {
       return [GizmoType.FREE, GizmoType.POSITION, GizmoType.ROTATION, GizmoType.SCALE] as const;
     },
     setGizmoType(type: GizmoType) {
+      hideSnapIndicator();
       // Then disable all Babylon gizmos
       gizmoManager.positionGizmoEnabled = false;
       gizmoManager.rotationGizmoEnabled = false;
@@ -345,7 +438,10 @@ export function createGizmoManager(context: SceneContext) {
           activateTransformer(positionTransformer, snapManager.getPositionSnap());
           // Set up callbacks for ECS updates
           if ('setUpdateCallbacks' in positionTransformer) {
-            positionTransformer.setUpdateCallbacks(updateEntityPosition, dispatchAndClearFlag);
+            positionTransformer.setUpdateCallbacks(updateEntityPosition, () => {
+              hideSnapIndicator();
+              dispatchAndClearFlag();
+            });
           }
           break;
         }
@@ -364,7 +460,7 @@ export function createGizmoManager(context: SceneContext) {
           break;
         }
         case GizmoType.SCALE: {
-          gizmoManager.scaleGizmoEnabled = true;
+          // BoundingBoxScaleGizmo manages its own handles — no built-in scale gizmo needed
           activateTransformer(scaleTransformer, snapManager.getScaleSnap());
           // Set up callbacks for ECS updates
           if ('setUpdateCallbacks' in scaleTransformer) {
@@ -385,7 +481,10 @@ export function createGizmoManager(context: SceneContext) {
           }
           // Set up callback to update gizmo position after drag ends
           if ('setOnDragEndCallback' in freeTransformer) {
-            freeTransformer.setOnDragEndCallback?.(() => updateGizmoPosition());
+            freeTransformer.setOnDragEndCallback?.(() => {
+              hideSnapIndicator();
+              updateGizmoPosition();
+            });
           }
           break;
         }

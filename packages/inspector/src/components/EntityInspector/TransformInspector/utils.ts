@@ -2,6 +2,7 @@ import { Quaternion } from '@babylonjs/core';
 import type { TransformType, Vector3Type } from '@dcl/ecs';
 
 import type { TransformConfig } from '../../../lib/sdk/components/TransformConfig';
+import { formatFloat } from '../utils';
 import type { TransformInput } from './types';
 
 export function fromTransform(value: TransformType): TransformInput {
@@ -13,14 +14,14 @@ export function fromTransform(value: TransformType): TransformInput {
   ).toEulerAngles();
   return {
     position: {
-      x: value.position.x.toFixed(2),
-      y: value.position.y.toFixed(2),
-      z: value.position.z.toFixed(2),
+      x: formatFloat(value.position.x),
+      y: formatFloat(value.position.y),
+      z: formatFloat(value.position.z),
     },
     scale: {
-      x: value.scale.x.toFixed(2),
-      y: value.scale.y.toFixed(2),
-      z: value.scale.z.toFixed(2),
+      x: formatFloat(value.scale.x),
+      y: formatFloat(value.scale.y),
+      z: formatFloat(value.scale.z),
     },
     rotation: {
       x: formatAngle((angles.x * 180) / Math.PI),
@@ -32,8 +33,11 @@ export function fromTransform(value: TransformType): TransformInput {
 
 function formatAngle(angle: number) {
   const sanitizedAngle = angle < 0 ? 360 + angle : angle;
-  const value = sanitizedAngle.toFixed(2);
-  return value === '360.00' ? '0.00' : value;
+  // Round to 4 decimal places before truncation to eliminate floating point noise
+  // introduced by the quaternion↔Euler round-trip (e.g. 14.99999 → 15)
+  const rounded = Math.round(sanitizedAngle * 10000) / 10000;
+  const value = formatFloat(rounded);
+  return value === '360' ? '0' : value;
 }
 
 /**

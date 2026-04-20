@@ -22,6 +22,9 @@ import createCustomAsset from './create-custom-asset';
 
 export interface Dispatch {
   dirty?: boolean;
+  /** Skip Redux state updates (updateCanSave / refreshUndoRedoState). Use during drag to get
+   *  live Inspector updates from engine.update without triggering React re-renders every frame. */
+  skipRedux?: boolean;
 }
 
 export function createOperations(engine: IEngine) {
@@ -38,10 +41,10 @@ export function createOperations(engine: IEngine) {
     removeSelectedEntities: removeSelectedEntities(engine),
     duplicateEntity: duplicateEntity(engine),
     createCustomAsset: createCustomAsset(engine),
-    dispatch: async ({ dirty = true }: Dispatch = {}) => {
-      store.dispatch(updateCanSave({ dirty }));
+    dispatch: async ({ dirty = true, skipRedux = false }: Dispatch = {}) => {
+      if (!skipRedux) store.dispatch(updateCanSave({ dirty }));
       await engine.update(1);
-      store.dispatch(refreshUndoRedoState());
+      if (!skipRedux) store.dispatch(refreshUndoRedoState());
     },
     getSelectedEntities: getSelectedEntities(engine),
     setGround: setGround(engine),

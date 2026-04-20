@@ -231,3 +231,95 @@
   flex-wrap: wrap;
   gap: 4px;
 }
+
+/* ===== Experimental UI ===== */
+.experimental-ui .EntityHeader {
+  padding-bottom: 8px;
+  gap: 12px;
+  margin-bottom: 2px;
+}
+
+.experimental-ui .EntityHeader .Title {
+  color: var(--text-primary);
+  gap: 6px;
+}
+
+.experimental-ui .EntityHeader .Title .EditTitleWrapper .Input {
+  height: 26px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-selection);
+  background: var(--surface-3);
+  color: var(--text-primary);
+  padding: 0 6px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.experimental-ui .EntityHeader .Title .EditTitleWrapper .EditHint {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+}
+
+.experimental-ui .EntityHeader .Title > svg {
+  color: var(--text-muted);
+  transition: color var(--transition-fast);
+}
+
+.experimental-ui .EntityHeader .Title > svg:hover {
+  color: var(--text-primary);
+}
+
+.experimental-ui .EntityHeader .RightContent {
+  font-size: 13px;
+  gap: 8px;
+}
+
+.experimental-ui .EntityHeader .RightContent > .Dropdown.Trigger > .DropdownContainer.AddComponent {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  gap: 4px;
+}
+
+.experimental-ui .EntityHeader .RightContent > .Dropdown.Trigger > .DropdownContainer.AddComponent .AddComponentTrigger {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.experimental-ui .EntityHeader .RightContent > .Dropdown.Trigger > .DropdownContainer.AddComponent .AddComponentTrigger svg {
+  width: 14px;
+  height: 14px;
+}
+
+.experimental-ui .EntityHeader .RightContent > .Dropdown.Trigger > .DropdownContainer.AddComponent:hover {
+  background-color: var(--accent-dark);
+  border-color: var(--accent-dark);
+}
+
+.experimental-ui .EntityHeader .subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  letter-spacing: 0.02em;
+}
+
+.experimental-ui .EntityHeader .componentInfo {
+  font-size: 11px;
+  gap: 12px;
+}
+
+.experimental-ui .EntityHeader .componentInfo .content {
+  gap: 6px;
+}
+
+.experimental-ui .EntityHeader .componentInfo .Chip {
+  background-color: var(--surface-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+}

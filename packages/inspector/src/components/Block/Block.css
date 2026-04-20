@@ -35,3 +35,30 @@
   flex-wrap: wrap;
   row-gap: 12px;
 }
+
+/* ===== Experimental UI ===== */
+.experimental-ui .Block {
+  margin-bottom: 0;
+  margin-top: 2px;
+}
+
+.experimental-ui .Block > .Label {
+  margin-bottom: var(--sp-1);
+}
+
+.experimental-ui .Block .content {
+  gap: 6px;
+}
+
+.experimental-ui .Block.error {
+  border: 1px var(--accent) dashed;
+  border-radius: var(--radius-sm);
+}
+
+.experimental-ui .Block .content.double {
+  column-gap: 6px;
+}
+
+.experimental-ui .Block .content:has(.Dropdown.Field) {
+  row-gap: 8px;
+}

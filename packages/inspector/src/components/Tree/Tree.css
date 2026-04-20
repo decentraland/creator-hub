@@ -37,6 +37,7 @@
 }
 
 .Tree .item:hover:not(:has(input)),
+.Tree .item.canvas-hovered:not(:has(input)),
 .Tree .selected:not(:has(input)) {
   background-color: var(--selected-item);
 }
@@ -101,4 +102,61 @@
 
 .Tree .WarningIcon {
   color: var(--warning-main);
+}
+
+/* ===== Experimental UI ===== */
+.experimental-ui .Tree {
+  color: var(--text-primary);
+}
+
+.experimental-ui .Tree.inside {
+  background-color: var(--surface-selection);
+  outline: 1px solid var(--border-selection);
+  border-radius: var(--radius-sm);
+}
+
+.experimental-ui .Tree.after > .item > .item-area:first-of-type,
+.experimental-ui .Tree.before > .item > .item-area:first-of-type {
+  border-top-color: var(--border-selection);
+}
+
+.experimental-ui .Tree .item.selected {
+  background-color: var(--surface-selection);
+  border-radius: var(--radius-sm);
+}
+
+.experimental-ui .Tree .item:hover,
+.experimental-ui .Tree .item.canvas-hovered {
+  background-color: var(--surface-3);
+  border-radius: var(--radius-sm);
+}
+
+.experimental-ui .Tree .item-input {
+  background-color: var(--surface-3);
+  border: 1px solid var(--border-selection);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.experimental-ui .Tree .selectable-area div {
+  color: var(--text-secondary);
+  transition: color var(--transition-fast);
+}
+
+.experimental-ui .Tree .item.selected .selectable-area div,
+.experimental-ui .Tree .item:hover .selectable-area div,
+.experimental-ui .Tree .item.canvas-hovered .selectable-area div {
+  color: var(--text-primary);
+}
+
+.experimental-ui .Tree .item svg {
+  color: var(--text-muted);
+  transition: color var(--transition-fast);
+}
+
+.experimental-ui .Tree .item:hover svg,
+.experimental-ui .Tree .item.selected svg,
+.experimental-ui .Tree .item.canvas-hovered svg {
+  color: var(--text-secondary);
 }

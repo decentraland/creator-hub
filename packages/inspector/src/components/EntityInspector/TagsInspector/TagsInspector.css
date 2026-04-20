@@ -1,7 +1,10 @@
 .TagsInspector {
   display: flex;
+  align-items: flex-start;
   gap: 24px;
   width: 100%;
+  padding: 6px 12px;
+  box-sizing: border-box;
 }
 
 .TagsInspector .title {
@@ -11,6 +14,7 @@
   color: var(--white);
   font-size: 11px;
   font-weight: 500;
+  height: 24px;
 }
 
 .TagsInspector .title svg {
@@ -19,6 +23,28 @@
 
 .TagsInspector .tags-selector {
   width: 85%;
+}
+
+.TagsInspector .DropdownContainer {
+  height: 24px !important;
+}
+
+.TagsInspector .add-tag-btn {
+  background: none;
+  border: none;
+  padding: 3px 6px;
+  margin: 0 -6px;
+  border-radius: 4px;
+  cursor: pointer;
+  height: 24px;
+}
+
+.TagsInspector .add-tag-btn:hover:not(.tags-label) {
+  background-color: var(--surface-3);
+}
+
+.TagsInspector .tags-label {
+  cursor: default;
 }
 
 .TagsInspector .AddTagOption {

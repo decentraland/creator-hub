@@ -6,6 +6,7 @@ import { LEFT_BUTTON } from '../mouse-utils';
 import type { IGizmoTransformer, IPlaneDragGizmoWithMesh, Vector3Axis } from './types';
 import { GizmoType } from './types';
 import { configureGizmoButtons } from './utils';
+import { AXIS_RED, AXIS_GREEN, AXIS_BLUE, YELLOW_HOVER_COLOR, PLANE_CONFIGS } from './constants';
 
 interface EntityState {
   position: Vector3;
@@ -18,12 +19,17 @@ export class PositionGizmo implements IGizmoTransformer {
   type = GizmoType.POSITION;
   private entityStates = new Map<Entity, EntityState>();
   private pivotPosition: Vector3 | null = null;
+  private lastGizmoPosition: Vector3 | null = null;
   private isDragging = false;
   private currentEntities: EcsEntity[] = [];
   private updateEntityPosition: ((entity: EcsEntity) => void) | null = null;
   private dispatchOperations: (() => void) | null = null;
+  private dispatchDuringDrag: (() => void) | null = null;
   private isWorldAligned = true;
   private parentMatrixCache = new Map<TransformNode, Matrix>();
+  private objectSnapFn:
+    | ((entity: EcsEntity, position: Vector3, currentEntities: EcsEntity[]) => Vector3 | null)
+    | null = null;
 
   private dragStartObserver: any = null;
   private dragObserver: any = null;
@@ -34,13 +40,65 @@ export class PositionGizmo implements IGizmoTransformer {
     private snapPosition: (position: Vector3) => Vector3,
   ) {}
 
+  setObjectSnapFn(
+    fn: (entity: EcsEntity, position: Vector3, currentEntities: EcsEntity[]) => Vector3 | null,
+  ): void {
+    this.objectSnapFn = fn;
+  }
+
+  setDispatchDuringDragCallback(fn: () => void): void {
+    this.dispatchDuringDrag = fn;
+  }
+
   setup(): void {
     const positionGizmo = this.getPositionGizmo();
     if (!positionGizmo) return;
 
     positionGizmo.updateGizmoRotationToMatchAttachedMesh = !this.isWorldAligned;
-
     positionGizmo.planarGizmoEnabled = true;
+
+    // Apply our color palette to the built-in Babylon axis gizmos
+    const axisColors = [
+      { sub: positionGizmo.xGizmo, color: AXIS_RED },
+      { sub: positionGizmo.yGizmo, color: AXIS_GREEN },
+      { sub: positionGizmo.zGizmo, color: AXIS_BLUE },
+    ];
+    for (const { sub, color } of axisColors) {
+      const colored = sub.coloredMaterial as any | null;
+      const hover = sub.hoverMaterial as any | null;
+      if (colored) {
+        colored.emissiveColor = color.clone();
+        colored.diffuseColor = color.clone();
+        colored.disableLighting = true;
+      }
+      if (hover) {
+        hover.emissiveColor = YELLOW_HOVER_COLOR.clone();
+        hover.diffuseColor = YELLOW_HOVER_COLOR.clone();
+        hover.disableLighting = true;
+      }
+    }
+
+    // Apply axis colors to planar gizmos using PLANE_CONFIGS order (XY→blue, XZ→green, YZ→red)
+    const planeGizmos = [
+      positionGizmo.zPlaneGizmo,
+      positionGizmo.yPlaneGizmo,
+      positionGizmo.xPlaneGizmo,
+    ];
+    for (let i = 0; i < planeGizmos.length; i++) {
+      const plane = planeGizmos[i] as any;
+      const cfg = PLANE_CONFIGS[i];
+      if (!cfg || !plane) continue;
+      if (plane.coloredMaterial) {
+        plane.coloredMaterial.emissiveColor = cfg.diffuse.clone();
+        plane.coloredMaterial.diffuseColor = cfg.diffuse.clone();
+        plane.coloredMaterial.disableLighting = true;
+      }
+      if (plane.hoverMaterial) {
+        plane.hoverMaterial.emissiveColor = YELLOW_HOVER_COLOR.clone();
+        plane.hoverMaterial.diffuseColor = YELLOW_HOVER_COLOR.clone();
+        plane.hoverMaterial.disableLighting = true;
+      }
+    }
   }
 
   private applyPlanarGizmoOffsets(): boolean {
@@ -120,11 +178,14 @@ export class PositionGizmo implements IGizmoTransformer {
     this.updateGizmoAlignment();
   }
 
-  setSnapDistance(distance: number): void {
+  setSnapDistance(_distance: number): void {
     const positionGizmo = this.getPositionGizmo();
     if (!positionGizmo) return;
 
-    positionGizmo.snapDistance = distance;
+    // Absolute snapping is applied directly to entity world positions in
+    // applyWorldPosition/applyLocalPosition via this.snapPosition.
+    // Babylon's incremental snapDistance is kept at 0 to avoid conflicting with it.
+    positionGizmo.snapDistance = 0;
     positionGizmo.planarGizmoEnabled = true;
 
     if (positionGizmo.xPlaneGizmo) {
@@ -210,6 +271,8 @@ export class PositionGizmo implements IGizmoTransformer {
       const gizmoNode = this.gizmoManager.attachedNode as TransformNode;
       if (gizmoNode) {
         this.update(this.currentEntities, gizmoNode);
+        this.updateEntitiesInRealTime();
+        this.dispatchDuringDrag?.();
       }
     });
 
@@ -246,12 +309,13 @@ export class PositionGizmo implements IGizmoTransformer {
     this.currentEntities.forEach(this.updateEntityPosition);
   }
 
-  onDragStart(entities: EcsEntity[], _gizmoNode: TransformNode): void {
+  onDragStart(entities: EcsEntity[], gizmoNode: TransformNode): void {
     if (this.isDragging) return;
 
     this.isDragging = true;
     this.calculatePivotPosition(entities);
     this.storeEntityStates(entities);
+    this.lastGizmoPosition = gizmoNode.position.clone();
   }
 
   private calculatePivotPosition(entities: EcsEntity[]): void {
@@ -282,21 +346,41 @@ export class PositionGizmo implements IGizmoTransformer {
   }
 
   update(entities: EcsEntity[], gizmoNode: TransformNode): void {
-    if (!this.isDragging || !this.pivotPosition) return;
+    if (!this.isDragging || !this.pivotPosition || !this.lastGizmoPosition) return;
 
-    const movementDelta = gizmoNode.position.subtract(this.pivotPosition);
+    // Accumulate frame-to-frame delta into pivotPosition so that resetting gizmoNode
+    // to the snapped position doesn't lose the total displacement since drag start.
+    // Babylon's drag behavior adds incremental deltas to gizmoNode each frame,
+    // so we must track them ourselves rather than relying on (gizmoNode - originalPivot).
+    const frameDelta = gizmoNode.position.subtract(this.lastGizmoPosition);
+    this.pivotPosition.addInPlace(frameDelta);
+    this.lastGizmoPosition.copyFrom(gizmoNode.position);
+
     this.parentMatrixCache.clear();
 
     for (const entity of entities) {
-      this.updateEntityTransform(entity, movementDelta);
+      this.updateEntityTransform(entity);
+    }
+
+    // Sync gizmo node to the snapped entity centroid so the gizmo and entity
+    // move at the same rate. lastGizmoPosition is updated to the post-reset value
+    // so the next frame's frameDelta is computed relative to where we left the gizmo.
+    if (entities.length > 0) {
+      const snappedCentroid = new Vector3();
+      for (const entity of entities) {
+        snappedCentroid.addInPlace(entity.getAbsolutePosition());
+      }
+      snappedCentroid.scaleInPlace(1 / entities.length);
+      gizmoNode.position.copyFrom(snappedCentroid);
+      this.lastGizmoPosition.copyFrom(snappedCentroid);
     }
   }
 
-  private updateEntityTransform(entity: EcsEntity, movementDelta: Vector3): void {
+  private updateEntityTransform(entity: EcsEntity): void {
     const state = this.entityStates.get(entity.entityId);
     if (!state) return;
 
-    const newWorldPosition = this.pivotPosition!.add(movementDelta).add(state.offset);
+    const newWorldPosition = this.pivotPosition!.add(state.offset);
     const parent = entity.parent instanceof TransformNode ? entity.parent : null;
 
     if (parent) {
@@ -312,6 +396,10 @@ export class PositionGizmo implements IGizmoTransformer {
     parent: TransformNode,
     state: EntityState,
   ): void {
+    const gridSnapped = this.snapPosition(worldPosition);
+    const objectSnapped = this.objectSnapFn?.(entity, gridSnapped, this.currentEntities);
+    const finalWorldPosition = objectSnapped ?? gridSnapped;
+
     // Check if we already computed the inverse matrix for this parent
     let parentWorldMatrixInverse = this.parentMatrixCache.get(parent);
 
@@ -322,18 +410,24 @@ export class PositionGizmo implements IGizmoTransformer {
       this.parentMatrixCache.set(parent, parentWorldMatrixInverse);
     }
 
-    const localPosition = Vector3.TransformCoordinates(worldPosition, parentWorldMatrixInverse);
+    const localPosition = Vector3.TransformCoordinates(
+      finalWorldPosition,
+      parentWorldMatrixInverse,
+    );
 
     this.applyTransforms(entity, localPosition, state);
   }
 
   private applyWorldPosition(entity: EcsEntity, worldPosition: Vector3, state: EntityState): void {
-    const snappedWorldPosition = this.snapPosition(worldPosition);
-    this.applyTransforms(entity, snappedWorldPosition, state);
+    const gridSnapped = this.snapPosition(worldPosition);
+    const objectSnapped = this.objectSnapFn?.(entity, gridSnapped, this.currentEntities);
+    const finalPosition = objectSnapped ?? gridSnapped;
+    this.applyTransforms(entity, finalPosition, state);
   }
 
   private applyTransforms(entity: EcsEntity, position: Vector3, _state: EntityState): void {
     entity.position.copyFrom(position);
+    entity.computeWorldMatrix(true);
   }
 
   private calculateCentroid(entities: EcsEntity[]): Vector3 {
@@ -376,6 +470,7 @@ export class PositionGizmo implements IGizmoTransformer {
   private resetDragState(): void {
     this.isDragging = false;
     this.pivotPosition = null;
+    this.lastGizmoPosition = null;
     this.entityStates.clear();
   }
 }

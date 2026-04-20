@@ -76,20 +76,28 @@
   --mui-palette-action-disabled: #231113;
   --mui-palette-secondary-contrast: #ffffff;
 
-  /* Global Scrollbar Styles */
-  ::-webkit-scrollbar {
-    width: 8px;
-  }
+}
 
-  ::-webkit-scrollbar-track {
-    background: var(--black);
-    border-radius: 4px;
-  }
+/* Global Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
 
-  ::-webkit-scrollbar-thumb {
-    background-color: var(--dcl-silver);
-    border-radius: 4px;
-  }
+::-webkit-scrollbar-track {
+  background: var(--black);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--dcl-silver);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-button {
+  width: 0;
+  height: 0;
+  background: transparent;
 }
 
 html {
@@ -111,6 +119,7 @@ body,
   bottom: 0px;
   right: 0px;
   left: 0px;
+  overflow: hidden;
 }
 
 html,
@@ -130,9 +139,11 @@ footer {
   background-size: cover;
   background-blend-mode: overlay;
   background-attachment: fixed;
-  min-height: 100vh;
+  height: 100%;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
+  user-select: none;
 }
 
 .Debugger {
@@ -167,4 +178,10 @@ a {
 /* Temp: make disabled buttons look disabled */
 .Button.MuiButton-root.Mui-disabled {
   opacity: 0.5;
+}
+
+.MuiTooltip-tooltip {
+  border: none !important;
+  outline: none !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
 }

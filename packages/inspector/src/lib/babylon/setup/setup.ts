@@ -3,6 +3,9 @@ import { GridMaterial } from '@babylonjs/materials';
 import { PARCEL_SIZE } from '../../utils/scene';
 import { CameraManager } from '../decentraland/camera';
 import type { InspectorPreferences } from '../../logic/preferences/types';
+import { getConfig } from '../../logic/config';
+import { InspectorFeatureFlags } from '../../../redux/feature-flags/types';
+import { setupSkybox } from './skybox';
 
 // if NODE_ENV == development
 require('@babylonjs/inspector');
@@ -13,7 +16,7 @@ const CAMERA_SPEEDS = [...Array(40).keys()]
     return (i + 1) * 0.5;
   })
   .concat([25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100]);
-const CAMERA_DEFAULT_SPEED_INDEX = 20;
+const CAMERA_DEFAULT_SPEED_INDEX = 9;
 const CAMERA_MIN_Y = 1;
 const CAMERA_ZOOM_SENSITIVITY = 1;
 
@@ -41,24 +44,6 @@ export function setupEngine(
   const audioEngine = BABYLON.Engine.audioEngine;
   const effectLayers: BABYLON.EffectLayer[] = [];
 
-  const highlightLayer: BABYLON.HighlightLayer = new BABYLON.HighlightLayer(
-    'selection_highlight',
-    scene,
-  );
-
-  {
-    if (!scene.effectLayers.includes(highlightLayer)) {
-      scene.addEffectLayer(highlightLayer);
-    }
-
-    highlightLayer.innerGlow = false;
-    highlightLayer.outerGlow = true;
-    highlightLayer.blurHorizontalSize = 0.1;
-    highlightLayer.blurVerticalSize = 0.1;
-
-    effectLayers.push(highlightLayer);
-  }
-
   scene.clearColor = BABYLON.Color3.FromInts(31, 29, 35).toColor4(1);
   scene.collisionsEnabled = true;
 
@@ -82,6 +67,8 @@ export function setupEngine(
   scene.onReadyObservable.addOnce(() => {
     const gl = new BABYLON.GlowLayer('glow', scene);
     effectLayers.push(gl);
+    // Exclude the ground mesh from glow so custom ShaderMaterial grid/terrain isn't treated as emissive
+    if (editorEnvHelper.ground) gl.addExcludedMesh(editorEnvHelper.ground);
 
     effectLayers.forEach($ => scene.effectLayers.includes($) || scene.addEffectLayer($));
 
@@ -120,6 +107,26 @@ export function setupEngine(
   grid.mainColor = BABYLON.Color3.FromHexString('#36343D');
   editorEnvHelper.ground!.material = grid;
 
+  const configFlags = getConfig().featureFlags;
+  const realSky = configFlags[InspectorFeatureFlags.RealSkybox] ?? true;
+  const realGround = configFlags[InspectorFeatureFlags.RealGround] ?? true;
+  const floorGrid = configFlags[InspectorFeatureFlags.FloorGrid] ?? true;
+  const { updateSkybox, setRealSky, setRealGround, setFloorGrid, setSceneBounds } = setupSkybox(
+    scene,
+    editorEnvHelper,
+    realSky,
+    realGround,
+    floorGrid,
+  );
+  scene.metadata = {
+    ...(scene.metadata ?? {}),
+    updateSkybox,
+    setRealSky,
+    setRealGround,
+    setFloorGrid,
+    setSceneBounds,
+  };
+
   const cameraManager = new CameraManager(
     scene,
     canvas,
@@ -129,6 +136,21 @@ export function setupEngine(
     CAMERA_ZOOM_SENSITIVITY,
   );
   cameraManager.setFreeCameraInvertRotation(preferences.freeCameraInvertRotation);
+
+  if (preferences.cameraPosition && preferences.cameraTarget) {
+    cameraManager.setPosition(
+      new BABYLON.Vector3(
+        preferences.cameraPosition.x,
+        preferences.cameraPosition.y,
+        preferences.cameraPosition.z,
+      ),
+      new BABYLON.Vector3(
+        preferences.cameraTarget.x,
+        preferences.cameraTarget.y,
+        preferences.cameraTarget.z,
+      ),
+    );
+  }
 
   const hemiLight = new BABYLON.HemisphericLight('default light', sunPosition, scene);
   hemiLight.diffuse = BABYLON.Color3.White();
@@ -151,7 +173,6 @@ export function setupEngine(
     scene,
     audioEngine,
     effectLayers,
-    highlightLayer,
   };
 }
 

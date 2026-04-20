@@ -1,3 +1,97 @@
+.metrics-popover {
+  background-color: #17141b;
+  padding: 13px 12px;
+  min-width: 260px;
+}
+
+.metrics-popover-header {
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.metrics-popover-subtitle {
+  font-size: 12px;
+  font-weight: 500;
+  color: #7a7880;
+  margin-bottom: 4px;
+}
+
+.metrics-popover-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 8px;
+}
+
+.metrics-popover-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #2a2730;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.metrics-popover-item:last-of-type {
+  border-bottom: none;
+}
+
+.metrics-popover-item-key {
+  color: #c4c2ca;
+}
+
+.metrics-popover-item-value {
+  display: flex;
+  gap: 2px;
+  color: #c4c2ca;
+}
+
+.metrics-popover-item-value .primary {
+  color: #fff;
+}
+
+.metrics-popover-item-value .secondary {
+  color: #7a7880;
+}
+
+.metrics-popover-item-value.exceeded .primary,
+.metrics-popover-item-value.exceeded .secondary {
+  color: #ffae00;
+}
+
+.metrics-popover-warning {
+  font-size: 12px;
+  color: #ffae00;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #2a2730;
+}
+
+.metrics-popover-actions {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #2a2730;
+}
+
+.metrics-popover-actions .Button.MuiButton-root {
+  width: 100%;
+  justify-content: flex-start;
+  font-size: 12px;
+  padding: 6px 8px;
+  color: #c4c2ca !important;
+  background-color: transparent !important;
+  border: 1px solid #2a2730 !important;
+  border-radius: 4px !important;
+  text-transform: none;
+}
+
+.metrics-popover-actions .Button.MuiButton-root:hover {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
 .Editor {
   display: flex;
   justify-content: flex-start;
@@ -9,6 +103,12 @@
 .Editor .Header {
   height: 56px;
   background-color: var(--bg-inspector);
+}
+
+.Editor.experimental-ui .Header {
+  background-color: #0c0b0f;
+  height: 80px;
+  padding: 8px;
 }
 
 .Editor .Header .back {
@@ -29,8 +129,272 @@
   margin-top: 1px;
 }
 
+.Editor.experimental-ui .Header .scene-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 64px;
+  padding: 8px;
+  box-sizing: border-box;
+  background-color: var(--black);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.Editor.experimental-ui .Header .scene-pill .back {
+  border: none;
+  border-radius: 4px;
+  width: auto;
+  height: auto;
+  padding: 0 4px;
+  align-self: stretch;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--mui-palette-action-active, rgba(255, 255, 255, 0.56));
+  transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+
+.Editor.experimental-ui .Header .scene-pill .back:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.Editor.experimental-ui .Header .scene-pill .back svg {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  transform: translateX(3px);
+}
+
+.Editor.experimental-ui .Header .scene-pill .MuiIconButton-root {
+  align-self: stretch;
+  height: auto;
+  border-radius: 4px;
+}
+
+.Editor.experimental-ui .Header .scene-thumbnail {
+  height: 100%;
+  width: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
 .Editor .Header .title {
-  margin-left: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--white);
+  margin-left: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px;
+}
+
+.Editor.experimental-ui .Header .scene-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 160px;
+  min-width: 0;
+  margin-left: 8px;
+}
+
+.Editor.experimental-ui .Header .scene-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.Editor.experimental-ui .Header .scene-title.small {
+  font-size: 13px;
+}
+
+.Editor.experimental-ui .Header .scene-parcels {
+  font-size: 11px;
+  color: var(--dcl-silver);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.Editor.experimental-ui .Header .left {
+  gap: 8px;
+}
+
+.Editor.experimental-ui .Header .editor-actions-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 64px;
+  padding: 8px;
+  box-sizing: border-box;
+  background-color: var(--black);
+  border-radius: 6px;
+}
+
+.Editor.experimental-ui .Header .editor-actions-pill > span {
+  display: flex;
+  align-self: stretch;
+}
+
+.Editor.experimental-ui .Header .editor-actions-pill .MuiIconButton-root {
+  align-self: stretch;
+  height: auto;
+  border-radius: 4px;
+}
+
+.Editor.experimental-ui .Header .actions .header-card {
+  display: flex;
+  align-items: center;
+  height: 64px;
+  padding: 8px;
+  box-sizing: border-box;
+  background-color: var(--black);
+  border-radius: 6px;
+}
+
+.Editor.experimental-ui .Header .actions .header-card .MuiButtonGroup-root {
+  box-shadow: none;
+  height: 100%;
+  align-self: stretch;
+}
+
+.Editor.experimental-ui .Header .actions .header-card .Button.MuiButton-root,
+.Editor.experimental-ui .Header .actions .header-card .Button.MuiButton-root.MuiButtonGroup-grouped,
+.Editor.experimental-ui .Header .editor-actions-pill .Button.MuiButton-root {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--mui-palette-action-active, rgba(255, 255, 255, 0.56)) !important;
+  align-self: stretch;
+  height: auto !important;
+  border-radius: 4px !important;
+}
+
+.Editor.experimental-ui .Header .actions .header-card .Button.MuiButton-root.MuiButtonGroup-grouped:not(.extra-button) {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.Editor.experimental-ui .Header .actions .header-card .Button.extra-button {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}
+
+.Editor.experimental-ui .Header .actions .header-card .Button.MuiButton-root svg,
+.Editor.experimental-ui .Header .actions .header-card .Button.MuiButton-root svg path,
+.Editor.experimental-ui .Header .editor-actions-pill .Button.MuiButton-root svg,
+.Editor.experimental-ui .Header .editor-actions-pill .Button.MuiButton-root svg path {
+  fill: var(--mui-palette-action-active, rgba(255, 255, 255, 0.56));
+  color: var(--mui-palette-action-active, rgba(255, 255, 255, 0.56));
+}
+
+.Editor.experimental-ui .Header .actions .header-card .Button.MuiButton-root:hover,
+.Editor.experimental-ui .Header .actions .header-card .Button.MuiButton-root.MuiButtonGroup-grouped:hover,
+.Editor.experimental-ui .Header .editor-actions-pill .Button.MuiButton-root:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.Editor.experimental-ui .Header .actions .header-card .Button.MuiButton-colorPrimary,
+.Editor.experimental-ui .Header .actions .header-card .Button.MuiButton-colorPrimary.MuiButtonGroup-grouped {
+  color: var(--dcl) !important;
+}
+
+.Editor.experimental-ui .Header .actions .header-card .Button.MuiButton-colorPrimary svg,
+.Editor.experimental-ui .Header .actions .header-card .Button.MuiButton-colorPrimary svg path {
+  fill: var(--dcl);
+  color: var(--dcl);
+}
+
+.Editor.experimental-ui .Header .actions .header-card .MuiButtonGroup-root .MuiButtonGroup-grouped {
+  border-color: transparent !important;
+}
+
+.Editor.experimental-ui .Header .actions .header-card .optimization-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.Editor.experimental-ui .Header .actions .header-card .optimization-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--dcl-silver);
+  white-space: nowrap;
+}
+
+.Editor.experimental-ui .Header .actions .header-card .optimization-progress {
+  height: 4px;
+  border-radius: 2px;
+  background-color: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+  width: 100%;
+  min-width: 80px;
+}
+
+.Editor.experimental-ui .Header .actions .header-card .optimization-progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.Editor.experimental-ui .Header .actions .header-card .optimization-progress-fill.progress-red {
+  background-color: #ff4444;
+}
+
+.Editor.experimental-ui .Header .actions .header-card .optimization-progress-fill.progress-orange {
+  background-color: #ff8c00;
+}
+
+.Editor.experimental-ui .Header .actions .header-card .optimization-progress-fill.progress-blue {
+  background-color: #00beff;
+}
+
+.Editor.experimental-ui .Header .actions .header-card .optimization-progress-fill.progress-green {
+  background-color: #00e57a;
+}
+
+.Editor.experimental-ui .Header .actions .header-card.optimization-card {
+  gap: 8px;
+  padding-left: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.Editor.experimental-ui .Header .actions .header-card.optimization-card .Button.MuiButton-root .MuiButton-startIcon {
+  margin: 0;
+}
+
+.Editor.experimental-ui .Header .actions .header-card.optimization-card .Button.MuiButton-root {
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+  min-width: unset !important;
+}
+
+.Editor.experimental-ui .Header .actions .header-card .optimization-button-wrapper {
+  position: relative;
+  display: flex;
+  align-self: stretch;
+}
+
+.Editor.experimental-ui .Header .actions .header-card .optimization-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #ff8c00;
+  pointer-events: none;
+  border: 1.5px solid var(--black);
 }
 
 .Editor .Header .actions {

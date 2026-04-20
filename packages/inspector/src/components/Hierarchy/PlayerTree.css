@@ -3,3 +3,9 @@
   color: var(--base-06);
   font-style: italic;
 }
+
+/* ===== Experimental UI ===== */
+.experimental-ui .PlayerTree {
+  color: var(--text-muted);
+  font-size: 11px;
+}

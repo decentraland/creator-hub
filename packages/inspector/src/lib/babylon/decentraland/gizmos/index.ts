@@ -4,3 +4,4 @@ export * from './FreeGizmo';
 export * from './PositionGizmo';
 export * from './RotationGizmo';
 export * from './ScaleGizmo';
+export * from './BoundingBoxScaleGizmo';
