@@ -23,12 +23,8 @@ function EntityTreeView({
 
   useEffect(() => {
     const anyRecent = () => {
-      const now = Date.now();
-      for (const key of Object.keys(entities)) {
-        const t = mobileDebugStore.getEntityUpdateTime(Number(key));
-        if (t > 0 && now - t < 1000) return true;
-      }
-      return false;
+      const t = mobileDebugStore.getLastAnyUpdateTime();
+      return t > 0 && Date.now() - t < 1000;
     };
     const tick = () => {
       if (!anyRecent()) {

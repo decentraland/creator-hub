@@ -59,5 +59,5 @@ export function useMobileDebugForwarding(
       unsubscribeEntries();
       unsubscribeSessions();
     };
-  }, [isPreviewRunning]);
+  }, [isPreviewRunning, projectKey]);
 }

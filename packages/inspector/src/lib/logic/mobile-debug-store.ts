@@ -122,6 +122,9 @@ let perSceneTicks: Map<number, PerSceneTicks> = new Map();
 let entityUpdateTimes: Record<number, number> = {};
 // Component-level: `${entity_id}:${component_name}` → timestamp
 let componentUpdateTimes: Record<string, number> = {};
+// Latest wall-clock tick observed for any entity, so the tree-view RAF can
+// poll a single scalar instead of scanning all entity keys every frame.
+let lastAnyUpdateTime = 0;
 
 // Full CRDT log for reconstruction
 let allCrdtEntries: CrdtEntry[] = [];
@@ -177,10 +180,9 @@ export function pushEntries(raw: unknown[]) {
           if (oldest !== undefined) sceneTicks.tickSet.delete(oldest);
         }
       }
-      if (crdt.sid) latestSceneIdInBatch = crdt.sid;
+      if (crdt.sid != null) latestSceneIdInBatch = crdt.sid;
 
-      // Track scene from sid
-      if (crdt.sid && !knownScenes.has(crdt.sid)) {
+      if (crdt.sid != null && !knownScenes.has(crdt.sid)) {
         knownScenes.set(crdt.sid, {
           sceneId: crdt.sid,
           title: `Scene ${crdt.sid}`,
@@ -188,19 +190,15 @@ export function pushEntries(raw: unknown[]) {
         });
       }
 
-      // Update highlighting timestamps
       entityUpdateTimes[crdt.e] = now;
       componentUpdateTimes[`${crdt.e}:${crdt.c}`] = now;
+      lastAnyUpdateTime = now;
 
-      // Buffer for reconstruction
       allCrdtEntries.push(crdt);
-      if (allCrdtEntries.length > MAX_ALL_CRDT) {
-        allCrdtEntries = allCrdtEntries.slice(-MAX_ALL_CRDT);
-      }
 
       changed = true;
     } else if (type === 'perf') {
-      latestPerf = e as unknown as PerfSnapshot;
+      latestPerf = parsePerfSnapshot(e);
       perfHistory.push(latestPerf);
       if (perfHistory.length > MAX_PERF_HISTORY) perfHistory.shift();
       changed = true;
@@ -248,6 +246,10 @@ export function pushEntries(raw: unknown[]) {
       // eslint-disable-next-line no-console
       console.debug('[mobile-debug-store] unknown entry type:', type, e);
     }
+  }
+
+  if (allCrdtEntries.length > MAX_ALL_CRDT) {
+    allCrdtEntries = allCrdtEntries.slice(-MAX_ALL_CRDT);
   }
 
   if (changed) notify();
@@ -336,6 +338,9 @@ export function getAllSceneTickInfo(): Record<number, SceneTickInfo> {
 export function getEntityUpdateTime(eid: number): number {
   return entityUpdateTimes[eid] ?? 0;
 }
+export function getLastAnyUpdateTime(): number {
+  return lastAnyUpdateTime;
+}
 export function getComponentUpdateTime(eid: number, comp: string): number {
   return componentUpdateTimes[`${eid}:${comp}`] ?? 0;
 }
@@ -364,12 +369,14 @@ export function getEntriesAtTick(tick: number, sceneId: number): CrdtEntry[] {
 export function reconstructStateAtTick(targetTick: number, sceneId: number): ReconstructResult {
   const state: Record<number, EntityState> = {};
   let oldestAvailableTick: number | null = null;
+  // Entries arrive in order per scene, so once we see a target-scene entry
+  // beyond targetTick the rest of the scene's entries are also beyond it.
   for (const entry of allCrdtEntries) {
     if (entry.sid !== sceneId) continue;
     if (oldestAvailableTick === null || entry.tk < oldestAvailableTick) {
       oldestAvailableTick = entry.tk;
     }
-    if (entry.tk > targetTick) continue;
+    if (entry.tk > targetTick) break;
     applyToState(state, entry);
   }
   const truncated = oldestAvailableTick !== null && targetTick < oldestAvailableTick;
@@ -399,7 +406,7 @@ let cachedSnapshot: MobileDebugSnapshot = {
   consoleEntries,
   sessions,
   latestPerf,
-  perfHistory,
+  perfHistory: [...perfHistory],
   totalCrdt,
   totalOps,
   totalConsole,
@@ -415,7 +422,7 @@ function updateSnapshot() {
     consoleEntries,
     sessions,
     latestPerf,
-    perfHistory,
+    perfHistory: [...perfHistory],
     totalCrdt,
     totalOps,
     totalConsole,
@@ -543,4 +550,29 @@ function formatArgs(args: unknown): string {
     return args.map(a => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ');
   if (typeof args === 'string') return args;
   return JSON.stringify(args);
+}
+
+function num(raw: unknown): number {
+  return typeof raw === 'number' && Number.isFinite(raw) ? raw : 0;
+}
+
+function parsePerfSnapshot(e: Record<string, unknown>): PerfSnapshot {
+  return {
+    fps: num(e.fps),
+    dt: num(e.dt),
+    draw_calls: num(e.draw_calls),
+    primitives: num(e.primitives),
+    objects_in_frame: num(e.objects_in_frame),
+    mem_static_mb: num(e.mem_static_mb),
+    mem_gpu_mb: num(e.mem_gpu_mb),
+    mem_rust_mb: num(e.mem_rust_mb),
+    js_heap_total_mb: num(e.js_heap_total_mb),
+    js_heap_used_mb: num(e.js_heap_used_mb),
+    js_heap_limit_mb: num(e.js_heap_limit_mb),
+    js_external_mb: num(e.js_external_mb),
+    assets_loading: num(e.assets_loading),
+    assets_loaded: num(e.assets_loaded),
+    download_speed_mbs: num(e.download_speed_mbs),
+    scene_count: num(e.scene_count),
+  };
 }

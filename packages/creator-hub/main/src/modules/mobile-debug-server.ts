@@ -27,7 +27,7 @@ export type MobileDebugListener = (session: MobileDebugSession, entries: unknown
 
 const SESSION_RETENTION_MS = 60_000;
 const COMMAND_TIMEOUT_MS = 5000;
-const MAX_WS_PAYLOAD = 256 * 1024 * 1024;
+const MAX_WS_PAYLOAD = 16 * 1024 * 1024;
 const SESSION_BROADCAST_THROTTLE_MS = 500;
 
 let wss: WebSocketServer | null = null;
@@ -56,8 +56,9 @@ export async function startMobileDebugServer(): Promise<number> {
   // only reachable from devices already on the same LAN as the developer.
   // TODO: add a per-session token embedded in the QR URL + verifyClient check
   //       before this ships to non-dev contexts.
-  // A generous maxPayload protects the Electron process from a single oversized
-  // frame without constraining legit phone telemetry (CRDT batches, perf, etc).
+  // maxPayload bounds a single WS frame to a size comfortably above real CRDT
+  // batches and perf telemetry, so a malformed or malicious oversized frame
+  // can't balloon the Electron heap.
   wss = new WebSocketServer({ port, host: '0.0.0.0', maxPayload: MAX_WS_PAYLOAD });
 
   wss.on('connection', (ws: WebSocket) => {
