@@ -1,3 +1,4 @@
-export const CONTENT_URL = 'https://builder-items.decentraland.org';
-export const LAND_MANAGER_URL = 'https://subgraph.decentraland.org/land-manager';
-export const REWARDS_SERVER_URL = 'https://rewards.decentraland.org';
+import { getDomain } from './fetch-utils';
+
+export const getContentUrl = () => `https://builder-items.decentraland.${getDomain()}`;
+export const getRewardsServerUrl = () => `https://rewards.decentraland.${getDomain()}`;

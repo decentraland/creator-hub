@@ -1,19 +1,28 @@
-import { Entity, IEngine } from '@dcl/ecs';
+import type { Entity, IEngine } from '@dcl/ecs';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import ReactEcs, { Dropdown, Label, UiEntity } from '@dcl/react-ecs';
 import { Color4 } from '@dcl/sdk/math';
-import { Action, AdminTools, getActionEvents, getComponents, getPayload } from '../definitions';
+import {
+  getActionEvents,
+  getComponents,
+  getPayload,
+  type Action,
+  type AdminTools,
+} from '../definitions';
 import { getExplorerComponents } from '../components';
 import { Button } from './Button';
-import { CONTENT_URL } from './constants';
-import { State } from './types';
+import { getContentUrl } from './constants';
+import { type State } from './types';
 import { Header } from './Header';
 import { Card } from './Card';
 import { getSmartItems } from '.';
 
 // Constants
 const ICONS = {
-  SMART_ITEM_CONTROL: `${CONTENT_URL}/admin_toolkit/assets/icons/smart-item-control.png`,
-} as const;
+  get SMART_ITEM_CONTROL() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/smart-item-control.png`;
+  },
+};
 
 function getSmartItemActions(
   engine: IEngine,

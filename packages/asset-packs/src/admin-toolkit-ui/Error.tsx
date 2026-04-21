@@ -1,13 +1,14 @@
 import { Color4 } from '@dcl/ecs-math';
-import ReactEcs, { UiEntity, Label, UiTransformProps } from '@dcl/react-ecs';
-import { CONTENT_URL } from './constants';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import ReactEcs, { UiEntity, Label, type UiTransformProps } from '@dcl/react-ecs';
+import { getContentUrl } from './constants';
 
 interface ErrorProps {
   text: string;
   uiTransform?: UiTransformProps;
 }
 
-export const ERROR_ICON = `${CONTENT_URL}/admin_toolkit/assets/icons/error.png`;
+export const getErrorIcon = () => `${getContentUrl()}/admin_toolkit/assets/icons/error.png`;
 
 export function Error({ text, uiTransform }: ErrorProps) {
   return (
@@ -32,7 +33,7 @@ export function Error({ text, uiTransform }: ErrorProps) {
         uiBackground={{
           textureMode: 'stretch',
           texture: {
-            src: ERROR_ICON,
+            src: getErrorIcon(),
           },
         }}
       />

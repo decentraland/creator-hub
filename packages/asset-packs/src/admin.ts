@@ -1,6 +1,6 @@
+import { getUserData } from '~system/UserIdentity';
 import { getSceneAdmins } from './admin-toolkit-ui/ModerationControl/api';
 import { isPreview } from './admin-toolkit-ui/fetch-utils';
-import { getUserData } from '~system/UserIdentity';
 
 type SceneAdmin = {
   name: string;

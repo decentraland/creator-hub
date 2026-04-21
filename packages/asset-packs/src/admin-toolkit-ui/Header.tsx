@@ -1,5 +1,6 @@
 import { Color4 } from '@dcl/sdk/math';
-import ReactEcs, { UiEntity, Label } from '@dcl/react-ecs';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import ReactEcs, { UiEntity } from '@dcl/react-ecs';
 
 type Props = {
   iconSrc: string;
