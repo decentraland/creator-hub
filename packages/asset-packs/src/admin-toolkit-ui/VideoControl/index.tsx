@@ -1,11 +1,13 @@
-import { IEngine } from '@dcl/ecs';
+import { type IEngine } from '@dcl/ecs';
 import ReactEcs, { Label, UiEntity, Dropdown } from '@dcl/react-ecs';
 import { Color4 } from '@dcl/sdk/math';
 import { Button } from '../Button';
-import { CONTENT_URL } from '../constants';
-import { State } from '../types';
+import { getContentUrl } from '../constants';
+import { type State } from '../types';
 import type { AdminTools } from '../../definitions';
 import { Header } from '../Header';
+import { Active } from '../Active';
+import { Card } from '../Card';
 import {
   getVideoPlayers,
   isDclCast,
@@ -13,27 +15,50 @@ import {
   isVideoUrl,
   useSelectedVideoPlayer,
 } from './utils';
-import { Card } from '../Card';
 import { VideoControlURL } from './VideoUrl';
 import { LiveStream } from './LiveStream';
-import { Active } from '../Active';
 import DclCast from './DclCast';
+import PresentationPanel from './DclCast/PresentationPanel';
 
 // Constants
 export const ICONS = {
-  VIDEO_CONTROL: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control.png`,
-  PREVIOUS_BUTTON: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-previous-button.png`,
-  FORWARD_BUTTON: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-forward-button.png`,
-  PLAY_BUTTON: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-play-button.png`,
-  MUTE: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-mute.png`,
-  LOOP: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-loop.png`,
-  VOLUME_MINUS_BUTTON: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-volume-minus-button.png`,
-  VOLUME_PLUS_BUTTON: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-volume-plus-button.png`,
-  VIDEO_SOURCE: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-video-icon.png`,
-  LIVE_SOURCE: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-live.png`,
-  DCL_CAST_SOURCE: `${CONTENT_URL}/admin_toolkit/assets/icons/video-control-dcl-cast.png`,
-  INFO: `${CONTENT_URL}/admin_toolkit/assets/icons/info.png`,
-} as const;
+  get VIDEO_CONTROL() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control.png`;
+  },
+  get PREVIOUS_BUTTON() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-previous-button.png`;
+  },
+  get FORWARD_BUTTON() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-forward-button.png`;
+  },
+  get PLAY_BUTTON() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-play-button.png`;
+  },
+  get MUTE() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-mute.png`;
+  },
+  get LOOP() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-loop.png`;
+  },
+  get VOLUME_MINUS_BUTTON() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-volume-minus-button.png`;
+  },
+  get VOLUME_PLUS_BUTTON() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-volume-plus-button.png`;
+  },
+  get VIDEO_SOURCE() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-video-icon.png`;
+  },
+  get LIVE_SOURCE() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-live.png`;
+  },
+  get DCL_CAST_SOURCE() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-dcl-cast.png`;
+  },
+  get INFO() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/info.png`;
+  },
+};
 
 export const VOLUME_STEP = 0.1;
 export const DEFAULT_VOLUME = 1;
@@ -45,7 +70,15 @@ export const COLORS = {
 } as const;
 
 // Main component
-export function VideoControl({ engine, state }: { engine: IEngine; state: State }) {
+export function VideoControl({
+  engine,
+  state,
+  playerAddress,
+}: {
+  engine: IEngine;
+  state: State;
+  playerAddress: string | undefined;
+}) {
   const [selectedEntity, selectedVideo] = useSelectedVideoPlayer(engine) ?? [];
   const videoPlayers = getVideoPlayers(engine);
   const [selected, setSelected] = ReactEcs.useState<'video-url' | 'live' | 'dcl-cast' | undefined>(
@@ -186,30 +219,50 @@ export function VideoControl({ engine, state }: { engine: IEngine; state: State 
         </UiEntity>
       </Card>
       {selected && selectedEntity && (
-        <Card>
-          {selected === 'video-url' && (
-            <VideoControlURL
-              engine={engine}
-              entity={selectedEntity}
-              video={selectedVideo}
+        <UiEntity uiTransform={{ flexDirection: 'column', width: '100%' }}>
+          <Card>
+            {selected === 'video-url' && (
+              <VideoControlURL
+                engine={engine}
+                entity={selectedEntity}
+                video={selectedVideo}
+              />
+            )}
+            {selected === 'live' && (
+              <LiveStream
+                engine={engine}
+                entity={selectedEntity}
+                video={selectedVideo}
+              />
+            )}
+            {selected === 'dcl-cast' && (
+              <DclCast
+                engine={engine}
+                state={state}
+                entity={selectedEntity}
+                video={selectedVideo}
+                playerAddress={playerAddress}
+              />
+            )}
+          </Card>
+          <Card
+            uiTransform={{
+              display:
+                selected === 'dcl-cast' &&
+                !!state.videoControl.presentationState &&
+                !state.videoControl.isMinimized
+                  ? 'flex'
+                  : 'none',
+            }}
+          >
+            <PresentationPanel
+              presentationState={state.videoControl.presentationState}
+              onStopSharing={() => {
+                state.videoControl.presentationState = undefined;
+              }}
             />
-          )}
-          {selected === 'live' && (
-            <LiveStream
-              engine={engine}
-              entity={selectedEntity}
-              video={selectedVideo}
-            />
-          )}
-          {selected === 'dcl-cast' && (
-            <DclCast
-              engine={engine}
-              state={state}
-              entity={selectedEntity}
-              video={selectedVideo}
-            />
-          )}
-        </Card>
+          </Card>
+        </UiEntity>
       )}
     </UiEntity>
   );

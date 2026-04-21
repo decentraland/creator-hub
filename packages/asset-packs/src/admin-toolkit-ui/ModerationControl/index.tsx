@@ -1,14 +1,14 @@
-import { IEngine } from '@dcl/ecs';
-import { Color4 } from '@dcl/ecs-math';
+import type { IEngine } from '@dcl/ecs';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import ReactEcs, { UiEntity } from '@dcl/react-ecs';
 
+import { type GetPlayerDataRes } from '../../types';
+import { getContentUrl } from '../constants';
 import { Header } from '../Header';
-import { AddUserInput, PermissionType } from './AddUserInput';
 import { Button } from '../Button';
-import { GetPlayerDataRes } from '../../types';
 import { Card } from '../Card';
-import { CONTENT_URL } from '../constants';
 import { fetchSceneBans } from '..';
+import { AddUserInput, PermissionType } from './AddUserInput';
 import {
   getModerationControlStyles,
   getModerationControlColors,
@@ -20,10 +20,19 @@ type Props = {
   sceneAdmins: SceneAdmin[];
 };
 
-export const BTN_MODERATION_CONTROL = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-moderation-control-button.png`;
-export const MODERATION_CONTROL_ICON = `${CONTENT_URL}/admin_toolkit/assets/icons/moderation-control-icon.png`;
-const VERIFIED_USER_ICON = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-verified-user.png`;
-const BAN_USER_ICON = `${CONTENT_URL}/admin_toolkit/assets/icons/ban.png`;
+export const getBtnModerationControl = () =>
+  `${getContentUrl()}/admin_toolkit/assets/icons/admin-panel-moderation-control-button.png`;
+const MODERATION_ICONS = {
+  get MODERATION_CONTROL_ICON() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/moderation-control-icon.png`;
+  },
+  get VERIFIED_USER_ICON() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/admin-panel-verified-user.png`;
+  },
+  get BAN_USER_ICON() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/ban.png`;
+  },
+};
 
 export type SceneAdmin = {
   name?: string;
@@ -46,7 +55,7 @@ export const moderationControlState: State = {
   unbanMessage: null as string | null,
 };
 
-export function ModerationControl({ engine, player, sceneAdmins }: Props) {
+export function ModerationControl({ engine: _engine, player: _player, sceneAdmins }: Props) {
   const styles = getModerationControlStyles();
   const colors = getModerationControlColors();
 
@@ -54,7 +63,7 @@ export function ModerationControl({ engine, player, sceneAdmins }: Props) {
     <Card>
       <UiEntity uiTransform={styles.container}>
         <Header
-          iconSrc={MODERATION_CONTROL_ICON}
+          iconSrc={MODERATION_ICONS.MODERATION_CONTROL_ICON}
           title="PERMISSIONS & MODERATION"
         />
         <AddUserInput
@@ -68,7 +77,7 @@ export function ModerationControl({ engine, player, sceneAdmins }: Props) {
           fontSize={18}
           color={colors.white}
           uiTransform={styles.viewListButton}
-          icon={VERIFIED_USER_ICON}
+          icon={MODERATION_ICONS.VERIFIED_USER_ICON}
           iconTransform={styles.viewListIcon}
           onMouseDown={() => (moderationControlState.showModalAdminList = true)}
         />
@@ -84,7 +93,7 @@ export function ModerationControl({ engine, player, sceneAdmins }: Props) {
           fontSize={18}
           color={colors.white}
           uiTransform={styles.viewListButton}
-          icon={BAN_USER_ICON}
+          icon={MODERATION_ICONS.BAN_USER_ICON}
           iconTransform={styles.viewListIcon}
           onMouseDown={async () => {
             await fetchSceneBans();

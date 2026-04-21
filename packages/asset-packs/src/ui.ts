@@ -16,7 +16,7 @@ import { Color4 } from '@dcl/sdk/math';
 import type { EngineComponents } from './definitions';
 import type { ScreenAlignMode } from './enums';
 import { AlignMode, Font } from './enums';
-import { CONTENT_URL } from './admin-toolkit-ui/constants';
+import { getContentUrl } from './admin-toolkit-ui/constants';
 
 function getAlignMode(align: AlignMode, isColumn: boolean) {
   switch (align) {
@@ -260,7 +260,8 @@ export function removeUiTransformEntities(
   }
 }
 
-const BTN_CLOSE_TEXT_ANNOUNCEMENT = `${CONTENT_URL}/admin_toolkit/assets/icons/text-announcement-close-button.png`;
+const getBtnCloseTextAnnouncement = () =>
+  `${getContentUrl()}/admin_toolkit/assets/icons/text-announcement-close-button.png`;
 
 export function showCaptchaPrompt(
   engine: IEngine,
@@ -332,7 +333,7 @@ export function showCaptchaPrompt(
   getUIBackground(
     UiBackground,
     closeButtonEntity,
-    BTN_CLOSE_TEXT_ANNOUNCEMENT,
+    getBtnCloseTextAnnouncement(),
     BackgroundTextureMode.STRETCH,
   );
 

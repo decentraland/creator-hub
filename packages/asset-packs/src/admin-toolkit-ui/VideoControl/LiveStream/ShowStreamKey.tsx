@@ -1,23 +1,27 @@
 import { Color4 } from '@dcl/sdk/math';
 import type { DeepReadonlyObject, Entity, IEngine, PBVideoPlayer } from '@dcl/ecs';
 import ReactEcs, { UiEntity, Label } from '@dcl/react-ecs';
-import { COLORS } from '..';
-import { createVideoPlayerControls } from '../utils';
-import { VideoControlVolume } from '../VolumeControl';
+import { copyToClipboard } from '~system/RestrictedActions';
+import { LIVEKIT_STREAM_SRC } from '../../../definitions';
+import { startTimeout, stopTimeout, startInterval, stopInterval } from '../../../timer';
+import { getContentUrl } from '../../constants';
 import { Button } from '../../Button';
 import { FeedbackButton } from '../../FeedbackButton';
-import { LIVEKIT_STREAM_SRC } from '../../../definitions';
-import { ERROR_ICON } from '../../Error';
-import { CONTENT_URL } from '../../constants';
-import { getStreamKey } from '../api';
+import { getErrorIcon } from '../../Error';
 import { LoadingDots } from '../../Loading';
-import { startTimeout, stopTimeout, startInterval, stopInterval } from '../../../timer';
+import { VideoControlVolume } from '../VolumeControl';
+import { getStreamKey } from '../api';
+import { createVideoPlayerControls } from '../utils';
 import { state } from '../..';
-import { copyToClipboard } from '~system/RestrictedActions';
+import { COLORS } from '..';
 
 const STREAM_ICONS = {
-  eyeShow: `${CONTENT_URL}/admin_toolkit/assets/icons/eye.png`,
-  eyeHide: `${CONTENT_URL}/admin_toolkit/assets/icons/eye-off.png`,
+  get eyeShow() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/eye.png`;
+  },
+  get eyeHide() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/eye-off.png`;
+  },
 };
 
 const AUTO_HIDE_DURATION_SECONDS = 30;
@@ -282,7 +286,7 @@ export function ShowStreamKey({
               uiBackground={{
                 textureMode: 'stretch',
                 texture: {
-                  src: ERROR_ICON,
+                  src: getErrorIcon(),
                 },
               }}
             />

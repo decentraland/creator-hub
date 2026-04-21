@@ -1,20 +1,29 @@
-import { IEngine } from '@dcl/ecs';
+import { type IEngine } from '@dcl/ecs';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import ReactEcs, { Label, UiEntity, Input } from '@dcl/react-ecs';
 import { Color4 } from '@dcl/sdk/math';
 import { getComponents } from '../definitions';
-import { GetPlayerDataRes } from '../types';
+import { type GetPlayerDataRes } from '../types';
 import { Button } from './Button';
-import { CONTENT_URL } from './constants';
-import { State } from './types';
+import { getContentUrl } from './constants';
 import { Header } from './Header';
 import { Card } from './Card';
+import { type State } from './types';
 
 const ICONS = {
-  TEXT_ANNOUNCEMENT_CONTROL: `${CONTENT_URL}/admin_toolkit/assets/icons/text-announcement-control.png`,
-  CHECK: `${CONTENT_URL}/admin_toolkit/assets/icons/text-announcement-check.png`,
-  BTN_CLOSE_TEXT_ANNOUNCEMENT: `${CONTENT_URL}/admin_toolkit/assets/icons/text-announcement-close-button.png`,
-  CHAT_MESSAGE_ICON: `${CONTENT_URL}/admin_toolkit/assets/icons/text-announcement-chat-message.png`,
-} as const;
+  get TEXT_ANNOUNCEMENT_CONTROL() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/text-announcement-control.png`;
+  },
+  get CHECK() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/text-announcement-check.png`;
+  },
+  get BTN_CLOSE_TEXT_ANNOUNCEMENT() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/text-announcement-close-button.png`;
+  },
+  get CHAT_MESSAGE_ICON() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/text-announcement-chat-message.png`;
+  },
+};
 
 let ANNOUNCEMENT_STATE: 'sent' | 'cleared';
 
@@ -177,7 +186,7 @@ function handleSendTextAnnouncement(
   if (textAnnouncement) {
     const author = player?.name;
     // Get current timestamp and ensure uniqueness
-    let timestamp = Date.now();
+    const timestamp = Date.now();
 
     textAnnouncement.author = author;
     textAnnouncement.id = `${timestamp}-${author}`;
