@@ -1,4 +1,7 @@
+import { useEffect, useState } from 'react';
 import { Box } from 'decentraland-ui2';
+import { editor } from '#preload';
+import type { MobileDebugSessionInfo } from '/shared/types/ipc';
 
 import { t } from '/@/modules/store/translation/utils';
 import { Modal, onBackNoop } from '..';
@@ -7,6 +10,17 @@ import type { Props } from './types';
 import './styles.css';
 
 export function MobileQRCode({ open, onClose, url, qr }: Props) {
+  const [sessions, setSessions] = useState<MobileDebugSessionInfo[]>([]);
+
+  useEffect(() => {
+    if (!open) {
+      setSessions([]);
+      return;
+    }
+    const unsubscribe = editor.onMobileDebugSessions(setSessions);
+    return unsubscribe;
+  }, [open]);
+
   const handleClose = (
     _event: React.MouseEvent<HTMLButtonElement>,
     reason?: 'backdropClick' | 'escapeKeyDown',
@@ -34,6 +48,21 @@ export function MobileQRCode({ open, onClose, url, qr }: Props) {
           />
         </Box>
         <span className="Url">{url}</span>
+        <Box className="SessionsContainer">
+          {sessions.length === 0 ? (
+            <span className="SessionStatus waiting">Waiting for mobile connection...</span>
+          ) : (
+            sessions.map(s => (
+              <Box
+                key={s.id}
+                className="SessionItem"
+              >
+                <span className="SessionBadge connected">Session #{s.id}</span>
+                <span className="SessionMessages">{s.messageCount.toLocaleString()} entries</span>
+              </Box>
+            ))
+          )}
+        </Box>
         <span className="Disclaimer">{t('modal.mobile_qr.disclaimer')}</span>
       </Box>
     </Modal>

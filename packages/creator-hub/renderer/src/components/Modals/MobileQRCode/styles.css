@@ -26,6 +26,48 @@
   margin-bottom: 16px;
 }
 
+.MobileQRCodeContent .SessionsContainer {
+  width: 100%;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+.MobileQRCodeContent .SessionStatus.waiting {
+  color: var(--dcl-silver);
+  font-size: 12px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.MobileQRCodeContent .SessionItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.MobileQRCodeContent .SessionBadge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.MobileQRCodeContent .SessionBadge.connected {
+  background-color: #2ecc71;
+  color: #000;
+}
+
+.MobileQRCodeContent .SessionMessages {
+  color: var(--dcl-silver);
+}
+
 .MobileQRCodeContent .Disclaimer {
   color: var(--dcl-silver);
   font-size: 12px;

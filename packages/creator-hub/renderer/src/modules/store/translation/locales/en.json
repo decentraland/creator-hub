@@ -625,7 +625,7 @@
       "cancel": "Cancel"
     },
     "mobile_qr": {
-      "title": "Mobile Preview",
+      "title": "Connect Mobile Debug Session",
       "description": "Scan this QR code with your mobile device to preview the scene",
       "disclaimer": "Both your computer and mobile device must be on the same network"
     }
