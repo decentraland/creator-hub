@@ -1,4 +1,4 @@
-import { useEffect, useRef, type MutableRefObject } from 'react';
+import { useEffect, type MutableRefObject } from 'react';
 
 import { editor } from '#preload';
 
@@ -9,22 +9,17 @@ export function useMobileDebugForwarding(
   isPreviewRunning: boolean,
   projectKey?: string,
 ) {
-  const wasEnabledRef = useRef(false);
-
-  useEffect(() => {
-    wasEnabledRef.current = false;
-  }, [projectKey]);
-
   useEffect(() => {
     if (!isPreviewRunning) return;
 
+    let enabled = false;
     const getScene = () => iframeRef.current?.scene;
 
     const unsubscribeEntries = editor.onMobileDebugEntries(({ entries }) => {
       const scene = getScene();
       if (!scene) return;
-      if (!wasEnabledRef.current) {
-        wasEnabledRef.current = true;
+      if (!enabled) {
+        enabled = true;
         void scene
           .setMobileDebugSessionEnabled(true, [])
           .catch(err => console.warn('[mobile-debug-forwarding]', err));
@@ -40,10 +35,10 @@ export function useMobileDebugForwarding(
     const unsubscribeSessions = editor.onMobileDebugSessions(sessions => {
       const scene = getScene();
       if (!scene) return;
-      const enabled = sessions.some(s => s.status === 'active') || sessions.length > 0;
+      const hasSessions = sessions.some(s => s.status === 'active') || sessions.length > 0;
       void scene
         .setMobileDebugSessionEnabled(
-          enabled,
+          hasSessions,
           sessions.map(s => ({
             id: s.id,
             sessionId: s.sessionId ?? null,

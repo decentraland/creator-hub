@@ -55,22 +55,23 @@ function EntityTreeView({
     return new Set(tickEntries.map(e => e.e));
   }, [tickEntries]);
 
-  const eids = Object.keys(entities)
-    .map(Number)
-    .sort((a, b) => a - b);
-
-  const childrenMap: Record<number, number[]> = {};
-  for (const eid of eids) {
-    const parent = entities[eid].parent;
-    if (parent === eid) continue;
-    if (!childrenMap[parent]) childrenMap[parent] = [];
-    childrenMap[parent].push(eid);
-  }
-
-  const roots = eids.filter(eid => {
-    const parent = entities[eid].parent;
-    return parent === eid || !(parent in entities);
-  });
+  const { eids, childrenMap, roots } = useMemo(() => {
+    const sortedEids = Object.keys(entities)
+      .map(Number)
+      .sort((a, b) => a - b);
+    const childMap: Record<number, number[]> = {};
+    for (const eid of sortedEids) {
+      const parent = entities[eid].parent;
+      if (parent === eid) continue;
+      if (!childMap[parent]) childMap[parent] = [];
+      childMap[parent].push(eid);
+    }
+    const rootEids = sortedEids.filter(eid => {
+      const parent = entities[eid].parent;
+      return parent === eid || !(parent in entities);
+    });
+    return { eids: sortedEids, childrenMap: childMap, roots: rootEids };
+  }, [entities]);
 
   const matchesFilter = (eid: number): boolean => {
     if (tickEntityIds && !tickEntityIds.has(eid)) return false;

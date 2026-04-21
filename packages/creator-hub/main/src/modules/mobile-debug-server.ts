@@ -187,6 +187,11 @@ export function stopMobileDebugServer(): void {
       session.disconnectedAt = new Date();
       session.ws = null;
     }
+    for (const pending of pendingCommands.values()) {
+      clearTimeout(pending.timeout);
+      pending.resolve({ ok: false, data: { error: 'server stopped' } });
+    }
+    pendingCommands.clear();
     wss.close();
     wss = null;
     port = null;
@@ -197,14 +202,6 @@ export function stopMobileDebugServer(): void {
     broadcastSessions();
     log.info('[mobile-debug] Stopped');
   }
-}
-
-export function getMobileDebugServerPort(): number | null {
-  return port;
-}
-
-export function isMobileDebugServerRunning(): boolean {
-  return wss !== null && port !== null;
 }
 
 export function getMobileDebugServerStatus(): {
@@ -317,7 +314,13 @@ export async function sendCommand(
     }, COMMAND_TIMEOUT_MS);
 
     pendingCommands.set(id, { resolve, timeout });
-    ws.send(msg);
+    try {
+      ws.send(msg);
+    } catch (err) {
+      pendingCommands.delete(id);
+      clearTimeout(timeout);
+      resolve({ ok: false, data: { error: err instanceof Error ? err.message : 'send failed' } });
+    }
   });
 }
 

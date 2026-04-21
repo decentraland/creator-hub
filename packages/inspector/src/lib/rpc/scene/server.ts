@@ -155,15 +155,7 @@ export class SceneServer extends RPC<Method, Params, Result> {
 
     this.handle('set_mobile_debug_session_enabled', async ({ enabled, sessions }) => {
       store.dispatch(setMobileDebugSessionEnabled({ enabled }));
-      // TODO(#1306): resetting here also wipes captured state ~60s after the
-      // last phone disconnects, even if the developer is still inspecting it.
-      // Move the reset behind an explicit user action (e.g. the toolbar Clear
-      // button) and keep the data on retention expiry.
-      if (!enabled) {
-        mobileDebugStore.reset();
-      } else {
-        mobileDebugStore.updateSessions(sessions);
-      }
+      mobileDebugStore.updateSessions(sessions);
     });
   }
 }

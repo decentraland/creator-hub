@@ -15,6 +15,12 @@ enum SubTab {
   Monitor = 'Monitor',
 }
 
+const SUB_TAB_LABELS: Record<SubTab, string> = {
+  [SubTab.EntityTree]: 'ENTITY TREE',
+  [SubTab.Console]: 'CONSOLE',
+  [SubTab.Monitor]: 'MONITOR',
+};
+
 function MobileDebugSession() {
   const [subTab, setSubTab] = useState(SubTab.EntityTree);
   const snapshot = useSyncExternalStore(mobileDebugStore.subscribe, mobileDebugStore.getSnapshot);
@@ -59,7 +65,7 @@ function MobileDebugSession() {
             className={`MobileDebugSession-tab ${subTab === t ? 'active' : ''}`}
             onClick={() => setSubTab(t)}
           >
-            {t === SubTab.EntityTree ? 'ENTITY TREE' : t === SubTab.Console ? 'CONSOLE' : 'MONITOR'}
+            {SUB_TAB_LABELS[t]}
           </div>
         ))}
         <CommandToolbar

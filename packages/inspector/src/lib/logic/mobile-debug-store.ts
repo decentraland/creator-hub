@@ -286,6 +286,8 @@ export function clear() {
   perSceneTicks = new Map();
   entityUpdateTimes = {};
   componentUpdateTimes = {};
+  lastAnyUpdateTime = 0;
+  updateTimesTicker = 0;
   allCrdtEntries = [];
   notify();
 }
@@ -466,12 +468,16 @@ function applyToState(state: Record<number, EntityState>, entry: CrdtEntry) {
   if (op === 'd') {
     delete ent.components[comp];
   } else if (op === 'a') {
-    if (!Array.isArray(ent.components[comp])) {
-      ent.components[comp] = [];
-    }
-    const arr = ent.components[comp] as unknown[];
-    arr.push(entry.payload ?? {});
-    if (arr.length > GOS_LIMIT) arr.shift();
+    // Spread into a new array so the previous published snapshot — which may
+    // still hold the old array reference — is not mutated. The detach-on-touch
+    // at the entity level only shallow-clones `components`; array values
+    // inside it are still shared until we replace them here.
+    const prev = Array.isArray(ent.components[comp]) ? (ent.components[comp] as unknown[]) : [];
+    const item = entry.payload ?? {};
+    ent.components[comp] =
+      prev.length >= GOS_LIMIT
+        ? [...prev.slice(prev.length - GOS_LIMIT + 1), item]
+        : [...prev, item];
   } else {
     // put (LWW)
     ent.components[comp] = entry.payload ?? true;
@@ -481,8 +487,7 @@ function applyToState(state: Record<number, EntityState>, entry: CrdtEntry) {
     }
     if (comp === 'UiTransform' && entry.payload && typeof entry.payload === 'object') {
       const payload = entry.payload as Record<string, unknown>;
-      const p = (payload.parent ?? payload.parent_entity ?? 0) as number;
-      ent.parent = p;
+      ent.parent = num(payload.parent ?? payload.parent_entity);
     }
   }
 }
