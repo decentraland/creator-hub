@@ -64,11 +64,6 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
     mobileDebug.unsubscribeSessions(event.sender);
   });
   handle(
-    'mobileDebug.sendCommand',
-    async (_event, sessionId: number, cmd: string, args: Record<string, unknown>) =>
-      mobileDebug.sendCommand(sessionId, cmd, args),
-  );
-  handle(
     'mobileDebug.broadcastCommand',
     async (_event, cmd: string, args: Record<string, unknown>) =>
       mobileDebug.broadcastCommand(cmd, args),

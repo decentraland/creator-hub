@@ -30,6 +30,11 @@ export interface MobileDebugSessionInfo {
   messageCount: number;
 }
 
+export interface MobileDebugBroadcastResult {
+  ok: boolean;
+  results: { sessionId: number; ok: boolean; data: unknown }[];
+}
+
 export interface Ipc {
   'electron.getEnvOverride': () => Env | null;
   'electron.getUserDataPath': () => string;
@@ -81,18 +86,10 @@ export interface Ipc {
   'mobileDebug.unsubscribeEntries': () => Promise<void>;
   'mobileDebug.subscribeSessions': () => Promise<void>;
   'mobileDebug.unsubscribeSessions': () => Promise<void>;
-  'mobileDebug.sendCommand': (
-    sessionId: number,
-    cmd: string,
-    args: Record<string, unknown>,
-  ) => Promise<{ ok: boolean; data: unknown }>;
   'mobileDebug.broadcastCommand': (
     cmd: string,
     args: Record<string, unknown>,
-  ) => Promise<{
-    ok: boolean;
-    results: { sessionId: number; ok: boolean; data: unknown }[];
-  }>;
+  ) => Promise<MobileDebugBroadcastResult>;
   'mobileDebug.startServer': () => Promise<{ port: number }>;
   'mobileDebug.stopServer': () => Promise<void>;
   'mobileDebug.getServerStatus': () => Promise<{

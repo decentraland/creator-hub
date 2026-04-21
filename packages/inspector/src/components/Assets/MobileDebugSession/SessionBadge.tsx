@@ -1,7 +1,7 @@
 import React from 'react';
-import type { MobileDebugSessionInfo } from '../../../lib/logic/mobile-debug-store';
+import type { MobileDebugSessionSummary } from '../../../lib/logic/mobile-debug-store';
 
-function SessionBadge({ sessions }: { sessions: MobileDebugSessionInfo[] }) {
+function SessionBadge({ sessions }: { sessions: MobileDebugSessionSummary[] }) {
   if (sessions.length === 0) {
     return <span className="MobileDebugSession-waiting">No session</span>;
   }

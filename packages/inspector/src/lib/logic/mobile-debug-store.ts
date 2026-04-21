@@ -58,7 +58,7 @@ export interface PerfSnapshot {
   scene_count: number;
 }
 
-export interface MobileDebugSessionInfo {
+export interface MobileDebugSessionSummary {
   id: number;
   sessionId: string | null;
   deviceName: string | null;
@@ -95,11 +95,12 @@ const MAX_PERF_HISTORY = 60; // ~2 min at 2s interval
 const MAX_ALL_CRDT = 50_000; // buffer for tick reconstruction
 const MAX_TICK_SET = MAX_ALL_CRDT;
 const UPDATE_TIME_TTL_MS = 5 * 60_000;
+const MAX_UNKNOWN_DIAGNOSTICS = 256;
 
 let entities: Record<number, EntityState> = {};
 let entityChanges: Record<number, CrdtEntry[]> = {};
 let consoleEntries: ConsoleEntry[] = [];
-let sessions: MobileDebugSessionInfo[] = [];
+let sessions: MobileDebugSessionSummary[] = [];
 let latestPerf: PerfSnapshot | null = null;
 let perfHistory: PerfSnapshot[] = [];
 let totalCrdt = 0;
@@ -227,7 +228,7 @@ export function pushEntries(raw: unknown[]) {
         if (consoleEntries.length > MAX_CONSOLE)
           consoleEntries = consoleEntries.slice(-MAX_CONSOLE);
         changed = true;
-      } else if (!seenUnknownOps.has(opName)) {
+      } else if (!seenUnknownOps.has(opName) && seenUnknownOps.size < MAX_UNKNOWN_DIAGNOSTICS) {
         seenUnknownOps.add(opName);
         // eslint-disable-next-line no-console
         console.debug('[mobile-debug-store] unknown op_call_start op_name:', opName);
@@ -241,7 +242,11 @@ export function pushEntries(raw: unknown[]) {
         knownScenes.set(sceneId, { sceneId, title, baseParcel });
         changed = true;
       }
-    } else if (type && !seenUnknownTypes.has(type)) {
+    } else if (
+      type &&
+      !seenUnknownTypes.has(type) &&
+      seenUnknownTypes.size < MAX_UNKNOWN_DIAGNOSTICS
+    ) {
       seenUnknownTypes.add(type);
       // eslint-disable-next-line no-console
       console.debug('[mobile-debug-store] unknown entry type:', type, e);
@@ -255,7 +260,7 @@ export function pushEntries(raw: unknown[]) {
   if (changed) notify();
 }
 
-export function updateSessions(s: MobileDebugSessionInfo[]) {
+export function updateSessions(s: MobileDebugSessionSummary[]) {
   sessions = s;
   notify();
 }
@@ -305,7 +310,7 @@ export function getEntityChanges(eid: number): CrdtEntry[] {
 export function getConsoleEntries(): ConsoleEntry[] {
   return consoleEntries;
 }
-export function getSessions(): MobileDebugSessionInfo[] {
+export function getSessions(): MobileDebugSessionSummary[] {
   return sessions;
 }
 export function getLatestPerf(): PerfSnapshot | null {
@@ -391,7 +396,7 @@ export function reconstructStateAtTick(targetTick: number, sceneId: number): Rec
 interface MobileDebugSnapshot {
   entities: Record<number, EntityState>;
   consoleEntries: ConsoleEntry[];
-  sessions: MobileDebugSessionInfo[];
+  sessions: MobileDebugSessionSummary[];
   latestPerf: PerfSnapshot | null;
   perfHistory: PerfSnapshot[];
   totalCrdt: number;

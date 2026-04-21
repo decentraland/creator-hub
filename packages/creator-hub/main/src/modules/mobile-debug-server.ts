@@ -3,7 +3,8 @@ import { randomUUID } from 'node:crypto';
 import { WebSocketServer, WebSocket } from 'ws';
 import type { WebContents } from 'electron';
 import log from 'electron-log/main';
-import type { MobileDebugSessionInfo } from '/shared/types/ipc';
+import QRCode from 'qrcode';
+import type { MobileDebugBroadcastResult, MobileDebugSessionInfo } from '/shared/types/ipc';
 import { getAvailablePort } from './port';
 import { getLanIp } from './network';
 
@@ -18,17 +19,13 @@ export interface MobileDebugSession {
   messageCount: number;
 }
 
-export interface BroadcastResult {
-  ok: boolean;
-  results: { sessionId: number; ok: boolean; data: unknown }[];
-}
-
 export type MobileDebugListener = (session: MobileDebugSession, entries: unknown[]) => void;
 
 const SESSION_RETENTION_MS = 60_000;
 const COMMAND_TIMEOUT_MS = 5000;
 const MAX_WS_PAYLOAD = 16 * 1024 * 1024;
 const SESSION_BROADCAST_THROTTLE_MS = 500;
+const MAX_SESSION_STRING = 128;
 
 let wss: WebSocketServer | null = null;
 let port: number | null = null;
@@ -78,14 +75,15 @@ export async function startMobileDebugServer(): Promise<number> {
     broadcastSessions();
 
     ws.on('message', (raw: Buffer) => {
-      let msg: Record<string, unknown>;
+      let parsed: unknown;
       try {
-        msg = JSON.parse(raw.toString());
+        parsed = JSON.parse(raw.toString());
       } catch {
         return;
       }
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return;
       try {
-        handleMessage(session, msg);
+        handleMessage(session, parsed as Record<string, unknown>);
       } catch (err) {
         log.warn('[mobile-debug] handler error', err);
       }
@@ -136,7 +134,7 @@ function handleMessage(session: MobileDebugSession, msg: Record<string, unknown>
   const payload = msg.payload as Record<string, unknown>;
   let metadataChanged = false;
   if (typeof payload.sessionId === 'string' && !session.sessionId) {
-    session.sessionId = payload.sessionId;
+    session.sessionId = payload.sessionId.slice(0, MAX_SESSION_STRING);
     metadataChanged = true;
   }
   const rawEntries = payload.entries;
@@ -152,7 +150,8 @@ function handleMessage(session: MobileDebugSession, msg: Record<string, unknown>
 
   for (const entry of entries) {
     if (entry.type === 'session_start') {
-      const deviceName = typeof entry.device_name === 'string' ? entry.device_name : undefined;
+      const rawName = typeof entry.device_name === 'string' ? entry.device_name : undefined;
+      const deviceName = rawName?.slice(0, MAX_SESSION_STRING);
       if (deviceName && deviceName !== session.deviceName) {
         session.deviceName = deviceName;
         metadataChanged = true;
@@ -327,7 +326,7 @@ export async function sendCommand(
 export async function broadcastCommand(
   cmd: string,
   args: Record<string, unknown> = {},
-): Promise<BroadcastResult> {
+): Promise<MobileDebugBroadcastResult> {
   const sessionIds = Array.from(sessions.keys());
   if (sessionIds.length === 0) {
     return { ok: false, results: [] };
@@ -347,8 +346,6 @@ export async function getStandaloneDeeplink(): Promise<{ url: string; qr: string
   const lanIp = getLanIp();
   const sceneInspectorTarget = `ws://${lanIp}:${wsPort}`;
   const url = `decentraland://?scene-inspector=${encodeURIComponent(sceneInspectorTarget)}`;
-
-  const QRCode = await import('qrcode');
   const qr = await QRCode.toDataURL(url, { width: 512, margin: 2 });
 
   return { url, qr, port: wsPort };

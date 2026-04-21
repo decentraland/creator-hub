@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import { realpathSync } from 'fs';
 import log from 'electron-log/main';
 import { app } from 'electron';
+import QRCode from 'qrcode';
 
 import type { PreviewOptions } from '/shared/types/settings';
 import {
@@ -98,14 +99,10 @@ function isPreviewRunning(preview?: Preview): preview is Preview {
   return !!(preview?.child.alive() && preview.url);
 }
 
-function parseDecentralandUrl(raw: string): URL | null {
-  const match = /^decentraland:\/\/(.*)$/i.exec(raw);
-  if (!match) return null;
-  try {
-    return new URL(`https://dummy/${match[1].replace(/^\/+/, '')}`);
-  } catch {
-    return null;
-  }
+function getDeepLinkParam(raw: string, key: string): string | null {
+  const queryIdx = raw.indexOf('?');
+  if (queryIdx < 0) return null;
+  return new URLSearchParams(raw.slice(queryIdx + 1)).get(key);
 }
 
 function getPreviewServerUrl(deepLinkUrl: string): string | null {
@@ -155,7 +152,7 @@ export async function getMobilePreview(path: string): Promise<{ url: string; qr:
         const wsPort = await startMobileDebugServer();
         // Extract the host from the mobile preview URL (not serverUrl which may be 127.0.0.1)
         // The mobile URL has the LAN IP that the phone can reach
-        const mobilePreviewParam = parseDecentralandUrl(url)?.searchParams.get('preview');
+        const mobilePreviewParam = getDeepLinkParam(url, 'preview');
         let previewHost = mobilePreviewParam
           ? new URL(mobilePreviewParam).hostname
           : new URL(serverUrl).hostname;
@@ -172,7 +169,6 @@ export async function getMobilePreview(path: string): Promise<{ url: string; qr:
         }
 
         // Regenerate QR with the modified URL
-        const QRCode = await import('qrcode');
         qr = await QRCode.toDataURL(url, { width: 512, margin: 2 });
 
         log.info(`[mobile-debug] WS at ws://0.0.0.0:${wsPort}, mobile URL updated`);

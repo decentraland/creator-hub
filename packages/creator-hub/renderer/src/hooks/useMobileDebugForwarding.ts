@@ -35,10 +35,9 @@ export function useMobileDebugForwarding(
     const unsubscribeSessions = editor.onMobileDebugSessions(sessions => {
       const scene = getScene();
       if (!scene) return;
-      const hasSessions = sessions.some(s => s.status === 'active') || sessions.length > 0;
       void scene
         .setMobileDebugSessionEnabled(
-          hasSessions,
+          sessions.length > 0,
           sessions.map(s => ({
             id: s.id,
             sessionId: s.sessionId ?? null,

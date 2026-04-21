@@ -84,59 +84,28 @@ export async function getMobilePreview(path: string) {
   return invoke('cli.getMobilePreview', path);
 }
 
-export async function getMobileDebugSessions(): Promise<MobileDebugSessionInfo[]> {
-  return invoke('mobileDebug.getSessions') as Promise<MobileDebugSessionInfo[]>;
+export async function getMobileDebugSessions() {
+  return invoke('mobileDebug.getSessions');
 }
 
-export async function sendMobileDebugCommand(
-  sessionId: number,
-  cmd: string,
-  args: Record<string, unknown> = {},
-): Promise<{ ok: boolean; data: unknown }> {
-  return invoke('mobileDebug.sendCommand', sessionId, cmd, args) as Promise<{
-    ok: boolean;
-    data: unknown;
-  }>;
+export async function broadcastMobileDebugCommand(cmd: string, args: Record<string, unknown> = {}) {
+  return invoke('mobileDebug.broadcastCommand', cmd, args);
 }
 
-export interface BroadcastMobileDebugResult {
-  ok: boolean;
-  results: { sessionId: number; ok: boolean; data: unknown }[];
+export async function startMobileDebugServer() {
+  return invoke('mobileDebug.startServer');
 }
 
-export async function broadcastMobileDebugCommand(
-  cmd: string,
-  args: Record<string, unknown> = {},
-): Promise<BroadcastMobileDebugResult> {
-  return invoke('mobileDebug.broadcastCommand', cmd, args) as Promise<BroadcastMobileDebugResult>;
+export async function stopMobileDebugServer() {
+  return invoke('mobileDebug.stopServer');
 }
 
-export async function startMobileDebugServer(): Promise<{ port: number }> {
-  return invoke('mobileDebug.startServer') as Promise<{ port: number }>;
+export async function getMobileDebugServerStatus() {
+  return invoke('mobileDebug.getServerStatus');
 }
 
-export async function stopMobileDebugServer(): Promise<void> {
-  return invoke('mobileDebug.stopServer') as Promise<void>;
-}
-
-export async function getMobileDebugServerStatus(): Promise<{
-  running: boolean;
-  port: number | null;
-  sessions: number;
-}> {
-  return invoke('mobileDebug.getServerStatus') as Promise<{
-    running: boolean;
-    port: number | null;
-    sessions: number;
-  }>;
-}
-
-export async function getStandaloneDeeplink(): Promise<{ url: string; qr: string; port: number }> {
-  return invoke('mobileDebug.getStandaloneDeeplink') as Promise<{
-    url: string;
-    qr: string;
-    port: number;
-  }>;
+export async function getStandaloneDeeplink() {
+  return invoke('mobileDebug.getStandaloneDeeplink');
 }
 
 export function onMobileDebugEntries(
