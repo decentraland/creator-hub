@@ -21,5 +21,6 @@
   "ASSETS_CDN_URL": "https://assets-cdn.decentraland.org",
   "REPORT_ISSUES_URL": "https://decentraland.typeform.com/creatorhub",
   "FEEDBACK_URL": "https://decentraland.typeform.com/creatorhub",
-  "FEATURE_FLAGS_URL": "https://feature-flags.decentraland.org"
+  "FEATURE_FLAGS_URL": "https://feature-flags.decentraland.org",
+  "WORLDS_STORAGE_SERVICE_URL": "https://decentraland.org/storage"
 }

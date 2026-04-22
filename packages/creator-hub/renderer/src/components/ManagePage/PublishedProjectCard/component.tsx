@@ -17,7 +17,7 @@ import { Image } from '../../Image';
 import { Button } from '../../Button';
 import { Dropdown } from '../../Dropdown';
 import type { Option } from '../../Dropdown';
-import { formatName, getJumpInUrl, getLogo, isENSDomain } from './utils';
+import { formatName, getJumpInUrl, getLogo, getStorageUrl, isENSDomain } from './utils';
 import './styles.css';
 
 const BUILDER_URL = 'https://decentraland.org/builder';
@@ -71,6 +71,11 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
       void misc.openExternal(`${BUILDER_URL}/land/${id}`);
     }, [id]);
 
+    const handleViewStorage = useCallback(() => {
+      analytics.track('Manage Worlds External Action', { action: 'View Storage' });
+      void misc.openExternal(getStorageUrl(type, id));
+    }, [id, type]);
+
     const dropdownOptions = useMemo(() => {
       const options: Array<Option & { active: boolean }> = [
         {
@@ -108,6 +113,13 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
           active: type === ManagedProjectType.WORLD && role === WorldRoleType.OWNER,
         },
         {
+          text: t('manage.cards.menu.view_storage'),
+          icon: <OpenInNew />,
+          handler: handleViewStorage,
+          active:
+            type === ManagedProjectType.LAND || (type === ManagedProjectType.WORLD && !!deployment),
+        },
+        {
           text: t('manage.cards.menu.unpublish'),
           handler: onUnpublishWorld,
           active:
@@ -117,7 +129,15 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
         },
       ];
       return options.filter(option => option.active) as Option[];
-    }, [project, handleJumpIn, handleCopyURL, handleEditName, handleViewParcel, onOpenPermissions]);
+    }, [
+      project,
+      handleJumpIn,
+      handleCopyURL,
+      handleEditName,
+      handleViewParcel,
+      handleViewStorage,
+      onOpenPermissions,
+    ]);
 
     return (
       <div className="PublishedProjectCard">

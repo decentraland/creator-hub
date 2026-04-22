@@ -858,6 +858,7 @@
         "edit_name": "Editar Nombre",
         "permissions": "Permisos",
         "parcel": "Parcela",
+        "view_storage": "Ver Almacenamiento",
         "unpublish": "Despublicar"
       },
       "no_scene": {
