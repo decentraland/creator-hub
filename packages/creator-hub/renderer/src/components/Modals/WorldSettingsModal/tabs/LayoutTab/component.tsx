@@ -11,6 +11,7 @@ import { useDispatch } from '#store';
 import type { WorldScene, WorldSettings } from '/@/lib/worlds';
 import { type Coords, idToCoords } from '/@/lib/land';
 import { t } from '/@/modules/store/translation/utils';
+import type { ParcelsPermission } from '/@/modules/store/management';
 import { actions as managementActions } from '/@/modules/store/management';
 import { formatWorldSize, getWorldDimensions, MAX_COORDINATE } from '/@/modules/world';
 import { Dropdown, type Option } from '/@/components/Dropdown';
@@ -31,6 +32,8 @@ type Props = {
   worldName: string;
   worldScenes: WorldScene[];
   worldSettings: WorldSettings;
+  isOwner: boolean;
+  userParcelsPermissions?: ParcelsPermission;
 };
 
 const InfoItem = ({ icon, label }: { icon: React.ReactNode; label: string }) => {
@@ -46,9 +49,13 @@ const InfoItem = ({ icon, label }: { icon: React.ReactNode; label: string }) => 
 const WorldScenesView: React.FC<{
   worldSettings: WorldSettings;
   worldScenes: WorldScene[];
+  isOwner: boolean;
+  userParcelsPermissions?: ParcelsPermission;
   onViewLayout: () => void;
   onUnpublish: (scene: WorldScene) => void;
-}> = React.memo(({ worldSettings, worldScenes, onViewLayout, onUnpublish }) => {
+}> = React.memo(props => {
+  const { worldSettings, worldScenes, isOwner, userParcelsPermissions, onViewLayout, onUnpublish } =
+    props;
   // const [multiSceneEnabled, setMultiSceneEnabled] = useState(true);
   const hasScenes = worldScenes && worldScenes.length > 0;
 
@@ -65,19 +72,44 @@ const WorldScenesView: React.FC<{
   }, []);
 
   const getDropdownOptions = useCallback(
-    (scene: WorldScene): Option[] => [
-      {
-        text: t('modal.world_settings.layout.actions.unpublish'),
-        handler: () => onUnpublish(scene),
-      },
-    ],
-    [onUnpublish],
+    (scene: WorldScene): Option[] => {
+      const hasWorldWidePermission =
+        isOwner ||
+        (userParcelsPermissions?.status === 'succeeded' &&
+          userParcelsPermissions.parcels.length === 0); // World-wide permission is represented by having an empty parcels array.
+
+      return [
+        {
+          text: t('modal.world_settings.layout.actions.unpublish'),
+          handler: () => onUnpublish(scene),
+          visible:
+            hasWorldWidePermission ||
+            scene.parcels?.some(parcel => userParcelsPermissions?.parcels?.includes(parcel)),
+        },
+      ].filter(option => option.visible);
+    },
+    [isOwner, userParcelsPermissions, onUnpublish],
   );
 
   const worldSize = useMemo(() => {
     const { width, height } = getWorldDimensions(worldScenes || []);
     return formatWorldSize({ width, height });
   }, [worldScenes]);
+
+  const worldScenesFormattedList = useMemo(
+    () =>
+      worldScenes.map(scene => ({
+        entityId: scene.entityId,
+        thumbnailUrl: scene.thumbnailUrl,
+        title:
+          scene.entity?.metadata?.display?.title ||
+          t('modal.world_settings.layout.scene_title_placeholder'),
+        baseParcel: getBaseParcel(scene.parcels || [])?.join(', ') || '',
+        parcelsCount: scene.parcels?.length || 0,
+        menuOptions: getDropdownOptions(scene),
+      })),
+    [worldScenes, getBaseParcel, getDropdownOptions],
+  );
 
   return (
     <>
@@ -155,7 +187,7 @@ const WorldScenesView: React.FC<{
 
           <Box className="ScenesSection">
             <Typography variant="h6">{t('modal.world_settings.layout.scenes_title')}</Typography>
-            {worldScenes.map(scene => (
+            {worldScenesFormattedList.map(scene => (
               <Box
                 key={scene.entityId}
                 className="SceneItem"
@@ -168,24 +200,21 @@ const WorldScenesView: React.FC<{
                   />
                 </Box>
                 <Box className="SceneInfo">
-                  <Typography className="SceneTitle">
-                    {scene.entity?.metadata?.display?.title ||
-                      t('modal.world_settings.layout.scene_title_placeholder')}
-                  </Typography>
+                  <Typography className="SceneTitle">{scene.title}</Typography>
                   <Box className="SceneMetadata">
                     <InfoItem
                       icon={<ParcelsIcon />}
                       label={t('modal.world_settings.layout.parcels_count', {
-                        count: scene.parcels?.length || 0,
+                        count: scene.parcelsCount,
                       })}
                     />
                     <InfoItem
                       icon={<LocationIcon />}
-                      label={getBaseParcel(scene.parcels || [])?.join(', ') || ''}
+                      label={scene.baseParcel}
                     />
                   </Box>
                 </Box>
-                <Dropdown options={getDropdownOptions(scene)} />
+                {!!scene.menuOptions.length && <Dropdown options={scene.menuOptions} />}
               </Box>
             ))}
           </Box>
@@ -261,7 +290,8 @@ const UnpublishConfirmationView: React.FC<{
   );
 });
 
-const LayoutTab: React.FC<Props> = React.memo(({ worldName, worldSettings, worldScenes }) => {
+const LayoutTab: React.FC<Props> = React.memo(props => {
+  const { worldName, worldSettings, worldScenes, isOwner, userParcelsPermissions } = props;
   const [activeView, setActiveView] = useState<LayoutView>(LayoutView.SCENES);
   const [selectedScene, setSelectedScene] = useState<WorldScene | null>(null);
   const dispatch = useDispatch();
@@ -297,6 +327,8 @@ const LayoutTab: React.FC<Props> = React.memo(({ worldName, worldSettings, world
         <WorldScenesView
           worldSettings={worldSettings}
           worldScenes={worldScenes}
+          isOwner={isOwner}
+          userParcelsPermissions={userParcelsPermissions}
           onViewLayout={() => setActiveView(LayoutView.LAYOUT)}
           onUnpublish={handleOpenConfirmation}
         />

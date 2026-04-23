@@ -871,6 +871,7 @@
         "scenes_count": "{count} {count, plural, one {scene} other {scenes}}",
         "scene_settings": "Scene Settings",
         "world_settings": "Settings",
+        "layout": "Layout",
         "published_world": "Published World"
       },
       "land": {

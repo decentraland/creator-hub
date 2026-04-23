@@ -2,12 +2,15 @@ import React, { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Button as DCLButton, Typography } from 'decentraland-ui2';
 import { useDispatch, useSelector } from '#store';
+import { useAuth } from '/@/hooks/useAuth';
+import { WorldPermissionName, WorldRoleType } from '/@/lib/worlds';
 import {
   fetchWorldSettings,
   fetchWorldScenes,
   fetchWorldPermissions,
   unpublishEntireWorld,
   selectors as managementSelectors,
+  fetchParcelsPermission,
 } from '/@/modules/store/management';
 import { t } from '/@/modules/store/translation/utils';
 import { WorldSettingsTab, type ManagedProject } from '/shared/types/manage';
@@ -22,6 +25,7 @@ import './styles.css';
 type SettingsModalState = {
   activeTab: WorldSettingsTab;
   isOpen: boolean;
+  isOwner?: boolean;
 };
 
 type PermissionsModalState = {
@@ -43,9 +47,11 @@ type Props = {
 
 const ManagedProjectsList: React.FC<Props> = React.memo(props => {
   const { projects, total, isLoading, onLoadMore } = props;
+  const { wallet } = useAuth();
   const [settingsModal, setSettingsModal] = useState<SettingsModalState>({
     isOpen: false,
     activeTab: WorldSettingsTab.DETAILS,
+    isOwner: false,
   });
   const [permissionsModal, setPermissionsModal] = useState<PermissionsModalState>({
     isOpen: false,
@@ -70,10 +76,19 @@ const ManagedProjectsList: React.FC<Props> = React.memo(props => {
   }, []);
 
   const handleOpenSettingsModal = useCallback(
-    (worldName: string, activeTab: WorldSettingsTab = WorldSettingsTab.DETAILS) => {
+    (worldName: string, activeTab: WorldSettingsTab, isOwner: boolean) => {
       dispatch(fetchWorldSettings({ worldName }));
       dispatch(fetchWorldScenes({ worldName }));
-      setSettingsModal({ isOpen: true, activeTab });
+      if (!isOwner && wallet) {
+        dispatch(
+          fetchParcelsPermission({
+            worldName,
+            walletAddress: wallet,
+            permissionName: WorldPermissionName.Deployment,
+          }),
+        );
+      }
+      setSettingsModal({ isOpen: true, activeTab, isOwner });
     },
     [],
   );
@@ -115,7 +130,9 @@ const ManagedProjectsList: React.FC<Props> = React.memo(props => {
         <PublishedProjectCard
           key={project.id}
           project={project}
-          onOpenSettings={activeTab => handleOpenSettingsModal(project.id, activeTab)}
+          onOpenSettings={activeTab =>
+            handleOpenSettingsModal(project.id, activeTab, project.role === WorldRoleType.OWNER)
+          }
           onOpenPermissions={() => handleOpenPermissionsModal(project.id)}
           onUnpublishWorld={() => handleShowUnpublishWorldConfirmation(project.id)}
           onViewScenes={handleViewScenes}
@@ -136,8 +153,10 @@ const ManagedProjectsList: React.FC<Props> = React.memo(props => {
       <WorldSettingsModal
         open={settingsModal.isOpen}
         worldName={worldSettings.worldName}
+        isOwner={!!settingsModal.isOwner}
         worldScenes={worldSettings.scenes}
         worldSettings={worldSettings.settings}
+        userParcelsPermissions={wallet ? worldPermissions.parcels[wallet] : undefined}
         isLoading={worldSettings.status === 'loading' || worldSettings.status === 'idle'}
         activeTab={settingsModal.activeTab}
         onTabClick={handleSettingsModalTabClick}
