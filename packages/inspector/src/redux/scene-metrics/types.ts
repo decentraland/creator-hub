@@ -4,4 +4,5 @@ export type SceneMetrics = {
   bodies: number;
   materials: number;
   textures: number;
+  texturePixels: number;
 };
