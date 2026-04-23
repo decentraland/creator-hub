@@ -334,6 +334,9 @@ export function processGLTFAssetContainer(assetContainer: BABYLON.AssetContainer
   // Find the textures in the materials that share the same domain as the context
   // then add the textures to the $.textures
   assetContainer.materials.forEach((material: BABYLON.Material | BABYLON.PBRMaterial) => {
+    // Disable backface culling to match Unity client behaviour (all models render both sides)
+    material.backFaceCulling = false;
+
     for (const i in material) {
       const t = (material as any)[i];
 
