@@ -36,10 +36,10 @@ const GB = MB * 1024;
  */
 export function formatSize(size: number): string {
   if (size < KB) {
-    return `${size.toFixed(2)} B`;
+    return `${Math.round(size)} B`;
   }
   if (size < MB) {
-    return `${(size / KB).toFixed(2)} KB`;
+    return `${Math.round(size / KB)} KB`;
   }
   if (size < GB) {
     return `${(size / MB).toFixed(2)} MB`;
