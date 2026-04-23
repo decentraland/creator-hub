@@ -564,7 +564,7 @@
         }
       },
       "collaborators": {
-        "description": "<span>Add up to 10 collaborators</span> and manage their permission to deploy, or stream into your World.",
+        "description": "<span>Add up to 100 collaborators</span> and manage their permission to deploy, or stream into your World.",
         "empty_list": "You haven't added any collaborators yet",
         "add_collaborator": "Add collaborator",
         "add": "Add",

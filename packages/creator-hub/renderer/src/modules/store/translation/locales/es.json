@@ -564,7 +564,7 @@
         }
       },
       "collaborators": {
-        "description": "<span>Agrega hasta 10 colaboradores</span> y gestiona sus permisos para publicar o transmitir en tu Mundo.",
+        "description": "<span>Agrega hasta 100 colaboradores</span> y gestiona sus permisos para publicar o transmitir en tu Mundo.",
         "empty_list": "Aún no has agregado ningún colaborador",
         "add_collaborator": "Agregar colaborador",
         "add": "Agregar",
