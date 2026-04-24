@@ -7,6 +7,7 @@ import type * as Schemas from '@dcl/schemas';
 
 import { createEditorComponents } from '../../sdk/components';
 import { createOperations } from '../../sdk/operations';
+import { ParticleSystemSchema } from '../../sdk/components/ParticleSystem';
 import { getDataLayerInterface } from '../../../redux/data-layer';
 import { ROOT } from '../../sdk/tree';
 import type { ComponentOperation } from './component-operations';
@@ -30,6 +31,7 @@ import { putAvatarAttachComponent } from './sdkComponents/avatar-attach';
 import { putHideComponent } from './editorComponents/hide';
 import { putLockComponent } from './editorComponents/lock';
 import { putPlaceholderComponent } from './sdkComponents/placeholder';
+import { putParticleSystemComponent } from './sdkComponents/particle-system';
 
 export type LoadableScene = {
   readonly entity: Readonly<Omit<Schemas.Entity, 'id'>>;
@@ -69,6 +71,10 @@ export class SceneContext {
   NftShape = components.NftShape(this.engine);
   VideoPlayer = components.VideoPlayer(this.engine);
   AvatarAttach = components.AvatarAttach(this.engine);
+  ParticleSystem = this.engine.defineComponentFromSchema(
+    'core::ParticleSystem',
+    ParticleSystemSchema,
+  );
 
   readonly editorComponents = createEditorComponents(this.engine);
 
@@ -87,6 +93,7 @@ export class SceneContext {
     [this.editorComponents.Hide.componentId]: putHideComponent,
     [this.editorComponents.Lock.componentId]: putLockComponent,
     [this.editorComponents.Placeholder.componentId]: putPlaceholderComponent,
+    [this.ParticleSystem.componentId]: putParticleSystemComponent,
   };
 
   readonly componentDeleteOperations: Record<number, ComponentOperation> = {
@@ -104,6 +111,7 @@ export class SceneContext {
     [this.editorComponents.Hide.componentId]: putHideComponent,
     [this.editorComponents.Lock.componentId]: putLockComponent,
     [this.editorComponents.Placeholder.componentId]: putPlaceholderComponent,
+    [this.ParticleSystem.componentId]: putParticleSystemComponent,
   };
 
   // this future is resolved when the scene is disposed
