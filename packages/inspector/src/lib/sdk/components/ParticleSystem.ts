@@ -2,50 +2,92 @@ import { Schemas } from '@dcl/ecs';
 
 export const PARTICLE_SYSTEM_COMPONENT_ID = 1217;
 
+const FloatRangeSchema = Schemas.Map({
+  start: Schemas.Float,
+  end: Schemas.Float,
+});
+
+const ColorRangeSchema = Schemas.Map({
+  start: Schemas.Color4,
+  end: Schemas.Color4,
+});
+
+const TextureSchema = Schemas.Map({
+  src: Schemas.String,
+  wrapMode: Schemas.Optional(Schemas.Int),
+  filterMode: Schemas.Optional(Schemas.Int),
+  offset: Schemas.Optional(
+    Schemas.Map({
+      x: Schemas.Float,
+      y: Schemas.Float,
+    }),
+  ),
+  tiling: Schemas.Optional(
+    Schemas.Map({
+      x: Schemas.Float,
+      y: Schemas.Float,
+    }),
+  ),
+});
+
+const ShapePointSchema = Schemas.Map({});
+const ShapeSphereSchema = Schemas.Map({
+  radius: Schemas.Optional(Schemas.Float),
+});
+const ShapeConeSchema = Schemas.Map({
+  angle: Schemas.Optional(Schemas.Float),
+  radius: Schemas.Optional(Schemas.Float),
+});
+const ShapeBoxSchema = Schemas.Map({
+  size: Schemas.Optional(Schemas.Vector3),
+});
+
+const ShapeSchema = Schemas.Map({
+  $case: Schemas.String,
+  point: Schemas.Optional(ShapePointSchema),
+  sphere: Schemas.Optional(ShapeSphereSchema),
+  cone: Schemas.Optional(ShapeConeSchema),
+  box: Schemas.Optional(ShapeBoxSchema),
+});
+
+const BurstSchema = Schemas.Map({
+  time: Schemas.Float,
+  count: Schemas.Int,
+  cycles: Schemas.Optional(Schemas.Int),
+  interval: Schemas.Optional(Schemas.Float),
+  probability: Schemas.Optional(Schemas.Float),
+});
+
+const BurstConfigurationSchema = Schemas.Map({
+  values: Schemas.Array(BurstSchema),
+});
+
 export const ParticleSystemSchema = Object.assign(
   Schemas.Map({
-    // Emission
     active: Schemas.Optional(Schemas.Boolean),
     rate: Schemas.Optional(Schemas.Float),
     maxParticles: Schemas.Optional(Schemas.Int),
     lifetime: Schemas.Optional(Schemas.Float),
 
-    // Motion
     gravity: Schemas.Optional(Schemas.Float),
     additionalForce: Schemas.Optional(Schemas.Vector3),
 
-    // Size
-    initialSize: Schemas.Optional(Schemas.Map({ min: Schemas.Float, max: Schemas.Float })),
-    sizeOverTime: Schemas.Optional(Schemas.Map({ min: Schemas.Float, max: Schemas.Float })),
+    initialSize: Schemas.Optional(FloatRangeSchema),
+    sizeOverTime: Schemas.Optional(FloatRangeSchema),
 
-    // Rotation
     initialRotation: Schemas.Optional(Schemas.Quaternion),
     rotationOverTime: Schemas.Optional(Schemas.Quaternion),
     faceTravelDirection: Schemas.Optional(Schemas.Boolean),
 
-    // Color
-    initialColor: Schemas.Optional(
-      Schemas.Map({
-        from: Schemas.Color4,
-        to: Schemas.Color4,
-      }),
-    ),
-    colorOverTime: Schemas.Optional(
-      Schemas.Map({
-        from: Schemas.Color4,
-        to: Schemas.Color4,
-      }),
-    ),
+    initialColor: Schemas.Optional(ColorRangeSchema),
+    colorOverTime: Schemas.Optional(ColorRangeSchema),
 
-    // Velocity
-    initialVelocitySpeed: Schemas.Optional(Schemas.Map({ min: Schemas.Float, max: Schemas.Float })),
+    initialVelocitySpeed: Schemas.Optional(FloatRangeSchema),
 
-    // Rendering
-    textureSrc: Schemas.Optional(Schemas.String),
+    texture: Schemas.Optional(TextureSchema),
     blendMode: Schemas.Optional(Schemas.Int),
     billboard: Schemas.Optional(Schemas.Boolean),
 
-    // Sprite Sheet
     spriteSheet: Schemas.Optional(
       Schemas.Map({
         tilesX: Schemas.Int,
@@ -54,41 +96,47 @@ export const ParticleSystemSchema = Object.assign(
       }),
     ),
 
-    // Shape (flattened from proto oneof)
-    // 0 = Point, 1 = Sphere, 2 = Cone, 3 = Box
-    shapeType: Schemas.Optional(Schemas.Int),
-    sphereRadius: Schemas.Optional(Schemas.Float),
-    coneAngle: Schemas.Optional(Schemas.Float),
-    coneRadius: Schemas.Optional(Schemas.Float),
-    boxSize: Schemas.Optional(Schemas.Vector3),
+    shape: Schemas.Optional(ShapeSchema),
 
-    // Simulation
     loop: Schemas.Optional(Schemas.Boolean),
     prewarm: Schemas.Optional(Schemas.Boolean),
     simulationSpace: Schemas.Optional(Schemas.Int),
 
-    // Limit Velocity
-    limitVelocitySpeed: Schemas.Optional(Schemas.Float),
-    limitVelocityDampen: Schemas.Optional(Schemas.Float),
+    limitVelocity: Schemas.Optional(
+      Schemas.Map({
+        speed: Schemas.Float,
+        dampen: Schemas.Optional(Schemas.Float),
+      }),
+    ),
 
-    // Playback
     playbackState: Schemas.Optional(Schemas.Int),
 
-    // Bursts
-    bursts: Schemas.Optional(
-      Schemas.Array(
-        Schemas.Map({
-          time: Schemas.Float,
-          count: Schemas.Int,
-          cycles: Schemas.Optional(Schemas.Int),
-          interval: Schemas.Optional(Schemas.Float),
-          probability: Schemas.Optional(Schemas.Float),
-        }),
-      ),
-    ),
+    bursts: Schemas.Optional(BurstConfigurationSchema),
   }),
   { COMPONENT_ID: PARTICLE_SYSTEM_COMPONENT_ID },
 );
+
+export type ParticleSystemTexture = {
+  src: string;
+  wrapMode?: number;
+  filterMode?: number;
+  offset?: { x: number; y: number };
+  tiling?: { x: number; y: number };
+};
+
+export type ParticleSystemShape =
+  | { $case: 'point'; point: Record<string, never> }
+  | { $case: 'sphere'; sphere: { radius?: number } }
+  | { $case: 'cone'; cone: { angle?: number; radius?: number } }
+  | { $case: 'box'; box: { size?: { x: number; y: number; z: number } } };
+
+export type ParticleSystemBurst = {
+  time: number;
+  count: number;
+  cycles?: number;
+  interval?: number;
+  probability?: number;
+};
 
 export type ParticleSystemComponentType = {
   active?: boolean;
@@ -97,40 +145,29 @@ export type ParticleSystemComponentType = {
   lifetime?: number;
   gravity?: number;
   additionalForce?: { x: number; y: number; z: number };
-  initialSize?: { min: number; max: number };
-  sizeOverTime?: { min: number; max: number };
+  initialSize?: { start: number; end: number };
+  sizeOverTime?: { start: number; end: number };
   initialRotation?: { x: number; y: number; z: number; w: number };
   rotationOverTime?: { x: number; y: number; z: number; w: number };
   faceTravelDirection?: boolean;
   initialColor?: {
-    from: { r: number; g: number; b: number; a: number };
-    to: { r: number; g: number; b: number; a: number };
+    start: { r: number; g: number; b: number; a: number };
+    end: { r: number; g: number; b: number; a: number };
   };
   colorOverTime?: {
-    from: { r: number; g: number; b: number; a: number };
-    to: { r: number; g: number; b: number; a: number };
+    start: { r: number; g: number; b: number; a: number };
+    end: { r: number; g: number; b: number; a: number };
   };
-  initialVelocitySpeed?: { min: number; max: number };
-  textureSrc?: string;
+  initialVelocitySpeed?: { start: number; end: number };
+  texture?: ParticleSystemTexture;
   blendMode?: number;
   billboard?: boolean;
   spriteSheet?: { tilesX: number; tilesY: number; framesPerSecond?: number };
-  shapeType?: number;
-  sphereRadius?: number;
-  coneAngle?: number;
-  coneRadius?: number;
-  boxSize?: { x: number; y: number; z: number };
+  shape?: ParticleSystemShape;
   loop?: boolean;
   prewarm?: boolean;
   simulationSpace?: number;
-  limitVelocitySpeed?: number;
-  limitVelocityDampen?: number;
+  limitVelocity?: { speed: number; dampen?: number };
   playbackState?: number;
-  bursts?: Array<{
-    time: number;
-    count: number;
-    cycles?: number;
-    interval?: number;
-    probability?: number;
-  }>;
+  bursts?: { values: ParticleSystemBurst[] };
 };

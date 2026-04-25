@@ -7,11 +7,6 @@ import type { ComponentOperation } from '../component-operations';
 import type { EcsEntity } from '../EcsEntity';
 import { toggleMeshSelection } from '../editorComponents/selection';
 
-const SHAPE_TYPE_POINT = 0;
-const SHAPE_TYPE_SPHERE = 1;
-const SHAPE_TYPE_CONE = 2;
-const SHAPE_TYPE_BOX = 3;
-
 const HELPER_COLOR = new Color3(0.2, 0.8, 1.0);
 
 function getOrCreateHelperMaterial(entity: EcsEntity) {
@@ -61,21 +56,13 @@ export const putParticleSystemComponent: ComponentOperation = (entity, component
   const scene = entity.scene || entity.getScene();
   if (!scene) return;
 
-  const shapeType = value.shapeType ?? SHAPE_TYPE_POINT;
+  const shape = value.shape;
   let mesh: Mesh | undefined;
   const material = getOrCreateHelperMaterial(entity);
 
-  switch (shapeType) {
-    case SHAPE_TYPE_POINT: {
-      mesh = MeshBuilder.CreateSphere(
-        `ps-helper-${entity.entityId}`,
-        { diameter: 0.15, segments: 8 },
-        scene,
-      );
-      break;
-    }
-    case SHAPE_TYPE_SPHERE: {
-      const radius = value.sphereRadius ?? 1;
+  switch (shape?.$case) {
+    case 'sphere': {
+      const radius = shape.sphere?.radius ?? 1;
       mesh = MeshBuilder.CreateSphere(
         `ps-helper-${entity.entityId}`,
         { diameter: radius * 2, segments: 16 },
@@ -83,9 +70,9 @@ export const putParticleSystemComponent: ComponentOperation = (entity, component
       );
       break;
     }
-    case SHAPE_TYPE_CONE: {
-      const angle = value.coneAngle ?? 25;
-      const radius = value.coneRadius ?? 1;
+    case 'cone': {
+      const angle = shape.cone?.angle ?? 25;
+      const radius = shape.cone?.radius ?? 1;
       const height = radius * 2;
       const topRadius = Math.tan((angle * Math.PI) / 180) * height;
       mesh = MeshBuilder.CreateCylinder(
@@ -100,8 +87,8 @@ export const putParticleSystemComponent: ComponentOperation = (entity, component
       );
       break;
     }
-    case SHAPE_TYPE_BOX: {
-      const size = value.boxSize ?? { x: 1, y: 1, z: 1 };
+    case 'box': {
+      const size = shape.box?.size ?? { x: 1, y: 1, z: 1 };
       mesh = MeshBuilder.CreateBox(
         `ps-helper-${entity.entityId}`,
         {
@@ -109,6 +96,15 @@ export const putParticleSystemComponent: ComponentOperation = (entity, component
           height: size.y,
           depth: size.z,
         },
+        scene,
+      );
+      break;
+    }
+    case 'point':
+    default: {
+      mesh = MeshBuilder.CreateSphere(
+        `ps-helper-${entity.entityId}`,
+        { diameter: 0.15, segments: 8 },
         scene,
       );
       break;

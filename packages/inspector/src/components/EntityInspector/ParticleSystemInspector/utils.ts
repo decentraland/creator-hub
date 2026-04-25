@@ -1,8 +1,83 @@
-import type { ParticleSystemComponentType } from '../../../lib/sdk/components/ParticleSystem';
+import type {
+  ParticleSystemBurst,
+  ParticleSystemComponentType,
+  ParticleSystemShape,
+} from '../../../lib/sdk/components/ParticleSystem';
 import { toHex, toColor3 } from '../../ui/ColorField/utils';
-import { Texture } from '../MaterialInspector/Texture/types';
-import type { ParticleSystemInput } from './types';
+import type { ParticleSystemInput, BurstInput } from './types';
 import { ShapeType } from './types';
+
+const fromShape = (shape: ParticleSystemShape | undefined) => {
+  const sphere = shape?.$case === 'sphere' ? shape.sphere : undefined;
+  const cone = shape?.$case === 'cone' ? shape.cone : undefined;
+  const box = shape?.$case === 'box' ? shape.box?.size : undefined;
+  return {
+    shapeType: (shape?.$case ?? ShapeType.POINT) as ShapeType,
+    sphere: { radius: String(sphere?.radius ?? 1) },
+    cone: {
+      angle: String(cone?.angle ?? 25),
+      radius: String(cone?.radius ?? 1),
+    },
+    box: {
+      x: String(box?.x ?? 1),
+      y: String(box?.y ?? 1),
+      z: String(box?.z ?? 1),
+    },
+  };
+};
+
+const toShape = (input: ParticleSystemInput): ParticleSystemShape => {
+  switch (input.shapeType) {
+    case ShapeType.SPHERE:
+      return {
+        $case: 'sphere',
+        sphere: { radius: Number(input.sphere.radius) },
+      };
+    case ShapeType.CONE:
+      return {
+        $case: 'cone',
+        cone: { angle: Number(input.cone.angle), radius: Number(input.cone.radius) },
+      };
+    case ShapeType.BOX:
+      return {
+        $case: 'box',
+        box: {
+          size: {
+            x: Number(input.box.x),
+            y: Number(input.box.y),
+            z: Number(input.box.z),
+          },
+        },
+      };
+    case ShapeType.POINT:
+    default:
+      return { $case: 'point', point: {} };
+  }
+};
+
+const fromBurst = (burst: ParticleSystemBurst): BurstInput => ({
+  time: String(burst.time ?? 0),
+  count: String(burst.count ?? 0),
+  cycles: String(burst.cycles ?? 1),
+  interval: String(burst.interval ?? 0.01),
+  probability: String(burst.probability ?? 1),
+});
+
+const toBurst = (input: BurstInput): ParticleSystemBurst => ({
+  time: Number(input.time),
+  count: Number(input.count),
+  cycles: Number(input.cycles),
+  interval: Number(input.interval),
+  probability: Number(input.probability),
+});
+
+export const createDefaultBurst = (): BurstInput => ({
+  time: '0',
+  count: '10',
+  cycles: '1',
+  interval: '0.01',
+  probability: '1',
+});
 
 export const fromComponent = (value: ParticleSystemComponentType): ParticleSystemInput => ({
   active: value.active ?? true,
@@ -16,39 +91,32 @@ export const fromComponent = (value: ParticleSystemComponentType): ParticleSyste
     z: String(value.additionalForce?.z ?? 0),
   },
   initialSize: {
-    min: String(value.initialSize?.min ?? 1),
-    max: String(value.initialSize?.max ?? 1),
+    start: String(value.initialSize?.start ?? 1),
+    end: String(value.initialSize?.end ?? 1),
   },
   sizeOverTime: {
-    min: String(value.sizeOverTime?.min ?? 1),
-    max: String(value.sizeOverTime?.max ?? 1),
+    start: String(value.sizeOverTime?.start ?? 1),
+    end: String(value.sizeOverTime?.end ?? 1),
   },
   faceTravelDirection: value.faceTravelDirection ?? false,
   initialColor: {
-    from: toHex(value.initialColor?.from).toUpperCase(),
-    fromAlpha: String(value.initialColor?.from?.a ?? 1),
-    to: toHex(value.initialColor?.to).toUpperCase(),
-    toAlpha: String(value.initialColor?.to?.a ?? 1),
+    startColor: toHex(value.initialColor?.start).toUpperCase(),
+    startAlpha: String(value.initialColor?.start?.a ?? 1),
+    endColor: toHex(value.initialColor?.end).toUpperCase(),
+    endAlpha: String(value.initialColor?.end?.a ?? 1),
   },
   colorOverTime: {
-    from: toHex(value.colorOverTime?.from).toUpperCase(),
-    fromAlpha: String(value.colorOverTime?.from?.a ?? 1),
-    to: toHex(value.colorOverTime?.to).toUpperCase(),
-    toAlpha: String(value.colorOverTime?.to?.a ?? 1),
+    startColor: toHex(value.colorOverTime?.start).toUpperCase(),
+    startAlpha: String(value.colorOverTime?.start?.a ?? 1),
+    endColor: toHex(value.colorOverTime?.end).toUpperCase(),
+    endAlpha: String(value.colorOverTime?.end?.a ?? 1),
   },
   initialVelocitySpeed: {
-    min: String(value.initialVelocitySpeed?.min ?? 1),
-    max: String(value.initialVelocitySpeed?.max ?? 1),
+    start: String(value.initialVelocitySpeed?.start ?? 1),
+    end: String(value.initialVelocitySpeed?.end ?? 1),
   },
-  textureEnabled: !!(value.textureSrc && value.textureSrc.length > 0),
-  texture: {
-    type: Texture.TT_TEXTURE,
-    src: value.textureSrc ?? '',
-    wrapMode: '0',
-    filterMode: '0',
-    offset: { x: '0', y: '0' },
-    tiling: { x: '1', y: '1' },
-  },
+  textureEnabled: !!value.texture,
+  texture: { src: value.texture?.src ?? '' },
   blendMode: String(value.blendMode ?? 0),
   billboard: value.billboard ?? true,
   spriteSheetEnabled: !!value.spriteSheet,
@@ -57,34 +125,26 @@ export const fromComponent = (value: ParticleSystemComponentType): ParticleSyste
     tilesY: String(value.spriteSheet?.tilesY ?? 1),
     framesPerSecond: String(value.spriteSheet?.framesPerSecond ?? 30),
   },
-  shapeType: String(value.shapeType ?? ShapeType.POINT),
-  sphere: { radius: String(value.sphereRadius ?? 1) },
-  cone: {
-    angle: String(value.coneAngle ?? 25),
-    radius: String(value.coneRadius ?? 1),
-  },
-  box: {
-    x: String(value.boxSize?.x ?? 1),
-    y: String(value.boxSize?.y ?? 1),
-    z: String(value.boxSize?.z ?? 1),
-  },
+  ...fromShape(value.shape),
   loop: value.loop ?? true,
   prewarm: value.prewarm ?? false,
   simulationSpace: String(value.simulationSpace ?? 0),
+  limitVelocityEnabled: !!value.limitVelocity,
   limitVelocity: {
-    speed: String(value.limitVelocitySpeed ?? 0),
-    dampen: String(value.limitVelocityDampen ?? 1),
+    speed: String(value.limitVelocity?.speed ?? 5),
+    dampen: String(value.limitVelocity?.dampen ?? 1),
   },
   playbackState: String(value.playbackState ?? 0),
+  bursts: (value.bursts?.values ?? []).map(fromBurst),
 });
 
 export const toComponent = (input: ParticleSystemInput): ParticleSystemComponentType => {
-  const fromColor = toColor3(input.initialColor.from);
-  const toColor = toColor3(input.initialColor.to);
-  const cotFromColor = toColor3(input.colorOverTime.from);
-  const cotToColor = toColor3(input.colorOverTime.to);
+  const startColor = toColor3(input.initialColor.startColor);
+  const endColor = toColor3(input.initialColor.endColor);
+  const cotStartColor = toColor3(input.colorOverTime.startColor);
+  const cotEndColor = toColor3(input.colorOverTime.endColor);
 
-  return {
+  const component: ParticleSystemComponentType = {
     active: input.active,
     rate: Number(input.rate),
     maxParticles: Number(input.maxParticles),
@@ -96,27 +156,26 @@ export const toComponent = (input: ParticleSystemInput): ParticleSystemComponent
       z: Number(input.additionalForce.z),
     },
     initialSize: {
-      min: Number(input.initialSize.min),
-      max: Number(input.initialSize.max),
+      start: Number(input.initialSize.start),
+      end: Number(input.initialSize.end),
     },
     sizeOverTime: {
-      min: Number(input.sizeOverTime.min),
-      max: Number(input.sizeOverTime.max),
+      start: Number(input.sizeOverTime.start),
+      end: Number(input.sizeOverTime.end),
     },
     faceTravelDirection: input.faceTravelDirection,
     initialColor: {
-      from: { ...fromColor, a: Number(input.initialColor.fromAlpha) },
-      to: { ...toColor, a: Number(input.initialColor.toAlpha) },
+      start: { ...startColor, a: Number(input.initialColor.startAlpha) },
+      end: { ...endColor, a: Number(input.initialColor.endAlpha) },
     },
     colorOverTime: {
-      from: { ...cotFromColor, a: Number(input.colorOverTime.fromAlpha) },
-      to: { ...cotToColor, a: Number(input.colorOverTime.toAlpha) },
+      start: { ...cotStartColor, a: Number(input.colorOverTime.startAlpha) },
+      end: { ...cotEndColor, a: Number(input.colorOverTime.endAlpha) },
     },
     initialVelocitySpeed: {
-      min: Number(input.initialVelocitySpeed.min),
-      max: Number(input.initialVelocitySpeed.max),
+      start: Number(input.initialVelocitySpeed.start),
+      end: Number(input.initialVelocitySpeed.end),
     },
-    textureSrc: input.textureEnabled ? (input.texture.src ?? '') : '',
     blendMode: Number(input.blendMode),
     billboard: input.billboard,
     spriteSheet: input.spriteSheetEnabled
@@ -126,22 +185,25 @@ export const toComponent = (input: ParticleSystemInput): ParticleSystemComponent
           framesPerSecond: Number(input.spriteSheet.framesPerSecond),
         }
       : undefined,
-    shapeType: Number(input.shapeType),
-    sphereRadius: Number(input.sphere.radius),
-    coneAngle: Number(input.cone.angle),
-    coneRadius: Number(input.cone.radius),
-    boxSize: {
-      x: Number(input.box.x),
-      y: Number(input.box.y),
-      z: Number(input.box.z),
-    },
+    shape: toShape(input),
     loop: input.loop,
     prewarm: input.prewarm,
     simulationSpace: Number(input.simulationSpace),
-    limitVelocitySpeed: Number(input.limitVelocity.speed),
-    limitVelocityDampen: Number(input.limitVelocity.dampen),
+    limitVelocity: input.limitVelocityEnabled
+      ? {
+          speed: Number(input.limitVelocity.speed),
+          dampen: Number(input.limitVelocity.dampen),
+        }
+      : undefined,
     playbackState: Number(input.playbackState),
+    bursts: input.bursts.length > 0 ? { values: input.bursts.map(toBurst) } : undefined,
   };
+
+  if (input.textureEnabled) {
+    component.texture = { src: input.texture.src ?? '' };
+  }
+
+  return component;
 };
 
 export const isValidInput = (input: ParticleSystemInput): boolean => {
@@ -150,5 +212,10 @@ export const isValidInput = (input: ParticleSystemInput): boolean => {
   const lifetime = Number(input.lifetime);
   if (isNaN(rate) || isNaN(maxParticles) || isNaN(lifetime)) return false;
   if (rate < 0 || maxParticles < 0 || lifetime < 0) return false;
+  for (const burst of input.bursts) {
+    const time = Number(burst.time);
+    const count = Number(burst.count);
+    if (isNaN(time) || isNaN(count) || time < 0 || count < 0) return false;
+  }
   return true;
 };

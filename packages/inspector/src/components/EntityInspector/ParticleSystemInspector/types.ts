@@ -1,19 +1,17 @@
 import type { Entity } from '@dcl/ecs';
 
-import type { TextureInput } from '../MaterialInspector/Texture/types';
-
 export enum ShapeType {
-  POINT = 0,
-  SPHERE = 1,
-  CONE = 2,
-  BOX = 3,
+  POINT = 'point',
+  SPHERE = 'sphere',
+  CONE = 'cone',
+  BOX = 'box',
 }
 
 export const SHAPE_TYPE_OPTIONS = [
-  { label: 'Point', value: String(ShapeType.POINT) },
-  { label: 'Sphere', value: String(ShapeType.SPHERE) },
-  { label: 'Cone', value: String(ShapeType.CONE) },
-  { label: 'Box', value: String(ShapeType.BOX) },
+  { label: 'Point', value: ShapeType.POINT },
+  { label: 'Sphere', value: ShapeType.SPHERE },
+  { label: 'Cone', value: ShapeType.CONE },
+  { label: 'Box', value: ShapeType.BOX },
 ];
 
 export enum BlendMode {
@@ -50,6 +48,14 @@ export const SIMULATION_SPACE_OPTIONS = [
   { label: 'World', value: String(SimulationSpace.PSS_WORLD) },
 ];
 
+export type BurstInput = {
+  time: string;
+  count: string;
+  cycles: string;
+  interval: string;
+  probability: string;
+};
+
 export type ParticleSystemInput = {
   active: boolean;
   rate: string;
@@ -57,27 +63,29 @@ export type ParticleSystemInput = {
   lifetime: string;
   gravity: string;
   additionalForce: { x: string; y: string; z: string };
-  initialSize: { min: string; max: string };
-  sizeOverTime: { min: string; max: string };
+  initialSize: { start: string; end: string };
+  sizeOverTime: { start: string; end: string };
   faceTravelDirection: boolean;
-  initialColor: { from: string; fromAlpha: string; to: string; toAlpha: string };
-  colorOverTime: { from: string; fromAlpha: string; to: string; toAlpha: string };
-  initialVelocitySpeed: { min: string; max: string };
+  initialColor: { startColor: string; startAlpha: string; endColor: string; endAlpha: string };
+  colorOverTime: { startColor: string; startAlpha: string; endColor: string; endAlpha: string };
+  initialVelocitySpeed: { start: string; end: string };
   textureEnabled: boolean;
-  texture: TextureInput;
+  texture: { src: string };
   blendMode: string;
   billboard: boolean;
   spriteSheetEnabled: boolean;
   spriteSheet: { tilesX: string; tilesY: string; framesPerSecond: string };
-  shapeType: string;
+  shapeType: ShapeType;
   sphere: { radius: string };
   cone: { angle: string; radius: string };
   box: { x: string; y: string; z: string };
   loop: boolean;
   prewarm: boolean;
   simulationSpace: string;
+  limitVelocityEnabled: boolean;
   limitVelocity: { speed: string; dampen: string };
   playbackState: string;
+  bursts: BurstInput[];
 };
 
 export type Props = { entities: Entity[]; initialOpen?: boolean };
