@@ -29,6 +29,8 @@ import type { ConfigComponentType } from './Config';
 import type { InspectorUIStateType } from './InspectorUIState';
 import { EditorComponentNames as BaseEditorComponentNames } from './types';
 import { defineAllComponents as defineAllInspectorComponents } from './versioning/registry';
+import { ParticleSystemSchema } from './ParticleSystem';
+import type { ParticleSystemComponentType } from './ParticleSystem';
 
 export { SceneAgeRating, SceneCategory };
 export { CoreComponents, AllComponentsType } from './types';
@@ -170,6 +172,7 @@ export type SdkComponents = {
   Tags: ReturnType<typeof components.Tags>;
   LightSource: ReturnType<typeof components.LightSource>;
   GltfNodeModifiers: ReturnType<typeof components.GltfNodeModifiers>;
+  ParticleSystem: LastWriteWinElementSetComponentDefinition<ParticleSystemComponentType>;
 };
 
 export function createComponents(engine: IEngine): SdkComponents {
@@ -197,6 +200,10 @@ export function createComponents(engine: IEngine): SdkComponents {
   const Tags = components.Tags(engine);
   const LightSource = components.LightSource(engine);
   const GltfNodeModifiers = components.GltfNodeModifiers(engine);
+  const ParticleSystem = engine.defineComponentFromSchema(
+    'core::ParticleSystem',
+    ParticleSystemSchema,
+  ) as unknown as LastWriteWinElementSetComponentDefinition<ParticleSystemComponentType>;
 
   return {
     Animator,
@@ -223,6 +230,7 @@ export function createComponents(engine: IEngine): SdkComponents {
     VisibilityComponent,
     LightSource,
     GltfNodeModifiers,
+    ParticleSystem,
   };
 }
 
