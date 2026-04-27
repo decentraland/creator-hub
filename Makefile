@@ -45,7 +45,12 @@ install-creator-hub:
 init-submodules:
 	git submodule update --init --recursive
 
-install-protoc:
+get-protobuf-version:
+	@echo $(PROTOBUF_VERSION)
+
+install-protoc: $(PROTOC)
+
+$(PROTOC):
 	mkdir -p node_modules/.bin/protobuf
 	@echo "Downloading protoc $(PROTOBUF_VERSION) for $(UNAME_S) $(UNAME_M)..."
 	@echo "Target file: $(PROTOBUF_ZIP)"

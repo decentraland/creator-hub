@@ -97,12 +97,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup
+        id: setup
         with:
-          node-version: 24
-          cache: 'npm'
+          cache-protoc: 'true'
 
       - name: install
+        if: steps.setup.outputs.node-modules-cache-hit != 'true'
         run: npm i --silent && make install-inspector
 
       - name: install asset-packs
