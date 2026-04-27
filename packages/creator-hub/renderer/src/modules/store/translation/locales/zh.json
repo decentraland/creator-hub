@@ -625,7 +625,7 @@
       "cancel": "取消"
     },
     "mobile_qr": {
-      "title": "移动端预览",
+      "title": "连接 Mobile Debug Session",
       "description": "使用移动设备扫描此二维码预览场景",
       "disclaimer": "您的电脑和移动设备必须在同一网络中"
     }
@@ -858,6 +858,7 @@
         "edit_name": "编辑名称",
         "permissions": "权限",
         "parcel": "地块",
+        "view_storage": "查看存储",
         "unpublish": "取消发布"
       },
       "no_scene": {

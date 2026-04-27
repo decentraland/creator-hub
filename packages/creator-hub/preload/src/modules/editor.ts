@@ -1,9 +1,12 @@
 import { ipcRenderer, type IpcRendererEvent } from 'electron';
 
 import type { DeployOptions } from '/shared/types/deploy';
+import type { MobileDebugSessionInfo } from '/shared/types/ipc';
 
 import { invoke } from '../services/ipc';
 import type { PreviewOptions } from '/shared/types/settings';
+
+export type { MobileDebugSessionInfo };
 
 export async function getVersion() {
   return invoke('electron.getAppVersion');
@@ -79,4 +82,54 @@ export async function openExternalURL(url: string) {
 
 export async function getMobilePreview(path: string) {
   return invoke('cli.getMobilePreview', path);
+}
+
+export async function getMobileDebugSessions() {
+  return invoke('mobileDebug.getSessions');
+}
+
+export async function broadcastMobileDebugCommand(cmd: string, args: Record<string, unknown> = {}) {
+  return invoke('mobileDebug.broadcastCommand', cmd, args);
+}
+
+export async function startMobileDebugServer() {
+  return invoke('mobileDebug.startServer');
+}
+
+export async function stopMobileDebugServer() {
+  return invoke('mobileDebug.stopServer');
+}
+
+export async function getMobileDebugServerStatus() {
+  return invoke('mobileDebug.getServerStatus');
+}
+
+export async function getStandaloneDeeplink() {
+  return invoke('mobileDebug.getStandaloneDeeplink');
+}
+
+export function onMobileDebugEntries(
+  callback: (data: { sessionId: number; entries: unknown[] }) => void,
+): () => void {
+  const handler = (_event: IpcRendererEvent, data: { sessionId: number; entries: unknown[] }) =>
+    callback(data);
+  ipcRenderer.on('mobileDebug:entries', handler);
+  void invoke('mobileDebug.subscribeEntries');
+  return () => {
+    ipcRenderer.removeListener('mobileDebug:entries', handler);
+    void invoke('mobileDebug.unsubscribeEntries');
+  };
+}
+
+export function onMobileDebugSessions(
+  callback: (sessions: MobileDebugSessionInfo[]) => void,
+): () => void {
+  const handler = (_event: IpcRendererEvent, sessions: MobileDebugSessionInfo[]) =>
+    callback(sessions);
+  ipcRenderer.on('mobileDebug:sessions', handler);
+  void invoke('mobileDebug.subscribeSessions');
+  return () => {
+    ipcRenderer.removeListener('mobileDebug:sessions', handler);
+    void invoke('mobileDebug.unsubscribeSessions');
+  };
 }

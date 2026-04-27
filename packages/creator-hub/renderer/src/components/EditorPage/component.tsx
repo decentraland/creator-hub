@@ -19,6 +19,7 @@ import { useSceneCustomCode } from '/@/hooks/useSceneCustomCode';
 import { useDeploy } from '/@/hooks/useDeploy';
 import { useConnectionStatus } from '/@/hooks/useConnectionStatus';
 import { useDebugLogForwarding } from '/@/hooks/useDebugLogForwarding';
+import { useMobileDebugForwarding } from '/@/hooks/useMobileDebugForwarding';
 import { ConnectionStatus } from '/@/lib/connection';
 
 import EditorPng from '/assets/images/editor.png';
@@ -86,6 +87,7 @@ export function EditorPage() {
   const showDebugPanel = settings.previewOptions.debugger;
 
   useDebugLogForwarding(iframeRef, isPreviewRunning, showDebugPanel, project?.path);
+  useMobileDebugForwarding(iframeRef, isPreviewRunning, project?.path);
 
   const handleIframeRef = useCallback(
     (e: React.SyntheticEvent<HTMLIFrameElement, Event>) => {
