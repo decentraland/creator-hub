@@ -47,12 +47,11 @@ jobs:
     if: ${{ needs.version.outputs.changed == 'true' }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
+      - uses: ./.github/actions/setup
+        id: setup
 
       - name: install
+        if: steps.setup.outputs.node-modules-cache-hit != 'true'
         run: npm i --silent && make install-asset-packs
 
       - name: validate
@@ -72,12 +71,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
+      - uses: ./.github/actions/setup
+        id: setup
 
       - name: install
+        if: steps.setup.outputs.node-modules-cache-hit != 'true'
         run: npm i --silent && make install-asset-packs
 
       - name: build
@@ -135,12 +133,11 @@ jobs:
     if: ${{ needs.version.outputs.changed == 'true' && github.ref == 'refs/heads/main' }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
+      - uses: ./.github/actions/setup
+        id: setup
 
       - name: install
+        if: steps.setup.outputs.node-modules-cache-hit != 'true'
         run: npm i --silent && make install-asset-packs
 
       - name: build

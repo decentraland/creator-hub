@@ -1,0 +1,73 @@
+name: Setup workspace
+description: Setup Node, restore node_modules cache, and optionally cache protoc / Playwright / Electron.
+
+inputs:
+  node-version:
+    description: Node version
+    required: false
+    default: '22'
+  cache-protoc:
+    description: Cache the protoc binary downloaded by `make install-protoc`
+    required: false
+    default: 'false'
+  cache-playwright:
+    description: Cache Playwright browsers (~/.cache/ms-playwright)
+    required: false
+    default: 'false'
+  cache-electron:
+    description: Cache Electron binaries (~/.cache/electron, ~/.cache/electron-builder)
+    required: false
+    default: 'false'
+
+outputs:
+  node-modules-cache-hit:
+    description: Whether the node_modules cache was restored
+    value: ${{ steps.cache-node-modules.outputs.cache-hit }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: 'npm'
+
+    - name: Cache node_modules
+      id: cache-node-modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          node_modules
+          packages/*/node_modules
+        key: ${{ runner.os }}-nodemodules-${{ hashFiles('package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-nodemodules-
+
+    - name: Read protoc version from Makefile
+      id: protoc-version
+      if: inputs.cache-protoc == 'true'
+      shell: bash
+      run: echo "version=$(make get-protobuf-version)" >> "$GITHUB_OUTPUT"
+
+    - name: Cache protoc
+      if: inputs.cache-protoc == 'true'
+      uses: actions/cache@v4
+      with:
+        path: node_modules/.bin/protobuf
+        key: ${{ runner.os }}-protoc-${{ steps.protoc-version.outputs.version }}
+
+    - name: Cache Playwright browsers
+      if: inputs.cache-playwright == 'true'
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+
+    - name: Cache Electron
+      if: inputs.cache-electron == 'true'
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/electron
+          ~/.cache/electron-builder
+        key: ${{ runner.os }}-electron-${{ hashFiles('packages/creator-hub/package-lock.json', 'packages/creator-hub/package.json') }}

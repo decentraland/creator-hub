@@ -17,9 +17,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      - uses: actions/setup-node@v4
+      - uses: ./.github/actions/setup
+        id: setup
         with:
-          cache: 'npm'
+          cache-protoc: 'true'
 
-      - run: make init
+      - name: install
+        if: steps.setup.outputs.node-modules-cache-hit != 'true'
+        run: make install
+
+      - run: make protoc
+      - name: build asset-packs types
+        run: npm run -w @dcl/asset-packs build:lib
       - run: npm run typecheck --if-present
