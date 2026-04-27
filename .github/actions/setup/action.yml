@@ -39,7 +39,8 @@ runs:
         path: |
           node_modules
           packages/*/node_modules
-        key: ${{ runner.os }}-nodemodules-${{ hashFiles('package-lock.json') }}
+          packages/creator-hub/.electron-vendors.cache.json
+        key: ${{ runner.os }}-nodemodules-${{ hashFiles('package-lock.json', '.github/actions/setup/action.yml') }}
         restore-keys: |
           ${{ runner.os }}-nodemodules-
 
