@@ -88,6 +88,8 @@ jobs:
       - name: install
         if: steps.setup.outputs.node-modules-cache-hit != 'true'
         run: npm i --silent && make install-inspector
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
 
       - name: install asset-packs
         working-directory: packages/inspector

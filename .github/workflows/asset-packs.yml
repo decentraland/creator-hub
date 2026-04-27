@@ -53,6 +53,8 @@ jobs:
       - name: install
         if: steps.setup.outputs.node-modules-cache-hit != 'true'
         run: npm i --silent && make install-asset-packs
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
 
       - name: validate
         run: make validate-asset-packs
@@ -77,6 +79,8 @@ jobs:
       - name: install
         if: steps.setup.outputs.node-modules-cache-hit != 'true'
         run: npm i --silent && make install-asset-packs
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
 
       - name: build
         run: make build-asset-packs
@@ -139,6 +143,8 @@ jobs:
       - name: install
         if: steps.setup.outputs.node-modules-cache-hit != 'true'
         run: npm i --silent && make install-asset-packs
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
 
       - name: build
         run: make build-asset-packs

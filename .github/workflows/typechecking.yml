@@ -25,6 +25,8 @@ jobs:
       - name: install
         if: steps.setup.outputs.node-modules-cache-hit != 'true'
         run: make install
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
 
       - run: make protoc
       - name: build asset-packs typecheck deps
