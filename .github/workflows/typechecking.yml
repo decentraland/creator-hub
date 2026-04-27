@@ -27,6 +27,8 @@ jobs:
         run: make install
 
       - run: make protoc
-      - name: build asset-packs types
-        run: npm run -w @dcl/asset-packs build:lib
+      - name: build asset-packs typecheck deps
+        run: |
+          npm run -w @dcl/asset-packs build:lib
+          npm run -w @dcl/asset-packs build:catalog
       - run: npm run typecheck --if-present
