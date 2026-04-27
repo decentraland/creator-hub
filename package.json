@@ -10,6 +10,7 @@
     "@dcl/ts-proto": "1.154.0",
     "@testing-library/react": "14.0.0",
     "@typescript-eslint/eslint-plugin": "7.15.0",
+    "concurrently": "^8.2.1",
     "eslint": "8.57.0",
     "eslint-plugin-import": "2.31.0",
     "happy-dom": "14.12.3",
@@ -34,8 +35,14 @@
     "syncpack:fix": "syncpack fix-mismatches --config .syncpackrc.json --source \"packages/*/package.json\" --source \"package.json\"",
     "syncpack:format": "syncpack format --config .syncpackrc.json --source \"packages/*/package.json\" --source \"package.json\"",
     "syncpack:list-mismatches": "syncpack list-mismatches --config .syncpackrc.json --source \"packages/*/package.json\" --source \"package.json\"",
-    "test": "npm run test --workspaces",
-    "typecheck": "npm run typecheck --workspaces"
+    "test": "concurrently --kill-others-on-fail --names ap,ins,ch -c blue,green,magenta \"npm:test:asset-packs\" \"npm:test:inspector\" \"npm:test:creator-hub\"",
+    "test:asset-packs": "npm run test -w @dcl/asset-packs",
+    "test:inspector": "npm run test -w @dcl/inspector",
+    "test:creator-hub": "npm run test -w creator-hub",
+    "typecheck": "concurrently --kill-others-on-fail --names ap,ins,ch -c blue,green,magenta \"npm:typecheck:asset-packs\" \"npm:typecheck:inspector\" \"npm:typecheck:creator-hub\"",
+    "typecheck:asset-packs": "npm run typecheck -w @dcl/asset-packs",
+    "typecheck:inspector": "npm run typecheck -w @dcl/inspector",
+    "typecheck:creator-hub": "npm run typecheck -w creator-hub"
   },
   "type": "module",
   "workspaces": [
