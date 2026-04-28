@@ -20,6 +20,7 @@ jobs:
         id: setup
         with:
           cache-protoc: 'true'
+          cache-asset-packs-build: 'true'
 
       - name: install
         if: steps.setup.outputs.node-modules-cache-hit != 'true'
@@ -31,6 +32,7 @@ jobs:
         run: make protoc
 
       - name: build asset-packs
+        if: steps.setup.outputs.asset-packs-build-cache-hit != 'true'
         run: make build-asset-packs
 
       - name: test
@@ -57,6 +59,8 @@ jobs:
         id: setup
         with:
           cache-playwright: 'true'
+          cache-asset-packs-build: 'true'
+          cache-inspector-public: 'true'
 
       - name: install
         if: steps.setup.outputs.node-modules-cache-hit != 'true'
@@ -72,9 +76,11 @@ jobs:
           path: packages/inspector/src/lib/data-layer/proto/gen
 
       - name: build asset-packs
+        if: steps.setup.outputs.asset-packs-build-cache-hit != 'true'
         run: make build-asset-packs
 
       - name: build inspector
+        if: steps.setup.outputs.inspector-public-cache-hit != 'true'
         run: make build-inspector
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"

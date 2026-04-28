@@ -18,11 +18,25 @@ inputs:
     description: Cache Electron binaries (~/.cache/electron, ~/.cache/electron-builder)
     required: false
     default: 'false'
+  cache-asset-packs-build:
+    description: Cache asset-packs build outputs (dist + bin + catalog.json) — used by typecheck, unit tests, and inspector build
+    required: false
+    default: 'false'
+  cache-inspector-public:
+    description: Cache inspector's bundled public/ output (used by E2E)
+    required: false
+    default: 'false'
 
 outputs:
   node-modules-cache-hit:
     description: Whether the node_modules cache was restored
     value: ${{ steps.cache-node-modules.outputs.cache-hit }}
+  asset-packs-build-cache-hit:
+    description: Whether the asset-packs build outputs cache was restored
+    value: ${{ steps.cache-asset-packs-build.outputs.cache-hit }}
+  inspector-public-cache-hit:
+    description: Whether the inspector public/ cache was restored
+    value: ${{ steps.cache-inspector-public.outputs.cache-hit }}
 
 runs:
   using: composite
@@ -72,3 +86,22 @@ runs:
           ~/.cache/electron
           ~/.cache/electron-builder
         key: ${{ runner.os }}-electron-${{ hashFiles('packages/creator-hub/package-lock.json', 'packages/creator-hub/package.json') }}
+
+    - name: Cache asset-packs build outputs
+      id: cache-asset-packs-build
+      if: inputs.cache-asset-packs-build == 'true'
+      uses: actions/cache@v4
+      with:
+        path: |
+          packages/asset-packs/dist
+          packages/asset-packs/bin
+          packages/asset-packs/catalog.json
+        key: ${{ runner.os }}-assetpacks-build-${{ hashFiles('packages/asset-packs/src/**', 'packages/asset-packs/scripts/**', 'packages/asset-packs/tsconfig*.json', 'packages/asset-packs/package.json') }}
+
+    - name: Cache inspector public/
+      id: cache-inspector-public
+      if: inputs.cache-inspector-public == 'true'
+      uses: actions/cache@v4
+      with:
+        path: packages/inspector/public
+        key: ${{ runner.os }}-inspector-public-${{ hashFiles('packages/inspector/src/**', 'packages/inspector/build.js', 'packages/inspector/tsconfig*.json', 'packages/inspector/package.json', 'packages/asset-packs/src/**', 'packages/asset-packs/scripts/**', 'packages/asset-packs/package.json') }}
