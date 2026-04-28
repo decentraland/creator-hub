@@ -49,7 +49,7 @@ jobs:
 
       - name: install
         if: steps.setup.outputs.node-modules-cache-hit != 'true'
-        run: npm i --silent && make install-creator-hub
+        run: make install
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
 
