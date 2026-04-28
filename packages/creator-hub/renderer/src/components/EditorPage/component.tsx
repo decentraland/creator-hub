@@ -4,7 +4,8 @@ import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import CodeIcon from '@mui/icons-material/Code';
 import PublicIcon from '@mui/icons-material/Public';
-import { CircularProgress as Loader } from 'decentraland-ui2';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import { CircularProgress as Loader, Tooltip } from 'decentraland-ui2';
 
 import { isClientNotInstalledError } from '/shared/types/client';
 import { isProjectError } from '/shared/types/projects';
@@ -93,6 +94,10 @@ export function EditorPage() {
     (e: React.SyntheticEvent<HTMLIFrameElement, Event>) => {
       const iframe = e.currentTarget;
       if (project) {
+        if (iframeRef.current) {
+          iframeRef.current.dispose();
+          iframeRef.current = undefined;
+        }
         const rpc = initRpc(iframe, project, { writeFile: updateScene });
         iframeRef.current = rpc;
         void rpc.scene.setFeatureFlags(featureFlags).catch(console.error);
@@ -100,6 +105,16 @@ export function EditorPage() {
     },
     [project, updateScene, featureFlags],
   );
+
+  const handleRefresh = useCallback(() => {
+    const rpc = iframeRef.current;
+    if (!rpc) return;
+    const { iframe } = rpc;
+    const { src } = iframe;
+    rpc.dispose();
+    iframeRef.current = undefined;
+    iframe.src = src;
+  }, []);
 
   useEffect(() => {
     const rpc = iframeRef.current;
@@ -324,6 +339,15 @@ export function EditorPage() {
                 <ArrowBackIosIcon />
               </div>
               <div className="title">{project.title}</div>
+              <Tooltip title={t('editor.header.actions.refresh')}>
+                <div
+                  className="refresh"
+                  onClick={handleRefresh}
+                  aria-label="refresh-inspector"
+                >
+                  <RefreshIcon />
+                </div>
+              </Tooltip>
             </>
             <div className="actions">
               <Button
