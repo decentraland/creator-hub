@@ -33,22 +33,39 @@ function DebugConsole() {
   }, [enabled]);
 
   useEffect(() => {
-    const handleMouseDown = (e: MouseEvent) => {
-      const target = e.target as Element | null;
-      if (target?.closest('.DebugConsole')) return;
+    const isSelectionInConsole = () => {
       const selection = window.getSelection();
-      if (!selection || selection.toString().length === 0) return;
+      if (!selection || selection.toString().length === 0) return false;
       const anchorNode = selection.anchorNode;
       const anchorElement =
         anchorNode?.nodeType === Node.ELEMENT_NODE
           ? (anchorNode as Element)
           : (anchorNode?.parentElement ?? null);
-      if (anchorElement?.closest('.DebugConsole')) {
-        selection.removeAllRanges();
+      return !!anchorElement?.closest('.DebugConsole');
+    };
+
+    const handleMouseDown = (e: MouseEvent) => {
+      const target = e.target as Element | null;
+      if (target?.closest('.DebugConsole')) return;
+      if (isSelectionInConsole()) {
+        window.getSelection()?.removeAllRanges();
       }
     };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isCopy = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c';
+      if (!isCopy) return;
+      if (isSelectionInConsole()) {
+        e.stopPropagation();
+      }
+    };
+
     document.addEventListener('mousedown', handleMouseDown);
-    return () => document.removeEventListener('mousedown', handleMouseDown);
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('keydown', handleKeyDown, true);
+    };
   }, []);
 
   return (

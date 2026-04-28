@@ -57,17 +57,6 @@ export const useHotkey = (
           element: targetDocument,
         },
         (event, handler) => {
-          const selection = window.getSelection();
-          if (selection && selection.toString().length > 0) {
-            const anchorNode = selection.anchorNode;
-            const anchorElement =
-              anchorNode?.nodeType === Node.ELEMENT_NODE
-                ? (anchorNode as Element)
-                : (anchorNode?.parentElement ?? null);
-            if (anchorElement?.closest('.DebugConsole')) {
-              return;
-            }
-          }
           event.preventDefault();
           callbackRef.current(event, handler);
         },
