@@ -1,0 +1,44 @@
+.entity-type-icon {
+  width: 16px;
+  height: 14px;
+  flex-shrink: 0;
+  background-size: 16px 16px;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.entity-type-icon.player-icon {
+  background-image: url(./icons/player.svg);
+}
+
+.entity-type-icon.camera-icon {
+  background-image: url(./icons/camera.svg);
+}
+
+.entity-type-icon.custom-icon {
+  background-image: url(./icons/custom.svg);
+}
+
+.entity-type-icon.smart-icon {
+  background-image: url(./icons/smart.svg);
+}
+
+.entity-type-icon.tile-icon {
+  background-image: url(./icons/tile.svg);
+}
+
+.entity-type-icon.entity-icon {
+  background-image: url(./icons/entity.svg);
+}
+
+.entity-type-icon.group-icon {
+  background-image: url(./icons/group.svg);
+}
+
+.entity-type-icon.spawn-area-icon {
+  background-image: url(./icons/spawn-area.svg);
+}
+
+.entity-type-icon.camera-target-icon {
+  background-image: url(./icons/camera-target.svg);
+}
