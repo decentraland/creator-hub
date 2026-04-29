@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import cx from 'classnames';
 import WorldSettingsIcon from '@mui/icons-material/SpaceDashboard';
 import { Box, Button, Typography } from 'decentraland-ui2';
 import { useDispatch } from '#store';
-import { actions as managementActions } from '/@/modules/store/management';
+import { actions as managementActions, type ParcelsPermission } from '/@/modules/store/management';
 import { t } from '/@/modules/store/translation/utils';
-import type { WorldScene, WorldSettings } from '/@/lib/worlds';
+import { type WorldScene, type WorldSettings } from '/@/lib/worlds';
 import { WorldSettingsTab } from '/shared/types/manage';
 import type { Props as TabsModalProps } from '../TabsModal';
 import { Loader } from '../../Loader';
@@ -33,11 +34,22 @@ type Props = Omit<TabsModalProps<WorldSettingsTab>, 'tabs' | 'title' | 'children
   worldName: string;
   worldSettings: WorldSettings;
   worldScenes: WorldScene[];
+  isOwner: boolean;
+  userParcelsPermissions?: ParcelsPermission;
   isLoading: boolean;
 };
 
 const WorldSettingsModal: React.FC<Props> = React.memo(
-  ({ worldName, worldSettings, worldScenes, isLoading, activeTab, ...props }) => {
+  ({
+    worldName,
+    worldSettings,
+    worldScenes,
+    userParcelsPermissions,
+    isOwner,
+    isLoading,
+    activeTab,
+    ...props
+  }) => {
     const dispatch = useDispatch();
     const [settingsUpdates, setSettingsUpdates] = useState<Partial<WorldSettings>>({});
     const worldSettingsForm = { ...worldSettings, ...settingsUpdates };
@@ -76,8 +88,9 @@ const WorldSettingsModal: React.FC<Props> = React.memo(
         {...props}
         activeTab={activeTab}
         tabs={WORLD_SETTINGS_TABS}
+        showTabs={isOwner}
         title={t('modal.world_settings.title', { worldName: worldName })}
-        className="WorldSettingsModal"
+        className={cx('WorldSettingsModal', { Collaborator: !isOwner })}
         icon={<WorldSettingsIcon />}
       >
         {isLoading && !hasChanges ? (
@@ -101,6 +114,8 @@ const WorldSettingsModal: React.FC<Props> = React.memo(
                 worldName={worldName}
                 worldSettings={worldSettings}
                 worldScenes={worldScenes}
+                isOwner={isOwner}
+                userParcelsPermissions={userParcelsPermissions}
               />
             )}
             {activeTab !== WorldSettingsTab.LAYOUT && hasChanges && (
