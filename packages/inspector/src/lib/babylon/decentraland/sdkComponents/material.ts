@@ -33,12 +33,20 @@ export const putMaterialComponent: ComponentOperation = (entity, component) => {
       entity.material?.dispose(true, true);
       entity.material = undefined;
       switch (newMaterialType) {
-        case 'pbr':
-          entity.material = new PBRMaterial(entity.entityId.toString(), entity.getScene());
+        case 'pbr': {
+          const pbrMat = new PBRMaterial(entity.entityId.toString(), entity.getScene());
+          // Disable backface culling to match Unity client behaviour
+          pbrMat.backFaceCulling = false;
+          entity.material = pbrMat;
           break;
-        case 'unlit':
-          entity.material = new StandardMaterial(entity.entityId.toString(), entity.getScene());
+        }
+        case 'unlit': {
+          const unlitMat = new StandardMaterial(entity.entityId.toString(), entity.getScene());
+          // Disable backface culling to match Unity client behaviour
+          unlitMat.backFaceCulling = false;
+          entity.material = unlitMat;
           break;
+        }
       }
     }
 
@@ -121,6 +129,8 @@ export const putMaterialComponent: ComponentOperation = (entity, component) => {
 
 export const baseMaterial = memoize((scene: Scene) => {
   const material = new StandardMaterial('base-box', scene);
+  // Disable backface culling to match Unity client behaviour
+  material.backFaceCulling = false;
   return material;
 });
 
