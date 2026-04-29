@@ -42,13 +42,16 @@ jobs:
           fetch-tags: true
           submodules: true
 
-      - uses: actions/setup-node@v4
+      - uses: ./.github/actions/setup
+        id: setup
         with:
-          node-version: 22
-          cache: 'npm'
+          cache-electron: 'true'
 
       - name: install
+        if: steps.setup.outputs.node-modules-cache-hit != 'true'
         run: npm i --silent && make install-creator-hub
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
 
       - name: install inspector
         working-directory: packages/creator-hub
