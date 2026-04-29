@@ -90,7 +90,7 @@ export const useEditor = () => {
   const refreshProject = useCallback(
     async (rpcInfo: RPCInfo) => {
       const _ = await saveAndGetThumbnail(rpcInfo);
-      dispatch(
+      await dispatch(
         workspaceActions.getProject({
           path: rpcInfo.project.path,
           opts: { omitOutdatedPackages: true },

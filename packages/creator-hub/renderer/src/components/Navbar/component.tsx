@@ -1,17 +1,16 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import cx from 'classnames';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { Box, Button, IconButton } from 'decentraland-ui2';
+import { Box, IconButton } from 'decentraland-ui2';
 import { useDispatch, useSelector } from '#store';
 import type { AppState } from '#store';
-import { misc } from '#preload';
 import logo from '/assets/images/logo-editor.png';
-import { REPORT_ISSUES_URL } from '/@/modules/utils';
 import { t } from '/@/modules/store/translation/utils';
 import { actions } from '/@/modules/store/settings';
 import { AppSettings } from '../Modals/AppSettings';
+import { HelpCenter } from '../Modals/HelpCenter';
 import { Header } from '../Header';
 import { ConnectionStatusIndicator } from '../ConnectionStatusIndicator';
 import './styles.css';
@@ -39,13 +38,9 @@ function MenuItem(props: { item: NavbarItem; active: NavbarItem; disable?: boole
 export function Navbar(props: { active: NavbarItem }) {
   const openAppSettings = useSelector((state: AppState) => state.settings.openAppSettingsModal);
   const dispatch = useDispatch();
+  const [openHelpCenter, setOpenHelpCenter] = useState(false);
 
-  const handleClickReportIssue = useCallback(() => misc.openExternal(REPORT_ISSUES_URL), []);
-
-  const handleClickHelp = useCallback(
-    () => misc.openExternal('https://decentraland.org/help/'),
-    [],
-  );
+  const handleClickHelp = useCallback(() => setOpenHelpCenter(true), []);
 
   const handleClickSettings = useCallback(() => {
     dispatch(actions.setOpenAppSettingsModal(true));
@@ -64,6 +59,7 @@ export function Navbar(props: { active: NavbarItem }) {
           <MenuItem
             item={NavbarItem.HOME}
             active={props.active}
+            disable={true}
           />
           <MenuItem
             item={NavbarItem.SCENES}
@@ -92,14 +88,6 @@ export function Navbar(props: { active: NavbarItem }) {
       <>
         <Box className="actions">
           <ConnectionStatusIndicator />
-          <Button
-            variant="outlined"
-            color="secondary"
-            size="small"
-            onClick={handleClickReportIssue}
-          >
-            {t('navbar.report_an_issue')}
-          </Button>
           <IconButton
             aria-label="help"
             onClick={handleClickHelp}
@@ -116,6 +104,10 @@ export function Navbar(props: { active: NavbarItem }) {
         <AppSettings
           open={openAppSettings}
           onClose={() => dispatch(actions.setOpenAppSettingsModal(false))}
+        />
+        <HelpCenter
+          open={openHelpCenter}
+          onClose={() => setOpenHelpCenter(false)}
         />
       </>
     </Header>

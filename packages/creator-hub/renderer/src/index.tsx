@@ -84,7 +84,7 @@ root.render(
                 <Routes>
                   <Route
                     path="/"
-                    element={<HomePage />}
+                    element={<ScenesPage />}
                   />
                   <Route
                     path="/home"
