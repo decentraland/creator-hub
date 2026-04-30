@@ -32,8 +32,8 @@ jobs:
       contents: read
       id-token: write
     outputs:
-      changed: ${{ steps.effective-version.outputs.changed }}
-      version: ${{ steps.effective-version.outputs.version }}
+      changed: ${{ steps.detect-changes.outputs.changed }}
+      version: ${{ steps.detect-changes.outputs.version }}
       previous_version: ${{ steps.semantic-version.outputs.previous_version }}
     steps:
       - uses: actions/checkout@v4
@@ -61,8 +61,8 @@ jobs:
       # republish the same version (rejected by the registry), and downstream
       # creator-hub would install a stale inspector tarball pinning the old
       # asset-packs.
-      - name: Compute effective version
-        id: effective-version
+      - name: Detect inspector/asset-packs changes
+        id: detect-changes
         env:
           INSPECTOR_CHANGED: ${{ steps.semantic-version.outputs.changed }}
           ASSET_PACKS_CHANGED: ${{ inputs.asset_packs_changed }}
