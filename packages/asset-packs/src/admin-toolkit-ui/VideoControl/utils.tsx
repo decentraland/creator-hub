@@ -1,15 +1,11 @@
 import type { DeepReadonlyObject, Entity, IEngine, PBVideoPlayer } from '@dcl/ecs';
-import {
-  getComponents,
-  LIVEKIT_STREAM_SRC,
-  VIDEO_URL_TYPE,
-  type AdminTools,
-} from '../../definitions';
+import type { AdminTools } from '../../definitions';
+import { getComponents, LIVEKIT_STREAM_SRC, VIDEO_URL_TYPE } from '../../definitions';
 import { getExplorerComponents } from '../../components';
-import { nextTickFunctions, state } from '../index';
+import { state } from '../index';
+import { getAdminMessageBus } from '../admin-message-bus';
 import { DEFAULT_VOLUME } from '.';
 
-// Types
 interface VideoPlayerControls {
   play(): void;
   pause(): void;
@@ -60,50 +56,35 @@ export function createVideoPlayerControls(entity: Entity, engine: IEngine): Vide
 
   return {
     play: () => {
-      const video = VideoPlayer.getMutable(entity);
-      video.playing = true;
-      video.position = undefined;
+      getAdminMessageBus().emitSetVideo(entity, { playing: true, position: undefined });
     },
     pause: () => {
-      const video = VideoPlayer.getMutable(entity);
-      video.playing = false;
-      video.position = undefined;
+      getAdminMessageBus().emitSetVideo(entity, { playing: false, position: undefined });
     },
     restart: () => {
-      const video = VideoPlayer.getMutable(entity);
-      video.playing = false;
-      video.position = 0;
-      nextTickFunctions.push(() => {
-        const video = VideoPlayer.getMutable(entity);
-        video.position = undefined;
-        video.playing = true;
-      });
+      getAdminMessageBus().emitSetVideo(entity, { playing: true, position: 0 });
     },
     setVolume: volumeOrStep => {
-      // Don't allow volume changes if sound is disabled
       if (videoControl?.disableVideoPlayersSound) {
         return;
       }
-      const video = VideoPlayer.getMutable(entity);
-      video.position = undefined;
+      const video = VideoPlayer.getOrNull(entity);
+      if (!video) return;
+      let newVolume: number;
       if (volumeOrStep === 0) {
-        video.volume = 0;
+        newVolume = 0;
       } else {
         const steps = Math.round((video.volume ?? DEFAULT_VOLUME) * 10);
         const newSteps = Math.max(0, Math.min(10, steps + (volumeOrStep as number) * 10));
-        video.volume = newSteps / 10;
+        newVolume = newSteps / 10;
       }
+      getAdminMessageBus().emitSetVideo(entity, { volume: newVolume, position: undefined });
     },
     setSource: url => {
-      VideoPlayer.getMutable(entity).src = url;
-      nextTickFunctions.push(() => {
-        VideoPlayer.getMutable(entity).playing = true;
-      });
+      getAdminMessageBus().emitSetVideo(entity, { src: url, playing: true });
     },
     setLoop(loop) {
-      const video = VideoPlayer.getMutable(entity);
-      video.loop = loop;
-      video.position = undefined;
+      getAdminMessageBus().emitSetVideo(entity, { loop, position: undefined });
     },
   };
 }
