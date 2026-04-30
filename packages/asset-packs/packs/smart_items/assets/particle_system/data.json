@@ -1,7 +1,7 @@
 {
   "id": "4686f9aa-f40e-4574-af90-32dcb9f79251",
   "name": "Particle System",
-  "category": "party",
+  "category": "utils",
   "tags": ["particles", "particle system", "fire", "smoke", "vfx", "effect"],
   "description": "An emitter that spawns animated particles. Configure rate, lifetime, color, size, velocity and shape to build effects like fire, smoke or sparks.",
   "author": "Decentraland Foundation"
