@@ -45,6 +45,7 @@
         "code": "代码",
         "preview": "预览",
         "publish": "发布",
+        "refresh": "从磁盘重新加载场景",
         "preview_options": {
           "title": "预览选项",
           "debugger": "在预览期间打开控制台窗口",

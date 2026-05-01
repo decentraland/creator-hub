@@ -45,6 +45,7 @@
         "code": "Code",
         "preview": "Preview",
         "publish": "Publish",
+        "refresh": "Reload scene from disk",
         "preview_options": {
           "title": "Preview Options",
           "debugger": "Open Debug Console",

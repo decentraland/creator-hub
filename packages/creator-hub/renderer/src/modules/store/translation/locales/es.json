@@ -45,6 +45,7 @@
         "code": "Código",
         "preview": "Previsualizar",
         "publish": "Publicar",
+        "refresh": "Recargar escena desde disco",
         "preview_options": {
           "title": "Opciones de Previsualización",
           "debugger": "Abrir la ventana de la Consola durante la previsualización",
