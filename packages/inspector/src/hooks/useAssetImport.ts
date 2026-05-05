@@ -1,11 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import { removeBasePath } from '../lib/logic/remove-base-path';
-import {
-  DIRECTORY,
-  transformBase64ResourceToBinary,
-  withAssetDir,
-} from '../lib/data-layer/host/fs-utils';
+import { transformBase64ResourceToBinary, withAssetDir } from '../lib/data-layer/host/fs-utils';
 import { importAsset, saveThumbnail } from '../redux/data-layer';
 import { useAppDispatch, useAppSelector } from '../redux/hooks';
 import { selectAssetCatalog, updateAssetCatalog } from '../redux/app';
@@ -111,7 +107,7 @@ export function useAssetImport(options: UseAssetImportOptions = {}): UseAssetImp
       setImportError(null);
 
       try {
-        const importBasePath = withAssetDir(DIRECTORY.SCENE);
+        const importBasePath = withAssetDir();
         const importedPaths: string[] = [];
 
         for (const asset of assetsToImport) {
@@ -132,7 +128,7 @@ export function useAssetImport(options: UseAssetImportOptions = {}): UseAssetImp
             dispatch(
               saveThumbnail({
                 content: new Uint8Array(transformBase64ResourceToBinary(asset.thumbnail)),
-                path: `${DIRECTORY.SCENE}/${assetPackageName}/${formatFileName(asset)}`,
+                path: `${assetPackageName}/${formatFileName(asset)}`,
               }),
             );
           }

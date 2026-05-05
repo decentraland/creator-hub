@@ -113,7 +113,7 @@ export function generateFeededComposite({ engine, components }: TempEngine, scen
       z: 8,
     },
   });
-  components.GltfContainer.create(gltfEntity, { src: 'assets/scene/Models/example/model.glb' });
+  components.GltfContainer.create(gltfEntity, { src: 'assets/Models/example/model.glb' });
   cubeIdComponent.create(gltfEntity);
   components.Name.create(gltfEntity, { value: 'Gltf Test' });
   components.Name.create(scriptEntity, { value: 'Script Test' });
@@ -135,7 +135,7 @@ export function generateFeededComposite({ engine, components }: TempEngine, scen
   components.Script.create(scriptEntity, {
     value: [
       {
-        path: 'assets/scene/Scripts/feeded-script.ts',
+        path: 'assets/Scripts/feeded-script.ts',
         priority: 0,
         layout: JSON.stringify({
           params: {
@@ -159,8 +159,7 @@ export function generateFeededComposite({ engine, components }: TempEngine, scen
 export const getMinimalComposite = () => generateMinimalComposite(createTempEngineContext());
 
 const builderMappings: Record<string, string> = {
-  'assets/scene/Models/example/model.glb':
-    'bafkreibzw3d2aziiw2yhq7eoihytxthsulbihbr2ds2zegmsreaycy4h7e',
+  'assets/Models/example/model.glb': 'bafkreibzw3d2aziiw2yhq7eoihytxthsulbihbr2ds2zegmsreaycy4h7e',
 };
 
 function getFeededEngineAndComposite(scene: Scene) {
@@ -218,7 +217,7 @@ export async function feededFileSystem(mappings: Record<string, string> = builde
     'assets/scene/feeded-thumbnail.png': Buffer.from(THUMBNAIL, 'base64'),
     'scene.json': Buffer.from(JSON.stringify(scene), 'utf-8'),
     'SCENE_README.md': Buffer.from(SCENE_INFO_MARKDOWN, 'utf-8'),
-    'assets/scene/Scripts/feeded-script.ts': Buffer.from(scriptTemplate, 'utf-8'),
+    'assets/Scripts/feeded-script.ts': Buffer.from(scriptTemplate, 'utf-8'),
   });
 
   return createFileSystemInterface(storage);

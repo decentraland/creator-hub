@@ -37,7 +37,7 @@
                   "tex": {
                     "$case": "texture",
                     "texture": {
-                      "src": "assets/scene/image-logo.png",
+                      "src": "assets/image-logo.png",
                       "wrapMode": 0,
                       "filterMode": 0
                     }
