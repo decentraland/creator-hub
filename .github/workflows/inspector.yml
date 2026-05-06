@@ -97,13 +97,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: ./.github/actions/setup
+        id: setup
         with:
-          node-version: 22
-          cache: 'npm'
+          cache-protoc: 'true'
 
       - name: install
+        if: steps.setup.outputs.node-modules-cache-hit != 'true'
         run: npm i --silent && make install-inspector
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
 
       - name: install asset-packs
         working-directory: packages/inspector
