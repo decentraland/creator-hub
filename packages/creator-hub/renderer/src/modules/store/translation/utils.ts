@@ -8,6 +8,18 @@ import * as languages from './locales';
 
 export const locales = Object.keys(languages) as Locale[];
 
+/**
+ * Detects the user's preferred locale from browser/OS language settings.
+ * Returns a supported locale if the browser language matches (en, es, zh), otherwise null.
+ */
+export function getPreferredLocale(): Locale | null {
+  const navigatorLocale =
+    (typeof navigator !== 'undefined' && navigator.languages?.[0]) || navigator?.language;
+  if (!navigatorLocale || typeof navigatorLocale !== 'string') return null;
+  const locale = navigatorLocale.slice(0, 2) as Locale;
+  return locales.includes(locale) ? locale : null;
+}
+
 const cache = createIntlCache();
 let currentLocale: ReturnType<typeof createIntl>;
 

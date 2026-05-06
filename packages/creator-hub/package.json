@@ -68,7 +68,7 @@
     "redux-logger": "3.0.6",
     "unplugin-auto-expose": "0.3.0"
   },
-  "main": "main/dist/index.js",
+  "main": "main/dist/index.cjs",
   "overrides": {
     "ua-parser-js": "2.0.0"
   },

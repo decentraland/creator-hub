@@ -85,15 +85,35 @@
       "description": "Unleash your creativity. Start building scenes for your LANDs and Worlds and share with the community. <a>Learn more about creating Scenes.</a>"
     },
     "sort": {
+      "created": "Newest",
       "name": "Name",
-      "newest": "Newest",
-      "size": "Size"
+      "newest": "Modified",
+      "size": "Scene Size",
+      "parcels": "Parcels"
     },
+    "search": "Search",
     "results": "{count} {count, plural, one {scene} other {scenes}}",
     "parcel_count": "{parcels} {parcels, plural, one {parcel} other {parcels}}",
     "saving": "Saving...",
     "badges": {
-      "published": "Published"
+      "published": "Published",
+      "in_progress": "In Progress"
+    },
+    "table": {
+      "thumbnail": "Scene",
+      "name": "Name",
+      "parcels": "Parcels",
+      "filesize": "Scene Size",
+      "modified": "Modified"
+    },
+    "view_mode": "Display view",
+    "view_grid": "Grid view",
+    "view_list": "List view",
+    "grid": "Grid",
+    "list": "List",
+    "size_calculating": "Calculating...",
+    "time": {
+      "just_now": "just now"
     }
   },
   "navbar": {
@@ -789,6 +809,15 @@
       "more": "More"
     },
     "see_all": "See All",
+    "search_placeholder": "Search Learn",
+    "visit_docs": "Visit Decentraland Docs",
+    "tabs": {
+      "creator_hub": "Creator Hub",
+      "creator_academy": "Creator Academy",
+      "community_all_hands": "Community All Hands",
+      "docs": "Creator Docs",
+      "news": "News"
+    },
     "videos": {
       "title": "Videos"
     },
