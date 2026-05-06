@@ -872,6 +872,7 @@
         "scenes_count": "{count} {count, plural, one {场景} other {场景}}",
         "scene_settings": "场景设置",
         "world_settings": "设置",
+        "layout": "布局",
         "published_world": "已发布的世界"
       },
       "land": {
