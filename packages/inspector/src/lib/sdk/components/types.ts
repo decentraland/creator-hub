@@ -24,6 +24,7 @@ export enum CoreComponents {
   LIGHT_SOURCE = 'core::LightSource',
   GLTF_NODE_MODIFIERS = 'core::GltfNodeModifiers',
   VIRTUAL_CAMERA = 'core::VirtualCamera',
+  PARTICLE_SYSTEM = 'core::ParticleSystem',
 }
 
 export const EditorComponentNames = {
