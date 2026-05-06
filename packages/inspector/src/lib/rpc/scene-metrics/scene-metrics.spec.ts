@@ -23,6 +23,7 @@ describe('SceneMetricsRPC', () => {
       bodies: 1,
       materials: 1,
       textures: 1,
+      texturePixels: 1,
     };
 
     beforeEach(() => {
@@ -49,6 +50,7 @@ describe('SceneMetricsRPC', () => {
       bodies: 1,
       materials: 1,
       textures: 1,
+      texturePixels: 1,
     };
 
     beforeEach(() => {

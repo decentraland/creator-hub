@@ -46,6 +46,7 @@
   height: 9px;
   border-radius: 50%;
   background-color: var(--warning-main);
+  animation: warningDotPulse 2s ease-in-out infinite;
 }
 
 .Metrics > div.LimitExceeded {
@@ -180,4 +181,127 @@
   color: var(--warning-main);
   line-height: 16px;
   margin: 0;
+}
+
+.Metrics > .Overlay .Items .Item.BudgetExceeded {
+  background-color: rgba(255, 152, 0, 0.08);
+  margin: 0 -12px;
+  padding: 8px 12px;
+  border-bottom-color: rgba(255, 152, 0, 0.12);
+  animation: budgetRowGlow 2s ease-in-out infinite;
+}
+
+.Metrics > .Overlay .WarningItem.BudgetWarning {
+  background-color: rgba(255, 152, 0, 0.08);
+  margin: 0 -12px;
+  padding: 8px 12px;
+  animation: budgetWarningGlow 2s ease-in-out infinite;
+}
+
+.Metrics > .Overlay .WarningItem.BudgetWarning .WarningText {
+  font-weight: 500;
+}
+
+/* Texture Budget Exceeded Animations */
+
+@keyframes warningDotPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 4px 1px rgba(255, 201, 91, 0.6),
+      0 0 8px 3px rgba(255, 201, 91, 0.25);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow:
+      0 0 6px 2px rgba(255, 201, 91, 0.8),
+      0 0 14px 5px rgba(255, 201, 91, 0.35);
+    transform: scale(1.15);
+  }
+}
+
+@keyframes budgetRowGlow {
+  0%,
+  100% {
+    background-color: rgba(255, 152, 0, 0.08);
+  }
+  50% {
+    background-color: rgba(255, 152, 0, 0.14);
+  }
+}
+
+@keyframes budgetWarningGlow {
+  0%,
+  100% {
+    background-color: rgba(255, 152, 0, 0.08);
+  }
+  50% {
+    background-color: rgba(255, 152, 0, 0.14);
+  }
+}
+
+@keyframes textureBudgetIconPulse {
+  0%,
+  100% {
+    color: #ff4d2a;
+  }
+  50% {
+    color: #ff8c00;
+  }
+}
+
+@keyframes textureBudgetOnlyPulse {
+  0%,
+  100% {
+    background-color: #ff4d2a;
+    box-shadow:
+      0 0 4px 1px rgba(255, 77, 42, 0.7),
+      0 0 8px 3px rgba(255, 77, 42, 0.3);
+    transform: scale(1);
+  }
+  50% {
+    background-color: #ff8c00;
+    box-shadow:
+      0 0 6px 2px rgba(255, 140, 0, 0.85),
+      0 0 14px 5px rgba(255, 140, 0, 0.4);
+    transform: scale(1.15);
+  }
+}
+
+.Metrics .Buttons .Button .WarningDot.TextureBudgetExceeded {
+  animation: textureBudgetOnlyPulse 2s ease-in-out infinite;
+}
+
+.Metrics .Buttons .Button.TextureBudgetExceeded svg {
+  animation: textureBudgetIconPulse 2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .Metrics .Buttons .Button .WarningDot {
+    animation: none;
+    box-shadow:
+      0 0 4px 1px rgba(255, 201, 91, 0.6),
+      0 0 8px 3px rgba(255, 201, 91, 0.25);
+  }
+
+  .Metrics > .Overlay .Items .Item.BudgetExceeded {
+    animation: none;
+  }
+
+  .Metrics > .Overlay .WarningItem.BudgetWarning {
+    animation: none;
+  }
+
+  .Metrics .Buttons .Button .WarningDot.TextureBudgetExceeded {
+    animation: none;
+    background-color: #ff4d2a;
+    box-shadow:
+      0 0 4px 1px rgba(255, 77, 42, 0.7),
+      0 0 8px 3px rgba(255, 77, 42, 0.3);
+  }
+
+  .Metrics .Buttons .Button.TextureBudgetExceeded svg {
+    animation: none;
+    color: #ff4d2a;
+  }
 }
