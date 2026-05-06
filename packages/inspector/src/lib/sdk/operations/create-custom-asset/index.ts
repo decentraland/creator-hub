@@ -49,6 +49,7 @@ function handleResource(type: string, keys: string[]): void {
 handleResource(CoreComponents.GLTF_CONTAINER, ['src']);
 handleResource(CoreComponents.AUDIO_SOURCE, ['audioClipUrl']);
 handleResource(CoreComponents.VIDEO_PLAYER, ['src']);
+handleResource(AssetPackComponentNames.PLACEHOLDER, ['src']);
 
 const PBR_TEXTURE_SLOTS = ['texture', 'alphaTexture', 'emissiveTexture', 'bumpTexture'];
 for (const slot of PBR_TEXTURE_SLOTS) {

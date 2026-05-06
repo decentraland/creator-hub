@@ -87,6 +87,7 @@ describe('createCustomAsset', () => {
     let GltfContainer: SdkComponents['GltfContainer'];
     let Material: SdkComponents['Material'];
     let Script: EditorComponents['Script'];
+    let Placeholder: EditorComponents['Placeholder'];
 
     beforeEach(() => {
       const sdkComponents = createComponents(engine);
@@ -94,6 +95,7 @@ describe('createCustomAsset', () => {
       Material = sdkComponents.Material;
       const editorComponents = createEditorComponents(engine);
       Script = editorComponents.Script;
+      Placeholder = editorComponents.Placeholder;
     });
 
     describe('GltfContainer resources', () => {
@@ -277,6 +279,44 @@ describe('createCustomAsset', () => {
 
           expect(result.resources).toContain('scene/assets/pack/models/mesh.glb');
           expect(result.resources).toContain('scene/assets/pack/scripts/main.ts');
+        });
+      });
+    });
+
+    describe('Placeholder resources', () => {
+      describe('when a single placeholder model is in a subfolder', () => {
+        it('should use the filename since the base path includes the subfolder', () => {
+          const entity = engine.addEntity();
+          Transform.create(entity, { position: { x: 0, y: 0, z: 0 } });
+          Placeholder.create(entity, { src: 'scene/assets/pack/subfolder/placeholder.glb' });
+
+          const createCustomAssetFn = createCustomAsset(engine);
+          const result = createCustomAssetFn([entity]);
+
+          const placeholderValue = findComponentValue(result, 'asset-packs::Placeholder', 0 as Entity);
+          expect(placeholderValue.src).toBe('{assetPath}/placeholder.glb');
+          expect(result.resources).toContain('scene/assets/pack/subfolder/placeholder.glb');
+        });
+      });
+
+      describe('when a placeholder model and a gltf model are in different subfolders', () => {
+        it('should preserve subfolder structure relative to the common base', () => {
+          const entity = engine.addEntity();
+          Transform.create(entity, { position: { x: 0, y: 0, z: 0 } });
+          GltfContainer.create(entity, { src: 'scene/assets/pack/models/mesh.glb' });
+          Placeholder.create(entity, { src: 'scene/assets/pack/placeholders/placeholder.glb' });
+
+          const createCustomAssetFn = createCustomAsset(engine);
+          const result = createCustomAssetFn([entity]);
+
+          const gltfValue = findComponentValue(result, CoreComponents.GLTF_CONTAINER, 0 as Entity);
+          expect(gltfValue.src).toBe('{assetPath}/models/mesh.glb');
+
+          const placeholderValue = findComponentValue(result, 'asset-packs::Placeholder', 0 as Entity);
+          expect(placeholderValue.src).toBe('{assetPath}/placeholders/placeholder.glb');
+
+          expect(result.resources).toContain('scene/assets/pack/models/mesh.glb');
+          expect(result.resources).toContain('scene/assets/pack/placeholders/placeholder.glb');
         });
       });
     });
