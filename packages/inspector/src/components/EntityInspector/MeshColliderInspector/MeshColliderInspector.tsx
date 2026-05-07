@@ -57,6 +57,8 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
           type="help"
         />
       }
+      component={MeshCollider}
+      entity={entities}
       onRemoveContainer={handleRemove}
     >
       <Block>

@@ -113,6 +113,8 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
           type="help"
         />
       }
+      component={States}
+      entity={entities}
       onRemoveContainer={handleDelete}
     >
       {items.length > 0 ? (

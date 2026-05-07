@@ -377,6 +377,8 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       label="Script"
       className="ScriptInspector"
       initialOpen={initialOpen}
+      component={Script}
+      entity={entityId}
       onRemoveContainer={handleRemove}
       rightContent={
         <InfoTooltip

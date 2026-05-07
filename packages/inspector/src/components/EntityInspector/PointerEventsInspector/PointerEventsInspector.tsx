@@ -92,6 +92,8 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
           type="help"
         />
       }
+      component={PointerEvents}
+      entity={entityId}
       onRemoveContainer={handleRemoveComponent}
     >
       {pointerEvents.map(($, idx) => (

@@ -25,6 +25,8 @@ export const RewardInspector = withSdk<Props>(({ sdk, entity, initialOpen = true
     <Container
       label="Rewards"
       initialOpen={initialOpen}
+      component={Rewards}
+      entity={entity}
       rightContent={
         <InfoTooltip
           text="Rewards enables the campaign configuration for giveaways."

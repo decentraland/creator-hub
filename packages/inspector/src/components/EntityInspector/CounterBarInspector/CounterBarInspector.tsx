@@ -42,6 +42,8 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
         />
       }
       initialOpen={initialOpen}
+      component={CounterBar}
+      entity={entity}
       onRemoveContainer={handleRemove}
     >
       <TextField

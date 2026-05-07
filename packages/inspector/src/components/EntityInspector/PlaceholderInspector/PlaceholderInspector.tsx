@@ -55,6 +55,8 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
           type="help"
         />
       }
+      component={Placeholder}
+      entity={entity}
       onRemoveContainer={handleRemove}
     >
       <Block>

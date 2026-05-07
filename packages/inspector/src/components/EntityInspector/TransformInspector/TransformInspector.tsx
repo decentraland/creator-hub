@@ -54,6 +54,8 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
       label="Transform"
       className="Transform"
       initialOpen={initialOpen}
+      component={Transform}
+      entity={entities}
       rightContent={
         <InfoTooltip
           text="Transform defines the position, rotation, and scale of an entity in 3D space. Every entity has a Transform component that determines where and how it appears in the scene."
