@@ -50,6 +50,8 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
           type="help"
         />
       }
+      component={TextShape}
+      entity={entities}
       onRemoveContainer={handleRemove}
     >
       <Block>

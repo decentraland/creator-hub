@@ -116,6 +116,8 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
           type="help"
         />
       }
+      component={Tween}
+      entity={entity}
       onRemoveContainer={handleRemove}
     >
       <Block label="Tween Type">

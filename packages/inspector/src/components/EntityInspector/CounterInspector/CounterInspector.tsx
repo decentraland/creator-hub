@@ -51,6 +51,8 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
           type="help"
         />
       }
+      component={Counter}
+      entity={entity}
       onRemoveContainer={handleRemove}
     >
       <TextField

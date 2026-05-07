@@ -108,6 +108,8 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
           type="help"
         />
       }
+      component={SyncComponents}
+      entity={entity}
       onRemoveContainer={handleRemove}
     >
       Select the components of this item to sync so all users see the same changes in the scene.

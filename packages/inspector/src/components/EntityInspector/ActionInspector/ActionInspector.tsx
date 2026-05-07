@@ -1314,6 +1314,8 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
           type="help"
         />
       }
+      component={Actions}
+      entity={entityId}
       onRemoveContainer={handleRemove}
     >
       {actions.map((action: Action, idx: number) => {

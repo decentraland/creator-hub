@@ -111,6 +111,8 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
           type="help"
         />
       }
+      component={GltfNodeModifiers}
+      entity={entity}
       onRemoveContainer={handleRemove}
     >
       {swapsValue.map((_, idx) => (

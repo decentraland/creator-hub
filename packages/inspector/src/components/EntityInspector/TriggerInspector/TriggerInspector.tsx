@@ -342,6 +342,8 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
           type="help"
         />
       }
+      component={Triggers}
+      entity={entityId}
       onRemoveContainer={handleRemove}
     >
       {triggers.map((trigger: Trigger, triggerIdx: number) => {

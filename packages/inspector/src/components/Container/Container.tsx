@@ -2,10 +2,12 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { IoIosArrowDown, IoIosArrowForward } from 'react-icons/io';
 import { FiAlertTriangle as WarningIcon } from 'react-icons/fi';
 import { VscTrash as RemoveIcon } from 'react-icons/vsc';
+import { MdContentCopy as CopyIcon, MdContentPaste as PasteIcon } from 'react-icons/md';
 import cx from 'classnames';
 import { Button } from '../Button';
 import { InfoTooltip } from '../ui/InfoTooltip';
 import MoreOptionsMenu from '../EntityInspector/MoreOptionsMenu';
+import { useComponentClipboard } from '../../hooks/sdk/useComponentClipboard';
 
 /**
  * ContainerContent is a wrapper component that allows returning both main content
@@ -79,27 +81,54 @@ const Container: React.FC<React.PropsWithChildren<Props>> = props => {
 
   const finalRightContent = rightContentFromChildren || props.rightContent;
 
+  const {
+    onCopyValues,
+    onPasteValues,
+    enabled: clipboardEnabled,
+  } = useComponentClipboard(props.entity, props.component);
+
+  const hasMenu = !!props.onRemoveContainer || clipboardEnabled;
+
   const shouldRenderRightContent = useMemo(() => {
-    return finalRightContent || props.onRemoveContainer;
-  }, [finalRightContent, props.onRemoveContainer]);
+    return finalRightContent || hasMenu;
+  }, [finalRightContent, hasMenu]);
 
   const renderRightContent = useCallback(() => {
     return (
       <div className="RightContent">
         {finalRightContent}
-        {props.onRemoveContainer && (
+        {hasMenu && (
           <MoreOptionsMenu>
-            <Button
-              className="RemoveButton"
-              onClick={props.onRemoveContainer}
-            >
-              <RemoveIcon /> Delete Component
-            </Button>
+            {clipboardEnabled ? (
+              <Button onClick={onCopyValues}>
+                <CopyIcon /> Copy values
+              </Button>
+            ) : null}
+            {clipboardEnabled ? (
+              <Button onClick={onPasteValues}>
+                <PasteIcon /> Paste values
+              </Button>
+            ) : null}
+            {props.onRemoveContainer ? (
+              <Button
+                className="RemoveButton"
+                onClick={props.onRemoveContainer}
+              >
+                <RemoveIcon /> Delete Component
+              </Button>
+            ) : null}
           </MoreOptionsMenu>
         )}
       </div>
     );
-  }, [finalRightContent, props.onRemoveContainer]);
+  }, [
+    finalRightContent,
+    hasMenu,
+    clipboardEnabled,
+    onCopyValues,
+    onPasteValues,
+    props.onRemoveContainer,
+  ]);
 
   return (
     <div
