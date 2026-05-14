@@ -52,7 +52,7 @@
   "license": "ISC",
   "main": "dist/definitions.js",
   "peerDependencies": {
-    "@dcl/ecs": "7.15.2"
+    "@dcl/ecs": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/add-entity-from-composite/@dcl/ecs/dcl-ecs-7.23.3-25821163319.commit-ee3f9cc.tgz"
   },
   "repository": {
     "type": "git",
