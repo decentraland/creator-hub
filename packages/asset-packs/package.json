@@ -52,7 +52,7 @@
   "license": "ISC",
   "main": "dist/definitions.js",
   "peerDependencies": {
-    "@dcl/ecs": "^7.15.2"
+    "@dcl/ecs": "^7.15.2 || ^7.23.3-0"
   },
   "repository": {
     "type": "git",
