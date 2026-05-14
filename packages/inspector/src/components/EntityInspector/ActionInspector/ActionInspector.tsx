@@ -51,6 +51,7 @@ import { ShowTextAction } from './ShowTextAction';
 import { DelayAction } from './DelayAction';
 import { LoopAction } from './LoopAction';
 import { CloneEntityAction } from './CloneEntityAction';
+import { SpawnEntityAction } from './SpawnEntityAction';
 import { ShowImageAction } from './ShowImageAction';
 import { FollowPlayerAction } from './FollowPlayerAction';
 import TriggerProximityAction from './TriggerProximityAction/TriggerProximityAction';
@@ -99,6 +100,7 @@ const ActionMapOption: Record<string, string> = {
   [ActionType.START_LOOP]: 'Start Loop',
   [ActionType.STOP_LOOP]: 'Stop Loop',
   [ActionType.CLONE_ENTITY]: 'Clone',
+  [ActionType.SPAWN_ENTITY]: 'Spawn Entity',
   [ActionType.REMOVE_ENTITY]: 'Remove',
   [ActionType.SHOW_IMAGE]: 'Show Image',
   [ActionType.HIDE_IMAGE]: 'Hide Image',
@@ -313,6 +315,20 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
           const payload = getPartialPayload<ActionType.CLONE_ENTITY>(action);
           return (
             !!payload &&
+            typeof payload.position?.x === 'number' &&
+            !isNaN(payload.position?.x) &&
+            typeof payload.position?.y === 'number' &&
+            !isNaN(payload.position?.y) &&
+            typeof payload.position?.z === 'number' &&
+            !isNaN(payload.position?.z)
+          );
+        }
+        case ActionType.SPAWN_ENTITY: {
+          const payload = getPartialPayload<ActionType.SPAWN_ENTITY>(action);
+          return (
+            !!payload &&
+            typeof payload.src === 'string' &&
+            payload.src.length > 0 &&
             typeof payload.position?.x === 'number' &&
             !isNaN(payload.position?.x) &&
             typeof payload.position?.y === 'number' &&
@@ -620,6 +636,16 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       handleModifyAction(idx, {
         ...actions[idx],
         jsonPayload: getJson<ActionType.CLONE_ENTITY>(value),
+      });
+    },
+    [actions, handleModifyAction],
+  );
+
+  const handleChangeSpawnEntity = useCallback(
+    (value: ActionPayload<ActionType.SPAWN_ENTITY>, idx: number) => {
+      handleModifyAction(idx, {
+        ...actions[idx],
+        jsonPayload: getJson<ActionType.SPAWN_ENTITY>(value),
       });
     },
     [actions, handleModifyAction],
@@ -1095,6 +1121,14 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
           <CloneEntityAction
             value={getPartialPayload<ActionType.CLONE_ENTITY>(action)}
             onUpdate={e => handleChangeCloneEntity(e, idx)}
+          />
+        );
+      }
+      case ActionType.SPAWN_ENTITY: {
+        return (
+          <SpawnEntityAction
+            value={getPartialPayload<ActionType.SPAWN_ENTITY>(action)}
+            onUpdate={e => handleChangeSpawnEntity(e, idx)}
           />
         );
       }
