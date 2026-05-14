@@ -18,7 +18,7 @@
     "@aws-sdk/lib-storage": "^3.405.0",
     "@dcl/hashing": "^3.0.4",
     "@dcl/js-runtime": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/add-entity-from-composite/@dcl/js-runtime/dcl-js-runtime-7.23.3-25821163319.commit-ee3f9cc.tgz",
-    "@dcl/react-ecs": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/add-entity-from-composite/@dcl/react-ecs/dcl-react-ecs-7.23.3-25821163319.commit-ee3f9cc.tgz",
+    "@dcl/react-ecs": "7.22.5",
     "@dcl/sdk-commands": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/add-entity-from-composite/dcl-sdk-commands-7.23.3-25821163319.commit-ee3f9cc.tgz",
     "@types/mime-types": "^2.1.1",
     "@types/node-fetch": "^2.6.4",
@@ -52,7 +52,7 @@
   "license": "ISC",
   "main": "dist/definitions.js",
   "peerDependencies": {
-    "@dcl/ecs": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/add-entity-from-composite/@dcl/ecs/dcl-ecs-7.23.3-25821163319.commit-ee3f9cc.tgz"
+    "@dcl/ecs": "^7.15.2"
   },
   "repository": {
     "type": "git",
