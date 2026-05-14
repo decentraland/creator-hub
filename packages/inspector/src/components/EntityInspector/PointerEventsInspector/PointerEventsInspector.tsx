@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect } from 'react';
-import { PBPointerEvents_Entry, PBPointerEvents, PBPointerEvents_Info } from '@dcl/ecs';
 import cx from 'classnames';
+import type { PBPointerEvents_Entry, PBPointerEvents, PBPointerEvents_Info } from '@dcl/ecs';
 
 import { withSdk } from '../../../hoc/withSdk';
 import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
@@ -11,8 +11,8 @@ import { CoreComponents } from '../../../lib/sdk/components';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { TextField, CheckboxField, RangeField, Dropdown, InfoTooltip } from '../../ui';
-import type { Props } from './types';
 import { useArrayState } from '../../../hooks/useArrayState';
+import { AddButton } from '../AddButton';
 import {
   DEFAULTS,
   INPUT_ACTIONS,
@@ -21,7 +21,7 @@ import {
   mapValueToInputAction,
   mapValueToPointerEvent,
 } from './utils';
-import { AddButton } from '../AddButton';
+import type { Props } from './types';
 
 type ChangeEvt = React.ChangeEvent<HTMLInputElement>;
 
@@ -133,13 +133,13 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
           </Block>
           <Block label="Show feedback">
             <CheckboxField
-              checked={!!$.eventInfo?.showFeedback ?? DEFAULTS.eventInfo.showFeedback}
+              checked={$.eventInfo?.showFeedback ?? DEFAULTS.eventInfo.showFeedback}
               onChange={e => handleEventInfoChange({ showFeedback: !!e.target.checked }, idx)}
             />
           </Block>
           <Block label="Show highlight">
             <CheckboxField
-              checked={!!$.eventInfo?.showHighlight ?? DEFAULTS.eventInfo.showHighlight}
+              checked={$.eventInfo?.showHighlight ?? DEFAULTS.eventInfo.showHighlight}
               onChange={e => handleEventInfoChange({ showHighlight: !!e.target.checked }, idx)}
             />
           </Block>
