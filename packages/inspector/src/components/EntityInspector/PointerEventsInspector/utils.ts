@@ -20,6 +20,8 @@ export function getDefaultPointerEvent(
       maxDistance: 10,
       showFeedback: true,
       showHighlight: true,
+      maxPlayerDistance: 0,
+      priority: 0,
       ...def?.eventInfo,
     },
   };

@@ -6,10 +6,11 @@
     "markdown-to-jsx": "^7.5.0"
   },
   "devDependencies": {
-    "@dcl/ecs": "7.15.2",
+    "@dcl/ecs": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/add-entity-from-composite/@dcl/ecs/dcl-ecs-7.23.3-25946260789.commit-5ef210a.tgz",
     "@dcl/ts-proto": "1.154.0",
     "@testing-library/react": "14.0.0",
     "@typescript-eslint/eslint-plugin": "7.15.0",
+    "@typescript-eslint/parser": "^7.15.0",
     "eslint": "8.57.0",
     "eslint-plugin-import": "2.31.0",
     "happy-dom": "14.12.3",

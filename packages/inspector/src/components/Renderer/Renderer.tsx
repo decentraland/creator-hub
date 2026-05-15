@@ -5,10 +5,8 @@ import cx from 'classnames';
 import { Vector3 } from '@babylonjs/core';
 import type { Entity } from '@dcl/ecs';
 
-import { DIRECTORY, withAssetDir } from '../../lib/data-layer/host/fs-utils';
-import { getRelativeResourcePath, getResourcesBasePath } from '../../lib/utils/path-utils';
-import { useAppDispatch, useAppSelector } from '../../redux/hooks';
-import { getDataLayerInterface, getAssetCatalog, saveThumbnail } from '../../redux/data-layer';
+import { DIRECTORY } from '../../lib/data-layer/host/fs-utils';
+import { useAppSelector } from '../../redux/hooks';
 import type {
   CatalogAssetDrop,
   IDrop,
@@ -20,15 +18,15 @@ import { useRenderer } from '../../hooks/sdk/useRenderer';
 import { useSdk } from '../../hooks/sdk/useSdk';
 import { getPointerCoords } from '../../lib/babylon/decentraland/mouse-utils';
 import { snapPosition } from '../../lib/babylon/decentraland/snap-manager';
-import { getConfig } from '../../lib/logic/config';
 import { ROOT } from '../../lib/sdk/tree';
-import type { Asset, CustomAsset } from '../../lib/logic/catalog';
-import { isGround, isSmart } from '../../lib/logic/catalog';
+import type { CustomAsset } from '../../lib/logic/catalog';
+import { isGround, isSmart, type Asset } from '../../lib/logic/catalog';
+import { useImportAssetToFilesystem } from '../../hooks/useImportAssetToFilesystem';
 import { areGizmosDisabled, getHiddenPanels, isGroundGridDisabled } from '../../redux/ui';
 import { PanelName } from '../../redux/ui/types';
 import type { AssetNodeItem } from '../ProjectAssetExplorer/types';
 import { Loading } from '../Loading';
-import { isModel, isAsset } from '../EntityInspector/GltfInspector/utils';
+import { isModel } from '../EntityInspector/GltfInspector/utils';
 import { useIsMounted } from '../../hooks/useIsMounted';
 import {
   useHotkey,
@@ -64,18 +62,17 @@ const ZOOM_DELTA = new Vector3(0, 0, 1.1);
 const fixedNumber = (val: number) => Math.round(val * 1e2) / 1e2;
 
 const SINGLE_TILE_HINT_OFFSET = 30;
-const THUMBNAIL_PATH = 'thumbnail.png';
 
 const Renderer: React.FC = () => {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   useRenderer(() => canvasRef);
   const sdk = useSdk();
-  const dispatch = useAppDispatch();
   const [isLoading, setIsLoading] = useState(false);
   const isMounted = useIsMounted();
+  const { importCatalogAssetToFilesystem, importCustomAssetToFilesystem } =
+    useImportAssetToFilesystem();
   const gizmosDisabled = useAppSelector(areGizmosDisabled);
   const groundGridDisabled = useAppSelector(isGroundGridDisabled);
-  const config = getConfig();
   const [copyEntities, setCopyEntities] = useState<Entity[]>([]);
   const hiddenPanels = useAppSelector(getHiddenPanels);
   const [placeSingleTile, setPlaceSingleTile] = useState(false);
@@ -273,39 +270,9 @@ const Renderer: React.FC = () => {
   };
 
   const importCustomAsset = async (asset: CustomAsset) => {
-    const destFolder = 'custom';
-    const assetPackageName = asset.name.trim().replaceAll(' ', '_').toLowerCase();
     const position = await getDropPosition();
-    const content: Map<string, Uint8Array> = new Map();
-
-    const dataLayer = getDataLayerInterface();
-    if (!dataLayer) return;
-
-    // Compute asset root to derive relative paths (preserves subfolders)
-    const assetRoot = getResourcesBasePath(asset.resources);
-
-    // Read resource files from the custom assets directory and prepare them for copying to the scene
-    const files = await Promise.all(
-      asset.resources.map(async resourcePath => {
-        const fileContent = await dataLayer
-          .getFile({ path: resourcePath })
-          .then(res => res.content);
-        const relativePath = getRelativeResourcePath(resourcePath, assetRoot);
-        return {
-          relativePath,
-          content: fileContent,
-        };
-      }),
-    );
-    for (const file of files) {
-      content.set(file.relativePath, file.content);
-    }
-
-    // Always write composite.json to ensure the folder is created, even if there are no resources
-    if (asset.composite) {
-      const compositeJson = new TextEncoder().encode(JSON.stringify(asset.composite, null, 2));
-      content.set('composite.json', compositeJson);
-    }
+    const result = await importCustomAssetToFilesystem(asset);
+    if (!result) return;
 
     const model: AssetNodeItem = {
       type: 'asset',
@@ -314,25 +281,8 @@ const Renderer: React.FC = () => {
       asset: { type: 'gltf', src: '', id: asset.id },
       composite: asset.composite,
     };
-    const basePath = withAssetDir(`${destFolder}/${assetPackageName}`);
-
-    await dataLayer.importAsset({ content, basePath, assetPackageName: '' });
-    dispatch(getAssetCatalog()); // Refresh catalog after import
-    await addAsset(model, position, basePath, true);
+    await addAsset(model, position, result.basePath, true);
   };
-
-  /**
-   * Get the URL to fetch a content by its hash, adding any necessary query parameters.
-   * Note: for thumbnails, we add a `?resize` query parameter as it is necessary on this endpoint to avoid CORS issues due to missing response headers.
-   */
-  const getContentFetchUrl = useCallback(
-    (path: string, contentHash: string) => {
-      let url = `${config.contentUrl}/contents/${contentHash}`;
-      if (path.endsWith(THUMBNAIL_PATH)) url += '?resize';
-      return url;
-    },
-    [config.contentUrl],
-  );
 
   const importCatalogAsset = async (asset: Asset) => {
     if (sdk) {
@@ -347,55 +297,9 @@ const Renderer: React.FC = () => {
     }
 
     const position = await getDropPosition();
-    const fileContent: Record<string, Uint8Array> = {};
-    const destFolder = 'asset-packs';
-    const assetPackageName = asset.name.trim().replaceAll(' ', '_').toLowerCase();
-    const path = Object.keys(asset.contents).find($ => isAsset($));
-    let thumbnail: Uint8Array | undefined;
 
     setIsLoading(true);
-
-    await Promise.all(
-      Object.entries(asset.contents).map(async ([path, contentHash]) => {
-        try {
-          const url = getContentFetchUrl(path, contentHash);
-          const response = await fetch(url);
-          const content = new Uint8Array(await response.arrayBuffer());
-          if (path.endsWith(THUMBNAIL_PATH)) {
-            thumbnail = content;
-          } else {
-            fileContent[path] = content;
-          }
-        } catch (err) {
-          // eslint-disable-next-line no-console
-          console.error('Error fetching an asset import ' + path);
-        }
-      }),
-    );
-
-    // Use direct data layer interface to ensure proper sequencing with undo system
-    const content = new Map(Object.entries(fileContent));
-    if (content.size > 0) {
-      const dataLayer = getDataLayerInterface();
-      if (dataLayer) {
-        await dataLayer.importAsset({
-          content,
-          basePath: withAssetDir(destFolder),
-          assetPackageName,
-        });
-        dispatch(getAssetCatalog()); // Refresh catalog after import
-      }
-    }
-
-    if (thumbnail) {
-      dispatch(
-        saveThumbnail({
-          content: thumbnail,
-          path: `${destFolder}/${assetPackageName}/${path || asset.name}`, // Full asset path for hash generation
-        }),
-      );
-    }
-
+    const result = await importCatalogAssetToFilesystem(asset);
     if (!isMounted()) return;
     setIsLoading(false);
 
@@ -403,18 +307,20 @@ const Renderer: React.FC = () => {
       type: 'asset',
       name: asset.name,
       parent: null,
-      asset: { type: path ? 'gltf' : 'unknown', src: path ?? '', id: asset.id },
+      asset: {
+        type: result.assetPath ? 'gltf' : 'unknown',
+        src: result.assetPath ?? '',
+        id: asset.id,
+      },
       composite: asset.composite,
     };
-    const basePath = withAssetDir(`${destFolder}/${assetPackageName}`);
     if (isGround(asset) && !placeSingleTile) {
-      await setGround(model, basePath);
+      await setGround(model, result.basePath);
     } else {
-      // place single tiles slightly above the ground
       if (isGround(asset)) {
         position.y += 0.25;
       }
-      await addAsset(model, position, basePath, false);
+      await addAsset(model, position, result.basePath, false);
     }
   };
 

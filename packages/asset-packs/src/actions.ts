@@ -75,6 +75,7 @@ import { initTriggers, damageTargets, healTargets } from './triggers';
 import { followMap } from './transform';
 import { getEasingFunctionFromInterpolation } from './tweens';
 import { getRewardsServerUrl } from './admin-toolkit-ui/constants';
+import { initializeComponentIdsFromComposite } from './add-child';
 import { callScriptMethod } from '~sdk/script-utils';
 
 const initedEntities = new Set<Entity>();
@@ -408,6 +409,10 @@ export function createActionsSystem(
           }
           case ActionType.DELETE: {
             handleDelete(entity);
+            break;
+          }
+          case ActionType.SPAWN_ENTITY: {
+            handleSpawnEntity(entity, getPayload<ActionType.SPAWN_ENTITY>(action));
             break;
           }
           default:
@@ -1628,5 +1633,53 @@ export function createActionsSystem(
     stopAllTimeouts(entity);
     stopAllIntervals(entity);
     engine.removeEntityWithChildren(entity);
+  }
+
+  // SPAWN_ENTITY
+  function handleSpawnEntity(entity: Entity, payload: ActionPayload<ActionType.SPAWN_ENTITY>) {
+    const { src, position } = payload;
+
+    console.log(
+      `[SPAWN_ENTITY] Spawning entity from composite "${src}" at position: ${position.x}, ${position.y}, ${position.z}`,
+    );
+
+    const spawn = () => {
+      const spawnedRoot = engine.addEntityFromComposite(src, {
+        transform: {
+          position: position,
+          parent: entity,
+        },
+      });
+      // Allocate Action/State/Counter IDs and remap Trigger references for the
+      // spawned subtree. Mirrors the inspector's add-asset ID pre-allocation
+      // pass; without this, initActions/initTriggers would bind to '{self}'
+      // string placeholders and triggers wouldn't fire.
+      const composite = engine.getCompositeProvider()?.getCompositeOrNull(src)?.composite;
+      if (composite) {
+        initializeComponentIdsFromComposite(engine, composite, spawnedRoot);
+      }
+      initActions(spawnedRoot);
+      initTriggers(spawnedRoot);
+      const triggerEvents = getTriggerEvents(spawnedRoot);
+      triggerEvents.emit(TriggerType.ON_SPAWN);
+    };
+
+    const provider = engine.getCompositeProvider();
+
+    // Cache miss with async loader — preload first, then spawn on next tick.
+    if (provider?.loadComposite && !provider.getCompositeOrNull(src)) {
+      provider
+        .loadComposite(src)
+        .then(spawn)
+        .catch((err: unknown) => {
+          console.error(`[SPAWN_ENTITY] Failed to load composite "${src}":`, err);
+        });
+      return;
+    }
+
+    // All other paths: spawn synchronously.
+    // engine.addEntityFromComposite throws the canonical error if the provider
+    // is missing or the composite is not cached.
+    spawn();
   }
 }

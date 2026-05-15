@@ -1,0 +1,18 @@
+.SpawnEntityActionContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+}
+
+.SpawnEntityActionContainer .row {
+  display: flex;
+  flex-direction: row;
+  gap: 15px;
+  width: 100%;
+}
+
+.SpawnEntityActionContainer .field {
+  flex: 1;
+  width: 100%;
+}

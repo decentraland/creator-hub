@@ -4,7 +4,7 @@ import { Assets } from '../Assets';
 import { Props } from './types';
 import './Categories.css';
 
-const Categories: React.FC<Props> = ({ value }) => {
+const Categories: React.FC<Props> = ({ value, onAddToFilesystem }) => {
   const assetsByCategory = useMemo(
     () => getAssetsByCategory(value.assets),
     [value.id, value.assets],
@@ -21,7 +21,10 @@ const Categories: React.FC<Props> = ({ value }) => {
             key={category}
           >
             <h4 className="category-name">{category}</h4>
-            <Assets assets={assets} />
+            <Assets
+              assets={assets}
+              onAddToFilesystem={onAddToFilesystem}
+            />
           </div>
         );
       })}

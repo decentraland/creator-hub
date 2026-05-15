@@ -17,9 +17,15 @@ interface CustomAssetItemProps {
   value: CustomAsset;
   onDelete: (assetId: string) => void;
   onRename: (assetId: string) => void;
+  onAddToFilesystem: (assetId: string) => void;
 }
 
-const CustomAssetItem: React.FC<CustomAssetItemProps> = ({ value, onDelete, onRename }) => {
+const CustomAssetItem: React.FC<CustomAssetItemProps> = ({
+  value,
+  onDelete,
+  onRename,
+  onAddToFilesystem,
+}) => {
   const [, drag] = useDrag(
     () => ({
       type: DropTypesEnum.CustomAsset,
@@ -33,6 +39,7 @@ const CustomAssetItem: React.FC<CustomAssetItemProps> = ({ value, onDelete, onRe
       assetId: value.id,
       onDelete,
       onRename,
+      onAddToFilesystem,
     });
   };
 
@@ -85,7 +92,11 @@ const EmptyCustomAssets = () => {
   );
 };
 
-export function CustomAssets() {
+type CustomAssetsProps = {
+  onAddToFilesystem?: (asset: CustomAsset) => void;
+};
+
+export function CustomAssets({ onAddToFilesystem }: CustomAssetsProps) {
   const customAssets = useAppSelector(selectCustomAssets);
   const dispatch = useAppDispatch();
 
@@ -103,6 +114,16 @@ export function CustomAssets() {
     [customAssets, dispatch],
   );
 
+  const handleAddToFilesystem = useCallback(
+    (assetId: string) => {
+      if (!onAddToFilesystem) return;
+      const asset = customAssets.find(a => a.id === assetId);
+      if (!asset) return;
+      void onAddToFilesystem(asset);
+    },
+    [customAssets, onAddToFilesystem],
+  );
+
   if (customAssets.length === 0) return <EmptyCustomAssets />;
 
   return (
@@ -114,6 +135,7 @@ export function CustomAssets() {
           value={asset}
           onDelete={handleDelete}
           onRename={handleRename}
+          onAddToFilesystem={handleAddToFilesystem}
         />
       ))}
     </div>
