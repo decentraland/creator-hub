@@ -6,7 +6,7 @@
     "markdown-to-jsx": "^7.5.0"
   },
   "devDependencies": {
-    "@dcl/ecs": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/add-entity-from-composite/@dcl/ecs/dcl-ecs-7.23.3-25917156822.commit-843c104.tgz",
+    "@dcl/ecs": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/add-entity-from-composite/@dcl/ecs/dcl-ecs-7.23.3-25936951106.commit-8a4cedb.tgz",
     "@dcl/ts-proto": "1.154.0",
     "@testing-library/react": "14.0.0",
     "@typescript-eslint/eslint-plugin": "7.15.0",
