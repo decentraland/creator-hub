@@ -108,9 +108,9 @@ function substituteAssetPathInComposite(
 
 function wrapProvider(base: Composite.Provider): Composite.Provider {
   return {
-    getCompositeOrNull: (src) => base.getCompositeOrNull(src),
+    getCompositeOrNull: src => base.getCompositeOrNull(src),
     loadComposite: base.loadComposite
-      ? async (src) => {
+      ? async src => {
           const resource = await base.loadComposite!(src);
           // Mutate in place: the base provider caches the resource by
           // reference, so subsequent getCompositeOrNull(src) calls return
