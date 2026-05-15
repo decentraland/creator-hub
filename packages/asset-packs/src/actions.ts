@@ -75,8 +75,8 @@ import { initTriggers, damageTargets, healTargets } from './triggers';
 import { followMap } from './transform';
 import { getEasingFunctionFromInterpolation } from './tweens';
 import { getRewardsServerUrl } from './admin-toolkit-ui/constants';
-import { callScriptMethod } from '~sdk/script-utils';
 import { initializeComponentIdsFromComposite } from './add-child';
+import { callScriptMethod } from '~sdk/script-utils';
 
 const initedEntities = new Set<Entity>();
 const uiStacks = new Map<string, Entity>();

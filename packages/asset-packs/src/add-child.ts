@@ -18,7 +18,7 @@
  */
 
 import type { Entity, IEngine, SystemFn } from '@dcl/ecs';
-import { Composite, getCompositeRootComponent } from '@dcl/ecs';
+import { type Composite, getCompositeRootComponent } from '@dcl/ecs';
 import { getNextId } from './id';
 import { ComponentName, getComponents } from './definitions';
 
