@@ -171,28 +171,33 @@ function parsePlaceholderRef(ref: string): ParsedRef | null {
   return null;
 }
 
+// Minimal structural shape we need from any id-bearing component definition.
+// Actions / States / Counter all expose `getMutableOrNull(entity)` returning
+// a value with `.id: number`, but their `value` field types diverge (Action[]
+// vs string[] vs number) which makes them incompatible as a Record value
+// type. We only ever read/write `.id`, so this narrow shape is enough.
+type IdMutableComponent = {
+  getMutableOrNull(entity: Entity): { id?: number } | null;
+};
+
 /**
  * For each composite component listed in COMPONENTS_WITH_ID whose payload
  * carries `id: '{self}'`, allocate a fresh numeric ID via `getNextId`,
  * write it onto the live spawned component, and return the mapping so
  * Trigger references can be remapped in a second pass.
+ *
+ * The engine looks up the component definition by name directly — no
+ * parallel `name → component` table to maintain.
  */
 function allocateIdsForSpawnedComponents(
   engine: IEngine,
   composite: Composite.Definition,
   spawnedEntityByCompositeId: Map<number, Entity>,
 ): IdMap {
-  const { Actions, States, Counter } = getComponents(engine);
-  const componentByName: Record<string, ReturnType<typeof getComponents>['Actions']> = {
-    [ComponentName.ACTIONS]: Actions,
-    [ComponentName.STATES]: States,
-    [ComponentName.COUNTER]: Counter,
-  };
-
   const ids: IdMap = new Map();
   for (const component of composite.components) {
     if (!COMPONENTS_WITH_ID.includes(component.name)) continue;
-    const ComponentDef = componentByName[component.name];
+    const ComponentDef = engine.getComponentOrNull(component.name) as IdMutableComponent | null;
     if (!ComponentDef) continue;
 
     for (const [compositeEntityId, componentData] of component.data) {
@@ -204,7 +209,7 @@ function allocateIdsForSpawnedComponents(
 
       const newId = getNextId(engine);
       ids.set(idKey(component.name, compositeEntityId), newId);
-      const live = ComponentDef.getMutableOrNull(destEntity) as { id?: number } | null;
+      const live = ComponentDef.getMutableOrNull(destEntity);
       if (live) live.id = newId;
     }
   }
