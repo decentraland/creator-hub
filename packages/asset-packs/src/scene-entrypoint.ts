@@ -11,6 +11,7 @@ import { createTransformSystem } from './transform';
 import { createInputActionSystem } from './input-actions';
 import { createCounterBarSystem } from './counter-bar';
 import { createAdminToolkitSystem } from './admin-toolkit';
+import { installAssetPackCompositeProvider } from './add-child';
 
 let initialized: boolean = false;
 /**
@@ -34,6 +35,12 @@ export function initAssetPacks(
 
     // create asset packs components
     createComponents(engine);
+
+    // Wrap the SDK's default Composite.Provider with asset-pack-aware
+    // resolution. Runtime SPAWN_ENTITY loads composite.json files that still
+    // carry the `{assetPath}` placeholder convention; this wrapper substitutes
+    // it at load time so the cached composite holds fully-resolved paths.
+    installAssetPackCompositeProvider(engine);
 
     // create core systems
     const inputSystem = createInputSystem(engine);
