@@ -76,6 +76,7 @@ import { followMap } from './transform';
 import { getEasingFunctionFromInterpolation } from './tweens';
 import { getRewardsServerUrl } from './admin-toolkit-ui/constants';
 import { callScriptMethod } from '~sdk/script-utils';
+import { initializeComponentIdsFromComposite } from './add-child';
 
 const initedEntities = new Set<Entity>();
 const uiStacks = new Map<string, Entity>();
@@ -1638,13 +1639,25 @@ export function createActionsSystem(
   function handleSpawnEntity(entity: Entity, payload: ActionPayload<ActionType.SPAWN_ENTITY>) {
     const { src, position } = payload;
 
+    console.log(
+      `[SPAWN_ENTITY] Spawning entity from composite "${src}" at position: ${position.x}, ${position.y}, ${position.z}`,
+    );
+
     const spawn = () => {
       const spawnedRoot = engine.addEntityFromComposite(src, {
         transform: {
-          position,
+          position: position,
           parent: entity,
         },
       });
+      // Allocate Action/State/Counter IDs and remap Trigger references for the
+      // spawned subtree. Mirrors the inspector's add-asset ID pre-allocation
+      // pass; without this, initActions/initTriggers would bind to '{self}'
+      // string placeholders and triggers wouldn't fire.
+      const composite = engine.getCompositeProvider()?.getCompositeOrNull(src)?.composite;
+      if (composite) {
+        initializeComponentIdsFromComposite(engine, composite, spawnedRoot);
+      }
       initActions(spawnedRoot);
       initTriggers(spawnedRoot);
       const triggerEvents = getTriggerEvents(spawnedRoot);
