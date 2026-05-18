@@ -1,4 +1,5 @@
 import type {
+  Composite,
   Entity,
   IEngine,
   Vector3Type,
@@ -15,11 +16,12 @@ import {
 import type { Actions } from '@dcl/asset-packs';
 import {
   ActionType,
-  COMPONENTS_WITH_ID,
+  allocateIdsForSpawnedComponents,
   ComponentName,
   getJson,
-  getNextId,
   getPayload,
+  remapTriggerReferences,
+  substituteAssetPathInComposite,
 } from '@dcl/asset-packs';
 
 import type { EditorComponents } from '../../components';
@@ -30,7 +32,7 @@ import type { EnumEntity } from '../../enum-entity';
 import type { AssetData } from '../../../logic/catalog';
 import { pushChild, removeChild } from '../../nodes';
 import { ROOT } from '../../tree';
-import { isSelf, parseMaterial, parseSyncComponents, resolveSelfReferences } from './utils';
+import { parseMaterial, parseSyncComponents, resolveSelfReferences } from './utils';
 
 export function addAsset(engine: IEngine) {
   return function addAsset(
@@ -213,44 +215,64 @@ export function addAsset(engine: IEngine) {
         }
       }
 
+      // The inspector's `AssetComposite` keeps `component.data` as a plain
+      // object `{ [entityId: string]: { json: T } }`, whereas the asset-packs
+      // helpers operate on the ts-proto `Composite.Definition` shape with
+      // `data: Map<Entity, ComponentData>` and `ComponentData = { data: { $case: 'json', json: T } }`.
+      // Build the canonical ts-proto shape AND the `values` map in a single
+      // pass over `composite.components`. Inner `json` references are shared
+      // with the original payloads so mutating-in-place helpers (e.g.
+      // `substituteAssetPathInComposite`) flow through. `values` carries
+      // shallow copies so subsequent `.id =` writes don't leak back.
       const values = new Map<string, any>();
-
-      // Generate ids for components that need them BEFORE processing components
-      const ids = new Map<string, number>();
-      for (const component of composite.components) {
-        const componentName = component.name;
-        for (const [entityId, data] of Object.entries(component.data)) {
-          // Use composite key of componentName and entityId
-          const key = `${componentName}:${entityId}`;
-          const componentValue = { ...data.json };
-          if (COMPONENTS_WITH_ID.includes(componentName) && isSelf(componentValue.id)) {
-            ids.set(key, getNextId(engine as any));
-            componentValue.id = ids.get(key);
+      const adaptedComponents: Composite.Definition['components'] = composite.components.map(
+        component => {
+          const dataMap = new Map<Entity, { data: { $case: 'json'; json: any } }>();
+          for (const [entityId, value] of Object.entries(component.data)) {
+            dataMap.set(Number(entityId) as Entity, {
+              data: { $case: 'json', json: value.json },
+            });
+            values.set(`${component.name}:${entityId}`, { ...value.json });
           }
-          values.set(key, componentValue);
-        }
+          return { name: component.name, jsonSchema: undefined, data: dataMap };
+        },
+      );
+      const adaptedComposite: Composite.Definition = {
+        version: composite.version,
+        components: adaptedComponents,
+      } as unknown as Composite.Definition;
+
+      // Apply {assetPath} substitution across the whole composite in one pass.
+      // The recursive walker handles every string-shaped occurrence — including
+      // those nested inside Action `jsonPayload` strings. `base` is already the
+      // asset directory (no filename); pass a synthetic composite src so the
+      // helper's `assetPathFrom` strips back to `base`.
+      substituteAssetPathInComposite(adaptedComposite, `${base}/composite.json`);
+
+      // Build the composite-entityId → spawned-Entity mapping the asset-packs
+      // helper expects (it walks each composite component and writes IDs onto
+      // the live spawned components by entity).
+      const spawnedEntityByCompositeId = new Map<number, Entity>();
+      for (const [compositeEntityId, destEntity] of entities) {
+        spawnedEntityByCompositeId.set(compositeEntityId as number, destEntity);
       }
 
-      const mapId = (id: string | number, entityId: string) => {
-        if (typeof id === 'string') {
-          // Handle self references
-          const selfMatch = id.match(/{self:(.+)}/);
-          if (selfMatch) {
-            const componentName = selfMatch[1];
-            const key = `${componentName}:${entityId}`;
-            return ids.get(key);
-          }
+      const ids = allocateIdsForSpawnedComponents(
+        engine,
+        adaptedComposite,
+        spawnedEntityByCompositeId,
+      );
 
-          // Handle cross-entity references
-          const crossEntityMatch = id.match(/{(\d+):(.+)}/);
-          if (crossEntityMatch) {
-            const [_, refEntityId, componentName] = crossEntityMatch;
-            const key = `${componentName}:${refEntityId}`;
-            return ids.get(key);
-          }
-        }
-        return id;
-      };
+      // `allocateIdsForSpawnedComponents` writes onto live entities AND returns
+      // the keyed `ids` map. In the inspector flow the live entities don't yet
+      // have these components attached (createOrReplace runs further below), so
+      // the on-entity write is a no-op — but the `ids` map is still populated.
+      // Copy the allocated ids back into `values` so the per-component switch
+      // below picks them up before each `createOrReplace`.
+      for (const [key, newId] of ids) {
+        const v = values.get(key);
+        if (v) v.id = newId;
+      }
 
       // Process and create components for each entity
       for (const component of composite.components) {
@@ -265,11 +287,6 @@ export function addAsset(engine: IEngine) {
             case CoreComponents.GLTF_CONTAINER: {
               componentValue.visibleMeshesCollisionMask ??= 0;
               componentValue.invisibleMeshesCollisionMask ??= 3;
-              componentValue.src = componentValue.src.replace('{assetPath}', base);
-              break;
-            }
-            case ComponentName.PLACEHOLDER: {
-              componentValue.src = componentValue.src.replace('{assetPath}', base);
               break;
             }
             case CoreComponents.GLTF_NODE_MODIFIERS: {
@@ -285,17 +302,6 @@ export function addAsset(engine: IEngine) {
               }
               break;
             }
-            case CoreComponents.AUDIO_SOURCE: {
-              componentValue.audioClipUrl = componentValue.audioClipUrl.replace(
-                '{assetPath}',
-                base,
-              );
-              break;
-            }
-            case CoreComponents.VIDEO_PLAYER: {
-              componentValue.src = componentValue.src.replace('{assetPath}', base);
-              break;
-            }
             case CoreComponents.MATERIAL: {
               componentValue = parseMaterial(base, componentValue, targetEntity);
               break;
@@ -304,39 +310,6 @@ export function addAsset(engine: IEngine) {
               const newValue: Actions['value'] = [];
               for (const action of componentValue.value) {
                 switch (action.type) {
-                  case ActionType.PLAY_SOUND: {
-                    const payload = getPayload<ActionType.PLAY_SOUND>(action);
-                    newValue.push({
-                      ...action,
-                      jsonPayload: getJson<ActionType.PLAY_SOUND>({
-                        ...payload,
-                        src: payload.src.replace('{assetPath}', base),
-                      }),
-                    });
-                    break;
-                  }
-                  case ActionType.PLAY_CUSTOM_EMOTE: {
-                    const payload = getPayload<ActionType.PLAY_CUSTOM_EMOTE>(action);
-                    newValue.push({
-                      ...action,
-                      jsonPayload: getJson<ActionType.PLAY_CUSTOM_EMOTE>({
-                        ...payload,
-                        src: payload.src.replace('{assetPath}', base),
-                      }),
-                    });
-                    break;
-                  }
-                  case ActionType.SHOW_IMAGE: {
-                    const payload = getPayload<ActionType.SHOW_IMAGE>(action);
-                    newValue.push({
-                      ...action,
-                      jsonPayload: getJson<ActionType.SHOW_IMAGE>({
-                        ...payload,
-                        src: payload.src.replace('{assetPath}', base),
-                      }),
-                    });
-                    break;
-                  }
                   case ActionType.CHANGE_CAMERA: {
                     try {
                       const payload = getPayload<ActionType.CHANGE_CAMERA>(action);
@@ -359,21 +332,6 @@ export function addAsset(engine: IEngine) {
               componentValue = { ...componentValue, value: newValue };
               break;
             }
-            case ComponentName.TRIGGERS: {
-              const newValue = componentValue.value.map((trigger: any) => ({
-                ...trigger,
-                conditions: (trigger.conditions || []).map((condition: any) => ({
-                  ...condition,
-                  id: mapId(condition.id, entityIdStr),
-                })),
-                actions: trigger.actions.map((action: any) => ({
-                  ...action,
-                  id: mapId(action.id, entityIdStr),
-                })),
-              }));
-              componentValue = { ...componentValue, value: newValue };
-              break;
-            }
             case CoreComponents.SYNC_COMPONENTS: {
               const componentIds = parseSyncComponents(
                 engine,
@@ -387,14 +345,6 @@ export function addAsset(engine: IEngine) {
                 entityId: enumEntityId.getNextEnumEntityId(),
                 networkId: 0,
               });
-              break;
-            }
-            case EditorComponentNames.Script: {
-              const newValue = componentValue.value.map((scriptItem: any) => ({
-                ...scriptItem,
-                path: scriptItem.path.replace('{assetPath}', base),
-              }));
-              componentValue = { ...componentValue, value: newValue };
               break;
             }
           }
@@ -417,6 +367,16 @@ export function addAsset(engine: IEngine) {
           }
         }
       }
+
+      // Rewrite Trigger `actions[].id` / `conditions[].id` placeholder strings
+      // ({self:Component} / {N:Component}) into the numeric IDs allocated above.
+      // Runs after the per-component loop so Triggers components are live on
+      // their target entities (`getMutableOrNull` resolves them).
+      const triggerSpawnedEntities: [Entity, number][] = [];
+      for (const [compositeEntityId, destEntity] of entities) {
+        triggerSpawnedEntities.push([destEntity, compositeEntityId]);
+      }
+      remapTriggerReferences(engine, triggerSpawnedEntities, ids);
 
       if (!mainEntity) {
         throw new Error('No main entity found');

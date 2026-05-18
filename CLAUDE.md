@@ -62,6 +62,11 @@ make format-fix    # Prettier write
 make typecheck     # TypeScript type checking across all workspaces
 ```
 
+**Note:** `make lint-fix` runs `make sync-deps` first, which can fail on
+branches that pin `@dcl/*` packages to SDK-toolchain tarball URLs (syncpack
+reports `UnsupportedMismatch`). When this happens, run `npm run lint:fix`
+directly to skip syncpack and still get ESLint autofixes.
+
 ### Protocol Buffers
 
 Proto files live at `packages/inspector/src/lib/data-layer/proto/`. After modifying `.proto` files:

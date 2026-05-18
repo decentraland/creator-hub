@@ -9,29 +9,24 @@
  *      placeholders resolve to live numeric IDs before initActions /
  *      initTriggers bind handlers.
  *
- * TODO(future PR — consolidate inspector duplication):
- *   The inspector's `add-asset/index.ts` reimplements `{assetPath}` substitution
- *   (per-component switch-case, ~60 lines) and ID alloc + trigger remap (lines
- *   218-253 + 362-375). Refactor the inspector to call into this module so the
- *   asset-pack conventions are defined in exactly one place. Material/
- *   videoTexture parsing and Nodes-tree updates stay inspector-side.
+ * Helpers exported here (`substituteAssetPathInComposite`,
+ * `allocateIdsForSpawnedComponents`, `remapTriggerReferences`, `deepReplaceAssetPath`,
+ * `getJsonPayload`) are the canonical implementations of asset-pack composite
+ * conventions. Inspector add-asset and create-custom-asset operations consume
+ * them. Material/videoTexture parsing and Nodes-tree updates stay inspector-side
+ * — they touch editor-specific runtime state.
  */
 
 import type { Entity, IEngine, SystemFn } from '@dcl/ecs';
 import { type Composite, getCompositeRootComponent } from '@dcl/ecs';
 import { getNextId } from './id';
-import { ComponentName, getComponents } from './definitions';
+import { COMPONENTS_WITH_ID, getComponents } from './definitions';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const ASSET_PATH_TOKEN = '{assetPath}';
 const SELF_REF = /^\{self:(.+)\}$/;
 const CROSS_ENTITY_REF = /^\{(\d+):(.+)\}$/;
-const COMPONENTS_WITH_ID: readonly string[] = [
-  ComponentName.ACTIONS,
-  ComponentName.STATES,
-  ComponentName.COUNTER,
-];
 
 // ─── ts-proto shape helpers ─────────────────────────────────────────────────
 //
@@ -44,12 +39,54 @@ const COMPONENTS_WITH_ID: readonly string[] = [
 type CompositeComponent = Composite.Definition['components'][number];
 type ComponentDataEntry = ReturnType<CompositeComponent['data']['get']>;
 
-function getJsonPayload<T = unknown>(componentData: ComponentDataEntry): T | undefined {
+export function getJsonPayload<T = unknown>(componentData: ComponentDataEntry): T | undefined {
   if (componentData?.data?.$case !== 'json') return undefined;
   return componentData.data.json as T | undefined;
 }
 
 // ─── `{assetPath}` substitution ─────────────────────────────────────────────
+
+// Inline POSIX-normalize. We can't import `path` here: `add-child.ts` is
+// bundled into runtime scenes (sandboxed; no Node), and `path-browserify`
+// is not a dependency. The normalizer walks segments, drops `.`, pops on
+// `..`, and joins with `/` — matching `path.posix.normalize` for the
+// substring shapes we feed it.
+function normalizePosix(p: string): string {
+  const segments = p.split('/');
+  const out: string[] = [];
+  for (const seg of segments) {
+    if (seg === '' || seg === '.') continue;
+    if (seg === '..') {
+      if (out.length === 0 || out[out.length - 1] === '..') out.push('..');
+      else out.pop();
+      continue;
+    }
+    out.push(seg);
+  }
+  const prefix = p.startsWith('/') ? '/' : '';
+  return prefix + out.join('/');
+}
+
+// Path-containment chokepoint for `{assetPath}` substitution. Given the
+// post-substitution path candidate `joined` and the asset directory
+// `replacement`, return the normalized `joined` if and only if
+// POSIX-normalization keeps it inside `replacement` (equal to it or
+// prefixed by `replacement + '/'`). Returns `null` for traversal payloads
+// like `{assetPath}/../../etc/passwd`.
+//
+// Risky-API note: this is the single security primitive for the
+// `{assetPath}` walker. Do not swap `normalizePosix` for a regex `..`
+// blacklist — that rejects legitimate sibling paths.
+function containAssetPath(replacement: string, joined: string): string | null {
+  // No replacement (compositeSrc had no `/`): any traversal is suspicious
+  // because the asset dir is the implicit cwd. Apply the same containment
+  // logic against a `.` base.
+  const base = replacement === '' ? '.' : normalizePosix(replacement);
+  const normalized = normalizePosix(joined);
+  if (normalized === base) return normalized;
+  if (normalized.startsWith(base + '/')) return normalized;
+  return null;
+}
 
 function assetPathFrom(compositeSrc: string): string {
   const slash = compositeSrc.lastIndexOf('/');
@@ -61,15 +98,37 @@ function assetPathFrom(compositeSrc: string): string {
  * from `value`, including strings nested inside stringified payloads
  * (e.g. `asset-packs::Actions[i].jsonPayload`). Mutates in place. Idempotent.
  */
-function deepReplaceAssetPath(value: unknown, replacement: string): void {
+export function deepReplaceAssetPath(value: unknown, replacement: string): void {
   if (value === null || typeof value !== 'object') return;
+
+  const substitute = (raw: string): string => {
+    const joined = raw.split(ASSET_PATH_TOKEN).join(replacement);
+    // Strings that don't contain any path separator after substitution
+    // can't traverse — skip the containment check for perf (e.g.
+    // placeholders used as labels).
+    if (!joined.includes('/') && !joined.includes('\\')) return joined;
+    const contained = containAssetPath(replacement, joined);
+    if (contained !== null) return contained;
+    // Traversal detected. Log once and fall back to `replacement` itself,
+    // which is at minimum syntactically inside the asset dir. Returning
+    // the original `raw` would leave the unresolved `{assetPath}` token
+    // in the output, breaking the runtime more visibly; returning the
+    // bare `replacement` results in a 404-on-load that's easier to debug.
+    // Use `console.error` (not `warn`): the SDK runtime `console` shim
+    // exposes only `log` and `error`. Inspector / Node consumers still
+    // surface this through their normal stderr.
+    console.error(
+      `[asset-packs] rejected {assetPath} substitution that escapes asset dir: ${JSON.stringify(raw)} -> ${JSON.stringify(joined)}`,
+    );
+    return replacement;
+  };
 
   if (Array.isArray(value)) {
     for (let i = 0; i < value.length; i++) {
       const item = value[i];
       if (typeof item === 'string') {
         if (item.includes(ASSET_PATH_TOKEN)) {
-          value[i] = item.split(ASSET_PATH_TOKEN).join(replacement);
+          value[i] = substitute(item);
         }
       } else {
         deepReplaceAssetPath(item, replacement);
@@ -83,7 +142,7 @@ function deepReplaceAssetPath(value: unknown, replacement: string): void {
     const item = obj[key];
     if (typeof item === 'string') {
       if (item.includes(ASSET_PATH_TOKEN)) {
-        obj[key] = item.split(ASSET_PATH_TOKEN).join(replacement);
+        obj[key] = substitute(item);
       }
     } else {
       deepReplaceAssetPath(item, replacement);
@@ -91,7 +150,7 @@ function deepReplaceAssetPath(value: unknown, replacement: string): void {
   }
 }
 
-function substituteAssetPathInComposite(
+export function substituteAssetPathInComposite(
   composite: Composite.Definition,
   compositeSrc: string,
 ): void {
@@ -108,7 +167,7 @@ function substituteAssetPathInComposite(
 
 function wrapProvider(base: Composite.Provider): Composite.Provider {
   return {
-    getCompositeOrNull: src => base.getCompositeOrNull(src),
+    getCompositeOrNull: base.getCompositeOrNull.bind(base),
     loadComposite: base.loadComposite
       ? async src => {
           const resource = await base.loadComposite!(src);
@@ -189,7 +248,7 @@ type IdMutableComponent = {
  * The engine looks up the component definition by name directly — no
  * parallel `name → component` table to maintain.
  */
-function allocateIdsForSpawnedComponents(
+export function allocateIdsForSpawnedComponents(
   engine: IEngine,
   composite: Composite.Definition,
   spawnedEntityByCompositeId: Map<number, Entity>,
@@ -221,7 +280,7 @@ function allocateIdsForSpawnedComponents(
  * (`{self:Component}` / `{entity:Component}`) into the numeric IDs allocated
  * in the previous pass.
  */
-function remapTriggerReferences(
+export function remapTriggerReferences(
   engine: IEngine,
   spawnedEntities: Iterable<[Entity, number]>,
   ids: IdMap,
