@@ -128,6 +128,17 @@ Files matching `*.styled.ts` / `*.styled.tsx` must follow these rules:
 - React: use `@testing-library/react` with accessible queries (`getByRole`, `getByLabelText`).
 - E2E: Playwright for both Electron app and web inspector.
 
+### Asset-packs circular imports & vitest
+
+`packages/asset-packs/src/definitions.ts` re-exports every internal module via
+`export * from './...'`. Production bundlers hoist these bindings, but the
+Vitest loader resolves the re-export *before* the leaf module finishes
+evaluating — so importing constants like `COMPONENTS_WITH_ID` or `getNextId`
+through `definitions.ts` will see them as `undefined` at call time inside the
+same source tree. In `asset-packs` source files and tests, import these
+constants from the leaf module directly (`from './id'`, `from './types'`,
+etc.) rather than via the `definitions.ts` barrel.
+
 ## Skills
 
 Skills live in `.ai/skills/*/SKILL.md`. Read the relevant `SKILL.md` when a task matches a skill's domain.

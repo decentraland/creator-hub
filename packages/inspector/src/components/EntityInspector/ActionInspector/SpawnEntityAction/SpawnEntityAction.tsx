@@ -64,36 +64,15 @@ const SpawnEntityAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
     [payload, handleUpdate],
   );
 
-  const handleChangePositionX = useCallback(
-    ({ target: { value } }: React.ChangeEvent<HTMLInputElement>) => {
-      if (!value) return;
-      handleUpdate({
-        ...payload,
-        position: { ...(payload.position as Vector3), x: parseFloat(value) },
-      });
-    },
-    [payload, handleUpdate],
-  );
-
-  const handleChangePositionY = useCallback(
-    ({ target: { value } }: React.ChangeEvent<HTMLInputElement>) => {
-      if (!value) return;
-      handleUpdate({
-        ...payload,
-        position: { ...(payload.position as Vector3), y: parseFloat(value) },
-      });
-    },
-    [payload, handleUpdate],
-  );
-
-  const handleChangePositionZ = useCallback(
-    ({ target: { value } }: React.ChangeEvent<HTMLInputElement>) => {
-      if (!value) return;
-      handleUpdate({
-        ...payload,
-        position: { ...(payload.position as Vector3), z: parseFloat(value) },
-      });
-    },
+  const handleChangePosition = useCallback(
+    (axis: 'x' | 'y' | 'z') =>
+      ({ target: { value } }: React.ChangeEvent<HTMLInputElement>) => {
+        if (!value) return;
+        handleUpdate({
+          ...payload,
+          position: { ...(payload.position as Vector3), [axis]: parseFloat(value) },
+        });
+      },
     [payload, handleUpdate],
   );
 
@@ -137,21 +116,21 @@ const SpawnEntityAction: React.FC<Props> = ({ value, onUpdate }: Props) => {
               leftLabel="X"
               type="number"
               value={payload.position?.x}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangePositionX(e)}
+              onChange={handleChangePosition('x')}
               autoSelect
             />
             <TextField
               leftLabel="Y"
               type="number"
               value={payload.position?.y}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangePositionY(e)}
+              onChange={handleChangePosition('y')}
               autoSelect
             />
             <TextField
               leftLabel="Z"
               type="number"
               value={payload.position?.z}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangePositionZ(e)}
+              onChange={handleChangePosition('z')}
               autoSelect
             />
           </div>

@@ -13,7 +13,7 @@ import {
   Name,
   Tags as TagsEngine,
 } from '@dcl/ecs';
-import type { Actions } from '@dcl/asset-packs';
+import type { Actions, AssetComposite } from '@dcl/asset-packs';
 import {
   ActionType,
   allocateIdsForSpawnedComponents,
@@ -33,6 +33,42 @@ import type { AssetData } from '../../../logic/catalog';
 import { pushChild, removeChild } from '../../nodes';
 import { ROOT } from '../../tree';
 import { parseMaterial, parseSyncComponents, resolveSelfReferences } from './utils';
+
+// The inspector's `AssetComposite` keeps `component.data` as a plain object
+// `{ [entityId: string]: { json: T } }`, whereas the asset-packs helpers
+// operate on the ts-proto `Composite.Definition` shape with
+// `data: Map<Entity, ComponentData>` and
+// `ComponentData = { data: { $case: 'json', json: T } }`.
+//
+// `toProtoComposite` is the single named bridge between the two shapes:
+// drift on either side becomes a type error here instead of being hidden by
+// a free-floating `as unknown as` at the call site. Inner `json` references
+// are shared with the original payloads so mutating-in-place helpers (e.g.
+// `substituteAssetPathInComposite`) flow through. `values` carries shallow
+// copies so subsequent `.id =` writes don't leak back.
+type ProtoComposite = Composite.Definition;
+type ComponentValues = Map<string, any>;
+
+function toProtoComposite(source: AssetComposite): {
+  composite: ProtoComposite;
+  values: ComponentValues;
+} {
+  const values: ComponentValues = new Map();
+  const components: ProtoComposite['components'] = source.components.map(component => {
+    const dataMap = new Map<Entity, { data: { $case: 'json'; json: any } }>();
+    for (const [entityId, value] of Object.entries(component.data)) {
+      dataMap.set(Number(entityId) as Entity, {
+        data: { $case: 'json', json: value.json },
+      });
+      values.set(`${component.name}:${entityId}`, { ...value.json });
+    }
+    return { name: component.name, jsonSchema: undefined, data: dataMap };
+  });
+  return {
+    composite: { version: source.version, components } as unknown as ProtoComposite,
+    values,
+  };
+}
 
 export function addAsset(engine: IEngine) {
   return function addAsset(
@@ -215,32 +251,7 @@ export function addAsset(engine: IEngine) {
         }
       }
 
-      // The inspector's `AssetComposite` keeps `component.data` as a plain
-      // object `{ [entityId: string]: { json: T } }`, whereas the asset-packs
-      // helpers operate on the ts-proto `Composite.Definition` shape with
-      // `data: Map<Entity, ComponentData>` and `ComponentData = { data: { $case: 'json', json: T } }`.
-      // Build the canonical ts-proto shape AND the `values` map in a single
-      // pass over `composite.components`. Inner `json` references are shared
-      // with the original payloads so mutating-in-place helpers (e.g.
-      // `substituteAssetPathInComposite`) flow through. `values` carries
-      // shallow copies so subsequent `.id =` writes don't leak back.
-      const values = new Map<string, any>();
-      const adaptedComponents: Composite.Definition['components'] = composite.components.map(
-        component => {
-          const dataMap = new Map<Entity, { data: { $case: 'json'; json: any } }>();
-          for (const [entityId, value] of Object.entries(component.data)) {
-            dataMap.set(Number(entityId) as Entity, {
-              data: { $case: 'json', json: value.json },
-            });
-            values.set(`${component.name}:${entityId}`, { ...value.json });
-          }
-          return { name: component.name, jsonSchema: undefined, data: dataMap };
-        },
-      );
-      const adaptedComposite: Composite.Definition = {
-        version: composite.version,
-        components: adaptedComponents,
-      } as unknown as Composite.Definition;
+      const { composite: adaptedComposite, values } = toProtoComposite(composite);
 
       // Apply {assetPath} substitution across the whole composite in one pass.
       // The recursive walker handles every string-shaped occurrence — including

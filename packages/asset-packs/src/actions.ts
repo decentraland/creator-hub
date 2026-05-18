@@ -1639,10 +1639,6 @@ export function createActionsSystem(
   function handleSpawnEntity(entity: Entity, payload: ActionPayload<ActionType.SPAWN_ENTITY>) {
     const { src, position } = payload;
 
-    console.log(
-      `[SPAWN_ENTITY] Spawning entity from composite "${src}" at position: ${position.x}, ${position.y}, ${position.z}`,
-    );
-
     const spawn = () => {
       const spawnedRoot = engine.addEntityFromComposite(src, {
         transform: {

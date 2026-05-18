@@ -1,12 +1,12 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 
 import type { Asset, CustomAsset } from '../lib/logic/catalog';
 import { getConfig } from '../lib/logic/config';
 import { DIRECTORY, withAssetDir } from '../lib/data-layer/host/fs-utils';
+import { getRelativeResourcePath, getResourcesBasePath } from '../lib/utils/path-utils';
 import { getDataLayerInterface, getAssetCatalog, saveThumbnail } from '../redux/data-layer';
 import { useAppDispatch } from '../redux/hooks';
 import { analytics, Event } from '../lib/logic/analytics';
-import { useIsMounted } from './useIsMounted';
 
 const THUMBNAIL_PATH = 'thumbnail.png';
 
@@ -15,8 +15,6 @@ const isAssetFile = (value: string): boolean => value.endsWith('.gltf') || value
 export function useImportAssetToFilesystem() {
   const dispatch = useAppDispatch();
   const config = getConfig();
-  const isMounted = useIsMounted();
-  const [isImporting, setIsImporting] = useState(false);
 
   const getContentFetchUrl = useCallback(
     (path: string, contentHash: string) => {
@@ -34,8 +32,6 @@ export function useImportAssetToFilesystem() {
       const assetPackageName = asset.name.trim().replaceAll(' ', '_').toLowerCase();
       const assetPath = Object.keys(asset.contents).find(isAssetFile);
       let thumbnail: Uint8Array | undefined;
-
-      setIsImporting(true);
 
       await Promise.all(
         Object.entries(asset.contents).map(async ([path, contentHash]) => {
@@ -76,10 +72,6 @@ export function useImportAssetToFilesystem() {
         );
       }
 
-      if (isMounted()) {
-        setIsImporting(false);
-      }
-
       analytics.track(Event.ADD_ITEM, {
         itemId: asset.id,
         itemName: asset.name,
@@ -93,7 +85,7 @@ export function useImportAssetToFilesystem() {
         assetPath,
       };
     },
-    [dispatch, getContentFetchUrl, isMounted],
+    [dispatch, getContentFetchUrl],
   );
 
   const importCustomAssetToFilesystem = useCallback(
@@ -105,19 +97,19 @@ export function useImportAssetToFilesystem() {
       const dataLayer = getDataLayerInterface();
       if (!dataLayer) return;
 
-      setIsImporting(true);
+      const assetRoot = getResourcesBasePath(asset.resources);
 
       const files = await Promise.all(
         asset.resources.map(async resourcePath => {
           const fileContent = await dataLayer
             .getFile({ path: resourcePath })
             .then(res => res.content);
-          const fileName = resourcePath.split('/').pop()!;
-          return { fileName, content: fileContent };
+          const relativePath = getRelativeResourcePath(resourcePath, assetRoot);
+          return { relativePath, content: fileContent };
         }),
       );
       for (const file of files) {
-        content.set(file.fileName, file.content);
+        content.set(file.relativePath, file.content);
       }
 
       if (asset.composite) {
@@ -129,18 +121,13 @@ export function useImportAssetToFilesystem() {
       await dataLayer.importAsset({ content, basePath, assetPackageName: '' });
       dispatch(getAssetCatalog());
 
-      if (isMounted()) {
-        setIsImporting(false);
-      }
-
       return { basePath };
     },
-    [dispatch, isMounted],
+    [dispatch],
   );
 
   return {
     importCatalogAssetToFilesystem,
     importCustomAssetToFilesystem,
-    isImporting,
   };
 }
