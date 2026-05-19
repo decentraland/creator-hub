@@ -37,8 +37,7 @@ export default React.memo(
       VideoPlayer,
       fromVideoPlayer,
       toVideoPlayer,
-      handleInputValidation,
-      [files],
+      { validateInput: handleInputValidation, deps: [files] },
     );
 
     const handleDrop = useCallback(async (src: string) => {

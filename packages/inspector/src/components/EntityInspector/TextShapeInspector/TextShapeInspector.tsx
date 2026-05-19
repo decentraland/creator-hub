@@ -21,7 +21,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
     TextShape,
     fromTextShape,
     toTextShape,
-    isValidInput,
+    { validateInput: isValidInput },
   );
 
   const handleRemove = useCallback(async () => {

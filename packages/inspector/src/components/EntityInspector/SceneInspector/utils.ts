@@ -23,7 +23,8 @@ export function fromScene(value: EditorComponentsTypes['Scene']): SceneInput {
     author: value.author || '',
     email: value.email || '',
     skyboxConfig: {
-      fixedTime: String(value.skyboxConfig?.fixedTime ?? MIDDAY_SECONDS),
+      fixedTime:
+        value.skyboxConfig?.fixedTime !== undefined ? String(value.skyboxConfig.fixedTime) : '',
       transitionMode: String(value.skyboxConfig?.transitionMode ?? TransitionMode.TM_FORWARD),
     },
     silenceVoiceChat: typeof value.silenceVoiceChat === 'boolean' ? value.silenceVoiceChat : false,
@@ -31,6 +32,8 @@ export function fromScene(value: EditorComponentsTypes['Scene']): SceneInput {
       typeof value.disablePortableExperiences === 'boolean'
         ? value.disablePortableExperiences
         : false,
+    disableNearbyVoiceChat:
+      typeof value.disableNearbyVoiceChat === 'boolean' ? value.disableNearbyVoiceChat : false,
     spawnPoints: Array.isArray(value.spawnPoints)
       ? value.spawnPoints.map(spawnPoint => fromSceneSpawnPoint(spawnPoint))
       : [],
@@ -53,11 +56,13 @@ export function toScene(inputs: SceneInput): EditorComponentsTypes['Scene'] {
     author: inputs.author,
     email: inputs.email,
     skyboxConfig: {
-      fixedTime: Number(inputs.skyboxConfig.fixedTime ?? MIDDAY_SECONDS),
+      fixedTime:
+        inputs.skyboxConfig.fixedTime !== '' ? Number(inputs.skyboxConfig.fixedTime) : undefined,
       transitionMode: Number(inputs.skyboxConfig.transitionMode) as TransitionMode,
     },
     silenceVoiceChat: inputs.silenceVoiceChat,
     disablePortableExperiences: inputs.disablePortableExperiences,
+    disableNearbyVoiceChat: inputs.disableNearbyVoiceChat,
     spawnPoints: inputs.spawnPoints.map(spawnPoint => toSceneSpawnPoint(spawnPoint)),
     layout: {
       base: parseParcels(inputs.layout.base)[0],

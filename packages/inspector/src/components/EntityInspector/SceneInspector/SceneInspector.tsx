@@ -100,7 +100,9 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
 
   const hasScene = useHasComponent(entity, Scene);
   const imageOptions = useAssetOptions(ACCEPTED_FILE_TYPES['image']);
-  const { getInputProps } = useComponentInput(entity, Scene, fromScene, toScene, isValidInput);
+  const { getInputProps } = useComponentInput(entity, Scene, fromScene, toScene, {
+    validateInput: isValidInput,
+  });
   const nameProps = getInputProps('name');
   const descriptionProps = getInputProps('description');
   const thumbnailProps = getInputProps('thumbnail');
@@ -112,6 +114,10 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const silenceVoiceChatProps = getInputProps('silenceVoiceChat', e => e.target.checked);
   const disablePortableExperiencesProps = getInputProps(
     'disablePortableExperiences',
+    e => e.target.checked,
+  );
+  const disableNearbyVoiceChatProps = getInputProps(
+    'disableNearbyVoiceChat',
     e => e.target.checked,
   );
 
@@ -348,6 +354,11 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
             label="Disable Smart Wearables & Portable Experiences"
             checked={componentValue.disablePortableExperiences}
             {...disablePortableExperiencesProps}
+          />
+          <CheckboxField
+            label="Disable Nearby Voice Chat"
+            checked={componentValue.disableNearbyVoiceChat}
+            {...disableNearbyVoiceChatProps}
           />
           <Block
             label="Skybox"

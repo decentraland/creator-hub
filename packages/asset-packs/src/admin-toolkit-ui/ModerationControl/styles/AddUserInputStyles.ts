@@ -1,8 +1,8 @@
 import { Color4 } from '@dcl/ecs-math';
 import type { UiTransformProps } from '@dcl/react-ecs';
-import { CONTENT_URL } from '../../constants';
+import { getContentUrl } from '../../constants';
 
-const ERROR_ICON = `${CONTENT_URL}/admin_toolkit/assets/icons/error.png`;
+const getErrorIcon = () => `${getContentUrl()}/admin_toolkit/assets/icons/error.png`;
 
 export const getAddUserInputStyles = (): Record<string, UiTransformProps> => ({
   container: {
@@ -66,7 +66,7 @@ export const getAddUserInputBackgrounds = () => ({
   errorIcon: {
     textureMode: 'stretch' as const,
     texture: {
-      src: ERROR_ICON,
+      src: getErrorIcon(),
     },
   },
 });

@@ -1,29 +1,44 @@
 import { Color4 } from '@dcl/sdk/math';
-import ReactEcs, { Label, Button as DCLButton, UiEntity, ReactBasedUiSystem } from '@dcl/react-ecs';
-import { Entity, IEngine, PointerEventsSystem } from '@dcl/ecs';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- ReactEcs is required for JSX factory
+import ReactEcs, {
+  Label,
+  Button as DCLButton,
+  UiEntity,
+  type ReactBasedUiSystem,
+} from '@dcl/react-ecs';
+import { type Entity, type IEngine, type PointerEventsSystem } from '@dcl/ecs';
 import { getExplorerInformation } from '~system/Runtime';
-import { getComponents, GetPlayerDataRes, IPlayersHelper, ISDKHelpers } from '../definitions';
+import {
+  getComponents,
+  type GetPlayerDataRes,
+  type IPlayersHelper,
+  type ISDKHelpers,
+} from '../definitions';
 import { VideoControl } from './VideoControl';
 import { TextAnnouncementsControl } from './TextAnnouncementsControl';
 import { SmartItemsControl } from './SmartItemsControl';
 import { Button } from './Button';
 import { TextAnnouncements } from './TextAnnouncements';
-import { CONTENT_URL } from './constants';
-import { State, TabType, SelectedSmartItem } from './types';
+import { getContentUrl } from './constants';
+import { type State, TabType, type SelectedSmartItem } from './types';
 import {
-  BTN_MODERATION_CONTROL,
+  getBtnModerationControl,
   ModerationControl,
   moderationControlState,
-  SceneAdmin,
+  type SceneAdmin,
 } from './ModerationControl';
-import { getSceneAdmins, getSceneBans, SceneBanUser } from './ModerationControl/api';
+import { getSceneAdmins, getSceneBans, type SceneBanUser } from './ModerationControl/api';
 import { ModalUserList, UserListType } from './ModerationControl/UsersList';
+import { showcaseState, sharePresentationState } from './VideoControl/DclCast';
+import { SpeakerShowcase } from './VideoControl/DclCast/SpeakerShowcase';
+import SharePresentationModal from './VideoControl/DclCast/SharePresentationModal';
 import { isPreview } from './fetch-utils';
+import { initAdminMessageBus, getAdminMessageBus } from './admin-message-bus';
 
 export const nextTickFunctions: (() => void)[] = [];
 const ADMIN_TOOLKIT_VIRTUAL_UI_SIZE = { virtualWidth: 1920, virtualHeight: 1080 };
 
-export let state: State = {
+export const state: State = {
   adminToolkitUiEntity: 0 as Entity,
   panelOpen: false,
   activeTab: TabType.NONE,
@@ -31,6 +46,8 @@ export let state: State = {
     selectedVideoPlayer: undefined,
     selectedStream: undefined,
     dclCast: undefined,
+    isMinimized: false,
+    presentationState: undefined,
   },
   smartItemsControl: {
     selectedSmartItem: undefined,
@@ -54,14 +71,23 @@ let sceneBansCache: SceneBanUser[] = [];
 // const BTN_REWARDS_CONTROL = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-rewards-control-button.png`
 // const BTN_REWARDS_CONTROL_ACTIVE = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-rewards-control-active-button.png`
 
-const BTN_VIDEO_CONTROL = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-video-control-button.png`;
-
-const BTN_SMART_ITEM_CONTROL = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-smart-item-control-button.png`;
-
-const BTN_TEXT_ANNOUNCEMENT_CONTROL = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-text-announcement-control-button.png`;
-
-const BTN_ADMIN_TOOLKIT_CONTROL = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-control-button.png`;
-const BTN_ADMIN_TOOLKIT_BACKGROUND = `${CONTENT_URL}/admin_toolkit/assets/backgrounds/admin-tool-background.png`;
+const ADMIN_ICONS = {
+  get BTN_VIDEO_CONTROL() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/admin-panel-video-control-button.png`;
+  },
+  get BTN_SMART_ITEM_CONTROL() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/admin-panel-smart-item-control-button.png`;
+  },
+  get BTN_TEXT_ANNOUNCEMENT_CONTROL() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/admin-panel-text-announcement-control-button.png`;
+  },
+  get BTN_ADMIN_TOOLKIT_CONTROL() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/admin-panel-control-button.png`;
+  },
+  get BTN_ADMIN_TOOLKIT_BACKGROUND() {
+    return `${getContentUrl()}/admin_toolkit/assets/backgrounds/admin-tool-background.png`;
+  },
+};
 
 export const containerBackgroundColor = Color4.create(0, 0, 0, 0.75);
 
@@ -82,7 +108,6 @@ export async function fetchSceneAdmins() {
   const [error, response] = await getSceneAdmins();
 
   if (error) {
-    // user doesnt have permissions
     console.log(JSON.stringify({ error }));
     sceneAdminsCache = [];
     return;
@@ -96,6 +121,16 @@ export async function fetchSceneAdmins() {
       canBeRemoved: !!$.canBeRemoved,
     }))
     .sort(a => (a.canBeRemoved ? 1 : -1));
+  if (adminDataInitialized) {
+    getAdminMessageBus().updateAdminList(sceneAdminsCache);
+  }
+}
+
+export async function fetchAndSyncSceneAdmins() {
+  await fetchSceneAdmins();
+  if (adminDataInitialized) {
+    getAdminMessageBus().emitSyncAdmins();
+  }
 }
 
 export async function fetchSceneBans() {
@@ -119,12 +154,6 @@ export function getSmartItems(engine: IEngine) {
   return Array.from(adminToolkitComponent.smartItemsControl.smartItems ?? []);
 }
 
-function getRewards(engine: IEngine) {
-  const adminToolkitComponent = getAdminToolkitComponent(engine);
-
-  return Array.from(adminToolkitComponent?.rewardsControl?.rewardItems ?? []);
-}
-
 function initTextAnnouncementSync(engine: IEngine) {
   const { TextAnnouncements } = getComponents(engine);
 
@@ -137,9 +166,13 @@ function initTextAnnouncementSync(engine: IEngine) {
 
 // Initialize admin data before UI rendering
 let adminDataInitialized = false;
-export async function initializeAdminData(engine: IEngine, sdkHelpers?: ISDKHelpers) {
+export async function initializeAdminData(
+  engine: IEngine,
+  sdkHelpers?: ISDKHelpers,
+  playersHelper?: IPlayersHelper,
+) {
   if (!adminDataInitialized) {
-    const { TextAnnouncements, VideoControlState } = getComponents(engine);
+    const { VideoControlState } = getComponents(engine);
 
     // Initialize AdminToolkitUiEntity
     state.adminToolkitUiEntity = getAdminToolkitEntity(engine) ?? engine.addEntity();
@@ -156,7 +189,7 @@ export async function initializeAdminData(engine: IEngine, sdkHelpers?: ISDKHelp
 
     sdkHelpers?.syncEntity?.(
       state.adminToolkitUiEntity,
-      [VideoControlState.componentId, TextAnnouncements.componentId],
+      [VideoControlState.componentId],
       ADMIN_TOOLS_ENTITY,
     );
 
@@ -172,6 +205,15 @@ export async function initializeAdminData(engine: IEngine, sdkHelpers?: ISDKHelp
     // Initialize scene data
     await Promise.all([fetchSceneAdmins(), fetchSceneBans()]);
 
+    // Initialize admin message bus with sender validation
+    initAdminMessageBus(
+      engine,
+      sceneAdminsCache,
+      state.adminToolkitUiEntity,
+      playersHelper,
+      fetchSceneAdmins,
+    );
+
     adminDataInitialized = true;
 
     console.log('initializeAdminData - initialized');
@@ -186,7 +228,7 @@ export function createAdminToolkitUI(
   playersHelper?: IPlayersHelper,
 ) {
   // Initialize admin data before setting up the UI
-  initializeAdminData(engine, sdkHelpers).then(() => {
+  initializeAdminData(engine, sdkHelpers, playersHelper).then(() => {
     console.log('createAdminToolkitUI - initialized');
     reactBasedUiSystem.setUiRenderer(
       () => uiComponent(engine, pointerEventsSystem, sdkHelpers, playersHelper),
@@ -216,10 +258,10 @@ function isAllowedAdmin(
  */
 let _isMobile: boolean = false;
 void getExplorerInformation({})
-  .then((info) => {
+  .then(info => {
     _isMobile = info.platform?.toLowerCase() === 'mobile';
   })
-  .catch((err) => {
+  .catch(err => {
     console.error('Admin Tools: failed to detect platform:', err);
   });
 
@@ -250,12 +292,12 @@ const uiComponent = (
   // toggle on top, panel expanding downward (column-reverse since toggle is last child).
   // Desktop layout: completely unchanged — panel + toggle side-by-side at top-right.
 
-  const toggleBtnSize = isMobile ? 126 : 42;   // 42 × 3 = 126
-  const tabBtnWidth = isMobile ? 147 : 49;     // 49 × 3 = 147
-  const tabBtnHeight = isMobile ? 126 : 42;    // 42 × 3 = 126
-  const panelWidth = isMobile ? 900 : 500;     // fits within center safe zone (~50% of 1920)
-  const headerHeight = isMobile ? 150 : 50;    // 50 × 3 = 150
-  const fontSize = isMobile ? 60 : 20;         // 20 × 3 = 60
+  const toggleBtnSize = isMobile ? 126 : 42; // 42 × 3 = 126
+  const tabBtnWidth = isMobile ? 147 : 49; // 49 × 3 = 147
+  const tabBtnHeight = isMobile ? 126 : 42; // 42 × 3 = 126
+  const panelWidth = isMobile ? 900 : 500; // fits within center safe zone (~50% of 1920)
+  const headerHeight = isMobile ? 150 : 50; // 50 × 3 = 150
+  const fontSize = isMobile ? 60 : 20; // 20 × 3 = 60
 
   // Desktop: row layout, anchored top-right (unchanged from original).
   // Mobile: column-reverse layout, centered horizontally at top of safe zone.
@@ -315,7 +357,7 @@ const uiComponent = (
               <Button
                 id="admin_toolkit_moderation_control"
                 variant={state.activeTab === TabType.MODERATION_CONTROL ? 'primary' : 'text'}
-                icon={BTN_MODERATION_CONTROL}
+                icon={getBtnModerationControl()}
                 onlyIcon
                 uiTransform={{
                   display:
@@ -349,7 +391,7 @@ const uiComponent = (
               <Button
                 id="admin_toolkit_panel_video_control"
                 variant={state.activeTab === TabType.VIDEO_CONTROL ? 'primary' : 'text'}
-                icon={BTN_VIDEO_CONTROL}
+                icon={ADMIN_ICONS.BTN_VIDEO_CONTROL}
                 iconBackground={{
                   color:
                     state.activeTab === TabType.VIDEO_CONTROL ? Color4.Black() : Color4.White(),
@@ -381,7 +423,7 @@ const uiComponent = (
               <Button
                 id="admin_toolkit_panel_smart_items_control"
                 variant={state.activeTab === TabType.SMART_ITEMS_CONTROL ? 'primary' : 'text'}
-                icon={BTN_SMART_ITEM_CONTROL}
+                icon={ADMIN_ICONS.BTN_SMART_ITEM_CONTROL}
                 iconBackground={{
                   color:
                     state.activeTab === TabType.SMART_ITEMS_CONTROL
@@ -415,7 +457,7 @@ const uiComponent = (
               <Button
                 id="admin_toolkit_panel_text_announcement_control"
                 variant={state.activeTab === TabType.TEXT_ANNOUNCEMENT_CONTROL ? 'primary' : 'text'}
-                icon={BTN_TEXT_ANNOUNCEMENT_CONTROL}
+                icon={ADMIN_ICONS.BTN_TEXT_ANNOUNCEMENT_CONTROL}
                 iconBackground={{
                   color:
                     state.activeTab === TabType.TEXT_ANNOUNCEMENT_CONTROL
@@ -458,6 +500,7 @@ const uiComponent = (
               <VideoControl
                 engine={engine}
                 state={state}
+                playerAddress={player?.userId}
               />
             ) : null}
             {state.activeTab === TabType.SMART_ITEMS_CONTROL ? (
@@ -486,7 +529,7 @@ const uiComponent = (
             }}
             uiBackground={{
               texture: {
-                src: BTN_ADMIN_TOOLKIT_BACKGROUND,
+                src: ADMIN_ICONS.BTN_ADMIN_TOOLKIT_BACKGROUND,
               },
               textureMode: 'stretch',
               color: Color4.create(1, 1, 1, 1),
@@ -503,7 +546,7 @@ const uiComponent = (
               }}
               uiBackground={{
                 texture: {
-                  src: BTN_ADMIN_TOOLKIT_CONTROL,
+                  src: ADMIN_ICONS.BTN_ADMIN_TOOLKIT_CONTROL,
                 },
                 textureMode: 'stretch',
                 color: Color4.create(1, 1, 1, 1),
@@ -532,6 +575,24 @@ const uiComponent = (
         users={sceneBansCache ?? []}
         engine={engine}
         type={UserListType.BAN}
+      />
+    ),
+    showcaseState.show &&
+      showcaseState.onSelectTrack &&
+      showcaseState.onSetDefault &&
+      showcaseState.onClose && (
+        <SpeakerShowcase
+          participants={showcaseState.participants}
+          activeTrackSid={showcaseState.activeTrackSid}
+          onSelectTrack={showcaseState.onSelectTrack}
+          onSetDefault={showcaseState.onSetDefault}
+          onClose={showcaseState.onClose}
+        />
+      ),
+    sharePresentationState.show && sharePresentationState.onClose && (
+      <SharePresentationModal
+        onClose={sharePresentationState.onClose}
+        streamingKey={state.videoControl.dclCast?.streamingKey ?? ''}
       />
     ),
   ];

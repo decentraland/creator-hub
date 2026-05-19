@@ -291,11 +291,14 @@ export function Tree<T>() {
               : undefined;
           sdk.operations.removeSelectedEntities();
           if (selectedEntities.length > 1) {
+            let insertAfter = selectedEntities[selectedEntities.length - 1];
             selectedEntities.forEach(entity => {
               if (typeof entity === typeof value) {
-                onDuplicate(entity as T, preferredGizmo);
+                const cloned = sdk.operations.duplicateEntity(entity, preferredGizmo, insertAfter);
+                insertAfter = cloned;
               }
             });
+            void sdk.operations.dispatch();
           } else {
             onDuplicate(value, preferredGizmo);
           }

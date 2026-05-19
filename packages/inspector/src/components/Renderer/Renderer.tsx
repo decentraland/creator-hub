@@ -6,6 +6,7 @@ import { Vector3 } from '@babylonjs/core';
 import type { Entity } from '@dcl/ecs';
 
 import { DIRECTORY, withAssetDir } from '../../lib/data-layer/host/fs-utils';
+import { getRelativeResourcePath, getResourcesBasePath } from '../../lib/utils/path-utils';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { getDataLayerInterface, getAssetCatalog, saveThumbnail } from '../../redux/data-layer';
 import type {
@@ -117,7 +118,12 @@ const Renderer: React.FC = () => {
         ? sdk.components.Selection.getOrNull(selectedEntitites[0])?.gizmo
         : undefined;
     sdk.operations.removeSelectedEntities();
-    selectedEntitites.forEach(entity => sdk.operations.duplicateEntity(entity, preferredGizmo));
+    let insertAfter =
+      selectedEntitites.length > 1 ? selectedEntitites[selectedEntitites.length - 1] : undefined;
+    selectedEntitites.forEach(entity => {
+      const cloned = sdk.operations.duplicateEntity(entity, preferredGizmo, insertAfter);
+      insertAfter = cloned;
+    });
     void sdk.operations.dispatch();
     setTimeout(() => {
       camera.attachControl(canvasRef.current, true);
@@ -138,7 +144,11 @@ const Renderer: React.FC = () => {
         ? sdk.components.Selection.getOrNull(selectedEntities[0])?.gizmo
         : undefined;
     sdk.operations.removeSelectedEntities();
-    copyEntities.forEach(entity => sdk.operations.duplicateEntity(entity, preferredGizmo));
+    let insertAfter = copyEntities.length > 1 ? copyEntities[copyEntities.length - 1] : undefined;
+    copyEntities.forEach(entity => {
+      const cloned = sdk.operations.duplicateEntity(entity, preferredGizmo, insertAfter);
+      insertAfter = cloned;
+    });
     void sdk.operations.dispatch();
   }, [sdk, copyEntities]);
 
@@ -271,43 +281,24 @@ const Renderer: React.FC = () => {
     const dataLayer = getDataLayerInterface();
     if (!dataLayer) return;
 
-    // Find the common base path from all resources
-    const customAssetBasePath = asset.resources.reduce((basePath, path) => {
-      const pathParts = path.split('/');
-      pathParts.pop(); // Remove filename
-      const currentPath = pathParts.join('/');
-      if (!basePath) return currentPath;
-
-      // Find common prefix between paths
-      const basePathParts = basePath.split('/');
-      const commonParts = [];
-      for (let i = 0; i < basePathParts.length; i++) {
-        if (basePathParts[i] === pathParts[i]) {
-          commonParts.push(basePathParts[i]);
-        } else {
-          break;
-        }
-      }
-      return commonParts.join('/');
-    }, '');
+    // Compute asset root to derive relative paths (preserves subfolders)
+    const assetRoot = getResourcesBasePath(asset.resources);
 
     // Read resource files from the custom assets directory and prepare them for copying to the scene
     const files = await Promise.all(
       asset.resources.map(async resourcePath => {
-        // Use the full path to read from custom assets directory
         const fileContent = await dataLayer
           .getFile({ path: resourcePath })
           .then(res => res.content);
-        // Extract just the filename for storing in the scene's custom folder
-        const fileName = resourcePath.split('/').pop()!;
+        const relativePath = getRelativeResourcePath(resourcePath, assetRoot);
         return {
-          fileName,
+          relativePath,
           content: fileContent,
         };
       }),
     );
     for (const file of files) {
-      content.set(file.fileName, file.content);
+      content.set(file.relativePath, file.content);
     }
 
     // Always write composite.json to ensure the folder is created, even if there are no resources

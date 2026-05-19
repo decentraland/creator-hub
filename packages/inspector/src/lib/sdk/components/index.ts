@@ -78,6 +78,7 @@ export type SceneComponent = {
   layout: Layout;
   silenceVoiceChat?: boolean;
   disablePortableExperiences?: boolean;
+  disableNearbyVoiceChat?: boolean;
   spawnPoints?: SceneSpawnPoint[];
 };
 

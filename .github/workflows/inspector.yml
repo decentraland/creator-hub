@@ -32,16 +32,16 @@ jobs:
       contents: read
       id-token: write
     outputs:
-      changed: ${{ steps.check-changed.outputs.changed }}
-      version: ${{ steps.version.outputs.version }}
-      previous_version: ${{ steps.version.outputs.previous_version }}
+      changed: ${{ steps.detect-changes.outputs.changed }}
+      version: ${{ steps.detect-changes.outputs.version }}
+      previous_version: ${{ steps.semantic-version.outputs.previous_version }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Bump release version
-        id: version
+        id: semantic-version
         uses: paulhatch/semantic-version@v5.4.0
         with:
           tag_prefix: "@dcl/inspector@"
@@ -54,14 +54,31 @@ jobs:
           user_format_type: "json"
           change_path: "packages/inspector"
 
-      # build inspector if either inspector or asset-packs changed
-      - name: Check if build is needed
-        id: check-changed
+      # Force a patch bump when only @dcl/asset-packs changed: inspector source
+      # references @dcl/asset-packs via `file:../asset-packs`, so dependency-only
+      # bumps don't touch packages/inspector and semantic-version returns an
+      # unchanged version. Without the patch bump, `npm publish` would try to
+      # republish the same version (rejected by the registry), and downstream
+      # creator-hub would install a stale inspector tarball pinning the old
+      # asset-packs.
+      - name: Detect inspector/asset-packs changes
+        id: detect-changes
+        env:
+          INSPECTOR_CHANGED: ${{ steps.semantic-version.outputs.changed }}
+          ASSET_PACKS_CHANGED: ${{ inputs.asset_packs_changed }}
+          SEMVER_VERSION: ${{ steps.semantic-version.outputs.version }}
+          PREVIOUS_VERSION: ${{ steps.semantic-version.outputs.previous_version }}
         run: |
-          if [[ "${{ steps.version.outputs.changed }}" == "true" || "${{ inputs.asset_packs_changed }}" == "true" ]]; then
-            echo "changed=true" >> $GITHUB_OUTPUT
+          if [[ "$INSPECTOR_CHANGED" == "true" ]]; then
+            echo "version=$SEMVER_VERSION" >> "$GITHUB_OUTPUT"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          elif [[ "$ASSET_PACKS_CHANGED" == "true" ]]; then
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$PREVIOUS_VERSION"
+            echo "version=${MAJOR}.${MINOR}.$((PATCH + 1))" >> "$GITHUB_OUTPUT"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
           else
-            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "version=$SEMVER_VERSION" >> "$GITHUB_OUTPUT"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
 
   publish:

@@ -4,6 +4,7 @@ export enum AssetsTab {
   FileSystem = 'FileSystem',
   AssetsPack = 'AssetsPack',
   Import = 'Import',
+  MobileDebugSession = 'MobileDebugSession',
 }
 
 export enum PanelName {
@@ -37,6 +38,8 @@ export enum Method {
   PUSH_DEBUG_LOGS = 'push_debug_logs',
   CLEAR_DEBUG_LOGS = 'clear_debug_logs',
   SET_FEATURE_FLAGS = 'set_feature_flags',
+  PUSH_MOBILE_DEBUG_ENTRIES = 'push_mobile_debug_entries',
+  SET_MOBILE_DEBUG_SESSION_ENABLED = 'set_mobile_debug_session_enabled',
 }
 
 export type Params = {
@@ -55,6 +58,17 @@ export type Params = {
   [Method.PUSH_DEBUG_LOGS]: { logs: string[] };
   [Method.CLEAR_DEBUG_LOGS]: Record<string, never>;
   [Method.SET_FEATURE_FLAGS]: { flags: Record<string, boolean> };
+  [Method.PUSH_MOBILE_DEBUG_ENTRIES]: { entries: unknown[] };
+  [Method.SET_MOBILE_DEBUG_SESSION_ENABLED]: {
+    enabled: boolean;
+    sessions: {
+      id: number;
+      sessionId: string | null;
+      deviceName: string | null;
+      status: 'active' | 'ended';
+      messageCount: number;
+    }[];
+  };
 };
 
 export type Result = {
@@ -73,6 +87,8 @@ export type Result = {
   [Method.PUSH_DEBUG_LOGS]: void;
   [Method.CLEAR_DEBUG_LOGS]: void;
   [Method.SET_FEATURE_FLAGS]: void;
+  [Method.PUSH_MOBILE_DEBUG_ENTRIES]: void;
+  [Method.SET_MOBILE_DEBUG_SESSION_ENABLED]: void;
 };
 
 export class SceneRpcClient extends RPC<Method, Params, Result> {
@@ -138,5 +154,22 @@ export class SceneRpcClient extends RPC<Method, Params, Result> {
 
   setFeatureFlags = (flags: Record<string, boolean>) => {
     return this.request('set_feature_flags', { flags });
+  };
+
+  pushMobileDebugEntries = (entries: unknown[]) => {
+    return this.request('push_mobile_debug_entries', { entries });
+  };
+
+  setMobileDebugSessionEnabled = (
+    enabled: boolean,
+    sessions: {
+      id: number;
+      sessionId: string | null;
+      deviceName: string | null;
+      status: 'active' | 'ended';
+      messageCount: number;
+    }[] = [],
+  ) => {
+    return this.request('set_mobile_debug_session_enabled', { enabled, sessions });
   };
 }

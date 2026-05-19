@@ -34,7 +34,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     GltfNodeModifiers,
     fromComponent,
     toComponent,
-    isValidInput,
+    { validateInput: isValidInput },
   );
 
   const [componentValue] = useComponentValue<PBGltfNodeModifiers>(entity, GltfNodeModifiers);

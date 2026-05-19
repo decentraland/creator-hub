@@ -8,7 +8,7 @@ import { Container } from '../../Container';
 import { TextField, Dropdown, InfoTooltip } from '../../ui';
 import { fromMeshRenderer, toMeshRenderer, isValidInput, SHAPES } from './utils';
 
-import { Props, MeshType } from './types';
+import { type Props, MeshType } from './types';
 
 export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const { MeshRenderer } = sdk.components;
@@ -19,7 +19,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     MeshRenderer,
     fromMeshRenderer,
     toMeshRenderer,
-    isValidInput,
+    { validateInput: isValidInput },
   );
 
   const handleRemove = useCallback(async () => {

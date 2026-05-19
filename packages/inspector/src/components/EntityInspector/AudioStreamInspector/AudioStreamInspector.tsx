@@ -24,7 +24,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
     AudioStream,
     fromAudioStream,
     toAudioStream,
-    handleInputValidation,
+    { validateInput: handleInputValidation },
   );
 
   const handleRemove = useCallback(async () => {

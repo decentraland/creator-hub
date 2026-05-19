@@ -23,7 +23,15 @@ export function createCustomNotification(
 export function createGenericNotification(
   severity: Severity,
   message: string,
-  opts?: Opts,
+  opts?: Opts & { description?: string },
 ): GenericNotification {
-  return { ...opts, id: opts?.requestId || getId('generic'), type: 'generic', severity, message };
+  const { description, ...rest } = opts || {};
+  return {
+    ...rest,
+    id: rest?.requestId || getId('generic'),
+    type: 'generic',
+    severity,
+    message,
+    description,
+  };
 }

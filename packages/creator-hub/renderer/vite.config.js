@@ -19,10 +19,10 @@ const config = {
   envDir: PACKAGE_DIR,
   resolve: {
     alias: {
-      '/@/': join(PACKAGE_ROOT, 'src') + '/',
-      '/shared/': join(PACKAGE_ROOT, '../shared') + '/',
-      '/assets/': join(PACKAGE_ROOT, 'assets') + '/',
-      '#store': join(PACKAGE_ROOT, 'src', 'modules', 'store') + '/',
+      '/@/': join(PACKAGE_ROOT, 'src').replaceAll('\\', '/') + '/',
+      '/shared/': join(PACKAGE_ROOT, '../shared').replaceAll('\\', '/') + '/',
+      '/assets/': join(PACKAGE_ROOT, 'assets').replaceAll('\\', '/') + '/',
+      '#store': join(PACKAGE_ROOT, 'src', 'modules', 'store').replaceAll('\\', '/') + '/',
     },
   },
   base: '',

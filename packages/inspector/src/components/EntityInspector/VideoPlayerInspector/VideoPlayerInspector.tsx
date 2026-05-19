@@ -34,8 +34,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     VideoPlayer,
     fromVideoPlayer,
     toVideoPlayer,
-    () => true,
-    [files],
+    { deps: [files] },
   );
 
   const handleRemove = useCallback(async () => {

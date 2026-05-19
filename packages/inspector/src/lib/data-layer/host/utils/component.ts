@@ -108,6 +108,7 @@ export function fromSceneComponent(
     featureToggles: {
       voiceChat: value.silenceVoiceChat ? 'disabled' : 'enabled',
       portableExperiences: value.disablePortableExperiences ? 'disabled' : 'enabled',
+      nearbyVoiceChat: value.disableNearbyVoiceChat ? 'disabled' : 'enabled',
     },
     rating: value.ageRating,
     skyboxConfig: {
@@ -154,6 +155,7 @@ export function toSceneComponent(value: Scene): EditorComponentsTypes['Scene'] {
     tags,
     silenceVoiceChat: value.featureToggles?.voiceChat === 'disabled',
     disablePortableExperiences: value.featureToggles?.portableExperiences === 'disabled',
+    disableNearbyVoiceChat: value.featureToggles?.nearbyVoiceChat === 'disabled',
     ageRating: (value as SceneWithRating).rating,
     skyboxConfig: {
       fixedTime: (value as SceneWithRating).skyboxConfig?.fixedTime,

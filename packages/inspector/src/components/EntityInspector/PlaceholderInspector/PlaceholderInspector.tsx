@@ -28,8 +28,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     Placeholder,
     fromPlaceholder,
     toPlaceholder,
-    handleInputValidation,
-    [files],
+    { validateInput: handleInputValidation, deps: [files] },
   );
 
   const handleRemove = useCallback(async () => {

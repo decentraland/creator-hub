@@ -4,11 +4,12 @@ import { createSlice } from '@reduxjs/toolkit';
 import { isProjectError } from '/shared/types/projects';
 import { t } from '/@/modules/store/translation/utils';
 
-import { actions as workspaceActions } from '../workspace';
 import { actions as deploymentActions } from '../deployment';
-import { actions as managementActions } from '../management';
+import { actions as editorActions } from '../editor';
 import { actions as ensActions } from '../ens';
 import { actions as landActions } from '../land';
+import { actions as managementActions } from '../management';
+import { actions as workspaceActions } from '../workspace';
 import { shouldNotifyUpdates } from '../workspace/utils';
 import { createCustomNotification, createGenericNotification } from './utils';
 import type { Notification } from './types';
@@ -105,6 +106,17 @@ export const slice = createSlice({
         state.notifications.push(
           createGenericNotification('error', t('snackbar.generic.run_scene_failed'), {
             requestId,
+          }),
+        );
+      })
+      .addCase(editorActions.runScene.rejected, (state, payload) => {
+        const { requestId } = payload.meta;
+        state.notifications = state.notifications.filter($ => $.id !== requestId);
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.preview_scene_failed'), {
+            requestId,
+            duration: 0,
+            description: payload.error.message,
           }),
         );
       })
