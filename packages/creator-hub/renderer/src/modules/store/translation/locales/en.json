@@ -40,6 +40,18 @@
     "loading": {
       "title": "Loading..."
     },
+    "composites": {
+      "main_scene": "Main scene",
+      "manage": "Manage composites…",
+      "modal": {
+        "title": "Manage composites",
+        "empty": "This project has no additional composites. Drag a smart item into a custom folder to create one.",
+        "main_label": "Main scene (cannot be deleted)",
+        "delete": "Delete",
+        "confirm_title": "Delete composite \"{name}\"?",
+        "confirm_warning": "The composite file will be removed from disk. Asset files inside its folder are kept."
+      }
+    },
     "header": {
       "actions": {
         "code": "Code",

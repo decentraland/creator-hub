@@ -1,0 +1,1 @@
+export { ManageCompositesModal } from './component';

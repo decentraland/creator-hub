@@ -5,7 +5,12 @@ import cx from 'classnames';
 import { Vector3 } from '@babylonjs/core';
 import type { Entity } from '@dcl/ecs';
 
-import { DIRECTORY, withAssetDir } from '../../lib/data-layer/host/fs-utils';
+import {
+  DIRECTORY,
+  getCompositeBaseFolder,
+  isAltCompositeMode,
+  withAssetDir,
+} from '../../lib/data-layer/host/fs-utils';
 import { getRelativeResourcePath, getResourcesBasePath } from '../../lib/utils/path-utils';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { getDataLayerInterface, getAssetCatalog, saveThumbnail } from '../../redux/data-layer';
@@ -92,14 +97,16 @@ const Renderer: React.FC = () => {
     }
   }, [sdk, gizmosDisabled]);
 
+  const altComposite = isAltCompositeMode();
+
   useEffect(() => {
     if (sdk) {
       const layout = sdk.scene.getNodeByName('layout');
       if (layout) {
-        layout.setEnabled(!groundGridDisabled);
+        layout.setEnabled(!groundGridDisabled && !altComposite);
       }
     }
-  }, [sdk, groundGridDisabled]);
+  }, [sdk, groundGridDisabled, altComposite]);
 
   const deleteSelectedEntities = useCallback(() => {
     if (!sdk) return;
@@ -277,6 +284,7 @@ const Renderer: React.FC = () => {
     const assetPackageName = asset.name.trim().replaceAll(' ', '_').toLowerCase();
     const position = await getDropPosition();
     const content: Map<string, Uint8Array> = new Map();
+    const compositeBaseFolder = altComposite ? getCompositeBaseFolder() : null;
 
     const dataLayer = getDataLayerInterface();
     if (!dataLayer) return;
@@ -314,7 +322,9 @@ const Renderer: React.FC = () => {
       asset: { type: 'gltf', src: '', id: asset.id },
       composite: asset.composite,
     };
-    const basePath = withAssetDir(`${destFolder}/${assetPackageName}`);
+    const basePath = compositeBaseFolder
+      ? `${compositeBaseFolder}/${assetPackageName}`
+      : withAssetDir(`${destFolder}/${assetPackageName}`);
 
     await dataLayer.importAsset({ content, basePath, assetPackageName: '' });
     dispatch(getAssetCatalog()); // Refresh catalog after import
@@ -349,6 +359,7 @@ const Renderer: React.FC = () => {
     const position = await getDropPosition();
     const fileContent: Record<string, Uint8Array> = {};
     const destFolder = 'asset-packs';
+    const compositeBaseFolder = altComposite ? getCompositeBaseFolder() : null;
     const assetPackageName = asset.name.trim().replaceAll(' ', '_').toLowerCase();
     const path = Object.keys(asset.contents).find($ => isAsset($));
     let thumbnail: Uint8Array | undefined;
@@ -380,7 +391,7 @@ const Renderer: React.FC = () => {
       if (dataLayer) {
         await dataLayer.importAsset({
           content,
-          basePath: withAssetDir(destFolder),
+          basePath: compositeBaseFolder ?? withAssetDir(destFolder),
           assetPackageName,
         });
         dispatch(getAssetCatalog()); // Refresh catalog after import
@@ -406,7 +417,9 @@ const Renderer: React.FC = () => {
       asset: { type: path ? 'gltf' : 'unknown', src: path ?? '', id: asset.id },
       composite: asset.composite,
     };
-    const basePath = withAssetDir(`${destFolder}/${assetPackageName}`);
+    const basePath = compositeBaseFolder
+      ? `${compositeBaseFolder}/${assetPackageName}`
+      : withAssetDir(`${destFolder}/${assetPackageName}`);
     if (isGround(asset) && !placeSingleTile) {
       await setGround(model, basePath);
     } else {

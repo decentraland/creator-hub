@@ -1,7 +1,11 @@
 import type { Scene } from '@dcl/schemas';
 import type { CompositeDefinition, Entity, IEngine } from '@dcl/ecs';
 import { Composite, CrdtMessageType, EntityMappingMode } from '@dcl/ecs';
-import { initComponents, migrateAll as migrateAllAssetPacksComponents } from '@dcl/asset-packs';
+import {
+  COMPONENTS_WITH_ID,
+  initComponents,
+  migrateAll as migrateAllAssetPacksComponents,
+} from '@dcl/asset-packs';
 import type { EditorComponents } from '../../sdk/components';
 import { EditorComponentNames } from '../../sdk/components';
 import { migrateAll as migrateAllInspectorComponents } from '../../sdk/components/versioning/registry';
@@ -99,8 +103,24 @@ export class CompositeProvider implements StateProvider {
   private async loadComposite(): Promise<void> {
     if (!this.compositeManager) throw new Error('Composite manager not initialized');
 
-    const loadedCompositeResource = this.compositeManager.getCompositeOrNull(this.compositePath);
-    if (!loadedCompositeResource) throw new Error('Invalid composite');
+    let loadedCompositeResource = this.compositeManager.getCompositeOrNull(this.compositePath);
+    if (!loadedCompositeResource) {
+      // Alt composite files (e.g. composite.json under assets/custom or assets/asset-packs)
+      // are not picked up by the default `.composite`-only scan. Read and parse them directly,
+      // resolving smart-item placeholders ({self}, {self:Component}, {N:Component}) so the
+      // engine receives only numeric ids.
+      try {
+        const buffer = await this.fs.readFile(this.compositePath);
+        const json = JSON.parse(new TextDecoder().decode(buffer));
+        const resolved = resolveCompositePlaceholders(json);
+        loadedCompositeResource = {
+          src: this.compositePath,
+          composite: Composite.fromJson(resolved),
+        };
+      } catch (err) {
+        throw new Error(`Invalid composite at ${this.compositePath}: ${(err as Error).message}`);
+      }
+    }
 
     console.log('Loading composite into engine...');
 
@@ -270,4 +290,81 @@ export class CompositeProvider implements StateProvider {
     this.composite = null;
     this.compositeManager = null;
   }
+}
+
+const SELF_REF = /^\{self:(.+)\}$/;
+const CROSS_REF = /^\{(\d+):(.+)\}$/;
+const COUNTER_COMPONENT = 'asset-packs::Counter';
+
+function resolveCompositePlaceholders(json: any): any {
+  if (!json || !Array.isArray(json.components)) return json;
+  const clone = JSON.parse(JSON.stringify(json));
+  const idMap = new Map<string, number>();
+
+  // Initialize id counter from existing Counter.value on the root entity (0), if present.
+  // We mirror getNextId's contract (Counter.getOrCreateMutable(RootEntity); ++counter.value)
+  // but locally so we don't mutate the engine before Composite.instance runs.
+  let counter = 0;
+  const counterComponent = clone.components.find((c: any) => c.name === COUNTER_COMPONENT);
+  const rootCounterValue = Number(counterComponent?.data?.['0']?.json?.value);
+  if (Number.isFinite(rootCounterValue)) counter = rootCounterValue;
+
+  for (const component of clone.components) {
+    if (!COMPONENTS_WITH_ID.includes(component.name) || !component.data) continue;
+    for (const [entityId, dataEntry] of Object.entries<any>(component.data)) {
+      const value = dataEntry?.json;
+      if (value && value.id === '{self}') {
+        const newId = ++counter;
+        idMap.set(`${component.name}:${entityId}`, newId);
+        value.id = newId;
+      }
+    }
+  }
+
+  // Persist the final counter back on entity 0 so the engine's Counter.value
+  // continues allocating from the right spot after Composite.instance loads.
+  if (counterComponent) {
+    counterComponent.data = counterComponent.data ?? {};
+    const rootEntry = counterComponent.data['0'] ?? { json: { id: 0, value: 0 } };
+    rootEntry.json = rootEntry.json ?? {};
+    rootEntry.json.value = counter;
+    if (rootEntry.json.id === undefined) rootEntry.json.id = 0;
+    counterComponent.data['0'] = rootEntry;
+  }
+
+  const resolve = (val: any, entityId: string): any => {
+    if (val === null || val === undefined) return val;
+    if (typeof val === 'string') {
+      if (val === '{self}') return Number(entityId);
+      const self = val.match(SELF_REF);
+      if (self) {
+        const mapped = idMap.get(`${self[1]}:${entityId}`);
+        return mapped ?? val;
+      }
+      const cross = val.match(CROSS_REF);
+      if (cross) {
+        const mapped = idMap.get(`${cross[2]}:${cross[1]}`);
+        return mapped ?? val;
+      }
+      return val;
+    }
+    if (Array.isArray(val)) return val.map(v => resolve(v, entityId));
+    if (typeof val === 'object') {
+      const out: any = {};
+      for (const [k, v] of Object.entries(val)) out[k] = resolve(v, entityId);
+      return out;
+    }
+    return val;
+  };
+
+  for (const component of clone.components) {
+    if (!component.data) continue;
+    for (const [entityId, dataEntry] of Object.entries<any>(component.data)) {
+      if (dataEntry?.json) {
+        dataEntry.json = resolve(dataEntry.json, entityId);
+      }
+    }
+  }
+
+  return clone;
 }

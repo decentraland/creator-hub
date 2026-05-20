@@ -7,6 +7,9 @@ import PublicIcon from '@mui/icons-material/Public';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { CircularProgress as Loader, Tooltip } from 'decentraland-ui2';
 
+import { composites as compositesPreload } from '#preload';
+import type { CompositeEntry } from '/shared/types/composites';
+
 import { isClientNotInstalledError } from '/shared/types/client';
 import { isProjectError } from '/shared/types/projects';
 import { isWorkspaceError } from '/shared/types/workspace';
@@ -34,6 +37,8 @@ import { Header } from '../Header';
 import { Row } from '../Row';
 import { ButtonGroup } from '../Button';
 import { ConnectionStatusIndicator } from '../ConnectionStatusIndicator';
+import { CompositeSelector, MAIN_COMPOSITE_RELATIVE } from '../CompositeSelector';
+import { ManageCompositesModal } from '../Modals/ManageComposites';
 import { MobileQRCode } from '../Modals/MobileQRCode';
 import { DeployModal } from './DeployModal';
 import { PreviewOptions, PublishOptions } from './MenuOptions';
@@ -83,6 +88,66 @@ export function EditorPage() {
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
   const [modalState, setModalState] = useState<ModalState>({ type: undefined });
   const [mobileQRData, setMobileQRData] = useState<{ url: string; qr: string } | null>(null);
+  const [composites, setComposites] = useState<CompositeEntry[]>([]);
+  const [selectedComposite, setSelectedComposite] = useState<string>(MAIN_COMPOSITE_RELATIVE);
+  const [manageCompositesOpen, setManageCompositesOpen] = useState(false);
+
+  const refreshComposites = useCallback(async () => {
+    if (!project) return [] as CompositeEntry[];
+    try {
+      const list = await compositesPreload.listComposites(project.path);
+      setComposites(list);
+      return list;
+    } catch (err) {
+      console.error('Failed to list composites', err);
+      return [] as CompositeEntry[];
+    }
+  }, [project]);
+
+  useEffect(() => {
+    setSelectedComposite(MAIN_COMPOSITE_RELATIVE);
+    setManageCompositesOpen(false);
+    setComposites([]);
+    if (project) {
+      void refreshComposites();
+    }
+  }, [project?.path, refreshComposites]);
+
+  const handleSelectComposite = useCallback((relativePath: string) => {
+    setSelectedComposite(relativePath);
+  }, []);
+
+  const handleOpenManageComposites = useCallback(() => {
+    setManageCompositesOpen(true);
+  }, []);
+
+  const handleCloseManageComposites = useCallback(() => {
+    setManageCompositesOpen(false);
+  }, []);
+
+  const handleDeleteComposite = useCallback(
+    async (entry: CompositeEntry) => {
+      if (!project) return;
+      try {
+        await compositesPreload.deleteComposite({
+          projectPath: project.path,
+          relativePath: entry.relativePath,
+        });
+      } catch (err) {
+        console.error('Failed to delete composite', err);
+        return;
+      }
+      const list = await refreshComposites();
+      const stillExists = list.some(c => c.relativePath === selectedComposite);
+      if (!stillExists) {
+        setSelectedComposite(MAIN_COMPOSITE_RELATIVE);
+      }
+      if (list.filter(c => !c.isMain).length === 0) {
+        setManageCompositesOpen(false);
+      }
+    },
+    [project, refreshComposites, selectedComposite],
+  );
 
   const isOffline = status === ConnectionStatus.OFFLINE;
   const showDebugPanel = settings.previewOptions.debugger;
@@ -311,6 +376,10 @@ export function EditorPage() {
     params.append('projectId', project.id);
   }
 
+  if (selectedComposite && selectedComposite !== MAIN_COMPOSITE_RELATIVE) {
+    params.append('compositePath', selectedComposite);
+  }
+
   // iframe src
   const iframeUrl = `${htmlUrl}?${params}`;
 
@@ -339,6 +408,13 @@ export function EditorPage() {
                 <ArrowBackIosIcon />
               </div>
               <div className="title">{project.title}</div>
+              <CompositeSelector
+                composites={composites}
+                selected={selectedComposite}
+                projectTitle={t('editor.composites.main_scene')}
+                onSelect={handleSelectComposite}
+                onManage={handleOpenManageComposites}
+              />
               <Tooltip title={t('editor.header.actions.refresh')}>
                 <div
                   className="refresh"
@@ -427,6 +503,12 @@ export function EditorPage() {
               qr={mobileQRData.qr}
             />
           )}
+          <ManageCompositesModal
+            open={manageCompositesOpen}
+            composites={composites}
+            onClose={handleCloseManageComposites}
+            onDelete={handleDeleteComposite}
+          />
         </>
       )}
     </main>

@@ -80,8 +80,33 @@ export function isFileInAssetDir(filePath: string = '') {
   return filePath.startsWith(DIRECTORY.ASSETS);
 }
 
+export const MAIN_COMPOSITE_PATH = withAssetDir(`${DIRECTORY.SCENE}/main.composite`);
+
+function readCompositePathFromUrl(): string | null {
+  try {
+    const search = globalThis?.location?.search;
+    if (!search) return null;
+    return new URLSearchParams(search).get('compositePath');
+  } catch {
+    return null;
+  }
+}
+
 export function getCurrentCompositePath() {
-  return withAssetDir(`${DIRECTORY.SCENE}/main.composite`);
+  const override = readCompositePathFromUrl();
+  if (override && override !== MAIN_COMPOSITE_PATH) {
+    return override;
+  }
+  return MAIN_COMPOSITE_PATH;
+}
+
+export function isAltCompositeMode() {
+  return getCurrentCompositePath() !== MAIN_COMPOSITE_PATH;
+}
+
+export function getCompositeBaseFolder(compositePath: string = getCurrentCompositePath()) {
+  const idx = compositePath.lastIndexOf('/');
+  return idx >= 0 ? compositePath.slice(0, idx) : '';
 }
 
 export function transformBinaryToBase64Resource(content: Uint8Array): string {
