@@ -44,30 +44,23 @@ import { parseMaterial, parseSyncComponents, resolveSelfReferences } from './uti
 // drift on either side becomes a type error here instead of being hidden by
 // a free-floating `as unknown as` at the call site. Inner `json` references
 // are shared with the original payloads so mutating-in-place helpers (e.g.
-// `substituteAssetPathInComposite`) flow through. `values` carries shallow
-// copies so subsequent `.id =` writes don't leak back.
+// `substituteAssetPathInComposite`) flow through to the inspector composite
+// as well. The per-component shallow-copy bag (`values`) used by the caller
+// is built *after* substitution, so top-level string fields like
+// `GltfContainer.src` reflect the substituted value.
 type ProtoComposite = Composite.Definition;
-type ComponentValues = Map<string, any>;
 
-function toProtoComposite(source: AssetComposite): {
-  composite: ProtoComposite;
-  values: ComponentValues;
-} {
-  const values: ComponentValues = new Map();
+function toProtoComposite(source: AssetComposite): ProtoComposite {
   const components: ProtoComposite['components'] = source.components.map(component => {
     const dataMap = new Map<Entity, { data: { $case: 'json'; json: any } }>();
     for (const [entityId, value] of Object.entries(component.data)) {
       dataMap.set(Number(entityId) as Entity, {
         data: { $case: 'json', json: value.json },
       });
-      values.set(`${component.name}:${entityId}`, { ...value.json });
     }
     return { name: component.name, jsonSchema: undefined, data: dataMap };
   });
-  return {
-    composite: { version: source.version, components } as unknown as ProtoComposite,
-    values,
-  };
+  return { version: source.version, components } as unknown as ProtoComposite;
 }
 
 export function addAsset(engine: IEngine) {
@@ -251,14 +244,26 @@ export function addAsset(engine: IEngine) {
         }
       }
 
-      const { composite: adaptedComposite, values } = toProtoComposite(composite);
+      const adaptedComposite = toProtoComposite(composite);
 
       // Apply {assetPath} substitution across the whole composite in one pass.
       // The recursive walker handles every string-shaped occurrence — including
       // those nested inside Action `jsonPayload` strings. `base` is already the
       // asset directory (no filename); pass a synthetic composite src so the
-      // helper's `assetPathFrom` strips back to `base`.
+      // helper's `assetPathFrom` strips back to `base`. The walker mutates the
+      // proto-shape's inner `json`, which is shared by reference with the
+      // original inspector composite, so the originals are substituted too.
       substituteAssetPathInComposite(adaptedComposite, `${base}/composite.json`);
+
+      // Build the per-component shallow-copy bag *after* substitution so
+      // top-level string fields like `GltfContainer.src` carry the substituted
+      // value rather than the unresolved `{assetPath}` token.
+      const values = new Map<string, any>();
+      for (const component of composite.components) {
+        for (const [entityId, value] of Object.entries(component.data)) {
+          values.set(`${component.name}:${entityId}`, { ...value.json });
+        }
+      }
 
       // Build the composite-entityId → spawned-Entity mapping the asset-packs
       // helper expects (it walks each composite component and writes IDs onto
