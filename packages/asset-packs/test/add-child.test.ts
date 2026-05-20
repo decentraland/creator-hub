@@ -118,19 +118,47 @@ describe('deepReplaceAssetPath', () => {
     expect(errorSpy).toHaveBeenCalled();
   });
 
-  it('should treat stringified-JSON payloads as opaque strings (containment rejects them)', () => {
-    // A jsonPayload that wraps a path is one big opaque string to the walker
-    // (it does not parse JSON). After substitution the resulting string has a
-    // `/` but does not start with the asset dir — so the containment chokepoint
-    // rejects it and falls back to the bare replacement. This documents the
-    // limitation: higher-level decoders that need to substitute paths *inside*
-    // a jsonPayload must parse / re-serialize the JSON themselves.
+  it('should substitute inside stringified-JSON wrappers under the `jsonPayload` key', () => {
+    // Asset-packs Actions carry their per-action data as a JSON-encoded
+    // string on the `jsonPayload` field. The walker parses, recurses, and
+    // re-serializes so the path inside the wrapper survives substitution
+    // while the containment check still applies to the inner path.
     const target: any = {
       jsonPayload: '{"src":"{assetPath}/scene.glb","extra":42}',
     };
     deepReplaceAssetPath(target, 'pack');
-    expect(target.jsonPayload).toBe('pack');
+    expect(JSON.parse(target.jsonPayload)).toEqual({ src: 'pack/scene.glb', extra: 42 });
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it('should still reject `..` traversal inside a stringified-JSON wrapper', () => {
+    // The recursion into the parsed payload re-enters the same containment
+    // chokepoint for the inner path string. The inner `src` falls back to
+    // the bare replacement; the rest of the payload is preserved.
+    const target: any = {
+      jsonPayload: '{"src":"{assetPath}/../../etc/passwd","extra":42}',
+    };
+    deepReplaceAssetPath(target, 'scene/assets/pack');
+    expect(JSON.parse(target.jsonPayload)).toEqual({
+      src: 'scene/assets/pack',
+      extra: 42,
+    });
     expect(errorSpy).toHaveBeenCalled();
+  });
+
+  it('should leave non-JSON `jsonPayload` strings to the plain substitution path', () => {
+    // If a `jsonPayload` field ever holds a plain path (malformed author),
+    // fall through to the regular path-substitution branch so behavior is
+    // unchanged. The leading character `/` skips the JSON-wrapper attempt.
+    const target: any = { jsonPayload: '{assetPath}/loose.glb' };
+    deepReplaceAssetPath(target, 'pack');
+    expect(target.jsonPayload).toBe('pack/loose.glb');
+  });
+
+  it('should leave `jsonPayload` strings without the token untouched', () => {
+    const target: any = { jsonPayload: '{"src":"already/resolved.glb"}' };
+    deepReplaceAssetPath(target, 'pack');
+    expect(target.jsonPayload).toBe('{"src":"already/resolved.glb"}');
   });
 
   it('should return silently for non-object values at the top level', () => {
@@ -152,6 +180,61 @@ describe('substituteAssetPathInComposite', () => {
     const g = composite.components[1].data.get(513 as Entity);
     expect((t!.data as any).json.src).toBe('scene/assets/pack/model.glb');
     expect((g!.data as any).json.src).toBe('scene/assets/pack/anim.glb');
+  });
+
+  it('should substitute paths nested inside Action jsonPayload wrappers', () => {
+    // Mirrors the on-disk shape produced by `create-custom-asset`: each
+    // resource-bearing action stores its data as a JSON-encoded string on the
+    // `jsonPayload` field. The walker must descend into each `jsonPayload`,
+    // substitute the `{assetPath}` token in its inner `src`, and re-serialize.
+    const composite = makeComposite([
+      makeComponent('core::AudioSource', [[513, { audioClipUrl: '{assetPath}/sounds/loop.mp3' }]]),
+      makeComponent('asset-packs::Actions', [
+        [
+          513,
+          {
+            value: [
+              {
+                type: 'play_sound',
+                jsonPayload: '{"src":"{assetPath}/sounds/click.mp3","volume":1}',
+              },
+              {
+                type: 'show_image',
+                jsonPayload: '{"src":"{assetPath}/textures/banner.png","width":2,"height":1}',
+              },
+              {
+                type: 'play_custom_emote',
+                jsonPayload: '{"src":"{assetPath}/emotes/wave.glb","loop":false}',
+              },
+              // Non-resource action (no `src`) — should be unaffected.
+              { type: 'set_visibility', jsonPayload: '{"visible":true}' },
+            ],
+          },
+        ],
+      ]),
+    ]);
+
+    substituteAssetPathInComposite(composite, 'assets/custom/my_item/composite.json');
+
+    const audio = composite.components[0].data.get(513 as Entity);
+    expect((audio!.data as any).json.audioClipUrl).toBe('assets/custom/my_item/sounds/loop.mp3');
+
+    const actions = composite.components[1].data.get(513 as Entity);
+    const [playSound, showImage, playEmote, setVisibility] = (actions!.data as any).json.value;
+    expect(JSON.parse(playSound.jsonPayload)).toEqual({
+      src: 'assets/custom/my_item/sounds/click.mp3',
+      volume: 1,
+    });
+    expect(JSON.parse(showImage.jsonPayload)).toEqual({
+      src: 'assets/custom/my_item/textures/banner.png',
+      width: 2,
+      height: 1,
+    });
+    expect(JSON.parse(playEmote.jsonPayload)).toEqual({
+      src: 'assets/custom/my_item/emotes/wave.glb',
+      loop: false,
+    });
+    expect(JSON.parse(setVisibility.jsonPayload)).toEqual({ visible: true });
   });
 });
 

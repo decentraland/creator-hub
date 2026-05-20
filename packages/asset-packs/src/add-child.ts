@@ -93,10 +93,32 @@ function assetPathFrom(compositeSrc: string): string {
   return slash >= 0 ? compositeSrc.substring(0, slash) : '';
 }
 
+// Stringified-JSON carrier convention. Asset-packs Actions encode their
+// per-action payload as a JSON-encoded string on the `jsonPayload` field
+// (see `RESOURCE_ACTION_TYPES` in inspector/create-custom-asset). When the
+// walker encounters this field, naïve string-level substitution would treat
+// the whole JSON literal as a path candidate and `containAssetPath` would
+// reject it (the string starts with `{`, not the asset dir), collapsing the
+// payload to the bare replacement. Parse → recurse → re-serialize keeps the
+// containment chokepoint intact for the actual path fields *inside* the
+// payload.
+//
+// If a future component introduces a different stringified-JSON wrapper key,
+// add the key here. Non-`jsonPayload` strings continue to flow through the
+// plain path-substitution branch.
+const JSON_WRAPPER_KEYS = new Set(['jsonPayload']);
+
 /**
  * Replace `{assetPath}` with `replacement` in every string value reachable
  * from `value`, including strings nested inside stringified payloads
  * (e.g. `asset-packs::Actions[i].jsonPayload`). Mutates in place. Idempotent.
+ *
+ * Conventions for future contributors adding `{assetPath}`-bearing fields:
+ *   - Plain path string at any depth: just works (structural recursion).
+ *   - Stringified-JSON wrapper: name the field `jsonPayload` (or extend
+ *     `JSON_WRAPPER_KEYS` above).
+ *   - Avoid embedding `{assetPath}` inside larger non-path strings (URLs with
+ *     query parameters etc.) — the containment check rejects those.
  */
 export function deepReplaceAssetPath(value: unknown, replacement: string): void {
   if (value === null || typeof value !== 'object') return;
@@ -123,6 +145,26 @@ export function deepReplaceAssetPath(value: unknown, replacement: string): void 
     return replacement;
   };
 
+  // Parse a stringified-JSON wrapper, recurse into the parsed value with the
+  // same `replacement`, and re-serialize. Returns the new string on success
+  // or `null` if the value is not a JSON object/array — callers fall back to
+  // the plain path-substitution branch in that case.
+  const substituteJsonWrapper = (raw: string): string | null => {
+    // Cheap shape check before attempting parse — skips primitives, paths,
+    // and labels that happen to live under a `jsonPayload` key.
+    const first = raw.charCodeAt(0);
+    if (first !== 0x7b /* '{' */ && first !== 0x5b /* '[' */) return null;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+    if (parsed === null || typeof parsed !== 'object') return null;
+    deepReplaceAssetPath(parsed, replacement);
+    return JSON.stringify(parsed);
+  };
+
   if (Array.isArray(value)) {
     for (let i = 0; i < value.length; i++) {
       const item = value[i];
@@ -141,6 +183,13 @@ export function deepReplaceAssetPath(value: unknown, replacement: string): void 
   for (const key of Object.keys(obj)) {
     const item = obj[key];
     if (typeof item === 'string') {
+      if (JSON_WRAPPER_KEYS.has(key) && item.includes(ASSET_PATH_TOKEN)) {
+        const next = substituteJsonWrapper(item);
+        if (next !== null) {
+          obj[key] = next;
+          continue;
+        }
+      }
       if (item.includes(ASSET_PATH_TOKEN)) {
         obj[key] = substitute(item);
       }
