@@ -94,6 +94,17 @@ export function addAsset(engine: IEngine) {
     };
 
     if (composite) {
+      // Deep-clone the composite up-front. Custom-asset composites come from
+      // Redux state, which Redux Toolkit auto-freezes via Immer; the walker
+      // below (`substituteAssetPathInComposite`) mutates per-component
+      // payloads in-place, which throws `TypeError: Cannot assign to read
+      // only property` on a frozen object — silently leaving `{assetPath}`
+      // unresolved in the live engine for the spawned custom asset. Catalog
+      // assets weren't affected because the catalog lives in a plain module
+      // variable, not in Redux. One clone here keeps both flows safe and
+      // independent of where the source composite came from.
+      composite = structuredClone(composite);
+
       // Get all unique entity IDs from components
       const entityIds = new Set<Entity>();
 

@@ -236,6 +236,64 @@ describe('substituteAssetPathInComposite', () => {
     });
     expect(JSON.parse(setVisibility.jsonPayload)).toEqual({ visible: true });
   });
+
+  it('should substitute {assetPath} on every entity of a multi-entity composite', () => {
+    // Reproduces a multi-entity custom asset: two smart items packed together
+    // (entity IDs 512 and 513), each carrying its own GltfContainer + a
+    // PLAY_SOUND Action whose `jsonPayload` references a `{assetPath}` path.
+    // Failure mode this guards against: a per-entity bug in the walker that
+    // would substitute the first entry but skip the second.
+    const composite = makeComposite([
+      makeComponent('core::GltfContainer', [
+        [512, { src: '{assetPath}/A.glb', visibleMeshesCollisionMask: 1 }],
+        [513, { src: '{assetPath}/B.glb', visibleMeshesCollisionMask: 1 }],
+      ]),
+      makeComponent('asset-packs::Actions', [
+        [
+          512,
+          {
+            id: '{self}',
+            value: [
+              {
+                type: 'play_sound',
+                jsonPayload: '{"src":"{assetPath}/sounds/a.mp3","loop":true}',
+              },
+            ],
+          },
+        ],
+        [
+          513,
+          {
+            id: '{self}',
+            value: [
+              {
+                type: 'play_sound',
+                jsonPayload: '{"src":"{assetPath}/sounds/b.mp3","loop":true}',
+              },
+            ],
+          },
+        ],
+      ]),
+    ]);
+
+    substituteAssetPathInComposite(composite, 'assets/custom/pair/composite.json');
+
+    const gltfA = composite.components[0].data.get(512 as Entity);
+    const gltfB = composite.components[0].data.get(513 as Entity);
+    expect((gltfA!.data as any).json.src).toBe('assets/custom/pair/A.glb');
+    expect((gltfB!.data as any).json.src).toBe('assets/custom/pair/B.glb');
+
+    const actionsA = composite.components[1].data.get(512 as Entity);
+    const actionsB = composite.components[1].data.get(513 as Entity);
+    expect(JSON.parse((actionsA!.data as any).json.value[0].jsonPayload)).toEqual({
+      src: 'assets/custom/pair/sounds/a.mp3',
+      loop: true,
+    });
+    expect(JSON.parse((actionsB!.data as any).json.value[0].jsonPayload)).toEqual({
+      src: 'assets/custom/pair/sounds/b.mp3',
+      loop: true,
+    });
+  });
 });
 
 describe('allocateIdsForSpawnedComponents', () => {

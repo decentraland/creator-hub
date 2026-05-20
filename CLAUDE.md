@@ -128,6 +128,17 @@ Files matching `*.styled.ts` / `*.styled.tsx` must follow these rules:
 - React: use `@testing-library/react` with accessible queries (`getByRole`, `getByLabelText`).
 - E2E: Playwright for both Electron app and web inspector.
 
+### Redux state freeze + in-place mutating helpers
+
+Redux Toolkit auto-freezes state via Immer (the `createSlice` default). Helpers
+that mutate objects in place (e.g. asset-packs'
+`deepReplaceAssetPath` / `substituteAssetPathInComposite`) throw
+`TypeError: Cannot assign to read only property` — or fail silently — when
+passed payloads read from Redux. Deep-clone (`structuredClone(x)`) at the
+boundary before passing Redux-sourced data to any mutating helper. Symptoms
+when missed: writes silently no-op, original placeholder tokens (e.g.
+`{assetPath}/...`) survive into the engine.
+
 ### Asset-packs circular imports & vitest
 
 `packages/asset-packs/src/definitions.ts` re-exports every internal module via
