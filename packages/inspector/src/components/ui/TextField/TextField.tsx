@@ -43,11 +43,15 @@ const TextField = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
   const [isHovered, setHovered] = useState(false);
   const [isFocused, setFocused] = useState(false);
 
+  // Skip the prop→state sync while focused: a stale `value` arriving from an
+  // unrelated re-render (e.g. engine→input sync in `useComponentInput`) would
+  // otherwise overwrite the just-typed character mid-keystroke.
   useEffect(() => {
+    if (isFocused) return;
     if (inputValue !== value) {
       setInputValue(value);
     }
-  }, [value]);
+  }, [value, isFocused]);
 
   const debounceChange = useCallback(debounce(onChange ?? (() => {}), debounceTime ?? 0), [
     debounceTime,

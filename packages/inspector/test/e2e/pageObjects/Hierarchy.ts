@@ -34,10 +34,17 @@ class HierarchyPageObject {
     return item;
   }
 
-  async getId(label: string) {
-    const id = await page.$eval(this.getTreeSelectorByLabel(label), element =>
-      element.getAttribute('data-test-id'),
-    );
+  // Wait for the tree row to render before reading its id — engine commits
+  // land before React paints, so a sync read races the render.
+  async getId(label: string, timeout = 5_000) {
+    const selector = this.getTreeSelectorByLabel(label);
+    const locator = page.locator(selector).first();
+    try {
+      await locator.waitFor({ state: 'attached', timeout });
+    } catch {
+      throw new Error(`Could not find entity with label="${label}"`);
+    }
+    const id = await locator.getAttribute('data-test-id');
     if (!id) {
       throw new Error(`Could not find entity with label="${label}"`);
     }
@@ -86,56 +93,102 @@ class HierarchyPageObject {
     return label || '';
   }
 
-  async rename(entityId: number, newLabel: string) {
-    const item = await this.getItem(entityId, this.getItemSelectorById);
-    await item.click({ button: 'right' });
-    const rename = await item.$('.contexify_item[itemid="rename"]');
-    if (!rename) {
-      throw new Error(`Can't rename entity with id=${entityId}`);
+  // Click a context-menu item via selector (not a captured handle) — contexify
+  // re-renders menu items between right-click and first paint, so pre-fetched
+  // handles go stale ("Element is not stable").
+  private async clickContextMenuItem(itemId: string, action: string, entityId: number) {
+    const selector = `.contexify_item[itemid="${itemId}"]`;
+    try {
+      await page.waitForSelector(selector, { state: 'visible', timeout: 5_000 });
+      await page.click(selector);
+    } catch (error: any) {
+      throw new Error(
+        `Can't ${action} entity with id=${entityId}: context-menu item "${itemId}" not clickable (${error.message})`,
+      );
     }
-    await rename.click();
+  }
 
-    await page.keyboard.press('ControlOrMeta+a'); // select all
+  // Post-mutation sync point: wait for the new row to land in the DOM.
+  private async waitForLabel(label: string, timeout = 5_000) {
+    await page.locator(this.getTreeSelectorByLabel(label)).first().waitFor({
+      state: 'attached',
+      timeout,
+    });
+  }
+
+  // Gate typing on `document.activeElement` actually being the Input —
+  // mount-visible isn't enough since the Input's onBlur unmounts itself.
+  private async typeIntoTreeInput(value: string, timeout = 5_000) {
+    const input = page.locator('input.Input').first();
+    await input.waitFor({ state: 'visible', timeout });
+    await page.waitForFunction(
+      () =>
+        document.activeElement instanceof HTMLInputElement &&
+        document.activeElement.classList.contains('Input'),
+      undefined,
+      { timeout },
+    );
+    await page.keyboard.type(value);
+  }
+
+  // Locator-based right-click: re-resolves at action time so a re-render
+  // between calls doesn't strand us on a detached element.
+  private async rightClickItem(entityId: number, action: string) {
+    try {
+      await page.locator(this.getItemSelectorById(entityId)).first().click({ button: 'right' });
+    } catch (error: any) {
+      throw new Error(`Could not ${action} entity with id=${entityId}: ${error.message}`);
+    }
+  }
+
+  async rename(entityId: number, newLabel: string) {
+    await this.rightClickItem(entityId, 'rename');
+    await this.clickContextMenuItem('rename', 'rename', entityId);
+
+    // Rename's Input is pre-filled; select-all so keystrokes replace, not append.
+    await page.locator('input.Input').first().waitFor({ state: 'visible', timeout: 5_000 });
+    await page.waitForFunction(
+      () =>
+        document.activeElement instanceof HTMLInputElement &&
+        document.activeElement.classList.contains('Input'),
+      undefined,
+      { timeout: 5_000 },
+    );
+    await page.keyboard.press('ControlOrMeta+a');
     await page.keyboard.type(newLabel);
     await page.keyboard.press('Enter');
+    await this.waitForLabel(newLabel);
   }
 
   async addChild(entityId: number, label: string) {
-    const item = await this.getItem(entityId, this.getItemSelectorById);
-    try {
-      await item.click({ button: 'right' });
-    } catch (error: any) {
-      throw new Error(
-        `Could not click on item entityId=${entityId} and label="${label}": ${error.message}`,
-      );
-    }
-    const addChild = await item.$('.contexify_item[itemid="add-child"]');
-    if (!addChild) {
-      throw new Error(`Can't add child to entity with id=${entityId}`);
-    }
-    await addChild.click();
-    await page.keyboard.type(label);
+    await this.rightClickItem(entityId, `add child "${label}" to`);
+    await this.clickContextMenuItem('add-child', 'add child to', entityId);
+    await this.typeIntoTreeInput(label);
     await page.keyboard.press('Enter');
+    await this.waitForLabel(label);
   }
 
   async duplicate(entityId: number) {
-    const item = await this.getItem(entityId, this.getItemSelectorById);
-    await item.click({ button: 'right' });
-    const duplicate = await item.$('.contexify_item[itemid="duplicate"]');
-    if (!duplicate) {
-      throw new Error(`Can't duplicate entity with id=${entityId}`);
-    }
-    await duplicate.click();
+    const beforeCount = await page.locator('.Hierarchy .Tree').count();
+    await this.rightClickItem(entityId, 'duplicate');
+    await this.clickContextMenuItem('duplicate', 'duplicate', entityId);
+    // Wait for the new subtree to render before returning.
+    await page
+      .waitForFunction(
+        ({ selector, expected }) => document.querySelectorAll(selector).length > expected,
+        { selector: '.Hierarchy .Tree', expected: beforeCount },
+        { timeout: 5_000 },
+      )
+      .catch(() => {});
   }
 
   async remove(entityId: number) {
-    const item = await this.getItem(entityId, this.getItemSelectorById);
-    await item.click({ button: 'right' });
-    const remove = await item.$('.contexify_item[itemid="delete"]');
-    if (!remove) {
-      throw new Error(`Can't delete entity with id=${entityId}`);
-    }
-    await remove.click();
+    await this.rightClickItem(entityId, 'delete');
+    await this.clickContextMenuItem('delete', 'delete', entityId);
+    await page
+      .locator(this.getItemSelectorById(entityId))
+      .waitFor({ state: 'detached', timeout: 5_000 })
+      .catch(() => {});
   }
 
   async exists(entityId: number) {

@@ -153,3 +153,10 @@ etc.) rather than via the `definitions.ts` barrel.
 ## Skills
 
 Skills live in `.ai/skills/*/SKILL.md`. Read the relevant `SKILL.md` when a task matches a skill's domain.
+
+## Standards
+
+Read the relevant standards doc when the task touches its domain:
+
+- [`docs/coding-standards.md`](docs/coding-standards.md) — React patterns and antipatterns (controlled-input prop-sync, memoized components built in render). Read when touching `TextField`, the tree `<Input>`, or building any component with a buffered value.
+- [`docs/testing-standards.md`](docs/testing-standards.md) — E2E patterns (real keyboard input vs `fill()`, locators vs `ElementHandle`s, focus-actually-on-element gates, outcome waits vs fixed sleeps). Read when writing or debugging Playwright tests.
