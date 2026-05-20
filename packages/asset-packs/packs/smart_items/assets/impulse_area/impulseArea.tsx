@@ -46,7 +46,12 @@ export class Bounce {
   start() {
     TriggerArea.setBox(this.entity, ColliderLayer.CL_PLAYER);
 
-    triggerAreaEventsSystem.onTriggerEnter(this.entity, () => {
+    triggerAreaEventsSystem.onTriggerEnter(this.entity, event => {
+      if (event.trigger?.entity !== engine.PlayerEntity) {
+        // Some other entity (e.g., a remote avatar) entered — ignore silently.
+        return;
+      }
+
       const direction = Vector3.rotate(
         Vector3.create(0, 1, 0),
         Transform.get(this.entity).rotation,
