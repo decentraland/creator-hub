@@ -88,8 +88,10 @@ export const useEditor = () => {
 
   // TODO: find a proper name for this function
   const refreshProject = useCallback(
-    async (rpcInfo: RPCInfo) => {
-      const _ = await saveAndGetThumbnail(rpcInfo);
+    async (rpcInfo: RPCInfo, options?: { skipThumbnail?: boolean }) => {
+      if (!options?.skipThumbnail) {
+        await saveAndGetThumbnail(rpcInfo);
+      }
       dispatch(
         workspaceActions.getProject({
           path: rpcInfo.project.path,
@@ -97,7 +99,7 @@ export const useEditor = () => {
         }),
       );
     },
-    [workspaceActions.getProject, project],
+    [workspaceActions.getProject, project, saveAndGetThumbnail],
   );
 
   const getMobileQR = useCallback(

@@ -40,6 +40,36 @@
     "loading": {
       "title": "Loading..."
     },
+    "composites": {
+      "main_scene": "Main scene",
+      "manage": "Manage composites…",
+      "create": "Create new composite…",
+      "modal": {
+        "title": "Manage composites",
+        "empty": "This project has no additional composites. Drag a smart item into a custom folder to create one.",
+        "main_label": "Main scene (cannot be modified)",
+        "actions_aria": "More actions",
+        "delete": "Delete",
+        "duplicate": "Duplicate…",
+        "confirm_title": "Delete composite \"{name}\"?",
+        "confirm_warning": "The composite file will be removed from disk. Asset files inside its folder are kept.",
+        "duplicate_title": "Duplicate composite \"{name}\"",
+        "duplicate_description": "A copy of the composite folder will be created under assets/custom.",
+        "duplicate_submit": "Duplicate"
+      },
+      "create_modal": {
+        "title": "Create new composite",
+        "label": "Name",
+        "placeholder": "e.g. my_widget",
+        "description": "A folder will be created under assets/custom with this name. The composite file and any assets you add will live inside it.",
+        "submit": "Create",
+        "errors": {
+          "empty": "Please enter a name",
+          "invalid": "Use letters, numbers, hyphens or underscores only",
+          "exists": "A composite with this name already exists"
+        }
+      }
+    },
     "header": {
       "actions": {
         "code": "Code",

@@ -5,7 +5,12 @@ import cx from 'classnames';
 import { Vector3 } from '@babylonjs/core';
 import type { Entity } from '@dcl/ecs';
 
-import { DIRECTORY, withAssetDir } from '../../lib/data-layer/host/fs-utils';
+import {
+  DIRECTORY,
+  getCompositeBaseFolder,
+  isAltCompositeMode,
+  withAssetDir,
+} from '../../lib/data-layer/host/fs-utils';
 import { getRelativeResourcePath, getResourcesBasePath } from '../../lib/utils/path-utils';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { getDataLayerInterface, getAssetCatalog, saveThumbnail } from '../../redux/data-layer';
@@ -92,14 +97,44 @@ const Renderer: React.FC = () => {
     }
   }, [sdk, gizmosDisabled]);
 
+  const altComposite = isAltCompositeMode();
+
   useEffect(() => {
     if (sdk) {
       const layout = sdk.scene.getNodeByName('layout');
       if (layout) {
-        layout.setEnabled(!groundGridDisabled);
+        layout.setEnabled(!groundGridDisabled && !altComposite);
+      }
+      const spawnPoints = sdk.scene.getNodeByName('spawn_points');
+      if (spawnPoints) {
+        spawnPoints.setEnabled(!altComposite);
+      }
+      const backgroundPlane = sdk.scene.getMeshByName('BackgroundPlane');
+      if (backgroundPlane) {
+        backgroundPlane.setEnabled(!altComposite);
       }
     }
-  }, [sdk, groundGridDisabled]);
+  }, [sdk, groundGridDisabled, altComposite]);
+
+  // In alt-composite mode, frame the camera on the loaded item once its GLBs finish loading.
+  useEffect(() => {
+    if (!sdk || !altComposite) return;
+    let done = false;
+    const center = () => {
+      if (done) return;
+      const rootNode = sdk.sceneContext.rootNode;
+      const { min } = rootNode.getHierarchyBoundingVectors();
+      // Babylon returns MAX_VALUE for empty hierarchies — wait for at least one mesh.
+      if (min.x === Number.MAX_VALUE) return;
+      done = true;
+      sdk.editorCamera.centerViewOnEntity(rootNode);
+      sdk.scene.onDataLoadedObservable.remove(observer);
+    };
+    const observer = sdk.scene.onDataLoadedObservable.add(center);
+    return () => {
+      sdk.scene.onDataLoadedObservable.remove(observer);
+    };
+  }, [sdk, altComposite]);
 
   const deleteSelectedEntities = useCallback(() => {
     if (!sdk) return;
@@ -277,6 +312,7 @@ const Renderer: React.FC = () => {
     const assetPackageName = asset.name.trim().replaceAll(' ', '_').toLowerCase();
     const position = await getDropPosition();
     const content: Map<string, Uint8Array> = new Map();
+    const compositeBaseFolder = altComposite ? getCompositeBaseFolder() : null;
 
     const dataLayer = getDataLayerInterface();
     if (!dataLayer) return;
@@ -314,7 +350,9 @@ const Renderer: React.FC = () => {
       asset: { type: 'gltf', src: '', id: asset.id },
       composite: asset.composite,
     };
-    const basePath = withAssetDir(`${destFolder}/${assetPackageName}`);
+    const basePath = compositeBaseFolder
+      ? `${compositeBaseFolder}/${assetPackageName}`
+      : withAssetDir(`${destFolder}/${assetPackageName}`);
 
     await dataLayer.importAsset({ content, basePath, assetPackageName: '' });
     dispatch(getAssetCatalog()); // Refresh catalog after import
@@ -349,6 +387,7 @@ const Renderer: React.FC = () => {
     const position = await getDropPosition();
     const fileContent: Record<string, Uint8Array> = {};
     const destFolder = 'asset-packs';
+    const compositeBaseFolder = altComposite ? getCompositeBaseFolder() : null;
     const assetPackageName = asset.name.trim().replaceAll(' ', '_').toLowerCase();
     const path = Object.keys(asset.contents).find($ => isAsset($));
     let thumbnail: Uint8Array | undefined;
@@ -380,7 +419,7 @@ const Renderer: React.FC = () => {
       if (dataLayer) {
         await dataLayer.importAsset({
           content,
-          basePath: withAssetDir(destFolder),
+          basePath: compositeBaseFolder ?? withAssetDir(destFolder),
           assetPackageName,
         });
         dispatch(getAssetCatalog()); // Refresh catalog after import
@@ -406,7 +445,9 @@ const Renderer: React.FC = () => {
       asset: { type: path ? 'gltf' : 'unknown', src: path ?? '', id: asset.id },
       composite: asset.composite,
     };
-    const basePath = withAssetDir(`${destFolder}/${assetPackageName}`);
+    const basePath = compositeBaseFolder
+      ? `${compositeBaseFolder}/${assetPackageName}`
+      : withAssetDir(`${destFolder}/${assetPackageName}`);
     if (isGround(asset) && !placeSingleTile) {
       await setGround(model, basePath);
     } else {

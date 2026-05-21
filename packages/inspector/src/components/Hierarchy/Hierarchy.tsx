@@ -9,6 +9,7 @@ import { withSdk } from '../../hoc/withSdk';
 import './Hierarchy.css';
 import { useAppSelector } from '../../redux/hooks';
 import { selectCustomAssets } from '../../redux/app';
+import { isAltCompositeMode } from '../../lib/data-layer/host/fs-utils';
 import { ContextMenu } from './ContextMenu';
 import PlayerTree from './PlayerTree';
 
@@ -66,6 +67,7 @@ const HierarchyIcon = withSdk<{ value: Entity }>(({ sdk, value }) => {
 const EntityTree = Tree<Entity>();
 
 const Hierarchy = withSdk(({ sdk }) => {
+  const altComposite = isAltCompositeMode();
   const spawnPointManager = sdk.sceneContext.spawnPoints;
   const {
     addChild,
@@ -195,11 +197,15 @@ const Hierarchy = withSdk(({ sdk }) => {
       className="Hierarchy"
       onClick={handleBackgroundDeselect}
     >
-      <PlayerTree onSelect={(entity, multiple) => void select(entity, !!multiple)} />
-      <EntityTree
-        value={CAMERA}
-        {...props}
-      />
+      {!altComposite && (
+        <>
+          <PlayerTree onSelect={(entity, multiple) => void select(entity, !!multiple)} />
+          <EntityTree
+            value={CAMERA}
+            {...props}
+          />
+        </>
+      )}
       <EntityTree
         value={ROOT}
         {...props}

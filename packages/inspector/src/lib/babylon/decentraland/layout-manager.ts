@@ -14,6 +14,7 @@ import { memoize } from '../../logic/once';
 import type { Layout } from '../../utils/layout';
 import { inBounds } from '../../utils/layout';
 import { PARCEL_SIZE, GROUND_MESH_PREFIX } from '../../utils/scene';
+import { isAltCompositeMode } from '../../data-layer/host/fs-utils';
 import { createAxisIndicator } from './axis-indicator';
 
 function center(scene: Scene, layout: Layout) {
@@ -131,6 +132,10 @@ export const getLayoutManager = memoize((scene: Scene) => {
   }
 
   function isEntityOutsideLayout(mesh: AbstractMesh) {
+    // Alt composites (smart items, custom assets) aren't constrained by scene parcels;
+    // every entity would otherwise read as outside the (hidden) layout.
+    if (isAltCompositeMode()) return false;
+
     const layoutBoundingBox = getLayoutBoundingBox();
     const meshBoundingBox = mesh.getBoundingInfo().boundingBox;
 

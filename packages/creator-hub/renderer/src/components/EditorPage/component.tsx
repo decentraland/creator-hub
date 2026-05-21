@@ -7,6 +7,9 @@ import PublicIcon from '@mui/icons-material/Public';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { CircularProgress as Loader, Tooltip } from 'decentraland-ui2';
 
+import { composites as compositesPreload } from '#preload';
+import type { CompositeEntry } from '/shared/types/composites';
+
 import { isClientNotInstalledError } from '/shared/types/client';
 import { isProjectError } from '/shared/types/projects';
 import { isWorkspaceError } from '/shared/types/workspace';
@@ -34,6 +37,9 @@ import { Header } from '../Header';
 import { Row } from '../Row';
 import { ButtonGroup } from '../Button';
 import { ConnectionStatusIndicator } from '../ConnectionStatusIndicator';
+import { CompositeSelector, MAIN_COMPOSITE_RELATIVE } from '../CompositeSelector';
+import { ManageCompositesModal } from '../Modals/ManageComposites';
+import { CreateCompositeModal } from '../Modals/CreateComposite';
 import { MobileQRCode } from '../Modals/MobileQRCode';
 import { DeployModal } from './DeployModal';
 import { PreviewOptions, PublishOptions } from './MenuOptions';
@@ -83,6 +89,118 @@ export function EditorPage() {
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
   const [modalState, setModalState] = useState<ModalState>({ type: undefined });
   const [mobileQRData, setMobileQRData] = useState<{ url: string; qr: string } | null>(null);
+  const [composites, setComposites] = useState<CompositeEntry[]>([]);
+  const [selectedComposite, setSelectedComposite] = useState<string>(MAIN_COMPOSITE_RELATIVE);
+  const [manageCompositesOpen, setManageCompositesOpen] = useState(false);
+  const [createCompositeOpen, setCreateCompositeOpen] = useState(false);
+
+  const projectPath = project?.path;
+
+  const refreshComposites = useCallback(async () => {
+    if (!projectPath) return [] as CompositeEntry[];
+    try {
+      const list = await compositesPreload.listComposites(projectPath);
+      setComposites(list);
+      return list;
+    } catch (err) {
+      console.error('Failed to list composites', err);
+      return [] as CompositeEntry[];
+    }
+  }, [projectPath]);
+
+  useEffect(() => {
+    setSelectedComposite(MAIN_COMPOSITE_RELATIVE);
+    setManageCompositesOpen(false);
+    setCreateCompositeOpen(false);
+    setComposites([]);
+    if (projectPath) {
+      void refreshComposites();
+    }
+  }, [projectPath, refreshComposites]);
+
+  const handleSelectComposite = useCallback((relativePath: string) => {
+    setSelectedComposite(relativePath);
+  }, []);
+
+  const handleOpenManageComposites = useCallback(() => {
+    setManageCompositesOpen(true);
+  }, []);
+
+  const handleCloseManageComposites = useCallback(() => {
+    setManageCompositesOpen(false);
+  }, []);
+
+  const handleOpenCreateComposite = useCallback(() => {
+    setCreateCompositeOpen(true);
+  }, []);
+
+  const handleCloseCreateComposite = useCallback(() => {
+    setCreateCompositeOpen(false);
+  }, []);
+
+  const handleSubmitCreateComposite = useCallback(
+    async (name: string) => {
+      if (!project) return;
+      const entry = await compositesPreload.createComposite({
+        projectPath: project.path,
+        name,
+      });
+      await refreshComposites();
+      setSelectedComposite(entry.relativePath);
+      setCreateCompositeOpen(false);
+    },
+    [project, refreshComposites],
+  );
+
+  const existingCustomFolderNames = useMemo(() => {
+    const prefix = 'assets/custom/';
+    return composites
+      .filter(c => c.relativePath.startsWith(prefix))
+      .map(c => {
+        const rest = c.relativePath.slice(prefix.length);
+        const slash = rest.indexOf('/');
+        return slash >= 0 ? rest.slice(0, slash) : rest;
+      });
+  }, [composites]);
+
+  const handleDeleteComposite = useCallback(
+    async (entry: CompositeEntry) => {
+      if (!project) return;
+      try {
+        await compositesPreload.deleteComposite({
+          projectPath: project.path,
+          relativePath: entry.relativePath,
+        });
+      } catch (err) {
+        console.error('Failed to delete composite', err);
+        return;
+      }
+      const list = await refreshComposites();
+      const stillExists = list.some(c => c.relativePath === selectedComposite);
+      if (!stillExists) {
+        setSelectedComposite(MAIN_COMPOSITE_RELATIVE);
+      }
+      if (list.filter(c => !c.isMain).length === 0) {
+        setManageCompositesOpen(false);
+      }
+    },
+    [project, refreshComposites, selectedComposite],
+  );
+
+  const handleDuplicateComposite = useCallback(
+    async (entry: CompositeEntry, newName: string) => {
+      if (!project) return;
+      const created = await compositesPreload.duplicateComposite({
+        projectPath: project.path,
+        relativePath: entry.relativePath,
+        newName,
+      });
+      await refreshComposites();
+      setSelectedComposite(created.relativePath);
+      setManageCompositesOpen(false);
+    },
+    [project, refreshComposites],
+  );
 
   const isOffline = status === ConnectionStatus.OFFLINE;
   const showDebugPanel = settings.previewOptions.debugger;
@@ -175,12 +293,14 @@ export function EditorPage() {
     [settings.previewOptions.showWarnings, detectCustomCode],
   );
 
+  const isAltCompositeSelected = selectedComposite !== MAIN_COMPOSITE_RELATIVE;
+
   const handleBack = useCallback(async () => {
     const rpc = iframeRef.current;
-    if (rpc) await refreshProject(rpc);
+    if (rpc) await refreshProject(rpc, { skipThumbnail: isAltCompositeSelected });
     killPreview();
     navigate('/scenes');
-  }, [navigate, iframeRef.current]);
+  }, [navigate, iframeRef.current, refreshProject, killPreview, isAltCompositeSelected]);
 
   const handleOpenPublishModal = useCallback(async () => {
     await handleActionWithWarningCheck(() => openModal('publish'));
@@ -230,33 +350,47 @@ export function EditorPage() {
 
   const handlePublishScene = useCallback(async () => {
     const rpc = iframeRef.current;
-    if (rpc) saveAndGetThumbnail(rpc);
+    if (rpc && !isAltCompositeSelected) saveAndGetThumbnail(rpc);
     await handleOpenPublishModal();
-  }, [saveAndGetThumbnail, handleOpenPublishModal]);
+  }, [saveAndGetThumbnail, handleOpenPublishModal, isAltCompositeSelected]);
 
   const handleDeployWorld = useCallback(async () => {
     if (!project) return;
     const rpc = iframeRef.current;
-    if (rpc) saveAndGetThumbnail(rpc);
+    if (rpc && !isAltCompositeSelected) saveAndGetThumbnail(rpc);
     try {
       await publishScene({ targetContent: config.get('WORLDS_CONTENT_SERVER_URL') });
       executeDeployment(project.path);
     } catch {
       openModal('publish', 'deploy');
     }
-  }, [project, saveAndGetThumbnail, publishScene, executeDeployment, openModal]);
+  }, [
+    project,
+    saveAndGetThumbnail,
+    publishScene,
+    executeDeployment,
+    openModal,
+    isAltCompositeSelected,
+  ]);
 
   const handleDeployLand = useCallback(async () => {
     if (!project) return;
     const rpc = iframeRef.current;
-    if (rpc) saveAndGetThumbnail(rpc);
+    if (rpc && !isAltCompositeSelected) saveAndGetThumbnail(rpc);
     try {
       await publishScene({ target: config.get('PEER_URL') });
       executeDeployment(project.path);
     } catch {
       openModal('publish', 'deploy');
     }
-  }, [project, saveAndGetThumbnail, publishScene, executeDeployment, openModal]);
+  }, [
+    project,
+    saveAndGetThumbnail,
+    publishScene,
+    executeDeployment,
+    openModal,
+    isAltCompositeSelected,
+  ]);
 
   const publishOptions = useMemo(
     () =>
@@ -311,6 +445,10 @@ export function EditorPage() {
     params.append('projectId', project.id);
   }
 
+  if (selectedComposite && selectedComposite !== MAIN_COMPOSITE_RELATIVE) {
+    params.append('compositePath', selectedComposite);
+  }
+
   // iframe src
   const iframeUrl = `${htmlUrl}?${params}`;
 
@@ -348,6 +486,14 @@ export function EditorPage() {
                   <RefreshIcon />
                 </div>
               </Tooltip>
+              <CompositeSelector
+                composites={composites}
+                selected={selectedComposite}
+                projectTitle={t('editor.composites.main_scene')}
+                onSelect={handleSelectComposite}
+                onManage={handleOpenManageComposites}
+                onCreate={handleOpenCreateComposite}
+              />
             </>
             <div className="actions">
               <Button
@@ -427,6 +573,20 @@ export function EditorPage() {
               qr={mobileQRData.qr}
             />
           )}
+          <ManageCompositesModal
+            open={manageCompositesOpen}
+            composites={composites}
+            existingCustomFolderNames={existingCustomFolderNames}
+            onClose={handleCloseManageComposites}
+            onDelete={handleDeleteComposite}
+            onDuplicate={handleDuplicateComposite}
+          />
+          <CreateCompositeModal
+            open={createCompositeOpen}
+            existingFolderNames={existingCustomFolderNames}
+            onClose={handleCloseCreateComposite}
+            onSubmit={handleSubmitCreateComposite}
+          />
         </>
       )}
     </main>

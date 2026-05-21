@@ -9,6 +9,7 @@ import { useEntitiesWith } from '../../hooks/sdk/useEntitiesWith';
 import { useAppSelector } from '../../redux/hooks';
 import { getHiddenComponents } from '../../redux/ui';
 import { EDITOR_ENTITIES, PLAYER } from '../../lib/sdk/tree';
+import { isAltCompositeMode } from '../../lib/data-layer/host/fs-utils';
 
 import { Divider } from '../ui';
 
@@ -153,7 +154,9 @@ const SingleEntityInspector = withSdk<{ entity: Entity | null }>(({ sdk, entity 
         name: sdk.components.MeshRenderer.componentName,
         component: MeshRendererInspector,
       },
-      { name: sdk.components.Scene.componentName, component: SceneInspector },
+      ...(isAltCompositeMode()
+        ? []
+        : [{ name: sdk.components.Scene.componentName, component: SceneInspector }]),
       {
         name: sdk.components.TextShape.componentName,
         component: TextShapeInspector,

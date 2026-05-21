@@ -1,0 +1,22 @@
+.CreateCompositeModal .MuiPaper-root {
+  min-width: 420px;
+  max-width: 560px;
+}
+
+.CreateCompositeBody {
+  padding: 8px 0 4px;
+}
+
+.CreateCompositeBody .MuiInputBase-root {
+  margin-top: 8px;
+}
+
+.CreateCompositeDescription {
+  margin-top: 8px;
+  color: var(--clear-divider);
+}
+
+.CreateCompositeError {
+  color: var(--error);
+  margin-top: 8px;
+}
