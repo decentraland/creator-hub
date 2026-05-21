@@ -13,6 +13,7 @@ import {
 import { debounce } from '../../lib/utils/debounce';
 import { getRoot } from '../../lib/sdk/nodes';
 import type { DropType } from '../../components/Tree/utils';
+import { isAltCompositeMode } from '../../lib/data-layer/host/fs-utils';
 import { useChange } from './useChange';
 import { useSdk } from './useSdk';
 
@@ -57,7 +58,12 @@ export const useTree = () => {
 
   const getLabel = useCallback(
     (entity: Entity) => {
-      if (entity === ROOT) return 'Scene';
+      if (entity === ROOT) {
+        if (!sdk) return 'Scene';
+        if (!isAltCompositeMode()) return 'Scene';
+        const { Name } = sdk.components;
+        return Name.has(entity) ? Name.get(entity).value : 'Scene';
+      }
       if (entity === PLAYER) return 'Player';
       if (entity === CAMERA) return 'Camera';
       if (!sdk) return entity.toString();

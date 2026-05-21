@@ -12,6 +12,7 @@ import { withSdk } from '../../../hoc/withSdk';
 import { useChange } from '../../../hooks/sdk/useChange';
 import { useOutsideClick } from '../../../hooks/useOutsideClick';
 import { getLayoutManager } from '../../../lib/babylon/decentraland/layout-manager';
+import { isAltCompositeMode } from '../../../lib/data-layer/host/fs-utils';
 import type { Layout } from '../../../lib/utils/layout';
 import { GROUND_MESH_PREFIX, PARCEL_SIZE } from '../../../lib/utils/scene';
 import { useAppDispatch, useAppSelector } from '../../../redux/hooks';
@@ -168,6 +169,15 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
   }, [sdk, setSceneLayout]);
 
   const handleSceneChange = useCallback(() => {
+    // Alt composites (smart items, custom assets) have no scene parcels; out-of-bounds
+    // is meaningless and the layout manager has nothing to measure against.
+    if (isAltCompositeMode()) {
+      if (entitiesOutOfBoundaries.length > 0) {
+        dispatch(setEntitiesOutOfBoundaries([]));
+      }
+      return;
+    }
+
     const nodes = getNodes();
     const { isEntityOutsideLayout } = getLayoutManager(sdk.scene);
 
@@ -184,7 +194,7 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
     });
 
     dispatch(setEntitiesOutOfBoundaries(entitiesOutOfBoundariesArray));
-  }, [sdk, dispatch, getNodes, setEntitiesOutOfBoundaries]);
+  }, [sdk, dispatch, getNodes, setEntitiesOutOfBoundaries, entitiesOutOfBoundaries]);
 
   useEffect(() => {
     const handleOutsideMaterialChange = (material: Material) => {

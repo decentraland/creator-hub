@@ -105,8 +105,36 @@ const Renderer: React.FC = () => {
       if (layout) {
         layout.setEnabled(!groundGridDisabled && !altComposite);
       }
+      const spawnPoints = sdk.scene.getNodeByName('spawn_points');
+      if (spawnPoints) {
+        spawnPoints.setEnabled(!altComposite);
+      }
+      const backgroundPlane = sdk.scene.getMeshByName('BackgroundPlane');
+      if (backgroundPlane) {
+        backgroundPlane.setEnabled(!altComposite);
+      }
     }
   }, [sdk, groundGridDisabled, altComposite]);
+
+  // In alt-composite mode, frame the camera on the loaded item once its GLBs finish loading.
+  useEffect(() => {
+    if (!sdk || !altComposite) return;
+    let done = false;
+    const center = () => {
+      if (done) return;
+      const rootNode = sdk.sceneContext.rootNode;
+      const { min } = rootNode.getHierarchyBoundingVectors();
+      // Babylon returns MAX_VALUE for empty hierarchies — wait for at least one mesh.
+      if (min.x === Number.MAX_VALUE) return;
+      done = true;
+      sdk.editorCamera.centerViewOnEntity(rootNode);
+      sdk.scene.onDataLoadedObservable.remove(observer);
+    };
+    const observer = sdk.scene.onDataLoadedObservable.add(center);
+    return () => {
+      sdk.scene.onDataLoadedObservable.remove(observer);
+    };
+  }, [sdk, altComposite]);
 
   const deleteSelectedEntities = useCallback(() => {
     if (!sdk) return;

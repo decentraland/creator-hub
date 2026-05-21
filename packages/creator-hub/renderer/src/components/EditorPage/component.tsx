@@ -92,26 +92,28 @@ export function EditorPage() {
   const [selectedComposite, setSelectedComposite] = useState<string>(MAIN_COMPOSITE_RELATIVE);
   const [manageCompositesOpen, setManageCompositesOpen] = useState(false);
 
+  const projectPath = project?.path;
+
   const refreshComposites = useCallback(async () => {
-    if (!project) return [] as CompositeEntry[];
+    if (!projectPath) return [] as CompositeEntry[];
     try {
-      const list = await compositesPreload.listComposites(project.path);
+      const list = await compositesPreload.listComposites(projectPath);
       setComposites(list);
       return list;
     } catch (err) {
       console.error('Failed to list composites', err);
       return [] as CompositeEntry[];
     }
-  }, [project]);
+  }, [projectPath]);
 
   useEffect(() => {
     setSelectedComposite(MAIN_COMPOSITE_RELATIVE);
     setManageCompositesOpen(false);
     setComposites([]);
-    if (project) {
+    if (projectPath) {
       void refreshComposites();
     }
-  }, [project?.path, refreshComposites]);
+  }, [projectPath, refreshComposites]);
 
   const handleSelectComposite = useCallback((relativePath: string) => {
     setSelectedComposite(relativePath);
@@ -240,12 +242,14 @@ export function EditorPage() {
     [settings.previewOptions.showWarnings, detectCustomCode],
   );
 
+  const isAltCompositeSelected = selectedComposite !== MAIN_COMPOSITE_RELATIVE;
+
   const handleBack = useCallback(async () => {
     const rpc = iframeRef.current;
-    if (rpc) await refreshProject(rpc);
+    if (rpc) await refreshProject(rpc, { skipThumbnail: isAltCompositeSelected });
     killPreview();
     navigate('/scenes');
-  }, [navigate, iframeRef.current]);
+  }, [navigate, iframeRef.current, refreshProject, killPreview, isAltCompositeSelected]);
 
   const handleOpenPublishModal = useCallback(async () => {
     await handleActionWithWarningCheck(() => openModal('publish'));
@@ -295,33 +299,47 @@ export function EditorPage() {
 
   const handlePublishScene = useCallback(async () => {
     const rpc = iframeRef.current;
-    if (rpc) saveAndGetThumbnail(rpc);
+    if (rpc && !isAltCompositeSelected) saveAndGetThumbnail(rpc);
     await handleOpenPublishModal();
-  }, [saveAndGetThumbnail, handleOpenPublishModal]);
+  }, [saveAndGetThumbnail, handleOpenPublishModal, isAltCompositeSelected]);
 
   const handleDeployWorld = useCallback(async () => {
     if (!project) return;
     const rpc = iframeRef.current;
-    if (rpc) saveAndGetThumbnail(rpc);
+    if (rpc && !isAltCompositeSelected) saveAndGetThumbnail(rpc);
     try {
       await publishScene({ targetContent: config.get('WORLDS_CONTENT_SERVER_URL') });
       executeDeployment(project.path);
     } catch {
       openModal('publish', 'deploy');
     }
-  }, [project, saveAndGetThumbnail, publishScene, executeDeployment, openModal]);
+  }, [
+    project,
+    saveAndGetThumbnail,
+    publishScene,
+    executeDeployment,
+    openModal,
+    isAltCompositeSelected,
+  ]);
 
   const handleDeployLand = useCallback(async () => {
     if (!project) return;
     const rpc = iframeRef.current;
-    if (rpc) saveAndGetThumbnail(rpc);
+    if (rpc && !isAltCompositeSelected) saveAndGetThumbnail(rpc);
     try {
       await publishScene({ target: config.get('PEER_URL') });
       executeDeployment(project.path);
     } catch {
       openModal('publish', 'deploy');
     }
-  }, [project, saveAndGetThumbnail, publishScene, executeDeployment, openModal]);
+  }, [
+    project,
+    saveAndGetThumbnail,
+    publishScene,
+    executeDeployment,
+    openModal,
+    isAltCompositeSelected,
+  ]);
 
   const publishOptions = useMemo(
     () =>
