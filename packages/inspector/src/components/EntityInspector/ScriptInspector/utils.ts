@@ -1,4 +1,9 @@
-import { DIRECTORY, withAssetDir } from '../../../lib/data-layer/host/fs-utils';
+import {
+  DIRECTORY,
+  getCompositeBaseFolder,
+  isAltCompositeMode,
+  withAssetDir,
+} from '../../../lib/data-layer/host/fs-utils';
 import type { DataLayerRpcClient } from '../../../lib/data-layer/types';
 import type { AssetCatalogResponse } from '../../../tooling-entrypoint';
 import { determineAssetType } from '../../ImportAsset/utils';
@@ -39,7 +44,12 @@ export const isScriptNode = (node: TreeNode): node is AssetNodeItem =>
   isAssetNode(node) && isScriptFile(node.name);
 
 export function buildScriptPath(name: string): string {
-  const scriptsDir = withAssetDir(`${DIRECTORY.SCENE}/${determineAssetType('ts')}`);
+  // When editing an alt composite, scripts created from its entities live next to the
+  // composite file (e.g. assets/custom/my_widget/Scripts/NewScript.tsx) so the folder
+  // stays self-contained and portable.
+  const scriptsDir = isAltCompositeMode()
+    ? `${getCompositeBaseFolder()}/${determineAssetType('ts')}`
+    : withAssetDir(`${DIRECTORY.SCENE}/${determineAssetType('ts')}`);
   if (name.startsWith(scriptsDir)) return name; // if it's already a built path, return the name parameter
   const scriptName = isScriptFile(name) ? name : `${name}.tsx`;
   const scriptPath = `${scriptsDir}/${scriptName}`;

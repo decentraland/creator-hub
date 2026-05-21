@@ -60,3 +60,34 @@
   font-style: italic;
   margin-right: 12px;
 }
+
+.ManageCompositesPrompt {
+  padding: 8px 0 4px;
+}
+
+.ManageCompositesPromptTitle {
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.ManageCompositesPromptForm .MuiInputBase-root {
+  margin-top: 8px;
+}
+
+.ManageCompositesPromptDescription {
+  margin-top: 8px;
+  color: var(--clear-divider);
+}
+
+.ManageCompositesPromptError {
+  color: var(--error);
+  margin-top: 8px;
+}
+
+.ManageCompositesPromptActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}

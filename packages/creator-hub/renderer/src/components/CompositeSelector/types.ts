@@ -6,4 +6,5 @@ export type Props = {
   projectTitle: string;
   onSelect: (relativePath: string) => void;
   onManage: () => void;
+  onCreate: () => void;
 };

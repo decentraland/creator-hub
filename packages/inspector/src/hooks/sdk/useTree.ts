@@ -137,9 +137,15 @@ export const useTree = () => {
 
   const rename = useCallback(
     async (entity: Entity, value: string) => {
-      if (entity === ROOT || !sdk) return;
+      if (!sdk) return;
+      // ROOT is renameable when editing an alt composite (the entity is the smart item's root).
+      if (entity === ROOT && !isAltCompositeMode()) return;
       const { Name } = sdk.components;
-      sdk.operations.updateValue(Name, entity, { value });
+      if (entity === ROOT && !Name.has(entity)) {
+        sdk.operations.addComponent(entity, Name.componentId, { value });
+      } else {
+        sdk.operations.updateValue(Name, entity, { value });
+      }
       await sdk.operations.dispatch();
       handleUpdate();
     },
@@ -207,7 +213,14 @@ export const useTree = () => {
     [],
   );
   const isNotRoot = useCallback((entity: Entity) => !isRoot(entity), []);
-  const canRename = isNotRoot;
+  const canRename = useCallback(
+    (entity: Entity) => {
+      // ROOT is renameable while editing an alt composite (it's the smart item's root entity).
+      if (entity === ROOT) return isAltCompositeMode();
+      return isNotRoot(entity);
+    },
+    [isNotRoot],
+  );
   const canRemove = isNotRoot;
   const canDuplicate = isNotRoot;
   const canDrag = isNotRoot;

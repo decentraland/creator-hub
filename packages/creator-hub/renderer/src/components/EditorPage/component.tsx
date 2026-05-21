@@ -39,6 +39,7 @@ import { ButtonGroup } from '../Button';
 import { ConnectionStatusIndicator } from '../ConnectionStatusIndicator';
 import { CompositeSelector, MAIN_COMPOSITE_RELATIVE } from '../CompositeSelector';
 import { ManageCompositesModal } from '../Modals/ManageComposites';
+import { CreateCompositeModal } from '../Modals/CreateComposite';
 import { MobileQRCode } from '../Modals/MobileQRCode';
 import { DeployModal } from './DeployModal';
 import { PreviewOptions, PublishOptions } from './MenuOptions';
@@ -91,6 +92,7 @@ export function EditorPage() {
   const [composites, setComposites] = useState<CompositeEntry[]>([]);
   const [selectedComposite, setSelectedComposite] = useState<string>(MAIN_COMPOSITE_RELATIVE);
   const [manageCompositesOpen, setManageCompositesOpen] = useState(false);
+  const [createCompositeOpen, setCreateCompositeOpen] = useState(false);
 
   const projectPath = project?.path;
 
@@ -109,6 +111,7 @@ export function EditorPage() {
   useEffect(() => {
     setSelectedComposite(MAIN_COMPOSITE_RELATIVE);
     setManageCompositesOpen(false);
+    setCreateCompositeOpen(false);
     setComposites([]);
     if (projectPath) {
       void refreshComposites();
@@ -126,6 +129,39 @@ export function EditorPage() {
   const handleCloseManageComposites = useCallback(() => {
     setManageCompositesOpen(false);
   }, []);
+
+  const handleOpenCreateComposite = useCallback(() => {
+    setCreateCompositeOpen(true);
+  }, []);
+
+  const handleCloseCreateComposite = useCallback(() => {
+    setCreateCompositeOpen(false);
+  }, []);
+
+  const handleSubmitCreateComposite = useCallback(
+    async (name: string) => {
+      if (!project) return;
+      const entry = await compositesPreload.createComposite({
+        projectPath: project.path,
+        name,
+      });
+      await refreshComposites();
+      setSelectedComposite(entry.relativePath);
+      setCreateCompositeOpen(false);
+    },
+    [project, refreshComposites],
+  );
+
+  const existingCustomFolderNames = useMemo(() => {
+    const prefix = 'assets/custom/';
+    return composites
+      .filter(c => c.relativePath.startsWith(prefix))
+      .map(c => {
+        const rest = c.relativePath.slice(prefix.length);
+        const slash = rest.indexOf('/');
+        return slash >= 0 ? rest.slice(0, slash) : rest;
+      });
+  }, [composites]);
 
   const handleDeleteComposite = useCallback(
     async (entry: CompositeEntry) => {
@@ -149,6 +185,21 @@ export function EditorPage() {
       }
     },
     [project, refreshComposites, selectedComposite],
+  );
+
+  const handleDuplicateComposite = useCallback(
+    async (entry: CompositeEntry, newName: string) => {
+      if (!project) return;
+      const created = await compositesPreload.duplicateComposite({
+        projectPath: project.path,
+        relativePath: entry.relativePath,
+        newName,
+      });
+      await refreshComposites();
+      setSelectedComposite(created.relativePath);
+      setManageCompositesOpen(false);
+    },
+    [project, refreshComposites],
   );
 
   const isOffline = status === ConnectionStatus.OFFLINE;
@@ -426,13 +477,6 @@ export function EditorPage() {
                 <ArrowBackIosIcon />
               </div>
               <div className="title">{project.title}</div>
-              <CompositeSelector
-                composites={composites}
-                selected={selectedComposite}
-                projectTitle={t('editor.composites.main_scene')}
-                onSelect={handleSelectComposite}
-                onManage={handleOpenManageComposites}
-              />
               <Tooltip title={t('editor.header.actions.refresh')}>
                 <div
                   className="refresh"
@@ -442,6 +486,14 @@ export function EditorPage() {
                   <RefreshIcon />
                 </div>
               </Tooltip>
+              <CompositeSelector
+                composites={composites}
+                selected={selectedComposite}
+                projectTitle={t('editor.composites.main_scene')}
+                onSelect={handleSelectComposite}
+                onManage={handleOpenManageComposites}
+                onCreate={handleOpenCreateComposite}
+              />
             </>
             <div className="actions">
               <Button
@@ -524,8 +576,16 @@ export function EditorPage() {
           <ManageCompositesModal
             open={manageCompositesOpen}
             composites={composites}
+            existingCustomFolderNames={existingCustomFolderNames}
             onClose={handleCloseManageComposites}
             onDelete={handleDeleteComposite}
+            onDuplicate={handleDuplicateComposite}
+          />
+          <CreateCompositeModal
+            open={createCompositeOpen}
+            existingFolderNames={existingCustomFolderNames}
+            onClose={handleCloseCreateComposite}
+            onSubmit={handleSubmitCreateComposite}
           />
         </>
       )}

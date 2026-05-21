@@ -8,6 +8,7 @@ import { type Entity } from '@dcl/ecs';
 import { type WithSdkProps, withSdk } from '../../../hoc/withSdk';
 import { useChange } from '../../../hooks/sdk/useChange';
 import { isRoot, useEntityComponent } from '../../../hooks/sdk/useEntityComponent';
+import { isAltCompositeMode } from '../../../lib/data-layer/host/fs-utils';
 import { CAMERA, PLAYER, ROOT } from '../../../lib/sdk/tree';
 import { type SdkContextEvents, type SdkContextValue } from '../../../lib/sdk/context';
 import { getAssetByModel } from '../../../lib/logic/catalog';
@@ -18,7 +19,7 @@ import { selectCustomAssets } from '../../../redux/app';
 import { Edit as EditInput } from '../../Tree/Edit';
 import { Block } from '../../Block';
 import CustomAssetIcon from '../../Icons/CustomAsset';
-import { Dropdown, Divider } from '../../ui';
+import { Dropdown } from '../../ui';
 
 import MoreOptionsMenu from '../MoreOptionsMenu';
 import { TagsInspector } from '../TagsInspector';
@@ -340,9 +341,14 @@ export default React.memo(
 
     const handleRenameEntity = useCallback(
       async (value: string) => {
-        if (isRoot(entity)) return;
+        const altRootRenameable = entity === ROOT && isAltCompositeMode();
+        if (isRoot(entity) && !altRootRenameable) return;
         const { Name } = sdk.components;
-        sdk.operations.updateValue(Name, entity, { value });
+        if (entity === ROOT && !Name.has(entity)) {
+          sdk.operations.addComponent(entity, Name.componentId, { value });
+        } else {
+          sdk.operations.updateValue(Name, entity, { value });
+        }
         await sdk.operations.dispatch();
         quitEditMode();
       },
@@ -373,34 +379,49 @@ export default React.memo(
             ) : null}
           </div>
           <div className="RightContent">
-            {componentOptions.some(option => !option.header) && !isRoot(entity) ? (
-              <Dropdown
-                className="AddComponent"
-                options={componentOptions}
-                trigger={
-                  <div className="AddComponentTrigger">
-                    <AddIcon />
-                    <ChevronDownIcon />
-                  </div>
-                }
-              />
-            ) : null}
-            {!isRoot(entity) ? (
-              <MoreOptionsMenu
-                options={[
-                  {
-                    label: 'Rename Entity',
-                    leftIcon: <RenameIcon />,
-                    onClick: () => enterEditMode(),
-                  },
-                  {
-                    label: 'Delete Entity',
-                    leftIcon: <TrashIcon />,
-                    onClick: () => void handleRemoveEntity(),
-                  },
-                ]}
-              />
-            ) : null}
+            {(() => {
+              const altRoot = entity === ROOT && isAltCompositeMode();
+              const showAddComponent =
+                componentOptions.some(option => !option.header) && (!isRoot(entity) || altRoot);
+              const showMoreOptions = !isRoot(entity) || altRoot;
+              const moreOptions = altRoot
+                ? [
+                    {
+                      label: 'Rename Entity',
+                      leftIcon: <RenameIcon />,
+                      onClick: () => enterEditMode(),
+                    },
+                  ]
+                : [
+                    {
+                      label: 'Rename Entity',
+                      leftIcon: <RenameIcon />,
+                      onClick: () => enterEditMode(),
+                    },
+                    {
+                      label: 'Delete Entity',
+                      leftIcon: <TrashIcon />,
+                      onClick: () => void handleRemoveEntity(),
+                    },
+                  ];
+              return (
+                <>
+                  {showAddComponent ? (
+                    <Dropdown
+                      className="AddComponent"
+                      options={componentOptions}
+                      trigger={
+                        <div className="AddComponentTrigger">
+                          <AddIcon />
+                          <ChevronDownIcon />
+                        </div>
+                      }
+                    />
+                  ) : null}
+                  {showMoreOptions ? <MoreOptionsMenu options={moreOptions} /> : null}
+                </>
+              );
+            })()}
           </div>
         </div>
         {!isRoot(entity) && (

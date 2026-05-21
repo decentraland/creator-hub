@@ -16,6 +16,7 @@ export function CompositeSelector({
   projectTitle,
   onSelect,
   onManage,
+  onCreate,
 }: Props) {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const open = Boolean(anchorEl);
@@ -46,6 +47,11 @@ export function CompositeSelector({
     setAnchorEl(null);
     onManage();
   }, [onManage]);
+
+  const handleCreate = useCallback(() => {
+    setAnchorEl(null);
+    onCreate();
+  }, [onCreate]);
 
   return (
     <div className="CompositeSelector">
@@ -78,6 +84,12 @@ export function CompositeSelector({
             </span>
           </MenuItem>
         ))}
+        <MenuItem
+          className="manage-item"
+          onClick={handleCreate}
+        >
+          {t('editor.composites.create')}
+        </MenuItem>
         <MenuItem
           className="manage-item"
           onClick={handleManage}

@@ -1,0 +1,1 @@
+export { CreateCompositeModal } from './component';

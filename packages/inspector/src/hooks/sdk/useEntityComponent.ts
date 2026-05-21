@@ -6,6 +6,7 @@ import { CrdtMessageType } from '@dcl/ecs';
 import type { SdkContextValue } from '../../lib/sdk/context';
 import { CoreComponents, EditorComponentNames } from '../../lib/sdk/components';
 import { getConfig } from '../../lib/logic/config';
+import { isAltCompositeMode } from '../../lib/data-layer/host/fs-utils';
 import { CAMERA, EDITOR_ENTITIES, PLAYER, ROOT } from '../../lib/sdk/tree';
 import { useSdk } from './useSdk';
 import { useChange } from './useChange';
@@ -164,7 +165,10 @@ export const useEntityComponent = () => {
           })
           .sort((a, b) => a.name.localeCompare(b.name));
 
-        if (isRoot(entity)) {
+        // In alt composite mode the ROOT entity is the smart item's root — treat it
+        // like any other entity so users can attach Actions, Triggers, etc. to it.
+        const altRootUnlocked = isAltCompositeMode() && entity === ROOT;
+        if (isRoot(entity) && !altRootUnlocked) {
           available = available.filter(
             component =>
               Array.isArray(ROOT_COMPONENTS[entity]) &&
