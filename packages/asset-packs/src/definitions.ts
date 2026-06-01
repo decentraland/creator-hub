@@ -59,7 +59,7 @@ export const VIDEO_URL_TYPE = 'https://';
 export * from './enums';
 export * from './action-types';
 export * from './events';
-export * from './id';
+export * from './mapping';
 export * from './states';
 export * from './clone';
 export * from './lww';

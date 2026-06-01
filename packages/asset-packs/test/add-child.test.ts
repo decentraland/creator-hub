@@ -1,11 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import {
-  Engine,
-  getCompositeRootComponent,
-  type Composite,
-  type Entity,
-  type IEngine,
-} from '@dcl/ecs';
+import { Engine, type Composite, type Entity, type IEngine } from '@dcl/ecs';
 import {
   deepReplaceAssetPath,
   substituteAssetPathInComposite,
@@ -14,6 +8,7 @@ import {
   initializeComponentIdsFromComposite,
 } from '../src/add-child';
 import { ComponentName, createComponents, getComponents } from '../src/definitions';
+import { createEntityMap } from '../src/mapping';
 
 function makeComponent(
   name: string,
@@ -493,11 +488,10 @@ describe('remapTriggerReferences', () => {
 });
 
 describe('initializeComponentIdsFromComposite (round trip)', () => {
-  it('should allocate IDs and rewrite trigger references using CompositeRoot mappings', () => {
+  it('should allocate IDs and rewrite trigger references using the supplied EntityMap', () => {
     const engine = Engine();
     createComponents(engine);
     const { Actions, Triggers } = getComponents(engine);
-    const CompositeRoot = getCompositeRootComponent(engine);
 
     // Live spawned entity that maps to composite-entity-id 100.
     const dest = engine.addEntity();
@@ -512,17 +506,16 @@ describe('initializeComponentIdsFromComposite (round trip)', () => {
       ],
     } as any);
 
-    const root = engine.addEntity();
-    CompositeRoot.createOrReplace(root, {
-      src: 'pack/composite.json',
-      entities: [{ src: 100 as Entity, dest }],
-    });
+    // Build the EntityMap the caller would normally populate via
+    // EMM_DIRECT_MAPPING during Composite.instance.
+    const entityMap = createEntityMap();
+    entityMap.put(100 as Entity, dest);
 
     const composite = makeComposite([
       makeComponent(ComponentName.ACTIONS, [[100, { id: '{self}', value: [] }]]),
     ]);
 
-    initializeComponentIdsFromComposite(engine, composite, root);
+    initializeComponentIdsFromComposite(engine, composite, entityMap);
 
     const allocatedId = Actions.get(dest).id;
     expect(allocatedId).toBeTypeOf('number');

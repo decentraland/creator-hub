@@ -19,6 +19,8 @@ import {
   MeshCollider,
   getComponentEntityTree,
   Tween,
+  Composite,
+  getCompositeProvider,
 } from '@dcl/ecs';
 import { Quaternion, Vector3 } from '@dcl/sdk/math';
 import type { TextureMovementType as SdkTextureMovementType } from '@dcl/ecs/dist/components/generated/pb/decentraland/sdk/components/tween.gen';
@@ -76,6 +78,7 @@ import { followMap } from './transform';
 import { getEasingFunctionFromInterpolation } from './tweens';
 import { getRewardsServerUrl } from './admin-toolkit-ui/constants';
 import { initializeComponentIdsFromComposite } from './add-child';
+import { createEntityMap } from './mapping';
 import { callScriptMethod } from '~sdk/script-utils';
 
 const initedEntities = new Set<Entity>();
@@ -1639,43 +1642,50 @@ export function createActionsSystem(
   function handleSpawnEntity(entity: Entity, payload: ActionPayload<ActionType.SPAWN_ENTITY>) {
     const { src, position } = payload;
 
-    const spawn = () => {
-      const spawnedRoot = engine.addEntityFromComposite(src, {
-        transform: {
-          position: position,
-          parent: entity,
-        },
+    const provider = getCompositeProvider();
+    if (!provider) {
+      console.error('[SPAWN_ENTITY] no composite provider registered');
+      return;
+    }
+
+    const doSpawn = (resource: Composite.Resource) => {
+      // Track composite-entity → live-entity pairs so we can drive the Action /
+      // Trigger ID remap below without reading CompositeRootComponent (the SDK
+      // no longer writes it for leaf composites).
+      const entityMap = createEntityMap();
+      const spawnedRoot = Composite.instance(engine, resource, provider, {
+        entityMapping: entityMap.toDirectMapping(engine),
       });
+      // The old engine.addEntityFromComposite carried a `transform` shortcut;
+      // with Composite.instance we apply the transform to the spawned root
+      // manually. createOrReplace handles both "first transform" and "merge on
+      // top of an existing one" cases.
+      Transform.createOrReplace(spawnedRoot, { position, parent: entity });
       // Allocate Action/State/Counter IDs and remap Trigger references for the
       // spawned subtree. Mirrors the inspector's add-asset ID pre-allocation
       // pass; without this, initActions/initTriggers would bind to '{self}'
       // string placeholders and triggers wouldn't fire.
-      const composite = engine.getCompositeProvider()?.getCompositeOrNull(src)?.composite;
-      if (composite) {
-        initializeComponentIdsFromComposite(engine, composite, spawnedRoot);
-      }
+      initializeComponentIdsFromComposite(engine, resource.composite, entityMap);
       initActions(spawnedRoot);
       initTriggers(spawnedRoot);
       const triggerEvents = getTriggerEvents(spawnedRoot);
       triggerEvents.emit(TriggerType.ON_SPAWN);
     };
 
-    const provider = engine.getCompositeProvider();
-
-    // Cache miss with async loader — preload first, then spawn on next tick.
-    if (provider?.loadComposite && !provider.getCompositeOrNull(src)) {
+    const cached = provider.getCompositeOrNull(src);
+    if (cached) {
+      doSpawn(cached);
+      return;
+    }
+    if (provider.loadComposite) {
       provider
         .loadComposite(src)
-        .then(spawn)
+        .then(doSpawn)
         .catch((err: unknown) => {
           console.error(`[SPAWN_ENTITY] Failed to load composite "${src}":`, err);
         });
       return;
     }
-
-    // All other paths: spawn synchronously.
-    // engine.addEntityFromComposite throws the canonical error if the provider
-    // is missing or the composite is not cached.
-    spawn();
+    console.error(`[SPAWN_ENTITY] composite "${src}" not cached and provider has no loadComposite`);
   }
 }

@@ -17,9 +17,9 @@
  * — they touch editor-specific runtime state.
  */
 
-import type { Entity, IEngine, SystemFn } from '@dcl/ecs';
-import { type Composite, getCompositeRootComponent } from '@dcl/ecs';
-import { COMPONENTS_WITH_ID, getNextId } from './id';
+import type { Entity, IEngine } from '@dcl/ecs';
+import { type Composite } from '@dcl/ecs';
+import { COMPONENTS_WITH_ID, getNextId, type EntityMap } from './mapping';
 import { getComponents } from './definitions';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -212,52 +212,6 @@ export function substituteAssetPathInComposite(
   }
 }
 
-// ─── Composite provider wrapper ─────────────────────────────────────────────
-
-function wrapProvider(base: Composite.Provider): Composite.Provider {
-  return {
-    getCompositeOrNull: base.getCompositeOrNull.bind(base),
-    loadComposite: base.loadComposite
-      ? async src => {
-          const resource = await base.loadComposite!(src);
-          // Mutate in place: the base provider caches the resource by
-          // reference, so subsequent getCompositeOrNull(src) calls return
-          // the already-resolved version. Substitution is idempotent —
-          // safe on a composite that was previously resolved.
-          substituteAssetPathInComposite(resource.composite, src);
-          return resource;
-        }
-      : undefined,
-  };
-}
-
-/**
- * Install an asset-pack-aware wrapper around the SDK's default Composite.Provider.
- *
- * Install is **deferred to the first system tick** because the auto-generated
- * scene entrypoint hoists `import * as entrypoint from <user-entry>` (which
- * triggers asset-packs init) BEFORE `import * as sdk from '@dcl/sdk'` (which
- * registers the SDK's provider). Querying `engine.getCompositeProvider()`
- * synchronously here would return null. A one-shot installer system at
- * priority Infinity runs after every module-init has completed and before
- * any other system runs on the first tick, so SPAWN_ENTITY cannot fire
- * before the wrap is in place.
- *
- * TODO: revisit if a future SDK version exposes a post-init hook.
- */
-export function installAssetPackCompositeProvider(engine: IEngine): void {
-  let installed = false;
-  const installer: SystemFn = () => {
-    if (installed) return;
-    const base = engine.getCompositeProvider();
-    if (!base) return; // SDK provider not yet set; retry next tick
-    installed = true;
-    engine.setCompositeProvider(wrapProvider(base));
-    engine.removeSystem(installer);
-  };
-  engine.addSystem(installer, Infinity, 'asset-pack-composite-provider-install');
-}
-
 // ─── ID allocation + Trigger reference remap (spawn-time) ───────────────────
 
 type IdMap = Map<string, number>;
@@ -361,13 +315,19 @@ export function remapTriggerReferences(
 }
 
 /**
- * After `engine.addEntityFromComposite` spawns a smart-item subtree, resolve
- * its placeholder IDs so handlers can fire:
+ * After `Composite.instance` spawns a smart-item subtree, resolve its
+ * placeholder IDs so handlers can fire:
  *
  *   1. Allocate fresh numeric IDs for Actions/States/Counter components whose
  *      composite-side id is the literal `{self}`.
  *   2. Rewrite Trigger `actions[].id` / `conditions[].id` placeholders to
  *      point at the newly-allocated numeric IDs.
+ *
+ * The caller supplies the composite-entity → live-entity map directly (via
+ * the `EntityMap` populated by `EMM_DIRECT_MAPPING`). We no longer read it
+ * back from `CompositeRoot`: the new SDK only writes that component for
+ * composites containing nested children, so leaf composites have no row to
+ * read.
  *
  * Mirrors the inspector's drag-n-drop initialization pass; both should
  * eventually call this function (see TODO at top of file).
@@ -375,20 +335,13 @@ export function remapTriggerReferences(
 export function initializeComponentIdsFromComposite(
   engine: IEngine,
   composite: Composite.Definition,
-  rootEntity: Entity,
+  entityMap: EntityMap,
 ): void {
-  // The entity mapping was populated by instanceComposite on the rootEntity's
-  // composite::root component — we read it back rather than threading it
-  // through addEntityFromComposite's return value.
-  const CompositeRoot = getCompositeRootComponent(engine);
-  const root = CompositeRoot.getOrNull(rootEntity);
-  if (!root) return;
-
   const spawnedEntityByCompositeId = new Map<number, Entity>();
   const inverse: [Entity, number][] = [];
-  for (const e of root.entities) {
-    spawnedEntityByCompositeId.set(e.src as number, e.dest);
-    inverse.push([e.dest, e.src as number]);
+  for (const [src, dst] of entityMap.entries()) {
+    spawnedEntityByCompositeId.set(src as number, dst);
+    inverse.push([dst, src as number]);
   }
 
   const ids = allocateIdsForSpawnedComponents(engine, composite, spawnedEntityByCompositeId);
