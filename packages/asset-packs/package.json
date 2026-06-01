@@ -19,6 +19,7 @@
     "@dcl/hashing": "^3.0.4",
     "@dcl/js-runtime": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/add-get-set-composite-provider-ref/@dcl/js-runtime/dcl-js-runtime-7.23.4-26777999878.commit-1f26ccf.tgz",
     "@dcl/react-ecs": "7.22.5",
+    "@dcl/sdk": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/add-get-set-composite-provider-ref/dcl-sdk-7.23.4-26777999878.commit-1f26ccf.tgz",
     "@dcl/sdk-commands": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/add-get-set-composite-provider-ref/dcl-sdk-commands-7.23.4-26777999878.commit-1f26ccf.tgz",
     "@types/mime-types": "^2.1.1",
     "@types/node-fetch": "^2.6.4",
