@@ -58,6 +58,14 @@ jobs:
       - name: install
         run: make install
 
+      - name: cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
       - name: install Playwright browsers
         run: npx playwright install
 
