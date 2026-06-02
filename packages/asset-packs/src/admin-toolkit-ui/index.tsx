@@ -32,12 +32,12 @@ import { showcaseState, sharePresentationState } from './VideoControl/DclCast';
 import { SpeakerShowcase } from './VideoControl/DclCast/SpeakerShowcase';
 import SharePresentationModal from './VideoControl/DclCast/SharePresentationModal';
 import { isPreview } from './fetch-utils';
+import { initAdminMessageBus, getAdminMessageBus } from './admin-message-bus';
 
 export const nextTickFunctions: (() => void)[] = [];
 const ADMIN_TOOLKIT_VIRTUAL_UI_SIZE = { virtualWidth: 1920, virtualHeight: 1080 };
 
-// eslint-disable-next-line prefer-const
-export let state: State = {
+export const state: State = {
   adminToolkitUiEntity: 0 as Entity,
   panelOpen: false,
   activeTab: TabType.NONE,
@@ -107,7 +107,6 @@ export async function fetchSceneAdmins() {
   const [error, response] = await getSceneAdmins();
 
   if (error) {
-    // user doesnt have permissions
     console.log(JSON.stringify({ error }));
     sceneAdminsCache = [];
     return;
@@ -121,6 +120,16 @@ export async function fetchSceneAdmins() {
       canBeRemoved: !!$.canBeRemoved,
     }))
     .sort(a => (a.canBeRemoved ? 1 : -1));
+  if (adminDataInitialized) {
+    getAdminMessageBus().updateAdminList(sceneAdminsCache);
+  }
+}
+
+export async function fetchAndSyncSceneAdmins() {
+  await fetchSceneAdmins();
+  if (adminDataInitialized) {
+    getAdminMessageBus().emitSyncAdmins();
+  }
 }
 
 export async function fetchSceneBans() {
@@ -144,13 +153,6 @@ export function getSmartItems(engine: IEngine) {
   return Array.from(adminToolkitComponent.smartItemsControl.smartItems ?? []);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function getRewards(engine: IEngine) {
-  const adminToolkitComponent = getAdminToolkitComponent(engine);
-
-  return Array.from(adminToolkitComponent?.rewardsControl?.rewardItems ?? []);
-}
-
 function initTextAnnouncementSync(engine: IEngine) {
   const { TextAnnouncements } = getComponents(engine);
 
@@ -163,9 +165,13 @@ function initTextAnnouncementSync(engine: IEngine) {
 
 // Initialize admin data before UI rendering
 let adminDataInitialized = false;
-export async function initializeAdminData(engine: IEngine, sdkHelpers?: ISDKHelpers) {
+export async function initializeAdminData(
+  engine: IEngine,
+  sdkHelpers?: ISDKHelpers,
+  playersHelper?: IPlayersHelper,
+) {
   if (!adminDataInitialized) {
-    const { TextAnnouncements, VideoControlState } = getComponents(engine);
+    const { VideoControlState } = getComponents(engine);
 
     // Initialize AdminToolkitUiEntity
     state.adminToolkitUiEntity = getAdminToolkitEntity(engine) ?? engine.addEntity();
@@ -182,7 +188,7 @@ export async function initializeAdminData(engine: IEngine, sdkHelpers?: ISDKHelp
 
     sdkHelpers?.syncEntity?.(
       state.adminToolkitUiEntity,
-      [VideoControlState.componentId, TextAnnouncements.componentId],
+      [VideoControlState.componentId],
       ADMIN_TOOLS_ENTITY,
     );
 
@@ -198,6 +204,15 @@ export async function initializeAdminData(engine: IEngine, sdkHelpers?: ISDKHelp
     // Initialize scene data
     await Promise.all([fetchSceneAdmins(), fetchSceneBans()]);
 
+    // Initialize admin message bus with sender validation
+    initAdminMessageBus(
+      engine,
+      sceneAdminsCache,
+      state.adminToolkitUiEntity,
+      playersHelper,
+      fetchSceneAdmins,
+    );
+
     adminDataInitialized = true;
 
     console.log('initializeAdminData - initialized');
@@ -212,7 +227,7 @@ export function createAdminToolkitUI(
   playersHelper?: IPlayersHelper,
 ) {
   // Initialize admin data before setting up the UI
-  initializeAdminData(engine, sdkHelpers).then(() => {
+  initializeAdminData(engine, sdkHelpers, playersHelper).then(() => {
     console.log('createAdminToolkitUI - initialized');
     reactBasedUiSystem.setUiRenderer(
       () => uiComponent(engine, pointerEventsSystem, sdkHelpers, playersHelper),
