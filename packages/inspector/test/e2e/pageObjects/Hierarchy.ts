@@ -93,19 +93,40 @@ class HierarchyPageObject {
     return label || '';
   }
 
-  // Click a context-menu item via selector (not a captured handle) — contexify
-  // re-renders menu items between right-click and first paint, so pre-fetched
-  // handles go stale ("Element is not stable").
-  private async clickContextMenuItem(itemId: string, action: string, entityId: number) {
-    const selector = `.contexify_item[itemid="${itemId}"]`;
-    try {
-      await page.waitForSelector(selector, { state: 'visible', timeout: 5_000 });
-      await page.click(selector);
-    } catch (error: any) {
-      throw new Error(
-        `Can't ${action} entity with id=${entityId}: context-menu item "${itemId}" not clickable (${error.message})`,
-      );
+  // Open the row's context menu and click an item, resiliently.
+  //
+  // Opening a contexify menu needs a `contextmenu` event to land on a stable
+  // row. Right after a tree mutation the row can still be remounting, so a
+  // single right-click is sometimes swallowed (the menu never opens) or the
+  // menu opens and is torn down when its anchor row remounts — leaving the
+  // item never "visible". Re-issue the right-click (re-resolving the row
+  // locator each time, per the locators-over-handles rule) until the item is
+  // actually visible, then click it. Short per-attempt timeouts make a missed
+  // attempt fall through to a retry quickly; Playwright's click auto-waits for
+  // row stability, so the loop paces itself against the remount.
+  private async openContextMenuItem(entityId: number, itemId: string, action: string) {
+    const rowSelector = this.getItemSelectorById(entityId);
+    const itemSelector = `.contexify_item[itemid="${itemId}"]`;
+    const deadline = Date.now() + 8_000;
+    let lastError: unknown;
+    while (Date.now() < deadline) {
+      try {
+        await page.locator(rowSelector).first().click({ button: 'right', timeout: 2_000 });
+        await page.waitForSelector(itemSelector, { state: 'visible', timeout: 1_500 });
+        await page.click(itemSelector, { timeout: 1_500 });
+        return;
+      } catch (error) {
+        lastError = error;
+        // Menu didn't open or was torn down mid-flight; dismiss any partial
+        // menu so the next right-click opens a fresh one, then retry.
+        await page.keyboard.press('Escape').catch(() => {});
+      }
     }
+    throw new Error(
+      `Can't ${action} entity with id=${entityId}: context-menu item "${itemId}" not clickable (${
+        lastError instanceof Error ? lastError.message : String(lastError)
+      })`,
+    );
   }
 
   // Post-mutation sync point: wait for the new row to land in the DOM.
@@ -131,19 +152,8 @@ class HierarchyPageObject {
     await page.keyboard.type(value);
   }
 
-  // Locator-based right-click: re-resolves at action time so a re-render
-  // between calls doesn't strand us on a detached element.
-  private async rightClickItem(entityId: number, action: string) {
-    try {
-      await page.locator(this.getItemSelectorById(entityId)).first().click({ button: 'right' });
-    } catch (error: any) {
-      throw new Error(`Could not ${action} entity with id=${entityId}: ${error.message}`);
-    }
-  }
-
   async rename(entityId: number, newLabel: string) {
-    await this.rightClickItem(entityId, 'rename');
-    await this.clickContextMenuItem('rename', 'rename', entityId);
+    await this.openContextMenuItem(entityId, 'rename', 'rename');
 
     // Rename's Input is pre-filled; select-all so keystrokes replace, not append.
     await page.locator('input.Input').first().waitFor({ state: 'visible', timeout: 5_000 });
@@ -161,8 +171,7 @@ class HierarchyPageObject {
   }
 
   async addChild(entityId: number, label: string) {
-    await this.rightClickItem(entityId, `add child "${label}" to`);
-    await this.clickContextMenuItem('add-child', 'add child to', entityId);
+    await this.openContextMenuItem(entityId, 'add-child', 'add child to');
     await this.typeIntoTreeInput(label);
     await page.keyboard.press('Enter');
     await this.waitForLabel(label);
@@ -170,8 +179,7 @@ class HierarchyPageObject {
 
   async duplicate(entityId: number) {
     const beforeCount = await page.locator('.Hierarchy .Tree').count();
-    await this.rightClickItem(entityId, 'duplicate');
-    await this.clickContextMenuItem('duplicate', 'duplicate', entityId);
+    await this.openContextMenuItem(entityId, 'duplicate', 'duplicate');
     // Wait for the new subtree to render before returning.
     await page
       .waitForFunction(
@@ -183,8 +191,7 @@ class HierarchyPageObject {
   }
 
   async remove(entityId: number) {
-    await this.rightClickItem(entityId, 'delete');
-    await this.clickContextMenuItem('delete', 'delete', entityId);
+    await this.openContextMenuItem(entityId, 'delete', 'delete');
     await page
       .locator(this.getItemSelectorById(entityId))
       .waitFor({ state: 'detached', timeout: 5_000 })
