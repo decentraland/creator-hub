@@ -2,8 +2,11 @@ import type { Entity, IEngine, LastWriteWinElementSetComponentDefinition } from 
 import type { UI, UIVariable } from '@dcl/asset-packs';
 import { ComponentName } from '@dcl/asset-packs';
 
+import { assertIdentifier } from './validators';
+
 export function declareVariable(engine: IEngine) {
   return function declareVariable(uiRoot: Entity, variable: UIVariable): void {
+    assertIdentifier(variable.name, 'variable name');
     const UIComp = engine.getComponent(
       ComponentName.UI,
     ) as LastWriteWinElementSetComponentDefinition<UI>;

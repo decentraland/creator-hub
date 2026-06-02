@@ -38,22 +38,16 @@ function getChildrenOf(engine: IEngine, bag: ComponentBag): Map<Entity, Entity[]
   return out;
 }
 
+type VarDefs = Map<string, { type: string; defaultValue: string }>;
+
 type ResolvedContext = {
   bindingsByField: Map<string, string>;
-  varDefs: Map<string, { type: string; defaultValue: string }>;
+  varDefs: VarDefs;
 };
 
-function buildContext(bag: ComponentBag, root: Entity, entity: Entity): ResolvedContext {
-  const bindingsValue = bag.UIBindings?.getOrNull(entity);
-  const bindingsByField = new Map<string, string>();
-  if (bindingsValue?.value) {
-    for (const row of bindingsValue.value as Array<{ field: string; variable: string }>) {
-      bindingsByField.set(row.field, row.variable);
-    }
-  }
-
+function buildVarDefs(bag: ComponentBag, root: Entity): VarDefs {
   const marker = bag.UI.getOrNull(root);
-  const varDefs = new Map<string, { type: string; defaultValue: string }>();
+  const varDefs: VarDefs = new Map();
   if (marker?.variables) {
     for (const v of marker.variables as Array<{
       name: string;
@@ -63,7 +57,17 @@ function buildContext(bag: ComponentBag, root: Entity, entity: Entity): Resolved
       varDefs.set(v.name, { type: v.type, defaultValue: v.defaultValue });
     }
   }
+  return varDefs;
+}
 
+function buildContext(bag: ComponentBag, entity: Entity, varDefs: VarDefs): ResolvedContext {
+  const bindingsValue = bag.UIBindings?.getOrNull(entity);
+  const bindingsByField = new Map<string, string>();
+  if (bindingsValue?.value) {
+    for (const row of bindingsValue.value as Array<{ field: string; variable: string }>) {
+      bindingsByField.set(row.field, row.variable);
+    }
+  }
   return { bindingsByField, varDefs };
 }
 
@@ -77,12 +81,22 @@ function parseDefault(type: string, raw: string): unknown {
       return raw === 'true';
     case 'color': {
       // Stored as '#RRGGBB' or '#RRGGBBAA'; parse to Color4 { r, g, b, a } in [0..1].
+      // Each channel returns its fallback (0 for r/g/b, 1 for a) when the byte
+      // pair is not a valid 2-hex-digit sequence — prevents NaN flowing into
+      // PB float fields downstream.
       const hex = raw.startsWith('#') ? raw.slice(1) : raw;
-      const r = parseInt(hex.slice(0, 2), 16) / 255;
-      const g = parseInt(hex.slice(2, 4), 16) / 255;
-      const b = parseInt(hex.slice(4, 6), 16) / 255;
-      const a = hex.length === 8 ? parseInt(hex.slice(6, 8), 16) / 255 : 1;
-      return { r: r || 0, g: g || 0, b: b || 0, a };
+      if (hex.length !== 6 && hex.length !== 8) {
+        return { r: 0, g: 0, b: 0, a: 1 };
+      }
+      const parseChannel = (slice: string, fallback: number): number => {
+        const n = parseInt(slice, 16);
+        return Number.isFinite(n) ? n / 255 : fallback;
+      };
+      const r = parseChannel(hex.slice(0, 2), 0);
+      const g = parseChannel(hex.slice(2, 4), 0);
+      const b = parseChannel(hex.slice(4, 6), 0);
+      const a = hex.length === 8 ? parseChannel(hex.slice(6, 8), 1) : 1;
+      return { r, g, b, a };
     }
     case 'string-array':
       return raw.split('\n').filter(Boolean);
@@ -132,11 +146,12 @@ type NodeProps = {
   bag: ComponentBag;
   childrenIndex: Map<Entity, Entity[]>;
   visited: Set<Entity>;
+  varDefs: VarDefs;
   overrideDisplay?: 'none' | 'flex';
 };
 
 const Node = (props: NodeProps): ReactEcs.JSX.Element | null => {
-  const { entity, root, engine, bag, childrenIndex, visited, overrideDisplay } = props;
+  const { entity, root, engine, bag, childrenIndex, visited, varDefs, overrideDisplay } = props;
   if (visited.has(entity)) return null;
   visited.add(entity);
 
@@ -148,7 +163,7 @@ const Node = (props: NodeProps): ReactEcs.JSX.Element | null => {
   const input = bag.UiInput.getOrNull(entity);
   const dropdown = bag.UiDropdown.getOrNull(entity);
 
-  const ctx = buildContext(bag, root, entity);
+  const ctx = buildContext(bag, entity, varDefs);
 
   const uiTransform = overrideDisplay ? { ...transform, display: overrideDisplay } : transform;
 
@@ -162,6 +177,7 @@ const Node = (props: NodeProps): ReactEcs.JSX.Element | null => {
       bag={bag}
       childrenIndex={childrenIndex}
       visited={visited}
+      varDefs={varDefs}
     />
   ));
 
@@ -258,7 +274,8 @@ export const UINodeRenderer = (props: UINodeRendererProps): ReactEcs.JSX.Element
   const bag = getBag(props.engine);
   const marker = bag.UI.getOrNull(props.root);
   if (!marker) return null;
-  const rootCtx = buildContext(bag, props.root, props.root);
+  const varDefs = buildVarDefs(bag, props.root);
+  const rootCtx = buildContext(bag, props.root, varDefs);
   const resolvedVisible = resolveBoundValue(
     rootCtx,
     props.root,
@@ -277,6 +294,7 @@ export const UINodeRenderer = (props: UINodeRendererProps): ReactEcs.JSX.Element
       bag={bag}
       childrenIndex={childrenIndex}
       visited={visited}
+      varDefs={varDefs}
       overrideDisplay={overrideDisplay}
     />
   );

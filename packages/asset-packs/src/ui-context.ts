@@ -20,13 +20,20 @@ export function setUiContext(
   patchOrName: Record<string, unknown> | string,
   value?: unknown,
 ): void {
-  const current = uiContextValues.get(uiRoot) ?? {};
+  let current = uiContextValues.get(uiRoot);
+  if (!current) {
+    current = Object.create(null) as Record<string, unknown>;
+    uiContextValues.set(uiRoot, current);
+  }
   if (typeof patchOrName === 'string') {
     current[patchOrName] = value;
-  } else {
-    Object.assign(current, patchOrName);
+    return;
   }
-  uiContextValues.set(uiRoot, current);
+  for (const k in patchOrName) {
+    if (Object.prototype.hasOwnProperty.call(patchOrName, k)) {
+      current[k] = patchOrName[k];
+    }
+  }
 }
 
 /** Drop all pushed values for a UI. The renderer falls back to declared defaults / static field values. */

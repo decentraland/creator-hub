@@ -1,35 +1,8 @@
-import type {
-  Entity,
-  IEngine,
-  LastWriteWinElementSetComponentDefinition,
-  PBUiTransform,
-} from '@dcl/ecs';
-import { UiTransform as UiTransformEngine } from '@dcl/ecs';
+import type { Entity, IEngine, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
 import type { UI, UIBindings } from '@dcl/asset-packs';
 import { ComponentName } from '@dcl/asset-packs';
 
-function collectDescendants(engine: IEngine, root: Entity): Set<Entity> {
-  const UiTransform = engine.getComponent(
-    UiTransformEngine.componentName,
-  ) as LastWriteWinElementSetComponentDefinition<PBUiTransform>;
-  const childrenOf = new Map<Entity, Entity[]>();
-  for (const [entity, value] of engine.getEntitiesWith(UiTransform)) {
-    const parent = (value as unknown as { parent?: Entity }).parent;
-    if (parent === undefined) continue;
-    const list = childrenOf.get(parent) ?? [];
-    list.push(entity);
-    childrenOf.set(parent, list);
-  }
-  const out = new Set<Entity>();
-  const stack: Entity[] = [root];
-  while (stack.length) {
-    const e = stack.pop()!;
-    if (out.has(e)) continue;
-    out.add(e);
-    for (const c of childrenOf.get(e) ?? []) stack.push(c);
-  }
-  return out;
-}
+import { collectDescendants } from './tree-walk';
 
 export function deleteVariable(engine: IEngine) {
   return function deleteVariable(uiRoot: Entity, name: string): void {

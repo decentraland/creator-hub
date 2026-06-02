@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Entity, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
 import type { UI, UIVariable } from '@dcl/asset-packs';
 import { ComponentName, VariableType } from '@dcl/asset-packs';
@@ -38,13 +38,14 @@ const VariablesPanelComponent: React.FC = () => {
   const sdk = useSdk();
   const selectedRoot = useAppSelector(getSelectedRoot);
   const [tick, setTick] = useState(0);
-  const bumpTick = useCallback(() => setTick(t => t + 1), []);
-  const debouncedBump = useCallback(debounce(bumpTick, 10), [bumpTick]);
+  const debouncedBump = useCallback(
+    debounce(() => setTick(t => t + 1), 10),
+    [],
+  );
   useChange(debouncedBump, []);
 
   const marker = useMemo(() => {
     if (!sdk || selectedRoot === null) return null;
-    void tick;
     const UIComp = sdk.engine.getComponentOrNull(
       ComponentName.UI,
     ) as LastWriteWinElementSetComponentDefinition<UI> | null;
@@ -52,23 +53,19 @@ const VariablesPanelComponent: React.FC = () => {
     return UIComp.getOrNull(selectedRoot as Entity);
   }, [sdk, selectedRoot, tick]);
 
-  const nextVariableName = useCallback((existing: readonly UIVariable[]): string => {
-    const taken = new Set(existing.map(v => v.name));
-    let n = 1;
-    while (taken.has(`variable_${n}`)) n++;
-    return `variable_${n}`;
-  }, []);
-
   const addVariable = useCallback(() => {
     if (!sdk || selectedRoot === null || !marker) return;
+    const taken = new Set(marker.variables.map(v => v.name));
+    let n = 1;
+    while (taken.has(`variable_${n}`)) n++;
     const variable: UIVariable = {
-      name: nextVariableName(marker.variables),
+      name: `variable_${n}`,
       type: VariableType.STRING,
       defaultValue: '',
     };
     sdk.operations.declareVariable(selectedRoot as Entity, variable);
     void sdk.operations.dispatch();
-  }, [sdk, selectedRoot, marker, nextVariableName]);
+  }, [sdk, selectedRoot, marker]);
 
   const patchVariable = useCallback(
     (oldName: string, patch: Partial<UIVariable>) => {
@@ -163,10 +160,10 @@ const VariableRow: React.FC<VariableRowProps> = ({
 
   // Re-sync local fields when the underlying variable changes (e.g. external
   // rename, type change resetting default).
-  React.useEffect(() => {
+  useEffect(() => {
     setLocalName(variable.name);
   }, [variable.name]);
-  React.useEffect(() => {
+  useEffect(() => {
     setLocalDefault(variable.defaultValue);
   }, [variable.defaultValue]);
 

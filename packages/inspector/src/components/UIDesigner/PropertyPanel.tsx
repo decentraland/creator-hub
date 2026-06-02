@@ -93,8 +93,7 @@ const PropertyPanelComponent: React.FC = () => {
     if (!sdk || selected === null) return null;
     const bag = getComponentBag(sdk.engine);
     if (!bag.UiTransform || !bag.UiTransform.has(selected as Entity)) return null;
-    // `tick` participates so this re-runs when components are added/removed on the entity.
-    void tick;
+    // `tick` (in the dep array) re-runs this when components are added/removed on the entity.
     return classifyNode(bag, selected as Entity);
   }, [sdk, selected, tick]);
 
@@ -104,7 +103,6 @@ const PropertyPanelComponent: React.FC = () => {
   const isUIRoot = useMemo(() => {
     if (!sdk || selected === null) return false;
     const UI = sdk.engine.getComponentOrNull('asset-packs::UI');
-    void tick;
     return !!UI && UI.has(selected as Entity);
   }, [sdk, selected, tick]);
 
@@ -113,7 +111,6 @@ const PropertyPanelComponent: React.FC = () => {
   // change via the existing `tick` from `useChange + debouncedBump`.
   const bindingsByField = useMemo<Record<string, string>>(() => {
     if (!sdk || selected === null) return {};
-    void tick;
     const Bindings = sdk.engine.getComponentOrNull(
       ComponentName.UI_BINDINGS,
     ) as LastWriteWinElementSetComponentDefinition<UIBindings> | null;

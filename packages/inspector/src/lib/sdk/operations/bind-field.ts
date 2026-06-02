@@ -2,8 +2,12 @@ import type { Entity, IEngine, LastWriteWinElementSetComponentDefinition } from 
 import type { UIBindings } from '@dcl/asset-packs';
 import { ComponentName } from '@dcl/asset-packs';
 
+import { assertFieldPath, assertIdentifier } from './validators';
+
 export function bindField(engine: IEngine) {
   return function bindField(entity: Entity, field: string, variable: string): void {
+    assertFieldPath(field);
+    assertIdentifier(variable, 'variable name');
     const Bindings = engine.getComponent(
       ComponentName.UI_BINDINGS,
     ) as LastWriteWinElementSetComponentDefinition<UIBindings>;

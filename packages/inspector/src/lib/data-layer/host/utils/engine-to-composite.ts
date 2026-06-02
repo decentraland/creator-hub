@@ -9,6 +9,7 @@ import type {
 } from '@dcl/ecs';
 import { ComponentType, PutComponentOperation, getCompositeRootComponent, Name } from '@dcl/ecs';
 import { ReadWriteByteBuffer } from '@dcl/ecs/dist/serialization/ByteBuffer';
+import type { UI, UIBindings } from '@dcl/asset-packs';
 import type { FileSystemInterface } from '../../types';
 
 function componentToCompositeComponentData<T>(
@@ -244,9 +245,7 @@ export async function generateEntityNamesType(
   }
 }
 
-type CallbackSig = '(value: string) => void' | '(value: number) => void' | '() => void';
-
-const FIELD_TO_CALLBACK_SIG: Record<string, CallbackSig> = {
+const FIELD_TO_CALLBACK_SIG: Record<string, string> = {
   'core::UiInput.onChange': '(value: string) => void',
   'core::UiInput.onSubmit': '(value: string) => void',
   'core::UiDropdown.onChange': '(value: number) => void',
@@ -302,17 +301,11 @@ export async function generateUiContextsType(
       return out;
     };
 
-    type Marker = {
-      name: string;
-      variables: Array<{ name: string; type: string; defaultValue: string }>;
-    };
-    type BindingsValue = { value: Array<{ field: string; variable: string }> };
-
     const blocks: string[] = [];
     const usedTypeNames = new Set<string>();
 
     for (const [rootEntity, rawMarker] of engine.getEntitiesWith(UIComp)) {
-      const marker = rawMarker as Marker;
+      const marker = rawMarker as UI;
       if (!marker.name) continue;
       const typeBase = sanitizeIdentifier(marker.name);
       let typeName = typeBase;
@@ -327,8 +320,7 @@ export async function generateUiContextsType(
       const descSet = descendantsOf(rootEntity as unknown as number);
       const callbackFieldsByVar = new Map<string, Set<string>>();
       if (UIBindings) {
-        const UIBindingsLww =
-          UIBindings as LastWriteWinElementSetComponentDefinition<BindingsValue>;
+        const UIBindingsLww = UIBindings as LastWriteWinElementSetComponentDefinition<UIBindings>;
         for (const e of descSet) {
           const b = UIBindingsLww.getOrNull(e as unknown as Entity);
           if (!b) continue;
@@ -362,10 +354,16 @@ export async function generateUiContextsType(
                     .map(s => `(${s})`)
                     .join(' | ');
           }
-          callbackLines.push(`  ${v.name}: ${sig};`);
+          callbackLines.push(`  ${sanitizeIdentifier(v.name)}: ${sig};`);
         } else {
-          const ts = VAR_TYPE_TO_TS[v.type] ?? 'unknown';
-          contextLines.push(`  ${v.name}: ${ts};`);
+          const ts = VAR_TYPE_TO_TS[v.type];
+          if (ts === undefined) {
+            console.warn(
+              `generateUiContextsType: skipping variable ${JSON.stringify(v.name)} with unknown type ${JSON.stringify(v.type)}`,
+            );
+            continue;
+          }
+          contextLines.push(`  ${sanitizeIdentifier(v.name)}: ${ts};`);
         }
       }
 
