@@ -11,11 +11,6 @@ export default defineConfig({
     // can exceed 30s. A genuinely hung/broken test still fails at 60s.
     testTimeout: 60000,
     hookTimeout: 60000,
-    // Absorb slow-machine variance (stale reads, worker crashes) that only shows
-    // up on heavily-loaded CI runners and never reproduces locally. This is for
-    // environmental noise, not deterministic races — those are fixed in the test
-    // logic (see Hierarchy.openContextMenuItem).
-    retry: 2,
     setupFiles: ['./test/e2e/setup.ts'],
     setupFilesAfterEnv: ['./test/e2e/types.d.ts'],
     pool: 'forks', // use forks instead of threads for better isolation

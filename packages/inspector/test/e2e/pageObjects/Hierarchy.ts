@@ -64,11 +64,36 @@ class HierarchyPageObject {
     parent: number,
     positions: Positions = { x: 'inside', y: 'inside' },
   ) {
+    const sel = this.getItemSelectorById(entityId);
+    // Row's current position, to detect the move landing. Re-resolves the locator.
+    const prevTop = await page
+      .locator(sel)
+      .first()
+      .evaluate(el => el.getBoundingClientRect().top)
+      .catch(() => null);
+
     await dragAndDrop(
       this.getItemAreaSelectorById(entityId),
       this.getItemAreaSelectorById(parent),
       positions,
     );
+
+    // Wait for the drop to reflect in the tree (the dragged row relocates)
+    // before the caller reads the hierarchy, instead of asserting against an
+    // un-updated DOM. Works for reparent, move-to-root and reorder alike since
+    // they all move the row. Best-effort: a no-op drop just lets the wait lapse.
+    if (prevTop !== null) {
+      await page
+        .waitForFunction(
+          ({ s, top }) => {
+            const el = document.querySelector(s);
+            return !!el && Math.abs(el.getBoundingClientRect().top - top) > 1;
+          },
+          { s: sel, top: prevTop },
+          { timeout: 5_000 },
+        )
+        .catch(() => {});
+    }
   }
 
   async isAncestor(entityId: number, parent: number) {
@@ -107,26 +132,36 @@ class HierarchyPageObject {
   private async openContextMenuItem(entityId: number, itemId: string, action: string) {
     const rowSelector = this.getItemSelectorById(entityId);
     const itemSelector = `.contexify_item[itemid="${itemId}"]`;
-    const deadline = Date.now() + 8_000;
+
+    // Retry only the menu *open*. A `contextmenu` event can be swallowed by a
+    // remounting row, so re-issue the right-click (re-resolving the row locator)
+    // until the item appears. Escape between tries clears a half-open menu so
+    // the next right-click opens a fresh one.
+    const deadline = Date.now() + 10_000;
+    let opened = false;
     let lastError: unknown;
-    while (Date.now() < deadline) {
+    while (!opened && Date.now() < deadline) {
       try {
-        await page.locator(rowSelector).first().click({ button: 'right', timeout: 2_000 });
-        await page.waitForSelector(itemSelector, { state: 'visible', timeout: 1_500 });
-        await page.click(itemSelector, { timeout: 1_500 });
-        return;
+        await page.locator(rowSelector).first().click({ button: 'right', timeout: 3_000 });
+        await page.waitForSelector(itemSelector, { state: 'visible', timeout: 3_000 });
+        opened = true;
       } catch (error) {
         lastError = error;
-        // Menu didn't open or was torn down mid-flight; dismiss any partial
-        // menu so the next right-click opens a fresh one, then retry.
         await page.keyboard.press('Escape').catch(() => {});
       }
     }
-    throw new Error(
-      `Can't ${action} entity with id=${entityId}: context-menu item "${itemId}" not clickable (${
-        lastError instanceof Error ? lastError.message : String(lastError)
-      })`,
-    );
+    if (!opened) {
+      throw new Error(
+        `Can't ${action} entity with id=${entityId}: context menu for "${itemId}" did not open (${
+          lastError instanceof Error ? lastError.message : String(lastError)
+        })`,
+      );
+    }
+
+    // The menu is open and the item is present. Click it with a generous
+    // timeout: once the item is actionable, the click itself can still be slow
+    // under slowMo on a loaded CI runner — that's a reason to wait, not retry.
+    await page.click(itemSelector, { timeout: 10_000 });
   }
 
   // Post-mutation sync point: wait for the new row to land in the DOM.
