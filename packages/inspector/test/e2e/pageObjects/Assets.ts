@@ -28,7 +28,11 @@ class AssetsPageObject {
     // wait for renderer to load
     await sleep(32);
     if (await page.$('.Renderer.is-loading')) {
-      await page.waitForSelector('.Renderer.is-loading');
+      // Wait for the in-progress load to FINISH (indicator detaches), not to
+      // appear. The indicator can disappear between the check above and here,
+      // which made the default "wait for visible" hang until timeout — the
+      // deterministic cause of the `.Renderer.is-loading ... 30000ms` failures.
+      await page.waitForSelector('.Renderer.is-loading', { state: 'detached', timeout: 60_000 });
     }
     await page.waitForSelector('.Renderer.is-loaded', { timeout: 60_000 });
   }
