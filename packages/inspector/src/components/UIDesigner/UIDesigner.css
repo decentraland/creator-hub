@@ -1,0 +1,178 @@
+.ui-designer {
+  width: 100%;
+  height: 100%;
+}
+
+.ui-designer-roots {
+  height: 100%;
+  overflow: auto;
+}
+
+.ui-designer-canvas {
+  height: 100%;
+  overflow: auto;
+}
+
+.ui-designer-inspector {
+  height: 100%;
+  overflow: auto;
+}
+
+.ui-designer-palette {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ui-designer-palette-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  cursor: grab;
+  user-select: none;
+}
+
+.ui-designer-palette-card:active {
+  cursor: grabbing;
+}
+
+.ui-designer-palette-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Horizontal variant — when the palette lives in the bottom panel, cards
+   sit side-by-side in a strip with the icon stacked above the label. */
+.ui-designer-bottom-bar {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-start;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background-color: var(--tree-bg-color);
+}
+
+.ui-designer-bottom-bar .ui-designer-palette {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+  border-bottom: none;
+}
+
+.ui-designer-bottom-bar .ui-designer-palette-card {
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  width: 88px;
+  height: 76px;
+  background-color: rgba(255, 255, 255, 0.02);
+  transition: background-color 80ms linear, border-color 80ms linear;
+}
+
+.ui-designer-bottom-bar .ui-designer-palette-card:hover {
+  background-color: rgba(80, 200, 255, 0.08);
+  border-color: rgba(80, 200, 255, 0.4);
+}
+
+.ui-designer-bottom-bar .ui-designer-palette-icon {
+  font-size: 22px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.ui-designer-bottom-bar .ui-designer-palette-label {
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.ui-designer-left-rail,
+.ui-designer-right-rail {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* The shared <Box> wrapper inserts an extra <div class="content"> between
+   the rail and our flex children. Make it transparent to the flex layout
+   so palette/tree/properties partition the rail height correctly. */
+.ui-designer-left-rail > .content,
+.ui-designer-right-rail > .content {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+}
+
+.ui-designer-rail-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* The fixed (non-grow) sections — currently the UI Roots list — cap at a
+   third of the rail so a long list scrolls internally instead of eating the
+   Nodes section's space. */
+.ui-designer-rail-section:not(.ui-designer-rail-section-grow) {
+  flex: 0 1 auto;
+  max-height: 33%;
+  overflow-y: auto;
+}
+
+.ui-designer-rail-section-grow {
+  flex: 1 1 auto;
+  overflow: auto;
+}
+
+.ui-designer-rail-header {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 8px 12px 4px;
+}
+
+.ui-designer-right-rail-variables {
+  flex: 0 0 auto;
+  max-height: 35%;
+  overflow-y: auto;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ui-designer-right-rail-properties {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 0 16px;
+}
+
+.ui-designer-right-rail-properties::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ui-designer-right-rail-properties::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ui-designer-right-rail-properties::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+
+.ui-designer-right-rail-properties::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}

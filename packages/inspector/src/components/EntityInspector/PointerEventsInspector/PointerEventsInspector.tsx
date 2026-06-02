@@ -133,13 +133,13 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
           </Block>
           <Block label="Show feedback">
             <CheckboxField
-              checked={!!$.eventInfo?.showFeedback ?? DEFAULTS.eventInfo.showFeedback}
+              checked={!!$.eventInfo?.showFeedback}
               onChange={e => handleEventInfoChange({ showFeedback: !!e.target.checked }, idx)}
             />
           </Block>
           <Block label="Show highlight">
             <CheckboxField
-              checked={!!$.eventInfo?.showHighlight ?? DEFAULTS.eventInfo.showHighlight}
+              checked={!!$.eventInfo?.showHighlight}
               onChange={e => handleEventInfoChange({ showHighlight: !!e.target.checked }, idx)}
             />
           </Block>

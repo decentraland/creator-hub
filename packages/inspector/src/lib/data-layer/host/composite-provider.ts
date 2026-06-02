@@ -11,7 +11,11 @@ import type { InspectorPreferences } from '../../logic/preferences/types';
 import { buildNodesHierarchyIfNotExists } from './utils/migrations/build-nodes-hierarchy';
 import { removeLegacyEntityNodeComponents } from './utils/migrations/legacy-entity-node';
 import { DIRECTORY, withAssetDir } from './fs-utils';
-import { dumpEngineToComposite, generateEntityNamesType } from './utils/engine-to-composite';
+import {
+  dumpEngineToComposite,
+  generateEntityNamesType,
+  generateUiContextsType,
+} from './utils/engine-to-composite';
 import type { CompositeManager } from './utils/fs-composite-provider';
 import { createFsCompositeProvider } from './utils/fs-composite-provider';
 import { toSceneComponent } from './utils/component';
@@ -33,6 +37,7 @@ enum DirtyState {
 }
 
 export const ENTITY_NAMES_PATH = 'entity-names.ts';
+export const UI_CONTEXTS_PATH = 'ui-contexts.ts';
 
 export class CompositeProvider implements StateProvider {
   readonly name = 'composite';
@@ -233,6 +238,12 @@ export class CompositeProvider implements StateProvider {
         this.engine,
         withAssetDir(DIRECTORY.SCENE + '/' + ENTITY_NAMES_PATH),
         'EntityNames',
+        this.fs,
+      );
+
+      await generateUiContextsType(
+        this.engine,
+        withAssetDir(DIRECTORY.SCENE + '/' + UI_CONTEXTS_PATH),
         this.fs,
       );
 

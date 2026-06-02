@@ -243,3 +243,158 @@ export async function generateEntityNamesType(
     console.error(`Fail to generate entity names types: ${e}\n`);
   }
 }
+
+type CallbackSig = '(value: string) => void' | '(value: number) => void' | '() => void';
+
+const FIELD_TO_CALLBACK_SIG: Record<string, CallbackSig> = {
+  'core::UiInput.onChange': '(value: string) => void',
+  'core::UiInput.onSubmit': '(value: string) => void',
+  'core::UiDropdown.onChange': '(value: number) => void',
+  'asset-packs::UI.onMouseDown': '() => void',
+  'asset-packs::UI.onMouseUp': '() => void',
+};
+
+const VAR_TYPE_TO_TS: Record<string, string> = {
+  string: 'string',
+  number: 'number',
+  boolean: 'boolean',
+  color: '{ r: number; g: number; b: number; a?: number }',
+  'string-array': 'string[]',
+};
+
+function sanitizeIdentifier(raw: string): string {
+  const cleaned = raw.replace(/[^A-Za-z0-9_]/g, '_').replace(/^[0-9]/, '_$&');
+  return cleaned || '_';
+}
+
+let __UI_CONTEXTS_CACHE = '';
+
+export async function generateUiContextsType(
+  engine: IEngine,
+  outputPath: string,
+  fs: FileSystemInterface,
+): Promise<void> {
+  try {
+    const UIComp = engine.getComponentOrNull('asset-packs::UI');
+    if (!UIComp) return;
+    const UIBindings = engine.getComponentOrNull('asset-packs::UIBindings');
+    const UiTransform = engine.getComponentOrNull('core::UiTransform');
+    if (!UiTransform) return;
+
+    // Build children index for descendant walk.
+    const childrenOf = new Map<number, number[]>();
+    for (const [entity, value] of engine.getEntitiesWith(UiTransform)) {
+      const parent = (value as { parent?: number }).parent;
+      if (parent === undefined) continue;
+      const list = childrenOf.get(parent) ?? [];
+      list.push(entity as unknown as number);
+      childrenOf.set(parent, list);
+    }
+    const descendantsOf = (root: number): Set<number> => {
+      const out = new Set<number>();
+      const stack: number[] = [root];
+      while (stack.length) {
+        const e = stack.pop()!;
+        if (out.has(e)) continue;
+        out.add(e);
+        for (const c of childrenOf.get(e) ?? []) stack.push(c);
+      }
+      return out;
+    };
+
+    type Marker = {
+      name: string;
+      variables: Array<{ name: string; type: string; defaultValue: string }>;
+    };
+    type BindingsValue = { value: Array<{ field: string; variable: string }> };
+
+    const blocks: string[] = [];
+    const usedTypeNames = new Set<string>();
+
+    for (const [rootEntity, rawMarker] of engine.getEntitiesWith(UIComp)) {
+      const marker = rawMarker as Marker;
+      if (!marker.name) continue;
+      const typeBase = sanitizeIdentifier(marker.name);
+      let typeName = typeBase;
+      let suffix = 1;
+      while (usedTypeNames.has(typeName)) {
+        suffix += 1;
+        typeName = `${typeBase}_${suffix}`;
+      }
+      usedTypeNames.add(typeName);
+
+      // Walk descendants to find callback bindings for THIS root.
+      const descSet = descendantsOf(rootEntity as unknown as number);
+      const callbackFieldsByVar = new Map<string, Set<string>>();
+      if (UIBindings) {
+        const UIBindingsLww =
+          UIBindings as LastWriteWinElementSetComponentDefinition<BindingsValue>;
+        for (const e of descSet) {
+          const b = UIBindingsLww.getOrNull(e as unknown as Entity);
+          if (!b) continue;
+          for (const row of b.value) {
+            const fieldKey = row.field;
+            const set = callbackFieldsByVar.get(row.variable) ?? new Set<string>();
+            set.add(fieldKey);
+            callbackFieldsByVar.set(row.variable, set);
+          }
+        }
+      }
+
+      const contextLines: string[] = [];
+      const callbackLines: string[] = [];
+
+      for (const v of marker.variables) {
+        if (v.type === 'callback') {
+          const fields = callbackFieldsByVar.get(v.name);
+          let sig: string;
+          if (!fields || fields.size === 0) {
+            sig = '() => void';
+          } else {
+            const sigs = new Set<string>();
+            for (const f of fields) {
+              sigs.add(FIELD_TO_CALLBACK_SIG[f] ?? '() => void');
+            }
+            sig =
+              sigs.size === 1
+                ? sigs.values().next().value!
+                : Array.from(sigs)
+                    .map(s => `(${s})`)
+                    .join(' | ');
+          }
+          callbackLines.push(`  ${v.name}: ${sig};`);
+        } else {
+          const ts = VAR_TYPE_TO_TS[v.type] ?? 'unknown';
+          contextLines.push(`  ${v.name}: ${ts};`);
+        }
+      }
+
+      blocks.push(
+        `export interface ${typeName}Context {\n${
+          contextLines.join('\n') || '  // (no value variables)'
+        }\n}`,
+      );
+      blocks.push(
+        `export interface ${typeName}Callbacks {\n${
+          callbackLines.join('\n') || '  // (no callback variables)'
+        }\n}`,
+      );
+    }
+
+    const fileContent = `// Auto-generated UI context interfaces. Do not edit by hand.\n\n${blocks.join(
+      '\n\n',
+    )}\n`;
+
+    if (fileContent === __UI_CONTEXTS_CACHE) return;
+    __UI_CONTEXTS_CACHE = fileContent;
+
+    const fileExists = await fs.existFile(outputPath);
+    if (fileExists) {
+      const existing = (await fs.readFile(outputPath)).toString('utf-8');
+      if (existing === fileContent) return;
+    }
+    await fs.writeFile(outputPath, Buffer.from(fileContent, 'utf-8'));
+  } catch (e) {
+    console.error(`Fail to generate UI contexts type: ${e}\n`);
+  }
+}

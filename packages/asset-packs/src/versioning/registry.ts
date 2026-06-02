@@ -1,6 +1,7 @@
 import { Schemas } from '@dcl/ecs';
 import { AdminPermissions, MediaSource } from '../constants';
 import { TriggerType, TriggerConditionType, TriggerConditionOperation } from '../trigger-enums';
+import { VariableType } from '../enums';
 import { createComponentFramework, type VersionedComponents } from './framework';
 
 const COMPONENT_REGISTRY = {
@@ -193,6 +194,29 @@ const COMPONENT_REGISTRY = {
   'asset-packs::Placeholder': [
     {
       src: Schemas.String,
+    },
+  ],
+  'asset-packs::UI': [
+    {
+      name: Schemas.String,
+      visible: Schemas.Boolean,
+      variables: Schemas.Array(
+        Schemas.Map({
+          name: Schemas.String,
+          type: Schemas.EnumString<VariableType>(VariableType, VariableType.STRING),
+          defaultValue: Schemas.String,
+        }),
+      ),
+    },
+  ],
+  'asset-packs::UIBindings': [
+    {
+      value: Schemas.Array(
+        Schemas.Map({
+          field: Schemas.String,
+          variable: Schemas.String,
+        }),
+      ),
     },
   ],
 } as const;

@@ -1,0 +1,66 @@
+import type { Entity } from '@dcl/ecs';
+
+type UiCallback = (...args: unknown[]) => unknown;
+
+const uiContextValues = new Map<Entity, Record<string, unknown>>();
+const uiCallbacks = new Map<Entity, Map<string, UiCallback>>();
+
+/**
+ * Push values for variables declared on a UI's marker. Call from scene code
+ * to drive bound fields at runtime.
+ *
+ * @example
+ *   setUiContext(SceneUIs.MainHUD, { score: 10, playerName: 'Alice' });
+ *   setUiContext(SceneUIs.MainHUD, 'score', 11);
+ */
+export function setUiContext(uiRoot: Entity, patch: Record<string, unknown>): void;
+export function setUiContext(uiRoot: Entity, name: string, value: unknown): void;
+export function setUiContext(
+  uiRoot: Entity,
+  patchOrName: Record<string, unknown> | string,
+  value?: unknown,
+): void {
+  const current = uiContextValues.get(uiRoot) ?? {};
+  if (typeof patchOrName === 'string') {
+    current[patchOrName] = value;
+  } else {
+    Object.assign(current, patchOrName);
+  }
+  uiContextValues.set(uiRoot, current);
+}
+
+/** Drop all pushed values for a UI. The renderer falls back to declared defaults / static field values. */
+export function clearUiContext(uiRoot: Entity): void {
+  uiContextValues.delete(uiRoot);
+}
+
+/**
+ * Register a callback for a variable of type `callback` on a UI's marker.
+ *
+ * @example
+ *   setUiCallback(SceneUIs.MainHUD, 'onScoreClick', () => console.log('clicked'));
+ */
+export function setUiCallback(uiRoot: Entity, name: string, fn: UiCallback): void {
+  const map = uiCallbacks.get(uiRoot) ?? new Map<string, UiCallback>();
+  map.set(name, fn);
+  uiCallbacks.set(uiRoot, map);
+}
+
+/** Clear a single registered callback (e.g. on unmount). */
+export function clearUiCallback(uiRoot: Entity, name: string): void {
+  const map = uiCallbacks.get(uiRoot);
+  if (!map) return;
+  map.delete(name);
+}
+
+// --- Internal read accessors used by ui-renderer.tsx ---
+
+/** @internal */
+export function getUiContextValue(uiRoot: Entity, name: string): unknown {
+  return uiContextValues.get(uiRoot)?.[name];
+}
+
+/** @internal */
+export function getUiCallback(uiRoot: Entity, name: string): UiCallback | undefined {
+  return uiCallbacks.get(uiRoot)?.get(name);
+}

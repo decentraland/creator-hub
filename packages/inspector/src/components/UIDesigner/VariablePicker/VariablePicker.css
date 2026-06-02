@@ -1,0 +1,43 @@
+.ui-designer-variable-picker {
+  position: absolute;
+  top: 24px;
+  right: 0;
+  min-width: 200px;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--inspector-bg, #1a1a1a);
+  border: 1px solid var(--inspector-border, #2a2a2a);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  padding: 4px;
+  z-index: 100;
+}
+
+.ui-designer-variable-picker-empty {
+  padding: 8px;
+  color: var(--inspector-text-muted, #888);
+  font-style: italic;
+}
+
+.ui-designer-variable-picker-row,
+.ui-designer-variable-picker-add {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 6px 8px;
+  cursor: pointer;
+  color: inherit;
+}
+
+.ui-designer-variable-picker-row:hover,
+.ui-designer-variable-picker-add:hover {
+  background: var(--inspector-row-hover, #2a2a2a);
+}
+
+.ui-designer-variable-picker-add {
+  border-top: 1px solid var(--inspector-border, #2a2a2a);
+  margin-top: 4px;
+  font-style: italic;
+}

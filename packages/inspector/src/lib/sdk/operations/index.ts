@@ -18,7 +18,16 @@ import duplicateEntity from './duplicate-entity';
 import setGround from './set-ground';
 import lock from './lock';
 import hide from './hide';
+import addUINode from './add-ui-node';
 import createCustomAsset from './create-custom-asset';
+import createUIRoot from './create-ui-root';
+import reorderUISibling from './reorder-ui-sibling';
+import setUIParent from './set-ui-parent';
+import declareVariable from './declare-variable';
+import renameVariable from './rename-variable';
+import deleteVariable from './delete-variable';
+import bindField from './bind-field';
+import unbindField from './unbind-field';
 
 export interface Dispatch {
   dirty?: boolean;
@@ -33,11 +42,20 @@ export function createOperations(engine: IEngine) {
     setParent: setParent(engine),
     reorder: reorder(engine),
     addComponent: addComponent(engine),
+    addUINode: addUINode(engine),
     removeComponent: removeComponent(engine),
     updateSelectedEntity: updateSelectedEntity(engine),
     removeSelectedEntities: removeSelectedEntities(engine),
     duplicateEntity: duplicateEntity(engine),
     createCustomAsset: createCustomAsset(engine),
+    createUIRoot: createUIRoot(engine),
+    reorderUISibling: reorderUISibling(engine),
+    setUIParent: setUIParent(engine),
+    declareVariable: declareVariable(engine),
+    renameVariable: renameVariable(engine),
+    deleteVariable: deleteVariable(engine),
+    bindField: bindField(engine),
+    unbindField: unbindField(engine),
     dispatch: async ({ dirty = true }: Dispatch = {}) => {
       store.dispatch(updateCanSave({ dirty }));
       await engine.update(1);

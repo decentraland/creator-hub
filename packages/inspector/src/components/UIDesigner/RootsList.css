@@ -1,0 +1,14 @@
+.ui-designer-roots-list {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.ui-designer-roots-header {
+  padding: 8px;
+}
+
+.ui-designer-roots-tree {
+  flex: 1;
+  overflow: auto;
+}

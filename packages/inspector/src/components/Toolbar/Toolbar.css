@@ -62,3 +62,6 @@
   justify-content: flex-end;
   align-items: center;
 }
+
+/* (Mode switcher moved to its own component above the toolbar — see
+   `components/ModeSwitcher`. It used to live here as `.mode-switch`. */

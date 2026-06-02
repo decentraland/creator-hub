@@ -1,0 +1,29 @@
+.ui-designer-bindable-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+}
+
+.ui-designer-bindable-content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ui-designer-bindable-content:empty {
+  flex: 0 0 auto;
+}
+
+.ui-designer-bindable-link {
+  opacity: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0 4px;
+  transition: opacity 80ms ease-out;
+}
+
+.ui-designer-bindable-row:hover .ui-designer-bindable-link,
+.ui-designer-bindable-content:empty + .ui-designer-bindable-link {
+  opacity: 1;
+}

@@ -301,6 +301,8 @@ export function getComponents(engine: IEngine) {
     VideoControlState: getComponent<VideoControlState>(ComponentName.VIDEO_CONTROL_STATE, engine),
     Script: getComponent<Script>(ComponentName.SCRIPT, engine),
     Placeholder: getComponent<Placeholder>(ComponentName.PLACEHOLDER, engine),
+    UI: getComponent<UI>(ComponentName.UI, engine),
+    UIBindings: getComponent<UIBindings>(ComponentName.UI_BINDINGS, engine),
   };
 }
 
@@ -320,6 +322,8 @@ export function createComponents(engine: IEngine) {
     VideoScreen: components[BaseComponentNames.VIDEO_SCREEN],
     Script: components[BaseComponentNames.SCRIPT],
     Placeholder: components[BaseComponentNames.PLACEHOLDER],
+    UI: components[BaseComponentNames.UI],
+    UIBindings: components[BaseComponentNames.UI_BINDINGS],
   };
 }
 
@@ -488,3 +492,13 @@ export type Script = ReturnType<ScriptComponent['schema']['deserialize']>;
 
 export type PlaceholderComponent = Components['Placeholder'];
 export type Placeholder = ReturnType<PlaceholderComponent['schema']['deserialize']>;
+
+export type UIComponent = Components['UI'];
+export type UI = ReturnType<UIComponent['schema']['deserialize']>;
+export type UIVariable = UI['variables'][0];
+
+export type UIBindingsComponent = Components['UIBindings'];
+export type UIBindings = ReturnType<UIBindingsComponent['schema']['deserialize']>;
+export type UIBinding = UIBindings['value'][0];
+
+export { setUiContext, clearUiContext, setUiCallback, clearUiCallback } from './ui-context';

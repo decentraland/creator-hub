@@ -19,6 +19,8 @@ export const ComponentName = {
   VIDEO_CONTROL_STATE: getLatestVersionName(BaseComponentNames.VIDEO_CONTROL_STATE),
   SCRIPT: getLatestVersionName(BaseComponentNames.SCRIPT),
   PLACEHOLDER: getLatestVersionName(BaseComponentNames.PLACEHOLDER),
+  UI: getLatestVersionName(BaseComponentNames.UI),
+  UI_BINDINGS: getLatestVersionName(BaseComponentNames.UI_BINDINGS),
 } as const;
 
 export type ComponentName = (typeof ComponentName)[keyof typeof ComponentName];
@@ -181,6 +183,18 @@ export enum ProximityLayer {
   ALL = 'all',
   PLAYER = 'player',
   NON_PLAYER = 'non_player',
+}
+
+// Defined values used by the UI Designer's Variables panel — declared on the
+// `asset-packs::UI` marker as the type of each variable. Tags are the storage
+// form (lowercased, hyphenated for compound) used in the registry schema.
+export enum VariableType {
+  STRING = 'string',
+  NUMBER = 'number',
+  BOOLEAN = 'boolean',
+  COLOR = 'color',
+  STRING_ARRAY = 'string-array',
+  CALLBACK = 'callback',
 }
 
 // Re-export for backward compatibility
