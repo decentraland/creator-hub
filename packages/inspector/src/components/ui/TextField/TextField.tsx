@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import cx from 'classnames';
 
 import { debounce } from '../../../lib/utils/debounce';
@@ -42,13 +42,25 @@ const TextField = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
   const [inputValue, setInputValue] = useState(value);
   const [isHovered, setHovered] = useState(false);
   const [isFocused, setFocused] = useState(false);
+  const lastValueRef = useRef(value);
 
-  // Skip the prop→state sync while focused: a stale `value` arriving from an
-  // unrelated re-render (e.g. engine→input sync in `useComponentInput`) would
-  // otherwise overwrite the just-typed character mid-keystroke.
+  // Adopt the `value` prop into local state only when it changes from an
+  // EXTERNAL source, and never while focused.
+  //
+  // - Skipping while focused stops a stale `value` (e.g. the engine→input sync
+  //   in `useComponentInput`) from overwriting the just-typed character.
+  // - Syncing only on an external change (tracked via lastValueRef), rather
+  //   than whenever `inputValue !== value`, stops the field from reverting to
+  //   a stale prop on blur: after the user edits and blurs, `value` can still
+  //   hold the pre-edit value while the onChange→engine→props round-trip is in
+  //   flight. The old `inputValue !== value` check fired in that window and
+  //   clobbered the committed value — a visible flicker on slow machines, and
+  //   the cause of the e2e "rotation reads 0" flake on the CI runner.
   useEffect(() => {
+    const externalChange = value !== lastValueRef.current;
+    lastValueRef.current = value;
     if (isFocused) return;
-    if (inputValue !== value) {
+    if (externalChange && inputValue !== value) {
       setInputValue(value);
     }
   }, [value, isFocused]);
