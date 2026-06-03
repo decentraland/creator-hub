@@ -77,7 +77,7 @@ import { initTriggers, damageTargets, healTargets } from './triggers';
 import { followMap } from './transform';
 import { getEasingFunctionFromInterpolation } from './tweens';
 import { getRewardsServerUrl } from './admin-toolkit-ui/constants';
-import { initializeComponentIdsFromComposite } from './add-child';
+import { initializeComponentIdsFromComposite, stripComponents } from './add-child';
 import { createEntityMap } from './mapping';
 import { callScriptMethod } from '~sdk/script-utils';
 
@@ -1649,11 +1649,16 @@ export function createActionsSystem(
     }
 
     const doSpawn = (resource: Composite.Resource) => {
+      // Drop editor-only (inspector::) components the Inspector bakes into
+      // authored composites. They're registered nowhere in the scene runtime, so
+      // Composite.instance would throw "references undefined component" on them.
+      const composite = stripComponents(resource.composite);
+      const cleanResource = composite === resource.composite ? resource : { ...resource, composite };
       // Track composite-entity → live-entity pairs so we can drive the Action /
       // Trigger ID remap below without reading CompositeRootComponent (the SDK
       // no longer writes it for leaf composites).
       const entityMap = createEntityMap();
-      const spawnedRoot = Composite.instance(engine, resource, provider, {
+      const spawnedRoot = Composite.instance(engine, cleanResource, provider, {
         entityMapping: entityMap.toDirectMapping(engine),
       });
       // The old engine.addEntityFromComposite carried a `transform` shortcut;
@@ -1665,7 +1670,7 @@ export function createActionsSystem(
       // spawned subtree. Mirrors the inspector's add-asset ID pre-allocation
       // pass; without this, initActions/initTriggers would bind to '{self}'
       // string placeholders and triggers wouldn't fire.
-      initializeComponentIdsFromComposite(engine, resource.composite, entityMap);
+      initializeComponentIdsFromComposite(engine, cleanResource.composite, entityMap);
       initActions(spawnedRoot);
       initTriggers(spawnedRoot);
       const triggerEvents = getTriggerEvents(spawnedRoot);

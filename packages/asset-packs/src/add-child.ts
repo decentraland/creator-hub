@@ -212,6 +212,33 @@ export function substituteAssetPathInComposite(
   }
 }
 
+// Component name prefixes to strip before instancing a spawned composite. Today
+// this is editor-only metadata: the Inspector bakes `inspector::*` components
+// (Config, Selection, Nodes, Hide, Lock, …) into authored composites for its own
+// use. They carry no `jsonSchema`, are registered nowhere in the scene runtime,
+// and are meaningless once deployed — so `Composite.instance` throws on them
+// ("references undefined component"). Add further prefixes here if more need
+// stripping.
+const COMPONENTS_PREFIXES = ['inspector::'];
+
+/**
+ * Return a composite with every component whose name matches a
+ * `COMPONENTS_PREFIXES` entry removed.
+ *
+ * Pure: returns the same reference when there is nothing to strip (so callers can
+ * cheaply detect a no-op and avoid copying), otherwise a shallow copy with a
+ * filtered `components` array. Entities are untouched — only the stripped
+ * components attached to them are dropped, so entity mapping and ID remap are
+ * unaffected.
+ */
+export function stripComponents(composite: Composite.Definition): Composite.Definition {
+  const kept = composite.components.filter(
+    c => !COMPONENTS_PREFIXES.some(prefix => c.name.startsWith(prefix)),
+  );
+  if (kept.length === composite.components.length) return composite;
+  return { ...composite, components: kept };
+}
+
 // ─── ID allocation + Trigger reference remap (spawn-time) ───────────────────
 
 type IdMap = Map<string, number>;

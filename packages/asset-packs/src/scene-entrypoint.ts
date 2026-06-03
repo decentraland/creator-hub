@@ -6,9 +6,10 @@ import {
   getCompositeProvider,
   setCompositeProvider,
 } from '@dcl/ecs';
+import { polyfillTextEncoder } from '@dcl/sdk/text-codec';
 import { createReactBasedUiSystem } from '@dcl/react-ecs';
 import type { IPlayersHelper, ISDKHelpers } from './definitions';
-import { initComponents } from './definitions';
+import { createComponents, initComponents } from './definitions';
 import { createActionsSystem } from './actions';
 import { createTriggersSystem } from './triggers';
 import { createTimerSystem } from './timer';
@@ -17,8 +18,7 @@ import { createTransformSystem } from './transform';
 import { createInputActionSystem } from './input-actions';
 import { createCounterBarSystem } from './counter-bar';
 import { createAdminToolkitSystem } from './admin-toolkit';
-import { assetPackProvider, wrapWithAssetPathSubstitution } from './asset-pack-provider';
-import { composeProviders } from './compose-providers';
+import { wrapWithAssetPathSubstitution } from './asset-pack-provider';
 
 let initialized: boolean = false;
 // TODO: enforce via ESLint `no-restricted-imports` that the global `engine`
@@ -45,32 +45,44 @@ export function initAssetPacks(
     // get engine components
     const components = getEngineComponents(engine);
 
-    // Register the asset-pack provider. `setCompositeProvider` iterates
-    // `provider.schemas` and registers each component pre-seal, replacing the
-    // old `createComponents(engine)` side-effect.
+    // Register asset-pack component types pre-seal, the same way the Inspector
+    // does (`createComponents` → `engine.defineComponent`). Asset-packs hold the
+    // real `ISchema`s, so registering directly avoids the
+    // `ISchema → jsonSchema → ISchema` round-trip a `provider.schemas` array
+    // would force. The provider therefore ships no schemas; it exists only to
+    // resolve composites at spawn time.
+    createComponents(engine);
+
+    // Install the TextEncoder/TextDecoder polyfill the QuickJS scene runtime
+    // lacks. The SDK's `compositeProvider.loadComposite` — which SPAWN_ENTITY
+    // calls to load `composite.json` files at runtime — decodes the file bytes
+    // via `TextDecoder`. Sourced from the lean `@dcl/sdk/text-codec` subpath so we
+    // don't reach in via `@dcl/sdk/ethereum-provider`. Idempotent
+    // (`setGlobalPolyfill` only assigns when the global is absent, so it's a no-op
+    // in the browser inspector or when the codec is already present).
+    polyfillTextEncoder();
+
+    // Wrap the SDK composite provider so SPAWN_ENTITY can load SDK-served
+    // composites with their portable `{assetPath}` placeholders resolved. The SDK
+    // registers its provider at boot (`@dcl/sdk/src/index.ts` calls
+    // `setCompositeProvider` at module load), so `getCompositeProvider()` returns
+    // it here; wrapping + re-registering swaps in the `{assetPath}` substitution
+    // pass — the only composite-resolution behavior asset-packs adds.
     //
-    // If the SDK already registered its own provider at boot time (the usual
-    // case — `@dcl/sdk/src/index.ts` calls `setCompositeProvider` at module
-    // load), we compose with it so SPAWN_ENTITY can still load SDK-served
-    // composites. The SDK provider is wrapped with `{assetPath}` substitution
-    // so on-disk composites keep their portable placeholder convention.
-    //
-    // NOTE: this depends on module-load order. If asset-packs is imported
-    // before the SDK boot, `getCompositeProvider()` returns null and we install
-    // only the asset-pack provider; SDK composites become unavailable until
-    // the SDK registers its provider on top. In practice the auto-generated
-    // scene entrypoint imports `@dcl/sdk` first (which boots and sets its
-    // provider) before the user-land entrypoint runs `initAssetPacks`, so this
-    // path is the common one. Asserted at runtime by the `sdkProvider` check
-    // below; the fallback exists for completeness.
+    // NOTE: this depends on module-load order — if asset-packs initializes before
+    // the SDK boots, `getCompositeProvider()` is null. In practice the generated
+    // scene entrypoint boots the SDK first.
     const sdkProvider = getCompositeProvider();
     if (sdkProvider) {
-      setCompositeProvider(
-        engine,
-        composeProviders([wrapWithAssetPathSubstitution(sdkProvider), assetPackProvider]),
-      );
+      setCompositeProvider(engine, wrapWithAssetPathSubstitution(sdkProvider));
     } else {
-      setCompositeProvider(engine, assetPackProvider);
+      // The SDK provider is what actually resolves and decodes composites;
+      // without it SPAWN_ENTITY cannot work. An explicit error beats silently
+      // installing a no-op provider.
+      console.error(
+        '[asset-packs] No SDK composite provider registered; SPAWN_ENTITY cannot ' +
+          'resolve composites. Ensure @dcl/sdk boots before initAssetPacks.',
+      );
     }
 
     // create core systems
