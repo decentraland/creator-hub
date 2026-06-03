@@ -1653,7 +1653,8 @@ export function createActionsSystem(
       // authored composites. They're registered nowhere in the scene runtime, so
       // Composite.instance would throw "references undefined component" on them.
       const composite = stripComponents(resource.composite);
-      const cleanResource = composite === resource.composite ? resource : { ...resource, composite };
+      const cleanResource =
+        composite === resource.composite ? resource : { ...resource, composite };
       // Track composite-entity → live-entity pairs so we can drive the Action /
       // Trigger ID remap below without reading CompositeRootComponent (the SDK
       // no longer writes it for leaf composites).
