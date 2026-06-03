@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+import { describe, it, expect } from 'vitest';
 import { globSync } from 'glob';
 
 /**
@@ -53,9 +53,9 @@ describe('catalog composite component coverage', () => {
 
     expect(
       summary,
-      `Unknown component namespace(s) found in shipped composites. Either register ` +
-        `the component pre-seal (add it to VERSIONS_REGISTRY) or strip it at spawn ` +
-        `time (add its prefix to COMPONENTS_PREFIXES in add-child.ts):\n` +
+      'Unknown component namespace(s) found in shipped composites. Either register ' +
+        'the component pre-seal (add it to VERSIONS_REGISTRY) or strip it at spawn ' +
+        'time (add its prefix to COMPONENTS_PREFIXES in add-child.ts):\n' +
         summary.join('\n'),
     ).toEqual([]);
   });
