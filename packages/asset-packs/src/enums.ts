@@ -185,17 +185,9 @@ export enum ProximityLayer {
   NON_PLAYER = 'non_player',
 }
 
-// Defined values used by the UI Designer's Variables panel — declared on the
-// `asset-packs::UI` marker as the type of each variable. Tags are the storage
-// form (lowercased, hyphenated for compound) used in the registry schema.
-export enum VariableType {
-  STRING = 'string',
-  NUMBER = 'number',
-  BOOLEAN = 'boolean',
-  COLOR = 'color',
-  STRING_ARRAY = 'string-array',
-  CALLBACK = 'callback',
-}
+// Re-export from variable-enums (standalone module — see ./variable-enums.ts
+// for why it's not defined inline here).
+export { VariableType } from './variable-enums';
 
 // Re-export for backward compatibility
 export { AdminPermissions, MediaSource } from './constants';

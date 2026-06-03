@@ -85,8 +85,7 @@ const PropertyPanelComponent: React.FC = () => {
   const selectedRoot = useAppSelector(getSelectedRoot);
   // Bump on engine change to re-read component values without rebuilding the tree.
   const [tick, setTick] = useState(0);
-  const bumpTick = useCallback(() => setTick(t => t + 1), []);
-  const debouncedBump = useCallback(debounce(bumpTick, 10), [bumpTick]);
+  const debouncedBump = useMemo(() => debounce(() => setTick(t => t + 1), 10), []);
   useChange(debouncedBump, []);
 
   const type: UINodeType | null = useMemo(() => {

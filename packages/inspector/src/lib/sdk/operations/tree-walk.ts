@@ -1,10 +1,4 @@
-import type {
-  Entity,
-  IEngine,
-  LastWriteWinElementSetComponentDefinition,
-  PBUiTransform,
-} from '@dcl/ecs';
-import { UiTransform as UiTransformEngine } from '@dcl/ecs';
+import type { Entity, IEngine } from '@dcl/ecs';
 
 /**
  * Walk the `core::UiTransform` parent index and return every descendant of
@@ -18,9 +12,7 @@ import { UiTransform as UiTransformEngine } from '@dcl/ecs';
  * Future-work note in this spec's `plan.md`.
  */
 export function collectDescendants(engine: IEngine, root: Entity): Set<Entity> {
-  const UiTransform = engine.getComponent(
-    UiTransformEngine.componentName,
-  ) as LastWriteWinElementSetComponentDefinition<PBUiTransform>;
+  const UiTransform = engine.getComponent('core::UiTransform');
   const childrenOf = new Map<Entity, Entity[]>();
   for (const [entity, value] of engine.getEntitiesWith(UiTransform)) {
     const parent = (value as unknown as { parent?: Entity }).parent;

@@ -1,7 +1,7 @@
 import { Schemas } from '@dcl/ecs';
 import { AdminPermissions, MediaSource } from '../constants';
 import { TriggerType, TriggerConditionType, TriggerConditionOperation } from '../trigger-enums';
-import { VariableType } from '../enums';
+import { VariableType } from '../variable-enums';
 import { createComponentFramework, type VersionedComponents } from './framework';
 
 const COMPONENT_REGISTRY = {

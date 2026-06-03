@@ -39,11 +39,7 @@ function getChildrenOf(engine: IEngine, bag: ComponentBag): Map<Entity, Entity[]
 }
 
 type VarDefs = Map<string, { type: string; defaultValue: string }>;
-
-type ResolvedContext = {
-  bindingsByField: Map<string, string>;
-  varDefs: VarDefs;
-};
+type Bindings = Map<string, string>;
 
 function buildVarDefs(bag: ComponentBag, root: Entity): VarDefs {
   const marker = bag.UI.getOrNull(root);
@@ -60,15 +56,15 @@ function buildVarDefs(bag: ComponentBag, root: Entity): VarDefs {
   return varDefs;
 }
 
-function buildContext(bag: ComponentBag, entity: Entity, varDefs: VarDefs): ResolvedContext {
+function buildBindings(bag: ComponentBag, entity: Entity): Bindings {
+  const bindings: Bindings = new Map();
   const bindingsValue = bag.UIBindings?.getOrNull(entity);
-  const bindingsByField = new Map<string, string>();
   if (bindingsValue?.value) {
     for (const row of bindingsValue.value as Array<{ field: string; variable: string }>) {
-      bindingsByField.set(row.field, row.variable);
+      bindings.set(row.field, row.variable);
     }
   }
-  return { bindingsByField, varDefs };
+  return bindings;
 }
 
 function parseDefault(type: string, raw: string): unknown {
@@ -109,16 +105,17 @@ function parseDefault(type: string, raw: string): unknown {
 }
 
 function resolveBoundValue(
-  ctx: ResolvedContext,
+  bindings: Bindings,
+  varDefs: VarDefs,
   root: Entity,
   componentId: string,
   fieldPath: string,
   staticFallback: unknown,
 ): unknown {
   const key = `${componentId}.${fieldPath}`;
-  const varName = ctx.bindingsByField.get(key);
+  const varName = bindings.get(key);
   if (!varName) return staticFallback;
-  const def = ctx.varDefs.get(varName);
+  const def = varDefs.get(varName);
   if (!def) return staticFallback;
   const runtime = getUiContextValue(root, varName);
   if (runtime !== undefined) return runtime;
@@ -127,13 +124,13 @@ function resolveBoundValue(
 }
 
 function resolveBoundCallback(
-  ctx: ResolvedContext,
+  bindings: Bindings,
   root: Entity,
   componentId: string,
   eventName: string,
 ): ((...args: unknown[]) => unknown) | undefined {
   const key = `${componentId}.${eventName}`;
-  const varName = ctx.bindingsByField.get(key);
+  const varName = bindings.get(key);
   if (!varName) return undefined;
   return getUiCallback(root, varName);
 }
@@ -163,7 +160,7 @@ const Node = (props: NodeProps): ReactEcs.JSX.Element | null => {
   const input = bag.UiInput.getOrNull(entity);
   const dropdown = bag.UiDropdown.getOrNull(entity);
 
-  const ctx = buildContext(bag, entity, varDefs);
+  const bindings = buildBindings(bag, entity);
 
   const uiTransform = overrideDisplay ? { ...transform, display: overrideDisplay } : transform;
 
@@ -182,24 +179,38 @@ const Node = (props: NodeProps): ReactEcs.JSX.Element | null => {
   ));
 
   // Event listeners (apply to every JSX branch).
-  const onMouseDown = resolveBoundCallback(ctx, root, 'asset-packs::UI', 'onMouseDown') as
+  const onMouseDown = resolveBoundCallback(bindings, root, 'asset-packs::UI', 'onMouseDown') as
     | (() => void)
     | undefined;
-  const onMouseUp = resolveBoundCallback(ctx, root, 'asset-packs::UI', 'onMouseUp') as
+  const onMouseUp = resolveBoundCallback(bindings, root, 'asset-packs::UI', 'onMouseUp') as
     | (() => void)
     | undefined;
 
   if (input) {
     const resolvedInput = {
       ...input,
-      value: resolveBoundValue(ctx, root, 'core::UiInput', 'value', input.value),
-      placeholder: resolveBoundValue(ctx, root, 'core::UiInput', 'placeholder', input.placeholder),
-      disabled: resolveBoundValue(ctx, root, 'core::UiInput', 'disabled', input.disabled),
+      value: resolveBoundValue(bindings, varDefs, root, 'core::UiInput', 'value', input.value),
+      placeholder: resolveBoundValue(
+        bindings,
+        varDefs,
+        root,
+        'core::UiInput',
+        'placeholder',
+        input.placeholder,
+      ),
+      disabled: resolveBoundValue(
+        bindings,
+        varDefs,
+        root,
+        'core::UiInput',
+        'disabled',
+        input.disabled,
+      ),
     };
-    const onChange = resolveBoundCallback(ctx, root, 'core::UiInput', 'onChange') as
+    const onChange = resolveBoundCallback(bindings, root, 'core::UiInput', 'onChange') as
       | ((value: string) => void)
       | undefined;
-    const onSubmit = resolveBoundCallback(ctx, root, 'core::UiInput', 'onSubmit') as
+    const onSubmit = resolveBoundCallback(bindings, root, 'core::UiInput', 'onSubmit') as
       | ((value: string) => void)
       | undefined;
     return (
@@ -217,17 +228,32 @@ const Node = (props: NodeProps): ReactEcs.JSX.Element | null => {
   if (dropdown) {
     const resolvedDropdown = {
       ...dropdown,
-      options: resolveBoundValue(ctx, root, 'core::UiDropdown', 'options', dropdown.options),
+      options: resolveBoundValue(
+        bindings,
+        varDefs,
+        root,
+        'core::UiDropdown',
+        'options',
+        dropdown.options,
+      ),
       selectedIndex: resolveBoundValue(
-        ctx,
+        bindings,
+        varDefs,
         root,
         'core::UiDropdown',
         'selectedIndex',
         dropdown.selectedIndex,
       ),
-      disabled: resolveBoundValue(ctx, root, 'core::UiDropdown', 'disabled', dropdown.disabled),
+      disabled: resolveBoundValue(
+        bindings,
+        varDefs,
+        root,
+        'core::UiDropdown',
+        'disabled',
+        dropdown.disabled,
+      ),
     };
-    const onChange = resolveBoundCallback(ctx, root, 'core::UiDropdown', 'onChange') as
+    const onChange = resolveBoundCallback(bindings, root, 'core::UiDropdown', 'onChange') as
       | ((value: number) => void)
       | undefined;
     return (
@@ -246,9 +272,22 @@ const Node = (props: NodeProps): ReactEcs.JSX.Element | null => {
       <Label
         uiTransform={uiTransform}
         uiBackground={background ?? undefined}
-        value={resolveBoundValue(ctx, root, 'core::UiText', 'value', text.value) as string}
-        color={resolveBoundValue(ctx, root, 'core::UiText', 'color', text.color) as never}
-        fontSize={resolveBoundValue(ctx, root, 'core::UiText', 'fontSize', text.fontSize) as number}
+        value={
+          resolveBoundValue(bindings, varDefs, root, 'core::UiText', 'value', text.value) as string
+        }
+        color={
+          resolveBoundValue(bindings, varDefs, root, 'core::UiText', 'color', text.color) as never
+        }
+        fontSize={
+          resolveBoundValue(
+            bindings,
+            varDefs,
+            root,
+            'core::UiText',
+            'fontSize',
+            text.fontSize,
+          ) as number
+        }
         textAlign={text.textAlign}
         onMouseDown={onMouseDown}
         onMouseUp={onMouseUp}
@@ -275,9 +314,10 @@ export const UINodeRenderer = (props: UINodeRendererProps): ReactEcs.JSX.Element
   const marker = bag.UI.getOrNull(props.root);
   if (!marker) return null;
   const varDefs = buildVarDefs(bag, props.root);
-  const rootCtx = buildContext(bag, props.root, varDefs);
+  const rootBindings = buildBindings(bag, props.root);
   const resolvedVisible = resolveBoundValue(
-    rootCtx,
+    rootBindings,
+    varDefs,
     props.root,
     'asset-packs::UI',
     'visible',

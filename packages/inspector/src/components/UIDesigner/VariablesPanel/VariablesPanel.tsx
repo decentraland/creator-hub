@@ -38,10 +38,7 @@ const VariablesPanelComponent: React.FC = () => {
   const sdk = useSdk();
   const selectedRoot = useAppSelector(getSelectedRoot);
   const [tick, setTick] = useState(0);
-  const debouncedBump = useCallback(
-    debounce(() => setTick(t => t + 1), 10),
-    [],
-  );
+  const debouncedBump = useMemo(() => debounce(() => setTick(t => t + 1), 10), []);
   useChange(debouncedBump, []);
 
   const marker = useMemo(() => {
