@@ -1,7 +1,5 @@
 import { Schemas } from '@dcl/ecs';
 
-export const PARTICLE_SYSTEM_COMPONENT_ID = 1217;
-
 const FloatRangeSchema = Schemas.Map({
   start: Schemas.Float,
   end: Schemas.Float,
@@ -62,59 +60,56 @@ const BurstConfigurationSchema = Schemas.Map({
   values: Schemas.Array(BurstSchema),
 });
 
-export const ParticleSystemSchema = Object.assign(
-  Schemas.Map({
-    active: Schemas.Optional(Schemas.Boolean),
-    rate: Schemas.Optional(Schemas.Float),
-    maxParticles: Schemas.Optional(Schemas.Int),
-    lifetime: Schemas.Optional(Schemas.Float),
+export const ParticleSystemSchema = Schemas.Map({
+  active: Schemas.Optional(Schemas.Boolean),
+  rate: Schemas.Optional(Schemas.Float),
+  maxParticles: Schemas.Optional(Schemas.Int),
+  lifetime: Schemas.Optional(Schemas.Float),
 
-    gravity: Schemas.Optional(Schemas.Float),
-    additionalForce: Schemas.Optional(Schemas.Vector3),
+  gravity: Schemas.Optional(Schemas.Float),
+  additionalForce: Schemas.Optional(Schemas.Vector3),
 
-    initialSize: Schemas.Optional(FloatRangeSchema),
-    sizeOverTime: Schemas.Optional(FloatRangeSchema),
+  initialSize: Schemas.Optional(FloatRangeSchema),
+  sizeOverTime: Schemas.Optional(FloatRangeSchema),
 
-    initialRotation: Schemas.Optional(Schemas.Quaternion),
-    rotationOverTime: Schemas.Optional(Schemas.Quaternion),
-    faceTravelDirection: Schemas.Optional(Schemas.Boolean),
+  initialRotation: Schemas.Optional(Schemas.Quaternion),
+  rotationOverTime: Schemas.Optional(Schemas.Quaternion),
+  faceTravelDirection: Schemas.Optional(Schemas.Boolean),
 
-    initialColor: Schemas.Optional(ColorRangeSchema),
-    colorOverTime: Schemas.Optional(ColorRangeSchema),
+  initialColor: Schemas.Optional(ColorRangeSchema),
+  colorOverTime: Schemas.Optional(ColorRangeSchema),
 
-    initialVelocitySpeed: Schemas.Optional(FloatRangeSchema),
+  initialVelocitySpeed: Schemas.Optional(FloatRangeSchema),
 
-    texture: Schemas.Optional(TextureSchema),
-    blendMode: Schemas.Optional(Schemas.Int),
-    billboard: Schemas.Optional(Schemas.Boolean),
+  texture: Schemas.Optional(TextureSchema),
+  blendMode: Schemas.Optional(Schemas.Int),
+  billboard: Schemas.Optional(Schemas.Boolean),
 
-    spriteSheet: Schemas.Optional(
-      Schemas.Map({
-        tilesX: Schemas.Int,
-        tilesY: Schemas.Int,
-        framesPerSecond: Schemas.Optional(Schemas.Float),
-      }),
-    ),
+  spriteSheet: Schemas.Optional(
+    Schemas.Map({
+      tilesX: Schemas.Int,
+      tilesY: Schemas.Int,
+      framesPerSecond: Schemas.Optional(Schemas.Float),
+    }),
+  ),
 
-    shape: Schemas.Optional(ShapeSchema),
+  shape: Schemas.Optional(ShapeSchema),
 
-    loop: Schemas.Optional(Schemas.Boolean),
-    prewarm: Schemas.Optional(Schemas.Boolean),
-    simulationSpace: Schemas.Optional(Schemas.Int),
+  loop: Schemas.Optional(Schemas.Boolean),
+  prewarm: Schemas.Optional(Schemas.Boolean),
+  simulationSpace: Schemas.Optional(Schemas.Int),
 
-    limitVelocity: Schemas.Optional(
-      Schemas.Map({
-        speed: Schemas.Float,
-        dampen: Schemas.Optional(Schemas.Float),
-      }),
-    ),
+  limitVelocity: Schemas.Optional(
+    Schemas.Map({
+      speed: Schemas.Float,
+      dampen: Schemas.Optional(Schemas.Float),
+    }),
+  ),
 
-    playbackState: Schemas.Optional(Schemas.Int),
+  playbackState: Schemas.Optional(Schemas.Int),
 
-    bursts: Schemas.Optional(BurstConfigurationSchema),
-  }),
-  { COMPONENT_ID: PARTICLE_SYSTEM_COMPONENT_ID },
-);
+  bursts: Schemas.Optional(BurstConfigurationSchema),
+});
 
 export type ParticleSystemTexture = {
   src: string;

@@ -25,7 +25,7 @@ import {
 } from '../../ui';
 import { ColorField } from '../../ui/ColorField';
 import { ACCEPTED_FILE_TYPES } from '../../ui/FileUploadField/types';
-import { isModel, isTexture } from '../MaterialInspector/Texture/utils';
+import { isModel } from '../MaterialInspector/Texture/utils';
 import type { Props } from './types';
 import {
   ShapeType,
@@ -50,20 +50,30 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
     { validateInput: isValidInput },
   );
 
-  const burstsEntity = entities[0];
-  const [burstsComponentValue, setBurstsComponentValue] =
-    useComponentValue<ParticleSystemComponentType>(burstsEntity, ParticleSystem);
+  // Bursts are edited through a dedicated path because getInputProps (useMultiComponentInput)
+  // has no API to add/remove items from a dynamic array. The list is read from the first
+  // selected entity for display, but writes fan out to every selected entity and merge into
+  // each entity's freshest engine value. Merging into the live value (instead of a stale React
+  // snapshot) means a burst edit only ever touches the `bursts` field, so it can't clobber a
+  // concurrent scalar edit going through useMultiComponentInput, and it stays consistent with
+  // the scalar fields by applying to the whole multi-selection.
+  const [burstsComponentValue] = useComponentValue<ParticleSystemComponentType>(
+    entities[0],
+    ParticleSystem,
+  );
   const bursts = burstsComponentValue?.bursts?.values ?? [];
 
   const updateBursts = useCallback(
     (next: NonNullable<ParticleSystemComponentType['bursts']>['values']) => {
-      if (!burstsComponentValue) return;
-      setBurstsComponentValue({
-        ...burstsComponentValue,
-        bursts: next.length > 0 ? { values: next } : undefined,
-      });
+      const value = next.length > 0 ? { values: next } : undefined;
+      for (const entity of entities) {
+        const current = ParticleSystem.getOrNull(entity);
+        if (!current) continue;
+        sdk.operations.updateValue(ParticleSystem, entity, { ...current, bursts: value });
+      }
+      void sdk.operations.dispatch();
     },
-    [burstsComponentValue, setBurstsComponentValue],
+    [sdk, entities, ParticleSystem],
   );
 
   const handleAddBurst = useCallback(() => {
@@ -113,7 +123,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
 
   const handleTextureChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      const srcInput = (getInputProps as any)('texture.src');
+      const srcInput = getInputProps('texture.src');
       srcInput?.onChange?.(event);
     },
     [getInputProps],
@@ -121,7 +131,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
 
   const handleTextureDrop = useCallback(
     (src: string) => {
-      const srcInput = (getInputProps as any)('texture.src');
+      const srcInput = getInputProps('texture.src');
       srcInput?.onChange?.({
         target: { value: src },
       } as React.ChangeEvent<HTMLInputElement>);
@@ -150,7 +160,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
   const spriteSheetEnabled = getInputProps('spriteSheetEnabled', e => e.target.checked);
   const limitVelocityEnabled = getInputProps('limitVelocityEnabled', e => e.target.checked);
   const shapeType = getInputProps('shapeType');
-  const textureSrc = (getInputProps as any)('texture.src');
+  const textureSrc = getInputProps('texture.src');
   const currentShape = String(shapeType.value);
 
   return (
@@ -233,7 +243,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
           >
             <TextField
               type="number"
-              {...(getInputProps as any)('sphere.radius')}
+              {...getInputProps('sphere.radius')}
               autoSelect
             />
           </Block>
@@ -255,7 +265,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
                 min={0}
                 max={90}
                 step={1}
-                {...(getInputProps as any)('cone.angle')}
+                {...getInputProps('cone.angle')}
               />
             </Block>
             <Block
@@ -271,7 +281,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
             >
               <TextField
                 type="number"
-                {...(getInputProps as any)('cone.radius')}
+                {...getInputProps('cone.radius')}
                 autoSelect
               />
             </Block>
@@ -292,19 +302,19 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
             <TextField
               leftLabel="X"
               type="number"
-              {...(getInputProps as any)('box.x')}
+              {...getInputProps('box.x')}
               autoSelect
             />
             <TextField
               leftLabel="Y"
               type="number"
-              {...(getInputProps as any)('box.y')}
+              {...getInputProps('box.y')}
               autoSelect
             />
             <TextField
               leftLabel="Z"
               type="number"
-              {...(getInputProps as any)('box.z')}
+              {...getInputProps('box.z')}
               autoSelect
             />
           </Block>
@@ -532,19 +542,19 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
           <TextField
             leftLabel="X"
             type="number"
-            {...(getInputProps as any)('additionalForce.x')}
+            {...getInputProps('additionalForce.x')}
             autoSelect
           />
           <TextField
             leftLabel="Y"
             type="number"
-            {...(getInputProps as any)('additionalForce.y')}
+            {...getInputProps('additionalForce.y')}
             autoSelect
           />
           <TextField
             leftLabel="Z"
             type="number"
-            {...(getInputProps as any)('additionalForce.z')}
+            {...getInputProps('additionalForce.z')}
             autoSelect
           />
         </Block>
@@ -562,13 +572,13 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
           <TextField
             leftLabel="Min"
             type="number"
-            {...(getInputProps as any)('initialVelocitySpeed.start')}
+            {...getInputProps('initialVelocitySpeed.start')}
             autoSelect
           />
           <TextField
             leftLabel="Max"
             type="number"
-            {...(getInputProps as any)('initialVelocitySpeed.end')}
+            {...getInputProps('initialVelocitySpeed.end')}
             autoSelect
           />
         </Block>
@@ -623,7 +633,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
               >
                 <TextField
                   type="number"
-                  {...(getInputProps as any)('limitVelocity.speed')}
+                  {...getInputProps('limitVelocity.speed')}
                   autoSelect
                 />
               </Block>
@@ -642,7 +652,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
                   min={0}
                   max={1}
                   step={0.01}
-                  {...(getInputProps as any)('limitVelocity.dampen')}
+                  {...getInputProps('limitVelocity.dampen')}
                 />
               </Block>
             </>
@@ -676,13 +686,13 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
           <TextField
             leftLabel="Min"
             type="number"
-            {...(getInputProps as any)('initialSize.start')}
+            {...getInputProps('initialSize.start')}
             autoSelect
           />
           <TextField
             leftLabel="Max"
             type="number"
-            {...(getInputProps as any)('initialSize.end')}
+            {...getInputProps('initialSize.end')}
             autoSelect
           />
         </Block>
@@ -700,13 +710,13 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
           <TextField
             leftLabel="Min"
             type="number"
-            {...(getInputProps as any)('sizeOverTime.start')}
+            {...getInputProps('sizeOverTime.start')}
             autoSelect
           />
           <TextField
             leftLabel="Max"
             type="number"
-            {...(getInputProps as any)('sizeOverTime.end')}
+            {...getInputProps('sizeOverTime.end')}
             autoSelect
           />
         </Block>
@@ -725,47 +735,47 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
         }
       >
         <Block label="Initial Color Start">
-          <ColorField {...(getInputProps as any)('initialColor.startColor')} />
+          <ColorField {...getInputProps('initialColor.startColor')} />
         </Block>
         <Block label="Alpha">
           <RangeField
             min={0}
             max={1}
             step={0.01}
-            {...(getInputProps as any)('initialColor.startAlpha')}
+            {...getInputProps('initialColor.startAlpha')}
           />
         </Block>
         <Block label="Initial Color End">
-          <ColorField {...(getInputProps as any)('initialColor.endColor')} />
+          <ColorField {...getInputProps('initialColor.endColor')} />
         </Block>
         <Block label="Alpha">
           <RangeField
             min={0}
             max={1}
             step={0.01}
-            {...(getInputProps as any)('initialColor.endAlpha')}
+            {...getInputProps('initialColor.endAlpha')}
           />
         </Block>
         <Block label="Final Color Start">
-          <ColorField {...(getInputProps as any)('colorOverTime.startColor')} />
+          <ColorField {...getInputProps('colorOverTime.startColor')} />
         </Block>
         <Block label="Alpha">
           <RangeField
             min={0}
             max={1}
             step={0.01}
-            {...(getInputProps as any)('colorOverTime.startAlpha')}
+            {...getInputProps('colorOverTime.startAlpha')}
           />
         </Block>
         <Block label="Final Color End">
-          <ColorField {...(getInputProps as any)('colorOverTime.endColor')} />
+          <ColorField {...getInputProps('colorOverTime.endColor')} />
         </Block>
         <Block label="Alpha">
           <RangeField
             min={0}
             max={1}
             step={0.01}
-            {...(getInputProps as any)('colorOverTime.endAlpha')}
+            {...getInputProps('colorOverTime.endAlpha')}
           />
         </Block>
       </Container>
@@ -889,21 +899,21 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
             <Block label="Tiles X">
               <TextField
                 type="number"
-                {...(getInputProps as any)('spriteSheet.tilesX')}
+                {...getInputProps('spriteSheet.tilesX')}
                 autoSelect
               />
             </Block>
             <Block label="Tiles Y">
               <TextField
                 type="number"
-                {...(getInputProps as any)('spriteSheet.tilesY')}
+                {...getInputProps('spriteSheet.tilesY')}
                 autoSelect
               />
             </Block>
             <Block label="Frames Per Second">
               <TextField
                 type="number"
-                {...(getInputProps as any)('spriteSheet.framesPerSecond')}
+                {...getInputProps('spriteSheet.framesPerSecond')}
                 autoSelect
               />
             </Block>
