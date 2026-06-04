@@ -1,7 +1,4 @@
 {
-  "permissions": {
-    "allow": ["Bash(xargs cat)", "Bash(make typecheck *)"]
-  },
   "hooks": {
     "PostToolUse": [
       {
