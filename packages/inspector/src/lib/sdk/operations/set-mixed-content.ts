@@ -1,8 +1,9 @@
-import type { Entity, IEngine, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
-import type { UIBindings, UISegment } from '@dcl/asset-packs';
-import { ComponentName, SegmentKind } from '@dcl/asset-packs';
+import type { Entity, IEngine } from '@dcl/ecs';
+import type { UISegment } from '@dcl/asset-packs';
+import { SegmentKind } from '@dcl/asset-packs';
 
 import { assertFieldPath, assertIdentifier } from './validators';
+import { getBindingsRows, writeBindingsRows } from './ui-bindings-store';
 
 export function setMixedContent(engine: IEngine) {
   return function setMixedContent(entity: Entity, field: string, segments: UISegment[]): void {
@@ -12,15 +13,9 @@ export function setMixedContent(engine: IEngine) {
         assertIdentifier(seg.value, 'variable name');
       }
     }
-    const Bindings = engine.getComponent(
-      ComponentName.UI_BINDINGS,
-    ) as LastWriteWinElementSetComponentDefinition<UIBindings>;
-    const current = Bindings.getOrNull(entity);
-    const rows = current?.value ?? [];
+    const rows = getBindingsRows(engine, entity);
     const without = rows.filter(b => b.field !== field);
-    Bindings.createOrReplace(entity, {
-      value: [...without, { field, variable: '', segments }] as UIBindings['value'],
-    });
+    writeBindingsRows(engine, entity, [...without, { field, variable: '', segments }]);
   };
 }
 

@@ -1,8 +1,13 @@
 import type { Entity, IEngine, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
-import type { UI, UIBindings } from '@dcl/asset-packs';
+import type { UI } from '@dcl/asset-packs';
 import { ComponentName, SegmentKind } from '@dcl/asset-packs';
 
 import { collectDescendants } from './tree-walk';
+import {
+  getBindingsComponentOrNull,
+  getBindingsRows,
+  writeBindingsRows,
+} from './ui-bindings-store';
 
 export function deleteVariable(engine: IEngine) {
   return function deleteVariable(uiRoot: Entity, name: string): void {
@@ -16,16 +21,13 @@ export function deleteVariable(engine: IEngine) {
       variables: current.variables.filter(v => v.name !== name),
     });
 
-    const Bindings = engine.getComponentOrNull(
-      ComponentName.UI_BINDINGS,
-    ) as LastWriteWinElementSetComponentDefinition<UIBindings> | null;
-    if (!Bindings) return;
+    if (!getBindingsComponentOrNull(engine)) return;
     for (const desc of collectDescendants(engine, uiRoot)) {
       if (desc === uiRoot) continue;
-      const bindings = Bindings.getOrNull(desc);
-      if (!bindings) continue;
+      const rows = getBindingsRows(engine, desc);
+      if (rows.length === 0) continue;
       let changed = false;
-      const next = bindings.value
+      const next = rows
         .map(b => {
           if (b.variable === name && !b.segments?.length) {
             changed = true;
@@ -43,7 +45,7 @@ export function deleteVariable(engine: IEngine) {
           return b;
         })
         .filter((b): b is NonNullable<typeof b> => b !== null);
-      if (changed) Bindings.createOrReplace(desc, { value: next as UIBindings['value'] });
+      if (changed) writeBindingsRows(engine, desc, next);
     }
   };
 }

@@ -153,6 +153,18 @@ export const MixedContentField: React.FC<MixedContentFieldProps> = ({
     document.execCommand('insertText', false, text);
   }, []);
 
+  // Drag-and-drop can insert rich HTML (foreign elements carrying a
+  // data-variable the user never picked). The chip editor has no drop gesture,
+  // so reject both dragover and drop outright — pairs with onPaste as the
+  // contentEditable trust boundary. See security-review.md Medium #1.
+  const onDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+  }, []);
+
+  const onDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+  }, []);
+
   const onKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       // Single-line field: prevent <br>/<div> insertion.
@@ -177,6 +189,8 @@ export const MixedContentField: React.FC<MixedContentFieldProps> = ({
         onMouseUp={saveSelection}
         onMouseDown={onEditorMouseDown}
         onPaste={onPaste}
+        onDrop={onDrop}
+        onDragOver={onDragOver}
         onKeyDown={onKeyDown}
       />
       <button

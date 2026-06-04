@@ -33,6 +33,15 @@ describe('serializeNodes', () => {
       { kind: SegmentKind.LITERAL, value: 'b' },
     ]);
   });
+  it('does not mint a binding for a data-variable that fails the identifier grammar', () => {
+    // A foreign element (paste/drop) can carry an attacker-chosen data-variable.
+    // It must be rejected at the read boundary rather than minted as a binding.
+    const root = editorWith('a', chip('not a valid id; alert(1)'), 'b');
+    expect(serializeNodes(root)).toEqual([
+      { kind: SegmentKind.LITERAL, value: 'a' },
+      { kind: SegmentKind.LITERAL, value: 'b' },
+    ]);
+  });
 });
 
 describe('normalizeSegments', () => {

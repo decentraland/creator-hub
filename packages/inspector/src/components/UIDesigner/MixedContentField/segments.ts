@@ -1,11 +1,13 @@
 import { SegmentKind } from '@dcl/asset-packs';
 import type { UISegment } from '@dcl/asset-packs';
 
+import { isValidIdentifier } from '../../../lib/sdk/operations/validators';
+
 // Pure helpers for the mixed-content inline editor. Extracted from the
 // contentEditable component so serialize / normalize / routing can be
 // unit-tested without driving the DOM; the component stays a thin wiring layer.
 
-export type StoragePlan =
+type StoragePlan =
   | { mode: 'literal'; text: string }
   | { mode: 'single-bind'; variable: string }
   | { mode: 'mixed'; segments: UISegment[] };
@@ -20,7 +22,14 @@ export function serializeNodes(root: HTMLElement): UISegment[] {
       out.push({ kind: SegmentKind.LITERAL, value: node.textContent ?? '' });
     } else if (node.nodeType === Node.ELEMENT_NODE) {
       const variable = (node as HTMLElement).dataset?.variable;
-      if (variable) out.push({ kind: SegmentKind.BINDING, value: variable });
+      // Treat data-variable as untrusted: a foreign element (paste/drop/IME)
+      // can carry an attacker-chosen value. Only accept it as a binding if it
+      // matches the same identifier grammar the SDK enforces at commit time.
+      // Reuses isValidIdentifier so read-time and write-time checks can't drift.
+      // See docs/specs/ui-designer-mixed-content/security-review.md Medium #1.
+      if (variable && isValidIdentifier(variable)) {
+        out.push({ kind: SegmentKind.BINDING, value: variable });
+      }
     }
   });
   return out;

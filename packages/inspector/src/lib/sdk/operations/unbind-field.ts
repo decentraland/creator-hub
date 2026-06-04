@@ -1,18 +1,20 @@
-import type { Entity, IEngine, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
-import type { UIBindings } from '@dcl/asset-packs';
-import { ComponentName } from '@dcl/asset-packs';
+import type { Entity, IEngine } from '@dcl/ecs';
+
+import {
+  getBindingsComponentOrNull,
+  getBindingsRows,
+  writeBindingsRows,
+} from './ui-bindings-store';
 
 export function unbindField(engine: IEngine) {
   return function unbindField(entity: Entity, field: string): void {
-    const Bindings = engine.getComponentOrNull(
-      ComponentName.UI_BINDINGS,
-    ) as LastWriteWinElementSetComponentDefinition<UIBindings> | null;
-    if (!Bindings) return;
-    const current = Bindings.getOrNull(entity);
-    if (!current) return;
-    Bindings.createOrReplace(entity, {
-      value: current.value.filter(b => b.field !== field) as UIBindings['value'],
-    });
+    if (!getBindingsComponentOrNull(engine)) return;
+    const rows = getBindingsRows(engine, entity);
+    writeBindingsRows(
+      engine,
+      entity,
+      rows.filter(b => b.field !== field),
+    );
   };
 }
 

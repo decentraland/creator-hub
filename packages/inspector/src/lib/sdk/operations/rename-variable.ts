@@ -1,9 +1,14 @@
 import type { Entity, IEngine, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
-import type { UI, UIBindings } from '@dcl/asset-packs';
+import type { UI } from '@dcl/asset-packs';
 import { ComponentName, SegmentKind } from '@dcl/asset-packs';
 
 import { collectDescendants } from './tree-walk';
 import { assertIdentifier } from './validators';
+import {
+  getBindingsComponentOrNull,
+  getBindingsRows,
+  writeBindingsRows,
+} from './ui-bindings-store';
 
 export function renameVariable(engine: IEngine) {
   return function renameVariable(uiRoot: Entity, oldName: string, newName: string): void {
@@ -21,16 +26,15 @@ export function renameVariable(engine: IEngine) {
       variables: current.variables.map(v => (v.name === oldName ? { ...v, name: newName } : v)),
     });
 
-    const Bindings = engine.getComponentOrNull(
-      ComponentName.UI_BINDINGS,
-    ) as LastWriteWinElementSetComponentDefinition<UIBindings> | null;
-    if (!Bindings) return;
+    if (!getBindingsComponentOrNull(engine)) return;
     for (const desc of collectDescendants(engine, uiRoot)) {
       if (desc === uiRoot) continue;
-      const bindings = Bindings.getOrNull(desc);
-      if (!bindings) continue;
-      Bindings.createOrReplace(desc, {
-        value: bindings.value.map(b => ({
+      const rows = getBindingsRows(engine, desc);
+      if (rows.length === 0) continue;
+      writeBindingsRows(
+        engine,
+        desc,
+        rows.map(b => ({
           ...b,
           variable: b.variable === oldName ? newName : b.variable,
           ...(b.segments
@@ -42,8 +46,8 @@ export function renameVariable(engine: IEngine) {
                 ),
               }
             : {}),
-        })) as UIBindings['value'],
-      });
+        })),
+      );
     }
   };
 }
