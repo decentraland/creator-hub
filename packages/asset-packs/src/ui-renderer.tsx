@@ -3,6 +3,7 @@ import type { IEngine, Entity } from '@dcl/ecs';
 
 import { ComponentName } from './enums';
 import { getUiContextValue, getUiCallback } from './ui-context';
+import { coerceToString } from './coerce';
 
 interface ComponentBag {
   UI: any;
@@ -40,6 +41,8 @@ function getChildrenOf(engine: IEngine, bag: ComponentBag): Map<Entity, Entity[]
 
 type VarDefs = Map<string, { type: string; defaultValue: string }>;
 type Bindings = Map<string, string>;
+type Segment = { kind: string; value: string };
+type MixedContent = Map<string, Segment[]>;
 
 function buildVarDefs(bag: ComponentBag, root: Entity): VarDefs {
   const marker = bag.UI.getOrNull(root);
@@ -56,15 +59,27 @@ function buildVarDefs(bag: ComponentBag, root: Entity): VarDefs {
   return varDefs;
 }
 
-function buildBindings(bag: ComponentBag, entity: Entity): Bindings {
-  const bindings: Bindings = new Map();
+function buildBindingMaps(
+  bag: ComponentBag,
+  entity: Entity,
+): { single: Bindings; mixed: MixedContent } {
+  const single: Bindings = new Map();
+  const mixed: MixedContent = new Map();
   const bindingsValue = bag.UIBindings?.getOrNull(entity);
   if (bindingsValue?.value) {
-    for (const row of bindingsValue.value as Array<{ field: string; variable: string }>) {
-      bindings.set(row.field, row.variable);
+    for (const row of bindingsValue.value as Array<{
+      field: string;
+      variable: string;
+      segments?: Segment[];
+    }>) {
+      if (row.segments && row.segments.length > 0) {
+        mixed.set(row.field, row.segments);
+      } else if (row.variable) {
+        single.set(row.field, row.variable);
+      }
     }
   }
-  return bindings;
+  return { single, mixed };
 }
 
 function parseDefault(type: string, raw: string): unknown {
@@ -135,6 +150,56 @@ function resolveBoundCallback(
   return getUiCallback(root, varName);
 }
 
+// Concatenate a field's mixed-content segments into a single string. Literal
+// segments contribute their text verbatim; binding segments resolve their
+// variable (runtime value -> declared default -> '') and coerce it to a string.
+// Returns undefined when the field has no mixed-content entry, so callers fall
+// through to the single-bind / static resolution path.
+function resolveMixedField(
+  mixedContent: MixedContent,
+  varDefs: VarDefs,
+  root: Entity,
+  componentId: string,
+  fieldPath: string,
+): string | undefined {
+  const key = `${componentId}.${fieldPath}`;
+  const segments = mixedContent.get(key);
+  if (!segments) return undefined;
+  let out = '';
+  for (const seg of segments) {
+    if (seg.kind === 'binding') {
+      const def = varDefs.get(seg.value);
+      let resolved: unknown = getUiContextValue(root, seg.value);
+      if (resolved === undefined && def && def.defaultValue !== '') {
+        resolved = parseDefault(def.type, def.defaultValue);
+      }
+      out += coerceToString(resolved);
+    } else {
+      out += seg.value;
+    }
+  }
+  return out;
+}
+
+// Resolve a renderable string field with the full precedence chain:
+//   mixed-content segments > single-variable binding > static value,
+// always coerced to a string so non-string variables embed correctly.
+function resolveTextField(
+  mixedContent: MixedContent,
+  bindings: Bindings,
+  varDefs: VarDefs,
+  root: Entity,
+  componentId: string,
+  fieldPath: string,
+  staticFallback: string,
+): string {
+  const mixed = resolveMixedField(mixedContent, varDefs, root, componentId, fieldPath);
+  if (mixed !== undefined) return mixed;
+  return coerceToString(
+    resolveBoundValue(bindings, varDefs, root, componentId, fieldPath, staticFallback),
+  );
+}
+
 type NodeProps = {
   key?: string;
   entity: Entity;
@@ -160,7 +225,7 @@ const Node = (props: NodeProps): ReactEcs.JSX.Element | null => {
   const input = bag.UiInput.getOrNull(entity);
   const dropdown = bag.UiDropdown.getOrNull(entity);
 
-  const bindings = buildBindings(bag, entity);
+  const { single: bindings, mixed: mixedContent } = buildBindingMaps(bag, entity);
 
   const uiTransform = overrideDisplay ? { ...transform, display: overrideDisplay } : transform;
 
@@ -189,8 +254,17 @@ const Node = (props: NodeProps): ReactEcs.JSX.Element | null => {
   if (input) {
     const resolvedInput = {
       ...input,
-      value: resolveBoundValue(bindings, varDefs, root, 'core::UiInput', 'value', input.value),
-      placeholder: resolveBoundValue(
+      value: resolveTextField(
+        mixedContent,
+        bindings,
+        varDefs,
+        root,
+        'core::UiInput',
+        'value',
+        input.value,
+      ),
+      placeholder: resolveTextField(
+        mixedContent,
         bindings,
         varDefs,
         root,
@@ -272,9 +346,15 @@ const Node = (props: NodeProps): ReactEcs.JSX.Element | null => {
       <Label
         uiTransform={uiTransform}
         uiBackground={background ?? undefined}
-        value={
-          resolveBoundValue(bindings, varDefs, root, 'core::UiText', 'value', text.value) as string
-        }
+        value={resolveTextField(
+          mixedContent,
+          bindings,
+          varDefs,
+          root,
+          'core::UiText',
+          'value',
+          text.value,
+        )}
         color={
           resolveBoundValue(bindings, varDefs, root, 'core::UiText', 'color', text.color) as never
         }
@@ -314,7 +394,7 @@ export const UINodeRenderer = (props: UINodeRendererProps): ReactEcs.JSX.Element
   const marker = bag.UI.getOrNull(props.root);
   if (!marker) return null;
   const varDefs = buildVarDefs(bag, props.root);
-  const rootBindings = buildBindings(bag, props.root);
+  const { single: rootBindings } = buildBindingMaps(bag, props.root);
   const resolvedVisible = resolveBoundValue(
     rootBindings,
     varDefs,

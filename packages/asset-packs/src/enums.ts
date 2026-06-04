@@ -189,5 +189,8 @@ export enum ProximityLayer {
 // for why it's not defined inline here).
 export { VariableType } from './variable-enums';
 
+// Re-export from segment-enums (standalone module — see ./segment-enums.ts).
+export { SegmentKind } from './segment-enums';
+
 // Re-export for backward compatibility
 export { AdminPermissions, MediaSource } from './constants';

@@ -11,7 +11,7 @@ export function unbindField(engine: IEngine) {
     const current = Bindings.getOrNull(entity);
     if (!current) return;
     Bindings.createOrReplace(entity, {
-      value: current.value.filter(b => b.field !== field),
+      value: current.value.filter(b => b.field !== field) as UIBindings['value'],
     });
   };
 }

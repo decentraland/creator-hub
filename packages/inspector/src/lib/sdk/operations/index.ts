@@ -28,6 +28,7 @@ import renameVariable from './rename-variable';
 import deleteVariable from './delete-variable';
 import bindField from './bind-field';
 import unbindField from './unbind-field';
+import setMixedContent from './set-mixed-content';
 
 export interface Dispatch {
   dirty?: boolean;
@@ -56,6 +57,7 @@ export function createOperations(engine: IEngine) {
     deleteVariable: deleteVariable(engine),
     bindField: bindField(engine),
     unbindField: unbindField(engine),
+    setMixedContent: setMixedContent(engine),
     dispatch: async ({ dirty = true }: Dispatch = {}) => {
       store.dispatch(updateCanSave({ dirty }));
       await engine.update(1);

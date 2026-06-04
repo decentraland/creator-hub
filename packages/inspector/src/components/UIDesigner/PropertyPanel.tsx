@@ -1,17 +1,20 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import type { Entity, IEngine, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
-import type { UIBindings } from '@dcl/asset-packs';
+import type { UIBindings, UISegment } from '@dcl/asset-packs';
 import { ComponentName } from '@dcl/asset-packs';
 
 import { useChange } from '../../hooks/sdk/useChange';
 import { useSdk } from '../../hooks/sdk/useSdk';
 import { useAppSelector } from '../../redux/hooks';
 import { getSelectedNode, getSelectedRoot } from '../../redux/ui-designer';
+import { Block } from '../Block';
 import { Container } from '../Container';
 import { TextField } from '../ui';
 import { debounce } from '../../lib/utils/debounce';
 import { classifyNode, getComponentBag, type UINodeType } from './tree-model';
 import { BindableField } from './BindableField';
+import { MixedContentField } from './MixedContentField';
+import { seedSegments } from './MixedContentField/segments';
 import {
   buildLayoutGroup,
   NODE_FIELD_CONFIGS,
@@ -116,7 +119,24 @@ const PropertyPanelComponent: React.FC = () => {
     if (!Bindings) return {};
     const value = Bindings.getOrNull(selected as Entity);
     if (!value) return {};
-    return Object.fromEntries(value.value.map(b => [b.field, b.variable]));
+    return Object.fromEntries(
+      value.value.filter(b => !b.segments?.length).map(b => [b.field, b.variable]),
+    );
+  }, [sdk, selected, tick]);
+
+  // Mixed-content rows live in the same `UIBindings` component (rows carrying a
+  // non-empty `segments` list). Map `componentId.fieldPath` -> segment list.
+  const mixedByField = useMemo<Record<string, UISegment[]>>(() => {
+    if (!sdk || selected === null) return {};
+    const Bindings = sdk.engine.getComponentOrNull(
+      ComponentName.UI_BINDINGS,
+    ) as LastWriteWinElementSetComponentDefinition<UIBindings> | null;
+    if (!Bindings) return {};
+    const value = Bindings.getOrNull(selected as Entity);
+    if (!value) return {};
+    return Object.fromEntries(
+      value.value.filter(b => b.segments?.length).map(b => [b.field, b.segments as UISegment[]]),
+    );
   }, [sdk, selected, tick]);
 
   const writeAndDispatch = useCallback(
@@ -181,6 +201,7 @@ const PropertyPanelComponent: React.FC = () => {
                 entity={selected as Entity}
                 selectedRoot={(selectedRoot ?? selected) as Entity}
                 bound={bindingsByField[`${field.componentId}.${field.path}`]}
+                mixed={mixedByField[`${field.componentId}.${field.path}`]}
                 onPatch={patch => writeAndDispatch(field.componentId, patch)}
               />
             );
@@ -197,6 +218,7 @@ interface FieldRowProps {
   entity: Entity;
   selectedRoot: Entity;
   bound?: string;
+  mixed?: UISegment[];
   onPatch: (patch: Record<string, unknown>) => void;
 }
 
@@ -206,6 +228,7 @@ const FieldRow: React.FC<FieldRowProps> = ({
   entity,
   selectedRoot,
   bound,
+  mixed,
   onPatch,
 }) => {
   const boundProp = bound ? { variable: bound } : undefined;
@@ -213,6 +236,19 @@ const FieldRow: React.FC<FieldRowProps> = ({
 
   switch (field.kind) {
     case 'string': {
+      if (field.mixable) {
+        return (
+          <Block label={field.label}>
+            <MixedContentField
+              field={field}
+              entity={entity}
+              selectedRoot={selectedRoot}
+              segments={seedSegments(raw, mixed, bound)}
+              onPatch={onPatch}
+            />
+          </Block>
+        );
+      }
       const v = (raw as string | undefined) ?? '';
       return (
         <BindableField

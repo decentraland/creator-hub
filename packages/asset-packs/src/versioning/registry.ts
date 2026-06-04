@@ -2,6 +2,7 @@ import { Schemas } from '@dcl/ecs';
 import { AdminPermissions, MediaSource } from '../constants';
 import { TriggerType, TriggerConditionType, TriggerConditionOperation } from '../trigger-enums';
 import { VariableType } from '../variable-enums';
+import { SegmentKind } from '../segment-enums';
 import { createComponentFramework, type VersionedComponents } from './framework';
 
 const COMPONENT_REGISTRY = {
@@ -215,6 +216,14 @@ const COMPONENT_REGISTRY = {
         Schemas.Map({
           field: Schemas.String,
           variable: Schemas.String,
+          segments: Schemas.Optional(
+            Schemas.Array(
+              Schemas.Map({
+                kind: Schemas.EnumString<SegmentKind>(SegmentKind, SegmentKind.LITERAL),
+                value: Schemas.String,
+              }),
+            ),
+          ),
         }),
       ),
     },

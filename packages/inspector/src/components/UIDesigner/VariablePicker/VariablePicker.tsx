@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { Entity, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
 import type { UI, UIVariable } from '@dcl/asset-packs';
 import { ComponentName, VariableType } from '@dcl/asset-packs';
@@ -9,13 +10,29 @@ import type { FieldConfig, FieldKind } from '../field-configs';
 import './VariablePicker.css';
 
 const KIND_TO_VARIABLE_TYPES: Partial<Record<FieldKind, VariableType[]>> = {
-  string: [VariableType.STRING],
+  string: [
+    VariableType.STRING,
+    VariableType.NUMBER,
+    VariableType.BOOLEAN,
+    VariableType.COLOR,
+    VariableType.STRING_ARRAY,
+  ],
   number: [VariableType.NUMBER],
   boolean: [VariableType.BOOLEAN],
   color: [VariableType.COLOR],
   'string-array': [VariableType.STRING_ARRAY],
   callback: [VariableType.CALLBACK],
 };
+
+// On a string-kind field every non-string variable is shown (it coerces to a
+// string at render time). Make that explicit in the row label so the creator
+// knows what they're embedding, e.g. "score (number → string)".
+function coercionLabel(field: FieldConfig, v: UIVariable): string {
+  if (field.kind === 'string' && v.type !== VariableType.STRING) {
+    return `${v.name} (${v.type} → string)`;
+  }
+  return v.name;
+}
 
 interface VariablePickerProps {
   field: FieldConfig;
@@ -34,6 +51,26 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
 }) => {
   const sdk = useSdk();
   const popoverRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+
+  useLayoutEffect(() => {
+    const place = () => {
+      const a = anchorRef.current?.getBoundingClientRect();
+      if (!a) return;
+      const MENU_WIDTH = 200;
+      const GAP = 4;
+      // Prefer left-aligned to the anchor; clamp to the viewport's right edge.
+      const left = Math.min(a.left, window.innerWidth - MENU_WIDTH - GAP);
+      setPos({ top: a.bottom + GAP, left: Math.max(GAP, left) });
+    };
+    place();
+    window.addEventListener('scroll', place, true);
+    window.addEventListener('resize', place);
+    return () => {
+      window.removeEventListener('scroll', place, true);
+      window.removeEventListener('resize', place);
+    };
+  }, [anchorRef]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -83,10 +120,11 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
     onPick(name);
   }, [sdk, selectedRoot, field, onPick]);
 
-  return (
+  return createPortal(
     <div
       ref={popoverRef}
       className="ui-designer-variable-picker"
+      style={{ position: 'fixed', top: pos.top, left: pos.left }}
     >
       {compatible.length === 0 && (
         <div className="ui-designer-variable-picker-empty">No compatible variables.</div>
@@ -98,7 +136,7 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
           className="ui-designer-variable-picker-row"
           onClick={() => onPick(v.name)}
         >
-          {v.name}
+          {coercionLabel(field, v)}
         </button>
       ))}
       <button
@@ -108,7 +146,8 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
       >
         + Add new variable…
       </button>
-    </div>
+    </div>,
+    document.body,
   );
 };
 

@@ -1,6 +1,6 @@
 import type { Entity, IEngine, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
 import type { UI, UIBindings } from '@dcl/asset-packs';
-import { ComponentName } from '@dcl/asset-packs';
+import { ComponentName, SegmentKind } from '@dcl/asset-packs';
 
 import { collectDescendants } from './tree-walk';
 import { assertIdentifier } from './validators';
@@ -30,7 +30,19 @@ export function renameVariable(engine: IEngine) {
       const bindings = Bindings.getOrNull(desc);
       if (!bindings) continue;
       Bindings.createOrReplace(desc, {
-        value: bindings.value.map(b => (b.variable === oldName ? { ...b, variable: newName } : b)),
+        value: bindings.value.map(b => ({
+          ...b,
+          variable: b.variable === oldName ? newName : b.variable,
+          ...(b.segments
+            ? {
+                segments: b.segments.map(seg =>
+                  seg.kind === SegmentKind.BINDING && seg.value === oldName
+                    ? { ...seg, value: newName }
+                    : seg,
+                ),
+              }
+            : {}),
+        })) as UIBindings['value'],
       });
     }
   };

@@ -14,7 +14,9 @@ export function bindField(engine: IEngine) {
     const current = Bindings.getOrNull(entity);
     const rows = current?.value ?? [];
     const without = rows.filter(b => b.field !== field);
-    Bindings.createOrReplace(entity, { value: [...without, { field, variable }] });
+    Bindings.createOrReplace(entity, {
+      value: [...without, { field, variable }] as UIBindings['value'],
+    });
   };
 }
 

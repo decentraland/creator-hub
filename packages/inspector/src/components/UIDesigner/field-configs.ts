@@ -51,6 +51,14 @@ export interface FieldConfig {
    * kinds set this to false in V1 — they have no scalar variable-type counterpart.
    */
   bindable?: boolean;
+  /**
+   * Whether this string field uses the inline mixed-content editor (literal
+   * text interleaved with variable chips). Only meaningful for `kind: 'string'`
+   * renderable text fields (UiText.value, UiInput.value, UiInput.placeholder).
+   * Identity fields (UI.name, Name.value) leave this false — they feed codegen
+   * via `sanitizeIdentifier` and must stay plain.
+   */
+  mixable?: boolean;
 }
 
 export interface NodeFieldConfig {
@@ -274,7 +282,7 @@ const BACKGROUND_GROUP = {
 const TEXT_GROUP = {
   title: 'Text',
   fields: [
-    { label: 'Value', componentId: TEXT, path: 'value', kind: 'string' as const },
+    { label: 'Value', componentId: TEXT, path: 'value', kind: 'string' as const, mixable: true },
     { label: 'Color', componentId: TEXT, path: 'color', kind: 'color' as const },
     { label: 'Font size', componentId: TEXT, path: 'fontSize', kind: 'number' as const },
     {
@@ -291,8 +299,14 @@ const TEXT_GROUP = {
 const INPUT_GROUP = {
   title: 'Input',
   fields: [
-    { label: 'Placeholder', componentId: INPUT, path: 'placeholder', kind: 'string' as const },
-    { label: 'Value', componentId: INPUT, path: 'value', kind: 'string' as const },
+    {
+      label: 'Placeholder',
+      componentId: INPUT,
+      path: 'placeholder',
+      kind: 'string' as const,
+      mixable: true,
+    },
+    { label: 'Value', componentId: INPUT, path: 'value', kind: 'string' as const, mixable: true },
     { label: 'Disabled', componentId: INPUT, path: 'disabled', kind: 'boolean' as const },
   ],
 };

@@ -1,6 +1,6 @@
 import type { Entity, IEngine, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
 import type { UI, UIBindings } from '@dcl/asset-packs';
-import { ComponentName } from '@dcl/asset-packs';
+import { ComponentName, SegmentKind } from '@dcl/asset-packs';
 
 import { collectDescendants } from './tree-walk';
 
@@ -24,9 +24,26 @@ export function deleteVariable(engine: IEngine) {
       if (desc === uiRoot) continue;
       const bindings = Bindings.getOrNull(desc);
       if (!bindings) continue;
-      const next = bindings.value.filter(b => b.variable !== name);
-      if (next.length === bindings.value.length) continue;
-      Bindings.createOrReplace(desc, { value: next });
+      let changed = false;
+      const next = bindings.value
+        .map(b => {
+          if (b.variable === name && !b.segments?.length) {
+            changed = true;
+            return null;
+          }
+          if (b.segments?.length) {
+            const segments = b.segments.filter(
+              seg => !(seg.kind === SegmentKind.BINDING && seg.value === name),
+            );
+            if (segments.length !== b.segments.length) {
+              changed = true;
+              return segments.length > 0 ? { ...b, segments } : null;
+            }
+          }
+          return b;
+        })
+        .filter((b): b is NonNullable<typeof b> => b !== null);
+      if (changed) Bindings.createOrReplace(desc, { value: next as UIBindings['value'] });
     }
   };
 }

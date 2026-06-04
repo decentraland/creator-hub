@@ -1,7 +1,4 @@
 .ui-designer-variable-picker {
-  position: absolute;
-  top: 24px;
-  right: 0;
   min-width: 200px;
   max-height: 240px;
   overflow-y: auto;
@@ -10,7 +7,7 @@
   border-radius: 4px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   padding: 4px;
-  z-index: 100;
+  z-index: 1000;
 }
 
 .ui-designer-variable-picker-empty {

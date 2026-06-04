@@ -500,5 +500,6 @@ export type UIVariable = UI['variables'][0];
 export type UIBindingsComponent = Components['UIBindings'];
 export type UIBindings = ReturnType<UIBindingsComponent['schema']['deserialize']>;
 export type UIBinding = UIBindings['value'][0];
+export type UISegment = NonNullable<UIBinding['segments']>[number];
 
 export { setUiContext, clearUiContext, setUiCallback, clearUiCallback } from './ui-context';
