@@ -12,6 +12,7 @@ import {
   isClientNotInstalledError,
 } from '/shared/types/client';
 import type { DeployOptions } from '/shared/types/deploy';
+import type { OptimizeOptions, OptimizeResult } from '/shared/types/optimize';
 import { dynamicImport } from '/shared/dynamic-import';
 
 import { dclDeepLink, run, type Child } from './bin';
@@ -412,4 +413,29 @@ export async function deploy({
   deployServer = { stop };
 
   return port;
+}
+
+export async function optimize(opts: OptimizeOptions): Promise<OptimizeResult> {
+  const { path, ...settings } = opts;
+
+  const args: string[] = ['--dir', path];
+  if (settings.basecolorSize) args.push('--basecolor-size', String(settings.basecolorSize));
+  if (settings.normalSize) args.push('--normal-size', String(settings.normalSize));
+  if (settings.ormSize) args.push('--orm-size', String(settings.ormSize));
+  if (settings.emissiveSize) args.push('--emissive-size', String(settings.emissiveSize));
+  if (settings.otherSize) args.push('--other-size', String(settings.otherSize));
+  if (settings.quality) args.push('--quality', String(settings.quality));
+  if (settings.format) args.push('--format', settings.format);
+  if (settings.dryRun) args.push('--dry-run');
+
+  const result = await runCommand(path, 'optimize', args);
+
+  return (
+    result ?? {
+      glbsProcessed: 0,
+      texturesExtracted: 0,
+      compression: [],
+      summary: { filesProcessed: 0, filesOptimized: 0, totalSaved: 0 },
+    }
+  );
 }

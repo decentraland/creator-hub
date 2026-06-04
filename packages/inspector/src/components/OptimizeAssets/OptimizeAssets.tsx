@@ -1,18 +1,19 @@
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { IoClose } from 'react-icons/io5';
 import cx from 'classnames';
+import { getSceneClient } from '../../lib/rpc/scene';
 import { useSnackbar } from '../../hooks/useSnackbar';
-import { getAssetCatalog, getDataLayerInterface } from '../../redux/data-layer';
+import { getAssetCatalog } from '../../redux/data-layer';
 import { useAppDispatch } from '../../redux/hooks';
 import { Loading } from '../Loading';
 import { Modal } from '../Modal';
 import { Button } from '../Button';
 import OptimizeIcon from '../Icons/Optimize/Optimize';
-import { CheckboxField } from '../ui';
 import { normalizeBytes } from '../ImportAsset/utils';
-import { optimizeAsset, getMaxHeight } from './utils';
-import type { Props, CompressionSettings, OptimizationResult } from './types';
+import { getMaxHeight } from './utils';
+import type { Props, CompressionSettings } from './types';
 import { DEFAULT_SETTINGS } from './types';
+import type { OptimizeAssetsResult } from '../../lib/rpc/scene/client';
 
 import './OptimizeAssets.css';
 
@@ -24,52 +25,18 @@ const TEXTURE_TYPE_LABELS: Record<string, string> = {
   other: 'Other',
 };
 
-const OptimizeAssets: React.FC<Props> = ({
-  isOpen,
-  onClose,
-  onScan,
-  assets,
-  isScanning,
-  selectedAssets,
-  onSelect,
-  onSelectAll,
-}) => {
+const OptimizeAssets: React.FC<Props> = ({ isOpen, onClose }) => {
   const dispatch = useAppDispatch();
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [settings, setSettings] = useState<CompressionSettings>({ ...DEFAULT_SETTINGS });
-  const [results, setResults] = useState<OptimizationResult[] | null>(null);
-  const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [results, setResults] = useState<OptimizeAssetsResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const { pushNotification } = useSnackbar();
-  const selectAllRef = useRef<HTMLInputElement>(null);
-
-  const totalSize = useMemo(() => assets.reduce((sum, a) => sum + a.size, 0), [assets]);
-  const selectedSize = useMemo(
-    () => assets.reduce((sum, a) => (selectedAssets.has(a.path) ? sum + a.size : sum), 0),
-    [assets, selectedAssets],
-  );
-  const allSelected = useMemo(
-    () => assets.length > 0 && selectedAssets.size === assets.length,
-    [assets.length, selectedAssets.size],
-  );
-  const isIndeterminate = useMemo(
-    () => selectedAssets.size > 0 && selectedAssets.size < assets.length,
-    [assets.length, selectedAssets.size],
-  );
 
   const savedBytes = useMemo(() => {
     if (!results) return 0;
-    return results.reduce((sum, r) => sum + (r.originalSize - r.optimizedSize), 0);
+    return results.summary.totalSaved;
   }, [results]);
-
-  const handleSelectAll = useCallback(() => {
-    onSelectAll(selectedAssets.size === 0 || !allSelected);
-  }, [selectedAssets.size, allSelected, onSelectAll]);
-
-  useEffect(() => {
-    if (selectAllRef.current) {
-      selectAllRef.current.indeterminate = isIndeterminate;
-    }
-  }, [isIndeterminate]);
 
   const handleSettingChange = useCallback(
     (key: keyof CompressionSettings, value: number | string) => {
@@ -79,51 +46,52 @@ const OptimizeAssets: React.FC<Props> = ({
   );
 
   const handleOptimize = useCallback(async () => {
-    if (selectedAssets.size === 0) return;
-
-    const dataLayer = getDataLayerInterface();
-    if (!dataLayer) return;
+    const sceneClient = getSceneClient();
+    if (!sceneClient) return;
 
     setIsOptimizing(true);
     setResults(null);
+    setError(null);
 
-    const selected = assets.filter(a => selectedAssets.has(a.path));
-    setProgress({ current: 0, total: selected.length });
+    try {
+      const result = await sceneClient.optimizeAssets({
+        basecolorSize: settings.basecolorSize,
+        normalSize: settings.normalSize,
+        ormSize: settings.ormSize,
+        emissiveSize: settings.emissiveSize,
+        otherSize: settings.otherSize,
+        quality: settings.quality,
+        format: settings.format,
+      });
 
-    const optimizationResults: OptimizationResult[] = [];
+      setResults(result);
 
-    for (let i = 0; i < selected.length; i++) {
-      const result = await optimizeAsset(dataLayer, selected[i], settings);
-      optimizationResults.push(result);
-      setProgress({ current: i + 1, total: selected.length });
+      if (result.summary.filesOptimized > 0) {
+        pushNotification(
+          'success',
+          `${result.summary.filesOptimized} ${result.summary.filesOptimized === 1 ? 'file' : 'files'} optimized. Saved ${normalizeBytes(result.summary.totalSaved)}.`,
+        );
+        dispatch(getAssetCatalog());
+      } else {
+        pushNotification('info', 'No files were optimized — all were already at or below target size.');
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Optimization failed';
+      setError(message);
+      pushNotification('error', message);
+    } finally {
+      setIsOptimizing(false);
     }
-
-    setResults(optimizationResults);
-    setIsOptimizing(false);
-
-    const optimized = optimizationResults.filter(r => !r.skipped);
-    const totalSaved = optimizationResults.reduce(
-      (sum, r) => sum + (r.originalSize - r.optimizedSize),
-      0,
-    );
-
-    if (optimized.length > 0) {
-      pushNotification(
-        'success',
-        `${optimized.length} ${optimized.length === 1 ? 'file' : 'files'} optimized. Saved ${normalizeBytes(totalSaved)}.`,
-      );
-      dispatch(getAssetCatalog());
-    } else {
-      pushNotification('info', 'No files were optimized — all were already at or below target size.');
-    }
-  }, [selectedAssets, assets, settings, pushNotification, dispatch]);
+  }, [settings, pushNotification, dispatch]);
 
   const handleBack = useCallback(() => {
     setResults(null);
+    setError(null);
   }, []);
 
   const handleClose = useCallback(() => {
     setResults(null);
+    setError(null);
     onClose();
   }, [onClose]);
 
@@ -148,17 +116,31 @@ const OptimizeAssets: React.FC<Props> = ({
           {results ? (
             <div className="ResultsSummary">
               <p className="ResultsTitle">Optimization Complete</p>
+              {results.glbsProcessed > 0 && (
+                <div className="ResultsStat">
+                  <span className="ResultsLabel">GLBs processed</span>
+                  <span className="ResultsValue">{results.glbsProcessed}</span>
+                </div>
+              )}
+              {results.texturesExtracted > 0 && (
+                <div className="ResultsStat">
+                  <span className="ResultsLabel">Textures extracted</span>
+                  <span className="ResultsValue">{results.texturesExtracted}</span>
+                </div>
+              )}
               <div className="ResultsStat">
                 <span className="ResultsLabel">Files processed</span>
-                <span className="ResultsValue">{results.length}</span>
+                <span className="ResultsValue">{results.summary.filesProcessed}</span>
               </div>
               <div className="ResultsStat">
                 <span className="ResultsLabel">Files optimized</span>
-                <span className="ResultsValue">{results.filter(r => !r.skipped).length}</span>
+                <span className="ResultsValue">{results.summary.filesOptimized}</span>
               </div>
               <div className="ResultsStat">
                 <span className="ResultsLabel">Files skipped</span>
-                <span className="ResultsValue">{results.filter(r => r.skipped).length}</span>
+                <span className="ResultsValue">
+                  {results.summary.filesProcessed - results.summary.filesOptimized}
+                </span>
               </div>
               <div className="ResultsStat total">
                 <span className="ResultsLabel">Total saved</span>
@@ -168,8 +150,8 @@ const OptimizeAssets: React.FC<Props> = ({
           ) : (
             <>
               <p>
-                Resize and compress image textures in your scene. Textures are classified by naming
-                convention and each type gets its own maximum height.
+                Resize and compress image textures in your scene. GLB files with embedded textures
+                are automatically extracted first, then all images are optimized.
               </p>
               <div className="SettingsSection">
                 <p className="SettingsTitle">Max Height (px)</p>
@@ -229,25 +211,39 @@ const OptimizeAssets: React.FC<Props> = ({
         </div>
 
         <div className="RightPanel">
-          {isScanning || isOptimizing ? (
+          {isOptimizing ? (
             <div className="LoadingContainer">
               <div className="SpinnerContainer">
                 <Loading dimmer={false} />
               </div>
-              <p>
-                {isScanning
-                  ? 'SCANNING ASSETS...'
-                  : `OPTIMIZING ${progress.current}/${progress.total}...`}
-              </p>
+              <p>OPTIMIZING ASSETS...</p>
             </div>
+          ) : error ? (
+            <>
+              <div className="stats">
+                <p className="FilesCounter">OPTIMIZATION FAILED</p>
+              </div>
+              <div className="FileList">
+                <p className="EmptyFiles">{error}</p>
+              </div>
+              <div className="footer">
+                <Button
+                  type="text"
+                  onClick={handleBack}
+                  className="ScanButton"
+                >
+                  BACK
+                </Button>
+              </div>
+            </>
           ) : results ? (
             <>
               <div className="stats">
-                <p className="FilesCounter">{results.length} FILES PROCESSED</p>
+                <p className="FilesCounter">{results.summary.filesProcessed} FILES PROCESSED</p>
                 <p className="TotalSize">Saved: {normalizeBytes(savedBytes)}</p>
               </div>
               <div className="FileList">
-                {results.map(result => (
+                {results.compression.map(result => (
                   <div
                     key={result.path}
                     className={cx('FileItem', { skipped: result.skipped })}
@@ -261,7 +257,12 @@ const OptimizeAssets: React.FC<Props> = ({
                           <span className="optimized">{normalizeBytes(result.optimizedSize)}</span>
                         </>
                       )}
-                      {result.skipped && <span className="skipped-label">skipped</span>}
+                      {result.skipped && result.reason && (
+                        <span className="skipped-label">{result.reason}</span>
+                      )}
+                      {result.skipped && !result.reason && (
+                        <span className="skipped-label">skipped</span>
+                      )}
                     </span>
                   </div>
                 ))}
@@ -279,58 +280,15 @@ const OptimizeAssets: React.FC<Props> = ({
             </>
           ) : (
             <>
-              <div className="stats">
-                <CheckboxField
-                  ref={selectAllRef}
-                  type="checkbox"
-                  checked={allSelected}
-                  onChange={handleSelectAll}
-                  className="checkbox"
-                />
-                <p className="FilesCounter">{assets.length} FILES</p>
-                <p className="TotalSize">Total size: {normalizeBytes(totalSize)}</p>
-                <p className="ReducedSize">Selected: {normalizeBytes(selectedSize)}</p>
-              </div>
-
               <div className="FileList">
-                {assets.length === 0 ? (
-                  <p className="EmptyFiles">
-                    No optimizable assets <br /> were found
-                  </p>
-                ) : (
-                  assets.map(asset => (
-                    <label
-                      key={asset.path}
-                      className={cx('FileItem', { selected: selectedAssets.has(asset.path) })}
-                    >
-                      <CheckboxField
-                        type="checkbox"
-                        checked={selectedAssets.has(asset.path)}
-                        onChange={() => onSelect(asset.path)}
-                        className="checkbox"
-                      />
-                      <span>{asset.path}</span>
-                      <span className="type-badge">{asset.type}</span>
-                      <span className="size">{normalizeBytes(asset.size)}</span>
-                    </label>
-                  ))
-                )}
+                <p className="EmptyFiles">
+                  Configure settings and click Optimize <br /> to process all scene assets
+                </p>
               </div>
-
               <div className="footer">
-                <Button
-                  type="text"
-                  onClick={onScan}
-                  className="ScanButton"
-                >
-                  SCAN AGAIN
-                </Button>
-                <Button
-                  onClick={handleOptimize}
-                  disabled={selectedAssets.size === 0}
-                >
+                <Button onClick={handleOptimize}>
                   <OptimizeIcon />
-                  OPTIMIZE SELECTED
+                  OPTIMIZE
                 </Button>
               </div>
             </>
