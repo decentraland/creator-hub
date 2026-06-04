@@ -72,6 +72,8 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
           type="help"
         />
       }
+      component={AudioSource}
+      entity={entities}
       onRemoveContainer={handleRemove}
     >
       <Block>

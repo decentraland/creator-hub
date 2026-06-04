@@ -59,6 +59,8 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
           type="help"
         />
       }
+      component={AudioStream}
+      entity={entities}
       onRemoveContainer={handleRemove}
     >
       <Block label="Url">
