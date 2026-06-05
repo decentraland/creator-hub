@@ -45,6 +45,7 @@
         "code": "代码",
         "preview": "预览",
         "publish": "发布",
+        "refresh": "从磁盘重新加载场景",
         "preview_options": {
           "title": "预览选项",
           "debugger": "在预览期间打开控制台窗口",
@@ -564,7 +565,7 @@
         }
       },
       "collaborators": {
-        "description": "<span>添加最多 10 个协作者</span>并管理他们在您世界中的部署或流媒体权限。",
+        "description": "<span>添加最多 100 个协作者</span>并管理他们在您世界中的部署或流媒体权限。",
         "empty_list": "您还没有添加任何协作者",
         "add_collaborator": "添加协作者",
         "add": "添加",
@@ -625,7 +626,7 @@
       "cancel": "取消"
     },
     "mobile_qr": {
-      "title": "移动端预览",
+      "title": "连接 Mobile Debug Session",
       "description": "使用移动设备扫描此二维码预览场景",
       "disclaimer": "您的电脑和移动设备必须在同一网络中"
     }
@@ -858,6 +859,7 @@
         "edit_name": "编辑名称",
         "permissions": "权限",
         "parcel": "地块",
+        "view_storage": "查看存储",
         "unpublish": "取消发布"
       },
       "no_scene": {

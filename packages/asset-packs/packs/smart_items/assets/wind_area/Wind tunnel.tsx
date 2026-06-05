@@ -46,7 +46,11 @@ export class WindTunnel {
   start() {
     TriggerArea.setBox(this.entity, ColliderLayer.CL_PLAYER);
 
-    triggerAreaEventsSystem.onTriggerEnter(this.entity, () => {
+    triggerAreaEventsSystem.onTriggerEnter(this.entity, event => {
+      if (event.trigger?.entity !== engine.PlayerEntity) {
+        // Some other entity (e.g., a remote avatar) entered — ignore silently.
+        return;
+      }
       const direction = Vector3.rotate(
         Vector3.create(0, 1, 0),
         Transform.get(this.entity).rotation,
@@ -54,7 +58,12 @@ export class WindTunnel {
       Physics.applyForceToPlayer(this.entity, direction, this.strength);
     });
 
-    triggerAreaEventsSystem.onTriggerExit(this.entity, () => {
+    triggerAreaEventsSystem.onTriggerExit(this.entity, event => {
+      if (event.trigger?.entity !== engine.PlayerEntity) {
+        // Some other entity (e.g., a remote avatar) entered — ignore silently.
+        return;
+      }
+
       Physics.removeForceFromPlayer(this.entity);
     });
 

@@ -20,7 +20,7 @@
               {
                 "path": "{assetPath}/Wind tunnel.tsx",
                 "priority": 0,
-                "layout": "{\"params\":{\"strength\":{\"type\":\"number\",\"optional\":true,\"value\":40},\"debug\":{\"type\":\"boolean\",\"optional\":false,\"value\":true}},\"actions\":[]}"
+                "layout": "{\"params\":{\"strength\":{\"type\":\"number\",\"optional\":true,\"value\":40},\"debug\":{\"type\":\"boolean\",\"optional\":false,\"tooltip\":\"If true, the area that applies the force becomes visible in your scene\",\"value\":false}},\"actions\":[]}"
               }
             ]
           }
