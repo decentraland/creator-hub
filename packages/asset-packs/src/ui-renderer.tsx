@@ -227,7 +227,27 @@ const Node = (props: NodeProps): ReactEcs.JSX.Element | null => {
 
   const { single: bindings, mixed: mixedContent } = buildBindingMaps(bag, entity);
 
-  const uiTransform = overrideDisplay ? { ...transform, display: overrideDisplay } : transform;
+  // Resolve any bound core::UiTransform fields (width, positionTop, opacity, …).
+  // Each binding overrides only the scalar value; the companion `${path}Unit`
+  // stays from the static transform.
+  let resolvedTransform: Record<string, unknown> = transform;
+  for (const key of bindings.keys()) {
+    if (!key.startsWith('core::UiTransform.')) continue;
+    const fieldPath = key.slice('core::UiTransform.'.length);
+    if (resolvedTransform === transform)
+      resolvedTransform = { ...(transform as Record<string, unknown>) };
+    resolvedTransform[fieldPath] = resolveBoundValue(
+      bindings,
+      varDefs,
+      root,
+      'core::UiTransform',
+      fieldPath,
+      (transform as Record<string, unknown>)[fieldPath],
+    );
+  }
+  const uiTransform = overrideDisplay
+    ? { ...resolvedTransform, display: overrideDisplay }
+    : resolvedTransform;
 
   const childEntities = childrenIndex.get(entity) ?? [];
   const childNodes = childEntities.map(child => (

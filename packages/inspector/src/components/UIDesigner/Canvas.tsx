@@ -12,7 +12,7 @@ import type { UINode } from './tree-model';
 
 // Logical canvas is 1920×1080; visual scale is 0.4 (see Canvas.css
 // `.ui-designer-canvas-root`). Keep this in sync if the CSS scale changes.
-const CANVAS_SCALE = 0.4;
+export const CANVAS_SCALE = 0.4;
 
 // Snap grid for drag-to-move when Shift is NOT held. Held → free movement.
 // 10 logical px = 4 viewport px at the current scale — fine enough for
@@ -212,6 +212,36 @@ function nodeStyle(node: UINode): React.CSSProperties {
   if (left !== undefined) style.left = left;
 
   if (t.opacity !== undefined) style.opacity = t.opacity;
+  if (t.zIndex !== undefined) style.zIndex = t.zIndex;
+
+  // Border radius — CSS `border-radius` shorthand is TL TR BR BL.
+  const rTL = cssLen(t.borderTopLeftRadius, t.borderTopLeftRadiusUnit);
+  const rTR = cssLen(t.borderTopRightRadius, t.borderTopRightRadiusUnit);
+  const rBR = cssLen(t.borderBottomRightRadius, t.borderBottomRightRadiusUnit);
+  const rBL = cssLen(t.borderBottomLeftRadius, t.borderBottomLeftRadiusUnit);
+  if (rTL ?? rTR ?? rBR ?? rBL) {
+    style.borderRadius = `${rTL ?? 0} ${rTR ?? 0} ${rBR ?? 0} ${rBL ?? 0}`;
+  }
+
+  // Border width + color, per side.
+  const applyBorder = (
+    side: 'Top' | 'Right' | 'Bottom' | 'Left',
+    widthKey: keyof typeof t,
+    unitKey: keyof typeof t,
+    color: { r: number; g: number; b: number; a?: number } | undefined,
+  ) => {
+    const w = cssLen(t[widthKey], t[unitKey]);
+    if (w !== undefined) {
+      (style as Record<string, unknown>)[`border${side}Width`] = w;
+      (style as Record<string, unknown>)[`border${side}Style`] = 'solid';
+      if (color) (style as Record<string, unknown>)[`border${side}Color`] = color4ToRgba(color);
+    }
+  };
+  const bt = (node.uiTransform ?? {}) as Record<string, any>;
+  applyBorder('Top', 'borderTopWidth', 'borderTopWidthUnit', bt.borderTopColor);
+  applyBorder('Right', 'borderRightWidth', 'borderRightWidthUnit', bt.borderRightColor);
+  applyBorder('Bottom', 'borderBottomWidth', 'borderBottomWidthUnit', bt.borderBottomColor);
+  applyBorder('Left', 'borderLeftWidth', 'borderLeftWidthUnit', bt.borderLeftColor);
 
   if (b?.color) {
     style.backgroundColor = color4ToRgba(b.color);
@@ -237,6 +267,12 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
   const tool = useAppSelector(getTool);
   const isSelected = selectedNode === node.entity;
   const text = (node.uiText ?? {}) as { value?: string };
+  const input = (node.uiInput ?? {}) as { placeholder?: string; value?: string };
+  const dropdown = (node.uiDropdown ?? {}) as {
+    options?: string[];
+    selectedIndex?: number;
+    emptyLabel?: string;
+  };
 
   // Ref to the rendered div so we can translate viewport drop coords into
   // logical (Yoga) coords inside this node.
@@ -592,7 +628,25 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       data-entity={String(node.entity)}
       data-type={node.type}
     >
-      {text?.value && <span className="ui-designer-canvas-text">{text.value}</span>}
+      {node.type === 'Input' && (
+        <span className="ui-designer-canvas-input">
+          {input.value || input.placeholder || 'Input'}
+        </span>
+      )}
+      {node.type === 'Dropdown' && (
+        <span className="ui-designer-canvas-dropdown">
+          <span className="ui-designer-canvas-dropdown-label">
+            {dropdown.options?.[dropdown.selectedIndex ?? 0] ?? dropdown.emptyLabel ?? 'Select…'}
+          </span>
+          <span className="ui-designer-canvas-dropdown-chevron">▼</span>
+        </span>
+      )}
+      {(node.type === 'Label' || node.type === 'Button') && text?.value && (
+        <span className="ui-designer-canvas-text">{text.value}</span>
+      )}
+      {node.type === 'Button' && !text?.value && (
+        <span className="ui-designer-canvas-text ui-designer-canvas-placeholder">Button</span>
+      )}
       {node.children.map(child => (
         <CanvasNode
           key={String(child.entity)}

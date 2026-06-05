@@ -59,6 +59,20 @@ export interface FieldConfig {
    * via `sanitizeIdentifier` and must stay plain.
    */
   mixable?: boolean;
+  /**
+   * When set, this single control writes its value to EVERY listed path (and,
+   * for `length`/`number`, the matching `${path}Unit`). Reads from `path`.
+   * Used for "one corner radius → all 4 corners", border width/color, etc.
+   */
+  writeAll?: string[];
+  /**
+   * When this returns true (given the field's component value), the control is
+   * rendered disabled/greyed. Pure read of the same component, e.g. margin is
+   * disabled when positionType === Absolute (Yoga ignores it).
+   */
+  disabledWhen?: (componentValue: Record<string, unknown>) => boolean;
+  /** One-line help shown as a hover tooltip beside the field label. */
+  info?: string;
 }
 
 export interface NodeFieldConfig {
@@ -154,6 +168,40 @@ const TEXT_ALIGN_OPTIONS: EnumOption[] = [
   { value: 8, label: 'Bottom right' },
 ];
 
+// YGWrap
+const FLEX_WRAP_OPTIONS: EnumOption[] = [
+  { value: 0, label: 'No wrap' },
+  { value: 1, label: 'Wrap' },
+  { value: 2, label: 'Wrap reverse' },
+];
+
+// YGOverflow
+const OVERFLOW_OPTIONS: EnumOption[] = [
+  { value: 0, label: 'Visible' },
+  { value: 1, label: 'Hidden' },
+  { value: 2, label: 'Scroll' },
+];
+
+// Font
+const FONT_OPTIONS: EnumOption[] = [
+  { value: 0, label: 'Sans serif' },
+  { value: 1, label: 'Serif' },
+  { value: 2, label: 'Monospace' },
+];
+
+// TextWrap
+const TEXT_WRAP_OPTIONS: EnumOption[] = [
+  { value: 0, label: 'Wrap' },
+  { value: 1, label: 'No wrap' },
+];
+
+// BackgroundTextureMode
+const TEXTURE_MODE_OPTIONS: EnumOption[] = [
+  { value: 0, label: 'Nine slices' },
+  { value: 1, label: 'Center' },
+  { value: 2, label: 'Stretch' },
+];
+
 // --- Layout group building blocks ---
 //
 // Order requirements (per content team feedback):
@@ -198,6 +246,43 @@ const LAYOUT_FLEX_FIELDS: FieldConfig[] = [
     options: ALIGN_OPTIONS,
     bindable: false,
   },
+  {
+    label: 'Align content',
+    componentId: TRANSFORM,
+    path: 'alignContent',
+    kind: 'enum' as const,
+    options: ALIGN_OPTIONS,
+    bindable: false,
+  },
+  {
+    label: 'Flex wrap',
+    componentId: TRANSFORM,
+    path: 'flexWrap',
+    kind: 'enum' as const,
+    options: FLEX_WRAP_OPTIONS,
+    bindable: false,
+  },
+  {
+    label: 'Flex grow',
+    componentId: TRANSFORM,
+    path: 'flexGrow',
+    kind: 'number' as const,
+    info: 'Share of free space this item takes along the main axis.',
+  },
+  {
+    label: 'Flex shrink',
+    componentId: TRANSFORM,
+    path: 'flexShrink',
+    kind: 'number' as const,
+  },
+  {
+    label: 'Overflow',
+    componentId: TRANSFORM,
+    path: 'overflow',
+    kind: 'enum' as const,
+    options: OVERFLOW_OPTIONS,
+    bindable: false,
+  },
 ];
 
 const LAYOUT_BOX_FIELDS: FieldConfig[] = [
@@ -213,12 +298,43 @@ const LAYOUT_BOX_FIELDS: FieldConfig[] = [
     bindable: false,
   },
   {
+    label: 'Min size',
+    componentId: TRANSFORM,
+    path: '',
+    kind: 'length-vec' as const,
+    subFields: [
+      { path: 'minWidth', leftLabel: 'W' },
+      { path: 'minHeight', leftLabel: 'H' },
+    ],
+    bindable: false,
+  },
+  {
+    label: 'Max size',
+    componentId: TRANSFORM,
+    path: '',
+    kind: 'length-vec' as const,
+    subFields: [
+      { path: 'maxWidth', leftLabel: 'W' },
+      { path: 'maxHeight', leftLabel: 'H' },
+    ],
+    bindable: false,
+  },
+  {
+    label: 'Align self',
+    componentId: TRANSFORM,
+    path: 'alignSelf',
+    kind: 'enum' as const,
+    options: ALIGN_OPTIONS,
+    bindable: false,
+  },
+  {
     label: 'Position type',
     componentId: TRANSFORM,
     path: 'positionType',
     kind: 'enum' as const,
     options: POSITION_TYPE_OPTIONS,
     bindable: false,
+    info: 'Absolute positions via Top/Right/Bottom/Left; Relative flows in layout.',
   },
   {
     label: 'Position',
@@ -258,6 +374,8 @@ const LAYOUT_BOX_FIELDS: FieldConfig[] = [
       { path: 'marginLeft', leftLabel: 'L' },
     ],
     bindable: false,
+    info: 'Ignored when Position type is Absolute.',
+    disabledWhen: v => (v.positionType as number) === 1,
   },
 ];
 
@@ -274,9 +392,85 @@ export function buildLayoutGroup(isRoot: boolean, isContainer: boolean) {
   return { title: 'Layout', fields };
 }
 
+export const EFFECTS_GROUP = {
+  title: 'Effects',
+  fields: [
+    {
+      label: 'Opacity',
+      componentId: TRANSFORM,
+      path: 'opacity',
+      kind: 'number' as const,
+      info: '0 = fully transparent, 1 = fully opaque.',
+    },
+    {
+      label: 'Z-index',
+      componentId: TRANSFORM,
+      path: 'zIndex',
+      kind: 'number' as const,
+      info: 'Stacking order; higher values render in front of siblings.',
+    },
+  ],
+};
+
+export const BORDER_GROUP = {
+  title: 'Border',
+  fields: [
+    {
+      label: 'Corner radius',
+      componentId: TRANSFORM,
+      path: 'borderTopLeftRadius',
+      kind: 'length' as const,
+      bindable: false,
+      info: 'Rounds all four corners. Supports px or %.',
+      writeAll: [
+        'borderTopLeftRadius',
+        'borderTopRightRadius',
+        'borderBottomLeftRadius',
+        'borderBottomRightRadius',
+      ],
+    },
+    {
+      label: 'Border width',
+      componentId: TRANSFORM,
+      path: 'borderTopWidth',
+      kind: 'length' as const,
+      bindable: false,
+      info: 'Thickness of all four borders. Supports px or %.',
+      writeAll: ['borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth'],
+    },
+    {
+      label: 'Border color',
+      componentId: TRANSFORM,
+      path: 'borderTopColor',
+      kind: 'color' as const,
+      bindable: false,
+      info: 'Color applied to all four borders.',
+      writeAll: ['borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor'],
+    },
+  ],
+};
+
 const BACKGROUND_GROUP = {
   title: 'Background',
-  fields: [{ label: 'Color', componentId: BACKGROUND, path: 'color', kind: 'color' as const }],
+  fields: [
+    { label: 'Color', componentId: BACKGROUND, path: 'color', kind: 'color' as const },
+    {
+      label: 'Texture mode',
+      componentId: BACKGROUND,
+      path: 'textureMode',
+      kind: 'enum' as const,
+      options: TEXTURE_MODE_OPTIONS,
+      bindable: false,
+    },
+    {
+      label: 'Texture src',
+      componentId: BACKGROUND,
+      path: 'src',
+      kind: 'string' as const,
+      bindable: false,
+      info: 'Texture path. Full asset picker coming soon.',
+    },
+  ],
 };
 
 const TEXT_GROUP = {
@@ -291,6 +485,22 @@ const TEXT_GROUP = {
       path: 'textAlign',
       kind: 'enum' as const,
       options: TEXT_ALIGN_OPTIONS,
+      bindable: false,
+    },
+    {
+      label: 'Font',
+      componentId: TEXT,
+      path: 'font',
+      kind: 'enum' as const,
+      options: FONT_OPTIONS,
+      bindable: false,
+    },
+    {
+      label: 'Text wrap',
+      componentId: TEXT,
+      path: 'textWrap',
+      kind: 'enum' as const,
+      options: TEXT_WRAP_OPTIONS,
       bindable: false,
     },
   ],
@@ -308,6 +518,30 @@ const INPUT_GROUP = {
     },
     { label: 'Value', componentId: INPUT, path: 'value', kind: 'string' as const, mixable: true },
     { label: 'Disabled', componentId: INPUT, path: 'disabled', kind: 'boolean' as const },
+    { label: 'Color', componentId: INPUT, path: 'color', kind: 'color' as const },
+    {
+      label: 'Placeholder color',
+      componentId: INPUT,
+      path: 'placeholderColor',
+      kind: 'color' as const,
+    },
+    {
+      label: 'Text align',
+      componentId: INPUT,
+      path: 'textAlign',
+      kind: 'enum' as const,
+      options: TEXT_ALIGN_OPTIONS,
+      bindable: false,
+    },
+    {
+      label: 'Font',
+      componentId: INPUT,
+      path: 'font',
+      kind: 'enum' as const,
+      options: FONT_OPTIONS,
+      bindable: false,
+    },
+    { label: 'Font size', componentId: INPUT, path: 'fontSize', kind: 'number' as const },
   ],
 };
 
@@ -320,8 +554,41 @@ const DROPDOWN_GROUP = {
       componentId: DROPDOWN,
       path: 'selectedIndex',
       kind: 'index' as const,
+    },
+    {
+      label: 'Accept empty',
+      componentId: DROPDOWN,
+      path: 'acceptEmpty',
+      kind: 'boolean' as const,
+      bindable: false,
+      info: 'Allows the dropdown to have no option selected.',
+    },
+    {
+      label: 'Empty label',
+      componentId: DROPDOWN,
+      path: 'emptyLabel',
+      kind: 'string' as const,
+      info: 'Text shown when no option is selected.',
+    },
+    { label: 'Disabled', componentId: DROPDOWN, path: 'disabled', kind: 'boolean' as const },
+    { label: 'Color', componentId: DROPDOWN, path: 'color', kind: 'color' as const },
+    {
+      label: 'Text align',
+      componentId: DROPDOWN,
+      path: 'textAlign',
+      kind: 'enum' as const,
+      options: TEXT_ALIGN_OPTIONS,
       bindable: false,
     },
+    {
+      label: 'Font',
+      componentId: DROPDOWN,
+      path: 'font',
+      kind: 'enum' as const,
+      options: FONT_OPTIONS,
+      bindable: false,
+    },
+    { label: 'Font size', componentId: DROPDOWN, path: 'fontSize', kind: 'number' as const },
   ],
 };
 

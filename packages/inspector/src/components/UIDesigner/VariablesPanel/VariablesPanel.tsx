@@ -11,6 +11,8 @@ import { debounce } from '../../../lib/utils/debounce';
 import { Container } from '../../Container';
 import { Block } from '../../Block';
 import { TextField } from '../../ui';
+import { RgbaColorField } from '../../ui/RgbaColorField';
+import { color4ToHex, hexToColor4 } from '../../ui/RgbaColorField/color';
 
 import './VariablesPanel.css';
 
@@ -212,12 +214,33 @@ const VariableRow: React.FC<VariableRowProps> = ({
         </select>
       </Block>
       <Block label="Default">
-        <TextField
-          value={localDefault}
-          onChange={e => setLocalDefault(e.target.value)}
-          onBlur={commitDefault}
-          disabled={variable.type === VariableType.CALLBACK}
-        />
+        {variable.type === VariableType.BOOLEAN ? (
+          <input
+            type="checkbox"
+            checked={localDefault === 'true'}
+            onChange={e => {
+              const v = e.target.checked ? 'true' : 'false';
+              setLocalDefault(v);
+              onPatch({ defaultValue: v });
+            }}
+          />
+        ) : variable.type === VariableType.COLOR ? (
+          <RgbaColorField
+            value={hexToColor4(localDefault || '#ffffff')}
+            onChange={c => {
+              const hex = color4ToHex(c);
+              setLocalDefault(hex);
+              onPatch({ defaultValue: hex });
+            }}
+          />
+        ) : (
+          <TextField
+            value={localDefault}
+            onChange={e => setLocalDefault(e.target.value)}
+            onBlur={commitDefault}
+            disabled={variable.type === VariableType.CALLBACK}
+          />
+        )}
       </Block>
       <div className="ui-designer-variable-row-actions">
         <button

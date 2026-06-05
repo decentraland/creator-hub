@@ -18,6 +18,8 @@ const KIND_TO_VARIABLE_TYPES: Partial<Record<FieldKind, VariableType[]>> = {
     VariableType.STRING_ARRAY,
   ],
   number: [VariableType.NUMBER],
+  length: [VariableType.NUMBER],
+  index: [VariableType.NUMBER],
   boolean: [VariableType.BOOLEAN],
   color: [VariableType.COLOR],
   'string-array': [VariableType.STRING_ARRAY],

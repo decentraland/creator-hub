@@ -1,0 +1,15 @@
+.ui-designer-bindable-subfield {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+}
+
+.ui-designer-bindable-subfield-content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ui-designer-bindable-subfield:hover .ui-designer-bindable-link {
+  opacity: 1;
+}

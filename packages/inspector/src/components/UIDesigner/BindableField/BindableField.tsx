@@ -46,12 +46,22 @@ export const BindableField: React.FC<BindableFieldProps> = ({
   }, [sdk, entity, pathKey]);
 
   if (!isBindable) {
-    return <Block label={field.label}>{children}</Block>;
+    return (
+      <Block
+        label={field.label}
+        info={field.info}
+      >
+        {children}
+      </Block>
+    );
   }
 
   if (bound) {
     return (
-      <Block label={field.label}>
+      <Block
+        label={field.label}
+        info={field.info}
+      >
         <Pill
           content={bound.variable}
           onRemove={onUnbind}
@@ -61,7 +71,10 @@ export const BindableField: React.FC<BindableFieldProps> = ({
   }
 
   return (
-    <Block label={field.label}>
+    <Block
+      label={field.label}
+      info={field.info}
+    >
       <div className="ui-designer-bindable-row">
         <div className="ui-designer-bindable-content">{children}</div>
         <button

@@ -10,13 +10,18 @@ import { getSelectedNode, getSelectedRoot } from '../../redux/ui-designer';
 import { Block } from '../Block';
 import { Container } from '../Container';
 import { TextField } from '../ui';
+import { RgbaColorField } from '../ui/RgbaColorField';
 import { debounce } from '../../lib/utils/debounce';
+import { measureParentBox, axisForPath, convertLength } from './measure';
 import { classifyNode, getComponentBag, type UINodeType } from './tree-model';
 import { BindableField } from './BindableField';
+import { BindableSubField } from './BindableSubField';
 import { MixedContentField } from './MixedContentField';
 import { seedSegments } from './MixedContentField/segments';
 import {
   buildLayoutGroup,
+  BORDER_GROUP,
+  EFFECTS_GROUP,
   NODE_FIELD_CONFIGS,
   NODE_GROUP,
   UI_ROOT_GROUP,
@@ -67,19 +72,19 @@ function clampNumber(raw: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-function color4ToHex(c: Color4 | undefined): string {
-  const r = Math.round((c?.r ?? 0) * 255);
-  const g = Math.round((c?.g ?? 0) * 255);
-  const b = Math.round((c?.b ?? 0) * 255);
-  const hex = [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
-  return `#${hex}`;
-}
-
-function hexToColor4(hex: string, alpha = 1): Color4 {
-  const r = parseInt(hex.slice(1, 3), 16) / 255;
-  const g = parseInt(hex.slice(3, 5), 16) / 255;
-  const b = parseInt(hex.slice(5, 7), 16) / 255;
-  return { r, g, b, a: alpha };
+// For a `writeAll` field, replicate a single value across all target paths.
+// `unitKeySuffix` mirrors the `${path}Unit` companion for length fields.
+function expandWriteAll(
+  paths: string[],
+  value: unknown,
+  withUnit?: { unit: number },
+): Record<string, unknown> {
+  const patch: Record<string, unknown> = {};
+  for (const p of paths) {
+    patch[p] = value;
+    if (withUnit) patch[`${p}Unit`] = withUnit.unit;
+  }
+  return patch;
 }
 
 const PropertyPanelComponent: React.FC = () => {
@@ -180,8 +185,8 @@ const PropertyPanelComponent: React.FC = () => {
   //     `entity-names.ts` for scene code (`SceneEntityNames.ScoreText`, …).
   const layoutGroup = buildLayoutGroup(isUIRoot, type === 'UiEntity');
   const groups = isUIRoot
-    ? [UI_ROOT_GROUP, layoutGroup, ...config.groups]
-    : [NODE_GROUP, layoutGroup, ...config.groups];
+    ? [UI_ROOT_GROUP, layoutGroup, ...config.groups, EFFECTS_GROUP, BORDER_GROUP]
+    : [NODE_GROUP, layoutGroup, ...config.groups, EFFECTS_GROUP, BORDER_GROUP];
 
   return (
     <div className="ui-designer-property-panel">
@@ -201,6 +206,7 @@ const PropertyPanelComponent: React.FC = () => {
                 entity={selected as Entity}
                 selectedRoot={(selectedRoot ?? selected) as Entity}
                 bound={bindingsByField[`${field.componentId}.${field.path}`]}
+                bindings={bindingsByField}
                 mixed={mixedByField[`${field.componentId}.${field.path}`]}
                 onPatch={patch => writeAndDispatch(field.componentId, patch)}
               />
@@ -218,6 +224,7 @@ interface FieldRowProps {
   entity: Entity;
   selectedRoot: Entity;
   bound?: string;
+  bindings?: Record<string, string>;
   mixed?: UISegment[];
   onPatch: (patch: Record<string, unknown>) => void;
 }
@@ -228,17 +235,23 @@ const FieldRow: React.FC<FieldRowProps> = ({
   entity,
   selectedRoot,
   bound,
+  bindings,
   mixed,
   onPatch,
 }) => {
   const boundProp = bound ? { variable: bound } : undefined;
   const raw = componentValue?.[field.path];
+  const fieldDisabled =
+    field.disabledWhen?.((componentValue ?? {}) as Record<string, unknown>) ?? false;
 
   switch (field.kind) {
     case 'string': {
       if (field.mixable) {
         return (
-          <Block label={field.label}>
+          <Block
+            label={field.label}
+            info={field.info}
+          >
             <MixedContentField
               field={field}
               entity={entity}
@@ -276,7 +289,13 @@ const FieldRow: React.FC<FieldRowProps> = ({
           <TextField
             type="number"
             value={String(v)}
-            onChange={e => onPatch({ [field.path]: clampNumber(e.target.value) })}
+            onChange={e =>
+              onPatch(
+                field.writeAll
+                  ? expandWriteAll(field.writeAll, clampNumber(e.target.value))
+                  : { [field.path]: clampNumber(e.target.value) },
+              )
+            }
           />
         </BindableField>
       );
@@ -347,20 +366,26 @@ const FieldRow: React.FC<FieldRowProps> = ({
               type="number"
               value={String(numeric)}
               onChange={e =>
-                onPatch({
-                  [field.path]: clampNumber(e.target.value),
-                  [unitKey]: unit,
-                })
+                onPatch(
+                  field.writeAll
+                    ? expandWriteAll(field.writeAll, clampNumber(e.target.value), { unit })
+                    : { [field.path]: clampNumber(e.target.value), [unitKey]: unit },
+                )
               }
             />
             <select
               value={String(unit)}
-              onChange={e =>
-                onPatch({
-                  [field.path]: numeric,
-                  [unitKey]: Number(e.target.value),
-                })
-              }
+              onChange={e => {
+                const nextUnit = Number(e.target.value);
+                const parent = measureParentBox(entity as unknown as number);
+                const dim = parent ? parent[axisForPath(field.path)] : 0;
+                const nextValue = convertLength(numeric, unit, nextUnit, dim);
+                onPatch(
+                  field.writeAll
+                    ? expandWriteAll(field.writeAll, nextValue, { unit: nextUnit })
+                    : { [field.path]: nextValue, [unitKey]: nextUnit },
+                );
+              }}
             >
               <option value={String(YGU_POINT)}>px</option>
               <option value={String(YGU_PERCENT)}>%</option>
@@ -387,19 +412,32 @@ const FieldRow: React.FC<FieldRowProps> = ({
         >
           {subs.map(sub => {
             const v = (componentValue?.[sub.path] as number | undefined) ?? 0;
+            const subBound = bindings?.[`${field.componentId}.${sub.path}`];
             return (
-              <TextField
+              <BindableSubField
                 key={sub.path}
-                type="number"
-                leftLabel={sub.leftLabel}
-                value={String(v)}
-                onChange={e =>
-                  onPatch({
-                    [sub.path]: clampNumber(e.target.value),
-                    [`${sub.path}Unit`]: unit,
-                  })
-                }
-              />
+                field={{
+                  componentId: field.componentId,
+                  path: sub.path,
+                  kind: 'length',
+                  label: sub.leftLabel,
+                }}
+                entity={entity}
+                selectedRoot={selectedRoot}
+                bound={subBound}
+              >
+                <TextField
+                  type="number"
+                  leftLabel={sub.leftLabel}
+                  value={String(v)}
+                  onChange={e =>
+                    onPatch({
+                      [sub.path]: clampNumber(e.target.value),
+                      [`${sub.path}Unit`]: unit,
+                    })
+                  }
+                />
+              </BindableSubField>
             );
           })}
           <div className="ui-designer-unit-selector">
@@ -407,8 +445,12 @@ const FieldRow: React.FC<FieldRowProps> = ({
               value={String(unit)}
               onChange={e => {
                 const nextUnit = Number(e.target.value);
+                const parent = measureParentBox(entity as unknown as number);
                 const patch: Record<string, unknown> = {};
                 for (const sub of subs) {
+                  const cur = (componentValue?.[sub.path] as number | undefined) ?? 0;
+                  const dim = parent ? parent[axisForPath(sub.path)] : 0;
+                  patch[sub.path] = convertLength(cur, unit, nextUnit, dim);
                   patch[`${sub.path}Unit`] = nextUnit;
                 }
                 onPatch(patch);
@@ -435,33 +477,45 @@ const FieldRow: React.FC<FieldRowProps> = ({
         >
           {subs.map(sub => {
             const v = (componentValue?.[sub.path] as number | undefined) ?? 0;
+            const subBound = bindings?.[`${field.componentId}.${sub.path}`];
             return (
-              <TextField
+              <BindableSubField
                 key={sub.path}
-                type="number"
-                leftLabel={sub.leftLabel}
-                value={String(v)}
-                onChange={e =>
-                  onPatch({
-                    [sub.path]: clampNumber(e.target.value),
-                    [`${sub.path}Unit`]: YGU_POINT,
-                  })
-                }
-              />
+                field={{
+                  componentId: field.componentId,
+                  path: sub.path,
+                  kind: 'length',
+                  label: sub.leftLabel,
+                }}
+                entity={entity}
+                selectedRoot={selectedRoot}
+                bound={subBound}
+              >
+                <TextField
+                  type="number"
+                  leftLabel={sub.leftLabel}
+                  value={String(v)}
+                  disabled={fieldDisabled}
+                  onChange={e =>
+                    onPatch({
+                      [sub.path]: clampNumber(e.target.value),
+                      [`${sub.path}Unit`]: YGU_POINT,
+                    })
+                  }
+                />
+              </BindableSubField>
             );
           })}
         </BindableField>
       );
     }
     case 'color': {
-      // Color4 = RGBA in [0..1]. The row is:
-      //   - checkerboard preview (so transparency is visible at a glance),
-      //   - native <input type="color"> for hue (RGB only — browser limitation),
-      //   - alpha slider 0..100% (HUD overlays need this).
-      const c = (raw as Color4 | undefined) ?? { r: 0, g: 0, b: 0, a: 1 };
-      const hex = color4ToHex(c);
-      const alphaPercent = Math.round((c.a ?? 1) * 100);
-      const previewBg = `rgba(${Math.round(c.r * 255)}, ${Math.round(c.g * 255)}, ${Math.round(c.b * 255)}, ${c.a ?? 1})`;
+      const c = (raw as Color4 | undefined) ?? {
+        r: 0,
+        g: 0,
+        b: 0,
+        a: 1,
+      };
       return (
         <BindableField
           field={field}
@@ -469,35 +523,14 @@ const FieldRow: React.FC<FieldRowProps> = ({
           selectedRoot={selectedRoot}
           bound={boundProp}
         >
-          <div className="ui-designer-color-row">
-            <span className="ui-designer-color-preview">
-              <span
-                className="ui-designer-color-preview-overlay"
-                style={{ backgroundColor: previewBg }}
-              />
-            </span>
-            <input
-              type="color"
-              className="ui-designer-color-picker"
-              value={hex}
-              onChange={e => onPatch({ [field.path]: hexToColor4(e.target.value, c.a ?? 1) })}
-            />
-            <input
-              type="range"
-              className="ui-designer-alpha-slider"
-              min={0}
-              max={100}
-              step={1}
-              value={alphaPercent}
-              title={`Alpha ${alphaPercent}%`}
-              onChange={e =>
-                onPatch({
-                  [field.path]: { r: c.r, g: c.g, b: c.b, a: Number(e.target.value) / 100 },
-                })
-              }
-            />
-            <span className="ui-designer-alpha-label">{alphaPercent}%</span>
-          </div>
+          <RgbaColorField
+            value={c}
+            onChange={next =>
+              onPatch(
+                field.writeAll ? expandWriteAll(field.writeAll, next) : { [field.path]: next },
+              )
+            }
+          />
         </BindableField>
       );
     }
@@ -543,7 +576,7 @@ const FieldRow: React.FC<FieldRowProps> = ({
           selectedRoot={selectedRoot}
           bound={boundProp}
         >
-          {null}
+          <span className="ui-designer-callback-hint">Bind a callback variable…</span>
         </BindableField>
       );
     }

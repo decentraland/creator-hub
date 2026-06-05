@@ -57,64 +57,8 @@
   resize: vertical;
 }
 
-/* RGBA color row: preview chip + native picker + alpha slider + percent. */
-.ui-designer-color-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-}
-
-/* Checkerboard background lives on the outer span. The color overlay rides
-   on top as a child via an absolute fill — so the checkerboard shows through
-   wherever the alpha < 1, giving a recognizable "this is transparent" cue. */
-.ui-designer-color-preview {
-  flex: 0 0 auto;
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background-color: rgba(255, 255, 255, 0.05);
-  background-image:
-    linear-gradient(45deg, rgba(255, 255, 255, 0.25) 25%, transparent 25%),
-    linear-gradient(-45deg, rgba(255, 255, 255, 0.25) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.25) 75%),
-    linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.25) 75%);
-  background-size: 8px 8px;
-  background-position: 0 0, 0 4px, 4px -4px, -4px 0;
-  position: relative;
-  overflow: hidden;
-  display: inline-block;
-}
-
-.ui-designer-color-preview-overlay {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.ui-designer-color-picker {
-  flex: 0 0 auto;
-  width: 32px;
-  height: 24px;
-  padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 4px;
-  background: transparent;
-  cursor: pointer;
-}
-
-.ui-designer-alpha-slider {
-  flex: 1 1 auto;
-  min-width: 60px;
-  accent-color: var(--primary-main);
-}
-
-.ui-designer-alpha-label {
-  flex: 0 0 auto;
-  min-width: 36px;
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.6);
-  text-align: right;
-  font-variant-numeric: tabular-nums;
+.ui-designer-callback-hint {
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+  font-size: 12px;
 }
