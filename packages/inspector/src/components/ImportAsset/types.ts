@@ -1,6 +1,7 @@
 import type { ValidationResult as Gltf } from '@dcl/gltf-validator-ts';
 import type { TreeNode } from '../ProjectAssetExplorer/ProjectView';
 import type { Props as DropdownProps } from '../ui/Dropdown/types';
+import type { TextureIssue, TextureImageInfo } from './texture-validation';
 
 export type {
   ValidationResult as Gltf,
@@ -22,13 +23,15 @@ export type ModelAsset = BaseAsset & {
   gltf: Gltf;
   buffers: BaseAsset[];
   images: BaseAsset[];
+  textureIssues?: TextureIssue[];
+  textureImages?: TextureImageInfo[];
 };
 
 export type Asset = ModelAsset | BaseAsset;
 
 export type ValidationError =
   | {
-      type: 'size' | 'type' | 'name' | 'model';
+      type: 'size' | 'type' | 'name' | 'model' | 'texture';
       message: string;
     }
   | undefined;

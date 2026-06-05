@@ -17,6 +17,7 @@ export const initialState: SceneMetricsState = {
     bodies: 0,
     materials: 0,
     textures: 0,
+    texturePixels: 0,
   },
   limits: {
     triangles: 0,
@@ -24,6 +25,7 @@ export const initialState: SceneMetricsState = {
     bodies: 0,
     materials: 0,
     textures: 0,
+    texturePixels: 0,
   },
   entitiesOutOfBoundaries: [],
   hasCustomCode: false,

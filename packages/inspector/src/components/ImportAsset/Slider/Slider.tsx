@@ -1,10 +1,13 @@
 import { useCallback, useMemo, useState } from 'react';
 
+import type { TextureIssue, TextureImageInfo } from '../texture-validation';
 import { Error } from '../Error';
 import { Button } from '../../Button';
 import type { Asset } from '../types';
+import { isModelAsset } from '../types';
 import { determineAssetType, formatFileName } from '../utils';
 import { AssetSlides } from './AssetSlides';
+import { TextureWarnings } from './TextureWarnings';
 import { useSliderAssets } from './useSliderAssets';
 import type { PropTypes, Thumbnails } from './types';
 
@@ -12,6 +15,7 @@ import './Slider.css';
 
 enum ImportStep {
   UPLOAD = 'upload',
+  TEXTURE_WARNINGS = 'texture_warnings',
   CONFIRM = 'confirm',
 }
 
@@ -20,6 +24,7 @@ export function Slider({ assets, onSubmit, isNameAvailable, isImporting = false 
   const [slide, setSlide] = useState(0);
   const [screenshots, setScreenshots] = useState<Thumbnails>({});
   const [step, setStep] = useState<ImportStep>(ImportStep.UPLOAD);
+  const [isFixingTextures, setIsFixingTextures] = useState(false);
 
   const invalidNames = useMemo(() => {
     const all = new Set<string>();
@@ -37,6 +42,22 @@ export function Slider({ assets, onSubmit, isNameAvailable, isImporting = false 
     return invalid;
   }, [uploadedAssets, isNameAvailable]);
 
+  const textureIssues = useMemo(() => {
+    const issues: { asset: Asset; issues: TextureIssue[]; images: TextureImageInfo[] }[] = [];
+    for (const asset of uploadedAssets) {
+      if (isModelAsset(asset) && asset.textureIssues?.length) {
+        issues.push({
+          asset,
+          issues: asset.textureIssues,
+          images: asset.textureImages ?? [],
+        });
+      }
+    }
+    return issues;
+  }, [uploadedAssets]);
+
+  const hasTextureIssues = textureIssues.length > 0;
+
   const handleSubmit = useCallback(() => {
     onSubmit(
       uploadedAssets.map($ => ({
@@ -47,12 +68,80 @@ export function Slider({ assets, onSubmit, isNameAvailable, isImporting = false 
   }, [uploadedAssets, screenshots, onSubmit]);
 
   const handleConfirmImport = useCallback(() => {
-    if (invalidNames.size > 0) {
+    if (hasTextureIssues) {
+      setStep(ImportStep.TEXTURE_WARNINGS);
+    } else if (invalidNames.size > 0) {
       setStep(ImportStep.CONFIRM);
     } else {
       handleSubmit();
     }
-  }, [invalidNames, handleSubmit]);
+  }, [hasTextureIssues, invalidNames, handleSubmit]);
+
+  const handleFixTextures = useCallback(async () => {
+    setIsFixingTextures(true);
+    try {
+      const { fixExternalImages, fixGlbEmbeddedImages } = await import('../texture-validation');
+
+      const updatedAssets = await Promise.all(
+        uploadedAssets.map(async asset => {
+          if (
+            !isModelAsset(asset) ||
+            !asset.textureIssues?.length ||
+            !asset.textureImages?.length
+          ) {
+            return asset;
+          }
+
+          const isGlb = asset.extension.toLowerCase() === 'glb';
+
+          if (isGlb) {
+            const buffer = await asset.blob.arrayBuffer();
+            const fixedBuffer = await fixGlbEmbeddedImages(
+              buffer,
+              asset.textureImages,
+              asset.textureIssues,
+            );
+            const fixedBlob = new File([fixedBuffer], asset.blob.name, {
+              type: asset.blob.type,
+            });
+            return {
+              ...asset,
+              blob: fixedBlob,
+              textureIssues: undefined,
+              textureImages: undefined,
+            };
+          } else {
+            const externalFiles = new Map(asset.images.map(img => [img.blob.name, img]));
+
+            const fixedFiles = await fixExternalImages(
+              asset.textureImages,
+              asset.textureIssues,
+              externalFiles,
+            );
+
+            const updatedImages = asset.images.map(img => {
+              const fixed = fixedFiles.get(img.blob.name);
+              return fixed ? { ...img, blob: fixed } : img;
+            });
+
+            return {
+              ...asset,
+              images: updatedImages,
+              textureIssues: undefined,
+              textureImages: undefined,
+            };
+          }
+        }),
+      );
+
+      setUploadedAssets(updatedAssets);
+      setStep(ImportStep.UPLOAD);
+    } catch (error) {
+      console.error('Failed to fix textures:', error);
+    } finally {
+      setIsFixingTextures(false);
+    }
+  }, [uploadedAssets, setUploadedAssets]);
 
   const handleScreenshot = useCallback(
     (file: Asset) => (thumbnail: string) => {
@@ -129,6 +218,14 @@ export function Slider({ assets, onSubmit, isNameAvailable, isImporting = false 
             {importText}
           </Button>
         </div>
+      )}
+      {step === ImportStep.TEXTURE_WARNINGS && (
+        <TextureWarnings
+          textureIssues={textureIssues}
+          isFixing={isFixingTextures}
+          onFix={handleFixTextures}
+          onBack={() => setStep(ImportStep.UPLOAD)}
+        />
       )}
       {step === ImportStep.CONFIRM && (
         <>
