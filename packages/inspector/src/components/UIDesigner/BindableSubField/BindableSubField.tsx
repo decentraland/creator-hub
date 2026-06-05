@@ -9,7 +9,7 @@ import { useFieldBinding } from '../useFieldBinding';
 import './BindableSubField.css';
 
 interface BindableSubFieldProps {
-  field: FieldConfig; // synthetic: { componentId, path, kind, label }
+  field: FieldConfig; // synthetic: { componentId, path, kind }
   entity: Entity;
   selectedRoot: Entity;
   bound?: string;

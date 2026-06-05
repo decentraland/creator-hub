@@ -1,8 +1,10 @@
+import type { Entity } from '@dcl/ecs';
+
 import { CANVAS_SCALE } from './Canvas';
 
 // Measure the rendered box of the selected node's PARENT, in logical (Yoga) px.
 // Returns null when the node isn't in the canvas DOM or the parent has no size.
-export function measureParentBox(entity: number): { width: number; height: number } | null {
+export function measureParentBox(entity: Entity): { width: number; height: number } | null {
   const id = Number(entity);
   if (!Number.isInteger(id)) return null;
   const el = document.querySelector(`[data-entity="${id}"]`);

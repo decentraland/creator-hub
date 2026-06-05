@@ -240,6 +240,7 @@ const FieldRow: React.FC<FieldRowProps> = ({
   onPatch,
 }) => {
   const boundProp = bound ? { variable: bound } : undefined;
+  const [srcError, setSrcError] = useState<string | undefined>(undefined);
   const raw = componentValue?.[field.path];
   const fieldDisabled =
     field.disabledWhen?.((componentValue ?? {}) as Record<string, unknown>) ?? false;
@@ -272,9 +273,14 @@ const FieldRow: React.FC<FieldRowProps> = ({
         >
           <TextField
             value={v}
+            error={srcError}
             onChange={e => {
               const next = e.target.value;
-              if (field.path === 'src' && next.includes('..')) return;
+              if (field.path === 'src' && next.includes('..')) {
+                setSrcError('Paths cannot contain ".."');
+                return;
+              }
+              setSrcError(undefined);
               onPatch({ [field.path]: next });
             }}
           />
@@ -375,7 +381,7 @@ const FieldRow: React.FC<FieldRowProps> = ({
               value={String(unit)}
               onChange={e => {
                 const nextUnit = Number(e.target.value);
-                const parent = measureParentBox(entity as unknown as number);
+                const parent = measureParentBox(entity);
                 const dim = parent ? parent[axisForPath(field.path)] : 0;
                 const nextValue = convertLength(numeric, unit, nextUnit, dim);
                 onPatch(
@@ -442,7 +448,7 @@ const FieldRow: React.FC<FieldRowProps> = ({
               value={String(unit)}
               onChange={e => {
                 const nextUnit = Number(e.target.value);
-                const parent = measureParentBox(entity as unknown as number);
+                const parent = measureParentBox(entity);
                 const patch: Record<string, unknown> = {};
                 for (const sub of subs) {
                   const cur = (componentValue?.[sub.path] as number | undefined) ?? 0;
