@@ -1,10 +1,10 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React from 'react';
 import type { Entity } from '@dcl/ecs';
 
 import { Pill } from '../../ui/Pill';
-import { useSdk } from '../../../hooks/sdk/useSdk';
 import type { FieldConfig } from '../field-configs';
 import { VariablePicker } from '../VariablePicker';
+import { useFieldBinding } from '../useFieldBinding';
 
 import './BindableSubField.css';
 
@@ -23,25 +23,7 @@ export const BindableSubField: React.FC<BindableSubFieldProps> = ({
   bound,
   children,
 }) => {
-  const sdk = useSdk();
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const anchorRef = useRef<HTMLButtonElement>(null);
-  const pathKey = `${field.componentId}.${field.path}`;
-
-  const onBind = useCallback(
-    (variableName: string) => {
-      if (!sdk) return;
-      sdk.operations.bindField(entity, pathKey, variableName);
-      void sdk.operations.dispatch();
-      setPickerOpen(false);
-    },
-    [sdk, entity, pathKey],
-  );
-  const onUnbind = useCallback(() => {
-    if (!sdk) return;
-    sdk.operations.unbindField(entity, pathKey);
-    void sdk.operations.dispatch();
-  }, [sdk, entity, pathKey]);
+  const { pickerOpen, setPickerOpen, anchorRef, onBind, onUnbind } = useFieldBinding(field, entity);
 
   if (bound) {
     return (

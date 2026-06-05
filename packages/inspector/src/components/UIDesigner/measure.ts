@@ -3,7 +3,9 @@ import { CANVAS_SCALE } from './Canvas';
 // Measure the rendered box of the selected node's PARENT, in logical (Yoga) px.
 // Returns null when the node isn't in the canvas DOM or the parent has no size.
 export function measureParentBox(entity: number): { width: number; height: number } | null {
-  const el = document.querySelector(`[data-entity="${entity}"]`);
+  const id = Number(entity);
+  if (!Number.isInteger(id)) return null;
+  const el = document.querySelector(`[data-entity="${id}"]`);
   const parent = el?.parentElement;
   if (!parent) return null;
   const r = parent.getBoundingClientRect();
@@ -12,7 +14,7 @@ export function measureParentBox(entity: number): { width: number; height: numbe
 }
 
 // Which parent dimension a length path is a percentage of.
-// width/min/max-width, positionLeft/Right, flexBasis → width; the rest → height.
+// height/top/bottom paths are a percentage of height; the rest of width.
 export function axisForPath(path: string): 'width' | 'height' {
   return /height|top|bottom/i.test(path) ? 'height' : 'width';
 }

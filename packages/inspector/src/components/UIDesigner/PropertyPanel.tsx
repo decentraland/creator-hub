@@ -73,7 +73,7 @@ function clampNumber(raw: string): number {
 }
 
 // For a `writeAll` field, replicate a single value across all target paths.
-// `unitKeySuffix` mirrors the `${path}Unit` companion for length fields.
+// When `withUnit` is given, also writes each path's `${path}Unit` companion.
 function expandWriteAll(
   paths: string[],
   value: unknown,
@@ -272,7 +272,11 @@ const FieldRow: React.FC<FieldRowProps> = ({
         >
           <TextField
             value={v}
-            onChange={e => onPatch({ [field.path]: e.target.value })}
+            onChange={e => {
+              const next = e.target.value;
+              if (field.path === 'src' && next.includes('..')) return;
+              onPatch({ [field.path]: next });
+            }}
           />
         </BindableField>
       );
@@ -289,13 +293,7 @@ const FieldRow: React.FC<FieldRowProps> = ({
           <TextField
             type="number"
             value={String(v)}
-            onChange={e =>
-              onPatch(
-                field.writeAll
-                  ? expandWriteAll(field.writeAll, clampNumber(e.target.value))
-                  : { [field.path]: clampNumber(e.target.value) },
-              )
-            }
+            onChange={e => onPatch({ [field.path]: clampNumber(e.target.value) })}
           />
         </BindableField>
       );
@@ -420,7 +418,6 @@ const FieldRow: React.FC<FieldRowProps> = ({
                   componentId: field.componentId,
                   path: sub.path,
                   kind: 'length',
-                  label: sub.leftLabel,
                 }}
                 entity={entity}
                 selectedRoot={selectedRoot}
@@ -485,7 +482,6 @@ const FieldRow: React.FC<FieldRowProps> = ({
                   componentId: field.componentId,
                   path: sub.path,
                   kind: 'length',
-                  label: sub.leftLabel,
                 }}
                 entity={entity}
                 selectedRoot={selectedRoot}

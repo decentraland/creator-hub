@@ -34,7 +34,7 @@ export interface VecSubField {
 }
 
 export interface FieldConfig {
-  label: string;
+  label?: string;
   componentId: string;
   // For `length`: the *base* field name (without `Unit` suffix). e.g. 'width'
   // writes to both `width` and `widthUnit`.

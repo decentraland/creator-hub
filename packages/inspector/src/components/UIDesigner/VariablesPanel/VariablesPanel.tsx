@@ -17,6 +17,7 @@ import { color4ToHex, hexToColor4 } from '../../ui/RgbaColorField/color';
 import './VariablesPanel.css';
 
 const VALID_IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
+const VALID_NUMBER_DEFAULT = /^-?\d+(\.\d+)?$/;
 
 const TYPE_OPTIONS: { value: VariableType; label: string }[] = [
   { value: VariableType.STRING, label: 'String' },
@@ -156,6 +157,7 @@ const VariableRow: React.FC<VariableRowProps> = ({
   const [localName, setLocalName] = useState(variable.name);
   const [nameError, setNameError] = useState<string | undefined>(undefined);
   const [localDefault, setLocalDefault] = useState(variable.defaultValue);
+  const [defaultError, setDefaultError] = useState<string | undefined>(undefined);
 
   // Re-sync local fields when the underlying variable changes (e.g. external
   // rename, type change resetting default).
@@ -184,9 +186,21 @@ const VariableRow: React.FC<VariableRowProps> = ({
   }, [localName, variable.name, existingNames, onRename]);
 
   const commitDefault = useCallback(() => {
-    if (localDefault === variable.defaultValue) return;
+    if (localDefault === variable.defaultValue) {
+      setDefaultError(undefined);
+      return;
+    }
+    if (variable.type === VariableType.NUMBER && !VALID_NUMBER_DEFAULT.test(localDefault)) {
+      setDefaultError('Must be a number');
+      return;
+    }
+    if (variable.type === VariableType.STRING && localDefault.includes('..')) {
+      setDefaultError('Paths cannot contain ".."');
+      return;
+    }
+    setDefaultError(undefined);
     onPatch({ defaultValue: localDefault });
-  }, [localDefault, variable.defaultValue, onPatch]);
+  }, [localDefault, variable.defaultValue, variable.type, onPatch]);
 
   return (
     <div className="ui-designer-variable-row">
@@ -239,6 +253,7 @@ const VariableRow: React.FC<VariableRowProps> = ({
             onChange={e => setLocalDefault(e.target.value)}
             onBlur={commitDefault}
             disabled={variable.type === VariableType.CALLBACK}
+            error={defaultError}
           />
         )}
       </Block>
