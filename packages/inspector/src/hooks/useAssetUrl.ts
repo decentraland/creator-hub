@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
-import { getDataLayerInterface } from '../../../redux/data-layer';
-import type { GetFileResponse } from '../../../lib/data-layer/remote-data-layer';
-import { getMimeType, isExternalUrl, normalizePath } from './utils';
+import { getDataLayerInterface } from '../redux/data-layer';
+import type { GetFileResponse } from '../lib/data-layer/remote-data-layer';
+import {
+  getMimeType,
+  isExternalUrl,
+  normalizePath,
+} from '../components/SceneInfoPanel/MarkdownRenderer/utils';
 
 /**
  * Hook that loads an asset from either an external URL or the scene filesystem
@@ -46,7 +50,7 @@ export function useAssetUrl(src: string | undefined): string | undefined {
         objectUrl = URL.createObjectURL(blob);
         setAssetUrl(objectUrl);
       } catch (err) {
-        console.error(`Failed to load asset on Scene Info: ${src}`, err);
+        console.error(`Failed to load asset URL for path: ${src}`, err);
       }
     };
 

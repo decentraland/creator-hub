@@ -6,17 +6,15 @@ import type {
   TextureUnion,
 } from '@dcl/ecs';
 import type { UIBindings, UISegment } from '@dcl/asset-packs';
-import { ComponentName, validateAssetPath } from '@dcl/asset-packs';
+import { ComponentName } from '@dcl/asset-packs';
 
 import { useChange } from '../../hooks/sdk/useChange';
 import { useSdk } from '../../hooks/sdk/useSdk';
 import { useAppSelector } from '../../redux/hooks';
-import { useAssetOptions } from '../../hooks/useAssetOptions';
 import { getSelectedNode, getSelectedRoot } from '../../redux/ui-designer';
 import { Block } from '../Block';
 import { Container } from '../Container';
-import { FileUploadField, TextField } from '../ui';
-import { ACCEPTED_FILE_TYPES } from '../ui/FileUploadField/types';
+import { TextField } from '../ui';
 import { RgbaColorField } from '../ui/RgbaColorField';
 import { debounce } from '../../lib/utils/debounce';
 import { measureParentBox, axisForPath, convertLength } from './measure';
@@ -25,6 +23,7 @@ import { BindableField } from './BindableField';
 import { BindableSubField } from './BindableSubField';
 import { MixedContentField } from './MixedContentField';
 import { seedSegments } from './MixedContentField/segments';
+import { TextureField } from './TextureField';
 import {
   buildLayoutGroup,
   BORDER_GROUP,
@@ -247,8 +246,6 @@ const FieldRow: React.FC<FieldRowProps> = ({
   onPatch,
 }) => {
   const boundProp = bound ? { variable: bound } : undefined;
-  const [textureError, setTextureError] = useState<string | undefined>(undefined);
-  const imageOptions = useAssetOptions(ACCEPTED_FILE_TYPES.image);
   const raw = componentValue?.[field.path];
   const fieldDisabled =
     field.disabledWhen?.((componentValue ?? {}) as Record<string, unknown>) ?? false;
@@ -536,38 +533,17 @@ const FieldRow: React.FC<FieldRowProps> = ({
       );
     }
     case 'texture': {
-      // The PBUiBackground `texture` key is a discriminated `TextureUnion`.
-      // V1 supports the file variant only (`tex.$case === 'texture'`); the
-      // avatar/video variants are a future extension.
-      const tex = (componentValue?.texture as TextureUnion | undefined)?.tex;
-      const existing = tex?.$case === 'texture' ? tex.texture : undefined;
-      const src = existing?.src ?? '';
-      const commit = (next: string) => {
-        if (next === '') {
-          setTextureError(undefined);
-          onPatch({ texture: undefined });
-          return;
-        }
-        const pathError = next ? validateAssetPath(next) : null;
-        setTextureError(pathError ?? undefined);
-        if (pathError !== null) return;
-        onPatch({
-          texture: { tex: { $case: 'texture', texture: { ...(existing ?? {}), src: next } } },
-        });
-      };
+      // The PBUiBackground `texture` key is a discriminated `TextureUnion`
+      // (file / avatar / video variants). `TextureField` owns variant
+      // selection, per-variant editing, and file-path validation.
       return (
         <Block
           label={field.label}
           info={field.info}
         >
-          <FileUploadField
-            value={src}
-            error={textureError}
-            accept={ACCEPTED_FILE_TYPES.image}
-            options={imageOptions}
-            acceptURLs
-            onDrop={commit}
-            onChange={e => commit(e.target.value)}
+          <TextureField
+            value={componentValue?.texture as TextureUnion | undefined}
+            onChange={next => onPatch({ texture: next })}
           />
         </Block>
       );

@@ -4,6 +4,7 @@ import cx from 'classnames';
 import type { PBUiTransform } from '@dcl/ecs';
 
 import { useSdk } from '../../hooks/sdk/useSdk';
+import { useAssetUrl } from '../../hooks/useAssetUrl';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { getSelectedNode, getTool, selectNode } from '../../redux/ui-designer';
 import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from './Palette';
@@ -58,6 +59,12 @@ const YGD_NONE = 1;
 
 // YGPositionType
 const YGPT_ABSOLUTE = 1;
+
+// BackgroundTextureMode (PB) — NINE_SLICES=0, CENTER=1, STRETCH=2. See
+// node_modules/@dcl/ecs/dist/components/generated/pb/decentraland/sdk/components/ui_background.gen.d.ts
+// Only CENTER needs distinct handling; STRETCH and NINE_SLICES (approximated)
+// both map to a full-box stretch.
+const BTM_CENTER = 1;
 
 const FLEX_DIRECTION: Record<number, React.CSSProperties['flexDirection']> = {
   0: 'row',
@@ -238,11 +245,13 @@ function nodeStyle(node: UINode): React.CSSProperties {
       if (color) (style as Record<string, unknown>)[`border${side}Color`] = color4ToRgba(color);
     }
   };
-  const bt = (node.uiTransform ?? {}) as Record<string, any>;
-  applyBorder('Top', 'borderTopWidth', 'borderTopWidthUnit', bt.borderTopColor);
-  applyBorder('Right', 'borderRightWidth', 'borderRightWidthUnit', bt.borderRightColor);
-  applyBorder('Bottom', 'borderBottomWidth', 'borderBottomWidthUnit', bt.borderBottomColor);
-  applyBorder('Left', 'borderLeftWidth', 'borderLeftWidthUnit', bt.borderLeftColor);
+  // Border colors are color objects, not the numbers `t` is typed as; read
+  // them off the same object through a widened view.
+  const tc = t as Record<string, any>;
+  applyBorder('Top', 'borderTopWidth', 'borderTopWidthUnit', tc.borderTopColor);
+  applyBorder('Right', 'borderRightWidth', 'borderRightWidthUnit', tc.borderRightColor);
+  applyBorder('Bottom', 'borderBottomWidth', 'borderBottomWidthUnit', tc.borderBottomColor);
+  applyBorder('Left', 'borderLeftWidth', 'borderLeftWidthUnit', tc.borderLeftColor);
 
   if (b?.color) {
     style.backgroundColor = color4ToRgba(b.color);
@@ -257,6 +266,39 @@ function nodeStyle(node: UINode): React.CSSProperties {
     style.textAlign = TEXT_ALIGN_H[text.textAlign];
   }
   return style;
+}
+
+// The resolved URL is interpolated into a CSS `url("...")` context. A value
+// containing a quote/paren/whitespace/backslash could break out of that
+// context, so we gate emission on a strict allowlist (output-sink hardening,
+// independent of the TextureField commit-path validation). blob: is the normal
+// asset-path case; http/https covers acceptURLs; data:image/ is harmless for
+// images. Anything else (or an unsafe character) drops the image entirely and
+// the background color still shows.
+function safeTextureUrl(url: string): string | undefined {
+  if (/["'()\\\s]/.test(url)) return undefined;
+  if (!/^(blob:|https?:|data:image\/)/.test(url)) return undefined;
+  return url;
+}
+
+// Map a resolved file-texture blob URL + PB textureMode to CSS background-*.
+// Layered on top of nodeStyle so the background COLOR remains a fallback while
+// the image is still loading. NINE_SLICES has no clean CSS equivalent here;
+// we approximate it with a full stretch (border-image slicing would need the
+// per-side slice values and is out of scope for the preview).
+function textureStyle(url: string, textureMode: number | undefined): React.CSSProperties {
+  const safe = safeTextureUrl(url);
+  const base: React.CSSProperties = {
+    backgroundRepeat: 'no-repeat',
+  };
+  if (safe) {
+    base.backgroundImage = `url("${safe}")`;
+  }
+  if (textureMode === BTM_CENTER) {
+    return { ...base, backgroundSize: 'auto', backgroundPosition: 'center' };
+  }
+  // STRETCH and NINE_SLICES (approximated) both cover the full box.
+  return { ...base, backgroundSize: '100% 100%' };
 }
 
 type CanvasNodeProps = { node: UINode };
@@ -274,6 +316,16 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
     selectedIndex?: number;
     emptyLabel?: string;
   };
+
+  // Only the FILE texture variant is previewable as a CSS background-image.
+  // Avatar/video textures resolve to no preview (color/layout still renders).
+  const background = (node.uiBackground ?? {}) as {
+    texture?: { tex?: { $case: string; texture?: { src?: string } } };
+    textureMode?: number;
+  };
+  const tex = background.texture?.tex;
+  const texSrc = tex?.$case === 'texture' ? tex.texture?.src : undefined;
+  const texUrl = useAssetUrl(texSrc);
 
   // Ref to the rendered div so we can translate viewport drop coords into
   // logical (Yoga) coords inside this node.
@@ -616,6 +668,12 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
         transform: `${baseStyle.transform ?? ''} translate(${live.dx}px, ${live.dy}px)`.trim(),
       };
     }
+  }
+
+  // Layer the resolved file-texture on top. backgroundColor (a separate
+  // property) survives as a fallback while the blob URL is still loading.
+  if (texUrl) {
+    style = { ...style, ...textureStyle(texUrl, background.textureMode) };
   }
 
   return (
