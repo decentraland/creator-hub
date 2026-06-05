@@ -1,8 +1,8 @@
 import type { Transport } from '@dcl/mini-rpc';
 import { RPC } from '@dcl/mini-rpc';
+import type { OptimizeAssetsSettings, OptimizeAssetsResult } from '@dcl/inspector/src/lib/rpc/scene/client';
 
 import { fs, editor } from '#preload';
-import type { OptimizeAssetsSettings, OptimizeAssetsResult } from '@dcl/inspector/src/lib/rpc/scene/client';
 
 import { type Project } from '/shared/types/projects';
 import { getPath } from '../';
