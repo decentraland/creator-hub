@@ -122,6 +122,7 @@ Files matching `*.styled.ts` / `*.styled.tsx` must follow these rules:
 - Variables and mocks go in `beforeEach`, cleanup in `afterEach`.
 - React: use `@testing-library/react` with accessible queries (`getByRole`, `getByLabelText`).
 - E2E: Playwright for both Electron app and web inspector.
+- **asset-packs unit specs**: a `*.spec.ts` may live in `packages/asset-packs/src/`, but it MUST stay excluded in BOTH `tsconfig.lib.json` and the base `tsconfig.json` (both `include: ["src"]` with `types: ["@dcl/js-runtime"]`, and are typechecked by `npm run build:lib` and `sdk-commands build` respectively). Otherwise the spec's `import … from 'vitest'` drags vitest→vite→rollup→`@types/node` global types into the library build and breaks it with `console`/`Response`/`Worker` conflicts.
 
 ## Skills
 
