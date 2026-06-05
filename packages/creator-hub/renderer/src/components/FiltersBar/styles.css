@@ -27,3 +27,7 @@
 .Filters .right > span {
   margin: 0 8px 0 0;
 }
+
+.Filters .right .SearchInput {
+  margin-left: 24px;
+}

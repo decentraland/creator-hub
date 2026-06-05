@@ -29,6 +29,7 @@ export type Template = {
 
 export type GetProjectsOpts = {
   omitOutdatedPackages?: boolean;
+  skipSize?: boolean;
 };
 
 export type Error = 'PROJECT_NOT_FOUND';

@@ -12,9 +12,11 @@ export type Layout = {
 };
 
 export enum SortBy {
+  CREATED = 'created',
   NEWEST = 'newest',
-  SIZE = 'size',
   NAME = 'name',
+  SIZE = 'size',
+  PARCELS = 'parcels',
 }
 
 export type DependencyState = { [k in PACKAGES]?: Outdated[keyof Outdated] };
@@ -23,6 +25,8 @@ export type ProjectInfo = {
   id: string;
   skipPublishWarning: boolean;
 };
+
+export type SizeStatus = 'pending' | 'loading' | 'done' | 'failed';
 
 export type Project = {
   id: string;
@@ -36,6 +40,7 @@ export type Project = {
   updatedAt: number;
   publishedAt: number;
   size: number;
+  sizeStatus?: SizeStatus;
   worldConfiguration?: WorldConfiguration;
   dependencyAvailableUpdates: DependencyState;
   status?: Status;

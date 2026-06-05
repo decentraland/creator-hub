@@ -1,0 +1,28 @@
+.PageSearchField {
+  min-width: 280px;
+}
+
+.PageSearchField .MuiInputBase-root {
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 12px;
+  color: var(--white);
+  font-size: 14px;
+  height: 40px;
+}
+
+.PageSearchField .MuiOutlinedInput-notchedOutline {
+  border-color: transparent;
+}
+
+.PageSearchField .MuiInputBase-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.PageSearchField .MuiInputBase-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: var(--primary);
+}
+
+.PageSearchField .MuiInputBase-input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+  opacity: 1;
+}

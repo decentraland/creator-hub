@@ -58,9 +58,10 @@ export const slice = createSlice({
       .addCase(thunks.getWorkspace.pending, state => {
         state.status = 'loading';
       })
-      .addCase(thunks.getWorkspace.fulfilled, (_, action) => {
+      .addCase(thunks.getWorkspace.fulfilled, (state, action) => {
         return {
           ...action.payload,
+          sortBy: state.sortBy,
           status: 'succeeded',
           error: null,
         };
@@ -182,6 +183,24 @@ export const slice = createSlice({
         const projectIdx = state.projects.findIndex($ => $.path === meta.arg.path);
         if (projectIdx !== -1) {
           state.projects[projectIdx] = { ...state.projects[projectIdx], status: 'failed' };
+        }
+      })
+      .addCase(thunks.getProjectSize.pending, (state, { meta }) => {
+        const idx = state.projects.findIndex($ => $.path === meta.arg.path);
+        if (idx !== -1) {
+          state.projects[idx] = { ...state.projects[idx], sizeStatus: 'loading' };
+        }
+      })
+      .addCase(thunks.getProjectSize.fulfilled, (state, { payload: { path, size } }) => {
+        const idx = state.projects.findIndex($ => $.path === path);
+        if (idx !== -1) {
+          state.projects[idx] = { ...state.projects[idx], size, sizeStatus: 'done' };
+        }
+      })
+      .addCase(thunks.getProjectSize.rejected, (state, { meta }) => {
+        const idx = state.projects.findIndex($ => $.path === meta.arg.path);
+        if (idx !== -1) {
+          state.projects[idx] = { ...state.projects[idx], sizeStatus: 'failed' };
         }
       })
       .addCase(deployment.executeDeployment.fulfilled, (state, payload) => {

@@ -14,6 +14,18 @@ import { WorkspaceError } from '/shared/types/workspace';
 
 export const getWorkspace = createAsyncThunk('workspace/getWorkspace', workspace.getWorkspace);
 export const getProject = createAsyncThunk('workspace/getProject', workspace.getProject);
+export const getProjectSize = createAsyncThunk(
+  'workspace/getProjectSize',
+  async ({ path }: { path: string }) => ({ path, size: await workspace.getProjectSize({ path }) }),
+);
+export const loadProjectSizes = createAsyncThunk(
+  'workspace/loadProjectSizes',
+  async (paths: string[], { dispatch }) => {
+    for (const path of paths) {
+      await dispatch(getProjectSize({ path }));
+    }
+  },
+);
 export const createProject = createAsyncThunk(
   'workspace/createProject',
   async (opts: Parameters<typeof workspace.createProject>[0]) => {

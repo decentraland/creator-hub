@@ -100,6 +100,10 @@ export const useWorkspace = () => {
     dispatch(workspaceActions.updateProjectInfo({ path, info }));
   }, []);
 
+  const loadProjectSizes = useCallback((paths: string[]) => {
+    dispatch(workspaceActions.loadProjectSizes(paths));
+  }, []);
+
   return {
     ...workspace,
     getWorkspace,
@@ -120,5 +124,6 @@ export const useWorkspace = () => {
     getAvailableProject,
     isLoading,
     updateProjectInfo,
+    loadProjectSizes,
   };
 };
