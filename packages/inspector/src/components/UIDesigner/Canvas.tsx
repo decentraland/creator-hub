@@ -10,11 +10,26 @@ import { getSelectedNode, getTool, selectNode } from '../../redux/ui-designer';
 import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from './Palette';
 import { useUINodeTree } from './useUINodeTree';
 import { clearNodeRegistry, registerNodeElement, unregisterNodeElement } from './node-registry';
-import type { UINode } from './tree-model';
+import { previewBoundText, type UINode } from './tree-model';
 
-// Logical canvas is 1920×1080; visual scale is 0.4 (see Canvas.css
-// `.ui-designer-canvas-root`). Keep this in sync if the CSS scale changes.
-export const CANVAS_SCALE = 0.4;
+// Logical canvas is 1920×1080. The default visual scale is 0.4; the user can
+// zoom (see the zoom controls in CanvasComponent). `canvasScale` is the LIVE
+// scale, read by the drag/resize coordinate math and by measure.ts so px↔%
+// conversions stay correct at any zoom level.
+export const DEFAULT_CANVAS_SCALE = 0.4;
+const ZOOM_MIN = 0.1;
+const ZOOM_MAX = 2;
+const ZOOM_STEP = 0.1;
+const clampZoom = (s: number): number =>
+  Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(s * 100) / 100));
+
+let canvasScale = DEFAULT_CANVAS_SCALE;
+export function getCanvasScale(): number {
+  return canvasScale;
+}
+export function setCanvasScale(scale: number): void {
+  canvasScale = scale;
+}
 
 // Snap grid for drag-to-move when Shift is NOT held. Held → free movement.
 // 10 logical px = 4 viewport px at the current scale — fine enough for
@@ -317,6 +332,14 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
     emptyLabel?: string;
   };
 
+  // Preview bound/mixed text: the value may live in UIBindings (segments or a
+  // whole-field binding) rather than the static PB value, so compose it here.
+  const labelText = previewBoundText(node.bindings, 'core::UiText.value', text.value ?? '');
+  const inputText =
+    previewBoundText(node.bindings, 'core::UiInput.value', input.value ?? '') ||
+    previewBoundText(node.bindings, 'core::UiInput.placeholder', input.placeholder ?? '') ||
+    'Input';
+
   // Only the FILE texture variant is previewable as a CSS background-image.
   // Avatar/video textures resolve to no preview (color/layout still renders).
   const background = (node.uiBackground ?? {}) as {
@@ -353,8 +376,8 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
         let localX = 0;
         let localY = 0;
         if (clientOffset && rect) {
-          localX = Math.round((clientOffset.x - rect.left) / CANVAS_SCALE);
-          localY = Math.round((clientOffset.y - rect.top) / CANVAS_SCALE);
+          localX = Math.round((clientOffset.x - rect.left) / getCanvasScale());
+          localY = Math.round((clientOffset.y - rect.top) / getCanvasScale());
         }
         const newEntity = sdk.operations.addUINode(node.entity, item.type);
         // Default behaviour: absolutely positioned at the drop point. Users
@@ -470,8 +493,8 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
         if (el && parentEl) {
           const elRect = el.getBoundingClientRect();
           const parentRect = parentEl.getBoundingClientRect();
-          startLeft = Math.round((elRect.left - parentRect.left) / CANVAS_SCALE);
-          startTop = Math.round((elRect.top - parentRect.top) / CANVAS_SCALE);
+          startLeft = Math.round((elRect.left - parentRect.left) / getCanvasScale());
+          startTop = Math.round((elRect.top - parentRect.top) / getCanvasScale());
         }
       }
 
@@ -495,8 +518,8 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
     const handleMove = (e: MouseEvent) => {
       const origin = dragOriginRef.current;
       if (!origin) return;
-      let dxLogical = (e.clientX - origin.mouseX) / CANVAS_SCALE;
-      let dyLogical = (e.clientY - origin.mouseY) / CANVAS_SCALE;
+      let dxLogical = (e.clientX - origin.mouseX) / getCanvasScale();
+      let dyLogical = (e.clientY - origin.mouseY) / getCanvasScale();
       if (!e.shiftKey) {
         // Snap to grid by quantising the FINAL position, not the delta,
         // so the snapped grid is anchored to absolute logical coords.
@@ -558,10 +581,10 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       resizeOriginRef.current = {
         mouseX: e.clientX,
         mouseY: e.clientY,
-        startTop: (elRect.top - parentRect.top) / CANVAS_SCALE,
-        startLeft: (elRect.left - parentRect.left) / CANVAS_SCALE,
-        startW: elRect.width / CANVAS_SCALE,
-        startH: elRect.height / CANVAS_SCALE,
+        startTop: (elRect.top - parentRect.top) / getCanvasScale(),
+        startLeft: (elRect.left - parentRect.left) / getCanvasScale(),
+        startW: elRect.width / getCanvasScale(),
+        startH: elRect.height / getCanvasScale(),
         dir,
       };
       resizeLiveRef.current = { dx: 0, dy: 0, dw: 0, dh: 0 };
@@ -577,8 +600,8 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
     const handleMove = (e: MouseEvent) => {
       const origin = resizeOriginRef.current;
       if (!origin) return;
-      const dxRaw = (e.clientX - origin.mouseX) / CANVAS_SCALE;
-      const dyRaw = (e.clientY - origin.mouseY) / CANVAS_SCALE;
+      const dxRaw = (e.clientX - origin.mouseX) / getCanvasScale();
+      const dyRaw = (e.clientY - origin.mouseY) / getCanvasScale();
       const axes = HANDLE_AXES[origin.dir];
 
       // Snap the FINAL position/size, not the delta, so the grid is anchored
@@ -691,11 +714,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       onMouseDown={handleMouseDown}
       data-type={node.type}
     >
-      {node.type === 'Input' ? (
-        <span className="ui-designer-canvas-input">
-          {input.value || input.placeholder || 'Input'}
-        </span>
-      ) : null}
+      {node.type === 'Input' ? <span className="ui-designer-canvas-input">{inputText}</span> : null}
       {node.type === 'Dropdown' ? (
         <span className="ui-designer-canvas-dropdown">
           <span className="ui-designer-canvas-dropdown-label">
@@ -704,10 +723,10 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
           <span className="ui-designer-canvas-dropdown-chevron">▼</span>
         </span>
       ) : null}
-      {(node.type === 'Label' || node.type === 'Button') && text?.value ? (
-        <span className="ui-designer-canvas-text">{text.value}</span>
+      {(node.type === 'Label' || node.type === 'Button') && labelText ? (
+        <span className="ui-designer-canvas-text">{labelText}</span>
       ) : null}
-      {node.type === 'Button' && !text?.value ? (
+      {node.type === 'Button' && !labelText ? (
         <span className="ui-designer-canvas-text ui-designer-canvas-placeholder">Button</span>
       ) : null}
       {node.children.map(child => (
@@ -731,22 +750,79 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
 
 const CanvasComponent: React.FC = () => {
   const tree = useUINodeTree();
+  const [scale, setScale] = useState(getCanvasScale());
+  const viewportRef = useRef<HTMLDivElement>(null);
+
+  // Keep the module-level scale (read by the drag/resize coordinate math and by
+  // measure.ts) in sync with the rendered zoom.
+  useEffect(() => {
+    setCanvasScale(scale);
+  }, [scale]);
+
   // Defensive: drop any stale entity→element entries when the canvas unmounts
   // (e.g. switching scenes). Individual node unmounts already unregister via
   // `setRef`; this guards against an entry surviving a full canvas teardown.
   useEffect(() => () => clearNodeRegistry(), []);
-  if (!tree) {
-    return (
-      <div className="ui-designer-canvas-empty">
-        <p>No UI selected. Create one from the left rail.</p>
-      </div>
-    );
-  }
+
+  // Ctrl/⌘ + wheel to zoom. Native non-passive listener so we can preventDefault
+  // (otherwise the browser page-zooms). Attached to the always-mounted viewport.
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      setScale(s => clampZoom(s - e.deltaY * 0.0015));
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
+
   return (
-    <div className="ui-designer-canvas-viewport">
-      <div className="ui-designer-canvas-root">
-        <CanvasNode node={tree} />
-      </div>
+    <div
+      ref={viewportRef}
+      className="ui-designer-canvas-viewport"
+    >
+      {tree ? (
+        <>
+          <div className="ui-designer-canvas-zoom">
+            <button
+              type="button"
+              className="ui-designer-canvas-zoom-btn"
+              onClick={() => setScale(s => clampZoom(s - ZOOM_STEP))}
+              aria-label="Zoom out"
+            >
+              −
+            </button>
+            <button
+              type="button"
+              className="ui-designer-canvas-zoom-level"
+              onClick={() => setScale(DEFAULT_CANVAS_SCALE)}
+              title="Reset zoom"
+            >
+              {Math.round(scale * 100)}%
+            </button>
+            <button
+              type="button"
+              className="ui-designer-canvas-zoom-btn"
+              onClick={() => setScale(s => clampZoom(s + ZOOM_STEP))}
+              aria-label="Zoom in"
+            >
+              +
+            </button>
+          </div>
+          <div
+            className="ui-designer-canvas-root"
+            style={{ transform: `scale(${scale})` }}
+          >
+            <CanvasNode node={tree} />
+          </div>
+        </>
+      ) : (
+        <div className="ui-designer-canvas-empty">
+          <p>No UI selected. Create one from the left rail.</p>
+        </div>
+      )}
     </div>
   );
 };

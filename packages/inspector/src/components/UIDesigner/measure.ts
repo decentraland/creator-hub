@@ -1,6 +1,6 @@
 import type { Entity } from '@dcl/ecs';
 
-import { CANVAS_SCALE } from './Canvas';
+import { getCanvasScale } from './Canvas';
 import { getNodeElement } from './node-registry';
 
 // Measure the rendered box of the selected node's PARENT, in logical (Yoga) px.
@@ -13,7 +13,8 @@ export function measureParentBox(entity: Entity): { width: number; height: numbe
   if (!parent) return null;
   const r = parent.getBoundingClientRect();
   if (!r.width && !r.height) return null;
-  return { width: r.width / CANVAS_SCALE, height: r.height / CANVAS_SCALE };
+  const scale = getCanvasScale();
+  return { width: r.width / scale, height: r.height / scale };
 }
 
 // Which parent dimension a length path is a percentage of.

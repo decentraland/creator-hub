@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Entity, IEngine } from '@dcl/ecs';
 
-import { buildUINodeTree } from './tree-model';
+import { buildUINodeTree, previewBoundText } from './tree-model';
 
 interface MockComponent {
   store: Map<Entity, any>;
@@ -121,5 +121,35 @@ describe('buildUINodeTree', () => {
       expect(tree).not.toBeNull();
       // No infinite recursion — the visited set short-circuits.
     });
+  });
+});
+
+describe('previewBoundText', () => {
+  const KEY = 'core::UiText.value';
+
+  it('returns the static value when the field has no binding row', () => {
+    expect(previewBoundText(undefined, KEY, 'Label')).toBe('Label');
+    expect(previewBoundText([{ field: 'other', variable: 'x' }], KEY, 'Label')).toBe('Label');
+  });
+
+  it('composes mixed-content segments with [name] placeholders for bindings', () => {
+    const bindings = [
+      {
+        field: KEY,
+        variable: '',
+        segments: [
+          { kind: 'literal', value: 'Hola ' },
+          { kind: 'binding', value: 'inputValue' },
+          { kind: 'literal', value: '!!!' },
+        ],
+      },
+    ];
+    expect(previewBoundText(bindings, KEY, 'Label')).toBe('Hola [inputValue]!!!');
+  });
+
+  it('renders a whole-field binding as [name]', () => {
+    expect(previewBoundText([{ field: KEY, variable: 'playerName' }], KEY, 'Label')).toBe(
+      '[playerName]',
+    );
   });
 });

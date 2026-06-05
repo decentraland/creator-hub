@@ -1,6 +1,10 @@
 import type { Entity, IEngine } from '@dcl/ecs';
+import { ComponentName, SegmentKind } from '@dcl/asset-packs';
 
 export type UINodeType = 'UiEntity' | 'Label' | 'Button' | 'Input' | 'Dropdown';
+
+export type CanvasSegment = { kind: string; value: string };
+export type CanvasBindingRow = { field: string; variable: string; segments?: CanvasSegment[] };
 
 export interface UINode {
   entity: Entity;
@@ -11,6 +15,7 @@ export interface UINode {
   uiText?: unknown;
   uiInput?: unknown;
   uiDropdown?: unknown;
+  bindings?: CanvasBindingRow[];
   children: UINode[];
 }
 
@@ -21,6 +26,7 @@ interface ComponentBag {
   UiInput: any;
   UiDropdown: any;
   Name?: any;
+  UIBindings?: any;
 }
 
 // Canonical SDK component IDs (verified against
@@ -42,7 +48,29 @@ export function getComponentBag(engine: IEngine): ComponentBag {
     UiInput: engine.getComponentOrNull(COMPONENT_IDS.UiInput),
     UiDropdown: engine.getComponentOrNull(COMPONENT_IDS.UiDropdown),
     Name: engine.getComponentOrNull(COMPONENT_IDS.Name),
+    UIBindings: engine.getComponentOrNull(ComponentName.UI_BINDINGS),
   };
+}
+
+// Compose the canvas preview for a (possibly bound) text field. Mixed-content
+// rows render literal text + `[variableName]` placeholders; a whole-field
+// binding renders `[variableName]`; otherwise the static PB value is shown. The
+// inspector has no runtime context, so bound segments preview as the variable
+// name rather than a resolved value.
+export function previewBoundText(
+  bindings: CanvasBindingRow[] | undefined,
+  fieldKey: string,
+  staticValue: string,
+): string {
+  const row = bindings?.find(b => b.field === fieldKey);
+  if (!row) return staticValue;
+  if (row.segments && row.segments.length > 0) {
+    return row.segments
+      .map(s => (s.kind === SegmentKind.BINDING ? `[${s.value}]` : s.value))
+      .join('');
+  }
+  if (row.variable) return `[${row.variable}]`;
+  return staticValue;
 }
 
 export function classifyNode(bag: ComponentBag, entity: Entity): UINodeType {
@@ -92,6 +120,7 @@ export function buildUINodeTree(engine: IEngine, rootEntity: Entity): UINode | n
       uiText: bag.UiText?.getOrNull(entity) ?? undefined,
       uiInput: bag.UiInput?.getOrNull(entity) ?? undefined,
       uiDropdown: bag.UiDropdown?.getOrNull(entity) ?? undefined,
+      bindings: bag.UIBindings?.getOrNull(entity)?.value as CanvasBindingRow[] | undefined,
       children: (childrenOf.get(entity) ?? []).map(visit),
     };
     return node;
