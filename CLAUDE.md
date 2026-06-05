@@ -92,6 +92,7 @@ make protoc        # Regenerate TypeScript from .proto files
 - Runtime built with `@dcl/sdk-commands` (SDK7 scene).
 - TypeScript library (`dist/`) + catalog.json + binary assets (`bin/`).
 - Scripts for validating, uploading to S3, and downloading assets.
+- Public API is exported via `src/definitions.ts` (built to `dist/definitions.js`, the package `main`). Cross-package VALUE imports from `@dcl/asset-packs` in the inspector only resolve after rebuilding asset-packs (`make build-asset-packs`).
 
 ## Code Style
 
