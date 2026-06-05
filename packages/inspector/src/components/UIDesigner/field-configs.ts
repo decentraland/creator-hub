@@ -21,7 +21,8 @@ export type FieldKind =
   | 'boolean'
   | 'string-array'
   | 'index'
-  | 'callback';
+  | 'callback'
+  | 'texture';
 
 export interface EnumOption {
   value: number;
@@ -463,12 +464,12 @@ const BACKGROUND_GROUP = {
       bindable: false,
     },
     {
-      label: 'Texture src',
+      label: 'Texture',
       componentId: BACKGROUND,
-      path: 'src',
-      kind: 'string' as const,
+      path: 'texture',
+      kind: 'texture' as const,
       bindable: false,
-      info: 'Texture path. Full asset picker coming soon.',
+      info: 'Pick an image asset from your scene.',
     },
   ],
 };

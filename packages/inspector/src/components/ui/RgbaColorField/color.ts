@@ -1,3 +1,5 @@
+import { parseHexColor } from '@dcl/asset-packs';
+
 export type Color4 = { r: number; g: number; b: number; a?: number };
 export type Rgba = { r: number; g: number; b: number; a: number };
 
@@ -27,11 +29,9 @@ export function color4ToHex(c: Color4): string {
   return a >= 1 ? base : `${base}${hex2(a * 255)}`;
 }
 
+// Delegates to the shared strict hex codec in @dcl/asset-packs so the inspector
+// and the runtime renderer parse colors identically. The returned { r, g, b, a }
+// satisfies the local Color4 type.
 export function hexToColor4(hex: string): Color4 {
-  const h = hex.replace('#', '');
-  const r = parseInt(h.slice(0, 2), 16) / 255 || 0;
-  const g = parseInt(h.slice(2, 4), 16) / 255 || 0;
-  const b = parseInt(h.slice(4, 6), 16) / 255 || 0;
-  const a = h.length >= 8 ? parseInt(h.slice(6, 8), 16) / 255 : 1;
-  return { r, g, b, a };
+  return parseHexColor(hex);
 }

@@ -1,15 +1,22 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import type { Entity, IEngine, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
+import type {
+  Entity,
+  IEngine,
+  LastWriteWinElementSetComponentDefinition,
+  TextureUnion,
+} from '@dcl/ecs';
 import type { UIBindings, UISegment } from '@dcl/asset-packs';
-import { ComponentName } from '@dcl/asset-packs';
+import { ComponentName, validateAssetPath } from '@dcl/asset-packs';
 
 import { useChange } from '../../hooks/sdk/useChange';
 import { useSdk } from '../../hooks/sdk/useSdk';
 import { useAppSelector } from '../../redux/hooks';
+import { useAssetOptions } from '../../hooks/useAssetOptions';
 import { getSelectedNode, getSelectedRoot } from '../../redux/ui-designer';
 import { Block } from '../Block';
 import { Container } from '../Container';
-import { TextField } from '../ui';
+import { FileUploadField, TextField } from '../ui';
+import { ACCEPTED_FILE_TYPES } from '../ui/FileUploadField/types';
 import { RgbaColorField } from '../ui/RgbaColorField';
 import { debounce } from '../../lib/utils/debounce';
 import { measureParentBox, axisForPath, convertLength } from './measure';
@@ -240,7 +247,8 @@ const FieldRow: React.FC<FieldRowProps> = ({
   onPatch,
 }) => {
   const boundProp = bound ? { variable: bound } : undefined;
-  const [srcError, setSrcError] = useState<string | undefined>(undefined);
+  const [textureError, setTextureError] = useState<string | undefined>(undefined);
+  const imageOptions = useAssetOptions(ACCEPTED_FILE_TYPES.image);
   const raw = componentValue?.[field.path];
   const fieldDisabled =
     field.disabledWhen?.((componentValue ?? {}) as Record<string, unknown>) ?? false;
@@ -273,16 +281,7 @@ const FieldRow: React.FC<FieldRowProps> = ({
         >
           <TextField
             value={v}
-            error={srcError}
-            onChange={e => {
-              const next = e.target.value;
-              if (field.path === 'src' && next.includes('..')) {
-                setSrcError('Paths cannot contain ".."');
-                return;
-              }
-              setSrcError(undefined);
-              onPatch({ [field.path]: next });
-            }}
+            onChange={e => onPatch({ [field.path]: e.target.value })}
           />
         </BindableField>
       );
@@ -534,6 +533,43 @@ const FieldRow: React.FC<FieldRowProps> = ({
             }
           />
         </BindableField>
+      );
+    }
+    case 'texture': {
+      // The PBUiBackground `texture` key is a discriminated `TextureUnion`.
+      // V1 supports the file variant only (`tex.$case === 'texture'`); the
+      // avatar/video variants are a future extension.
+      const tex = (componentValue?.texture as TextureUnion | undefined)?.tex;
+      const existing = tex?.$case === 'texture' ? tex.texture : undefined;
+      const src = existing?.src ?? '';
+      const commit = (next: string) => {
+        if (next === '') {
+          setTextureError(undefined);
+          onPatch({ texture: undefined });
+          return;
+        }
+        const pathError = next ? validateAssetPath(next) : null;
+        setTextureError(pathError ?? undefined);
+        if (pathError !== null) return;
+        onPatch({
+          texture: { tex: { $case: 'texture', texture: { ...(existing ?? {}), src: next } } },
+        });
+      };
+      return (
+        <Block
+          label={field.label}
+          info={field.info}
+        >
+          <FileUploadField
+            value={src}
+            error={textureError}
+            accept={ACCEPTED_FILE_TYPES.image}
+            options={imageOptions}
+            acceptURLs
+            onDrop={commit}
+            onChange={e => commit(e.target.value)}
+          />
+        </Block>
       );
     }
     case 'string-array': {

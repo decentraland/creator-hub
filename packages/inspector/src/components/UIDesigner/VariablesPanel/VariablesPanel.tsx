@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Entity, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
 import type { UI, UIVariable } from '@dcl/asset-packs';
-import { ComponentName, VariableType } from '@dcl/asset-packs';
+import { ComponentName, VariableType, validateVariableDefault } from '@dcl/asset-packs';
 
 import { useChange } from '../../../hooks/sdk/useChange';
 import { useSdk } from '../../../hooks/sdk/useSdk';
@@ -17,7 +17,6 @@ import { color4ToHex, hexToColor4 } from '../../ui/RgbaColorField/color';
 import './VariablesPanel.css';
 
 const VALID_IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
-const VALID_NUMBER_DEFAULT = /^-?\d+(\.\d+)?$/;
 
 const TYPE_OPTIONS: { value: VariableType; label: string }[] = [
   { value: VariableType.STRING, label: 'String' },
@@ -190,12 +189,9 @@ const VariableRow: React.FC<VariableRowProps> = ({
       setDefaultError(undefined);
       return;
     }
-    if (variable.type === VariableType.NUMBER && !VALID_NUMBER_DEFAULT.test(localDefault)) {
-      setDefaultError('Must be a number');
-      return;
-    }
-    if (variable.type === VariableType.STRING && localDefault.includes('..')) {
-      setDefaultError('Paths cannot contain ".."');
+    const error = validateVariableDefault(variable.type, localDefault);
+    if (error) {
+      setDefaultError(error);
       return;
     }
     setDefaultError(undefined);

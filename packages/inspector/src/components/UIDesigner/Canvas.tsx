@@ -8,6 +8,7 @@ import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { getSelectedNode, getTool, selectNode } from '../../redux/ui-designer';
 import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from './Palette';
 import { useUINodeTree } from './useUINodeTree';
+import { registerNodeElement, unregisterNodeElement } from './node-registry';
 import type { UINode } from './tree-model';
 
 // Logical canvas is 1920×1080; visual scale is 0.4 (see Canvas.css
@@ -332,8 +333,13 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
     (el: HTMLDivElement | null) => {
       divRef.current = el;
       drop(el);
+      if (el) {
+        registerNodeElement(node.entity, el);
+      } else {
+        unregisterNodeElement(node.entity);
+      }
     },
-    [drop],
+    [drop, node.entity],
   );
 
   // --- Native drag-to-move (Unity/Unreal/Godot style) ---
@@ -625,7 +631,6 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       style={style}
       onClick={handleClick}
       onMouseDown={handleMouseDown}
-      data-entity={String(node.entity)}
       data-type={node.type}
     >
       {node.type === 'Input' && (

@@ -4,6 +4,7 @@ import type { IEngine, Entity } from '@dcl/ecs';
 import { ComponentName } from './enums';
 import { getUiContextValue, getUiCallback } from './ui-context';
 import { coerceToString } from './coerce';
+import { parseVariableDefault } from './variable-codecs';
 
 interface ComponentBag {
   UI: any;
@@ -82,43 +83,6 @@ function buildBindingMaps(
   return { single, mixed };
 }
 
-function parseDefault(type: string, raw: string): unknown {
-  switch (type) {
-    case 'number': {
-      const n = Number(raw);
-      return Number.isFinite(n) ? n : 0;
-    }
-    case 'boolean':
-      return raw === 'true';
-    case 'color': {
-      // Stored as '#RRGGBB' or '#RRGGBBAA'; parse to Color4 { r, g, b, a } in [0..1].
-      // Each channel returns its fallback (0 for r/g/b, 1 for a) when the byte
-      // pair is not a valid 2-hex-digit sequence — prevents NaN flowing into
-      // PB float fields downstream.
-      const hex = raw.startsWith('#') ? raw.slice(1) : raw;
-      if (hex.length !== 6 && hex.length !== 8) {
-        return { r: 0, g: 0, b: 0, a: 1 };
-      }
-      const parseChannel = (slice: string, fallback: number): number => {
-        const n = parseInt(slice, 16);
-        return Number.isFinite(n) ? n / 255 : fallback;
-      };
-      const r = parseChannel(hex.slice(0, 2), 0);
-      const g = parseChannel(hex.slice(2, 4), 0);
-      const b = parseChannel(hex.slice(4, 6), 0);
-      const a = hex.length === 8 ? parseChannel(hex.slice(6, 8), 1) : 1;
-      return { r, g, b, a };
-    }
-    case 'string-array':
-      return raw.split('\n').filter(Boolean);
-    case 'callback':
-      return undefined;
-    case 'string':
-    default:
-      return raw;
-  }
-}
-
 function resolveBoundValue(
   bindings: Bindings,
   varDefs: VarDefs,
@@ -134,7 +98,7 @@ function resolveBoundValue(
   if (!def) return staticFallback;
   const runtime = getUiContextValue(root, varName);
   if (runtime !== undefined) return runtime;
-  if (def.defaultValue !== '') return parseDefault(def.type, def.defaultValue);
+  if (def.defaultValue !== '') return parseVariableDefault(def.type, def.defaultValue);
   return staticFallback;
 }
 
@@ -171,7 +135,7 @@ function resolveMixedField(
       const def = varDefs.get(seg.value);
       let resolved: unknown = getUiContextValue(root, seg.value);
       if (resolved === undefined && def && def.defaultValue !== '') {
-        resolved = parseDefault(def.type, def.defaultValue);
+        resolved = parseVariableDefault(def.type, def.defaultValue);
       }
       out += coerceToString(resolved);
     } else {
