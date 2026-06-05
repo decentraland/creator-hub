@@ -84,6 +84,7 @@ export function fetchLatestCatalog(): Promise<AssetPack[]> {
 }
 
 export function getContentsUrl(hash: string) {
+  if (hash.startsWith('http://') || hash.startsWith('https://')) return hash;
   const config = getConfig();
   return `${config.contentUrl}/contents/${hash}`;
 }

@@ -11,6 +11,7 @@ import {
   getCatalogSource,
   isSmart,
 } from '../../lib/logic/catalog';
+import { fetchExternalCatalog } from '../../lib/logic/external-catalog';
 import { getConfig } from '../../lib/logic/config';
 import { getSceneClient } from '../../lib/rpc/scene';
 import { useSnackbar } from '../../hooks/useSnackbar';
@@ -98,6 +99,7 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
 
   const config = getConfig();
   const [catalog, setCatalog] = useState<AssetPack[]>([]);
+  const [externalCatalog, setExternalCatalog] = useState<AssetPack[]>([]);
   const [catalogUnavailable, setCatalogUnavailable] = useState(false);
 
   useEffect(() => {
@@ -113,11 +115,18 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
           'Could not load the asset catalog. Please check your connection and try again.',
         );
       });
+    fetchExternalCatalog()
+      .then(packs => setExternalCatalog(packs))
+      .catch(err => console.warn('Failed to load external catalog:', err));
   }, []);
 
   const filteredCatalog = config.disableSmartItems
     ? catalog.map(removeSmartItems).filter(assetPack => assetPack.assets.length > 0)
     : catalog;
+
+  const filteredExternalCatalog = config.disableSmartItems
+    ? externalCatalog.map(removeSmartItems).filter(assetPack => assetPack.assets.length > 0)
+    : externalCatalog;
 
   const assetToRename = useAppSelector(selectAssetToRename);
   const stagedCustomAsset = useAppSelector(selectStagedCustomAsset);
@@ -372,7 +381,10 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
                   </p>
                 </div>
               ) : (
-                <AssetsCatalog catalog={filteredCatalog} />
+                <AssetsCatalog
+                  catalog={filteredCatalog}
+                  externalCatalog={filteredExternalCatalog}
+                />
               ))}
             {tab === AssetsTab.FileSystem && <ProjectAssetExplorer />}
             {tab === AssetsTab.CustomAssets && <CustomAssets />}

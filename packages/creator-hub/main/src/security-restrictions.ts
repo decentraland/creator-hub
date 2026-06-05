@@ -50,7 +50,7 @@ const ALLOWED_EXTERNAL_ORIGINS = new Set<AllowedOrigins<typeof IS_DEV>>([
 
 app.on('ready', () => {
   const filter = {
-    urls: ['https://studios.decentraland.org/*'],
+    urls: ['https://studios.decentraland.org/*', 'https://models.dclregenesislabs.xyz/*'],
   };
 
   session.defaultSession.webRequest.onBeforeSendHeaders(filter, (details, callback) => {
@@ -59,12 +59,14 @@ app.on('ready', () => {
   });
 
   session.defaultSession.webRequest.onHeadersReceived(filter, (details, callback) => {
-    callback({
-      responseHeaders: {
-        'Access-Control-Allow-Origin': ['*'],
-        ...details.responseHeaders,
-      },
-    });
+    const responseHeaders = { ...details.responseHeaders };
+    for (const key of Object.keys(responseHeaders)) {
+      if (key.toLowerCase() === 'access-control-allow-origin') {
+        delete responseHeaders[key];
+      }
+    }
+    responseHeaders['Access-Control-Allow-Origin'] = ['*'];
+    callback({ responseHeaders });
   });
 });
 
