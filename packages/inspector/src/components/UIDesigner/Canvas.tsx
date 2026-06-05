@@ -9,7 +9,7 @@ import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { getSelectedNode, getTool, selectNode } from '../../redux/ui-designer';
 import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from './Palette';
 import { useUINodeTree } from './useUINodeTree';
-import { registerNodeElement, unregisterNodeElement } from './node-registry';
+import { clearNodeRegistry, registerNodeElement, unregisterNodeElement } from './node-registry';
 import type { UINode } from './tree-model';
 
 // Logical canvas is 1920×1080; visual scale is 0.4 (see Canvas.css
@@ -508,7 +508,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
         dyLogical = snappedTop - origin.startTop;
       }
       liveOffsetRef.current = { dx: dxLogical, dy: dyLogical };
-      setRenderTick(tick => (tick + 1) & 0x7fffffff);
+      setRenderTick(tick => tick + 1);
     };
 
     const handleUp = () => {
@@ -607,7 +607,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
         dw: nextW - origin.startW,
         dh: nextH - origin.startH,
       };
-      setRenderTick(tick => (tick + 1) & 0x7fffffff);
+      setRenderTick(tick => tick + 1);
     };
 
     const handleUp = () => {
@@ -691,45 +691,50 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       onMouseDown={handleMouseDown}
       data-type={node.type}
     >
-      {node.type === 'Input' && (
+      {node.type === 'Input' ? (
         <span className="ui-designer-canvas-input">
           {input.value || input.placeholder || 'Input'}
         </span>
-      )}
-      {node.type === 'Dropdown' && (
+      ) : null}
+      {node.type === 'Dropdown' ? (
         <span className="ui-designer-canvas-dropdown">
           <span className="ui-designer-canvas-dropdown-label">
             {dropdown.options?.[dropdown.selectedIndex ?? 0] ?? dropdown.emptyLabel ?? 'Select…'}
           </span>
           <span className="ui-designer-canvas-dropdown-chevron">▼</span>
         </span>
-      )}
-      {(node.type === 'Label' || node.type === 'Button') && text?.value && (
+      ) : null}
+      {(node.type === 'Label' || node.type === 'Button') && text?.value ? (
         <span className="ui-designer-canvas-text">{text.value}</span>
-      )}
-      {node.type === 'Button' && !text?.value && (
+      ) : null}
+      {node.type === 'Button' && !text?.value ? (
         <span className="ui-designer-canvas-text ui-designer-canvas-placeholder">Button</span>
-      )}
+      ) : null}
       {node.children.map(child => (
         <CanvasNode
           key={String(child.entity)}
           node={child}
         />
       ))}
-      {showResizeHandles &&
-        HANDLE_DIRS.map(dir => (
-          <span
-            key={dir}
-            className={cx('ui-designer-resize-handle', dir)}
-            onMouseDown={handleResizeStart(dir)}
-          />
-        ))}
+      {showResizeHandles
+        ? HANDLE_DIRS.map(dir => (
+            <span
+              key={dir}
+              className={cx('ui-designer-resize-handle', dir)}
+              onMouseDown={handleResizeStart(dir)}
+            />
+          ))
+        : null}
     </div>
   );
 };
 
 const CanvasComponent: React.FC = () => {
   const tree = useUINodeTree();
+  // Defensive: drop any stale entity→element entries when the canvas unmounts
+  // (e.g. switching scenes). Individual node unmounts already unregister via
+  // `setRef`; this guards against an entry surviving a full canvas teardown.
+  useEffect(() => () => clearNodeRegistry(), []);
   if (!tree) {
     return (
       <div className="ui-designer-canvas-empty">

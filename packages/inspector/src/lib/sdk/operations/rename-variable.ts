@@ -31,23 +31,30 @@ export function renameVariable(engine: IEngine) {
       if (desc === uiRoot) continue;
       const rows = getBindingsRows(engine, desc);
       if (rows.length === 0) continue;
-      writeBindingsRows(
-        engine,
-        desc,
-        rows.map(b => ({
-          ...b,
-          variable: b.variable === oldName ? newName : b.variable,
-          ...(b.segments
-            ? {
-                segments: b.segments.map(seg =>
-                  seg.kind === SegmentKind.BINDING && seg.value === oldName
-                    ? { ...seg, value: newName }
-                    : seg,
-                ),
-              }
-            : {}),
-        })),
-      );
+      // Only rewrite this entity if a row actually references `oldName` — avoid
+      // a no-op CRDT write for every bound entity on an unrelated rename.
+      let changed = false;
+      const next = rows.map(b => {
+        const variable = b.variable === oldName ? newName : b.variable;
+        if (variable !== b.variable) changed = true;
+        if (!b.segments) {
+          return variable !== b.variable ? { ...b, variable } : b;
+        }
+        let segChanged = false;
+        const segments = b.segments.map(seg => {
+          if (seg.kind === SegmentKind.BINDING && seg.value === oldName) {
+            segChanged = true;
+            return { ...seg, value: newName };
+          }
+          return seg;
+        });
+        if (segChanged) {
+          changed = true;
+          return { ...b, variable, segments };
+        }
+        return variable !== b.variable ? { ...b, variable } : b;
+      });
+      if (changed) writeBindingsRows(engine, desc, next);
     }
   };
 }

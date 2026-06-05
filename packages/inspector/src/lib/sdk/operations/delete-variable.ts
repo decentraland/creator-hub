@@ -3,6 +3,7 @@ import type { UI } from '@dcl/asset-packs';
 import { ComponentName, SegmentKind } from '@dcl/asset-packs';
 
 import { collectDescendants } from './tree-walk';
+import { assertIdentifier } from './validators';
 import {
   getBindingsComponentOrNull,
   getBindingsRows,
@@ -11,6 +12,7 @@ import {
 
 export function deleteVariable(engine: IEngine) {
   return function deleteVariable(uiRoot: Entity, name: string): void {
+    assertIdentifier(name, 'variable name');
     const UIComp = engine.getComponent(
       ComponentName.UI,
     ) as LastWriteWinElementSetComponentDefinition<UI>;

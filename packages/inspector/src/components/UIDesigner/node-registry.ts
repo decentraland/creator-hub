@@ -15,3 +15,9 @@ export function unregisterNodeElement(entity: Entity): void {
 export function getNodeElement(entity: Entity): HTMLElement | undefined {
   return nodeElements.get(Number(entity));
 }
+
+// Drop all entries (e.g. on canvas teardown / scene switch) so recycled entity
+// ids never resolve to a detached element from a previous scene.
+export function clearNodeRegistry(): void {
+  nodeElements.clear();
+}

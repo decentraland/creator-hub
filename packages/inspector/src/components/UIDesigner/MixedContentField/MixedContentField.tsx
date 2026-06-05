@@ -145,13 +145,29 @@ export const MixedContentField: React.FC<MixedContentFieldProps> = ({
     [commit],
   );
 
-  const onPaste = useCallback((e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const text = e.clipboardData.getData('text/plain');
-    // execCommand is deprecated but remains the pragmatic way to insert plain
-    // text at the caret while preserving the browser's native undo stack.
-    document.execCommand('insertText', false, text);
-  }, []);
+  const onPaste = useCallback(
+    (e: React.ClipboardEvent) => {
+      e.preventDefault();
+      const text = e.clipboardData.getData('text/plain');
+      if (!text) return;
+      // Insert plain text at the caret via Range (not the deprecated
+      // execCommand('insertText'), which is a no-op in Firefox / some Electron
+      // isolation contexts → silent paste loss). Mirrors the chip-insert path.
+      const sel = document.getSelection();
+      if (!sel || sel.rangeCount === 0 || !editorRef.current?.contains(sel.anchorNode)) return;
+      const range = sel.getRangeAt(0);
+      range.deleteContents();
+      const node = document.createTextNode(text);
+      range.insertNode(node);
+      range.setStartAfter(node);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      // Range mutations don't reliably fire `input`, so commit explicitly.
+      debouncedCommit();
+    },
+    [debouncedCommit],
+  );
 
   // Drag-and-drop can insert rich HTML (foreign elements carrying a
   // data-variable the user never picked). The chip editor has no drop gesture,
@@ -206,7 +222,7 @@ export const MixedContentField: React.FC<MixedContentFieldProps> = ({
       >
         {'\u{1F517}'}
       </button>
-      {pickerOpen && (
+      {pickerOpen ? (
         <VariablePicker
           field={field}
           selectedRoot={selectedRoot}
@@ -214,7 +230,7 @@ export const MixedContentField: React.FC<MixedContentFieldProps> = ({
           onPick={onPick}
           onDismiss={() => setPickerOpen(false)}
         />
-      )}
+      ) : null}
     </div>
   );
 };

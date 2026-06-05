@@ -66,7 +66,7 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
       setPos({ top: a.bottom + GAP, left: Math.max(GAP, left) });
     };
     place();
-    window.addEventListener('scroll', place, true);
+    window.addEventListener('scroll', place, { capture: true, passive: true });
     window.addEventListener('resize', place);
     return () => {
       window.removeEventListener('scroll', place, true);
@@ -128,9 +128,9 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
       className="ui-designer-variable-picker"
       style={{ position: 'fixed', top: pos.top, left: pos.left }}
     >
-      {compatible.length === 0 && (
+      {compatible.length === 0 ? (
         <div className="ui-designer-variable-picker-empty">No compatible variables.</div>
-      )}
+      ) : null}
       {compatible.map(v => (
         <button
           key={v.name}

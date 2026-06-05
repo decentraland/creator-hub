@@ -33,7 +33,7 @@ export const RgbaColorField: React.FC<RgbaColorFieldProps> = ({ value, onChange 
       if (popRef.current?.contains(t) || anchorRef.current?.contains(t)) return;
       setOpen(false);
     };
-    window.addEventListener('scroll', place, true);
+    window.addEventListener('scroll', place, { capture: true, passive: true });
     window.addEventListener('resize', place);
     document.addEventListener('mousedown', onDoc);
     return () => {
@@ -57,20 +57,21 @@ export const RgbaColorField: React.FC<RgbaColorFieldProps> = ({ value, onChange 
           style={{ backgroundColor: swatchBg }}
         />
       </button>
-      {open &&
-        createPortal(
-          <div
-            ref={popRef}
-            className="ui-designer-color-popover"
-            style={{ position: 'fixed', top: pos.top, left: pos.left }}
-          >
-            <RgbaColorPicker
-              color={rgba}
-              onChange={next => onChange(rgbaToColor4(next))}
-            />
-          </div>,
-          document.body,
-        )}
+      {open
+        ? createPortal(
+            <div
+              ref={popRef}
+              className="ui-designer-color-popover"
+              style={{ position: 'fixed', top: pos.top, left: pos.left }}
+            >
+              <RgbaColorPicker
+                color={rgba}
+                onChange={next => onChange(rgbaToColor4(next))}
+              />
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 };
