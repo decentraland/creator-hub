@@ -234,6 +234,12 @@ const Node = (props: NodeProps): ReactEcs.JSX.Element | null => {
   const onMouseUp = resolveBoundCallback(bindings, root, 'asset-packs::UI', 'onMouseUp') as
     | (() => void)
     | undefined;
+  const onMouseEnter = resolveBoundCallback(bindings, root, 'asset-packs::UI', 'onMouseEnter') as
+    | (() => void)
+    | undefined;
+  const onMouseLeave = resolveBoundCallback(bindings, root, 'asset-packs::UI', 'onMouseLeave') as
+    | (() => void)
+    | undefined;
 
   if (input) {
     const resolvedInput = {
@@ -280,6 +286,8 @@ const Node = (props: NodeProps): ReactEcs.JSX.Element | null => {
         onSubmit={onSubmit}
         onMouseDown={onMouseDown}
         onMouseUp={onMouseUp}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
       />
     );
   }
@@ -322,6 +330,8 @@ const Node = (props: NodeProps): ReactEcs.JSX.Element | null => {
         onChange={onChange}
         onMouseDown={onMouseDown}
         onMouseUp={onMouseUp}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
       />
     );
   }
@@ -355,6 +365,8 @@ const Node = (props: NodeProps): ReactEcs.JSX.Element | null => {
         textAlign={text.textAlign}
         onMouseDown={onMouseDown}
         onMouseUp={onMouseUp}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
       />
     );
   }
@@ -365,6 +377,8 @@ const Node = (props: NodeProps): ReactEcs.JSX.Element | null => {
       uiText={text ?? undefined}
       onMouseDown={onMouseDown}
       onMouseUp={onMouseUp}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       {childNodes}
     </UiEntity>

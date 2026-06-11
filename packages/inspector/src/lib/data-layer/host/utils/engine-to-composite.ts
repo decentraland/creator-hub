@@ -251,6 +251,8 @@ const FIELD_TO_CALLBACK_SIG: Record<string, string> = {
   'core::UiDropdown.onChange': '(value: number) => void',
   'asset-packs::UI.onMouseDown': '() => void',
   'asset-packs::UI.onMouseUp': '() => void',
+  'asset-packs::UI.onMouseEnter': '() => void',
+  'asset-packs::UI.onMouseLeave': '() => void',
 };
 
 const VAR_TYPE_TO_TS: Record<string, string> = {
@@ -394,5 +396,100 @@ export async function generateUiContextsType(
     await fs.writeFile(outputPath, Buffer.from(fileContent, 'utf-8'));
   } catch (e) {
     console.error(`Fail to generate UI contexts type: ${e}\n`);
+  }
+}
+
+// Turn raw Name strings into unique, valid TS-identifier enum entries.
+// Mirrors the sanitize + collision-dedup in generateEntityNamesType (192-215).
+function buildEnumEntries(names: string[]): Array<{ original: string; valid: string }> {
+  const used = new Set<string>();
+  const out: Array<{ original: string; valid: string }> = [];
+  for (const name of names) {
+    let valid = name.replace(/[^a-zA-Z0-9_]/g, '_').replace(/^[0-9]/, '_$&');
+    if (used.has(valid)) {
+      let suffix = 1;
+      while (used.has(`${valid}_${suffix}`)) suffix++;
+      valid = `${valid}_${suffix}`;
+    }
+    used.add(valid);
+    out.push({ original: name, valid });
+  }
+  return out;
+}
+
+let __UI_ENTITY_NAMES_CACHE = '';
+
+/**
+ * Generate a TypeScript value-enum of UI element names — every UI root
+ * (`asset-packs::UI` marker) plus its named `core::UiTransform.parent`
+ * descendants. A UI-filtered subset of the catch-all `EntityNames`, intended for
+ * `engine.getEntityOrNullByName(UiEntityNames.X)` and pairing with the
+ * `<Root>Context` / `<Root>Callbacks` interfaces from `ui-contexts.ts`.
+ */
+export async function generateUiEntityNamesType(
+  engine: IEngine,
+  outputPath: string,
+  fs: FileSystemInterface,
+): Promise<void> {
+  try {
+    const UIComp = engine.getComponentOrNull('asset-packs::UI');
+    const UiTransform = engine.getComponentOrNull('core::UiTransform');
+    const NameComponent = engine.getComponentOrNull(Name.componentId) as typeof Name | null;
+    if (!UIComp || !UiTransform || !NameComponent) return;
+
+    // Children index over the UiTransform parent pointer.
+    const childrenOf = new Map<number, number[]>();
+    for (const [entity, value] of engine.getEntitiesWith(UiTransform)) {
+      const parent = (value as { parent?: number }).parent;
+      if (parent === undefined) continue;
+      const list = childrenOf.get(parent) ?? [];
+      list.push(entity as unknown as number);
+      childrenOf.set(parent, list);
+    }
+    const descendantsOf = (root: number): Set<number> => {
+      const out = new Set<number>();
+      const stack: number[] = [root];
+      while (stack.length) {
+        const e = stack.pop()!;
+        if (out.has(e)) continue;
+        out.add(e);
+        for (const c of childrenOf.get(e) ?? []) stack.push(c);
+      }
+      return out;
+    };
+
+    // Union of every UI root and its descendants.
+    const uiEntities = new Set<number>();
+    for (const [rootEntity] of engine.getEntitiesWith(UIComp)) {
+      for (const e of descendantsOf(rootEntity as unknown as number)) uiEntities.add(e);
+    }
+
+    const names: string[] = [];
+    for (const e of uiEntities) {
+      const value = NameComponent.getOrNull(e as unknown as Entity)?.value;
+      if (value) names.push(value);
+    }
+    names.sort();
+
+    const entries = buildEnumEntries(Array.from(new Set(names)));
+
+    let fileContent = '// Auto-generated UI entity names from the scene. Do not edit by hand.\n\n';
+    fileContent += 'export enum UiEntityNames {\n';
+    for (const { original, valid } of entries) {
+      fileContent += `  ${valid} = "${original}",\n`;
+    }
+    fileContent += '}\n';
+
+    if (fileContent === __UI_ENTITY_NAMES_CACHE) return;
+    __UI_ENTITY_NAMES_CACHE = fileContent;
+
+    const fileExists = await fs.existFile(outputPath);
+    if (fileExists) {
+      const existing = (await fs.readFile(outputPath)).toString('utf-8');
+      if (existing === fileContent) return;
+    }
+    await fs.writeFile(outputPath, Buffer.from(fileContent, 'utf-8'));
+  } catch (e) {
+    console.error(`Fail to generate UI entity names types: ${e}\n`);
   }
 }

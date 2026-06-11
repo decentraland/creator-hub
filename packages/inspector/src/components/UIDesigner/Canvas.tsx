@@ -723,11 +723,8 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
           <span className="ui-designer-canvas-dropdown-chevron">▼</span>
         </span>
       ) : null}
-      {(node.type === 'Label' || node.type === 'Button') && labelText ? (
+      {node.type === 'Label' && labelText ? (
         <span className="ui-designer-canvas-text">{labelText}</span>
-      ) : null}
-      {node.type === 'Button' && !labelText ? (
-        <span className="ui-designer-canvas-text ui-designer-canvas-placeholder">Button</span>
       ) : null}
       {node.children.map(child => (
         <CanvasNode

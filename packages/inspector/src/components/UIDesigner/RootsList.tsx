@@ -1,12 +1,13 @@
 import React, { useCallback, useMemo } from 'react';
 import { IoLayersOutline } from 'react-icons/io5';
 import type { Entity, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
-import { UiTransform as UiTransformEngine, Name as NameEngine } from '@dcl/ecs';
+import { Name as NameEngine } from '@dcl/ecs';
 import type { UI } from '@dcl/asset-packs';
 import { ComponentName } from '@dcl/asset-packs';
 
 import { useSdk } from '../../hooks/sdk/useSdk';
 import { useEntitiesWith } from '../../hooks/sdk/useEntitiesWith';
+import { collectDescendants } from '../../lib/sdk/operations/tree-walk';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { getSelectedRoot, selectRoot } from '../../redux/ui-designer';
 import { Button } from '../Button';
@@ -84,26 +85,10 @@ export const RootsList: React.FC = () => {
   const handleRemove = useCallback(
     (node: UIRootNode) => {
       if (!sdk) return;
-      // removeEntity cascades to descendants via the Transform tree. UI children are
-      // parented through UiTransform.parent (a separate component) so the cascade
-      // walk for UI subtrees is owned by Phase 4's tree helpers. For Phase 3 we
-      // remove the root entity and any direct descendants discoverable via
-      // UiTransform.parent — full subtree cascade is layered on in later phases.
-      const UiTransform = sdk.engine.getComponent(
-        UiTransformEngine.componentName,
-      ) as LastWriteWinElementSetComponentDefinition<{ parent: number }>;
-      const toRemove: Entity[] = [node.entity];
-      const stack: Entity[] = [node.entity];
-      while (stack.length) {
-        const current = stack.pop() as Entity;
-        for (const [child, value] of sdk.engine.getEntitiesWith(UiTransform)) {
-          if (value.parent === (current as unknown as number) && !toRemove.includes(child)) {
-            toRemove.push(child);
-            stack.push(child);
-          }
-        }
-      }
-      for (const target of toRemove) {
+      // UI subtrees are parented via core::UiTransform.parent. collectDescendants
+      // returns the root + every descendant; remove each entity.
+      const subtree = collectDescendants(sdk.engine, node.entity);
+      for (const target of subtree) {
         sdk.operations.removeEntity(target);
       }
       void sdk.operations.dispatch();
@@ -114,13 +99,15 @@ export const RootsList: React.FC = () => {
 
   const handleDuplicate = useCallback(
     async (node: UIRootNode) => {
-      // V1 duplicate copies the marker + root UiTransform only; subtree duplication
-      // is a V2 enhancement (see learnings/phase-3.md for the rationale).
       if (!sdk) return;
+      const clone = sdk.operations.duplicateUINode(node.entity);
+      const UIComp = sdk.engine.getComponent(
+        ComponentName.UI,
+      ) as LastWriteWinElementSetComponentDefinition<UI>;
       const baseName = node.name || 'Untitled UI';
-      const entity = sdk.operations.createUIRoot(`${baseName} copy`);
+      sdk.operations.updateValue(UIComp, clone, { name: `${baseName} copy` });
       await sdk.operations.dispatch();
-      dispatch(selectRoot({ root: entity }));
+      dispatch(selectRoot({ root: clone }));
     },
     [sdk, dispatch],
   );

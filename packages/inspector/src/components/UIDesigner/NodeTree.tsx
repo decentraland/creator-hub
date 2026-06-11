@@ -6,10 +6,18 @@ import {
   IoSquareOutline,
   IoTextOutline,
 } from 'react-icons/io5';
+import type { Entity } from '@dcl/ecs';
 
 import { useSdk } from '../../hooks/sdk/useSdk';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
-import { getExpanded, getSelectedNode, selectNode, setExpanded } from '../../redux/ui-designer';
+import { collectDescendants } from '../../lib/sdk/operations/tree-walk';
+import {
+  getExpanded,
+  getSelectedNode,
+  getSelectedRoot,
+  selectNode,
+  setExpanded,
+} from '../../redux/ui-designer';
 import { Tree } from '../Tree';
 import type { DropType } from '../Tree/utils';
 import { useUINodeTree } from './useUINodeTree';
@@ -49,6 +57,7 @@ const NodeTreeImpl: React.FC = () => {
   const tree = useUINodeTree();
   const expanded = useAppSelector(getExpanded);
   const selectedNode = useAppSelector(getSelectedNode);
+  const selectedRoot = useAppSelector(getSelectedRoot);
 
   // Memoise the Tree<UINode> component once per mount — Tree<T>() returns a
   // memoised component factory; constructing it in render would defeat memo.
@@ -113,6 +122,35 @@ const NodeTreeImpl: React.FC = () => {
     [sdk, tree],
   );
 
+  const handleRemove = useCallback(
+    (node: UINode) => {
+      if (!sdk) return;
+      // UI children are parented via core::UiTransform.parent (not core::Transform),
+      // so cascade the subtree ourselves and remove each entity.
+      const subtree = collectDescendants(sdk.engine, node.entity);
+      for (const target of subtree) {
+        sdk.operations.removeEntity(target);
+      }
+      void sdk.operations.dispatch();
+      // If the deleted subtree held the selection, fall back to the parent (or root).
+      if (selectedNode !== null && subtree.has(selectedNode as Entity)) {
+        const parent = tree ? findParent(tree, node) : null;
+        dispatch(selectNode({ node: parent?.entity ?? selectedRoot }));
+      }
+    },
+    [sdk, tree, selectedNode, selectedRoot, dispatch],
+  );
+
+  const handleDuplicate = useCallback(
+    async (node: UINode) => {
+      if (!sdk) return;
+      const clone = sdk.operations.duplicateUINode(node.entity);
+      await sdk.operations.dispatch();
+      dispatch(selectNode({ node: clone }));
+    },
+    [sdk, dispatch],
+  );
+
   const noop = useCallback(() => undefined, []);
 
   if (!tree) return null;
@@ -135,8 +173,8 @@ const NodeTreeImpl: React.FC = () => {
         onDrop={handleDrop}
         onRename={noop}
         onAddChild={noop}
-        onRemove={noop}
-        onDuplicate={noop}
+        onRemove={handleRemove}
+        onDuplicate={handleDuplicate}
         dndType={NODE_TREE_DND_TYPE}
       />
     </div>

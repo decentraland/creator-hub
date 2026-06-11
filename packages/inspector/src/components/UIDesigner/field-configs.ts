@@ -593,8 +593,8 @@ const DROPDOWN_GROUP = {
   ],
 };
 
-const BUTTON_EVENTS_GROUP = {
-  title: 'Events',
+const MOUSE_EVENTS_GROUP = {
+  title: 'Mouse events',
   fields: [
     {
       label: 'On mouse down',
@@ -606,6 +606,18 @@ const BUTTON_EVENTS_GROUP = {
       label: 'On mouse up',
       componentId: UI_MARKER,
       path: 'onMouseUp',
+      kind: 'callback' as const,
+    },
+    {
+      label: 'On mouse enter',
+      componentId: UI_MARKER,
+      path: 'onMouseEnter',
+      kind: 'callback' as const,
+    },
+    {
+      label: 'On mouse leave',
+      componentId: UI_MARKER,
+      path: 'onMouseLeave',
       kind: 'callback' as const,
     },
   ],
@@ -630,9 +642,9 @@ const DROPDOWN_EVENTS_GROUP = {
 // `buildLayoutGroup` in PropertyPanel and is NOT listed here — that keeps
 // the field-order and root/container variants in one place.
 export const NODE_FIELD_CONFIGS: Record<UINodeType, NodeFieldConfig> = {
-  UiEntity: { groups: [BACKGROUND_GROUP] },
-  Label: { groups: [BACKGROUND_GROUP, TEXT_GROUP] },
-  Button: { groups: [BACKGROUND_GROUP, TEXT_GROUP, BUTTON_EVENTS_GROUP] },
-  Input: { groups: [INPUT_GROUP, INPUT_EVENTS_GROUP] },
-  Dropdown: { groups: [DROPDOWN_GROUP, DROPDOWN_EVENTS_GROUP] },
+  UiEntity: { groups: [BACKGROUND_GROUP, MOUSE_EVENTS_GROUP] },
+  Label: { groups: [BACKGROUND_GROUP, TEXT_GROUP, MOUSE_EVENTS_GROUP] },
+  Button: { groups: [BACKGROUND_GROUP, TEXT_GROUP, MOUSE_EVENTS_GROUP] },
+  Input: { groups: [INPUT_GROUP, INPUT_EVENTS_GROUP, MOUSE_EVENTS_GROUP] },
+  Dropdown: { groups: [DROPDOWN_GROUP, DROPDOWN_EVENTS_GROUP, MOUSE_EVENTS_GROUP] },
 };

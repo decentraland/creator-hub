@@ -15,6 +15,7 @@ import {
   dumpEngineToComposite,
   generateEntityNamesType,
   generateUiContextsType,
+  generateUiEntityNamesType,
 } from './utils/engine-to-composite';
 import type { CompositeManager } from './utils/fs-composite-provider';
 import { createFsCompositeProvider } from './utils/fs-composite-provider';
@@ -38,6 +39,7 @@ enum DirtyState {
 
 export const ENTITY_NAMES_PATH = 'entity-names.ts';
 export const UI_CONTEXTS_PATH = 'ui-contexts.ts';
+export const UI_ENTITY_NAMES_PATH = 'ui-entity-names.ts';
 
 export class CompositeProvider implements StateProvider {
   readonly name = 'composite';
@@ -244,6 +246,12 @@ export class CompositeProvider implements StateProvider {
       await generateUiContextsType(
         this.engine,
         withAssetDir(DIRECTORY.SCENE + '/' + UI_CONTEXTS_PATH),
+        this.fs,
+      );
+
+      await generateUiEntityNamesType(
+        this.engine,
+        withAssetDir(DIRECTORY.SCENE + '/' + UI_ENTITY_NAMES_PATH),
         this.fs,
       );
 

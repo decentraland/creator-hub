@@ -10,8 +10,9 @@ const uiCallbacks = new Map<Entity, Map<string, UiCallback>>();
  * to drive bound fields at runtime.
  *
  * @example
- *   setUiContext(SceneUIs.MainHUD, { score: 10, playerName: 'Alice' });
- *   setUiContext(SceneUIs.MainHUD, 'score', 11);
+ *   const hud = engine.getEntityOrNullByName(UiEntityNames.MainHUD)!;
+ *   setUiContext(hud, { score: 10, playerName: 'Alice' });
+ *   setUiContext(hud, 'score', 11);
  */
 export function setUiContext(uiRoot: Entity, patch: Record<string, unknown>): void;
 export function setUiContext(uiRoot: Entity, name: string, value: unknown): void;
@@ -45,7 +46,8 @@ export function clearUiContext(uiRoot: Entity): void {
  * Register a callback for a variable of type `callback` on a UI's marker.
  *
  * @example
- *   setUiCallback(SceneUIs.MainHUD, 'onScoreClick', () => console.log('clicked'));
+ *   const hud = engine.getEntityOrNullByName(UiEntityNames.MainHUD)!;
+ *   setUiCallback(hud, 'onScoreClick', () => console.log('clicked'));
  */
 export function setUiCallback(uiRoot: Entity, name: string, fn: UiCallback): void {
   const map = uiCallbacks.get(uiRoot) ?? new Map<string, UiCallback>();
