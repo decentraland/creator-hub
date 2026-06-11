@@ -159,6 +159,7 @@ export type SpawnPointTarget = 'position' | 'cameraTarget';
 export interface SpawnPointController {
   getSelectedIndex(): number | null;
   getSelectedTarget(): SpawnPointTarget | null;
+  isHidden(name: string): boolean;
   select(index: number | null): void;
   selectCameraTarget(index: number): void;
   setVisible(index: number, name: string, visible: boolean): void;
@@ -201,6 +202,14 @@ export interface IRenderer {
    * as `events.pick`). Returns the ground-plane point too, for snap-to-grid drops.
    */
   pickAt(x: number, y: number): { entity: Entity | null; point: Vector3 | null };
+
+  /**
+   * Resolve the world-space point under the pointer on the next pointer tick.
+   * This is the drop-placement primitive: the inspector asks "where is the
+   * pointer aiming in the scene right now?" without knowing screen coordinates.
+   * Returns null if nothing was hit.
+   */
+  getPointerWorldPoint(): Promise<Vector3 | null>;
 
   /** Toggle the editor ground grid. */
   setGridVisible(visible: boolean): void;

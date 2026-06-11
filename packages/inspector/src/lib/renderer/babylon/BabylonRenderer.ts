@@ -83,6 +83,11 @@ export class BabylonRenderer implements IRenderer {
     };
   }
 
+  async getPointerWorldPoint(): Promise<Vector3 | null> {
+    const point = await getPointerCoords(this.context.scene);
+    return point ? DclVector3.create(point.x, point.y, point.z) : null;
+  }
+
   setGridVisible(visible: boolean): void {
     const layout = this.context.scene.getNodeByName('layout');
     layout?.setEnabled(visible);
@@ -218,6 +223,7 @@ function createSpawnPointsFacade(sp: SceneContext['spawnPoints']): SpawnPointCon
   return {
     getSelectedIndex: () => sp.getSelectedIndex(),
     getSelectedTarget: () => sp.getSelectedTarget() as SpawnPointTarget | null,
+    isHidden: name => sp.isSpawnPointHidden(name),
     select: index => sp.selectSpawnPoint(index),
     selectCameraTarget: index => sp.selectCameraTarget(index),
     setVisible: (index, name, visible) => sp.setSpawnPointVisible(index, name, visible),
@@ -240,7 +246,3 @@ function createDebugFacade(scene: BABYLON.Scene): RendererDebug {
     },
   };
 }
-
-// Keep the picking helper import meaningful even if the inspector later routes
-// drop-placement through pickAt; getPointerCoords remains the snap-to-ground path.
-export { getPointerCoords };

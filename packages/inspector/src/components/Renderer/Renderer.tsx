@@ -58,7 +58,6 @@ import { AxisHelper } from './AxisHelper';
 
 import './Renderer.css';
 
-const ZOOM_DELTA = new Vector3(0, 0, 1.1);
 const fixedNumber = (val: number) => Math.round(val * 1e2) / 1e2;
 
 const SINGLE_TILE_HINT_OFFSET = 30;
@@ -91,10 +90,7 @@ const Renderer: React.FC = () => {
 
   useEffect(() => {
     if (sdk) {
-      const layout = sdk.scene.getNodeByName('layout');
-      if (layout) {
-        layout.setEnabled(!groundGridDisabled);
-      }
+      sdk.renderer.setGridVisible(!groundGridDisabled);
     }
   }, [sdk, groundGridDisabled]);
 
@@ -107,8 +103,7 @@ const Renderer: React.FC = () => {
 
   const duplicateSelectedEntities = useCallback(() => {
     if (!sdk) return;
-    const camera = sdk.scene.activeCamera!;
-    camera.detachControl();
+    sdk.renderer.camera.setControlEnabled(false);
     const selectedEntitites = sdk.operations.getSelectedEntities();
     const preferredGizmo =
       selectedEntitites.length > 0
@@ -123,7 +118,7 @@ const Renderer: React.FC = () => {
     });
     void sdk.operations.dispatch();
     setTimeout(() => {
-      camera.attachControl(canvasRef.current, true);
+      sdk.renderer.camera.setControlEnabled(true);
     }, 100);
   }, [sdk]);
 
@@ -151,32 +146,24 @@ const Renderer: React.FC = () => {
 
   const zoomIn = useCallback(() => {
     if (!sdk) return;
-    const camera = sdk.editorCamera.getCamera();
-    const dir = camera.getDirection(ZOOM_DELTA);
-    camera.position.addInPlace(dir);
+    sdk.renderer.camera.zoom(1);
   }, [sdk]);
 
   const zoomOut = useCallback(() => {
     if (!sdk) return;
-    const camera = sdk.editorCamera.getCamera();
-    const dir = camera.getDirection(ZOOM_DELTA).negate();
-    camera.position.addInPlace(dir);
+    sdk.renderer.camera.zoom(-1);
   }, [sdk]);
 
   const resetCamera = useCallback(() => {
     if (!sdk) return;
-    sdk.editorCamera.resetCamera();
+    sdk.renderer.camera.reset();
   }, [sdk]);
 
   const focusOnSelected = useCallback(() => {
     if (!sdk) return;
     const selectedEntities = sdk.operations.getSelectedEntities();
     if (selectedEntities.length > 0) {
-      const entityId = selectedEntities[0];
-      const node = sdk.sceneContext.getEntityOrNull(entityId);
-      if (node) {
-        sdk.editorCamera.centerViewOnEntity(node);
-      }
+      sdk.renderer.camera.focusOnEntity(selectedEntities[0]);
     }
   }, [sdk]);
 
