@@ -241,9 +241,87 @@ const VAR_TYPE_TO_TS: Record<string, string> = {
   'string-array': 'string[]',
 };
 
-function sanitizeIdentifier(raw: string): string {
-  const cleaned = raw.replace(/[^A-Za-z0-9_]/g, '_').replace(/^[0-9]/, '_$&');
-  return cleaned || '_';
+// TS/JS reserved words + a few contextual keywords that are invalid as a bare
+// enum-member name or interface-member/type name. An author-controlled Name
+// (or UI marker / variable name) that sanitizes to one of these would emit a
+// non-compiling generated file (build-time DoS), so prefix it with `_`.
+const TS_RESERVED_WORDS: ReadonlySet<string> = new Set([
+  'break',
+  'case',
+  'catch',
+  'class',
+  'const',
+  'continue',
+  'debugger',
+  'default',
+  'delete',
+  'do',
+  'else',
+  'enum',
+  'export',
+  'extends',
+  'false',
+  'finally',
+  'for',
+  'function',
+  'if',
+  'import',
+  'in',
+  'instanceof',
+  'new',
+  'null',
+  'return',
+  'super',
+  'switch',
+  'this',
+  'throw',
+  'true',
+  'try',
+  'typeof',
+  'var',
+  'void',
+  'while',
+  'with',
+  'as',
+  'implements',
+  'interface',
+  'let',
+  'package',
+  'private',
+  'protected',
+  'public',
+  'static',
+  'yield',
+  'any',
+  'boolean',
+  'constructor',
+  'declare',
+  'get',
+  'module',
+  'require',
+  'number',
+  'set',
+  'string',
+  'symbol',
+  'type',
+  'from',
+  'of',
+  'namespace',
+  'async',
+  'await',
+]);
+
+/**
+ * Turn an author-controlled string into a guaranteed-valid bare TS identifier.
+ * (a) sanitize to the [A-Za-z0-9_] charset, prefixing a leading digit;
+ * (b) if the sanitized token collides with a TS reserved word, prefix `_` so
+ *     the emitted token is valid regardless of input.
+ * Empty input collapses to `_`. Single chokepoint for every author-string →
+ * source-*token* (not value) emission in this module.
+ */
+function toSafeIdentifier(raw: string): string {
+  const cleaned = raw.replace(/[^A-Za-z0-9_]/g, '_').replace(/^[0-9]/, '_$&') || '_';
+  return TS_RESERVED_WORDS.has(cleaned) ? `_${cleaned}` : cleaned;
 }
 
 let __UI_CONTEXTS_CACHE = '';
@@ -268,7 +346,7 @@ export async function generateUiContextsType(
     for (const [rootEntity, rawMarker] of engine.getEntitiesWith(UIComp)) {
       const marker = rawMarker as UI;
       if (!marker.name) continue;
-      const typeBase = sanitizeIdentifier(marker.name);
+      const typeBase = toSafeIdentifier(marker.name);
       let typeName = typeBase;
       let suffix = 1;
       while (usedTypeNames.has(typeName)) {
@@ -315,7 +393,7 @@ export async function generateUiContextsType(
                     .map(s => `(${s})`)
                     .join(' | ');
           }
-          callbackLines.push(`  ${sanitizeIdentifier(v.name)}: ${sig};`);
+          callbackLines.push(`  ${toSafeIdentifier(v.name)}: ${sig};`);
         } else {
           const ts = VAR_TYPE_TO_TS[v.type];
           if (ts === undefined) {
@@ -324,7 +402,7 @@ export async function generateUiContextsType(
             );
             continue;
           }
-          contextLines.push(`  ${sanitizeIdentifier(v.name)}: ${ts};`);
+          contextLines.push(`  ${toSafeIdentifier(v.name)}: ${ts};`);
         }
       }
 
@@ -365,7 +443,7 @@ function buildEnumEntries(names: string[]): Array<{ original: string; valid: str
   const used = new Set<string>();
   const out: Array<{ original: string; valid: string }> = [];
   for (const name of names) {
-    let valid = name.replace(/[^a-zA-Z0-9_]/g, '_').replace(/^[0-9]/, '_$&');
+    let valid = toSafeIdentifier(name);
     if (used.has(valid)) {
       let suffix = 1;
       while (used.has(`${valid}_${suffix}`)) suffix++;
