@@ -624,7 +624,7 @@ const MOUSE_EVENTS_GROUP = {
 };
 
 const INPUT_EVENTS_GROUP = {
-  title: 'Events',
+  title: 'Input events',
   fields: [
     { label: 'On change', componentId: INPUT, path: 'onChange', kind: 'callback' as const },
     { label: 'On submit', componentId: INPUT, path: 'onSubmit', kind: 'callback' as const },
@@ -632,7 +632,7 @@ const INPUT_EVENTS_GROUP = {
 };
 
 const DROPDOWN_EVENTS_GROUP = {
-  title: 'Events',
+  title: 'Dropdown events',
   fields: [
     { label: 'On change', componentId: DROPDOWN, path: 'onChange', kind: 'callback' as const },
   ],

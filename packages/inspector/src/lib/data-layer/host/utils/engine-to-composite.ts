@@ -189,30 +189,8 @@ export async function generateEntityNamesType(
     // Remove duplicates
     const uniqueNames = Array.from(namesSet);
 
-    // Generate valid TypeScript identifiers and handle duplicates in a single pass
-    const validNameMap = new Map<string, string>();
-    const finalNames: Array<{ original: string; valid: string }> = [];
-
-    for (const name of uniqueNames) {
-      // Create a valid TypeScript identifier
-      let validName = name
-        .replace(/[^a-zA-Z0-9_]/g, '_') // Replace non-alphanumeric chars with underscore
-        .replace(/^[0-9]/, '_$&'); // Prepend underscore if starts with number
-
-      // Handle collision if this valid name already exists
-      if (validNameMap.has(validName)) {
-        // Add numeric suffix for uniqueness
-        let suffix = 1;
-        while (validNameMap.has(`${validName}_${suffix}`)) {
-          suffix++;
-        }
-        validName = `${validName}_${suffix}`;
-      }
-
-      // Store the mapping and add to result
-      validNameMap.set(validName, name);
-      finalNames.push({ original: name, valid: validName });
-    }
+    // Generate valid, unique TS-identifier enum entries (sanitize + dedup).
+    const finalNames = buildEnumEntries(uniqueNames);
 
     // Generate the .d.ts file content
     let fileContent = '// Auto-generated entity names from the scene\n\n';
@@ -223,7 +201,7 @@ export async function generateEntityNamesType(
     fileContent += `export enum ${typeName} {\n`;
 
     for (const { original, valid } of finalNames) {
-      fileContent += `  ${valid} = "${original}",\n`;
+      fileContent += `  ${valid} = ${JSON.stringify(original)},\n`;
     }
 
     fileContent += '} \n';
@@ -282,26 +260,7 @@ export async function generateUiContextsType(
     const UiTransform = engine.getComponentOrNull('core::UiTransform');
     if (!UiTransform) return;
 
-    // Build children index for descendant walk.
-    const childrenOf = new Map<number, number[]>();
-    for (const [entity, value] of engine.getEntitiesWith(UiTransform)) {
-      const parent = (value as { parent?: number }).parent;
-      if (parent === undefined) continue;
-      const list = childrenOf.get(parent) ?? [];
-      list.push(entity as unknown as number);
-      childrenOf.set(parent, list);
-    }
-    const descendantsOf = (root: number): Set<number> => {
-      const out = new Set<number>();
-      const stack: number[] = [root];
-      while (stack.length) {
-        const e = stack.pop()!;
-        if (out.has(e)) continue;
-        out.add(e);
-        for (const c of childrenOf.get(e) ?? []) stack.push(c);
-      }
-      return out;
-    };
+    const descendantsOf = buildUiDescendantIndex(engine, UiTransform);
 
     const blocks: string[] = [];
     const usedTypeNames = new Set<string>();
@@ -400,7 +359,8 @@ export async function generateUiContextsType(
 }
 
 // Turn raw Name strings into unique, valid TS-identifier enum entries.
-// Mirrors the sanitize + collision-dedup in generateEntityNamesType (192-215).
+// Single source of the sanitize + collision-dedup logic, consumed by both
+// generateEntityNamesType and generateUiEntityNamesType.
 function buildEnumEntries(names: string[]): Array<{ original: string; valid: string }> {
   const used = new Set<string>();
   const out: Array<{ original: string; valid: string }> = [];
@@ -415,6 +375,39 @@ function buildEnumEntries(names: string[]): Array<{ original: string; valid: str
     out.push({ original: name, valid });
   }
   return out;
+}
+
+/**
+ * Build a descendant resolver over the `core::UiTransform.parent` pointer.
+ * Returns `descendantsOf(root)` → the inclusive set of `root` and every entity
+ * reachable through UiTransform parent links. Pure: reads the engine once,
+ * holds no external state. Shared by the UI codegen generators.
+ */
+function buildUiDescendantIndex(
+  engine: IEngine,
+  UiTransform: ReturnType<IEngine['getComponentOrNull']>,
+): (root: number) => Set<number> {
+  const childrenOf = new Map<number, number[]>();
+  for (const [entity, value] of engine.getEntitiesWith(
+    UiTransform as Parameters<IEngine['getEntitiesWith']>[0],
+  )) {
+    const parent = (value as { parent?: number }).parent;
+    if (parent === undefined) continue;
+    const list = childrenOf.get(parent) ?? [];
+    list.push(entity as unknown as number);
+    childrenOf.set(parent, list);
+  }
+  return (root: number): Set<number> => {
+    const out = new Set<number>();
+    const stack: number[] = [root];
+    while (stack.length) {
+      const e = stack.pop()!;
+      if (out.has(e)) continue;
+      out.add(e);
+      for (const c of childrenOf.get(e) ?? []) stack.push(c);
+    }
+    return out;
+  };
 }
 
 let __UI_ENTITY_NAMES_CACHE = '';
@@ -437,26 +430,7 @@ export async function generateUiEntityNamesType(
     const NameComponent = engine.getComponentOrNull(Name.componentId) as typeof Name | null;
     if (!UIComp || !UiTransform || !NameComponent) return;
 
-    // Children index over the UiTransform parent pointer.
-    const childrenOf = new Map<number, number[]>();
-    for (const [entity, value] of engine.getEntitiesWith(UiTransform)) {
-      const parent = (value as { parent?: number }).parent;
-      if (parent === undefined) continue;
-      const list = childrenOf.get(parent) ?? [];
-      list.push(entity as unknown as number);
-      childrenOf.set(parent, list);
-    }
-    const descendantsOf = (root: number): Set<number> => {
-      const out = new Set<number>();
-      const stack: number[] = [root];
-      while (stack.length) {
-        const e = stack.pop()!;
-        if (out.has(e)) continue;
-        out.add(e);
-        for (const c of childrenOf.get(e) ?? []) stack.push(c);
-      }
-      return out;
-    };
+    const descendantsOf = buildUiDescendantIndex(engine, UiTransform);
 
     // Union of every UI root and its descendants.
     const uiEntities = new Set<number>();
@@ -476,7 +450,7 @@ export async function generateUiEntityNamesType(
     let fileContent = '// Auto-generated UI entity names from the scene. Do not edit by hand.\n\n';
     fileContent += 'export enum UiEntityNames {\n';
     for (const { original, valid } of entries) {
-      fileContent += `  ${valid} = "${original}",\n`;
+      fileContent += `  ${valid} = ${JSON.stringify(original)},\n`;
     }
     fileContent += '}\n';
 
