@@ -49,12 +49,7 @@ const Toolbar = withSdk(({ sdk }) => {
 
   // TODO: Remove withSdk
   const handleInspector = useCallback(() => {
-    const { debugLayer } = sdk.scene;
-    if (debugLayer.isVisible()) {
-      debugLayer.hide();
-    } else {
-      void debugLayer.show({ showExplorer: true, embedMode: true });
-    }
+    sdk.renderer.debug?.toggle();
   }, [sdk]);
 
   const handleSaveClick = useCallback(() => dispatch(save()), []);

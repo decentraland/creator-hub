@@ -13,6 +13,7 @@ export function createInspectorEngine(): Omit<
   | 'editorCamera'
   | 'preferences'
   | 'enumEntity'
+  | 'renderer'
 > {
   const events = mitt<SdkContextEvents>();
   const { engine, components } = createEngineContext({

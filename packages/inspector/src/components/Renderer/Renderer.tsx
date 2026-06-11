@@ -85,7 +85,7 @@ const Renderer: React.FC = () => {
 
   useEffect(() => {
     if (sdk) {
-      sdk.gizmos.setEnabled(!gizmosDisabled);
+      sdk.renderer.gizmos.setEnabled(!gizmosDisabled);
     }
   }, [sdk, gizmosDisabled]);
 

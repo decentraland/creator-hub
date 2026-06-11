@@ -5,6 +5,8 @@ import type { ComponentDefinition, CrdtMessageType, Entity, IEngine } from '@dcl
 
 import { SceneContext } from '../babylon/decentraland/SceneContext';
 import { initRenderer } from '../babylon/setup/init';
+import { BabylonRenderer } from '../renderer/babylon/BabylonRenderer';
+import type { IRenderer } from '../renderer/types';
 import type { Gizmos } from '../babylon/decentraland/GizmoManager';
 import type { CameraManager } from '../babylon/decentraland/camera';
 import type { InspectorPreferences } from '../logic/preferences/types';
@@ -35,14 +37,29 @@ export type SdkContextComponents = EditorComponents & SdkComponents;
 export type SdkContextValue = {
   engine: IEngine;
   components: SdkContextComponents;
-  scene: Scene;
-  sceneContext: SceneContext;
   events: Emitter<SdkContextEvents>;
   dispose(): void;
   operations: ReturnType<typeof createOperations>;
-  gizmos: Gizmos;
-  editorCamera: CameraManager;
   enumEntity: EnumEntity;
+
+  /**
+   * Renderer-agnostic boundary. New code should reach for the scene/camera/
+   * gizmos through here so the inspector stays decoupled from Babylon. See
+   * `lib/renderer/types.ts`.
+   */
+  renderer: IRenderer;
+
+  /**
+   * @deprecated Raw Babylon handles, exposed only until every consumer is
+   * migrated to `renderer`. Do not add new usages — see lib/renderer/types.ts.
+   */
+  scene: Scene;
+  /** @deprecated Use `renderer.*`. Raw Babylon scene-context, migration-only. */
+  sceneContext: SceneContext;
+  /** @deprecated Use `renderer.gizmos`. Migration-only. */
+  gizmos: Gizmos;
+  /** @deprecated Use `renderer.camera`. Migration-only. */
+  editorCamera: CameraManager;
 };
 
 export async function createSdkContext(
@@ -64,6 +81,9 @@ export async function createSdkContext(
   );
   ctx.rootNode.position.set(0, 0, 0);
 
+  // renderer-agnostic boundary over the Babylon scene context
+  const rendererAdapter = new BabylonRenderer(ctx, renderer.editorCamera);
+
   // create inspector engine context and components
   const { engine, components, events, dispose } = createInspectorEngine();
 
@@ -82,12 +102,13 @@ export async function createSdkContext(
     engine,
     components,
     events,
-    scene,
-    sceneContext: ctx,
     dispose,
     operations: createOperations(engine),
+    enumEntity: createEnumEntityId(engine),
+    renderer: rendererAdapter,
+    scene,
+    sceneContext: ctx,
     gizmos: ctx.gizmos,
     editorCamera: renderer.editorCamera,
-    enumEntity: createEnumEntityId(engine),
   };
 }
